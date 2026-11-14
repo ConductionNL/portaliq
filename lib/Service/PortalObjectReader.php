@@ -434,16 +434,32 @@ class PortalObjectReader implements ScopedCollectionReaderInterface, PortalObjec
 				organisation: $organisation,
 				limit: $limit
 			);
-			foreach ($read as $row) {
-				$key = (string)($row['id'] ?? $row['uuid'] ?? ($row['@self']['id'] ?? ''));
-				if ($key !== '' && isset($rows[$key]) === false) {
-					$rows[$key] = $row;
-				}
-			}
+			$rows = $this->withUnseenRows(rows: $rows, read: $read);
 		}
 
 		return array_values($rows);
 	}//end readCollectionByAnyScope()
+
+	/**
+	 * The rows so far, keyed by id, plus every read row not seen yet.
+	 *
+	 * @param array<string, array<string, mixed>> $rows The rows so far, keyed by id.
+	 * @param array<int, array<string, mixed>> $read The rows of one scoped read.
+	 *
+	 * @return array<string, array<string, mixed>> The rows, keyed by id.
+	 *
+	 * @spec openspec/changes/personal-action-list/tasks.md#t02
+	 */
+	private function withUnseenRows(array $rows, array $read): array {
+		foreach ($read as $row) {
+			$key = (string)($row['id'] ?? $row['uuid'] ?? ($row['@self']['id'] ?? ''));
+			if ($key !== '' && isset($rows[$key]) === false) {
+				$rows[$key] = $row;
+			}
+		}
+
+		return $rows;
+	}//end withUnseenRows()
 
 	/**
 	 * The rows of a collection its app declares `anonymous`: what the public
@@ -492,6 +508,23 @@ class PortalObjectReader implements ScopedCollectionReaderInterface, PortalObjec
 			return [];
 		}
 
+		$verified = $this->tenantRows(rows: $rows, organisation: $organisation, schema: $schema);
+
+		return $this->projector->projectRows(rows: $verified, fields: $fields);
+	}//end readPublicCollection()
+
+	/**
+	 * The normalised rows that belong to the tenant.
+	 *
+	 * @param array<int, mixed> $rows The raw rows from OpenRegister.
+	 * @param string $organisation The tenant of the session (may be empty).
+	 * @param string $schema The schema slug.
+	 *
+	 * @return array<int, array<string, mixed>> The tenant's rows.
+	 *
+	 * @spec openspec/changes/anonymous-collection-reads-what-the-public-may/specs/portal-contribution-contract/spec.md#requirement-an-anonymous-collection-shows-what-the-public-may-read
+	 */
+	private function tenantRows(array $rows, string $organisation, string $schema): array {
 		$verified = [];
 		foreach ($rows as $row) {
 			$normalised = $this->normalise(row: $row);
@@ -500,8 +533,8 @@ class PortalObjectReader implements ScopedCollectionReaderInterface, PortalObjec
 			}
 		}
 
-		return $this->projector->projectRows(rows: $verified, fields: $fields);
-	}//end readPublicCollection()
+		return $verified;
+	}//end tenantRows()
 
 	/**
 	 * One page of a scoped read, or null when OpenRegister is absent or the
@@ -611,11 +644,7 @@ class PortalObjectReader implements ScopedCollectionReaderInterface, PortalObjec
 		mixed $fields = null,
 		array $filter = [],
 	): ?array {
-		if ($id === '') {
-			return null;
-		}
-
-		$objectService = $this->actingObjectService(organisation: $organisation);
+		$objectService = $this->actingServiceForId(id: $id, organisation: $organisation);
 		if ($objectService === null) {
 			return null;
 		}
@@ -650,12 +679,46 @@ class PortalObjectReader implements ScopedCollectionReaderInterface, PortalObjec
 			schema: $schema,
 			row: $row
 		);
-		if ($verified === null) {
+
+		return $this->projectedRow(row: $verified, fields: $fields);
+	}//end readObject()
+
+	/**
+	 * The verified row shaped down to the field whitelist, or null when nothing was verified.
+	 *
+	 * @param array<string, mixed>|null $row The verified row, or null.
+	 * @param mixed $fields Optional projection whitelist; null = full row.
+	 *
+	 * @return array<string, mixed>|null The projected row, or null.
+	 *
+	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T1
+	 */
+	private function projectedRow(array|null $row, mixed $fields): array|null {
+		if ($row === null) {
 			return null;
 		}
 
-		return $this->projector->projectRow(row: $verified, fields: $fields);
-	}//end readObject()
+		return $this->projector->projectRow(row: $row, fields: $fields);
+	}//end projectedRow()
+
+	/**
+	 * The acting object service for a read by id, or null for an empty id or
+	 * when OpenRegister is absent.
+	 *
+	 * @param string $id The client-supplied object id/uuid.
+	 * @param string $organisation The tenant to constrain to (may be empty).
+	 *
+	 * @return object|null The acting OR object service, or null.
+	 *
+	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T1
+	 */
+	private function actingServiceForId(string $id, string $organisation): object|null {
+		if ($id === '') {
+			return null;
+		}
+
+		return $this->actingObjectService(organisation: $organisation);
+	}//end actingServiceForId()
 
 	/**
 	 * The fetched row when the subject may see it, else null (→ 404).
@@ -799,6 +862,20 @@ class PortalObjectReader implements ScopedCollectionReaderInterface, PortalObjec
 			return null;
 		}
 
+		return $this->rowWithId(entity: $entity, id: $id);
+	}//end fetchById()
+
+	/**
+	 * The normalised row of a fetched entity when it carries the requested id, else null.
+	 *
+	 * @param mixed $entity The entity OpenRegister returned (may be null).
+	 * @param string $id The client-supplied id/uuid.
+	 *
+	 * @return array<string, mixed>|null The normalised row, or null.
+	 *
+	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T1
+	 */
+	private function rowWithId(mixed $entity, string $id): array|null {
 		if ($entity === null) {
 			return null;
 		}
@@ -814,7 +891,7 @@ class PortalObjectReader implements ScopedCollectionReaderInterface, PortalObjec
 		}
 
 		return $row;
-	}//end fetchById()
+	}//end rowWithId()
 
 	/**
 	 * Verify a single fetched row against a one-hop `via` join, reusing the
@@ -842,15 +919,7 @@ class PortalObjectReader implements ScopedCollectionReaderInterface, PortalObjec
 		string $organisation,
 		array $row,
 	): ?array {
-		if (is_array($via) === false || $this->rowRefs()->isValidVia(via: $via) === false) {
-			$this->logger->warning(
-				'Portaliq: invalid via declaration on single read — failing closed',
-				['schema' => (string)($row['@self']['schema'] ?? '')]
-			);
-			return null;
-		}
-
-		if ($scopeValue === '') {
+		if ($this->viaObjectReadable(via: $via, row: $row, scopeValue: $scopeValue) === false) {
 			return null;
 		}
 
@@ -859,14 +928,65 @@ class PortalObjectReader implements ScopedCollectionReaderInterface, PortalObjec
 			return null;
 		}
 
-		$match = (string)($via['match'] ?? 'id');
+		$match = $this->matchMode(via: $via);
 		$verified = $this->filterTargetRows(rows: [$row], targets: $targets, organisation: $organisation, match: $match, scopeField: $scopeField);
-		if (count($verified) === 0) {
+
+		return $this->firstRow(rows: $verified);
+	}//end verifyViaObject()
+
+	/**
+	 * The first of the verified rows, or null when there is none.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The verified rows.
+	 *
+	 * @return array<string, mixed>|null The first row, or null.
+	 *
+	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T1
+	 */
+	private function firstRow(array $rows): array|null {
+		if (count($rows) === 0) {
 			return null;
 		}
 
-		return $verified[0];
-	}//end verifyViaObject()
+		return $rows[0];
+	}//end firstRow()
+
+	/**
+	 * Whether a single read may go through the via join: a valid via
+	 * declaration (an invalid one is logged) and a non-empty scoping value.
+	 *
+	 * @param mixed $via The raw via declaration.
+	 * @param array<string, mixed> $row The normalised fetched row.
+	 * @param string $scopeValue The subject's scoping value.
+	 *
+	 * @return bool True when the join may run.
+	 *
+	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T1
+	 */
+	private function viaObjectReadable(mixed $via, array $row, string $scopeValue): bool {
+		if (is_array($via) === false || $this->rowRefs()->isValidVia(via: $via) === false) {
+			$this->logger->warning(
+				'Portaliq: invalid via declaration on single read — failing closed',
+				['schema' => (string)($row['@self']['schema'] ?? '')]
+			);
+			return false;
+		}
+
+		return $scopeValue !== '';
+	}//end viaObjectReadable()
+
+	/**
+	 * The `match` mode of a validated via declaration: absent, 'id', or 'scopeField'.
+	 *
+	 * @param array<string, mixed> $via The validated via declaration.
+	 *
+	 * @return string The match mode, 'id' when absent.
+	 *
+	 * @spec openspec/changes/archive/2026-09-07-reverse-scope-join/tasks.md#T1
+	 */
+	private function matchMode(array $via): string {
+		return (string)($via['match'] ?? 'id');
+	}//end matchMode()
 
 	/**
 	 * Resolve the OWNERSHIP scope value for a subject on a collection/action —
@@ -936,13 +1056,8 @@ class PortalObjectReader implements ScopedCollectionReaderInterface, PortalObjec
 		string $audience,
 		string $organisation,
 	): ?string {
-		$address = $this->parseClaimAddress(scopeClaim: $scopeClaim, contributingApp: $contributingApp);
+		$address = $this->claimAddressFor(scopeClaim: $scopeClaim, contributingApp: $contributingApp, subjectRef: $subjectRef);
 		if ($address === null) {
-			$this->logger->debug('Portaliq: malformed scopeClaim treated as absent', ['scopeClaim' => $scopeClaim]);
-			return null;
-		}
-
-		if ($subjectRef === '') {
 			return null;
 		}
 
@@ -956,27 +1071,118 @@ class PortalObjectReader implements ScopedCollectionReaderInterface, PortalObjec
 			return null;
 		}
 
-		$claims = ($account['claims'] ?? null);
+		return $this->admittedAccountClaim(account: $account, address: $address, organisation: $organisation);
+	}//end resolveClaim()
+
+	/**
+	 * The account's claim value when it is a non-empty string the owning app admits, else null.
+	 *
+	 * @param array<string, mixed> $account The subject's own portalAccount row.
+	 * @param array{appId: string, claimName: string} $address The claim address.
+	 * @param string $organisation The subject's tenant (may be empty).
+	 *
+	 * @return string|null The claim value, or null.
+	 *
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T5
+	 */
+	private function admittedAccountClaim(array $account, array $address, string $organisation): string|null {
+		$value = $this->accountClaim(account: $account, address: $address);
+		if ($value === null) {
+			return null;
+		}
+
+		if ($this->claimAdmitted(address: $address, value: $value, account: $account, organisation: $organisation) === false) {
+			return null;
+		}
+
+		return $value;
+	}//end admittedAccountClaim()
+
+	/**
+	 * The parsed claim address, or null when it is malformed (logged) or the
+	 * subject reference is empty.
+	 *
+	 * @param string $scopeClaim The declared claim address.
+	 * @param string $contributingApp Namespace for the bare form.
+	 * @param string $subjectRef The subject's own reference.
+	 *
+	 * @return array{appId: string, claimName: string}|null
+	 *
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T5
+	 */
+	private function claimAddressFor(string $scopeClaim, string $contributingApp, string $subjectRef): array|null {
+		$address = $this->parseClaimAddress(scopeClaim: $scopeClaim, contributingApp: $contributingApp);
+		if ($address === null) {
+			$this->logger->debug('Portaliq: malformed scopeClaim treated as absent', ['scopeClaim' => $scopeClaim]);
+			return null;
+		}
+
+		if ($subjectRef === '') {
+			return null;
+		}
+
+		return $address;
+	}//end claimAddressFor()
+
+	/**
+	 * The claim's value on the account, or null unless it is a non-empty string.
+	 *
+	 * @param array<string, mixed> $account The subject's own portalAccount row.
+	 * @param array{appId: string, claimName: string} $address The claim address.
+	 *
+	 * @return string|null The claim value, or null.
+	 *
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T5
+	 */
+	private function accountClaim(array $account, array $address): string|null {
+		$value = $this->claimIn(claims: ($account['claims'] ?? null), address: $address);
+		if (is_string($value) === false || $value === '') {
+			return null;
+		}
+
+		return $value;
+	}//end accountClaim()
+
+	/**
+	 * The raw value at the claim address in an account's claims, or null.
+	 *
+	 * @param mixed $claims The account's claims.
+	 * @param array{appId: string, claimName: string} $address The claim address.
+	 *
+	 * @return mixed The raw claim value, or null.
+	 *
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T5
+	 */
+	private function claimIn(mixed $claims, array $address): mixed {
 		$value = null;
 		if (is_array($claims) === true && is_array(($claims[$address['appId']] ?? null)) === true) {
 			$value = ($claims[$address['appId']][$address['claimName']] ?? null);
 		}
 
-		if (is_string($value) === false || $value === '') {
-			return null;
-		}
+		return $value;
+	}//end claimIn()
 
-		// The owning app may refuse a claim that names a record of another tenant.
+	/**
+	 * Whether the owning app admits the claim: it may refuse a claim that
+	 * names a record of another tenant.
+	 *
+	 * @param array{appId: string, claimName: string} $address The claim address.
+	 * @param string $value The claim value.
+	 * @param array<string, mixed> $account The subject's own portalAccount row.
+	 * @param string $organisation The subject's tenant (may be empty).
+	 *
+	 * @return bool True when the claim is admitted.
+	 *
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T5
+	 */
+	private function claimAdmitted(array $address, string $value, array $account, string $organisation): bool {
 		$check = new PortalClaimScopeEvent(
 			claim: $address,
 			holder: ['value' => $value, 'organisation' => (string)($account['organisation'] ?? $organisation)]
 		);
-		if ((new ClaimScopeCheck(container: $this->container, logger: $this->logger))->admits(event: $check) === false) {
-			return null;
-		}
 
-		return $value;
-	}//end resolveClaim()
+		return (new ClaimScopeCheck(container: $this->container, logger: $this->logger))->admits(event: $check);
+	}//end claimAdmitted()
 
 	/**
 	 * Parse a scopeClaim address into its appId + claimName, or null when the
@@ -1105,12 +1311,7 @@ class PortalObjectReader implements ScopedCollectionReaderInterface, PortalObjec
 		int $limit,
 		array $filter=[],
 	): array {
-		if ($this->rowRefs()->isValidVia(via: $via) === false) {
-			$this->logger->warning('Portaliq: invalid via declaration — failing closed to zero rows', ['register' => $register, 'schema' => $schema]);
-			return [];
-		}
-
-		if ($scopeValue === '') {
+		if ($this->viaReadable(via: $via, register: $register, schema: $schema, scopeValue: $scopeValue) === false) {
 			return [];
 		}
 
@@ -1123,13 +1324,9 @@ class PortalObjectReader implements ScopedCollectionReaderInterface, PortalObjec
 		}
 
 		// The via is validated, so `match` is absent, 'id', or 'scopeField'.
-		$match = (string)($via['match'] ?? 'id');
+		$match = $this->matchMode(via: $via);
 
-		try {
-			$objectService->setRegister(register: $register);
-			$objectService->setSchema(schema: $schema);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: OR read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
+		if ($this->contextSet(objectService: $objectService, register: $register, schema: $schema) === false) {
 			return [];
 		}
 
@@ -1150,6 +1347,51 @@ class PortalObjectReader implements ScopedCollectionReaderInterface, PortalObjec
 	}//end readViaCollection()
 
 	/**
+	 * Whether a via collection read may run: a valid via declaration (an
+	 * invalid one is logged) and a non-empty scoping value.
+	 *
+	 * @param mixed $via The raw via declaration.
+	 * @param string $register The target register.
+	 * @param string $schema The target schema.
+	 * @param string $scopeValue The subject's scoping value.
+	 *
+	 * @return bool True when the read may run.
+	 *
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T6
+	 */
+	private function viaReadable(mixed $via, string $register, string $schema, string $scopeValue): bool {
+		if ($this->rowRefs()->isValidVia(via: $via) === false) {
+			$this->logger->warning('Portaliq: invalid via declaration — failing closed to zero rows', ['register' => $register, 'schema' => $schema]);
+			return false;
+		}
+
+		return $scopeValue !== '';
+	}//end viaReadable()
+
+	/**
+	 * Set the register/schema context on the object service; false (logged) when that fails.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $register The target register.
+	 * @param string $schema The target schema.
+	 *
+	 * @return bool True when the context is set.
+	 *
+	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T6
+	 */
+	private function contextSet(object $objectService, string $register, string $schema): bool {
+		try {
+			$objectService->setRegister(register: $register);
+			$objectService->setSchema(schema: $schema);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: OR read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
+			return false;
+		}
+
+		return true;
+	}//end contextSet()
+
+	/**
 	 * Run the join pre-pass and collect the verified target references: query
 	 * the join schema (query-side filter best-effort, row-capped), verify each
 	 * row's dot-path scope value + tenant PER ROW — the actual security
@@ -1165,8 +1407,28 @@ class PortalObjectReader implements ScopedCollectionReaderInterface, PortalObjec
 	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-via-join-may-grant-only-through-live-join-rows-req-smo-023
 	 */
 	private function verifiedJoinTargets(object $objectService, array $via, string $scopeValue, string $organisation): array {
+		$joinRows = $this->joinRows(objectService: $objectService, via: $via, scopeValue: $scopeValue);
+		if ($joinRows === null) {
+			return [];
+		}
+
+		return $this->joinTargetsOf(joinRows: $joinRows, via: $via, scopeValue: $scopeValue, organisation: $organisation);
+	}//end verifiedJoinTargets()
+
+	/**
+	 * The raw rows of the join pre-pass (query-side filter best-effort,
+	 * row-capped), or null when the read failed (logged) or returned no list.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param array<string, mixed> $via The validated via declaration.
+	 * @param string $scopeValue The subject's scoping value.
+	 *
+	 * @return array<int, mixed>|null The raw join rows, or null.
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-via-join-may-grant-only-through-live-join-rows-req-smo-023
+	 */
+	private function joinRows(object $objectService, array $via, string $scopeValue): array|null {
 		$joinScopeField = (string)$via['scopeField'];
-		$joinTargetField = (string)$via['targetField'];
 
 		try {
 			$objectService->setRegister(register: (string)$via['register']);
@@ -1184,43 +1446,80 @@ class PortalObjectReader implements ScopedCollectionReaderInterface, PortalObjec
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: via join read failed', ['schema' => (string)$via['schema'], 'reason' => $e->getMessage()]);
-			return [];
+			return null;
 		}
 
 		if (is_array($joinRows) === false) {
-			return [];
+			return null;
 		}
+
+		return $joinRows;
+	}//end joinRows()
+
+	/**
+	 * Verify each join row's dot-path scope value + tenant + liveness PER ROW
+	 * and union the targetField references of the survivors.
+	 *
+	 * @param array<int, mixed> $joinRows The raw join rows.
+	 * @param array<string, mixed> $via The validated via declaration.
+	 * @param string $scopeValue The subject's scoping value.
+	 * @param string $organisation The subject's tenant (may be empty).
+	 *
+	 * @return array<string, true> Verified target ids as a lookup set.
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-via-join-may-grant-only-through-live-join-rows-req-smo-023
+	 */
+	private function joinTargetsOf(array $joinRows, array $via, string $scopeValue, string $organisation): array {
+		$joinTargetField = (string)$via['targetField'];
 
 		$targets = [];
 		$liveRows = new ViaJoinRowFilter();
 		$now = new DateTimeImmutable();
 		foreach ($joinRows as $joinRow) {
-			$row = $this->normalise(row: $joinRow);
-			if ($row === null) {
-				continue;
-			}
-
-			if ($this->rowRefs()->joinRowMatches(row: $row, path: $joinScopeField, scopeValue: $scopeValue) === false) {
-				continue;
-			}
-
-			if ($this->rowRefs()->organisationMatches(row: $row, organisation: $organisation) === false) {
-				continue;
-			}
+			$row = $this->matchingJoinRow(joinRow: $joinRow, via: $via, scopeValue: $scopeValue, organisation: $organisation);
 
 			// A withdrawn, terminated, revoked or expired join row grants
 			// nothing (site-mijn-omgeving-components REQ-SMO-023).
-			if ($liveRows->grants(row: $row, via: $via, now: $now) === false) {
+			if ($row === null || $liveRows->grants(row: $row, via: $via, now: $now) === false) {
 				continue;
 			}
 
 			foreach ($this->rowRefs()->targetRefs(value: $this->rowRefs()->dotGet(row: $row, path: $joinTargetField)) as $ref) {
 				$targets[$ref] = true;
 			}
-		}//end foreach
+		}
 
 		return $targets;
-	}//end verifiedJoinTargets()
+	}//end joinTargetsOf()
+
+	/**
+	 * The normalised join row when its dot-path scope value and tenant match, else null.
+	 *
+	 * @param mixed $joinRow The raw join row.
+	 * @param array<string, mixed> $via The validated via declaration.
+	 * @param string $scopeValue The subject's scoping value.
+	 * @param string $organisation The subject's tenant (may be empty).
+	 *
+	 * @return array<string, mixed>|null The matching row, or null.
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-via-join-may-grant-only-through-live-join-rows-req-smo-023
+	 */
+	private function matchingJoinRow(mixed $joinRow, array $via, string $scopeValue, string $organisation): array|null {
+		$row = $this->normalise(row: $joinRow);
+		if ($row === null) {
+			return null;
+		}
+
+		if ($this->rowRefs()->joinRowMatches(row: $row, path: (string)$via['scopeField'], scopeValue: $scopeValue) === false) {
+			return null;
+		}
+
+		if ($this->rowRefs()->organisationMatches(row: $row, organisation: $organisation) === false) {
+			return null;
+		}
+
+		return $row;
+	}//end matchingJoinRow()
 
 	/**
 	 * Keep only outer rows the verified join set selects — membership checked
@@ -1286,23 +1585,11 @@ class PortalObjectReader implements ScopedCollectionReaderInterface, PortalObjec
 				continue;
 			}
 
-			// One rule for single values and lists (portal-scope-list-membership):
-			// an equal value, or a list that contains it. Every other shape and
-			// an empty scoping value drop the row.
-			if ($scopeField !== '' && $this->scopeMatches(stored: ($normalised[$scopeField] ?? null), scopeValue: $subjectRef) === false) {
+			if ($this->scopeFails(row: $normalised, scopeField: $scopeField, subjectRef: $subjectRef) === true) {
 				continue;
 			}
 
-			// With a subject scope, tenant isolation applies only when the row
-			// carries an organisation; schemas without one are scoped by the
-			// subject reference alone, which is globally unique. Without a
-			// subject scope the tenant is the only boundary, and it fails closed.
-			$tenantHolds = $this->rowRefs()->organisationMatches(row: $normalised, organisation: $organisation, schema: $schema);
-			if ($scopeField === '') {
-				$tenantHolds = $this->rowRefs()->tenantMatches(row: $normalised, organisation: $organisation);
-			}
-
-			if ($tenantHolds === false) {
+			if ($this->tenantHolds(row: $normalised, scopeField: $scopeField, organisation: $organisation, schema: $schema) === false) {
 				continue;
 			}
 
@@ -1311,6 +1598,47 @@ class PortalObjectReader implements ScopedCollectionReaderInterface, PortalObjec
 
 		return $verified;
 	}//end verifyScope()
+
+	/**
+	 * Whether a row fails the subject scope. One rule for single values and
+	 * lists (portal-scope-list-membership): an equal value, or a list that
+	 * contains it. Every other shape and an empty scoping value drop the row.
+	 *
+	 * @param array<string, mixed> $row The normalised row.
+	 * @param string $scopeField The scope field to check ('' = no subject scope).
+	 * @param string $subjectRef The expected subject reference.
+	 *
+	 * @return bool True when the row must be dropped.
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-direct-scope-field-must-match-a-single-value-or-strict-list-membership
+	 */
+	private function scopeFails(array $row, string $scopeField, string $subjectRef): bool {
+		return $scopeField !== '' && $this->scopeMatches(stored: ($row[$scopeField] ?? null), scopeValue: $subjectRef) === false;
+	}//end scopeFails()
+
+	/**
+	 * Whether a row passes tenant isolation. With a subject scope it applies
+	 * only when the row carries an organisation; schemas without one are
+	 * scoped by the subject reference alone, which is globally unique.
+	 * Without a subject scope the tenant is the only boundary, and it fails closed.
+	 *
+	 * @param array<string, mixed> $row The normalised row.
+	 * @param string $scopeField The scope field ('' = no subject scope).
+	 * @param string $organisation The expected tenant (empty = skip).
+	 * @param string $schema The schema read, when known.
+	 *
+	 * @return bool True when the tenant holds.
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-direct-scope-field-must-match-a-single-value-or-strict-list-membership
+	 */
+	private function tenantHolds(array $row, string $scopeField, string $organisation, string $schema): bool {
+		$tenantHolds = $this->rowRefs()->organisationMatches(row: $row, organisation: $organisation, schema: $schema);
+		if ($scopeField === '') {
+			$tenantHolds = $this->rowRefs()->tenantMatches(row: $row, organisation: $organisation);
+		}
+
+		return $tenantHolds;
+	}//end tenantHolds()
 
 	/**
 	 * Normalise an OpenRegister row (array or object) to an associative array.
