@@ -63,7 +63,7 @@
   - GIVEN the README WHEN this change lands THEN it documents the tool table (reads vs writes, scope×reach, the three approval-gated tools) and the ADR-046 rule that no tool is reachable from the portal edge
   - GIVEN the capability spec WHEN this change is archived THEN `openspec/specs/portaliq-mcp-surface/spec.md` reflects the base requirements from `portaliq-mcp-adoption` plus this delta's MODIFIED and ADDED requirements, listing both changes
   - GIVEN the CHANGELOG WHEN this change lands THEN it records the new derived read dialects and the governed provider
-- [ ] Implement
+- [x] Implement
 - [ ] Test
 
 ## Verification

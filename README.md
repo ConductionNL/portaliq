@@ -773,18 +773,48 @@ in the hydra repo for the full rationale.
 
 ### AI Chat Companion / MCP tools
 
-Portaliq has no hand-written MCP tool provider. Its agent-facing tools are
-derived by OpenRegister from the `x-openregister-mcp` dialect declared on the
-schemas in `lib/Settings/portaliq_register.json` (hydra ADR-063):
+Reads are derived by OpenRegister from the `x-openregister-mcp` dialect
+declared on the schemas in `lib/Settings/portaliq_register.json` (hydra
+ADR-063); staff write actions are curated tools in the one governed provider,
+`lib/Mcp/PortaliqToolProvider.php`. Hermiq governs both from the declared
+`scope` and `reach`: writes are denied to an agent until granted, and the
+three high-impact tools carry `requiresApproval: true` so a person approves
+each run. Annotations only restrict; the server-side checks are the UI's own.
 
-- `portaliq.portalmessage.search` and `portaliq.portalmessage.get` — read-only
-  access to the portal inbox, served through OpenRegister's `ObjectService`
-  with the same authorization as the UI. No write verb is declared.
-- `portalAccount`, `portalSession` and `exampleDocument` declare no dialect and
-  are never tools: an account carries identity claims and a session carries
-  token metadata, and the dialect returns whole objects.
+Derived reads (`search` and `get`, read-only, served through OpenRegister's
+`ObjectService` with the same authorization as the UI):
 
-See `openspec/changes/portaliq-mcp-adoption` for the curation.
+| Tool ids | Schema | scope × reach |
+| --- | --- | --- |
+| `portaliq.portalmessage.search` / `.get` | `portalMessage` | read × self |
+| `portaliq.portalsubmission.search` / `.get` | `portalSubmission` | read × instance |
+| `portaliq.portalnotification.search` / `.get` | `portalNotification` | read × instance |
+
+Curated tools (each re-runs the check its screen needs: administrator, or
+content editor through the page editor's groups):
+
+| Tool id | Drives | scope × reach | Approval |
+| --- | --- | --- | --- |
+| `portaliq.trafficSummary` | `TrafficReportController::summary` totals | read × instance | — |
+| `portaliq.updatePortalContent` | page draft, menu or glossary term, as the caller | update × instance | — |
+| `portaliq.updatePageRegions` | a portal's regions, through `PortalRegionResolver` | update × instance | — |
+| `portaliq.applyTheme` | `PortalThemeChoice`, as `PortalThemeController::update` | update × instance | — |
+| `portaliq.publishPortalPage` | a page's draft becomes its live body | update × instance | required |
+| `portaliq.sendPortalMessage` | a staff message in one portal inbox | create × external | required |
+| `portaliq.revokeOrganisationSessions` | `SessionAdminController::revokeOrganisation`; answers counts only | delete × instance | required |
+
+Every executed curated tool writes a fact-only audit row (verb, target, acting
+user, tool id; never content). `portalAccount`, `portalSession` and
+`exampleDocument` are never tools.
+
+**No tool is reachable from the portal edge (ADR-046).** MCP lives on
+OpenRegister's internal Nextcloud surface; every curated tool refuses a call
+without a signed-in Nextcloud user, and a portal bearer never signs one in. No
+`/portal/` route and no public or bearer-guarded controller reaches the MCP
+surface (`tests/Unit/Mcp/PortalEdgeMcpTest.php`).
+
+See `openspec/changes/portaliq-mcp-adoption` and
+`openspec/changes/hermiq-ai-tooling`.
 
 ### Code quality
 
