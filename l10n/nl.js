@@ -3408,7 +3408,8 @@ OC.L10N.register(
         "Change a value before sending the proposal.": "Wijzig eerst een waarde voordat u het voorstel verstuurt.",
         "The proposal was refused.": "Het voorstel is geweigerd.",
         "Your proposal is sent for review.": "Uw voorstel is ter beoordeling verstuurd.",
-        "The proposal is withdrawn.": "Het voorstel is ingetrokken."
+        "The proposal is withdrawn.": "Het voorstel is ingetrokken.",
+        "Off: no second signer is needed.": "Uit: geen tweede ondertekenaar nodig."
     },
     "nplurals=2; plural=(n != 1);"
 )

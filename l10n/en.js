@@ -3254,7 +3254,8 @@ OC.L10N.register(
         "Change a value before sending the proposal.": "Change a value before sending the proposal.",
         "The proposal was refused.": "The proposal was refused.",
         "Your proposal is sent for review.": "Your proposal is sent for review.",
-        "The proposal is withdrawn.": "The proposal is withdrawn."
+        "The proposal is withdrawn.": "The proposal is withdrawn.",
+        "Off: no second signer is needed.": "Off: no second signer is needed."
     },
     "nplurals=2; plural=(n != 1);"
 )
