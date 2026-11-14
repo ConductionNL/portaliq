@@ -162,4 +162,37 @@ class EventFeedReaderTest extends TestCase {
 		$this->assertNull($reader->readOwnEvent('guardian-anna-devries', ''));
 		$this->assertFalse($reader->isOwnChild('', 'child-1'));
 	}//end testReadOwnEventReturnsAnEventInTheAudienceAndNullForAnEmptyId()
+	public function testAPupilLearnsSheMayAnswerAndSeesTheAnswerGivenForHer(): void {
+		$events = [
+			['id' => 'e1', 'status' => 'published', 'target' => ['groupRefs' => ['3havo']], 'rsvpEnabled' => true, 'rsvpBy' => ['guardian', 'learner'], 'askSeats' => true],
+			['id' => 'e2', 'status' => 'published', 'target' => ['groupRefs' => ['3havo']], 'rsvpEnabled' => true],
+		];
+		$rsvps = [
+			['eventRef' => 'e1', 'guardianRef' => 'guardian-erik', 'childRef' => 'pupil-noor', 'response' => 'yes', 'seats' => 3],
+		];
+
+		$reader = new EventFeedReader($this->container($events, $rsvps), $this->audienceReader(['3havo']), $this->createMock(LoggerInterface::class));
+		$feed = $reader->feedFor('pupil-noor');
+
+		$this->assertCount(2, $feed);
+		$this->assertTrue($feed[0]['mayAnswerSelf']);
+		$this->assertSame('pupil-noor', $feed[0]['selfRef']);
+		$this->assertSame(['response' => 'yes', 'seats' => 3], $feed[0]['ownAnswer'], 'her father\'s answer is the one answer for her');
+		$this->assertSame(3, $feed[0]['seatsTaken']);
+		$this->assertNull($feed[0]['myRsvp'], 'she did not give it herself');
+		$this->assertFalse($feed[1]['mayAnswerSelf'], 'an event without rsvpBy is answered by guardians alone');
+		$this->assertArrayNotHasKey('ownAnswer', $feed[1]);
+		$this->assertArrayNotHasKey('selfRef', $feed[1]);
+	}//end testAPupilLearnsSheMayAnswerAndSeesTheAnswerGivenForHer()
+
+	public function testNoAnswerForHerYetIsNull(): void {
+		$events = [['id' => 'e1', 'status' => 'published', 'target' => ['groupRefs' => ['3havo']], 'rsvpEnabled' => true, 'rsvpBy' => ['learner']]];
+		$rsvps = [['eventRef' => 'e1', 'guardianRef' => 'guardian-erik', 'childRef' => 'pupil-other', 'response' => 'yes']];
+
+		$reader = new EventFeedReader($this->container($events, $rsvps), $this->audienceReader(['3havo']), $this->createMock(LoggerInterface::class));
+		$feed = $reader->feedFor('pupil-noor');
+
+		$this->assertTrue($feed[0]['mayAnswerSelf']);
+		$this->assertNull($feed[0]['ownAnswer']);
+	}//end testNoAnswerForHerYetIsNull()
 }//end class
