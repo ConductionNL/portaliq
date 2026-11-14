@@ -62,6 +62,7 @@ use OCA\Portaliq\Service\WriteRefusal;
  * @uses \OCA\Portaliq\Contribution\ActionOptionsNormaliser
  * @uses \OCA\Portaliq\Contribution\ActionSummaryNormaliser
  * @uses \OCA\Portaliq\Contribution\CitizenWriteConfigNormaliser
+ * @uses \OCA\Portaliq\Contribution\CaseFieldDisplayHints
  * @uses \OCA\Portaliq\Contribution\CollectionConfigNormaliser
  * @uses \OCA\Portaliq\Contribution\CollectionSchemaLabels
  * @uses \OCA\Portaliq\Contribution\ConfirmationMailKeys

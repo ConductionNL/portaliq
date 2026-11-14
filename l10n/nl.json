@@ -1,6 +1,16 @@
 {
     "translations": {
         "Choose media": "Media kiezen",
+        "A part with a text shows \"Hulp bij deze pagina\" under its heading; a part without shows nothing.": "Een onderdeel met een tekst toont \"Hulp bij deze pagina\" onder de kop; een onderdeel zonder tekst toont niets.",
+        "An e-mail address looks like info@example.nl.": "Een e-mailadres ziet eruit als info@example.nl.",
+        "An image address starts with / or https://.": "Een afbeeldingsadres begint met / of https://.",
+        "Help on forms": "Hulp bij formulieren",
+        "Help per part of Mijn omgeving": "Hulp per onderdeel van Mijn omgeving",
+        "Hulp": "Hulp",
+        "May name the form with {formulier}.": "Mag het formulier noemen met {formulier}.",
+        "No image": "Geen afbeelding",
+        "Opens the \"Hulp nodig?\" dialog on every form. A form may override each of these details; with none set, forms show no \"Hulp nodig?\".": "Opent het venster \"Hulp nodig?\" op elk formulier. Een formulier kan elk van deze gegevens vervangen; zonder gegevens tonen formulieren geen \"Hulp nodig?\".",
+        "When set, the page shows \"Hulp bij deze pagina\" under its heading, closed until a visitor opens it. Empty shows nothing.": "Als deze is ingevuld, toont de pagina \"Hulp bij deze pagina\" onder de kop, dicht tot een bezoeker hem opent. Leeg toont niets.",
         "change proposals": "wijzigingsvoorstellen",
         "A bounded map of extra values the client attached: at most 20 keys, scalar values, 256 characters each.": "Een begrensde tabel van extra waarden die de client meestuurde: hoogstens 20 sleutels, enkelvoudige waarden, elk 256 tekens.",
         "A bounded map of extra values the client attached: at most 20 keys, scalar values, 256 characters each. On a form event only `formId`, `fieldId`, `lastFieldId` and `ms` survive, so what was typed can never be stored; a `cd_<id>` custom dimension survives only when the portal declared the id.": "Een begrensde tabel van extra waarden die de client meestuurde: hoogstens 20 sleutels, enkelvoudige waarden, elk 256 tekens. Op een formuliergebeurtenis blijven alleen `formId`, `fieldId`, `lastFieldId` en `ms` over, zodat wat is getypt nooit kan worden opgeslagen; een eigen dimensie `cd_<id>` blijft alleen over als het portaal het id heeft aangegeven.",
@@ -3387,6 +3397,10 @@
         "The image the home page hero shows when its block sets no image of its own: an item of this portal's media library as media:<id>.": "De afbeelding die de hero op de startpagina toont als het blok zelf geen afbeelding heeft: een item uit de mediabibliotheek van dit portaal, als media:<id>.",
         "The site logo shown in the portal header: an item of this portal's media library as media:<id>, or an address. Also the tab icon when the portal has no favicon.": "Het logo van de site in de kop van het portaal: een item uit de mediabibliotheek van dit portaal als media:<id>, of een adres. Ook het tabbladpictogram als het portaal er geen heeft.",
         "The tab icon of the site: an item of this portal's media library as media:<id>. A PNG, SVG or ICO. Empty uses the logo, then the theme's icon.": "Het tabbladpictogram van de site: een item uit de mediabibliotheek van dit portaal als media:<id>. Een PNG, SVG of ICO. Leeg gebruikt het logo, daarna het pictogram van het thema.",
+        "Open the form with an introduction page": "Het formulier opent met een introductiepagina",
+        "Off: the form opens at step 1. The introduction's text is kept.": "Uit: het formulier opent bij stap 1. De tekst van de introductie blijft bewaard.",
+        "Introduction text": "Tekst van de introductie",
+        "The opening sentence under the form's heading.": "De openingszin onder de kop van het formulier.",
         "Event to sign up for": "Evenement om je voor aan te melden",
         "No event": "Geen evenement"
     },
