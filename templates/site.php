@@ -35,6 +35,7 @@
 
 declare(strict_types=1);
 
+use OCA\Portaliq\Service\Cms\SiteIcon;
 use OCA\Portaliq\Service\PortalThemeResolver;
 
 /** @var array $_ */
@@ -262,29 +263,29 @@ foreach ($tokenStylesheets as $href) {
     $stylesheets[] = $href;
 }
 
-// The tab icon. A portal's declared logo wins; otherwise the theme app's own
-// favicon, which every NLDS theme ships.
+// The tab icon (portal-identity-from-the-admin REQ-PIA-002): the portal's
+// favicon, then its logo, both resolved by SiteShell to a public address that
+// answers without a session; then the theme app's own icon, which every NLDS
+// theme ships; then this app's own mark.
 // The theme app ships a per-brand logo under `img/logos/<theme>.svg`; the
 // reference application serves an SVG favicon the same way. `img/favicon.ico`
 // does NOT exist there — linking it would have traded a 404 on
 // /favicon.ico for a 404 on a path of our own invention, which is not a fix.
-$favicon = (string)($portalConfig['logo'] ?? '');
-if ($favicon === '' && $themeStylesheet !== '' && $themeApp !== null) {
+$themeIcon = '';
+if ($themeStylesheet !== '' && $themeApp !== null) {
     $themeName = basename($themeStylesheet);
     try {
         $logo = $appManager->getAppPath($themeApp)
             . '/img/logos/' . $themeName . '.svg';
         if (is_file($logo) === true) {
-            $favicon = $asset($themeApp, 'img/logos/' . $themeName . '.svg');
+            $themeIcon = $asset($themeApp, 'img/logos/' . $themeName . '.svg');
         }
     } catch (\Throwable) {
         // No theme app: fall through to this app's own mark.
     }
 }
 
-if ($favicon === '') {
-    $favicon = $asset($appId, 'img/app.svg');
-}
+$favicon = SiteIcon::first((string)($_['portalIcon'] ?? ''), $themeIcon, $asset($appId, 'img/app.svg'));
 
 ?><!DOCTYPE html>
 <html lang="<?php p($locale); ?>">
