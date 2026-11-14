@@ -3227,7 +3227,19 @@ OC.L10N.register(
         "Introduction text": "Introduction text",
         "The opening sentence under the form's heading.": "The opening sentence under the form's heading.",
         "Event to sign up for": "Event to sign up for",
-        "No event": "No event"
+        "No event": "No event",
+        "Propose a change": "Propose a change",
+        "Nothing on this record can be proposed.": "Nothing on this record can be proposed.",
+        "Note for the reviewer": "Note for the reviewer",
+        "Send proposal": "Send proposal",
+        "Your proposals on this record": "Your proposals on this record",
+        "Your proposals could not be loaded.": "Your proposals could not be loaded.",
+        "You have made no proposals on this record.": "You have made no proposals on this record.",
+        "Rejected": "Rejected",
+        "Change a value before sending the proposal.": "Change a value before sending the proposal.",
+        "The proposal was refused.": "The proposal was refused.",
+        "Your proposal is sent for review.": "Your proposal is sent for review.",
+        "The proposal is withdrawn.": "The proposal is withdrawn."
     },
     "nplurals=2; plural=(n != 1);"
 )
