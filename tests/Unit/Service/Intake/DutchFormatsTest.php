@@ -69,6 +69,42 @@ class DutchFormatsTest extends TestCase {
 	}//end testAnUnknownFormatChecksNothing()
 
 	/**
+	 * Each format's own check, untrimmed, refuses a value with a trailing
+	 * newline, or strips it with the other whitespace before checking.
+	 *
+	 * @return void
+	 */
+	public function testACheckRefusesATrailingNewline(): void {
+		$checks = (new \ReflectionMethod(DutchFormats::class, 'checks'))->invoke(new DutchFormats());
+		$cases  = [
+			['bsn', "123456782\n", null],
+			['kvk', "12345678\n", null],
+			['kvk-branch', "123456789012\n", null],
+			['postcode', "1234 AB\n", null],
+			['phone-nl', "0612345678\n", '0612345678'],
+			['phone-international', "+442079460958\n", '+442079460958'],
+			['iban', "NL91ABNA0417164300\n", 'NL91ABNA0417164300'],
+			['nl-licence-plate', "AB1234\n", 'AB1234'],
+		];
+		foreach ($cases as [$format, $value, $expected]) {
+			$this->assertSame($expected, $checks[$format]($value), $format);
+		}
+
+		$this->assertEqualsCanonicalizing(DutchFormats::FORMATS, array_column($cases, 0));
+	}//end testACheckRefusesATrailingNewline()
+
+	/**
+	 * A submitted value is trimmed first, so a trailing newline never reaches the stored value.
+	 *
+	 * @return void
+	 */
+	public function testATrailingNewlineIsNotStored(): void {
+		$formats = new DutchFormats();
+		$this->assertSame('0612345678', $formats->normalise(format: 'phone-nl', value: "06 12345678\n"));
+		$this->assertSame('12345678', $formats->normalise(format: 'kvk', value: "12345678\n"));
+	}//end testATrailingNewlineIsNotStored()
+
+	/**
 	 * Every value of every format is kept, normalised or refused exactly as recorded.
 	 *
 	 * @return void
