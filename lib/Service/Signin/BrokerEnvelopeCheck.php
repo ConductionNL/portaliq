@@ -70,6 +70,36 @@ class BrokerEnvelopeCheck {
 	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-every-claim-portaliq-acts-on-is-checked-req-bel-004
 	 */
 	public function check(string $envelope, string $consumerId, string $org, string $provider, int $now): ?array {
+		$claims = $this->matchingClaims(envelope: $envelope, consumerId: $consumerId, org: $org, provider: $provider);
+		if ($claims === null) {
+			return null;
+		}
+
+		if ($this->isCurrent(claims: $claims, now: $now) === false) {
+			return null;
+		}
+
+		$subject = $this->subjectOf(claims: $claims);
+		if ($subject === null) {
+			return null;
+		}
+
+		return ['sub' => $subject, 'provider' => $provider, 'trust' => $this->trustOf(claims: $claims)];
+	}//end check()
+
+	/**
+	 * The envelope's claims when its use, issuer, audience, organisation and provider all match, else null.
+	 *
+	 * @param string $envelope   The compact JWS integriq returned.
+	 * @param string $consumerId Portaliq's consumer id: the envelope's audience.
+	 * @param string $org        The organisation the login was started for.
+	 * @param string $provider   The provider the login was started for.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-every-claim-portaliq-acts-on-is-checked-req-bel-004
+	 */
+	private function matchingClaims(string $envelope, string $consumerId, string $org, string $provider): array|null {
 		$claims = $this->claims(envelope: $envelope);
 		if ($claims === null) {
 			return null;
@@ -88,24 +118,45 @@ class BrokerEnvelopeCheck {
 			}
 		}
 
-		if ($this->isCurrent(claims: $claims, now: $now) === false) {
-			return null;
-		}
+		return $claims;
+	}//end matchingClaims()
 
+	/**
+	 * The envelope's subject, or null when it is not a non-blank string.
+	 *
+	 * @param array<string, mixed> $claims The claims.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-every-claim-portaliq-acts-on-is-checked-req-bel-004
+	 */
+	private function subjectOf(array $claims): string|null {
 		$subject = ($claims['sub'] ?? null);
 		if (is_string($subject) === false || trim($subject) === '') {
 			return null;
 		}
 
-		// An unknown or missing trust is under-privileged to `low`, as
-		// integriq's spec asks of consumers (REQ-BEL-005).
+		return $subject;
+	}//end subjectOf()
+
+	/**
+	 * The envelope's trust. An unknown or missing trust is under-privileged
+	 * to `low`, as integriq's spec asks of consumers (REQ-BEL-005).
+	 *
+	 * @param array<string, mixed> $claims The claims.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-every-claim-portaliq-acts-on-is-checked-req-bel-004
+	 */
+	private function trustOf(array $claims): string {
 		$trust = 'low';
 		if (in_array(($claims['trust'] ?? null), self::TRUST_LEVELS, true) === true) {
 			$trust = $claims['trust'];
 		}
 
-		return ['sub' => $subject, 'provider' => $provider, 'trust' => $trust];
-	}//end check()
+		return $trust;
+	}//end trustOf()
 
 
 	/**
