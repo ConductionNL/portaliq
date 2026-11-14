@@ -30,7 +30,7 @@ A business session MUST see every mandate and open invitation whose `onBehalfOf`
 
 ### Requirement: A party MUST invite, never look up, the person it authorises (REQ-SMR-003)
 
-Portaliq holds no BSN, so a person who never signed in cannot be named. "Iemand machtigen" MUST ask for an email address, a scope (all cases or chosen case types of the portal) and an optional end date in the future, typed as day, month and year, and MUST mail the invitation link to that address only; the secret MUST NOT be answered to the inviter. The scope's words ("Alle zaken", or the titles of the chosen case types) stand in for a label (board Machtigen). It MUST NOT ask for a BSN or look a person up by name. The mandate MUST be written only when the invitee signs in and accepts, for the account that accepted, with the invitation's terms. The inviter MUST NOT be able to accept their own invitation.
+"Iemand machtigen" MUST ask for an email address, a scope (all cases or chosen case types) and an optional future end date, and MUST mail the invitation link to that address only, never answering the secret to the inviter. Portaliq holds no BSN, so it MUST NOT ask for one or look a person up by name. The mandate MUST be written only when the invitee accepts, for that account, with the invitation's terms; the inviter MUST NOT accept their own invitation.
 
 #### Scenario: Tom accepts
 - GIVEN an invitation from KVK 12345678 to tom@example.nl for "Mag alleen bezwaren indienen en volgen", valid until 30 June 2027
@@ -48,6 +48,16 @@ Portaliq holds no BSN, so a person who never signed in cannot be named. "Iemand 
 - GIVEN the invitation form with end date 1 January 2026
 - WHEN the party sends it on 2 October 2026
 - THEN no invitation is sent and the form names the end date
+
+#### Scenario: The scope's words stand in for a label
+- GIVEN an invitation for the case types "Bezwaar" and "Parkeervergunning"
+- WHEN the party's list shows it
+- THEN its line reads those case-type titles, or "Alle zaken" for an invitation on all cases (board Machtigen)
+
+#### Scenario: The inviter cannot accept their own invitation
+- GIVEN KVK 12345678 invited tom@example.nl
+- WHEN the same session opens the invitation link and accepts
+- THEN no mandate is written and the invitation stays open
 
 ### Requirement: Either side MUST be able to end a mandate (REQ-SMR-004)
 
