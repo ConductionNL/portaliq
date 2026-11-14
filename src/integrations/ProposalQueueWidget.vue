@@ -47,43 +47,12 @@
 				v-for="proposal in proposals"
 				:key="proposal.uuid || proposal.id"
 				class="portaliq-proposal-queue__item">
-				<p class="portaliq-proposal-queue__meta">
-					{{
-						proposal.channel === 'portal'
-							? t('portaliq', 'From the portal')
-							: t('portaliq', 'From a colleague')
-					}}
-					<span v-if="proposal.proposedAt">
-						· {{ dateOf(proposal.proposedAt) }}</span
-					>
-				</p>
-				<p v-if="proposal.note" class="portaliq-proposal-queue__note">
-					{{ proposal.note }}
-				</p>
-				<table class="portaliq-proposal-queue__changes">
-					<thead>
-						<tr>
-							<th scope="col">
-								{{ t('portaliq', 'Field') }}
-							</th>
-							<th scope="col">
-								{{ t('portaliq', 'Now') }}
-							</th>
-							<th scope="col">
-								{{ t('portaliq', 'Proposed') }}
-							</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr
-							v-for="change in proposal.changes || []"
-							:key="change.property">
-							<td>{{ change.property }}</td>
-							<td>{{ formatValue(change.currentValue) }}</td>
-							<td>{{ formatValue(change.proposedValue) }}</td>
-						</tr>
-					</tbody>
-				</table>
+				<ProposalSummary
+					:label="channelLabel(proposal)"
+					:proposed-at="proposal.proposedAt || ''"
+					:note="proposal.note || ''"
+					:changes="proposal.changes || []"
+					show-current />
 
 				<div
 					v-if="driftFor(proposal).length > 0"
@@ -220,35 +189,11 @@
 					v-for="proposal in mine"
 					:key="idOf(proposal)"
 					class="portaliq-proposal-queue__item">
-					<p class="portaliq-proposal-queue__meta">
-						{{ stateLabel(proposal.state) }}
-						<span v-if="proposal.proposedAt">
-							· {{ dateOf(proposal.proposedAt) }}</span
-						>
-					</p>
-					<p v-if="proposal.note" class="portaliq-proposal-queue__note">
-						{{ proposal.note }}
-					</p>
-					<table class="portaliq-proposal-queue__changes">
-						<thead>
-							<tr>
-								<th scope="col">
-									{{ t('portaliq', 'Field') }}
-								</th>
-								<th scope="col">
-									{{ t('portaliq', 'Proposed') }}
-								</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr
-								v-for="change in proposal.changes || []"
-								:key="change.property">
-								<td>{{ change.property }}</td>
-								<td>{{ formatValue(change.proposedValue) }}</td>
-							</tr>
-						</tbody>
-					</table>
+					<ProposalSummary
+						:changes="proposal.changes || []"
+						:note="proposal.note || ''"
+						:proposed-at="proposal.proposedAt || ''"
+						:label="stateLabel(proposal.state)" />
 					<div
 						v-if="proposal.state === 'queued'"
 						class="portaliq-proposal-queue__actions">
@@ -273,10 +218,13 @@ import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import { leafReportMixin } from './leafReport.js'
-import { createProposalQueue, formatValue, inputValue } from './proposalQueue.js'
+import { createProposalQueue, formatDate, formatValue, inputValue } from './proposalQueue.js'
+import ProposalSummary from './ProposalSummary.vue'
 
 export default {
 	name: 'ProposalQueueWidget',
+
+	components: { ProposalSummary },
 
 	mixins: [leafReportMixin],
 
@@ -355,7 +303,7 @@ export default {
 				emptyLabel: t('portaliq', 'No proposals are waiting on this record.'),
 				noun: t('portaliq', 'change proposals'),
 				rows: this.proposals.map((proposal) => ({
-					label: (proposal.channel === 'portal' ? t('portaliq', 'From the portal') : t('portaliq', 'From a colleague'))
+					label: this.channelLabel(proposal)
 						+ (proposal.proposedAt ? ` · ${this.dateOf(proposal.proposedAt)}` : ''),
 					icon: 'FileDocumentEditOutline',
 				})),
@@ -390,17 +338,18 @@ export default {
 		},
 
 		/**
-		 * @param {string} value An ISO date.
-		 * @return {string}
+		 * @param {object} proposal The proposal.
+		 * @return {string} Where the proposal came from.
 		 *
 		 * @spec openspec/specs/change-proposal-queue/spec.md#requirement-the-queue-is-a-leaf-on-the-subject-req-cpq-004
 		 */
-		dateOf(value) {
-			const date = new Date(value)
-			return Number.isNaN(date.getTime())
-				? String(value)
-				: date.toLocaleDateString()
+		channelLabel(proposal) {
+			return proposal.channel === 'portal'
+				? t('portaliq', 'From the portal')
+				: t('portaliq', 'From a colleague')
 		},
+
+		dateOf: formatDate,
 
 		/**
 		 * @param {object} proposal The proposal.
@@ -643,7 +592,6 @@ export default {
 	border-bottom: 1px solid var(--color-border);
 }
 
-.portaliq-proposal-queue__meta,
 .portaliq-proposal-queue__state {
 	color: var(--color-text-maxcontrast);
 	margin: 0;
@@ -651,18 +599,6 @@ export default {
 
 .portaliq-proposal-queue__state--error {
 	color: var(--color-error);
-}
-
-.portaliq-proposal-queue__changes {
-	width: 100%;
-	margin: 4px 0;
-	border-collapse: collapse;
-}
-
-.portaliq-proposal-queue__changes th,
-.portaliq-proposal-queue__changes td {
-	text-align: start;
-	padding: 2px 8px 2px 0;
 }
 
 .portaliq-proposal-queue__drift {

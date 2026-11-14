@@ -205,18 +205,13 @@ class ProposalController extends Controller {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		$mayReview = $this->guard->mayAct(
-			user: $user,
-			register: $register,
-			schema: $schema,
-			id: $id,
-			action: PortalCaseAccessGuardInterface::ACTION_REVIEW_PROPOSAL
-		);
+		$subject   = ['subjectRegister' => $register, 'subjectSchema' => $schema, 'subjectId' => $id];
+		$mayReview = $this->mayReview(user: $user, proposal: $subject);
 
 		$properties = $this->declared()->forRecord(register: $register, schema: $schema);
 		$row        = [];
 		if ($properties !== []) {
-			$row = $this->subjectRowOf(proposal: ['subjectRegister' => $register, 'subjectSchema' => $schema, 'subjectId' => $id]);
+			$row = $this->subjectRowOf(proposal: $subject);
 		}
 
 		$proposable = [];

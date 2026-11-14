@@ -43,6 +43,21 @@ function idOf(proposal) {
 }
 
 /**
+ * An ISO date as the reader's locale writes it; an unreadable one as given.
+ *
+ * @param {string} value An ISO date.
+ * @return {string}
+ *
+ * @spec openspec/specs/change-proposal-queue/spec.md#requirement-the-queue-is-a-leaf-on-the-subject-req-cpq-004
+ */
+export function formatDate(value) {
+	const date = new Date(value)
+	return Number.isNaN(date.getTime())
+		? String(value)
+		: date.toLocaleDateString()
+}
+
+/**
  * A proposed or current value as the reviewer reads it.
  *
  * @param {*} value The value.
