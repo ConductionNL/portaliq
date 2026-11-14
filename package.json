@@ -75,7 +75,7 @@
     "check:site-public-detail": "node --test tests/site-public-detail.spec.mjs",
     "check:case-actions-row-inputs": "node --test tests/case-actions-row-inputs.spec.mjs",
     "check:case-page-next-step": "node --test tests/case-page-next-step.spec.mjs",
-    "check:woo-dossier-in-my-cases": "node --test tests/woo-dossier-in-my-cases.spec.mjs",
+    "check:woo-dossier-in-my-cases": "node --test tests/woo-dossier-in-my-cases.spec.mjs tests/citizen-case-question.spec.mjs",
     "check:not-found-page": "node --test tests/not-found-page.spec.mjs",
     "check:not-found-without-breadcrumb": "node --test tests/not-found-without-breadcrumb.spec.mjs",
     "check:contact-form": "node --test tests/contact-form.spec.mjs",
