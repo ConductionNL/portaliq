@@ -58,6 +58,7 @@ use OCA\Portaliq\Contribution\TimelineProviderMethod;
  * @uses   \OCA\Portaliq\Event\PortalClientWriteEvent
  * @uses   \OCA\Portaliq\Event\PortalClientWithdrawalEvent
  * @uses   \OCA\Portaliq\Service\CitizenWritableSetResolver
+ * @uses   \OCA\Portaliq\Contribution\CaseFieldDisplayHints
  * @uses   \OCA\Portaliq\Service\CitizenWriteRecorder
  * @uses   \OCA\Portaliq\Service\CitizenWriteThrottle
  * @uses   \OCA\Portaliq\Service\PortalSessionService
