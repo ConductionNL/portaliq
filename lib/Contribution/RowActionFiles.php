@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\RowActionFilesInterface;
 use OCP\IRequest;
 
 /**
@@ -37,7 +38,7 @@ use OCP\IRequest;
  *
  * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
  */
-class RowActionFiles {
+class RowActionFiles implements RowActionFilesInterface {
 
 	private const FIELD_NAME = '/^[a-zA-Z][a-zA-Z0-9_]*$/';
 

@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\CaseTypeColumns;
 
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 
 /**
  * Reads the declared `cases` collections from the contribution registry.
@@ -38,10 +38,10 @@ class CasesCollections {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalContributionRegistry $registry The contributing apps.
+	 * @param PortalContributionRegistryInterface $registry The contributing apps.
 	 */
 	public function __construct(
-		private readonly PortalContributionRegistry $registry,
+		private readonly PortalContributionRegistryInterface $registry,
 	) {
 	}//end __construct()
 

@@ -9,6 +9,7 @@ use OCA\Portaliq\Service\PortalItemReader;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Portaliq\Contribution\TimelineProviderMethod;
 
 /**
  * Reading a dossier's items from its app (my-dossiers D2).
@@ -46,7 +47,7 @@ class PortalItemReaderTest extends TestCase {
 		$locator = $this->getMockBuilder(PortalProviderLocator::class)->disableOriginalConstructor()->onlyMethods(['locate'])->getMock();
 		$locator->method('locate')->willReturn($provider);
 
-		return new PortalItemReader(locator: $locator, logger: $this->createMock(LoggerInterface::class));
+		return new PortalItemReader(locator: $locator, logger: $this->createMock(LoggerInterface::class), timelineProviderMethod: new TimelineProviderMethod());
 	}//end reader()
 
 	/**

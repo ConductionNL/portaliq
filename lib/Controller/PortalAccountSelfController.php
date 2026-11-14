@@ -33,13 +33,13 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
-use OCA\Portaliq\Service\Identity\PortalAccessRequestService;
-use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
-use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
-use OCA\Portaliq\Service\PortalOrganisationConfigService;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalAccessRequestServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalIdentityMailerInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalOrganisationConfigServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSelfServiceServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -59,21 +59,21 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param PortalSelfServiceService $selfService The account's own details.
-	 * @param PortalAccessRequestService $accessRequests Asking for access.
-	 * @param PortalIdentityMailer $mailer Mails the confirmation to the new address.
-	 * @param PortalOrganisationConfigService|null $orgConfig Whether the organisation offers the message box.
+	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
+	 * @param PortalSelfServiceServiceInterface $selfService The account's own details.
+	 * @param PortalAccessRequestServiceInterface $accessRequests Asking for access.
+	 * @param PortalIdentityMailerInterface $mailer Mails the confirmation to the new address.
+	 * @param PortalOrganisationConfigServiceInterface|null $orgConfig Whether the organisation offers the message box.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
-		private readonly PortalSelfServiceService $selfService,
-		private readonly PortalAccessRequestService $accessRequests,
-		private readonly PortalIdentityMailer $mailer,
-		private readonly ?PortalOrganisationConfigService $orgConfig = null,
+		private readonly PortalSessionServiceInterface $session,
+		private readonly PortalSelfServiceServiceInterface $selfService,
+		private readonly PortalAccessRequestServiceInterface $accessRequests,
+		private readonly PortalIdentityMailerInterface $mailer,
+		private readonly ?PortalOrganisationConfigServiceInterface $orgConfig = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -167,7 +167,7 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 	 */
 	private function confirmationAnswer(DetailsChange $change, string $token): JSONResponse {
 		$sent = $this->mailer->send(
-			template: PortalIdentityMailer::TEMPLATE_EMAIL_CONFIRMATION,
+			template: PortalIdentityMailerInterface::TEMPLATE_EMAIL_CONFIRMATION,
 			email: $change->email,
 			secret: $token,
 			organisation: $change->organisation

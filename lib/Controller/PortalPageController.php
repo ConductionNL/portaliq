@@ -46,18 +46,19 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\AccessibilityFramingInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalNoticeReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalRuntimeConfigResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalThemeResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\SiteHeadInterface;
+use OCA\Portaliq\Kernel\Contracts\SiteShellInterface;
 use OCA\Portaliq\Service\SiteShell;
-use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
-use OCA\Portaliq\Service\PortalThemeResolver;
-use OCA\Portaliq\Service\PortalNoticeReader;
-use OCA\Portaliq\Service\Cms\AccessibilityFraming;
-use OCA\Portaliq\Service\Cms\SiteHead;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
-use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\RedirectResponse;
 use OCP\AppFramework\Http\TemplateResponse;
@@ -84,39 +85,39 @@ class PortalPageController extends Controller {
 	/**
 	 * Builds what the site shell template renders.
 	 *
-	 * @var SiteShell
+	 * @var SiteShellInterface
 	 */
-	private readonly SiteShell $shell;
+	private readonly SiteShellInterface $shell;
 
 	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request
-	 * @param PortalRuntimeConfigResolver $configResolver Resolves the serving
+	 * @param PortalRuntimeConfigResolverInterface $configResolver Resolves the serving
 	 *                                                    portal and the runtime
 	 *                                                    config built from it.
 	 * @param IURLGenerator $urlGenerator Builds the content API base handed to
 	 *                                    the site renderer.
-	 * @param PortalResolver $portalResolver Resolves the serving portal, so the
+	 * @param PortalResolverInterface $portalResolver Resolves the serving portal, so the
 	 *                                       shell knows whose theme to load.
-	 * @param PortalThemeResolver $themeResolver Maps that portal's theme
+	 * @param PortalThemeResolverInterface $themeResolver Maps that portal's theme
 	 *                                           reference to a real themiq
 	 *                                           token stylesheet.
-	 * @param SiteHead $siteHead The head of the page a site request asks for.
-	 * @param PortalNoticeReader $notices The notices running on the signed-in surface now.
-	 * @param AccessibilityFraming $framing Whether the accessibility measurement may frame this request.
+	 * @param SiteHeadInterface $siteHead The head of the page a site request asks for.
+	 * @param PortalNoticeReaderInterface $notices The notices running on the signed-in surface now.
+	 * @param AccessibilityFramingInterface $framing Whether the accessibility measurement may frame this request.
 	 */
 	public function __construct(
 		IRequest $request,
-		PortalRuntimeConfigResolver $configResolver,
+		PortalRuntimeConfigResolverInterface $configResolver,
 		private readonly IURLGenerator $urlGenerator,
-		PortalResolver $portalResolver,
-		PortalThemeResolver $themeResolver,
-		SiteHead $siteHead,
-		PortalNoticeReader $notices,
-		private readonly AccessibilityFraming $framing,
+		PortalResolverInterface $portalResolver,
+		PortalThemeResolverInterface $themeResolver,
+		SiteHeadInterface $siteHead,
+		PortalNoticeReaderInterface $notices,
+		private readonly AccessibilityFramingInterface $framing,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 		$this->shell = new SiteShell(
 			request: $request,
 			portalResolver: $portalResolver,
@@ -233,7 +234,7 @@ class PortalPageController extends Controller {
 	 */
 	private function shellResponse(string $path): TemplateResponse {
 		$response = new TemplateResponse(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			'site',
 			$this->shell->templateParams(path: $path),
 			// BASE, NOT PUBLIC — a white-label site may not wear Nextcloud's

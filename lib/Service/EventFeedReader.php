@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\EventFeedReaderInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
@@ -40,7 +41,7 @@ use Psr\Log\LoggerInterface;
  * the sibling news-and-newsletter-authoring change), so the two features'
  * audience rules can never fork.
  */
-class EventFeedReader {
+class EventFeedReader implements EventFeedReaderInterface {
 	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
 	use PagedObjectReads;

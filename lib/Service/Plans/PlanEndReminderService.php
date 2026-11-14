@@ -27,6 +27,7 @@ namespace OCA\Portaliq\Service\Plans;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\Portaliq\Kernel\Contracts\PlanEndReminderServiceInterface;
 use OCA\Portaliq\Service\PagedObjectReads;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\RowAsArray;
@@ -42,7 +43,7 @@ use Throwable;
  *
  * @spec openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md#requirement-a-plan-near-its-end-date-asks-for-action-req-spl-004
  */
-class PlanEndReminderService {
+class PlanEndReminderService implements PlanEndReminderServiceInterface {
 	use RowAsArray;
 	use PagedObjectReads;
 
@@ -154,7 +155,6 @@ class PlanEndReminderService {
 
 		return $open;
 	}//end openActions()
-
 
 	/**
 	 * A row's identifier.

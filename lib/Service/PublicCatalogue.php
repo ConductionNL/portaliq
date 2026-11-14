@@ -31,21 +31,22 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Contribution\PortalProviderLocator;
-use OCA\Portaliq\Contribution\PublicDetailShape;
 use OCA\Portaliq\Contribution\PublicIndexItems;
-use OCA\Portaliq\Contribution\PublicIndexKinds;
+use OCA\Portaliq\Kernel\Contracts\PortalProviderLocatorInterface;
+use OCA\Portaliq\Kernel\Contracts\PublicCatalogueInterface;
 use OCP\App\IAppManager;
 use OCP\ICacheFactory;
 use Psr\Log\LoggerInterface;
 use Throwable;
+use OCA\Portaliq\Kernel\Contracts\PublicDetailShapeInterface;
+use OCA\Portaliq\Kernel\Contracts\PublicIndexKindsInterface;
 
 /**
  * Gathers a portal's public catalogue.
  *
  * @spec openspec/changes/portal-public-catalogue/specs/portal-public-catalogue/spec.md#requirement-a-visitor-may-search-and-filter-a-portals-public-catalogue
  */
-class PublicCatalogue {
+class PublicCatalogue implements PublicCatalogueInterface {
 	/**
 	 * The type of the portal's own news items.
 	 */
@@ -60,17 +61,21 @@ class PublicCatalogue {
 	 * Constructor.
 	 *
 	 * @param IAppManager           $apps    The installed apps.
-	 * @param PortalProviderLocator $locator Finds each app's provider.
+	 * @param PortalProviderLocatorInterface $locator Finds each app's provider.
 	 * @param PublicNewsReader      $news    The portal's own public news.
 	 * @param ICacheFactory         $caches  The distributed cache.
 	 * @param LoggerInterface       $logger  Logs an app whose index failed.
+	 * @param PublicDetailShapeInterface $publicDetailShape The PublicDetailShape helper.
+	 * @param PublicIndexKindsInterface $publicIndexKinds The PublicIndexKinds helper.
 	 */
 	public function __construct(
 		private readonly IAppManager $apps,
-		private readonly PortalProviderLocator $locator,
+		private readonly PortalProviderLocatorInterface $locator,
 		private readonly PublicNewsReader $news,
 		private readonly ICacheFactory $caches,
 		private readonly LoggerInterface $logger,
+		private readonly PublicDetailShapeInterface $publicDetailShape,
+		private readonly PublicIndexKindsInterface $publicIndexKinds,
 	) {
 	}//end __construct()
 
@@ -186,15 +191,15 @@ class PublicCatalogue {
 	 */
 	public function kindsFor(string $portal): array {
 		$out   = [];
-		$shape = new PublicIndexKinds();
+		$shape = $this->publicIndexKinds;
 		foreach ($this->apps->getInstalledApps() as $appId) {
 			$provider = $this->locator->locate(appId: (string)$appId);
-			if ($provider === null || method_exists($provider, PublicIndexKinds::METHOD) === false) {
+			if ($provider === null || method_exists($provider, PublicIndexKindsInterface::METHOD) === false) {
 				continue;
 			}
 
 			try {
-				$answer = $provider->{PublicIndexKinds::METHOD}($portal);
+				$answer = $provider->{PublicIndexKindsInterface::METHOD}($portal);
 			} catch (Throwable $e) {
 				$this->logger->warning('Portaliq: public index kinds failed', ['app' => (string)$appId, 'reason' => $e->getMessage()]);
 				continue;
@@ -225,18 +230,18 @@ class PublicCatalogue {
 		}
 
 		$provider = $this->locator->locate(appId: $appId);
-		if ($provider === null || method_exists($provider, PublicIndexKinds::VISITOR_METHOD) === false) {
+		if ($provider === null || method_exists($provider, PublicIndexKindsInterface::VISITOR_METHOD) === false) {
 			return [];
 		}
 
 		try {
-			$answer = $provider->{PublicIndexKinds::VISITOR_METHOD}($portal, $subject);
+			$answer = $provider->{PublicIndexKindsInterface::VISITOR_METHOD}($portal, $subject);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: public index visitor failed', ['app' => $appId, 'reason' => $e->getMessage()]);
 			return [];
 		}
 
-		return (new PublicIndexKinds())->visitorValues(answer: $answer);
+		return $this->publicIndexKinds->visitorValues(answer: $answer);
 	}//end visitorValuesFor()
 
 	/**
@@ -265,18 +270,18 @@ class PublicCatalogue {
 		}
 
 		$provider = $this->locator->locate(appId: $appId);
-		if ($provider === null || method_exists($provider, PublicDetailShape::METHOD) === false) {
+		if ($provider === null || method_exists($provider, PublicDetailShapeInterface::METHOD) === false) {
 			return null;
 		}
 
 		try {
-			$answer = $provider->{PublicDetailShape::METHOD}($portal, substr((string)$found['id'], (strlen($appId) + 1)));
+			$answer = $provider->{PublicDetailShapeInterface::METHOD}($portal, substr((string)$found['id'], (strlen($appId) + 1)));
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: public detail failed', ['app' => $appId, 'reason' => $e->getMessage()]);
 			return null;
 		}
 
-		$detail = (new PublicDetailShape())->detail(answer: $answer);
+		$detail = $this->publicDetailShape->detail(answer: $answer);
 		if ($detail === null) {
 			return null;
 		}

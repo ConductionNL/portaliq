@@ -32,11 +32,12 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Notifications;
 
-use OCA\Portaliq\Service\ObjectRowNormaliser;
-use OCA\Portaliq\Service\ObjectServiceLookup;
 use DateInterval;
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\Portaliq\Kernel\Contracts\QuietHoursPolicyInterface;
+use OCA\Portaliq\Service\ObjectRowNormaliser;
+use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCP\IConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -45,7 +46,7 @@ use Throwable;
 /**
  * @spec openspec/specs/guardian-push-notifications/spec.md#requirement-a-non-emergency-push-during-quiet-hours-is-deferred-not-dropped
  */
-class QuietHoursPolicy {
+class QuietHoursPolicy implements QuietHoursPolicyInterface {
 	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
 

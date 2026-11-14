@@ -25,12 +25,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\ExampleSite;
 
+use OCA\Portaliq\Kernel\Contracts\ExampleSiteRemoverInterface;
+
 /**
  * Removes an example site from its install's own record.
  *
  * @spec openspec/changes/example-site-zuiddrecht/specs/example-site/spec.md#requirement-an-administrator-must-be-able-to-remove-an-example-site
  */
-class ExampleSiteRemover {
+class ExampleSiteRemover implements ExampleSiteRemoverInterface {
 	/**
 	 * Constructor.
 	 *

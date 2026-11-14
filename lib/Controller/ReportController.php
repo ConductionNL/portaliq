@@ -34,17 +34,16 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\CaseTypeReader;
-use OCA\Portaliq\Service\Identity\PortalChallengeService;
-use OCA\Portaliq\Service\PortalObjectReader;
-use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\RequestedPortal;
-use OCA\Portaliq\Service\Reports\ReportIntakeService;
-use OCA\Portaliq\Service\Reports\ReportProjection;
-use OCA\Portaliq\Service\Reports\ReportTermsService;
-use OCA\Portaliq\Service\Reports\ReportThreadService;
-use OCA\Portaliq\Service\Reports\RevealService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\CaseTypeReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalChallengeServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\ReportIntakeServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\ReportProjectionInterface;
+use OCA\Portaliq\Kernel\Contracts\ReportTermsServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\ReportThreadServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\RevealServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -55,6 +54,7 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
+use OCA\Portaliq\Kernel\Contracts\RequestedPortalInterface;
 
 /**
  * Files a report, runs its thread, and gates the reveal.
@@ -98,31 +98,33 @@ class ReportController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalResolver $portals Resolves the portal being visited.
-	 * @param PortalChallengeService $challenge The portal's own challenge.
-	 * @param ReportIntakeService $intake Accepts a report and mints its code.
-	 * @param ReportThreadService $threads Opens a thread and carries messages.
-	 * @param ReportTermsService $terms Where the declared terms stand.
-	 * @param RevealService $reveals Requests, refusals and reveals.
-	 * @param ReportProjection $projection Strips the reporter from an answer.
-	 * @param PortalObjectReader $reader Reads the report and the request.
-	 * @param CaseTypeReader $caseTypes Reads the declaration.
+	 * @param PortalResolverInterface $portals Resolves the portal being visited.
+	 * @param PortalChallengeServiceInterface $challenge The portal's own challenge.
+	 * @param ReportIntakeServiceInterface $intake Accepts a report and mints its code.
+	 * @param ReportThreadServiceInterface $threads Opens a thread and carries messages.
+	 * @param ReportTermsServiceInterface $terms Where the declared terms stand.
+	 * @param RevealServiceInterface $reveals Requests, refusals and reveals.
+	 * @param ReportProjectionInterface $projection Strips the reporter from an answer.
+	 * @param PortalObjectReaderInterface $reader Reads the report and the request.
+	 * @param CaseTypeReaderInterface $caseTypes Reads the declaration.
 	 * @param IUserSession $userSession The staff user, when there is one.
+	 * @param RequestedPortalInterface $requestedPortal The RequestedPortal helper.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalResolver $portals,
-		private readonly PortalChallengeService $challenge,
-		private readonly ReportIntakeService $intake,
-		private readonly ReportThreadService $threads,
-		private readonly ReportTermsService $terms,
-		private readonly RevealService $reveals,
-		private readonly ReportProjection $projection,
-		private readonly PortalObjectReader $reader,
-		private readonly CaseTypeReader $caseTypes,
+		private readonly PortalResolverInterface $portals,
+		private readonly PortalChallengeServiceInterface $challenge,
+		private readonly ReportIntakeServiceInterface $intake,
+		private readonly ReportThreadServiceInterface $threads,
+		private readonly ReportTermsServiceInterface $terms,
+		private readonly RevealServiceInterface $reveals,
+		private readonly ReportProjectionInterface $projection,
+		private readonly PortalObjectReaderInterface $reader,
+		private readonly CaseTypeReaderInterface $caseTypes,
 		private readonly IUserSession $userSession,
+		private readonly RequestedPortalInterface $requestedPortal,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -156,7 +158,7 @@ class ReportController extends Controller {
 		int $expiresAt = 0,
 		string $signature = '',
 	): JSONResponse {
-		$site = $this->portals->resolve(request: $this->request, portalSlug: (new RequestedPortal())->slug(request: $this->request));
+		$site = $this->portals->resolve(request: $this->request, portalSlug: $this->requestedPortal->slug(request: $this->request));
 		if ($site === null) {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
 		}

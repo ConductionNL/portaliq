@@ -25,6 +25,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\PublicRecordsNormaliserInterface;
+
 /**
  * An entry survives only with a plain id, a label and two provider names that
  * pass the timeline rule and exist as public methods on the provider. Anything
@@ -32,7 +34,7 @@ namespace OCA\Portaliq\Contribution;
  *
  * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t1
  */
-class PublicRecordsNormaliser {
+class PublicRecordsNormaliser implements PublicRecordsNormaliserInterface {
 
 	/**
 	 * The shape of a record list id.

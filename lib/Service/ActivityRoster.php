@@ -28,12 +28,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\ActivityRosterInterface;
+
 /**
  * Builds the staff roster of one activity.
  *
  * @spec openspec/changes/archive/2026-09-28-activity-parental-consent/specs/portaliq-cms/spec.md#requirement-where-photos-are-taken-the-roster-must-show-each-childs-photo-consent
  */
-class ActivityRoster {
+class ActivityRoster implements ActivityRosterInterface {
 	/**
 	 * Constructor.
 	 *

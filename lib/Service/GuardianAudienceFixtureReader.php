@@ -31,6 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\GuardianAudienceFixtureReaderInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -50,7 +51,7 @@ use Throwable;
  * replaced as a whole when the real audience source lands, so splitting it
  * now would only spread the seam.
  */
-class GuardianAudienceFixtureReader {
+class GuardianAudienceFixtureReader implements GuardianAudienceFixtureReaderInterface {
 	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
 
