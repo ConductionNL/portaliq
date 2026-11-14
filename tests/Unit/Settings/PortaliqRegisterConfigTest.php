@@ -404,8 +404,11 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.106.0 (guardianMessage 0.3.0): a message's `readAt`, when the other side first read it (message-read-time). Additive.
 		// 0.108.0 (portalPage 0.10.0): a cta's `messageTo`, the field naming whom the message form opens for (guardian-message-to-and-whole-day). Additive.
 		// 0.109.0 (portalFormBinding 0.6.0): `intro.enabled`, whether the form opens with its introduction (form-statements-intro-and-confirmation-mail T06). Additive.
-		$this->assertSame(expected: '0.109.0', actual: self::$register['info']['version']);
-		$this->assertSame(expected: '0.109.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		// 0.111.0 (article 0.1.0, page 0.8.0): marketing articles move here from pipelinq, and a markdown page body may name one as `articleRef` (marketing-articles-from-pipelinq). Additive.
+		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['page']['properties']['body']['properties']['articleRef']['type']);
+		$this->assertSame(expected: '0.111.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.111.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame(expected: '0.1.0', actual: self::$register['components']['schemas']['article']['version']);
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portalPage']['properties']['pages']['items']['properties']['blocks']['items']['properties']['messageTo']['type']);
 		$this->assertSame(expected: 'date-time', actual: self::$register['components']['schemas']['guardianMessage']['properties']['readAt']['format']);
 		// 0.107.0 (portal 0.28.0): a portal's `caseTypeColumns`, how each case type's columns read in Mijn zaken (case-type-columns-in-my-cases). Additive.
@@ -434,7 +437,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame('string', self::$register['components']['schemas']['portalMessage']['properties']['ruleKey']['type']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalOidcState']['version']);
 		$this->assertSame('boolean', self::$register['components']['schemas']['portalOidcState']['properties']['silent']['type']);
-		$this->assertSame('0.7.0', self::$register['components']['schemas']['page']['version']);
+		$this->assertSame('0.8.0', self::$register['components']['schemas']['page']['version']);
 		$this->assertSame(70, self::$register['components']['schemas']['page']['properties']['seoTitle']['maxLength']);
 		$this->assertSame(160, self::$register['components']['schemas']['page']['properties']['seoDescription']['maxLength']);
 		$this->assertSame('boolean', self::$register['components']['schemas']['page']['properties']['seoNoindex']['type']);
@@ -476,7 +479,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalTrafficRecording']['version']);
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
-		$this->assertSame('0.7.0', self::$register['components']['schemas']['page']['version']);
+		$this->assertSame('0.8.0', self::$register['components']['schemas']['page']['version']);
 		$this->assertSame('0.28.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portal']['properties']['authentication']['properties']['registration']['properties']['businessGroup']['type']);
 		$this->assertSame('string', self::$register['components']['schemas']['portal']['properties']['tokens']['additionalProperties']['type']);

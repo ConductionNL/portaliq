@@ -238,6 +238,10 @@
         {
             "name": "traffic-report",
             "description": "ADMIN ONLY, BY OMISSION. No `NoAdminRequired` on the action: the daily records are the portal's audience measurement and the export is an operator's surface, the same posture as the Reports page it hangs off. `NoCSRFRequired` because a download is a top-level GET the browser navigates to, which carries no request token; it reads and changes nothing, and the session cookie's SameSite guard is what a cross-site GET meets."
+        },
+        {
+            "name": "article",
+            "description": "Marketing articles, reused by newsletters, posts and pages."
         }
     ],
     "paths": {
@@ -5149,6 +5153,504 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/Problem401"
+                    }
+                }
+            }
+        },
+        "/articles": {
+            "get": {
+                "operationId": "article-index",
+                "summary": "A page of articles, newest first",
+                "description": "A page of the marketing articles, newest first. Needs a signed-in Nextcloud user holding portal.write-articles.",
+                "tags": [
+                    "article"
+                ],
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "description": "The page, from 1.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "description": "The page size, 1 to 100.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "article-create",
+                "summary": "Create an article as a draft",
+                "description": "Create an article as a draft by the signed-in user; the server stamps the author, status, slug and agent mark. Needs a signed-in Nextcloud user holding portal.write-articles.",
+                "tags": [
+                    "article"
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "title": {
+                                        "type": "string",
+                                        "description": "The headline."
+                                    },
+                                    "slug": {
+                                        "type": "string",
+                                        "description": "The URL-safe identifier; derived from the title when empty."
+                                    },
+                                    "summary": {
+                                        "type": "string",
+                                        "description": "One or two sentences."
+                                    },
+                                    "body": {
+                                        "type": "string",
+                                        "description": "The article in markdown."
+                                    },
+                                    "heroImage": {
+                                        "type": "string",
+                                        "description": "A Files path, an absolute URL, or app:<app>/<file>."
+                                    },
+                                    "language": {
+                                        "type": "string",
+                                        "description": "A two-letter language code."
+                                    },
+                                    "organisation": {
+                                        "type": "string",
+                                        "description": "The organisation that owns the article."
+                                    },
+                                    "portalPageRef": {
+                                        "type": "string",
+                                        "description": "The public page that carries the article."
+                                    },
+                                    "links": {
+                                        "type": "array",
+                                        "description": "Further reading, each a label and a url.",
+                                        "items": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "tags": {
+                                        "type": "array",
+                                        "description": "Subject tags.",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                },
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "The article was created.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/Problem400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    }
+                }
+            }
+        },
+        "/articles/{id}": {
+            "get": {
+                "operationId": "article-show",
+                "summary": "One article",
+                "description": "One article by id or slug. Needs a signed-in Nextcloud user holding portal.write-articles.",
+                "tags": [
+                    "article"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "The article's id or slug.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Problem404"
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "article-update",
+                "summary": "Change an article's editable fields",
+                "description": "Change an article's editable fields. Needs a signed-in Nextcloud user holding portal.write-articles.",
+                "tags": [
+                    "article"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "The article's id or slug.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "title": {
+                                        "type": "string",
+                                        "description": "The headline."
+                                    },
+                                    "slug": {
+                                        "type": "string",
+                                        "description": "The URL-safe identifier; derived from the title when empty."
+                                    },
+                                    "summary": {
+                                        "type": "string",
+                                        "description": "One or two sentences."
+                                    },
+                                    "body": {
+                                        "type": "string",
+                                        "description": "The article in markdown."
+                                    },
+                                    "heroImage": {
+                                        "type": "string",
+                                        "description": "A Files path, an absolute URL, or app:<app>/<file>."
+                                    },
+                                    "language": {
+                                        "type": "string",
+                                        "description": "A two-letter language code."
+                                    },
+                                    "organisation": {
+                                        "type": "string",
+                                        "description": "The organisation that owns the article."
+                                    },
+                                    "portalPageRef": {
+                                        "type": "string",
+                                        "description": "The public page that carries the article."
+                                    },
+                                    "links": {
+                                        "type": "array",
+                                        "description": "Further reading, each a label and a url.",
+                                        "items": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "tags": {
+                                        "type": "array",
+                                        "description": "Subject tags.",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                },
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/Problem400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Problem404"
+                    }
+                }
+            }
+        },
+        "/articles/{id}/publish": {
+            "post": {
+                "operationId": "article-publish",
+                "summary": "Publish an article",
+                "description": "Publish an article; the first publish stamps publishedAt and a later one never moves it. Needs a signed-in Nextcloud user holding portal.write-articles.",
+                "tags": [
+                    "article"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "The article's id or slug.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/Problem400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Problem404"
+                    }
+                }
+            }
+        },
+        "/articles/{id}/archive": {
+            "post": {
+                "operationId": "article-archive",
+                "summary": "Archive an article",
+                "description": "Archive an article; it stays readable and every reference stays intact. Needs a signed-in Nextcloud user holding portal.write-articles.",
+                "tags": [
+                    "article"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "The article's id or slug.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/Problem400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Problem404"
+                    }
+                }
+            }
+        },
+        "/articles/{id}/transition": {
+            "post": {
+                "operationId": "article-transition",
+                "summary": "Apply a declared lifecycle move",
+                "description": "Apply submitForReview, returnToDraft or restore, as the lifecycle declares. Needs a signed-in Nextcloud user holding portal.write-articles.",
+                "tags": [
+                    "article"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "The article's id or slug.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "transition": {
+                                        "type": "string",
+                                        "description": "The transition's name."
+                                    }
+                                },
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/Problem400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Problem404"
+                    }
+                }
+            }
+        },
+        "/articles/{id}/usages": {
+            "get": {
+                "operationId": "article-usages",
+                "summary": "Where an article is used",
+                "description": "Where an article is used, asked from every app at read time. Needs a signed-in Nextcloud user holding portal.write-articles.",
+                "tags": [
+                    "article"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "The article's id or slug.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Problem404"
                     }
                 }
             }

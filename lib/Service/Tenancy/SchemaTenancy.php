@@ -89,6 +89,8 @@ final class SchemaTenancy implements SchemaTenancyInterface {
 		'portalFaq'               => ['scope' => self::PORTAL],
 		'portalFinder'            => ['scope' => self::PORTAL],
 		'sharedBlock'             => ['scope' => self::ORGANISATION],
+		// A marketing article belongs to the organisation and to no single portal (marketing-articles-from-pipelinq).
+		'article'                 => ['scope' => self::ORGANISATION],
 		'portalReport'            => ['scope' => self::PORTAL],
 		'newsItem'                => ['scope' => self::PORTAL],
 		'portalAvailabilityDaily' => ['scope' => self::PORTAL],

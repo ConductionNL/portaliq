@@ -70,7 +70,7 @@
       "label": "Media",
       "icon": "PackageVariantClosed",
       "route": "Media",
-      "order": 25,
+      "order": 24,
       "visibleIf": {
         "access.pages": true
       }
@@ -80,7 +80,7 @@
       "label": "Notices",
       "icon": "BullhornOutline",
       "route": "Notices",
-      "order": 26,
+      "order": 25,
       "visibleIf": {
         "access.pages": true
       }
@@ -90,7 +90,17 @@
       "label": "News",
       "icon": "FileDocumentOutline",
       "route": "News",
-      "order": 27
+      "order": 26
+    },
+    {
+      "id": "ArticlesMenu",
+      "label": "Articles",
+      "icon": "NewspaperVariantOutline",
+      "route": "Articles",
+      "order": 27,
+      "visibleIf": {
+        "access.pages": true
+      }
     },
     {
       "id": "Themes",
@@ -6190,6 +6200,214 @@
           "cards",
           "board",
           "map"
+        ]
+      }
+    },
+    {
+      "id": "Articles",
+      "route": "/articles",
+      "type": "index",
+      "title": "Articles",
+      "config": {
+        "register": "portaliq",
+        "schema": "article",
+        "_note": "Marketing articles, moved here from pipelinq (marketing-articles-from-pipelinq): reusable public text that a page, a mailing and a post each render their own way. Opens as a table; the cards view shows hero image, title, summary and status. Every write goes through ArticleController (author stamp, slug, first-publish moment, the agent mark a client cannot set), so the object form is off: New article opens ArticleNew, a row opens ArticleDetail.",
+        "showAdd": false,
+        "showFormDialog": false,
+        "showEditAction": false,
+        "showCopyAction": false,
+        "showMassImport": false,
+        "showMassCopy": false,
+        "columns": [
+          {
+            "key": "title",
+            "label": "Title",
+            "width": "340px"
+          },
+          {
+            "key": "status",
+            "label": "Status",
+            "widget": "badge",
+            "widgetProps": {
+              "colorMap": {
+                "published": "success",
+                "review": "info",
+                "draft": "warning",
+                "archived": "neutral"
+              }
+            },
+            "enum": [
+              "draft",
+              "review",
+              "published",
+              "archived"
+            ],
+            "enumLabels": {
+              "draft": "Draft",
+              "review": "In review",
+              "published": "Published",
+              "archived": "Archived"
+            },
+            "width": "131px"
+          },
+          {
+            "key": "language",
+            "label": "Language",
+            "width": "100px"
+          },
+          {
+            "key": "publishedAt",
+            "label": "Published",
+            "width": "181px"
+          }
+        ],
+        "showTitle": true,
+        "showTitleIcon": false,
+        "rowTitle": "strong",
+        "countText": "{shown} of {total} articles",
+        "headerActions": [
+          {
+            "id": "new-article",
+            "label": "New article",
+            "icon": "Plus",
+            "handler": "navigate",
+            "route": "ArticleNew"
+          }
+        ],
+        "quickFilters": [
+          {
+            "label": "All",
+            "filter": {},
+            "showCount": true,
+            "default": true
+          },
+          {
+            "label": "Published",
+            "filter": {
+              "status": "published"
+            },
+            "showCount": true
+          },
+          {
+            "label": "In review",
+            "filter": {
+              "status": "review"
+            },
+            "showCount": true
+          },
+          {
+            "label": "Draft",
+            "filter": {
+              "status": "draft"
+            },
+            "showCount": true
+          }
+        ],
+        "viewSwitch": [
+          "table",
+          "cards"
+        ]
+      }
+    },
+    {
+      "id": "ArticleNew",
+      "route": "/articles/new",
+      "type": "custom",
+      "title": "New article",
+      "component": "ArticleFormView",
+      "_note": "Mounts ArticleEditModal in create mode (marketing-articles-from-pipelinq): the markdown editor and the Files hero-image picker live in that one modal, and the create goes through ArticleController, which a declarative create dialog cannot do.",
+      "config": {
+        "register": "portaliq",
+        "schema": "article"
+      }
+    },
+    {
+      "id": "ArticleDetail",
+      "route": "/articles/:id",
+      "type": "detail",
+      "title": "Article",
+      "config": {
+        "register": "portaliq",
+        "schema": "article",
+        "_note": "One article (marketing-articles-from-pipelinq). ArticleContentSection leads: the rendered body, the hero image, the agent mark, Edit and the lifecycle moves, all through ArticleController. The data widget shows the article's own fields. ArticleUsageSection answers where the article is used, asked from every app through ArticleUsagesRequestedEvent.",
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true
+        },
+        "widgets": [
+          {
+            "id": "article-content",
+            "type": "ArticleContentSection",
+            "title": "Article",
+            "icon": "NewspaperVariantOutline",
+            "content": {}
+          },
+          {
+            "id": "article-data",
+            "type": "data",
+            "title": "Article details",
+            "icon": "InformationOutline",
+            "content": {
+              "columns": 2,
+              "include": [
+                "status",
+                "language",
+                "author",
+                "publishedAt",
+                "slug",
+                "tags",
+                "portalPageRef",
+                "legacyRef"
+              ]
+            }
+          },
+          {
+            "id": "article-usage",
+            "type": "ArticleUsageSection",
+            "title": "Where this is used",
+            "icon": "LinkVariant",
+            "content": {}
+          },
+          {
+            "id": "article-history",
+            "type": "audit-trail",
+            "title": "History",
+            "icon": "History"
+          }
+        ],
+        "layout": [
+          {
+            "id": "article-content",
+            "widgetId": "article-content",
+            "gridX": 0,
+            "gridY": 0,
+            "gridWidth": 12,
+            "gridHeight": 10
+          },
+          {
+            "id": "article-data",
+            "widgetId": "article-data",
+            "gridX": 0,
+            "gridY": 10,
+            "gridWidth": 12,
+            "gridHeight": 5
+          },
+          {
+            "id": "article-usage",
+            "widgetId": "article-usage",
+            "gridX": 0,
+            "gridY": 15,
+            "gridWidth": 12,
+            "gridHeight": 4
+          },
+          {
+            "id": "article-history",
+            "widgetId": "article-history",
+            "gridX": 0,
+            "gridY": 19,
+            "gridWidth": 12,
+            "gridHeight": 5
+          }
         ]
       }
     },

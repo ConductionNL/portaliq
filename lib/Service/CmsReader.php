@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Kernel\Contracts\CmsReaderInterface;
+use OCA\Portaliq\Service\Articles\PageArticle;
 use OCA\Portaliq\Service\Cms\MediaReferences;
 use OCA\Portaliq\Service\Cms\PortalHelp;
 use OCA\Portaliq\Service\Cms\PortalShell;
@@ -93,6 +94,7 @@ class CmsReader implements CmsReaderInterface {
 	 * @param MediaReferences       $media        Resolves a page's media:<id> references.
 	 * @param PortalRegionResolver  $regions      Groups a page's widgets by region.
 	 * @param PortalShell           $shell        Projects the portal's header, footer and regions.
+	 * @param PageArticle|null      $articles     Resolves the article a markdown page names.
 	 *
 	 * @return void
 	 */
@@ -104,6 +106,7 @@ class CmsReader implements CmsReaderInterface {
 		private readonly MediaReferences $media,
 		private readonly PortalRegionResolver $regions=new PortalRegionResolver(),
 		private readonly PortalShell $shell=new PortalShell(),
+		private readonly ?PageArticle $articles=null,
 	) {
 		$this->cache     = new CmsContentCache(cache: $cacheFactory->createDistributed('portaliq_cms'), logger: $logger);
 		$this->rows      = new CmsRows(container: $container, logger: $logger, context: $context);
@@ -206,7 +209,7 @@ class CmsReader implements CmsReaderInterface {
 				return null;
 			}
 
-			return $decoded;
+			return $this->withArticle(page: $decoded, portal: $portal, organisation: $organisation);
 		}
 
 		// The `status` filter is applied in the QUERY, not after. A draft page
@@ -224,8 +227,32 @@ class CmsReader implements CmsReaderInterface {
 
 		$this->cache->store($key, json_encode($page ?? []));
 
-		return $page;
+		return $this->withArticle(page: $page, portal: $portal, organisation: $organisation);
 	}//end page()
+
+	/**
+	 * The page with the article its markdown body names, read now: only a
+	 * published or archived article of the portal's organisation shows, and
+	 * any other answer is null (marketing-articles-from-pipelinq).
+	 *
+	 * @param array|null $page         The shaped page, or null.
+	 * @param string     $portal       The portal slug.
+	 * @param string     $organisation The serving portal's organisation.
+	 *
+	 * @return array|null The page, with `body.article` when the body names one.
+	 *
+	 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-page-can-show-an-article
+	 */
+	private function withArticle(?array $page, string $portal, string $organisation): ?array {
+		$ref = ($page['body']['articleRef'] ?? '');
+		if ($page === null || is_string($ref) === false || $ref === '' || $this->articles === null) {
+			return $page;
+		}
+
+		$page['body']['article'] = $this->articles->shown(portal: $portal, ref: $ref, organisation: $organisation);
+
+		return $page;
+	}//end withArticle()
 
 	/**
 	 * Resolve the stored identifier of a page at a route, published or not.
@@ -474,6 +501,15 @@ class CmsReader implements CmsReaderInterface {
 		// obviously — to parse it back out, losing fidelity for nothing.
 		// Only a media:<id> link target is rewritten to the item's address.
 		$shaped['markdown'] = $this->media->markdown(portal: (string)($row['portal'] ?? ''), markdown: (string)($body['markdown'] ?? ''));
+
+		// A markdown page may name an article (marketing-articles-from-pipelinq).
+		// The reference is cached with the page; the article itself is read
+		// per request in withArticle(), so publishing or archiving it shows
+		// at once without a page write to drop the cache.
+		$articleRef = $body['articleRef'] ?? '';
+		if (is_string($articleRef) === true && trim($articleRef) !== '') {
+			$shaped['articleRef'] = trim($articleRef);
+		}
 
 		return $shaped;
 	}//end shapeBody()

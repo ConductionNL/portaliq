@@ -557,6 +557,15 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         // The change-proposal queue (change-proposal-queue). A proposal never
         // writes the record: only a reviewer accepting one does, with their
         // own rights. The staff routes are gated by `portal.review-proposal`.
+        // Marketing articles, moved here from pipelinq (marketing-articles-from-pipelinq).
+        ['name' => 'article#index', 'url' => '/api/articles', 'verb' => 'GET'],
+        ['name' => 'article#create', 'url' => '/api/articles', 'verb' => 'POST'],
+        ['name' => 'article#publish', 'url' => '/api/articles/{id}/publish', 'verb' => 'POST'],
+        ['name' => 'article#archive', 'url' => '/api/articles/{id}/archive', 'verb' => 'POST'],
+        ['name' => 'article#transition', 'url' => '/api/articles/{id}/transition', 'verb' => 'POST'],
+        ['name' => 'article#usages', 'url' => '/api/articles/{id}/usages', 'verb' => 'GET'],
+        ['name' => 'article#show', 'url' => '/api/articles/{id}', 'verb' => 'GET'],
+        ['name' => 'article#update', 'url' => '/api/articles/{id}', 'verb' => 'PATCH'],
         ['name' => 'proposal#index', 'url' => '/api/proposals', 'verb' => 'GET'],
         ['name' => 'proposal#proposeAsColleague', 'url' => '/api/proposals', 'verb' => 'POST'],
         ['name' => 'proposal#accept', 'url' => '/api/proposals/{id}/accept', 'verb' => 'POST'],

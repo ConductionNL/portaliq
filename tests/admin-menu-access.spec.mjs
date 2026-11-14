@@ -65,6 +65,7 @@ test('each flag opens its own pages', () => {
 		'MediaMenu',
 		'NoticesMenu',
 		'NewsMenu',
+		'ArticlesMenu',
 		'Documentation',
 	])
 	assert.deepEqual(visibleMenu({ ...NONE, accounts: true }), [
