@@ -1,7 +1,7 @@
 # Tasks: form-governance-availability-retention-and-routing
 
 - [ ] **T01**: `lib/Settings/portaliq_register.json`: `availability`, `retention`, `delivery` on `portalFormBinding`, `expiresAt` and `attempts` on `portalIntakeSubmission`; register bump; import and grep for `PARTIAL IMPORT`
-  - `availability` on `portalFormBinding` is in (register 0.109.0, binding 0.6.0). `retention`, `delivery`, `expiresAt` and `attempts` are left out: decision 179 removed routing and retry and moved retention to the destination objects.
+  - `availability` on `portalFormBinding` is in (register 0.110.0, binding 0.7.0). `retention`, `delivery`, `expiresAt` and `attempts` are left out: decision 179 removed routing and retry and moved retention to the destination objects.
 - [x] **T02**: `lib/Service/Intake/PortalFormAvailability.php`: active period, maintenance, limit per period (OpenRegister count), replacement; called from `PortalFormBindingResolver::render()` and from the submit path; PHPUnit per situation and for the limit check inside the submit request (REQ-FGV-001)
   - Called from the intake controller's form and submit routes rather than inside `render()`, so the background drains are not refused. The count is the destination's objects of the period (decision 179: no portal-side submission store).
 - [x] **T03**: `src/site/components/forms/FormUnavailable.vue` with the three situations of the FormulierNietBeschikbaar board and the not-yet-open text; node test (REQ-FGV-001)
