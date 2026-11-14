@@ -407,9 +407,15 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.109.0 (portalFormBinding 0.6.0): `intro.enabled`, whether the form opens with its introduction (form-statements-intro-and-confirmation-mail T06). Additive.
 		// 0.110.0 (portal 0.29.0): a portal's `favicon` and `heroImage`, and a `logo` that may be a media reference (portal-identity-from-the-admin). Additive.
 		// 0.111.0 (portalFormBinding 0.7.0): a binding's `availability`, its active period, limit per period, maintenance window and successor (form-governance-availability-retention-and-routing REQ-FGV-001). Additive.
-		$this->assertSame(expected: '0.111.0', actual: self::$register['info']['version']);
-		$this->assertSame(expected: '0.111.0', actual: self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame(expected: ['total', 'month', 'year'], actual: self::$register['components']['schemas']['portalFormBinding']['properties']['availability']['properties']['limit']['properties']['per']['enum']);
+		// 0.112.0 (portal 0.30.0): a portal's `adminGroups`, the groups whose members look after that portal (operate-portals-per-organisation T10). Additive; moved past development's 0.111.0 at merge time.
+		$this->assertSame(expected: '0.112.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.112.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portal']['properties']['adminGroups']['items']['type']);
+		// The portal form offers a group picker for it (operate-portals-per-organisation T12).
+		$this->assertSame(expected: 'nextcloud-group', actual: self::$register['components']['schemas']['portal']['properties']['adminGroups']['items']['referenceType']);
+		// Only an instance administrator is offered the picker (x-admin-only, nextcloud-vue fieldsFromSchema); PortalAdminWriteGate still refuses anyone else.
+		$this->assertTrue(self::$register['components']['schemas']['portal']['properties']['adminGroups']['x-admin-only']);
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portalPage']['properties']['pages']['items']['properties']['blocks']['items']['properties']['messageTo']['type']);
 		$this->assertSame(expected: 'date-time', actual: self::$register['components']['schemas']['guardianMessage']['properties']['readAt']['format']);
 		// 0.107.0 (portal 0.28.0): a portal's `caseTypeColumns`, how each case type's columns read in Mijn zaken (case-type-columns-in-my-cases). Additive.
@@ -481,7 +487,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.7.0', self::$register['components']['schemas']['page']['version']);
-		$this->assertSame('0.29.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('0.30.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portal']['properties']['authentication']['properties']['registration']['properties']['businessGroup']['type']);
 		$this->assertSame('string', self::$register['components']['schemas']['portal']['properties']['tokens']['additionalProperties']['type']);
 		$this->assertTrue(self::$register['components']['schemas']['portal']['properties']['searchInsideDocuments']['default']);

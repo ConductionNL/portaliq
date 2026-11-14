@@ -45,6 +45,7 @@ import FormEmbedDialog from './dialogs/FormEmbedDialog.vue'
 import InviteDialog from './dialogs/InviteDialog.vue'
 import IssueAccountDialog from './dialogs/IssueAccountDialog.vue'
 import MailTemplateDialog from './dialogs/MailTemplateDialog.vue'
+import NewPortalDialog from './dialogs/NewPortalDialog.vue'
 import NewsItemDialog from './dialogs/NewsItemDialog.vue'
 import RefuseAccessRequestDialog from './dialogs/RefuseAccessRequestDialog.vue'
 import RevealDecisionDialog from './dialogs/RevealDecisionDialog.vue'
@@ -60,6 +61,7 @@ import { createMailTemplateApi, createMailTemplateHandlers } from './lib/mailTem
 import { createNewsApi, createNewsHandlers, NEWS_LIST } from './lib/newsAuthoring.js'
 import { createOpenPortalSite } from './lib/openPortalSite.js'
 import { createPageVisibilityHandlers } from './lib/pageVisibility.js'
+import { createPortalProvisioning, createPortalProvisioningHandlers } from './lib/portalProvisioning.js'
 import { createRevealHandlers } from './lib/revealActions.js'
 import { createSessionHandlers } from './lib/sessionActions.js'
 import {
@@ -243,6 +245,22 @@ const pageVisibilityHandlers = createPageVisibilityHandlers({
 })
 
 /**
+ * `New portal` on the Portals page (operate-portals-per-organisation T07):
+ * a draft portal for an organisation through PortalProvisionController,
+ * instance administrators only; see src/lib/portalProvisioning.js.
+ */
+const portalProvisioningHandlers = createPortalProvisioningHandlers({
+	provisioning: createPortalProvisioning({
+		post: (url, body) => axios.post(url, body),
+		generateUrl,
+		translate: (text, vars) => t('portaliq', text, vars),
+	}),
+	openDialog: (submit) => spawnLookDialog(NewPortalDialog, { submit }),
+	notify: showSuccess,
+	reload: () => window.location.reload(),
+})
+
+/**
  * `New mail text`, `Change` and `Back to the default text` on the Mail
  * templates page (mail-templates-admin-screen T06). The editor checks a text
  * against its kind's variables before it is stored; see
@@ -325,4 +343,8 @@ export default {
 	 */
 	...revealHandlers,
 	...mailTemplateHandlers,
+	/**
+	 * The Portals page's `New portal` (operate-portals-per-organisation T07).
+	 */
+	...portalProvisioningHandlers,
 }
