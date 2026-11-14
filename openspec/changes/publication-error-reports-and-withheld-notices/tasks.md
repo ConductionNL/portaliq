@@ -90,13 +90,18 @@ test marked **fails today** must be run on `origin/development` first and seen r
 ## 5. Verify and deliver
 
 - [ ] 5.1 `TMPDIR` set to a sibling directory beside the clone.
-- [ ] 5.2 While building, run `./vendor/bin/phpunit -c phpunit-unit.xml --no-coverage --filter` on the
+- [x] 5.2 While building, run `./vendor/bin/phpunit -c phpunit-unit.xml --no-coverage --filter` on the
   touched classes and `node --test` on the touched node tests. Judge PHPUnit by the `Tests:` line.
-- [ ] 5.3 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then `npm run lint`,
+- [x] 5.3 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then `npm run lint`,
   `npm run format`, `npm run check:l10n-js`, `npm run check:schema-l10n`, `npm run check:manifest`,
   `npm run check:register`, `npm run check:specs` and `npm run build:site`, plus any other leg
   `code-quality.yml` requires. Then hydra's `scripts/run-hydra-gates.sh --base origin/development`;
   count the gates that ran.
+  - Ran: PHPUnit 5222 tests, 0 failures (5194 at the start of this build); phpstan, psalm, phpmd and phpcs on the
+    touched lib files; `lint`, `check:l10n-js`, `check:register`, `check:manifest-v2`, `build:site` green;
+    `check:specs` green except `check:notices`, `check:site-look` and `check:page-help`, which fail on
+    `development` too; `check:manifest`, `check:schema-l10n` and `format` fail on `development` as well. Hydra gates:
+    87 of 87 applicable ran; none of the failures names a file of this change.
 - [ ] 5.4 Project coverage of the added statements: no coverage driver runs locally, so take the base percentages from the last green push run on `development`, intersect its clover uncovered lines with the lines you add, and say in the PR body that the number is arithmetic, not a local green.
 - [ ] 5.5 One PR, `--base development`. Merge, never rebase. No `Co-Authored-By`. Done means merged on
   `development` with CI green. 6.15 and 6.16 then read `yes` (build) as opt-in features (6.16's list
