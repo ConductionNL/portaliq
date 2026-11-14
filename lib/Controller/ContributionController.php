@@ -1349,18 +1349,10 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$collectionId = (string)$this->request->getParam('collection', '');
-
-		$match = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
+		// Defense in depth (contract v2, A3): the matched collection's minTrust
+		// is re-checked — 403 before any OpenRegister call.
+		$match = $this->trustedCollection(subject: $subject, target: ['register' => $register, 'schema' => $schema]);
 		if ($match === null) {
-			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
-		}
-
-		$collection = $match['collection'];
-
-		// Defense in depth (contract v2, A3): re-check the matched collection's
-		// minTrust — 403 before any OpenRegister call.
-		if (SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -1371,17 +1363,31 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
+		return $this->objectAnswer(collection: $match['collection'], object: $object, target: ['register' => $register, 'schema' => $schema, 'id' => $id]);
+	}//end object()
+
+	/**
+	 * The answer for one owned object: its files when the collection opts in,
+	 * and the user names the screen shows.
+	 *
+	 * @param array<string, mixed>                                $collection The subject's own collection.
+	 * @param array<string, mixed>                                $object     The object, already proven the subject's.
+	 * @param array{register: string, schema: string, id: string} $target     The object's register, schema and id.
+	 *
+	 * @return JSONResponse
+	 */
+	private function objectAnswer(array $collection, array $object, array $target): JSONResponse {
 		// Opt-in only, and only after ownership is already proven above — the
 		// listing itself never widens which ROWS are visible, only what a row
 		// the subject already owns additionally shows.
 		if (($collection['filesDownload'] ?? false) === true) {
-			$object['_files'] = $this->fileReader->listFiles(register: $register, schema: $schema, id: $id);
+			$object['_files'] = $this->fileReader->listFiles(register: $target['register'], schema: $target['schema'], id: $target['id']);
 		}
 
 		$object = $this->userNames->row(row: $object, collection: $collection);
 
 		return new JSONResponse(['object' => $object]);
-	}//end object()
+	}//end objectAnswer()
 
 	/**
 	 * Whether a session has no organisation while the schema is declared
@@ -1420,32 +1426,58 @@ class ContributionController extends Controller implements PortalProtected {
 			return null;
 		}
 
-		$object = $this->reader->readObject(
-			register: $register,
-			schema: $schema,
-			scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			id: $id,
-			organisation: (string)($subject['organisation'] ?? ''),
-			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
-			contributingApp: $match['app'],
-			via: ($collection['via'] ?? null),
-			audience: (string)($subject['audience'] ?? ''),
-			fields: ($collection['fields'] ?? null),
-			filter: (array)($collection['filter'] ?? [])
-		);
-
-		$hidden = ($this->caseTypes?->hiddenForCollection(request: $this->request, subject: $subject, collection: $collection) ?? []);
-		if ($object === null
-			|| $this->visibleFromGate->rows(rows: [$object], collection: $collection) === []
-			|| $this->branches->admits(subject: $subject, collection: $collection, row: $object) === false
-			|| $this->caseTypes?->rowIsHidden(row: $object, collection: $collection, hidden: $hidden) === true
-		) {
+		$object = $this->readScreenObject(subject: $subject, own: $match, target: ['register' => $register, 'schema' => $schema, 'id' => $id]);
+		if ($this->rowIsWithheld(subject: $subject, collection: $collection, object: $object) === true) {
 			return null;
 		}
 
 		return $this->columnsFor(subject: $subject)->row(row: $object, collection: $collection);
 	}//end screenRow()
+
+	/**
+	 * The object read through the collection's full scope, or null.
+	 *
+	 * @param array<string, mixed>                                 $subject The resolved subject.
+	 * @param array{collection: array<string, mixed>, app: string} $own     The subject's own collection.
+	 * @param array{register: string, schema: string, id: string}  $target  The requested object.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function readScreenObject(array $subject, array $own, array $target): array|null {
+		$collection = $own['collection'];
+		return $this->reader->readObject(
+			register: $target['register'],
+			schema: $target['schema'],
+			scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
+			subjectRef: (string)($subject['subjectRef'] ?? ''),
+			id: $target['id'],
+			organisation: (string)($subject['organisation'] ?? ''),
+			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
+			contributingApp: $own['app'],
+			via: ($collection['via'] ?? null),
+			audience: (string)($subject['audience'] ?? ''),
+			fields: ($collection['fields'] ?? null),
+			filter: (array)($collection['filter'] ?? [])
+		);
+	}//end readScreenObject()
+
+	/**
+	 * Whether the screen withholds an object read: absent, not visible from
+	 * the gate, outside the subject's branch, or of a case type the portal hides.
+	 *
+	 * @param array<string, mixed>      $subject    The resolved subject.
+	 * @param array<string, mixed>      $collection The subject's own collection.
+	 * @param array<string, mixed>|null $object     The object read, or null.
+	 *
+	 * @return bool
+	 */
+	private function rowIsWithheld(array $subject, array $collection, array|null $object): bool {
+		$hidden = ($this->caseTypes?->hiddenForCollection(request: $this->request, subject: $subject, collection: $collection) ?? []);
+		return $object === null
+			|| $this->visibleFromGate->rows(rows: [$object], collection: $collection) === []
+			|| $this->branches->admits(subject: $subject, collection: $collection, row: $object) === false
+			|| $this->caseTypes?->rowIsHidden(row: $object, collection: $collection, hidden: $hidden) === true;
+	}//end rowIsWithheld()
 
 	/**
 	 * Attach an uploaded file to an object the subject owns (the file-upload
@@ -1542,6 +1574,22 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'no_file'], Http::STATUS_BAD_REQUEST);
 		}
 
+		return $this->attachedFile(register: $register, schema: $schema, id: $id, upload: $upload);
+	}//end attachUpload()
+
+	/**
+	 * Write the read upload into the object's folder and answer its metadata.
+	 *
+	 * @param string                               $register The register of the collection.
+	 * @param string                               $schema   The schema of the collection.
+	 * @param string                               $id       The object to attach to.
+	 * @param array{name: string, content: string} $upload   The sanitised upload.
+	 *
+	 * @return JSONResponse The attached file metadata, or 502.
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#scoped-file-attachment-on-a-subject-owned-object
+	 */
+	private function attachedFile(string $register, string $schema, string $id, array $upload): JSONResponse {
 		$result = $this->fileWriter->attachFile(
 			register: $register,
 			schema: $schema,
@@ -1554,7 +1602,7 @@ class ContributionController extends Controller implements PortalProtected {
 		}
 
 		return new JSONResponse(['file' => $result]);
-	}//end attachUpload()
+	}//end attachedFile()
 
 	/**
 	 * Read the multipart upload (`file`) into a sanitised {name, content} pair,
@@ -1684,7 +1732,21 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$stream = $this->fileReader->streamFile(register: $register, schema: $schema, id: $id, fileId: $fileId);
+		return $this->streamOwnedFile(subject: $subject, target: $target, fileId: $fileId);
+	}//end downloadFile()
+
+	/**
+	 * Stream a file of an object already proven the subject's, and audit the
+	 * download; a file that does not resolve in the object's folder is 404.
+	 *
+	 * @param array<string, mixed>                                $subject The resolved subject.
+	 * @param array{register: string, schema: string, id: string} $target  The owned object.
+	 * @param string                                              $fileId  The requested file's id.
+	 *
+	 * @return Response
+	 */
+	private function streamOwnedFile(array $subject, array $target, string $fileId): Response {
+		$stream = $this->fileReader->streamFile(register: $target['register'], schema: $target['schema'], id: $target['id'], fileId: $fileId);
 		if ($stream === null) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
@@ -1692,13 +1754,13 @@ class ContributionController extends Controller implements PortalProtected {
 		$this->auditHook->download(
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
 			organisation: (string)($subject['organisation'] ?? ''),
-			register: $register,
-			schema: $schema,
-			id: $id
+			register: $target['register'],
+			schema: $target['schema'],
+			id: $target['id']
 		);
 
 		return $stream;
-	}//end downloadFile()
+	}//end streamOwnedFile()
 
 	/**
 	 * The collection the subject may download files from, or the refusal: 403
@@ -2069,6 +2131,26 @@ class ContributionController extends Controller implements PortalProtected {
 			return null;
 		}
 
+		$draft = $this->liveDraftOf(action: $action, subjectRef: $subjectRef);
+		if ($draft === null) {
+			return null;
+		}
+
+		$payload = $this->draftPayload(subject: $subject, action: $action, stamp: $stamp, data: $data);
+
+		return $this->sendDraftPayload(action: $action, draft: $draft, payload: $payload, subjectRef: $subjectRef);
+	}//end sendLiveDraft()
+
+	/**
+	 * The saved draft of an action, or null when there is none or it could not
+	 * be looked up.
+	 *
+	 * @param array<string, mixed> $action     The create action.
+	 * @param string               $subjectRef The subject's reference.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function liveDraftOf(array $action, string $subjectRef): array|null {
 		try {
 			$draft = $this->drafts->find(action: $action, subjectRef: $subjectRef);
 		} catch (\Throwable) {
@@ -2076,24 +2158,61 @@ class ContributionController extends Controller implements PortalProtected {
 			$draft = null;
 		}
 
-		if ($draft === null) {
-			return null;
-		}
+		return $draft;
+	}//end liveDraftOf()
 
-		$payload = $this->writer->stamp(
+	/**
+	 * The draft's answers stamped with the scope and tenant, as the store
+	 * receives them.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param array<string, mixed> $action  The create action.
+	 * @param string               $stamp   The scope value the object carries.
+	 * @param array<string, mixed> $data    The answers.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function draftPayload(array $subject, array $action, string $stamp, array $data): array {
+		return $this->writer->stamp(
 			schema: (string)($action['schema'] ?? ''),
 			scopeField: (string)($action['scopeField'] ?? 'subjectRef'),
 			subjectRef: $stamp,
 			organisation: (string)($subject['organisation'] ?? ''),
 			data: $data
 		);
-		$sent    = $this->destinations->sendDraft(
+	}//end draftPayload()
+
+	/**
+	 * Send a stamped draft to its destination.
+	 *
+	 * @param array<string, mixed> $action     The create action.
+	 * @param array<string, mixed> $draft      The saved draft.
+	 * @param array<string, mixed> $payload    The stamped answers.
+	 * @param string               $subjectRef The subject's reference.
+	 *
+	 * @return array<string, mixed>|JSONResponse The sent object, or the destination's refusal.
+	 */
+	private function sendDraftPayload(array $action, array $draft, array $payload, string $subjectRef): array|JSONResponse {
+		$sent = $this->destinations->sendDraft(
 			destination: $this->drafts->destinationOf(action: $action),
 			payload: $payload,
 			subjectRef: $subjectRef,
 			draftId: (string)$draft['id'],
 			idempotencyKey: (string)$this->request->getHeader('Idempotency-Key')
 		);
+		return $this->sentDraft(sent: $sent, draft: $draft, payload: $payload);
+	}//end sendDraftPayload()
+
+	/**
+	 * The object a sent draft became, or the destination's refusal.
+	 *
+	 * @param array<string, mixed> $sent    What the destination answered.
+	 * @param array<string, mixed> $draft   The saved draft.
+	 * @param array<string, mixed> $payload The stamped answers.
+	 *
+	 * @return array<string, mixed>|JSONResponse
+	 */
+	private function sentDraft(array $sent, array $draft, array $payload): array|JSONResponse {
 		if ($sent['ok'] === false) {
 			return new JSONResponse(['error' => 'invalid', 'errors' => $this->destinations->errorsOf(findings: $sent['findings'])], $sent['status']);
 		}
@@ -2103,7 +2222,7 @@ class ContributionController extends Controller implements PortalProtected {
 			$payload,
 			['id' => $id, 'uuid' => $id, 'reference' => ($sent['answer']['reference'] ?? null), 'receivedAt' => ($sent['answer']['receivedAt'] ?? null)]
 		);
-	}//end sendLiveDraft()
+	}//end sentDraft()
 
 
 	/**
@@ -2171,8 +2290,20 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		$action = $match['action'];
+		return $this->writeAnonymous(action: $match['action'], register: $register, schema: $schema);
+	}//end createAnonymous()
 
+	/**
+	 * Write an anonymous create for its matched action: into the action's
+	 * destination when it names one, else as an anonymous object.
+	 *
+	 * @param array<string, mixed> $action   The matched landing-page action.
+	 * @param string               $register The register written to.
+	 * @param string               $schema   The schema written to.
+	 *
+	 * @return JSONResponse
+	 */
+	private function writeAnonymous(array $action, string $register, string $schema): JSONResponse {
 		// Server-forced defaults ride over the whitelist, identical discipline
 		// to the authenticated path (e.g. a placeholder ownership marker a
 		// schema's `required` set may mandate, since an anonymous write
@@ -2189,13 +2320,26 @@ class ContributionController extends Controller implements PortalProtected {
 			return $this->submitIntoDestination(action: $action, answers: $whitelisted);
 		}
 
+		return $this->anonymousObject(register: $register, schema: $schema, data: $data);
+	}//end writeAnonymous()
+
+	/**
+	 * Write the anonymous body as an object and answer it.
+	 *
+	 * @param string               $register The register written to.
+	 * @param string               $schema   The schema written to.
+	 * @param array<string, mixed> $data     The body, defaults applied.
+	 *
+	 * @return JSONResponse The created object, or 502.
+	 */
+	private function anonymousObject(string $register, string $schema, array $data): JSONResponse {
 		$created = $this->writer->createAnonymousObject(register: $register, schema: $schema, data: $data);
 		if ($created === null) {
 			return new JSONResponse(['error' => 'write_failed'], Http::STATUS_BAD_GATEWAY);
 		}
 
 		return new JSONResponse(['object' => $created]);
-	}//end createAnonymous()
+	}//end anonymousObject()
 
 	/**
 	 * Submit an anonymous form straight into its destination (decision 179).
@@ -2389,19 +2533,57 @@ class ContributionController extends Controller implements PortalProtected {
 			return $target;
 		}
 
-		['match' => $match, 'action' => $action, 'scopeValue' => $scopeValue] = $target;
+		$data = $this->updateBody(subject: $subject, resolved: $target);
+		if ($data instanceof JSONResponse) {
+			return $data;
+		}
+
+		return $this->writeUpdate(subject: $subject, resolved: $target, object: ['register' => $register, 'schema' => $schema, 'id' => $id], data: $data);
+	}//end update()
+
+	/**
+	 * The update body: the action's whitelist without file fields, with the
+	 * declared transition set, or the 403 when a reference in it is not the
+	 * subject's to name.
+	 *
+	 * @param array<string, mixed> $subject  The resolved subject.
+	 * @param array<string, mixed> $resolved What updateTarget() resolved: match, action and scopeValue.
+	 *
+	 * @return array<string, mixed>|JSONResponse
+	 */
+	private function updateBody(array $subject, array $resolved): array|JSONResponse {
+		['match' => $match, 'action' => $action] = $resolved;
 
 		$data = $this->withoutFileFields(action: $action, data: $this->whitelist(fields: (array)($action['fields'] ?? [])));
 
 		$data = $this->withTransitionSet(action: $action, data: $data);
 
+		$refused = $this->crossRefRefusal(subject: $subject, app: $match['app'], action: $action, data: $data);
+		if ($refused !== null) {
+			return $refused;
+		}
+
+		return $data;
+	}//end updateBody()
+
+	/**
+	 * The 403 for an update body that names another party's object, or null.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param string               $app     The matched app.
+	 * @param array<string, mixed> $action  The update action.
+	 * @param array<string, mixed> $data    The update body.
+	 *
+	 * @return JSONResponse|null
+	 */
+	private function crossRefRefusal(array $subject, string $app, array $action, array $data): JSONResponse|null {
 		// The same guard as on create, for the same reason: an update body can
 		// name another party's object just as a create body can.
 		$refused = $this->crossRefGuard()->refusedField(
 			action: $action,
 			data: $data,
 			subject: $subject,
-			app: $match['app']
+			app: $app
 		);
 		if ($refused !== '') {
 			return new JSONResponse(
@@ -2410,29 +2592,26 @@ class ContributionController extends Controller implements PortalProtected {
 			);
 		}
 
-		$updated = $this->writeScoped(
-			register: $register,
-			schema: $schema,
-			scopeField: (string)($action['scopeField'] ?? 'subjectRef'),
-			subjectRef: $scopeValue,
-			organisation: (string)($subject['organisation'] ?? ''),
-			id: $id,
-			data: $data,
-			context: 'update'
-		);
+		return null;
+	}//end crossRefRefusal()
+
+	/**
+	 * Write the update, audit it and dispatch the status-changed notification.
+	 *
+	 * @param array<string, mixed>                                $subject  The resolved subject.
+	 * @param array<string, mixed>                                $resolved What updateTarget() resolved: match, action and scopeValue.
+	 * @param array{register: string, schema: string, id: string} $object   The object updated.
+	 * @param array<string, mixed>                                $data     The update body.
+	 *
+	 * @return JSONResponse
+	 */
+	private function writeUpdate(array $subject, array $resolved, array $object, array $data): JSONResponse {
+		$updated = $this->scopedUpdate(subject: $subject, resolved: $resolved, object: $object, data: $data);
 		if ($updated instanceof JSONResponse) {
 			return $updated;
 		}
 
-		$this->auditor->record(
-			verb: 'update',
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			organisation: (string)($subject['organisation'] ?? ''),
-			register: $register,
-			schema: $schema,
-			id: $id,
-			jti: (string)($subject['jti'] ?? '')
-		);
+		$this->recordUpdate(subject: $subject, object: $object);
 
 		// Portal-notifications-dispatch: the update ALREADY succeeded above —
 		// this is a fail-safe follow-on (dispatch() never throws), never a
@@ -2441,12 +2620,56 @@ class ContributionController extends Controller implements PortalProtected {
 		// simply enqueues nothing.
 		$this->notificationDispatch->dispatch(
 			ruleKey: NotificationDispatchServiceInterface::RULE_STATUS_CHANGED,
-			appId: $match['app'],
+			appId: $resolved['match']['app'],
 			subject: $subject
 		);
 
 		return new JSONResponse(['object' => $updated]);
-	}//end update()
+	}//end writeUpdate()
+
+	/**
+	 * Write the update body through the scoped writer.
+	 *
+	 * @param array<string, mixed>                                $subject  The resolved subject.
+	 * @param array<string, mixed>                                $resolved What updateTarget() resolved: match, action and scopeValue.
+	 * @param array{register: string, schema: string, id: string} $object   The object updated.
+	 * @param array<string, mixed>                                $data     The update body.
+	 *
+	 * @return array<string, mixed>|JSONResponse
+	 */
+	private function scopedUpdate(array $subject, array $resolved, array $object, array $data): array|JSONResponse {
+		['action' => $action, 'scopeValue' => $scopeValue] = $resolved;
+		return $this->writeScoped(
+			register: $object['register'],
+			schema: $object['schema'],
+			scopeField: (string)($action['scopeField'] ?? 'subjectRef'),
+			subjectRef: $scopeValue,
+			organisation: (string)($subject['organisation'] ?? ''),
+			id: $object['id'],
+			data: $data,
+			context: 'update'
+		);
+	}//end scopedUpdate()
+
+	/**
+	 * Audit an update that succeeded.
+	 *
+	 * @param array<string, mixed>                                $subject The resolved subject.
+	 * @param array{register: string, schema: string, id: string} $object  The object updated.
+	 *
+	 * @return void
+	 */
+	private function recordUpdate(array $subject, array $object): void {
+		$this->auditor->record(
+			verb: 'update',
+			subjectRef: (string)($subject['subjectRef'] ?? ''),
+			organisation: (string)($subject['organisation'] ?? ''),
+			register: $object['register'],
+			schema: $object['schema'],
+			id: $object['id'],
+			jti: (string)($subject['jti'] ?? '')
+		);
+	}//end recordUpdate()
 
 	/**
 	 * The update action the subject may run on this collection and the
@@ -2656,13 +2879,27 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		// A declared `fields` whitelist rebuilds the forwarded body server-side
-		// from ONLY those request params; an action that declares none relays
-		// the raw request body as-is (contract v2, A6).
-		$whitelisted = null;
-		if (array_key_exists('fields', $action) === true) {
-			$whitelisted = $this->whitelist(fields: (array)$action['fields']);
+		$scoped = $this->preparedForward(subject: $subject, action: $action, appId: $appId, actionId: $actionId);
+		if ($scoped instanceof JSONResponse) {
+			return $scoped;
 		}
+
+		return $this->forwardAndAnswer(subject: $subject, action: $action, scoped: $scoped, target: ['appId' => $appId, 'actionId' => $actionId]);
+	}//end action()
+
+	/**
+	 * The forwarded body after whitelisting and server-side scoping, or the
+	 * refusal that stops the forward; an authorised forward is audited here.
+	 *
+	 * @param array<string, mixed> $subject  The resolved subject.
+	 * @param array<string, mixed> $action   The authorised endpoint action.
+	 * @param string               $appId    The requested contributing app.
+	 * @param string               $actionId The requested action id.
+	 *
+	 * @return array<string, mixed>|JSONResponse The scoped `body` and `scopeValue`, or the refusal.
+	 */
+	private function preparedForward(array $subject, array $action, string $appId, string $actionId): array|JSONResponse {
+		$whitelisted = $this->declaredWhitelist(action: $action);
 
 		// A declared `subjectField` (portal-take-assessment) receives the
 		// subject's resolved scope from the server, over any client value, and
@@ -2679,6 +2916,40 @@ class ContributionController extends Controller implements PortalProtected {
 			return $refused;
 		}
 
+		$this->recordForward(subject: $subject, appId: $appId, actionId: $actionId);
+
+		return $scoped;
+	}//end preparedForward()
+
+	/**
+	 * The forwarded body a declared `fields` whitelist rebuilds, or null.
+	 *
+	 * @param array<string, mixed> $action The authorised endpoint action.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function declaredWhitelist(array $action): array|null {
+		// A declared `fields` whitelist rebuilds the forwarded body server-side
+		// from ONLY those request params; an action that declares none relays
+		// the raw request body as-is (contract v2, A6).
+		$whitelisted = null;
+		if (array_key_exists('fields', $action) === true) {
+			$whitelisted = $this->whitelist(fields: (array)$action['fields']);
+		}
+
+		return $whitelisted;
+	}//end declaredWhitelist()
+
+	/**
+	 * Audit an authorised forward.
+	 *
+	 * @param array<string, mixed> $subject  The resolved subject.
+	 * @param string               $appId    The requested contributing app.
+	 * @param string               $actionId The requested action id.
+	 *
+	 * @return void
+	 */
+	private function recordForward(array $subject, string $appId, string $actionId): void {
 		// Recorded once the forward is AUTHORISED — regardless of the domain
 		// app's own response status or a transport failure below — because the
 		// fact being audited is "the subject invoked this forward", not
@@ -2694,7 +2965,19 @@ class ContributionController extends Controller implements PortalProtected {
 			id: '',
 			jti: (string)($subject['jti'] ?? '')
 		);
+	}//end recordForward()
 
+	/**
+	 * Forward the action and relay the domain app's answer.
+	 *
+	 * @param array<string, mixed>                   $subject The resolved subject.
+	 * @param array<string, mixed>                   $action  The authorised endpoint action.
+	 * @param array<string, mixed>                   $scoped  The scoped `body` and `scopeValue`.
+	 * @param array{appId: string, actionId: string} $target  The requested app and action id.
+	 *
+	 * @return JSONResponse
+	 */
+	private function forwardAndAnswer(array $subject, array $action, array $scoped, array $target): JSONResponse {
 		$response = $this->forwarder->forward(action: $action, subject: $subject, whitelisted: $scoped['body'], scopeValue: $scoped['scopeValue']);
 		if ($response === null) {
 			// Transport failure: 502, or 504 when the app did not answer in
@@ -2709,19 +2992,32 @@ class ContributionController extends Controller implements PortalProtected {
 		// the domain endpoint is authoritative and has already succeeded (2xx)
 		// by the time this fires; fail-safe follow-on only, never a gate.
 		if (($action['type'] ?? '') === 'create' && $status >= 200 && $status < 300) {
-			$this->receiptService->record(
-				subjectRef: (string)($subject['subjectRef'] ?? ''),
-				organisation: (string)($subject['organisation'] ?? ''),
-				appId: $appId,
-				actionId: $actionId,
-				whitelistedData: $this->whitelist(fields: (array)($action['fields'] ?? [])),
-				audience: (string)($subject['audience'] ?? ''),
-				actionTitle: ($action['label'] ?? '')
-			);
+			$this->recordReceipt(subject: $subject, action: $action, target: $target);
 		}
 
 		return new JSONResponse($decoded, $status);
-	}//end action()
+	}//end forwardAndAnswer()
+
+	/**
+	 * Record the submission receipt of a create forward that succeeded.
+	 *
+	 * @param array<string, mixed>                   $subject The resolved subject.
+	 * @param array<string, mixed>                   $action  The authorised endpoint action.
+	 * @param array{appId: string, actionId: string} $target  The requested app and action id.
+	 *
+	 * @return void
+	 */
+	private function recordReceipt(array $subject, array $action, array $target): void {
+		$this->receiptService->record(
+			subjectRef: (string)($subject['subjectRef'] ?? ''),
+			organisation: (string)($subject['organisation'] ?? ''),
+			appId: $target['appId'],
+			actionId: $target['actionId'],
+			whitelistedData: $this->whitelist(fields: (array)($action['fields'] ?? [])),
+			audience: (string)($subject['audience'] ?? ''),
+			actionTitle: ($action['label'] ?? '')
+		);
+	}//end recordReceipt()
 
 	/**
 	 * Find an authorised endpoint action {appId, actionId} in the subject's
@@ -2865,19 +3161,34 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$collectionId = (string)$this->request->getParam('collection', '');
-		$match        = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
-		if ($match === null || SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
+		$match = $this->trustedCollection(subject: $subject, target: ['register' => $register, 'schema' => $schema]);
+		if ($match === null) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		$collection = $match['collection'];
+		return $this->collectionPdf(subject: $subject, own: $match, register: $register, schema: $schema);
+	}//end exportCollectionPdf()
+
+	/**
+	 * The PDF of a collection the subject may read, when it declares `exportPdf`.
+	 *
+	 * @param array<string, mixed>                                 $subject  The resolved subject.
+	 * @param array{collection: array<string, mixed>, app: string} $own      The subject's own collection.
+	 * @param string                                               $register The register of the collection.
+	 * @param string                                               $schema   The schema of the collection.
+	 *
+	 * @return Response The PDF, or 404 / 400 / 502 / 503.
+	 *
+	 * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t02
+	 */
+	private function collectionPdf(array $subject, array $own, string $register, string $schema): Response {
+		$collection = $own['collection'];
 		if (($collection['exportPdf'] ?? false) !== true) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
 		$columns = ($this->pdf?->listColumns(collection: $collection) ?? []);
-		$rows    = $this->screenRows(subject: $subject, match: $match, register: $register, schema: $schema);
+		$rows    = $this->screenRows(subject: $subject, match: $own, register: $register, schema: $schema);
 
 		return $this->pdfResponse(
 			subject: $subject,
@@ -2886,7 +3197,7 @@ class ContributionController extends Controller implements PortalProtected {
 			rows: $rows,
 			target: ['register' => $register, 'schema' => $schema, 'id' => (string)($collection['id'] ?? '')]
 		);
-	}//end exportCollectionPdf()
+	}//end collectionPdf()
 
 	/**
 	 * Download one of the subject's own records as a PDF: the same authorisation and
@@ -2909,18 +3220,29 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$collectionId = (string)$this->request->getParam('collection', '');
-		$match        = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
-		if ($match === null || SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
+		$match = $this->trustedCollection(subject: $subject, target: ['register' => $register, 'schema' => $schema]);
+		if ($match === null) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		$collection = $match['collection'];
-		$object     = null;
-		if (($collection['exportPdf'] ?? false) === true) {
-			$object = $this->screenRow(subject: $subject, match: $match, register: $register, schema: $schema, id: $id);
-		}
+		return $this->objectPdf(subject: $subject, own: $match, target: ['register' => $register, 'schema' => $schema, 'id' => $id]);
+	}//end exportObjectPdf()
 
+	/**
+	 * The PDF of one record the subject owns; a foreign or missing record, or
+	 * a collection without `exportPdf`, is one 404.
+	 *
+	 * @param array<string, mixed>                                 $subject The resolved subject.
+	 * @param array{collection: array<string, mixed>, app: string} $own     The subject's own collection.
+	 * @param array{register: string, schema: string, id: string}  $target  The requested record.
+	 *
+	 * @return Response The PDF, or 404 / 400 / 502 / 503.
+	 *
+	 * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t03
+	 */
+	private function objectPdf(array $subject, array $own, array $target): Response {
+		$collection = $own['collection'];
+		$object     = $this->exportableRow(subject: $subject, own: $own, target: $target);
 		if ($object === null) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
@@ -2930,9 +3252,29 @@ class ContributionController extends Controller implements PortalProtected {
 			collection: $collection,
 			columns: ($this->pdf?->recordColumns(collection: $collection) ?? []),
 			rows: [$this->userNames->row(row: $object, collection: $collection)],
-			target: ['register' => $register, 'schema' => $schema, 'id' => $id]
+			target: $target
 		);
-	}//end exportObjectPdf()
+	}//end objectPdf()
+
+	/**
+	 * The screen row of a record when its collection declares `exportPdf`, else null.
+	 *
+	 * @param array<string, mixed>                                 $subject The resolved subject.
+	 * @param array{collection: array<string, mixed>, app: string} $own     The subject's own collection.
+	 * @param array{register: string, schema: string, id: string}  $target  The requested record.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t03
+	 */
+	private function exportableRow(array $subject, array $own, array $target): array|null {
+		$object = null;
+		if (($own['collection']['exportPdf'] ?? false) === true) {
+			$object = $this->screenRow(subject: $subject, match: $own, register: $target['register'], schema: $target['schema'], id: $target['id']);
+		}
+
+		return $object;
+	}//end exportableRow()
 
 	/**
 	 * Render the rows and answer with the file, or with the reason there is none.
