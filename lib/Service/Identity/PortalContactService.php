@@ -40,6 +40,7 @@ use OCP\Security\ISecureRandom;
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- reader, writer, mailer and the random source.
  * @SuppressWarnings(PHPMD.TooManyPublicMethods) -- one method per action a resident takes on a contact.
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- The total is the sum of small private steps; each method stays under the method thresholds.
  *
  * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
  */
@@ -139,27 +140,50 @@ class PortalContactService implements PortalContactServiceInterface {
 			return self::INVALID;
 		}
 
-		$now  = ($now ?? new DateTimeImmutable());
-		$rows = $this->rows->rowsOf(owner: $owner, organisation: $organisation);
-		if ($this->rows->sentToday(rows: $rows, now: $now) >= self::DAILY_LIMIT) {
-			return self::LIMIT;
+		$now     = ($now ?? new DateTimeImmutable());
+		$rows    = $this->rows->rowsOf(owner: $owner, organisation: $organisation);
+		$checked = $this->inviteRefusal(subject: $subject, rows: $rows, email: $email, now: $now);
+		if ($checked['refusal'] !== '') {
+			return $checked['refusal'];
 		}
 
-		$account = $this->rows->accountByEmail(email: $email, organisation: $organisation);
-		if ($account !== null && (string)($account['subjectRef'] ?? '') === $owner) {
-			return self::INVALID;
-		}
-
-		if ($this->rows->alreadyOpenOrLinked(rows: $rows, email: $email, account: $account) === true) {
-			return self::DUPLICATE;
-		}
-
-		if ($account !== null) {
-			return $this->request(subject: $subject, account: $account, message: $message, now: $now);
+		if ($checked['account'] !== null) {
+			return $this->request(subject: $subject, account: $checked['account'], message: $message, now: $now);
 		}
 
 		return $this->mailInvitation(subject: $subject, email: $email, message: $message, now: $now, row: null);
 	}//end invite()
+
+	/**
+	 * The refusal of an invitation past the daily limit, to the resident's own
+	 * account or to someone already invited or linked; else '' with the
+	 * account the address has, if any.
+	 *
+	 * @param array<string, mixed>             $subject The resident's session subject.
+	 * @param array<int, array<string, mixed>> $rows    The resident's contact rows.
+	 * @param string                           $email   The normalised address.
+	 * @param DateTimeImmutable                $now     The moment, for the daily limit.
+	 *
+	 * @return array{refusal: string, account: array<string, mixed>|null}
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 */
+	private function inviteRefusal(array $subject, array $rows, string $email, DateTimeImmutable $now): array {
+		if ($this->rows->sentToday(rows: $rows, now: $now) >= self::DAILY_LIMIT) {
+			return ['refusal' => self::LIMIT, 'account' => null];
+		}
+
+		$account = $this->rows->accountByEmail(email: $email, organisation: (string)($subject['organisation'] ?? ''));
+		if ($account !== null && (string)($account['subjectRef'] ?? '') === (string)($subject['subjectRef'] ?? '')) {
+			return ['refusal' => self::INVALID, 'account' => null];
+		}
+
+		if ($this->rows->alreadyOpenOrLinked(rows: $rows, email: $email, account: $account) === true) {
+			return ['refusal' => self::DUPLICATE, 'account' => null];
+		}
+
+		return ['refusal' => '', 'account' => $account];
+	}//end inviteRefusal()
 
 	/**
 	 * Send an invitation again with a new link and a new 14 days.
