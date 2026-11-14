@@ -75,7 +75,7 @@ class DutchFormatsTest extends TestCase {
 	 * @return void
 	 */
 	public function testACheckRefusesATrailingNewline(): void {
-		$checks = (new \ReflectionMethod(DutchFormats::class, 'checks'))->invoke(new DutchFormats());
+		$checks = (new \ReflectionMethod(objectOrMethod: DutchFormats::class, method: 'checks'))->invoke(object: new DutchFormats());
 		$cases  = [
 			['bsn', "123456782\n", null],
 			['kvk', "12345678\n", null],
@@ -87,10 +87,10 @@ class DutchFormatsTest extends TestCase {
 			['nl-licence-plate', "AB1234\n", 'AB1234'],
 		];
 		foreach ($cases as [$format, $value, $expected]) {
-			$this->assertSame($expected, $checks[$format]($value), $format);
+			$this->assertSame(expected: $expected, actual: $checks[$format]($value), message: $format);
 		}
 
-		$this->assertEqualsCanonicalizing(DutchFormats::FORMATS, array_column($cases, 0));
+		$this->assertEqualsCanonicalizing(expected: DutchFormats::FORMATS, actual: array_column(array: $cases, column_key: 0));
 	}//end testACheckRefusesATrailingNewline()
 
 	/**
@@ -100,8 +100,8 @@ class DutchFormatsTest extends TestCase {
 	 */
 	public function testATrailingNewlineIsNotStored(): void {
 		$formats = new DutchFormats();
-		$this->assertSame('0612345678', $formats->normalise(format: 'phone-nl', value: "06 12345678\n"));
-		$this->assertSame('12345678', $formats->normalise(format: 'kvk', value: "12345678\n"));
+		$this->assertSame(expected: '0612345678', actual: $formats->normalise(format: 'phone-nl', value: "06 12345678\n"));
+		$this->assertSame(expected: '12345678', actual: $formats->normalise(format: 'kvk', value: "12345678\n"));
 	}//end testATrailingNewlineIsNotStored()
 
 	/**
