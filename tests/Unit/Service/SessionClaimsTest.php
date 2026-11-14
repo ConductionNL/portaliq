@@ -109,6 +109,7 @@ class SessionClaimsTest extends TestCase {
 			'an integer'    => [12345678, ''],
 			'with a space'  => ['1234 5678', ''],
 			'with letters'  => ['1234567a', ''],
+			'a newline'     => ["12345678\n", ''],
 		];
 	}//end kvkNumbers()
 

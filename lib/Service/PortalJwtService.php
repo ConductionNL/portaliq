@@ -231,7 +231,7 @@ class PortalJwtService implements PortalJwtServiceInterface {
 	 */
 	private function kvkClaim(array $context): array {
 		$kvk = (string)($context['kvk'] ?? '');
-		if (preg_match('/^\d{8}$/', $kvk) !== 1) {
+		if (preg_match('/^\d{8}$/D', $kvk) !== 1) {
 			return [];
 		}
 
