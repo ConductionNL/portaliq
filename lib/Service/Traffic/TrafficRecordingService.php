@@ -22,6 +22,7 @@ namespace OCA\Portaliq\Service\Traffic;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\Portaliq\Kernel\Contracts\TrafficRecordingServiceInterface;
 use OCA\Portaliq\Service\TrafficConfigResolver;
 use OCP\AppFramework\Utility\ITimeFactory;
 
@@ -42,7 +43,7 @@ use OCP\AppFramework\Utility\ITimeFactory;
  *
  * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
  */
-class TrafficRecordingService {
+class TrafficRecordingService implements TrafficRecordingServiceInterface {
 
 	/**
 	 * The most bytes one chunk may carry, after masking: 256 KB.

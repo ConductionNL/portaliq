@@ -104,6 +104,15 @@
 				"
 				data-testid="news-item-groups" />
 
+			<NcSelect
+				v-if="events.length > 0"
+				v-model="event"
+				:options="events"
+				label="label"
+				:inputLabel="t('portaliq', 'Event to sign up for')"
+				:placeholder="t('portaliq', 'No event')"
+				data-testid="news-item-event" />
+
 			<p class="news-item__hint">
 				{{
 					t(
@@ -183,6 +192,15 @@ export default {
 			default: () => ({ schools: [], groups: [] }),
 		},
 
+		/**
+		 * The events the item may carry the sign-up of, `{id, label}`; none
+		 * hides the choice (event-sign-up-by-a-pupil-with-seats task 4).
+		 */
+		events: {
+			type: Array,
+			default: () => [],
+		},
+
 		/** Saves the form; answers `{ok, message}`. */
 		submit: {
 			type: Function,
@@ -234,6 +252,25 @@ export default {
 			 */
 			set(option) {
 				this.form.schoolRef = option?.id || ''
+			},
+		},
+
+		/** The chosen event as an option, read and written through the form. */
+		event: {
+			/**
+			 * @return {object|null}
+			 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/tasks.md#task-4
+			 */
+			get() {
+				return this.optionFor(this.events, this.form.eventRef)
+			},
+
+			/**
+			 * @param {object|null} option The chosen event; null clears it.
+			 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/tasks.md#task-4
+			 */
+			set(option) {
+				this.form.eventRef = option?.id || ''
 			},
 		},
 

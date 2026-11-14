@@ -36,28 +36,29 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
-use OCA\Portaliq\Contribution\CitizenDocumentUpload;
 use OCA\Portaliq\Contribution\CitizenWriteActionFinder;
-use OCA\Portaliq\Contribution\CitizenWriteConfigNormaliser;
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Event\PortalClientWriteEvent;
-use OCA\Portaliq\Service\Branch\PortalBranchScope;
-use OCA\Portaliq\Service\CitizenCaseDocuments;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\CitizenCaseDocumentsInterface;
+use OCA\Portaliq\Kernel\Contracts\CitizenDocumentUploadInterface;
+use OCA\Portaliq\Kernel\Contracts\CitizenWritableSetResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\CitizenWriteConfigNormaliserInterface;
+use OCA\Portaliq\Kernel\Contracts\CitizenWriteRecorderInterface;
+use OCA\Portaliq\Kernel\Contracts\CitizenWriteThrottleInterface;
+use OCA\Portaliq\Kernel\Contracts\MandatedCaseReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalBranchScopeInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFileReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFileWriterInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalMandateServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectWriterInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalPartyTreeResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
+use OCA\Portaliq\Kernel\Support\PortalBranchScope;
 use OCA\Portaliq\Service\CitizenCaseProjection;
-use OCA\Portaliq\Service\CitizenWritableSetResolver;
-use OCA\Portaliq\Service\CitizenWriteRecorder;
-use OCA\Portaliq\Service\CitizenWriteThrottle;
-use OCA\Portaliq\Service\Identity\MandateParties;
-use OCA\Portaliq\Service\Identity\PortalMandateService;
-use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
-use OCA\Portaliq\Service\MandatedCaseReader;
-use OCA\Portaliq\Service\PortalFileReader;
-use OCA\Portaliq\Service\PortalFileWriter;
-use OCA\Portaliq\Service\PortalObjectReader;
-use OCA\Portaliq\Service\PortalObjectWriter;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Support\SessionTrust;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -68,6 +69,7 @@ use OCP\AppFramework\Http\Response;
 use OCP\IL10N;
 use OCP\IRequest;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Kernel\Contracts\MandatePartiesInterface;
 
 /**
  * Serves and accepts the writes a citizen may make on their own case.
@@ -106,47 +108,49 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalContributionRegistry $registry The contribution aggregator.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param PortalObjectReader $reader Subject-scoped OpenRegister reader.
-	 * @param PortalObjectWriter $writer Subject-scoped OpenRegister writer.
-	 * @param PortalFileReader $fileReader Lists what is already on the case.
-	 * @param PortalFileWriter $fileWriter Adds the citizen's document.
-	 * @param CitizenWritableSetResolver $writableSet Reads the case type's flags.
-	 * @param CitizenWriteRecorder $recorder Records and announces the write.
-	 * @param CitizenWriteThrottle $throttle Counts writes per identity and per case.
-	 * @param CitizenDocumentUpload $upload Reads and names the citizen's document.
-	 * @param PortalMandateService $mandates The mandates the identity holds.
-	 * @param PortalPartyTreeResolver $tree How far a mandate reaches.
+	 * @param PortalContributionRegistryInterface $registry The contribution aggregator.
+	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
+	 * @param PortalObjectReaderInterface $reader Subject-scoped OpenRegister reader.
+	 * @param PortalObjectWriterInterface $writer Subject-scoped OpenRegister writer.
+	 * @param PortalFileReaderInterface $fileReader Lists what is already on the case.
+	 * @param PortalFileWriterInterface $fileWriter Adds the citizen's document.
+	 * @param CitizenWritableSetResolverInterface $writableSet Reads the case type's flags.
+	 * @param CitizenWriteRecorderInterface $recorder Records and announces the write.
+	 * @param CitizenWriteThrottleInterface $throttle Counts writes per identity and per case.
+	 * @param CitizenDocumentUploadInterface $upload Reads and names the citizen's document.
+	 * @param PortalMandateServiceInterface $mandates The mandates the identity holds.
+	 * @param PortalPartyTreeResolverInterface $tree How far a mandate reaches.
 	 * @param IL10N $l10n The sentences a refusal is given with.
 	 * @param LoggerInterface $logger Records the cause of a translated failure.
-	 * @param CitizenCaseDocuments $documents Lists and opens the documents on the case.
-	 * @param MandatedCaseReader|null $mandatedCases Reads a case listed under a
+	 * @param CitizenCaseDocumentsInterface $documents Lists and opens the documents on the case.
+	 * @param MandatePartiesInterface $mandateParties The MandateParties helper.
+	 * @param MandatedCaseReaderInterface|null $mandatedCases Reads a case listed under a
 	 *                                               mandate (cases-my-cases-page).
 	 *                                               Absent opens only own cases.
-	 * @param PortalBranchScope $branches The branch filter of signin-eherkenning-branch.
+	 * @param PortalBranchScopeInterface $branches The branch filter of signin-eherkenning-branch.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalContributionRegistry $registry,
-		private readonly PortalSessionService $session,
-		private readonly PortalObjectReader $reader,
-		private readonly PortalObjectWriter $writer,
-		private readonly PortalFileReader $fileReader,
-		private readonly PortalFileWriter $fileWriter,
-		private readonly CitizenWritableSetResolver $writableSet,
-		private readonly CitizenWriteRecorder $recorder,
-		private readonly CitizenWriteThrottle $throttle,
-		private readonly CitizenDocumentUpload $upload,
-		private readonly PortalMandateService $mandates,
-		private readonly PortalPartyTreeResolver $tree,
+		private readonly PortalContributionRegistryInterface $registry,
+		private readonly PortalSessionServiceInterface $session,
+		private readonly PortalObjectReaderInterface $reader,
+		private readonly PortalObjectWriterInterface $writer,
+		private readonly PortalFileReaderInterface $fileReader,
+		private readonly PortalFileWriterInterface $fileWriter,
+		private readonly CitizenWritableSetResolverInterface $writableSet,
+		private readonly CitizenWriteRecorderInterface $recorder,
+		private readonly CitizenWriteThrottleInterface $throttle,
+		private readonly CitizenDocumentUploadInterface $upload,
+		private readonly PortalMandateServiceInterface $mandates,
+		private readonly PortalPartyTreeResolverInterface $tree,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
-		private readonly CitizenCaseDocuments $documents,
-		private readonly ?MandatedCaseReader $mandatedCases = null,
-		private readonly PortalBranchScope $branches = new PortalBranchScope(),
+		private readonly CitizenCaseDocumentsInterface $documents,
+		private readonly MandatePartiesInterface $mandateParties,
+		private readonly ?MandatedCaseReaderInterface $mandatedCases = null,
+		private readonly PortalBranchScopeInterface $branches = new PortalBranchScope(),
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -438,7 +442,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			content: $upload['content'],
 			// Tagged, so the case screen lists it under "Sent by you" and
 			// nothing else from the folder (cases-documents-on-the-case).
-			tags: [PortalFileWriter::TAG_FROM_APPLICANT]
+			tags: [PortalFileWriterInterface::TAG_FROM_APPLICANT]
 		);
 	}//end attachedUpload()
 
@@ -652,7 +656,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 * @return string
 	 */
 	private function writeConfigField(CaseWriteRun $write, string $key): string {
-		$config = (array)($write->context['action'][CitizenWriteConfigNormaliser::KEY] ?? []);
+		$config = (array)($write->context['action'][CitizenWriteConfigNormaliserInterface::KEY] ?? []);
 		return (string)($config[$key] ?? self::WRITE_CONFIG_DEFAULTS[$key]);
 	}//end writeConfigField()
 
@@ -757,23 +761,12 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		// never grant itself one (REQ-PTV-006).
 		$subject = $this->actingAs(subject: $subject);
 
-		$match = $this->writeActions()->forSubject(subject: $subject, register: $register, schema: $schema);
-		if ($match === null) {
-			return $this->refuse(
-				message: $this->l10n->t('This case cannot be changed from the portal.'),
-				slug: 'portal-writes-not-declared',
-				status: Http::STATUS_FORBIDDEN
-			);
+		$match = $this->writableMatch(subject: $subject, register: $register, schema: $schema);
+		if ($match instanceof JSONResponse) {
+			return $match;
 		}
 
 		$action = $match['action'];
-		if (PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
-			return $this->refuse(
-				message: $this->l10n->t('This case cannot be changed from the portal.'),
-				slug: 'portal-writes-not-declared',
-				status: Http::STATUS_FORBIDDEN
-			);
-		}
 
 		// The ownership boundary. A case that is not the citizen's and a case
 		// that does not exist answer identically, so the portal never confirms
@@ -799,6 +792,22 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			);
 		}
 
+		return $this->writeContext(subject: $subject, match: $match, case: $case);
+	}//end context()
+
+	/**
+	 * The write context of an owned case: the subject, the matched action and
+	 * app, the case, and the fields the action may set on it.
+	 *
+	 * @param array<string,mixed> $subject The session subject.
+	 * @param array<string,mixed> $match   The matched write action.
+	 * @param array<string,mixed> $case    The owned case.
+	 *
+	 * @return array<string,mixed>
+	 */
+	private function writeContext(array $subject, array $match, array $case): array {
+		$action = $match['action'];
+
 		return [
 			'subject' => $subject,
 			'action' => $action,
@@ -815,7 +824,39 @@ class CitizenCaseController extends Controller implements PortalProtected {
 				closedField: (string)($match['closedField'] ?? '')
 			),
 		];
-	}//end context()
+	}//end writeContext()
+
+	/**
+	 * The portal write action declared for this collection whose trust level
+	 * the subject meets, or the 403 refusal.
+	 *
+	 * @param array<string,mixed> $subject  The session subject.
+	 * @param string              $register The register.
+	 * @param string              $schema   The schema.
+	 *
+	 * @return array<string,mixed>|JSONResponse
+	 */
+	private function writableMatch(array $subject, string $register, string $schema): array|JSONResponse {
+		$match = $this->writeActions()->forSubject(subject: $subject, register: $register, schema: $schema);
+		if ($match === null) {
+			return $this->refuse(
+				message: $this->l10n->t('This case cannot be changed from the portal.'),
+				slug: 'portal-writes-not-declared',
+				status: Http::STATUS_FORBIDDEN
+			);
+		}
+
+		$action = $match['action'];
+		if (SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
+			return $this->refuse(
+				message: $this->l10n->t('This case cannot be changed from the portal.'),
+				slug: 'portal-writes-not-declared',
+				status: Http::STATUS_FORBIDDEN
+			);
+		}
+
+		return $match;
+	}//end writableMatch()
 
 	/**
 	 * The guard both write acts share: the throttle, counted per identity and
@@ -825,6 +866,8 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 * @param string $id The case id.
 	 *
 	 * @return JSONResponse|null The refusal, or null to proceed.
+	 *
+	 * @spec openspec/changes/citizen-case-write-limit/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-residents-writes-on-her-own-case-are-limited-per-case-and-per-identity-req-cwl-001
 	 */
 	private function guardWrite(array $context, string $id): ?JSONResponse {
 		$allowed = $this->throttle->allow(
@@ -1037,7 +1080,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		$held = $this->mandates->mandatesFor(
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
 			organisation: (string)($subject['organisation'] ?? ''),
-			holders: (new MandateParties())->holdersOf(subject: $subject)
+			holders: $this->mandateParties->holdersOf(subject: $subject)
 		);
 		return $this->mandates->activeMandate(mandates: $held, mandateId: (string)$this->request->getParam('mandate', ''));
 	}//end heldMandate()
@@ -1059,7 +1102,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 
 		return $this->tree->entitiesFor(
 			root: $party,
-			reachesDown: ($this->mandates->reachOf(mandate: $mandate) === PortalMandateService::REACH_TREE)
+			reachesDown: ($this->mandates->reachOf(mandate: $mandate) === PortalMandateServiceInterface::REACH_TREE)
 		);
 	}//end mandateScope()
 	/**

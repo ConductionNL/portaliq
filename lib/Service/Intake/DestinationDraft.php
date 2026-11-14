@@ -36,6 +36,7 @@ use OCA\OpenRegister\Service\Form\FormSubmitter;
 use OCA\OpenRegister\Service\Object\DiscardDraftRequest;
 use OCA\OpenRegister\Service\Object\DraftDiscard;
 use OCA\OpenRegister\Service\Object\DraftOwner;
+use OCA\Portaliq\Kernel\Contracts\DestinationDraftInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -45,7 +46,7 @@ use Throwable;
  *
  * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
  */
-class DestinationDraft {
+class DestinationDraft implements DestinationDraftInterface {
 	/**
 	 * OpenRegister's submit service.
 	 */
@@ -60,7 +61,6 @@ class DestinationDraft {
 	 * OpenRegister's draft owner, built as `portal:<subjectRef>` (decision 195).
 	 */
 	private const DRAFT_OWNER = DraftOwner::class;
-
 
 	/**
 	 * Constructor.

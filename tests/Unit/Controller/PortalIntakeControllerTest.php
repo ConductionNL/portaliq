@@ -458,7 +458,7 @@ class PortalIntakeControllerTest extends TestCase {
 			deepLinks: null,
 			emailVerification: $pay['verification'] ?? null,
 			intake: $intake,
-			lookup: $this->doubles['lookup']
+			lookup: $this->doubles['lookup'], destinationMapping: new DestinationMapping()
 		);
 	}//end controller()
 

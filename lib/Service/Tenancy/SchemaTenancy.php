@@ -25,6 +25,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Tenancy;
 
+use OCA\Portaliq\Kernel\Contracts\SchemaTenancyInterface;
+
 /**
  * Every schema is scoped by `organisation`, by `portal`, by `subject`, through
  * its `parent`, or is `global` with a reason a reviewer can check. A census test
@@ -33,7 +35,7 @@ namespace OCA\Portaliq\Service\Tenancy;
  *
  * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t01
  */
-final class SchemaTenancy {
+final class SchemaTenancy implements SchemaTenancyInterface {
 
 	public const ORGANISATION = 'organisation';
 

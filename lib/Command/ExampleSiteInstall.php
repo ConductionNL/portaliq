@@ -26,8 +26,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Command;
 
-use OCA\Portaliq\Service\ExampleSite\ExampleSiteCatalogue;
-use OCA\Portaliq\Service\ExampleSite\ExampleSiteInstaller;
+use OCA\Portaliq\Kernel\Contracts\ExampleSiteCatalogueInterface;
+use OCA\Portaliq\Kernel\Contracts\ExampleSiteInstallerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -50,14 +50,14 @@ class ExampleSiteInstall extends Command {
 	/**
 	 * Constructor.
 	 *
-	 * @param ExampleSiteCatalogue $catalogue The shipped sites.
-	 * @param ExampleSiteInstaller $installer Writes and proves.
+	 * @param ExampleSiteCatalogueInterface $catalogue The shipped sites.
+	 * @param ExampleSiteInstallerInterface $installer Writes and proves.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly ExampleSiteCatalogue $catalogue,
-		private readonly ExampleSiteInstaller $installer,
+		private readonly ExampleSiteCatalogueInterface $catalogue,
+		private readonly ExampleSiteInstallerInterface $installer,
 	) {
 		parent::__construct();
 	}//end __construct()

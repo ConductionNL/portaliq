@@ -22,12 +22,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Mail;
 
+use OCA\Portaliq\Kernel\Contracts\RecipientMaskInterface;
+
 /**
  * An address with its middle hidden.
  *
  * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t03
  */
-class RecipientMask {
+class RecipientMask implements RecipientMaskInterface {
 	/**
 	 * An address with its middle hidden: "sanne@example.nl" becomes "s***@example.nl".
 	 *

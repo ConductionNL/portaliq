@@ -29,7 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Notifications;
 
-use OCA\Portaliq\Contribution\PortalProviderLocator;
+use OCA\Portaliq\Kernel\Contracts\MessageBoxSenderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalProviderLocatorInterface;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
@@ -42,7 +43,7 @@ use Throwable;
  *
  * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-portaliq-asks-integriq-to-send-and-records-the-answer-req-mbc-003
  */
-class MessageBoxSender {
+class MessageBoxSender implements MessageBoxSenderInterface {
 
 	/**
 	 * Integriq's send command, named as a string so portaliq does not depend
@@ -53,17 +54,10 @@ class MessageBoxSender {
 	public const SEND_EVENT = 'OCA\\Integriq\\Event\\DigitalPostSendRequestedEvent';
 
 	/**
-	 * Who portaliq says asked for the letter; integriq's status reports carry it back.
-	 *
-	 * @var string
-	 */
-	public const REQUESTED_BY = 'portaliq';
-
-	/**
 	 * Wire the sender.
 	 *
 	 * @param PortalOrganisationConfigService $orgConfig The organisation's source.
-	 * @param PortalProviderLocator           $locator   Finds the case app's provider.
+	 * @param PortalProviderLocatorInterface           $locator   Finds the case app's provider.
 	 * @param PortalObjectReader              $reader    Reads the message, scoped to the resident.
 	 * @param PortalObjectWriter              $writer    Writes the notification row.
 	 * @param IEventDispatcher                $events    Dispatches integriq's command.
@@ -72,7 +66,7 @@ class MessageBoxSender {
 	 */
 	public function __construct(
 		private readonly PortalOrganisationConfigService $orgConfig,
-		private readonly PortalProviderLocator $locator,
+		private readonly PortalProviderLocatorInterface $locator,
 		private readonly PortalObjectReader $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly IEventDispatcher $events,

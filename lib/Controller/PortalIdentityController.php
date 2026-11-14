@@ -32,21 +32,20 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\CaseTypeReader;
-use OCA\Portaliq\Service\Identity\PortalAccountActivationService;
-use OCA\Portaliq\Service\Identity\PortalChallengeService;
-use OCA\Portaliq\Service\Identity\PortalContactService;
-use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
-use OCA\Portaliq\Service\Identity\PortalReferenceCaseService;
-use OCA\Portaliq\Service\Identity\PortalInvitationService;
-use OCA\Portaliq\Service\Identity\PortalReferenceLinkService;
-use OCA\Portaliq\Service\Identity\PortalRegistrationPolicyService;
-use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
-use OCA\Portaliq\Service\PortalAccountService;
-use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
-use OCA\Portaliq\Service\RequestedPortal;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\CaseTypeReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalAccountActivationServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalAccountServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalChallengeServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContactServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFormBindingResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalIdentityMailerInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalInvitationServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalReferenceCaseServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalReferenceLinkServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalRegistrationPolicyServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -54,6 +53,7 @@ use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCA\Portaliq\Kernel\Contracts\RequestedPortalInterface;
 
 /**
  * The citizen's own identity surfaces.
@@ -70,37 +70,39 @@ class PortalIdentityController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalResolver $portals Resolves the portal being visited.
-	 * @param PortalChallengeService $challenge The portal's own challenge.
-	 * @param PortalReferenceLinkService $references The one-time reference link.
-	 * @param PortalRegistrationPolicyService $policy The registration policy.
-	 * @param PortalInvitationService $invitations Invitations into the portal.
-	 * @param PortalAccountService $accounts Provisions a registration.
-	 * @param CaseTypeReader $caseTypes Reads the case type's identity kinds.
-	 * @param PortalFormBindingResolver $bindings The case types this portal declares.
-	 * @param PortalIdentityMailer $mailer Mails the reference link to its address.
-	 * @param PortalReferenceCaseService $referenceCases The case behind a reference link.
-	 * @param PortalSessionService $sessions Mints and resolves the reference session.
-	 * @param PortalAccountActivationService $activation Mints and spends the activation link (identity-ways-in-screens T03).
-	 * @param PortalContactService|null $contacts Joins a contact invitation the registration followed (own-contacts-and-invitations T05).
+	 * @param PortalResolverInterface $portals Resolves the portal being visited.
+	 * @param PortalChallengeServiceInterface $challenge The portal's own challenge.
+	 * @param PortalReferenceLinkServiceInterface $references The one-time reference link.
+	 * @param PortalRegistrationPolicyServiceInterface $policy The registration policy.
+	 * @param PortalInvitationServiceInterface $invitations Invitations into the portal.
+	 * @param PortalAccountServiceInterface $accounts Provisions a registration.
+	 * @param CaseTypeReaderInterface $caseTypes Reads the case type's identity kinds.
+	 * @param PortalFormBindingResolverInterface $bindings The case types this portal declares.
+	 * @param PortalIdentityMailerInterface $mailer Mails the reference link to its address.
+	 * @param PortalReferenceCaseServiceInterface $referenceCases The case behind a reference link.
+	 * @param PortalSessionServiceInterface $sessions Mints and resolves the reference session.
+	 * @param PortalAccountActivationServiceInterface $activation Mints and spends the activation link (identity-ways-in-screens T03).
+	 * @param RequestedPortalInterface $requestedPortal The RequestedPortal helper.
+	 * @param PortalContactServiceInterface|null $contacts Joins a contact invitation the registration followed (own-contacts-and-invitations T05).
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalResolver $portals,
-		private readonly PortalChallengeService $challenge,
-		private readonly PortalReferenceLinkService $references,
-		private readonly PortalRegistrationPolicyService $policy,
-		private readonly PortalInvitationService $invitations,
-		private readonly PortalAccountService $accounts,
-		private readonly CaseTypeReader $caseTypes,
-		private readonly PortalFormBindingResolver $bindings,
-		private readonly PortalIdentityMailer $mailer,
-		private readonly PortalReferenceCaseService $referenceCases,
-		private readonly PortalSessionService $sessions,
-		private readonly PortalAccountActivationService $activation,
-		private readonly ?PortalContactService $contacts = null,
+		private readonly PortalResolverInterface $portals,
+		private readonly PortalChallengeServiceInterface $challenge,
+		private readonly PortalReferenceLinkServiceInterface $references,
+		private readonly PortalRegistrationPolicyServiceInterface $policy,
+		private readonly PortalInvitationServiceInterface $invitations,
+		private readonly PortalAccountServiceInterface $accounts,
+		private readonly CaseTypeReaderInterface $caseTypes,
+		private readonly PortalFormBindingResolverInterface $bindings,
+		private readonly PortalIdentityMailerInterface $mailer,
+		private readonly PortalReferenceCaseServiceInterface $referenceCases,
+		private readonly PortalSessionServiceInterface $sessions,
+		private readonly PortalAccountActivationServiceInterface $activation,
+		private readonly RequestedPortalInterface $requestedPortal,
+		private readonly ?PortalContactServiceInterface $contacts = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -286,7 +288,7 @@ class PortalIdentityController extends Controller {
 	 */
 	private function mailReferenceLink(ReferenceLinkRun $run, string $secret): void {
 		$this->mailer->send(
-			template: PortalIdentityMailer::TEMPLATE_REFERENCE_LINK,
+			template: PortalIdentityMailerInterface::TEMPLATE_REFERENCE_LINK,
 			email: $run->email,
 			secret: $secret,
 			organisation: (string)($run->site['organisation'] ?? ''),
@@ -498,7 +500,7 @@ class PortalIdentityController extends Controller {
 
 		$this->holdContactInvitation(run: $run, account: $account);
 
-		if ($decision['reason'] === PortalRegistrationPolicyService::POLICY_ACTIVATION) {
+		if ($decision['reason'] === PortalRegistrationPolicyServiceInterface::POLICY_ACTIVATION) {
 			$this->mailActivation(subjectRef: $account['subjectRef'], email: $run->email, site: $run->site);
 		}
 
@@ -522,7 +524,7 @@ class PortalIdentityController extends Controller {
 			// Neither policy trusts the address yet: approval waits for a
 			// person, activation waits for the mail.
 			verifiedEmail: false,
-			provisionedBy: PortalAccountService::SELF_REGISTRATION,
+			provisionedBy: PortalAccountServiceInterface::SELF_REGISTRATION,
 			displayName: $run->displayName
 		);
 	}//end selfRegisteredAccount()
@@ -622,7 +624,7 @@ class PortalIdentityController extends Controller {
 		}
 
 		$this->mailer->send(
-			template: PortalIdentityMailer::TEMPLATE_REGISTRATION_ACTIVATION,
+			template: PortalIdentityMailerInterface::TEMPLATE_REGISTRATION_ACTIVATION,
 			email: $email,
 			secret: $token,
 			organisation: (string)($site['organisation'] ?? ''),
@@ -662,6 +664,6 @@ class PortalIdentityController extends Controller {
 		// The SPA names the portal it is served as, the way `/site` and the
 		// runtime config do; on a shared host the host alone names none.
 		// A named portal that does not exist is a miss, never the host's.
-		return $this->portals->resolve(request: $this->request, portalSlug: (new RequestedPortal())->slug(request: $this->request));
+		return $this->portals->resolve(request: $this->request, portalSlug: $this->requestedPortal->slug(request: $this->request));
 	}//end site()
 }//end class

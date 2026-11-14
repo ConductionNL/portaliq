@@ -34,7 +34,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Contribution\FileFieldConfigNormaliser;
+use OCA\Portaliq\Kernel\Contracts\FileFieldConfigNormaliserInterface;
+use OCA\Portaliq\Kernel\Contracts\RequiredFieldsGuardInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 
@@ -43,7 +44,7 @@ use OCP\AppFramework\Http\JSONResponse;
  *
  * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-the-server-must-refuse-a-submit-that-leaves-a-required-field-empty-req-smf-024
  */
-class RequiredFieldsGuard {
+class RequiredFieldsGuard implements RequiredFieldsGuardInterface {
 	/**
 	 * The error code of the refusal.
 	 */
@@ -91,7 +92,7 @@ class RequiredFieldsGuard {
 		return is_string($field) === true
 			&& is_array($config) === true
 			&& ($config['required'] ?? false) === true
-			&& ($config['type'] ?? null) !== FileFieldConfigNormaliser::TYPE_FILE;
+			&& ($config['type'] ?? null) !== FileFieldConfigNormaliserInterface::TYPE_FILE;
 	}//end isCheckedField()
 
 	/**
