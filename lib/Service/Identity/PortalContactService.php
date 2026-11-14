@@ -386,17 +386,32 @@ class PortalContactService implements PortalContactServiceInterface {
 	 * @return string SENT or FAILED.
 	 */
 	private function request(array $subject, array $account, string $message, DateTimeImmutable $now): string {
-		$owner        = (string)$subject['subjectRef'];
-		$organisation = (string)$subject['organisation'];
-		$theirs       = (string)$account['subjectRef'];
-		$mine         = $this->writer->createObject(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: 'owner',
-			subjectRef: $owner,
-			organisation: $organisation,
+		$mine = $this->createMine(subject: $subject, account: $account, message: $message, now: $now);
+		if ($mine === null) {
+			return self::FAILED;
+		}
+
+		$this->createTheirs(subject: $subject, account: $account, message: $message, now: $now);
+
+		return self::SENT;
+	}//end request()
+
+	/**
+	 * The inviter's row: the other account, invited.
+	 *
+	 * @param array<string, mixed> $subject The inviter.
+	 * @param array<string, mixed> $account The other account.
+	 * @param string               $message The message.
+	 * @param DateTimeImmutable    $now     The moment.
+	 *
+	 * @return array<string, mixed>|null The created row, or null when the write failed.
+	 */
+	private function createMine(array $subject, array $account, string $message, DateTimeImmutable $now): array|null {
+		return $this->createSide(
+			owner: (string)$subject['subjectRef'],
+			organisation: (string)$subject['organisation'],
 			data: [
-				'contactRef'  => $theirs,
+				'contactRef'  => (string)$account['subjectRef'],
 				'role'        => 'contact',
 				'displayName' => (string)($account['displayName'] ?? ''),
 				'state'       => 'invited',
@@ -404,18 +419,24 @@ class PortalContactService implements PortalContactServiceInterface {
 				'sentAt'      => $now->format(DATE_ATOM),
 			]
 		);
-		if ($mine === null) {
-			return self::FAILED;
-		}
+	}//end createMine()
 
-		$this->writer->createObject(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: 'owner',
-			subjectRef: $theirs,
-			organisation: $organisation,
+	/**
+	 * The other account's row: the inviter, requested.
+	 *
+	 * @param array<string, mixed> $subject The inviter.
+	 * @param array<string, mixed> $account The other account.
+	 * @param string               $message The message.
+	 * @param DateTimeImmutable    $now     The moment.
+	 *
+	 * @return void
+	 */
+	private function createTheirs(array $subject, array $account, string $message, DateTimeImmutable $now): void {
+		$this->createSide(
+			owner: (string)$account['subjectRef'],
+			organisation: (string)$subject['organisation'],
 			data: [
-				'contactRef'  => $owner,
+				'contactRef'  => (string)$subject['subjectRef'],
 				'role'        => 'contact',
 				'displayName' => (string)($subject['displayName'] ?? ''),
 				'state'       => 'requested',
@@ -423,9 +444,27 @@ class PortalContactService implements PortalContactServiceInterface {
 				'sentAt'      => $now->format(DATE_ATOM),
 			]
 		);
+	}//end createTheirs()
 
-		return self::SENT;
-	}//end request()
+	/**
+	 * Write one side's contact row.
+	 *
+	 * @param string               $owner        The row's owner.
+	 * @param string               $organisation The tenant.
+	 * @param array<string, mixed> $data         The row.
+	 *
+	 * @return array<string, mixed>|null The created row, or null when the write failed.
+	 */
+	private function createSide(string $owner, string $organisation, array $data): array|null {
+		return $this->writer->createObject(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: 'owner',
+			subjectRef: $owner,
+			organisation: $organisation,
+			data: $data
+		);
+	}//end createSide()
 
 	/**
 	 * Mint a link, store its hash and mail it. A mail that did not leave
@@ -538,26 +577,68 @@ class PortalContactService implements PortalContactServiceInterface {
 			$theirTo = $to;
 		}
 
-		if ($other === '') {
-			return self::SENT;
-		}
-
-		foreach ($this->rows->rowsOf(owner: $other, organisation: (string)$subject['organisation']) as $counterpart) {
-			if ((string)($counterpart['contactRef'] ?? '') === (string)$subject['subjectRef'] && (string)($counterpart['state'] ?? '') === $theirs) {
-				$this->writer->updateObject(
-					register: self::REGISTER,
-					schema: self::SCHEMA,
-					scopeField: 'owner',
-					subjectRef: $other,
-					organisation: (string)$subject['organisation'],
-					id: $this->rows->idOf(row: $counterpart),
-					data: ['state' => $theirTo]
-				);
-			}
-		}
+		$this->endCounterparts(subject: $subject, other: $other, theirs: $theirs, theirTo: $theirTo);
 
 		return self::SENT;
 	}//end endLink()
+
+	/**
+	 * Move the other side's rows about the resident from `$theirs` to `$theirTo`;
+	 * nothing when there is no other side.
+	 *
+	 * @param array<string, mixed> $subject The resident.
+	 * @param string               $other   The other side, or ''.
+	 * @param string               $theirs  The state the other side's row is expected to hold.
+	 * @param string               $theirTo The state the other side's row ends in.
+	 *
+	 * @return void
+	 */
+	private function endCounterparts(array $subject, string $other, string $theirs, string $theirTo): void {
+		if ($other === '') {
+			return;
+		}
+
+		foreach ($this->rows->rowsOf(owner: $other, organisation: (string)$subject['organisation']) as $counterpart) {
+			if ($this->isCounterpart(counterpart: $counterpart, subject: $subject, theirs: $theirs) === true) {
+				$this->setCounterpart(subject: $subject, other: $other, counterpart: $counterpart, theirTo: $theirTo);
+			}
+		}
+	}//end endCounterparts()
+
+	/**
+	 * Whether the other side's row is about the resident and holds `$theirs`.
+	 *
+	 * @param array<string, mixed> $counterpart The other side's row.
+	 * @param array<string, mixed> $subject     The resident.
+	 * @param string               $theirs      The state the row is expected to hold.
+	 *
+	 * @return bool
+	 */
+	private function isCounterpart(array $counterpart, array $subject, string $theirs): bool {
+		return (string)($counterpart['contactRef'] ?? '') === (string)$subject['subjectRef'] && (string)($counterpart['state'] ?? '') === $theirs;
+	}//end isCounterpart()
+
+	/**
+	 * Write the other side's row in its new state.
+	 *
+	 * @param array<string, mixed> $subject     The resident.
+	 * @param string               $other       The other side.
+	 * @param array<string, mixed> $counterpart The other side's row.
+	 * @param string               $theirTo     The state it ends in.
+	 *
+	 * @return void
+	 */
+	private function setCounterpart(array $subject, string $other, array $counterpart, string $theirTo): void {
+		$this->writer->updateObject(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: 'owner',
+			subjectRef: $other,
+			organisation: (string)$subject['organisation'],
+			id: $this->rows->idOf(row: $counterpart),
+			data: ['state' => $theirTo]
+		);
+	}//end setCounterpart()
 
 	/**
 	 * Write fields on one of the resident's own rows.
