@@ -172,9 +172,23 @@ export function draftPayload(page, body) {
  * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-designer-must-keep-a-markdown-pages-markdown-req-pie-001
  */
 export function publishPayload(page, body) {
-	const payload = { ...withoutEnvelope(page), body }
+	// Publishing is the act that makes a page public (page-public-on-purpose):
+	// the page is served without signing in from here on.
+	const payload = { ...withoutEnvelope(page), body, status: 'published' }
 	delete payload.draftBody
 	return payload
+}
+
+/**
+ * The page taken back to a draft: its route then answers as one that does
+ * not exist. Its body and its draft stay as they are.
+ *
+ * @param {object} page The page as loaded.
+ * @return {object} The payload.
+ * @spec openspec/changes/page-public-on-purpose/tasks.md#1.2
+ */
+export function draftStatusPayload(page) {
+	return { ...withoutEnvelope(page), status: 'draft' }
 }
 
 /**

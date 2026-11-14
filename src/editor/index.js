@@ -58,6 +58,7 @@ export {
 	bodyFor,
 	discardPayload,
 	draftPayload,
+	draftStatusPayload,
 	isMainWidget,
 	publishPayload,
 	readBody,
