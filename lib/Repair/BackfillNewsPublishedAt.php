@@ -22,17 +22,17 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/news-publish-date/tasks.md#T3
+ * @spec openspec/changes/archive/2026-10-07-news-publish-date/tasks.md#T3
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Repair;
 
-use OCA\Portaliq\Service\ObjectServiceLookup;
 use DateTimeImmutable;
 use DateTimeZone;
-use OCA\Portaliq\Service\PortalRegisterContext;
+use OCA\Portaliq\Kernel\Contracts\PortalRegisterContextInterface;
+use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Container\ContainerInterface;
@@ -42,7 +42,7 @@ use Throwable;
 /**
  * Stamps `publishedAt` on published news items that have none.
  *
- * @spec openspec/changes/news-publish-date/tasks.md#T3
+ * @spec openspec/changes/archive/2026-10-07-news-publish-date/tasks.md#T3
  */
 class BackfillNewsPublishedAt implements IRepairStep {
 	use PagedSchemaRead;
@@ -82,12 +82,12 @@ class BackfillNewsPublishedAt implements IRepairStep {
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container Resolves OpenRegister's object service, which may be absent.
-	 * @param PortalRegisterContext $context Points the object service at the news item schema.
+	 * @param PortalRegisterContextInterface $context Points the object service at the news item schema.
 	 * @param LoggerInterface $logger Names an item that could not be stamped.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
-		private readonly PortalRegisterContext $context,
+		private readonly PortalRegisterContextInterface $context,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -97,7 +97,7 @@ class BackfillNewsPublishedAt implements IRepairStep {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/news-publish-date/tasks.md#T3
+	 * @spec openspec/changes/archive/2026-10-07-news-publish-date/tasks.md#T3
 	 */
 	public function getName(): string {
 		return 'Give published news items their publish moment';
@@ -110,7 +110,7 @@ class BackfillNewsPublishedAt implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/news-publish-date/tasks.md#T3
+	 * @spec openspec/changes/archive/2026-10-07-news-publish-date/tasks.md#T3
 	 */
 	public function run(IOutput $output): void {
 		$objectService = $this->objectService();

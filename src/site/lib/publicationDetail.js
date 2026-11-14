@@ -62,7 +62,7 @@ function readableDate(value, locale) {
  *
  * @param {object} publication One publication object.
  * @return {string} The summary, or ''.
- * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
  */
 export function publicationSummary(publication) {
 	const row = publication || {}
@@ -80,7 +80,7 @@ export function publicationSummary(publication) {
  *
  * @param {object} publication One publication object.
  * @return {Array<string>} The theme ids.
- * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
  */
 export function themeIdsOf(publication) {
 	const themes = (publication || {}).themes
@@ -106,7 +106,7 @@ export function themeIdsOf(publication) {
  * @param {string} context.locale The site's language.
  * @param {Record<string, string>} [context.themeNames] Theme id to name.
  * @return {Array<{name: string, label: string, value: string|Array<string>, kind: string}>} The rows.
- * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
  */
 export function visitorRows(publication, { t, locale, themeNames = {} }) {
 	if (!publication || typeof publication !== 'object') {
@@ -190,7 +190,7 @@ function safeLink(value) {
  * @param {number} bytes The size in bytes.
  * @return {string} The size, or '' when unknown.
  *
- * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-list-and-offer-every-document-for-download-req-wsd-005
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-list-and-offer-every-document-for-download-req-wsd-005
  */
 export function humanSize(bytes) {
 	if (bytes === null || bytes === undefined || bytes === '') {
@@ -249,7 +249,7 @@ function fileType(file) {
  * @param {object|Array} envelope The attachments answer.
  * @return {Array<object>} `{id, title, type, size, href}` rows.
  *
- * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-list-and-offer-every-document-for-download-req-wsd-005
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-list-and-offer-every-document-for-download-req-wsd-005
  */
 export function toDocuments(envelope) {
 	let files = []
@@ -268,4 +268,79 @@ export function toDocuments(envelope) {
 			size: humanSize(file.size),
 			href: safeLink(file.downloadUrl) || safeLink(file.accessUrl),
 		}))
+}
+
+/**
+ * The object's own metadata, never a row of the "All details" table.
+ */
+const METADATA_KEYS = ['@self', 'id']
+
+/**
+ * Words written in capitals when a property name is turned into a label.
+ */
+const ACRONYMS = ['api', 'bsn', 'html', 'id', 'kvk', 'pdf', 'uri', 'url', 'uuid']
+
+/**
+ * A readable label made from a property name: `sourceUrl` reads
+ * `Source URL`, `woo_category` reads `Woo category`.
+ *
+ * @param {string} name The property name.
+ * @return {string} The label.
+ * @spec openspec/changes/publication-page-all-details/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-end-with-an-all-details-table-of-every-stored-property
+ */
+export function propertyLabel(name) {
+	const words = String(name)
+		.replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+		.replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
+		.split(/[\s_-]+/)
+		.filter((word) => word !== '')
+		.map((word) => word.toLowerCase())
+		.map((word) => (ACRONYMS.includes(word) ? word.toUpperCase() : word))
+	if (words.length === 0) {
+		return ''
+	}
+
+	const first = words[0]
+	words[0] = first.charAt(0).toUpperCase() + first.slice(1)
+	return words.join(' ')
+}
+
+/**
+ * One value as the table shows it: its text, and a link when it is shaped
+ * like a web address.
+ *
+ * @param {unknown} value A scalar or a nested value.
+ * @return {{text: string, href: string}} The item.
+ */
+function detailItem(value) {
+	const text = typeof value === 'object' ? JSON.stringify(value) : String(value)
+	const href = /^https?:\/\/\S+$/i.test(text.trim()) ? text.trim() : ''
+	return { text, href }
+}
+
+/**
+ * The rows of the "All details" table below the worded part: every stored
+ * property except the object's own metadata (`@self`, `id`), in stored
+ * order, with a readable label. A property without a value is left out; a
+ * list shows one item per entry; a value shaped like a URL is a link.
+ *
+ * @param {object} publication One publication object.
+ * @return {Array<{name: string, label: string, items: Array<{text: string, href: string}>}>} The rows.
+ * @spec openspec/changes/publication-page-all-details/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-end-with-an-all-details-table-of-every-stored-property
+ */
+export function allDetailRows(publication) {
+	if (!publication || typeof publication !== 'object' || Array.isArray(publication)) {
+		return []
+	}
+
+	return Object.entries(publication)
+		.filter(([name, value]) => !METADATA_KEYS.includes(name) && !isEmpty(value))
+		.map(([name, value]) => ({
+			name,
+			label: propertyLabel(name),
+			items: (Array.isArray(value) ? value : [value])
+				.filter((entry) => !isEmpty(entry))
+				.map(detailItem),
+		}))
+		.filter((row) => row.items.length > 0 && row.label !== '')
 }

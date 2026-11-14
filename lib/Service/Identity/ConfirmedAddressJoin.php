@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
@@ -32,12 +32,12 @@ use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
-use OCA\Portaliq\Service\Session\SessionTrust;
+use OCA\Portaliq\Kernel\Support\SessionTrust;
 
 /**
  * Joins the waiting account for an address its holder just confirmed.
  *
- * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 class ConfirmedAddressJoin {
 	/**
@@ -103,7 +103,7 @@ class ConfirmedAddressJoin {
 	 *
 	 * @return bool True when a waiting account was joined.
 	 *
-	 * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function join(array $account, string $email, ?array $session = null): bool {
 		$organisation = (string)($account['organisation'] ?? '');

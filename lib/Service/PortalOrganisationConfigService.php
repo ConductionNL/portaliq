@@ -31,14 +31,15 @@
  *
  * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.2
  * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#3.1
- * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T01
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalOrganisationConfigServiceInterface;
 use OCA\Portaliq\Service\Notifications\MessageBoxOffer;
 use OCA\Portaliq\Service\Signin\LoginProviders;
 use OCP\IAppConfig;
@@ -52,9 +53,9 @@ use Throwable;
  * replacing the `idp` placeholder this change removes the last dependency on.
  *
  * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.2
- * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T01
  */
-class PortalOrganisationConfigService {
+class PortalOrganisationConfigService implements PortalOrganisationConfigServiceInterface {
 	/**
 	 * OpenRegister's Organisation mapper (core entity — ADR-022, no new
 	 * parallel client; the same entity every session's `organisation` claim
@@ -157,8 +158,8 @@ class PortalOrganisationConfigService {
 	 * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.2
 	 * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.3
 	 * @spec openspec/specs/supplier-portal/spec.md#requirement-the-public-site-must-render-its-own-words-through-a-locale-aware-translation-layer
-	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T01
-	 * @spec openspec/changes/woo-search-names-the-organisation/specs/portal-federated-search/spec.md#requirement-the-organisation-filter-reads-the-organisations-name
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T01
+	 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-organisation-filter-reads-the-organisations-name
 	 */
 	public function resolve(string $orgSlug, string $locale = 'nl'): array {
 		$locale = $this->normaliseLocale(locale: $locale);
@@ -251,7 +252,7 @@ class PortalOrganisationConfigService {
 	 *
 	 * @return array<string, mixed>|null The merged OIDC config, or null.
 	 *
-	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T01
 	 * @spec openspec/specs/supplier-portal/spec.md#oidc-start-builds-a-state-nonce-pkce-authorization-request
 	 */
 	public function resolveOidcConfig(string $orgSlug, string $provider): ?array {
@@ -287,7 +288,6 @@ class PortalOrganisationConfigService {
 
 		return $this->claimMapper->applyPreset(provider: $provider, rawConfig: $rawConfig);
 	}//end resolveOidcConfig()
-
 
 	/**
 	 * Whether this organisation is permitted to start a login with this
@@ -367,12 +367,11 @@ class PortalOrganisationConfigService {
 	 */
 	public function writePresentation(string $organisationUuid, array $overrides): bool {
 		return $this->appConfig->setValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			self::CONFIG_KEY_PREFIX . $organisationUuid,
 			(string)json_encode($overrides, JSON_UNESCAPED_SLASHES)
 		);
 	}//end writePresentation()
-
 
 	/**
 	 * Store an organisation's OIDC client secret for one provider, via a
@@ -386,7 +385,7 @@ class PortalOrganisationConfigService {
 	 *
 	 * @return bool Whether the value was written.
 	 *
-	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T01
 	 */
 	public function setOidcClientSecret(string $organisationUuid, string $provider, string $clientSecret): bool {
 		if ($organisationUuid === '' || in_array($provider, self::OIDC_PROVIDERS, true) === false) {
@@ -394,7 +393,7 @@ class PortalOrganisationConfigService {
 		}
 
 		return $this->appConfig->setValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			$this->oidcSecretKey(organisationUuid: $organisationUuid, provider: $provider),
 			$clientSecret,
 			false,
@@ -414,7 +413,7 @@ class PortalOrganisationConfigService {
 	private function oidcClientSecret(string $organisationUuid, string $provider): string {
 		$key = $this->oidcSecretKey(organisationUuid: $organisationUuid, provider: $provider);
 
-		return $this->appConfig->getValueString(Application::APP_ID, $key, '');
+		return $this->appConfig->getValueString(AppIdentity::APP_ID, $key, '');
 	}//end oidcClientSecret()
 
 	/**
@@ -469,7 +468,7 @@ class PortalOrganisationConfigService {
 	private function configuredOidcProviders(string $orgSlug, string $organisationUuid, array $overrides): array {
 		return $this->loginProviders->list(
 			overrides: $overrides,
-			brokerSecret: $this->appConfig->getValueString(Application::APP_ID, LoginProviders::SECRET_KEY_PREFIX . $organisationUuid, ''),
+			brokerSecret: $this->appConfig->getValueString(AppIdentity::APP_ID, LoginProviders::SECRET_KEY_PREFIX . $organisationUuid, ''),
 			oidcConfig: fn (string $provider): ?array => $this->resolveOidcConfig(orgSlug: $orgSlug, provider: $provider)
 		);
 	}//end configuredOidcProviders()
@@ -529,7 +528,7 @@ class PortalOrganisationConfigService {
 		}
 
 		$json = $this->appConfig->getValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			self::CONFIG_KEY_PREFIX . $organisationUuid,
 			'{}'
 		);

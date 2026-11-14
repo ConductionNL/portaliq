@@ -23,7 +23,7 @@ use OCA\Portaliq\Service\DerivedCatalogueFacets;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PublicCatalogue;
 use OCA\Portaliq\Service\PublicCatalogueQuery;
-use OCA\Portaliq\Service\Session\BearerSessionResolver;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\IRequest;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -131,7 +131,7 @@ class ContentCatalogueIndexGoldenTest extends TestCase {
 			}
 		);
 
-		$controller = new ContentCatalogueController(appName: 'portaliq', request: $request, resolver: $resolver, session: $session, catalogue: $catalogue);
+		$controller = new ContentCatalogueController(appName: 'portaliq', request: $request, resolver: $resolver, session: $session, catalogue: $catalogue, publicCatalogueQuery: new PublicCatalogueQuery());
 
 		return $this->answer(controller: $controller, params: $params, log: $log);
 	}//end trace()

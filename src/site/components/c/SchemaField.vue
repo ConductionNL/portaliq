@@ -166,7 +166,7 @@ import '@utrecht/textarea-css/dist/index.css'
  * "(niet verplicht)"; a required one has `aria-required` and no mark. A date
  * is asked as day, month and year in a fieldset (DateInputGroup).
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
  * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-site-form-must-mark-the-fields-that-are-not-required-req-smf-001
  * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-date-field-must-be-asked-as-day-month-and-year-req-smf-003
  */

@@ -232,7 +232,7 @@ export default {
 		 *
 		 * @return {object} The props.
 		 * @spec openspec/changes/hero-aside/specs/portaliq-cms/spec.md#requirement-a-hero-may-hold-a-list-or-a-photo-beside-its-text
-		 * @spec openspec/changes/hero-on-the-school-boards/specs/portaliq-cms/spec.md#requirement-the-hero-hands-its-portal-to-the-block-beside-it-and-draws-its-search-on-the-band
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-hero-hands-its-portal-to-the-block-beside-it-and-draws-its-search-on-the-band
 		 */
 		asideProps() {
 			const props = this.aside?.props
@@ -316,7 +316,7 @@ export default {
 		 * @return {boolean} True when visible.
 		 *
 		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-hero-must-cap-its-calls-to-action-and-keep-one-outline-entry-req-ptb-006
-		 * @spec openspec/changes/site-hero-shows-its-heading/specs/site-look/spec.md#requirement-a-hero-must-show-its-heading-lead-and-search-box-together
+		 * @spec openspec/specs/site-look/spec.md#requirement-a-hero-must-show-its-heading-lead-and-search-box-together
 		 */
 		showHeading() {
 			return this.headingVisible !== null ? this.headingVisible : true
@@ -329,7 +329,7 @@ export default {
 		 *
 		 * @return {string} The label.
 		 *
-		 * @spec openspec/changes/site-hero-shows-its-heading/specs/site-look/spec.md#requirement-a-hero-must-show-its-heading-lead-and-search-box-together
+		 * @spec openspec/specs/site-look/spec.md#requirement-a-hero-must-show-its-heading-lead-and-search-box-together
 		 */
 		searchFieldLabel() {
 			if (this.searchLabel !== '') {
@@ -350,7 +350,7 @@ export default {
 		 *
 		 * @return {boolean} True when visible.
 		 *
-		 * @spec openspec/changes/site-hero-shows-its-heading/specs/site-look/spec.md#requirement-a-hero-must-show-its-heading-lead-and-search-box-together
+		 * @spec openspec/specs/site-look/spec.md#requirement-a-hero-must-show-its-heading-lead-and-search-box-together
 		 */
 		searchLabelVisible() {
 			return this.searchLabel !== '' || this.showHeading === false

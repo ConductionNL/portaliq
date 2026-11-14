@@ -25,7 +25,7 @@ use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\ProposalController;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\Proposals\ProposalService;
-use OCA\Portaliq\Service\Session\BearerSessionResolver;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCA\Portaliq\Service\Tasks\PortalCaseAccessGuard;
 use OCP\IRequest;
 use OCP\IUserSession;

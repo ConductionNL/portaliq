@@ -35,7 +35,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation
+ * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation
  */
 
 declare(strict_types=1);
@@ -43,12 +43,12 @@ declare(strict_types=1);
 namespace OCA\Portaliq\BackgroundJob;
 
 use DateTimeInterface;
-use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
-use OCA\Portaliq\Service\PortalAccountService;
-use OCA\Portaliq\Service\PortalDeepLinkBuilder;
+use OCA\Portaliq\Kernel\Contracts\PortalAccountServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalDeepLinkBuilderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalNoticeLanguageInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectWriterInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalOrganisationConfigServiceInterface;
 use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
-use OCA\Portaliq\Service\PortalObjectWriter;
-use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJob;
 use OCP\BackgroundJob\TimedJob;
@@ -61,7 +61,7 @@ use Throwable;
 /**
  * Drains the portal task delivery ledger into inbox messages and mails.
  *
- * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation
+ * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation
  *
  * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the constructor wires
  * every dependency this job's self-contained pipeline (drain → render → write
@@ -160,22 +160,22 @@ class PortalTaskDeliveryJob extends TimedJob {
 	 * @param ITimeFactory $time Testable clock (job base class).
 	 * @param ContainerInterface $container Resolves the ledger seam by name.
 	 * @param ScopedCollectionReaderInterface $reader The idempotency probe + account lookup.
-	 * @param PortalObjectWriter $writer Writes the inbox message (scope stamped server-side).
-	 * @param PortalOrganisationConfigService $orgConfig Resolves the tenant display name.
+	 * @param PortalObjectWriterInterface $writer Writes the inbox message (scope stamped server-side).
+	 * @param PortalOrganisationConfigServiceInterface $orgConfig Resolves the tenant display name.
 	 * @param IMailer $mailer Sends the privacy-minimal mail.
-	 * @param PortalNoticeLanguage $language The translations in the language of the resident's portal.
-	 * @param PortalDeepLinkBuilder $deepLinks Builds the portal deep link from the route table (WOO-570).
+	 * @param PortalNoticeLanguageInterface $language The translations in the language of the resident's portal.
+	 * @param PortalDeepLinkBuilderInterface $deepLinks Builds the portal deep link from the route table (WOO-570).
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
 		ITimeFactory $time,
 		private readonly ContainerInterface $container,
 		private readonly ScopedCollectionReaderInterface $reader,
-		private readonly PortalObjectWriter $writer,
-		private readonly PortalOrganisationConfigService $orgConfig,
+		private readonly PortalObjectWriterInterface $writer,
+		private readonly PortalOrganisationConfigServiceInterface $orgConfig,
 		private readonly IMailer $mailer,
-		private readonly PortalNoticeLanguage $language,
-		private readonly PortalDeepLinkBuilder $deepLinks,
+		private readonly PortalNoticeLanguageInterface $language,
+		private readonly PortalDeepLinkBuilderInterface $deepLinks,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(time: $time);
@@ -191,7 +191,7 @@ class PortalTaskDeliveryJob extends TimedJob {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- the base class dictates
 	 * the signature; dropping the parameter breaks the override.
@@ -229,7 +229,7 @@ class PortalTaskDeliveryJob extends TimedJob {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation
 	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-an-unknown-kind-fails-honestly-req-trd-003
 	 */
 	private function settleRow(object $ledger, object $row): void {
@@ -327,7 +327,7 @@ class PortalTaskDeliveryJob extends TimedJob {
 	 *
 	 * @return string|null Null on success, else the failure reason.
 	 *
-	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-inbox-message-deep-links-to-the-task
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-inbox-message-deep-links-to-the-task
 	 */
 	private function deliverInbox(TaskDelivery $delivery): ?string {
 		// Idempotency probe: an earlier run may have written the message and
@@ -402,7 +402,7 @@ class PortalTaskDeliveryJob extends TimedJob {
 	 *
 	 * @return string|null Null on success, else the failure reason.
 	 *
-	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation
 	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-mail-says-which-kind-of-delivery-it-is-req-trd-002
 	 */
 	private function deliverMail(TaskDelivery $delivery): ?string {
@@ -498,7 +498,7 @@ class PortalTaskDeliveryJob extends TimedJob {
 	 * @return bool
 	 */
 	private function withdrawn(?array $account): bool {
-		if (($account['status'] ?? '') !== PortalAccountService::STATUS_VOID) {
+		if (($account['status'] ?? '') !== PortalAccountServiceInterface::STATUS_VOID) {
 			return false;
 		}
 
@@ -518,7 +518,7 @@ class PortalTaskDeliveryJob extends TimedJob {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation
 	 */
 	private function deepLink(string $organisation): string {
 		return $this->deepLinks->forOrganisation(organisation: $organisation);

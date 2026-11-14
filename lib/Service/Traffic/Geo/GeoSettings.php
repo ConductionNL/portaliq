@@ -13,14 +13,14 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-maxmind-credentials-must-never-be-echoed-back
+ * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-maxmind-credentials-must-never-be-echoed-back
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic\Geo;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCP\IAppConfig;
 
 /**
@@ -33,7 +33,7 @@ use OCP\IAppConfig;
  * that renders: `toArray()` says whether a key is stored, and only the
  * provider that needs it asks for the value.
  *
- * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-maxmind-credentials-must-never-be-echoed-back
+ * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-maxmind-credentials-must-never-be-echoed-back
  */
 class GeoSettings {
 
@@ -93,10 +93,10 @@ class GeoSettings {
 	 *
 	 * @return string One of PROVIDERS.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
 	 */
 	public function provider(): string {
-		$value = $this->config->getValueString(Application::APP_ID, self::KEY_PROVIDER, self::DEFAULT_PROVIDER);
+		$value = $this->config->getValueString(AppIdentity::APP_ID, self::KEY_PROVIDER, self::DEFAULT_PROVIDER);
 		if (in_array($value, self::PROVIDERS, true) === false) {
 			return self::DEFAULT_PROVIDER;
 		}
@@ -109,10 +109,10 @@ class GeoSettings {
 	 *
 	 * @return string The account id.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-maxmind-credentials-must-never-be-echoed-back
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-maxmind-credentials-must-never-be-echoed-back
 	 */
 	public function maxMindAccountId(): string {
-		return trim($this->config->getValueString(Application::APP_ID, self::KEY_ACCOUNT_ID, ''));
+		return trim($this->config->getValueString(AppIdentity::APP_ID, self::KEY_ACCOUNT_ID, ''));
 	}
 
 	/**
@@ -120,10 +120,10 @@ class GeoSettings {
 	 *
 	 * @return string The key.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-maxmind-credentials-must-never-be-echoed-back
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-maxmind-credentials-must-never-be-echoed-back
 	 */
 	public function maxMindLicenseKey(): string {
-		return trim($this->config->getValueString(Application::APP_ID, self::KEY_LICENSE_KEY, ''));
+		return trim($this->config->getValueString(AppIdentity::APP_ID, self::KEY_LICENSE_KEY, ''));
 	}
 
 	/**
@@ -131,10 +131,10 @@ class GeoSettings {
 	 *
 	 * @return string One of EDITIONS.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
 	 */
 	public function maxMindEdition(): string {
-		$value = $this->config->getValueString(Application::APP_ID, self::KEY_EDITION, self::EDITIONS[0]);
+		$value = $this->config->getValueString(AppIdentity::APP_ID, self::KEY_EDITION, self::EDITIONS[0]);
 		if (in_array($value, self::EDITIONS, true) === false) {
 			return self::EDITIONS[0];
 		}
@@ -147,7 +147,7 @@ class GeoSettings {
 	 *
 	 * @return array{provider: string, maxmindAccountId: string, maxmindEdition: string, maxmindLicenseKeySet: bool} The view.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-maxmind-credentials-must-never-be-echoed-back
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-maxmind-credentials-must-never-be-echoed-back
 	 */
 	public function toArray(): array {
 		return [
@@ -167,22 +167,22 @@ class GeoSettings {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-maxmind-credentials-must-never-be-echoed-back
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-maxmind-credentials-must-never-be-echoed-back
 	 */
 	public function update(array $data): void {
 		$provider = $data['provider'] ?? null;
 		if (is_string($provider) === true && in_array($provider, self::PROVIDERS, true) === true) {
-			$this->config->setValueString(Application::APP_ID, self::KEY_PROVIDER, $provider);
+			$this->config->setValueString(AppIdentity::APP_ID, self::KEY_PROVIDER, $provider);
 		}
 
 		$edition = $data['maxmindEdition'] ?? null;
 		if (is_string($edition) === true && in_array($edition, self::EDITIONS, true) === true) {
-			$this->config->setValueString(Application::APP_ID, self::KEY_EDITION, $edition);
+			$this->config->setValueString(AppIdentity::APP_ID, self::KEY_EDITION, $edition);
 		}
 
 		$accountId = $data['maxmindAccountId'] ?? null;
 		if (is_string($accountId) === true) {
-			$this->config->setValueString(Application::APP_ID, self::KEY_ACCOUNT_ID, trim($accountId));
+			$this->config->setValueString(AppIdentity::APP_ID, self::KEY_ACCOUNT_ID, trim($accountId));
 		}
 
 		$key = $data['maxmindLicenseKey'] ?? null;
@@ -191,11 +191,11 @@ class GeoSettings {
 		}
 
 		if (trim($key) === '') {
-			$this->config->deleteKey(Application::APP_ID, self::KEY_LICENSE_KEY);
+			$this->config->deleteKey(AppIdentity::APP_ID, self::KEY_LICENSE_KEY);
 
 			return;
 		}
 
-		$this->config->setValueString(Application::APP_ID, self::KEY_LICENSE_KEY, trim($key), false, true);
+		$this->config->setValueString(AppIdentity::APP_ID, self::KEY_LICENSE_KEY, trim($key), false, true);
 	}
 }

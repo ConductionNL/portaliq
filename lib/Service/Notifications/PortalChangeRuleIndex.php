@@ -44,19 +44,20 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Notifications;
 
-use OCA\Portaliq\Contribution\NotificationRuleNormaliser;
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Kernel\Contracts\PortalChangeRuleIndexInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use OCA\Portaliq\Service\NotificationDispatchService;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
+use OCA\Portaliq\Kernel\Contracts\NotificationRuleNormaliserInterface;
 
 /**
  * Looks up change rules and inbox collections by register and schema.
  *
  * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-declared-change-reaches-the-residents-inbox-req-nap-002
  */
-class PortalChangeRuleIndex {
+class PortalChangeRuleIndex implements PortalChangeRuleIndexInterface {
 
 	/**
 	 * OpenRegister's register mapper, resolved by name so portaliq does not
@@ -97,14 +98,16 @@ class PortalChangeRuleIndex {
 	/**
 	 * Wire the index.
 	 *
-	 * @param PortalContributionRegistry $registry  Every app's contribution.
+	 * @param PortalContributionRegistryInterface $registry  Every app's contribution.
 	 * @param ContainerInterface         $container Resolves OpenRegister's mappers.
 	 * @param LoggerInterface            $logger    The logger.
+	 * @param NotificationRuleNormaliserInterface $notificationRuleNormaliser The NotificationRuleNormaliser helper.
 	 */
 	public function __construct(
-		private readonly PortalContributionRegistry $registry,
+		private readonly PortalContributionRegistryInterface $registry,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly NotificationRuleNormaliserInterface $notificationRuleNormaliser,
 	) {
 	}//end __construct()
 
@@ -130,7 +133,7 @@ class PortalChangeRuleIndex {
 	 *
 	 * @return array{collection: array<string, mixed>, messages: array<string, mixed>}
 	 *
-	 * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md
 	 */
 	public function details(array $entry): array {
 		$this->entries();
@@ -337,7 +340,7 @@ class PortalChangeRuleIndex {
 
 			$collection = $collections[(string)$rule['collection']];
 			$recipientClaim = (string)($rule['recipients']['claim'] ?? '');
-			if ($recipientClaim === '' && (new NotificationRuleNormaliser())->scopedElsewhere(collection: $collection) === true) {
+			if ($recipientClaim === '' && $this->notificationRuleNormaliser->scopedElsewhere(collection: $collection) === true) {
 				// The normaliser already drops this; a record of a claim or
 				// via collection does not say whose it is.
 				continue;

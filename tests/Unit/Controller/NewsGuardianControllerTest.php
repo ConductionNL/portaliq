@@ -26,7 +26,7 @@ use OCA\Portaliq\Controller\NewsGuardianController;
 use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
 use OCA\Portaliq\Service\NewsFeedReader;
 use OCA\Portaliq\Service\NewsReadReceiptService;
-use OCA\Portaliq\Service\Session\BearerSessionResolver;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;

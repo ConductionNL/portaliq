@@ -23,21 +23,22 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-a-sign-up-role-enforces-its-capacity-server-side
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-sign-up-role-enforces-its-capacity-server-side
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\EventSignupServiceInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-a-sign-up-role-enforces-its-capacity-server-side
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-sign-up-role-enforces-its-capacity-server-side
  */
-class EventSignupService {
+class EventSignupService implements EventSignupServiceInterface {
 	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
 	use PagedObjectReads;
@@ -47,10 +48,6 @@ class EventSignupService {
 	private const REGISTER = 'portaliq';
 
 	private const SCHEMA = 'eventSignup';
-
-	public const REASON_ROLE_NOT_FOUND = 'role-not-found';
-
-	public const REASON_ROLE_FULL = 'role-full';
 
 	/**
 	 * Constructor.
@@ -81,7 +78,7 @@ class EventSignupService {
 	 *
 	 * @return string|null The refusal reason, or null on success.
 	 *
-	 * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-a-sign-up-role-enforces-its-capacity-server-side
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-sign-up-role-enforces-its-capacity-server-side
 	 */
 	public function attemptSignup(string $subjectRef, string $eventId, string $roleId, string $childRef = '', string $note = ''): ?string {
 		$role = $this->reachableRole(subjectRef: $subjectRef, eventId: $eventId, roleId: $roleId, childRef: $childRef);
@@ -166,6 +163,18 @@ class EventSignupService {
 			return null;
 		}
 
+		return $this->roleWithId(roles: $roles, roleId: $roleId);
+	}//end findRole()
+
+	/**
+	 * The first declared role with this id.
+	 *
+	 * @param array<int|string, mixed> $roles  The event's declared roles.
+	 * @param string                   $roleId The role id.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function roleWithId(array $roles, string $roleId): ?array {
 		foreach ($roles as $role) {
 			if (is_array($role) === true && (string)($role['id'] ?? '') === $roleId) {
 				return $role;
@@ -173,7 +182,7 @@ class EventSignupService {
 		}
 
 		return null;
-	}//end findRole()
+	}//end roleWithId()
 
 	/**
 	 * Count existing sign-ups for one role on one event, immediately before

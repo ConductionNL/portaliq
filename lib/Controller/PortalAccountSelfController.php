@@ -26,20 +26,20 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
-use OCA\Portaliq\Service\Identity\PortalAccessRequestService;
-use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
-use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
-use OCA\Portaliq\Service\PortalOrganisationConfigService;
-use OCA\Portaliq\Service\Session\BearerSessionResolver;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalAccessRequestServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalIdentityMailerInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalOrganisationConfigServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSelfServiceServiceInterface;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -51,7 +51,7 @@ use OCP\IRequest;
 /**
  * The bearer's own account.
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
 class PortalAccountSelfController extends Controller implements PortalProtected {
 
@@ -60,20 +60,20 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 	 *
 	 * @param IRequest $request The request.
 	 * @param BearerSessionResolver $session Resolves the subject from the bearer.
-	 * @param PortalSelfServiceService $selfService The account's own details.
-	 * @param PortalAccessRequestService $accessRequests Asking for access.
-	 * @param PortalIdentityMailer $mailer Mails the confirmation to the new address.
-	 * @param PortalOrganisationConfigService|null $orgConfig Whether the organisation offers the message box.
+	 * @param PortalSelfServiceServiceInterface $selfService The account's own details.
+	 * @param PortalAccessRequestServiceInterface $accessRequests Asking for access.
+	 * @param PortalIdentityMailerInterface $mailer Mails the confirmation to the new address.
+	 * @param PortalOrganisationConfigServiceInterface|null $orgConfig Whether the organisation offers the message box.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly BearerSessionResolver $session,
-		private readonly PortalSelfServiceService $selfService,
-		private readonly PortalAccessRequestService $accessRequests,
-		private readonly PortalIdentityMailer $mailer,
-		private readonly ?PortalOrganisationConfigService $orgConfig = null,
+		private readonly PortalSelfServiceServiceInterface $selfService,
+		private readonly PortalAccessRequestServiceInterface $accessRequests,
+		private readonly PortalIdentityMailerInterface $mailer,
+		private readonly ?PortalOrganisationConfigServiceInterface $orgConfig = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -94,10 +94,10 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 	 *                      confirmation is now waiting, and whether its
 	 *                      mail left.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T01
-	 * @spec openspec/changes/notification-preferences-per-role/specs/supplier-portal/spec.md#requirement-an-accounts-own-channel-opt-out-gates-dispatch
-	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-an-accounts-own-channel-opt-out-gates-dispatch
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -167,7 +167,7 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 	 */
 	private function confirmationAnswer(DetailsChange $change, string $token): JSONResponse {
 		$sent = $this->mailer->send(
-			template: PortalIdentityMailer::TEMPLATE_EMAIL_CONFIRMATION,
+			template: PortalIdentityMailerInterface::TEMPLATE_EMAIL_CONFIRMATION,
 			email: $change->email,
 			secret: $token,
 			organisation: $change->organisation
@@ -253,7 +253,7 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 	 *
 	 * @return JSONResponse The details, 401 without a subject, 404 without an account.
 	 *
-	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -282,8 +282,8 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 	 *
 	 * @return JSONResponse Whether the address is now in use.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
-	 * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -305,7 +305,7 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 	 *
 	 * @return JSONResponse Whether the account is gone.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -332,7 +332,7 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 	 *
 	 * @return JSONResponse The recorded request, or a refusal.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -361,7 +361,7 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 	 *
 	 * @return JSONResponse The asker's own requests.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

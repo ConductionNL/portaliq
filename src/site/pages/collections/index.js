@@ -14,7 +14,7 @@
 // open the page a record link names with `openRecordEntry(nav)` (below), then
 // route to that entry. The page itself selects the record.
 //
-// @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-contribution-page-must-render-its-blocks-req-srp-014
+// @spec openspec/specs/site-portal-parity/spec.md#requirement-a-contribution-page-must-render-its-blocks-req-srp-014
 
 import {
 	consumeOpenTarget,
@@ -62,7 +62,7 @@ export const pages = {
  * @param {object} [where.history] The history.
  * @param {object|null} [where.storage] sessionStorage.
  * @return {object|null} The entry, or null.
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-record-link-must-open-its-record-after-sign-in-req-srp-021
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-record-link-must-open-its-record-after-sign-in-req-srp-021
  */
 export function openRecordEntry(nav, where = {}) {
 	const { location, history, storage } = pageParts(where)

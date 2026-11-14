@@ -63,7 +63,7 @@ function goTo(url) {
  * confirm step. An update row action with fields to fill in gets its form
  * (`dialog: 'form'`, site-action-forms). Each dialog loads on first use.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-an-endpoint-row-action-must-confirm-before-it-runs-req-srp-026
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-an-endpoint-row-action-must-confirm-before-it-runs-req-srp-026
  * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-update-row-action-that-needs-input-must-open-its-form-on-the-row
  */
 export default {

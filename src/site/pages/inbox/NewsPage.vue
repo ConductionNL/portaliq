@@ -49,7 +49,7 @@ import { PAGE_EMITS, PAGE_PROPS } from './pageProps.js'
 import { pageLocale, withStrings } from './translate.js'
 
 /**
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-school-news-req-srp-033
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-school-news-req-srp-033
  */
 export default {
 	name: 'NewsPage',
@@ -67,7 +67,7 @@ export default {
 	computed: {
 		/**
 		 * @return {string} `nl` or `en`.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-school-news-req-srp-033
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-school-news-req-srp-033
 		 */
 		lang() {
 			return pageLocale(this.locale)
@@ -75,7 +75,7 @@ export default {
 
 		/**
 		 * @return {(key: string, vars?: object) => string} The translator.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-school-news-req-srp-033
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-school-news-req-srp-033
 		 */
 		tr() {
 			return withStrings(this.t, this.lang)
@@ -90,7 +90,7 @@ export default {
 	methods: {
 		/**
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-school-news-req-srp-033
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-school-news-req-srp-033
 		 */
 		async loadLanguage() {
 			const details = await this.api.getDetails()
@@ -101,7 +101,7 @@ export default {
 		 * Read the feed and the newsletter archive.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-school-news-req-srp-033
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-school-news-req-srp-033
 		 */
 		async loadFeed() {
 			const [items, newsletters] = await Promise.all([
@@ -117,7 +117,7 @@ export default {
 		 *
 		 * @param {string} next The language tag, '' for as written.
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-school-news-req-srp-033
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-school-news-req-srp-033
 		 */
 		async changeLanguage(next) {
 			this.error = ''

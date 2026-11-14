@@ -31,15 +31,15 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-the-portal-api-must-ask-contributing-apps-in-the-portals-language
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-the-portal-api-must-ask-contributing-apps-in-the-portals-language
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
-use OCA\Portaliq\Service\CaseTypeVisibility;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Kernel\Contracts\CaseTypeVisibilityInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCP\IConfig;
 use OCP\IRequest;
 use Throwable;
@@ -47,7 +47,7 @@ use Throwable;
 /**
  * Picks the portal's language and runs a provider call in it.
  *
- * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-the-portal-api-must-ask-contributing-apps-in-the-portals-language
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-the-portal-api-must-ask-contributing-apps-in-the-portals-language
  */
 class ContributionLanguage {
 	/**
@@ -60,12 +60,12 @@ class ContributionLanguage {
 	 *
 	 * @param IRequest       $request The current request.
 	 * @param IConfig        $config  For an instance-wide `force_language`.
-	 * @param PortalResolver $portals Resolves the portal the request is for.
+	 * @param PortalResolverInterface $portals Resolves the portal the request is for.
 	 */
 	public function __construct(
 		private readonly IRequest $request,
 		private readonly IConfig $config,
-		private readonly PortalResolver $portals,
+		private readonly PortalResolverInterface $portals,
 	) {
 	}//end __construct()
 
@@ -82,7 +82,7 @@ class ContributionLanguage {
 	 *
 	 * @return string A language code, or '' to leave the choice to Nextcloud.
 	 *
-	 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-the-portal-api-must-ask-contributing-apps-in-the-portals-language
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-the-portal-api-must-ask-contributing-apps-in-the-portals-language
 	 */
 	public function languageFor(array $subject=[]): string {
 		$locales = $this->portalLocales(organisation: (string)($subject['organisation'] ?? ''));
@@ -116,7 +116,7 @@ class ContributionLanguage {
 	 *
 	 * @return mixed What the call returns.
 	 *
-	 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-the-portal-api-must-ask-contributing-apps-in-the-portals-language
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-the-portal-api-must-ask-contributing-apps-in-the-portals-language
 	 */
 	public function speak(string $language, callable $call): mixed {
 		if ($language === '' || $this->languageAlreadyForced() === true
@@ -169,7 +169,7 @@ class ContributionLanguage {
 	 */
 	private function portalLocales(string $organisation): array {
 		try {
-			$slug = trim($this->request->getHeader(CaseTypeVisibility::HEADER));
+			$slug = trim($this->request->getHeader(CaseTypeVisibilityInterface::HEADER));
 			if ($slug === '') {
 				$slug = null;
 			}

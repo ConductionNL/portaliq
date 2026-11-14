@@ -24,7 +24,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\QuietHoursGuardianController;
 use OCA\Portaliq\Service\Notifications\QuietHoursPolicy;
-use OCA\Portaliq\Service\Session\BearerSessionResolver;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;

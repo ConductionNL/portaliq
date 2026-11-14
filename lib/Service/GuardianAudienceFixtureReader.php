@@ -24,13 +24,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/news-and-newsletter-authoring/design.md#audience-source-seam
+ * @spec openspec/changes/archive/2026-10-09-news-and-newsletter-authoring/design.md#audience-source-seam
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\GuardianAudienceFixtureReaderInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -39,7 +40,7 @@ use Throwable;
  * Resolves a guardian's audience (school/group/child + photo consent) from
  * the interim fixture register.
  *
- * @spec openspec/changes/news-and-newsletter-authoring/design.md#audience-source-seam
+ * @spec openspec/changes/archive/2026-10-09-news-and-newsletter-authoring/design.md#audience-source-seam
  *
  * @SuppressWarnings(PHPMD.StaticAccess) -- NewsAudienceMatcher::matches() is
  * deliberately the ONE stateless match predicate every caller (this class,
@@ -50,7 +51,7 @@ use Throwable;
  * replaced as a whole when the real audience source lands, so splitting it
  * now would only spread the seam.
  */
-class GuardianAudienceFixtureReader {
+class GuardianAudienceFixtureReader implements GuardianAudienceFixtureReaderInterface {
 	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
 
@@ -96,7 +97,7 @@ class GuardianAudienceFixtureReader {
 	 *
 	 * @return array{schoolRef: string, groupRefs: array<int, string>, childRefs: array<int, string>, photoConsent: array<string, array<string, bool>>}
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/design.md#audience-source-seam
+	 * @spec openspec/changes/archive/2026-10-09-news-and-newsletter-authoring/design.md#audience-source-seam
 	 */
 	public function resolveAudience(string $subjectRef): array {
 		$empty = ['schoolRef' => '', 'groupRefs' => [], 'childRefs' => [], 'photoConsent' => []];
@@ -146,7 +147,7 @@ class GuardianAudienceFixtureReader {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/design.md#participation-model
+	 * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#participation-model
 	 */
 	public function guardianReachesGroup(string $subjectRef, string $groupRef): bool {
 		if ($groupRef === '') {
@@ -167,7 +168,7 @@ class GuardianAudienceFixtureReader {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-photos-in-a-news-item-are-gated-by-the-target-childs-photo-consent
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-photos-in-a-news-item-are-gated-by-the-target-childs-photo-consent
 	 */
 	public function photoConsentGranted(string $subjectRef, string $childRef, string $purpose = self::PURPOSE_NEWS): bool {
 		$audience = $this->resolveAudience(subjectRef: $subjectRef);
@@ -190,7 +191,7 @@ class GuardianAudienceFixtureReader {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-photos-in-a-news-item-are-gated-by-the-target-childs-photo-consent
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-photos-in-a-news-item-are-gated-by-the-target-childs-photo-consent
 	 */
 	public function childPhotoConsentGranted(string $childRef, string $purpose = self::PURPOSE_NEWS): bool {
 		if ($childRef === '') {
@@ -270,8 +271,8 @@ class GuardianAudienceFixtureReader {
 	 *
 	 * @return array<int, string> Distinct guardian subjectRefs.
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
-	 * @spec openspec/changes/guardian-enumeration-from-the-school-app/tasks.md#T2
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
+	 * @spec openspec/changes/archive/2026-10-07-guardian-enumeration-from-the-school-app/tasks.md#T2
 	 */
 	public function guardiansMatching(array $target): array {
 		$fixture = $this->fixtureGuardiansMatching(target: $target);

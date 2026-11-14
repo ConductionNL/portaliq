@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md
  */
 
 declare(strict_types=1);
@@ -27,7 +27,7 @@ namespace OCA\Portaliq\Service\Intake;
 /**
  * Reads the fields of a published form.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md
  */
 class PortalFormFields {
 	/**
@@ -49,7 +49,7 @@ class PortalFormFields {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	public function fieldsOf(array $form): array {
 		$fields = ($form['fields'] ?? []);

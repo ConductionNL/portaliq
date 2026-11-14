@@ -26,7 +26,7 @@ use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
-use OCA\Portaliq\Service\Session\BearerSessionResolver;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCA\Portaliq\Service\PortalTaskGateway;
 use OCA\Portaliq\Service\SubmissionReceiptService;
 use OCP\AppFramework\Http;
@@ -34,6 +34,17 @@ use OCP\IL10N;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Service\CaseRowMarker;
+use OCA\Portaliq\Contribution\CreateActionMatcher;
+use OCA\Portaliq\Contribution\CreateBody;
+use OCA\Portaliq\Contribution\InboxMessageFields;
+use OCA\Portaliq\Contribution\PageChoice;
+use OCA\Portaliq\Service\RequestedPortal;
+use OCA\Portaliq\Service\RequiredFieldsGuard;
+use OCA\Portaliq\Contribution\RowIdentifier;
+use OCA\Portaliq\Contribution\ThemeChoice;
+use OCA\Portaliq\Service\VisibleFromGate;
+use OCA\Portaliq\Service\WriteRefusal;
 
 /**
  * The proxy's fail-closed edge and refusal mapping (design D-3): no bearer
@@ -743,6 +754,17 @@ class PortalTaskProxyControllerTest extends TestCase {
 			$this->receiptMock(),
 			$this->createMock(NotificationDispatchService::class),
 			$this->createMock(LoggerInterface::class),
+			new CaseRowMarker(),
+			new CreateActionMatcher(),
+			new CreateBody(),
+			new InboxMessageFields(),
+			new PageChoice(),
+			new RequestedPortal(),
+			new RequiredFieldsGuard(),
+			new RowIdentifier(),
+			new ThemeChoice(),
+			new VisibleFromGate(),
+			new WriteRefusal(),
 			$gateway
 		);
 	}//end contributionController()

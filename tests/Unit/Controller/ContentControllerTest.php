@@ -31,7 +31,7 @@ use OCA\Portaliq\Service\PortalNoticeReader;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\SiteOrganisation;
 use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\Session\BearerSessionResolver;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCA\Portaliq\Service\PublishedPortals;
 use OCA\Portaliq\Service\TrafficConfigResolver;
 use OCP\App\IAppManager;
@@ -45,6 +45,7 @@ use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Service\Assistant\PublicSourceScope;
 
 /**
  * The public content API's boundary behaviour.
@@ -176,7 +177,7 @@ class ContentControllerTest extends TestCase {
 			userSession: ($this->userSession ?? $this->createMock(IUserSession::class)),
 			assistant: $assistant,
 			registrationDoor: $this->registrationDoor,
-			siteOrganisation: ($this->organisations === null) ? null : new SiteOrganisation(organisations: $this->organisations)
+			siteOrganisation: ($this->organisations === null) ? null : new SiteOrganisation(organisations: $this->organisations), publicSourceScope: new PublicSourceScope()
 		);
 	}//end controller()
 

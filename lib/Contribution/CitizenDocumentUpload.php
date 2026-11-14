@@ -23,21 +23,22 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+ * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
-use OCA\Portaliq\Service\UploadedFile;
+use OCA\Portaliq\Kernel\Contracts\CitizenDocumentUploadInterface;
+use OCA\Portaliq\Kernel\Support\UploadedFile;
 
 /**
  * Reads the citizen's upload and names it so it adds rather than replaces.
  *
- * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+ * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
-class CitizenDocumentUpload {
+class CitizenDocumentUpload implements CitizenDocumentUploadInterface {
 
 	/**
 	 * Read the multipart upload into a {name, content} pair, or null when
@@ -47,7 +48,7 @@ class CitizenDocumentUpload {
 	 *
 	 * @return array{name: string, content: string}|null
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	public function read(?array $uploaded): ?array {
 		return (new UploadedFile())->read(uploaded: $uploaded);
@@ -62,7 +63,7 @@ class CitizenDocumentUpload {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	public function uniqueName(array $existing, string $fileName): string {
 		$taken = [];

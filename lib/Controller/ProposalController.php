@@ -23,19 +23,19 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+ * @spec openspec/specs/change-proposal-queue/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
-use OCA\Portaliq\Service\PortalObjectReader;
-use OCA\Portaliq\Service\Proposals\ProposalService;
-use OCA\Portaliq\Service\Session\BearerSessionResolver;
-use OCA\Portaliq\Service\Tasks\PortalCaseAccessGuard;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalCaseAccessGuardInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
+use OCA\Portaliq\Kernel\Contracts\ProposalServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -50,7 +50,7 @@ use OCP\IUserSession;
 /**
  * Takes proposals and decides them.
  *
- * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+ * @spec openspec/specs/change-proposal-queue/spec.md
  *
  * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- one dependency per step:
  * the session, the contribution allow-list, the record, the queue, the guard.
@@ -62,23 +62,23 @@ class ProposalController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param ProposalService $proposals The queue itself.
-	 * @param PortalContributionRegistry $registry The contribution aggregator.
-	 * @param PortalObjectReader $reader Reads the record being proposed about.
+	 * @param ProposalServiceInterface $proposals The queue itself.
+	 * @param PortalContributionRegistryInterface $registry The contribution aggregator.
+	 * @param PortalObjectReaderInterface $reader Reads the record being proposed about.
 	 * @param BearerSessionResolver $session Resolves a portal subject.
-	 * @param PortalCaseAccessGuard $guard Decides who may review.
+	 * @param PortalCaseAccessGuardInterface $guard Decides who may review.
 	 * @param IUserSession $userSession The staff user, when there is one.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly ProposalService $proposals,
-		private readonly PortalContributionRegistry $registry,
-		private readonly PortalObjectReader $reader,
+		private readonly ProposalServiceInterface $proposals,
+		private readonly PortalContributionRegistryInterface $registry,
+		private readonly PortalObjectReaderInterface $reader,
 		private readonly BearerSessionResolver $session,
-		private readonly PortalCaseAccessGuard $guard,
+		private readonly PortalCaseAccessGuardInterface $guard,
 		private readonly IUserSession $userSession,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -92,7 +92,7 @@ class ProposalController extends Controller {
 	 *
 	 * @return JSONResponse The queued proposal, or a refusal.
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -130,7 +130,7 @@ class ProposalController extends Controller {
 	 *
 	 * @return JSONResponse The queued proposal, or a refusal.
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	#[NoAdminRequired]
 	public function proposeAsColleague(
@@ -178,10 +178,10 @@ class ProposalController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	#[NoAdminRequired]
-	public function index(string $register, string $schema, string $id, string $state = ProposalService::STATE_QUEUED): JSONResponse {
+	public function index(string $register, string $schema, string $id, string $state = ProposalServiceInterface::STATE_QUEUED): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
@@ -198,7 +198,7 @@ class ProposalController extends Controller {
 			register: $register,
 			schema: $schema,
 			id: $id,
-			action: PortalCaseAccessGuard::ACTION_REVIEW_PROPOSAL
+			action: PortalCaseAccessGuardInterface::ACTION_REVIEW_PROPOSAL
 		);
 		if ($mayReview === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
@@ -217,7 +217,7 @@ class ProposalController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/guardian-self-service-profile/specs/change-proposal-queue/spec.md#requirement-a-proposer-can-list-their-own-proposals-req-cpq-005
+	 * @spec openspec/specs/change-proposal-queue/spec.md#requirement-a-proposer-can-list-their-own-proposals-req-cpq-005
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -241,7 +241,7 @@ class ProposalController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	#[NoAdminRequired]
 	public function accept(string $id): JSONResponse {
@@ -268,7 +268,7 @@ class ProposalController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	#[NoAdminRequired]
 	public function acceptConfirmingDrift(string $id): JSONResponse {
@@ -290,7 +290,7 @@ class ProposalController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	private function acceptAnswer(array $result): JSONResponse {
 		if (isset($result['error']) === false) {
@@ -313,7 +313,7 @@ class ProposalController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	#[NoAdminRequired]
 	public function reject(string $id, string $reason = ''): JSONResponse {
@@ -337,7 +337,7 @@ class ProposalController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -404,7 +404,7 @@ class ProposalController extends Controller {
 			register: (string)($proposal['subjectRegister'] ?? ''),
 			schema: (string)($proposal['subjectSchema'] ?? ''),
 			id: (string)($proposal['subjectId'] ?? ''),
-			action: PortalCaseAccessGuard::ACTION_REVIEW_PROPOSAL
+			action: PortalCaseAccessGuardInterface::ACTION_REVIEW_PROPOSAL
 		);
 	}//end mayReview()
 

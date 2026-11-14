@@ -13,12 +13,14 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-endpoint-must-return-one-pages-figures-for-a-period
+ * @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-endpoint-must-return-one-pages-figures-for-a-period
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic;
+
+use OCA\Portaliq\Kernel\Contracts\TrafficPageReportInterface;
 
 /**
  * One page's figures over a span of "all visits" daily records. Pure.
@@ -31,9 +33,9 @@ namespace OCA\Portaliq\Service\Traffic;
  * sums and counted apart, and when no day carries them the figure is
  * null. A zero there would say "nobody", where the truth is "not counted".
  *
- * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-endpoint-must-return-one-pages-figures-for-a-period
+ * @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-endpoint-must-return-one-pages-figures-for-a-period
  */
-class TrafficPageReport {
+class TrafficPageReport implements TrafficPageReportInterface {
 
 	/**
 	 * The most rows each list of the answer carries.
@@ -83,7 +85,7 @@ class TrafficPageReport {
 	 *                              sessions, visitors, engagedSessions, previous, next,
 	 *                              referrers, outbound.
 	 *
-	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-endpoint-must-return-one-pages-figures-for-a-period
+	 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-endpoint-must-return-one-pages-figures-for-a-period
 	 */
 	public function fold(array $records, string $route): array {
 		$state = [

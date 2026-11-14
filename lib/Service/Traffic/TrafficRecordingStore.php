@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+ * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use Throwable;
  * Reached by duck typing through the container like TrafficEventStore,
  * so a missing OpenRegister degrades to "nothing stored, nothing read".
  *
- * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+ * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
  */
 class TrafficRecordingStore {
 	use ObjectServiceLookup;
@@ -90,7 +90,7 @@ class TrafficRecordingStore {
 	 *
 	 * @return array<string, mixed>|null The object, with its `@self`.
 	 *
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 	 */
 	public function find(string $portal, string $recordingId): ?array {
 		foreach ($this->findAll(filters: ['portal' => $portal, 'recordingId' => $recordingId], limit: 5) as $row) {
@@ -110,7 +110,7 @@ class TrafficRecordingStore {
 	 *
 	 * @return bool True when saved.
 	 *
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 	 */
 	public function save(array $recording, ?string $uuid): bool {
 		$objectService = $this->objectService();
@@ -145,7 +145,7 @@ class TrafficRecordingStore {
 	 *
 	 * @return int How many were removed.
 	 *
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 	 */
 	public function purgeExpired(): int {
 		return $this->purgeExpiredOf(schema: self::SCHEMA, failure: 'Portaliq: traffic recording purge failed');
@@ -158,7 +158,7 @@ class TrafficRecordingStore {
 	 *
 	 * @return int How many were removed.
 	 *
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 	 */
 	protected function deleteExpired(object $objectService): int {
 		$now = gmdate('Y-m-d\TH:i:s\Z');
@@ -183,7 +183,7 @@ class TrafficRecordingStore {
 	 *
 	 * @return string The uuid.
 	 *
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 	 */
 	public function uuidOf(array $row): string {
 		return trim((string)($row['@self']['uuid'] ?? $row['uuid'] ?? $row['@self']['id'] ?? $row['id'] ?? ''));

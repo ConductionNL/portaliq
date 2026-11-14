@@ -34,12 +34,13 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\Mail\MailLog;
-use OCA\Portaliq\Service\Mail\MailTemplateRenderer;
-use OCA\Portaliq\Service\Mail\MailSite;
-use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use DateTimeInterface;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalIdentityMailerInterface;
+use OCA\Portaliq\Service\Mail\MailLog;
+use OCA\Portaliq\Service\Mail\MailSite;
+use OCA\Portaliq\Service\Mail\MailTemplateRenderer;
+use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCP\IL10N;
 use OCP\L10N\IFactory;
 use OCP\Mail\IEMailTemplate;
@@ -53,44 +54,13 @@ use Throwable;
  *
  * @spec openspec/specs/portal-ways-in/spec.md#requirement-every-way-in-sends-its-secret-by-mail-req-iwi-001
  */
-class PortalIdentityMailer {
-	/**
-	 * The one-time link to follow one case (identity-ways-in-screens D1).
-	 */
-	public const TEMPLATE_REFERENCE_LINK = 'reference-link';
-
-	/**
-	 * The invitation into the portal (identity-staff-account-screens D2).
-	 */
-	public const TEMPLATE_INVITATION = 'invitation';
-
-	/**
-	 * The confirmation of a new address (identity-profile-page D1).
-	 */
-	public const TEMPLATE_EMAIL_CONFIRMATION = 'email-confirmation';
-
-	/**
-	 * The activation link of a self-registration (identity-ways-in-screens D4).
-	 */
-	public const TEMPLATE_REGISTRATION_ACTIVATION = 'registration-activation';
-
-	/**
-	 * The invitation of a waiting account an app provisioned: the person
-	 * follows the link, signs in, and the waiting account joins theirs
-	 * (invitation-secret-joins-the-signed-in-account).
-	 */
-	public const TEMPLATE_ACCOUNT_INVITATION = 'account-invitation';
+class PortalIdentityMailer implements PortalIdentityMailerInterface {
 
 	/**
 	 * The invitation of a resident to become a contact of another resident
 	 * (own-contacts-and-invitations REQ-ROC-003).
 	 */
 	public const TEMPLATE_CONTACT_INVITATION = 'contact-invitation';
-
-	/**
-	 * The invitation to act on someone's behalf (site-mandates-the-represented-manage).
-	 */
-	public const TEMPLATE_MANDATE_INVITATION = 'mandate-invitation';
 
 	/**
 	 * The one-time sign-in link of an `email` account (sign-in-with-an-email-link).
@@ -299,7 +269,7 @@ class PortalIdentityMailer {
 	 */
 	private function deliver(IdentityMailRun $run): bool {
 		try {
-			$l10n   = $this->l10nFactory->get(Application::APP_ID, $this->site->language(portal: $run->portal));
+			$l10n   = $this->l10nFactory->get(AppIdentity::APP_ID, $this->site->language(portal: $run->portal));
 			$failed = $this->mailer->send($this->messageTo(email: $run->email, mail: $this->composeMail(run: $run, l10n: $l10n)));
 		} catch (Throwable $failure) {
 			// The exception's own message is left out on purpose: a transport
@@ -476,7 +446,7 @@ class PortalIdentityMailer {
 	 *
 	 * @return bool True when the mail left.
 	 *
-	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function sendClaimNotice(string $email, string $organisation, DateTimeInterface $moment): bool {
 		return $this->notice(
@@ -580,7 +550,7 @@ class PortalIdentityMailer {
 	 */
 	private function noticeMail(IdentityNotice $notice, string $name): IEMailTemplate {
 		$keys = self::NOTICES[$notice->template];
-		$l10n = $this->l10nFactory->get(Application::APP_ID, $this->site->language(portal: $notice->portal));
+		$l10n = $this->l10nFactory->get(AppIdentity::APP_ID, $this->site->language(portal: $notice->portal));
 		$day  = (string)$l10n->l($keys['moment'], $notice->moment, ['width' => 'long']);
 
 		$mail = $this->mailer->createEMailTemplate('portaliq.identity.' . $notice->template, []);

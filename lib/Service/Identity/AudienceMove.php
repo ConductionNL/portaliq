@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ use Throwable;
 /**
  * Decides and records an audience move.
  *
- * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 class AudienceMove {
 	/**
@@ -78,7 +78,7 @@ class AudienceMove {
 	 *
 	 * @return UnboundAccount
 	 *
-	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function rules(string $organisation, mixed $trust): UnboundAccount {
 		return new UnboundAccount(trust: $trust, audiences: $this->audiences(organisation: $organisation));
@@ -94,7 +94,7 @@ class AudienceMove {
 	 *
 	 * @return array<int, string>
 	 *
-	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function audiences(string $organisation): array {
 		try {
@@ -130,7 +130,7 @@ class AudienceMove {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function record(array $account, string $accountId, array $waiting, string $jti, DateTimeImmutable $moment): void {
 		$organisation = (string)($account['organisation'] ?? '');

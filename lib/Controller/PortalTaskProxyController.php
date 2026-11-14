@@ -34,22 +34,22 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
- * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
+ * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
+ * @spec openspec/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Event\PortalClientWriteEvent;
-use OCA\Portaliq\Service\AuditTrailService;
-use OCA\Portaliq\Service\CitizenWriteRecorder;
-use OCA\Portaliq\Service\PortalTaskGateway;
-use OCA\Portaliq\Service\Session\BearerSessionResolver;
-use OCA\Portaliq\Service\SubmissionReceiptService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\AuditTrailServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\CitizenWriteRecorderInterface;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
+use OCA\Portaliq\Kernel\Contracts\PortalTaskGatewayInterface;
+use OCA\Portaliq\Kernel\Contracts\SubmissionReceiptServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -62,7 +62,7 @@ use OCP\IRequest;
 /**
  * Bearer-guarded proxy for the subject's portal tasks.
  *
- * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
+ * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
  */
 class PortalTaskProxyController extends Controller implements PortalProtected {
 
@@ -96,23 +96,23 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 	 *
 	 * @param IRequest $request The request.
 	 * @param BearerSessionResolver $session Resolves the bearer subject (fail-closed).
-	 * @param PortalTaskGateway $gateway The assertion-signed seam client.
-	 * @param AuditTrailService $auditor Records the `complete` audit fact (fail-safe, never throws).
-	 * @param SubmissionReceiptService $receiptService WMEBV ontvangstbevestiging + proof log (fail-safe, never throws).
-	 * @param CitizenWriteRecorder $recorder Announces a citizen's task answer
+	 * @param PortalTaskGatewayInterface $gateway The assertion-signed seam client.
+	 * @param AuditTrailServiceInterface $auditor Records the `complete` audit fact (fail-safe, never throws).
+	 * @param SubmissionReceiptServiceInterface $receiptService WMEBV ontvangstbevestiging + proof log (fail-safe, never throws).
+	 * @param CitizenWriteRecorderInterface $recorder Announces a citizen's task answer
 	 *                                       as a portal write.
 	 * @param IL10N $l10n The sentence a second answer is refused with.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly BearerSessionResolver $session,
-		private readonly PortalTaskGateway $gateway,
-		private readonly AuditTrailService $auditor,
-		private readonly SubmissionReceiptService $receiptService,
-		private readonly CitizenWriteRecorder $recorder,
+		private readonly PortalTaskGatewayInterface $gateway,
+		private readonly AuditTrailServiceInterface $auditor,
+		private readonly SubmissionReceiptServiceInterface $receiptService,
+		private readonly CitizenWriteRecorderInterface $recorder,
 		private readonly IL10N $l10n,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -123,7 +123,7 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The seam's page {results, total, limit, offset}, or a refusal.
 	 *
-	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -144,7 +144,7 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The seam's task row, or a refusal.
 	 *
-	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -176,7 +176,7 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The completed task row, or a refusal.
 	 *
-	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
 	 * @spec openspec/specs/supplier-portal/spec.md#append-only-portal-audit-trail-on-every-mutation-download-and-session-event
 	 * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
 	 * @spec openspec/specs/supplier-portal/spec.md#proof-of-receipt-log-satisfying-the-wmebv-burden-of-proof
@@ -300,7 +300,7 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	private function announceClientAnswer(TaskCompletionRun $run, ?array $answer): void {
 		if ($answer === null
@@ -332,7 +332,7 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	private function isAnswered(array $task): bool {
 		return $this->hasAnsweredStamp(task: $task) === true || $this->hasAnsweredState(task: $task) === true;
@@ -437,7 +437,7 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 		$this->receiptService->record(
 			subjectRef: (string)($run->subject['subjectRef'] ?? ''),
 			organisation: (string)($run->subject['organisation'] ?? ''),
-			appId: Application::APP_ID,
+			appId: AppIdentity::APP_ID,
 			actionId: self::ACTION_COMPLETE,
 			whitelistedData: $this->completionCopy(run: $run, task: $task),
 			audience: (string)($run->subject['audience'] ?? ''),
@@ -473,7 +473,7 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
 	 */
 	private function relay(?array $answer): JSONResponse {
 		if ($answer === null) {

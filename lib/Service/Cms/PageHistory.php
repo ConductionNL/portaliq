@@ -28,7 +28,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Cms;
 
 use DateTimeInterface;
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PageHistoryInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -49,7 +50,7 @@ use Throwable;
  * The rows are checked against portaliq's own page schema, so a uuid of some
  * other object never lends its trail to a page editor.
  */
-class PageHistory {
+class PageHistory implements PageHistoryInterface {
 
 	private const TRAIL_MAPPER = 'OCA\\OpenRegister\\Db\\AuditTrailMapper';
 
@@ -85,7 +86,7 @@ class PageHistory {
 		try {
 			$trail   = $this->container->get(self::TRAIL_MAPPER);
 			$schemas = $this->container->get(self::SCHEMA_MAPPER);
-			$schema  = $schemas->findByApplicationAndSlug(slug: 'page', application: Application::APP_ID);
+			$schema  = $schemas->findByApplicationAndSlug(slug: 'page', application: AppIdentity::APP_ID);
 			if ($schema === null) {
 				return [];
 			}

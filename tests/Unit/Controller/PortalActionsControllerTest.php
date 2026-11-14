@@ -12,7 +12,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Controller\PortalActionsController;
 use OCA\Portaliq\Service\Actions\PortalActionService;
-use OCA\Portaliq\Service\Session\BearerSessionResolver;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 

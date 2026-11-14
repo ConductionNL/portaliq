@@ -25,11 +25,11 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
-use OCA\Portaliq\Service\Actions\PortalActionService;
-use OCA\Portaliq\Service\Plans\PortalPlanService;
-use OCA\Portaliq\Service\Session\BearerSessionResolver;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalActionServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalPlanServiceInterface;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -60,14 +60,14 @@ class PortalActionsController extends Controller implements PortalProtected {
 	 *
 	 * @param IRequest $request The request.
 	 * @param BearerSessionResolver $session Resolves the subject from the bearer.
-	 * @param PortalActionService $actions The action rules.
+	 * @param PortalActionServiceInterface $actions The action rules.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly BearerSessionResolver $session,
-		private readonly PortalActionService $actions,
+		private readonly PortalActionServiceInterface $actions,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -106,7 +106,7 @@ class PortalActionsController extends Controller implements PortalProtected {
 		}
 
 		$result = $this->actions->create(subject: $subject, data: $this->sent());
-		if ($result['status'] !== PortalPlanService::OK) {
+		if ($result['status'] !== PortalPlanServiceInterface::OK) {
 			return $this->answer(result: $result['status']);
 		}
 
@@ -178,7 +178,7 @@ class PortalActionsController extends Controller implements PortalProtected {
 
 		$lines = $this->actions->history(subject: $subject, id: $id, planId: $plan);
 		if ($lines === null) {
-			return $this->answer(result: PortalPlanService::NOT_FOUND);
+			return $this->answer(result: PortalPlanServiceInterface::NOT_FOUND);
 		}
 
 		return new JSONResponse(['history' => $lines]);
@@ -227,7 +227,7 @@ class PortalActionsController extends Controller implements PortalProtected {
 			return $this->unauthenticated();
 		}
 
-		return ($this->actions->file(subject: $subject, id: $id, planId: $plan) ?? $this->answer(result: PortalPlanService::NOT_FOUND));
+		return ($this->actions->file(subject: $subject, id: $id, planId: $plan) ?? $this->answer(result: PortalPlanServiceInterface::NOT_FOUND));
 	}//end file()
 
 	/**

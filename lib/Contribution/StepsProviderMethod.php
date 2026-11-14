@@ -25,19 +25,21 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cases-collection-may-supply-steps-an-answer-date-and-whose-turn-it-is-req-smo-022
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-cases-collection-may-supply-steps-an-answer-date-and-whose-turn-it-is-req-smo-022
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\StepsProviderMethodInterface;
+
 /**
  * Keeps a cases collection's progress keys, and the provider's steps, in shape.
  *
- * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cases-collection-may-supply-steps-an-answer-date-and-whose-turn-it-is-req-smo-022
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-cases-collection-may-supply-steps-an-answer-date-and-whose-turn-it-is-req-smo-022
  */
-class StepsProviderMethod {
+class StepsProviderMethod implements StepsProviderMethodInterface {
 	/**
 	 * The states a step may be in.
 	 */
@@ -51,7 +53,7 @@ class StepsProviderMethod {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cases-collection-may-supply-steps-an-answer-date-and-whose-turn-it-is-req-smo-022
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-cases-collection-may-supply-steps-an-answer-date-and-whose-turn-it-is-req-smo-022
 	 */
 	public function normalise(array $collection): array {
 		$declared = [
@@ -93,7 +95,7 @@ class StepsProviderMethod {
 	 *
 	 * @return array<int, array<string, string>>
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cases-collection-may-supply-steps-an-answer-date-and-whose-turn-it-is-req-smo-022
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-cases-collection-may-supply-steps-an-answer-date-and-whose-turn-it-is-req-smo-022
 	 */
 	public function steps(array $entries): array {
 		$out = [];

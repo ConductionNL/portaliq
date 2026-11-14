@@ -28,10 +28,11 @@ use OCA\Portaliq\Service\Plans\PlanFiles;
 use OCA\Portaliq\Service\Plans\PortalPlanService;
 use OCA\Portaliq\Service\PortalPdfExport;
 use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\Session\BearerSessionResolver;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\AppFramework\Http\StreamResponse;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Service\RequestedPortal;
 
 /**
  * 401 without a session, the outcomes as statuses, only the allowed fields
@@ -66,7 +67,7 @@ class PortalPlansControllerTest extends TestCase {
 			$portals->method('resolve')->willReturn(['slug' => 'zuid']);
 		}
 
-		return new PortalPlansController($request, $session, $plans, $portals, $pdf, $files);
+		return new PortalPlansController($request, $session, $plans, $portals, new RequestedPortal(), $pdf, $files);
 	}//end controller()
 
 	/**

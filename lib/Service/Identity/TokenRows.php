@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
 
 declare(strict_types=1);
@@ -29,7 +29,7 @@ namespace OCA\Portaliq\Service\Identity;
 /**
  * Helpers over rows found by a token hash.
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
 final class TokenRows {
 	/**
@@ -41,7 +41,7 @@ final class TokenRows {
 	 *
 	 * @return array<string, mixed>|null
 	 *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public static function matching(array $rows, string $hash): ?array {
 		foreach ($rows as $row) {
@@ -60,7 +60,7 @@ final class TokenRows {
 	 *
 	 * @return string The identifier, or '' when the row carries none.
 	 *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public static function identifierOf(array $row): string {
 		$id = (string)($row['uuid'] ?? $row['id'] ?? '');

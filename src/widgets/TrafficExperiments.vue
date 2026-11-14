@@ -11,7 +11,7 @@
   crowned one would be read as a result. The verdict is re-derived from
   the summed counts of the range, never averaged over days.
 
-  @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-winner-must-only-be-named-with-enough-sessions-and-a-significant-difference
+  @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-winner-must-only-be-named-with-enough-sessions-and-a-significant-difference
 -->
 <template>
 	<div class="traffic-table" data-testid="traffic-experiments">
@@ -121,7 +121,7 @@ export default {
 		 * portal declares that no day counted yet, so a freshly started
 		 * experiment is a row with zeros rather than absent.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
 		 * @return {Array<object>} The rows.
 		 */
 		experiments() {
@@ -166,7 +166,7 @@ export default {
 		/**
 		 * The selected portal's object id, for the link to its detail page.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
 		 * @return {string} The id, or ''.
 		 */
 		portalId() {
@@ -180,7 +180,7 @@ export default {
 		/**
 		 * The status as a word.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
 		 * @param {string} status The status.
 		 * @return {string} The label.
 		 */
@@ -195,7 +195,7 @@ export default {
 		 * The sentence above the table: not enough data, a winner with
 		 * its confidence, or no clear difference yet.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-winner-must-only-be-named-with-enough-sessions-and-a-significant-difference
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-winner-must-only-be-named-with-enough-sessions-and-a-significant-difference
 		 * @param {object} experiment The experiment row.
 		 * @return {string} The label.
 		 */
@@ -230,7 +230,7 @@ export default {
 		/**
 		 * A rate as a percentage with one decimal.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
 		 * @param {number} rate The rate, 0 to 1.
 		 * @return {string} The percentage.
 		 */

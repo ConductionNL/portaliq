@@ -17,7 +17,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Controller\ContentNewsController;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PublicNewsReader;
-use OCA\Portaliq\Service\Session\BearerSessionResolver;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 

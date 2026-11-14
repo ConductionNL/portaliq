@@ -27,11 +27,11 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
-use OCA\Portaliq\Service\Identity\PortalContactAddressService;
-use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
-use OCA\Portaliq\Service\Session\BearerSessionResolver;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalContactAddressServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalIdentityMailerInterface;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -52,16 +52,16 @@ class PortalContactAddressController extends Controller implements PortalProtect
 	 *
 	 * @param IRequest $request The request.
 	 * @param BearerSessionResolver $session Resolves the subject from the bearer.
-	 * @param PortalContactAddressService $addresses The address and channel rules.
-	 * @param PortalIdentityMailer $mailer Mails the confirmation to a new address.
+	 * @param PortalContactAddressServiceInterface $addresses The address and channel rules.
+	 * @param PortalIdentityMailerInterface $mailer Mails the confirmation to a new address.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly BearerSessionResolver $session,
-		private readonly PortalContactAddressService $addresses,
-		private readonly PortalIdentityMailer $mailer,
+		private readonly PortalContactAddressServiceInterface $addresses,
+		private readonly PortalIdentityMailerInterface $mailer,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -96,7 +96,7 @@ class PortalContactAddressController extends Controller implements PortalProtect
 		}
 
 		$sent = $this->mailer->send(
-			template: PortalIdentityMailer::TEMPLATE_EMAIL_CONFIRMATION,
+			template: PortalIdentityMailerInterface::TEMPLATE_EMAIL_CONFIRMATION,
 			email: $added['value'],
 			secret: $added['confirmationToken'],
 			organisation: (string)($subject['organisation'] ?? '')

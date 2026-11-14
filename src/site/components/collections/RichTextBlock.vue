@@ -36,7 +36,7 @@ import { richTextLines } from './richText.js'
  * never puts markup on the page. Every line here is a text node, so there is
  * nothing to sanitise.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-rich-text-must-stay-text-only-req-srp-018
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-rich-text-must-stay-text-only-req-srp-018
  */
 export default {
 	name: 'RichTextBlock',

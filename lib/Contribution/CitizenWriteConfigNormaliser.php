@@ -24,23 +24,21 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+ * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\CitizenWriteConfigNormaliserInterface;
+
 /**
  * Validates the per-action `citizenWrite` declaration, fail closed.
  *
- * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+ * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
-class CitizenWriteConfigNormaliser {
-	/**
-	 * The manifest key carrying the declaration.
-	 */
-	public const KEY = 'citizenWrite';
+class CitizenWriteConfigNormaliser implements CitizenWriteConfigNormaliserInterface {
 
 	/**
 	 * Keys the case app MUST supply; without all three the portal cannot
@@ -68,7 +66,7 @@ class CitizenWriteConfigNormaliser {
 	 *
 	 * @return array<string, mixed> The action, with a valid declaration or none.
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	public function normaliseAction(array $action): array {
 		if (array_key_exists(self::KEY, $action) === false) {
@@ -102,7 +100,7 @@ class CitizenWriteConfigNormaliser {
 	 *
 	 * @return array<string, string>|null The sanitised config, or null.
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	private function normaliseConfig(array $declared): ?array {
 		$config = $this->requiredKeys(declared: $declared);

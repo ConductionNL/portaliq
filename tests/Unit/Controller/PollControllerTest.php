@@ -6,7 +6,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\PollController;
 use OCA\Portaliq\Service\PollService;
-use OCA\Portaliq\Service\Session\BearerSessionResolver;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;

@@ -39,12 +39,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Kernel\Contracts\PortalBindingPreviewInterface;
+
 /**
  * Describes one binding's current resolution for an administrator.
  *
  * @spec openspec/specs/portal-intake-form/spec.md#requirement-a-portal-page-binds-to-a-published-form-not-to-a-field-list-req-pifo-001
  */
-class PortalBindingPreview {
+class PortalBindingPreview implements PortalBindingPreviewInterface {
 
 	/**
 	 * The binding resolves to a published form an audience can reach.

@@ -25,7 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\Service\Session\BearerSessionResolver;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -41,7 +41,7 @@ final class SignedInSubject {
 	 * no subject.
 	 *
 	 * @param BearerSessionResolver $session Resolves the subject from the bearer.
-	 * @param IRequest              $request The request carrying the bearer.
+	 * @param IRequest             $request The request carrying the bearer.
 	 *
 	 * @return array<string, mixed>|null
 	 *

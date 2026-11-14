@@ -34,13 +34,36 @@ export function waysInTranslator(t, locale) {
 		.split(/[-_]/)[0]
 	const own = strings[lang] || strings.en
 	return function translate(key, vars) {
-		const site = typeof t === 'function' ? t(key) : key
-		let text = site !== key || !Object.hasOwn(own, key) ? site : own[key]
-		for (const [name, value] of Object.entries(vars || {})) {
-			text = String(text).split(`{${name}}`).join(String(value))
-		}
-		return text
+		const site = siteText(t, key)
+		const text = site !== key || !Object.hasOwn(own, key) ? site : own[key]
+		return withVariables(text, vars)
 	}
+}
+
+/**
+ * The site's own text for a key, or the key without a site translator.
+ *
+ * @param {(key: string) => string} t The site's translator.
+ * @param {string} key The English source key.
+ * @return {string} The text.
+ */
+function siteText(t, key) {
+	return typeof t === 'function' ? t(key) : key
+}
+
+/**
+ * A text with every `{name}` replaced by its value.
+ *
+ * @param {string} text The text.
+ * @param {object} [vars] The values by name.
+ * @return {string} The filled text; the text as it is without values.
+ */
+function withVariables(text, vars) {
+	let filled = text
+	for (const [name, value] of Object.entries(vars || {})) {
+		filled = String(filled).split(`{${name}}`).join(String(value))
+	}
+	return filled
 }
 
 /**
@@ -53,15 +76,7 @@ export function waysInTranslator(t, locale) {
  */
 export function waysInFrom(signin) {
 	const ways = (signin && signin.waysIn) || {}
-	const types = Array.isArray(ways.referenceCaseTypes)
-		? ways.referenceCaseTypes.filter(
-				(type) =>
-					type
-					&& typeof type.register === 'string'
-					&& typeof type.schema === 'string'
-					&& typeof type.caseType === 'string',
-			)
-		: []
+	const types = referenceCaseTypesOf(ways)
 	return {
 		register: ways.register === true,
 		reference: ways.reference === true && types.length > 0,
@@ -71,6 +86,34 @@ export function waysInFrom(signin) {
 		// "Create an account" (REQ-IWI-014).
 		emailLink: ways.emailLink === true,
 	}
+}
+
+/**
+ * The case types a reference may be asked for, each naming its register,
+ * schema and case type.
+ *
+ * @param {object} ways The site config's `waysIn` block.
+ * @return {Array<object>} The well-formed case types.
+ */
+function referenceCaseTypesOf(ways) {
+	return Array.isArray(ways.referenceCaseTypes)
+		? ways.referenceCaseTypes.filter(isReferenceCaseType)
+		: []
+}
+
+/**
+ * Whether a declared case type names its register, schema and case type.
+ *
+ * @param {object} type The declared case type.
+ * @return {boolean}
+ */
+function isReferenceCaseType(type) {
+	return (
+		Boolean(type)
+		&& typeof type.register === 'string'
+		&& typeof type.schema === 'string'
+		&& typeof type.caseType === 'string'
+	)
 }
 
 /**
@@ -86,20 +129,60 @@ export function waysInFrom(signin) {
  */
 export function takeWayInLink(location, history) {
 	if (captured !== null) {
-		const link = captured
-		captured = null
-		return link
+		return handOverCaptured()
 	}
-	const match = String((location && location.hash) || '').match(LINK)
+	const match = linkInFragment(location)
 	if (!match) {
 		return null
 	}
 
+	stripFragment(location, history)
+	return linkOf(match)
+}
+
+/**
+ * The e-mail link captured at boot, handed over once.
+ *
+ * @return {{kind: string, token: string}} The link.
+ */
+function handOverCaptured() {
+	const link = captured
+	captured = null
+	return link
+}
+
+/**
+ * A mailed link in the location's fragment, or null.
+ *
+ * @param {Location|object} location The window location.
+ * @return {RegExpMatchArray|null} The kind and the encoded secret.
+ */
+function linkInFragment(location) {
+	return String((location && location.hash) || '').match(LINK)
+}
+
+/**
+ * The link a fragment names, with its secret decoded.
+ *
+ * @param {RegExpMatchArray} match The kind and the encoded secret.
+ * @return {{kind: string, token: string}} The link.
+ */
+function linkOf(match) {
+	return { kind: match[1], token: decodeURIComponent(match[2]) }
+}
+
+/**
+ * Take the fragment off the address bar, where the history allows it.
+ *
+ * @param {Location|object} location The window location.
+ * @param {History|object} history The window history.
+ * @return {void}
+ */
+function stripFragment(location, history) {
 	const url = String(location.href || '').replace(/#.*$/, '')
 	if (history && typeof history.replaceState === 'function') {
 		history.replaceState(null, '', url)
 	}
-	return { kind: match[1], token: decodeURIComponent(match[2]) }
 }
 
 /**
@@ -114,18 +197,12 @@ export function takeWayInLink(location, history) {
  * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-the-e-mail-link-never-reaches-a-log-an-answer-or-the-traffic-store-req-iwi-012
  */
 export function captureEmailLink(location, history) {
-	const match = String((location && location.hash) || '').match(LINK)
+	const match = linkInFragment(location)
 	if (!match || match[1] !== 'email-link') {
 		return false
 	}
-	captured = { kind: match[1], token: decodeURIComponent(match[2]) }
-	if (history && typeof history.replaceState === 'function') {
-		history.replaceState(
-			null,
-			'',
-			String(location.href || '').replace(/#.*$/, ''),
-		)
-	}
+	captured = linkOf(match)
+	stripFragment(location, history)
 	return true
 }
 

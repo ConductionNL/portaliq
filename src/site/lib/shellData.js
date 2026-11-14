@@ -155,7 +155,7 @@ export function footerMenusOf(menus) {
  *   `cta` is `{label, href}` or null, `contact` is `{title, lines}` or null.
  *
  * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-footer-must-be-a-block-whose-bands-are-styled-by-role-req-ptb-005
- * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
+ * @spec openspec/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
  */
 export function footerContentOf(site) {
 	const footer = (site && site.footer) || {}
@@ -261,7 +261,7 @@ export function registerRouteOf(site) {
  * @param {object} site The public site record.
  * @return {{enabled: boolean, label: string, placeholder: string, route: string}} The box.
  *
- * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
+ * @spec openspec/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
  */
 export function headerSearchOf(site) {
 	const search = (site && site.headerSearch) || {}

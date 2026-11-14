@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-translation-work-per-request-is-bounded-and-skips-what-needs-none
+ * @spec openspec/specs/guardian-message-translation/spec.md#requirement-translation-work-per-request-is-bounded-and-skips-what-needs-none
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ namespace OCA\Portaliq\Service\Messaging;
 /**
  * Attaches (and stores) AI translations for one reader.
  *
- * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-translation-work-per-request-is-bounded-and-skips-what-needs-none
+ * @spec openspec/specs/guardian-message-translation/spec.md#requirement-translation-work-per-request-is-bounded-and-skips-what-needs-none
  */
 class GuardianMessageTranslator {
 	/**
@@ -77,11 +77,11 @@ class GuardianMessageTranslator {
 	 * @return array<int, array<string, mixed>> The same messages, each carrying
 	 *                                          `translation` when one applies.
 	 *
-	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-translation-work-per-request-is-bounded-and-skips-what-needs-none
-	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-the-stored-message-keeps-both-texts-and-the-provenance
-	 * @spec openspec/changes/news-item-translation/specs/guardian-message-translation/spec.md#requirement-a-news-item-keeps-its-ai-translations-next-to-the-original
-	 * @spec openspec/changes/news-title-and-newsletter-translation/specs/guardian-message-translation/spec.md#requirement-a-news-title-is-translated-with-its-body
-	 * @spec openspec/changes/newsletter-title-translation/specs/guardian-message-translation/spec.md#requirement-a-newsletter-keeps-its-title-translations-next-to-the-original
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-translation-work-per-request-is-bounded-and-skips-what-needs-none
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-the-stored-message-keeps-both-texts-and-the-provenance
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-a-news-item-keeps-its-ai-translations-next-to-the-original
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-a-news-title-is-translated-with-its-body
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-a-newsletter-keeps-its-title-translations-next-to-the-original
 	 */
 	public function forReader(
 		array $messages,
@@ -180,9 +180,9 @@ class GuardianMessageTranslator {
 	 *
 	 * @return array<string, mixed>|null The new entry, or null.
 	 *
-	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-the-stored-message-keeps-both-texts-and-the-provenance
-	 * @spec openspec/changes/news-title-and-newsletter-translation/specs/guardian-message-translation/spec.md#requirement-a-news-title-is-translated-with-its-body
-	 * @spec openspec/changes/newsletter-title-translation/specs/guardian-message-translation/spec.md#requirement-a-newsletter-keeps-its-title-translations-next-to-the-original
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-the-stored-message-keeps-both-texts-and-the-provenance
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-a-news-title-is-translated-with-its-body
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-a-newsletter-keeps-its-title-translations-next-to-the-original
 	 */
 	private function translateAndStore(array $message, string $language, string $schema, array $fields): ?array {
 		$id = $this->store->rowId(row: $message);
@@ -242,7 +242,7 @@ class GuardianMessageTranslator {
 	 *
 	 * @return array<string, mixed> The entry, with its title when hermiq labelled one.
 	 *
-	 * @spec openspec/changes/news-title-and-newsletter-translation/specs/guardian-message-translation/spec.md#requirement-a-news-title-is-translated-with-its-body
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-a-news-title-is-translated-with-its-body
 	 */
 	private function addTitle(array $message, array $entry, string $schema, string $titleField): array {
 		$id = $this->store->rowId(row: $message);

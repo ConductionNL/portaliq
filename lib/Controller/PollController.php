@@ -18,17 +18,17 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/parent-polls/specs/parent-polls/spec.md
+ * @spec openspec/specs/parent-polls/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\ActionAuthService;
-use OCA\Portaliq\Service\PollService;
-use OCA\Portaliq\Service\Session\BearerSessionResolver;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\ActionAuthServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PollServiceInterface;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -43,7 +43,7 @@ use OCP\IUserSession;
 /**
  * Creates polls (staff) and serves a subject's own (portal).
  *
- * @spec openspec/changes/parent-polls/specs/parent-polls/spec.md
+ * @spec openspec/specs/parent-polls/spec.md
  */
 class PollController extends Controller {
 	/**
@@ -56,19 +56,19 @@ class PollController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PollService $polls Creates, lists and answers polls.
+	 * @param PollServiceInterface $polls Creates, lists and answers polls.
 	 * @param BearerSessionResolver $session Resolves a portal subject.
 	 * @param IUserSession $userSession The staff user, when there is one.
-	 * @param ActionAuthService $actionAuth Decides whether this staff user may create a poll (ADR-023).
+	 * @param ActionAuthServiceInterface $actionAuth Decides whether this staff user may create a poll (ADR-023).
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PollService $polls,
+		private readonly PollServiceInterface $polls,
 		private readonly BearerSessionResolver $session,
 		private readonly IUserSession $userSession,
-		private readonly ActionAuthService $actionAuth,
+		private readonly ActionAuthServiceInterface $actionAuth,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -82,7 +82,7 @@ class PollController extends Controller {
 	 *
 	 * @return JSONResponse The created poll, or a refusal.
 	 *
-	 * @spec openspec/changes/parent-polls/specs/parent-polls/spec.md#requirement-a-poll-is-created-by-staff-addressed-to-one-audience-and-organisation
+	 * @spec openspec/specs/parent-polls/spec.md#requirement-a-poll-is-created-by-staff-addressed-to-one-audience-and-organisation
 	 */
 	#[NoAdminRequired]
 	public function create(
@@ -139,7 +139,7 @@ class PollController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/parent-polls/specs/parent-polls/spec.md#requirement-a-portal-subject-sees-only-polls-for-their-own-audience-and-organisation
+	 * @spec openspec/specs/parent-polls/spec.md#requirement-a-portal-subject-sees-only-polls-for-their-own-audience-and-organisation
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -161,7 +161,7 @@ class PollController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/parent-polls/specs/parent-polls/spec.md#requirement-a-subject-may-answer-once-and-change-their-answer-while-the-poll-is-open
+	 * @spec openspec/specs/parent-polls/spec.md#requirement-a-subject-may-answer-once-and-change-their-answer-while-the-poll-is-open
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

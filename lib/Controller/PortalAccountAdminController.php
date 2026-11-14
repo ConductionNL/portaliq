@@ -20,19 +20,19 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\ActionAuthService;
-use OCA\Portaliq\Service\Identity\EmailLink\SignInAddressChange;
-use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
-use OCA\Portaliq\Service\Identity\PortalInvitationService;
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\ActionAuthServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalAccountServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalIdentityMailerInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalInvitationServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\SignInAddressChangeInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -41,39 +41,40 @@ use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
+use OCA\Portaliq\Kernel\StaffAction;
 
 /**
  * Provisioning and withdrawal of portal accounts by staff.
  *
- * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 class PortalAccountAdminController extends Controller {
 	/**
 	 * The ADR-023 action both methods are gated by.
 	 */
-	public const ACTION_PROVISION = 'portal.provision';
+	public const ACTION_PROVISION = StaffAction::PROVISION;
 
 	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalAccountService $accounts Provisions and withdraws accounts.
-	 * @param ActionAuthService $actionAuth Decides whether this clerk may.
+	 * @param PortalAccountServiceInterface $accounts Provisions and withdraws accounts.
+	 * @param ActionAuthServiceInterface $actionAuth Decides whether this clerk may.
 	 * @param IUserSession $userSession The staff user making the request.
-	 * @param PortalInvitationService $invitations Invitations into the portal.
-	 * @param PortalIdentityMailer $mailer Mails the invitation to its address.
-	 * @param SignInAddressChange|null $signInAddresses Changes an e-mail account's sign-in address (sign-in-with-an-email-link H2).
+	 * @param PortalInvitationServiceInterface $invitations Invitations into the portal.
+	 * @param PortalIdentityMailerInterface $mailer Mails the invitation to its address.
+	 * @param SignInAddressChangeInterface|null $signInAddresses Changes an e-mail account's sign-in address (sign-in-with-an-email-link H2).
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalAccountService $accounts,
-		private readonly ActionAuthService $actionAuth,
+		private readonly PortalAccountServiceInterface $accounts,
+		private readonly ActionAuthServiceInterface $actionAuth,
 		private readonly IUserSession $userSession,
-		private readonly PortalInvitationService $invitations,
-		private readonly PortalIdentityMailer $mailer,
-		private readonly ?SignInAddressChange $signInAddresses = null,
+		private readonly PortalInvitationServiceInterface $invitations,
+		private readonly PortalIdentityMailerInterface $mailer,
+		private readonly ?SignInAddressChangeInterface $signInAddresses = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -89,7 +90,7 @@ class PortalAccountAdminController extends Controller {
 	 *
 	 * @return JSONResponse The account, or a refusal.
 	 *
-	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- one parameter per
 	 * declared field of the account being provisioned.
@@ -138,7 +139,7 @@ class PortalAccountAdminController extends Controller {
 	 *
 	 * @return JSONResponse The outcome, or a refusal.
 	 *
-	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	#[NoAdminRequired]
 	public function void(string $subjectRef, string $reason = ''): JSONResponse {
@@ -156,7 +157,7 @@ class PortalAccountAdminController extends Controller {
 			return new JSONResponse(['error' => 'not_pending'], Http::STATUS_BAD_REQUEST);
 		}
 
-		return new JSONResponse(['status' => PortalAccountService::STATUS_VOID]);
+		return new JSONResponse(['status' => PortalAccountServiceInterface::STATUS_VOID]);
 	}//end void()
 
 	/**
@@ -169,7 +170,7 @@ class PortalAccountAdminController extends Controller {
 	 * @return JSONResponse That it was sent and until when, or a refusal.
 	 *                      Never the secret: that is in the mail only.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-invite-an-address-and-portaliq-mails-it-req-isa-001
 	 */
 	#[NoAdminRequired]
@@ -193,7 +194,7 @@ class PortalAccountAdminController extends Controller {
 		// mail is what proves the address. So it goes to the invited address
 		// and the answer carries only the state and the expiry.
 		$sent = $this->mailer->send(
-			template: PortalIdentityMailer::TEMPLATE_INVITATION,
+			template: PortalIdentityMailerInterface::TEMPLATE_INVITATION,
 			email: $email,
 			secret: (string)$invited['token'],
 			organisation: $organisation
@@ -214,7 +215,7 @@ class PortalAccountAdminController extends Controller {
 	 *
 	 * @return JSONResponse The sender's own invitations.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	#[NoAdminRequired]
 	public function invitations(string $organisation = ''): JSONResponse {
@@ -277,7 +278,7 @@ class PortalAccountAdminController extends Controller {
 		}
 
 		$sent = $this->mailer->send(
-			template: PortalIdentityMailer::TEMPLATE_INVITATION,
+			template: PortalIdentityMailerInterface::TEMPLATE_INVITATION,
 			email: (string)$resent['email'],
 			secret: (string)$resent['token'],
 			organisation: $organisation
@@ -311,7 +312,7 @@ class PortalAccountAdminController extends Controller {
 			return new JSONResponse(['error' => 'not_pending'], Http::STATUS_BAD_REQUEST);
 		}
 
-		return new JSONResponse(['status' => PortalAccountService::STATUS_ACTIVE]);
+		return new JSONResponse(['status' => PortalAccountServiceInterface::STATUS_ACTIVE]);
 	}//end approve()
 
 	/**
@@ -339,7 +340,7 @@ class PortalAccountAdminController extends Controller {
 			return new JSONResponse(['error' => 'not_pending'], Http::STATUS_BAD_REQUEST);
 		}
 
-		return new JSONResponse(['status' => PortalAccountService::STATUS_VOID]);
+		return new JSONResponse(['status' => PortalAccountServiceInterface::STATUS_VOID]);
 	}//end refuse()
 
 	/**
@@ -366,11 +367,11 @@ class PortalAccountAdminController extends Controller {
 		}
 
 		$outcome = $this->signInAddresses->change(account: $account, newAddress: $address, byStaff: true);
-		if ($outcome === SignInAddressChange::FAILED) {
+		if ($outcome === SignInAddressChangeInterface::FAILED) {
 			return new JSONResponse(['error' => 'save_failed'], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
 
-		if ($outcome !== SignInAddressChange::CHANGED) {
+		if ($outcome !== SignInAddressChangeInterface::CHANGED) {
 			return new JSONResponse(['error' => 'refused'], Http::STATUS_BAD_REQUEST);
 		}
 

@@ -146,6 +146,7 @@ class FakeLedger {
  * @uses \OCA\Portaliq\Service\Notifications\PortalNoticeLanguage
  * @uses   \OCA\Portaliq\BackgroundJob\TaskDelivery
  * @uses   \OCA\Portaliq\BackgroundJob\TaskNoticeBody
+ * @uses \OCA\Portaliq\BackgroundJob\TaskMail
  *
  * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation
  */

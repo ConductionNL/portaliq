@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 /**
- * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
  */
 class NewsAudienceMatcher {
 	/**
@@ -46,7 +46,7 @@ class NewsAudienceMatcher {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
 	 */
 	public static function matches(array $target, array $audience): bool {
 		$targetSchool = (string)($target['schoolRef'] ?? '');
@@ -74,7 +74,7 @@ class NewsAudienceMatcher {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
 	 */
 	public static function reaches(array $row, array $audience): bool {
 		$target = [];

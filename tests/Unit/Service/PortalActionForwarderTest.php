@@ -6,7 +6,7 @@ namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\InstanceLoopback;
 use OCA\Portaliq\Service\PortalActionForwarder;
-use OCA\Portaliq\Service\Session\SubjectAssertionIssuer;
+use OCA\Portaliq\Kernel\Support\SubjectAssertionIssuer;
 use OCP\Http\Client\IResponse;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;

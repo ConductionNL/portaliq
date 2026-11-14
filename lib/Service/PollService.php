@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/parent-polls/specs/parent-polls/spec.md
+ * @spec openspec/specs/parent-polls/spec.md
  */
 
 declare(strict_types=1);
@@ -31,13 +31,14 @@ namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
 use Exception;
+use OCA\Portaliq\Kernel\Contracts\PollServiceInterface;
 
 /**
  * Creates polls, lists a subject's own, and records a subject's answer.
  *
- * @spec openspec/changes/parent-polls/specs/parent-polls/spec.md
+ * @spec openspec/specs/parent-polls/spec.md
  */
-class PollService {
+class PollService implements PollServiceInterface {
 	/**
 	 * The register both schemas live in.
 	 */
@@ -77,7 +78,7 @@ class PollService {
 	 *
 	 * @return array{poll: array<string, mixed>}|array{error: string}
 	 *
-	 * @spec openspec/changes/parent-polls/specs/parent-polls/spec.md#requirement-a-poll-is-created-by-staff-addressed-to-one-audience-and-organisation
+	 * @spec openspec/specs/parent-polls/spec.md#requirement-a-poll-is-created-by-staff-addressed-to-one-audience-and-organisation
 	 */
 	public function create(
 		string $question,
@@ -142,7 +143,7 @@ class PollService {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/parent-polls/specs/parent-polls/spec.md#requirement-a-portal-subject-sees-only-polls-for-their-own-audience-and-organisation
+	 * @spec openspec/specs/parent-polls/spec.md#requirement-a-portal-subject-sees-only-polls-for-their-own-audience-and-organisation
 	 */
 	public function forSubject(array $subject): array {
 		if ($this->hasAudience(subject: $subject) === false) {
@@ -177,7 +178,7 @@ class PollService {
 	 *
 	 * @return array{responded: true}|array{error: string}
 	 *
-	 * @spec openspec/changes/parent-polls/specs/parent-polls/spec.md#requirement-a-subject-may-answer-once-and-change-their-answer-while-the-poll-is-open
+	 * @spec openspec/specs/parent-polls/spec.md#requirement-a-subject-may-answer-once-and-change-their-answer-while-the-poll-is-open
 	 */
 	public function respond(string $pollId, string $optionId, array $subject): array {
 		$subjectRef = (string)($subject['subjectRef'] ?? '');

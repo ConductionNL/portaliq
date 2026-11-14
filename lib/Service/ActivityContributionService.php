@@ -25,48 +25,23 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/activity-offer-contract-fix/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-raise-the-contribution-for-an-activitys-confirmed-places-and-portaliq-must-write-the-reference
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-raise-the-contribution-for-an-activitys-confirmed-places-and-portaliq-must-write-the-reference
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\ActivityContributionServiceInterface;
 use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 
 /**
  * Raises an activity's contribution per confirmed place and writes the
  * references.
  *
- * @spec openspec/changes/activity-offer-contract-fix/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-raise-the-contribution-for-an-activitys-confirmed-places-and-portaliq-must-write-the-reference
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-raise-the-contribution-for-an-activitys-confirmed-places-and-portaliq-must-write-the-reference
  */
-class ActivityContributionService {
-	/**
-	 * The activity does not exist.
-	 */
-	public const REASON_NOT_FOUND = 'not_found';
-
-	/**
-	 * The activity asks no contribution.
-	 */
-	public const REASON_NOT_REQUESTED = 'payment_not_requested';
-
-	/**
-	 * The sign-ups could not be read.
-	 */
-	public const REASON_UNAVAILABLE = 'activity_unavailable';
-
-	/**
-	 * The raise answers the service passes on from shillinq, named here so a
-	 * caller maps one vocabulary.
-	 */
-	public const ERROR_INVALID = ShillinqContributionRaiser::ERROR_INVALID;
-
-	public const ERROR_FORBIDDEN = ShillinqContributionRaiser::ERROR_FORBIDDEN;
-
-	public const ERROR_SHILLINQ_UNAVAILABLE = ShillinqContributionRaiser::ERROR_UNAVAILABLE;
-
-	public const ERROR_FAILED = ShillinqContributionRaiser::ERROR_FAILED;
+class ActivityContributionService implements ActivityContributionServiceInterface {
 
 	/**
 	 * Shillinq's most recipients per call.
@@ -102,7 +77,7 @@ class ActivityContributionService {
 	 *
 	 * @return array<string, mixed> `{raised, skipped, failed, results}`, or `['error' => <code>]`.
 	 *
-	 * @spec openspec/changes/activity-offer-contract-fix/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-raise-the-contribution-for-an-activitys-confirmed-places-and-portaliq-must-write-the-reference
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-raise-the-contribution-for-an-activitys-confirmed-places-and-portaliq-must-write-the-reference
 	 */
 	public function raise(string $activityId, array $params): array {
 		$activity = $this->store->lookup(schema: ActivityStore::OFFER, id: $activityId);

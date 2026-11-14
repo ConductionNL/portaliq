@@ -30,11 +30,11 @@
  * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T3
  * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T5
  * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T8
- * @spec openspec/changes/portal-inbox-v2/tasks.md#T02
- * @spec openspec/changes/portal-inbox-v2/tasks.md#T03
- * @spec openspec/changes/portal-inbox-v2/tasks.md#T04
- * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T06
- * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+ * @spec openspec/changes/archive/2026-07-23-portal-inbox-v2/tasks.md#T02
+ * @spec openspec/changes/archive/2026-07-23-portal-inbox-v2/tasks.md#T03
+ * @spec openspec/changes/archive/2026-07-23-portal-inbox-v2/tasks.md#T04
+ * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T06
+ * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T09
  * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
  * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
  * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
@@ -45,49 +45,44 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\ActionScopeResolver;
-use OCA\Portaliq\Contribution\CreateBody;
-use OCA\Portaliq\Contribution\CreateActionMatcher;
-use OCA\Portaliq\Contribution\FileFieldConfigNormaliser;
-use OCA\Portaliq\Contribution\InboxMessageFields;
-use OCA\Portaliq\Contribution\PageChoice;
-use OCA\Portaliq\Contribution\ThemeChoice;
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Http\PdfDownloadResponse;
-use OCA\Portaliq\Service\Intake\ActionDraft;
-use OCA\Portaliq\Service\Intake\DestinationDraft;
-use OCA\Portaliq\Service\Intake\DestinationIntake;
-use OCA\Portaliq\Service\Branch\PortalBranchScope;
-use OCA\Portaliq\Service\AuditTrailService;
-use OCA\Portaliq\Service\CaseRowMarker;
-use OCA\Portaliq\Service\CaseTypeNames;
-use OCA\Portaliq\Service\CaseTypeVisibility;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\ActionDraftInterface;
+use OCA\Portaliq\Kernel\Contracts\AuditTrailServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\CaseTypeNamesInterface;
+use OCA\Portaliq\Kernel\Contracts\CaseTypeVisibilityInterface;
+use OCA\Portaliq\Kernel\Contracts\ColumnOverridesInterface;
+use OCA\Portaliq\Kernel\Contracts\ContactConfirmationMailerInterface;
+use OCA\Portaliq\Kernel\Contracts\DestinationDraftInterface;
+use OCA\Portaliq\Kernel\Contracts\DestinationIntakeInterface;
+use OCA\Portaliq\Kernel\Contracts\FileFieldConfigNormaliserInterface;
+use OCA\Portaliq\Kernel\Contracts\NotificationDispatchServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalActionForwarderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalAuditHookInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalBranchScopeInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalCrossRefGuardInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFileReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFileWriterInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalInboxReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectWriterInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalPdfExportInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalRateLimitInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSchemaReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalTaskGatewayInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalUserDisplayNamesInterface;
+use OCA\Portaliq\Kernel\Contracts\SubmissionReceiptServiceInterface;
+use OCA\Portaliq\Kernel\Support\PortalBranchScope;
 use OCA\Portaliq\Service\CaseTypeColumns\ColumnOverrides;
-use OCA\Portaliq\Service\Identity\ContactConfirmationMailer;
-use OCA\Portaliq\Service\NotificationDispatchService;
-use OCA\Portaliq\Service\PortalActionForwarder;
-use OCA\Portaliq\Service\PortalAuditHook;
 use OCA\Portaliq\Service\PortalCrossRefGuard;
-use OCA\Portaliq\Service\PortalPdfExport;
-use OCA\Portaliq\Service\PortalFileReader;
-use OCA\Portaliq\Service\PortalFileWriter;
-use OCA\Portaliq\Service\PortalInboxReader;
-use OCA\Portaliq\Service\PortalObjectReader;
-use OCA\Portaliq\Service\PortalObjectWriter;
-use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\RequestedPortal;
-use OCA\Portaliq\Service\PortalSchemaReader;
-use OCA\Portaliq\Service\PortalSessionService;
-use OCA\Portaliq\Service\Tenancy\SchemaTenancy;
-use OCA\Portaliq\Service\PortalTaskGateway;
-use OCA\Portaliq\Service\VisibleFromGate;
 use OCA\Portaliq\Service\PortalUserDisplayNames;
-use OCA\Portaliq\Service\PortalRateLimit;
-use OCA\Portaliq\Service\RequiredFieldsGuard;
-use OCA\Portaliq\Service\SubmissionReceiptService;
-use OCA\Portaliq\Service\WriteRefusal;
+use OCA\Portaliq\Kernel\Support\SessionTrust;
+use OCA\Portaliq\Service\Tenancy\SchemaTenancy;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -97,6 +92,22 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Http\Response;
 use OCP\IRequest;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Kernel\DestinationRefusal;
+use OCA\Portaliq\Kernel\InboxDeletion;
+use OCA\Portaliq\Kernel\Contracts\CaseRowMarkerInterface;
+use OCA\Portaliq\Kernel\Contracts\CreateActionMatcherInterface;
+use OCA\Portaliq\Kernel\Contracts\CreateBodyInterface;
+use OCA\Portaliq\Kernel\Contracts\InboxMessageFieldsInterface;
+use OCA\Portaliq\Kernel\Contracts\PageChoiceInterface;
+use OCA\Portaliq\Kernel\Contracts\RequestedPortalInterface;
+use OCA\Portaliq\Kernel\Contracts\RequiredFieldsGuardInterface;
+use OCA\Portaliq\Kernel\Contracts\RowIdentifierInterface;
+use OCA\Portaliq\Kernel\Contracts\ThemeChoiceInterface;
+use OCA\Portaliq\Kernel\Contracts\VisibleFromGateInterface;
+use OCA\Portaliq\Kernel\Contracts\WriteRefusalInterface;
+use OCA\Portaliq\Kernel\Contracts\NotificationRuleNormaliserInterface;
+use OCA\Portaliq\Kernel\Contracts\PublicDetailShapeInterface;
+use OCA\Portaliq\Kernel\Contracts\PublicIndexKindsInterface;
 
 /**
  * Serves the authenticated subject's aggregated portal contributions.
@@ -133,39 +144,50 @@ class ContributionController extends Controller implements PortalProtected {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request object.
-	 * @param PortalContributionRegistry $registry The contribution aggregator.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param PortalObjectReader $reader Subject-scoped OR reader.
-	 * @param PortalObjectWriter $writer Subject-scoped OR writer.
-	 * @param PortalFileWriter $fileWriter Subject-scoped OR file attach.
-	 * @param PortalFileReader $fileReader Subject-scoped OR file list/download.
-	 * @param PortalSchemaReader $schemaReader Scoped OR schema-definition reader.
-	 * @param PortalInboxReader $inboxReader Cross-app inbox aggregation + unread count (portal-inbox-v2).
-	 * @param PortalAuditHook $auditHook Fail-safe audit-record call site (download).
-	 * @param PortalActionForwarder $forwarder Transport half of the A6 action forward
+	 * @param PortalContributionRegistryInterface $registry The contribution aggregator.
+	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
+	 * @param PortalObjectReaderInterface $reader Subject-scoped OR reader.
+	 * @param PortalObjectWriterInterface $writer Subject-scoped OR writer.
+	 * @param PortalFileWriterInterface $fileWriter Subject-scoped OR file attach.
+	 * @param PortalFileReaderInterface $fileReader Subject-scoped OR file list/download.
+	 * @param PortalSchemaReaderInterface $schemaReader Scoped OR schema-definition reader.
+	 * @param PortalInboxReaderInterface $inboxReader Cross-app inbox aggregation + unread count (portal-inbox-v2).
+	 * @param PortalAuditHookInterface $auditHook Fail-safe audit-record call site (download).
+	 * @param PortalActionForwarderInterface $forwarder Transport half of the A6 action forward
 	 *                                         (signed assertion, instance-local URL,
 	 *                                         502-on-transport-failure).
-	 * @param AuditTrailService $auditor Records create/update/forward mutations
+	 * @param AuditTrailServiceInterface $auditor Records create/update/forward mutations
 	 *                                   (portal-session-hardening-v2).
-	 * @param SubmissionReceiptService $receiptService WMEBV ontvangstbevestiging + proof-log
+	 * @param SubmissionReceiptServiceInterface $receiptService WMEBV ontvangstbevestiging + proof-log
 	 *                                                 generator, called after every
 	 *                                                 successful create (fail-safe; never
 	 *                                                 affects the response).
-	 * @param NotificationDispatchService $notificationDispatch Fires the `status.changed` trigger
+	 * @param NotificationDispatchServiceInterface $notificationDispatch Fires the `status.changed` trigger
 	 *                                                          (portal-notifications-dispatch) on a
 	 *                                                          successful transition; fail-safe,
 	 *                                                          never affects the response.
 	 * @param LoggerInterface $logger Records the CAUSE of a translated storage
 	 *                                failure. The cause is logged and never
 	 *                                returned — see writeScoped().
-	 * @param PortalTaskGateway|null $taskGateway Answers whether the portal task
+	 * @param CaseRowMarkerInterface $caseRowMarker The CaseRowMarker helper.
+	 * @param CreateActionMatcherInterface $createActionMatcher The CreateActionMatcher helper.
+	 * @param CreateBodyInterface $createBody The CreateBody helper.
+	 * @param InboxMessageFieldsInterface $inboxMessageFields The InboxMessageFields helper.
+	 * @param PageChoiceInterface $pageChoice The PageChoice helper.
+	 * @param RequestedPortalInterface $requestedPortal The RequestedPortal helper.
+	 * @param RequiredFieldsGuardInterface $requiredFieldsGuard The RequiredFieldsGuard helper.
+	 * @param RowIdentifierInterface $rowIdentifier The RowIdentifier helper.
+	 * @param ThemeChoiceInterface $themeChoice The ThemeChoice helper.
+	 * @param VisibleFromGateInterface $visibleFromGate The VisibleFromGate helper.
+	 * @param WriteRefusalInterface $writeRefusal The WriteRefusal helper.
+	 * @param PortalTaskGatewayInterface|null $taskGateway Answers whether the portal task
 	 *                                            seam is reachable, so index() can
 	 *                                            announce the "Mijn taken" surface
 	 *                                            (portal-task-delivery). Optional so
 	 *                                            existing construction sites and
 	 *                                            tests keep working; absent reads
 	 *                                            as "no tasks surface".
-	 * @param PortalCrossRefGuard|null $crossRefs Checks that a declared cross
+	 * @param PortalCrossRefGuardInterface|null $crossRefs Checks that a declared cross
 	 *                                            reference resolves inside the
 	 *                                            subject's own scope
 	 *                                            (portal-create-cross-refs).
@@ -173,61 +195,72 @@ class ContributionController extends Controller implements PortalProtected {
 	 *                                            site only: absent is built in
 	 *                                            crossRefGuard(), never skipped,
 	 *                                            because it is a guard.
-	 * @param CaseTypeVisibility|null $caseTypes The case types the serving
+	 * @param CaseTypeVisibilityInterface|null $caseTypes The case types the serving
 	 *                                           portal hides from a `cases`
 	 *                                           collection
 	 *                                           (operate-show-per-case-type).
 	 *                                           Absent hides nothing.
-	 * @param PortalBranchScope $branches The branch filter of signin-eherkenning-branch.
-	 * @param PortalUserDisplayNames $userNames Reads a `render: "user"` column as the user's name.
-	 * @param CaseTypeNames|null $typeNames Names each case's type on a `cases` collection
+	 * @param PortalBranchScopeInterface $branches The branch filter of signin-eherkenning-branch.
+	 * @param PortalUserDisplayNamesInterface $userNames Reads a `render: "user"` column as the user's name.
+	 * @param CaseTypeNamesInterface|null $typeNames Names each case's type on a `cases` collection
 	 *                                      (site-mijn-omgeving-components REQ-SMO-030).
-	 * @param PortalResolver|null $portals Finds the serving portal, for its navigation choice.
+	 * @param PortalResolverInterface|null $portals Finds the serving portal, for its navigation choice.
 	 *                                     Absent leaves the navigation as the aggregate has it.
-	 * @param ContactConfirmationMailer|null $confirmation Mails the resident that a question arrived, after
+	 * @param ContactConfirmationMailerInterface|null $confirmation Mails the resident that a question arrived, after
 	 *                                                     a create whose action asks for it; fail-safe.
-	 * @param PortalPdfExport|null $pdf Renders a list or a record the resident can see as a PDF through
+	 * @param PortalPdfExportInterface|null $pdf Renders a list or a record the resident can see as a PDF through
 	 *                                  OpenRegister (cases-export-own-data-pdf). Absent offers no export.
-	 * @param PortalRateLimit|null $rateLimit Limits a portal session per subject and a call
+	 * @param PortalRateLimitInterface|null $rateLimit Limits a portal session per subject and a call
 	 *                                        without one per IP (portal-subject-rate-limit).
-	 * @param ActionDraft|null $drafts Finds the subject's live draft of a create action, which a
+	 * @param ActionDraftInterface|null $drafts Finds the subject's live draft of a create action, which a
 	 *                                 create then sends instead of writing a new object (decision 180).
 	 *                                 Absent writes a new object as before.
-	 * @param DestinationDraft|null $destinations Sends that draft through OpenRegister's submit service.
-	 * @param DestinationIntake|null $intake Submits a landing-page form straight into its destination
+	 * @param DestinationDraftInterface|null $destinations Sends that draft through OpenRegister's submit service.
+	 * @param DestinationIntakeInterface|null $intake Submits a landing-page form straight into its destination
 	 *                                       (decision 179). Absent answers 503 for such a form.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalContributionRegistry $registry,
-		private readonly PortalSessionService $session,
-		private readonly PortalObjectReader $reader,
-		private readonly PortalObjectWriter $writer,
-		private readonly PortalFileWriter $fileWriter,
-		private readonly PortalFileReader $fileReader,
-		private readonly PortalSchemaReader $schemaReader,
-		private readonly PortalInboxReader $inboxReader,
-		private readonly PortalAuditHook $auditHook,
-		private readonly PortalActionForwarder $forwarder,
-		private readonly AuditTrailService $auditor,
-		private readonly SubmissionReceiptService $receiptService,
-		private readonly NotificationDispatchService $notificationDispatch,
+		private readonly PortalContributionRegistryInterface $registry,
+		private readonly PortalSessionServiceInterface $session,
+		private readonly PortalObjectReaderInterface $reader,
+		private readonly PortalObjectWriterInterface $writer,
+		private readonly PortalFileWriterInterface $fileWriter,
+		private readonly PortalFileReaderInterface $fileReader,
+		private readonly PortalSchemaReaderInterface $schemaReader,
+		private readonly PortalInboxReaderInterface $inboxReader,
+		private readonly PortalAuditHookInterface $auditHook,
+		private readonly PortalActionForwarderInterface $forwarder,
+		private readonly AuditTrailServiceInterface $auditor,
+		private readonly SubmissionReceiptServiceInterface $receiptService,
+		private readonly NotificationDispatchServiceInterface $notificationDispatch,
 		private readonly LoggerInterface $logger,
-		private readonly ?PortalTaskGateway $taskGateway = null,
-		private readonly ?PortalCrossRefGuard $crossRefs = null,
-		private readonly ?CaseTypeVisibility $caseTypes = null,
-		private readonly PortalBranchScope $branches = new PortalBranchScope(),
-		private readonly PortalUserDisplayNames $userNames = new PortalUserDisplayNames(),
-		private readonly ?CaseTypeNames $typeNames = null,
-		private readonly ?PortalResolver $portals = null,
-		private readonly ?ContactConfirmationMailer $confirmation = null,
-		private readonly ?PortalPdfExport $pdf = null,
-		private readonly ?PortalRateLimit $rateLimit = null,
-		private readonly ?ActionDraft $drafts = null,
-		private readonly ?DestinationDraft $destinations = null,
-		private readonly ?DestinationIntake $intake = null,
+		private readonly CaseRowMarkerInterface $caseRowMarker,
+		private readonly CreateActionMatcherInterface $createActionMatcher,
+		private readonly CreateBodyInterface $createBody,
+		private readonly InboxMessageFieldsInterface $inboxMessageFields,
+		private readonly PageChoiceInterface $pageChoice,
+		private readonly RequestedPortalInterface $requestedPortal,
+		private readonly RequiredFieldsGuardInterface $requiredFieldsGuard,
+		private readonly RowIdentifierInterface $rowIdentifier,
+		private readonly ThemeChoiceInterface $themeChoice,
+		private readonly VisibleFromGateInterface $visibleFromGate,
+		private readonly WriteRefusalInterface $writeRefusal,
+		private readonly ?PortalTaskGatewayInterface $taskGateway = null,
+		private readonly ?PortalCrossRefGuardInterface $crossRefs = null,
+		private readonly ?CaseTypeVisibilityInterface $caseTypes = null,
+		private readonly PortalBranchScopeInterface $branches = new PortalBranchScope(),
+		private readonly PortalUserDisplayNamesInterface $userNames = new PortalUserDisplayNames(),
+		private readonly ?CaseTypeNamesInterface $typeNames = null,
+		private readonly ?PortalResolverInterface $portals = null,
+		private readonly ?ContactConfirmationMailerInterface $confirmation = null,
+		private readonly ?PortalPdfExportInterface $pdf = null,
+		private readonly ?PortalRateLimitInterface $rateLimit = null,
+		private readonly ?ActionDraftInterface $drafts = null,
+		private readonly ?DestinationDraftInterface $destinations = null,
+		private readonly ?DestinationIntakeInterface $intake = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -238,11 +271,11 @@ class ContributionController extends Controller implements PortalProtected {
 	 * it would otherwise write unchecked references, which is the defect the
 	 * guard exists to close. Its two dependencies are already held here.
 	 *
-	 * @return PortalCrossRefGuard The guard.
+	 * @return PortalCrossRefGuardInterface The guard.
 	 *
-	 * @spec openspec/changes/portal-create-cross-refs/specs/portal-contribution-contract/spec.md
+	 * @spec openspec/specs/portal-contribution-contract/spec.md
 	 */
-	private function crossRefGuard(): PortalCrossRefGuard {
+	private function crossRefGuard(): PortalCrossRefGuardInterface {
 		return ($this->crossRefs ?? new PortalCrossRefGuard(reader: $this->reader, logger: $this->logger));
 	}//end crossRefGuard()
 
@@ -316,7 +349,7 @@ class ContributionController extends Controller implements PortalProtected {
 				$named = $data;
 			}
 
-			return (new WriteRefusal())->response(failure: $this->writer->lastFailure(), data: $named)
+			return $this->writeRefusal->response(failure: $this->writer->lastFailure(), data: $named)
 				?? new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
@@ -354,9 +387,9 @@ class ContributionController extends Controller implements PortalProtected {
 	 *                      inbox without a subject).
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T04
-	 * @spec openspec/changes/portal-inbox-v2/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-07-23-portal-inbox-v2/tasks.md#T04
 	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
-	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
 	 * @spec openspec/specs/portal-my-cases/spec.md#requirement-your-cases-from-every-app-in-one-list-req-cmc-001
 	 */
 	#[PublicPage]
@@ -386,7 +419,7 @@ class ContributionController extends Controller implements PortalProtected {
 		$aggregate['tasks'] = ['enabled' => ($this->taskGateway?->isAvailable() === true)];
 		// Announce "My cases" (cases-my-cases-page REQ-CMC-001) and whether
 		// any case collection can tell a closed case from an open one.
-		$aggregate['cases'] = (new CaseRowMarker())->announce(aggregate: $aggregate);
+		$aggregate['cases'] = $this->caseRowMarker->announce(aggregate: $aggregate);
 		$aggregate = $this->withThemes(aggregate: $aggregate);
 		// The pages of the resident's own area the serving portal switched on
 		// (own-contacts-and-invitations, shared-plans-with-a-caseworker).
@@ -408,12 +441,12 @@ class ContributionController extends Controller implements PortalProtected {
 	private function withThemes(array $aggregate): array {
 		$declared = [];
 		if ($this->portals !== null) {
-			$slug = (new RequestedPortal())->slug(request: $this->request);
+			$slug = $this->requestedPortal->slug(request: $this->request);
 
 			$declared = ($this->portals->resolve(request: $this->request, portalSlug: $slug)['themes'] ?? []);
 		}
 
-		return (new ThemeChoice())->arrange(aggregate: $aggregate, themes: $declared);
+		return $this->themeChoice->arrange(aggregate: $aggregate, themes: $declared);
 	}//end withThemes()
 
 	/**
@@ -431,7 +464,7 @@ class ContributionController extends Controller implements PortalProtected {
 			return [];
 		}
 
-		$slug = (new RequestedPortal())->slug(request: $this->request);
+		$slug = $this->requestedPortal->slug(request: $this->request);
 
 		$portal = $this->portals->resolve(request: $this->request, portalSlug: $slug);
 		$pages  = [];
@@ -467,7 +500,7 @@ class ContributionController extends Controller implements PortalProtected {
 			return $aggregate;
 		}
 
-		$slug = (new RequestedPortal())->slug(request: $this->request);
+		$slug = $this->requestedPortal->slug(request: $this->request);
 
 		$portal = $this->portals->resolve(request: $this->request, portalSlug: $slug);
 		$navigation = $portal['navigation'][(string)($aggregate['audience'] ?? '')] ?? null;
@@ -475,7 +508,7 @@ class ContributionController extends Controller implements PortalProtected {
 			return $aggregate;
 		}
 
-		return (new PageChoice())->arrange(aggregate: $aggregate, navigation: $navigation);
+		return $this->pageChoice->arrange(aggregate: $aggregate, navigation: $navigation);
 	}//end withPortalNavigation()
 
 	/**
@@ -490,7 +523,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The merged inbox rows, or 401.
 	 *
-	 * @spec openspec/changes/portal-inbox-v2/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-07-23-portal-inbox-v2/tasks.md#T02
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -527,8 +560,8 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The updated message, or 401 / 403 / 404.
 	 *
-	 * @spec openspec/changes/portal-inbox-v2/tasks.md#T03
-	 * @spec openspec/changes/inbox-reads-each-apps-message-fields/specs/supplier-portal/spec.md#requirement-mark-read-writes-the-collections-own-read-field-req-imf-002
+	 * @spec openspec/changes/archive/2026-07-23-portal-inbox-v2/tasks.md#T03
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-mark-read-writes-the-collections-own-read-field-req-imf-002
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -549,7 +582,7 @@ class ContributionController extends Controller implements PortalProtected {
 
 		// Defense in depth (contract v2, A3): re-check the matched collection's
 		// minTrust — 403 before any OpenRegister write.
-		if (PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
+		if ((new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -569,7 +602,7 @@ class ContributionController extends Controller implements PortalProtected {
 		// client sends are simply never read, so `read` (or the collection's
 		// own read date, messageFields.readAt) is the only field this
 		// endpoint can ever change.
-		$fields = new InboxMessageFields();
+		$fields = $this->inboxMessageFields;
 		$normalised = $fields->normalise(collection: $collection);
 		$now = gmdate(format: 'Y-m-d\TH:i:s\Z');
 		// Decided from the row the writer has just proven the subject's own.
@@ -607,7 +640,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{deleted: true}`, or 401 / 403 / 404.
 	 *
-	 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -625,8 +658,8 @@ class ContributionController extends Controller implements PortalProtected {
 		}
 
 		$collection = $match['collection'];
-		if (PortalInboxReader::residentMayDelete(collection: $collection) === false
-			|| PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false
+		if (InboxDeletion::residentMayDelete(collection: $collection) === false
+			|| (new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false
 		) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
@@ -678,7 +711,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{object, action, register, schema}`, or 401 / 403 / 404 / 400 / 502.
 	 *
-	 * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t03
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -691,7 +724,7 @@ class ContributionController extends Controller implements PortalProtected {
 
 		$collectionId = (string)$this->request->getParam('collection', '');
 		$match = $this->authorisedInboxCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
-		if ($match === null || PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
+		if ($match === null || (new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -712,7 +745,7 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		if (PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
+		if ((new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -837,8 +870,8 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return array{collection: array<string, mixed>, app: string}|null
 	 *
-	 * @spec openspec/changes/portal-inbox-v2/tasks.md#T03
-	 * @spec openspec/changes/inbox-shows-portal-messages/specs/portal-notifications-and-preferences/spec.md#requirement-portaliqs-own-notices-reach-the-residents-inbox-req-nap-009
+	 * @spec openspec/changes/archive/2026-07-23-portal-inbox-v2/tasks.md#T03
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-portaliqs-own-notices-reach-the-residents-inbox-req-nap-009
 	 */
 	private function authorisedInboxCollection(array $subject, string $register, string $schema, string $collectionId = ''): ?array {
 		$match = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
@@ -847,9 +880,9 @@ class ContributionController extends Controller implements PortalProtected {
 		}
 
 		// Portaliq's own notices are an inbox source of every resident
-		// (PortalInboxReader::OWN_MESSAGES), declared or not. The write that
+		// (PortalInboxReaderInterface::OWN_MESSAGES), declared or not. The write that
 		// follows is still scoped on the bearer's own subjectRef.
-		$own = PortalInboxReader::OWN_MESSAGES;
+		$own = PortalInboxReaderInterface::OWN_MESSAGES;
 		if ($match === null && $register === $own['register'] && $schema === $own['schema'] && in_array($collectionId, ['', $own['id']], true) === true) {
 			return ['collection' => $own, 'app' => 'portaliq'];
 		}
@@ -876,7 +909,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T3
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T5
 	 * @spec openspec/changes/archive/2026-09-07-field-projection/tasks.md#T2
-	 * @spec openspec/changes/portal-subject-rate-limit/specs/portal-contribution-contract/spec.md#requirement-a-signed-in-portal-session-must-be-rate-limited-per-subject
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-signed-in-portal-session-must-be-rate-limited-per-subject
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -895,31 +928,58 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}
 
-		// The optional `collection` query param disambiguates multiple
-		// collections that share a register+schema (contract v2 — scopeClaim /
-		// via views over the same schema). Absent → first-by-(register,schema),
-		// preserving the pre-existing behaviour.
-		$collectionId = (string)$this->request->getParam('collection', '');
+		return $this->collectionRows(subject: $subject, target: ['register' => $register, 'schema' => $schema]);
+	}//end collection()
 
-		$match = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
+	/**
+	 * The rows of the subject's own collection, or 403 when it is not theirs.
+	 *
+	 * @param array<string, mixed>                    $subject The resolved subject.
+	 * @param array{register: string, schema: string} $target  The requested register and schema.
+	 *
+	 * @return JSONResponse
+	 */
+	private function collectionRows(array $subject, array $target): JSONResponse {
+		$match = $this->trustedCollection(subject: $subject, target: $target);
 		if ($match === null) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		$collection = $match['collection'];
+		$objects = $this->screenRows(subject: $subject, match: $match, register: $target['register'], schema: $target['schema']);
 
-		// Defense in depth (contract v2, A3): the aggregate is already
-		// trust-filtered, but the matched entry's minTrust is re-checked here
-		// so a direct request can never slip below the threshold — 403 before
-		// any OpenRegister call.
-		if (PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
-			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		return new JSONResponse(['register' => $target['register'], 'schema' => $target['schema'], 'objects' => $objects]);
+	}//end collectionRows()
+
+	/**
+	 * The subject's own collection for (register, schema), or null (403).
+	 *
+	 * The optional `collection` query param disambiguates multiple
+	 * collections that share a register+schema (contract v2 — scopeClaim /
+	 * via views over the same schema). Absent → first-by-(register,schema),
+	 * preserving the pre-existing behaviour. Defense in depth (contract v2,
+	 * A3): the aggregate is already trust-filtered, but the matched entry's
+	 * minTrust is re-checked here so a direct request can never slip below
+	 * the threshold — refused before any OpenRegister call.
+	 *
+	 * @param array<string, mixed>                  $subject The resolved subject.
+	 * @param array{register: string, schema: string} $target  The requested register and schema.
+	 *
+	 * @return array{collection: array<string, mixed>, app: string}|null
+	 */
+	private function trustedCollection(array $subject, array $target): ?array {
+		$collectionId = (string)$this->request->getParam('collection', '');
+		$match        = $this->authorisedCollection(
+			subject: $subject,
+			register: $target['register'],
+			schema: $target['schema'],
+			collectionId: $collectionId
+		);
+		if ($match === null || (new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
+			return null;
 		}
 
-		$objects = $this->screenRows(subject: $subject, match: $match, register: $register, schema: $schema);
-
-		return new JSONResponse(['register' => $register, 'schema' => $schema, 'objects' => $objects]);
-	}//end collection()
+		return $match;
+	}//end trustedCollection()
 
 	/**
 	 * The rows a collection's screen shows this subject: the scoped read, then
@@ -934,7 +994,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return array<int, mixed> The rows.
 	 *
-	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t02
 	 */
 	private function screenRows(array $subject, array $match, string $register, string $schema): array {
 		$collection = $match['collection'];
@@ -951,7 +1011,7 @@ class ContributionController extends Controller implements PortalProtected {
 
 		// A row waits until its moment has passed on the server clock
 		// (site-school-blocks, `visibleFromField`).
-		$objects = (new VisibleFromGate())->rows(rows: $objects, collection: $collection);
+		$objects = $this->visibleFromGate->rows(rows: $objects, collection: $collection);
 
 		$hidden = ($this->caseTypes?->hiddenForCollection(request: $this->request, subject: $subject, collection: $collection) ?? []);
 		if ($hidden !== []) {
@@ -982,11 +1042,11 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @param array<string, mixed> $subject The resolved subject.
 	 *
-	 * @return ColumnOverrides
+	 * @return ColumnOverridesInterface
 	 *
-	 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-a-case-row-reads-with-its-case-types-columns
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-case-row-reads-with-its-case-types-columns
 	 */
-	private function columnsFor(array $subject): ColumnOverrides {
+	private function columnsFor(array $subject): ColumnOverridesInterface {
 		if ($this->caseTypes === null) {
 			return new ColumnOverrides(byType: [], types: null);
 		}
@@ -1107,7 +1167,7 @@ class ContributionController extends Controller implements PortalProtected {
 
 		// Defense in depth (contract v2, A3): re-check the matched collection's
 		// minTrust — 403 before any OpenRegister call.
-		if (PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
+		if ((new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -1159,7 +1219,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return array<string, mixed>|null The row.
 	 *
-	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t03
 	 */
 	private function screenRow(array $subject, array $match, string $register, string $schema, string $id): ?array {
 		$collection = $match['collection'];
@@ -1184,7 +1244,7 @@ class ContributionController extends Controller implements PortalProtected {
 
 		$hidden = ($this->caseTypes?->hiddenForCollection(request: $this->request, subject: $subject, collection: $collection) ?? []);
 		if ($object === null
-			|| (new VisibleFromGate())->rows(rows: [$object], collection: $collection) === []
+			|| $this->visibleFromGate->rows(rows: [$object], collection: $collection) === []
 			|| $this->branches->admits(subject: $subject, collection: $collection, row: $object) === false
 			|| $this->caseTypes?->rowIsHidden(row: $object, collection: $collection, hidden: $hidden) === true
 		) {
@@ -1236,7 +1296,7 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		if (PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
+		if ((new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -1294,8 +1354,25 @@ class ContributionController extends Controller implements PortalProtected {
 	 */
 	private function readUploadedFile(): ?array {
 		$uploaded = $this->request->getUploadedFile('file');
-		$tmpName = (string)($uploaded['tmp_name'] ?? '');
-		if ((int)($uploaded['error'] ?? 1) !== 0 || $tmpName === '' || is_readable($tmpName) === false) {
+		$content  = $this->uploadedContent(uploaded: $uploaded);
+		if ($content === null) {
+			return null;
+		}
+
+		return ['name' => $this->uploadedName(uploaded: $uploaded), 'content' => $content];
+	}//end readUploadedFile()
+
+	/**
+	 * The uploaded file's bytes, or null when the upload failed, is absent,
+	 * or cannot be read.
+	 *
+	 * @param mixed $uploaded What `IRequest::getUploadedFile()` returned.
+	 *
+	 * @return string|null
+	 */
+	private function uploadedContent(mixed $uploaded): ?string {
+		$tmpName = $this->readableUpload(uploaded: $uploaded);
+		if ($tmpName === '') {
 			return null;
 		}
 
@@ -1304,13 +1381,41 @@ class ContributionController extends Controller implements PortalProtected {
 			return null;
 		}
 
-		$fileName = basename((string)($uploaded['name'] ?? 'upload'));
-		if ($fileName === '' || $fileName === '.' || $fileName === '..') {
-			$fileName = 'upload';
+		return $content;
+	}//end uploadedContent()
+
+	/**
+	 * The temp file of an upload without an error that can be read, else ''.
+	 *
+	 * @param mixed $uploaded What `IRequest::getUploadedFile()` returned.
+	 *
+	 * @return string The temp file's path, or ''.
+	 */
+	private function readableUpload(mixed $uploaded): string {
+		$tmpName = (string)($uploaded['tmp_name'] ?? '');
+		if ((int)($uploaded['error'] ?? 1) !== 0 || $tmpName === '' || is_readable($tmpName) === false) {
+			return '';
 		}
 
-		return ['name' => $fileName, 'content' => $content];
-	}//end readUploadedFile()
+		return $tmpName;
+	}//end readableUpload()
+
+	/**
+	 * The upload's file name reduced to a basename, `upload` when that
+	 * leaves nothing usable: a client path is never trusted.
+	 *
+	 * @param mixed $uploaded What `IRequest::getUploadedFile()` returned.
+	 *
+	 * @return string
+	 */
+	private function uploadedName(mixed $uploaded): string {
+		$fileName = basename((string)($uploaded['name'] ?? 'upload'));
+		if ($fileName === '' || $fileName === '.' || $fileName === '..') {
+			return 'upload';
+		}
+
+		return $fileName;
+	}//end uploadedName()
 
 	/**
 	 * Stream a file attached to an object the subject owns
@@ -1356,7 +1461,7 @@ class ContributionController extends Controller implements PortalProtected {
 
 		$collection = $match['collection'];
 
-		if (PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
+		if ((new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -1428,20 +1533,7 @@ class ContributionController extends Controller implements PortalProtected {
 		}
 
 		// The subject may only introspect a schema their manifest references.
-		$referenced = false;
-		$aggregate = $this->registry->aggregateFor(subject: $subject);
-		foreach (($aggregate['contributions'] ?? []) as $contribution) {
-			foreach (['collections', 'actions'] as $section) {
-				foreach (($contribution[$section] ?? []) as $entry) {
-					if ((string)($entry['schema'] ?? '') === $schema) {
-						$referenced = true;
-						break 3;
-					}
-				}
-			}
-		}
-
-		if ($referenced === false) {
+		if ($this->referencesSchema(subject: $subject, schema: $schema) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -1452,6 +1544,47 @@ class ContributionController extends Controller implements PortalProtected {
 
 		return new JSONResponse($definition);
 	}//end schema()
+
+	/**
+	 * Whether a collection or an action of the subject's own manifest names the schema.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param string               $schema  The schema slug.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#scoped-schema-introspection
+	 */
+	private function referencesSchema(array $subject, string $schema): bool {
+		$aggregate = $this->registry->aggregateFor(subject: $subject);
+		foreach (($aggregate['contributions'] ?? []) as $contribution) {
+			if ($this->contributionNames(contribution: $contribution, schema: $schema) === true) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end referencesSchema()
+
+	/**
+	 * Whether one contribution's collections or actions name the schema.
+	 *
+	 * @param mixed  $contribution The contribution.
+	 * @param string $schema       The schema slug.
+	 *
+	 * @return bool
+	 */
+	private function contributionNames(mixed $contribution, string $schema): bool {
+		foreach (['collections', 'actions'] as $section) {
+			foreach (($contribution[$section] ?? []) as $entry) {
+				if ((string)($entry['schema'] ?? '') === $schema) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}//end contributionNames()
 
 	/**
 	 * Create an object in a collection, owned by the subject.
@@ -1478,7 +1611,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T06
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T3
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T09
 	 * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
 	 * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
 	 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
@@ -1493,7 +1626,7 @@ class ContributionController extends Controller implements PortalProtected {
 		}
 
 		$match = $this->authorisedCreateAction(subject: $subject, register: $register, schema: $schema);
-		if ($match === CreateActionMatcher::AMBIGUOUS) {
+		if ($match === CreateActionMatcherInterface::AMBIGUOUS) {
 			// Two or more create actions write this schema and the client
 			// named none: refuse rather than guess (create-names-its-action).
 			return new JSONResponse(['error' => 'action_required'], Http::STATUS_BAD_REQUEST);
@@ -1507,7 +1640,7 @@ class ContributionController extends Controller implements PortalProtected {
 
 		// Defense in depth (contract v2, A3): re-check the matched action's
 		// minTrust — 403 before any OpenRegister write.
-		if (PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
+		if ((new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -1528,7 +1661,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The created object, or the refusal.
 	 *
-	 * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t02
 	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
 	 */
 	private function createFrom(array $subject, array $match, string $register, string $schema, array $carried=[]): JSONResponse {
@@ -1539,7 +1672,7 @@ class ContributionController extends Controller implements PortalProtected {
 			action: $action,
 			data: $this->whitelist(fields: array_values(array_diff((array)($action['fields'] ?? []), $leftOut)))
 		);
-		$data = (new CreateBody())->build(action: $action, whitelisted: $whitelisted);
+		$data = $this->createBody->build(action: $action, whitelisted: $whitelisted);
 		// A carried field is set from the message the resident owns, over anything the client sent.
 		$data = array_merge($data, $carried);
 
@@ -1550,7 +1683,7 @@ class ContributionController extends Controller implements PortalProtected {
 		// reference has to resolve inside the subject's own scope, else a uuid
 		// in a create body is accepted as typed, which is how a citizen could
 		// file an objection against somebody else's case.
-		$refused = ((new RequiredFieldsGuard())->refusal(action: $action, body: $data)
+		$refused = ($this->requiredFieldsGuard->refusal(action: $action, body: $data)
 			?? $this->crossRefGuard()->refusal(action: $action, data: $data, subject: $subject, app: $match['app']));
 		if ($refused !== null) {
 			return $refused;
@@ -1586,7 +1719,7 @@ class ContributionController extends Controller implements PortalProtected {
 
 		if ($created === null) {
 			// A value the store refused names its field (site-action-forms).
-			return (new WriteRefusal())->response(failure: $this->writer->lastFailure(), data: $data)
+			return $this->writeRefusal->response(failure: $this->writer->lastFailure(), data: $data)
 				?? new JSONResponse(['error' => 'write_failed'], Http::STATUS_BAD_GATEWAY);
 		}
 
@@ -1691,7 +1824,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * for granted (create-names-its-action). A named id must be one of the
 	 * subject's create actions on this register and schema, else null (403).
 	 * Without an id, a single candidate is used as before, and two or more
-	 * answer CreateActionMatcher::AMBIGUOUS (400) rather than a guess.
+	 * answer CreateActionMatcherInterface::AMBIGUOUS (400) rather than a guess.
 	 *
 	 * @param array<string, mixed> $subject The resolved subject.
 	 * @param string $register The requested register.
@@ -1702,10 +1835,10 @@ class ContributionController extends Controller implements PortalProtected {
 	 *                                                                      WMEBV receipt's `appId`), 'ambiguous',
 	 *                                                                      or null.
 	 *
-	 * @spec openspec/changes/create-names-its-action/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-10-07-create-names-its-action/tasks.md#T1
 	 */
 	private function authorisedCreateAction(array $subject, string $register, string $schema): array|string|null {
-		return (new CreateActionMatcher())->match(
+		return $this->createActionMatcher->match(
 			aggregate: $this->registry->aggregateFor($subject),
 			register: $register,
 			schema: $schema,
@@ -1737,7 +1870,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 */
 	private function createAnonymous(string $register, string $schema): JSONResponse {
 		$match = $this->authorisedAnonymousCreateAction(register: $register, schema: $schema);
-		if ($match === CreateActionMatcher::AMBIGUOUS) {
+		if ($match === CreateActionMatcherInterface::AMBIGUOUS) {
 			// Two or more landing-page forms write this schema and the client
 			// named none: refuse rather than file it under the first form.
 			return new JSONResponse(['error' => 'action_required'], Http::STATUS_BAD_REQUEST);
@@ -1754,9 +1887,9 @@ class ContributionController extends Controller implements PortalProtected {
 		// schema's `required` set may mandate, since an anonymous write
 		// carries no real subjectRef).
 		$whitelisted = $this->withoutFileFields(action: $action, data: $this->whitelist(fields: (array)($action['fields'] ?? [])));
-		$data = (new CreateBody())->build(action: $action, whitelisted: $whitelisted);
+		$data = $this->createBody->build(action: $action, whitelisted: $whitelisted);
 
-		$missing = (new RequiredFieldsGuard())->refusal(action: $action, body: $data);
+		$missing = $this->requiredFieldsGuard->refusal(action: $action, body: $data);
 		if ($missing !== null) {
 			return $missing;
 		}
@@ -1791,11 +1924,72 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/landing-page-provisioning/spec.md#requirement-a-landing-pages-form-is-submittable-with-no-portal-session
 	 */
 	private function submitIntoDestination(array $action, array $answers): JSONResponse {
-		if ($this->intake === null) {
-			$refusal = DestinationIntake::refusal(submitted: null);
-			return new JSONResponse($refusal['body'], $refusal['status']);
+		$submitted = $this->intakeSubmission(action: $action, answers: $answers);
+		if ($submitted['ok'] === false) {
+			return $this->intakeRefusal(submitted: $submitted);
 		}
 
+		return new JSONResponse(['object' => $submitted['answer']]);
+	}//end submitIntoDestination()
+
+	/**
+	 * What the destination intake answers for the action's answers; a
+	 * refusal without a status (try again later) when the intake is not wired.
+	 *
+	 * @param array<string, mixed> $action  The matched action.
+	 * @param array<string, mixed> $answers The whitelisted answers.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function intakeSubmission(array $action, array $answers): array {
+		if ($this->intake === null) {
+			return ['ok' => false];
+		}
+
+		return $this->intake->submit(
+			binding: $this->intakeBinding(action: $action),
+			render: ['fields' => $this->intakeFields(action: $action)],
+			answers: $answers,
+			server: (array)($action['server'] ?? []),
+			idempotencyKey: (string)$this->request->getHeader('Idempotency-Key')
+		);
+	}//end intakeSubmission()
+
+	/**
+	 * The destination intake's refusal as a response.
+	 *
+	 * @param array<string, mixed> $submitted What the intake answered.
+	 *
+	 * @return JSONResponse
+	 */
+	private function intakeRefusal(array $submitted): JSONResponse {
+		$refusal = DestinationRefusal::of(submitted: $submitted);
+
+		return new JSONResponse($refusal['body'], $refusal['status']);
+	}//end intakeRefusal()
+
+	/**
+	 * The binding an action submits through: its destination, and its
+	 * `intakeScope` split into the portal and the route.
+	 *
+	 * @param array<string, mixed> $action The matched action.
+	 *
+	 * @return array{destination: mixed, portal: string, route: string}
+	 */
+	private function intakeBinding(array $action): array {
+		$scope = explode('/', (string)($action['intakeScope'] ?? ''), 2);
+
+		return ['destination' => $action['destination'], 'portal' => $scope[0], 'route' => ($scope[1] ?? '')];
+	}//end intakeBinding()
+
+	/**
+	 * The action's field names as the form's fields.
+	 *
+	 * @param array<string, mixed> $action The matched action.
+	 *
+	 * @return array<int, array{name: string}>
+	 */
+	private function intakeFields(array $action): array {
 		$fields = [];
 		foreach ((array)($action['fields'] ?? []) as $field) {
 			if (is_string($field) === true && $field !== '') {
@@ -1803,21 +1997,8 @@ class ContributionController extends Controller implements PortalProtected {
 			}
 		}
 
-		$scope     = explode('/', (string)($action['intakeScope'] ?? ''), 2);
-		$submitted = $this->intake->submit(
-			binding: ['destination' => $action['destination'], 'portal' => $scope[0], 'route' => ($scope[1] ?? '')],
-			render: ['fields' => $fields],
-			answers: $answers,
-			server: (array)($action['server'] ?? []),
-			idempotencyKey: (string)$this->request->getHeader('Idempotency-Key')
-		);
-		if ($submitted['ok'] === false) {
-			$refusal = DestinationIntake::refusal(submitted: $submitted);
-			return new JSONResponse($refusal['body'], $refusal['status']);
-		}
-
-		return new JSONResponse(['object' => $submitted['answer']]);
-	}//end submitIntoDestination()
+		return $fields;
+	}//end intakeFields()
 
 	/**
 	 * Find the `anonymous: true`, `type: create` action for (register, schema)
@@ -1828,7 +2009,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * `landingPageSubmission`, so the first match is never taken for granted
 	 * (create-names-its-action): a named id must be one of the anonymous create
 	 * actions on this target, else null (403), and two or more without an id
-	 * answer CreateActionMatcher::AMBIGUOUS (400).
+	 * answer CreateActionMatcherInterface::AMBIGUOUS (400).
 	 *
 	 * @param string $register The requested register.
 	 * @param string $schema   The requested schema.
@@ -1836,10 +2017,10 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @return array{action: array<string, mixed>, app: string}|string|null The match, 'ambiguous', or null.
 	 *
 	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
-	 * @spec openspec/changes/create-names-its-action/tasks.md#T3
+	 * @spec openspec/changes/archive/2026-10-07-create-names-its-action/tasks.md#T3
 	 */
 	private function authorisedAnonymousCreateAction(string $register, string $schema): array|string|null {
-		return (new CreateActionMatcher())->matchAnonymous(
+		return $this->createActionMatcher->matchAnonymous(
 			aggregate: $this->registry->aggregateAnonymous(),
 			register: $register,
 			schema: $schema,
@@ -1900,7 +2081,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @return JSONResponse The updated object, or 401 / 403 / 404.
 	 *
 	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T3
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T09
 	 * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
 	 */
 	#[PublicPage]
@@ -1922,7 +2103,7 @@ class ContributionController extends Controller implements PortalProtected {
 
 		// Defense in depth (contract v2, A3): re-check the matched action's
 		// minTrust — 403 before any OpenRegister write.
-		if (PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
+		if ((new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -1990,7 +2171,7 @@ class ContributionController extends Controller implements PortalProtected {
 		// (non-status) update action that declares no `status.changed` key
 		// simply enqueues nothing.
 		$this->notificationDispatch->dispatch(
-			ruleKey: NotificationDispatchService::RULE_STATUS_CHANGED,
+			ruleKey: NotificationDispatchServiceInterface::RULE_STATUS_CHANGED,
 			appId: $match['app'],
 			subject: $subject
 		);
@@ -2083,11 +2264,11 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return array<string, mixed> The body without file fields.
 	 *
-	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-file-field-must-never-be-written-from-a-request-body
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-file-field-must-never-be-written-from-a-request-body
 	 */
 	private function withoutFileFields(array $action, array $data): array {
 		foreach ((array)($action['fieldConfigs'] ?? []) as $field => $config) {
-			if (is_array($config) === true && ($config['type'] ?? null) === FileFieldConfigNormaliser::TYPE_FILE) {
+			if (is_array($config) === true && ($config['type'] ?? null) === FileFieldConfigNormaliserInterface::TYPE_FILE) {
 				unset($data[$field]);
 			}
 		}
@@ -2104,24 +2285,10 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return string The identifier, or '' when the row carries none.
 	 *
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T09
 	 */
 	private function extractId(array $row): string {
-		$self = ($row['@self'] ?? null);
-		$selfUuid = null;
-		$selfId = null;
-		if (is_array($self) === true) {
-			$selfUuid = ($self['uuid'] ?? null);
-			$selfId = ($self['id'] ?? null);
-		}
-
-		foreach ([($row['id'] ?? null), ($row['uuid'] ?? null), $selfUuid, $selfId] as $candidate) {
-			if ((is_string($candidate) === true || is_int($candidate) === true) && (string)$candidate !== '') {
-				return (string)$candidate;
-			}
-		}
-
-		return '';
+		return $this->rowIdentifier->idFor(row: $row, fallback: '');
 	}//end extractId()
 
 	/**
@@ -2149,10 +2316,10 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @return JSONResponse The relayed response, or 401 / 403 / 502.
 	 *
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T8
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T09
 	 * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
 	 * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
-	 * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
 	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
 	 *
 	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) -- the audit fact-record
@@ -2195,7 +2362,7 @@ class ContributionController extends Controller implements PortalProtected {
 		// either stops the forward before it is audited or made.
 		$scoped = (new ActionScopeResolver(reader: $this->reader))
 			->prepare(action: $action, subject: $subject, appId: $appId, body: $whitelisted);
-		$refused = (new RequiredFieldsGuard())->forwardRefusal(action: $action, scoped: $scoped, declaresFields: $whitelisted !== null);
+		$refused = $this->requiredFieldsGuard->forwardRefusal(action: $action, scoped: $scoped, declaresFields: $whitelisted !== null);
 		if ($refused !== null) {
 			return $refused;
 		}
@@ -2296,17 +2463,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @return bool
 	 */
 	private function isForwardableAction(array $action, array $subject): bool {
-		$endpoint = ($action['endpoint'] ?? null);
-		if (is_string($endpoint) === false || $endpoint === '') {
-			return false;
-		}
-
-		// SSRF guard: instance-local absolute paths ONLY. Full http(s)://
-		// URLs and protocol-relative // paths are rejected.
-		if (str_starts_with($endpoint, '/') === false
-			|| str_starts_with($endpoint, '//') === true
-			|| str_contains($endpoint, '://') === true
-		) {
+		if ($this->isLocalEndpoint(endpoint: ($action['endpoint'] ?? null)) === false) {
 			return false;
 		}
 
@@ -2315,8 +2472,24 @@ class ContributionController extends Controller implements PortalProtected {
 			return false;
 		}
 
-		return PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null));
+		return (new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null));
 	}//end isForwardableAction()
+
+	/**
+	 * Whether an endpoint is a non-empty instance-local absolute path. SSRF
+	 * guard: full http(s):// URLs and protocol-relative // paths are rejected.
+	 *
+	 * @param mixed $endpoint The declared endpoint.
+	 *
+	 * @return bool
+	 */
+	private function isLocalEndpoint(mixed $endpoint): bool {
+		return is_string($endpoint) === true
+			&& $endpoint !== ''
+			&& str_starts_with($endpoint, '/') === true
+			&& str_starts_with($endpoint, '//') === false
+			&& str_contains($endpoint, '://') === false;
+	}//end isLocalEndpoint()
 
 	/**
 	 * Report `exportPdf` on a collection only when OpenRegister's rows renderer is there,
@@ -2326,7 +2499,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return array<string, mixed> The aggregate.
 	 *
-	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t01
+	 * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t01
 	 */
 	private function withExportAvailability(array $aggregate): array {
 		if ($this->pdf?->available() === true) {
@@ -2334,15 +2507,31 @@ class ContributionController extends Controller implements PortalProtected {
 		}
 
 		foreach ((array)($aggregate['contributions'] ?? []) as $i => $contribution) {
-			foreach ((array)($contribution['collections'] ?? []) as $j => $collection) {
-				if (is_array($collection) === true && array_key_exists('exportPdf', $collection) === true) {
-					$aggregate['contributions'][$i]['collections'][$j]['exportPdf'] = false;
-				}
+			foreach ($this->pdfExportKeys(contribution: $contribution) as $j) {
+				$aggregate['contributions'][$i]['collections'][$j]['exportPdf'] = false;
 			}
 		}
 
 		return $aggregate;
 	}//end withExportAvailability()
+
+	/**
+	 * The keys of a contribution's collections that declare `exportPdf`.
+	 *
+	 * @param mixed $contribution The contribution.
+	 *
+	 * @return array<int, int|string>
+	 */
+	private function pdfExportKeys(mixed $contribution): array {
+		$keys = [];
+		foreach ((array)($contribution['collections'] ?? []) as $j => $collection) {
+			if (is_array($collection) === true && array_key_exists('exportPdf', $collection) === true) {
+				$keys[] = $j;
+			}
+		}
+
+		return $keys;
+	}//end pdfExportKeys()
 
 	/**
 	 * Download the subject's own list as a PDF: the same authorisation and the same
@@ -2353,7 +2542,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return Response The PDF, or 401 / 403 / 404 / 400 / 502 / 503.
 	 *
-	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t02
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -2366,7 +2555,7 @@ class ContributionController extends Controller implements PortalProtected {
 
 		$collectionId = (string)$this->request->getParam('collection', '');
 		$match        = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
-		if ($match === null || PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
+		if ($match === null || (new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -2397,7 +2586,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return Response The PDF, or 401 / 403 / 404 / 400 / 502 / 503.
 	 *
-	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t03
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -2410,7 +2599,7 @@ class ContributionController extends Controller implements PortalProtected {
 
 		$collectionId = (string)$this->request->getParam('collection', '');
 		$match        = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
-		if ($match === null || PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
+		if ($match === null || (new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -2444,8 +2633,8 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return Response The PDF, or 400 (too long) / 502 / 503.
 	 *
-	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t04
-	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t04
+	 * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t05
 	 */
 	private function pdfResponse(array $subject, array $collection, array $columns, array $rows, array $target): Response {
 		if ($this->pdf === null || $this->pdf->available() === false) {
@@ -2462,7 +2651,7 @@ class ContributionController extends Controller implements PortalProtected {
 			columns: array_map(static fn (array $c): array => ['key' => $c['key'], 'label' => $c['label']], $columns),
 			rows: $this->pdf->textRows(columns: $columns, rows: array_values(array_filter($rows, 'is_array')))
 		);
-		if ($bytes === PortalPdfExport::TOO_LARGE) {
+		if ($bytes === PortalPdfExportInterface::TOO_LARGE) {
 			return new JSONResponse(['error' => 'too_large'], Http::STATUS_BAD_REQUEST);
 		}
 

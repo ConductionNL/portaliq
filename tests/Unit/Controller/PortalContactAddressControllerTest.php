@@ -7,7 +7,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Controller\PortalContactAddressController;
 use OCA\Portaliq\Service\Identity\PortalContactAddressService;
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
-use OCA\Portaliq\Service\Session\BearerSessionResolver;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;

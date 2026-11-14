@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+ * @spec openspec/specs/report-without-an-account/spec.md
  */
 
 declare(strict_types=1);
@@ -28,7 +28,7 @@ namespace OCA\Portaliq\Service\Reports;
 /**
  * Reads a row's own identifier.
  *
- * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+ * @spec openspec/specs/report-without-an-account/spec.md
  */
 final class ReportRowId {
 	/**
@@ -39,7 +39,7 @@ final class ReportRowId {
 	 *
 	 * @return string The identifier, '' when it has none.
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 */
 	public static function of(array $row): string {
 		$self = (array)($row['@self'] ?? []);

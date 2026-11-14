@@ -8,7 +8,7 @@
 //
 // Imports nothing, so tests/site-collections.spec.mjs reads it as node.
 //
-// @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-contribution-page-must-render-its-blocks-req-srp-014
+// @spec openspec/specs/site-portal-parity/spec.md#requirement-a-contribution-page-must-render-its-blocks-req-srp-014
 
 export default {
 	nl: {

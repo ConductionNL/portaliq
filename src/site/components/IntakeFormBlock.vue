@@ -895,7 +895,7 @@ export default {
 		 *
 		 * @return {string} The binding route, or ''.
 		 *
-		 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
+		 * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
 		 */
 		bindingRoute() {
 			return bindingRouteFrom(this.routeParam, this.route)
@@ -906,7 +906,7 @@ export default {
 		 *
 		 * @return {Array<object>} The fields.
 		 *
-		 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
+		 * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
 		 */
 		fields() {
 			return (
@@ -1092,7 +1092,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
+		 * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
 		 */
 		bindingRoute() {
 			this.load()
@@ -1109,7 +1109,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when loaded.
 		 *
-		 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-applicant-block-is-prefilled-from-the-signed-in-identity-only-req-pifo-003
+		 * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-applicant-block-is-prefilled-from-the-signed-in-identity-only-req-pifo-003
 		 */
 		async load() {
 			this.state = 'loading'
@@ -1140,7 +1140,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when answered.
 		 *
-		 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
+		 * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
 		 */
 		async submit() {
 			this.sendFailed = false
@@ -1474,6 +1474,17 @@ export default {
 			if (Object.hasOwn(TYPED_ANSWERS, field.type)) {
 				return TYPED_ANSWERS[field.type](field, this.values[field.name])
 			}
+			return this.plainAnswerText(field)
+		},
+
+		/**
+		 * An answer without a type of its own as the review shows it: the
+		 * option's label, a date as written in Dutch, or the text.
+		 *
+		 * @param {object} field The field.
+		 * @return {string} The answer.
+		 */
+		plainAnswerText(field) {
 			const value = String(this.values[field.name] ?? '')
 			const option = chosenOption(field, value)
 			if (option !== undefined) {
@@ -1589,7 +1600,7 @@ export default {
 		 * @param {object} field The field.
 		 * @return {string} The id.
 		 *
-		 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
+		 * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
 		 */
 		elementId(field) {
 			return `pq-intake-field-${field.name}`
@@ -1601,7 +1612,7 @@ export default {
 		 * @param {object} field The field.
 		 * @return {string} The input type.
 		 *
-		 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
+		 * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
 		 */
 		inputType(field) {
 			const KNOWN = ['text', 'email', 'tel', 'number', 'date', 'url']

@@ -1,6 +1,6 @@
 publiccodeYmlVersion: "0.3"
 
-name: "App Template"
+name: "Portaliq"
 url: "https://github.com/ConductionNL/portaliq"
 softwareVersion: "0.1.2"
 releaseDate: "2026-01-01"
@@ -16,18 +16,41 @@ developmentStatus: development
 
 description:
   en:
-    shortDescription: "Scaffold template for Conduction Nextcloud apps"
+    localisedName: "Portaliq"
+    shortDescription: "One shared external portal for clients and suppliers"
     longDescription: |
-      A scaffold template for creating new Nextcloud applications using the
-      Conduction development stack. Provides OpenRegister integration,
-      manifest-driven UI, MCP tool provider scaffolding, and Playwright
-      end-to-end test setup.
+      Portaliq is the shared external portal of the Conduction app suite.
+      Clients (citizens) and suppliers (companies) get one integrated,
+      white-label portal to see and act on their records across every app.
+      Portaliq reads the data through OpenRegister and renders the portal
+      contribution of each app. It owns the external login (DigiD,
+      eHerkenning, eIDAS), the white-label portal shell, the unified inbox
+      and the register of portal contributions. Employees keep working in
+      the internal apps.
     features:
-      - OpenRegister register and schema initialisation
-      - Manifest-driven SPA with CnAppRoot
-      - AI Chat Companion (MCP tool provider) scaffold
-      - Admin settings panel
-      - Playwright e2e test setup
+      - External login with DigiD, eHerkenning and eIDAS
+      - White-label portal shell with its own domain and theme
+      - Unified inbox for clients and suppliers
+      - Portal contributions from every app in the suite
+      - Data read and written through OpenRegister
+  nl:
+    localisedName: "Portaliq"
+    shortDescription: "Eén gedeeld extern portaal voor klanten en leveranciers"
+    longDescription: |
+      Portaliq is het gedeelde externe portaal van de Conduction-appsuite.
+      Klanten (burgers) en leveranciers (bedrijven) krijgen één
+      geïntegreerd, white-label portaal waarin ze hun gegevens uit alle apps
+      inzien en er acties op uitvoeren. Portaliq haalt de gegevens op via
+      OpenRegister en toont de portaalbijdrage van elke app. Portaliq
+      verzorgt de externe inlog (DigiD, eHerkenning, eIDAS), de white-label
+      portaalschil, de gebundelde berichtenbox en het register van
+      portaalbijdragen. Medewerkers blijven werken in de interne apps.
+    features:
+      - Externe inlog met DigiD, eHerkenning en eIDAS
+      - White-label portaalschil met een eigen domein en thema
+      - Gebundelde berichtenbox voor klanten en leveranciers
+      - Portaalbijdragen van elke app in de suite
+      - Gegevens lezen en schrijven via OpenRegister
 
 legal:
   license: EUPL-1.2
@@ -46,3 +69,12 @@ localisation:
   availableLanguages:
     - en
     - nl
+
+# Common Ground layer (nl.vng profile). The NL country section is deprecated in
+# publiccode.yml 1.0, so the same layer is also declared as a supports entry.
+supports:
+  - id: https://commonground.nl/cms/view/54476261/5-lagen-model#interaction
+NL:
+  vng:
+    commonground:
+      layer: interaction

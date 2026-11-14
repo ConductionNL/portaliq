@@ -16,10 +16,10 @@ use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionRevoker;
 use OCA\Portaliq\Service\PortalSessionService;
-use OCA\Portaliq\Service\Session\BearerSessionResolver;
-use OCA\Portaliq\Service\Session\SessionRecords;
-use OCA\Portaliq\Service\Session\SessionSigningKey;
-use OCA\Portaliq\Service\Session\SubjectAssertionIssuer;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
+use OCA\Portaliq\Kernel\Support\SessionRecords;
+use OCA\Portaliq\Kernel\Support\SessionSigningKey;
+use OCA\Portaliq\Kernel\Support\SubjectAssertionIssuer;
 use OCP\App\IAppManager;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
@@ -33,6 +33,8 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Portaliq\Service\RequestedPortal;
+use OCA\Portaliq\Service\RequiredFieldsGuard;
 
 /**
  * The guest routes of identity-guest-page-for-signed-links: a declared guest
@@ -340,7 +342,9 @@ class GuestActionControllerTest extends TestCase {
 			$registry,
 			new PortalActionForwarder($request, new InstanceLoopback($clientService, $urls, $this->createMock(InternalBaseUrl::class), $this->createMock(LoggerInterface::class)), new SubjectAssertionIssuer($signingKey)),
 			$portals,
-			($auditor ?? $this->createMock(AuditTrailService::class))
+			($auditor ?? $this->createMock(AuditTrailService::class)),
+			new RequestedPortal(),
+			new RequiredFieldsGuard()
 		);
 	}//end controller()
 }//end class

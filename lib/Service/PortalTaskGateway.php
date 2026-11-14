@@ -25,14 +25,15 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
+ * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Service\Session\SubjectAssertionIssuer;
+use OCA\Portaliq\Kernel\Support\SubjectAssertionIssuer;
+use OCA\Portaliq\Kernel\Contracts\PortalTaskGatewayInterface;
 use OCP\App\IAppManager;
 use OCP\Http\Client\IResponse;
 use OCP\IURLGenerator;
@@ -43,9 +44,9 @@ use Throwable;
 /**
  * Forwards portal task reads and completions to openregister, assertion-signed.
  *
- * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
+ * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
  */
-class PortalTaskGateway {
+class PortalTaskGateway implements PortalTaskGatewayInterface {
 	/**
 	 * The seam's routes on the co-installed openregister, BY NAME. The URL is
 	 * built from the route table (`linkToRoute()` + `getAbsoluteURL()`), never
@@ -64,7 +65,7 @@ class PortalTaskGateway {
 	 * The seam route that raises a task. Used server to server, as the handler
 	 * who asked, never from a browser.
 	 *
-	 * @spec openspec/changes/partner-tasks-in-the-portal/specs/partner-tasks-in-the-portal/spec.md
+	 * @spec openspec/specs/partner-tasks-in-the-portal/spec.md
 	 */
 	private const ROUTE_CREATE = 'openregister.portalTask.create';
 
@@ -106,7 +107,7 @@ class PortalTaskGateway {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
 	 */
 	public function isAvailable(): bool {
 		if ($this->appManager->isInstalled('openregister') === false || $this->session->isConfigured() === false) {
@@ -133,7 +134,7 @@ class PortalTaskGateway {
 	 * @return array{status: int, body: array<string, mixed>}|null The relayed
 	 *         answer, or null on transport failure / an unmintable assertion.
 	 *
-	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
 	 */
 	public function listTasks(array $subject, int $limit = 25, int $offset = 0): ?array {
 		$call = new SeamCall(method: 'GET', route: self::ROUTE_INDEX);
@@ -150,7 +151,7 @@ class PortalTaskGateway {
 	 * @return array{status: int, body: array<string, mixed>}|null The relayed
 	 *         answer, or null on transport failure / an unmintable assertion.
 	 *
-	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
 	 */
 	public function getTask(array $subject, string $uuid): ?array {
 		$call = new SeamCall(method: 'GET', route: self::ROUTE_SHOW);
@@ -174,7 +175,7 @@ class PortalTaskGateway {
 	 * @return array{status: int, body: array<string, mixed>}|null The relayed
 	 *         answer, or null on transport failure / an unmintable assertion.
 	 *
-	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
 	 */
 	public function completeTask(
 		array $subject,
@@ -271,7 +272,7 @@ class PortalTaskGateway {
 	 * @return array{status: int, body: array<string, mixed>}|null The relayed
 	 *         answer, or null on transport failure.
 	 *
-	 * @spec openspec/changes/partner-tasks-in-the-portal/specs/partner-tasks-in-the-portal/spec.md
+	 * @spec openspec/specs/partner-tasks-in-the-portal/spec.md
 	 */
 	public function createTask(array $handler, string $subjectRef, array $task): ?array {
 		if ($subjectRef === '') {
@@ -328,7 +329,7 @@ class PortalTaskGateway {
 	 *
 	 * @return array{status: int, body: array<string, mixed>}|null
 	 *
-	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
 	 */
 	private function forward(array $subject, SeamCall $call): ?array {
 		$assertion = $this->assertionFor(subject: $subject);
@@ -476,7 +477,7 @@ class PortalTaskGateway {
 	 *   never the seam. The empty path is turned into the exception so that
 	 *   `forward()` degrades to null instead of calling the wrong URL.
 	 *
-	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
 	 */
 	private function seamUrl(string $route, array $parameters): string {
 		$path = $this->urlGenerator->linkToRoute($route, $parameters);

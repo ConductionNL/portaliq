@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-derived-dimensions-must-be-computed-on-the-server-and-never-accepted-from-the-client
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-derived-dimensions-must-be-computed-on-the-server-and-never-accepted-from-the-client
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ namespace OCA\Portaliq\Service\Traffic;
  * communications officer asks ("do people read this on their phone") and
  * cannot answer the one they should not.
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-derived-dimensions-must-be-computed-on-the-server-and-never-accepted-from-the-client
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-derived-dimensions-must-be-computed-on-the-server-and-never-accepted-from-the-client
  */
 class UserAgentClassifier {
 
@@ -71,7 +71,7 @@ class UserAgentClassifier {
 	 *
 	 * @return array{deviceType: string, browser: string, os: string, bot: bool} The families.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-derived-dimensions-must-be-computed-on-the-server-and-never-accepted-from-the-client
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-derived-dimensions-must-be-computed-on-the-server-and-never-accepted-from-the-client
 	 */
 	public function classify(string $userAgent): array {
 		$agent = trim($userAgent);

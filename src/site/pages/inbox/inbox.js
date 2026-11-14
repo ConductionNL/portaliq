@@ -30,7 +30,7 @@ export const TASK_STORAGE_KEY = 'portaliq.openTask'
  * @param {object} row The row.
  * @param {string|number|null} [fallback] Used when the row has no id.
  * @return {string|number|null} The id.
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
  */
 export function rowId(row, fallback = null) {
 	return row?.id || row?.['@self']?.id || fallback
@@ -42,7 +42,7 @@ export function rowId(row, fallback = null) {
  * @param {string} value An ISO date-time.
  * @param {string} locale `nl` or `en`.
  * @return {string} The formatted value.
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
  */
 export function formatDateTime(value, locale) {
 	if (!value) {
@@ -92,7 +92,7 @@ export function formatMessageMoment(value, locale) {
  * @param {string} value An ISO date-time.
  * @param {string} locale `nl` or `en`.
  * @return {string} The formatted date.
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
  */
 export function formatDate(value, locale) {
 	if (!value) {
@@ -110,7 +110,7 @@ export function formatDate(value, locale) {
  *
  * @param {object} message The message.
  * @return {boolean}
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
  */
 export function hasReadiness(message) {
 	return Boolean(message?.nature || message?.rechtsgevolg || message?.term)
@@ -122,7 +122,7 @@ export function hasReadiness(message) {
  * @param {Array<object>} messages The messages.
  * @param {string|number} id The id of the message the server marked read.
  * @return {Array<object>} The new list.
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
  */
 export function markedRead(messages, id) {
 	return (messages || []).map((m) => (rowId(m) === id ? { ...m, read: true } : m))
@@ -135,7 +135,7 @@ export function markedRead(messages, id) {
  *
  * @param {object} message The message.
  * @return {boolean}
- * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+ * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
  */
 export function canDelete(message) {
 	return Boolean(rowId(message)) && message?._source?.deletable === true
@@ -147,7 +147,7 @@ export function canDelete(message) {
  * @param {Array<object>} messages The messages.
  * @param {Array<string>} ids The ids to leave out.
  * @return {Array<object>}
- * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+ * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
  */
 export function withoutMessages(messages, ids) {
 	const gone = new Set(ids || [])
@@ -162,19 +162,42 @@ export function withoutMessages(messages, ids) {
  * @param {Array<object>} nav The navigation entries.
  * @param {{app: string, collection: string, id: string}} link The record link.
  * @return {string|null} The route.
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
  */
 export function recordRoute(nav, link) {
-	const key = navKeyFor(nav, link)
-	const entry = key ? (nav || []).find((n) => n.key === key) : null
+	const entry = navEntryFor(nav, link)
 	if (!entry) {
 		return null
 	}
 	// A record page opens on that record's route (REQ-SMO-010).
-	if (link?.id && opensAsRecordPage(entry, link.collection)) {
+	if (opensOnRecord(entry, link)) {
 		return `${routeForNav(entry)}/${encodeURIComponent(link.id)}`
 	}
 	return routeForNav(entry)
+}
+
+/**
+ * The navigation entry of the page that shows a record link, or null.
+ *
+ * @param {Array<object>} nav The navigation entries.
+ * @param {{app: string, collection: string, id: string}} link The record link.
+ * @return {object|null} The entry.
+ */
+function navEntryFor(nav, link) {
+	const key = navKeyFor(nav, link)
+	return key ? (nav || []).find((n) => n.key === key) : null
+}
+
+/**
+ * Whether a page opens on the linked record itself: the link names a
+ * record and the page is that collection's record page.
+ *
+ * @param {object} entry The navigation entry.
+ * @param {{collection: string, id: string}} link The record link.
+ * @return {boolean}
+ */
+function opensOnRecord(entry, link) {
+	return Boolean(link?.id) && opensAsRecordPage(entry, link.collection)
 }
 
 /**
@@ -184,7 +207,7 @@ export function recordRoute(nav, link) {
  * @param {object|null} storage sessionStorage.
  * @param {{app: string, collection: string, id: string}} link The record link.
  * @return {void}
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
  */
 export function keepRecordToOpen(storage, link) {
 	try {
@@ -207,7 +230,7 @@ export function keepRecordToOpen(storage, link) {
  * @param {object|null} storage sessionStorage.
  * @param {string} uuid The task uuid.
  * @return {void}
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
  */
 export function keepTaskToOpen(storage, uuid) {
 	try {
@@ -222,7 +245,7 @@ export function keepTaskToOpen(storage, uuid) {
  *
  * @param {object|null} storage sessionStorage.
  * @return {string|null} The task uuid.
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
  */
 export function takeTaskToOpen(storage) {
 	try {
@@ -238,7 +261,7 @@ export function takeTaskToOpen(storage) {
  * The browser's sessionStorage, or null where it is blocked.
  *
  * @return {object|null} The storage.
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
  */
 export function sessionStore() {
 	try {
@@ -254,7 +277,7 @@ export function sessionStore() {
  *
  * @param {object} message The message.
  * @return {Array<{id: (string|number), name: string, size?: number}>} The files, or `[]`.
- * @spec openspec/changes/inbox-reply-with-attachments/specs/portal-inbox-reply/spec.md#requirement-files-that-came-with-a-message-open-req-ira-004
+ * @spec openspec/specs/portal-inbox-reply/spec.md#requirement-files-that-came-with-a-message-open-req-ira-004
  */
 export function attachmentsOf(message) {
 	const files = Array.isArray(message?._files) ? message._files : []
@@ -272,7 +295,7 @@ export function attachmentsOf(message) {
  *
  * @param {object} message The message.
  * @return {{id: string, register: string, schema: string}|null} The collection, or null without a source.
- * @spec openspec/changes/inbox-reply-with-attachments/specs/portal-inbox-reply/spec.md#requirement-files-that-came-with-a-message-open-req-ira-004
+ * @spec openspec/specs/portal-inbox-reply/spec.md#requirement-files-that-came-with-a-message-open-req-ira-004
  */
 export function downloadCollection(message) {
 	const source = message?._source || {}
@@ -368,30 +391,61 @@ function withoutLeadIn(before) {
  * @return {{line: string, changed: boolean}} The line, and whether anything went.
  */
 function lineWithoutOpenLinks(line, isOpenTarget) {
-	const listItem = /^\s*[-*\u2022]\s/.test(line)
+	const cut = { line, listItem: /^\s*[-*\u2022]\s/.test(line), changed: false }
 	const found = [...line.matchAll(URL_PATTERN)].reverse()
-	let result = line
-	let changed = false
 	for (const match of found) {
-		const url = match[0].replace(TRAILING_PUNCTUATION, '')
-		if (!isOpenTarget(url)) {
-			continue
+		if (isOpenTarget(addressOf(match))) {
+			cutAddress(cut, match)
 		}
-		let before = result.slice(0, match.index).trimEnd()
-		let after = result.slice(match.index + url.length)
-		if (before.endsWith(':')) {
-			before = before.slice(0, -1)
-			if (!listItem) {
-				before = withoutLeadIn(before)
-			}
-		}
-		if (/^[.,;:!?]*\s*$/.test(after) && before.trim() === '') {
-			after = ''
-		}
-		result = (before.trimEnd() + after).trimEnd()
-		changed = true
 	}
-	return { line: result, changed }
+	return { line: cut.line, changed: cut.changed }
+}
+
+/**
+ * The address an address match names, without the punctuation that ends
+ * the sentence around it.
+ *
+ * @param {RegExpMatchArray} match The address found.
+ * @return {string} The address.
+ */
+function addressOf(match) {
+	return match[0].replace(TRAILING_PUNCTUATION, '')
+}
+
+/**
+ * Cut one address out of the line being cut, with the words that only
+ * introduce it; what follows goes too when it is only punctuation and
+ * nothing stays before it.
+ *
+ * @param {{line: string, listItem: boolean, changed: boolean}} cut The line being cut, whether it is a list line, and whether anything went.
+ * @param {RegExpMatchArray} match The address found.
+ * @return {void}
+ */
+function cutAddress(cut, match) {
+	const before = textBeforeAddress(cut, match.index)
+	let after = cut.line.slice(match.index + addressOf(match).length)
+	if (/^[.,;:!?]*\s*$/.test(after) && before.trim() === '') {
+		after = ''
+	}
+	cut.line = (before.trimEnd() + after).trimEnd()
+	cut.changed = true
+}
+
+/**
+ * The text that stays before an address: up to the address, without the
+ * colon that ends a lead-in and, outside a list line, the lead-in itself.
+ *
+ * @param {{line: string, listItem: boolean}} cut The line being cut and whether it is a list line.
+ * @param {number} index Where the address starts.
+ * @return {string} The text.
+ */
+function textBeforeAddress(cut, index) {
+	const before = cut.line.slice(0, index).trimEnd()
+	if (!before.endsWith(':')) {
+		return before
+	}
+	const leadIn = before.slice(0, -1)
+	return cut.listItem ? leadIn : withoutLeadIn(leadIn)
 }
 
 /**
@@ -408,7 +462,7 @@ function lineWithoutOpenLinks(line, isOpenTarget) {
  * @param {{app: string, collection: string, id: string}|null} link The row's record link.
  * @param {string|null} openRoute The route "Open" navigates to, or null without the button.
  * @return {string} The body to show.
- * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-does-not-repeat-the-open-link-in-the-text-req-nap-012
+ * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-does-not-repeat-the-open-link-in-the-text-req-nap-012
  */
 export function bodyWithoutOpenLink(body, link, openRoute) {
 	if (typeof body !== 'string' || body === '' || !link?.id || !openRoute) {
@@ -451,26 +505,53 @@ function siteLink(url, origin) {
 	if (!origin) {
 		return null
 	}
-	let parsed
+	const parsed = parsedUrl(url)
+	if (!parsed || !isSitePageOn(parsed, origin)) {
+		return null
+	}
+	return { href: parsed.href, route: navigableRoute(parsed) }
+}
+
+/**
+ * An address parsed, or null when it is not one.
+ *
+ * @param {string} url The address.
+ * @return {URL|null} The parsed address.
+ */
+function parsedUrl(url) {
 	try {
-		parsed = new URL(url)
+		return new URL(url)
 	} catch {
 		return null
 	}
-	if (
-		(parsed.protocol !== 'https:' && parsed.protocol !== 'http:')
-		|| parsed.origin !== origin
-		|| !SITE_PATH.test(parsed.pathname)
-	) {
-		return null
-	}
+}
+
+/**
+ * Whether a parsed address is an http(s) page of this site on an origin.
+ *
+ * @param {URL} parsed The parsed address.
+ * @param {string} origin The page's origin.
+ * @return {boolean}
+ */
+function isSitePageOn(parsed, origin) {
+	return (
+		(parsed.protocol === 'https:' || parsed.protocol === 'http:')
+		&& parsed.origin === origin
+		&& SITE_PATH.test(parsed.pathname)
+	)
+}
+
+/**
+ * The route a link into this site navigates to in place, or null. Only a
+ * plain route goes through the site's own navigation; a `#open=` link loads
+ * the site, which reads the fragment on arrival.
+ *
+ * @param {URL} parsed The parsed address.
+ * @return {string|null} The route.
+ */
+function navigableRoute(parsed) {
 	const route = parsed.searchParams.get('route')
-	return {
-		href: parsed.href,
-		// Only a plain route goes through the site's own navigation; a
-		// `#open=` link loads the site, which reads the fragment on arrival.
-		route: route && route.startsWith('/') && !parsed.hash ? route : null,
-	}
+	return route && route.startsWith('/') && !parsed.hash ? route : null
 }
 
 /**
@@ -510,7 +591,7 @@ function pushPart(parts, part) {
  * @param {string} origin The page's origin.
  * @param {{publication: string, link: string}} labels The names of a link.
  * @return {Array<{text: string, href?: string, route?: (string|null)}>} The parts, in order.
- * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-shows-other-site-addresses-as-named-links-req-nap-013
+ * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-shows-other-site-addresses-as-named-links-req-nap-013
  */
 export function bodyParts(body, origin, labels) {
 	const parts = []
@@ -548,7 +629,7 @@ function pushLineParts(parts, view) {
  * @return {number} Where the line's text is now taken up to.
  */
 function pushLinkParts(parts, at) {
-	const url = at.match[0].replace(TRAILING_PUNCTUATION, '')
+	const url = addressOf(at.match)
 	const link = siteLink(url, at.origin)
 	if (!link) {
 		return at.cursor

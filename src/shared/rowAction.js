@@ -54,10 +54,22 @@ export function offersRowAction(action, row) {
 	if (action.availableWhen && !isAvailable(action, row)) {
 		return false
 	}
-	if (!action.rowWhen) {
+	return meetsRowWhen(action.rowWhen, row)
+}
+
+/**
+ * Whether a row meets an action's `rowWhen`: no `rowWhen` holds for every
+ * row, a malformed one for none.
+ *
+ * @param {{field: string, in: Array}|undefined} rowWhen The condition.
+ * @param {object} row The row.
+ * @return {boolean}
+ */
+function meetsRowWhen(rowWhen, row) {
+	if (!rowWhen) {
 		return true
 	}
-	const { field, in: allowed } = action.rowWhen
+	const { field, in: allowed } = rowWhen
 	if (typeof field !== 'string' || !Array.isArray(allowed) || !row) {
 		return false
 	}
@@ -229,17 +241,35 @@ export function redirectTarget(result) {
 	if (!result || !result.ok || !result.body) {
 		return null
 	}
-	const candidate = result.body.redirectUrl ?? result.body.checkoutUrl
+	return httpsHref(result.body.redirectUrl ?? result.body.checkoutUrl)
+}
+
+/**
+ * An absolute `https:` address, or null for anything else.
+ *
+ * @param {unknown} candidate The address an answer gave.
+ * @return {string|null}
+ */
+function httpsHref(candidate) {
 	if (typeof candidate !== 'string' || candidate === '') {
 		return null
 	}
-	let url
+	const url = parsedUrl(candidate)
+	return url && url.protocol === 'https:' ? url.href : null
+}
+
+/**
+ * An absolute address parsed, or null when it is not one.
+ *
+ * @param {string} candidate The address.
+ * @return {URL|null}
+ */
+function parsedUrl(candidate) {
 	try {
-		url = new URL(candidate)
+		return new URL(candidate)
 	} catch {
 		return null
 	}
-	return url.protocol === 'https:' ? url.href : null
 }
 
 /**
@@ -256,6 +286,9 @@ function refusedRedirect(result) {
 	)
 }
 
+/** The answers that say the item no longer allows the action. */
+const GONE_STATUSES = [403, 404, 409]
+
 /**
  * The English source string (the i18n key) for a forward's answer.
  *
@@ -264,15 +297,26 @@ function refusedRedirect(result) {
  */
 export function outcomeKey(result) {
 	if (result && result.ok) {
-		return refusedRedirect(result)
-			? 'The next page could not be opened.'
-			: 'Done.'
+		return doneKey(result)
 	}
 	const status = result ? result.status : 0
-	if (status === 403 || status === 404 || status === 409) {
+	if (GONE_STATUSES.includes(status)) {
 		return 'This can no longer be done for this item.'
 	}
 	return 'This is not available right now. Try again later.'
+}
+
+/**
+ * The English source string for a 2xx answer: done, unless it tried to send
+ * the browser somewhere it may not go.
+ *
+ * @param {{ok: boolean, body: object}} result The forward's result envelope.
+ * @return {string}
+ */
+function doneKey(result) {
+	return refusedRedirect(result)
+		? 'The next page could not be opened.'
+		: 'Done.'
 }
 
 /**
@@ -299,13 +343,24 @@ function pageOrigin() {
  * @param {object} result `{ok, body}` from a forward.
  * @param {string} [origin] The page's own origin; defaults to the current page.
  * @return {string} The link, or ''.
- * @spec openspec/changes/my-dossiers/specs/portal-contribution-contract/spec.md#requirement-a-link-in-an-actions-answer-must-be-shown-to-the-resident-req-myd-004
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-link-in-an-actions-answer-must-be-shown-to-the-resident-req-myd-004
  */
 export function answerLink(result, origin = pageOrigin()) {
 	const link = linkInAnswer(result)
 	if (/^https:\/\/\S+$/i.test(link) || /^\/(?!\/)\S*$/.test(link)) {
 		return link
 	}
+	return sameOriginLink(link, origin)
+}
+
+/**
+ * An absolute http link on the page's own origin, else ''.
+ *
+ * @param {string} link The link.
+ * @param {string} origin The page's own origin, or ''.
+ * @return {string} The link, or ''.
+ */
+function sameOriginLink(link, origin) {
 	if (origin !== '' && /^http:\/\/\S+$/i.test(link)) {
 		return onOrigin(link, origin) ? link : ''
 	}

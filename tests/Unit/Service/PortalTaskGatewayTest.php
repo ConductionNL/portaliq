@@ -13,7 +13,7 @@ namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\InstanceLoopback;
 use OCA\Portaliq\Service\InternalBaseUrl;
-use OCA\Portaliq\Service\Session\SubjectAssertionIssuer;
+use OCA\Portaliq\Kernel\Support\SubjectAssertionIssuer;
 use OCA\Portaliq\Service\PortalTaskGateway;
 use OCA\Portaliq\Tests\Unit\Service\Fixtures\FakeConnectException;
 use OCP\App\IAppManager;
@@ -42,6 +42,7 @@ use RuntimeException;
  *
  * @uses \OCA\Portaliq\Service\InstanceLoopback
  * @uses   \OCA\Portaliq\Service\SeamCall
+ * @uses \OCA\Portaliq\Service\LoopbackRetry
  *
  * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
  */

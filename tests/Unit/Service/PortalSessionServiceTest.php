@@ -10,10 +10,10 @@ use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSessionRevoker;
 use OCA\Portaliq\Service\PortalSessionService;
-use OCA\Portaliq\Service\Session\BearerSessionResolver;
-use OCA\Portaliq\Service\Session\SessionRecords;
-use OCA\Portaliq\Service\Session\SessionSigningKey;
-use OCA\Portaliq\Service\Session\SubjectAssertionIssuer;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
+use OCA\Portaliq\Kernel\Support\SessionRecords;
+use OCA\Portaliq\Kernel\Support\SessionSigningKey;
+use OCA\Portaliq\Kernel\Support\SubjectAssertionIssuer;
 use OCP\IAppConfig;
 use OCP\IConfig;
 use OCP\Security\ISecureRandom;
@@ -220,6 +220,26 @@ class PortalSessionServiceTest extends TestCase {
 	}//end testAMalformedOrForgedBearerResolvesToNoSubject()
 
 	/**
+	 * The company's KVK number is signed on the session and survives a
+	 * refresh; a session without one, or with a malformed one, carries none.
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/tasks.md#t0
+	 */
+	public function testTheCompanyKvkRidesOnTheSessionAndItsRefresh(): void {
+		$service = $this->service();
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1', trust: 'substantial', roles: ['supplier:read'], provider: 'eherkenning', kvk: '87654321');
+
+		$subject = $service->resolveFromBearer('Bearer ' . $issued['token']);
+		$this->assertSame('87654321', $subject['kvk']);
+
+		$refreshed = $service->refreshSession('Bearer ' . $issued['token']);
+		$this->assertSame('87654321', $service->resolveFromBearer('Bearer ' . $refreshed['token'])['kvk']);
+
+		$none = $service->issueSession(subjectRef: 's2', audience: 'supplier', organisation: 'org-1', kvk: '1234');
+		$this->assertSame('', $service->resolveFromBearer('Bearer ' . $none['token'])['kvk']);
+	}//end testTheCompanyKvkRidesOnTheSessionAndItsRefresh()
+
+	/**
 	 * The resolved subject has exactly these fields, in this order.
 	 */
 	public function testAResolvedSubjectHasItsFieldsInOrder(): void {
@@ -229,7 +249,7 @@ class PortalSessionServiceTest extends TestCase {
 		$subject = $service->resolveFromBearer('Bearer ' . $issued['token']);
 
 		$this->assertSame(
-			['subjectRef', 'audience', 'organisation', 'trust', 'roles', 'jti', 'authTime', 'branch', 'branchRestricted', 'provider', 'expiresAt'],
+			['subjectRef', 'audience', 'organisation', 'trust', 'roles', 'jti', 'authTime', 'branch', 'branchRestricted', 'provider', 'expiresAt', 'kvk'],
 			array_keys($subject)
 		);
 		$this->assertSame('s1', $subject['subjectRef']);

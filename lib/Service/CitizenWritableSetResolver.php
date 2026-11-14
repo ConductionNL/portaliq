@@ -30,23 +30,24 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+ * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Contribution\CitizenWriteConfigNormaliser;
+use OCA\Portaliq\Kernel\Contracts\CitizenWritableSetResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\CitizenWriteConfigNormaliserInterface;
 use OCP\IL10N;
 
 /**
  * Resolves the writable set, the amendment window and the public status label
  * for one case.
  *
- * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+ * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
-class CitizenWritableSetResolver {
+class CitizenWritableSetResolver implements CitizenWritableSetResolverInterface {
 	/**
 	 * The property on the case type listing the fields a portal audience may
 	 * change. Each entry IS the field's flag (D16).
@@ -78,7 +79,7 @@ class CitizenWritableSetResolver {
 	 * The property on the case type declaring whether an applicant may end
 	 * their own request, until when, and onto which status.
 	 *
-	 * @spec openspec/changes/withdrawing-your-own-case-from-the-portal/specs/withdrawing-your-own-case/spec.md
+	 * @spec openspec/specs/withdrawing-your-own-case/spec.md
 	 */
 	public const WITHDRAWAL_PROPERTY = 'portalWithdrawal';
 
@@ -110,8 +111,8 @@ class CitizenWritableSetResolver {
 	 *                              `window`, `documents`, `status` and
 	 *                              `ended`.
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
-	 * @spec openspec/changes/citizen-case-ended-shows-only-its-state/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-case-that-has-ended-offers-nothing-and-explains-nothing
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/changes/archive/2026-10-07-citizen-case-ended-shows-only-its-state/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-case-that-has-ended-offers-nothing-and-explains-nothing
 	 */
 	public function resolve(array $action, array $case, string $audience, string $closedField = ''): array {
 		$set = $this->resolveOpen(action: $action, case: $case, audience: $audience);
@@ -144,7 +145,6 @@ class CitizenWritableSetResolver {
 		);
 	}//end resolve()
 
-
 	/**
 	 * The writable set as the case type declares it for the case's status.
 	 *
@@ -154,7 +154,7 @@ class CitizenWritableSetResolver {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	private function resolveOpen(array $action, array $case, string $audience): array {
 		$caseType = $this->actionCaseType(action: $action, caseRow: $case);
@@ -209,8 +209,8 @@ class CitizenWritableSetResolver {
 	 * @return array<string, mixed> `declared`, `open`, `reason`,
 	 *         `targetStatus` and `confirmText`.
 	 *
-	 * @spec openspec/changes/withdrawing-your-own-case-from-the-portal/specs/withdrawing-your-own-case/spec.md
-	 * @spec openspec/changes/citizen-case-ended-shows-only-its-state/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-case-that-has-ended-offers-nothing-and-explains-nothing
+	 * @spec openspec/specs/withdrawing-your-own-case/spec.md
+	 * @spec openspec/changes/archive/2026-10-07-citizen-case-ended-shows-only-its-state/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-case-that-has-ended-offers-nothing-and-explains-nothing
 	 */
 	public function withdrawal(array $action, array $case, string $closedField = ''): array {
 		$closed = [
@@ -317,7 +317,7 @@ class CitizenWritableSetResolver {
 	 * @return array<string, mixed>|null
 	 */
 	private function actionCaseType(array $action, array $caseRow): ?array {
-		$config = ($action[CitizenWriteConfigNormaliser::KEY] ?? null);
+		$config = ($action[CitizenWriteConfigNormaliserInterface::KEY] ?? null);
 		if (is_array($config) === false) {
 			return null;
 		}
@@ -339,7 +339,7 @@ class CitizenWritableSetResolver {
 	 * @return string
 	 */
 	private function caseStatusOf(array $action, array $caseRow): string {
-		$config = (array)$action[CitizenWriteConfigNormaliser::KEY];
+		$config = (array)$action[CitizenWriteConfigNormaliserInterface::KEY];
 		return (string)($caseRow[$config['statusField']] ?? '');
 	}//end caseStatusOf()
 
@@ -353,7 +353,7 @@ class CitizenWritableSetResolver {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	public function isWritable(array $set, string $field): bool {
 		return in_array($field, (array)($set['writable'] ?? []), true);

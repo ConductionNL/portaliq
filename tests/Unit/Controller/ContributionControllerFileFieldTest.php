@@ -19,7 +19,7 @@ use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
-use OCA\Portaliq\Service\Session\SubjectAssertionIssuer;
+use OCA\Portaliq\Kernel\Support\SubjectAssertionIssuer;
 use OCA\Portaliq\Service\SubmissionReceiptService;
 use OCP\AppFramework\Http;
 use OCP\Http\Client\IClientService;
@@ -27,6 +27,17 @@ use OCP\IRequest;
 use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Service\CaseRowMarker;
+use OCA\Portaliq\Contribution\CreateActionMatcher;
+use OCA\Portaliq\Contribution\CreateBody;
+use OCA\Portaliq\Contribution\InboxMessageFields;
+use OCA\Portaliq\Contribution\PageChoice;
+use OCA\Portaliq\Service\RequestedPortal;
+use OCA\Portaliq\Service\RequiredFieldsGuard;
+use OCA\Portaliq\Contribution\RowIdentifier;
+use OCA\Portaliq\Contribution\ThemeChoice;
+use OCA\Portaliq\Service\VisibleFromGate;
+use OCA\Portaliq\Service\WriteRefusal;
 
 /**
  * A declared file field is never written from a request body
@@ -213,7 +224,18 @@ class ContributionControllerFileFieldTest extends TestCase {
 			$this->createMock(AuditTrailService::class),
 			$this->createMock(SubmissionReceiptService::class),
 			$this->createMock(NotificationDispatchService::class),
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(LoggerInterface::class),
+			new CaseRowMarker(),
+			new CreateActionMatcher(),
+			new CreateBody(),
+			new InboxMessageFields(),
+			new PageChoice(),
+			new RequestedPortal(),
+			new RequiredFieldsGuard(),
+			new RowIdentifier(),
+			new ThemeChoice(),
+			new VisibleFromGate(),
+			new WriteRefusal()
 		);
 	}//end controller()
 }//end class

@@ -12,7 +12,7 @@ use OCA\Portaliq\Controller\PortalAccountSelfController;
 use OCA\Portaliq\Controller\PortalIdentityController;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
 use OCA\Portaliq\Service\PortalRateLimit;
-use OCA\Portaliq\Service\Session\BearerSessionResolver;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\OCS\OCSForbiddenException;

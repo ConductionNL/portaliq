@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
@@ -34,57 +34,27 @@ namespace OCA\Portaliq\Service\Identity;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\WaitingAccountInvitationInterface;
 use OCA\Portaliq\Service\AuditTrailService;
-use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCP\Security\ISecureRandom;
 
 /**
  * Issues and redeems the one-time secret of a waiting account.
  *
- * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
-class WaitingAccountInvitation {
+class WaitingAccountInvitation implements WaitingAccountInvitationInterface {
 	/**
 	 * How long the secret works: the week an invitation into the portal has.
 	 */
 	public const TTL = 'P7D';
 
 	/**
-	 * The secret was right: the waiting account joined the caller's account.
-	 */
-	public const CLAIMED = 'claimed';
-
-	/**
 	 * Wrong, expired and already used, told apart by nobody.
 	 */
 	public const NOT_VALID = 'not_valid';
-
-	/**
-	 * The caller offered too many wrong secrets.
-	 */
-	public const LOCKED = 'locked';
-
-	/**
-	 * The caller's own account cannot take over a waiting account: it is not
-	 * active, did not sign in through an identity provider, or sits in
-	 * another organisation. About the caller, never about the invitation,
-	 * and nothing is spent or counted (security review L6).
-	 */
-	public const CANNOT_RECEIVE = 'cannot_receive';
-
-	/**
-	 * The secret is right, but the waiting account carries a claim the
-	 * caller's account holds with another value. Nothing is spent, so the
-	 * invitation stays with its real holder (security review M1).
-	 */
-	public const CONFLICT = 'conflict';
-
-	/**
-	 * Another request holds the lock of the caller's or the waiting account
-	 * past a short wait. Nothing changed; trying again is safe.
-	 */
-	public const BUSY = 'busy';
 
 	/**
 	 * The reason written on the waiting account once it is joined.
@@ -148,7 +118,7 @@ class WaitingAccountInvitation {
 	 * @return array{token: string, email: string, organisation: string, expiresAt: string}|null
 	 *         Null when the account is not this app's waiting account or the write failed.
 	 *
-	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function issue(string $subjectRef, string $appId, ?DateTimeImmutable $now = null): ?array {
 		$lookup  = new PortalAccountLookup(reader: $this->reader);
@@ -193,7 +163,7 @@ class WaitingAccountInvitation {
 	 * @return array{code: string, expiresAt: string}|null Null when the
 	 *         account is not this app's waiting account or the write failed.
 	 *
-	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function issueCode(string $subjectRef, string $appId, ?DateTimeImmutable $now = null): ?array {
 		$lookup  = new PortalAccountLookup(reader: $this->reader);
@@ -241,8 +211,8 @@ class WaitingAccountInvitation {
 	 *
 	 * @return string One of CLAIMED, NOT_VALID, LOCKED, CANNOT_RECEIVE, CONFLICT and BUSY.
 	 *
-	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
-	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function redeem(array $subject, #[\SensitiveParameter] string $secret, ?DateTimeImmutable $now = null): string {
 		$moment  = ($now ?? new DateTimeImmutable());
@@ -349,7 +319,7 @@ class WaitingAccountInvitation {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function audienceOf(array $subject): string {
 		$account = (new PortalAccountLookup(reader: $this->reader))->bySubjectRef(subjectRef: (string)($subject['subjectRef'] ?? ''));

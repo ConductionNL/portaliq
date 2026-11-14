@@ -26,12 +26,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\PublicCatalogueQueryInterface;
+
 /**
  * Searches, filters, sorts and pages catalogue items.
  *
  * @spec openspec/changes/portal-public-catalogue/specs/portal-public-catalogue/spec.md#requirement-a-visitor-may-search-and-filter-a-portals-public-catalogue
  */
-class PublicCatalogueQuery {
+class PublicCatalogueQuery implements PublicCatalogueQueryInterface {
 	/**
 	 * The most results one page shows.
 	 */
@@ -46,11 +48,6 @@ class PublicCatalogueQuery {
 		'í' => 'i', 'ì' => 'i', 'ï' => 'i', 'î' => 'i', 'ó' => 'o', 'ò' => 'o', 'ö' => 'o', 'ô' => 'o',
 		'ú' => 'u', 'ù' => 'u', 'ü' => 'u', 'û' => 'u', 'ç' => 'c', 'ñ' => 'n', 'ĳ' => 'ij',
 	];
-
-	/**
-	 * The sorts a visitor may choose.
-	 */
-	public const SORTS = ['relevance', 'date', 'dateDesc', 'title'];
 
 	/**
 	 * One page of the items that match a visitor's query, with the facets of

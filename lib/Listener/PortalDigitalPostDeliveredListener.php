@@ -36,11 +36,11 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Listener;
 
 use OCA\Integriq\Event\DigitalPostDeliveredEvent;
-use OCA\Portaliq\Service\Notifications\MessageBoxChannel;
-use OCA\Portaliq\Service\Notifications\MessageBoxSender;
+use OCA\Portaliq\Kernel\Contracts\MessageBoxChannelInterface;
+use OCA\Portaliq\Kernel\Contracts\MessageBoxSenderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectWriterInterface;
 use OCA\Portaliq\Service\Notifications\MessageBoxStatus;
 use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
-use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -67,12 +67,12 @@ class PortalDigitalPostDeliveredListener implements IEventListener {
 	 * Wire the listener.
 	 *
 	 * @param ScopedCollectionReaderInterface $reader Finds the row by integriq's message id.
-	 * @param PortalObjectWriter $writer Writes the status.
+	 * @param PortalObjectWriterInterface $writer Writes the status.
 	 * @param LoggerInterface    $logger The logger.
 	 */
 	public function __construct(
 		private readonly ScopedCollectionReaderInterface $reader,
-		private readonly PortalObjectWriter $writer,
+		private readonly PortalObjectWriterInterface $writer,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -92,7 +92,7 @@ class PortalDigitalPostDeliveredListener implements IEventListener {
 			return;
 		}
 
-		if ($event->getRequestedBy() !== MessageBoxSender::REQUESTED_BY || $event->getMessageId() === '') {
+		if ($event->getRequestedBy() !== MessageBoxSenderInterface::REQUESTED_BY || $event->getMessageId() === '') {
 			return;
 		}
 
@@ -160,7 +160,7 @@ class PortalDigitalPostDeliveredListener implements IEventListener {
 	 * @return bool
 	 */
 	private static function isMessageBoxRow(mixed $candidate, string $messageId): bool {
-		return ($candidate['externalMessageId'] ?? null) === $messageId && ($candidate['channel'] ?? null) === MessageBoxChannel::CHANNEL;
+		return ($candidate['externalMessageId'] ?? null) === $messageId && ($candidate['channel'] ?? null) === MessageBoxChannelInterface::CHANNEL;
 	}//end isMessageBoxRow()
 
 	/**

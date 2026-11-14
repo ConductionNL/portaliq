@@ -490,7 +490,7 @@ export default {
 		 *
 		 * @param {*} query The words, or a browser event.
 		 * @return {void}
-		 * @spec openspec/changes/portal-subject-rate-limit/specs/site-search/spec.md#requirement-enter-in-a-search-field-must-search-for-the-typed-words
+		 * @spec openspec/specs/site-search/spec.md#requirement-enter-in-a-search-field-must-search-for-the-typed-words
 		 */
 		forwardSearch(query) {
 			if (typeof query === 'string') {
@@ -542,7 +542,7 @@ export default {
 		 * @return {object} The component props.
 		 *
 		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-blocks-must-take-their-data-as-props-and-nothing-else-req-ptb-007
-		 * @spec openspec/changes/language-switch-reaches-the-content/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
 		 * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-the-sign-in-card-offers-the-portals-own-ways-in
 		 */
 		propsFor(widget) {

@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/guardian-direct-messages/specs/guardian-direct-messaging/spec.md#requirement-a-guardian-may-start-a-direct-thread-with-a-teacher-who-teaches-their-childs-group
+ * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-a-guardian-may-start-a-direct-thread-with-a-teacher-who-teaches-their-childs-group
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Messaging;
 
 /**
- * @spec openspec/changes/guardian-direct-messages/specs/guardian-direct-messaging/spec.md#requirement-a-guardian-may-start-a-direct-thread-with-a-teacher-who-teaches-their-childs-group
+ * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-a-guardian-may-start-a-direct-thread-with-a-teacher-who-teaches-their-childs-group
  */
 class InAppMessagingLeaf implements GuardianMessagingLeafInterface {
 	private const THREAD_SCHEMA = 'messageThread';
@@ -64,7 +64,7 @@ class InAppMessagingLeaf implements GuardianMessagingLeafInterface {
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/specs/guardian-direct-messaging/spec.md#requirement-a-guardian-may-start-a-direct-thread-with-a-teacher-who-teaches-their-childs-group
+	 * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-a-guardian-may-start-a-direct-thread-with-a-teacher-who-teaches-their-childs-group
 	 */
 	public function createThread(string $kind, array $participantRefs, ?string $groupRef, string $createdBy): ?string {
 		if ($kind === self::KIND_DIRECT && $this->access->canCreateDirect(participantRefs: $participantRefs, createdBy: $createdBy) === true) {
@@ -145,7 +145,7 @@ class InAppMessagingLeaf implements GuardianMessagingLeafInterface {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/specs/guardian-direct-messaging/spec.md#requirement-every-readpostmark-read-re-verifies-participation-server-side
+	 * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-every-readpostmark-read-re-verifies-participation-server-side
 	 */
 	public function postMessage(string $threadId, string $senderRef, bool $senderIsStaff, string $body): bool {
 		if ($threadId === '' || $senderRef === '' || $body === '') {
@@ -174,7 +174,7 @@ class InAppMessagingLeaf implements GuardianMessagingLeafInterface {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/design.md#api-design
+	 * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#api-design
 	 */
 	public function listThreads(string $subjectRef, bool $isStaff): array {
 		if ($subjectRef === '') {
@@ -200,7 +200,7 @@ class InAppMessagingLeaf implements GuardianMessagingLeafInterface {
 	 *
 	 * @return array<int, array<string, mixed>>|null
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/specs/guardian-direct-messaging/spec.md#requirement-every-readpostmark-read-re-verifies-participation-server-side
+	 * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-every-readpostmark-read-re-verifies-participation-server-side
 	 */
 	public function listMessages(string $threadId, string $subjectRef, bool $isStaff): ?array {
 		$thread = $this->findThread(threadId: $threadId);
@@ -227,7 +227,7 @@ class InAppMessagingLeaf implements GuardianMessagingLeafInterface {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/specs/guardian-direct-messaging/spec.md#requirement-a-message-tracks-who-has-read-it
+	 * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-a-message-tracks-who-has-read-it
 	 */
 	public function markThreadRead(string $threadId, string $subjectRef, bool $isStaff): bool {
 		$messages = $this->listMessages(threadId: $threadId, subjectRef: $subjectRef, isStaff: $isStaff);
@@ -250,7 +250,7 @@ class InAppMessagingLeaf implements GuardianMessagingLeafInterface {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/message-read-time/specs/guardian-direct-messaging/spec.md#requirement-a-message-records-when-the-other-side-first-read-it
+	 * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-a-message-records-when-the-other-side-first-read-it
 	 */
 	private function markOneMessageRead(array $message, string $subjectRef): void {
 		$readBy = (array)($message['readBy'] ?? []);
@@ -275,7 +275,7 @@ class InAppMessagingLeaf implements GuardianMessagingLeafInterface {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/message-read-time/specs/guardian-direct-messaging/spec.md#requirement-a-message-records-when-the-other-side-first-read-it
+	 * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-a-message-records-when-the-other-side-first-read-it
 	 */
 	private function withReadAt(array $message, string $readerRef): array {
 		if ($readerRef === (string)($message['senderRef'] ?? '') || (string)($message['readAt'] ?? '') !== '') {
@@ -302,13 +302,31 @@ class InAppMessagingLeaf implements GuardianMessagingLeafInterface {
 		// id is still compared here, and a miss falls back to the full read,
 		// so a store that does not narrow by id never hides a thread.
 		foreach ([[$threadId], null] as $ids) {
-			foreach ($this->store->findAll(schema: self::THREAD_SCHEMA, filters: [], ids: $ids) as $thread) {
-				if ($this->store->rowId(row: $thread) === $threadId) {
-					return $thread;
-				}
+			$thread = $this->threadAmong(ids: $ids, threadId: $threadId);
+			if ($thread !== null) {
+				return $thread;
 			}
 		}
 
 		return null;
 	}//end findThread()
+
+	/**
+	 * The thread with this id among the threads read by these ids, or among
+	 * every thread when no ids are given.
+	 *
+	 * @param array<int, string>|null $ids      The ids to read by, or null for the full read.
+	 * @param string                  $threadId The thread id.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function threadAmong(?array $ids, string $threadId): ?array {
+		foreach ($this->store->findAll(schema: self::THREAD_SCHEMA, filters: [], ids: $ids) as $thread) {
+			if ($this->store->rowId(row: $thread) === $threadId) {
+				return $thread;
+			}
+		}
+
+		return null;
+	}//end threadAmong()
 }//end class

@@ -21,32 +21,33 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
+ * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\CaseTypeColumns;
 
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Kernel\Contracts\CaseTypeColumnSettingsInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use stdClass;
 
 /**
  * The portal's column settings per case type.
  *
- * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
+ * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
  */
-class CaseTypeColumnSettings {
+class CaseTypeColumnSettings implements CaseTypeColumnSettingsInterface {
 	/**
 	 * Constructor.
 	 *
 	 * @param PortalObjectWriter $writer Writes the portal.
-	 * @param PortalContributionRegistry $registry The contributing apps.
+	 * @param PortalContributionRegistryInterface $registry The contributing apps.
 	 */
 	public function __construct(
 		private readonly PortalObjectWriter $writer,
-		private readonly PortalContributionRegistry $registry,
+		private readonly PortalContributionRegistryInterface $registry,
 	) {
 	}//end __construct()
 
@@ -57,7 +58,7 @@ class CaseTypeColumnSettings {
 	 *
 	 * @return array<string, array<int, array{field: string, render: string, linkLabel?: string}>>
 	 *
-	 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
 	 */
 	public function storedFor(?array $portal): array {
 		return (new CaseTypeColumnsNormaliser())->byType(portal: $portal);
@@ -68,7 +69,7 @@ class CaseTypeColumnSettings {
 	 *
 	 * @return array<int, array{field: string, label: string}>
 	 *
-	 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
 	 */
 	public function fields(): array {
 		$fields = [];
@@ -88,7 +89,7 @@ class CaseTypeColumnSettings {
 	 *
 	 * @return array<int, array{field: string, label: string}>
 	 *
-	 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
 	 */
 	private function columnsOf(array $collection): array {
 		$out = [];
@@ -111,7 +112,7 @@ class CaseTypeColumnSettings {
 	 *
 	 * @return array<string, mixed>|null The saved portal, or null when the write failed.
 	 *
-	 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
 	 */
 	public function save(array $portal, array $change): ?array {
 		return $this->writer->updateObject(
@@ -133,7 +134,7 @@ class CaseTypeColumnSettings {
 	 *
 	 * @return array<string, mixed>|stdClass An empty object when no type is left, so it stores as `{}`.
 	 *
-	 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
 	 */
 	private function merged(array $existing, array $change): array|stdClass {
 		$stored = $this->storedFor(portal: $existing);

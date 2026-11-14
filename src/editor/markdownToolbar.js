@@ -14,7 +14,7 @@
  * A selection is `{value, start, end}` with `start <= end`, as
  * `selectionStart` and `selectionEnd` report it.
  *
- * @spec openspec/changes/editor-text-toolbar/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
  */
 
 /**
@@ -171,7 +171,7 @@ function wrapped(value, range) {
  * @param {{value: string, start: number, end: number}} selection The selection.
  * @return {{value: string, start: number, end: number}} The new text and selection.
  *
- * @spec openspec/changes/editor-text-toolbar/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
  */
 export function applyHeading(selection) {
 	const { value, start, end } = normalise(selection)
@@ -212,7 +212,7 @@ function headingEdit(line) {
  * @param {{value: string, start: number, end: number}} selection The selection.
  * @return {{value: string, start: number, end: number}} The new text and selection.
  *
- * @spec openspec/changes/editor-text-toolbar/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
  */
 export function applyBold(selection) {
 	return wrap(selection, '**')
@@ -224,7 +224,7 @@ export function applyBold(selection) {
  * @param {{value: string, start: number, end: number}} selection The selection.
  * @return {{value: string, start: number, end: number}} The new text and selection.
  *
- * @spec openspec/changes/editor-text-toolbar/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
  */
 export function applyItalic(selection) {
 	return wrap(selection, '_')
@@ -241,7 +241,7 @@ export function applyItalic(selection) {
  * @param {{value: string, start: number, end: number}} selection The selection.
  * @return {{value: string, start: number, end: number}} The new text and selection.
  *
- * @spec openspec/changes/editor-text-toolbar/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
  */
 export function applyList(selection) {
 	const { value, start, end } = normalise(selection)
@@ -337,7 +337,7 @@ function listSelection(edit, range) {
  * @param {string} url The address the editor gave.
  * @return {{value: string, start: number, end: number}} The new text and selection.
  *
- * @spec openspec/changes/editor-text-toolbar/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
  */
 export function applyLink(selection, url) {
 	const { value, start, end } = normalise(selection)
@@ -371,7 +371,7 @@ const SHORTCUTS = new Map([
  * @param {{key: string, ctrlKey?: boolean, metaKey?: boolean, shiftKey?: boolean, altKey?: boolean}} event The key event.
  * @return {Transform|null} `applyBold`, `applyItalic`, or null.
  *
- * @spec openspec/changes/editor-text-toolbar/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
  */
 export function shortcutFor(event) {
 	if (!isPlainCommand(event)) {
@@ -457,7 +457,7 @@ const FOCUS_MOVES = new Map([
  * @param {number} count How many buttons the toolbar has.
  * @return {number|null} The index to focus, or null.
  *
- * @spec openspec/changes/editor-text-toolbar/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
  */
 export function toolbarIndexFor(current, key, count) {
 	if (!Number.isInteger(count) || count < 1) {
@@ -474,7 +474,7 @@ export function toolbarIndexFor(current, key, count) {
  * @param {number} count How many buttons the toolbar has.
  * @return {Array<number>} One tabindex per button.
  *
- * @spec openspec/changes/editor-text-toolbar/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
  */
 export function rovingTabindexes(current, count) {
 	const size = Number.isInteger(count) && count > 0 ? count : 0

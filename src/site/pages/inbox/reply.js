@@ -8,7 +8,7 @@
  * from the message the resident owns; the browser sends what the resident
  * wrote and uploads the files into the new reply.
  *
- * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t05
+ * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t05
  */
 
 import { fileFields, submitWithFiles } from '../../../shared/fileFieldSubmit.js'
@@ -18,7 +18,7 @@ import { fileFields, submitWithFiles } from '../../../shared/fileFieldSubmit.js'
  *
  * @param {object} message An inbox row with its `_source`.
  * @return {object|null} `{action, carried, subjectFrom?}`.
- * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t05
+ * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t05
  */
 export function replyOf(message) {
 	const reply = message && message._source && message._source.reply
@@ -33,7 +33,7 @@ export function replyOf(message) {
  *
  * @param {object} reply The reply declaration.
  * @return {Array<{name: string, label: string, long: boolean, required: boolean}>} The questions.
- * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t05
+ * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t05
  */
 export function replyQuestions(reply) {
 	const configs = reply.action.fieldConfigs || {}
@@ -61,7 +61,7 @@ export function replyQuestions(reply) {
  *
  * @param {object} reply The reply declaration.
  * @return {Array<{name: string, label: string, multiple: boolean, accept: string, maxSizeMb: number}>} The file fields.
- * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t05
+ * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t05
  */
 export function replyFileFields(reply) {
 	const configs = reply.action.fieldConfigs || {}
@@ -83,7 +83,7 @@ export function replyFileFields(reply) {
  * @param {object} message The message.
  * @param {object} reply The reply declaration.
  * @return {Record<string, string>} The starting value per question.
- * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t05
+ * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t05
  */
 export function replyStart(message, reply) {
 	const values = Object.fromEntries(
@@ -110,7 +110,7 @@ export function replyStart(message, reply) {
  * @param {object} api The portal api (`replyToMessage`, `uploadFieldFile`).
  * @param {{message: object, reply: object, values: Record<string, string>, filesByField: Record<string, File[]>}} answer The message being answered, the reply declaration, what the resident wrote and the picked files per field.
  * @return {Promise<{ok: boolean, errors: Record<string, string>, failed: string[]}>} `failed` names the files that did not attach.
- * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t06
+ * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t06
  */
 export async function sendReply(api, answer) {
 	const { message, reply, values, filesByField } = answer
@@ -133,7 +133,7 @@ export async function sendReply(api, answer) {
  * @param {string[]} failed The names of the files that did not attach.
  * @param {{sent: string, partial: string}} words The sentences, `partial` with `{name}`.
  * @return {string} The sentence.
- * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t06
+ * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t06
  */
 export function sentMessage(failed, words) {
 	return failed.length === 0

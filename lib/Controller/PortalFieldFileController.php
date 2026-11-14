@@ -27,22 +27,23 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
-use OCA\Portaliq\Service\AuditTrailService;
-use OCA\Portaliq\Service\PortalFileFieldPolicy;
-use OCA\Portaliq\Service\PortalFileWriter;
-use OCA\Portaliq\Service\PortalObjectReader;
-use OCA\Portaliq\Service\PortalObjectWriter;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\AuditTrailServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFileFieldPolicyInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFileWriterInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectWriterInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
+use OCA\Portaliq\Kernel\Support\SessionTrust;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -56,7 +57,7 @@ use Throwable;
 /**
  * Serves the scoped upload into a declared file field.
  *
- * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
  *
  * @SuppressWarnings(PHPMD.StaticAccess) -- PortalSessionService::trustSatisfies,
  * the one trust ordering every portal gate shares.
@@ -70,35 +71,35 @@ class PortalFieldFileController extends Controller implements PortalProtected {
 	 * HTTP status per policy refusal.
 	 */
 	private const REFUSAL_STATUS = [
-		PortalFileFieldPolicy::ERROR_TOO_LARGE => Http::STATUS_REQUEST_ENTITY_TOO_LARGE,
-		PortalFileFieldPolicy::ERROR_TYPE_REFUSED => Http::STATUS_UNSUPPORTED_MEDIA_TYPE,
+		PortalFileFieldPolicyInterface::ERROR_TOO_LARGE => Http::STATUS_REQUEST_ENTITY_TOO_LARGE,
+		PortalFileFieldPolicyInterface::ERROR_TYPE_REFUSED => Http::STATUS_UNSUPPORTED_MEDIA_TYPE,
 	];
 
 	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalContributionRegistry $registry The subject's contributions.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param PortalObjectReader $reader The scoped single-object read.
-	 * @param PortalObjectWriter $writer The ownership-checking writer.
-	 * @param PortalFileWriter $fileWriter Attaches the file through OpenRegister.
-	 * @param PortalFileFieldPolicy $policy The upload rules.
-	 * @param AuditTrailService $auditor Records the write.
+	 * @param PortalContributionRegistryInterface $registry The subject's contributions.
+	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
+	 * @param PortalObjectReaderInterface $reader The scoped single-object read.
+	 * @param PortalObjectWriterInterface $writer The ownership-checking writer.
+	 * @param PortalFileWriterInterface $fileWriter Attaches the file through OpenRegister.
+	 * @param PortalFileFieldPolicyInterface $policy The upload rules.
+	 * @param AuditTrailServiceInterface $auditor Records the write.
 	 * @param LoggerInterface $logger Records the cause of a failed write.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalContributionRegistry $registry,
-		private readonly PortalSessionService $session,
-		private readonly PortalObjectReader $reader,
-		private readonly PortalObjectWriter $writer,
-		private readonly PortalFileWriter $fileWriter,
-		private readonly PortalFileFieldPolicy $policy,
-		private readonly AuditTrailService $auditor,
+		private readonly PortalContributionRegistryInterface $registry,
+		private readonly PortalSessionServiceInterface $session,
+		private readonly PortalObjectReaderInterface $reader,
+		private readonly PortalObjectWriterInterface $writer,
+		private readonly PortalFileWriterInterface $fileWriter,
+		private readonly PortalFileFieldPolicyInterface $policy,
+		private readonly AuditTrailServiceInterface $auditor,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -115,7 +116,7 @@ class PortalFieldFileController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{file, field, value}`, or 400 / 401 / 403 / 404 / 409 / 413 / 415 / 502.
 	 *
-	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -154,7 +155,7 @@ class PortalFieldFileController extends Controller implements PortalProtected {
 	 *
 	 * @return array<string, mixed>|JSONResponse The upload context, or the refusal.
 	 *
-	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
 	 */
 	private function authorise(array $subject, array $target): array|JSONResponse {
 		$match = $this->authorisedAction(subject: $subject, register: $target['register'], schema: $target['schema']);
@@ -165,7 +166,7 @@ class PortalFieldFileController extends Controller implements PortalProtected {
 
 		if ($match === null
 			|| $config === null
-			|| PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($match['action']['minTrust'] ?? null)) === false
+			|| (new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($match['action']['minTrust'] ?? null)) === false
 		) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
@@ -190,7 +191,7 @@ class PortalFieldFileController extends Controller implements PortalProtected {
 	 *
 	 * @return array{name: string, content: string, arrayProperty: bool|null}|JSONResponse
 	 *
-	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
 	 */
 	private function checkedUpload(array $context): array|JSONResponse {
 		$upload = $this->policy->readUpload(request: $this->request);
@@ -219,7 +220,7 @@ class PortalFieldFileController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{file, field, value}`, or 502.
 	 *
-	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
 	 */
 	private function store(array $context, array $upload): JSONResponse {
 		$file = $this->fileWriter->attachFile(

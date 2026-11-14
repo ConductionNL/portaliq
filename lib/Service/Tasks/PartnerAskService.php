@@ -24,22 +24,23 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/partner-tasks-in-the-portal/specs/partner-tasks-in-the-portal/spec.md
+ * @spec openspec/specs/partner-tasks-in-the-portal/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Tasks;
 
+use OCA\Portaliq\Kernel\Contracts\PartnerAskServiceInterface;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalTaskGateway;
 
 /**
  * Resolves the partner and raises the task addressed to them.
  *
- * @spec openspec/changes/partner-tasks-in-the-portal/specs/partner-tasks-in-the-portal/spec.md
+ * @spec openspec/specs/partner-tasks-in-the-portal/spec.md
  */
-class PartnerAskService {
+class PartnerAskService implements PartnerAskServiceInterface {
 	/**
 	 * The audience a partner account carries.
 	 */
@@ -77,7 +78,7 @@ class PartnerAskService {
 	 *         Null when the ask carries no title, no partner that can be
 	 *         resolved, or when the engine refused the task.
 	 *
-	 * @spec openspec/changes/partner-tasks-in-the-portal/specs/partner-tasks-in-the-portal/spec.md
+	 * @spec openspec/specs/partner-tasks-in-the-portal/spec.md
 	 */
 	public function ask(array $handler, array $partner, array $ask): ?array {
 		// A task with no title and no case is not an ask anybody could
@@ -184,7 +185,7 @@ class PartnerAskService {
 	 *
 	 * @return array{subjectRef: string, provisioned: bool}|null
 	 *
-	 * @spec openspec/changes/partner-tasks-in-the-portal/specs/partner-tasks-in-the-portal/spec.md
+	 * @spec openspec/specs/partner-tasks-in-the-portal/spec.md
 	 */
 	private function resolvePartner(array $partner, array $handler): ?array {
 		$subjectRef = (string)($partner['subjectRef'] ?? '');
@@ -300,7 +301,6 @@ class PartnerAskService {
 	private function isLive(?array $account): bool {
 		return $account !== null && $this->isVoid(account: $account) === false;
 	}//end isLive()
-
 
 	/**
 	 * Whether an account was withdrawn.

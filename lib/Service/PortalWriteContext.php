@@ -35,12 +35,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\PortalWriteContextInterface;
+
 /**
  * Marks the span of portaliq's own OpenRegister writes.
  *
  * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-is-not-told-about-their-own-change-req-nap-003
  */
-class PortalWriteContext {
+class PortalWriteContext implements PortalWriteContextInterface {
 
 	/**
 	 * How many portaliq writes are running.

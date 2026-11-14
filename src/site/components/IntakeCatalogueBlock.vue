@@ -139,7 +139,7 @@ export default {
 	 *
 	 * @return {Promise<void>} Resolves when read.
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
+	 * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
 	 */
 	async mounted() {
 		try {
@@ -161,7 +161,7 @@ export default {
 		 * @param {object} entry A catalogue entry.
 		 * @return {string} The href.
 		 *
-		 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
+		 * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
 		 * @spec openspec/specs/site-navigation/spec.md#requirement-a-link-to-a-record-or-a-search-result-keeps-the-portal-and-the-route-req-rsl-001
 		 */
 		hrefFor(entry) {
@@ -178,7 +178,7 @@ export default {
 		 * @param {object} entry A catalogue entry.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
+		 * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
 		 */
 		open(entry) {
 			this.$emit('navigate', formRouteFor(this.formPage, entry.route))

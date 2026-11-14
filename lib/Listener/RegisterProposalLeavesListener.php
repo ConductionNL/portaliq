@@ -39,7 +39,7 @@ use OCA\OpenRegister\Service\Integration\LeafAvailability;
 use OCA\OpenRegister\Service\Integration\LeafDescriptor;
 use OCA\OpenRegister\Service\Integration\LeafIdentity;
 use OCA\OpenRegister\Service\Integration\LeafRendering;
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\Proposals\ChangeProposalsProvider;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -113,7 +113,7 @@ class RegisterProposalLeavesListener implements IEventListener {
 						group: ChangeProposalsProvider::GROUP,
 					),
 					kinds: [LeafDescriptor::KIND_DATA_PROVIDER],
-					availability: new LeafAvailability(requiredApp: Application::APP_ID),
+					availability: new LeafAvailability(requiredApp: AppIdentity::APP_ID),
 				),
 				$this->provider
 			);
@@ -127,7 +127,7 @@ class RegisterProposalLeavesListener implements IEventListener {
 						group: ChangeProposalsProvider::GROUP,
 					),
 					kinds: [LeafDescriptor::KIND_RENDER_SURFACE],
-					availability: new LeafAvailability(requiredApp: Application::APP_ID),
+					availability: new LeafAvailability(requiredApp: AppIdentity::APP_ID),
 					// Portaliq is Vue 3 and a host may be Vue 2.7: the JS half
 					// roots its own app on a bare element. Both halves name the
 					// same mode, or the host renders the leaf the wrong way.

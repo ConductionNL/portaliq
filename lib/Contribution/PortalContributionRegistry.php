@@ -36,8 +36,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
-use OCA\Portaliq\Service\Identity\PortalAccountLookup;
-use OCA\Portaliq\Service\Session\SessionTrust;
+use OCA\Portaliq\Kernel\Contracts\PortalAccountLookupInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
+use OCA\Portaliq\Kernel\Support\SessionTrust;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -51,7 +52,7 @@ use Throwable;
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the registry wires the locator, the
  * normalisers and the hidden-page and anonymous collaborators; the coupling is the list.
  */
-class PortalContributionRegistry {
+class PortalContributionRegistry implements PortalContributionRegistryInterface {
 	/**
 	 * Locates each app's provider class. Built here from the injected
 	 * dependencies when not supplied, so the constructor signature every
@@ -90,7 +91,7 @@ class PortalContributionRegistry {
 	 * @param LoggerInterface $logger The logger.
 	 * @param PortalManifestNormaliser $normaliser The fail-closed v3 UI-config sanitiser.
 	 * @param PortalProviderLocator|null $locator Provider lookup; built from the above when null.
-	 * @param PortalAccountLookup|null $accounts Reads the account's hidden pages; none hides nothing.
+	 * @param PortalAccountLookupInterface|null $accounts Reads the account's hidden pages; none hides nothing.
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
@@ -98,7 +99,7 @@ class PortalContributionRegistry {
 		private readonly LoggerInterface $logger,
 		private readonly PortalManifestNormaliser $normaliser = new PortalManifestNormaliser(),
 		?PortalProviderLocator $locator = null,
-		private readonly ?PortalAccountLookup $accounts = null,
+		private readonly ?PortalAccountLookupInterface $accounts = null,
 	) {
 		$this->locator   = ($locator ?? new PortalProviderLocator($appManager, $container, $logger));
 		$this->hidden    = new HiddenPagesReader(accounts: $accounts, logger: $logger);
@@ -438,7 +439,6 @@ class PortalContributionRegistry {
 	private function resolveProvider(string $appId): ?object {
 		return $this->locator->locate(appId: $appId);
 	}//end resolveProvider()
-
 
 	/**
 	 * The collections this subject's trust drops, as `stepUp` entries: app,

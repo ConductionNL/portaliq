@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
@@ -27,7 +27,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Listener;
 
 use OCA\Portaliq\Event\PortalAccountClaimRequestedEvent;
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Kernel\Contracts\PortalAccountServiceInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -38,18 +38,18 @@ use Throwable;
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 class PortalAccountClaimListener implements IEventListener {
 
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalAccountService $accounts Writes the claim.
+	 * @param PortalAccountServiceInterface $accounts Writes the claim.
 	 * @param LoggerInterface $logger Records a refusal's cause.
 	 */
 	public function __construct(
-		private readonly PortalAccountService $accounts,
+		private readonly PortalAccountServiceInterface $accounts,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -61,7 +61,7 @@ class PortalAccountClaimListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function handle(Event $event): void {
 		if (($event instanceof PortalAccountClaimRequestedEvent) === false) {

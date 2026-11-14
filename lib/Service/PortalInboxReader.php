@@ -26,7 +26,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-inbox-v2/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-23-portal-inbox-v2/tasks.md#T01
  */
 
 declare(strict_types=1);
@@ -34,38 +34,22 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Contribution\InboxMessageFields;
+use OCA\Portaliq\Kernel\Contracts\PortalInboxReaderInterface;
 use OCA\Portaliq\Service\Notifications\MessageBoxDeliveries;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Kernel\InboxDeletion;
 
 /**
  * Aggregates every inbox collection across a subject's contributions.
  *
- * @spec openspec/changes/portal-inbox-v2/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-23-portal-inbox-v2/tasks.md#T01
  */
-class PortalInboxReader {
+class PortalInboxReader implements PortalInboxReaderInterface {
 	/**
 	 * Row cap per inbox collection — bounds a single subject's aggregated
 	 * inbox read while comfortably covering portal-scale message volumes.
 	 */
 	private const ROW_LIMIT = 200;
-
-	/**
-	 * The notices portaliq writes itself (an answered question, a matched
-	 * saved search, a published decision, a submission receipt, a delivered
-	 * task) as one built-in inbox source. Every resident's inbox reads it,
-	 * whether or not a contribution declares an inbox over `portalMessage`,
-	 * through the same scoped read as a declared source: on `subjectRef`, with
-	 * the subject's own reference and organisation.
-	 *
-	 * @spec openspec/changes/inbox-shows-portal-messages/specs/portal-notifications-and-preferences/spec.md#requirement-portaliqs-own-notices-reach-the-residents-inbox-req-nap-009
-	 */
-	public const OWN_MESSAGES = [
-		'id' => 'portalMessages',
-		'kind' => 'inbox',
-		'register' => 'portaliq',
-		'schema' => 'portalMessage',
-		'scopeField' => 'subjectRef',
-	];
 
 	/**
 	 * Constructor.
@@ -115,10 +99,10 @@ class PortalInboxReader {
 	 *
 	 * @return array<int, array<string, mixed>> The merged inbox rows.
 	 *
-	 * @spec openspec/changes/portal-inbox-v2/tasks.md#T01
-	 * @spec openspec/changes/inbox-shows-portal-messages/specs/portal-notifications-and-preferences/spec.md#requirement-portaliqs-own-notices-reach-the-residents-inbox-req-nap-009
-	 * @spec openspec/changes/inbox-reads-each-apps-message-fields/specs/supplier-portal/spec.md#requirement-an-inbox-collection-names-its-own-message-fields-req-imf-001
-	 * @spec openspec/changes/inbox-reply-with-attachments/specs/portal-inbox-reply/spec.md#requirement-files-that-came-with-a-message-open-req-ira-004
+	 * @spec openspec/changes/archive/2026-07-23-portal-inbox-v2/tasks.md#T01
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-portaliqs-own-notices-reach-the-residents-inbox-req-nap-009
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-an-inbox-collection-names-its-own-message-fields-req-imf-001
+	 * @spec openspec/specs/portal-inbox-reply/spec.md#requirement-files-that-came-with-a-message-open-req-ira-004
 	 */
 	public function aggregateInbox(array $subject, array $aggregate): array {
 		$rows = [];
@@ -162,7 +146,7 @@ class PortalInboxReader {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/portal-inbox-v2/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-23-portal-inbox-v2/tasks.md#T01
 	 */
 	private function collectionRows(array $subject, array $collection, array $contribution): array {
 		$appId         = (string)($contribution['app'] ?? '');
@@ -213,7 +197,7 @@ class PortalInboxReader {
 	 *
 	 * @return array<string, mixed>|null The reply, or null.
 	 *
-	 * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t05
 	 */
 	private function replyOf(array $collection, array $contribution): ?array {
 		$declared = ($collection['reply'] ?? null);
@@ -258,16 +242,10 @@ class PortalInboxReader {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
 	 */
 	public static function residentMayDelete(array $collection): bool {
-		$register = ($collection['register'] ?? '');
-		$schema   = ($collection['schema'] ?? '');
-		if ($register === self::OWN_MESSAGES['register'] && $schema === self::OWN_MESSAGES['schema']) {
-			return true;
-		}
-
-		return ($collection['deletable'] ?? false) === true;
+		return InboxDeletion::residentMayDelete(collection: $collection);
 	}//end residentMayDelete()
 
 	/**
@@ -282,7 +260,7 @@ class PortalInboxReader {
 	 *
 	 * @return int The subject's own unread message count.
 	 *
-	 * @spec openspec/changes/portal-inbox-v2/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-07-23-portal-inbox-v2/tasks.md#T04
 	 */
 	public function unreadCount(array $subject, array $aggregate): int {
 		$count = 0;
@@ -307,7 +285,7 @@ class PortalInboxReader {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/inbox-shows-portal-messages/specs/portal-notifications-and-preferences/spec.md#requirement-portaliqs-own-notices-reach-the-residents-inbox-req-nap-009
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-portaliqs-own-notices-reach-the-residents-inbox-req-nap-009
 	 */
 	private function ownMessages(array $subject, array $declared): array {
 		$seen = [];
@@ -348,7 +326,7 @@ class PortalInboxReader {
 	 *
 	 * @return array<string, mixed> The row, with `_files` when opted in.
 	 *
-	 * @spec openspec/changes/inbox-reply-with-attachments/specs/portal-inbox-reply/spec.md#requirement-files-that-came-with-a-message-open-req-ira-004
+	 * @spec openspec/specs/portal-inbox-reply/spec.md#requirement-files-that-came-with-a-message-open-req-ira-004
 	 */
 	private function withFiles(array $row, array $collection): array {
 		$rowId = $this->rowId(row: $row);

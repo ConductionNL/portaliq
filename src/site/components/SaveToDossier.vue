@@ -98,7 +98,7 @@ let counter = 0
  * The dossier list is read when the resident opens the form, not before:
  * most visitors read and leave.
  *
- * @spec openspec/changes/woo-journey-entry-points/specs/portal-federated-search/spec.md#requirement-a-resident-must-be-able-to-keep-a-publication-or-one-document-in-a-dossier-req-wje-002
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-a-resident-must-be-able-to-keep-a-publication-or-one-document-in-a-dossier-req-wje-002
  */
 export default {
 	name: 'SaveToDossier',
@@ -161,7 +161,7 @@ export default {
 	 *
 	 * @return {Promise<void>}
 	 *
-	 * @spec openspec/changes/woo-journey-entry-points/specs/portal-federated-search/spec.md#requirement-the-save-actions-must-show-only-to-a-signed-in-resident-who-is-offered-them-req-wje-001
+	 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-save-actions-must-show-only-to-a-signed-in-resident-who-is-offered-them-req-wje-001
 	 */
 	async mounted() {
 		const manifest = await residentManifest()
@@ -175,7 +175,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/woo-journey-entry-points/specs/portal-federated-search/spec.md#requirement-a-resident-must-be-able-to-keep-a-publication-or-one-document-in-a-dossier-req-wje-002
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-a-resident-must-be-able-to-keep-a-publication-or-one-document-in-a-dossier-req-wje-002
 		 */
 		async openForm() {
 			this.open = true
@@ -203,7 +203,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/woo-journey-entry-points/specs/portal-federated-search/spec.md#requirement-a-resident-must-be-able-to-keep-a-publication-or-one-document-in-a-dossier-req-wje-002
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-a-resident-must-be-able-to-keep-a-publication-or-one-document-in-a-dossier-req-wje-002
 		 */
 		async submit() {
 			this.busy = true

@@ -128,6 +128,39 @@ class PortalIntakeControllerTest extends TestCase {
 
 	}//end testAnUnsolvedChallengeStopsTheSubmissionBeforeValidation()
 
+	public function testASubmitToAnUnknownPortalIsNotFound(): void {
+		$controller = $this->controller(render: $this->hostedForm(), site: null);
+		$this->forbidSubmit = true;
+
+		$response = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB']);
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+		$this->assertSame(['error' => 'portal_not_found'], $response->getData());
+
+	}//end testASubmitToAnUnknownPortalIsNotFound()
+
+	public function testASolvedChallengeIsCheckedWithWhatWasSentAndTheSubmissionProceeds(): void {
+		$render = $this->hostedForm();
+		$render['settings']['challenge'] = true;
+		$controller = $this->controller(render: $render);
+		$this->doubles['challenge']->expects($this->once())->method('accepts')->with(
+			['slug' => 'gemeente-x', 'organisation' => 'gemeente-x'],
+			'form',
+			['postcode' => '1234 AB'],
+			'nonce-1',
+			'solved',
+			1700000000,
+			'sig-1'
+		)->willReturn(true);
+
+		$data = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB'], nonce: 'nonce-1', solution: 'solved', expiresAt: 1700000000, signature: 'sig-1')->getData();
+
+		$this->assertSame('2026-0042', $data['reference']);
+		$this->assertSame('u-1', $data['id']);
+		$this->assertCount(1, $this->submit->calls);
+
+	}//end testASolvedChallengeIsCheckedWithWhatWasSentAndTheSubmissionProceeds()
+
 	public function testAnUnknownRouteIsNotAForm(): void {
 		$controller = $this->controller(render: $this->hostedForm(), binding: null);
 
@@ -354,7 +387,7 @@ class PortalIntakeControllerTest extends TestCase {
 		array $render,
 		?array $binding = ['portal' => 'gemeente-x', 'route' => 'aanvragen/verhuizing', 'destination' => ['register' => 'dossiq', 'schema' => 'case', 'subjectField' => 'portalSubject']],
 		?array $subject = null,
-		array $site = ['slug' => 'gemeente-x', 'organisation' => 'gemeente-x'],
+		?array $site = ['slug' => 'gemeente-x', 'organisation' => 'gemeente-x'],
 		?\OCA\Portaliq\Service\Intake\PortalAddressLookup $addresses = null,
 		?\OCA\Portaliq\Service\Intake\PortalFamilyMembers $family = null,
 		?\OCA\Portaliq\Service\Intake\FormStatements $statements = null,
@@ -425,7 +458,7 @@ class PortalIntakeControllerTest extends TestCase {
 			deepLinks: null,
 			emailVerification: $pay['verification'] ?? null,
 			intake: $intake,
-			lookup: $this->doubles['lookup']
+			lookup: $this->doubles['lookup'], destinationMapping: new DestinationMapping()
 		);
 	}//end controller()
 
@@ -466,6 +499,32 @@ class PortalIntakeControllerTest extends TestCase {
 		$this->assertSame('Henk', $ok->getData()['members'][0]['name']);
 		$this->assertSame(Http::STATUS_NOT_FOUND, $this->controller(render: [], subject: $subject)->family()->getStatus());
 	}//end testTheFamilyRouteNeedsASessionAndOffersOnlyWhatTheBrpBacks()
+
+	/**
+	 * `sameAddressOnly` absent or true asks for the members at the resident's
+	 * address, anything the framework casts to false asks for all of them;
+	 * a BRP that cannot answer is 404.
+	 *
+	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t04
+	 */
+	public function testTheFamilyRouteReadsSameAddressOnlyAsABoundBool(): void {
+		$family = $this->double(\OCA\Portaliq\Service\Intake\PortalFamilyMembers::class, ['forSubject', 'allForSubject']);
+		$family->method('forSubject')->willReturnCallback(static fn (string $subjectRef): array => [['ref' => 'same-' . $subjectRef]]);
+		$family->method('allForSubject')->willReturnCallback(static fn (string $subjectRef): array => [['ref' => 'all-' . $subjectRef]]);
+
+		foreach ([[null, 'same'], ['true', 'same'], ['1', 'same'], ['yes', 'same'], ['false', 'all'], ['0', 'all'], ['', 'all']] as [$raw, $which]) {
+			$controller = $this->controller(render: [], subject: ['subjectRef' => 'sub-1'], family: $family);
+			$request    = $this->createMock(IRequest::class);
+			$request->method('getParam')->willReturnCallback(static fn (string $key): mixed => ($key === 'sameAddressOnly' ? $raw : null));
+			(new \ReflectionProperty(\OCP\AppFramework\Controller::class, 'request'))->setValue($controller, $request);
+
+			$this->assertSame(['members' => [['ref' => $which . '-sub-1']]], $controller->family()->getData(), var_export($raw, true));
+		}
+
+		$unanswered = $this->double(\OCA\Portaliq\Service\Intake\PortalFamilyMembers::class, ['forSubject']);
+		$unanswered->method('forSubject')->willReturn(null);
+		$this->assertSame(Http::STATUS_NOT_FOUND, $this->controller(render: [], subject: ['subjectRef' => 'sub-1'], family: $unanswered)->family()->getStatus());
+	}//end testTheFamilyRouteReadsSameAddressOnlyAsABoundBool()
 
 	/**
 	 * A forged family reference stops the submission before anything is recorded.

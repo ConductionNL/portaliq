@@ -15,7 +15,7 @@
   The manifest supplies `metric` (a key of the summary totals), `label`,
   `variant` and `testId`.
 
-  @spec openspec/changes/portal-traffic-kpi-cards/specs/portal-traffic-kpi-cards/spec.md#requirement-the-traffic-page-must-show-its-four-headline-numbers-as-kpi-cards
+  @spec openspec/specs/portal-traffic-kpi-cards/spec.md#requirement-the-traffic-page-must-show-its-four-headline-numbers-as-kpi-cards
 -->
 <template>
 	<CnStatsBlock
@@ -54,7 +54,7 @@ export default {
 		/**
 		 * The manifest label in the reader's language.
 		 *
-		 * @spec openspec/changes/portal-traffic-kpi-cards/specs/portal-traffic-kpi-cards/spec.md#requirement-the-traffic-page-must-show-its-four-headline-numbers-as-kpi-cards
+		 * @spec openspec/specs/portal-traffic-kpi-cards/spec.md#requirement-the-traffic-page-must-show-its-four-headline-numbers-as-kpi-cards
 		 * @return {string} The title.
 		 */
 		title() {
@@ -64,7 +64,7 @@ export default {
 		/**
 		 * The metric's total for the selection, or 0 while there is none.
 		 *
-		 * @spec openspec/changes/portal-traffic-kpi-cards/specs/portal-traffic-kpi-cards/spec.md#requirement-the-traffic-page-must-show-its-four-headline-numbers-as-kpi-cards
+		 * @spec openspec/specs/portal-traffic-kpi-cards/spec.md#requirement-the-traffic-page-must-show-its-four-headline-numbers-as-kpi-cards
 		 * @return {number} The total.
 		 */
 		count() {
@@ -77,7 +77,7 @@ export default {
 		/**
 		 * What the card says instead of a number.
 		 *
-		 * @spec openspec/changes/portal-traffic-kpi-cards/specs/portal-traffic-kpi-cards/spec.md#requirement-the-traffic-page-must-show-its-four-headline-numbers-as-kpi-cards
+		 * @spec openspec/specs/portal-traffic-kpi-cards/spec.md#requirement-the-traffic-page-must-show-its-four-headline-numbers-as-kpi-cards
 		 * @return {string} The label.
 		 */
 		emptyLabel() {

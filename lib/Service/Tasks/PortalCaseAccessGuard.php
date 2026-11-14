@@ -28,13 +28,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/partner-tasks-in-the-portal/specs/partner-tasks-in-the-portal/spec.md
+ * @spec openspec/specs/partner-tasks-in-the-portal/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Tasks;
 
+use OCA\Portaliq\Kernel\Contracts\PortalCaseAccessGuardInterface;
 use OCA\Portaliq\Service\ActionAuthService;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IUser;
@@ -44,20 +45,13 @@ use Throwable;
 /**
  * Decides whether a staff user may ask a partner about a case.
  *
- * @spec openspec/changes/partner-tasks-in-the-portal/specs/partner-tasks-in-the-portal/spec.md
+ * @spec openspec/specs/partner-tasks-in-the-portal/spec.md
  */
-class PortalCaseAccessGuard {
+class PortalCaseAccessGuard implements PortalCaseAccessGuardInterface {
 	/**
 	 * The ADR-023 action raising an ask is gated by.
 	 */
 	public const ACTION = 'portal.ask-partner';
-
-	/**
-	 * The ADR-023 action reviewing a change proposal is gated by.
-	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
-	 */
-	public const ACTION_REVIEW_PROPOSAL = 'portal.review-proposal';
 
 	/**
 	 * OpenRegister's object service, resolved lazily so portaliq still boots
@@ -87,7 +81,7 @@ class PortalCaseAccessGuard {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/partner-tasks-in-the-portal/specs/partner-tasks-in-the-portal/spec.md
+	 * @spec openspec/specs/partner-tasks-in-the-portal/spec.md
 	 */
 	public function mayAsk(IUser $user, string $register, string $schema, string $id): bool {
 		return $this->mayAct(user: $user, register: $register, schema: $schema, id: $id, action: self::ACTION);
@@ -104,7 +98,7 @@ class PortalCaseAccessGuard {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function mayAct(IUser $user, string $register, string $schema, string $id, string $action): bool {
 		if ($register === '' || $schema === '' || $id === '') {

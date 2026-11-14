@@ -6,7 +6,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\ContentCatalogueController;
 use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\Session\BearerSessionResolver;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCA\Portaliq\Service\PublicCatalogue;
 use OCA\Portaliq\Service\DerivedCatalogueFacets;
 use OCA\Portaliq\Service\PublicCatalogueQuery;
@@ -25,6 +25,7 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(DerivedCatalogueFacets::class)]
 #[UsesClass(BearerSessionResolver::class)]
 #[UsesClass(\OCA\Portaliq\Service\CatalogueScope::class)]
+#[UsesClass(\OCA\Portaliq\Kernel\Support\SessionTrust::class)]
 class ContentCatalogueControllerTest extends TestCase {
 	/**
 	 * Build the controller over doubles.
@@ -54,7 +55,7 @@ class ContentCatalogueControllerTest extends TestCase {
 		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
 
-		return new ContentCatalogueController('portaliq', $request, $resolver, $session, ($catalogue ?? $this->createMock(PublicCatalogue::class)));
+		return new ContentCatalogueController('portaliq', $request, $resolver, $session, ($catalogue ?? $this->createMock(PublicCatalogue::class)), new PublicCatalogueQuery());
 	}//end controller()
 
 	/**

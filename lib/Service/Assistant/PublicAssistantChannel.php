@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Assistant;
 
+use OCA\Portaliq\Kernel\Contracts\PublicAssistantChannelInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -38,7 +39,7 @@ use Throwable;
  *
  * @spec openspec/changes/search-assistant-from-public-content/tasks.md#t03
  */
-class PublicAssistantChannel {
+class PublicAssistantChannel implements PublicAssistantChannelInterface {
 
 	/**
 	 * The entry point hermiq publishes for channel adapters, by name only.

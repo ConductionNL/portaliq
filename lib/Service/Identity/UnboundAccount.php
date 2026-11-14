@@ -20,19 +20,19 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
-use OCA\Portaliq\Service\Session\SessionTrust;
+use OCA\Portaliq\Kernel\Support\SessionTrust;
 
 /**
  * The account side of taking on an invitation's audience.
  *
- * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 final class UnboundAccount {
 	/**
@@ -80,7 +80,7 @@ final class UnboundAccount {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function mayTakeOn(array $account, array $waiting): bool {
 		return in_array((string)($waiting['audience'] ?? ''), $this->audiences, true) === true

@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/contribution-value-labels/specs/portal-contribution-contract/spec.md#requirement-a-column-and-a-form-field-may-declare-how-their-values-read
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-column-and-a-form-field-may-declare-how-their-values-read
  */
 
 declare(strict_types=1);
@@ -35,7 +35,7 @@ namespace OCA\Portaliq\Contribution;
 /**
  * Keeps a well-formed `valueLabels` map, or nothing.
  *
- * @spec openspec/changes/contribution-value-labels/specs/portal-contribution-contract/spec.md#requirement-a-column-and-a-form-field-may-declare-how-their-values-read
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-column-and-a-form-field-may-declare-how-their-values-read
  */
 class ValueLabelsNormaliser {
 	/**
@@ -66,7 +66,7 @@ class ValueLabelsNormaliser {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/contribution-value-labels/specs/portal-contribution-contract/spec.md#requirement-a-column-and-a-form-field-may-declare-how-their-values-read
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-column-and-a-form-field-may-declare-how-their-values-read
 	 */
 	public function apply(array $entry, array $source): array {
 		$labels = $this->normalise(value: ($source[self::KEY] ?? null));
@@ -85,7 +85,7 @@ class ValueLabelsNormaliser {
 	 *
 	 * @return array<string, string>
 	 *
-	 * @spec openspec/changes/contribution-value-labels/specs/portal-contribution-contract/spec.md#requirement-a-column-and-a-form-field-may-declare-how-their-values-read
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-column-and-a-form-field-may-declare-how-their-values-read
 	 */
 	public function normalise(mixed $value): array {
 		if (is_array($value) === false) {

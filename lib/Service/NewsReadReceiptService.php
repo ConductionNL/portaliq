@@ -22,21 +22,22 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\NewsReadReceiptServiceInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
  */
-class NewsReadReceiptService {
+class NewsReadReceiptService implements NewsReadReceiptServiceInterface {
 	use ObjectServiceLookup;
 
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
@@ -69,7 +70,7 @@ class NewsReadReceiptService {
 	 *
 	 * @return bool True on success (including "already recorded").
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
 	 */
 	public function markRead(string $subjectRef, string $id): bool {
 		if ($subjectRef === '' || $id === '') {

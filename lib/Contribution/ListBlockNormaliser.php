@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
  */
 
 declare(strict_types=1);
@@ -34,7 +34,7 @@ namespace OCA\Portaliq\Contribution;
 /**
  * Normalises the `tasks` and `inbox` blocks.
  *
- * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
  */
 class ListBlockNormaliser {
 	/**
@@ -65,7 +65,7 @@ class ListBlockNormaliser {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
 	 */
 	public function tasksBlock(array $block, array $collections): ?array {
 		$collection = $this->collection(id: ($block['collection'] ?? null), collections: $collections);
@@ -110,7 +110,7 @@ class ListBlockNormaliser {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-tasks-and-inbox-blocks-may-narrow-to-the-open-record-and-leave-rows-out-by-a-lookup-req-smo-025
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-tasks-and-inbox-blocks-may-narrow-to-the-open-record-and-leave-rows-out-by-a-lookup-req-smo-025
 	 */
 	private function excludeWhen(mixed $declared, array $lookups): array {
 		if (is_array($declared) === false || in_array(($declared['lookup'] ?? null), array_column($lookups, 'as'), true) === false) {
@@ -147,7 +147,7 @@ class ListBlockNormaliser {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
 	 */
 	public function inboxBlock(array $block, array $collections): ?array {
 		$entry = ['type' => 'inbox'];
@@ -180,7 +180,7 @@ class ListBlockNormaliser {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
 	 */
 	public function casesBlock(array $block, array $collections): ?array {
 		$collection = $this->collection(id: ($block['collection'] ?? null), collections: $collections);
@@ -211,7 +211,7 @@ class ListBlockNormaliser {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
 	 * @spec openspec/changes/steps-as-bars/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-as-a-row-of-bars
 	 * @spec openspec/changes/documents-for-each-record/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
 	 */
@@ -277,7 +277,7 @@ class ListBlockNormaliser {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
 	 * @spec openspec/changes/documents-for-each-record/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
 	 */
 	public function recordPageOnly(array $blocks, array $recordCollections): array {

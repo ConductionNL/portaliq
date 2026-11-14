@@ -62,6 +62,7 @@ const TOKEN_KEY = 'portaliq.session.token'
  * ticket.
  *
  * @return {string} The adopted token, or the stored one, or ''.
+ * @spec openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md#requirement-the-bearer-reaches-the-browser-in-the-fragment-and-leaves-the-address-req-see-003
  */
 export function adoptSessionToken() {
 	if (typeof window === 'undefined') {
@@ -75,23 +76,54 @@ export function adoptSessionToken() {
 	const hash = String(window.location.hash || '')
 	const match = hash.match(/[#&]token=([^&]+)/)
 	if (match) {
-		const token = decodeURIComponent(match[1])
-		try {
-			window.sessionStorage.setItem(TOKEN_KEY, token)
-		} catch {
-			// Private mode, or storage disabled. The session then lasts exactly
-			// this page view, which is a degraded login rather than a broken one.
-		}
-
-		const clean = window.location.pathname + window.location.search
-		window.history.replaceState(null, '', clean)
-		return token
+		return takeLinkToken(match[1])
 	}
 
+	return tabToken(legacy)
+}
+
+/**
+ * Keep a sign-in link's bearer for this tab and take it off the address bar.
+ *
+ * @param {string} encoded The bearer as the fragment carries it.
+ * @return {string} The bearer.
+ */
+function takeLinkToken(encoded) {
+	const token = decodeURIComponent(encoded)
+	// Private mode, or storage disabled: the session then lasts exactly this
+	// page view, which is a degraded login rather than a broken one.
+	keepTabToken(token)
+
+	const clean = window.location.pathname + window.location.search
+	window.history.replaceState(null, '', clean)
+	return token
+}
+
+/**
+ * Keep a bearer in this tab's store; without a store it is kept nowhere.
+ *
+ * @param {string} token The bearer.
+ * @return {void}
+ */
+function keepTabToken(token) {
 	try {
-		return window.sessionStorage.getItem(TOKEN_KEY) || legacy
+		window.sessionStorage.setItem(TOKEN_KEY, token)
 	} catch {
-		return legacy
+		// No session storage: the caller's bearer lasts this page view.
+	}
+}
+
+/**
+ * The bearer this tab keeps, else the given fallback.
+ *
+ * @param {string} fallback The bearer to answer without one, or ''.
+ * @return {string} The bearer.
+ */
+function tabToken(fallback) {
+	try {
+		return window.sessionStorage.getItem(TOKEN_KEY) || fallback
+	} catch {
+		return fallback
 	}
 }
 
@@ -113,31 +145,52 @@ export const LEGACY_TOKEN_KEY = 'portaliq_token'
  *
  * @return {string} The adopted bearer, or ''.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-site-must-adopt-and-keep-one-bearer-for-the-resident-req-srp-002
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-site-must-adopt-and-keep-one-bearer-for-the-resident-req-srp-002
  */
 export function adoptLegacyToken() {
 	let legacy
 	try {
-		legacy = window.localStorage.getItem(LEGACY_TOKEN_KEY) || ''
-		if (legacy) {
-			window.localStorage.removeItem(LEGACY_TOKEN_KEY)
-		}
+		legacy = takeLegacyToken()
 	} catch {
 		return ''
 	}
 
 	if (legacy) {
-		try {
-			// A bearer this tab already holds is newer than the old one.
-			if (!window.sessionStorage.getItem(TOKEN_KEY)) {
-				window.sessionStorage.setItem(TOKEN_KEY, legacy)
-			}
-		} catch {
-			// No session storage: the bearer lasts this page view.
-		}
+		keepUnlessHeld(legacy)
 	}
 
 	return legacy
+}
+
+/**
+ * Take the old bearer out of localStorage; throws where the browser refuses
+ * the store.
+ *
+ * @return {string} The old bearer, or ''.
+ */
+function takeLegacyToken() {
+	const legacy = window.localStorage.getItem(LEGACY_TOKEN_KEY) || ''
+	if (legacy) {
+		window.localStorage.removeItem(LEGACY_TOKEN_KEY)
+	}
+	return legacy
+}
+
+/**
+ * Keep the old bearer for this tab, unless the tab already holds one: that
+ * one is newer.
+ *
+ * @param {string} legacy The old bearer.
+ * @return {void}
+ */
+function keepUnlessHeld(legacy) {
+	try {
+		if (!window.sessionStorage.getItem(TOKEN_KEY)) {
+			window.sessionStorage.setItem(TOKEN_KEY, legacy)
+		}
+	} catch {
+		// No session storage: the bearer lasts this page view.
+	}
 }
 
 /**
@@ -178,7 +231,7 @@ export function takeSigninFailed() {
  *
  * @param {string|null} token The bearer.
  * @return {void}
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export function storeSessionToken(token) {
 	try {
@@ -218,14 +271,8 @@ export function clearSessionToken() {
  */
 export async function fetchSession(authBase) {
 	try {
-		const token = adoptSessionToken()
-		const headers = { Accept: 'application/json' }
-		if (token) {
-			headers.Authorization = `Bearer ${token}`
-		}
-
 		const response = await fetch(`${authBase}/session`, {
-			headers,
+			headers: sessionHeaders(),
 			credentials: 'include',
 		})
 		if (!response.ok) {
@@ -239,6 +286,20 @@ export async function fetchSession(authBase) {
 	} catch {
 		return null
 	}
+}
+
+/**
+ * The headers of a session read, with this tab's bearer when it has one.
+ *
+ * @return {object} The headers.
+ */
+function sessionHeaders() {
+	const token = adoptSessionToken()
+	const headers = { Accept: 'application/json' }
+	if (token) {
+		headers.Authorization = `Bearer ${token}`
+	}
+	return headers
 }
 
 /**
@@ -256,30 +317,46 @@ export async function refreshSession(authBase) {
 		if (!token) {
 			return null
 		}
-		const response = await fetch(`${authBase}/session/refresh`, {
-			method: 'POST',
-			headers: {
-				Accept: 'application/json',
-				Authorization: `Bearer ${token}`,
-			},
-			credentials: 'include',
-		})
+		const response = await fetch(`${authBase}/session/refresh`, rotationRequest(token))
 		if (!response.ok) {
 			return null
 		}
-		const body = await response.json()
-		if (!body || !body.token) {
-			return null
-		}
-		try {
-			window.sessionStorage.setItem(TOKEN_KEY, body.token)
-		} catch {
-			// No storage: the page keeps the old bearer until it expires.
-		}
-		return body
+		return keptRotation(await response.json())
 	} catch {
 		return null
 	}
+}
+
+/**
+ * The request that rotates a bearer.
+ *
+ * @param {string} token The bearer to rotate.
+ * @return {object} The request init.
+ */
+function rotationRequest(token) {
+	return {
+		method: 'POST',
+		headers: {
+			Accept: 'application/json',
+			Authorization: `Bearer ${token}`,
+		},
+		credentials: 'include',
+	}
+}
+
+/**
+ * Keep the rotated bearer for this tab; without storage the page keeps the
+ * old bearer until it expires.
+ *
+ * @param {object|null} body The rotation's answer.
+ * @return {object|null} The answer, or null when it carries no bearer.
+ */
+function keptRotation(body) {
+	if (!body || !body.token) {
+		return null
+	}
+	keepTabToken(body.token)
+	return body
 }
 
 /**
@@ -328,9 +405,9 @@ function dutchLabel(key, vars = {}) {
  *        with it (demo-sign-in-beside-the-account).
  * @param {boolean} [ways.emailLink] Whether the portal offers the e-mail link (`waysIn.emailLink`).
  * @return {Array<{key: string, mode: string, label: string, card?: object, href: string, demo?: boolean, form?: string}>} The routes.
- * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
+ * @spec openspec/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
  * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#1
- * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+ * @spec openspec/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
  * @spec openspec/changes/nextcloud-account-registration/specs/portal-nextcloud-account-login/spec.md#requirement-the-sign-in-page-leads-to-nextclouds-own-registration-req-ncl-005
  * @spec openspec/changes/demo-sign-in-beside-the-account/specs/example-resident/spec.md#requirement-a-demo-may-sign-in-each-example-resident-with-one-click
  */

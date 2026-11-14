@@ -26,51 +26,23 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-guardian-must-be-able-to-sign-up-one-of-their-own-children-with-a-waiting-list-when-full
- * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-guardian-must-be-able-to-sign-up-one-of-their-own-children-with-a-waiting-list-when-full
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\ActivitySignupServiceInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 
 /**
  * Signs children up, withdraws them and promotes from the waiting list.
  *
- * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-guardian-must-be-able-to-sign-up-one-of-their-own-children-with-a-waiting-list-when-full
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-guardian-must-be-able-to-sign-up-one-of-their-own-children-with-a-waiting-list-when-full
  */
-class ActivitySignupService {
-	/**
-	 * Refusal: the activity is out of reach, or the child is not the guardian's (404).
-	 */
-	public const REASON_NOT_FOUND = 'not_found';
-
-	/**
-	 * Refusal: the activity is closed or its deadline passed (422).
-	 */
-	public const REASON_CLOSED = 'signup_closed';
-
-	/**
-	 * Refusal: no place and no waiting list (422).
-	 */
-	public const REASON_FULL = 'activity_full';
-
-	/**
-	 * Refusal: the child already has a sign-up that counts (409).
-	 */
-	public const REASON_DUPLICATE = 'already_signed_up';
-
-	/**
-	 * Refusal: the sign-ups could not be read or written, so no place can be promised (502).
-	 */
-	public const REASON_UNAVAILABLE = 'activity_unavailable';
-
-	/**
-	 * Refusal: the activity needs consent and the current consent text was not accepted (422).
-	 */
-	public const REASON_CONSENT_REQUIRED = 'consent_required';
+class ActivitySignupService implements ActivitySignupServiceInterface {
 
 	/**
 	 * Constructor.
@@ -100,8 +72,8 @@ class ActivitySignupService {
 	 *
 	 * @return array{status?: string, position?: int|null, error?: string}
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-guardian-must-be-able-to-sign-up-one-of-their-own-children-with-a-waiting-list-when-full
-	 * @spec openspec/changes/activity-parental-consent/specs/portaliq-cms/spec.md#requirement-an-activity-must-be-able-to-require-a-guardians-consent-recorded-on-the-sign-up
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-guardian-must-be-able-to-sign-up-one-of-their-own-children-with-a-waiting-list-when-full
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-an-activity-must-be-able-to-require-a-guardians-consent-recorded-on-the-sign-up
 	 */
 	public function signUp(string $subjectRef, string $activityId, string $childRef, string $note = '', string $acceptedStatement = ''): array {
 		$checked = $this->checkedSignup(subjectRef: $subjectRef, activityId: $activityId, childRef: $childRef, acceptedStatement: $acceptedStatement);
@@ -213,7 +185,7 @@ class ActivitySignupService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/activity-parental-consent/specs/portaliq-cms/spec.md#requirement-an-activity-must-be-able-to-require-a-guardians-consent-recorded-on-the-sign-up
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-an-activity-must-be-able-to-require-a-guardians-consent-recorded-on-the-sign-up
 	 */
 	private function consentAccepted(array $activity, string $acceptedStatement): bool {
 		if (($activity['consentRequired'] ?? false) !== true) {
@@ -236,7 +208,7 @@ class ActivitySignupService {
 	 *
 	 * @return string|null A REASON_* constant, or null on success.
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
 	 */
 	public function withdraw(string $subjectRef, string $activityId, string $childRef): ?string {
 		$activity = $this->feedReader->readOwnActivity(subjectRef: $subjectRef, activityId: $activityId);
@@ -273,7 +245,7 @@ class ActivitySignupService {
 	 *
 	 * @return int
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
 	 */
 	public function promote(array $activity): int {
 		$signups = $this->signupsOf(activity: $activity);
@@ -312,7 +284,7 @@ class ActivitySignupService {
 	 *
 	 * @return array{activity: array<string, mixed>, promoted: int}|null Null when the activity is unknown or the write failed.
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
 	 */
 	public function setSupervisors(string $activityId, array $supervisorRefs): ?array {
 		$activity = $this->store->lookup(schema: ActivityStore::OFFER, id: $activityId);

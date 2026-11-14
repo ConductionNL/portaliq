@@ -28,7 +28,7 @@ use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
 use OCA\Portaliq\Service\Messaging\GuardianMessageTranslator;
 use OCA\Portaliq\Service\Messaging\GuardianMessagingLeafInterface;
 use OCA\Portaliq\Service\Messaging\MessageContactReader;
-use OCA\Portaliq\Service\Session\BearerSessionResolver;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;

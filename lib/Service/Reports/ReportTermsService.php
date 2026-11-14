@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+ * @spec openspec/specs/report-without-an-account/spec.md
  */
 
 declare(strict_types=1);
@@ -32,13 +32,14 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Reports;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\ReportTermsServiceInterface;
 
 /**
  * Renders the declared terms and where they stand.
  *
- * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+ * @spec openspec/specs/report-without-an-account/spec.md
  */
-class ReportTermsService {
+class ReportTermsService implements ReportTermsServiceInterface {
 	/**
 	 * The property on the case type carrying the declaration.
 	 */
@@ -55,7 +56,7 @@ class ReportTermsService {
 	 *         its name, its days, its due date, whether it is met, and the
 	 *         days left or over. A term nobody declared is simply absent.
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 */
 	public function forReport(array $caseType, array $report, ?DateTimeImmutable $now = null): array {
 		$declaration = ($caseType[self::DECLARATION] ?? null);

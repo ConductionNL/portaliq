@@ -18,14 +18,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
+ * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Command;
 
-use OCA\Portaliq\Service\Traffic\Geo\GeoRefreshService;
+use OCA\Portaliq\Kernel\Contracts\GeoRefreshServiceInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -38,19 +38,19 @@ use Symfony\Component\Console\Output\OutputInterface;
  * fix. Exit 1 when a download or the verification failed, with the
  * reason on stdout, so a cron wrapper notices.
  *
- * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
+ * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
  */
 class TrafficGeoRefresh extends Command {
 
 	/**
 	 * Constructor.
 	 *
-	 * @param GeoRefreshService $refresh Does the work.
+	 * @param GeoRefreshServiceInterface $refresh Does the work.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly GeoRefreshService $refresh,
+		private readonly GeoRefreshServiceInterface $refresh,
 	) {
 		parent::__construct();
 	}//end __construct()
@@ -61,7 +61,7 @@ class TrafficGeoRefresh extends Command {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
 	 */
 	protected function configure(): void {
 		$this->setName(name: 'portaliq:traffic:geo-refresh');
@@ -77,7 +77,7 @@ class TrafficGeoRefresh extends Command {
 	 *
 	 * @return int 0 when refreshed or disabled, 1 when failed.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- the base class dictates
 	 * the signature.

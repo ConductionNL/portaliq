@@ -26,7 +26,7 @@ use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Controller\PortalContactsController;
 use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use OCA\Portaliq\Service\Identity\PortalContactService;
-use OCA\Portaliq\Service\Session\BearerSessionResolver;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 

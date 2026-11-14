@@ -26,7 +26,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+ * @spec openspec/specs/change-proposal-queue/spec.md
  */
 
 declare(strict_types=1);
@@ -34,18 +34,15 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Proposals;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\ProposalServiceInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 
 /**
  * Queues, reviews and applies change proposals.
  *
- * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+ * @spec openspec/specs/change-proposal-queue/spec.md
  */
-class ProposalService {
-	/**
-	 * A proposal waiting for a reviewer.
-	 */
-	public const STATE_QUEUED = 'queued';
+class ProposalService implements ProposalServiceInterface {
 
 	/**
 	 * A proposal whose values are on the record.
@@ -104,7 +101,7 @@ class ProposalService {
 	 *
 	 * @return array{proposal: array<string, mixed>}|array{error: string, property?: string}
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the parameters are the
 	 * proposal's declared fields plus the allow-list it is judged against.
@@ -137,7 +134,7 @@ class ProposalService {
 	 *
 	 * @return array{proposal: array<string, mixed>}|array{error: string, property?: string}
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function proposeChange(ChangeProposalRequest $request): array {
 		$checked = $this->checkedChanges(request: $request);
@@ -282,7 +279,7 @@ class ProposalService {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function forSubject(array $subject, string $state = self::STATE_QUEUED): array {
 		return $this->queueReader->forSubject(subject: $subject, state: $state);
@@ -300,7 +297,7 @@ class ProposalService {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/guardian-self-service-profile/specs/change-proposal-queue/spec.md#requirement-a-proposer-can-list-their-own-proposals-req-cpq-005
+	 * @spec openspec/specs/change-proposal-queue/spec.md#requirement-a-proposer-can-list-their-own-proposals-req-cpq-005
 	 */
 	public function mine(string $proposedBy): array {
 		return $this->queueReader->mine(proposedBy: $proposedBy);
@@ -321,7 +318,7 @@ class ProposalService {
 	 *
 	 * @return array{accepted: true}|array{error: string, drift?: array<int, array<string, mixed>>}
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function accept(array $proposal, array $subjectRow, string $reviewer): array {
 		$refusal = $this->refusalBeforeApplying(proposal: $proposal, reviewer: $reviewer);
@@ -353,7 +350,7 @@ class ProposalService {
 	 *
 	 * @return array{accepted: true}|array{error: string}
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function acceptConfirmingDrift(array $proposal, string $reviewer): array {
 		$refusal = $this->refusalBeforeApplying(proposal: $proposal, reviewer: $reviewer);
@@ -374,7 +371,7 @@ class ProposalService {
 	 *
 	 * @return array{error: string}|null
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	private function refusalBeforeApplying(array $proposal, string $reviewer): ?array {
 		if ((string)($proposal['state'] ?? '') !== self::STATE_QUEUED) {
@@ -396,7 +393,7 @@ class ProposalService {
 	 *
 	 * @return array{accepted: true}|array{error: string}
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	private function applyProposal(array $proposal, string $reviewer): array {
 		$values = [];
@@ -442,7 +439,7 @@ class ProposalService {
 	 *
 	 * @return array{rejected: true}|array{error: string}
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function reject(array $proposal, string $reviewer, string $reason): array {
 		if ((string)($proposal['state'] ?? '') !== self::STATE_QUEUED) {
@@ -469,7 +466,7 @@ class ProposalService {
 	 *
 	 * @return array{withdrawn: true}|array{error: string}
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function withdraw(array $proposal, string $proposedBy): array {
 		if ((string)($proposal['state'] ?? '') !== self::STATE_QUEUED) {
@@ -495,7 +492,7 @@ class ProposalService {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function drift(array $proposal, array $subjectRow): array {
 		$drift = [];

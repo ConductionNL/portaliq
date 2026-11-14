@@ -26,7 +26,7 @@ use OCA\Portaliq\Controller\EventGuardianController;
 use OCA\Portaliq\Service\EventFeedReader;
 use OCA\Portaliq\Service\EventRsvpService;
 use OCA\Portaliq\Service\EventSignupService;
-use OCA\Portaliq\Service\Session\BearerSessionResolver;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;

@@ -24,21 +24,22 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Kernel\Contracts\PortalApplicantPrefillInterface;
+use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 
 /**
  * Fills the applicant block from the signed-in identity's own claims.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md
  */
-class PortalApplicantPrefill {
+class PortalApplicantPrefill implements PortalApplicantPrefillInterface {
 	/**
 	 * The applicant fields that may be prefilled, and the account field each
 	 * one is taken from. Nothing outside this map is ever prefilled, so adding
@@ -52,10 +53,10 @@ class PortalApplicantPrefill {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalAccountService $accounts Reads the signed-in account.
+	 * @param PortalAccountLookup  $accounts Reads the signed-in account.
 	 */
 	public function __construct(
-		private readonly PortalAccountService $accounts,
+		private readonly PortalAccountLookup $accounts,
 	) {
 	}//end __construct()
 
@@ -68,7 +69,7 @@ class PortalApplicantPrefill {
 	 * @return array<string, mixed> Field name to value. Empty for a visitor
 	 *         with no session.
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	public function forSubject(?array $subject, array $fields): array {
 		$account = $this->ownAccount(subject: $subject);
@@ -113,7 +114,7 @@ class PortalApplicantPrefill {
 	 * @return array<string, mixed>|null
 	 */
 	private function accountOf(string $subjectRef): ?array {
-		$account = $this->accounts->findBySubjectRef(subjectRef: $subjectRef);
+		$account = $this->accounts->bySubjectRef(subjectRef: $subjectRef);
 		if ($account === null || (string)($account['subjectRef'] ?? '') !== $subjectRef) {
 			return null;
 		}

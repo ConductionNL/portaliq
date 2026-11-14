@@ -8,10 +8,10 @@ use OCA\Portaliq\Controller\PortalAccountSelfController;
 use OCA\Portaliq\Service\Identity\PortalAccessRequestService;
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
 use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
-use OCA\Portaliq\Service\Session\BearerSessionResolver;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\Security\ISecureRandom;
@@ -294,8 +294,8 @@ class PortalAccountSelfControllerTest extends TestCase {
 		$session = $this->double(BearerSessionResolver::class, ['resolveFromBearer']);
 		$session->method('resolveFromBearer')->willReturn(['subjectRef' => 'subject-1', 'organisation' => 'gemeente-x']);
 
-		$accounts = $this->double(PortalAccountService::class, ['findBySubjectRef']);
-		$accounts->method('findBySubjectRef')->willReturnCallback(
+		$accounts = $this->double(PortalAccountLookup::class, ['bySubjectRef']);
+		$accounts->method('bySubjectRef')->willReturnCallback(
 			static fn (string $subjectRef): ?array => ($subjectRef === 'subject-1' ? $account : ['uuid' => 'account-other', 'subjectRef' => $subjectRef])
 		);
 		$reader = $this->double(PortalObjectReader::class, ['readCollection']);

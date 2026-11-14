@@ -21,17 +21,17 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/push-notifications-quiet-hours/design.md#api-design
+ * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#api-design
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
-use OCA\Portaliq\Service\Notifications\QuietHoursPolicy;
-use OCA\Portaliq\Service\Session\BearerSessionResolver;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
+use OCA\Portaliq\Kernel\Contracts\QuietHoursPolicyInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -41,7 +41,7 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 
 /**
- * @spec openspec/changes/push-notifications-quiet-hours/design.md#api-design
+ * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#api-design
  */
 class QuietHoursGuardianController extends Controller implements PortalProtected {
 	/**
@@ -49,14 +49,14 @@ class QuietHoursGuardianController extends Controller implements PortalProtected
 	 *
 	 * @param IRequest $request The request.
 	 * @param BearerSessionResolver $session Resolves the subject from the bearer.
-	 * @param QuietHoursPolicy $quietHours The single source of truth.
+	 * @param QuietHoursPolicyInterface $quietHours The single source of truth.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly BearerSessionResolver $session,
-		private readonly QuietHoursPolicy $quietHours,
+		private readonly QuietHoursPolicyInterface $quietHours,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -64,7 +64,7 @@ class QuietHoursGuardianController extends Controller implements PortalProtected
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/push-notifications-quiet-hours/design.md#api-design
+	 * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#api-design
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -86,7 +86,7 @@ class QuietHoursGuardianController extends Controller implements PortalProtected
 	 *
 	 * @return JSONResponse 204 on success, 400 for an invalid window.
 	 *
-	 * @spec openspec/changes/push-notifications-quiet-hours/design.md#api-design
+	 * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#api-design
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

@@ -24,16 +24,21 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Service\Cms\SiteHead;
+use OCA\Portaliq\Kernel\Contracts\SiteShellInterface;
 use OCP\IRequest;
 use OCP\IURLGenerator;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalNoticeReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalRuntimeConfigResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalThemeResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\SiteHeadInterface;
 
 /**
  * The values the site shell template is rendered with.
  *
  * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#3.2
  */
-class SiteShell {
+class SiteShell implements SiteShellInterface {
 	/**
 	 * The portal slug this request names, once read (see requestedPortalSlug()).
 	 *
@@ -59,21 +64,21 @@ class SiteShell {
 	 * Constructor.
 	 *
 	 * @param IRequest                    $request        The request.
-	 * @param PortalResolver              $portalResolver Resolves the serving portal.
-	 * @param PortalThemeResolver         $themeResolver  Maps the portal's theme to a token stylesheet.
+	 * @param PortalResolverInterface              $portalResolver Resolves the serving portal.
+	 * @param PortalThemeResolverInterface         $themeResolver  Maps the portal's theme to a token stylesheet.
 	 * @param IURLGenerator               $urlGenerator   Builds the content API base and the logo address.
-	 * @param SiteHead                    $siteHead       The head of the page a site request asks for.
-	 * @param PortalNoticeReader          $notices        The notices running on the signed-in surface now.
-	 * @param PortalRuntimeConfigResolver $configResolver Resolves the runtime config built from the portal.
+	 * @param SiteHeadInterface                    $siteHead       The head of the page a site request asks for.
+	 * @param PortalNoticeReaderInterface          $notices        The notices running on the signed-in surface now.
+	 * @param PortalRuntimeConfigResolverInterface $configResolver Resolves the runtime config built from the portal.
 	 */
 	public function __construct(
 		private readonly IRequest $request,
-		private readonly PortalResolver $portalResolver,
-		private readonly PortalThemeResolver $themeResolver,
+		private readonly PortalResolverInterface $portalResolver,
+		private readonly PortalThemeResolverInterface $themeResolver,
 		private readonly IURLGenerator $urlGenerator,
-		private readonly SiteHead $siteHead,
-		private readonly PortalNoticeReader $notices,
-		private readonly PortalRuntimeConfigResolver $configResolver,
+		private readonly SiteHeadInterface $siteHead,
+		private readonly PortalNoticeReaderInterface $notices,
+		private readonly PortalRuntimeConfigResolverInterface $configResolver,
 	) {
 		$this->addressing = new SiteAddressing(portalResolver: $portalResolver, urlGenerator: $urlGenerator);
 	}//end __construct()
@@ -85,7 +90,7 @@ class SiteShell {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+	 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 	 * @spec openspec/changes/site-at-the-root-of-a-portal-host/specs/portal-settings/spec.md#requirement-a-verified-domain-may-serve-the-site-at-its-root-req-srh-001
 	 */
 	public function templateParams(string $path = ''): array {
@@ -194,7 +199,7 @@ class SiteShell {
 	 *
 	 * @return string The slug, or ''.
 	 *
-	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-old-portal-links-must-land-on-the-site-req-srp-048
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-old-portal-links-must-land-on-the-site-req-srp-048
 	 */
 	public function requestedPortalSlug(): string {
 		if ($this->requestedSlug !== null) {
@@ -302,7 +307,7 @@ class SiteShell {
 	 * @return array{devLogin: bool, silentSignIn: string, signinOrganisation: string, audience: string,
 	 *               waysIn: array<string, mixed>, exampleResident: string, exampleResidents: list<array<string, mixed>>}
 	 *
-	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+	 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/tasks.md#T07
 	 * @spec openspec/changes/demo-sign-in-beside-the-account/specs/example-resident/spec.md#requirement-a-demo-may-sign-in-each-example-resident-with-one-click
 	 */
@@ -335,7 +340,7 @@ class SiteShell {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-notices-must-show-above-every-page-req-srp-010
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-notices-must-show-above-every-page-req-srp-010
 	 */
 	private function sitePortalNotices(): array {
 		$slug = $this->siteResolvedSlug();

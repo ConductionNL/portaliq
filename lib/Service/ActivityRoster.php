@@ -20,20 +20,22 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
- * @spec openspec/changes/activity-parental-consent/specs/portaliq-cms/spec.md#requirement-where-photos-are-taken-the-roster-must-show-each-childs-photo-consent
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
+ * @spec openspec/changes/archive/2026-09-28-activity-parental-consent/specs/portaliq-cms/spec.md#requirement-where-photos-are-taken-the-roster-must-show-each-childs-photo-consent
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\ActivityRosterInterface;
+
 /**
  * Builds the staff roster of one activity.
  *
- * @spec openspec/changes/activity-parental-consent/specs/portaliq-cms/spec.md#requirement-where-photos-are-taken-the-roster-must-show-each-childs-photo-consent
+ * @spec openspec/changes/archive/2026-09-28-activity-parental-consent/specs/portaliq-cms/spec.md#requirement-where-photos-are-taken-the-roster-must-show-each-childs-photo-consent
  */
-class ActivityRoster {
+class ActivityRoster implements ActivityRosterInterface {
 	/**
 	 * Constructor.
 	 *
@@ -56,7 +58,7 @@ class ActivityRoster {
 	 *
 	 * @return array{places: int, confirmed: array<int, array<string, mixed>>, waitlist: array<int, array<string, mixed>>}|null
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
 	 */
 	public function roster(string $activityId): ?array {
 		$activity = $this->store->lookup(schema: ActivityStore::OFFER, id: $activityId);
@@ -86,7 +88,7 @@ class ActivityRoster {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/activity-parental-consent/specs/portaliq-cms/spec.md#requirement-where-photos-are-taken-the-roster-must-show-each-childs-photo-consent
+	 * @spec openspec/changes/archive/2026-09-28-activity-parental-consent/specs/portaliq-cms/spec.md#requirement-where-photos-are-taken-the-roster-must-show-each-childs-photo-consent
 	 */
 	private function withPhotoConsent(array $activity, array $signups): array {
 		if (($activity['photosTaken'] ?? false) !== true) {

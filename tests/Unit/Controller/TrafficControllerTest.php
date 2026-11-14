@@ -20,7 +20,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\TrafficController;
 use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\Session\BearerSessionResolver;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCA\Portaliq\Service\Traffic\RawRequestBody;
 use OCA\Portaliq\Service\Traffic\TrafficRecordingService;
 use OCA\Portaliq\Service\Traffic\TrafficServerToken;
@@ -36,6 +36,7 @@ use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionProperty;
+use OCA\Portaliq\Service\Traffic\TrafficServerBatch;
 
 /**
  * The collector as an HTTP surface: what it refuses whole, what it
@@ -175,7 +176,8 @@ class TrafficControllerTest extends TestCase {
 			$appManager,
 			$this->session ?? $this->createMock(BearerSessionResolver::class),
 			$tokens,
-			$recordings
+			$recordings,
+			new TrafficServerBatch()
 		);
 	}//end controller()
 

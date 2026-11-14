@@ -25,24 +25,25 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Service\Session\SessionTrust;
 use OCA\Portaliq\Contribution\CaseStatusLabelField;
-use OCA\Portaliq\Service\Branch\PortalBranchScope;
+use OCA\Portaliq\Kernel\Contracts\PortalCaseListReaderInterface;
+use OCA\Portaliq\Kernel\Support\PortalBranchScope;
 use OCA\Portaliq\Service\Identity\MandateParties;
+use OCA\Portaliq\Kernel\Support\SessionTrust;
 
 /**
  * Merges every `kind: cases` collection into the subject's own case list.
  *
- * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
-class PortalCaseListReader {
+class PortalCaseListReader implements PortalCaseListReaderInterface {
 	/**
 	 * The collection kind this reader fans out over.
 	 */
@@ -87,7 +88,7 @@ class PortalCaseListReader {
 	 *
 	 * @return array<int, array<string, mixed>> The merged case rows.
 	 *
-	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 */
 	public function listCases(array $subject, array $aggregate, array $hiddenCaseTypes = []): array {
@@ -224,7 +225,7 @@ class PortalCaseListReader {
 	 *
 	 * @return array<int, array<string, mixed>> The mandated case rows.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 */
 	public function listMandatedCases(array $subject, array $aggregate, array $mandates, array $hiddenCaseTypes = []): array {
@@ -284,7 +285,7 @@ class PortalCaseListReader {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	private function mandatedRowsOfContribution(CaseListRun $run, array $contribution): array {
 		$rows = [];
@@ -339,7 +340,7 @@ class PortalCaseListReader {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/portal-visibility-follows-the-party-tree/specs/portal-visibility-and-the-party-tree/spec.md
+	 * @spec openspec/specs/portal-visibility-and-the-party-tree/spec.md
 	 */
 	private function mandatedRowsOfMandate(CaseListRun $run, CaseListSource $source, array $mandate): array {
 		$described = $this->mandates?->describe(mandate: $mandate);
@@ -434,7 +435,7 @@ class PortalCaseListReader {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/portal-visibility-follows-the-party-tree/specs/portal-visibility-and-the-party-tree/spec.md
+	 * @spec openspec/specs/portal-visibility-and-the-party-tree/spec.md
 	 */
 	private function stampMandatedRows(array $partyRows, MandatedRead $read): array {
 		$rows = [];
@@ -486,7 +487,7 @@ class PortalCaseListReader {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-visibility-follows-the-party-tree/specs/portal-visibility-and-the-party-tree/spec.md
+	 * @spec openspec/specs/portal-visibility-and-the-party-tree/spec.md
 	 */
 	private function reachableThroughAParent(array $collection, string $caseType): bool {
 		$declared = ($collection['parentReachableTypes'] ?? []);

@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
  */
 
 declare(strict_types=1);
@@ -25,7 +25,7 @@ namespace OCA\Portaliq\Service\Traffic;
  * device, browser, operating system, language and region, and events per
  * search term, downloaded file and outbound link. Pure.
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
  */
 class TrafficDimensionCounts {
 
@@ -47,7 +47,7 @@ class TrafficDimensionCounts {
 	 *
 	 * @return array<int, array<string, mixed>> The rows, ranked by count.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 	 */
 	public function perSession(array $sessions, array $keys, array $names, string $countKey): array {
 		$out = [];
@@ -96,7 +96,7 @@ class TrafficDimensionCounts {
 	 *
 	 * @return array<string, int> Value => sessions, sorted by value.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 	 */
 	public function perSessionMap(array $sessions, string $key): array {
 		$map = [];
@@ -133,7 +133,7 @@ class TrafficDimensionCounts {
 	 *
 	 * @return array<int, array<string, mixed>> Rows of [label => value, countKey => n], ranked.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 	 */
 	public function perEvent(array $sessions, string $name, array $keys, string $label, string $countKey = 'count'): array {
 		$counts = [];
@@ -274,7 +274,7 @@ class TrafficDimensionCounts {
 	 *
 	 * @return array<string, array<string, int>> Id => (value => count), values sorted.
 	 *
-	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-custom-dimensions-must-be-declared-before-they-are-stored
+	 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-custom-dimensions-must-be-declared-before-they-are-stored
 	 */
 	public function custom(array $sessions, array $definitions): array {
 		$out = [];

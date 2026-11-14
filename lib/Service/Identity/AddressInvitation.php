@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
 
 declare(strict_types=1);
@@ -28,7 +28,7 @@ namespace OCA\Portaliq\Service\Identity;
 /**
  * An address a clerk invites into the portal.
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
 final class AddressInvitation {
 	/**

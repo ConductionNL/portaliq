@@ -24,7 +24,7 @@ use OCA\Portaliq\Controller\PortalRegisteredDetailsController;
 use OCA\Portaliq\Service\CaseTypeVisibility;
 use OCA\Portaliq\Service\Identity\PortalRegisteredDetailsLinks;
 use OCA\Portaliq\Service\Identity\PortalRegisteredDetailsService;
-use OCA\Portaliq\Service\Session\BearerSessionResolver;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;

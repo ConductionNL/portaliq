@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
 
 declare(strict_types=1);
@@ -40,15 +40,16 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\PortalChallengeServiceInterface;
 use OCP\Security\ICrypto;
 use OCP\Security\ISecureRandom;
 
 /**
  * Issues and verifies the portal's own challenge.
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
-class PortalChallengeService {
+class PortalChallengeService implements PortalChallengeServiceInterface {
 	/**
 	 * The work factor used when a surface names none.
 	 */
@@ -86,7 +87,7 @@ class PortalChallengeService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function isEnabled(array $site): bool {
 		$proofOfWork = $this->proofOfWorkConfig(site: $site);
@@ -107,7 +108,7 @@ class PortalChallengeService {
 	 *
 	 * @return array{nonce: string, expiresAt: int, signature: string, difficulty: int, algorithm: string}
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function issue(array $site, string $surface, ?DateTimeImmutable $now = null): array {
 		$nonce = $this->random->generate(32, (ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS));
@@ -137,7 +138,7 @@ class PortalChallengeService {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function signatureFor(string $nonce, string $surface, string $portal, int $expiresAt): string {
 		return $this->crypto->calculateHMAC($nonce . ':' . $surface . ':' . $portal . ':' . $expiresAt);
@@ -155,7 +156,7 @@ class PortalChallengeService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function nonceIsOurs(
 		string $nonce,
@@ -184,7 +185,7 @@ class PortalChallengeService {
 	 *
 	 * @return int
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function difficultyFor(array $site, string $surface): int {
 		$proofOfWork = $this->proofOfWorkConfig(site: $site);
@@ -224,7 +225,7 @@ class PortalChallengeService {
 	 *
 	 * @return bool True when the submission may proceed.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function accepts(
 		array $site,
@@ -282,7 +283,7 @@ class PortalChallengeService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function solves(string $nonce, string $solution, int $difficulty): bool {
 		if ($nonce === '' || $solution === '') {

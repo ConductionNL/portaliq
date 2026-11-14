@@ -20,22 +20,21 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\Session\BearerSessionResolver;
-use OCA\Portaliq\Service\Traffic\RawRequestBody;
-use OCA\Portaliq\Service\Traffic\TrafficRecordingService;
-use OCA\Portaliq\Service\Traffic\TrafficServerBatch;
-use OCA\Portaliq\Service\Traffic\TrafficServerToken;
-use OCA\Portaliq\Service\TrafficEventValidator;
-use OCA\Portaliq\Service\TrafficIngestService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
+use OCA\Portaliq\Kernel\Contracts\RawRequestBodyInterface;
+use OCA\Portaliq\Kernel\Contracts\TrafficEventValidatorInterface;
+use OCA\Portaliq\Kernel\Contracts\TrafficIngestServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\TrafficRecordingServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\TrafficServerTokenInterface;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -48,6 +47,7 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Http\Response;
 use OCP\IRequest;
 use Throwable;
+use OCA\Portaliq\Kernel\Contracts\TrafficServerBatchInterface;
 
 /**
  * Anonymous, unauthenticated, writable by anyone who can reach the portal:
@@ -65,7 +65,7 @@ use Throwable;
  * authenticated callers at Nextcloud's default, which is far lower, so an
  * editor previewing their own site would be throttled before a visitor.
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the edge of the
  * collector meets the resolver, the ingest, the body reader, the app
@@ -98,26 +98,28 @@ class TrafficController extends Controller {
 	 *
 	 * @param string               $appName    The app id.
 	 * @param IRequest             $request    The request.
-	 * @param PortalResolver       $resolver   Resolves the serving portal.
-	 * @param TrafficIngestService $ingest     Validates and stores events.
-	 * @param RawRequestBody       $body       Reads the text body.
+	 * @param PortalResolverInterface       $resolver   Resolves the serving portal.
+	 * @param TrafficIngestServiceInterface $ingest     Validates and stores events.
+	 * @param RawRequestBodyInterface       $body       Reads the text body.
 	 * @param IAppManager          $appManager Locates the built client on disk.
 	 * @param BearerSessionResolver $session    Resolves a portal session bearer to its subject, for account linking.
-	 * @param TrafficServerToken   $tokens     Verifies a backend's bearer token (portal-traffic-reporting).
-	 * @param TrafficRecordingService $recordings Stores a session recording chunk (portal-traffic-experiments).
+	 * @param TrafficServerTokenInterface   $tokens     Verifies a backend's bearer token (portal-traffic-reporting).
+	 * @param TrafficRecordingServiceInterface $recordings Stores a session recording chunk (portal-traffic-experiments).
+	 * @param TrafficServerBatchInterface $trafficServerBatch The TrafficServerBatch helper.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly PortalResolver $resolver,
-		private readonly TrafficIngestService $ingest,
-		private readonly RawRequestBody $body,
+		private readonly PortalResolverInterface $resolver,
+		private readonly TrafficIngestServiceInterface $ingest,
+		private readonly RawRequestBodyInterface $body,
 		private readonly IAppManager $appManager,
 		private readonly BearerSessionResolver $session,
-		private readonly TrafficServerToken $tokens,
-		private readonly TrafficRecordingService $recordings,
+		private readonly TrafficServerTokenInterface $tokens,
+		private readonly TrafficRecordingServiceInterface $recordings,
+		private readonly TrafficServerBatchInterface $trafficServerBatch,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -134,7 +136,7 @@ class TrafficController extends Controller {
 	 *
 	 * @return Response 204, or a 400 with a reason.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -173,7 +175,7 @@ class TrafficController extends Controller {
 			return $this->refusal(reason: 'malformed-batch');
 		}
 
-		if ($bounded === true && count($batch['events']) > TrafficEventValidator::MAX_BATCH) {
+		if ($bounded === true && count($batch['events']) > TrafficEventValidatorInterface::MAX_BATCH) {
 			return $this->refusal(reason: 'batch-too-large');
 		}
 
@@ -212,7 +214,7 @@ class TrafficController extends Controller {
 	 *
 	 * @return Response 204, a 400 with a reason, or a 401.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -232,7 +234,7 @@ class TrafficController extends Controller {
 		$consent = (($batch['consent'] ?? false) === true);
 		// Pure and stateless, so built here rather than injected: a tenth
 		// constructor argument for a regrouping is more ceremony than fact.
-		$batches = new TrafficServerBatch();
+		$batches = $this->trafficServerBatch;
 		foreach ($batches->byVisitor(batch: $batch) as $group) {
 			$this->ingest->ingestForPortal(
 				portal: $portal,
@@ -314,7 +316,7 @@ class TrafficController extends Controller {
 	 *
 	 * @return Response 204, or a 400 with a reason.
 	 *
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -343,7 +345,7 @@ class TrafficController extends Controller {
 	 *
 	 * @return DataDisplayResponse The script, a 304, or a 404.
 	 *
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -363,7 +365,7 @@ class TrafficController extends Controller {
 	 *
 	 * @return DataDisplayResponse A 1x1 GIF, always.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -408,7 +410,7 @@ class TrafficController extends Controller {
 	 *
 	 * @return DataDisplayResponse The script, a 304, or a 404.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-served-client-must-be-one-file-for-every-renderer
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-served-client-must-be-one-file-for-every-renderer
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -460,7 +462,7 @@ class TrafficController extends Controller {
 	 */
 	private function clientPath(string $file): ?string {
 		try {
-			$path = $this->appManager->getAppPath(Application::APP_ID) . '/js/' . $file;
+			$path = $this->appManager->getAppPath(AppIdentity::APP_ID) . '/js/' . $file;
 		} catch (Throwable) {
 			return null;
 		}
@@ -517,7 +519,7 @@ class TrafficController extends Controller {
 	 *
 	 * @return string The subjectRef, or ''.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-account-linking-must-attach-only-a-pseudonymous-reference
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-account-linking-must-attach-only-a-pseudonymous-reference
 	 */
 	private function subjectRef(): string {
 		$header = trim($this->request->getHeader('Authorization'));

@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md
  */
 
 declare(strict_types=1);
@@ -29,7 +29,7 @@ use OCP\IL10N;
 /**
  * Holds one answer to the limits its field declares.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md
  */
 class PortalFieldLimits {
 	/**
@@ -50,7 +50,7 @@ class PortalFieldLimits {
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	public function patternError(array $field, mixed $value): ?string {
 		$pattern = (string)($field['pattern'] ?? '');
@@ -73,7 +73,7 @@ class PortalFieldLimits {
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	public function optionsError(array $field, mixed $value): ?string {
 		if (($field['referenceListEmpty'] ?? false) === true) {
@@ -111,7 +111,7 @@ class PortalFieldLimits {
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	public function lengthError(array $field, mixed $value): ?string {
 		$maxLength = (int)($field['maxLength'] ?? 0);

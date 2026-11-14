@@ -26,12 +26,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\ExampleResident;
 
+use OCA\Portaliq\Kernel\Contracts\ExampleResidentRemoverInterface;
+
 /**
  * Removes an example resident from its install's own record.
  *
  * @spec openspec/changes/example-resident-zuiddrecht/specs/example-resident/spec.md#requirement-an-administrator-must-be-able-to-remove-an-example-resident
  */
-class ExampleResidentRemover {
+class ExampleResidentRemover implements ExampleResidentRemoverInterface {
 	/**
 	 * Constructor.
 	 *

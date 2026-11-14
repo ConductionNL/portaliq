@@ -22,7 +22,7 @@ namespace OCA\Portaliq\Listener;
 
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCP\EventDispatcher\Event;
 use Throwable;
 
@@ -41,7 +41,7 @@ trait SchemaWriteGuard {
 	 * @return void
 	 *
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-form-binding-names-its-destination-and-is-valid-against-it-req-pifo-007
-	 * @spec openspec/changes/portal-cms-content-model/tasks.md#task-3
+	 * @spec openspec/changes/archive/2026-10-09-portal-cms-content-model/tasks.md#task-3
 	 * @spec openspec/specs/portal-notices/spec.md#requirement-page-editors-manage-notices-req-omn-003
 	 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
 	 */
@@ -68,7 +68,7 @@ trait SchemaWriteGuard {
 	private function guardsSchema(string $schema): bool {
 		try {
 			$guarded = $this->container->get('OCA\\OpenRegister\\Db\\SchemaMapper')
-				->findByApplicationAndSlug(slug: self::GUARDED_SCHEMA, application: Application::APP_ID);
+				->findByApplicationAndSlug(slug: self::GUARDED_SCHEMA, application: AppIdentity::APP_ID);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: ' . self::GUARD_NAME . ' could not read the schema', ['reason' => $e->getMessage()]);
 			return false;

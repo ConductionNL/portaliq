@@ -31,26 +31,29 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Contribution\PortalProviderLocator;
-use OCA\Portaliq\Contribution\TimelineProviderMethod;
+use OCA\Portaliq\Kernel\Contracts\PortalProviderLocatorInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalTimelineReaderInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
+use OCA\Portaliq\Kernel\Contracts\TimelineProviderMethodInterface;
 
 /**
  * Calls a contributing app's declared timeline method.
  *
  * @spec openspec/specs/portal-contribution-contract/spec.md
  */
-class PortalTimelineReader {
+class PortalTimelineReader implements PortalTimelineReaderInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalProviderLocator $locator Finds the app's provider.
+	 * @param PortalProviderLocatorInterface $locator Finds the app's provider.
 	 * @param LoggerInterface $logger Records a provider that failed.
+	 * @param TimelineProviderMethodInterface $timelineProviderMethod The TimelineProviderMethod helper.
 	 */
 	public function __construct(
-		private readonly PortalProviderLocator $locator,
+		private readonly PortalProviderLocatorInterface $locator,
 		private readonly LoggerInterface $logger,
+		private readonly TimelineProviderMethodInterface $timelineProviderMethod,
 	) {
 	}//end __construct()
 
@@ -69,7 +72,7 @@ class PortalTimelineReader {
 	 */
 	public function entries(string $appId, string $method, string $id): ?array {
 		$provider = $this->locator->locate(appId: $appId);
-		if ($provider === null || (new TimelineProviderMethod())->callableOn(provider: $provider, method: $method) === false) {
+		if ($provider === null || $this->timelineProviderMethod->callableOn(provider: $provider, method: $method) === false) {
 			return null;
 		}
 
