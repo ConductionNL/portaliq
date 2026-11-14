@@ -21,6 +21,11 @@ that is not in `check:specs` does not run in CI.
     saves through; find it first) `testAJpegFaviconIsRefused`,
     `testAnotherPortalsMediaIsRefused`.
   - Through the caller: the controller the form posts to, `testSavingTheThreeImagesStoresReferences`.
+  - Save path built: the portal form is a manifest page that writes the `portal` object through
+    OpenRegister, so the rules run on OpenRegister's creating/updating events
+    (`PortalImagesGuardListener` over `lib/Service/Cms/PortalImageChoice.php`): a `media:<id>` must be a
+    published item of this portal's own library, and a favicon's newest file a PNG, SVG or ICO.
+    Tests in `tests/Unit/Service/Cms/PortalImageChoiceTest.php`. The three pickers in the form are left.
 
 ## 2. The head and the hero
 
