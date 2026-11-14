@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.109.0"
+        "version": "0.110.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.109.0",
+                "version": "0.110.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -2650,7 +2650,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.28.0",
+                "version": "0.29.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -4813,6 +4813,18 @@
                         "example": [
                             "/contact"
                         ]
+                    },
+                    "adminGroups": {
+                        "title": "Administrators",
+                        "type": "array",
+                        "description": "The Nextcloud groups whose members look after this portal: its settings, domains, theme, sign-in, pages, menus and notices. Only an instance administrator changes this list.",
+                        "items": {
+                            "type": "string",
+                            "referenceType": "nextcloud-group",
+                            "description": "A Nextcloud group id.",
+                            "example": "zeist-beheer"
+                        },
+                        "example": []
                     },
                     "editors": {
                         "title": "Editors",

@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\PortalThemeController;
+use OCA\Portaliq\Service\Tenancy\PortalAdminScope;
 use OCA\Portaliq\Service\Theme\PortalThemeChoice;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
@@ -30,6 +31,13 @@ class PortalThemeControllerTest extends TestCase {
 	 * @var PortalThemeChoice&MockObject
 	 */
 	private $choice;
+
+	/**
+	 * The admin scope double.
+	 *
+	 * @var PortalAdminScope&MockObject
+	 */
+	private $scope;
 
 	public function testAnUnknownPortalIs404(): void {
 		$controller = $this->controller(portal: null);
@@ -77,25 +85,51 @@ class PortalThemeControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_BAD_GATEWAY, $controller->update(slug: 'gemeente', theme: 'vng')->getStatus());
 	}//end testAFailedWriteIs502()
 
-	public function testBothRoutesStayAdminOnly(): void {
+	public function testBothRoutesAreOpenToThePortalsOwnAdministratorsOnly(): void {
 		foreach (['index', 'update'] as $method) {
 			$attributes = array_map(
 				static fn ($attribute): string => $attribute->getName(),
 				(new ReflectionMethod(PortalThemeController::class, $method))->getAttributes()
 			);
-			$this->assertSame([], array_values(array_filter($attributes, static fn (string $name): bool => str_contains($name, 'NoAdminRequired') || str_contains($name, 'PublicPage'))));
+			$this->assertContains('OCP\\AppFramework\\Http\\Attribute\\NoAdminRequired', $attributes);
+			$this->assertSame([], array_values(array_filter($attributes, static fn (string $name): bool => str_contains($name, 'PublicPage'))));
 		}
-	}//end testBothRoutesStayAdminOnly()
+	}//end testBothRoutesAreOpenToThePortalsOwnAdministratorsOnly()
+
+	public function testAPortalTheCallerMayNotAdministerIs404AndNothingIsSaved(): void {
+		$controller = $this->controller(portal: ['slug' => 'utrecht', 'adminGroups' => ['utrecht-beheer']], mayAdminister: false);
+		$this->choice->expects($this->never())->method('listFor');
+		$this->choice->expects($this->never())->method('choose');
+		$this->choice->expects($this->never())->method('chooseConfirmingFindings');
+
+		$index = $controller->index(slug: 'utrecht');
+		$update = $controller->update(slug: 'utrecht', theme: 'vng');
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $index->getStatus());
+		$this->assertSame(['error' => 'portal_not_found'], $index->getData(), 'the same answer as an unknown portal');
+		$this->assertSame(Http::STATUS_NOT_FOUND, $update->getStatus());
+		$this->assertSame(['error' => 'portal_not_found'], $update->getData());
+	}//end testAPortalTheCallerMayNotAdministerIs404AndNothingIsSaved()
+
+	public function testTheScopeIsAskedAboutThePortalTheSlugFound(): void {
+		$portal = ['slug' => 'zeist', 'adminGroups' => ['zeist-beheer']];
+		$controller = $this->controller(portal: $portal, mayAdminister: null);
+		$this->scope->expects($this->once())->method('mayAdminister')->with($portal)->willReturn(true);
+		$this->choice->method('listFor')->willReturn(['current' => 'vng', 'currentResolves' => true, 'sets' => []]);
+
+		$this->assertSame(Http::STATUS_OK, $controller->index(slug: 'zeist')->getStatus());
+	}//end testTheScopeIsAskedAboutThePortalTheSlugFound()
 
 	/**
 	 * The controller over a choice double.
 	 *
 	 * @param array<string, mixed>|null $portal         The portal the slug finds.
 	 * @param bool                      $acceptFindings What the request says about confirming.
+	 * @param bool|null                 $mayAdminister  What the scope answers; null leaves it to the test.
 	 *
 	 * @return PortalThemeController
 	 */
-	private function controller(?array $portal, bool $acceptFindings = false): PortalThemeController {
+	private function controller(?array $portal, bool $acceptFindings = false, ?bool $mayAdminister = true): PortalThemeController {
 		$this->choice = $this->getMockBuilder(PortalThemeChoice::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['portalBySlug', 'listFor', 'choose', 'chooseConfirmingFindings'])
@@ -107,7 +141,12 @@ class PortalThemeControllerTest extends TestCase {
 			static fn (string $key, mixed $default = null): mixed => ($key === 'acceptFindings' ? $acceptFindings : $default)
 		);
 
-		return new PortalThemeController($request, $this->choice);
+		$this->scope = $this->createMock(PortalAdminScope::class);
+		if ($mayAdminister !== null) {
+			$this->scope->method('mayAdminister')->willReturn($mayAdminister);
+		}
+
+		return new PortalThemeController($request, $this->choice, $this->scope);
 	}//end controller()
 
 }//end class
