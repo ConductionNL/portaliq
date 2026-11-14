@@ -96,10 +96,7 @@ class EventRsvpEligibility {
 	 * @return bool
 	 */
 	private function mayAnswer(array $event, string $subjectRef, string $childRef): bool {
-		$answerers = $this->stringList(value: ($event['rsvpBy'] ?? null));
-		if ($answerers === []) {
-			$answerers = ['guardian'];
-		}
+		$answerers = self::answerersOf(event: $event);
 
 		if ($childRef === $subjectRef && in_array('learner', $answerers, true) === true) {
 			return true;
@@ -109,15 +106,40 @@ class EventRsvpEligibility {
 	}//end mayAnswer()
 
 	/**
-	 * @param mixed $value A list.
+	 * Who may answer the event: its `rsvpBy`, or guardians alone when it
+	 * names none.
 	 *
-	 * @return array<int, string>
+	 * @param array<string, mixed> $event The event.
+	 *
+	 * @return array<int, string> `guardian` and/or `learner`.
+	 *
+	 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-pupil-may-answer-an-event-for-herself-with-the-number-of-seats
 	 */
-	private function stringList(mixed $value): array {
-		if (is_array($value) === false) {
-			return [];
+	public static function answerersOf(array $event): array {
+		$value = ($event['rsvpBy'] ?? null);
+		$answerers = [];
+		if (is_array($value) === true) {
+			$answerers = array_values(array_filter($value, 'is_string'));
 		}
 
-		return array_values(array_filter($value, 'is_string'));
-	}//end stringList()
+		if ($answerers === []) {
+			return ['guardian'];
+		}
+
+		return $answerers;
+	}//end answerersOf()
+
+	/**
+	 * Whether a person may answer the event for herself: RSVP is on and the
+	 * event lets learners answer.
+	 *
+	 * @param array<string, mixed> $event The event.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-pupil-may-answer-an-event-for-herself-with-the-number-of-seats
+	 */
+	public static function learnersMayAnswer(array $event): bool {
+		return ($event['rsvpEnabled'] ?? false) === true && in_array('learner', self::answerersOf(event: $event), true) === true;
+	}//end learnersMayAnswer()
 }//end class
