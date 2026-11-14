@@ -22,6 +22,7 @@ namespace OCA\Portaliq\Service\Traffic;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\Portaliq\Kernel\Contracts\TrafficPathServiceInterface;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\TrafficConfigResolver;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -64,7 +65,7 @@ use OCP\ICacheFactory;
  * arithmetic, the cache and the clock are the whole cast of one read; a
  * facade would hide which step reads what.
  */
-class TrafficPathService {
+class TrafficPathService implements TrafficPathServiceInterface {
 
 	/**
 	 * The most events one read scans.

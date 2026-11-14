@@ -11,6 +11,7 @@ use OCP\ICache;
 use OCP\ICacheFactory;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Portaliq\Contribution\PublicRecordsNormaliser;
 
 /**
  * A provider that records what it was asked.
@@ -118,7 +119,7 @@ class PublicRecordReaderTest extends TestCase {
 			return $provider->getContribution($subject);
 		});
 
-		return new PublicRecordReader($locator, $factory, $this->createMock(LoggerInterface::class));
+		return new PublicRecordReader($locator, $factory, $this->createMock(LoggerInterface::class), new PublicRecordsNormaliser());
 	}
 
 	public function testTheListKeepsAtMostFiveHundredEntriesAndOnlyTheContractKeys(): void {

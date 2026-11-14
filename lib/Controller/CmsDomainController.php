@@ -26,7 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\Service\Cms\PortalDomainVerifier;
+use OCA\Portaliq\Kernel\Contracts\PortalDomainVerifierInterface;
 use OCA\Portaliq\Service\Tenancy\PortalAdminScope;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -47,14 +47,14 @@ class CmsDomainController extends Controller {
 	 *
 	 * @param string               $appName  The app name.
 	 * @param IRequest             $request  The request.
-	 * @param PortalDomainVerifier $verifier Shows and checks the records.
+	 * @param PortalDomainVerifierInterface $verifier Shows and checks the records.
 	 * @param IL10N                $l10n     Words the outcome of a check.
 	 * @param PortalAdminScope     $scope    Who may administer which portal.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly PortalDomainVerifier $verifier,
+		private readonly PortalDomainVerifierInterface $verifier,
 		private readonly IL10N $l10n,
 		private readonly PortalAdminScope $scope,
 	) {
@@ -116,12 +116,12 @@ class CmsDomainController extends Controller {
 		}
 
 		$status = $this->verifier->verify(slug: $portal, hostname: $hostname);
-		if ($status === null || $status === PortalDomainVerifier::NOT_FOUND) {
+		if ($status === null || $status === PortalDomainVerifierInterface::NOT_FOUND) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
 		$message = $this->l10n->t('The record of %s is not there yet.', [$hostname]);
-		if ($status === PortalDomainVerifier::VERIFIED) {
+		if ($status === PortalDomainVerifierInterface::VERIFIED) {
 			$message = $this->l10n->t('%s is verified.', [$hostname]);
 		}
 

@@ -30,10 +30,11 @@ namespace OCA\Portaliq\Service\Identity\EmailLink;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\EmailLinkTokensInterface;
 use OCA\Portaliq\Service\Identity\ClaimLock;
 use OCA\Portaliq\Service\Identity\TokenRows;
-use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCP\Security\ISecureRandom;
 
 /**
@@ -41,36 +42,7 @@ use OCP\Security\ISecureRandom;
  *
  * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#4
  */
-class EmailLinkTokens {
-	/**
-	 * The spend went through: this caller signs in.
-	 */
-	public const SPENT = 'spent';
-
-	/**
-	 * The link was spent before.
-	 */
-	public const USED = 'used';
-
-	/**
-	 * Unknown, expired, voided by a newer link or by staff.
-	 */
-	public const NOT_VALID = 'not_valid';
-
-	/**
-	 * Opened without the request cookie and without the typed address.
-	 */
-	public const ADDRESS_NEEDED = 'address_needed';
-
-	/**
-	 * The typed address is not the one the link was sent to.
-	 */
-	public const ADDRESS_WRONG = 'address_wrong';
-
-	/**
-	 * Another redeem holds the lock.
-	 */
-	public const BUSY = 'busy';
+class EmailLinkTokens implements EmailLinkTokensInterface {
 
 	/**
 	 * Token length; 48 characters over 36 symbols is about 248 bits.

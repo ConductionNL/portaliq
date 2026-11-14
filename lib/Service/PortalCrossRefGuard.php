@@ -39,7 +39,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Contribution\CrossRefConfigNormaliser;
+use OCA\Portaliq\Kernel\Contracts\CrossRefConfigNormaliserInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalCrossRefGuardInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use Psr\Log\LoggerInterface;
@@ -49,15 +51,15 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-declared-cross-reference-must-resolve-inside-the-subjects-own-scope
  */
-class PortalCrossRefGuard {
+class PortalCrossRefGuard implements PortalCrossRefGuardInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader The scoped read that answers whose an object is.
+	 * @param PortalObjectReaderInterface $reader The scoped read that answers whose an object is.
 	 * @param LoggerInterface    $logger Logger.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly PortalObjectReaderInterface $reader,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -97,7 +99,7 @@ class PortalCrossRefGuard {
 	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-declared-cross-reference-must-resolve-inside-the-subjects-own-scope
 	 */
 	public function refusedField(array $action, array $data, array $subject, string $app): string {
-		$declared = ($action[CrossRefConfigNormaliser::KEY] ?? []);
+		$declared = ($action[CrossRefConfigNormaliserInterface::KEY] ?? []);
 		if (is_array($declared) === false || $declared === []) {
 			return '';
 		}

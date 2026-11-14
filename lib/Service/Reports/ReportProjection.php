@@ -32,12 +32,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Reports;
 
+use OCA\Portaliq\Kernel\Contracts\ReportProjectionInterface;
+
 /**
  * Projects a report for anybody who is not the custodian answering a reveal.
  *
  * @spec openspec/specs/report-without-an-account/spec.md
  */
-class ReportProjection {
+class ReportProjection implements ReportProjectionInterface {
 	/**
 	 * Keys that never leave, whoever is asking.
 	 *

@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\PortalTaskGatewayInterface;
 use OCP\App\IAppManager;
 use OCP\Http\Client\IResponse;
 use OCP\IURLGenerator;
@@ -44,7 +45,7 @@ use Throwable;
  *
  * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
  */
-class PortalTaskGateway {
+class PortalTaskGateway implements PortalTaskGatewayInterface {
 	/**
 	 * The seam's routes on the co-installed openregister, BY NAME. The URL is
 	 * built from the route table (`linkToRoute()` + `getAbsoluteURL()`), never

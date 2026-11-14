@@ -45,6 +45,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\PortalFileReaderInterface;
 use OCP\AppFramework\Http\StreamResponse;
 use OCP\Files\File;
 use Psr\Container\ContainerInterface;
@@ -56,7 +57,7 @@ use Throwable;
  *
  * @spec openspec/specs/supplier-portal/spec.md#scoped-file-download-re-verifies-ownership-before-serving-a-byte
  */
-class PortalFileReader {
+class PortalFileReader implements PortalFileReaderInterface {
 	use ObjectFileLookup;
 
 	/**

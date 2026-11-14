@@ -22,9 +22,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalThemeChoiceInterface;
 use OCA\Portaliq\Service\Tenancy\PortalAdminScope;
-use OCA\Portaliq\Service\Theme\PortalThemeChoice;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -40,15 +40,15 @@ class PortalThemeController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest          $request The request.
-	 * @param PortalThemeChoice $choice  The sets and the choice.
+	 * @param PortalThemeChoiceInterface $choice  The sets and the choice.
 	 * @param PortalAdminScope  $scope   Who may administer which portal.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalThemeChoice $choice,
+		private readonly PortalThemeChoiceInterface $choice,
 		private readonly PortalAdminScope $scope,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
