@@ -120,38 +120,103 @@ class FormDestinationDependentsListener implements IEventListener {
 	private function formFor(array $binding, array $names, array $schema): ?FormDependent {
 		$destination = $this->mapping->destinationOf(binding: $binding);
 		$bindingId   = $this->idOf(row: $binding);
-		if ($destination === null || $bindingId === '' || in_array($destination['schema'], $names, true) === false) {
+		if ($this->writesElsewhere(destination: $destination, bindingId: $bindingId, names: $names) === true) {
 			return null;
 		}
 
 		$render = $this->bindings->render(binding: $binding);
-		if ((string)($render['kind'] ?? '') === PortalFormBindingResolverInterface::KIND_EXTERNAL || ($render['resolvesToNoForm'] ?? false) === true) {
+		if ($this->rendersNoHostedForm(render: $render) === true) {
 			return null;
 		}
 
+		return $this->dependentOf(binding: $binding, render: $render, schema: $schema, bindingId: $bindingId);
+	}//end formFor()
+
+	/**
+	 * Whether a binding has no destination, no id, or a destination outside
+	 * this schema.
+	 *
+	 * @param array<string, mixed>|null $destination The binding's destination, or null.
+	 * @param string                    $bindingId   The binding's id.
+	 * @param array<int, string>        $names       The names the schema answers to.
+	 *
+	 * @return bool
+	 */
+	private function writesElsewhere(array|null $destination, string $bindingId, array $names): bool {
+		return $destination === null || $bindingId === '' || in_array($destination['schema'], $names, true) === false;
+	}//end writesElsewhere()
+
+	/**
+	 * Whether a binding renders a form on another host, or no form at all.
+	 *
+	 * @param array<string, mixed> $render What the binding renders to.
+	 *
+	 * @return bool
+	 */
+	private function rendersNoHostedForm(array $render): bool {
+		return (string)($render['kind'] ?? '') === PortalFormBindingResolverInterface::KIND_EXTERNAL || ($render['resolvesToNoForm'] ?? false) === true;
+	}//end rendersNoHostedForm()
+
+	/**
+	 * The form dependent of a binding that writes into this schema.
+	 *
+	 * @param array<string, mixed> $binding   The published binding.
+	 * @param array<string, mixed> $render    What it renders to.
+	 * @param array<string, mixed> $schema    The proposed schema, with `properties`.
+	 * @param string               $bindingId The binding's id.
+	 *
+	 * @return FormDependent
+	 */
+	private function dependentOf(array $binding, array $render, array $schema, string $bindingId): FormDependent {
 		$portal = (string)($binding['portal'] ?? '');
 
 		return new FormDependent(
-			// Every portal submit reaches OpenRegister as an anonymous write
-			// (DestinationSubmit), so the form is judged as a public one.
-			form: new PublishedForm(
-				id: $bindingId,
-				app: AppIdentity::APP_ID,
-				title: $this->titleOf(binding: $binding, render: $render),
-				audience: 'public'
-			),
+			form: $this->publishedFormOf(binding: $binding, render: $render, bindingId: $bindingId),
 			author: $this->authorOf(binding: $binding),
-			mapping: $this->mapping->mappingFor(
-				binding: $binding,
-				fields: (array)($render['fields'] ?? []),
-				schema: $schema,
-				subjectRef: DestinationMappingInterface::SUBJECT_PLACEHOLDER
-			),
+			mapping: $this->mappingOf(binding: $binding, render: $render, schema: $schema),
 			unpublish: function () use ($bindingId, $portal): void {
 				$this->unpublish(bindingId: $bindingId, portal: $portal);
 			}
 		);
-	}//end formFor()
+	}//end dependentOf()
+
+	/**
+	 * The published form a binding stands for.
+	 *
+	 * @param array<string, mixed> $binding   The published binding.
+	 * @param array<string, mixed> $render    What it renders to.
+	 * @param string               $bindingId The binding's id.
+	 *
+	 * @return PublishedForm
+	 */
+	private function publishedFormOf(array $binding, array $render, string $bindingId): PublishedForm {
+		// Every portal submit reaches OpenRegister as an anonymous write
+		// (DestinationSubmit), so the form is judged as a public one.
+		return new PublishedForm(
+			id: $bindingId,
+			app: AppIdentity::APP_ID,
+			title: $this->titleOf(binding: $binding, render: $render),
+			audience: 'public'
+		);
+	}//end publishedFormOf()
+
+	/**
+	 * The destination mapping of a binding's rendered fields onto the schema.
+	 *
+	 * @param array<string, mixed> $binding The published binding.
+	 * @param array<string, mixed> $render  What it renders to.
+	 * @param array<string, mixed> $schema  The proposed schema, with `properties`.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function mappingOf(array $binding, array $render, array $schema): array {
+		return $this->mapping->mappingFor(
+			binding: $binding,
+			fields: (array)($render['fields'] ?? []),
+			schema: $schema,
+			subjectRef: DestinationMappingInterface::SUBJECT_PLACEHOLDER
+		);
+	}//end mappingOf()
 
 	/**
 	 * The name an author knows the form by: the form's own, else the binding's, else its portal and route.
