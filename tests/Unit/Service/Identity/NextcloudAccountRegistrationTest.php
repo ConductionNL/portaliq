@@ -54,6 +54,9 @@ use OCP\IUser;
 use OCP\IUserManager;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Service\Identity\ContactAddressValues;
+use OCA\Portaliq\Service\RequestedPortal;
+use OCA\Portaliq\Service\Signin\SiteReturnAddress;
 
 /**
  * The registration door, the first sign-in and the way back.
@@ -350,6 +353,9 @@ class NextcloudAccountRegistrationTest extends TestCase {
 			$urls,
 			$userSession,
 			$resolver,
+			new ContactAddressValues(),
+			new RequestedPortal(),
+			new SiteReturnAddress(),
 			null,
 			$this->door(published: [$portal], provisioner: new NextcloudAccountProvisioner($reader, $writer, $users, $published))
 		);

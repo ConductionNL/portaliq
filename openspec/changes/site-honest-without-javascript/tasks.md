@@ -30,7 +30,7 @@ each test carries the `@e2e portaliq site-without-javascript::<scenario>` tag of
   `templates/parts/site-stylesheets.php`, included by both templates, so the plain page wears the same theme.
   - node test `tests/site-plain.spec.mjs` (new, wired into `check:specs` as `check:site-plain`):
     `both templates include the same stylesheet partial` and `the plain template contains no script element`.
-- [ ] 2.3 `lib/Service/Cms/PlainMarkdown.php`: a converter for headings, paragraphs, ordered and unordered lists,
+- [x] 2.3 `lib/Service/Cms/PlainMarkdown.php`: a converter for headings, paragraphs, ordered and unordered lists,
   links, emphasis and inline and fenced code; every other character escaped; link targets limited to `http`,
   `https`, `mailto` and relative paths (others are rendered as text).
   - **fails today**: `tests/Unit/Service/Cms/PlainMarkdownTest.php::testTheSubsetRenders`,

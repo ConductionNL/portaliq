@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Intake;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\PortalIntakeQueueInterface;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\Security\ISecureRandom;
@@ -40,16 +41,11 @@ use OCP\Security\ISecureRandom;
  *
  * @spec openspec/specs/portal-intake-form/spec.md
  */
-class PortalIntakeQueue {
+class PortalIntakeQueue implements PortalIntakeQueueInterface {
 	/**
 	 * A submission recorded but not yet registered as a case.
 	 */
 	public const STATE_QUEUED = 'queued';
-
-	/**
-	 * A submission whose case exists.
-	 */
-	public const STATE_REGISTERED = 'registered';
 
 	/**
 	 * A submission whose create failed. Shown, never hidden.

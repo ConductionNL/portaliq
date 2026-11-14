@@ -14,6 +14,7 @@ use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Contribution\StepsProviderMethod;
 
 /**
  * A dossier's items for its owner (my-dossiers D2), served by
@@ -116,6 +117,6 @@ class PortalItemListControllerTest extends TestCase {
 		$timelines = $this->getMockBuilder(PortalTimelineReader::class)->disableOriginalConstructor()->onlyMethods(['entries'])->getMock();
 		$this->items = $this->getMockBuilder(PortalItemReader::class)->disableOriginalConstructor()->onlyMethods(['items'])->getMock();
 
-		return new PortalTimelineController($request, $registry, $session, $reader, $timelines, $this->items);
+		return new PortalTimelineController($request, $registry, $session, $reader, $timelines, new StepsProviderMethod(), $this->items);
 	}//end controller()
 }//end class

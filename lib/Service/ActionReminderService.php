@@ -30,6 +30,7 @@ namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\Portaliq\Kernel\Contracts\ActionReminderServiceInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -39,7 +40,7 @@ use Throwable;
  *
  * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
  */
-class ActionReminderService {
+class ActionReminderService implements ActionReminderServiceInterface {
 	use RowAsArray;
 	use PagedObjectReads;
 
@@ -138,7 +139,6 @@ class ActionReminderService {
 
 		return $sent;
 	}//end remindDue()
-
 
 	/**
 	 * Whether the assignee's account was withdrawn (void); logged with the account id only.

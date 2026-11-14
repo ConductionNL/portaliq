@@ -38,7 +38,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalOrganisationConfigServiceInterface;
 use OCA\Portaliq\Service\Notifications\MessageBoxOffer;
 use OCA\Portaliq\Service\Signin\LoginProviders;
 use OCP\IAppConfig;
@@ -54,7 +55,7 @@ use Throwable;
  * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.2
  * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T01
  */
-class PortalOrganisationConfigService {
+class PortalOrganisationConfigService implements PortalOrganisationConfigServiceInterface {
 	/**
 	 * OpenRegister's Organisation mapper (core entity — ADR-022, no new
 	 * parallel client; the same entity every session's `organisation` claim
@@ -288,7 +289,6 @@ class PortalOrganisationConfigService {
 		return $this->claimMapper->applyPreset(provider: $provider, rawConfig: $rawConfig);
 	}//end resolveOidcConfig()
 
-
 	/**
 	 * Whether this organisation is permitted to start a login with this
 	 * provider — a SECRET-FREE policy question.
@@ -367,12 +367,11 @@ class PortalOrganisationConfigService {
 	 */
 	public function writePresentation(string $organisationUuid, array $overrides): bool {
 		return $this->appConfig->setValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			self::CONFIG_KEY_PREFIX . $organisationUuid,
 			(string)json_encode($overrides, JSON_UNESCAPED_SLASHES)
 		);
 	}//end writePresentation()
-
 
 	/**
 	 * Store an organisation's OIDC client secret for one provider, via a
@@ -394,7 +393,7 @@ class PortalOrganisationConfigService {
 		}
 
 		return $this->appConfig->setValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			$this->oidcSecretKey(organisationUuid: $organisationUuid, provider: $provider),
 			$clientSecret,
 			false,
@@ -414,7 +413,7 @@ class PortalOrganisationConfigService {
 	private function oidcClientSecret(string $organisationUuid, string $provider): string {
 		$key = $this->oidcSecretKey(organisationUuid: $organisationUuid, provider: $provider);
 
-		return $this->appConfig->getValueString(Application::APP_ID, $key, '');
+		return $this->appConfig->getValueString(AppIdentity::APP_ID, $key, '');
 	}//end oidcClientSecret()
 
 	/**
@@ -469,7 +468,7 @@ class PortalOrganisationConfigService {
 	private function configuredOidcProviders(string $orgSlug, string $organisationUuid, array $overrides): array {
 		return $this->loginProviders->list(
 			overrides: $overrides,
-			brokerSecret: $this->appConfig->getValueString(Application::APP_ID, LoginProviders::SECRET_KEY_PREFIX . $organisationUuid, ''),
+			brokerSecret: $this->appConfig->getValueString(AppIdentity::APP_ID, LoginProviders::SECRET_KEY_PREFIX . $organisationUuid, ''),
 			oidcConfig: fn (string $provider): ?array => $this->resolveOidcConfig(orgSlug: $orgSlug, provider: $provider)
 		);
 	}//end configuredOidcProviders()
@@ -529,7 +528,7 @@ class PortalOrganisationConfigService {
 		}
 
 		$json = $this->appConfig->getValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			self::CONFIG_KEY_PREFIX . $organisationUuid,
 			'{}'
 		);

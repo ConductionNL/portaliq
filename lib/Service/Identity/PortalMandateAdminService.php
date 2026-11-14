@@ -33,6 +33,7 @@ namespace OCA\Portaliq\Service\Identity;
 use DateInterval;
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\Portaliq\Kernel\Contracts\PortalMandateAdminServiceInterface;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\Security\ISecureRandom;
@@ -42,18 +43,12 @@ use OCP\Security\ISecureRandom;
  *
  * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md
  */
-class PortalMandateAdminService {
+class PortalMandateAdminService implements PortalMandateAdminServiceInterface {
 	public const REFUSED = 'refused';
 
 	public const NOT_FOUND = 'not_found';
 
 	public const BAD_EMAIL = 'bad_email';
-
-	public const BAD_END_DATE = 'bad_end_date';
-
-	public const OWN_INVITATION = 'own_invitation';
-
-	public const GONE = 'gone';
 
 	private const REGISTER = MandateStore::REGISTER;
 

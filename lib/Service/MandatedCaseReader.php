@@ -30,7 +30,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Kernel\Contracts\MandatedCaseReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use OCA\Portaliq\Service\Identity\MandateParties;
 use OCA\Portaliq\Service\Identity\PortalMandateService;
 use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
@@ -42,22 +43,18 @@ use OCP\IL10N;
  *
  * @spec openspec/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
  */
-class MandatedCaseReader {
-	/**
-	 * The `mandate` value that means "acting for yourself".
-	 */
-	public const ACTING_FOR_SELF = 'self';
+class MandatedCaseReader implements MandatedCaseReaderInterface {
 
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalContributionRegistry $registry The subject's contributions.
+	 * @param PortalContributionRegistryInterface $registry The subject's contributions.
 	 * @param PortalCaseListReader $cases Lists the cases a mandate opens.
 	 * @param PortalMandateService $mandates The mandates the identity holds.
 	 * @param PortalPartyTreeResolver $tree How far a mandate reaches.
 	 */
 	public function __construct(
-		private readonly PortalContributionRegistry $registry,
+		private readonly PortalContributionRegistryInterface $registry,
 		private readonly PortalCaseListReader $cases,
 		private readonly PortalMandateService $mandates,
 		private readonly PortalPartyTreeResolver $tree,

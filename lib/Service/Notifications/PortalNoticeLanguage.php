@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Notifications;
 
+use OCA\Portaliq\Kernel\Contracts\PortalNoticeLanguageInterface;
 use OCA\Portaliq\Service\PortalResolver;
 use OCP\IL10N;
 use OCP\L10N\IFactory;
@@ -36,7 +37,7 @@ use Throwable;
  *
  * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-change-notice-is-written-in-the-portals-language-only-req-nap-010
  */
-class PortalNoticeLanguage {
+class PortalNoticeLanguage implements PortalNoticeLanguageInterface {
 
 	/**
 	 * The language of a notice when the portal names none.

@@ -31,6 +31,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
+
 /**
  * Finds the contributed action a citizen write runs under.
  *
@@ -41,10 +43,10 @@ class CitizenWriteActionFinder {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalContributionRegistry $registry What the subject's apps contribute.
+	 * @param PortalContributionRegistryInterface $registry What the subject's apps contribute.
 	 */
 	public function __construct(
-		private readonly PortalContributionRegistry $registry,
+		private readonly PortalContributionRegistryInterface $registry,
 	) {
 	}//end __construct()
 

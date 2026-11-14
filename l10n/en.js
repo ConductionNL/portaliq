@@ -1605,6 +1605,9 @@ OC.L10N.register(
         "Verklaringen": "Verklaringen",
         "Write {reference} and {deadline} where they belong.": "Write {reference} and {deadline} where they belong.",
         "Check form": "Check form",
+        "Copy name": "Copy name",
+        "Copy value": "Copy value",
+        "Copying did not work. Select the text and copy it yourself.": "Copying did not work. Select the text and copy it yourself.",
         "This entry opens \"{form}\" today.": "This entry opens \"{form}\" today.",
         "This entry sends people to {destination}. Nothing arrives here.": "This entry sends people to {destination}. Nothing arrives here.",
         "This entry sends people to another website, but has no address. Nobody can start it.": "This entry sends people to another website, but has no address. Nobody can start it.",
@@ -3208,7 +3211,9 @@ OC.L10N.register(
         "QR code": "QR code",
         "As the case app shows it": "As the case app shows it",
         "The columns are saved.": "The columns are saved.",
-        "The columns could not be saved. Try again.": "The columns could not be saved. Try again."
+        "The columns could not be saved. Try again.": "The columns could not be saved. Try again.",
+        "Event to sign up for": "Event to sign up for",
+        "No event": "No event"
     },
     "nplurals=2; plural=(n != 1);"
 )

@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Command;
 
-use OCA\Portaliq\Service\Tenancy\PortalProvisioningService;
+use OCA\Portaliq\Kernel\Contracts\PortalProvisioningServiceInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -46,21 +46,21 @@ class PortalProvision extends Command {
 	 * @var array<string, string>
 	 */
 	private const REFUSALS = [
-		PortalProvisioningService::INVALID     => 'The organisation, slug, title or host is missing or not valid. '
+		PortalProvisioningServiceInterface::INVALID     => 'The organisation, slug, title or host is missing or not valid. '
 			.'The slug is lower case letters, digits and hyphens; the host has no scheme or port.',
-		PortalProvisioningService::SLUG_TAKEN  => 'This portal slug is already used by another portal.',
-		PortalProvisioningService::HOST_TAKEN  => 'This web address is already used by another portal.',
-		PortalProvisioningService::UNAVAILABLE => 'OpenRegister is not available, so nothing was written. Enable openregister and run this again.',
-		PortalProvisioningService::FAILED      => 'The portal could not be written. Nothing else was created.',
+		PortalProvisioningServiceInterface::SLUG_TAKEN  => 'This portal slug is already used by another portal.',
+		PortalProvisioningServiceInterface::HOST_TAKEN  => 'This web address is already used by another portal.',
+		PortalProvisioningServiceInterface::UNAVAILABLE => 'OpenRegister is not available, so nothing was written. Enable openregister and run this again.',
+		PortalProvisioningServiceInterface::FAILED      => 'The portal could not be written. Nothing else was created.',
 	];
 
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalProvisioningService $provisioning Creates the portal.
+	 * @param PortalProvisioningServiceInterface $provisioning Creates the portal.
 	 */
 	public function __construct(
-		private readonly PortalProvisioningService $provisioning,
+		private readonly PortalProvisioningServiceInterface $provisioning,
 	) {
 		parent::__construct();
 	}//end __construct()
@@ -99,8 +99,8 @@ class PortalProvision extends Command {
 			host: (string)$input->getArgument('host')
 		);
 
-		if ($result['status'] !== PortalProvisioningService::CREATED || $result['dns'] === null) {
-			$output->writeln('<error>'.(self::REFUSALS[$result['status']] ?? self::REFUSALS[PortalProvisioningService::FAILED]).'</error>');
+		if ($result['status'] !== PortalProvisioningServiceInterface::CREATED || $result['dns'] === null) {
+			$output->writeln('<error>'.(self::REFUSALS[$result['status']] ?? self::REFUSALS[PortalProvisioningServiceInterface::FAILED]).'</error>');
 
 			return 1;
 		}

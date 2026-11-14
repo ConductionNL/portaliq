@@ -26,7 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\BackgroundJob;
 
-use OCA\Portaliq\Service\Notifications\NotificationChannels;
+use OCA\Portaliq\Kernel\Contracts\NotificationChannelsInterface;
 
 /**
  * The values every step of one dispatch shares.
@@ -91,7 +91,7 @@ final class NotificationDispatchRun {
 	 * @param string                $organisation The tenant (may be empty).
 	 * @param string                $ruleKey      The matched rule key.
 	 * @param string                $appId        The contributing app.
-	 * @param NotificationChannels  $channels     The subject's choices and the push.
+	 * @param NotificationChannelsInterface  $channels     The subject's choices and the push.
 	 */
 	public function __construct(
 		public readonly array $argument,
@@ -99,7 +99,7 @@ final class NotificationDispatchRun {
 		public readonly string $organisation,
 		public readonly string $ruleKey,
 		public readonly string $appId,
-		public readonly NotificationChannels $channels,
+		public readonly NotificationChannelsInterface $channels,
 	) {
 	}//end __construct()
 
@@ -149,8 +149,8 @@ final class NotificationDispatchRun {
 	private function emailAttempts(array $rows): array {
 		$matching = [];
 		foreach ($rows as $row) {
-			$channel = (string)($row['channel'] ?? NotificationChannels::CHANNEL_EMAIL);
-			if ((string)($row['ruleKey'] ?? '') === $this->ruleKey && $channel === NotificationChannels::CHANNEL_EMAIL) {
+			$channel = (string)($row['channel'] ?? NotificationChannelsInterface::CHANNEL_EMAIL);
+			if ((string)($row['ruleKey'] ?? '') === $this->ruleKey && $channel === NotificationChannelsInterface::CHANNEL_EMAIL) {
 				$matching[] = $row;
 			}
 		}

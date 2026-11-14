@@ -29,10 +29,10 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Repair;
 
-use OCA\Portaliq\Service\ObjectServiceLookup;
 use DateTimeImmutable;
 use DateTimeZone;
-use OCA\Portaliq\Service\PortalRegisterContext;
+use OCA\Portaliq\Kernel\Contracts\PortalRegisterContextInterface;
+use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Container\ContainerInterface;
@@ -82,12 +82,12 @@ class BackfillNewsPublishedAt implements IRepairStep {
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container Resolves OpenRegister's object service, which may be absent.
-	 * @param PortalRegisterContext $context Points the object service at the news item schema.
+	 * @param PortalRegisterContextInterface $context Points the object service at the news item schema.
 	 * @param LoggerInterface $logger Names an item that could not be stamped.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
-		private readonly PortalRegisterContext $context,
+		private readonly PortalRegisterContextInterface $context,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
