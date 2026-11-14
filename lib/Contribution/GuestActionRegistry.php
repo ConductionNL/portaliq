@@ -98,6 +98,19 @@ class GuestActionRegistry implements GuestActionRegistryInterface {
 			return [];
 		}
 
+		return $this->contributionFrom(provider: $provider, appId: $appId);
+	}//end guestContribution()
+
+	/**
+	 * The normalised contribution a provider gives a guest, or [] when it
+	 * gives none or fails.
+	 *
+	 * @param object $provider The app's provider.
+	 * @param string $appId    The contributing app.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function contributionFrom(object $provider, string $appId): array {
 		try {
 			$contribution = $this->locator->contributionOf(
 				provider: $provider,
@@ -113,7 +126,7 @@ class GuestActionRegistry implements GuestActionRegistryInterface {
 			$this->logger->error('Portaliq: guest contribution failed', ['app' => $appId, 'reason' => $e->getMessage()]);
 			return [];
 		}
-	}//end guestContribution()
+	}//end contributionFrom()
 
 	/**
 	 * Whether a provider gives contributions and names the guest audience.

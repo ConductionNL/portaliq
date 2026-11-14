@@ -451,16 +451,50 @@ class PortalJwtService implements PortalJwtServiceInterface {
 
 		[$hPart, $cPart, $sPart] = $parts;
 
-		$expected = $this->b64UrlEncode(bytes: $this->signRaw(input: $hPart . '.' . $cPart));
-		if (hash_equals($expected, $sPart) === false) {
-			throw new RuntimeException('Invalid portal JWT signature');
-		}
+		$this->assertSigned(header: $hPart, claims: $cPart, signature: $sPart);
 
 		$claims = json_decode($this->b64UrlDecode(encoded: $cPart), true);
 		if (is_array($claims) === false) {
 			throw new RuntimeException('Malformed portal JWT claims');
 		}
 
+		$this->assertCurrent(claims: $claims);
+
+		return $claims;
+	}//end validate()
+
+	/**
+	 * Throw unless the signature is this service's over the header and claims.
+	 *
+	 * @param string $header    The encoded header.
+	 * @param string $claims    The encoded claims.
+	 * @param string $signature The encoded signature.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When the signature does not match.
+	 *
+	 * @spec openspec/changes/supplier-portal/tasks.md#T02
+	 */
+	private function assertSigned(string $header, string $claims, string $signature): void {
+		$expected = $this->b64UrlEncode(bytes: $this->signRaw(input: $header . '.' . $claims));
+		if (hash_equals($expected, $signature) === false) {
+			throw new RuntimeException('Invalid portal JWT signature');
+		}
+	}//end assertSigned()
+
+	/**
+	 * Throw unless the claims name this issuer and have not expired.
+	 *
+	 * @param array<string, mixed> $claims The decoded claims.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When the issuer is wrong or the token expired.
+	 *
+	 * @spec openspec/changes/supplier-portal/tasks.md#T02
+	 */
+	private function assertCurrent(array $claims): void {
 		if (($claims['iss'] ?? '') !== self::ISSUER) {
 			throw new RuntimeException('Unexpected portal JWT issuer');
 		}
@@ -468,9 +502,7 @@ class PortalJwtService implements PortalJwtServiceInterface {
 		if (isset($claims['exp']) === true && (int)$claims['exp'] < time()) {
 			throw new RuntimeException('Expired portal JWT');
 		}
-
-		return $claims;
-	}//end validate()
+	}//end assertCurrent()
 
 	/**
 	 * Raw HMAC of the signing input.

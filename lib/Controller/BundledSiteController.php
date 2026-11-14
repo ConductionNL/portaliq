@@ -138,15 +138,41 @@ class BundledSiteController extends Controller {
 
 		$resolved = $this->bundledFile(root: $root, path: $path);
 
+		$content = $this->contentOf(resolved: $resolved);
+		if ($content === false) {
+			return new DataDisplayResponse('Not found', Http::STATUS_NOT_FOUND, ['Content-Type' => 'text/plain']);
+		}
+
+		return $this->fileResponse(resolved: $resolved, content: $content);
+	}//end render()
+
+	/**
+	 * The bytes of a resolved bundled file, or false when it is not a file or
+	 * cannot be read.
+	 *
+	 * @param string $resolved The resolved file.
+	 *
+	 * @return string|false
+	 */
+	private function contentOf(string $resolved): string|false {
 		$content = false;
 		if (is_file($resolved) === true) {
 			$content = file_get_contents($resolved);
 		}
 
-		if ($content === false) {
-			return new DataDisplayResponse('Not found', Http::STATUS_NOT_FOUND, ['Content-Type' => 'text/plain']);
-		}
+		return $content;
+	}//end contentOf()
 
+	/**
+	 * The response serving a bundled file: hash-named assets cached, the SPA
+	 * index and the runtime config never cached and under the SPA's CSP.
+	 *
+	 * @param string $resolved The resolved file.
+	 * @param string $content  Its bytes.
+	 *
+	 * @return Response
+	 */
+	private function fileResponse(string $resolved, string $content): Response {
 		$isIndex = (substr($resolved, -10) === 'index.html');
 		$response = new DataDisplayResponse($content, Http::STATUS_OK, ['Content-Type' => $this->mimeFor(file: $resolved)]);
 
@@ -161,7 +187,7 @@ class BundledSiteController extends Controller {
 		$this->applySpaCsp(response: $response);
 
 		return $response;
-	}//end render()
+	}//end fileResponse()
 
 	/**
 	 * The file a request path names inside a bundle, or the bundle's

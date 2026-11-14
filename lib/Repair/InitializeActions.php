@@ -160,6 +160,22 @@ class InitializeActions implements IRepairStep {
 	 * @return array<mixed>|null
 	 */
 	private function readSeed(IOutput $output): ?array {
+		$raw = $this->seedText(output: $output);
+		if ($raw === null) {
+			return null;
+		}
+
+		return $this->seedActions(output: $output, raw: $raw);
+	}//end readSeed()
+
+	/**
+	 * The seed file's text, or null (with a warning) when it is missing or unreadable.
+	 *
+	 * @param IOutput $output Repair output channel.
+	 *
+	 * @return string|null
+	 */
+	private function seedText(IOutput $output): string|null {
 		if (file_exists(self::SEED_PATH) === false) {
 			$output->warning('actions.seed.json not found — matrix left as is (unknown actions are admin-only).');
 			$this->logger->warning('[portaliq] ADR-023 seed file missing at ' . self::SEED_PATH);
@@ -172,6 +188,19 @@ class InitializeActions implements IRepairStep {
 			return null;
 		}
 
+		return $raw;
+	}//end seedText()
+
+	/**
+	 * The `actions` object of the seed's text, or null (with a warning) when
+	 * the text is not JSON or has no `actions` object.
+	 *
+	 * @param IOutput $output Repair output channel.
+	 * @param string  $raw    The seed file's text.
+	 *
+	 * @return array<mixed>|null
+	 */
+	private function seedActions(IOutput $output, string $raw): array|null {
 		try {
 			$parsed = json_decode($raw, associative: true, depth: 512, flags: JSON_THROW_ON_ERROR);
 		} catch (\JsonException $e) {
@@ -187,5 +216,5 @@ class InitializeActions implements IRepairStep {
 		}
 
 		return $actions;
-	}//end readSeed()
+	}//end seedActions()
 }//end class

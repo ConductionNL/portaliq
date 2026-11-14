@@ -112,13 +112,25 @@ class BrokerLogin implements BrokerLoginInterface {
 			PHP_QUERY_RFC3986
 		);
 
+		return $this->withQuery(startUrl: $broker['startUrl'], query: $query);
+	}//end start()
+
+	/**
+	 * The broker's start address with the query appended.
+	 *
+	 * @param string $startUrl The broker's start address.
+	 * @param string $query    The encoded query.
+	 *
+	 * @return string
+	 */
+	private function withQuery(string $startUrl, string $query): string {
 		$separator = '?';
-		if (str_contains($broker['startUrl'], '?') === true) {
+		if (str_contains($startUrl, '?') === true) {
 			$separator = '&';
 		}
 
-		return $broker['startUrl'] . $separator . $query;
-	}//end start()
+		return $startUrl . $separator . $query;
+	}//end withQuery()
 
 	/**
 	 * Complete a login: the minted bearer and where to land, or null when no
