@@ -797,7 +797,8 @@ test('the Zuiddrecht site lays out its own area as the MijnMenu and MijnZaken bo
 		'folders',
 	])
 	assert.equal(portal.version, '0.28.0')
-	assert.equal(register.info.version, '0.109.0')
+	// 0.110.0: a submission's `formBinding` (submission-row-actions).
+	assert.equal(register.info.version, '0.110.0')
 })
 
 // zuiddrecht-site-details: the portal names the organisation of the example

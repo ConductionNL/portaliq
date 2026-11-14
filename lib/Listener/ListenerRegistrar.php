@@ -140,6 +140,9 @@ final class ListenerRegistrar {
 		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $event) {
 			$context->registerEventListener($event, NoticeWriteGuardListener::class);
 		}
+
+		// A submission's proof fields never change after the write (submission-row-actions).
+		$context->registerEventListener(ObjectUpdatingEvent::class, SubmissionWriteGuardListener::class);
 	}//end registerCmsListeners()
 
 	/**

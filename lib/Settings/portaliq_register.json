@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.109.0"
+        "version": "0.110.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.109.0",
+                "version": "0.110.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -1424,7 +1424,7 @@
                     ]
                 },
                 "icon": "FileCheckOutline",
-                "version": "0.3.0",
+                "version": "0.4.0",
                 "configuration": {
                     "linkedTypes": [
                         "forms"
@@ -1502,6 +1502,13 @@
                             "failed"
                         ],
                         "example": "delivered"
+                    },
+                    "formBinding": {
+                        "title": "Request form",
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "The request form (`portalFormBinding`) this submission came through. Linked by an employee from the Submissions list; the only field besides the delivery state that changes after the write.",
+                        "example": "00000000-0000-0000-0000-000000000000"
                     }
                 }
             },
