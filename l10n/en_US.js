@@ -576,7 +576,18 @@ OC.L10N.register(
         "Thank you. Your report was sent to the people who publish this.": "Thank you. Your report was sent to the people who publish this.",
         "Error report on \"%1$s\" (%2$s)": "Error report on \"%1$s\" (%2$s)",
         "Error report on a publication (%s)": "Error report on a publication (%s)",
-        "A visitor reported an error. Open the report to handle it.": "A visitor reported an error. Open the report to handle it."
+        "A visitor reported an error. Open the report to handle it.": "A visitor reported an error. Open the report to handle it.",
+        "Error reports": "Error reports",
+        "Error report": "Error report",
+        "Handled": "Handled",
+        "Not applicable": "Not applicable",
+        "New": "New",
+        "All": "All",
+        "{shown} of {total} reports": "{shown} of {total} reports",
+        "The report is marked handled.": "The report is marked handled.",
+        "The report is marked not applicable.": "The report is marked not applicable.",
+        "Only the owner of this portal's error reports can close them.": "Only the owner of this portal's error reports can close them.",
+        "The report could not be closed. Try again.": "The report could not be closed. Try again."
     },
     "nplurals=2; plural=(n != 1);"
 )

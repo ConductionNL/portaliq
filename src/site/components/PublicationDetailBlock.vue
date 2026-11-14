@@ -238,6 +238,14 @@
 					</tbody>
 				</table>
 			</section>
+			<!-- "Fout melden", only while the portal has error reports on
+			     (publication-error-reports-and-withheld-notices REQ-PER-002). -->
+			<PublicationReport
+				v-if="publications && publications.errorReports === true"
+				:publications="publications"
+				:portal="portal"
+				:publication="subjectId"
+				:documents="documentNames" />
 		</article>
 	</section>
 </template>
@@ -282,6 +290,9 @@ export default {
 
 	components: {
 		SaveToDossier: defineAsyncComponent(() => import('./SaveToDossier.vue')),
+		PublicationReport: defineAsyncComponent(
+			() => import('./PublicationReport.vue'),
+		),
 	},
 
 	props: {
@@ -313,6 +324,22 @@ export default {
 		signedIn: {
 			type: Boolean,
 			default: false,
+		},
+
+		/**
+		 * The site record's `publications`, `{errorReports, withheldNotices}`.
+		 * Set by the host after the authored props, never by page
+		 * configuration (publication-error-reports-and-withheld-notices).
+		 */
+		publications: {
+			type: Object,
+			default: null,
+		},
+
+		/** The serving portal's slug, set by the host. */
+		portal: {
+			type: String,
+			default: '',
 		},
 
 		/**
@@ -413,6 +440,16 @@ export default {
 		 */
 		details() {
 			return allDetailRows(this.publication)
+		},
+
+		/**
+		 * @return {Array<string>} The documents' names, to say which one a report is about.
+		 * @spec openspec/changes/publication-error-reports-and-withheld-notices/specs/portal-federated-search/spec.md#requirement-a-report-reaches-the-named-owner-req-per-002
+		 */
+		documentNames() {
+			return (this.documents || [])
+				.map((document) => String(document?.title || ''))
+				.filter((name) => name !== '')
 		},
 
 		fields() {

@@ -38,15 +38,23 @@ test marked **fails today** must be run on `origin/development` first and seen r
     `PublicationReportNotifier` (its own id), wired in `Application.php`, asserted in
     `PublicationReportWiringTest::testTheNotifierIsRegistered`. The site record carries
     `publications.errorReports` and `publications.withheldNotices`, never the owner.
-- [ ] 2.2 "Fout melden" on the publication page (a dialog in its own file under `src/site/dialogs/` or
+- [x] 2.2 "Fout melden" on the publication page (a dialog in its own file under `src/site/dialogs/` or
   the site's equivalent), only when on (REQ-PER-002).
   - node test `tests/publication-report.spec.mjs` (wire into `check:specs`): `no button when off`,
     `the form posts publication, document and description`.
-- [ ] 2.3 The admin queue for the owner: list, mark handled or not applicable. A daily `TimedJob` erases
+  - Built: `src/site/components/PublicationReport.vue` (the button) and `src/site/modals/PublicationReportModal.vue`
+    (the dialog), words and the call in `src/site/lib/publicationReport.js`. The publication block shows it only when
+    the site record's `publications.errorReports` is true; the grid sets that after the authored props.
+- [x] 2.3 The admin queue for the owner: list, mark handled or not applicable. A daily `TimedJob` erases
   `contactEmail` 30 days after `closedAt` (REQ-PER-002).
   - unit `tests/Unit/BackgroundJob/EraseReportContactJobTest.php` `testTheAddressIsErasedAfter30Days`,
     `testAnOpenReportKeepsItsAddress`.
   - Through the caller: `ApplicationTest` or `info.xml` test that the job is registered.
+  - Built: the manifest pages `PublicationReports` (index, filter New/All, row handlers Handled / Not applicable
+    through `PublicationReportController::close`, owner only) and `PublicationReportDetail`, menu entry "Error reports"
+    with the count of new reports; handlers in `src/lib/publicationReportActions.js`. `EraseReportContactJob` in
+    `info.xml`, asserted by `EraseReportContactJobTest::testTheJobIsRegistered`. The list reads the schema's own
+    authorization (staff group); the close is the owner's only.
 
 ## 3. Withheld notices
 

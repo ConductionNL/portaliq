@@ -3411,7 +3411,17 @@ OC.L10N.register(
         "Thank you. Your report was sent to the people who publish this.": "Dank u. Uw melding is verstuurd naar de mensen die dit publiceren.",
         "Error report on \"%1$s\" (%2$s)": "Foutmelding over \"%1$s\" (%2$s)",
         "Error report on a publication (%s)": "Foutmelding over een publicatie (%s)",
-        "A visitor reported an error. Open the report to handle it.": "Een bezoeker heeft een fout gemeld. Open de melding om die af te handelen."
+        "A visitor reported an error. Open the report to handle it.": "Een bezoeker heeft een fout gemeld. Open de melding om die af te handelen.",
+        "Error reports": "Foutmeldingen",
+        "Error report": "Foutmelding",
+        "Handled": "Afgehandeld",
+        "Not applicable": "Niet van toepassing",
+        "New": "Nieuw",
+        "{shown} of {total} reports": "{shown} van {total} meldingen",
+        "The report is marked handled.": "De melding is als afgehandeld gemarkeerd.",
+        "The report is marked not applicable.": "De melding is als niet van toepassing gemarkeerd.",
+        "Only the owner of this portal's error reports can close them.": "Alleen de eigenaar van de foutmeldingen van dit portaal kan ze sluiten.",
+        "The report could not be closed. Try again.": "De melding kon niet worden gesloten. Probeer het opnieuw."
     },
     "nplurals=2; plural=(n != 1);"
 )
