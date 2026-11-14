@@ -290,6 +290,31 @@ export function attachmentsOf(message) {
 }
 
 /**
+ * The PDF a submission receipt offers: portaliq's own receipt message, the
+ * one carrying a reference, downloads its reference, moment and answers. Any
+ * other message offers none.
+ *
+ * @param {object} message The message.
+ * @return {{id: string, name: string}|null} The receipt's id and file name, or null.
+ * @spec openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+ */
+export function receiptPdfOf(message) {
+	const source = message?._source || {}
+	const reference = message?.referenceId
+	const id = rowId(message)
+	if (
+		source.register !== 'portaliq'
+		|| source.schema !== 'portalMessage'
+		|| typeof reference !== 'string'
+		|| reference === ''
+		|| !id
+	) {
+		return null
+	}
+	return { id: String(id), name: `${reference.replace(/[^A-Za-z0-9-]+/g, '-')}.pdf` }
+}
+
+/**
  * The collection a message's download goes through: its own source, so the
  * server proves the message is the resident's before it serves a byte.
  *

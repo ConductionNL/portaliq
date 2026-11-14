@@ -8,6 +8,7 @@ The Traffic page SHALL list a portal's recordings and SHALL replay one in a play
 - **GIVEN** a portal with recording switched on and one recorded visit that typed in a search field
 - **WHEN** an editor opens the recording from the Traffic page
 - **THEN** the player replays the clicks and scrolling of that visit, and the search field shows no typed text
+- @e2e exclude needs a recorded visit on a portal with recording on. Masking is covered by `TrafficRecordingMaskTest::testASnapshotKeepsLengthsAndLayoutOnly` and `TrafficRecordingMaskTest::testMovesClicksScrollsAndNavigationsKeepNumbersOnly`, the replay by `tests/recording-player-html-golden.spec.mjs` ("the replay HTML of a masked page").
 
 ### Requirement: The client honours Do Not Track (REQ-CRG-013)
 

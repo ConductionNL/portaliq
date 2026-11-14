@@ -151,6 +151,7 @@ test.describe('site renderer — content', () => {
 		expect(survived).toBe(true)
 	})
 
+	// @e2e portaliq-cms::an-editor-adds-the-glossary-to-a-page
 	test('S1b: the glossary is reachable and rendered', async ({ page }) => {
 		await page.goto(`${SITE}?route=/begrippen`)
 
@@ -238,6 +239,7 @@ test.describe('site renderer — content', () => {
 	})
 
 	// @e2e portaliq-cms::the-subject-scoped-aggregate-is-never-served-publicly
+	// @e2e portaliq-cms::the-home-page-lists-the-services
 	test('S19: contributed surfaces reach the portal over the public contract', async ({
 		page,
 		request,

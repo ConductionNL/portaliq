@@ -38,6 +38,34 @@ namespace OCA\Portaliq\Kernel\Contracts;
 interface SubmissionReceiptServiceInterface {
 
 	/**
+	 * receiptPdf(): the PDF was rendered; the answer carries `bytes` and `name`.
+	 *
+	 * @var string
+	 */
+	public const RECEIPT_PDF = 'ok';
+
+	/**
+	 * receiptPdf(): no receipt of this subject has that id.
+	 *
+	 * @var string
+	 */
+	public const RECEIPT_NOT_FOUND = 'not_found';
+
+	/**
+	 * receiptPdf(): OpenRegister cannot render a PDF here.
+	 *
+	 * @var string
+	 */
+	public const RECEIPT_PDF_UNAVAILABLE = 'pdf_unavailable';
+
+	/**
+	 * receiptPdf(): OpenRegister failed to render it.
+	 *
+	 * @var string
+	 */
+	public const RECEIPT_PDF_FAILED = 'pdf_failed';
+
+	/**
 	 * Record the WMEBV receipt + proof log for one successful create-action.
 	 *
 	 * Never throws and never returns a value the caller could branch on — by
@@ -109,4 +137,18 @@ interface SubmissionReceiptServiceInterface {
 		string $outcome,
 		array $files,
 	): array;
+
+	/**
+	 * The PDF of one of the subject's own receipts: its reference, moment of
+	 * receipt and the answers of its data copy. Someone else's receipt and an
+	 * unknown id answer RECEIPT_NOT_FOUND alike.
+	 *
+	 * @param array<string, mixed> $subject The resolved session subject.
+	 * @param string $id The receipt message's id.
+	 *
+	 * @return array{status: string, bytes?: string, name?: string}
+	 *
+	 * @spec openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+	 */
+	public function receiptPdf(array $subject, string $id): array;
 }//end interface

@@ -465,6 +465,8 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         ['name' => 'portalPlans#update', 'url' => '/portal/api/plans/{id}', 'verb' => 'PATCH'],
         ['name' => 'portalPlans#destroy', 'url' => '/portal/api/plans/{id}', 'verb' => 'DELETE'],
         ['name' => 'portalPlans#pdf', 'url' => '/portal/api/plans/{id}/pdf', 'verb' => 'GET'],
+        // capability-rows-without-a-requirement (REQ-CRG-005): a receipt's answers as a PDF, for its own subject only.
+        ['name' => 'submissionReceipt#pdf', 'url' => '/portal/api/receipts/{id}/pdf', 'verb' => 'GET'],
         ['name' => 'portalPlans#addFile', 'url' => '/portal/api/plans/{id}/files', 'verb' => 'POST'],
         ['name' => 'portalPlans#file', 'url' => '/portal/api/plans/{id}/files/{fileId}', 'verb' => 'GET'],
         ['name' => 'portalPlans#addParticipants', 'url' => '/portal/api/plans/{id}/participants', 'verb' => 'POST'],

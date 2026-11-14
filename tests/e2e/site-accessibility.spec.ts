@@ -204,6 +204,7 @@ test.describe('site renderer — accessibility', () => {
 })
 
 test.describe('site renderer — responsive', () => {
+	// @e2e portaliq-cms::the-home-page-on-a-phone
 	test('S16: a phone viewport does not scroll horizontally', async ({ page }) => {
 		// 360x740 is a common Android size and narrower than the manifest grid's
 		// smallest breakpoint. A public municipal site is majority mobile.
@@ -224,6 +225,7 @@ test.describe('site renderer — responsive', () => {
 		).toBeLessThanOrEqual(overflow.clientWidth + 1)
 	})
 
+	// @e2e portaliq-cms::the-home-page-on-a-phone
 	test('S16b: grid widgets stack instead of squeezing on a phone', async ({
 		page,
 	}) => {

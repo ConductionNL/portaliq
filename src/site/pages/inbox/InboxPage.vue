@@ -210,6 +210,26 @@
 						</p>
 					</div>
 
+					<!-- A submission receipt offers its answers as a PDF (REQ-CRG-005). -->
+					<div
+						v-if="receiptPdf(message)"
+						class="pq-inbox-row__receipt-pdf">
+						<button
+							type="button"
+							class="utrecht-button utrecht-button--subtle"
+							:disabled="downloadingId === receiptPdf(message).id"
+							data-testid="inbox-row-receipt-pdf"
+							@click="downloadReceipt(message)">
+							{{ tr('Download as PDF') }}
+						</button>
+						<p
+							v-if="downloadFailedFor === idOf(message, i)"
+							class="utrecht-paragraph pq-inbox-row__download-error"
+							role="alert">
+							{{ tr('The download did not work.') }}
+						</p>
+					</div>
+
 					<p
 						v-if="delivery(message)"
 						class="utrecht-paragraph pq-inbox-row__delivery">
@@ -313,6 +333,7 @@ import {
 	keepTaskToOpen,
 	markedRead,
 	messagesOnTab,
+	receiptPdfOf,
 	recordRoute,
 	rowId,
 	sessionStore,
@@ -655,6 +676,38 @@ export default {
 			this.downloadingId = null
 			if (!result?.ok) {
 				this.downloadFailedFor = id
+			}
+		},
+
+		/**
+		 * The PDF a receipt offers, or null for any other message.
+		 *
+		 * @param {object} message The message.
+		 * @return {{id: string, name: string}|null} The receipt.
+		 * @spec openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+		 */
+		receiptPdf(message) {
+			return receiptPdfOf(message)
+		},
+
+		/**
+		 * Download a receipt's PDF; a refusal or failure says the download did not work.
+		 *
+		 * @param {object} message The receipt message.
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+		 */
+		async downloadReceipt(message) {
+			const receipt = receiptPdfOf(message)
+			if (!receipt) {
+				return
+			}
+			this.downloadingId = receipt.id
+			this.downloadFailedFor = null
+			const result = await this.api.downloadReceiptPdf(receipt)
+			this.downloadingId = null
+			if (!result?.ok) {
+				this.downloadFailedFor = rowId(message)
 			}
 		},
 
