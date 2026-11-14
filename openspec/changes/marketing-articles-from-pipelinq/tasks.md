@@ -4,7 +4,7 @@ Spec only in this PR. Tier V1. pipelinq's `marketing-articles-move-to-portaliq` 
 
 ## 1. Schema
 
-- [ ] 1.1 Add `article` to `lib/Settings/portaliq_register.json` with pipelinq's properties, lifecycle and `legacyRef`; add the three demo articles to the example data. — partial: the `article` schema (pipelinq's properties and lifecycle, plus `legacyRef` and `organisation`; organisation-scoped in `SchemaTenancy`) is in the register (0.109.0); the three demo articles are not added yet, and the import was not run here (needs a live instance).
+- [x] 1.1 Add `article` to `lib/Settings/portaliq_register.json` with pipelinq's properties, lifecycle and `legacyRef`; add the three demo articles to the example data. — the `article` schema (pipelinq's properties and lifecycle, plus `legacyRef` and `organisation`; organisation-scoped in `SchemaTenancy`) is in the register (0.111.0), with pipelinq's three demo articles as seed objects and en/nl catalogue keys for its strings. The import itself (the acceptance line) was not run here: it needs a live instance.
   - spec_ref: `specs/marketing-articles/spec.md#requirement-an-article-holds-its-body-as-markdown-and-its-own-identity`
   - acceptance: the register imports with no `PARTIAL IMPORT` in the log; `occ openregister:schema` lists `article` in register `portaliq`
 
