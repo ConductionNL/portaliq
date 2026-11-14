@@ -140,6 +140,12 @@ final class ListenerRegistrar {
 		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $event) {
 			$context->registerEventListener($event, NoticeWriteGuardListener::class);
 		}
+
+		// Error reports on publications need an existing owner
+		// (publication-error-reports-and-withheld-notices REQ-PER-001).
+		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $event) {
+			$context->registerEventListener($event, PortalReportOwnerGuardListener::class);
+		}
 	}//end registerCmsListeners()
 
 	/**

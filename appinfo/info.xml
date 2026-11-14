@@ -102,6 +102,9 @@
         <!-- media-usage-count: hourly, how many records of its portal use each media item. -->
         <job>OCA\Portaliq\BackgroundJob\MediaUsageJob</job>
         <job>OCA\Portaliq\BackgroundJob\MailLogRetentionJob</job>
+        <!-- publication-error-reports-and-withheld-notices: daily, erases the
+             contact address of an error report closed 30 days ago. -->
+        <job>OCA\Portaliq\BackgroundJob\EraseReportContactJob</job>
     </background-jobs>
 
     <!-- @spec openspec/architecture/adr-023-action-authorization.md -->

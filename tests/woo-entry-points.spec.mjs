@@ -84,7 +84,7 @@ test('host props win', () => {
 	)
 	assert.match(
 		grid,
-		/\.\.\.props,\s*subjectId: this\.routeParam,\s*signedIn: this\.signedIn === true,?\s*\}/,
+		/\.\.\.props,\s*subjectId: this\.routeParam,\s*signedIn: this\.signedIn === true,?(?:\s*\/\/[^\n]*|\s*\w+: this\.\w+,)*\s*\}/,
 	)
 	assert.match(
 		grid,

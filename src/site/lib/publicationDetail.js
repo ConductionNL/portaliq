@@ -344,3 +344,133 @@ export function allDetailRows(publication) {
 		}))
 		.filter((row) => row.items.length > 0 && row.label !== '')
 }
+
+/**
+ * What a withdrawn publication's page may show, or null when it shows not
+ * found: only on a 410, only while the portal shows withheld notices, and
+ * only the date, the public reason and the title when the answer carries one
+ * (publication-error-reports-and-withheld-notices REQ-PER-003, REQ-PER-004).
+ *
+ * @param {number} status The publication read's HTTP status.
+ * @param {object|null} body The read's answer.
+ * @param {object|null} publications The site record's `publications`.
+ * @return {{withdrawnAt?: string, publicReason?: string, title?: string}|null}
+ * @spec openspec/changes/publication-error-reports-and-withheld-notices/specs/portal-federated-search/spec.md#requirement-a-withdrawn-link-says-it-was-withdrawn-and-why-req-per-004
+ */
+export function withdrawalFrom(status, body, publications) {
+	if (status !== 410 || !publications || publications.withheldNotices !== true) {
+		return null
+	}
+
+	const row = body && typeof body === 'object' ? body : {}
+	const withdrawal = {}
+	for (const key of ['withdrawnAt', 'publicReason', 'title']) {
+		if (typeof row[key] === 'string' && row[key].trim() !== '') {
+			withdrawal[key] = row[key].trim()
+		}
+	}
+	return withdrawal
+}
+
+/**
+ * The words of the withdrawal page: the heading, the sentence with the date,
+ * the reason and the title, each '' when the answer carried none.
+ *
+ * @param {{withdrawnAt?: string, publicReason?: string, title?: string}} withdrawal What withdrawalFrom() returned.
+ * @param {string} locale The site's language.
+ * @return {{heading: string, sentence: string, reasonLabel: string, reason: string, titleLabel: string, title: string}}
+ * @spec openspec/changes/publication-error-reports-and-withheld-notices/specs/portal-federated-search/spec.md#requirement-a-withdrawn-link-says-it-was-withdrawn-and-why-req-per-004
+ */
+export function withdrawalLines(withdrawal, locale) {
+	const english = locale === 'en'
+	const date = withdrawal?.withdrawnAt ? readableDate(withdrawal.withdrawnAt, locale) : ''
+	let sentence = english ? 'This publication was withdrawn.' : 'Deze publicatie is ingetrokken.'
+	if (date !== '') {
+		sentence = english
+			? `This publication was withdrawn on ${date}`
+			: `Deze publicatie is ingetrokken op ${date}`
+	}
+	return {
+		heading: english ? 'Publication withdrawn' : 'Publicatie ingetrokken',
+		sentence,
+		reasonLabel: english ? 'Reason' : 'Reden',
+		reason: withdrawal?.publicReason || '',
+		titleLabel: english ? 'Title' : 'Titel',
+		title: withdrawal?.title || '',
+	}
+}
+
+/**
+ * The documents held back from a publication, with their grounds, while the
+ * portal shows withheld notices (publication-error-reports-and-withheld-notices
+ * REQ-PER-005). Only what the public read carries is shown.
+ *
+ * The contract is opencatalogi's planned `withheld` on the public read
+ * (publication-detail-for-the-portal REQ-PDP-004, woo-decision-shows-what-was-withheld
+ * REQ-WDW-003): a list of `{position, grounds, title?, groundDetails?}`,
+ * `grounds` the codes and `groundDetails` `{code, article, label}`. A row is
+ * named by its title when the read carries one, else by its position. Labels
+ * come from `groundDetails`; a code without one reads as its code alone.
+ *
+ * @param {object|null} publication The publication the read returned.
+ * @param {object|null} publications The site record's `publications`.
+ * @param {string} [locale] The site's language.
+ * @return {Array<{reference: string, grounds: Array<{code: string, label: string}>}>}
+ * @spec openspec/changes/publication-error-reports-and-withheld-notices/specs/portal-federated-search/spec.md#requirement-a-publication-lists-what-was-held-back-with-the-ground-req-per-005
+ */
+export function withheldDocumentsOf(publication, publications, locale = 'nl') {
+	if (!publications || publications.withheldNotices !== true) {
+		return []
+	}
+
+	const rows = (publication || {}).withheld
+	if (!Array.isArray(rows)) {
+		return []
+	}
+
+	return rows
+		.filter((row) => row && typeof row === 'object')
+		.map((row) => ({ reference: withheldReference(row, locale), grounds: withheldGrounds(row) }))
+		.filter((row) => row.reference !== '')
+}
+
+/**
+ * @param {object} row One `withheld` entry.
+ * @param {string} locale The site's language.
+ * @return {string} Its title, else "Document <position>", else ''.
+ */
+function withheldReference(row, locale) {
+	if (typeof row.title === 'string' && row.title.trim() !== '') {
+		return row.title.trim()
+	}
+	const position = Number(row.position)
+	if (Number.isInteger(position) && position > 0) {
+		return `${locale === 'en' ? 'Document' : 'Document'} ${position}`
+	}
+	return ''
+}
+
+/**
+ * @param {object} row One `withheld` entry.
+ * @return {Array<{code: string, label: string}>} Its grounds, in the read's order.
+ */
+function withheldGrounds(row) {
+	const details = Array.isArray(row.groundDetails) ? row.groundDetails : []
+	const labels = {}
+	for (const detail of details) {
+		if (detail && typeof detail.code === 'string') {
+			labels[detail.code.trim()] = typeof detail.label === 'string' ? detail.label.trim() : ''
+		}
+	}
+
+	const codes = (Array.isArray(row.grounds) ? row.grounds : [])
+		.filter((code) => typeof code === 'string' && code.trim() !== '')
+		.map((code) => code.trim())
+	for (const code of Object.keys(labels)) {
+		if (code !== '' && codes.includes(code) === false) {
+			codes.push(code)
+		}
+	}
+
+	return codes.map((code) => ({ code, label: labels[code] || '' }))
+}

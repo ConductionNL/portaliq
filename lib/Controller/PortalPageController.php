@@ -55,6 +55,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalThemeResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\SiteHeadInterface;
 use OCA\Portaliq\Kernel\Contracts\SiteShellInterface;
 use OCA\Portaliq\Service\SiteShell;
+use OCA\Portaliq\Service\Publication\WithdrawnPublication;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -83,6 +84,13 @@ class PortalPageController extends Controller {
 	private const STATUS_NOT_FOUND = 404;
 
 	/**
+	 * HTTP 410 Gone: what a withdrawn publication's page answers on a portal
+	 * that shows the withdrawal (publication-error-reports-and-withheld-notices
+	 * REQ-PER-004).
+	 */
+	private const STATUS_GONE = 410;
+
+	/**
 	 * Builds what the site shell template renders.
 	 *
 	 * @var SiteShellInterface
@@ -106,6 +114,7 @@ class PortalPageController extends Controller {
 	 * @param SiteHeadInterface $siteHead The head of the page a site request asks for.
 	 * @param PortalNoticeReaderInterface $notices The notices running on the signed-in surface now.
 	 * @param AccessibilityFramingInterface $framing Whether the accessibility measurement may frame this request.
+	 * @param WithdrawnPublication|null $withdrawn Whether a path is a withdrawn publication's page; absent, none is.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -116,6 +125,7 @@ class PortalPageController extends Controller {
 		SiteHeadInterface $siteHead,
 		PortalNoticeReaderInterface $notices,
 		private readonly AccessibilityFramingInterface $framing,
+		private readonly ?WithdrawnPublication $withdrawn = null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 		$this->shell = new SiteShell(
@@ -315,10 +325,40 @@ class PortalPageController extends Controller {
 		$response = $this->shellResponse(path: $path);
 		if ($this->shell->servesAPortal() === false) {
 			$response->setStatus(self::STATUS_NOT_FOUND);
+			return $response;
+		}
+
+		if ($this->isWithdrawnPage(path: $path) === true) {
+			$response->setStatus(self::STATUS_GONE);
 		}
 
 		return $response;
 	}//end sitePath()
+
+	/**
+	 * Whether the path is a withdrawn publication's page on a portal that
+	 * shows the withdrawal (publication-error-reports-and-withheld-notices
+	 * REQ-PER-004). The shell still renders: the site reads the withdrawal
+	 * itself, this only makes the status say what the page says.
+	 *
+	 * @param string $path The path under the site route.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/publication-error-reports-and-withheld-notices/specs/portal-federated-search/spec.md#requirement-a-withdrawn-link-says-it-was-withdrawn-and-why-req-per-004
+	 */
+	private function isWithdrawnPage(string $path): bool {
+		if ($this->withdrawn === null) {
+			return false;
+		}
+
+		$slug = $this->shell->requestedPortalSlug();
+		if ($slug === '') {
+			$slug = null;
+		}
+
+		return $this->withdrawn->isWithdrawnRequest(request: $this->request, slug: $slug, path: $path);
+	}//end isWithdrawnPage()
 
 
 }//end class

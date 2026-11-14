@@ -59,4 +59,14 @@ interface SiteShellInterface {
 	 * @spec openspec/changes/site-at-the-root-of-a-portal-host/specs/portal-settings/spec.md#requirement-a-verified-domain-may-serve-the-site-at-its-root-req-srh-001
 	 */
 	public function templateParams(string $path = ''): array;
+
+	/**
+	 * The portal slug this request names (`?portal=`, else the portal of
+	 * `?org=`), or '' when the host decides.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-old-portal-links-must-land-on-the-site-req-srp-048
+	 */
+	public function requestedPortalSlug(): string;
 }//end interface

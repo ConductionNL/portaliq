@@ -94,6 +94,7 @@ final class SchemaTenancy implements SchemaTenancyInterface {
 		'portalAvailabilityDaily' => ['scope' => self::PORTAL],
 		'portalAvailabilityOutage' => ['scope' => self::PORTAL],
 		'portalNotice'            => ['scope' => self::PORTAL],
+		'publicationErrorReport'  => ['scope' => self::PORTAL],
 		'portalPollResponse'      => ['scope' => self::SUBJECT],
 		'pushSubscription'        => ['scope' => self::SUBJECT],
 		'notificationQuietHours'  => ['scope' => self::SUBJECT],

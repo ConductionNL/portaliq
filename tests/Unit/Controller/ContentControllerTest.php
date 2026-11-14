@@ -974,6 +974,29 @@ class ContentControllerTest extends TestCase {
 		$this->assertFalse($this->controller()->site()->getData()['searchInsideDocuments']);
 	}//end testAPortalCanSwitchSearchInsideDocumentsOff()
 
+
+	/**
+	 * Both publication features are off on a new portal; switched on, the
+	 * site record says so, and never names the owner
+	 * (publication-error-reports-and-withheld-notices REQ-PER-001, REQ-PER-003).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/publication-error-reports-and-withheld-notices/specs/portal-federated-search/spec.md#requirement-error-reports-are-opt-in-and-need-a-named-owner-req-per-001
+	 */
+	public function testTheSiteRecordSaysWhichPublicationFeaturesAreOn(): void {
+		$on                                = $this->portal();
+		$on['publicationErrorReports']     = true;
+		$on['publicationErrorReportOwner'] = 'woo-redactie';
+		$on['showWithheldNotices']         = true;
+		$this->resolver->method('resolve')->willReturnOnConsecutiveCalls($this->portal(), $on);
+
+		$this->assertSame(['errorReports' => false, 'withheldNotices' => false], $this->controller()->site()->getData()['publications']);
+		$data = $this->controller()->site()->getData();
+		$this->assertSame(['errorReports' => true, 'withheldNotices' => true], $data['publications']);
+		$this->assertStringNotContainsString('woo-redactie', (string)json_encode($data));
+	}//end testTheSiteRecordSaysWhichPublicationFeaturesAreOn()
+
 	/**
 	 * REQ-PWR-001: a portal offering the account route is served the address of
 	 * Nextcloud's login page with a way back; one that does not is served none.

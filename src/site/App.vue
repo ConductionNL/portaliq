@@ -1016,6 +1016,9 @@ export default {
 				portal: this.site.slug || '',
 				signedIn: this.session !== null,
 				searchInsideDocuments: this.site.searchInsideDocuments !== false,
+				// "Fout melden" and the withdrawal notice, both opt-in
+				// (publication-error-reports-and-withheld-notices).
+				publications: this.site.publications || null,
 				organisation: this.site.organisation || null,
 				navigation: this.navigation,
 				languages: this.languages,

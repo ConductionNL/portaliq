@@ -43,6 +43,7 @@ use OCA\Portaliq\Middleware\ApiContractMiddleware;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
 use OCA\Portaliq\Middleware\PublicApiCorsMiddleware;
 use OCA\Portaliq\Notification\Notifier;
+use OCA\Portaliq\Notification\PublicationReportNotifier;
 use OCA\Portaliq\Service\HostRootRedirect;
 use OCA\Portaliq\Service\ServiceRegistrar;
 use OCP\AppFramework\App;
@@ -138,6 +139,10 @@ class Application extends App implements IBootstrap {
 		// Traffic reports and alerts (portal-traffic-reporting) reach a
 		// user as an in-app notification beside the mail; this renders it.
 		$context->registerNotifierService(Notifier::class);
+
+		// A new error report on a publication reaches its owner as a
+		// notification (publication-error-reports-and-withheld-notices REQ-PER-002).
+		$context->registerNotifierService(PublicationReportNotifier::class);
 
 		// The store plane (ADR-080, ADR-114 Decision 4). The manifest's
 		// `type: "store"` page calls /api/store/items; appinfo/routes.php declares

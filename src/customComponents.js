@@ -58,6 +58,7 @@ import { refreshList } from './lib/listRefresh.js'
 import { createMailTemplateApi, createMailTemplateHandlers } from './lib/mailTemplateEditing.js'
 import { createNewsApi, createNewsHandlers, NEWS_LIST } from './lib/newsAuthoring.js'
 import { createOpenPortalSite } from './lib/openPortalSite.js'
+import { createPublicationReportHandlers } from './lib/publicationReportActions.js'
 import { createRevealHandlers } from './lib/revealActions.js'
 import { createSessionHandlers } from './lib/sessionActions.js'
 import {
@@ -101,6 +102,20 @@ const accessRequestHandlers = createAccessRequestHandlers({
 	translate: (text) => t('portaliq', text),
 	// A row handler gets no handle on the list, so the page reloads to show
 	// the answered request in its new state.
+	reload: () => window.location.reload(),
+})
+
+/**
+ * The Handled and Not applicable row actions on the Error reports page
+ * (publication-error-reports-and-withheld-notices REQ-PER-002). See
+ * src/lib/publicationReportActions.js.
+ */
+const publicationReportHandlers = createPublicationReportHandlers({
+	post: (url, body) => axios.post(url, body),
+	generateUrl,
+	notify: showSuccess,
+	notifyError: showError,
+	translate: (text) => t('portaliq', text),
 	reload: () => window.location.reload(),
 })
 
@@ -275,6 +290,7 @@ export default {
 	 * AccessRequestAdminController, and a grant also records the mandate.
 	 */
 	...accessRequestHandlers,
+	...publicationReportHandlers,
 	/**
 	 * `Check form` row action on the Request forms index page.
 	 */

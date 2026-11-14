@@ -13,6 +13,34 @@
 			{{ t('Loading…') }}
 		</p>
 
+		<!-- A withdrawn publication, on a portal that shows withheld notices
+		     (publication-error-reports-and-withheld-notices REQ-PER-004): the
+		     date, the public reason and the title only when the answer carries
+		     one. Nothing else of the record. -->
+		<div
+			v-else-if="withdrawal"
+			class="pq-detail__withdrawn"
+			data-testid="publication-withdrawn">
+			<h1 class="utrecht-heading-1">{{ withdrawn.heading }}</h1>
+			<p class="utrecht-paragraph" data-testid="publication-withdrawn-sentence">
+				{{ withdrawn.sentence }}
+			</p>
+			<dl class="pq-detail__fields">
+				<div v-if="withdrawn.title" class="pq-detail__field" data-testid="publication-withdrawn-title">
+					<dt class="pq-detail__label">
+						<strong>{{ withdrawn.titleLabel }}:</strong>
+					</dt>
+					<dd class="pq-detail__value">{{ withdrawn.title }}</dd>
+				</div>
+				<div v-if="withdrawn.reason" class="pq-detail__field" data-testid="publication-withdrawn-reason">
+					<dt class="pq-detail__label">
+						<strong>{{ withdrawn.reasonLabel }}:</strong>
+					</dt>
+					<dd class="pq-detail__value">{{ withdrawn.reason }}</dd>
+				</div>
+			</dl>
+		</div>
+
 		<div v-else-if="error" role="alert" data-testid="publication-detail-error">
 			<h1 class="utrecht-heading-1">{{ t('Publication not found') }}</h1>
 			<p class="utrecht-paragraph">
@@ -238,6 +266,37 @@
 					</tbody>
 				</table>
 			</section>
+			<!-- WHAT WAS HELD BACK (publication-error-reports-and-withheld-notices
+			     REQ-PER-005): only while the portal shows withheld notices, and
+			     only what the public read carries. -->
+			<section
+				v-if="withheld.length > 0"
+				class="pq-detail__withheld"
+				data-testid="publication-withheld">
+				<h2 class="utrecht-heading-2">{{ withdrawnWords.withheldHeading }}</h2>
+				<ul class="pq-detail__list">
+					<li
+						v-for="document in withheld"
+						:key="document.reference"
+						data-testid="publication-withheld-document">
+						<strong>{{ document.reference }}</strong>
+						<ul v-if="document.grounds.length > 0" class="pq-detail__list">
+							<li v-for="ground in document.grounds" :key="ground.code">
+								{{ ground.label ? `${ground.code}: ${ground.label}` : ground.code }}
+							</li>
+						</ul>
+					</li>
+				</ul>
+			</section>
+
+			<!-- "Fout melden", only while the portal has error reports on
+			     (publication-error-reports-and-withheld-notices REQ-PER-002). -->
+			<PublicationReport
+				v-if="publications && publications.errorReports === true"
+				:publications="publications"
+				:portal="portal"
+				:publication="subjectId"
+				:documents="documentNames" />
 		</article>
 	</section>
 </template>
@@ -252,6 +311,9 @@ import {
 	themeIdsOf,
 	toDocuments,
 	visitorRows,
+	withdrawalFrom,
+	withdrawalLines,
+	withheldDocumentsOf,
 } from '../lib/publicationDetail.js'
 
 /**
@@ -282,6 +344,9 @@ export default {
 
 	components: {
 		SaveToDossier: defineAsyncComponent(() => import('./SaveToDossier.vue')),
+		PublicationReport: defineAsyncComponent(
+			() => import('./PublicationReport.vue'),
+		),
 	},
 
 	props: {
@@ -316,6 +381,22 @@ export default {
 		},
 
 		/**
+		 * The site record's `publications`, `{errorReports, withheldNotices}`.
+		 * Set by the host after the authored props, never by page
+		 * configuration (publication-error-reports-and-withheld-notices).
+		 */
+		publications: {
+			type: Object,
+			default: null,
+		},
+
+		/** The serving portal's slug, set by the host. */
+		portal: {
+			type: String,
+			default: '',
+		},
+
+		/**
 		 * The endpoint to read. Relative by default, so a portal served from
 		 * the same Nextcloud finds OpenCatalogi without configuration.
 		 */
@@ -342,6 +423,7 @@ export default {
 			documents: null,
 			loading: true,
 			error: false,
+			withdrawal: null,
 		}
 	},
 
@@ -415,6 +497,42 @@ export default {
 			return allDetailRows(this.publication)
 		},
 
+		/**
+		 * @return {object} The words of the withdrawal page.
+		 * @spec openspec/changes/publication-error-reports-and-withheld-notices/specs/portal-federated-search/spec.md#requirement-a-withdrawn-link-says-it-was-withdrawn-and-why-req-per-004
+		 */
+		withdrawn() {
+			return withdrawalLines(this.withdrawal, this.locale)
+		},
+
+		/**
+		 * @return {Array<object>} The documents held back, with their grounds.
+		 * @spec openspec/changes/publication-error-reports-and-withheld-notices/specs/portal-federated-search/spec.md#requirement-a-publication-lists-what-was-held-back-with-the-ground-req-per-005
+		 */
+		withheld() {
+			return withheldDocumentsOf(this.publication, this.publications, this.locale)
+		},
+
+		/**
+		 * @return {{withheldHeading: string}} The words of the withheld list.
+		 * @spec openspec/changes/publication-error-reports-and-withheld-notices/specs/portal-federated-search/spec.md#requirement-a-publication-lists-what-was-held-back-with-the-ground-req-per-005
+		 */
+		withdrawnWords() {
+			return {
+				withheldHeading: this.locale === 'en' ? 'Not made public' : 'Niet openbaar gemaakt',
+			}
+		},
+
+		/**
+		 * @return {Array<string>} The documents' names, to say which one a report is about.
+		 * @spec openspec/changes/publication-error-reports-and-withheld-notices/specs/portal-federated-search/spec.md#requirement-a-report-reaches-the-named-owner-req-per-002
+		 */
+		documentNames() {
+			return (this.documents || [])
+				.map((document) => String(document?.title || ''))
+				.filter((name) => name !== '')
+		},
+
 		fields() {
 			return visitorRows(this.publication, {
 				t: this.t,
@@ -462,6 +580,7 @@ export default {
 
 			this.loading = true
 			this.error = false
+			this.withdrawal = null
 
 			try {
 				// THE BY-ID ROUTE, not `?_id=`.
@@ -486,6 +605,18 @@ export default {
 				const response = await fetch(url.toString(), {
 					headers: { Accept: 'application/json' },
 				})
+
+				if (response.status === 410) {
+					// Withdrawn: shown only while the portal shows withheld
+					// notices; otherwise the same not found as any other miss.
+					const answer = await response.json().catch(() => null)
+					const withdrawal = withdrawalFrom(410, answer, this.publications)
+					if (withdrawal !== null) {
+						this.withdrawal = withdrawal
+						this.publication = null
+						return
+					}
+				}
 
 				if (response.ok === false) {
 					throw new Error(`HTTP ${response.status}`)
