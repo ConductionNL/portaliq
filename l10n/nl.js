@@ -3381,7 +3381,9 @@ OC.L10N.register(
         "Introduction text": "Tekst van de introductie",
         "The opening sentence under the form's heading.": "De openingszin onder de kop van het formulier.",
         "Event to sign up for": "Evenement om je voor aan te melden",
-        "No event": "Geen evenement"
+        "No event": "Geen evenement",
+        "You do not look after this portal.": "U beheert dit portaal niet.",
+        "Only an instance administrator can change who looks after a portal.": "Alleen een beheerder van de installatie kan wijzigen wie een portaal beheert."
     },
     "nplurals=2; plural=(n != 1);"
 )

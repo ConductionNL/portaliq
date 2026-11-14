@@ -49,13 +49,17 @@ A member of `zeist-beheer` who is not an instance administrator can, on the port
 
 - read and change its theme,
 - read and change how residents sign in, including the broker settings,
-- read and check the DNS records of its domains.
+- read and check the DNS records of its domains,
+- write its pages, menus, notices and media items, and open the page editor and the publish check on it,
+- read and change the portal object itself (its title, theme fields, domains and the like).
+
+Saving a portal writes its `adminGroups` into the rules of these schemas as conditional rules that only hold for that portal's rows (`{"group": "zeist-beheer", "match": {"portal": "zeist"}}`; on the portal schema the match is on `slug`). Only an action the schema already lists gets the rule: a missing list means every signed-in user may, and a rule there would close it to the rest. Moving a page, menu, notice or media item to or from a portal they do not look after is refused.
 
 On any other portal the same person gets the answer an unknown portal gets (404), so they learn nothing about it.
 
 Only an instance administrator changes `adminGroups` or provisions a portal. The instance-wide editor groups in the admin settings keep working as before.
 
-Not yet per portal: the portal settings form, pages, menus and notices still follow the instance-wide rules, and the Portals admin page still lists every portal to an instance administrator only.
+Not yet per portal: the instance-wide settings form stays with instance administrators, and the Portals admin page has no "Administrators" group picker yet; `adminGroups` is set on the portal object.
 
 ## What is not covered
 

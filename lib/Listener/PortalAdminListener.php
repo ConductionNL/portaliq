@@ -43,7 +43,8 @@ use Throwable;
 
 /**
  * Before a write: the PortalAdminWriteGate's refusal stops it, with its
- * message. After a portal write: its `adminGroups` are written into the
+ * message. A move out of the register (ObjectLeavingEvent, a deleting event)
+ * is checked like a delete. After a portal write: its `adminGroups` are written into the
  * rules of the content it owns (PortalAdminGrants).
  *
  * @template-implements IEventListener<Event>

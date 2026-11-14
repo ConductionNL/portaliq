@@ -542,7 +542,9 @@ OC.L10N.register(
         "The columns are saved.": "The columns are saved.",
         "The columns could not be saved. Try again.": "The columns could not be saved. Try again.",
         "Event to sign up for": "Event to sign up for",
-        "No event": "No event"
+        "No event": "No event",
+        "You do not look after this portal.": "You do not look after this portal.",
+        "Only an instance administrator can change who looks after a portal.": "Only an instance administrator can change who looks after a portal."
     },
     "nplurals=2; plural=(n != 1);"
 )

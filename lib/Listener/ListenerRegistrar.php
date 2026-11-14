@@ -147,6 +147,7 @@ final class ListenerRegistrar {
 			ObjectCreatingEvent::class,
 			ObjectUpdatingEvent::class,
 			ObjectDeletingEvent::class,
+			ObjectLeavingEvent::class,
 			ObjectCreatedEvent::class,
 			ObjectUpdatedEvent::class,
 			ObjectDeletedEvent::class,
