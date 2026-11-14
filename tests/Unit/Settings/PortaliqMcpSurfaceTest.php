@@ -23,8 +23,9 @@ namespace OCA\Portaliq\Tests\Unit\Settings;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Portaliq declares exactly one read-only pair of MCP tools, over the portal
- * inbox, and no hand-written provider.
+ * Portaliq derives only read-only MCP tools (the portal inbox and the
+ * operational records) and registers exactly one governed hand-written
+ * provider for the staff write actions.
  *
  * OpenRegister's SchemaDerivedToolProvider names a derived tool
  * `{appId}.{lowercased schema}.{verb}` for every verb an enabled
@@ -33,6 +34,7 @@ use PHPUnit\Framework\TestCase;
  * or a write verb to the inbox, fails this test until the spec says so.
  *
  * @spec openspec/changes/portaliq-mcp-adoption/specs/portaliq-mcp-surface/spec.md
+ * @spec openspec/changes/hermiq-ai-tooling/specs/portaliq-mcp-surface/spec.md
  */
 class PortaliqMcpSurfaceTest extends TestCase {
 
@@ -212,18 +214,21 @@ class PortaliqMcpSurfaceTest extends TestCase {
 	}//end testIdentityAndSessionObjectsAreNotTools()
 
 	/**
-	 * The scaffold provider is gone and nothing replaces it: no file under
-	 * lib/ implements IMcpToolProvider or carries #[McpTool], and Application
-	 * registers no provider alias.
+	 * The scaffold provider stays gone and exactly one governed provider
+	 * replaces it: lib/Mcp/PortaliqToolProvider.php is the only file under
+	 * lib/ that implements IMcpToolProvider, nothing carries #[McpTool], and
+	 * Application registers that one provider under the per-app key.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/hermiq-ai-tooling/specs/portaliq-mcp-surface/spec.md#requirement-portaliq-exposes-no-hand-written-mcp-tool
 	 */
-	public function testNoHandWrittenProviderIsRegistered(): void {
+	public function testOnlyTheGovernedProviderIsRegistered(): void {
 		$this->assertFileDoesNotExist(self::ROOT . '/lib/Mcp/ExampleToolProvider.php');
-		$this->assertDirectoryDoesNotExist(self::ROOT . '/lib/Mcp');
 
 		$files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(self::ROOT . '/lib', \FilesystemIterator::SKIP_DOTS));
 		$scanned = 0;
+		$providers = [];
 		foreach ($files as $file) {
 			if ($file->getExtension() !== 'php') {
 				continue;
@@ -231,14 +236,19 @@ class PortaliqMcpSurfaceTest extends TestCase {
 
 			$scanned++;
 			$code = (string)file_get_contents($file->getPathname());
-			$this->assertDoesNotMatchRegularExpression('/implements[^{]*IMcpToolProvider/', $code, $file->getPathname() . ' implements IMcpToolProvider');
+			if (preg_match('/implements[^{]*IMcpToolProvider/', $code) === 1) {
+				$providers[] = substr($file->getPathname(), strlen(self::ROOT) + 1);
+			}
+
 			$this->assertDoesNotMatchRegularExpression('/#\[\s*\\\\?(\w+\\\\)*McpTool\b/', $code, $file->getPathname() . ' carries #[McpTool]');
+			$this->assertDoesNotMatchRegularExpression("/'portaliq\\.(ping|describeApp)'/", $code, $file->getPathname() . ' brings back a scaffold tool');
 		}
 
 		$this->assertGreaterThan(0, $scanned, 'lib/ moved; this test scanned nothing.');
+		$this->assertSame(['lib/Mcp/PortaliqToolProvider.php'], $providers);
 
 		$application = (string)file_get_contents(self::ROOT . '/lib/AppInfo/Application.php');
-		$this->assertDoesNotMatchRegularExpression('/registerServiceAlias\([^;]*IMcpToolProvider/s', $application);
-		$this->assertStringNotContainsString("IMcpToolProvider::class . '::portaliq'", $application);
-	}//end testNoHandWrittenProviderIsRegistered()
+		$this->assertSame(1, preg_match_all('/registerServiceAlias\([^;]*IMcpToolProvider/s', $application));
+		$this->assertMatchesRegularExpression('/IMcpToolProvider::\'\s*\.\s*self::APP_ID,\s*PortaliqToolProvider::class/s', $application);
+	}//end testOnlyTheGovernedProviderIsRegistered()
 }//end class

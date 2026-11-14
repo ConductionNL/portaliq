@@ -23,8 +23,8 @@
   - GIVEN every descriptor WHEN annotations are inspected THEN `scope` and `reach` are declared per the spec table, `trafficSummary` carries `readOnlyHint: true`, and `revokeOrganisationSessions` carries `destructiveHint: true`
   - GIVEN `revokeOrganisationSessions` WHEN it executes THEN it returns a count and never a session object, `jti` or claims blob; GIVEN any write tool WHEN invoked without the server-side authority its UI equivalent requires THEN it fails closed identically to the UI path
   - GIVEN the app boots WHEN the container resolves THEN the provider registers without DI error and `portaliq.ping` / `portaliq.describeApp` do not exist
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test
 
 ### Task 3: Declare approval requirements on the three high-impact tools
 - **spec_ref**: `openspec/changes/hermiq-ai-tooling/specs/portaliq-mcp-surface/spec.md#requirement-high-impact-writes-require-a-human-approval-gate`
@@ -33,8 +33,8 @@
   - GIVEN `portaliq.publishPortalPage`, `portaliq.sendPortalMessage` and `portaliq.revokeOrganisationSessions` WHEN their descriptors are read THEN each declares that execution requires human approval, in the form hermiq's `human-approval-gate` consumes
   - GIVEN `updatePortalContent`, `updatePageRegions` and `applyTheme` WHEN their descriptors are read THEN none requires per-invocation approval (default-deny grant only)
   - GIVEN a test enumerating the catalog THEN the approval-required set is pinned exactly — adding a fourth or dropping one of the three fails the test
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test
 
 ### Task 4: Prove the portal edge cannot reach MCP
 - **spec_ref**: `openspec/changes/hermiq-ai-tooling/specs/portaliq-mcp-surface/spec.md#requirement-mcp-tools-are-unreachable-from-the-external-portal-edge`
@@ -43,7 +43,7 @@
   - GIVEN a valid, unexpired portal bearer minted via `PortalSessionService` WHEN presented to the MCP listing and invocation paths THEN both reject it as unauthenticated, with a response indistinguishable from an invalid bearer's
   - GIVEN the control half WHEN the same bearer is presented to a `PortalProtected` `/portal/api/*` endpoint THEN it authenticates — proving the bearer is genuinely valid and the rejection above is the guard, not a broken fixture
   - GIVEN `appinfo/routes.php` and the `#[PublicPage]` controller set WHEN audited by test THEN no `/portal/*` route and no public method lists, proxies or invokes an MCP tool
-- [ ] Implement
+- [x] Implement
 - [ ] Test
 
 ### Task 5: Audit every invocation through `AuditTrailService`
@@ -53,8 +53,8 @@
   - GIVEN any executed curated tool WHEN it completes THEN a `portalAuditEntry` records verb, target register/schema/id, timestamp and acting identity — and a test asserts the entry contains no payload field
   - GIVEN `AuditTrailService::record()` failing (OR unavailable) WHEN a granted tool executes THEN the action still completes and the gap is logged — reusing the service's existing never-throw contract, not reimplementing it
   - GIVEN a denied invocation (no grant / approval rejected) WHEN portaliq's audit trail is inspected THEN no portaliq-side entry was written for it
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test
 
 ### Task 6: Documentation + capability spec maintenance
 - **spec_ref**: `openspec/changes/hermiq-ai-tooling/specs/portaliq-mcp-surface/spec.md#requirement-portaliq-exposes-no-hand-written-mcp-tool`

@@ -116,9 +116,13 @@ if (is_dir($serverTestsLib)) {
 	$loader->register(true);
 }
 
-// Portaliq ships no hand-written MCP tool provider: its tools are derived from
-// the x-openregister-mcp dialect in lib/Settings/portaliq_register.json (see
-// openspec/changes/portaliq-mcp-adoption), so no IMcpToolProvider stub is loaded.
+// Load the IMcpToolProvider stub when OpenRegister is not installed, so the one
+// governed provider (lib/Mcp/PortaliqToolProvider.php, hermiq-ai-tooling) can
+// be unit-tested standalone. Reads stay derived from the x-openregister-mcp
+// dialect in lib/Settings/portaliq_register.json (portaliq-mcp-adoption).
+if (interface_exists(\OCA\OpenRegister\Mcp\IMcpToolProvider::class) === false) {
+	require_once __DIR__ . '/Stubs/Mcp/IMcpToolProvider.php';
+}
 
 // Integriq's connection-registry events (adopt-connection-registry).
 // ConnectionReporter sends them by string class name behind class_exists
