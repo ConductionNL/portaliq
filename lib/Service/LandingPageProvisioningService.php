@@ -32,6 +32,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Event\LandingPageRequestedEvent;
+use OCA\Portaliq\Kernel\Contracts\LandingPageProvisioningServiceInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -40,7 +41,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-a-contributing-app-requests-a-landing-page-via-a-typed-event
  */
-class LandingPageProvisioningService {
+class LandingPageProvisioningService implements LandingPageProvisioningServiceInterface {
 
 	/**
 	 * The register every schema this service touches lives in.

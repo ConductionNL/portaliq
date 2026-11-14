@@ -18,6 +18,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Signin;
 
+use OCA\Portaliq\Kernel\Contracts\SiteReturnAddressInterface;
+
 /**
  * Where a login started on the public site may return to.
  *
@@ -30,7 +32,7 @@ namespace OCA\Portaliq\Service\Signin;
  *
  * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
-final class SiteReturnAddress {
+final class SiteReturnAddress implements SiteReturnAddressInterface {
 
 	/**
 	 * The return address when it is a page of the site, else ''.

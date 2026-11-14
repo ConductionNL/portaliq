@@ -3128,6 +3128,9 @@
         "Code for your website": "Code voor uw website",
         "Copy code": "Code kopiëren",
         "Copied": "Gekopieerd",
+        "Copy name": "Naam kopiëren",
+        "Copy value": "Waarde kopiëren",
+        "Copying did not work. Select the text and copy it yourself.": "Kopiëren lukte niet. Selecteer de tekst en kopieer hem zelf.",
         "Websites that may show the form": "Websites waarop het formulier mag staan",
         "On any other website the browser does not show the form.": "Op een andere website laat de browser het formulier niet zien.",
         "This form cannot be put on another website yet. Add the website addresses that may show it.": "Dit formulier kan nog niet op een andere website. Voeg de websites toe die het mogen tonen.",
@@ -3380,6 +3383,8 @@
         "As the case app shows it": "Zoals de zaakapp het toont",
         "The columns are saved.": "De kolommen zijn opgeslagen.",
         "The columns could not be saved. Try again.": "De kolommen konden niet worden opgeslagen. Probeer het opnieuw.",
+        "Event to sign up for": "Evenement om je voor aan te melden",
+        "No event": "Geen evenement",
         "Plan templates": "Plansjablonen"
     },
     "plurals": "",

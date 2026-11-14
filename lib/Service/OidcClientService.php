@@ -48,6 +48,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\OidcClientServiceInterface;
 use OCA\Portaliq\Service\Connection\ConnectionReporter;
 use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
@@ -69,7 +70,7 @@ use Throwable;
  * classes with no corresponding safety gain — see PortalObjectReader's
  * identical rationale.
  */
-class OidcClientService {
+class OidcClientService implements OidcClientServiceInterface {
 	/**
 	 * The ONLY accepted ID-token signature algorithm. Rejects `alg: none`
 	 * and every other algorithm — closes the classic algorithm-confusion

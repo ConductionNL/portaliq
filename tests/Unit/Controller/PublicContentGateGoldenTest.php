@@ -26,6 +26,7 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Http\Response;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Service\PublicCatalogueQuery;
 
 /**
  * The gate's allowed and refused outcomes, per read.
@@ -87,7 +88,7 @@ class PublicContentGateGoldenTest extends TestCase {
 		$reader->method('itemsFor')->willReturn([]);
 		[$request, $resolver, $session] = $this->doubles($caller);
 
-		return [new ContentCatalogueController('portaliq', $request, $resolver, $session, $reader), $reader];
+		return [new ContentCatalogueController('portaliq', $request, $resolver, $session, $reader, new PublicCatalogueQuery()), $reader];
 	}//end catalogue()
 
 	/**

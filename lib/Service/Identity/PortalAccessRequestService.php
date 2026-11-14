@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\PortalAccessRequestServiceInterface;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 
@@ -36,7 +37,7 @@ use OCA\Portaliq\Service\PortalObjectWriter;
  *
  * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
-class PortalAccessRequestService {
+class PortalAccessRequestService implements PortalAccessRequestServiceInterface {
 	/**
 	 * The register the request lives in.
 	 */
@@ -48,24 +49,9 @@ class PortalAccessRequestService {
 	private const SCHEMA = 'portalAccessRequest';
 
 	/**
-	 * The request was answered as asked.
-	 */
-	public const OUTCOME_DONE = 'done';
-
-	/**
 	 * No request with that id in that organisation.
 	 */
 	public const OUTCOME_NOT_FOUND = 'not_found';
-
-	/**
-	 * The request was already answered.
-	 */
-	public const OUTCOME_NOT_PENDING = 'not_pending';
-
-	/**
-	 * The grant could not record its mandate, so the request stays pending.
-	 */
-	public const OUTCOME_MANDATE_FAILED = 'mandate_failed';
 
 	/**
 	 * The schema recording a mandate.

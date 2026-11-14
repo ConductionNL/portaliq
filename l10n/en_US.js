@@ -264,6 +264,9 @@ OC.L10N.register(
         "Move": "Move",
         "draft": "draft",
         "this page": "this page",
+        "Copy name": "Copy name",
+        "Copy value": "Copy value",
+        "Copying did not work. Select the text and copy it yourself.": "Copying did not work. Select the text and copy it yourself.",
         "Rename": "Rename",
         "Delete": "Delete",
         "New page": "New page",
@@ -528,6 +531,8 @@ OC.L10N.register(
         "As the case app shows it": "As the case app shows it",
         "The columns are saved.": "The columns are saved.",
         "The columns could not be saved. Try again.": "The columns could not be saved. Try again.",
+        "Event to sign up for": "Event to sign up for",
+        "No event": "No event",
         "Plan templates": "Plan templates"
     },
     "nplurals=2; plural=(n != 1);"
