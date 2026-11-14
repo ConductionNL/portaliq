@@ -2,6 +2,8 @@ OC.L10N.register(
     "portaliq",
     {
         "Marketplace": "Marketplace",
+        "This site uses JavaScript for its interactive parts, and JavaScript is off in your browser.": "This site uses JavaScript for its interactive parts, and JavaScript is off in your browser.",
+        "Open the plain version of this page": "Open the plain version of this page",
         "A part with a text shows \"Hulp bij deze pagina\" under its heading; a part without shows nothing.": "A part with a text shows \"Hulp bij deze pagina\" under its heading; a part without shows nothing.",
         "An e-mail address looks like info@example.nl.": "An e-mail address looks like info@example.nl.",
         "An image address starts with / or https://.": "An image address starts with / or https://.",
@@ -3243,8 +3245,6 @@ OC.L10N.register(
         "The opening sentence under the form's heading.": "The opening sentence under the form's heading.",
         "Event to sign up for": "Event to sign up for",
         "No event": "No event",
-        "This site uses JavaScript for its interactive parts, and JavaScript is off in your browser.": "This site uses JavaScript for its interactive parts, and JavaScript is off in your browser.",
-        "Open the plain version of this page": "Open the plain version of this page",
         "Propose a change": "Propose a change",
         "Nothing on this record can be proposed.": "Nothing on this record can be proposed.",
         "Note for the reviewer": "Note for the reviewer",
