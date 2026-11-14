@@ -25,7 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Command;
 
-use OCA\Portaliq\Service\Traffic\Geo\GeoRefreshService;
+use OCA\Portaliq\Kernel\Contracts\GeoRefreshServiceInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -45,12 +45,12 @@ class TrafficGeoRefresh extends Command {
 	/**
 	 * Constructor.
 	 *
-	 * @param GeoRefreshService $refresh Does the work.
+	 * @param GeoRefreshServiceInterface $refresh Does the work.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly GeoRefreshService $refresh,
+		private readonly GeoRefreshServiceInterface $refresh,
 	) {
 		parent::__construct();
 	}//end __construct()

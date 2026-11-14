@@ -25,9 +25,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Repair;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\PortalObjectWriter;
-use OCA\Portaliq\Service\PortalRegisterContext;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectWriterInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalRegisterContextInterface;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -299,14 +299,14 @@ class InitializeDemoPortal implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectWriter $writer Writes portal and page objects.
+	 * @param PortalObjectWriterInterface $writer Writes portal and page objects.
 	 * @param IAppConfig $appConfig App configuration.
 	 * @param LoggerInterface $logger Logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly PortalObjectWriter $writer,
+		private readonly PortalObjectWriterInterface $writer,
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
 	) {
@@ -348,7 +348,7 @@ class InitializeDemoPortal implements IRepairStep {
 		// Stamped only after every write landed. Setting it earlier would
 		// record success for a half-provisioned instance and then refuse the
 		// re-run that would have completed it.
-		$this->appConfig->setValueString(Application::APP_ID, self::MARKER_KEY, (string)$portalId);
+		$this->appConfig->setValueString(AppIdentity::APP_ID, self::MARKER_KEY, (string)$portalId);
 
 		$output->info('Provisioned the "Open Catalogi" portal with a landing page, search at /zoeken and publication detail pages.');
 	}//end run()
@@ -361,15 +361,15 @@ class InitializeDemoPortal implements IRepairStep {
 	 * @return string|null The message to report, or null.
 	 */
 	private function refusal(): ?string {
-		if ($this->appConfig->getValueString(Application::APP_ID, self::CONFIG_KEY, 'yes') === 'no') {
+		if ($this->appConfig->getValueString(AppIdentity::APP_ID, self::CONFIG_KEY, 'yes') === 'no') {
 			return 'Demo portal disabled by configuration — nothing provisioned.';
 		}
 
-		if ($this->appConfig->getValueString(Application::APP_ID, self::MARKER_KEY, '') !== '') {
+		if ($this->appConfig->getValueString(AppIdentity::APP_ID, self::MARKER_KEY, '') !== '') {
 			return 'Demo portal was already provisioned once — not provisioning again.';
 		}
 
-		$existing = $this->writer->countObjects(register: PortalRegisterContext::REGISTER, schema: 'portal');
+		$existing = $this->writer->countObjects(register: PortalRegisterContextInterface::REGISTER, schema: 'portal');
 		if ($existing > 0) {
 			return sprintf('%d portal(s) already present — leaving content untouched.', $existing);
 		}
@@ -441,7 +441,7 @@ class InitializeDemoPortal implements IRepairStep {
 	 */
 	private function create(string $schema, array $data): ?array {
 		return $this->writer->createAnonymousObject(
-			register: PortalRegisterContext::REGISTER,
+			register: PortalRegisterContextInterface::REGISTER,
 			schema: $schema,
 			data: $data
 		);

@@ -36,6 +36,7 @@ use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionProperty;
+use OCA\Portaliq\Service\Traffic\TrafficServerBatch;
 
 /**
  * The collector as an HTTP surface: what it refuses whole, what it
@@ -175,7 +176,8 @@ class TrafficControllerTest extends TestCase {
 			$appManager,
 			$this->session ?? $this->createMock(PortalSessionService::class),
 			$tokens,
-			$recordings
+			$recordings,
+			new TrafficServerBatch()
 		);
 	}//end controller()
 

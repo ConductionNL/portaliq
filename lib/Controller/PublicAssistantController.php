@@ -24,10 +24,10 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\Assistant\PublicAssistantChannel;
-use OCA\Portaliq\Service\Assistant\PublicSourceScope;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PublicAssistantChannelInterface;
+use OCA\Portaliq\Kernel\Contracts\PublicSourceScopeInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -47,17 +47,17 @@ class PublicAssistantController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalResolver $portals Resolves the portal being visited.
-	 * @param PublicSourceScope $scope Whether the portal turned the assistant on.
-	 * @param PublicAssistantChannel $channel The adapter to hermiq.
+	 * @param PortalResolverInterface $portals Resolves the portal being visited.
+	 * @param PublicSourceScopeInterface $scope Whether the portal turned the assistant on.
+	 * @param PublicAssistantChannelInterface $channel The adapter to hermiq.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalResolver $portals,
-		private readonly PublicSourceScope $scope,
-		private readonly PublicAssistantChannel $channel,
+		private readonly PortalResolverInterface $portals,
+		private readonly PublicSourceScopeInterface $scope,
+		private readonly PublicAssistantChannelInterface $channel,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

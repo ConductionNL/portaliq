@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Kernel\Contracts\PortalFormDecisionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -35,7 +36,7 @@ use Throwable;
  *
  * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
  */
-class PortalFormDecision {
+class PortalFormDecision implements PortalFormDecisionInterface {
 
 	/**
 	 * What decide() answers when the engine produced an outcome.

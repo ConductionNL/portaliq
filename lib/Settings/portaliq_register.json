@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.109.0"
+        "version": "0.112.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.109.0",
+                "version": "0.112.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -2650,7 +2650,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.29.0",
+                "version": "0.30.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -8549,7 +8549,7 @@
                     ]
                 },
                 "icon": "FormSelect",
-                "version": "0.5.0",
+                "version": "0.6.0",
                 "title": "Portal Form Binding",
                 "description": "What a portal form page is bound to (portal-intake-form-as-an-object REQ-PIFO-001): a case type tuple, an audience, an optional form name, and the intake settings. The page keeps no field list of its own; the fields, their order and their presets come from the published form at render time, so a form edited in buildiq reaches the portal with no portal change.",
                 "type": "object",
@@ -8728,8 +8728,13 @@
                     "intro": {
                         "title": "Introduction page",
                         "type": "object",
-                        "description": "The page a form opens with, before step 1: what you need, how long it takes and what happens next. Absent means the form opens at step 1.",
+                        "description": "The page a form opens with, before step 1: what you need, how long it takes and what happens next. Absent, or `enabled` false, means the form opens at step 1.",
                         "properties": {
+                            "enabled": {
+                                "title": "Show the introduction",
+                                "type": "boolean",
+                                "description": "Whether the form opens with its introduction page. Absent reads as true; false opens the form at step 1 and keeps the introduction's text for later."
+                            },
                             "lead": {
                                 "title": "Lead",
                                 "type": "string",

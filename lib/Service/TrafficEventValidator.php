@@ -22,6 +22,7 @@ namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\Portaliq\Kernel\Contracts\TrafficEventValidatorInterface;
 use OCA\Portaliq\Service\Traffic\TrafficOutcomeParams;
 use Throwable;
 
@@ -52,7 +53,7 @@ use Throwable;
  * DateTimeImmutable/DateTimeZone/Throwable and the resolver; there is no
  * abstraction that would make that fewer.
  */
-class TrafficEventValidator {
+class TrafficEventValidator implements TrafficEventValidatorInterface {
 
 	/**
 	 * The longest URL, referrer or title kept.
@@ -62,13 +63,6 @@ class TrafficEventValidator {
 	 * view over a cosmetic limit.
 	 */
 	public const MAX_STRING = 512;
-
-	/**
-	 * The most events one batch may carry.
-	 *
-	 * A batch is a convenience for the client, not an invitation.
-	 */
-	public const MAX_BATCH = 50;
 
 	/**
 	 * The most keys a `params` map may carry, and the longest value in it.

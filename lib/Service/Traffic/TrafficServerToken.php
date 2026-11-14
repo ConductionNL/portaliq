@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic;
 
+use OCA\Portaliq\Kernel\Contracts\TrafficServerTokenInterface;
 use OCA\Portaliq\Service\PortalBySlug;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCA\Portaliq\Service\PublishedPortals;
@@ -45,7 +46,7 @@ use Throwable;
  *
  * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
  */
-class TrafficServerToken {
+class TrafficServerToken implements TrafficServerTokenInterface {
 	use PortalBySlug;
 
 	/**

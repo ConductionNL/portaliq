@@ -34,8 +34,9 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Reports;
 
 use DateTimeImmutable;
-use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\ReportThreadServiceInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCP\Security\Bruteforce\IThrottler;
 
 /**
@@ -43,7 +44,7 @@ use OCP\Security\Bruteforce\IThrottler;
  *
  * @spec openspec/specs/report-without-an-account/spec.md
  */
-class ReportThreadService {
+class ReportThreadService implements ReportThreadServiceInterface {
 	/**
 	 * The throttler action a failed code attempt is registered under.
 	 */

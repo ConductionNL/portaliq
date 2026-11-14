@@ -22,7 +22,8 @@ namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\TrafficReportServiceInterface;
 use OCA\Portaliq\Service\Traffic\TrafficEventStore;
 use OCA\Portaliq\Service\Traffic\TrafficReportDelivery;
 use OCA\Portaliq\Service\Traffic\TrafficReportNumbers;
@@ -51,7 +52,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
  */
-class TrafficReportService {
+class TrafficReportService implements TrafficReportServiceInterface {
 	use PublishedPortalWalk;
 
 	/**
@@ -133,11 +134,11 @@ class TrafficReportService {
 	private function report(array $portal, string $slug, array $report, DateTimeImmutable $now): bool {
 		$period = $this->periods->reportPeriod(cadence: (string)$report['cadence'], now: $now);
 		$key = self::REPORT_PREFIX . $slug . '_' . (string)$report['id'];
-		if ($this->appConfig->getValueString(Application::APP_ID, $key, '') === $period['key']) {
+		if ($this->appConfig->getValueString(AppIdentity::APP_ID, $key, '') === $period['key']) {
 			return false;
 		}
 
-		$this->appConfig->setValueString(Application::APP_ID, $key, $period['key']);
+		$this->appConfig->setValueString(AppIdentity::APP_ID, $key, $period['key']);
 		$current = $this->numbers->fold(records: $this->records(slug: $slug, from: $period['from'], to: $period['to']));
 		$previous = $this->numbers->fold(records: $this->records(slug: $slug, from: $period['previousFrom'], to: $period['previousTo']));
 		$delivered = $this->delivery->sendReport(portal: $portal, report: $report, period: $period, current: $current, previous: $previous);
@@ -163,7 +164,7 @@ class TrafficReportService {
 	private function alert(array $portal, string $slug, array $alert, DateTimeImmutable $now): bool {
 		$period = $this->periods->alertPeriod(period: (string)$alert['period'], comparison: (string)$alert['comparison'], now: $now);
 		$key = self::ALERT_PREFIX . $slug . '_' . (string)$alert['id'];
-		if ($this->appConfig->getValueString(Application::APP_ID, $key, '') === $period['key']) {
+		if ($this->appConfig->getValueString(AppIdentity::APP_ID, $key, '') === $period['key']) {
 			return false;
 		}
 
@@ -188,7 +189,7 @@ class TrafficReportService {
 			return false;
 		}
 
-		$this->appConfig->setValueString(Application::APP_ID, $key, $period['key']);
+		$this->appConfig->setValueString(AppIdentity::APP_ID, $key, $period['key']);
 		$delivered = $this->delivery->sendAlert(portal: $portal, alert: $alert, period: $period, value: $value, change: $change);
 		$this->logger->info(
 			'Portaliq: traffic alert fired',

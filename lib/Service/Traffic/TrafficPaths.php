@@ -20,6 +20,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic;
 
+use OCA\Portaliq\Kernel\Contracts\TrafficPathsInterface;
+
 /**
  * The path explorer's arithmetic: a visit's path, the fold of many visits
  * into weighted paths, and the steps, nodes, drop-offs and links the
@@ -50,7 +52,7 @@ namespace OCA\Portaliq\Service\Traffic;
  *
  * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-paths-endpoint-must-count-each-visits-own-path-from-the-raw-events
  */
-class TrafficPaths {
+class TrafficPaths implements TrafficPathsInterface {
 
 	/**
 	 * The pages a step lists before the rest become one "+N more" node.
@@ -58,23 +60,11 @@ class TrafficPaths {
 	public const TOP = 5;
 
 	/**
-	 * The most steps after the start or end point.
-	 */
-	public const MAX_STEPS = 10;
-
-	/**
 	 * The most page views of one visit that are kept. A visit longer than
 	 * this is a crawler that slipped through, not a reader, and its tail
 	 * would only make the fold bigger.
 	 */
 	public const MAX_VIEWS = 100;
-
-	/**
-	 * Read forward from the start point, or backward from the end point.
-	 *
-	 * @var string[]
-	 */
-	public const MODES = ['start', 'end'];
 
 	/**
 	 * What joins the pages of a path into one fold key. A NUL byte, because

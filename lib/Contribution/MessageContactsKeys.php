@@ -36,12 +36,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\MessageContactsKeysInterface;
+
 /**
  * Keeps a collection's `contacts` key, and a provider's answer, in shape.
  *
  * @spec openspec/changes/site-messages-per-record/specs/portal-contribution-contract/spec.md#requirement-a-collection-may-name-who-a-resident-may-write-to-about-each-row
  */
-class MessageContactsKeys {
+class MessageContactsKeys implements MessageContactsKeysInterface {
 	/**
 	 * The longest compose heading, hint, name or role.
 	 */

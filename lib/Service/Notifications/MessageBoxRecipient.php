@@ -27,8 +27,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Notifications;
 
-use OCA\Portaliq\Contribution\PortalProviderLocator;
 use OCA\Portaliq\Contribution\TimelineProviderMethod;
+use OCA\Portaliq\Kernel\Contracts\PortalProviderLocatorInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -41,11 +41,11 @@ final class MessageBoxRecipient {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalProviderLocator $locator Finds the case app's provider.
+	 * @param PortalProviderLocatorInterface $locator Finds the case app's provider.
 	 * @param LoggerInterface       $logger  The logger; never given the recipient.
 	 */
 	public function __construct(
-		private readonly PortalProviderLocator $locator,
+		private readonly PortalProviderLocatorInterface $locator,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

@@ -200,15 +200,65 @@ class PortalRegisteredDetailsServiceTest extends TestCase {
 
 	}//end testNoRecordFoundSaysNotFound()
 
-	public function testTheCountOfResidentsIsNotClaimedWhileOpenRegisterCannotAnswerIt(): void {
-		$brp = $this->provider(self::BRP, 'lookupByBsn');
+	public function testTheCountOfResidentsIsShownAsANumberWithoutTheAddressObject(): void {
+		$brp = $this->provider(self::BRP, ['lookupByBsn', 'countResidentsAtAddressObject']);
 		$brp->method('lookupByBsn')->willReturn(['results' => [$this->haalCentraalPerson()], 'total' => 1]);
+		$brp->expects($this->once())->method('countResidentsAtAddressObject')->with('0344010000012345')->willReturn(
+			['total' => 3, 'meta' => ['correlationId' => 'c-2', 'durationMs' => 9, 'status' => 200]]
+		);
+
+		$result = $this->service(['identityType' => 'digid', 'identityRef' => self::BSN], [self::BRP => $brp])->forSubject('subject-1');
+
+		$this->assertSame(3, $result['person']['residentsAtAddress']);
+		$encoded = (string)json_encode($result);
+		$this->assertStringNotContainsString('0344010000012345', $encoded);
+		$this->assertStringNotContainsString('c-2', $encoded);
+		$this->assertSame([], $this->logged);
+
+	}//end testTheCountOfResidentsIsShownAsANumberWithoutTheAddressObject()
+
+	public function testTheCountOfResidentsIsNotClaimedWhenTheSourceDoesNotAllowIt(): void {
+		$brp = $this->provider(self::BRP, ['lookupByBsn', 'countResidentsAtAddressObject']);
+		$brp->method('lookupByBsn')->willReturn(['results' => [$this->haalCentraalPerson()], 'total' => 1]);
+		$brp->method('countResidentsAtAddressObject')->willReturn(['unavailable' => true, 'cause' => 'resident-count-not-enabled']);
+
+		$result = $this->service(['identityType' => 'digid', 'identityRef' => self::BSN], [self::BRP => $brp])->forSubject('subject-1');
+
+		$this->assertTrue($result['available']);
+		$this->assertNull($result['person']['residentsAtAddress']);
+		$logged = (string)json_encode($this->logged);
+		$this->assertStringContainsString('resident-count-not-enabled', $logged);
+		$this->assertStringNotContainsString('0344010000012345', $logged);
+		$this->assertStringNotContainsString(self::BSN, $logged);
+
+	}//end testTheCountOfResidentsIsNotClaimedWhenTheSourceDoesNotAllowIt()
+
+	public function testTheCountOfResidentsIsNotClaimedWhenTheCountFails(): void {
+		$brp = $this->provider(self::BRP, ['lookupByBsn', 'countResidentsAtAddressObject']);
+		$brp->method('lookupByBsn')->willReturn(['results' => [$this->haalCentraalPerson()], 'total' => 1]);
+		$brp->method('countResidentsAtAddressObject')->willThrowException(new RuntimeException('down'));
+
+		$result = $this->service(['identityType' => 'digid', 'identityRef' => self::BSN], [self::BRP => $brp])->forSubject('subject-1');
+
+		$this->assertTrue($result['available']);
+		$this->assertNull($result['person']['residentsAtAddress']);
+		$this->assertStringContainsString('provider_missing', (string)json_encode($this->logged));
+
+	}//end testTheCountOfResidentsIsNotClaimedWhenTheCountFails()
+
+	public function testARecordWithoutAnAddressObjectIsNotCounted(): void {
+		$person = $this->haalCentraalPerson();
+		unset($person['verblijfplaats']['adresseerbaarObjectIdentificatie']);
+		$brp = $this->provider(self::BRP, ['lookupByBsn', 'countResidentsAtAddressObject']);
+		$brp->method('lookupByBsn')->willReturn(['results' => [$person], 'total' => 1]);
+		$brp->expects($this->never())->method('countResidentsAtAddressObject');
 
 		$result = $this->service(['identityType' => 'digid', 'identityRef' => self::BSN], [self::BRP => $brp])->forSubject('subject-1');
 
 		$this->assertNull($result['person']['residentsAtAddress']);
+		$this->assertSame('Dorpsstraat', $result['person']['address']['street']);
 
-	}//end testTheCountOfResidentsIsNotClaimedWhileOpenRegisterCannotAnswerIt()
+	}//end testARecordWithoutAnAddressObjectIsNotCounted()
 
 	/**
 	 * The service over one account and a container holding the given providers.
@@ -273,19 +323,19 @@ class PortalRegisteredDetailsServiceTest extends TestCase {
 	/**
 	 * A double of OpenRegister's real provider class on its real lookup method.
 	 *
-	 * @param string $class  The provider class.
-	 * @param string $method The lookup method.
+	 * @param string               $class  The provider class.
+	 * @param string|array<string> $method The lookup method(s).
 	 *
 	 * @return mixed
 	 */
-	private function provider(string $class, string $method): mixed {
+	private function provider(string $class, string|array $method): mixed {
 		if (class_exists($class) === false) {
 			$this->markTestSkipped($class . ' is not loadable: set PORTALIQ_OPENREGISTER_LIB to an openregister checkout\'s lib/.');
 		}
 
 		return $this->getMockBuilder($class)
 			->disableOriginalConstructor()
-			->onlyMethods([$method])
+			->onlyMethods((array)$method)
 			->getMock();
 	}//end provider()
 

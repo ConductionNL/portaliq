@@ -32,25 +32,21 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
-use OCA\Portaliq\Contribution\FormStepsNormaliser;
+use OCA\Portaliq\Kernel\Contracts\PortalFormBindingResolverInterface;
 use OCA\Portaliq\Service\CaseTypeVisibility;
 use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Kernel\Contracts\FormStepsNormaliserInterface;
 
 /**
  * Resolves a form binding against the published form, at render time.
  *
  * @spec openspec/specs/portal-intake-form/spec.md
  */
-class PortalFormBindingResolver {
+class PortalFormBindingResolver implements PortalFormBindingResolverInterface {
 	/**
 	 * A binding whose form is rendered by the portal itself.
 	 */
 	public const KIND_HOSTED = 'hosted';
-
-	/**
-	 * A binding naming a start form on another host.
-	 */
-	public const KIND_EXTERNAL = 'external';
 
 	/**
 	 * The register the binding lives in.
@@ -85,6 +81,7 @@ class PortalFormBindingResolver {
 	 * Constructor.
 	 *
 	 * @param PortalObjectReader $reader Reads the binding and the form.
+	 * @param FormStepsNormaliserInterface $formStepsNormaliser The FormStepsNormaliser helper.
 	 * @param CaseTypeVisibility|null $caseTypes The case types a portal hides
 	 *                                           (operate-show-per-case-type).
 	 *                                           Absent hides nothing.
@@ -98,6 +95,7 @@ class PortalFormBindingResolver {
 	 */
 	public function __construct(
 		private readonly PortalObjectReader $reader,
+		private readonly FormStepsNormaliserInterface $formStepsNormaliser,
 		private readonly ?CaseTypeVisibility $caseTypes = null,
 		private readonly VisibleWhenLocal $visibleWhen = new VisibleWhenLocal(),
 		?PortalReferenceLists $lists = null,
@@ -301,7 +299,7 @@ class PortalFormBindingResolver {
 			// The introduction, the statements asked, the confirmation page and
 			// mail (form-statements-intro-and-confirmation-mail). Carried as the
 			// binding declares them; the controller adds the portal's wording.
-			'intro' => $this->arrayOrNull(value: ($binding['intro'] ?? null)),
+			'intro' => $this->shownIntro(intro: ($binding['intro'] ?? null)),
 			'statementsDeclared' => $this->arrayOrNull(value: ($binding['statements'] ?? null)),
 			'confirmation' => $this->arrayOrNull(value: ($binding['confirmation'] ?? null)),
 			'confirmationMail' => ((($binding['confirmationMail']['enabled'] ?? false)) === true),
@@ -361,7 +359,7 @@ class PortalFormBindingResolver {
 			'fields' => $fields,
 			// The form's own steps (site-multi-step-forms REQ-SMF-010), kept
 			// only where they name fields the form has; [] renders one page.
-			'steps' => (new FormStepsNormaliser())->steps(
+			'steps' => $this->formStepsNormaliser->steps(
 				steps: ($form['steps'] ?? null),
 				known: array_map(static fn (array $field): string => (string)$field['name'], $fields)
 			),
@@ -478,6 +476,26 @@ class PortalFormBindingResolver {
 
 		return ($name === '' || (string)($row['name'] ?? '') === $name);
 	}//end formAnswersTheBinding()
+
+	/**
+	 * The introduction the form opens with, or null when it opens at step 1:
+	 * an `intro` an administrator switched off (`enabled` false) is kept on
+	 * the binding but not shown. Absent `enabled` reads as on.
+	 *
+	 * @param mixed $intro The binding's `intro`.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t06
+	 */
+	private function shownIntro(mixed $intro): ?array {
+		$intro = $this->arrayOrNull(value: $intro);
+		if ($intro === null || ($intro['enabled'] ?? true) === false) {
+			return null;
+		}
+
+		return $intro;
+	}//end shownIntro()
 
 	/**
 	 * A value when it is an array, otherwise null.
