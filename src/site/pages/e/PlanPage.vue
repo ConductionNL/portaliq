@@ -152,7 +152,20 @@
 							v-for="action in plan.actions"
 							:key="action.id"
 							data-testid="plan-action">
-							<td>{{ action.title }}</td>
+							<td>
+								<button
+									v-if="plan.canEdit"
+									type="button"
+									class="utrecht-button utrecht-button--subtle pq-plan__action-open"
+									:aria-label="`${words.editAction}: ${action.title}`"
+									data-testid="plan-action-edit"
+									@click="openAction(action)">
+									{{ action.title }}
+								</button>
+								<template v-else>
+									{{ action.title }}
+								</template>
+							</td>
 							<td>
 								<select
 									:value="action.status"
@@ -172,6 +185,18 @@
 						</tr>
 					</tbody>
 				</table>
+				<ActionEditModal
+					v-if="actionOpen !== null"
+					:api="api"
+					:action="actionInPlan"
+					:assignees="planAssignees"
+					:planId="plan.id"
+					:planTitle="plan.title"
+					:viewer="viewer"
+					:locale="locale"
+					@saved="actionClosed"
+					@deleted="actionClosed"
+					@cancel="actionOpen = null" />
 				<form
 					v-if="plan.canEdit"
 					class="pq-plan__add"
@@ -447,6 +472,7 @@
 </template>
 
 <script>
+import ActionEditModal from '../../modals/e/ActionEditModal.vue'
 import { plansApi } from '../../../shared/areaApi.js'
 import {
 	daysLine,
@@ -461,6 +487,8 @@ import {
  */
 export default {
 	name: 'PlanPage',
+
+	components: { ActionEditModal },
 
 	props: {
 		/** The plan to show. */
@@ -488,6 +516,7 @@ export default {
 			newPerson: '',
 			confirming: false,
 			versionOf: '',
+			actionOpen: null,
 		}
 	},
 
@@ -500,6 +529,44 @@ export default {
 			return planWords(
 				this.locale || globalThis.document?.documentElement?.lang || '',
 			)
+		},
+
+		/**
+		 * @return {string} The viewer's subject reference.
+		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
+		 */
+		viewer() {
+			return String(this.session?.subjectRef || '')
+		},
+
+		/**
+		 * @return {Array<{ref: string, displayName: string}>} Who an action in this plan may be given to: its participants.
+		 * @spec openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md
+		 */
+		planAssignees() {
+			return (this.plan?.participants || []).map((person) => ({
+				ref: String(person.ref),
+				displayName: person.displayName || '',
+			}))
+		},
+
+		/**
+		 * The open action as the edit dialog takes it: in this plan, with the
+		 * plan's participants as the people it may be given to.
+		 *
+		 * @return {object|null} The action, or null when none is open.
+		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
+		 */
+		actionInPlan() {
+			if (this.actionOpen === null) {
+				return null
+			}
+			return {
+				...this.actionOpen,
+				plan: this.plan.id,
+				planTitle: this.plan.title,
+				assignees: this.planAssignees,
+			}
 		},
 
 		/**
@@ -671,6 +738,31 @@ export default {
 			this.$emit('changed')
 			await this.load()
 			return true
+		},
+
+		/**
+		 * Open an action of the plan in the edit dialog.
+		 *
+		 * @param {object} action The action.
+		 * @return {void}
+		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
+		 */
+		openAction(action) {
+			this.actionOpen = action
+		},
+
+		/**
+		 * The edit dialog saved or deleted the action: say so and read the plan again.
+		 *
+		 * @return {Promise<void>} Resolves when read.
+		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
+		 */
+		async actionClosed() {
+			this.actionOpen = null
+			this.problem = ''
+			this.notice = this.words.saved
+			this.$emit('changed')
+			await this.load()
 		},
 
 		/**
@@ -865,6 +957,12 @@ export default {
 	list-style: none;
 	margin: 0;
 	padding: 0;
+}
+
+.pq-plan__action-open {
+	padding: 0;
+	text-align: start;
+	text-decoration: underline;
 }
 
 .pq-plan__file {

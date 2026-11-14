@@ -313,3 +313,46 @@ test('the plan page sends a picked file as a new version of the file it was aske
 		assert.match(around, /plan\.canEdit/, `${id} is offered only on a plan that is not done`)
 	}
 })
+
+test('an action of the plan opens the edit dialog with the plan lead and the participants as assignees', async () => {
+	const page = await loadSfc(PLAN)
+	const plan = {
+		id: 'p1',
+		title: 'Schuldhulp op orde',
+		participants: [{ ref: 'sanne', displayName: 'Sanne de Vries' }, { ref: 7, displayName: 'Mark Jansen' }],
+	}
+	const vm = { plan, actionOpen: null }
+	assert.equal(page.computed.actionInPlan.call({ ...vm, planAssignees: [] }), null, 'no dialog without an open action')
+
+	page.methods.openAction.call(vm, { id: 'a1', title: 'Brieven', status: 'todo' })
+	const assignees = page.computed.planAssignees.call(vm)
+	assert.deepEqual(assignees, [{ ref: 'sanne', displayName: 'Sanne de Vries' }, { ref: '7', displayName: 'Mark Jansen' }])
+	assert.deepEqual(page.computed.actionInPlan.call({ ...vm, planAssignees: assignees }), {
+		id: 'a1',
+		title: 'Brieven',
+		status: 'todo',
+		plan: 'p1',
+		planTitle: 'Schuldhulp op orde',
+		assignees,
+	})
+	assert.equal(page.computed.viewer.call({ session: { subjectRef: 42 } }), '42')
+	assert.equal(page.computed.viewer.call({ session: null }), '')
+
+	let loaded = 0
+	const emitted = []
+	const closing = { ...vm, actionOpen: { id: 'a1' }, words: planWords('nl'), problem: 'x', notice: '', $emit: (...a) => emitted.push(a), load: async () => { loaded++ } }
+	await page.methods.actionClosed.call(closing)
+	assert.equal(closing.actionOpen, null)
+	assert.equal(closing.notice, planWords('nl').saved)
+	assert.equal(closing.problem, '')
+	assert.deepEqual(emitted, [['changed']])
+	assert.equal(loaded, 1)
+
+	const source = readFileSync(PLAN, 'utf8')
+	const edit = source.indexOf('data-testid="plan-action-edit"')
+	assert.match(source.slice(Math.max(0, edit - 300), edit), /v-if="plan\.canEdit"/, 'the edit button shows only on a plan that is not done')
+	const modal = source.slice(source.indexOf('<ActionEditModal'), source.indexOf('/>', source.indexOf('<ActionEditModal')))
+	for (const binding of [':planId="plan.id"', ':planTitle="plan.title"', ':assignees="planAssignees"', ':action="actionInPlan"', '@saved="actionClosed"', '@deleted="actionClosed"']) {
+		assert.ok(modal.includes(binding), binding)
+	}
+})
