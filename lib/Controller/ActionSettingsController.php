@@ -145,21 +145,7 @@ class ActionSettingsController extends Controller {
 		$catalogue = $this->catalogue();
 		$existing = array_column($this->groups->availableGroups(), 'id');
 		$matrix = $this->actions->getMatrix();
-
-		foreach ($grants as $action => $groups) {
-			if (is_string($action) === false || isset($catalogue[$action]) === false || is_array($groups) === false) {
-				continue;
-			}
-
-			$kept = $this->keptGroups(groups: $groups, existing: $existing);
-
-			// Administrators always pass; an empty list reads "only administrators".
-			if ($kept === []) {
-				$kept = ['admin'];
-			}
-
-			$matrix[$action] = $kept;
-		}
+		$matrix = $this->grantedMatrix(grants: $grants, catalogue: $catalogue, existing: $existing, matrix: $matrix);
 
 		try {
 			$this->actions->setMatrix($matrix);
@@ -169,6 +155,70 @@ class ActionSettingsController extends Controller {
 
 		return $this->index();
 	}//end update()
+
+	/**
+	 * The matrix with every known action's grant set to its existing groups.
+	 *
+	 * @param array<string, mixed> $grants    Action name to group ids.
+	 * @param array<string, mixed> $catalogue The known actions.
+	 * @param array<int, mixed>    $existing  The ids of the groups that exist.
+	 * @param array<string, mixed> $matrix    The stored grants.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/operate-roles-for-content-and-actions/specs/portal-admin-roles/spec.md#requirement-the-grants-accept-only-known-actions-and-existing-groups-req-ora-002
+	 */
+	private function grantedMatrix(array $grants, array $catalogue, array $existing, array $matrix): array {
+		foreach ($grants as $action => $groups) {
+			if ($this->isGrant(action: $action, groups: $groups, catalogue: $catalogue) === false) {
+				continue;
+			}
+
+			$matrix[$action] = $this->keptOrAdmin(groups: $groups, existing: $existing);
+		}
+
+		return $matrix;
+	}//end grantedMatrix()
+
+	/**
+	 * Whether a grant names a known action and lists groups.
+	 *
+	 * @param mixed                $action    The action name.
+	 * @param mixed                $groups    The group ids.
+	 * @param array<string, mixed> $catalogue The known actions.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/operate-roles-for-content-and-actions/specs/portal-admin-roles/spec.md#requirement-the-grants-accept-only-known-actions-and-existing-groups-req-ora-002
+	 */
+	private function isGrant(mixed $action, mixed $groups, array $catalogue): bool {
+		if (is_string($action) === false || isset($catalogue[$action]) === false || is_array($groups) === false) {
+			return false;
+		}
+
+		return true;
+	}//end isGrant()
+
+	/**
+	 * The groups that exist, or only administrators when none do.
+	 *
+	 * @param array<int|string, mixed> $groups   The declared groups.
+	 * @param array<int, mixed>        $existing The ids of the groups that exist.
+	 *
+	 * @return array<int, string>
+	 *
+	 * @spec openspec/changes/operate-roles-for-content-and-actions/specs/portal-admin-roles/spec.md#requirement-the-grants-accept-only-known-actions-and-existing-groups-req-ora-002
+	 */
+	private function keptOrAdmin(array $groups, array $existing): array {
+		$kept = $this->keptGroups(groups: $groups, existing: $existing);
+
+		// Administrators always pass; an empty list reads "only administrators".
+		if ($kept === []) {
+			$kept = ['admin'];
+		}
+
+		return $kept;
+	}//end keptOrAdmin()
 
 	/**
 	 * The groups that exist, without duplicates.
@@ -195,21 +245,7 @@ class ActionSettingsController extends Controller {
 	 * @return array<string, array{label: string, description: string, groups: array<int, string>}>
 	 */
 	private function catalogue(): array {
-		if (is_file($this->seedPath) === false || is_readable($this->seedPath) === false) {
-			return [];
-		}
-
-		$raw = file_get_contents($this->seedPath);
-		if ($raw === false) {
-			return [];
-		}
-
-		$parsed = json_decode($raw, true);
-		$actions = null;
-		if (is_array($parsed) === true) {
-			$actions = ($parsed['actions'] ?? null);
-		}
-
+		$actions = $this->seedActions();
 		if (is_array($actions) === false) {
 			return [];
 		}
@@ -225,6 +261,30 @@ class ActionSettingsController extends Controller {
 
 		return $out;
 	}//end catalogue()
+
+	/**
+	 * The seed's `actions`, or null when the seed cannot be read.
+	 *
+	 * @return mixed
+	 */
+	private function seedActions(): mixed {
+		if (is_file($this->seedPath) === false || is_readable($this->seedPath) === false) {
+			return null;
+		}
+
+		$raw = file_get_contents($this->seedPath);
+		if ($raw === false) {
+			return null;
+		}
+
+		$parsed = json_decode($raw, true);
+		$actions = null;
+		if (is_array($parsed) === true) {
+			$actions = ($parsed['actions'] ?? null);
+		}
+
+		return $actions;
+	}//end seedActions()
 
 	/**
 	 * One catalogue entry: the old bare list form has no label, so the action name stands in.

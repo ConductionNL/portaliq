@@ -65,19 +65,52 @@ final class CaseFieldDisplayHints {
 				continue;
 			}
 
-			$field = $key;
-			if (array_is_list($declared) === true) {
-				$field = ($entry['field'] ?? null);
-			}
-
-			$hint = self::hintOf(entry: $entry);
-			if (is_string($field) === true && $field !== '' && $hint !== []) {
-				$hints[$field] = $hint;
-			}
+			$field = self::fieldOf(key: $key, entry: $entry, isList: array_is_list($declared));
+			$hints = self::withHint(hints: $hints, field: $field, entry: $entry);
 		}
 
 		return $hints;
 	}//end normalise()
+
+	/**
+	 * The field an entry is for: its key in a map, its `field` in a list.
+	 *
+	 * @param int|string           $key    The entry's key.
+	 * @param array<string, mixed> $entry  The entry.
+	 * @param bool                 $isList Whether the declaration is a list.
+	 *
+	 * @return mixed
+	 *
+	 * @spec openspec/changes/personal-data-left-untranslated/tasks.md#t03
+	 */
+	private static function fieldOf(int|string $key, array $entry, bool $isList): mixed {
+		$field = $key;
+		if ($isList === true) {
+			$field = ($entry['field'] ?? null);
+		}
+
+		return $field;
+	}//end fieldOf()
+
+	/**
+	 * The hints with the entry's hint for a named field, when it has one.
+	 *
+	 * @param array<string, array{personal?: true, format?: string}> $hints The hints so far.
+	 * @param mixed                                                  $field The entry's field.
+	 * @param array<string, mixed>                                   $entry The entry.
+	 *
+	 * @return array<string, array{personal?: true, format?: string}>
+	 *
+	 * @spec openspec/changes/personal-data-left-untranslated/tasks.md#t03
+	 */
+	private static function withHint(array $hints, mixed $field, array $entry): array {
+		$hint = self::hintOf(entry: $entry);
+		if (is_string($field) === true && $field !== '' && $hint !== []) {
+			$hints[$field] = $hint;
+		}
+
+		return $hints;
+	}//end withHint()
 
 	/**
 	 * The field states with each field's hint added. Fields without a hint,

@@ -152,8 +152,6 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 	 * @param string $id The object id.
 	 *
 	 * @return JSONResponse|array{subject: array<string, mixed>, app: string, documents: array<string, mixed>} The refusal, or the proven match.
-	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) -- PortalSessionService::trustSatisfies, the one trust ordering.
 	 */
 	private function proven(string $register, string $schema, string $id): JSONResponse|array {
 		$subject = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
@@ -161,15 +159,15 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$match = $this->collectionOf(subject: $subject, register: $register, schema: $schema);
+		$match = $this->trustedCollection(subject: $subject, register: $register, schema: $schema);
 		$notFound = new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
-		if ($match === null || SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
+		if ($match === null) {
 			return $notFound;
 		}
 
 		$collection = $match['collection'];
-		$documents  = ($collection['documents'] ?? null);
-		if (is_array($documents) === false || is_string($documents['provider'] ?? null) === false) {
+		$documents  = $this->documentsOf(collection: $collection);
+		if ($documents === null) {
 			return $notFound;
 		}
 
@@ -192,6 +190,42 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 
 		return ['subject' => $subject, 'app' => $match['app'], 'documents' => $documents];
 	}//end proven()
+
+	/**
+	 * The subject's own collection for a register and schema, when the session meets its trust level.
+	 *
+	 * @param array<string, mixed> $subject  The resolved subject.
+	 * @param string               $register The requested register.
+	 * @param string               $schema   The requested schema.
+	 *
+	 * @return array{collection: array<string, mixed>, app: string}|null
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) -- PortalSessionService::trustSatisfies, the one trust ordering.
+	 */
+	private function trustedCollection(array $subject, string $register, string $schema): array|null {
+		$match = $this->collectionOf(subject: $subject, register: $register, schema: $schema);
+		if ($match === null || SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
+			return null;
+		}
+
+		return $match;
+	}//end trustedCollection()
+
+	/**
+	 * The collection's `documents` declaration when it names a provider.
+	 *
+	 * @param array<string, mixed> $collection The collection.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function documentsOf(array $collection): array|null {
+		$documents = ($collection['documents'] ?? null);
+		if (is_array($documents) === false || is_string($documents['provider'] ?? null) === false) {
+			return null;
+		}
+
+		return $documents;
+	}//end documentsOf()
 
 	/**
 	 * The subject's own collection for a register and schema, with its app.

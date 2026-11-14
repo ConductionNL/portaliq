@@ -174,26 +174,72 @@ class DestinationLookup implements DestinationLookupInterface {
 	 * @return array{object: array<string, mixed>, binding: array<string, mixed>, schema: array<string, mixed>}|null
 	 */
 	private function findIn(array $entry, string $reference, string $subjectRef): ?array {
+		$found = $this->byEarlierReference(entry: $entry, reference: $reference);
+		if ($found !== null) {
+			return $found;
+		}
+
+		return $this->byOwnReference(entry: $entry, reference: $reference, subjectRef: $subjectRef);
+	}//end findIn()
+
+	/**
+	 * The object in one destination by an earlier reference, when its schema
+	 * carries one.
+	 *
+	 * @param array<string, mixed> $entry     The destination: `destination`, `binding` and `schema`.
+	 * @param string               $reference The reference.
+	 *
+	 * @return array{object: array<string, mixed>, binding: array<string, mixed>, schema: array<string, mixed>}|null
+	 */
+	private function byEarlierReference(array $entry, string $reference): array|null {
+		$schema     = $entry['schema'];
+		$properties = (array)($schema['properties'] ?? []);
+		if (array_key_exists(self::EARLIER_REFERENCE, $properties) === false) {
+			return null;
+		}
+
+		$row = $this->earlierRow(destination: $entry['destination'], reference: $reference);
+		if ($row === null) {
+			return null;
+		}
+
+		return ['object' => $row, 'binding' => $entry['binding'], 'schema' => $schema];
+	}//end byEarlierReference()
+
+	/**
+	 * The row of a destination whose earlier reference is exactly the reference.
+	 *
+	 * @param array<string, mixed> $destination The destination's `register` and `schema`.
+	 * @param string               $reference   The reference.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function earlierRow(array $destination, string $reference): array|null {
+		return $this->first(
+			rows: $this->reader->readCollection(
+				register: $destination['register'],
+				schema: $destination['schema'],
+				scopeField: self::EARLIER_REFERENCE,
+				subjectRef: $reference,
+				limit: 2
+			),
+			property: self::EARLIER_REFERENCE,
+			value: $reference
+		);
+	}//end earlierRow()
+
+	/**
+	 * The object in one destination by its own reference, for its owner only.
+	 *
+	 * @param array<string, mixed> $entry      The destination: `destination`, `binding` and `schema`.
+	 * @param string               $reference  The reference.
+	 * @param string               $subjectRef The signed-in subject, or ''.
+	 *
+	 * @return array{object: array<string, mixed>, binding: array<string, mixed>, schema: array<string, mixed>}|null
+	 */
+	private function byOwnReference(array $entry, string $reference, string $subjectRef): array|null {
 		$destination = $entry['destination'];
 		$schema      = $entry['schema'];
-		$properties  = (array)($schema['properties'] ?? []);
-
-		if (array_key_exists(self::EARLIER_REFERENCE, $properties) === true) {
-			$row = $this->first(
-				rows: $this->reader->readCollection(
-					register: $destination['register'],
-					schema: $destination['schema'],
-					scopeField: self::EARLIER_REFERENCE,
-					subjectRef: $reference,
-					limit: 2
-				),
-				property: self::EARLIER_REFERENCE,
-				value: $reference
-			);
-			if ($row !== null) {
-				return ['object' => $row, 'binding' => $entry['binding'], 'schema' => $schema];
-			}
-		}
 
 		$subjectField = trim((string)($entry['binding']['destination']['subjectField'] ?? ''));
 		$own          = $this->marked(schema: $schema, marker: 'reference');
@@ -213,12 +259,25 @@ class DestinationLookup implements DestinationLookupInterface {
 			property: $own[0],
 			value: $reference
 		);
-		if ($row === null || (string)($row[$subjectField] ?? '') !== $subjectRef) {
+		if ($this->isNotTheSubjects(row: $row, subjectField: $subjectField, subjectRef: $subjectRef) === true) {
 			return null;
 		}
 
 		return ['object' => $row, 'binding' => $entry['binding'], 'schema' => $schema];
-	}//end findIn()
+	}//end byOwnReference()
+
+	/**
+	 * Whether a row read is absent or not the signed-in subject's.
+	 *
+	 * @param array<string, mixed>|null $row          The row, or null.
+	 * @param string                    $subjectField The field naming the subject.
+	 * @param string                    $subjectRef   The signed-in subject.
+	 *
+	 * @return bool
+	 */
+	private function isNotTheSubjects(array|null $row, string $subjectField, string $subjectRef): bool {
+		return $row === null || (string)($row[$subjectField] ?? '') !== $subjectRef;
+	}//end isNotTheSubjects()
 
 	/**
 	 * The first row whose property holds exactly the value: a reader's

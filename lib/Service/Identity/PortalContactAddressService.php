@@ -93,6 +93,21 @@ class PortalContactAddressService implements PortalContactAddressServiceInterfac
 			return $this->refused(refusal: $added['refusal']);
 		}
 
+		return $this->storeAdded(account: $account, added: $added, normalised: $normalised);
+	}//end addAddress()
+
+	/**
+	 * Write the grown list, parking a new e-mail address with a fresh secret.
+	 *
+	 * @param array<string, mixed> $account    The account row.
+	 * @param array<string, mixed> $added      What the address book answered.
+	 * @param string               $normalised The address, normalised.
+	 *
+	 * @return array{refusal: string, value: string, confirmationToken: string}
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T03
+	 */
+	private function storeAdded(array $account, array $added, string $normalised): array {
 		$data  = ['contactAddresses' => $added['entries']];
 		$token = '';
 		if ($added['confirm'] === true) {
@@ -105,7 +120,7 @@ class PortalContactAddressService implements PortalContactAddressServiceInterfac
 		}
 
 		return ['refusal' => '', 'value' => $normalised, 'confirmationToken' => $token];
-	}//end addAddress()
+	}//end storeAdded()
 
 	/**
 	 * Mark an address as the preferred one of its kind. A preferred e-mail

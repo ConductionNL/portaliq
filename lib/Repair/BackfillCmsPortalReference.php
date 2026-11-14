@@ -128,34 +128,91 @@ class BackfillCmsPortalReference implements IRepairStep {
 			return;
 		}
 
+		$target = $this->soleTarget(objectService: $objectService);
+		[$changed, $orphans] = $this->tally(objectService: $objectService, target: $target);
+		$this->report(output: $output, changed: $changed, orphans: $orphans);
+	}//end run()
+
+	/**
+	 * The one portal to assign, or null when there is not exactly one.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 *
+	 * @return string|null
+	 */
+	private function soleTarget(object $objectService): string|null {
 		$slugs  = $this->portalSlugs(objectService: $objectService);
 		$target = null;
 		if (count($slugs) === 1) {
 			$target = $slugs[0];
 		}
 
+		return $target;
+	}//end soleTarget()
+
+	/**
+	 * Assign the target to every content object without a portal.
+	 *
+	 * @param object      $objectService OpenRegister's object service.
+	 * @param string|null $target        The portal to assign, or null for none.
+	 *
+	 * @return array{0: int, 1: int} The objects assigned and those still without a portal.
+	 */
+	private function tally(object $objectService, string|null $target): array {
 		$changed = 0;
 		$orphans = 0;
 		foreach (self::CONTENT_SCHEMAS as $schema) {
-			foreach ($this->rows(objectService: $objectService, schema: $schema) as $row) {
-				if ($this->hasPortal(row: $row) === true) {
-					continue;
-				}
-
-				if ($target !== null && $this->assign(objectService: $objectService, schema: $schema, row: $row, portal: $target) === true) {
-					$changed++;
-					continue;
-				}
-
-				$orphans++;
-			}
+			[$schemaChanged, $schemaOrphans] = $this->tallySchema(objectService: $objectService, schema: $schema, target: $target);
+			$changed += $schemaChanged;
+			$orphans += $schemaOrphans;
 		}
 
+		return [$changed, $orphans];
+	}//end tally()
+
+	/**
+	 * Assign the target to every object of one schema without a portal.
+	 *
+	 * @param object      $objectService OpenRegister's object service.
+	 * @param string      $schema        The schema slug.
+	 * @param string|null $target        The portal to assign, or null for none.
+	 *
+	 * @return array{0: int, 1: int} The objects assigned and those still without a portal.
+	 */
+	private function tallySchema(object $objectService, string $schema, string|null $target): array {
+		$changed = 0;
+		$orphans = 0;
+		foreach ($this->rows(objectService: $objectService, schema: $schema) as $row) {
+			if ($this->hasPortal(row: $row) === true) {
+				continue;
+			}
+
+			if ($target !== null && $this->assign(objectService: $objectService, schema: $schema, row: $row, portal: $target) === true) {
+				$changed++;
+				continue;
+			}
+
+			$orphans++;
+		}
+
+		return [$changed, $orphans];
+	}//end tallySchema()
+
+	/**
+	 * Report what was assigned and what is left.
+	 *
+	 * @param IOutput $output  The repair output.
+	 * @param int     $changed The objects assigned a portal.
+	 * @param int     $orphans The objects still without one.
+	 *
+	 * @return void
+	 */
+	private function report(IOutput $output, int $changed, int $orphans): void {
 		$output->info('BackfillCmsPortalReference: assigned a portal to ' . $changed . ' objects, ' . $orphans . ' still without one.');
 		if ($orphans > 0) {
 			$output->warning('BackfillCmsPortalReference: ' . $orphans . ' objects have no portal and are not served. Assign them in the admin.');
 		}
-	}//end run()
+	}//end report()
 
 	/**
 	 * Whether a stored object names a portal.

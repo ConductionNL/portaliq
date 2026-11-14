@@ -270,7 +270,8 @@ class TrafficPaths implements TrafficPathsInterface {
 	 * @return array{0: array<string, mixed>, 1: array<string, int>} The column, and page => node index (a page in "+N more" maps to that node).
 	 */
 	private function column(array $paths, int $step, array $trail): array {
-		[$visits, $ended] = $this->count(paths: $paths, step: $step, trail: $trail);
+		$counts = $this->count(paths: $paths, step: $step, trail: $trail);
+		$visits = $counts[0];
 
 		// Keys cast back to strings: PHP turns a numeric-string key into an
 		// int, and a page path is a string whatever it looks like.
@@ -278,10 +279,44 @@ class TrafficPaths implements TrafficPathsInterface {
 		usort($ranked, static fn (string $a, string $b): int => [$visits[$b], $a] <=> [$visits[$a], $b]);
 		$chosen = ($trail[$step] ?? '');
 
+		$shown = $this->shownPages(ranked: $ranked, visits: $visits, chosen: $chosen);
+		[$nodes, $index] = $this->stepNodes(ranked: $ranked, shown: $shown, counts: $counts, chosen: $chosen);
+
+		return [$this->columnSummary(step: $step, counts: $counts, nodes: $nodes), $index];
+	}
+
+	/**
+	 * The top pages of a step, with the chosen page added when it is not
+	 * among them.
+	 *
+	 * @param string[]           $ranked The step's pages, most visited first.
+	 * @param array<string, int> $visits Page => visits.
+	 * @param string             $chosen The page chosen on this step, or ''.
+	 *
+	 * @return string[]
+	 */
+	private function shownPages(array $ranked, array $visits, string $chosen): array {
 		$shown = array_slice($ranked, 0, self::TOP);
 		if ($chosen !== '' && isset($visits[$chosen]) === true && in_array($chosen, $shown, true) === false) {
 			$shown[] = $chosen;
 		}
+
+		return $shown;
+	}
+
+	/**
+	 * The nodes of a step: one per shown page, then the "+N more" node when
+	 * pages are left over, and the node index of every page.
+	 *
+	 * @param string[]                                                $ranked The step's pages, most visited first.
+	 * @param string[]                                                $shown  The shown pages.
+	 * @param array{0: array<string, int>, 1: array<string, int>}     $counts Page => visits, page => drop-offs.
+	 * @param string                                                  $chosen The page chosen on this step, or ''.
+	 *
+	 * @return array{0: array<int, array<string, mixed>>, 1: array<string, int>} The nodes, and page => node index.
+	 */
+	private function stepNodes(array $ranked, array $shown, array $counts, string $chosen): array {
+		[$visits, $ended] = $counts;
 
 		$nodes = [];
 		$index = [];
@@ -290,8 +325,25 @@ class TrafficPaths implements TrafficPathsInterface {
 			$nodes[] = ['path' => $page, 'sessions' => $visits[$page], 'dropOffs' => $ended[$page], 'more' => 0, 'selected' => ($page === $chosen)];
 		}
 
+		return $this->withMoreNode(nodes: $nodes, index: $index, rest: array_diff($ranked, $shown), counts: $counts);
+	}
+
+	/**
+	 * The nodes with the "+N more" node of the pages left over, when there
+	 * are any; every left-over page maps to that node.
+	 *
+	 * @param array<int, array<string, mixed>>                    $nodes  The nodes of the shown pages.
+	 * @param array<string, int>                                  $index  Page => node index.
+	 * @param string[]                                            $rest   The pages not shown.
+	 * @param array{0: array<string, int>, 1: array<string, int>} $counts Page => visits, page => drop-offs.
+	 *
+	 * @return array{0: array<int, array<string, mixed>>, 1: array<string, int>} The nodes, and page => node index.
+	 */
+	private function withMoreNode(array $nodes, array $index, array $rest, array $counts): array {
+		[$visits, $ended] = $counts;
+
 		$more = ['path' => '', 'sessions' => 0, 'dropOffs' => 0, 'more' => 0, 'selected' => false];
-		foreach (array_diff($ranked, $shown) as $page) {
+		foreach ($rest as $page) {
 			$more['sessions'] += $visits[$page];
 			$more['dropOffs'] += $ended[$page];
 			$more['more']++;
@@ -302,14 +354,24 @@ class TrafficPaths implements TrafficPathsInterface {
 			$nodes[] = $more;
 		}
 
+		return [$nodes, $index];
+	}
+
+	/**
+	 * A step's column: its totals and its nodes.
+	 *
+	 * @param int                                                 $step   The step.
+	 * @param array{0: array<string, int>, 1: array<string, int>} $counts Page => visits, page => drop-offs.
+	 * @param array<int, array<string, mixed>>                    $nodes  The step's nodes.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function columnSummary(int $step, array $counts, array $nodes): array {
 		return [
-			[
-				'step' => $step,
-				'sessions' => array_sum($visits),
-				'dropOffs' => array_sum($ended),
-				'nodes' => $nodes,
-			],
-			$index,
+			'step' => $step,
+			'sessions' => array_sum($counts[0]),
+			'dropOffs' => array_sum($counts[1]),
+			'nodes' => $nodes,
 		];
 	}
 
