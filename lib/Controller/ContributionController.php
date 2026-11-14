@@ -572,6 +572,29 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}
 
+		$match = $this->trustedInboxCollection(subject: $subject, register: $register, schema: $schema);
+		if ($match instanceof JSONResponse) {
+			return $match;
+		}
+
+		$target = ['register' => $register, 'schema' => $schema, 'id' => $id];
+
+		return $this->markOwnedRead(subject: $subject, inbox: $match, target: $target);
+	}//end markRead()
+
+	/**
+	 * The inbox collection the subject may mark messages read in, or the 403
+	 * refusal when none is authorised or its trust level is not met.
+	 *
+	 * @param array<string, mixed> $subject  The resolved subject.
+	 * @param string               $register The register of the inbox collection.
+	 * @param string               $schema   The schema of the inbox collection.
+	 *
+	 * @return array<string, mixed>|JSONResponse
+	 *
+	 * @spec openspec/changes/archive/2026-07-23-portal-inbox-v2/tasks.md#T03
+	 */
+	private function trustedInboxCollection(array $subject, string $register, string $schema): array|JSONResponse {
 		$collectionId = (string)$this->request->getParam('collection', '');
 		$match = $this->authorisedInboxCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
 		if ($match === null) {
@@ -586,43 +609,103 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		// Resolve the OWNERSHIP scope value the SAME way every scoped write does:
-		// a declared scopeClaim resolves server-side; an absent/malformed claim
-		// fails closed to 404 with no write.
-		$scopeValue = $this->reader->resolveScopeValue(
+		return $match;
+	}//end trustedInboxCollection()
+
+	/**
+	 * The ownership scope value of an inbox collection, resolved the SAME way
+	 * every scoped write does: a declared scopeClaim resolves server-side; an
+	 * absent/malformed claim gives null or '' and the caller fails closed.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param array<string, mixed> $inbox   The authorised inbox collection and its app.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/changes/archive/2026-07-23-portal-inbox-v2/tasks.md#T03
+	 */
+	private function inboxScopeValue(array $subject, array $inbox): string|null {
+		$collection = $inbox['collection'];
+
+		return $this->reader->resolveScopeValue(
 			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
-			contributingApp: $match['app'],
+			contributingApp: $inbox['app'],
 			subject: $subject
 		);
+	}//end inboxScopeValue()
+
+	/**
+	 * Mark one message read under the inbox's ownership scope, and answer it.
+	 * An absent or malformed scope claim fails closed to 404 with no write.
+	 *
+	 * @param array<string, mixed>                                $subject The resolved subject.
+	 * @param array<string, mixed>                                $inbox   The authorised inbox collection and its app.
+	 * @param array{register: string, schema: string, id: string} $target  The message.
+	 *
+	 * @return JSONResponse The updated message, or 404.
+	 *
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-mark-read-writes-the-collections-own-read-field-req-imf-002
+	 */
+	private function markOwnedRead(array $subject, array $inbox, array $target): JSONResponse {
+		$scopeValue = $this->inboxScopeValue(subject: $subject, inbox: $inbox);
 		if ($scopeValue === null || $scopeValue === '') {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		// The LITERAL payload — never the request body. Whatever extra fields a
-		// client sends are simply never read, so `read` (or the collection's
-		// own read date, messageFields.readAt) is the only field this
-		// endpoint can ever change.
-		$fields = $this->inboxMessageFields;
-		$normalised = $fields->normalise(collection: $collection);
-		$now = gmdate(format: 'Y-m-d\TH:i:s\Z');
-		// Decided from the row the writer has just proven the subject's own.
-		$payload = static fn (array $row): array => $fields->readPayload(collection: $normalised, now: $now, row: $row);
-		$updated = $this->writeScoped(
-			register: $register,
-			schema: $schema,
-			scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
-			subjectRef: $scopeValue,
-			organisation: (string)($subject['organisation'] ?? ''),
-			id: $id,
-			data: $payload,
-			context: 'markRead'
-		);
+		$updated = $this->writeReadMark(subject: $subject, collection: $inbox['collection'], target: $target, scopeValue: $scopeValue);
 		if ($updated instanceof JSONResponse) {
 			return $updated;
 		}
 
 		return new JSONResponse(['object' => $updated]);
-	}//end markRead()
+	}//end markOwnedRead()
+
+	/**
+	 * Write the read mark through the scoped writer.
+	 *
+	 * @param array<string, mixed>                                $subject    The resolved subject.
+	 * @param array<string, mixed>                                $collection The inbox collection.
+	 * @param array{register: string, schema: string, id: string} $target     The message.
+	 * @param string                                              $scopeValue The ownership scope value.
+	 *
+	 * @return array<string, mixed>|JSONResponse
+	 *
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-mark-read-writes-the-collections-own-read-field-req-imf-002
+	 */
+	private function writeReadMark(array $subject, array $collection, array $target, string $scopeValue): array|JSONResponse {
+		$payload = $this->readMarkPayload(collection: $collection);
+
+		return $this->writeScoped(
+			register: $target['register'],
+			schema: $target['schema'],
+			scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
+			subjectRef: $scopeValue,
+			organisation: (string)($subject['organisation'] ?? ''),
+			id: $target['id'],
+			data: $payload,
+			context: 'markRead'
+		);
+	}//end writeReadMark()
+
+	/**
+	 * The LITERAL read payload — never the request body. Whatever extra fields
+	 * a client sends are simply never read, so `read` (or the collection's own
+	 * read date, messageFields.readAt) is the only field markRead can change.
+	 *
+	 * @param array<string, mixed> $collection The inbox collection.
+	 *
+	 * @return \Closure The payload, decided from the row the writer has just
+	 *                  proven the subject's own.
+	 *
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-mark-read-writes-the-collections-own-read-field-req-imf-002
+	 */
+	private function readMarkPayload(array $collection): \Closure {
+		$fields = $this->inboxMessageFields;
+		$normalised = $fields->normalise(collection: $collection);
+		$now = gmdate(format: 'Y-m-d\TH:i:s\Z');
+		// Decided from the row the writer has just proven the subject's own.
+		return static fn (array $row): array => $fields->readPayload(collection: $normalised, now: $now, row: $row);
+	}//end readMarkPayload()
 
 	/**
 	 * Delete ONE of the resident's own inbox messages. The (register, schema)
@@ -651,6 +734,30 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}
 
+		$match = $this->deletableInboxCollection(subject: $subject, register: $register, schema: $schema);
+		if ($match instanceof JSONResponse) {
+			return $match;
+		}
+
+		$target = ['register' => $register, 'schema' => $schema, 'id' => $id];
+
+		return $this->deleteOwnedMessage(subject: $subject, inbox: $match, target: $target);
+	}//end deleteMessage()
+
+	/**
+	 * The inbox collection the subject may delete messages from, or the 403
+	 * refusal when none is authorised, it does not allow deleting, or its
+	 * trust level is not met.
+	 *
+	 * @param array<string, mixed> $subject  The resolved subject.
+	 * @param string               $register The register of the inbox collection.
+	 * @param string               $schema   The schema of the inbox collection.
+	 *
+	 * @return array<string, mixed>|JSONResponse
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+	 */
+	private function deletableInboxCollection(array $subject, string $register, string $schema): array|JSONResponse {
 		$collectionId = (string)$this->request->getParam('collection', '');
 		$match = $this->authorisedInboxCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
 		if ($match === null) {
@@ -664,27 +771,30 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		$scopeValue = $this->reader->resolveScopeValue(
-			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
-			contributingApp: $match['app'],
-			subject: $subject
-		);
+		return $match;
+	}//end deletableInboxCollection()
+
+	/**
+	 * Delete one message under the inbox's ownership scope, and answer it.
+	 * An absent or malformed scope claim fails closed to 404 with no write.
+	 *
+	 * @param array<string, mixed>                                $subject The resolved subject.
+	 * @param array<string, mixed>                                $inbox   The authorised inbox collection and its app.
+	 * @param array{register: string, schema: string, id: string} $target  The message.
+	 *
+	 * @return JSONResponse `{deleted: true}`, or 404 / 500.
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+	 */
+	private function deleteOwnedMessage(array $subject, array $inbox, array $target): JSONResponse {
+		$scopeValue = $this->inboxScopeValue(subject: $subject, inbox: $inbox);
 		if ($scopeValue === null || $scopeValue === '') {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		try {
-			$deleted = $this->writer->deleteObject(
-				register: $register,
-				schema: $schema,
-				scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
-				subjectRef: $scopeValue,
-				organisation: (string)($subject['organisation'] ?? ''),
-				id: $id
-			);
-		} catch (\Throwable $e) {
-			$this->logger->error('deleteMessage failed: ' . $e->getMessage(), ['exception' => $e]);
-			return new JSONResponse(['error' => 'server_error'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		$deleted = $this->deleteScopedMessage(subject: $subject, collection: $inbox['collection'], target: $target, scopeValue: $scopeValue);
+		if ($deleted instanceof JSONResponse) {
+			return $deleted;
 		}
 
 		if ($deleted === false) {
@@ -692,7 +802,36 @@ class ContributionController extends Controller implements PortalProtected {
 		}
 
 		return new JSONResponse(['deleted' => true]);
-	}//end deleteMessage()
+	}//end deleteOwnedMessage()
+
+	/**
+	 * Delete the message through the scoped writer; a failure is logged and
+	 * answered 500.
+	 *
+	 * @param array<string, mixed>                                $subject    The resolved subject.
+	 * @param array<string, mixed>                                $collection The inbox collection.
+	 * @param array{register: string, schema: string, id: string} $target     The message.
+	 * @param string                                              $scopeValue The ownership scope value.
+	 *
+	 * @return bool|JSONResponse Whether a row was deleted, or the 500 answer.
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+	 */
+	private function deleteScopedMessage(array $subject, array $collection, array $target, string $scopeValue): bool|JSONResponse {
+		try {
+			return $this->writer->deleteObject(
+				register: $target['register'],
+				schema: $target['schema'],
+				scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
+				subjectRef: $scopeValue,
+				organisation: (string)($subject['organisation'] ?? ''),
+				id: $target['id']
+			);
+		} catch (\Throwable $e) {
+			$this->logger->error('deleteMessage failed: ' . $e->getMessage(), ['exception' => $e]);
+			return new JSONResponse(['error' => 'server_error'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+	}//end deleteScopedMessage()
 
 	/**
 	 * Answer one of the resident's inbox messages through the create action its
@@ -722,25 +861,79 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$collectionId = (string)$this->request->getParam('collection', '');
-		$match = $this->authorisedInboxCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
-		if ($match === null || SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
+		$match = $this->trustedReplyInbox(subject: $subject, register: $register, schema: $schema);
+		if ($match === null) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		$collection = $match['collection'];
+		return $this->answerMessage(subject: $subject, inbox: $match, target: ['register' => $register, 'schema' => $schema, 'id' => $id]);
+	}//end reply()
+
+	/**
+	 * The inbox collection the subject may reply from, or null when none is
+	 * authorised or its trust level is not met.
+	 *
+	 * @param array<string, mixed> $subject  The resolved subject.
+	 * @param string               $register The register of the inbox collection.
+	 * @param string               $schema   The schema of the inbox collection.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t03
+	 */
+	private function trustedReplyInbox(array $subject, string $register, string $schema): array|null {
+		$collectionId = (string)$this->request->getParam('collection', '');
+		$match = $this->authorisedInboxCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
+		if ($match === null || SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
+			return null;
+		}
+
+		return $match;
+	}//end trustedReplyInbox()
+
+	/**
+	 * Answer the message through the collection's declared reply, once the
+	 * message is proven the resident's.
+	 *
+	 * @param array<string, mixed>                                $subject The resolved subject.
+	 * @param array<string, mixed>                                $inbox   The authorised inbox collection and its app.
+	 * @param array{register: string, schema: string, id: string} $target  The requested register, schema and message id.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t03
+	 */
+	private function answerMessage(array $subject, array $inbox, array $target): JSONResponse {
+		$collection = $inbox['collection'];
 		$declared   = ($collection['reply'] ?? null);
 		if (is_array($declared) === false) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$message = $this->readReplyMessage(subject: $subject, match: $match, target: ['register' => $register, 'schema' => $schema, 'id' => $id]);
+		$message = $this->readReplyMessage(subject: $subject, match: $inbox, target: $target);
 		// Not the resident's, or not there: one 404, and nothing is written.
 		if ($message === null) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$action = $this->replyAction(subject: $subject, app: $match['app'], actionId: (string)($declared['action'] ?? ''));
+		return $this->replyThroughAction(subject: $subject, inbox: $inbox, declared: $declared, message: $message);
+	}//end answerMessage()
+
+	/**
+	 * Write the reply through the declared reply action, when the resident
+	 * may use it.
+	 *
+	 * @param array<string, mixed> $subject  The resolved subject.
+	 * @param array<string, mixed> $inbox    The authorised inbox collection and its app.
+	 * @param array<string, mixed> $declared The collection's `reply` declaration.
+	 * @param array<string, mixed> $message  The original message.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t03
+	 */
+	private function replyThroughAction(array $subject, array $inbox, array $declared, array $message): JSONResponse {
+		$action = $this->replyAction(subject: $subject, app: $inbox['app'], actionId: (string)($declared['action'] ?? ''));
 		if ($action === null) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
@@ -751,8 +944,8 @@ class ContributionController extends Controller implements PortalProtected {
 
 		$carried = $this->carriedFields(declared: $declared, message: $message);
 
-		return $this->createReply(subject: $subject, match: ['action' => $action, 'app' => $match['app']], carried: $carried);
-	}//end reply()
+		return $this->createReply(subject: $subject, match: ['action' => $action, 'app' => $inbox['app']], carried: $carried);
+	}//end replyThroughAction()
 
 	/**
 	 * Write the reply through the create pipeline and name it in the answer.
@@ -1283,6 +1476,35 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}
 
+		$match = $this->uploadableCollection(subject: $subject, register: $register, schema: $schema);
+		if ($match instanceof JSONResponse) {
+			return $match;
+		}
+
+		// Re-verify ownership with the full scope resolution — 404 (no oracle)
+		// when the object is not the subject's or does not exist.
+		$target = ['register' => $register, 'schema' => $schema, 'id' => $id];
+		if ($this->ownsDownloadObject(subject: $subject, match: $match, target: $target) === false) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		return $this->attachUpload(register: $register, schema: $schema, id: $id);
+	}//end uploadFile()
+
+	/**
+	 * The collection the subject may upload files to, or the 403 refusal when
+	 * no collection is authorised, it has not opted in to uploads, or its
+	 * trust level is not met.
+	 *
+	 * @param array<string, mixed> $subject  The resolved subject.
+	 * @param string               $register The register.
+	 * @param string               $schema   The schema.
+	 *
+	 * @return array{collection: array<string, mixed>, app: string}|JSONResponse
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#scoped-file-attachment-on-a-subject-owned-object
+	 */
+	private function uploadableCollection(array $subject, string $register, string $schema): array|JSONResponse {
 		$collectionId = (string)$this->request->getParam('collection', '');
 		$match = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
 		if ($match === null) {
@@ -1300,25 +1522,21 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		// Re-verify ownership with the full scope resolution — 404 (no oracle)
-		// when the object is not the subject's or does not exist.
-		$owned = $this->reader->readObject(
-			register: $register,
-			schema: $schema,
-			scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			id: $id,
-			organisation: (string)($subject['organisation'] ?? ''),
-			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
-			contributingApp: $match['app'],
-			via: ($collection['via'] ?? null),
-			audience: (string)($subject['audience'] ?? ''),
-			fields: ($collection['fields'] ?? null)
-		);
-		if ($owned === null) {
-			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
-		}
+		return $match;
+	}//end uploadableCollection()
 
+	/**
+	 * Attach the multipart upload to an object already proven the subject's.
+	 *
+	 * @param string $register The register of the collection.
+	 * @param string $schema   The schema of the collection.
+	 * @param string $id       The object to attach to.
+	 *
+	 * @return JSONResponse The attached file metadata, or 400 / 502.
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#scoped-file-attachment-on-a-subject-owned-object
+	 */
+	private function attachUpload(string $register, string $schema, string $id): JSONResponse {
 		$upload = $this->readUploadedFile();
 		if ($upload === null) {
 			return new JSONResponse(['error' => 'no_file'], Http::STATUS_BAD_REQUEST);
@@ -1336,7 +1554,7 @@ class ContributionController extends Controller implements PortalProtected {
 		}
 
 		return new JSONResponse(['file' => $result]);
-	}//end uploadFile()
+	}//end attachUpload()
 
 	/**
 	 * Read the multipart upload (`file`) into a sanitised {name, content} pair,
