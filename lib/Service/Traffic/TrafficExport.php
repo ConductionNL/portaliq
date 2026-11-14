@@ -160,11 +160,12 @@ class TrafficExport {
 			$parts[] = $row['term'] . ' (' . (int)($row['count'] ?? 0) . ')';
 		}
 
-		return implode('; ', $parts);
+		return $this->neutralised(cell: implode('; ', $parts));
 	}
 
 	/**
-	 * A scalar as a CSV field: a boolean as 1 or 0, the rest as is.
+	 * A scalar as a CSV field: a boolean as 1 or 0, a number as is, a
+	 * string neutralised.
 	 *
 	 * @param int|float|string|bool $value The value.
 	 *
@@ -179,7 +180,28 @@ class TrafficExport {
 			return '0';
 		}
 
+		if (is_string($value) === true) {
+			return $this->neutralised(cell: $value);
+		}
+
 		return (string)$value;
+	}
+
+	/**
+	 * A text cell a spreadsheet will read as text: a cell that starts with
+	 * = + - @, a tab or a carriage return gets a leading apostrophe, as the
+	 * OWASP CSV guidance recommends.
+	 *
+	 * @param string $cell The cell.
+	 *
+	 * @return string The cell, prefixed when it would start a formula.
+	 */
+	private function neutralised(string $cell): string {
+		if ($cell !== '' && str_contains("=+-@\t\r", $cell[0]) === true) {
+			return "'" . $cell;
+		}
+
+		return $cell;
 	}
 
 	/**

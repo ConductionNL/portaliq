@@ -838,10 +838,11 @@ test('the Zuiddrecht site lays out its own area as the MijnMenu and MijnZaken bo
 		'rows',
 		'folders',
 	])
-	assert.equal(portal.version, '0.30.0')
+	assert.equal(portal.version, '0.31.0')
 	// 0.111.0: a form binding's `availability` (form-governance-availability-retention-and-routing).
-	// 0.112.0: a portal's `traffic.excludedPaths` (intake-report-pages T07).
-	assert.equal(register.info.version, '0.112.0')
+	// 0.112.0: a portal's `adminGroups` (operate-portals-per-organisation).
+	// 0.113.0: a portal's `traffic.excludedPaths` (intake-report-pages T07).
+	assert.equal(register.info.version, '0.113.0')
 })
 
 // zuiddrecht-site-details: the portal names the organisation of the example
