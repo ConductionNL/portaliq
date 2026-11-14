@@ -168,6 +168,10 @@
             "description": "Figures of all published portals together, for the dashboard."
         },
         {
+            "name": "portal-provision",
+            "description": "Provisioning an organisation's draft portal from the admin page."
+        },
+        {
             "name": "portal-signin",
             "description": "The Sign-in widget on a portal's page: per provider the login route, and the integriq broker settings (signin-integriq-broker-login T11)."
         },
@@ -1501,7 +1505,7 @@
             "get": {
                 "operationId": "cms-domain-records",
                 "summary": "The record each domain of a portal must publish",
-                "description": "The record each domain of a portal must publish. Needs a Nextcloud administrator.",
+                "description": "The record each domain of a portal must publish. Needs an instance administrator or a member of one of the portal's own administrator groups; anyone else gets 404.",
                 "tags": [
                     "cms-domain"
                 ],
@@ -1546,7 +1550,7 @@
             "post": {
                 "operationId": "cms-domain-verify",
                 "summary": "Check one domain's record. A record that is not there yet answers `pending`, which is the normal first outcome; the check can be run again",
-                "description": "Check one domain's record. A record that is not there yet answers `pending`, which is the normal first outcome; the check can be run again. Needs a Nextcloud administrator.",
+                "description": "Check one domain's record. A record that is not there yet answers `pending`, which is the normal first outcome; the check can be run again. Needs an instance administrator or a member of one of the portal's own administrator groups; anyone else gets 404.",
                 "tags": [
                     "cms-domain"
                 ],
@@ -4468,6 +4472,78 @@
                 }
             }
         },
+        "/portals/provision": {
+            "post": {
+                "operationId": "portal-provision-provision",
+                "summary": "Create the draft portal of an organisation",
+                "description": "Create the draft portal of an organisation: the portal with its host, a menu and a home page, not published. Answers the DNS TXT record that verifies the host. Needs an instance administrator.",
+                "tags": [
+                    "portal-provision"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "organisation": {
+                                        "type": "string",
+                                        "description": "The organisation the portal belongs to."
+                                    },
+                                    "slug": {
+                                        "type": "string",
+                                        "description": "The portal's slug."
+                                    },
+                                    "title": {
+                                        "type": "string",
+                                        "description": "The portal's title."
+                                    },
+                                    "host": {
+                                        "type": "string",
+                                        "description": "The host the portal answers on, without scheme or port."
+                                    }
+                                },
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "The draft portal was created.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/Problem400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/Problem409"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/Problem500"
+                    },
+                    "503": {
+                        "$ref": "#/components/responses/Problem503"
+                    }
+                }
+            }
+        },
         "/portals/{slug}/accessibility": {
             "get": {
                 "operationId": "accessibility-index",
@@ -4880,7 +4956,7 @@
             "get": {
                 "operationId": "portal-signin-index",
                 "summary": "The portal's sign-in settings, secret-free",
-                "description": "The portal's sign-in settings, secret-free. Needs a Nextcloud administrator.",
+                "description": "The portal's sign-in settings, secret-free. Needs an instance administrator or a member of one of the portal's own administrator groups; anyone else gets 404.",
                 "tags": [
                     "portal-signin"
                 ],
@@ -4923,7 +4999,7 @@
             "put": {
                 "operationId": "portal-signin-update",
                 "summary": "Save the routes and the broker settings. The secret is write-only: an empty value keeps the stored one",
-                "description": "Save the routes and the broker settings. The secret is write-only: an empty value keeps the stored one. Needs a Nextcloud administrator.",
+                "description": "Save the routes and the broker settings. The secret is write-only: an empty value keeps the stored one. Needs an instance administrator or a member of one of the portal's own administrator groups; anyone else gets 404.",
                 "tags": [
                     "portal-signin"
                 ],
@@ -4997,7 +5073,7 @@
             "get": {
                 "operationId": "portal-theme-index",
                 "summary": "The portal's theme and every set it can adopt, with contrast verdicts",
-                "description": "The portal's theme and every set it can adopt, with contrast verdicts. Needs a Nextcloud administrator.",
+                "description": "The portal's theme and every set it can adopt, with contrast verdicts. Needs an instance administrator or a member of one of the portal's own administrator groups; anyone else gets 404.",
                 "tags": [
                     "portal-theme"
                 ],
@@ -5040,7 +5116,7 @@
             "put": {
                 "operationId": "portal-theme-update",
                 "summary": "Save the portal's theme",
-                "description": "Save the portal's theme. The administrator's confirmation of a set that fails contrast arrives as the `acceptFindings` body field and selects the confirming save. Needs a Nextcloud administrator.",
+                "description": "Save the portal's theme. The administrator's confirmation of a set that fails contrast arrives as the `acceptFindings` body field and selects the confirming save. Needs an instance administrator or a member of one of the portal's own administrator groups; anyone else gets 404.",
                 "tags": [
                     "portal-theme"
                 ],
