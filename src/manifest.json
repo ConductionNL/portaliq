@@ -3864,6 +3864,16 @@
                   "widgetId": "portal-settings-accessibility"
                 },
                 {
+                  "key": "help",
+                  "title": "Help on forms",
+                  "widgetId": "portal-settings-help"
+                },
+                {
+                  "key": "section-help",
+                  "title": "Help per part of Mijn omgeving",
+                  "widgetId": "portal-settings-section-help"
+                },
+                {
                   "key": "editors",
                   "title": "Administrators",
                   "widgetId": "portal-editors"
@@ -3989,6 +3999,119 @@
             }
           },
           {
+            "id": "portal-settings-help",
+            "type": "settings-form",
+            "title": "Help on forms",
+            "content": {
+              "columns": 2,
+              "saveLabel": "Save",
+              "savedText": "The portal is saved.",
+              "fields": [
+                {
+                  "key": "help.intro",
+                  "label": "Introduction",
+                  "type": "textarea",
+                  "rows": 3,
+                  "wide": true,
+                  "hint": "Opens the \"Hulp nodig?\" dialog on every form. A form may override each of these details; with none set, forms show no \"Hulp nodig?\"."
+                },
+                {
+                  "key": "help.phone",
+                  "label": "Phone",
+                  "placeholder": "14 0123"
+                },
+                {
+                  "key": "help.phoneNote",
+                  "label": "What to say on the phone",
+                  "hint": "May name the form with {formulier}."
+                },
+                {
+                  "key": "help.hours",
+                  "label": "Opening hours"
+                },
+                {
+                  "key": "help.email",
+                  "label": "E-mail",
+                  "pattern": "^$|^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$",
+                  "patternMessage": "An e-mail address looks like info@example.nl."
+                },
+                {
+                  "key": "help.desk",
+                  "label": "Desk",
+                  "type": "textarea",
+                  "rows": 2,
+                  "wide": true,
+                  "hint": "Where to go in person, and what to do first."
+                },
+                {
+                  "key": "help.image",
+                  "label": "Image",
+                  "type": "reference",
+                  "register": "portaliq",
+                  "schema": "media",
+                  "labelField": "title",
+                  "filter": {
+                    "kind": "image",
+                    "status": "published",
+                    "portal": "@object.slug"
+                  },
+                  "valueTemplate": "/apps/portaliq/api/content/media/{id}?portal={portal}",
+                  "emptyLabel": "No image",
+                  "hint": "A published image from Media of this portal, or the address of an image.",
+                  "free": true,
+                  "freeLabel": "Or a web address",
+                  "freePlaceholder": "https://www.example.nl/help.jpg",
+                  "freePattern": "^(/(?!/)\\S*|https://\\S+)$",
+                  "freePatternMessage": "An image address starts with / or https://.",
+                  "wide": true
+                }
+              ]
+            }
+          },
+          {
+            "id": "portal-settings-section-help",
+            "type": "settings-form",
+            "title": "Help per part of Mijn omgeving",
+            "content": {
+              "columns": 1,
+              "saveLabel": "Save",
+              "savedText": "The portal is saved.",
+              "fields": [
+                {
+                  "key": "sectionHelp.overview",
+                  "label": "Overview",
+                  "type": "textarea",
+                  "rows": 2,
+                  "hint": "A part with a text shows \"Hulp bij deze pagina\" under its heading; a part without shows nothing."
+                },
+                {
+                  "key": "sectionHelp.cases",
+                  "label": "Cases",
+                  "type": "textarea",
+                  "rows": 2
+                },
+                {
+                  "key": "sectionHelp.tasks",
+                  "label": "Tasks",
+                  "type": "textarea",
+                  "rows": 2
+                },
+                {
+                  "key": "sectionHelp.messages",
+                  "label": "Messages",
+                  "type": "textarea",
+                  "rows": 2
+                },
+                {
+                  "key": "sectionHelp.contacts",
+                  "label": "Contacts",
+                  "type": "textarea",
+                  "rows": 2
+                }
+              ]
+            }
+          },
+          {
             "id": "portal-settings-theme",
             "type": "PortalTheme",
             "title": "House style",
@@ -4048,7 +4171,17 @@
                   "template": "Publish this TXT record: {name} = {value}",
                   "when": {
                     "verified": false
-                  }
+                  },
+                  "copy": [
+                    {
+                      "path": "name",
+                      "label": "Copy name"
+                    },
+                    {
+                      "path": "value",
+                      "label": "Copy value"
+                    }
+                  ]
                 }
               },
               "add": {
@@ -4750,6 +4883,26 @@
             }
           },
           {
+            "id": "page-help",
+            "type": "settings-form",
+            "title": "Help text",
+            "icon": "HelpCircleOutline",
+            "content": {
+              "columns": 1,
+              "saveLabel": "Save",
+              "savedText": "The page is saved.",
+              "fields": [
+                {
+                  "key": "helpText",
+                  "label": "Help text",
+                  "type": "textarea",
+                  "rows": 4,
+                  "hint": "When set, the page shows \"Hulp bij deze pagina\" under its heading, closed until a visitor opens it. Empty shows nothing."
+                }
+              ]
+            }
+          },
+          {
             "id": "page-traffic-incoming",
             "type": "PageTrafficFlow",
             "title": "Incoming traffic",
@@ -4794,6 +4947,10 @@
                 {
                   "widgetId": "page-search",
                   "label": "Zoekmachines"
+                },
+                {
+                  "widgetId": "page-help",
+                  "label": "Hulp"
                 },
                 {
                   "widgetIds": [
@@ -5276,6 +5433,32 @@
             }
           },
           {
+            "id": "binding-intro",
+            "type": "settings-form",
+            "title": "Introduction",
+            "content": {
+              "columns": 2,
+              "saveLabel": "Save",
+              "savedText": "The form settings are saved.",
+              "fields": [
+                {
+                  "key": "intro.enabled",
+                  "label": "Open the form with an introduction page",
+                  "type": "switch",
+                  "default": true,
+                  "hint": "Off: the form opens at step 1. The introduction's text is kept."
+                },
+                {
+                  "key": "intro.lead",
+                  "label": "Introduction text",
+                  "type": "textarea",
+                  "rows": 3,
+                  "hint": "The opening sentence under the form's heading."
+                }
+              ]
+            }
+          },
+          {
             "id": "binding-general",
             "type": "sections",
             "title": "Algemeen",
@@ -5286,6 +5469,11 @@
                   "key": "form",
                   "title": "Form",
                   "widgetId": "binding-form"
+                },
+                {
+                  "key": "intro",
+                  "title": "Introduction",
+                  "widgetId": "binding-intro"
                 },
                 {
                   "key": "signin",

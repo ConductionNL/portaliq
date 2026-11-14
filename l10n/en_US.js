@@ -2,6 +2,16 @@ OC.L10N.register(
     "portaliq",
     {
         "Choose media": "Choose media",
+        "A part with a text shows \"Hulp bij deze pagina\" under its heading; a part without shows nothing.": "A part with a text shows \"Hulp bij deze pagina\" under its heading; a part without shows nothing.",
+        "An e-mail address looks like info@example.nl.": "An e-mail address looks like info@example.nl.",
+        "An image address starts with / or https://.": "An image address starts with / or https://.",
+        "Help on forms": "Help on forms",
+        "Help per part of Mijn omgeving": "Help per part of Mijn omgeving",
+        "Hulp": "Hulp",
+        "May name the form with {formulier}.": "May name the form with {formulier}.",
+        "No image": "No image",
+        "Opens the \"Hulp nodig?\" dialog on every form. A form may override each of these details; with none set, forms show no \"Hulp nodig?\".": "Opens the \"Hulp nodig?\" dialog on every form. A form may override each of these details; with none set, forms show no \"Hulp nodig?\".",
+        "When set, the page shows \"Hulp bij deze pagina\" under its heading, closed until a visitor opens it. Empty shows nothing.": "When set, the page shows \"Hulp bij deze pagina\" under its heading, closed until a visitor opens it. Empty shows nothing.",
         "change proposals": "change proposals",
         "Per day": "Per day",
         "Sources": "Sources",
@@ -264,6 +274,9 @@ OC.L10N.register(
         "Move": "Move",
         "draft": "draft",
         "this page": "this page",
+        "Copy name": "Copy name",
+        "Copy value": "Copy value",
+        "Copying did not work. Select the text and copy it yourself.": "Copying did not work. Select the text and copy it yourself.",
         "Rename": "Rename",
         "Delete": "Delete",
         "New page": "New page",
@@ -535,7 +548,9 @@ OC.L10N.register(
         "Show withheld notices": "Show withheld notices",
         "Whether a withdrawn publication's link says it was withdrawn and why, and a publication page lists the documents held back with their ground. Off by default: publishing that a record exists is itself a choice.": "Whether a withdrawn publication's link says it was withdrawn and why, and a publication page lists the documents held back with their ground. Off by default: publishing that a record exists is itself a choice.",
         "Error reports need an owner: name the user or group that receives them.": "Error reports need an owner: name the user or group that receives them.",
-        "Error reports need an owner, and \"%s\" is not a user or group.": "Error reports need an owner, and \"%s\" is not a user or group."
+        "Error reports need an owner, and \"%s\" is not a user or group.": "Error reports need an owner, and \"%s\" is not a user or group.",
+        "Event to sign up for": "Event to sign up for",
+        "No event": "No event"
     },
     "nplurals=2; plural=(n != 1);"
 )

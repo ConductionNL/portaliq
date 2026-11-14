@@ -873,6 +873,14 @@
             "optional": true,
             "promoted": true,
             "acceptsReader": false
+        },
+        {
+            "name": "fees",
+            "position": 3,
+            "allowsNull": true,
+            "optional": true,
+            "promoted": true,
+            "acceptsReader": false
         }
     ],
     "OCA\\Portaliq\\Service\\Intake\\PortalDraftDrain": [

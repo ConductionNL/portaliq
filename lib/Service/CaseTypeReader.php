@@ -33,6 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\CaseTypeReaderInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -42,7 +43,7 @@ use Throwable;
  *
  * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
-class CaseTypeReader {
+class CaseTypeReader implements CaseTypeReaderInterface {
 	use ObjectServiceLookup;
 
 	/**

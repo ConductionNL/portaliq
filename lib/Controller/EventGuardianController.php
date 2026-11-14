@@ -28,12 +28,12 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
-use OCA\Portaliq\Service\EventFeedReader;
-use OCA\Portaliq\Service\EventRsvpService;
-use OCA\Portaliq\Service\EventSignupService;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\EventFeedReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\EventRsvpServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\EventSignupServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -52,19 +52,19 @@ class EventGuardianController extends Controller implements PortalProtected {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param EventFeedReader $feedReader The guardian-scoped read path.
-	 * @param EventRsvpService $rsvpService Upserts an RSVP.
-	 * @param EventSignupService $signupService Capacity-checked sign-up.
+	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
+	 * @param EventFeedReaderInterface $feedReader The guardian-scoped read path.
+	 * @param EventRsvpServiceInterface $rsvpService Upserts an RSVP.
+	 * @param EventSignupServiceInterface $signupService Capacity-checked sign-up.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
-		private readonly EventFeedReader $feedReader,
-		private readonly EventRsvpService $rsvpService,
-		private readonly EventSignupService $signupService,
+		private readonly PortalSessionServiceInterface $session,
+		private readonly EventFeedReaderInterface $feedReader,
+		private readonly EventRsvpServiceInterface $rsvpService,
+		private readonly EventSignupServiceInterface $signupService,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -114,7 +114,7 @@ class EventGuardianController extends Controller implements PortalProtected {
 			response: $response,
 			seats: $seats
 		);
-		if ($reason === EventRsvpService::REASON_NOT_FOUND) {
+		if ($reason === EventRsvpServiceInterface::REASON_NOT_FOUND) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
@@ -155,11 +155,11 @@ class EventGuardianController extends Controller implements PortalProtected {
 			note: $note
 		);
 
-		if ($reason === EventSignupService::REASON_ROLE_NOT_FOUND) {
+		if ($reason === EventSignupServiceInterface::REASON_ROLE_NOT_FOUND) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		if ($reason === EventSignupService::REASON_ROLE_FULL) {
+		if ($reason === EventSignupServiceInterface::REASON_ROLE_FULL) {
 			return new JSONResponse(['error' => 'role-full'], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
 

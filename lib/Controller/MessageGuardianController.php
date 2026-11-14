@@ -29,14 +29,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
-use OCA\Portaliq\Service\Identity\PortalContactService;
-use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\MessageContactReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContactServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSelfServiceServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Service\Messaging\GuardianMessageTranslator;
 use OCA\Portaliq\Service\Messaging\GuardianMessagingLeafInterface;
-use OCA\Portaliq\Service\Messaging\MessageContactReader;
-use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -70,29 +70,29 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
+	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
 	 * @param GuardianMessagingLeafInterface $messaging The messaging leaf.
 	 * @param GuardianMessageTranslator|null $translator Shows messages in the reader's
 	 *                                                   language (translated-message-notice).
 	 *                                                   Nullable and trailing so a
 	 *                                                   controller built by hand keeps
 	 *                                                   its old shape.
-	 * @param PortalSelfServiceService|null $selfService Reads the reader's own `messageLanguage`.
-	 * @param MessageContactReader|null $contacts Who the resident may write to, per record
+	 * @param PortalSelfServiceServiceInterface|null $selfService Reads the reader's own `messageLanguage`.
+	 * @param MessageContactReaderInterface|null $contacts Who the resident may write to, per record
 	 *                                            (site-messages-per-record).
-	 * @param PortalContactService|null $portalContacts The resident's own approved contacts
+	 * @param PortalContactServiceInterface|null $portalContacts The resident's own approved contacts
 	 *                                                  (own-contacts-and-invitations T07).
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
+		private readonly PortalSessionServiceInterface $session,
 		private readonly GuardianMessagingLeafInterface $messaging,
 		private readonly ?GuardianMessageTranslator $translator = null,
-		private readonly ?PortalSelfServiceService $selfService = null,
-		private readonly ?MessageContactReader $contacts = null,
-		private readonly ?PortalContactService $portalContacts = null,
+		private readonly ?PortalSelfServiceServiceInterface $selfService = null,
+		private readonly ?MessageContactReaderInterface $contacts = null,
+		private readonly ?PortalContactServiceInterface $portalContacts = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

@@ -2,6 +2,16 @@ OC.L10N.register(
     "portaliq",
     {
         "Choose media": "Media kiezen",
+        "A part with a text shows \"Hulp bij deze pagina\" under its heading; a part without shows nothing.": "Een onderdeel met een tekst toont \"Hulp bij deze pagina\" onder de kop; een onderdeel zonder tekst toont niets.",
+        "An e-mail address looks like info@example.nl.": "Een e-mailadres ziet eruit als info@example.nl.",
+        "An image address starts with / or https://.": "Een afbeeldingsadres begint met / of https://.",
+        "Help on forms": "Hulp bij formulieren",
+        "Help per part of Mijn omgeving": "Hulp per onderdeel van Mijn omgeving",
+        "Hulp": "Hulp",
+        "May name the form with {formulier}.": "Mag het formulier noemen met {formulier}.",
+        "No image": "Geen afbeelding",
+        "Opens the \"Hulp nodig?\" dialog on every form. A form may override each of these details; with none set, forms show no \"Hulp nodig?\".": "Opent het venster \"Hulp nodig?\" op elk formulier. Een formulier kan elk van deze gegevens vervangen; zonder gegevens tonen formulieren geen \"Hulp nodig?\".",
+        "When set, the page shows \"Hulp bij deze pagina\" under its heading, closed until a visitor opens it. Empty shows nothing.": "Als deze is ingevuld, toont de pagina \"Hulp bij deze pagina\" onder de kop, dicht tot een bezoeker hem opent. Leeg toont niets.",
         "change proposals": "wijzigingsvoorstellen",
         "A bounded map of extra values the client attached: at most 20 keys, scalar values, 256 characters each.": "Een begrensde tabel van extra waarden die de client meestuurde: hoogstens 20 sleutels, enkelvoudige waarden, elk 256 tekens.",
         "A bounded map of extra values the client attached: at most 20 keys, scalar values, 256 characters each. On a form event only `formId`, `fieldId`, `lastFieldId` and `ms` survive, so what was typed can never be stored; a `cd_<id>` custom dimension survives only when the portal declared the id.": "Een begrensde tabel van extra waarden die de client meestuurde: hoogstens 20 sleutels, enkelvoudige waarden, elk 256 tekens. Op een formuliergebeurtenis blijven alleen `formId`, `fieldId`, `lastFieldId` en `ms` over, zodat wat is getypt nooit kan worden opgeslagen; een eigen dimensie `cd_<id>` blijft alleen over als het portaal het id heeft aangegeven.",
@@ -3114,6 +3124,9 @@ OC.L10N.register(
         "Code for your website": "Code voor uw website",
         "Copy code": "Code kopiëren",
         "Copied": "Gekopieerd",
+        "Copy name": "Naam kopiëren",
+        "Copy value": "Waarde kopiëren",
+        "Copying did not work. Select the text and copy it yourself.": "Kopiëren lukte niet. Selecteer de tekst en kopieer hem zelf.",
         "Websites that may show the form": "Websites waarop het formulier mag staan",
         "On any other website the browser does not show the form.": "Op een andere website laat de browser het formulier niet zien.",
         "This form cannot be put on another website yet. Add the website addresses that may show it.": "Dit formulier kan nog niet op een andere website. Voeg de websites toe die het mogen tonen.",
@@ -3370,7 +3383,13 @@ OC.L10N.register(
         "Show withheld notices": "Meldingen over niet-openbare stukken tonen",
         "Whether a withdrawn publication's link says it was withdrawn and why, and a publication page lists the documents held back with their ground. Off by default: publishing that a record exists is itself a choice.": "Of de link van een ingetrokken publicatie zegt dat die is ingetrokken en waarom, en of een publicatiepagina de achtergehouden documenten met hun grond toont. Standaard uit: bekendmaken dat een stuk bestaat is zelf een keuze.",
         "Error reports need an owner: name the user or group that receives them.": "Foutmeldingen hebben een eigenaar nodig: noem de gebruiker of groep die ze ontvangt.",
-        "Error reports need an owner, and \"%s\" is not a user or group.": "Foutmeldingen hebben een eigenaar nodig, en \"%s\" is geen gebruiker of groep."
+        "Error reports need an owner, and \"%s\" is not a user or group.": "Foutmeldingen hebben een eigenaar nodig, en \"%s\" is geen gebruiker of groep.",
+        "Open the form with an introduction page": "Het formulier opent met een introductiepagina",
+        "Off: the form opens at step 1. The introduction's text is kept.": "Uit: het formulier opent bij stap 1. De tekst van de introductie blijft bewaard.",
+        "Introduction text": "Tekst van de introductie",
+        "The opening sentence under the form's heading.": "De openingszin onder de kop van het formulier.",
+        "Event to sign up for": "Evenement om je voor aan te melden",
+        "No event": "Geen evenement"
     },
     "nplurals=2; plural=(n != 1);"
 )

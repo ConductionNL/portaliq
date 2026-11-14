@@ -32,13 +32,14 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Reports;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\ReportTermsServiceInterface;
 
 /**
  * Renders the declared terms and where they stand.
  *
  * @spec openspec/specs/report-without-an-account/spec.md
  */
-class ReportTermsService {
+class ReportTermsService implements ReportTermsServiceInterface {
 	/**
 	 * The property on the case type carrying the declaration.
 	 */

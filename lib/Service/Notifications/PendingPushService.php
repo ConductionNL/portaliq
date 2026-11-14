@@ -28,9 +28,10 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Notifications;
 
+use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\PendingPushServiceInterface;
 use OCA\Portaliq\Service\ObjectRowNormaliser;
 use OCA\Portaliq\Service\ObjectServiceLookup;
-use DateTimeImmutable;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -38,7 +39,7 @@ use Throwable;
 /**
  * @spec openspec/specs/guardian-push-notifications/spec.md#requirement-a-due-deferred-push-is-delivered-by-the-background-job-an-undue-one-is-left-alone
  */
-class PendingPushService {
+class PendingPushService implements PendingPushServiceInterface {
 	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
 

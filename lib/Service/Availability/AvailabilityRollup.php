@@ -29,6 +29,7 @@ namespace OCA\Portaliq\Service\Availability;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\Portaliq\Kernel\Contracts\AvailabilityRollupInterface;
 use Throwable;
 
 /**
@@ -42,11 +43,7 @@ use Throwable;
  *
  * @spec openspec/specs/portal-availability/spec.md#requirement-an-interval-without-a-check-counts-as-down-req-oar-002
  */
-class AvailabilityRollup {
-	/**
-	 * The check interval, in seconds.
-	 */
-	public const INTERVAL = 300;
+class AvailabilityRollup implements AvailabilityRollupInterface {
 
 	public const AVAILABLE = 'available';
 

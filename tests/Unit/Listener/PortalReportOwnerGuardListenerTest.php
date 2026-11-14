@@ -68,7 +68,7 @@ class PortalReportOwnerGuardListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheGuardIsRegisteredOnEveryPortalWrite(): void {
-		$application = (string) file_get_contents(dirname(__DIR__, 3).'/lib/AppInfo/Application.php');
+		$application = (string) file_get_contents(dirname(__DIR__, 3).'/lib/Listener/ListenerRegistrar.php');
 
 		$registration = "foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as \$event) {\n"
 			."\t\t\t\$context->registerEventListener(\$event, PortalReportOwnerGuardListener::class);";

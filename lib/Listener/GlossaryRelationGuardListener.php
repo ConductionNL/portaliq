@@ -24,8 +24,8 @@ namespace OCA\Portaliq\Listener;
 
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
-use OCA\Portaliq\Service\Cms\GlossaryRelations;
-use OCA\Portaliq\Service\CmsReader;
+use OCA\Portaliq\Kernel\Contracts\CmsReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\GlossaryRelationsInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\IL10N;
@@ -61,15 +61,15 @@ class GlossaryRelationGuardListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container Resolves OpenRegister's schema mapper.
-	 * @param CmsReader          $reader    Reads the terms of a portal.
-	 * @param GlossaryRelations  $relations Decides which relations leave the portal.
+	 * @param CmsReaderInterface          $reader    Reads the terms of a portal.
+	 * @param GlossaryRelationsInterface  $relations Decides which relations leave the portal.
 	 * @param IL10N              $l10n      Translates the refusal.
 	 * @param LoggerInterface    $logger    Logs a failed check.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
-		private readonly CmsReader $reader,
-		private readonly GlossaryRelations $relations,
+		private readonly CmsReaderInterface $reader,
+		private readonly GlossaryRelationsInterface $relations,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 	) {
