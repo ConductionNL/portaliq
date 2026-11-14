@@ -154,8 +154,73 @@ class SiteShell implements SiteShellInterface {
 			// carrying no Accept-Language would otherwise produce.
 			'locale'          => $this->siteLocale(),
 			'head'            => $this->siteHead(path: $path),
+			// The plain version of this page, for the notice a browser
+			// without JavaScript shows (site-honest-without-javascript).
+			'plainUrl'        => $this->plainUrl(path: $path),
 		];
 	}//end templateParams()
+
+	/**
+	 * The address of the plain version of the page this request asks for:
+	 * `/site/plain` with the route, the portal, the search and the page carried
+	 * over. The route is the path under the site route, else the request's
+	 * `route`; the portal is the slug the request names (never a raw `?org=`).
+	 * A `/` in a value stays readable, every other reserved character is
+	 * encoded.
+	 *
+	 * @param string $path The path under the site route, or ''.
+	 *
+	 * @return string The address.
+	 *
+	 * @spec openspec/changes/site-honest-without-javascript/specs/site-without-javascript/spec.md#requirement-every-site-page-says-so-when-javascript-is-off-req-shj-001
+	 */
+	public function plainUrl(string $path = ''): string {
+		$route = trim($path, '/');
+		if ($route !== '') {
+			$route = '/' . $route;
+		} else {
+			$route = trim((string)$this->request->getParam('route', ''));
+		}
+
+		$query = [];
+		$values = [
+			'route'   => $route,
+			'portal'  => $this->requestedPortalSlug(),
+			'_search' => $this->stringParam(name: '_search'),
+			'_page'   => $this->stringParam(name: '_page'),
+		];
+		foreach ($values as $name => $value) {
+			if ($value !== '') {
+				$query[] = $name . '=' . str_replace('%2F', '/', rawurlencode($value));
+			}
+		}
+
+		$plain = $this->urlGenerator->linkToRoute('portaliq.portalPage.site') . '/plain';
+		if ($query === []) {
+			return $plain;
+		}
+
+		return $plain . '?' . implode('&', $query);
+	}//end plainUrl()
+
+	/**
+	 * A request parameter as a trimmed string; anything that is not a string or
+	 * a number (an array from `?x[]=`) is ''.
+	 *
+	 * @param string $name The parameter.
+	 *
+	 * @return string The value, or ''.
+	 *
+	 * @spec openspec/changes/site-honest-without-javascript/specs/site-without-javascript/spec.md#requirement-every-site-page-says-so-when-javascript-is-off-req-shj-001
+	 */
+	private function stringParam(string $name): string {
+		$value = $this->request->getParam($name, '');
+		if (is_string($value) === false && is_int($value) === false) {
+			return '';
+		}
+
+		return trim((string)$value);
+	}//end stringParam()
 
 	/**
 	 * Whether this request resolves to a portal at all: by the slug it names

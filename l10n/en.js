@@ -3227,7 +3227,9 @@ OC.L10N.register(
         "Introduction text": "Introduction text",
         "The opening sentence under the form's heading.": "The opening sentence under the form's heading.",
         "Event to sign up for": "Event to sign up for",
-        "No event": "No event"
+        "No event": "No event",
+        "This site uses JavaScript for its interactive parts, and JavaScript is off in your browser.": "This site uses JavaScript for its interactive parts, and JavaScript is off in your browser.",
+        "Open the plain version of this page": "Open the plain version of this page"
     },
     "nplurals=2; plural=(n != 1);"
 )

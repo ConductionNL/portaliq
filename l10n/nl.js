@@ -3381,7 +3381,9 @@ OC.L10N.register(
         "Introduction text": "Tekst van de introductie",
         "The opening sentence under the form's heading.": "De openingszin onder de kop van het formulier.",
         "Event to sign up for": "Evenement om je voor aan te melden",
-        "No event": "Geen evenement"
+        "No event": "Geen evenement",
+        "This site uses JavaScript for its interactive parts, and JavaScript is off in your browser.": "Deze website gebruikt JavaScript voor de interactieve onderdelen, en JavaScript staat uit in uw browser.",
+        "Open the plain version of this page": "Open de eenvoudige versie van deze pagina"
     },
     "nplurals=2; plural=(n != 1);"
 )

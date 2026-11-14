@@ -306,6 +306,7 @@ if ($favicon === '') {
     // page's search title; with no head at all the portal's name stands, then
     // the neutral fallback.
     $head = (array)($head ?? []);
+    $plainUrl = (string)($plainUrl ?? '');
     $headTitle = (string)($head['title'] ?? '');
     if ($headTitle === '') {
         $headTitle = (($portalConfig['title'] ?? '') !== '' ? (string)$portalConfig['title'] : 'Portaal');
@@ -397,6 +398,22 @@ if ($favicon === '') {
            class="utrecht-skip-link utrecht-skip-link--visible-on-focus pq-site__skip"
            href="#pq-main">Direct naar de inhoud</a>
     </p>
+
+    <!--
+        WITHOUT JAVASCRIPT THE BUNDLE NEVER RENDERS `#pq-main`, so the skip link
+        above would point nowhere and the page would be empty. This block is the
+        main landmark for that visitor: it says why the page is empty and links
+        to the plain version of the same page, which the server renders
+        (site-honest-without-javascript REQ-SHJ-001). A browser running
+        JavaScript does not render `<noscript>` content, so there is still one
+        `#pq-main` on the page then.
+    -->
+    <noscript>
+        <main id="pq-main" class="pq-site__noscript" tabindex="-1">
+            <p><?php p($l->t('This site uses JavaScript for its interactive parts, and JavaScript is off in your browser.')); ?></p>
+            <p><a href="<?php p($plainUrl); ?>"><?php p($l->t('Open the plain version of this page')); ?></a></p>
+        </main>
+    </noscript>
 
     <!--
         DATA, NOT CODE. `type="application/json"` is not executed, so this
