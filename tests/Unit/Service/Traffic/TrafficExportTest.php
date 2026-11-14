@@ -117,6 +117,71 @@ class TrafficExportTest extends TestCase {
 	}//end testEachRecordIsALine()
 
 	/**
+	 * Text cells that would start a formula, one per leading character: the
+	 * value, its exported cell, and its cell as a zero-result term.
+	 *
+	 * @return array<string, array{0: string, 1: string, 2: string}>
+	 */
+	public static function formulaCells(): array {
+		return [
+			'equals'          => ['=SUM(A1:A9)', "'=SUM(A1:A9)", "'=SUM(A1:A9) (2)"],
+			'plus'            => ['+31 20', "'+31 20", "'+31 20 (2)"],
+			'minus'           => ['-1+1', "'-1+1", "'-1+1 (2)"],
+			'at'              => ['@SUM(A1)', "'@SUM(A1)", "'@SUM(A1) (2)"],
+			'tab'             => ["\tx", "'\tx", "'\tx (2)"],
+			'carriage return' => ["\rx", "\"'\rx\"", "\"'\rx (2)\""],
+		];
+	}//end formulaCells()
+
+	/**
+	 * A text cell starting with = + - @, a tab or a carriage return is prefixed
+	 * with an apostrophe, in a plain column and in the zero-result terms.
+	 *
+	 * @param string $value    The value.
+	 * @param string $cell     The exported cell.
+	 * @param string $termCell The exported zero-result terms cell.
+	 *
+	 * @return void
+	 *
+	 * @dataProvider formulaCells
+	 */
+	public function testAFormulaCellIsExportedAsText(string $value, string $cell, string $termCell): void {
+		$export = new TrafficExport();
+		$header = implode(',', TrafficExport::COLUMNS) . "\r\n";
+
+		$this->assertSame(
+			expected: $header . ',,' . $cell . str_repeat(',', 12) . "\r\n",
+			actual: $export->csv(records: [['segment' => $value]])
+		);
+		$this->assertSame(
+			expected: $header . str_repeat(',', 14) . $termCell . "\r\n",
+			actual: $export->csv(records: [['zeroResultSearches' => [['term' => $value, 'count' => 2]]]])
+		);
+	}//end testAFormulaCellIsExportedAsText()
+
+	/**
+	 * Ordinary text, numbers (negative ones included) and booleans are unchanged.
+	 *
+	 * @return void
+	 */
+	public function testOrdinaryCellsAreUnchanged(): void {
+		$lines = $this->csvLines(
+			records: [
+				[
+					'portal'             => 'mijn',
+					'date'               => '2026-11-13',
+					'segment'            => 'a=b',
+					'pageViews'          => -3,
+					'sessions'           => -0.5,
+					'visitors'           => true,
+					'zeroResultSearches' => [['term' => 'paspoort', 'count' => 4], ['term' => '=x', 'count' => 1]],
+				],
+			]
+		);
+		$this->assertSame(expected: 'mijn,2026-11-13,a=b,-3,-0.5,1,,,,,,,,,paspoort (4); =x (1)', actual: $lines[1]);
+	}//end testOrdinaryCellsAreUnchanged()
+
+	/**
 	 * The JSON export drops the object metadata and keeps slashes and accents readable.
 	 *
 	 * @return void
