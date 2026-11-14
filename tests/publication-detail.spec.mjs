@@ -17,6 +17,7 @@ import { test } from 'node:test'
 import {
 	withdrawalFrom,
 	withdrawalLines,
+	withheldDocumentsOf,
 } from '../src/site/lib/publicationDetail.js'
 import { loadSfc, renderComponent } from './support/render-sfc.mjs'
 
@@ -141,4 +142,59 @@ test('a tombstone without a title shows none', async () => {
 	// Nothing else of the record travels, and an empty answer still says it was withdrawn.
 	assert.deepEqual(Object.keys(withdrawalFrom(410, TOMBSTONE, { withheldNotices: true })).sort(), ['publicReason', 'withdrawnAt'])
 	assert.equal(withdrawalLines(withdrawalFrom(410, null, { withheldNotices: true }), 'nl').sentence, 'Deze publicatie is ingetrokken.')
+})
+
+// REQ-PER-005 against the PROPOSED contract: opencatalogi's public read does
+// not carry withheld documents yet, so the fixture's keys are the proposal.
+const WITH_WITHHELD = {
+	id: 'pub-1',
+	title: 'Besluit op Woo-verzoek',
+	withheldDocuments: [
+		{ reference: 'Document 4', grounds: [{ code: '5.1.2.e', label: 'Eerbiediging van de persoonlijke levenssfeer' }] },
+		{ reference: 'Document 7', grounds: [{ code: '5.2.1', label: 'Persoonlijke beleidsopvattingen' }] },
+		{ grounds: [{ code: '5.1.1.c' }] },
+	],
+}
+
+/**
+ * Render the block holding one loaded publication.
+ *
+ * @param {object|null} publications The site record's `publications`.
+ * @return {Promise<string>} The HTML.
+ */
+async function renderPublication(publications) {
+	const component = await loadSfc(BLOCK, STUBS)
+	const data = component.data
+	return renderComponent(
+		{
+			...component,
+			mounted() {},
+			data() {
+				return { ...data.call(this), loading: false, publication: WITH_WITHHELD, documents: [] }
+			},
+		},
+		{ subjectId: 'pub-1', publications },
+	)
+}
+
+test('two withheld documents list their grounds', async () => {
+	assert.deepEqual(withheldDocumentsOf(WITH_WITHHELD, { withheldNotices: true }), [
+		{ reference: 'Document 4', grounds: [{ code: '5.1.2.e', label: 'Eerbiediging van de persoonlijke levenssfeer' }] },
+		{ reference: 'Document 7', grounds: [{ code: '5.2.1', label: 'Persoonlijke beleidsopvattingen' }] },
+	])
+
+	const html = await renderPublication({ withheldNotices: true })
+	assert.match(html, /Niet openbaar gemaakt/)
+	assert.equal((html.match(/data-testid="publication-withheld-document"/g) || []).length, 2)
+	assert.match(html, /5\.1\.2\.e: Eerbiediging van de persoonlijke levenssfeer/)
+	assert.match(html, /5\.2\.1: Persoonlijke beleidsopvattingen/)
+})
+
+test('notices off lists nothing', async () => {
+	for (const publications of [null, { withheldNotices: false }, { errorReports: true }]) {
+		assert.deepEqual(withheldDocumentsOf(WITH_WITHHELD, publications), [])
+		const html = await renderPublication(publications)
+		assert.doesNotMatch(html, /publication-withheld/, JSON.stringify(publications))
+	}
+	assert.deepEqual(withheldDocumentsOf({ withheldDocuments: 'no list' }, { withheldNotices: true }), [])
 })

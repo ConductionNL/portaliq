@@ -266,6 +266,29 @@
 					</tbody>
 				</table>
 			</section>
+			<!-- WHAT WAS HELD BACK (publication-error-reports-and-withheld-notices
+			     REQ-PER-005): only while the portal shows withheld notices, and
+			     only what the public read carries. -->
+			<section
+				v-if="withheld.length > 0"
+				class="pq-detail__withheld"
+				data-testid="publication-withheld">
+				<h2 class="utrecht-heading-2">{{ withdrawnWords.withheldHeading }}</h2>
+				<ul class="pq-detail__list">
+					<li
+						v-for="document in withheld"
+						:key="document.reference"
+						data-testid="publication-withheld-document">
+						<strong>{{ document.reference }}</strong>
+						<ul v-if="document.grounds.length > 0" class="pq-detail__list">
+							<li v-for="ground in document.grounds" :key="ground.code">
+								{{ ground.label ? `${ground.code}: ${ground.label}` : ground.code }}
+							</li>
+						</ul>
+					</li>
+				</ul>
+			</section>
+
 			<!-- "Fout melden", only while the portal has error reports on
 			     (publication-error-reports-and-withheld-notices REQ-PER-002). -->
 			<PublicationReport
@@ -290,6 +313,7 @@ import {
 	visitorRows,
 	withdrawalFrom,
 	withdrawalLines,
+	withheldDocumentsOf,
 } from '../lib/publicationDetail.js'
 
 /**
@@ -479,6 +503,24 @@ export default {
 		 */
 		withdrawn() {
 			return withdrawalLines(this.withdrawal, this.locale)
+		},
+
+		/**
+		 * @return {Array<object>} The documents held back, with their grounds.
+		 * @spec openspec/changes/publication-error-reports-and-withheld-notices/specs/portal-federated-search/spec.md#requirement-a-publication-lists-what-was-held-back-with-the-ground-req-per-005
+		 */
+		withheld() {
+			return withheldDocumentsOf(this.publication, this.publications)
+		},
+
+		/**
+		 * @return {{withheldHeading: string}} The words of the withheld list.
+		 * @spec openspec/changes/publication-error-reports-and-withheld-notices/specs/portal-federated-search/spec.md#requirement-a-publication-lists-what-was-held-back-with-the-ground-req-per-005
+		 */
+		withdrawnWords() {
+			return {
+				withheldHeading: this.locale === 'en' ? 'Not made public' : 'Niet openbaar gemaakt',
+			}
 		},
 
 		/**

@@ -399,3 +399,41 @@ export function withdrawalLines(withdrawal, locale) {
 		title: withdrawal?.title || '',
 	}
 }
+
+/**
+ * The documents held back from a publication, with their grounds, while the
+ * portal shows withheld notices (publication-error-reports-and-withheld-notices
+ * REQ-PER-005). Only what the public read carries is shown.
+ *
+ * PROPOSED CONTRACT, not yet answered by opencatalogi: the publication read
+ * carries `withheldDocuments`, a list of `{reference, grounds: [{code,
+ * label}]}`. A row without a reference, and a ground without a code, is left
+ * out; a document without a usable ground is still listed, with none.
+ *
+ * @param {object|null} publication The publication the read returned.
+ * @param {object|null} publications The site record's `publications`.
+ * @return {Array<{reference: string, grounds: Array<{code: string, label: string}>}>}
+ * @spec openspec/changes/publication-error-reports-and-withheld-notices/specs/portal-federated-search/spec.md#requirement-a-publication-lists-what-was-held-back-with-the-ground-req-per-005
+ */
+export function withheldDocumentsOf(publication, publications) {
+	if (!publications || publications.withheldNotices !== true) {
+		return []
+	}
+
+	const rows = (publication || {}).withheldDocuments
+	if (!Array.isArray(rows)) {
+		return []
+	}
+
+	return rows
+		.filter((row) => row && typeof row.reference === 'string' && row.reference.trim() !== '')
+		.map((row) => ({
+			reference: row.reference.trim(),
+			grounds: (Array.isArray(row.grounds) ? row.grounds : [])
+				.filter((ground) => ground && typeof ground.code === 'string' && ground.code.trim() !== '')
+				.map((ground) => ({
+					code: ground.code.trim(),
+					label: typeof ground.label === 'string' ? ground.label.trim() : '',
+				})),
+		}))
+}

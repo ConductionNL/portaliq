@@ -75,6 +75,11 @@ test marked **fails today** must be run on `origin/development` first and seen r
   written in the PR body as the proposed contract, leave this box open, and say in the PR body that
   6.16's second half waits on opencatalogi.
   - node test `two withheld documents list their grounds`, `notices off lists nothing`.
+  - Rendering built against the proposed contract (`withheldDocumentsOf()` in `src/site/lib/publicationDetail.js`,
+    the "Niet openbaar gemaakt" section of `PublicationDetailBlock.vue`, both tests in
+    `tests/publication-detail.spec.mjs`): the publication read carries `withheldDocuments`, a list of
+    `{reference, grounds: [{code, label}]}`. Left open: no opencatalogi change exposes withheld documents with
+    their grounds on the public read yet, so 6.16's second half waits on opencatalogi.
 
 ## 4. Live
 
