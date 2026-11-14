@@ -107,6 +107,26 @@ class PortalFormAvailability {
 
 		$now = ($now ?? new DateTimeImmutable())->setTimezone(new DateTimeZone(self::ZONE));
 
+		$situation = $this->scheduleSituation(availability: $availability, now: $now);
+		if ($situation !== null) {
+			return $situation;
+		}
+
+		return $this->fullSituation(binding: $binding, availability: $availability, now: $now);
+	}//end unavailable()
+
+	/**
+	 * Why the form's schedule keeps it closed now: replaced, not yet open,
+	 * closed or in maintenance, in that order; null when it does not.
+	 *
+	 * @param array<string, mixed> $availability The binding's availability.
+	 * @param DateTimeImmutable    $now          The moment to judge, in the portal's zone.
+	 *
+	 * @return array<string, mixed>|null `situation` and what its page shows.
+	 *
+	 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-a-form-opens-and-closes-on-set-dates-and-after-a-set-number-of-submissions-req-fgv-001
+	 */
+	private function scheduleSituation(array $availability, DateTimeImmutable $now): array|null {
 		$replacedBy = trim((string)($availability['replacedBy'] ?? ''));
 		if ($replacedBy !== '') {
 			return ['situation' => self::REPLACED, 'replacedBy' => $replacedBy];
@@ -117,11 +137,22 @@ class PortalFormAvailability {
 			return $period;
 		}
 
-		$maintenance = $this->maintenance(availability: $availability, now: $now);
-		if ($maintenance !== null) {
-			return $maintenance;
-		}
+		return $this->maintenance(availability: $availability, now: $now);
+	}//end scheduleSituation()
 
+	/**
+	 * The full situation when the current period's submissions reached the
+	 * limit, else null.
+	 *
+	 * @param array<string, mixed> $binding      The binding.
+	 * @param array<string, mixed> $availability The binding's availability.
+	 * @param DateTimeImmutable    $now          The moment to judge, in the portal's zone.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-a-form-opens-and-closes-on-set-dates-and-after-a-set-number-of-submissions-req-fgv-001
+	 */
+	private function fullSituation(array $binding, array $availability, DateTimeImmutable $now): array|null {
 		$counter = $this->counter(binding: $binding, now: $now);
 		if ($counter !== null && $counter['count'] >= $counter['limit']) {
 			return [
@@ -133,7 +164,7 @@ class PortalFormAvailability {
 		}
 
 		return null;
-	}//end unavailable()
+	}//end fullSituation()
 
 	/**
 	 * The submissions of the current period against the limit, or null when

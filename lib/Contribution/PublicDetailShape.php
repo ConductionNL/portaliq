@@ -40,7 +40,8 @@ use OCA\Portaliq\Kernel\Contracts\PublicDetailShapeInterface;
 /**
  * Holds a public detail answer to its fixed shape.
  *
- * @spec openspec/changes/public-detail-page-for-a-provider-item/tasks.md#task-1
+ * @spec openspec/changes/public-detail-page-for-a-provider-item/tasks.md#task-1 *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class PublicDetailShape implements PublicDetailShapeInterface {
 
@@ -75,6 +76,18 @@ class PublicDetailShape implements PublicDetailShapeInterface {
 		$out['dates']     = $this->dates(declared: ($answer['dates'] ?? null));
 		$out['documents'] = $this->links(declared: ($answer['documents'] ?? null));
 
+		return $this->withLinkAndAction(out: $out, answer: $answer);
+	}//end detail()
+
+	/**
+	 * The detail with its secondary link and its action, when they fit.
+	 *
+	 * @param array<string, mixed> $out    The detail so far.
+	 * @param array<string, mixed> $answer What the app returned.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withLinkAndAction(array $out, array $answer): array {
 		$secondary = $this->links(declared: [($answer['secondaryLink'] ?? null)]);
 		if ($secondary !== []) {
 			$out['secondaryLink'] = $secondary[0];
@@ -86,7 +99,7 @@ class PublicDetailShape implements PublicDetailShapeInterface {
 		}
 
 		return $out;
-	}//end detail()
+	}//end withLinkAndAction()
 
 	/**
 	 * @param mixed $declared A list of `{label, value}`.
@@ -140,28 +153,56 @@ class PublicDetailShape implements PublicDetailShapeInterface {
 				continue;
 			}
 
-			$item = ['id' => $id, 'date' => $date];
-			$end  = $this->day(value: ($row['endDate'] ?? null));
-			if ($end !== null) {
-				$item['endDate'] = $end;
-			}
-
-			foreach (['label', 'placesLine'] as $key) {
-				$text = $this->short(value: ($row[$key] ?? null));
-				if ($text !== null) {
-					$item[$key] = $text;
-				}
-			}
-
-			if (is_int($row['places'] ?? null) === true && $row['places'] >= 0) {
-				$item['places'] = $row['places'];
-			}
-
-			$out[] = $item;
-		}//end foreach
+			$out[] = $this->dateItem(row: $row, id: $id, date: $date);
+		}
 
 		return $out;
 	}//end dates()
+
+	/**
+	 * One dated choice: its id and date, and its end date, texts and places
+	 * when they fit.
+	 *
+	 * @param array<string, mixed> $row  The declared choice.
+	 * @param string               $id   Its id.
+	 * @param string               $date Its date.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function dateItem(array $row, string $id, string $date): array {
+		$item = ['id' => $id, 'date' => $date];
+		$end  = $this->day(value: ($row['endDate'] ?? null));
+		if ($end !== null) {
+			$item['endDate'] = $end;
+		}
+
+		$item = $this->withTexts(item: $item, row: $row);
+
+		if (is_int($row['places'] ?? null) === true && $row['places'] >= 0) {
+			$item['places'] = $row['places'];
+		}
+
+		return $item;
+	}//end dateItem()
+
+	/**
+	 * A dated choice with its `label` and `placesLine`, when they fit.
+	 *
+	 * @param array<string, mixed> $item The choice so far.
+	 * @param array<string, mixed> $row  The declared choice.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withTexts(array $item, array $row): array {
+		foreach (['label', 'placesLine'] as $key) {
+			$text = $this->short(value: ($row[$key] ?? null));
+			if ($text !== null) {
+				$item[$key] = $text;
+			}
+		}
+
+		return $item;
+	}//end withTexts()
 
 	/**
 	 * @param mixed $declared A list of `{label, href}`.

@@ -54,6 +54,8 @@ use Throwable;
  *
  * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.2
  * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T01
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class PortalOrganisationConfigService implements PortalOrganisationConfigServiceInterface {
 	/**
@@ -256,7 +258,7 @@ class PortalOrganisationConfigService implements PortalOrganisationConfigService
 	 * @spec openspec/specs/supplier-portal/spec.md#oidc-start-builds-a-state-nonce-pkce-authorization-request
 	 */
 	public function resolveOidcConfig(string $orgSlug, string $provider): ?array {
-		if ($orgSlug === '' || in_array($provider, self::OIDC_PROVIDERS, true) === false) {
+		if ($this->isOidcRequest(orgSlug: $orgSlug, provider: $provider) === false) {
 			return null;
 		}
 
@@ -265,6 +267,40 @@ class PortalOrganisationConfigService implements PortalOrganisationConfigService
 			return null;
 		}
 
+		$rawConfig = $this->providerOidcConfig(organisation: $organisation, provider: $provider);
+		if ($rawConfig === null) {
+			return null;
+		}
+
+		return $this->withClientSecret(rawConfig: $rawConfig, organisation: $organisation, provider: $provider);
+	}//end resolveOidcConfig()
+
+	/**
+	 * Whether a slug is named and the provider is an OIDC one.
+	 *
+	 * @param string $orgSlug  The `?org=` slug.
+	 * @param string $provider The provider.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T01
+	 */
+	private function isOidcRequest(string $orgSlug, string $provider): bool {
+		return $orgSlug !== '' && in_array($provider, self::OIDC_PROVIDERS, true) === true;
+	}//end isOidcRequest()
+
+	/**
+	 * The organisation's configured OIDC settings for one provider, without
+	 * the secret, or null when there are none.
+	 *
+	 * @param array<string, mixed> $organisation The organisation.
+	 * @param string               $provider     The provider.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T01
+	 */
+	private function providerOidcConfig(array $organisation, string $provider): array|null {
 		$overrides = $this->presentationOverrides(organisationUuid: $organisation['uuid']);
 		$oidc = ($overrides['oidc'] ?? null);
 		if (is_array($oidc) === false) {
@@ -276,6 +312,22 @@ class PortalOrganisationConfigService implements PortalOrganisationConfigService
 			return null;
 		}
 
+		return $rawConfig;
+	}//end providerOidcConfig()
+
+	/**
+	 * The provider's settings with the secret read from its own entry and
+	 * the preset applied, or null when a required field is missing.
+	 *
+	 * @param array<string, mixed> $rawConfig    The configured settings.
+	 * @param array<string, mixed> $organisation The organisation.
+	 * @param string               $provider     The provider.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/supplier-portal/spec.md#oidc-start-builds-a-state-nonce-pkce-authorization-request
+	 */
+	private function withClientSecret(array $rawConfig, array $organisation, string $provider): array|null {
 		// The secret NEVER lives in the (non-sensitive) presentation-override
 		// blob — it is read from its OWN `sensitive`-flagged IAppConfig entry,
 		// keyed by organisation + provider, and injected here ONLY for this
@@ -287,7 +339,7 @@ class PortalOrganisationConfigService implements PortalOrganisationConfigService
 		}
 
 		return $this->claimMapper->applyPreset(provider: $provider, rawConfig: $rawConfig);
-	}//end resolveOidcConfig()
+	}//end withClientSecret()
 
 	/**
 	 * Whether this organisation is permitted to start a login with this

@@ -129,7 +129,21 @@ class PortalAccessRequestService implements PortalAccessRequestServiceInterface 
 			$filter['state'] = $state;
 		}
 
-		$rows = $this->reader->readCollection(
+		return $this->ofOrganisation(rows: $this->ownerRows(organisation: $organisation, filter: $filter), organisation: $organisation);
+	}//end forOwner()
+
+	/**
+	 * The stored requests of a tenant, narrowed by the filter.
+	 *
+	 * @param string               $organisation The tenant.
+	 * @param array<string, mixed> $filter       The state filter, or [].
+	 *
+	 * @return array<int, mixed>
+	 *
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
+	 */
+	private function ownerRows(string $organisation, array $filter): array {
+		return $this->reader->readCollection(
 			register: self::REGISTER,
 			schema: self::SCHEMA,
 			scopeField: 'organisation',
@@ -138,7 +152,19 @@ class PortalAccessRequestService implements PortalAccessRequestServiceInterface 
 			limit: 200,
 			filter: $filter
 		);
+	}//end ownerRows()
 
+	/**
+	 * The rows that belong to the tenant: the reader's filter is not trusted.
+	 *
+	 * @param array<int, mixed> $rows         The rows read.
+	 * @param string            $organisation The tenant.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
+	 */
+	private function ofOrganisation(array $rows, string $organisation): array {
 		$out = [];
 		foreach ($rows as $row) {
 			if (is_array($row) === true && ($row['organisation'] ?? '') === $organisation) {
@@ -147,7 +173,7 @@ class PortalAccessRequestService implements PortalAccessRequestServiceInterface 
 		}
 
 		return $out;
-	}//end forOwner()
+	}//end ofOrganisation()
 
 	/**
 	 * The requests one asker has made, with the answers they were given.
@@ -254,29 +280,76 @@ class PortalAccessRequestService implements PortalAccessRequestServiceInterface 
 			return self::OUTCOME_NOT_FOUND;
 		}
 
-		$mandate = $this->writer->createObject(
+		$mandate = $this->openMandate(request: $request, organisation: $organisation, decidedBy: $decidedBy);
+		if ($mandate === null) {
+			return self::OUTCOME_MANDATE_FAILED;
+		}
+
+		return $this->grantedOrRevoked(id: $id, organisation: $organisation, decidedBy: $decidedBy, mandate: $mandate);
+	}//end grant()
+
+	/**
+	 * Write the mandate a granted request opens, or null when it cannot be written.
+	 *
+	 * @param array<string, mixed> $request      The pending request.
+	 * @param string               $organisation The tenant.
+	 * @param string               $decidedBy    The staff user granting it.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/portal-access-requests/spec.md#requirement-a-granted-request-opens-the-cases-req-iar-003
+	 */
+	private function openMandate(array $request, string $organisation, string $decidedBy): array|null {
+		return $this->writer->createObject(
 			register: self::REGISTER,
 			schema: self::MANDATE_SCHEMA,
 			scopeField: '',
 			subjectRef: '',
 			organisation: $organisation,
-			data: [
-				'subjectRef' => (string)($request['subjectRef'] ?? ''),
-				'organisation' => $organisation,
-				'onBehalfOf' => (new MandateParties())->typed(value: (string)($request['onBehalfOf'] ?? '')),
-				// The party as the asker named it: the site reads the label as
-				// the name of whom the holder acts for.
-				'label' => mb_substr(trim((string)($request['onBehalfOf'] ?? '')), 0, 200),
-				'reach' => 'organisation',
-				'status' => 'active',
-				'grantedBy' => $decidedBy,
-				'grantedAt' => (new DateTimeImmutable())->format(DATE_ATOM),
-			]
+			data: $this->mandateData(request: $request, organisation: $organisation, decidedBy: $decidedBy)
 		);
-		if ($mandate === null) {
-			return self::OUTCOME_MANDATE_FAILED;
-		}
+	}//end openMandate()
 
+	/**
+	 * The mandate a granted request opens.
+	 *
+	 * @param array<string, mixed> $request      The pending request.
+	 * @param string               $organisation The tenant.
+	 * @param string               $decidedBy    The staff user granting it.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/portal-access-requests/spec.md#requirement-a-granted-request-opens-the-cases-req-iar-003
+	 */
+	private function mandateData(array $request, string $organisation, string $decidedBy): array {
+		return [
+			'subjectRef' => (string)($request['subjectRef'] ?? ''),
+			'organisation' => $organisation,
+			'onBehalfOf' => (new MandateParties())->typed(value: (string)($request['onBehalfOf'] ?? '')),
+			// The party as the asker named it: the site reads the label as
+			// the name of whom the holder acts for.
+			'label' => mb_substr(trim((string)($request['onBehalfOf'] ?? '')), 0, 200),
+			'reach' => 'organisation',
+			'status' => 'active',
+			'grantedBy' => $decidedBy,
+			'grantedAt' => (new DateTimeImmutable())->format(DATE_ATOM),
+		];
+	}//end mandateData()
+
+	/**
+	 * Mark the request granted; when it can no longer be answered, revoke the
+	 * mandate just written, so no access stands without a granted request.
+	 *
+	 * @param string               $id           The request's id.
+	 * @param string               $organisation The tenant.
+	 * @param string               $decidedBy    The staff user granting it.
+	 * @param array<string, mixed> $mandate      The mandate just written.
+	 *
+	 * @return string One of the OUTCOME_* constants.
+	 *
+	 * @spec openspec/specs/portal-access-requests/spec.md#requirement-a-granted-request-opens-the-cases-req-iar-003
+	 */
+	private function grantedOrRevoked(string $id, string $organisation, string $decidedBy, array $mandate): string {
 		if ($this->decide(id: $id, organisation: $organisation, granted: true, decidedBy: $decidedBy) === true) {
 			return self::OUTCOME_DONE;
 		}
@@ -292,7 +365,7 @@ class PortalAccessRequestService implements PortalAccessRequestServiceInterface 
 		);
 
 		return self::OUTCOME_NOT_FOUND;
-	}//end grant()
+	}//end grantedOrRevoked()
 
 	/**
 	 * Refuse a request, keeping the reason the asker will read.

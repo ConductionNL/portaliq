@@ -43,6 +43,8 @@ use OCA\Portaliq\Service\Traffic\TrafficSegments;
  * unconfigured portal has made neither.
  *
  * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class TrafficConfigResolver implements TrafficConfigResolverInterface {
 
@@ -723,23 +725,40 @@ class TrafficConfigResolver implements TrafficConfigResolverInterface {
 
 		$paths = [];
 		foreach ($value as $entry) {
-			if (is_string($entry) === false) {
-				continue;
+			$path = $this->excludedPath(entry: $entry);
+			if ($path !== null) {
+				$paths[] = $path;
 			}
-
-			$path = trim($entry);
-			if ($path === '') {
-				continue;
-			}
-
-			if (str_starts_with($path, '/') === false) {
-				$path = '/' . $path;
-			}
-
-			$paths[] = rtrim($path, '/');
 		}
 
 		return array_values(array_unique($paths));
 	}//end excludedPaths()
+
+	/**
+	 * One declared path with a leading and without a trailing slash, or null
+	 * when it is no text.
+	 *
+	 * @param mixed $entry The declared path.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/specs/report-without-an-account/spec.md
+	 */
+	private function excludedPath(mixed $entry): string|null {
+		if (is_string($entry) === false) {
+			return null;
+		}
+
+		$path = trim($entry);
+		if ($path === '') {
+			return null;
+		}
+
+		if (str_starts_with($path, '/') === false) {
+			$path = '/' . $path;
+		}
+
+		return rtrim($path, '/');
+	}//end excludedPath()
 
 }

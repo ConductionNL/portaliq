@@ -1,6 +1,8 @@
 {
     "translations": {
         "Choose media": "Media kiezen",
+        "This site uses JavaScript for its interactive parts, and JavaScript is off in your browser.": "Deze website gebruikt JavaScript voor de interactieve onderdelen, en JavaScript staat uit in uw browser.",
+        "Open the plain version of this page": "Open de eenvoudige versie van deze pagina",
         "A part with a text shows \"Hulp bij deze pagina\" under its heading; a part without shows nothing.": "Een onderdeel met een tekst toont \"Hulp bij deze pagina\" onder de kop; een onderdeel zonder tekst toont niets.",
         "An e-mail address looks like info@example.nl.": "Een e-mailadres ziet eruit als info@example.nl.",
         "An image address starts with / or https://.": "Een afbeeldingsadres begint met / of https://.",

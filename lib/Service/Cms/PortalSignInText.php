@@ -110,24 +110,62 @@ class PortalSignInText {
 		}
 
 		$kept = $this->texts(source: $page, keys: ['title', 'intro']);
+		$kept = $this->withNotice(kept: $kept, page: $page);
+		$kept = $this->withStaffLink(kept: $kept, page: $page);
 
+		return $this->withPanel(kept: $kept, page: $page);
+	}//end signInPage()
+
+	/**
+	 * The parts with the notice under the cards, when it has a text.
+	 *
+	 * @param array<string, mixed>    $kept The parts so far.
+	 * @param array<array-key, mixed> $page The authored block.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withNotice(array $kept, array $page): array {
 		$notice = $this->texts(source: ($page['notice'] ?? null), keys: ['title', 'text']);
 		if (($notice['text'] ?? '') !== '') {
 			$kept['notice'] = $notice;
 		}
 
+		return $kept;
+	}//end withNotice()
+
+	/**
+	 * The parts with the line for staff, when it has a label and a link that can be followed.
+	 *
+	 * @param array<string, mixed>    $kept The parts so far.
+	 * @param array<array-key, mixed> $page The authored block.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withStaffLink(array $kept, array $page): array {
 		$staff = $this->texts(source: ($page['staffLink'] ?? null), keys: ['text', 'label', 'href']);
 		if (($staff['label'] ?? '') !== '' && $this->followable(href: ($staff['href'] ?? '')) === true) {
 			$kept['staffLink'] = $staff;
 		}
 
+		return $kept;
+	}//end withStaffLink()
+
+	/**
+	 * The parts with the side panel, when it has points.
+	 *
+	 * @param array<string, mixed>    $kept The parts so far.
+	 * @param array<array-key, mixed> $page The authored block.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withPanel(array $kept, array $page): array {
 		$panel = $this->panel(panel: ($page['panel'] ?? null));
 		if ($panel !== null) {
 			$kept['panel'] = $panel;
 		}
 
 		return $kept;
-	}//end signInPage()
+	}//end withPanel()
 
 	/**
 	 * The side panel: a title and the points that have a title. Null when

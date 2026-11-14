@@ -47,6 +47,8 @@ use OCP\IL10N;
  * for one case.
  *
  * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class CitizenWritableSetResolver implements CitizenWritableSetResolverInterface {
 	/**
@@ -398,12 +400,8 @@ class CitizenWritableSetResolver implements CitizenWritableSetResolverInterface 
 		}
 
 		foreach ($declared as $entry) {
-			$field = null;
-			if (is_array($entry) === true) {
-				$field = ($entry['field'] ?? null);
-			}
-
-			if (is_string($field) === false || $field === '' || in_array($field, $whitelist, true) === false) {
+			$field = $this->whitelistedField(entry: $entry, whitelist: $whitelist);
+			if ($field === null) {
 				continue;
 			}
 
@@ -417,6 +415,27 @@ class CitizenWritableSetResolver implements CitizenWritableSetResolverInterface 
 
 		return $fields;
 	}//end fields()
+
+	/**
+	 * The field a declared flag names, when the action's whitelist has it.
+	 *
+	 * @param mixed              $entry     The declared flag.
+	 * @param array<int, string> $whitelist The action's `fields`.
+	 *
+	 * @return string|null
+	 */
+	private function whitelistedField(mixed $entry, array $whitelist): string|null {
+		$field = null;
+		if (is_array($entry) === true) {
+			$field = ($entry['field'] ?? null);
+		}
+
+		if (is_string($field) === false || $field === '' || in_array($field, $whitelist, true) === false) {
+			return null;
+		}
+
+		return $field;
+	}//end whitelistedField()
 
 	/**
 	 * One field flag's state. A flag that does not name this audience is not a

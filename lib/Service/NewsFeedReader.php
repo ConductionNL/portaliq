@@ -220,6 +220,25 @@ class NewsFeedReader implements NewsFeedReaderInterface {
 	 * @return array<int, array<string, mixed>>
 	 */
 	private function withItems(array $newsletters, array $audience, array $reader, ?int &$budget): array {
+		$referenced = $this->referencedIds(newsletters: $newsletters);
+		$items      = $this->referencedItems(audience: $audience, referenced: $referenced);
+
+		$byId = [];
+		foreach ($this->translated(items: $items, subjectRef: $reader['subjectRef'], language: $reader['language'], budget: $budget) as $item) {
+			$byId[$this->rows->rowId(row: $item)] = $this->photoGate->apply(item: $item);
+		}
+
+		return $this->attachItems(newsletters: $newsletters, byId: $byId);
+	}//end withItems()
+
+	/**
+	 * The ids of every item the newsletters reference.
+	 *
+	 * @param array<int, array<string, mixed>> $newsletters The newsletters.
+	 *
+	 * @return array<string, true>
+	 */
+	private function referencedIds(array $newsletters): array {
 		$referenced = [];
 		foreach ($newsletters as $newsletter) {
 			foreach ((array)($newsletter['itemRefs'] ?? []) as $ref) {
@@ -227,6 +246,18 @@ class NewsFeedReader implements NewsFeedReaderInterface {
 			}
 		}
 
+		return $referenced;
+	}//end referencedIds()
+
+	/**
+	 * The items in the reader's audience that a newsletter references.
+	 *
+	 * @param array<string, mixed> $audience   The reader's audience.
+	 * @param array<string, true>  $referenced The referenced item ids.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function referencedItems(array $audience, array $referenced): array {
 		$items = [];
 		foreach ($this->itemsFor(audience: $audience) as $item) {
 			if (isset($referenced[$this->rows->rowId(row: $item)]) === true) {
@@ -234,11 +265,18 @@ class NewsFeedReader implements NewsFeedReaderInterface {
 			}
 		}
 
-		$byId = [];
-		foreach ($this->translated(items: $items, subjectRef: $reader['subjectRef'], language: $reader['language'], budget: $budget) as $item) {
-			$byId[$this->rows->rowId(row: $item)] = $this->photoGate->apply(item: $item);
-		}
+		return $items;
+	}//end referencedItems()
 
+	/**
+	 * Each newsletter with the items it references, in its order.
+	 *
+	 * @param array<int, array<string, mixed>>    $newsletters The newsletters.
+	 * @param array<string, array<string, mixed>> $byId        The readable items, by id.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function attachItems(array $newsletters, array $byId): array {
 		foreach ($newsletters as $index => $newsletter) {
 			$newsletters[$index]['items'] = [];
 			foreach ((array)($newsletter['itemRefs'] ?? []) as $ref) {
@@ -249,7 +287,7 @@ class NewsFeedReader implements NewsFeedReaderInterface {
 		}
 
 		return $newsletters;
-	}//end withItems()
+	}//end attachItems()
 
 	/**
 	 * The published news items in the reader's audience, as stored.
