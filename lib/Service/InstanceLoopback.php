@@ -44,7 +44,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
@@ -210,7 +210,7 @@ class InstanceLoopback {
 		$this->logger->info(
 			'[InstanceLoopback] The absolute URL did not answer from inside the server; calls to this instance use ' . $origin . ' for this request.'
 			. ' Set internal_base_url to skip the failed attempt.',
-			['app' => Application::APP_ID, 'reason' => $retry->failure->getMessage(), 'origin' => $origin]
+			['app' => AppIdentity::APP_ID, 'reason' => $retry->failure->getMessage(), 'origin' => $origin]
 		);
 	}//end remember()
 
@@ -228,7 +228,7 @@ class InstanceLoopback {
 			'[InstanceLoopback] This instance could not be reached at its absolute URL nor on the loopback.'
 			. ' Set internal_base_url to the address the server reaches itself on.',
 			[
-				'app' => Application::APP_ID,
+				'app' => AppIdentity::APP_ID,
 				'absolute' => $retry->failure->getMessage(),
 				'loopback' => $retry->failures,
 			]

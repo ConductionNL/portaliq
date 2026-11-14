@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Kernel\Contracts\PortalFamilyMembersInterface;
 use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -38,7 +39,7 @@ use Throwable;
  *
  * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t04
  */
-class PortalFamilyMembers {
+class PortalFamilyMembers implements PortalFamilyMembersInterface {
 	/**
 	 * OpenRegister's person lookup.
 	 */

@@ -24,11 +24,11 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\Identity\EmailLink\EmailLinkSetting;
-use OCA\Portaliq\Service\InternalBaseUrl;
-use OCA\Portaliq\Service\PageEditorService;
-use OCA\Portaliq\Service\SettingsService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\EmailLinkSettingInterface;
+use OCA\Portaliq\Kernel\Contracts\InternalBaseUrlInterface;
+use OCA\Portaliq\Kernel\Contracts\PageEditorServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\SettingsServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -41,19 +41,19 @@ class SettingsController extends Controller {
 	 * Constructor for the SettingsController.
 	 *
 	 * @param IRequest $request The request object
-	 * @param SettingsService $settingsService The settings service
-	 * @param InternalBaseUrl|null $internalBaseUrl The internal address for calls to this instance.
-	 * @param EmailLinkSetting|null $emailLinks The e-mail link switch, OFF by default (sign-in-with-an-email-link).
+	 * @param SettingsServiceInterface $settingsService The settings service
+	 * @param InternalBaseUrlInterface|null $internalBaseUrl The internal address for calls to this instance.
+	 * @param EmailLinkSettingInterface|null $emailLinks The e-mail link switch, OFF by default (sign-in-with-an-email-link).
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		IRequest $request,
-		private SettingsService $settingsService,
-		private ?InternalBaseUrl $internalBaseUrl = null,
-		private ?EmailLinkSetting $emailLinks = null,
+		private SettingsServiceInterface $settingsService,
+		private ?InternalBaseUrlInterface $internalBaseUrl = null,
+		private ?EmailLinkSettingInterface $emailLinks = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -81,22 +81,22 @@ class SettingsController extends Controller {
 			// instance's group structure for a field they have no form for.
 			// `mayEditPages` stays: it says only what THIS caller may do, which
 			// is what the interface asking the question needs.
-			unset($settings[PageEditorService::CONFIG_KEY]);
+			unset($settings[PageEditorServiceInterface::CONFIG_KEY]);
 			// The geography provider and the MaxMind account id are instance
 			// configuration; a non-admin has no form for them either.
-			unset($settings[SettingsService::GEO_KEY]);
+			unset($settings[SettingsServiceInterface::GEO_KEY]);
 		}
 
 		// The internal address for calls to this instance names where the
 		// server reaches itself: administrators only.
 		if ($isAdmin === true && $this->internalBaseUrl !== null) {
-			$settings[InternalBaseUrl::CONFIG_KEY] = $this->internalBaseUrl->stored();
+			$settings[InternalBaseUrlInterface::CONFIG_KEY] = $this->internalBaseUrl->stored();
 		}
 
 		// The e-mail link switch (decision 127): off until an administrator
 		// turns it on after the security review. Administrators only.
 		if ($isAdmin === true && $this->emailLinks !== null) {
-			$settings[EmailLinkSetting::SETTINGS_KEY] = $this->emailLinks->isEnabled();
+			$settings[EmailLinkSettingInterface::SETTINGS_KEY] = $this->emailLinks->isEnabled();
 		}
 
 		return new JSONResponse($settings);
@@ -153,18 +153,18 @@ class SettingsController extends Controller {
 		// The internal address for calls to this instance
 		// (instance-loopback-self-calls): validated before it is stored; an
 		// invalid one is refused and the stored address stays.
-		if ($this->internalBaseUrl !== null && is_string($data[InternalBaseUrl::CONFIG_KEY] ?? null) === true) {
-			if ($this->internalBaseUrl->store(value: $data[InternalBaseUrl::CONFIG_KEY]) === false) {
+		if ($this->internalBaseUrl !== null && is_string($data[InternalBaseUrlInterface::CONFIG_KEY] ?? null) === true) {
+			if ($this->internalBaseUrl->store(value: $data[InternalBaseUrlInterface::CONFIG_KEY]) === false) {
 				$config['internal_base_url_refused'] = true;
 			}
 
-			$config[InternalBaseUrl::CONFIG_KEY] = $this->internalBaseUrl->stored();
+			$config[InternalBaseUrlInterface::CONFIG_KEY] = $this->internalBaseUrl->stored();
 		}
 
 		// Only a real boolean switches the e-mail link sign-in.
-		if ($this->emailLinks !== null && is_bool($data[EmailLinkSetting::SETTINGS_KEY] ?? null) === true) {
-			$this->emailLinks->setEnabled(enabled: $data[EmailLinkSetting::SETTINGS_KEY]);
-			$config[EmailLinkSetting::SETTINGS_KEY] = $this->emailLinks->isEnabled();
+		if ($this->emailLinks !== null && is_bool($data[EmailLinkSettingInterface::SETTINGS_KEY] ?? null) === true) {
+			$this->emailLinks->setEnabled(enabled: $data[EmailLinkSettingInterface::SETTINGS_KEY]);
+			$config[EmailLinkSettingInterface::SETTINGS_KEY] = $this->emailLinks->isEnabled();
 		}
 
 		return new JSONResponse(

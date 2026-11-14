@@ -36,6 +36,7 @@ namespace OCA\Portaliq\Service;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\OidcStateStoreServiceInterface;
 use Throwable;
 
 /**
@@ -43,7 +44,7 @@ use Throwable;
  *
  * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T02
  */
-class OidcStateStoreService {
+class OidcStateStoreService implements OidcStateStoreServiceInterface {
 	/**
 	 * The OpenRegister register the `portalOidcState` schema lives in.
 	 */

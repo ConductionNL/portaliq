@@ -37,6 +37,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\PortalFileWriterInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -46,7 +47,7 @@ use Throwable;
  *
  * @spec openspec/specs/portal-contribution-contract/spec.md#scoped-file-attachment-on-a-subject-owned-object
  */
-class PortalFileWriter {
+class PortalFileWriter implements PortalFileWriterInterface {
 	use ObjectFileLookup;
 
 	/**
@@ -64,15 +65,6 @@ class PortalFileWriter {
 	 * Logged when the owned object cannot be resolved.
 	 */
 	private const ENTITY_LOOKUP_WARNING = 'Portaliq: object resolve for file attach failed';
-
-	/**
-	 * The tag on a file a resident sent through the portal, so the case screen
-	 * can list it apart from what staff put in the same folder
-	 * (cases-documents-on-the-case, REQ-CDC-004).
-	 *
-	 * @var string
-	 */
-	public const TAG_FROM_APPLICANT = 'portal:from-applicant';
 
 	/**
 	 * Constructor.

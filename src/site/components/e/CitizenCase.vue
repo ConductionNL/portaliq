@@ -156,6 +156,8 @@
 				:field="field"
 				:state="fieldStates[field] || null"
 				:value="draft[field] !== undefined ? draft[field] : caseRow[field]"
+				:format="fieldStates[field]?.format || ''"
+				:personal="fieldStates[field]?.personal === true"
 				:quiet="ended"
 				:t="t"
 				@change="onFieldChange" />

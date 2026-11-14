@@ -69,7 +69,11 @@
       phpstan + phpunit — all green on every file touched across all six
       changes applied in this pass (118/118 PHPUnit tests). `phpmd`/`psalm`
       not run standalone in this pass (time-boxed).
-- [ ] 5.2 Run Hydra gates (spec-coverage, e2e-coverage, spdx-headers) before
-      push. — not run as part of this apply pass (process/review step); flag
-      for the PR review stage. — not run: hydra gates need a base ref and the full vendor tree; the gate scripts are not available in this build session. Note: e2e-coverage will legitimately flag the
-      deferred Playwright spec above.
+- [x] 5.2 Run Hydra gates (spec-coverage, e2e-coverage, spdx-headers). — run
+      2026-11-13 on development with `run-hydra-gates.sh --full`:
+      spdx-headers PASS; e2e-coverage advisory (the deferred Playwright
+      spec above is among the scenarios it lists); spec-coverage is a delta
+      gate and reports not applicable on a checkout, since these tests are
+      already on development. None of the run's blocking findings names
+      `ContributionController`, `SessionController` or
+      `PortalPageController`.

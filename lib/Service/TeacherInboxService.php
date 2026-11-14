@@ -29,12 +29,13 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\TeacherInboxServiceInterface;
 use OCA\Portaliq\Service\Messaging\GuardianMessagingLeafInterface;
 
 /**
  * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-a-staff-members-inbox-is-bucketed-by-group-with-an-unread-count
  */
-class TeacherInboxService {
+class TeacherInboxService implements TeacherInboxServiceInterface {
 	private const DIRECT_BUCKET = 'direct';
 
 	/**

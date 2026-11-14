@@ -17,7 +17,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Theme;
 
-use OCA\Portaliq\Service\PortalThemeResolver;
+use OCA\Portaliq\Kernel\Contracts\PortalThemeResolverInterface;
 
 /**
  * Follows `extends` through the theme catalogue.
@@ -28,10 +28,10 @@ class PortalThemeParents {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalThemeResolver $resolver Reads the catalogue and resolves a set to its stylesheet.
+	 * @param PortalThemeResolverInterface $resolver Reads the catalogue and resolves a set to its stylesheet.
 	 */
 	public function __construct(
-		private readonly PortalThemeResolver $resolver,
+		private readonly PortalThemeResolverInterface $resolver,
 	) {
 	}//end __construct()
 

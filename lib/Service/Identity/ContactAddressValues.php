@@ -29,13 +29,14 @@ namespace OCA\Portaliq\Service\Identity;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\ContactAddressValuesInterface;
 
 /**
  * The values around a person's own addresses.
  *
  * @spec openspec/changes/archive/2026-09-30-identity-profile-page/specs/portal-profile/spec.md
  */
-class ContactAddressValues {
+class ContactAddressValues implements ContactAddressValuesInterface {
 	/**
 	 * The ways the organisation may contact the person (REQ-IPP-004).
 	 */

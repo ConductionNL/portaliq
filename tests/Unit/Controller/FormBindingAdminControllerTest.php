@@ -13,6 +13,7 @@ use OCA\Portaliq\Service\PortalObjectReader;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Contribution\FormStepsNormaliser;
 
 /**
  * The admin surface names the form a binding resolves to today (T03).
@@ -39,7 +40,7 @@ class FormBindingAdminControllerTest extends TestCase {
 			->getMock();
 		$reader->method('readCollection')->willReturn($forms);
 
-		$resolver = new PortalFormBindingResolver(reader: $reader);
+		$resolver = new PortalFormBindingResolver(reader: $reader, formStepsNormaliser: new FormStepsNormaliser());
 
 		return new FormBindingAdminController(
 			request: $this->createMock(IRequest::class),
