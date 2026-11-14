@@ -301,7 +301,7 @@ class PortalFormBindingResolver implements PortalFormBindingResolverInterface {
 			// The introduction, the statements asked, the confirmation page and
 			// mail (form-statements-intro-and-confirmation-mail). Carried as the
 			// binding declares them; the controller adds the portal's wording.
-			'intro' => $this->arrayOrNull(value: ($binding['intro'] ?? null)),
+			'intro' => $this->shownIntro(intro: ($binding['intro'] ?? null)),
 			'statementsDeclared' => $this->arrayOrNull(value: ($binding['statements'] ?? null)),
 			'confirmation' => $this->arrayOrNull(value: ($binding['confirmation'] ?? null)),
 			'confirmationMail' => ((($binding['confirmationMail']['enabled'] ?? false)) === true),
@@ -478,6 +478,26 @@ class PortalFormBindingResolver implements PortalFormBindingResolverInterface {
 
 		return ($name === '' || (string)($row['name'] ?? '') === $name);
 	}//end formAnswersTheBinding()
+
+	/**
+	 * The introduction the form opens with, or null when it opens at step 1:
+	 * an `intro` an administrator switched off (`enabled` false) is kept on
+	 * the binding but not shown. Absent `enabled` reads as on.
+	 *
+	 * @param mixed $intro The binding's `intro`.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t06
+	 */
+	private function shownIntro(mixed $intro): ?array {
+		$intro = $this->arrayOrNull(value: $intro);
+		if ($intro === null || ($intro['enabled'] ?? true) === false) {
+			return null;
+		}
+
+		return $intro;
+	}//end shownIntro()
 
 	/**
 	 * A value when it is an array, otherwise null.
