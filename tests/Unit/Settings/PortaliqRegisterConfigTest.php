@@ -408,7 +408,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.110.0 (portal 0.29.0): a portal's `favicon` and `heroImage`, and a `logo` that may be a media reference (portal-identity-from-the-admin). Additive.
 		// 0.111.0 (portalFormBinding 0.7.0): a binding's `availability`, its active period, limit per period, maintenance window and successor (form-governance-availability-retention-and-routing REQ-FGV-001). Additive.
 		$this->assertSame(expected: ['total', 'month', 'year'], actual: self::$register['components']['schemas']['portalFormBinding']['properties']['availability']['properties']['limit']['properties']['per']['enum']);
-		// 0.112.0 (development; portal 0.30.0): a portal's `adminGroups`, the groups whose members look after that portal (operate-portals-per-organisation T10). Additive; moved past development's 0.111.0 at merge time.
+		// 0.112.0 (portal 0.30.0): a portal's `adminGroups`, the groups whose members look after that portal (operate-portals-per-organisation T10). Additive; moved past development's 0.111.0 at merge time.
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portal']['properties']['adminGroups']['items']['type']);
 		// The portal form offers a group picker for it (operate-portals-per-organisation T12).
 		$this->assertSame(expected: 'nextcloud-group', actual: self::$register['components']['schemas']['portal']['properties']['adminGroups']['items']['referenceType']);
@@ -417,11 +417,15 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// article 0.1.0, page 0.8.0: marketing articles move here from pipelinq, and a markdown page body may name one as `articleRef` (marketing-articles-from-pipelinq). Additive.
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['page']['properties']['body']['properties']['articleRef']['type']);
 		$this->assertSame(expected: '0.1.0', actual: self::$register['components']['schemas']['article']['version']);
-		// 0.114.0 (portal 0.31.0): a portal's `organisationType` and `organisationTypeLabel` (portal-identity-from-the-admin REQ-PIA-003). Additive; moved past development's 0.112.0 at merge time.
-		$this->assertSame(expected: '0.114.0', actual: self::$register['info']['version']);
-		$this->assertSame(expected: '0.114.0', actual: self::$register['components']['registers']['portaliq']['version']);
-		$this->assertSame(expected: '0.31.0', actual: self::$register['components']['schemas']['portal']['version']);
+		// 0.113.0 (portalAccount 0.19.0): identity type `yivi`, a sign-in through the broker that shares only what a form asks (resident-identity-in-forms T05). Additive; moved past development's 0.112.0 at merge time.
+		// 0.114.0 (portal 0.31.0): a portal's `authentication.deskGroup`, the Nextcloud group whose members may fill a form in for a resident (resident-identity-in-forms T06). Additive; portal moved past development's 0.30.0.
+		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portal']['properties']['authentication']['properties']['deskGroup']['type']);
+		// 0.115.0 (portal 0.32.0): a portal's `organisationType` and `organisationTypeLabel` (portal-identity-from-the-admin REQ-PIA-003), with the marketing articles above. Additive; moved past development's 0.114.0 at merge time.
+		$this->assertSame(expected: '0.115.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.115.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame(expected: '0.32.0', actual: self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portalPage']['properties']['pages']['items']['properties']['blocks']['items']['properties']['messageTo']['type']);
+		$this->assertContains(needle: 'yivi', haystack: self::$register['components']['schemas']['portalAccount']['properties']['identityType']['enum']);
 		$this->assertSame(expected: 'date-time', actual: self::$register['components']['schemas']['guardianMessage']['properties']['readAt']['format']);
 		// 0.107.0 (portal 0.28.0): a portal's `caseTypeColumns`, how each case type's columns read in Mijn zaken (case-type-columns-in-my-cases). Additive.
 		$this->assertSame(expected: ['text', 'link', 'qr', 'date'], actual: self::$register['components']['schemas']['portal']['properties']['caseTypeColumns']['additionalProperties']['items']['properties']['render']['enum']);
@@ -443,7 +447,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertFalse(self::$register['components']['schemas']['newsItem']['properties']['public']['default']);
 		$this->assertSame('string', self::$register['components']['schemas']['newsItem']['properties']['portal']['type']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['newsItem']['properties']['publishedAt']['format']);
-		$this->assertSame('0.18.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$this->assertSame('0.19.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['activationExpiresAt']['format']);
 		$this->assertSame('0.7.0', self::$register['components']['schemas']['portalMessage']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalMessage']['properties']['ruleKey']['type']);
@@ -492,13 +496,13 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.8.0', self::$register['components']['schemas']['page']['version']);
-		$this->assertSame('0.31.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('0.32.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portal']['properties']['authentication']['properties']['registration']['properties']['businessGroup']['type']);
 		$this->assertSame('string', self::$register['components']['schemas']['portal']['properties']['tokens']['additionalProperties']['type']);
 		$this->assertTrue(self::$register['components']['schemas']['portal']['properties']['searchInsideDocuments']['default']);
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalDraft']['authorization']['read']);
 		$this->assertContains('portalDraft', self::$register['components']['registers']['portaliq']['schemas']);
-		$this->assertSame('0.18.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$this->assertSame('0.19.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.10.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['messageThread']['version']);
 		$this->assertArrayHasKey('recordRef', self::$register['components']['schemas']['messageThread']['properties']);
@@ -678,7 +682,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 
 		$account = $schemas['portalAccount'];
 		$this->assertSame(
-			['eherkenning', 'digid', 'eidas', 'generic', 'dev', 'email'],
+			['eherkenning', 'digid', 'eidas', 'yivi', 'generic', 'dev', 'email'],
 			$account['properties']['identityType']['enum']
 		);
 		// Union-merge caution (migration.md): the additive enum member must not
@@ -768,7 +772,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 	public function testTheMessageBoxRowsFitThePortalNotificationSchema(): void {
 		$schema = self::$register['components']['schemas']['portalNotification'];
 		$this->assertSame('0.3.0', $schema['version']);
-		$this->assertSame('0.18.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$this->assertSame('0.19.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$jsonSchema = json_decode((string)json_encode(['type' => 'object', 'required' => $schema['required'], 'properties' => $schema['properties']]), false);
 
 		$row = [
