@@ -18,7 +18,7 @@ test marked **fails today** must be run on `origin/development` first and seen r
 
 ## 2. Error reports
 
-- [ ] 2.1 Schema `publicationErrorReport` (status `new`, `handled`, `not-applicable`, `closedAt`).
+- [x] 2.1 Schema `publicationErrorReport` (status `new`, `handled`, `not-applicable`, `closedAt`).
   `PublicationReportController::create()` on POST `/api/site/publication-reports` with `#[PublicPage]`,
   `#[NoCSRFRequired]`, `#[AnonRateLimit]` and `#[BruteForceProtection]`; it checks the setting, the
   publication through the anonymous public read, the length, and stores no IP or user agent. It
@@ -31,6 +31,13 @@ test marked **fails today** must be run on `origin/development` first and seen r
     `testTheNotificationLinksToTheReport`, and `ApplicationTest::testTheNotifierIsRegistered`.
   - Gate route-auth green; a throttling e2e is not needed, the attributes are asserted by reflection in
     `testTheRouteIsRateLimited`.
+  - Built: `PublicationReportService` (submit, recipients, close, erase) over `PublicPublicationRead`
+    (opencatalogi's public by-id route, called anonymously through `InstanceLoopback`); the controller
+    answers 201 / 400 / 404 / 413 / 429; on top of `#[AnonRateLimit]` per address, a publication takes
+    10 reports an hour from all addresses (`testAPublicationTakesTenReportsAnHour`). The notifier is
+    `PublicationReportNotifier` (its own id), wired in `Application.php`, asserted in
+    `PublicationReportWiringTest::testTheNotifierIsRegistered`. The site record carries
+    `publications.errorReports` and `publications.withheldNotices`, never the owner.
 - [ ] 2.2 "Fout melden" on the publication page (a dialog in its own file under `src/site/dialogs/` or
   the site's equivalent), only when on (REQ-PER-002).
   - node test `tests/publication-report.spec.mjs` (wire into `check:specs`): `no button when off`,

@@ -406,6 +406,10 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.109.0 (portalFormBinding 0.6.0): `intro.enabled`, whether the form opens with its introduction (form-statements-intro-and-confirmation-mail T06). Additive.
 		// 0.110.0 (portal 0.29.0): the portal's `publicationErrorReports`, `publicationErrorReportOwner` and `showWithheldNotices`, all off by default (publication-error-reports-and-withheld-notices REQ-PER-001, REQ-PER-003). Additive.
 		$this->assertSame(expected: false, actual: self::$register['components']['schemas']['portal']['properties']['showWithheldNotices']['default']);
+		// 0.110.0 also adds `publicationErrorReport`, a visitor's report with no address or user agent (REQ-PER-002).
+		$this->assertSame(expected: ['new', 'handled', 'not-applicable'], actual: self::$register['components']['schemas']['publicationErrorReport']['properties']['status']['enum']);
+		$this->assertSame(expected: 2000, actual: self::$register['components']['schemas']['publicationErrorReport']['properties']['description']['maxLength']);
+		$this->assertContains(needle: 'publicationErrorReport', haystack: self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame(expected: '0.110.0', actual: self::$register['info']['version']);
 		$this->assertSame(expected: '0.110.0', actual: self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portalPage']['properties']['pages']['items']['properties']['blocks']['items']['properties']['messageTo']['type']);

@@ -84,7 +84,8 @@
                     "portalFaq",
                     "portalFinder",
                     "sharedBlock",
-                    "accessibilityMeasurement"
+                    "accessibilityMeasurement",
+                    "publicationErrorReport"
                 ],
                 "authorization": {
                     "read": [
@@ -12179,6 +12180,97 @@
                                 }
                             }
                         }
+                    }
+                }
+            },
+            "publicationErrorReport": {
+                "slug": "publicationErrorReport",
+                "authorization": {
+                    "read": [
+                        "portaliq-medewerkers"
+                    ],
+                    "export": [
+                        "portaliq-medewerkers"
+                    ]
+                },
+                "icon": "AlertOctagon",
+                "version": "0.1.0",
+                "title": "Publication Error Report",
+                "description": "A visitor's report of an error in a publication, sent from its page while the portal has error reports on (publication-error-reports-and-withheld-notices REQ-PER-002). It reaches the portal's owner of error reports, who marks it handled or not applicable. It holds no IP address and no user agent.",
+                "type": "object",
+                "required": [
+                    "portal",
+                    "publication",
+                    "description",
+                    "status",
+                    "receivedAt"
+                ],
+                "properties": {
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The slug of the portal the report was sent from.",
+                        "example": "zuiddrecht"
+                    },
+                    "publication": {
+                        "title": "Publication",
+                        "type": "string",
+                        "description": "The id of the publication the report is about, as the public read returned it.",
+                        "example": "7f3c2a9e-1b4d-4e8a-9c2f-5d6e7a8b9c0d"
+                    },
+                    "publicationTitle": {
+                        "title": "Publication title",
+                        "type": "string",
+                        "description": "The publication's title when the report was sent, so the queue reads a name.",
+                        "default": ""
+                    },
+                    "document": {
+                        "title": "Document",
+                        "type": "string",
+                        "description": "The document of the publication the report names, if any.",
+                        "default": ""
+                    },
+                    "description": {
+                        "title": "What is wrong",
+                        "type": "string",
+                        "maxLength": 2000,
+                        "description": "What the visitor says is wrong, at most 2000 characters."
+                    },
+                    "contactEmail": {
+                        "title": "Contact e-mail",
+                        "type": "string",
+                        "format": "email",
+                        "description": "An address for a reply, when the visitor gave one. Erased 30 days after the report is closed.",
+                        "default": ""
+                    },
+                    "status": {
+                        "title": "Status",
+                        "type": "string",
+                        "enum": [
+                            "new",
+                            "handled",
+                            "not-applicable"
+                        ],
+                        "default": "new",
+                        "description": "Where the report stands: new, handled, or not applicable."
+                    },
+                    "receivedAt": {
+                        "title": "Received on",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the report arrived."
+                    },
+                    "closedAt": {
+                        "title": "Closed on",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the owner marked it handled or not applicable; the contact e-mail is erased 30 days later."
+                    },
+                    "closedBy": {
+                        "title": "Closed by",
+                        "type": "string",
+                        "description": "The Nextcloud user who closed the report.",
+                        "default": ""
                     }
                 }
             }

@@ -7460,6 +7460,160 @@
                     }
                 }
             }
+        },
+        "/site/publication-reports": {
+            "post": {
+                "operationId": "publication-report-create",
+                "summary": "Report an error in a publication",
+                "description": "Report an error in a publication. Public, rate limited per address and per publication; answers 404 while the portal has error reports off or for a publication the anonymous public read does not return. Stores no IP address or user agent.",
+                "tags": [
+                    "publication-report"
+                ],
+                "security": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "portal": {
+                                        "type": "string",
+                                        "description": "The portal slug."
+                                    },
+                                    "publication": {
+                                        "type": "string",
+                                        "description": "The publication id."
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "maxLength": 2000,
+                                        "description": "What is wrong."
+                                    },
+                                    "document": {
+                                        "type": "string",
+                                        "description": "The document it is about, if any."
+                                    },
+                                    "contactEmail": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "description": "An address for a reply, if any."
+                                    }
+                                },
+                                "required": [
+                                    "publication",
+                                    "description"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "The report was received.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/Problem400"
+                    },
+                    "404": {
+                        "description": "Error reports are off, or the publication is not public."
+                    },
+                    "413": {
+                        "description": "The description is longer than 2000 characters."
+                    },
+                    "429": {
+                        "description": "Too many reports."
+                    }
+                }
+            }
+        },
+        "/publication-reports/{id}/close": {
+            "post": {
+                "operationId": "publication-report-close",
+                "summary": "Close an error report as handled or not applicable",
+                "description": "Close an error report as handled or not applicable. Only the portal's owner of error reports, or a member of that group, may. Needs a signed-in Nextcloud user.",
+                "tags": [
+                    "publication-report"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "The report.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "portal": {
+                                        "type": "string",
+                                        "description": "The portal slug."
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "handled",
+                                            "not-applicable"
+                                        ],
+                                        "description": "How the report is closed."
+                                    }
+                                },
+                                "required": [
+                                    "portal",
+                                    "status"
+                                ],
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The report was closed.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/Problem400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "description": "Not the owner of this portal's error reports."
+                    },
+                    "404": {
+                        "description": "No such report on this portal."
+                    }
+                }
+            }
         }
     },
     "components": {

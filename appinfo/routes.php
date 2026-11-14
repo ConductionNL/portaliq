@@ -426,6 +426,10 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         // A guest's one act from a link a contributing app signed
         // (identity-guest-page-for-signed-links D3): public, rate limited, no session.
         ['name' => 'guestAction#preview', 'url' => '/portal/api/guest/{appId}/{actionId}/preview', 'verb' => 'POST'],
+        // An error report on a publication, and its owner closing it
+        // (publication-error-reports-and-withheld-notices REQ-PER-002).
+        ['name' => 'publicationReport#create', 'url' => '/api/site/publication-reports', 'verb' => 'POST'],
+        ['name' => 'publicationReport#close', 'url' => '/api/publication-reports/{id}/close', 'verb' => 'POST'],
         ['name' => 'guestAction#act', 'url' => '/portal/api/guest/{appId}/{actionId}', 'verb' => 'POST'],
         ['name' => 'portalAccountSelf#updateDetails', 'url' => '/portal/api/identity/details', 'verb' => 'PATCH'],
         ['name' => 'portalAccountSelf#details', 'url' => '/portal/api/identity/details', 'verb' => 'GET'],
