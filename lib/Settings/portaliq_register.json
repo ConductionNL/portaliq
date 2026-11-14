@@ -4815,11 +4815,12 @@
                         ]
                     },
                     "adminGroups": {
-                        "title": "Administrator groups",
+                        "title": "Administrators",
                         "type": "array",
                         "description": "The Nextcloud groups whose members look after this portal: its settings, domains, theme, sign-in, pages, menus and notices. Only an instance administrator changes this list.",
                         "items": {
                             "type": "string",
+                            "format": "nc-group",
                             "description": "A Nextcloud group id.",
                             "example": "zeist-beheer"
                         },

@@ -408,6 +408,8 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(expected: '0.110.0', actual: self::$register['info']['version']);
 		$this->assertSame(expected: '0.110.0', actual: self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portal']['properties']['adminGroups']['items']['type']);
+		// The portal form offers a group picker for it (operate-portals-per-organisation T12).
+		$this->assertSame(expected: 'nc-group', actual: self::$register['components']['schemas']['portal']['properties']['adminGroups']['items']['format']);
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portalPage']['properties']['pages']['items']['properties']['blocks']['items']['properties']['messageTo']['type']);
 		$this->assertSame(expected: 'date-time', actual: self::$register['components']['schemas']['guardianMessage']['properties']['readAt']['format']);
 		// 0.107.0 (portal 0.28.0): a portal's `caseTypeColumns`, how each case type's columns read in Mijn zaken (case-type-columns-in-my-cases). Additive.
