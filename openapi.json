@@ -168,6 +168,10 @@
             "description": "Figures of all published portals together, for the dashboard."
         },
         {
+            "name": "portal-provision",
+            "description": "Provisioning an organisation's draft portal from the admin page."
+        },
+        {
             "name": "portal-signin",
             "description": "The Sign-in widget on a portal's page: per provider the login route, and the integriq broker settings (signin-integriq-broker-login T11)."
         },
@@ -4460,6 +4464,78 @@
                     },
                     "403": {
                         "$ref": "#/components/responses/Problem403"
+                    }
+                }
+            }
+        },
+        "/portals/provision": {
+            "post": {
+                "operationId": "portal-provision-provision",
+                "summary": "Create the draft portal of an organisation",
+                "description": "Create the draft portal of an organisation: the portal with its host, a menu and a home page, not published. Answers the DNS TXT record that verifies the host. Needs an instance administrator.",
+                "tags": [
+                    "portal-provision"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "organisation": {
+                                        "type": "string",
+                                        "description": "The organisation the portal belongs to."
+                                    },
+                                    "slug": {
+                                        "type": "string",
+                                        "description": "The portal's slug."
+                                    },
+                                    "title": {
+                                        "type": "string",
+                                        "description": "The portal's title."
+                                    },
+                                    "host": {
+                                        "type": "string",
+                                        "description": "The host the portal answers on, without scheme or port."
+                                    }
+                                },
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "The draft portal was created.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/Problem400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/Problem409"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/Problem500"
+                    },
+                    "503": {
+                        "$ref": "#/components/responses/Problem503"
                     }
                 }
             }
