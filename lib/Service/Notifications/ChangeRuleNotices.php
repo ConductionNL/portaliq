@@ -41,6 +41,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Notifications;
 
+use OCA\Portaliq\Kernel\Contracts\ChangeRuleNoticesInterface;
 use OCA\Portaliq\Service\Identity\PortalAccountsByClaim;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCP\IDateTimeZone;
@@ -51,7 +52,7 @@ use OCP\IDateTimeZone;
  *
  * @spec openspec/specs/portal-notifications-and-preferences/spec.md
  */
-class ChangeRuleNotices {
+class ChangeRuleNotices implements ChangeRuleNoticesInterface {
 
 	/**
 	 * Constructor.

@@ -25,7 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\Service\Mail\MailTemplateRenderer;
+use OCA\Portaliq\Kernel\Contracts\MailTemplateRendererInterface;
 use OCA\Portaliq\Service\Mail\RecipientMask;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -45,12 +45,12 @@ final class SampleMailSender {
 	 * Constructor.
 	 *
 	 * @param IMailer              $mailer   Sends the sample.
-	 * @param MailTemplateRenderer $renderer Fills the sample values.
+	 * @param MailTemplateRendererInterface $renderer Fills the sample values.
 	 * @param LoggerInterface      $logger   Records a sample that could not be sent.
 	 */
 	public function __construct(
 		private readonly IMailer $mailer,
-		private readonly MailTemplateRenderer $renderer,
+		private readonly MailTemplateRendererInterface $renderer,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -89,7 +89,7 @@ final class SampleMailSender {
 	 */
 	private function sampleMessage(SampleMail $sample): IMessage {
 		$mail = $this->mailer->createEMailTemplate('portaliq.mail.test', []);
-		$label = (string)MailTemplateRenderer::TEMPLATES[$sample->templateKey]['label'];
+		$label = (string)MailTemplateRendererInterface::TEMPLATES[$sample->templateKey]['label'];
 		$line = $this->renderer->preview(key: $sample->templateKey, text: $this->orElse(text: $sample->subject, fallback: $label));
 		$mail->setSubject(trim((string)preg_replace('/\s+/', ' ', $line)));
 		$mail->addHeader();

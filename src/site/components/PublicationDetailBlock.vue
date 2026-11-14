@@ -57,7 +57,8 @@
 				WHAT A VISITOR NEEDS, IN WORDS (resident-sees-words-not-codes):
 				the date, the information category by name and the themes by
 				name. The archive's bookkeeping (Plooi, retention, the
-				organisation id, the status) stays off the page.
+				organisation id, the status) stays out of this worded part;
+				it shows only in the "All details" table at the end.
 			-->
 			<dl
 				v-if="fields.length > 0"
@@ -186,6 +187,57 @@
 					</li>
 				</ul>
 			</section>
+
+			<!--
+				ALL DETAILS (publication-page-all-details): every stored
+				property below the worded part, with a readable label. The
+				object's own metadata and empty values are left out, and a
+				value shaped like a URL is a link. The worded part above stays
+				free of stored codes.
+			-->
+			<section
+				v-if="details.length > 0"
+				class="pq-detail__all"
+				data-testid="publication-all-details">
+				<h2 id="pq-detail-all-details" class="utrecht-heading-2">
+					{{ t('All details') }}
+				</h2>
+				<table
+					class="utrecht-table pq-detail__all-table"
+					aria-labelledby="pq-detail-all-details">
+					<tbody class="utrecht-table__body">
+						<tr
+							v-for="row in details"
+							:key="row.name"
+							class="utrecht-table__row"
+							:data-property="row.name">
+							<th scope="row" class="utrecht-table__header-cell">
+								{{ row.label }}
+							</th>
+							<td class="utrecht-table__cell">
+								<ul v-if="row.items.length > 1" class="pq-detail__list">
+									<li v-for="(item, index) in row.items" :key="index">
+										<a
+											v-if="item.href"
+											class="utrecht-link"
+											:href="item.href"
+											rel="noopener noreferrer">{{ item.text }}</a>
+										<span v-else>{{ item.text }}</span>
+									</li>
+								</ul>
+								<template v-else>
+									<a
+										v-if="row.items[0].href"
+										class="utrecht-link"
+										:href="row.items[0].href"
+										rel="noopener noreferrer">{{ row.items[0].text }}</a>
+									<span v-else>{{ row.items[0].text }}</span>
+								</template>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</section>
 		</article>
 	</section>
 </template>
@@ -195,6 +247,7 @@ import { defineAsyncComponent } from 'vue'
 import { createTranslator } from '../../shared/i18n/index.js'
 import { pageLocale } from '../lib/facetLabels.js'
 import {
+	allDetailRows,
 	publicationSummary,
 	themeIdsOf,
 	toDocuments,
@@ -352,6 +405,14 @@ export default {
 		categoryName() {
 			const row = this.fields.find((field) => field.name === 'wooCategory')
 			return row ? String(row.value) : ''
+		},
+
+		/**
+		 * @return {Array<object>} The rows of the "All details" table.
+		 * @spec openspec/changes/publication-page-all-details/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-end-with-an-all-details-table-of-every-stored-property
+		 */
+		details() {
+			return allDetailRows(this.publication)
 		},
 
 		fields() {
@@ -617,6 +678,32 @@ export default {
 		var(--nldesign-color-text-muted, #65757b)
 	);
 	margin-inline-start: 4px;
+}
+
+/* All details: label column and value column, tokens only. */
+.pq-detail__all {
+	margin-block-start: 24px;
+}
+
+.pq-detail__all-table {
+	inline-size: 100%;
+	border-collapse: collapse;
+}
+
+.pq-detail__all-table th,
+.pq-detail__all-table td {
+	padding-block: 0.5rem;
+	padding-inline-end: 1rem;
+	border-block-end: 1px solid
+		var(--nldesign-color-border, var(--nldesign-color-border-dark, currentcolor));
+	text-align: start;
+	vertical-align: top;
+	overflow-wrap: anywhere;
+}
+
+.pq-detail__all-table th {
+	inline-size: 30%;
+	font-weight: 600;
 }
 
 /* The cards variant (board Publicatie). Tokens only. */

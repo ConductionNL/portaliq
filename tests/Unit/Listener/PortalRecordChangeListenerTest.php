@@ -27,6 +27,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Portaliq\Contribution\NotificationRuleNormaliser;
 
 /**
  * A declared change reaches the resident's inbox (REQ-NAP-002 to 004).
@@ -137,7 +138,7 @@ class PortalRecordChangeListenerTest extends TestCase {
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturn($mapper);
 
-		$index = new PortalChangeRuleIndex(registry: $registry, container: $container, logger: $this->createMock(LoggerInterface::class));
+		$index = new PortalChangeRuleIndex(registry: $registry, container: $container, logger: $this->createMock(LoggerInterface::class), notificationRuleNormaliser: new NotificationRuleNormaliser());
 
 		$accounts = $this->createMock(PortalAccountService::class);
 		$accounts->method('findBySubjectRef')->willReturnCallback(

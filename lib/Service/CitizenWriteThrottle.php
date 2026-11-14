@@ -34,6 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\CitizenWriteThrottleInterface;
 use OCP\ICacheFactory;
 use Throwable;
 
@@ -42,7 +43,7 @@ use Throwable;
  *
  * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
-class CitizenWriteThrottle {
+class CitizenWriteThrottle implements CitizenWriteThrottleInterface {
 	/**
 	 * The cache namespace.
 	 */
@@ -83,7 +84,7 @@ class CitizenWriteThrottle {
 	 *
 	 * @return bool True when the write may proceed.
 	 *
-	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/changes/citizen-case-write-limit/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-residents-writes-on-her-own-case-are-limited-per-case-and-per-identity-req-cwl-001
 	 */
 	public function allow(string $subjectRef, string $caseId): bool {
 		if ($subjectRef === '') {

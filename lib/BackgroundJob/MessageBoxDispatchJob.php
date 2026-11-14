@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\BackgroundJob;
 
-use OCA\Portaliq\Service\Notifications\MessageBoxSender;
+use OCA\Portaliq\Kernel\Contracts\MessageBoxSenderInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\QueuedJob;
 use Psr\Log\LoggerInterface;
@@ -43,12 +43,12 @@ class MessageBoxDispatchJob extends QueuedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory     $time   The clock.
-	 * @param MessageBoxSender $sender Sends and logs.
+	 * @param MessageBoxSenderInterface $sender Sends and logs.
 	 * @param LoggerInterface  $logger The logger; never given the recipient.
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly MessageBoxSender $sender,
+		private readonly MessageBoxSenderInterface $sender,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(time: $time);

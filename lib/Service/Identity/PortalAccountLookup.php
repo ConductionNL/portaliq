@@ -33,6 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
+use OCA\Portaliq\Kernel\Contracts\PortalAccountLookupInterface;
 use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 
 /**
@@ -40,7 +41,7 @@ use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
  *
  * @spec openspec/specs/portal-identity-space/spec.md
  */
-class PortalAccountLookup {
+class PortalAccountLookup implements PortalAccountLookupInterface {
 
 	/**
 	 * The OpenRegister register the `portalAccount` schema lives in.

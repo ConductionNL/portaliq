@@ -41,16 +41,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\CrossRefConfigNormaliserInterface;
+
 /**
  * Validates the per-action `crossRefs` declaration, fail closed.
  *
  * @spec openspec/specs/portal-contribution-contract/spec.md
  */
-class CrossRefConfigNormaliser {
-	/**
-	 * The manifest key carrying the declaration.
-	 */
-	public const KEY = 'crossRefs';
+class CrossRefConfigNormaliser implements CrossRefConfigNormaliserInterface {
 
 	/**
 	 * The action types a cross reference can be declared on. A read has no

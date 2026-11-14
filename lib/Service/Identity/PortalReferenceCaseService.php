@@ -32,7 +32,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalReferenceCaseServiceInterface;
 use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 
 /**
@@ -40,7 +41,7 @@ use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
  *
  * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/design.md
  */
-class PortalReferenceCaseService {
+class PortalReferenceCaseService implements PortalReferenceCaseServiceInterface {
 	/**
 	 * The audience a reference session reads as: a resident.
 	 */
@@ -60,11 +61,11 @@ class PortalReferenceCaseService {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalContributionRegistry $registry The case apps' collection declarations.
+	 * @param PortalContributionRegistryInterface $registry The case apps' collection declarations.
 	 * @param ScopedCollectionReaderInterface $reader Reads the binding and the one case.
 	 */
 	public function __construct(
-		private readonly PortalContributionRegistry $registry,
+		private readonly PortalContributionRegistryInterface $registry,
 		private readonly ScopedCollectionReaderInterface $reader,
 	) {
 	}//end __construct()

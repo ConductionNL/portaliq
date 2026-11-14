@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Kernel\Contracts\PortalEmailVerificationInterface;
 use OCP\ICache;
 use OCP\ICacheFactory;
 use OCP\IL10N;
@@ -40,15 +41,7 @@ use OCP\Security\ISecureRandom;
  *
  * @spec openspec/changes/resident-identity-in-forms/tasks.md#t03
  */
-class PortalEmailVerification {
-
-	public const SENT = 'sent';
-
-	public const INVALID = 'invalid';
-
-	public const WAIT = 'wait';
-
-	public const THROTTLED = 'throttled';
+class PortalEmailVerification implements PortalEmailVerificationInterface {
 
 	public const UNAVAILABLE = 'unavailable';
 
@@ -73,13 +66,6 @@ class PortalEmailVerification {
 	 * @var int
 	 */
 	public const MAX_TRIES = 5;
-
-	/**
-	 * How many seconds must pass before a new code can be asked.
-	 *
-	 * @var int
-	 */
-	public const RESEND_AFTER = 60;
 
 	/**
 	 * How long a proof of verification stays valid, in seconds.

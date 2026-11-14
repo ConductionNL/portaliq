@@ -42,7 +42,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Kernel\Contracts\NewsAudienceOptionsInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -52,7 +53,7 @@ use Throwable;
  *
  * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T2
  */
-class NewsAudienceOptions {
+class NewsAudienceOptions implements NewsAudienceOptionsInterface {
 	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
 
@@ -71,12 +72,12 @@ class NewsAudienceOptions {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalContributionRegistry $registry The contributions for the parent audience.
+	 * @param PortalContributionRegistryInterface $registry The contributions for the parent audience.
 	 * @param ContainerInterface $container For resolving OpenRegister services.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
-		private readonly PortalContributionRegistry $registry,
+		private readonly PortalContributionRegistryInterface $registry,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 	) {

@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Mail;
 
+use OCA\Portaliq\Kernel\Contracts\MailTemplateRendererInterface;
 use OCA\Portaliq\Service\PortalObjectReader;
 
 /**
@@ -35,7 +36,7 @@ use OCA\Portaliq\Service\PortalObjectReader;
  *
  * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t02
  */
-class MailTemplateRenderer {
+class MailTemplateRenderer implements MailTemplateRendererInterface {
 	/**
 	 * The register and schema of a stored text.
 	 */
@@ -45,98 +46,6 @@ class MailTemplateRenderer {
 	 * The schema of a stored text.
 	 */
 	public const SCHEMA = 'portalMailTemplate';
-
-	/**
-	 * Each kind of mail and the variables its text may use.
-	 *
-	 * @var array<string, array{label: string, variables: string[], sample: array<string, string>}>
-	 */
-	public const TEMPLATES = [
-		'reference-link' => [
-			'label' => 'Link to follow a case',
-			'variables' => ['portal', 'link'],
-			'sample' => [
-				'portal' => 'Gemeente Voorbeeld',
-				'link' => 'https://portaal.example/mijn',
-			],
-		],
-		'invitation' => [
-			'label' => 'Invitation',
-			'variables' => ['portal', 'link'],
-			'sample' => [
-				'portal' => 'Gemeente Voorbeeld',
-				'link' => 'https://portaal.example/mijn',
-			],
-		],
-		'account-invitation' => [
-			'label' => 'Invitation to an account',
-			'variables' => ['portal', 'link'],
-			'sample' => [
-				'portal' => 'Gemeente Voorbeeld',
-				'link' => 'https://portaal.example/mijn',
-			],
-		],
-		'email-confirmation' => [
-			'label' => 'Confirm an e-mail address',
-			'variables' => ['portal', 'link'],
-			'sample' => [
-				'portal' => 'Gemeente Voorbeeld',
-				'link' => 'https://portaal.example/mijn',
-			],
-		],
-		'registration-activation' => [
-			'label' => 'Activate an account',
-			'variables' => ['portal', 'link'],
-			'sample' => [
-				'portal' => 'Gemeente Voorbeeld',
-				'link' => 'https://portaal.example/mijn',
-			],
-		],
-		'contact-confirmation' => [
-			'label' => 'Confirmation of a question',
-			'variables' => ['portal', 'topic'],
-			'sample' => [
-				'portal' => 'Gemeente Voorbeeld',
-				'topic' => 'Afval',
-			],
-		],
-		'form-email-code' => [
-			'label' => 'Code to check an e-mail address',
-			'variables' => ['portal', 'code'],
-			'sample' => [
-				'portal' => 'Gemeente Voorbeeld',
-				'code' => '482915',
-			],
-		],
-		'form-confirmation' => [
-			'label' => 'Confirmation of a request',
-			'variables' => ['portal', 'reference', 'formName'],
-			'sample' => [
-				'portal' => 'Gemeente Voorbeeld',
-				'reference' => 'AANVRAAG-7',
-				'formName' => 'Woo-verzoek',
-			],
-		],
-		'plan-ending' => [
-			'label' => 'A plan is nearly ending',
-			'variables' => ['portal', 'plan', 'date', 'open'],
-			'sample' => [
-				'portal' => 'Gemeente Voorbeeld',
-				'plan' => 'Schuldhulp op orde',
-				'date' => '2026-10-20',
-				'open' => '3',
-			],
-		],
-		'action-due' => [
-			'label' => 'An action is nearly due',
-			'variables' => ['portal', 'action', 'date'],
-			'sample' => [
-				'portal' => 'Gemeente Voorbeeld',
-				'action' => 'Formulier inleveren',
-				'date' => '2026-10-14',
-			],
-		],
-	];
 
 	/**
 	 * Constructor.
