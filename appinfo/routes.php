@@ -284,6 +284,9 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         // What would render broken if a portal's content went out as it is (portal-cms-admin-ui).
         ['name' => 'cmsEditor#publishCheck', 'url' => '/api/cms/publish-check', 'verb' => 'GET'],
         // The TXT record a portal's domains publish, and the check that reads it (portal-cms-admin-ui).
+        // The "New portal" dialog on the Portals page, instance admins only
+        // (operate-portals-per-organisation T07).
+        ['name' => 'portalProvision#provision', 'url' => '/api/portals/provision', 'verb' => 'POST'],
         ['name' => 'cmsDomain#records', 'url' => '/api/cms/domains', 'verb' => 'GET'],
         ['name' => 'cmsDomain#verify', 'url' => '/api/cms/domains/verify', 'verb' => 'POST'],
         // A page's published versions for the designer's History dialog
