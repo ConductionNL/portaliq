@@ -26,6 +26,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Kernel\Contracts\IntakeQueueDrainInterface;
+
 /**
  * Drains `queued` and `failed` queue entries into their destinations.
  *
@@ -36,7 +38,7 @@ namespace OCA\Portaliq\Service\Intake;
  *
  * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#4.1
  */
-class IntakeQueueDrain {
+class IntakeQueueDrain implements IntakeQueueDrainInterface {
 	/**
 	 * Constructor.
 	 *

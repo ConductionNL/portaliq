@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\CmsReaderInterface;
 use OCA\Portaliq\Service\Cms\MediaReferences;
 use OCA\Portaliq\Service\Cms\PortalHelp;
 use OCA\Portaliq\Service\Cms\PortalShell;
@@ -52,7 +53,7 @@ use Psr\Log\LoggerInterface;
  *
  * @SuppressWarnings(PHPMD.TooManyPublicMethods) -- one method per kind of content the headless API serves.
  */
-class CmsReader {
+class CmsReader implements CmsReaderInterface {
 
 	/**
 	 * The audience-keyed distributed cache.
@@ -110,7 +111,6 @@ class CmsReader {
 		$this->faqReader = new CmsFaq(cache: $this->cache, rows: $this->rows, reader: $this);
 	}//end __construct()
 
-
 	/**
 	 * Read the menus of a portal.
 	 *
@@ -137,7 +137,6 @@ class CmsReader {
 
 		return $menus;
 	}//end menus()
-
 
 	/**
 	 * Read the published pages of a portal, without their bodies.
@@ -175,7 +174,6 @@ class CmsReader {
 
 		return $pages;
 	}//end pages()
-
 
 	/**
 	 * Read one published page by route.
@@ -229,7 +227,6 @@ class CmsReader {
 		return $page;
 	}//end page()
 
-
 	/**
 	 * Resolve the stored identifier of a page at a route, published or not.
 	 *
@@ -271,7 +268,6 @@ class CmsReader {
 
 		return null;
 	}//end identify()
-
 
 	/**
 	 * Every row of one schema for a portal, drafts included, for the editor's
@@ -328,7 +324,6 @@ class CmsReader {
 		return $terms;
 	}//end glossary()
 
-
 	/**
 	 * Shape a stored menu row for the API.
 	 *
@@ -352,7 +347,6 @@ class CmsReader {
 			'items'    => $items,
 		];
 	}//end shapeMenu()
-
 
 	/**
 	 * Shape one top-level menu item, with its children ordered.
@@ -381,7 +375,6 @@ class CmsReader {
 		];
 	}//end shapeMenuItem()
 
-
 	/**
 	 * Shape one child of a menu item.
 	 *
@@ -401,7 +394,6 @@ class CmsReader {
 			'icon'  => (string)($child['icon'] ?? ''),
 		];
 	}//end shapeMenuChild()
-
 
 	/**
 	 * A page's search-engine fields, stored flat as `seo*` so the page form
@@ -423,7 +415,6 @@ class CmsReader {
 		];
 	}//end shapeSeo()
 
-
 	/**
 	 * The portal's shell as the public site contract serves it.
 	 *
@@ -436,7 +427,6 @@ class CmsReader {
 	public function shell(array $portal): array {
 		return $this->shell->project(portal: $portal);
 	}//end shell()
-
 
 	/**
 	 * Shape a stored page row for the API.
@@ -459,7 +449,6 @@ class CmsReader {
 			'body'    => $this->shapeBody(row: $row, organisation: $organisation),
 		];
 	}//end shapePage()
-
 
 	/**
 	 * Shape a stored page's body: markdown source, or a widget grid.
@@ -488,7 +477,6 @@ class CmsReader {
 
 		return $shaped;
 	}//end shapeBody()
-
 
 	/**
 	 * Shape a grid body: its widgets ordered by row then column, its aside
@@ -523,7 +511,6 @@ class CmsReader {
 			'unknownRegions' => $grouped['unknownRegions'],
 		];
 	}//end shapeGrid()
-
 
 	/**
 	 * A fixed-width aside column, when the page asks for one

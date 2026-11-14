@@ -32,13 +32,13 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\Intake\DestinationIntake;
-use OCA\Portaliq\Service\Intake\PortalEmbedGuard;
-use OCA\Portaliq\Service\Intake\PortalEmbedThrottle;
-use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
-use OCA\Portaliq\Service\Intake\PortalFormValidator;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\DestinationIntakeInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalEmbedGuardInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalEmbedThrottleInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFormBindingResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFormValidatorInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -49,6 +49,7 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\IRequest;
 use OCP\IURLGenerator;
+use OCA\Portaliq\Kernel\DestinationRefusal;
 
 /**
  * Serves the framed form and takes its submissions.
@@ -66,25 +67,25 @@ class PortalEmbedController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalResolver $portals Resolves the portal being framed.
-	 * @param PortalFormBindingResolver $bindings Resolves the binding.
-	 * @param PortalEmbedGuard $guard Decides who may frame this form.
-	 * @param PortalEmbedThrottle $throttle Counts frame traffic per origin.
-	 * @param PortalFormValidator $validator Validates a submission.
-	 * @param DestinationIntake $intake Submits into the binding's destination (decision 179).
+	 * @param PortalResolverInterface $portals Resolves the portal being framed.
+	 * @param PortalFormBindingResolverInterface $bindings Resolves the binding.
+	 * @param PortalEmbedGuardInterface $guard Decides who may frame this form.
+	 * @param PortalEmbedThrottleInterface $throttle Counts frame traffic per origin.
+	 * @param PortalFormValidatorInterface $validator Validates a submission.
+	 * @param DestinationIntakeInterface $intake Submits into the binding's destination (decision 179).
 	 * @param IURLGenerator $urls Builds the follow link.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalResolver $portals,
-		private readonly PortalFormBindingResolver $bindings,
-		private readonly PortalEmbedGuard $guard,
-		private readonly PortalEmbedThrottle $throttle,
-		private readonly PortalFormValidator $validator,
-		private readonly DestinationIntake $intake,
+		private readonly PortalResolverInterface $portals,
+		private readonly PortalFormBindingResolverInterface $bindings,
+		private readonly PortalEmbedGuardInterface $guard,
+		private readonly PortalEmbedThrottleInterface $throttle,
+		private readonly PortalFormValidatorInterface $validator,
+		private readonly DestinationIntakeInterface $intake,
 		private readonly IURLGenerator $urls,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -239,7 +240,7 @@ class PortalEmbedController extends Controller {
 			idempotencyKey: (string)$this->request->getHeader('Idempotency-Key')
 		);
 		if ($submitted['ok'] === false) {
-			$refusal = DestinationIntake::refusal(submitted: $submitted);
+			$refusal = DestinationRefusal::of(submitted: $submitted);
 			return new JSONResponse($refusal['body'], $refusal['status']);
 		}
 
@@ -272,9 +273,9 @@ class PortalEmbedController extends Controller {
 	 */
 	private function framed(array $binding, array $payload): TemplateResponse {
 		$response = new TemplateResponse(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			'embed',
-			['embed' => $payload, 'minHeight' => PortalEmbedGuard::MINIMUM_HEIGHT],
+			['embed' => $payload, 'minHeight' => PortalEmbedGuardInterface::MINIMUM_HEIGHT],
 			TemplateResponse::RENDER_AS_BLANK
 		);
 

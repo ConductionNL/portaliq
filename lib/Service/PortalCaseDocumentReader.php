@@ -36,10 +36,10 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Contribution\PortalProviderLocator;
-use OCA\Portaliq\Contribution\TimelineProviderMethod;
+use OCA\Portaliq\Kernel\Contracts\PortalProviderLocatorInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
+use OCA\Portaliq\Kernel\Contracts\TimelineProviderMethodInterface;
 
 /**
  * Calls a case app's declared documents method.
@@ -50,12 +50,14 @@ class PortalCaseDocumentReader {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalProviderLocator $locator Finds the app's provider.
+	 * @param PortalProviderLocatorInterface $locator Finds the app's provider.
 	 * @param LoggerInterface       $logger  Records a provider that failed or answered badly.
+	 * @param TimelineProviderMethodInterface $timelineProviderMethod The TimelineProviderMethod helper.
 	 */
 	public function __construct(
-		private readonly PortalProviderLocator $locator,
+		private readonly PortalProviderLocatorInterface $locator,
 		private readonly LoggerInterface $logger,
+		private readonly TimelineProviderMethodInterface $timelineProviderMethod,
 	) {
 	}//end __construct()
 
@@ -72,7 +74,7 @@ class PortalCaseDocumentReader {
 	 */
 	public function entries(string $appId, string $method, string $caseId): array {
 		$provider = $this->locator->locate(appId: $appId);
-		if ($provider === null || (new TimelineProviderMethod())->callableOn(provider: $provider, method: $method) === false) {
+		if ($provider === null || $this->timelineProviderMethod->callableOn(provider: $provider, method: $method) === false) {
 			return [];
 		}
 

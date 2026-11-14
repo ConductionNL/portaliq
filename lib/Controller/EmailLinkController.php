@@ -30,17 +30,16 @@ namespace OCA\Portaliq\Controller;
 
 use DateTime;
 use DateTimeImmutable;
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\BackgroundJob\EmailLinkRequestJob;
-use OCA\Portaliq\Service\Identity\EmailLink\EmailLinkAddress;
-use OCA\Portaliq\Service\Identity\EmailLink\EmailLinkEligibility;
-use OCA\Portaliq\Service\Identity\EmailLink\EmailLinkLimits;
-use OCA\Portaliq\Service\Identity\EmailLink\EmailLinkSetting;
-use OCA\Portaliq\Service\Identity\EmailLink\EmailLinkTokens;
-use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
-use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
-use OCA\Portaliq\Service\RequestedPortal;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\EmailLinkAddressInterface;
+use OCA\Portaliq\Kernel\Contracts\EmailLinkEligibilityInterface;
+use OCA\Portaliq\Kernel\Contracts\EmailLinkLimitsInterface;
+use OCA\Portaliq\Kernel\Contracts\EmailLinkSettingInterface;
+use OCA\Portaliq\Kernel\Contracts\EmailLinkTokensInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalIdentityMailerInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -55,6 +54,7 @@ use OCP\ICacheFactory;
 use OCP\IRequest;
 use OCP\Security\ISecureRandom;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Kernel\Contracts\RequestedPortalInterface;
 
 /**
  * Requests, describes and redeems e-mail links.
@@ -87,35 +87,37 @@ class EmailLinkController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest             $request      The request.
-	 * @param PortalResolver       $portals      Resolves the portal being visited.
-	 * @param EmailLinkSetting     $setting      The switch and the portal's modes.
-	 * @param EmailLinkAddress     $address      Normalises and hashes the address.
-	 * @param EmailLinkLimits      $limits       The per-address counter.
-	 * @param EmailLinkTokens      $tokens       Reads and spends the link.
-	 * @param EmailLinkEligibility $eligibility  Checks the account again at redeem.
+	 * @param PortalResolverInterface       $portals      Resolves the portal being visited.
+	 * @param EmailLinkSettingInterface     $setting      The switch and the portal's modes.
+	 * @param EmailLinkAddressInterface     $address      Normalises and hashes the address.
+	 * @param EmailLinkLimitsInterface      $limits       The per-address counter.
+	 * @param EmailLinkTokensInterface      $tokens       Reads and spends the link.
+	 * @param EmailLinkEligibilityInterface $eligibility  Checks the account again at redeem.
 	 * @param IJobList             $jobs         Queues the lookup and the mail.
 	 * @param ISecureRandom        $random       Mints the cookie and the page value.
 	 * @param ICacheFactory        $cacheFactory Keeps the page value.
-	 * @param PortalSessionService $sessions     Mints the `low` session.
-	 * @param PortalIdentityMailer $mailer       Mails the "you signed in" notice.
+	 * @param PortalSessionServiceInterface $sessions     Mints the `low` session.
+	 * @param PortalIdentityMailerInterface $mailer       Mails the "you signed in" notice.
 	 * @param LoggerInterface      $logger       Logs by account and address hash.
+	 * @param RequestedPortalInterface $requestedPortal The RequestedPortal helper.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalResolver $portals,
-		private readonly EmailLinkSetting $setting,
-		private readonly EmailLinkAddress $address,
-		private readonly EmailLinkLimits $limits,
-		private readonly EmailLinkTokens $tokens,
-		private readonly EmailLinkEligibility $eligibility,
+		private readonly PortalResolverInterface $portals,
+		private readonly EmailLinkSettingInterface $setting,
+		private readonly EmailLinkAddressInterface $address,
+		private readonly EmailLinkLimitsInterface $limits,
+		private readonly EmailLinkTokensInterface $tokens,
+		private readonly EmailLinkEligibilityInterface $eligibility,
 		private readonly IJobList $jobs,
 		private readonly ISecureRandom $random,
 		ICacheFactory $cacheFactory,
-		private readonly PortalSessionService $sessions,
-		private readonly PortalIdentityMailer $mailer,
+		private readonly PortalSessionServiceInterface $sessions,
+		private readonly PortalIdentityMailerInterface $mailer,
 		private readonly LoggerInterface $logger,
+		private readonly RequestedPortalInterface $requestedPortal,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 		$this->nonces = $cacheFactory->createDistributed('portaliq-email-link');
 	}//end __construct()
 
@@ -188,7 +190,7 @@ class EmailLinkController extends Controller {
 
 		$account = $this->eligibility->stillEligible(subjectRef: (string)($row['subjectRef'] ?? ''), organisation: (string)($row['organisation'] ?? ''));
 		if ($account === null) {
-			return $this->refusal(outcome: EmailLinkTokens::NOT_VALID);
+			return $this->refusal(outcome: EmailLinkTokensInterface::NOT_VALID);
 		}
 
 		$nonce = $this->random->generate(32, (ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS));
@@ -224,7 +226,7 @@ class EmailLinkController extends Controller {
 		$stored = $this->nonces->get($key);
 		$known  = (is_string($stored) === true && $nonce !== '' && hash_equals($stored, $nonce) === true);
 		if ($this->setting->isEnabled() === false || $token === '' || $known === false) {
-			$refused = $this->refusal(outcome: EmailLinkTokens::NOT_VALID);
+			$refused = $this->refusal(outcome: EmailLinkTokensInterface::NOT_VALID);
 			$refused->throttle(['action' => 'portaliq_email_link']);
 			return $refused;
 		}
@@ -235,7 +237,7 @@ class EmailLinkController extends Controller {
 		}
 
 		$spent = $this->tokens->spend(token: $token, cookieHash: $this->browserHash(), addressHash: $addressHash);
-		if ($spent['outcome'] !== EmailLinkTokens::SPENT || $spent['row'] === null) {
+		if ($spent['outcome'] !== EmailLinkTokensInterface::SPENT || $spent['row'] === null) {
 			return $this->refusedRedeem(outcome: $spent['outcome'], key: $key);
 		}
 
@@ -256,7 +258,7 @@ class EmailLinkController extends Controller {
 		$account      = $this->eligibility->stillEligible(subjectRef: (string)($row['subjectRef'] ?? ''), organisation: $organisation);
 		if ($account === null) {
 			// The link is spent either way.
-			return $this->refusal(outcome: EmailLinkTokens::NOT_VALID);
+			return $this->refusal(outcome: EmailLinkTokensInterface::NOT_VALID);
 		}
 
 		$session = $this->sessionFor(account: $account, organisation: $organisation);
@@ -286,7 +288,7 @@ class EmailLinkController extends Controller {
 			organisation: $organisation,
 			trust: 'low',
 			roles: [$audience . ':read'],
-			provider: EmailLinkSetting::MODE
+			provider: EmailLinkSettingInterface::MODE
 		);
 	}//end sessionFor()
 
@@ -338,11 +340,11 @@ class EmailLinkController extends Controller {
 	 */
 	private function refusedRedeem(string $outcome, string $key): JSONResponse {
 		$refused = $this->refusal(outcome: $outcome);
-		if ($outcome === EmailLinkTokens::ADDRESS_NEEDED || $outcome === EmailLinkTokens::BUSY) {
+		if ($outcome === EmailLinkTokensInterface::ADDRESS_NEEDED || $outcome === EmailLinkTokensInterface::BUSY) {
 			return $refused;
 		}
 
-		if ($outcome !== EmailLinkTokens::ADDRESS_WRONG) {
+		if ($outcome !== EmailLinkTokensInterface::ADDRESS_WRONG) {
 			$this->nonces->remove($key);
 		}
 
@@ -361,10 +363,10 @@ class EmailLinkController extends Controller {
 	 */
 	private function refusal(string $outcome): JSONResponse {
 		$codes = [
-			EmailLinkTokens::USED           => ['link_used', Http::STATUS_FORBIDDEN],
-			EmailLinkTokens::ADDRESS_NEEDED => ['address_needed', Http::STATUS_FORBIDDEN],
-			EmailLinkTokens::ADDRESS_WRONG  => ['address_wrong', Http::STATUS_FORBIDDEN],
-			EmailLinkTokens::BUSY           => ['busy', Http::STATUS_SERVICE_UNAVAILABLE],
+			EmailLinkTokensInterface::USED           => ['link_used', Http::STATUS_FORBIDDEN],
+			EmailLinkTokensInterface::ADDRESS_NEEDED => ['address_needed', Http::STATUS_FORBIDDEN],
+			EmailLinkTokensInterface::ADDRESS_WRONG  => ['address_wrong', Http::STATUS_FORBIDDEN],
+			EmailLinkTokensInterface::BUSY           => ['busy', Http::STATUS_SERVICE_UNAVAILABLE],
 		];
 		[$error, $status] = ($codes[$outcome] ?? ['link_not_valid', Http::STATUS_FORBIDDEN]);
 
@@ -404,6 +406,6 @@ class EmailLinkController extends Controller {
 	 * @return array<string, mixed>|null
 	 */
 	private function site(): ?array {
-		return $this->portals->resolve(request: $this->request, portalSlug: (new RequestedPortal())->slug(request: $this->request));
+		return $this->portals->resolve(request: $this->request, portalSlug: $this->requestedPortal->slug(request: $this->request));
 	}//end site()
 }//end class

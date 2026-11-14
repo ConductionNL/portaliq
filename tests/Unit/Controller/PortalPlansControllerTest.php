@@ -32,6 +32,7 @@ use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http\StreamResponse;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Service\RequestedPortal;
 
 /**
  * 401 without a session, the outcomes as statuses, only the allowed fields
@@ -66,7 +67,7 @@ class PortalPlansControllerTest extends TestCase {
 			$portals->method('resolve')->willReturn(['slug' => 'zuid']);
 		}
 
-		return new PortalPlansController($request, $session, $plans, $portals, $pdf, $files);
+		return new PortalPlansController($request, $session, $plans, $portals, new RequestedPortal(), $pdf, $files);
 	}//end controller()
 
 	/**

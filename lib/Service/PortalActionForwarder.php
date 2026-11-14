@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\PortalActionForwarderInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\Http\Client\IResponse;
@@ -46,7 +47,7 @@ use Throwable;
  *
  * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T8
  */
-class PortalActionForwarder {
+class PortalActionForwarder implements PortalActionForwarderInterface {
 	/**
 	 * Timeout (seconds) for the server-to-server action forward.
 	 *

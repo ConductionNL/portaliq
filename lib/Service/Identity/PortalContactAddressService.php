@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use OCA\Portaliq\Event\PortalContactDetailsChangedEvent;
+use OCA\Portaliq\Kernel\Contracts\PortalContactAddressServiceInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\Security\ISecureRandom;
@@ -38,7 +39,7 @@ use OCP\Security\ISecureRandom;
  *
  * @spec openspec/changes/archive/2026-09-30-identity-profile-page/specs/portal-profile/spec.md
  */
-class PortalContactAddressService {
+class PortalContactAddressService implements PortalContactAddressServiceInterface {
 	/**
 	 * Constructor.
 	 *

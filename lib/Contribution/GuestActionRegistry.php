@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\GuestActionRegistryInterface;
 use OCP\App\IAppManager;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -35,11 +36,7 @@ use Throwable;
  *
  * @spec openspec/specs/portal-guest-actions/spec.md#requirement-a-signed-link-opens-a-page-for-its-one-act-without-an-account-req-gst-002
  */
-class GuestActionRegistry {
-	/**
-	 * The audience a provider declares to serve guests.
-	 */
-	public const GUEST_AUDIENCE = 'guest';
+class GuestActionRegistry implements GuestActionRegistryInterface {
 
 	/**
 	 * Constructor.

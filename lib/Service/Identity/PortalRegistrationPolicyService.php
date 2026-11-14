@@ -26,12 +26,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
+use OCA\Portaliq\Kernel\Contracts\PortalRegistrationPolicyServiceInterface;
+
 /**
  * Decides what happens to a self-registration.
  *
  * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
-class PortalRegistrationPolicyService {
+class PortalRegistrationPolicyService implements PortalRegistrationPolicyServiceInterface {
 	/**
 	 * No account is created by a stranger.
 	 */
@@ -41,11 +43,6 @@ class PortalRegistrationPolicyService {
 	 * The account waits for a decision.
 	 */
 	public const POLICY_APPROVAL = 'approval';
-
-	/**
-	 * The account waits for a mail the registrant confirms.
-	 */
-	public const POLICY_ACTIVATION = 'activation';
 
 	/**
 	 * Whether this portal offers registration at all.

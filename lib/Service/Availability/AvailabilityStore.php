@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Availability;
 
+use OCA\Portaliq\Kernel\Contracts\AvailabilityStoreInterface;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use Psr\Container\ContainerInterface;
@@ -40,16 +41,12 @@ use Throwable;
  *
  * @spec openspec/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
  */
-class AvailabilityStore {
+class AvailabilityStore implements AvailabilityStoreInterface {
 	use ObjectServiceLookup;
 
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
 	private const REGISTER = 'portaliq';
-
-	public const DAILY_SCHEMA = 'portalAvailabilityDaily';
-
-	public const OUTAGE_SCHEMA = 'portalAvailabilityOutage';
 
 	/**
 	 * Rows per page, and the most one read returns.
