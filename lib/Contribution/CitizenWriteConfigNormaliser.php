@@ -98,9 +98,10 @@ class CitizenWriteConfigNormaliser implements CitizenWriteConfigNormaliserInterf
 	 *
 	 * @param array<string, mixed> $declared The declaration as authored.
 	 *
-	 * @return array<string, string>|null The sanitised config, or null.
+	 * @return array<string, mixed>|null The sanitised config, or null.
 	 *
 	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/changes/personal-data-left-untranslated/tasks.md#t03
 	 */
 	private function normaliseConfig(array $declared): ?array {
 		$config = $this->requiredKeys(declared: $declared);
@@ -108,7 +109,16 @@ class CitizenWriteConfigNormaliser implements CitizenWriteConfigNormaliserInterf
 			return null;
 		}
 
-		return $config + $this->defaultedKeys(declared: $declared);
+		$config = $config + $this->defaultedKeys(declared: $declared);
+
+		// How a field's value is shown (personal data, its format) rides along
+		// only when the declaration says something about at least one field.
+		$hints = CaseFieldDisplayHints::normalise(declared: ($declared['fields'] ?? null));
+		if ($hints !== []) {
+			$config['fields'] = $hints;
+		}
+
+		return $config;
 	}//end normaliseConfig()
 
 	/**
