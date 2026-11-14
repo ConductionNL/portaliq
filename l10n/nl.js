@@ -3450,6 +3450,7 @@ OC.L10N.register(
         "The proposal was refused.": "Het voorstel is geweigerd.",
         "Your proposal is sent for review.": "Uw voorstel is ter beoordeling verstuurd.",
         "The proposal is withdrawn.": "Het voorstel is ingetrokken.",
+        "Off: no second signer is needed.": "Uit: geen tweede ondertekenaar nodig.",
         "For example Gemeente Zeist.": "Bijvoorbeeld Gemeente Zeist.",
         "Lower case letters, digits and hyphens. It names the portal in links.": "Kleine letters, cijfers en streepjes. Hiermee heet het portaal in links.",
         "The organisation the portal and its data belong to.": "De organisatie waar het portaal en zijn gegevens bij horen.",
