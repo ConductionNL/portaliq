@@ -40,6 +40,8 @@ use Throwable;
  *
  * Every failure gives no questions, never someone else's.
  *
+ * @SuppressWarnings(PHPMD.StaticAccess) -- SessionTrust::trustSatisfies, the trust comparison every collection read uses.
+ *
  * @spec openspec/changes/woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-open-question-is-answered-on-the-case-page-req-wdm-001
  */
 class CaseQuestions {
@@ -92,31 +94,46 @@ class CaseQuestions {
 
 		$questions = [];
 		foreach ($contributions as $contribution) {
-			if (($contribution['app'] ?? null) !== $app) {
-				continue;
-			}
-
-			foreach (($contribution['collections'] ?? []) as $collection) {
-				if (is_array($collection) === false || $this->isQuestionCollection(subject: $subject, collection: $collection) === false) {
-					continue;
-				}
-
-				$action = $this->answerAction(contribution: $contribution, collection: $collection);
-				if ($action === null) {
-					continue;
-				}
-
-				foreach ($this->openRows(subject: $subject, app: $app, collection: $collection, caseIds: $caseIds) as $row) {
-					$question = $this->question(collection: $collection, action: $action, row: $row);
-					if ($question !== null) {
-						$questions[] = $question;
-					}
-				}
+			if (is_array($contribution) === true && ($contribution['app'] ?? null) === $app) {
+				$questions = array_merge($questions, $this->fromContribution(subject: $subject, contribution: $contribution, caseIds: $caseIds));
 			}
 		}
 
 		return $questions;
 	}//end forCase()
+
+	/**
+	 * The open questions on the case from one contribution's question collections.
+	 *
+	 * @param array<string, mixed> $subject      The signed-in subject.
+	 * @param array<string, mixed> $contribution The case app's contribution.
+	 * @param list<string>         $caseIds      The ids the case is known by.
+	 *
+	 * @return list<array<string, mixed>>
+	 */
+	private function fromContribution(array $subject, array $contribution, array $caseIds): array {
+		$questions = [];
+		foreach (($contribution['collections'] ?? []) as $collection) {
+			if (is_array($collection) === false || $this->isQuestionCollection(subject: $subject, collection: $collection) === false) {
+				continue;
+			}
+
+			$action = $this->answerAction(contribution: $contribution, collection: $collection);
+			if ($action === null) {
+				continue;
+			}
+
+			$app = (string)$contribution['app'];
+			foreach ($this->openRows(subject: $subject, app: $app, collection: $collection, caseIds: $caseIds) as $row) {
+				$question = $this->question(collection: $collection, action: $action, row: $row);
+				if ($question !== null) {
+					$questions[] = $question;
+				}
+			}
+		}
+
+		return $questions;
+	}//end fromContribution()
 
 	/**
 	 * Whether a collection holds questions this subject may read.
