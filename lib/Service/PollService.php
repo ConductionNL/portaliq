@@ -31,13 +31,14 @@ namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
 use Exception;
+use OCA\Portaliq\Kernel\Contracts\PollServiceInterface;
 
 /**
  * Creates polls, lists a subject's own, and records a subject's answer.
  *
  * @spec openspec/specs/parent-polls/spec.md
  */
-class PollService {
+class PollService implements PollServiceInterface {
 	/**
 	 * The register both schemas live in.
 	 */

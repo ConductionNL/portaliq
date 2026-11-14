@@ -28,7 +28,8 @@ namespace OCA\Portaliq\Service\Actions;
 
 use DateTimeImmutable;
 use DateTimeInterface;
-use OCA\Portaliq\Contribution\CitizenDocumentUpload;
+use OCA\Portaliq\Kernel\Contracts\CitizenDocumentUploadInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalActionServiceInterface;
 use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use OCA\Portaliq\Service\Identity\PortalContactService;
 use OCA\Portaliq\Service\Plans\PlanActionFields;
@@ -53,7 +54,7 @@ use OCP\AppFramework\Http\StreamResponse;
  *
  * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md
  */
-class PortalActionService {
+class PortalActionService implements PortalActionServiceInterface {
 
 	public const SCHEMA = 'portalAction';
 
@@ -88,7 +89,7 @@ class PortalActionService {
 	 * @param PortalPlanService $plans Whether the viewer takes part in an action's plan.
 	 * @param PortalFileReader $fileReader Streams an action's file.
 	 * @param PortalFileWriter $fileWriter Attaches a file to an action.
-	 * @param CitizenDocumentUpload $upload Reads the multipart upload.
+	 * @param CitizenDocumentUploadInterface $upload Reads the multipart upload.
 	 * @param ActionHistory $history Reads the audit trail of an action.
 	 * @param ActionUpload $types Accepts PDF, JPG or PNG up to 10 MB.
 	 */
@@ -100,7 +101,7 @@ class PortalActionService {
 		private readonly PortalPlanService $plans,
 		private readonly PortalFileReader $fileReader,
 		private readonly PortalFileWriter $fileWriter,
-		private readonly CitizenDocumentUpload $upload,
+		private readonly CitizenDocumentUploadInterface $upload,
 		private readonly ActionHistory $history,
 		private readonly ActionUpload $types = new ActionUpload(),
 	) {

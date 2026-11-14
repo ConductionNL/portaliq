@@ -310,7 +310,7 @@ class ConnectionsDeclarationTest extends TestCase {
 	 */
 	public function testTheGeographyProviderFactsStillHold(): void {
 		$settings = (string) file_get_contents($this->root() . '/lib/Service/Traffic/Geo/GeoSettings.php');
-		$app      = (string) file_get_contents($this->root() . '/lib/AppInfo/Application.php');
+		$app      = (string) file_get_contents($this->root() . '/lib/Service/ServiceRegistrar.php');
 
 		$this->assertStringContainsString(needle: "DEFAULT_PROVIDER = 'dbip'", haystack: $settings);
 		$this->assertStringContainsString(needle: "PROVIDERS = ['none', 'dbip', 'maxmind']", haystack: $settings);

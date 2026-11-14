@@ -30,8 +30,8 @@ namespace OCA\Portaliq\Listener;
 
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
-use OCA\Portaliq\Service\Intake\DestinationIntake;
-use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
+use OCA\Portaliq\Kernel\Contracts\DestinationIntakeInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFormBindingResolverInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\IL10N;
@@ -62,15 +62,15 @@ class BindingDestinationGuardListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param ContainerInterface        $container Resolves OpenRegister's schema mapper.
-	 * @param PortalFormBindingResolver $bindings  Resolves what a binding renders.
-	 * @param DestinationIntake         $intake    Checks a binding against its destination.
+	 * @param PortalFormBindingResolverInterface $bindings  Resolves what a binding renders.
+	 * @param DestinationIntakeInterface         $intake    Checks a binding against its destination.
 	 * @param IL10N                     $l10n      Translates the refusal.
 	 * @param LoggerInterface           $logger    Logs a schema that could not be read.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
-		private readonly PortalFormBindingResolver $bindings,
-		private readonly DestinationIntake $intake,
+		private readonly PortalFormBindingResolverInterface $bindings,
+		private readonly DestinationIntakeInterface $intake,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 	) {

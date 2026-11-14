@@ -17,6 +17,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\PortalThemeResolverInterface;
 use OCA\Portaliq\Service\Theme\PortalCustomThemeSets;
 use OCP\App\IAppManager;
 use Psr\Log\LoggerInterface;
@@ -48,7 +49,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
  */
-class PortalThemeResolver {
+class PortalThemeResolver implements PortalThemeResolverInterface {
 
 	/**
 	 * The app that ships the token stylesheets, newest id first.
@@ -95,7 +96,6 @@ class PortalThemeResolver {
 	 */
 	private const LOGO_VARIANTS = ['' => '', 'dark' => '-dark', 'emblem' => '-emblem', 'emblem-grey' => '-emblem-grey'];
 
-
 	/**
 	 * Constructor.
 	 *
@@ -111,7 +111,6 @@ class PortalThemeResolver {
 		private readonly ?LoggerInterface $logger = null,
 	) {
 	}//end __construct()
-
 
 	/**
 	 * The token stylesheet for a theme reference, relative to the theme app's
@@ -135,7 +134,6 @@ class PortalThemeResolver {
 
 		return $sheet;
 	}//end stylesheetFor()
-
 
 	/**
 	 * The stylesheet a theme reference resolves to, or null.
@@ -188,7 +186,6 @@ class PortalThemeResolver {
 		return 'tokens/' . $theme;
 	}//end resolveStylesheet()
 
-
 	/**
 	 * The theme app's own stylesheets the site links beside a set, relative
 	 * to its `css/` directory, each null when the installed theme app ships
@@ -212,7 +209,6 @@ class PortalThemeResolver {
 			'fonts'  => $asset->stylesheetIfShipped(root: $root, name: self::FONT_STYLESHEET),
 		];
 	}//end shippedStylesheets()
-
 
 	/**
 	 * The theme app path of a set's logo, relative to that app, or null.
@@ -262,7 +258,6 @@ class PortalThemeResolver {
 
 		return $relative;
 	}//end logoFileFor()
-
 
 	/**
 	 * Whether the theme app's catalogue offers this set.
@@ -423,7 +418,6 @@ class PortalThemeResolver {
 		return $values;
 	}//end tokenValuesFor()
 
-
 	/**
 	 * The NL Design System token stylesheet this app ships for a theme, or
 	 * null.
@@ -480,7 +474,6 @@ class PortalThemeResolver {
 		return null;
 	}//end nldsStylesheetFor()
 
-
 	/**
 	 * Whether a theme reference is safe to put in a filesystem path.
 	 *
@@ -497,7 +490,6 @@ class PortalThemeResolver {
 	private function isSafeThemeName(string $theme): bool {
 		return preg_match('/^[a-z0-9][a-z0-9-]{0,63}$/', $theme) === 1;
 	}//end isSafeThemeName()
-
 
 	/**
 	 * Which theme-app id this instance actually answers to.
@@ -522,7 +514,6 @@ class PortalThemeResolver {
 		return null;
 	}//end themeAppId()
 
-
 	/**
 	 * The theme app's directory, or null when it is not installed.
 	 *
@@ -542,6 +533,5 @@ class PortalThemeResolver {
 			return null;
 		}
 	}//end themeAppPath()
-
 
 }//end class

@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Kernel\Contracts\PortalFormValidatorInterface;
 use OCP\IL10N;
 
 /**
@@ -35,7 +36,7 @@ use OCP\IL10N;
  *
  * @spec openspec/specs/portal-intake-form/spec.md
  */
-class PortalFormValidator {
+class PortalFormValidator implements PortalFormValidatorInterface {
 	/**
 	 * The largest signature image accepted, in bytes.
 	 *

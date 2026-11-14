@@ -15,6 +15,7 @@ use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Service\Identity\MandateParties;
 
 /**
  * portal-identity-space REQ-PIS-004 and the fail-closed half of REQ-PIS-001:
@@ -257,7 +258,7 @@ class MyCasesControllerTest extends TestCase {
 			static fn (string $key, $default = null) => ($key === 'mandate' ? $mandateParam : $default)
 		);
 
-		return new MyCasesController($request, $registry, $session, $cases, $mandateService, $tree, $caseTypes);
+		return new MyCasesController($request, $registry, $session, $cases, $mandateService, $tree, new MandateParties(), $caseTypes);
 	}//end controller()
 
 	/**

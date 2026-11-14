@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity\EmailLink;
 
+use OCA\Portaliq\Kernel\Contracts\EmailLinkEligibilityInterface;
 use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 
 /**
@@ -35,7 +36,7 @@ use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
  *
  * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#3
  */
-class EmailLinkEligibility {
+class EmailLinkEligibility implements EmailLinkEligibilityInterface {
 	/**
 	 * The identity type of an account that signs in with an e-mail link.
 	 */

@@ -47,6 +47,28 @@ class CitizenWriteThrottleTest extends TestCase {
 	}//end testOneCaseIsStoppedAtThePerCaseLimit()
 
 	/**
+	 * A refused write is counted too: refused writes on one case use up the
+	 * identity's budget, so after the limit the next write elsewhere is still
+	 * refused (REQ-CWL-001).
+	 *
+	 * @spec openspec/changes/citizen-case-write-limit/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-residents-writes-on-her-own-case-are-limited-per-case-and-per-identity-req-cwl-001
+	 */
+	public function testARefusedWriteIsCountedSoTheNextWriteIsStillRefused(): void {
+		$throttle = new CitizenWriteThrottle($this->cacheFactory());
+
+		$refused = 0;
+		for ($attempt = 0; $attempt < 60; $attempt++) {
+			if ($throttle->allow(subjectRef: 's1', caseId: 'zaak-1') === false) {
+				$refused++;
+			}
+		}
+
+		// 20 allowed on the case, 40 refused: together the identity's 60.
+		$this->assertSame(40, $refused);
+		$this->assertFalse($throttle->allow(subjectRef: 's1', caseId: 'zaak-2'));
+	}//end testARefusedWriteIsCountedSoTheNextWriteIsStillRefused()
+
+	/**
 	 * A second case gets its own budget: one busy case never locks a citizen
 	 * out of another one.
 	 */
