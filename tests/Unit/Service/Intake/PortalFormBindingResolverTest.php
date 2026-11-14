@@ -270,6 +270,31 @@ class PortalFormBindingResolverTest extends TestCase {
 
 	}//end testTheConfirmationTextIsTheFormsOwn()
 
+	/**
+	 * form-statements-intro-and-confirmation-mail T06: an introduction is
+	 * shown unless the form settings page switched it off; switched off, its
+	 * text stays on the binding and the form opens at step 1.
+	 *
+	 * @return void
+	 */
+	public function testAnIntroductionSwitchedOffOpensTheFormAtStepOne(): void {
+		$this->seedForm(audience: 'client', fields: [['name' => 'postcode', 'order' => 1]]);
+		$resolver = $this->resolver();
+		$intro    = ['lead' => 'Voordat u begint.', 'blocks' => [['title' => 'Wat heeft u nodig?']]];
+
+		$shown = $resolver->render(binding: $this->binding(['intro' => $intro]));
+		$this->assertSame($intro, $shown['settings']['intro']);
+
+		$switchedOn = $resolver->render(binding: $this->binding(['intro' => ['enabled' => true] + $intro]));
+		$this->assertSame(['enabled' => true] + $intro, $switchedOn['settings']['intro']);
+
+		$switchedOff = $resolver->render(binding: $this->binding(['intro' => ['enabled' => false] + $intro]));
+		$this->assertNull($switchedOff['settings']['intro']);
+
+		$this->assertNull($resolver->render(binding: $this->binding([]))['settings']['intro']);
+		$this->assertNull($resolver->render(binding: $this->binding(['intro' => 'Voordat u begint.']))['settings']['intro']);
+	}//end testAnIntroductionSwitchedOffOpensTheFormAtStepOne()
+
 	public function testABindingThatResolvesToNoFormSaysSoAndRendersNoFields(): void {
 		$this->seedForm(audience: 'supplier', fields: [['name' => 'kvk', 'order' => 1]]);
 		$resolver = $this->resolver();
