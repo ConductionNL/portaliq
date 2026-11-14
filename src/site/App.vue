@@ -615,7 +615,7 @@ import { hasWayInLink, waysInFrom, waysInTranslator } from './lib/waysIn.js'
 import { openRecordEntry } from './pages/collections/index.js'
 import { confirmEmailFromLink, contactPromptWanted } from './pages/e/index.js'
 import { themeCaseCounts } from './pages/e/themes.js'
-import { TASK_STORAGE_KEY } from './pages/inbox/inbox.js'
+import { TASK_STORAGE_KEY } from './pages/inbox/taskStorage.js'
 
 /**
  * LOADED ON DEMAND, and the budget is why — the same reason the detail and
