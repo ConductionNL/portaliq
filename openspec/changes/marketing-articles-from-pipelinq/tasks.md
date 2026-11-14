@@ -19,7 +19,7 @@ Spec only in this PR. Tier V1. pipelinq's `marketing-articles-move-to-portaliq` 
 
 ## 3. Pages
 
-- [ ] 3.1 Menu entry Articles under Website after News; pages `Articles`, `ArticleNew`, `ArticleDetail` as drawn on `portaliq/PtArtikelen` and `portaliq/PtArtikel`.
+- [x] 3.1 Menu entry Articles under Website after News; pages `Articles`, `ArticleNew`, `ArticleDetail` as drawn on `portaliq/PtArtikelen` and `portaliq/PtArtikel`. — menu entry (page editors, `access.pages`), the declarative index (table and cards) and detail pages, and pipelinq's `ArticleEditModal`, `ArticleFormView` and `ArticleContentSection` ported; `ArticleUsageSection` rewritten for the cross-app `{id, title, kind, app, url}` answer, grouped by app. en/nl strings added. `node --test tests/articles-pages.spec.mjs`. Not checked against the boards in a browser here.
   - spec_ref: `#requirement-a-marketer-writes-and-reads-an-article-in-portaliq`
   - files: `src/manifest.json`, ported Vue components, `l10n/`
 - [x] 3.2 A markdown page can name an article and the site renders it. — `page.body.articleRef` (page 0.8.0) names an article by id or slug; `CmsReader` caches the reference with the page and reads the article per request through `PageArticle` (published or archived only, same organisation; `app:<app>/<file>` hero images resolve to that app's `img/`), and the site renders it under the page's markdown (`PageArticleBlock`). PHPUnit `PageArticleTest`, `CmsReaderMediaTest`; `node --test tests/page-article.spec.mjs`
