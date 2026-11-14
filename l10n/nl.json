@@ -3466,7 +3466,22 @@
         "Change a value before sending the proposal.": "Wijzig eerst een waarde voordat u het voorstel verstuurt.",
         "The proposal was refused.": "Het voorstel is geweigerd.",
         "Your proposal is sent for review.": "Uw voorstel is ter beoordeling verstuurd.",
-        "The proposal is withdrawn.": "Het voorstel is ingetrokken."
+        "The proposal is withdrawn.": "Het voorstel is ingetrokken.",
+        "Report without an account": "Melding zonder account",
+        "What was reported": "Wat er is gemeld",
+        "Conversation with the reporter": "Gesprek met de melder",
+        "Reply": "Antwoorden",
+        "Reply to the report": "Antwoorden op de melding",
+        "Visible to the reporter": "Zichtbaar voor de melder",
+        "Your message is saved.": "Uw bericht is opgeslagen.",
+        "Request reveal": "Onthulling aanvragen",
+        "Ask the custodian to reveal the reporter": "Vraag de vertrouwenspersoon de melder bekend te maken",
+        "The custodian has your request.": "De vertrouwenspersoon heeft uw verzoek ontvangen.",
+        "Kind of report": "Soort melding",
+        "Acknowledged on": "Ontvangst bevestigd op",
+        "Feedback due on": "Terugkoppeling uiterlijk op",
+        "Internal note": "Interne notitie",
+        "No messages yet.": "Nog geen berichten."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

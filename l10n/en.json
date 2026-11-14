@@ -3313,7 +3313,22 @@
         "Change a value before sending the proposal.": "Change a value before sending the proposal.",
         "The proposal was refused.": "The proposal was refused.",
         "Your proposal is sent for review.": "Your proposal is sent for review.",
-        "The proposal is withdrawn.": "The proposal is withdrawn."
+        "The proposal is withdrawn.": "The proposal is withdrawn.",
+        "Report without an account": "Report without an account",
+        "What was reported": "What was reported",
+        "Conversation with the reporter": "Conversation with the reporter",
+        "Reply": "Reply",
+        "Reply to the report": "Reply to the report",
+        "Visible to the reporter": "Visible to the reporter",
+        "Your message is saved.": "Your message is saved.",
+        "Request reveal": "Request reveal",
+        "Ask the custodian to reveal the reporter": "Ask the custodian to reveal the reporter",
+        "The custodian has your request.": "The custodian has your request.",
+        "Kind of report": "Kind of report",
+        "Acknowledged on": "Acknowledged on",
+        "Feedback due on": "Feedback due on",
+        "Internal note": "Internal note",
+        "No messages yet.": "No messages yet."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

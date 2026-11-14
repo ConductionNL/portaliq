@@ -2989,7 +2989,167 @@
         "showAdd": false,
         "showTitle": true,
         "showTitleIcon": false,
-        "_note": "intake-report-pages T08 / REQ-IRP-004: the reports the caller handles, read from GET /api/reports through the projection, never from a generic OpenRegister index on portalReport."
+        "_note": "intake-report-pages T08 / REQ-IRP-004: the reports the caller handles, read from GET /api/reports through the projection, never from a generic OpenRegister index on portalReport.",
+        "rowRoute": "AccountlessReportDetail"
+      }
+    },
+    {
+      "id": "AccountlessReportDetail",
+      "route": "/accountless-reports/:id",
+      "type": "detail",
+      "title": "Report without an account",
+      "config": {
+        "entitySource": "endpoint",
+        "sourceConfig": {
+          "url": "/apps/portaliq/api/reports/{id}",
+          "recordPath": "report"
+        },
+        "titleField": "subject",
+        "statusPill": {
+          "field": "state",
+          "colorMap": {
+            "open": "warning",
+            "acknowledged": "info",
+            "closed": "success"
+          }
+        },
+        "breadcrumb": {
+          "label": "Reports without an account",
+          "route": "AccountlessReports"
+        },
+        "notFoundRoute": "AccountlessReports",
+        "notFoundRouteLabel": "Reports without an account",
+        "favourite": false,
+        "follow": false,
+        "markRead": false,
+        "headerActions": [
+          {
+            "id": "report-reply",
+            "label": "Reply",
+            "icon": "Reply",
+            "type": "open-form",
+            "formTitle": "Reply to the report",
+            "endpoint": {
+              "url": "/apps/portaliq/api/reports/@objectId/messages",
+              "method": "POST"
+            },
+            "formProperties": {
+              "body": {
+                "type": "string",
+                "title": "Message",
+                "format": "textarea"
+              },
+              "visibleToReporter": {
+                "type": "boolean",
+                "title": "Visible to the reporter",
+                "default": false
+              }
+            },
+            "successMessage": "Your message is saved."
+          },
+          {
+            "id": "report-request-reveal",
+            "label": "Request reveal",
+            "icon": "EyeOutline",
+            "type": "open-form",
+            "formTitle": "Ask the custodian to reveal the reporter",
+            "endpoint": {
+              "url": "/apps/portaliq/api/reports/@objectId/reveal-requests",
+              "method": "POST"
+            },
+            "formProperties": {
+              "motivation": {
+                "type": "string",
+                "title": "Motivation",
+                "format": "textarea"
+              }
+            },
+            "successMessage": "The custodian has your request."
+          }
+        ],
+        "widgets": [
+          {
+            "id": "report-facts",
+            "type": "facts",
+            "title": "What was reported",
+            "content": {
+              "fields": [
+                {
+                  "path": "subject",
+                  "label": "Subject"
+                },
+                {
+                  "path": "body",
+                  "label": "Message"
+                },
+                {
+                  "path": "caseType",
+                  "label": "Kind of report"
+                },
+                {
+                  "path": "receivedAt",
+                  "label": "Received on",
+                  "format": "datetime"
+                },
+                {
+                  "path": "acknowledgedAt",
+                  "label": "Acknowledged on",
+                  "format": "datetime"
+                },
+                {
+                  "path": "feedbackAt",
+                  "label": "Feedback due on",
+                  "format": "datetime"
+                }
+              ]
+            }
+          },
+          {
+            "id": "report-thread",
+            "type": "record-list",
+            "title": "Conversation with the reporter",
+            "content": {
+              "endpointSource": {
+                "url": "/apps/portaliq/api/reports/@objectId",
+                "method": "GET",
+                "responsePath": "messages"
+              },
+              "presentation": "rows",
+              "title": "{authorName}",
+              "text": "{body}",
+              "trailing": "{writtenAt|date}",
+              "pill": {
+                "field": "visibleToReporter",
+                "labels": {
+                  "true": "Visible to the reporter",
+                  "false": "Internal note"
+                },
+                "colorMap": {
+                  "true": "info",
+                  "false": "neutral"
+                }
+              },
+              "emptyText": "No messages yet."
+            }
+          }
+        ],
+        "layout": [
+          {
+            "id": "1",
+            "widgetId": "report-facts",
+            "gridX": 0,
+            "gridY": 0,
+            "gridWidth": 12
+          },
+          {
+            "id": "2",
+            "widgetId": "report-thread",
+            "gridX": 0,
+            "gridY": 1,
+            "gridWidth": 12
+          }
+        ],
+        "_note": "intake-report-pages T08 / REQ-IRP-004: one report the caller handles, read from GET /api/reports/{id} (the projection, never the contact); the thread from the same answer's messages; reply with the visibility toggle and a reveal request with its motivation post to the report routes, which check the handler first."
       }
     },
     {
