@@ -8,8 +8,8 @@
 
   Below it, the searched terms (portal-traffic-outcomes).
 
-  @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-derived-dimensions-must-be-computed-on-the-server-and-never-accepted-from-the-client
-  @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-site-search-must-be-reported-by-the-built-in-search-box
+  @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-derived-dimensions-must-be-computed-on-the-server-and-never-accepted-from-the-client
+  @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-site-search-must-be-reported-by-the-built-in-search-box
 -->
 <template>
 	<div class="traffic-table" data-testid="traffic-sources">
@@ -173,7 +173,7 @@ export default {
 		 * Which part of the sources report this card shows.
 		 *
 		 * @return {string} "all", "channels" or "searches".
-		 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-site-search-must-be-reported-by-the-built-in-search-box
+		 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-site-search-must-be-reported-by-the-built-in-search-box
 		 */
 		part() {
 			return ['channels', 'searches'].includes(this.content?.part) ? this.content.part : 'all'
@@ -184,7 +184,7 @@ export default {
 		 * under the channels only when there are any.
 		 *
 		 * @return {boolean} True when the searches table is drawn.
-		 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-site-search-must-be-reported-by-the-built-in-search-box
+		 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-site-search-must-be-reported-by-the-built-in-search-box
 		 */
 		showSearches() {
 			if (this.part === 'searches') {

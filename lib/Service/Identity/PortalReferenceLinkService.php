@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
 
 declare(strict_types=1);
@@ -29,16 +29,17 @@ namespace OCA\Portaliq\Service\Identity;
 
 use DateInterval;
 use DateTimeImmutable;
-use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalReferenceLinkServiceInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCP\Security\ISecureRandom;
 
 /**
  * Issues and redeems the one-time reference link.
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
-class PortalReferenceLinkService {
+class PortalReferenceLinkService implements PortalReferenceLinkServiceInterface {
 	/**
 	 * The identity kind this route belongs to.
 	 */
@@ -89,7 +90,7 @@ class PortalReferenceLinkService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function admitsReference(array $caseType): bool {
 		$kinds = ($caseType['portalIdentityKind'] ?? []);
@@ -114,7 +115,7 @@ class PortalReferenceLinkService {
 	 * @return array{token: string, expiresAt: string}|null Null when the case
 	 *         type does not admit the reference route, or the call is empty.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/design.md
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- each field is stored
@@ -147,7 +148,7 @@ class PortalReferenceLinkService {
 	 * @return array{token: string, expiresAt: string}|null Null when the case
 	 *         type does not admit the reference route, or the call is empty.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function issueLink(ReferenceLinkRequest $request): ?array {
 		if ($this->refuses(request: $request) === true) {
@@ -227,7 +228,7 @@ class PortalReferenceLinkService {
 	 *
 	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/design.md
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function redeem(string $token, ?DateTimeImmutable $now = null): ?array {
 		if ($token === '') {
@@ -293,7 +294,7 @@ class PortalReferenceLinkService {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	private function liveRowFor(string $hash, DateTimeImmutable $moment): ?array {
 		$rows = $this->reader->readCollection(

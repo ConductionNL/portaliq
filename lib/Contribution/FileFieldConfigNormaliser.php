@@ -21,33 +21,21 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-an-action-must-be-able-to-declare-a-file-field
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-action-must-be-able-to-declare-a-file-field
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\FileFieldConfigNormaliserInterface;
+
 /**
  * Sanitises the file keys of one field config.
  *
- * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-an-action-must-be-able-to-declare-a-file-field
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-action-must-be-able-to-declare-a-file-field
  */
-class FileFieldConfigNormaliser {
-	/**
-	 * The one field type this vocabulary knows.
-	 */
-	public const TYPE_FILE = 'file';
-
-	/**
-	 * The size limit applied when a file field declares none, in megabytes.
-	 */
-	public const DEFAULT_SIZE_MB = 20;
-
-	/**
-	 * The highest size limit a leaf app may declare, in megabytes.
-	 */
-	public const MAX_SIZE_MB = 50;
+class FileFieldConfigNormaliser implements FileFieldConfigNormaliserInterface {
 
 	/**
 	 * The most `accept` entries kept per field.
@@ -73,7 +61,7 @@ class FileFieldConfigNormaliser {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-an-action-must-be-able-to-declare-a-file-field
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-action-must-be-able-to-declare-a-file-field
 	 */
 	public function apply(array $entry, array $config, string $actionType): array {
 		if (($config['type'] ?? null) !== self::TYPE_FILE

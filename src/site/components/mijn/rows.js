@@ -6,7 +6,7 @@
 // translator these components share. No Vue, so tests/mijn-components.spec.mjs
 // runs it as node.
 //
-// @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+// @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 
 import strings from './strings.js'
 
@@ -24,7 +24,7 @@ const DAY_MS = 24 * 60 * 60 * 1000
  * @param {((key: string) => string)|null} t The site's translator.
  * @param {string} [locale] The page language.
  * @return {(key: string, vars?: object) => string}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
  */
 export function mijnTranslator(t, locale) {
 	const own = strings[pageLanguage(locale)] || strings.en
@@ -95,7 +95,7 @@ function dayInWords(day, today, locale) {
  * @param {(key: string, vars?: object) => string} tr The translator.
  * @param {string} [locale] The page language.
  * @return {{text: string, state: string, datetime: string}|null} The badge, or null without a deadline.
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
  */
 export function deadlineBadge(due, today, tr, locale = 'nl') {
 	const day = localDay(due)
@@ -195,7 +195,7 @@ export function filledTemplate(template, row) {
  * @param {object} block The block (`dueField`, `titleFields`, `limit`).
  * @param {object} collection The collection (`titleFields`, `label`).
  * @return {Array<{id: string, title: string, due: string, row: object}>}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
  */
 export function taskRows(rows, block, collection) {
 	const titleFields = (Array.isArray(block?.titleFields)
@@ -250,7 +250,7 @@ export function taskRows(rows, block, collection) {
  * @param {object} block The block (`collection`, `limit`).
  * @param {string} app The app of the contribution the block belongs to.
  * @return {Array<object>}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
  */
 export function inboxRows(messages, block, app) {
 	const wanted = block?.collection || ''
@@ -302,7 +302,7 @@ function receivedMs(message) {
  * @param {(key: string, vars?: object) => string} tr The translator.
  * @param {string} [locale] The page language.
  * @return {string}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
  */
 export function receivedInWords(value, today, tr, locale = 'nl') {
 	const at = value ? new Date(value) : null
@@ -379,7 +379,7 @@ function momentInWords(value, { today, tr, locale }) {
  *
  * @param {string} route The in-site route.
  * @return {string}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
  */
 export function siteHref(route) {
 	if (!route) {

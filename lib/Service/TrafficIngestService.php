@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-an-ip-address-must-not-be-stored
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-an-ip-address-must-not-be-stored
  */
 
 declare(strict_types=1);
@@ -22,6 +22,7 @@ namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\Portaliq\Kernel\Contracts\TrafficIngestServiceInterface;
 use OCA\Portaliq\Service\Traffic\TrafficIngestPipeline;
 use OCA\Portaliq\Service\Traffic\TrafficMetrics;
 use OCA\Portaliq\Service\Traffic\TrafficRecordDerivers;
@@ -42,7 +43,7 @@ use OCP\AppFramework\Utility\ITimeFactory;
  * other apps in this instance (pipelinq's mail events), which name a portal
  * by slug and say they are server-side.
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-an-ip-address-must-not-be-stored
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-an-ip-address-must-not-be-stored
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the ingest step is
  * where the classifiers, the hasher, the store and the metrics meet; that is
@@ -62,7 +63,7 @@ use OCP\AppFramework\Utility\ITimeFactory;
  *     derived?: array<string, string>
  * }
  */
-class TrafficIngestService {
+class TrafficIngestService implements TrafficIngestServiceInterface {
 
 	/**
 	 * Constructor.
@@ -94,7 +95,7 @@ class TrafficIngestService {
 	 *
 	 * @return array{accepted: int, refused: array<string, int>} What happened.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-mail-events-must-only-be-written-server-side
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-mail-events-must-only-be-written-server-side
 	 */
 	public function ingest(string $portalSlug, array $events, array $context = []): array {
 		$portal = null;
@@ -121,8 +122,8 @@ class TrafficIngestService {
 	 *
 	 * @return array{accepted: int, refused: array<string, int>} What happened.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-an-ip-address-must-not-be-stored
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-roll-up-portal-must-sum-its-members-and-never-count-its-own
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-an-ip-address-must-not-be-stored
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-roll-up-portal-must-sum-its-members-and-never-count-its-own
 	 */
 	public function ingestForPortal(array $portal, array $events, array $context = []): array {
 		$batch = $this->openBatch(portal: $portal, context: $context);
@@ -254,7 +255,7 @@ class TrafficIngestService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 */
 	private function isExcluded(array $event, array $config): bool {
 		$excluded = (array)($config['excludedPaths'] ?? []);
@@ -363,7 +364,7 @@ class TrafficIngestService {
 	 *
 	 * @return array<string, string> `['userRef' => ...]`, or [].
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-account-linking-must-attach-only-a-pseudonymous-reference
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-account-linking-must-attach-only-a-pseudonymous-reference
 	 */
 	private function linkedAccount(array $config, array $context): array {
 		$userRef = trim((string)($context['userRef'] ?? ''));

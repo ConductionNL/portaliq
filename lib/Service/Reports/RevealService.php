@@ -26,7 +26,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+ * @spec openspec/specs/report-without-an-account/spec.md
  */
 
 declare(strict_types=1);
@@ -35,8 +35,9 @@ namespace OCA\Portaliq\Service\Reports;
 
 use DateTimeImmutable;
 use OCA\Portaliq\Event\PortalReportRevealedEvent;
-use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\RevealServiceInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IGroupManager;
 use OCP\IUser;
@@ -44,9 +45,9 @@ use OCP\IUser;
 /**
  * Requests, refusals and reveals of a reporter's identity.
  *
- * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+ * @spec openspec/specs/report-without-an-account/spec.md
  */
-class RevealService {
+class RevealService implements RevealServiceInterface {
 	/**
 	 * The register the request lives in.
 	 */
@@ -88,7 +89,7 @@ class RevealService {
 	 * @return array<string, mixed>|null The recorded request, or null when it
 	 *         carries no motivation and is therefore refused outright.
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 */
 	public function request(string $reportId, string $requestedBy, string $motivation): ?array {
 		if ($reportId === '' || $requestedBy === '' || trim($motivation) === '') {
@@ -119,7 +120,7 @@ class RevealService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 */
 	public function isCustodian(IUser $user, array $caseType): bool {
 		$declaration = ($caseType[ReportTermsService::DECLARATION] ?? null);
@@ -181,7 +182,7 @@ class RevealService {
 	 *
 	 * @return array{state: string, contact?: array<string, mixed>}|array{error: string}
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- each parameter is part
 	 * of the record this decision writes.
@@ -199,7 +200,7 @@ class RevealService {
 	 *
 	 * @return array{state: string, contact?: array<string, mixed>}|array{error: string}
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 */
 	public function decideRequest(RevealDecision $decision): array {
 		$refusal = $this->refusal(decision: $decision);

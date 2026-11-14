@@ -10,7 +10,7 @@
 // load that finishes after a newer one for the same collection is dropped, so
 // a slow first read cannot overwrite the row a create just added.
 //
-// @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-collections-must-reload-after-a-write-req-srp-016
+// @spec openspec/specs/site-portal-parity/spec.md#requirement-collections-must-reload-after-a-write-req-srp-016
 
 import { rowFor } from '../../../shared/openRecord.js'
 

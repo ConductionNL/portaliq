@@ -27,6 +27,8 @@ namespace OCA\Portaliq\Service;
 use OCA\Portaliq\Service\Theme\PortalThemeParents;
 use OCP\IRequest;
 use OCP\IURLGenerator;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalThemeResolverInterface;
 
 /**
  * The theme of the portal a site request names: stylesheet, parents, token
@@ -40,15 +42,15 @@ class SiteShellTheme {
 	 * Constructor.
 	 *
 	 * @param IRequest            $request        The request.
-	 * @param PortalResolver      $portalResolver Resolves the serving portal.
-	 * @param PortalThemeResolver $themeResolver Maps the portal's theme to a token stylesheet.
+	 * @param PortalResolverInterface      $portalResolver Resolves the serving portal.
+	 * @param PortalThemeResolverInterface $themeResolver Maps the portal's theme to a token stylesheet.
 	 * @param IURLGenerator       $urlGenerator   Builds the logo address.
 	 * @param string              $slug           The portal slug the request names, or ''.
 	 */
 	public function __construct(
 		private readonly IRequest $request,
-		private readonly PortalResolver $portalResolver,
-		private readonly PortalThemeResolver $themeResolver,
+		private readonly PortalResolverInterface $portalResolver,
+		private readonly PortalThemeResolverInterface $themeResolver,
 		private readonly IURLGenerator $urlGenerator,
 		private readonly string $slug,
 	) {
@@ -148,7 +150,7 @@ class SiteShellTheme {
 	 *
 	 * @spec openspec/changes/site-links-the-theme-bridge/specs/portaliq-cms/spec.md#requirement-the-site-must-link-the-theme-apps-public-bridge-before-a-resolved-token-set-req-stb-001
 	 * @spec openspec/changes/site-links-the-theme-bridge/specs/portaliq-cms/spec.md#requirement-the-site-must-link-the-faces-the-theme-app-bundles-req-stb-002
-	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
+	 * @spec openspec/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
 	 */
 	public function appSheets(): array {
 		$none = ['bridge' => '', 'fonts' => '', 'logoInverse' => '', 'emblem' => '', 'emblemGrey' => ''];
@@ -202,7 +204,7 @@ class SiteShellTheme {
 	 * @return string An absolute URL, or '' when there is no logo to serve.
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
-	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
+	 * @spec openspec/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
 	 */
 	public function logoUrl(string $variant=''): string {
 		$stylesheet = $this->stylesheet();

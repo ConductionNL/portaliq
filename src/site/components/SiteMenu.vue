@@ -227,7 +227,7 @@ export default {
 		 *
 		 * @param {string} link The item's link.
 		 * @return {'page'|'true'|undefined} The value.
-		 * @spec openspec/changes/site-page-layout/specs/site-look/spec.md#requirement-the-menu-must-mark-the-section-of-the-page-on-screen
+		 * @spec openspec/specs/site-look/spec.md#requirement-the-menu-must-mark-the-section-of-the-page-on-screen
 		 */
 		currentOf(link) {
 			return menuCurrent(link, this.currentRoute)

@@ -49,8 +49,10 @@ namespace OCA\Portaliq\Service;
 
 use DateInterval;
 use DateTimeImmutable;
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Service\Branch\BranchNumber;
+use OCA\Portaliq\Kernel\Support\SessionTrust;
 use OCP\IAppConfig;
 use OCP\IConfig;
 use OCP\Security\ISecureRandom;
@@ -74,22 +76,11 @@ use Throwable;
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)     -- one method per step of
  * a session's life, including revoking one session as an admin.
  */
-class PortalSessionService {
+class PortalSessionService implements PortalSessionServiceInterface {
 	/**
 	 * The bearer scheme prefix, case-sensitive per RFC 6750.
 	 */
 	private const BEARER_PREFIX = 'Bearer ';
-
-	/**
-	 * The eIDAS-aligned trust vocabulary, ordered ascending (contract v2, A3).
-	 * Any subject trust outside this map normalises to `low`; any entry
-	 * `minTrust` outside it is unsatisfiable (fail-closed both ways).
-	 */
-	private const TRUST_ORDER = [
-		'low' => 1,
-		'substantial' => 2,
-		'high' => 3,
-	];
 
 	/**
 	 * The OpenRegister register the `portalSession` schema lives in.
@@ -178,7 +169,7 @@ class PortalSessionService {
 	 * @param IAppConfig $appConfig Holds the signing secret, flagged sensitive.
 	 *
 	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.1
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T01
 	 */
 	public function __construct(
 		private readonly IConfig $config,
@@ -191,7 +182,7 @@ class PortalSessionService {
 	) {
 		// The secret is a sensitive app value (security review S4): read it
 		// through IAppConfig, which decrypts it, never through IConfig.
-		$secret = $appConfig->getValueString(Application::APP_ID, 'jwt_signing_secret', '');
+		$secret = $appConfig->getValueString(AppIdentity::APP_ID, 'jwt_signing_secret', '');
 		$jwt = null;
 		if ($secret !== '') {
 			$jwt = self::buildJwtService(secret: $secret);
@@ -232,12 +223,8 @@ class PortalSessionService {
 	}//end isConfigured()
 
 	/**
-	 * Normalise a subject trust value to the eIDAS-aligned vocabulary.
-	 *
-	 * Any value outside `low|substantial|high` — including empty, legacy `dev`
-	 * or `EH3` — normalises to `low` (fail-closed; ADR-005). This is the single
-	 * normalisation point used by the session edge, the registry, and the
-	 * contribution controller.
+	 * Normalise a subject trust value; kept for the callers not yet moved to
+	 * {@see SessionTrust::normaliseTrust()}.
 	 *
 	 * @param mixed $trust The raw trust value (session claim or config).
 	 *
@@ -246,23 +233,14 @@ class PortalSessionService {
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T1
 	 */
 	public static function normaliseTrust(mixed $trust): string {
-		if (is_string($trust) === true && isset(self::TRUST_ORDER[$trust]) === true) {
-			return $trust;
-		}
-
-		return 'low';
+		return SessionTrust::normaliseTrust(trust: $trust);
 	}//end normaliseTrust()
 
 	/**
-	 * Whether a subject trust level satisfies an entry's `minTrust`.
+	 * Whether a subject trust level satisfies an entry's `minTrust`; kept for
+	 * the callers not yet moved to {@see SessionTrust::trustSatisfies()}.
 	 *
-	 * Ordering is `low < substantial < high`. A missing `minTrust` (null or
-	 * empty string) defaults to `low`; an unrecognised `minTrust` value makes
-	 * the entry unsatisfiable for EVERY subject — a typo must never widen
-	 * access (fail-closed; ADR-005). The subject side is normalised first, so
-	 * unknown subject trust is compared as `low`.
-	 *
-	 * @param mixed $subjectTrust The subject's trust value (normalised here).
+	 * @param mixed $subjectTrust The subject's trust value (normalised there).
 	 * @param mixed $minTrust The entry's declared minimum, or null/'' when absent.
 	 *
 	 * @return bool True when the subject meets the threshold.
@@ -270,16 +248,7 @@ class PortalSessionService {
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T1
 	 */
 	public static function trustSatisfies(mixed $subjectTrust, mixed $minTrust): bool {
-		if ($minTrust === null || $minTrust === '') {
-			$minTrust = 'low';
-		}
-
-		if (is_string($minTrust) === false || isset(self::TRUST_ORDER[$minTrust]) === false) {
-			// Unrecognised minTrust → unsatisfiable for everyone.
-			return false;
-		}
-
-		return self::TRUST_ORDER[self::normaliseTrust(trust: $subjectTrust)] >= self::TRUST_ORDER[$minTrust];
+		return SessionTrust::trustSatisfies(subjectTrust: $subjectTrust, minTrust: $minTrust);
 	}//end trustSatisfies()
 
 	/**
@@ -296,6 +265,7 @@ class PortalSessionService {
 	 * @param array<int, string> $roles Roles carried in the session.
 	 * @param string $branch The vestigingsnummer the login was restricted to, or ''.
 	 * @param string $provider The OIDC provider the login came through, or '' (dev-login, Nextcloud mode, integriq route).
+	 * @param string $kvk The KVK number of the company an eHerkenning login signs in for, or ''.
 	 *
 	 * @return array{token: string, jti: string, expiresAt: int, hardExpiresAt: int, idleTimeout: int}|null The minted
 	 *         bearer token, its id and the session's times, or null when the edge is not yet configured.
@@ -305,7 +275,7 @@ class PortalSessionService {
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
 	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.3
 	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#2.1
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T09
 	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#11
 	 */
 	public function issueSession(
@@ -316,6 +286,7 @@ class PortalSessionService {
 		array $roles = [],
 		string $branch = '',
 		string $provider = '',
+		string $kvk = '',
 	): ?array {
 		// A branch from the login restricts the session to it
 		// (signin-eherkenning-branch D1); a malformed one is never signed.
@@ -327,7 +298,7 @@ class PortalSessionService {
 			trust: $trust,
 			roles: $roles,
 			authTime: null,
-			context: ['number' => $branchNumber, 'restricted' => ($branchNumber !== ''), 'provider' => $provider]
+			context: ['number' => $branchNumber, 'restricted' => ($branchNumber !== ''), 'provider' => $provider, 'kvk' => $kvk]
 		);
 		if ($issued === null) {
 			return null;
@@ -372,7 +343,7 @@ class PortalSessionService {
 	 * @param int|null $authTime The ORIGIN login's unix timestamp to carry
 	 *                           forward unchanged (a refresh rotation); null
 	 *                           mints a fresh origin (a genuine new login).
-	 * @param array{number?: string, restricted?: bool, provider?: string} $context The branch in effect
+	 * @param array{number?: string, restricted?: bool, provider?: string, kvk?: string} $context The branch in effect
 	 *                                                                             (signin-eherkenning-branch) and the
 	 *                                                                             OIDC provider (signin-session-idle-
 	 *                                                                             warning-and-sso).
@@ -380,8 +351,8 @@ class PortalSessionService {
 	 * @return array{token: string, jti: string, expiresAt: int, hardExpiresAt: int, idleTimeout: int}|null The minted
 	 *         bearer token, its id and the session's times, or null when the edge is not yet configured.
 	 *
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T01
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T02
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T01
 	 */
 	private function mintSession(
@@ -455,7 +426,7 @@ class PortalSessionService {
 	 * @spec openspec/changes/archive/2026-10-30-idle-warning-preview/tasks.md#T01
 	 */
 	private function idlePreviewEnabled(): bool {
-		return $this->config->getAppValue(Application::APP_ID, self::IDLE_PREVIEW_CONFIG_KEY, 'no') === 'yes';
+		return $this->config->getAppValue(AppIdentity::APP_ID, self::IDLE_PREVIEW_CONFIG_KEY, 'no') === 'yes';
 	}//end idlePreviewEnabled()
 
 	/**
@@ -468,7 +439,7 @@ class PortalSessionService {
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T01
 	 */
 	private function idleTimeoutSeconds(): int {
-		$configured = (int)$this->config->getAppValue(Application::APP_ID, self::IDLE_TIMEOUT_CONFIG_KEY, (string)self::DEFAULT_IDLE_TIMEOUT);
+		$configured = (int)$this->config->getAppValue(AppIdentity::APP_ID, self::IDLE_TIMEOUT_CONFIG_KEY, (string)self::DEFAULT_IDLE_TIMEOUT);
 		if ($configured <= 0) {
 			return self::DEFAULT_IDLE_TIMEOUT;
 		}
@@ -504,10 +475,10 @@ class PortalSessionService {
 	 *
 	 * @return int
 	 *
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T01
 	 */
 	private function maxLifetimeSeconds(): int {
-		$configured = (int)$this->config->getAppValue(Application::APP_ID, self::MAX_LIFETIME_CONFIG_KEY, (string)self::DEFAULT_MAX_LIFETIME);
+		$configured = (int)$this->config->getAppValue(AppIdentity::APP_ID, self::MAX_LIFETIME_CONFIG_KEY, (string)self::DEFAULT_MAX_LIFETIME);
 		if ($configured <= 0) {
 			return self::DEFAULT_MAX_LIFETIME;
 		}
@@ -545,7 +516,7 @@ class PortalSessionService {
 			return null;
 		}
 
-		return (new SessionClaims())->subject(claims: $claims, trust: self::normaliseTrust(trust: ($claims['trust'] ?? '')));
+		return (new SessionClaims())->subject(claims: $claims, trust: SessionTrust::normaliseTrust(trust: ($claims['trust'] ?? '')));
 	}//end resolveFromBearer()
 
 	/**
@@ -762,9 +733,9 @@ class PortalSessionService {
 	 * @return array{token: string, jti: string, expiresAt: int, hardExpiresAt: int, idleTimeout: int}|null The NEW
 	 *         bearer token, its id and when the rotated session ends, or null on any rejection.
 	 *
-	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T02
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T02
 	 * @spec openspec/specs/supplier-portal/spec.md#session-refresh-rotates-the-token-within-an-absolute-cap
 	 */
 	public function refreshSession(?string $authorizationHeader, string $audience = ''): ?array {
@@ -790,6 +761,7 @@ class PortalSessionService {
 				'number' => (string)($subject['branch'] ?? ''),
 				'restricted' => (($subject['branchRestricted'] ?? false) === true),
 				'provider' => (string)($subject['provider'] ?? ''),
+				'kvk' => (string)($subject['kvk'] ?? ''),
 			]
 		);
 	}//end refreshSession()
@@ -823,7 +795,7 @@ class PortalSessionService {
 
 		return $this->rotate(
 			subject: $subject,
-			context: ['number' => $number, 'restricted' => false, 'provider' => (string)($subject['provider'] ?? '')]
+			context: ['number' => $number, 'restricted' => false, 'provider' => (string)($subject['provider'] ?? ''), 'kvk' => (string)($subject['kvk'] ?? '')]
 		);
 	}//end rebranchSession()
 
@@ -832,7 +804,7 @@ class PortalSessionService {
 	 * revoke the old one quietly and record one `refresh`.
 	 *
 	 * @param array<string, mixed>                                          $subject The resolved subject.
-	 * @param array{number?: string, restricted?: bool, provider?: string} $context The new bearer's context.
+	 * @param array{number?: string, restricted?: bool, provider?: string, kvk?: string} $context The new bearer's context.
 	 *
 	 * @return array{token: string, jti: string, expiresAt: int, hardExpiresAt: int, idleTimeout: int}|null
 	 */
@@ -951,7 +923,7 @@ class PortalSessionService {
 	 * @return bool True when a matching session was found and marked revoked.
 	 *
 	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#3.1
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T09
 	 */
 	public function revoke(string $jti): bool {
 		$row = $this->revokeQuietly(jti: $jti);
@@ -1024,7 +996,7 @@ class PortalSessionService {
 	 *                                   the OR write failed.
 	 *
 	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#3.1
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T02
 	 */
 	private function revokeQuietly(string $jti): ?array {
 		if ($jti === '') {
@@ -1073,7 +1045,7 @@ class PortalSessionService {
 	 * @return array{revoked: int, failed: int, complete: bool}
 	 *
 	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#3.2
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T09
 	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#12
 	 */
 	public function revokeAllForOrganisation(string $organisation, string $admin, string $subjectRef = ''): array {
@@ -1125,7 +1097,7 @@ class PortalSessionService {
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
 			audience: (string)($subject['audience'] ?? ''),
 			organisation: (string)($subject['organisation'] ?? ''),
-			trust: self::normaliseTrust(trust: ($subject['trust'] ?? '')),
+			trust: SessionTrust::normaliseTrust(trust: ($subject['trust'] ?? '')),
 			jti: (string)($subject['jti'] ?? ''),
 			scopeClaim: $scopeClaim,
 			scopeValue: $scopeValue,

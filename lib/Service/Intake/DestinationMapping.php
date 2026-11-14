@@ -27,6 +27,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Kernel\Contracts\DestinationMappingInterface;
+
 /**
  * Builds a binding's mapping onto its destination.
  *
@@ -36,19 +38,13 @@ namespace OCA\Portaliq\Service\Intake;
  *
  * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md
  */
-class DestinationMapping {
+class DestinationMapping implements DestinationMappingInterface {
 	/**
 	 * The campaign fields a landing-page form always whitelists. They travel only
 	 * to a destination that declares them: another destination would refuse each
 	 * as a property it does not have, and the whole submission with it.
 	 */
 	public const TRACKING_FIELDS = ['utmFirstTouch', 'utmLastTouch', 'referrer'];
-
-	/**
-	 * What a binding check puts in the subject property, standing in for the
-	 * subject reference only a submit knows.
-	 */
-	public const SUBJECT_PLACEHOLDER = 'subject';
 
 	/**
 	 * The key a finding without a field of its own is filed under.
@@ -69,25 +65,45 @@ class DestinationMapping {
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-form-binding-names-its-destination-and-is-valid-against-it-req-pifo-007
 	 */
 	public function destinationOf(array $binding): ?array {
-		$destination = $binding['destination'] ?? null;
-		$register    = '';
-		$schema      = '';
-		if (is_array($destination) === true) {
-			$register = trim((string)($destination['register'] ?? ''));
-			$schema   = trim((string)($destination['schema'] ?? ''));
-		}
-
-		if ($register === '' && $schema === '') {
-			$register = trim((string)($binding['caseRegister'] ?? ''));
-			$schema   = trim((string)($binding['caseSchema'] ?? ''));
-		}
-
-		if ($register === '' || $schema === '') {
+		$pair = $this->declaredPair(binding: $binding);
+		if ($pair['register'] === '' || $pair['schema'] === '') {
 			return null;
 		}
 
-		return ['register' => $register, 'schema' => $schema];
+		return $pair;
 	}//end destinationOf()
+
+	/**
+	 * The pair `destination` names, else the old `caseRegister` and
+	 * `caseSchema` when `destination` names neither half.
+	 *
+	 * @param array<string, mixed> $binding The binding.
+	 *
+	 * @return array{register: string, schema: string} The trimmed pair; a half may be ''.
+	 */
+	private function declaredPair(array $binding): array {
+		$pair = $this->namedPair(destination: ($binding['destination'] ?? null));
+		if ($pair['register'] === '' && $pair['schema'] === '') {
+			$pair = ['register' => trim((string)($binding['caseRegister'] ?? '')), 'schema' => trim((string)($binding['caseSchema'] ?? ''))];
+		}
+
+		return $pair;
+	}//end declaredPair()
+
+	/**
+	 * The trimmed register and schema of a `destination`, '' where it names none.
+	 *
+	 * @param mixed $destination The binding's `destination`.
+	 *
+	 * @return array{register: string, schema: string}
+	 */
+	private function namedPair(mixed $destination): array {
+		if (is_array($destination) === false) {
+			return ['register' => '', 'schema' => ''];
+		}
+
+		return ['register' => trim((string)($destination['register'] ?? '')), 'schema' => trim((string)($destination['schema'] ?? ''))];
+	}//end namedPair()
 
 	/**
 	 * The mapping a submit or a check sends.
@@ -174,13 +190,24 @@ class DestinationMapping {
 	private function declaredOnly(array $values, array $properties): array {
 		$kept = [];
 		foreach ($values as $name => $value) {
-			if (array_key_exists((string)$name, $properties) === true && $value !== null && $value !== [] && $value !== '') {
+			if (array_key_exists((string)$name, $properties) === true && $this->isEmptyValue(value: $value) === false) {
 				$kept[(string)$name] = $value;
 			}
 		}
 
 		return $kept;
 	}//end declaredOnly()
+
+	/**
+	 * Whether a server value is empty: null, [] or ''.
+	 *
+	 * @param mixed $value The value.
+	 *
+	 * @return bool
+	 */
+	private function isEmptyValue(mixed $value): bool {
+		return $value === null || $value === [] || $value === '';
+	}//end isEmptyValue()
 
 	/**
 	 * The answers per field: each finding filed under the field that writes
@@ -195,24 +222,10 @@ class DestinationMapping {
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-submission-is-validated-against-its-destinations-schema-before-anything-is-stored-req-pifo-004
 	 */
 	public function fieldErrors(array $findings, array $mapping): array {
-		$byProperty = [];
-		foreach ((array)($mapping['fields'] ?? []) as $field) {
-			if (is_array($field) === true) {
-				$byProperty[(string)($field['property'] ?? '')] = (string)($field['field'] ?? '');
-			}
-		}
-
-		$errors = [];
+		$byProperty = $this->fieldsByProperty(mapping: $mapping);
+		$errors     = [];
 		foreach ($findings as $finding) {
-			$field = (string)($finding['field'] ?? '');
-			if ($field === '') {
-				$field = ($byProperty[(string)($finding['property'] ?? '')] ?? '');
-			}
-
-			if ($field === '') {
-				$field = self::FORM_LEVEL;
-			}
-
+			$field = $this->findingField(finding: $finding, byProperty: $byProperty);
 			if (isset($errors[$field]) === false) {
 				$errors[$field] = (string)($finding['message'] ?? '');
 			}
@@ -220,6 +233,46 @@ class DestinationMapping {
 
 		return $errors;
 	}//end fieldErrors()
+
+	/**
+	 * The form field that writes each property of a sent mapping.
+	 *
+	 * @param array<string, mixed> $mapping The mapping that was sent.
+	 *
+	 * @return array<string, string> Field name per property.
+	 */
+	private function fieldsByProperty(array $mapping): array {
+		$byProperty = [];
+		foreach ((array)($mapping['fields'] ?? []) as $field) {
+			if (is_array($field) === true) {
+				$byProperty[(string)($field['property'] ?? '')] = (string)($field['field'] ?? '');
+			}
+		}
+
+		return $byProperty;
+	}//end fieldsByProperty()
+
+	/**
+	 * The field a finding is filed under: its own, the one writing its
+	 * property, else the form level.
+	 *
+	 * @param mixed                 $finding    One finding.
+	 * @param array<string, string> $byProperty Field name per property.
+	 *
+	 * @return string The field name.
+	 */
+	private function findingField(mixed $finding, array $byProperty): string {
+		$field = (string)($finding['field'] ?? '');
+		if ($field === '') {
+			$field = ($byProperty[(string)($finding['property'] ?? '')] ?? '');
+		}
+
+		if ($field === '') {
+			return self::FORM_LEVEL;
+		}
+
+		return $field;
+	}//end findingField()
 
 	/**
 	 * The mapping's fields.
@@ -270,19 +323,43 @@ class DestinationMapping {
 			return null;
 		}
 
-		foreach ($properties as $name => $property) {
-			$ref = '';
-			if (is_array($property) === true) {
-				// A slug (`caseType`) or a path ending in one (`#/components/schemas/caseType`).
-				$ref = (string)($property['$ref'] ?? '');
-				$ref = substr($ref, (int)strrpos('/' . $ref, '/'));
-			}
+		return $this->propertyReferencing(properties: $properties, typeSchema: $typeSchema);
+	}//end typeProperty()
 
+	/**
+	 * The first property whose `$ref` names the type schema.
+	 *
+	 * @param array<string, mixed> $properties The destination's properties.
+	 * @param string               $typeSchema The type schema's slug.
+	 *
+	 * @return string|null
+	 */
+	private function propertyReferencing(array $properties, string $typeSchema): ?string {
+		foreach ($properties as $name => $property) {
+			$ref = $this->referencedSlug(property: $property);
 			if ($ref !== '' && $ref === $typeSchema) {
 				return (string)$name;
 			}
 		}
 
 		return null;
-	}//end typeProperty()
+	}//end propertyReferencing()
+
+	/**
+	 * The slug a property's `$ref` ends in: a slug (`caseType`) or a path
+	 * ending in one (`#/components/schemas/caseType`).
+	 *
+	 * @param mixed $property The property.
+	 *
+	 * @return string The slug, or ''.
+	 */
+	private function referencedSlug(mixed $property): string {
+		if (is_array($property) === false) {
+			return '';
+		}
+
+		$ref = (string)($property['$ref'] ?? '');
+
+		return substr($ref, (int)strrpos('/' . $ref, '/'));
+	}//end referencedSlug()
 }//end class

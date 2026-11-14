@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
+ * @spec openspec/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
  */
 
 declare(strict_types=1);
@@ -22,7 +22,8 @@ namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\TrafficBackfillServiceInterface;
 use OCA\Portaliq\Service\Traffic\TrafficDayGuard;
 use OCA\Portaliq\Service\Traffic\TrafficEventStore;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -44,9 +45,9 @@ use OCP\IAppConfig;
  * more complete record (TrafficDayGuard). The job's watermark is not
  * touched: this is not the ordinary run.
  *
- * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
+ * @spec openspec/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
  */
-class TrafficBackfillService {
+class TrafficBackfillService implements TrafficBackfillServiceInterface {
 	use PublishedPortalWalk;
 
 	/**
@@ -90,15 +91,15 @@ class TrafficBackfillService {
 	 *
 	 * @return int The days rewritten, 0 when it had already run.
 	 *
-	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
+	 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
 	 */
 	public function runOnce(): int {
-		if ($this->appConfig->getValueString(Application::APP_ID, self::DONE_KEY, '') === self::VERSION) {
+		if ($this->appConfig->getValueString(AppIdentity::APP_ID, self::DONE_KEY, '') === self::VERSION) {
 			return 0;
 		}
 
 		$days = $this->backfill()['days'];
-		$this->appConfig->setValueString(Application::APP_ID, self::DONE_KEY, self::VERSION);
+		$this->appConfig->setValueString(AppIdentity::APP_ID, self::DONE_KEY, self::VERSION);
 
 		return $days;
 	}
@@ -114,7 +115,7 @@ class TrafficBackfillService {
 	 * @return array{portals: int, days: int, kept: int, rollupDays: int} Portals walked, days rewritten,
 	 *                                                                  days kept as they were, roll-up days re-summed.
 	 *
-	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
+	 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
 	 */
 	public function backfill(?string $only = null): array {
 		$now = DateTimeImmutable::createFromMutable($this->time->getDateTime())->setTimezone(new DateTimeZone('UTC'));

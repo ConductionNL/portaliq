@@ -27,11 +27,11 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\CaseTypeVisibility;
-use OCA\Portaliq\Service\Identity\PortalRegisteredDetailsLinks;
-use OCA\Portaliq\Service\Identity\PortalRegisteredDetailsService;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\CaseTypeVisibilityInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalRegisteredDetailsLinksInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalRegisteredDetailsServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -52,19 +52,19 @@ class PortalRegisteredDetailsController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest                       $request  The request.
-	 * @param PortalSessionService           $session  Resolves the subject from the bearer.
-	 * @param PortalRegisteredDetailsService $details  Reads the BRP or KvK record.
-	 * @param PortalRegisteredDetailsLinks   $links    The portal's request links.
-	 * @param CaseTypeVisibility             $portals  Finds the portal the request is served from.
+	 * @param PortalSessionServiceInterface           $session  Resolves the subject from the bearer.
+	 * @param PortalRegisteredDetailsServiceInterface $details  Reads the BRP or KvK record.
+	 * @param PortalRegisteredDetailsLinksInterface   $links    The portal's request links.
+	 * @param CaseTypeVisibilityInterface             $portals  Finds the portal the request is served from.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
-		private readonly PortalRegisteredDetailsService $details,
-		private readonly PortalRegisteredDetailsLinks $links,
-		private readonly CaseTypeVisibility $portals,
+		private readonly PortalSessionServiceInterface $session,
+		private readonly PortalRegisteredDetailsServiceInterface $details,
+		private readonly PortalRegisteredDetailsLinksInterface $links,
+		private readonly CaseTypeVisibilityInterface $portals,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

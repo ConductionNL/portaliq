@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
+ * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
  */
 
 declare(strict_types=1);
@@ -34,7 +34,7 @@ use Throwable;
  * basic auth on the one request that needs them and are read from the
  * settings at that moment, never held on this object.
  *
- * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
+ * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
  */
 class MaxMindProvider implements GeoDatabaseProvider {
 
@@ -71,7 +71,7 @@ class MaxMindProvider implements GeoDatabaseProvider {
 	 *
 	 * @return string maxmind.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
 	 */
 	public function providerId(): string {
 		return 'maxmind';
@@ -82,7 +82,7 @@ class MaxMindProvider implements GeoDatabaseProvider {
 	 *
 	 * @return string The attribution.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
 	 */
 	public function attribution(): string {
 		return 'This product includes ' . $this->settings->maxMindEdition() . ' data created by MaxMind, available from https://www.maxmind.com';
@@ -93,7 +93,7 @@ class MaxMindProvider implements GeoDatabaseProvider {
 	 *
 	 * @return string The URL.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
 	 */
 	public function url(): string {
 		return sprintf(self::URL, $this->settings->maxMindEdition());
@@ -108,7 +108,7 @@ class MaxMindProvider implements GeoDatabaseProvider {
 	 *
 	 * @throws RuntimeException Without credentials, or when the download fails.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
 	 */
 	public function fetch(string $targetPath): string {
 		$accountId = $this->settings->maxMindAccountId();

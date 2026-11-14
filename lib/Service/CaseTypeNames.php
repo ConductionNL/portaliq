@@ -22,19 +22,21 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-my-cases/spec.md#requirement-my-cases-must-name-each-cases-type-req-smo-030
+ * @spec openspec/specs/portal-my-cases/spec.md#requirement-my-cases-must-name-each-cases-type-req-smo-030
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\CaseTypeNamesInterface;
+
 /**
  * Stamps `_caseTypeName` on a case row from its collection's case type source.
  *
- * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-my-cases/spec.md#requirement-my-cases-must-name-each-cases-type-req-smo-030
+ * @spec openspec/specs/portal-my-cases/spec.md#requirement-my-cases-must-name-each-cases-type-req-smo-030
  */
-class CaseTypeNames {
+class CaseTypeNames implements CaseTypeNamesInterface {
 	use CaseTypeLabel;
 
 	/**
@@ -69,7 +71,7 @@ class CaseTypeNames {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-my-cases/spec.md#requirement-my-cases-must-name-each-cases-type-req-smo-030
+	 * @spec openspec/specs/portal-my-cases/spec.md#requirement-my-cases-must-name-each-cases-type-req-smo-030
 	 */
 	public function stamp(array $row, array $collection, string $typeId): array {
 		if ($typeId === '') {
@@ -95,7 +97,7 @@ class CaseTypeNames {
 	 *
 	 * @return array<int, mixed>
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-my-cases/spec.md#requirement-my-cases-must-name-each-cases-type-req-smo-030
+	 * @spec openspec/specs/portal-my-cases/spec.md#requirement-my-cases-must-name-each-cases-type-req-smo-030
 	 */
 	public function stampRows(array $rows, array $collection): array {
 		if (($collection['kind'] ?? null) !== 'cases' || is_array($collection['caseTypeSource'] ?? null) === false) {

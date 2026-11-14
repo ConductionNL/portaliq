@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T02
+ * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T02
  */
 
 declare(strict_types=1);
@@ -36,14 +36,15 @@ namespace OCA\Portaliq\Service;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\OidcStateStoreServiceInterface;
 use Throwable;
 
 /**
  * Single-use, TTL-bounded OIDC `state` storage (CSRF + replay guard).
  *
- * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T02
+ * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T02
  */
-class OidcStateStoreService {
+class OidcStateStoreService implements OidcStateStoreServiceInterface {
 	/**
 	 * The OpenRegister register the `portalOidcState` schema lives in.
 	 */
@@ -88,7 +89,7 @@ class OidcStateStoreService {
 	 *              (the caller — `oidcStart()` — fails the whole request
 	 *              closed rather than issue a redirect with no matching state).
 	 *
-	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T02
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T07
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- `silent` is one recorded
@@ -185,7 +186,7 @@ class OidcStateStoreService {
 	 *
 	 * @return array{nonce: string, codeVerifier: string, org: string, provider: string, returnTo: string, route: string, silent: bool}|null
 	 *
-	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T02
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T08
 	 * @spec openspec/specs/supplier-portal/spec.md#every-validation-failure-is-an-identical-generic-error
 	 */

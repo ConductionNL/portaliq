@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
@@ -33,7 +33,7 @@ use OCP\EventDispatcher\Event;
 /**
  * An app asks portaliq to mail the invitation of a waiting account.
  *
- * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 class PortalAccountInvitationRequestedEvent extends Event {
 	/**
@@ -109,7 +109,7 @@ class PortalAccountInvitationRequestedEvent extends Event {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function getAppId(): string {
 		return $this->appId;
@@ -120,7 +120,7 @@ class PortalAccountInvitationRequestedEvent extends Event {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function getSubjectRef(): string {
 		return $this->subjectRef;
@@ -131,7 +131,7 @@ class PortalAccountInvitationRequestedEvent extends Event {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function getChannel(): string {
 		return $this->channel;
@@ -146,8 +146,8 @@ class PortalAccountInvitationRequestedEvent extends Event {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
-	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function answer(string $result, string $expiresAt = '', string $code = ''): void {
 		$this->result    = $result;
@@ -160,7 +160,7 @@ class PortalAccountInvitationRequestedEvent extends Event {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function getCode(): string {
 		return $this->code;
@@ -171,7 +171,7 @@ class PortalAccountInvitationRequestedEvent extends Event {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function getResult(): string {
 		return $this->result;
@@ -182,7 +182,7 @@ class PortalAccountInvitationRequestedEvent extends Event {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function getExpiresAt(): string {
 		return $this->expiresAt;

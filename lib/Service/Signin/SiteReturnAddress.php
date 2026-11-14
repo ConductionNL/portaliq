@@ -18,6 +18,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Signin;
 
+use OCA\Portaliq\Kernel\Contracts\SiteReturnAddressInterface;
+
 /**
  * Where a login started on the public site may return to.
  *
@@ -28,9 +30,9 @@ namespace OCA\Portaliq\Service\Signin;
  * fragment, so the return address can never send a bearer to another origin.
  * Anything else answers '' and the caller keeps its own default.
  *
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
-final class SiteReturnAddress {
+final class SiteReturnAddress implements SiteReturnAddressInterface {
 
 	/**
 	 * The return address when it is a page of the site, else ''.
@@ -43,7 +45,7 @@ final class SiteReturnAddress {
 	 *
 	 * @return string The accepted address, or ''.
 	 *
-	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+	 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 	 */
 	public function accept(string $candidate, string $sitePath): string {
 		$sitePath = $this->withoutFrontController(path: $sitePath);

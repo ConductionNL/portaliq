@@ -32,7 +32,7 @@ export const LAYOUT = {
  * when reading backward from an ending point, so the diagram always reads
  * left to right in the direction the visitors walked.
  *
- * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-each-step-must-show-its-busiest-pages-the-rest-as-one-node-and-where-visits-ended
+ * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-each-step-must-show-its-busiest-pages-the-rest-as-one-node-and-where-visits-ended
  * @param {object} result The endpoint's answer: `mode`, `columns`, `links`.
  * @param {object} [measures] Overrides of LAYOUT.
  * @return {{width: number, height: number, scale: number, columns: Array<object>, links: Array<object>}} The drawing.
@@ -300,7 +300,7 @@ function drawingWidth(columns, m) {
  * The outline of one band: a top curve out, a straight edge down, a
  * bottom curve back, closed.
  *
- * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-each-step-must-show-its-busiest-pages-the-rest-as-one-node-and-where-visits-ended
+ * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-each-step-must-show-its-busiest-pages-the-rest-as-one-node-and-where-visits-ended
  * @param {{x0: number, y0: number, x1: number, y1: number, thickness: number}} outline Where it leaves (x, top y), where it arrives (x, top y), and its thickness.
  * @return {string} An SVG path.
  */
@@ -350,7 +350,7 @@ function curve(mid, to) {
 /**
  * Every node of every step as a row, for the table beside the drawing.
  *
- * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-be-operable-by-keyboard-and-readable-without-the-diagram
+ * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-be-operable-by-keyboard-and-readable-without-the-diagram
  * @param {object} result The endpoint's answer.
  * @return {Array<{step: number, path: string, more: number, sessions: number, dropOffs: number, selected: boolean}>} The rows, step by step.
  */
@@ -377,7 +377,7 @@ export function pathRows(result) {
  * among visits that no longer count). Choosing the chosen node again
  * undoes it.
  *
- * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-reader-must-be-able-to-expand-from-a-node-and-change-the-number-of-steps
+ * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-reader-must-be-able-to-expand-from-a-node-and-change-the-number-of-steps
  * @param {Array<string|null>} trail The current trail.
  * @param {number} step The step of the node.
  * @param {string} path The node's page.

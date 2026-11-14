@@ -1,0 +1,3202 @@
+{
+    "notAnArray": [
+        {
+            "logger.warning": {
+                "message": "Portaliq: NotificationDispatchJob invalid argument \u2014 not an array",
+                "context": []
+            }
+        }
+    ],
+    "missingSubject": [
+        {
+            "logger.warning": {
+                "message": "Portaliq: NotificationDispatchJob missing required argument keys",
+                "context": []
+            }
+        }
+    ],
+    "missingRule": [
+        {
+            "logger.warning": {
+                "message": "Portaliq: NotificationDispatchJob missing required argument keys",
+                "context": []
+            }
+        }
+    ],
+    "noAccount": [
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "subjectRef",
+                "subjectRef": "s1",
+                "organisation": "org-1",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "logger.debug": {
+                "message": "Portaliq: NotificationDispatchJob found no portalAccount \u2014 skipping",
+                "context": {
+                    "subjectRef": "s1"
+                }
+            }
+        }
+    ],
+    "withdrawn": [
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "subjectRef",
+                "subjectRef": "s1",
+                "organisation": "org-1",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "logger.info": {
+                "message": "Portaliq: NotificationDispatchJob skips a withdrawn portalAccount",
+                "context": {
+                    "account": "acc-2"
+                }
+            }
+        },
+        {
+            "logger.debug": {
+                "message": "Portaliq: NotificationDispatchJob found no portalAccount \u2014 skipping",
+                "context": {
+                    "subjectRef": "s1"
+                }
+            }
+        }
+    ],
+    "noId": [
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "subjectRef",
+                "subjectRef": "s1",
+                "organisation": "org-1",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "channels.record": {
+                "argument": {
+                    "subjectRef": "s1",
+                    "organisation": "org-1",
+                    "appId": "app-x",
+                    "ruleKey": "message.created"
+                }
+            }
+        },
+        {
+            "channels.kindOf": {
+                "record": []
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "email": "a@example.org"
+                },
+                "kind": "kind-x",
+                "channel": "email"
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "email": "a@example.org"
+                },
+                "kind": "kind-x",
+                "channel": "push"
+            }
+        }
+    ],
+    "delivered": [
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "subjectRef",
+                "subjectRef": "s1",
+                "organisation": "org-1",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "channels.record": {
+                "argument": {
+                    "subjectRef": "s1",
+                    "organisation": "org-1",
+                    "appId": "app-x",
+                    "ruleKey": "message.created"
+                }
+            }
+        },
+        {
+            "channels.kindOf": {
+                "record": []
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "@self": {
+                        "uuid": "acc-1"
+                    },
+                    "email": "a@example.org",
+                    "status": "active"
+                },
+                "kind": "kind-x",
+                "channel": "email"
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "@self": {
+                        "uuid": "acc-1"
+                    },
+                    "email": "a@example.org",
+                    "status": "active"
+                },
+                "kind": "kind-x",
+                "channel": "push"
+            }
+        },
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "acc-1",
+                "organisation": "org-1",
+                "limit": 50,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "mailer.validateMailAddress": {
+                "email": "a@example.org"
+            }
+        },
+        {
+            "orgConfig.resolve": {
+                "orgSlug": "org-1",
+                "locale": "nl"
+            }
+        },
+        {
+            "deepLinks.forNotice": {
+                "organisation": "org-1",
+                "record": []
+            }
+        },
+        {
+            "mailer.createMessage": []
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "You have a new message in the portal of %1$s",
+                "parameters": [
+                    "Org One"
+                ]
+            }
+        },
+        {
+            "message.setSubject": {
+                "subject": "You have a new message in the portal of %1$s [\"Org One\"]"
+            }
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "You have a new message in the portal of %1$s. Log in to view it: %2$s",
+                "parameters": [
+                    "Org One",
+                    "https://site/org-1/-"
+                ]
+            }
+        },
+        {
+            "message.setPlainBody": {
+                "body": "You have a new message in the portal of %1$s. Log in to view it: %2$s [\"Org One\",\"https:\\/\\/site\\/org-1\\/-\"]"
+            }
+        },
+        {
+            "message.setTo": {
+                "recipients": [
+                    "a@example.org"
+                ]
+            }
+        },
+        {
+            "mailer.send": {
+                "message": "double"
+            }
+        },
+        {
+            "writer.createObject": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "acc-1",
+                "organisation": "org-1",
+                "data": {
+                    "ruleKey": "message.created",
+                    "appId": "app-x",
+                    "channel": "email",
+                    "status": "sent",
+                    "attempts": 0,
+                    "lastAttemptAt": "NOW"
+                }
+            }
+        },
+        {
+            "config.getAppValue": {
+                "appName": "portaliq",
+                "key": "notification_failure_threshold",
+                "default": "3"
+            }
+        }
+    ],
+    "deliveredFlatId": [
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "subjectRef",
+                "subjectRef": "s1",
+                "organisation": "org-1",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "channels.record": {
+                "argument": {
+                    "subjectRef": "s1",
+                    "organisation": "org-1",
+                    "appId": "app-x",
+                    "ruleKey": "message.created"
+                }
+            }
+        },
+        {
+            "channels.kindOf": {
+                "record": []
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "uuid": "u-9",
+                    "id": 7,
+                    "email": "a@example.org"
+                },
+                "kind": "kind-x",
+                "channel": "email"
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "uuid": "u-9",
+                    "id": 7,
+                    "email": "a@example.org"
+                },
+                "kind": "kind-x",
+                "channel": "push"
+            }
+        },
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "u-9",
+                "organisation": "org-1",
+                "limit": 50,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "mailer.validateMailAddress": {
+                "email": "a@example.org"
+            }
+        },
+        {
+            "orgConfig.resolve": {
+                "orgSlug": "org-1",
+                "locale": "nl"
+            }
+        },
+        {
+            "deepLinks.forNotice": {
+                "organisation": "org-1",
+                "record": []
+            }
+        },
+        {
+            "mailer.createMessage": []
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "You have a new message in the portal of %1$s",
+                "parameters": [
+                    "Org One"
+                ]
+            }
+        },
+        {
+            "message.setSubject": {
+                "subject": "You have a new message in the portal of %1$s [\"Org One\"]"
+            }
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "You have a new message in the portal of %1$s. Log in to view it: %2$s",
+                "parameters": [
+                    "Org One",
+                    "https://site/org-1/-"
+                ]
+            }
+        },
+        {
+            "message.setPlainBody": {
+                "body": "You have a new message in the portal of %1$s. Log in to view it: %2$s [\"Org One\",\"https:\\/\\/site\\/org-1\\/-\"]"
+            }
+        },
+        {
+            "message.setTo": {
+                "recipients": [
+                    "a@example.org"
+                ]
+            }
+        },
+        {
+            "mailer.send": {
+                "message": "double"
+            }
+        },
+        {
+            "writer.createObject": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "u-9",
+                "organisation": "org-1",
+                "data": {
+                    "ruleKey": "message.created",
+                    "appId": "app-x",
+                    "channel": "email",
+                    "status": "sent",
+                    "attempts": 0,
+                    "lastAttemptAt": "NOW"
+                }
+            }
+        },
+        {
+            "config.getAppValue": {
+                "appName": "portaliq",
+                "key": "notification_failure_threshold",
+                "default": "3"
+            }
+        }
+    ],
+    "refused": [
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "subjectRef",
+                "subjectRef": "s1",
+                "organisation": "org-1",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "channels.record": {
+                "argument": {
+                    "subjectRef": "s1",
+                    "organisation": "org-1",
+                    "appId": "app-x",
+                    "ruleKey": "message.created"
+                }
+            }
+        },
+        {
+            "channels.kindOf": {
+                "record": []
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "@self": {
+                        "uuid": "acc-1"
+                    },
+                    "email": "a@example.org",
+                    "status": "active"
+                },
+                "kind": "kind-x",
+                "channel": "email"
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "@self": {
+                        "uuid": "acc-1"
+                    },
+                    "email": "a@example.org",
+                    "status": "active"
+                },
+                "kind": "kind-x",
+                "channel": "push"
+            }
+        },
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "acc-1",
+                "organisation": "org-1",
+                "limit": 50,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "mailer.validateMailAddress": {
+                "email": "a@example.org"
+            }
+        },
+        {
+            "orgConfig.resolve": {
+                "orgSlug": "org-1",
+                "locale": "nl"
+            }
+        },
+        {
+            "deepLinks.forNotice": {
+                "organisation": "org-1",
+                "record": []
+            }
+        },
+        {
+            "mailer.createMessage": []
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "You have a new message in the portal of %1$s",
+                "parameters": [
+                    "Org One"
+                ]
+            }
+        },
+        {
+            "message.setSubject": {
+                "subject": "You have a new message in the portal of %1$s [\"Org One\"]"
+            }
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "You have a new message in the portal of %1$s. Log in to view it: %2$s",
+                "parameters": [
+                    "Org One",
+                    "https://site/org-1/-"
+                ]
+            }
+        },
+        {
+            "message.setPlainBody": {
+                "body": "You have a new message in the portal of %1$s. Log in to view it: %2$s [\"Org One\",\"https:\\/\\/site\\/org-1\\/-\"]"
+            }
+        },
+        {
+            "message.setTo": {
+                "recipients": [
+                    "a@example.org"
+                ]
+            }
+        },
+        {
+            "mailer.send": {
+                "message": "double"
+            }
+        },
+        {
+            "logger.warning": {
+                "message": "Portaliq: notification email reported failed recipients",
+                "context": []
+            }
+        },
+        {
+            "writer.createObject": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "acc-1",
+                "organisation": "org-1",
+                "data": {
+                    "ruleKey": "message.created",
+                    "appId": "app-x",
+                    "channel": "email",
+                    "status": "failed",
+                    "attempts": 1,
+                    "lastAttemptAt": "NOW"
+                }
+            }
+        },
+        {
+            "config.getAppValue": {
+                "appName": "portaliq",
+                "key": "notification_failure_threshold",
+                "default": "3"
+            }
+        }
+    ],
+    "throws": [
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "subjectRef",
+                "subjectRef": "s1",
+                "organisation": "org-1",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "channels.record": {
+                "argument": {
+                    "subjectRef": "s1",
+                    "organisation": "org-1",
+                    "appId": "app-x",
+                    "ruleKey": "message.created"
+                }
+            }
+        },
+        {
+            "channels.kindOf": {
+                "record": []
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "@self": {
+                        "uuid": "acc-1"
+                    },
+                    "email": "a@example.org",
+                    "status": "active"
+                },
+                "kind": "kind-x",
+                "channel": "email"
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "@self": {
+                        "uuid": "acc-1"
+                    },
+                    "email": "a@example.org",
+                    "status": "active"
+                },
+                "kind": "kind-x",
+                "channel": "push"
+            }
+        },
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "acc-1",
+                "organisation": "org-1",
+                "limit": 50,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "mailer.validateMailAddress": {
+                "email": "a@example.org"
+            }
+        },
+        {
+            "orgConfig.resolve": {
+                "orgSlug": "org-1",
+                "locale": "nl"
+            }
+        },
+        {
+            "deepLinks.forNotice": {
+                "organisation": "org-1",
+                "record": []
+            }
+        },
+        {
+            "mailer.createMessage": []
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "You have a new message in the portal of %1$s",
+                "parameters": [
+                    "Org One"
+                ]
+            }
+        },
+        {
+            "message.setSubject": {
+                "subject": "You have a new message in the portal of %1$s [\"Org One\"]"
+            }
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "You have a new message in the portal of %1$s. Log in to view it: %2$s",
+                "parameters": [
+                    "Org One",
+                    "https://site/org-1/-"
+                ]
+            }
+        },
+        {
+            "message.setPlainBody": {
+                "body": "You have a new message in the portal of %1$s. Log in to view it: %2$s [\"Org One\",\"https:\\/\\/site\\/org-1\\/-\"]"
+            }
+        },
+        {
+            "message.setTo": {
+                "recipients": [
+                    "a@example.org"
+                ]
+            }
+        },
+        {
+            "mailer.send": {
+                "message": "double"
+            }
+        },
+        {
+            "logger.warning": {
+                "message": "Portaliq: notification email send failed",
+                "context": {
+                    "reason": "SMTP down"
+                }
+            }
+        },
+        {
+            "writer.createObject": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "acc-1",
+                "organisation": "org-1",
+                "data": {
+                    "ruleKey": "message.created",
+                    "appId": "app-x",
+                    "channel": "email",
+                    "status": "failed",
+                    "attempts": 1,
+                    "lastAttemptAt": "NOW"
+                }
+            }
+        },
+        {
+            "config.getAppValue": {
+                "appName": "portaliq",
+                "key": "notification_failure_threshold",
+                "default": "3"
+            }
+        }
+    ],
+    "noAddress": [
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "subjectRef",
+                "subjectRef": "s1",
+                "organisation": "org-1",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "channels.record": {
+                "argument": {
+                    "subjectRef": "s1",
+                    "organisation": "org-1",
+                    "appId": "app-x",
+                    "ruleKey": "message.created"
+                }
+            }
+        },
+        {
+            "channels.kindOf": {
+                "record": []
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "id": "acc-3"
+                },
+                "kind": "kind-x",
+                "channel": "email"
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "id": "acc-3"
+                },
+                "kind": "kind-x",
+                "channel": "push"
+            }
+        },
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "acc-3",
+                "organisation": "org-1",
+                "limit": 50,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "writer.createObject": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "acc-3",
+                "organisation": "org-1",
+                "data": {
+                    "ruleKey": "message.created",
+                    "appId": "app-x",
+                    "channel": "email",
+                    "status": "failed",
+                    "attempts": 1,
+                    "lastAttemptAt": "NOW"
+                }
+            }
+        },
+        {
+            "config.getAppValue": {
+                "appName": "portaliq",
+                "key": "notification_failure_threshold",
+                "default": "3"
+            }
+        }
+    ],
+    "badAddress": [
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "subjectRef",
+                "subjectRef": "s1",
+                "organisation": "org-1",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "channels.record": {
+                "argument": {
+                    "subjectRef": "s1",
+                    "organisation": "org-1",
+                    "appId": "app-x",
+                    "ruleKey": "message.created"
+                }
+            }
+        },
+        {
+            "channels.kindOf": {
+                "record": []
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "id": "acc-3",
+                    "email": "bad"
+                },
+                "kind": "kind-x",
+                "channel": "email"
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "id": "acc-3",
+                    "email": "bad"
+                },
+                "kind": "kind-x",
+                "channel": "push"
+            }
+        },
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "acc-3",
+                "organisation": "org-1",
+                "limit": 50,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "mailer.validateMailAddress": {
+                "email": "bad"
+            }
+        },
+        {
+            "writer.createObject": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "acc-3",
+                "organisation": "org-1",
+                "data": {
+                    "ruleKey": "message.created",
+                    "appId": "app-x",
+                    "channel": "email",
+                    "status": "failed",
+                    "attempts": 1,
+                    "lastAttemptAt": "NOW"
+                }
+            }
+        },
+        {
+            "config.getAppValue": {
+                "appName": "portaliq",
+                "key": "notification_failure_threshold",
+                "default": "3"
+            }
+        }
+    ],
+    "streakCarried": [
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "subjectRef",
+                "subjectRef": "s1",
+                "organisation": "org-1",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "channels.record": {
+                "argument": {
+                    "subjectRef": "s1",
+                    "organisation": "org-1",
+                    "appId": "app-x",
+                    "ruleKey": "message.created"
+                }
+            }
+        },
+        {
+            "channels.kindOf": {
+                "record": []
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "@self": {
+                        "uuid": "acc-1"
+                    },
+                    "email": "a@example.org",
+                    "status": "active"
+                },
+                "kind": "kind-x",
+                "channel": "email"
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "@self": {
+                        "uuid": "acc-1"
+                    },
+                    "email": "a@example.org",
+                    "status": "active"
+                },
+                "kind": "kind-x",
+                "channel": "push"
+            }
+        },
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "acc-1",
+                "organisation": "org-1",
+                "limit": 50,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "mailer.validateMailAddress": {
+                "email": "a@example.org"
+            }
+        },
+        {
+            "orgConfig.resolve": {
+                "orgSlug": "org-1",
+                "locale": "nl"
+            }
+        },
+        {
+            "deepLinks.forNotice": {
+                "organisation": "org-1",
+                "record": []
+            }
+        },
+        {
+            "mailer.createMessage": []
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "You have a new message in the portal of %1$s",
+                "parameters": [
+                    "Org One"
+                ]
+            }
+        },
+        {
+            "message.setSubject": {
+                "subject": "You have a new message in the portal of %1$s [\"Org One\"]"
+            }
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "You have a new message in the portal of %1$s. Log in to view it: %2$s",
+                "parameters": [
+                    "Org One",
+                    "https://site/org-1/-"
+                ]
+            }
+        },
+        {
+            "message.setPlainBody": {
+                "body": "You have a new message in the portal of %1$s. Log in to view it: %2$s [\"Org One\",\"https:\\/\\/site\\/org-1\\/-\"]"
+            }
+        },
+        {
+            "message.setTo": {
+                "recipients": [
+                    "a@example.org"
+                ]
+            }
+        },
+        {
+            "mailer.send": {
+                "message": "double"
+            }
+        },
+        {
+            "logger.warning": {
+                "message": "Portaliq: notification email send failed",
+                "context": {
+                    "reason": "SMTP down"
+                }
+            }
+        },
+        {
+            "writer.createObject": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "acc-1",
+                "organisation": "org-1",
+                "data": {
+                    "ruleKey": "message.created",
+                    "appId": "app-x",
+                    "channel": "email",
+                    "status": "failed",
+                    "attempts": 3,
+                    "lastAttemptAt": "NOW"
+                }
+            }
+        },
+        {
+            "config.getAppValue": {
+                "appName": "portaliq",
+                "key": "notification_failure_threshold",
+                "default": "3"
+            }
+        },
+        {
+            "writer.updateObject": {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "subjectRef",
+                "subjectRef": "s1",
+                "organisation": "org-1",
+                "id": "acc-1",
+                "data": {
+                    "needsAlternativeContact": true
+                }
+            }
+        }
+    ],
+    "streakAfterSent": [
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "subjectRef",
+                "subjectRef": "s1",
+                "organisation": "org-1",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "channels.record": {
+                "argument": {
+                    "subjectRef": "s1",
+                    "organisation": "org-1",
+                    "appId": "app-x",
+                    "ruleKey": "message.created"
+                }
+            }
+        },
+        {
+            "channels.kindOf": {
+                "record": []
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "@self": {
+                        "uuid": "acc-1"
+                    },
+                    "email": "a@example.org",
+                    "status": "active"
+                },
+                "kind": "kind-x",
+                "channel": "email"
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "@self": {
+                        "uuid": "acc-1"
+                    },
+                    "email": "a@example.org",
+                    "status": "active"
+                },
+                "kind": "kind-x",
+                "channel": "push"
+            }
+        },
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "acc-1",
+                "organisation": "org-1",
+                "limit": 50,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "mailer.validateMailAddress": {
+                "email": "a@example.org"
+            }
+        },
+        {
+            "orgConfig.resolve": {
+                "orgSlug": "org-1",
+                "locale": "nl"
+            }
+        },
+        {
+            "deepLinks.forNotice": {
+                "organisation": "org-1",
+                "record": []
+            }
+        },
+        {
+            "mailer.createMessage": []
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "You have a new message in the portal of %1$s",
+                "parameters": [
+                    "Org One"
+                ]
+            }
+        },
+        {
+            "message.setSubject": {
+                "subject": "You have a new message in the portal of %1$s [\"Org One\"]"
+            }
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "You have a new message in the portal of %1$s. Log in to view it: %2$s",
+                "parameters": [
+                    "Org One",
+                    "https://site/org-1/-"
+                ]
+            }
+        },
+        {
+            "message.setPlainBody": {
+                "body": "You have a new message in the portal of %1$s. Log in to view it: %2$s [\"Org One\",\"https:\\/\\/site\\/org-1\\/-\"]"
+            }
+        },
+        {
+            "message.setTo": {
+                "recipients": [
+                    "a@example.org"
+                ]
+            }
+        },
+        {
+            "mailer.send": {
+                "message": "double"
+            }
+        },
+        {
+            "logger.warning": {
+                "message": "Portaliq: notification email send failed",
+                "context": {
+                    "reason": "SMTP down"
+                }
+            }
+        },
+        {
+            "writer.createObject": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "acc-1",
+                "organisation": "org-1",
+                "data": {
+                    "ruleKey": "message.created",
+                    "appId": "app-x",
+                    "channel": "email",
+                    "status": "failed",
+                    "attempts": 1,
+                    "lastAttemptAt": "NOW"
+                }
+            }
+        },
+        {
+            "config.getAppValue": {
+                "appName": "portaliq",
+                "key": "notification_failure_threshold",
+                "default": "3"
+            }
+        }
+    ],
+    "thresholdReached": [
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "subjectRef",
+                "subjectRef": "s1",
+                "organisation": "org-1",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "channels.record": {
+                "argument": {
+                    "subjectRef": "s1",
+                    "organisation": "org-1",
+                    "appId": "app-x",
+                    "ruleKey": "message.created"
+                }
+            }
+        },
+        {
+            "channels.kindOf": {
+                "record": []
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "@self": {
+                        "uuid": "acc-1"
+                    },
+                    "email": "a@example.org",
+                    "status": "active"
+                },
+                "kind": "kind-x",
+                "channel": "email"
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "@self": {
+                        "uuid": "acc-1"
+                    },
+                    "email": "a@example.org",
+                    "status": "active"
+                },
+                "kind": "kind-x",
+                "channel": "push"
+            }
+        },
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "acc-1",
+                "organisation": "org-1",
+                "limit": 50,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "mailer.validateMailAddress": {
+                "email": "a@example.org"
+            }
+        },
+        {
+            "orgConfig.resolve": {
+                "orgSlug": "org-1",
+                "locale": "nl"
+            }
+        },
+        {
+            "deepLinks.forNotice": {
+                "organisation": "org-1",
+                "record": []
+            }
+        },
+        {
+            "mailer.createMessage": []
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "You have a new message in the portal of %1$s",
+                "parameters": [
+                    "Org One"
+                ]
+            }
+        },
+        {
+            "message.setSubject": {
+                "subject": "You have a new message in the portal of %1$s [\"Org One\"]"
+            }
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "You have a new message in the portal of %1$s. Log in to view it: %2$s",
+                "parameters": [
+                    "Org One",
+                    "https://site/org-1/-"
+                ]
+            }
+        },
+        {
+            "message.setPlainBody": {
+                "body": "You have a new message in the portal of %1$s. Log in to view it: %2$s [\"Org One\",\"https:\\/\\/site\\/org-1\\/-\"]"
+            }
+        },
+        {
+            "message.setTo": {
+                "recipients": [
+                    "a@example.org"
+                ]
+            }
+        },
+        {
+            "mailer.send": {
+                "message": "double"
+            }
+        },
+        {
+            "logger.warning": {
+                "message": "Portaliq: notification email send failed",
+                "context": {
+                    "reason": "SMTP down"
+                }
+            }
+        },
+        {
+            "writer.createObject": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "acc-1",
+                "organisation": "org-1",
+                "data": {
+                    "ruleKey": "message.created",
+                    "appId": "app-x",
+                    "channel": "email",
+                    "status": "failed",
+                    "attempts": 3,
+                    "lastAttemptAt": "NOW"
+                }
+            }
+        },
+        {
+            "config.getAppValue": {
+                "appName": "portaliq",
+                "key": "notification_failure_threshold",
+                "default": "3"
+            }
+        },
+        {
+            "writer.updateObject": {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "subjectRef",
+                "subjectRef": "s1",
+                "organisation": "org-1",
+                "id": "acc-1",
+                "data": {
+                    "needsAlternativeContact": true
+                }
+            }
+        }
+    ],
+    "thresholdUnset": [
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "subjectRef",
+                "subjectRef": "s1",
+                "organisation": "org-1",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "channels.record": {
+                "argument": {
+                    "subjectRef": "s1",
+                    "organisation": "org-1",
+                    "appId": "app-x",
+                    "ruleKey": "message.created"
+                }
+            }
+        },
+        {
+            "channels.kindOf": {
+                "record": []
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "@self": {
+                        "uuid": "acc-1"
+                    },
+                    "email": "a@example.org",
+                    "status": "active"
+                },
+                "kind": "kind-x",
+                "channel": "email"
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "@self": {
+                        "uuid": "acc-1"
+                    },
+                    "email": "a@example.org",
+                    "status": "active"
+                },
+                "kind": "kind-x",
+                "channel": "push"
+            }
+        },
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "acc-1",
+                "organisation": "org-1",
+                "limit": 50,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "mailer.validateMailAddress": {
+                "email": "a@example.org"
+            }
+        },
+        {
+            "orgConfig.resolve": {
+                "orgSlug": "org-1",
+                "locale": "nl"
+            }
+        },
+        {
+            "deepLinks.forNotice": {
+                "organisation": "org-1",
+                "record": []
+            }
+        },
+        {
+            "mailer.createMessage": []
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "You have a new message in the portal of %1$s",
+                "parameters": [
+                    "Org One"
+                ]
+            }
+        },
+        {
+            "message.setSubject": {
+                "subject": "You have a new message in the portal of %1$s [\"Org One\"]"
+            }
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "You have a new message in the portal of %1$s. Log in to view it: %2$s",
+                "parameters": [
+                    "Org One",
+                    "https://site/org-1/-"
+                ]
+            }
+        },
+        {
+            "message.setPlainBody": {
+                "body": "You have a new message in the portal of %1$s. Log in to view it: %2$s [\"Org One\",\"https:\\/\\/site\\/org-1\\/-\"]"
+            }
+        },
+        {
+            "message.setTo": {
+                "recipients": [
+                    "a@example.org"
+                ]
+            }
+        },
+        {
+            "mailer.send": {
+                "message": "double"
+            }
+        },
+        {
+            "logger.warning": {
+                "message": "Portaliq: notification email send failed",
+                "context": {
+                    "reason": "SMTP down"
+                }
+            }
+        },
+        {
+            "writer.createObject": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "acc-1",
+                "organisation": "org-1",
+                "data": {
+                    "ruleKey": "message.created",
+                    "appId": "app-x",
+                    "channel": "email",
+                    "status": "failed",
+                    "attempts": 3,
+                    "lastAttemptAt": "NOW"
+                }
+            }
+        },
+        {
+            "config.getAppValue": {
+                "appName": "portaliq",
+                "key": "notification_failure_threshold",
+                "default": "3"
+            }
+        },
+        {
+            "writer.updateObject": {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "subjectRef",
+                "subjectRef": "s1",
+                "organisation": "org-1",
+                "id": "acc-1",
+                "data": {
+                    "needsAlternativeContact": true
+                }
+            }
+        }
+    ],
+    "flagCleared": [
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "subjectRef",
+                "subjectRef": "s1",
+                "organisation": "org-1",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "channels.record": {
+                "argument": {
+                    "subjectRef": "s1",
+                    "organisation": "org-1",
+                    "appId": "app-x",
+                    "ruleKey": "message.created"
+                }
+            }
+        },
+        {
+            "channels.kindOf": {
+                "record": []
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "@self": {
+                        "uuid": "acc-1"
+                    },
+                    "email": "a@example.org",
+                    "status": "active",
+                    "needsAlternativeContact": true
+                },
+                "kind": "kind-x",
+                "channel": "email"
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "@self": {
+                        "uuid": "acc-1"
+                    },
+                    "email": "a@example.org",
+                    "status": "active",
+                    "needsAlternativeContact": true
+                },
+                "kind": "kind-x",
+                "channel": "push"
+            }
+        },
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "acc-1",
+                "organisation": "org-1",
+                "limit": 50,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "mailer.validateMailAddress": {
+                "email": "a@example.org"
+            }
+        },
+        {
+            "orgConfig.resolve": {
+                "orgSlug": "org-1",
+                "locale": "nl"
+            }
+        },
+        {
+            "deepLinks.forNotice": {
+                "organisation": "org-1",
+                "record": []
+            }
+        },
+        {
+            "mailer.createMessage": []
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "You have a new message in the portal of %1$s",
+                "parameters": [
+                    "Org One"
+                ]
+            }
+        },
+        {
+            "message.setSubject": {
+                "subject": "You have a new message in the portal of %1$s [\"Org One\"]"
+            }
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "You have a new message in the portal of %1$s. Log in to view it: %2$s",
+                "parameters": [
+                    "Org One",
+                    "https://site/org-1/-"
+                ]
+            }
+        },
+        {
+            "message.setPlainBody": {
+                "body": "You have a new message in the portal of %1$s. Log in to view it: %2$s [\"Org One\",\"https:\\/\\/site\\/org-1\\/-\"]"
+            }
+        },
+        {
+            "message.setTo": {
+                "recipients": [
+                    "a@example.org"
+                ]
+            }
+        },
+        {
+            "mailer.send": {
+                "message": "double"
+            }
+        },
+        {
+            "writer.createObject": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "acc-1",
+                "organisation": "org-1",
+                "data": {
+                    "ruleKey": "message.created",
+                    "appId": "app-x",
+                    "channel": "email",
+                    "status": "sent",
+                    "attempts": 0,
+                    "lastAttemptAt": "NOW"
+                }
+            }
+        },
+        {
+            "config.getAppValue": {
+                "appName": "portaliq",
+                "key": "notification_failure_threshold",
+                "default": "3"
+            }
+        },
+        {
+            "writer.updateObject": {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "subjectRef",
+                "subjectRef": "s1",
+                "organisation": "org-1",
+                "id": "acc-1",
+                "data": {
+                    "needsAlternativeContact": false
+                }
+            }
+        }
+    ],
+    "flagNotCleared": [
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "subjectRef",
+                "subjectRef": "s1",
+                "organisation": "org-1",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "channels.record": {
+                "argument": {
+                    "subjectRef": "s1",
+                    "organisation": "org-1",
+                    "appId": "app-x",
+                    "ruleKey": "message.created"
+                }
+            }
+        },
+        {
+            "channels.kindOf": {
+                "record": []
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "@self": {
+                        "uuid": "acc-1"
+                    },
+                    "email": "a@example.org",
+                    "status": "active",
+                    "needsAlternativeContact": "yes"
+                },
+                "kind": "kind-x",
+                "channel": "email"
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "@self": {
+                        "uuid": "acc-1"
+                    },
+                    "email": "a@example.org",
+                    "status": "active",
+                    "needsAlternativeContact": "yes"
+                },
+                "kind": "kind-x",
+                "channel": "push"
+            }
+        },
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "acc-1",
+                "organisation": "org-1",
+                "limit": 50,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "mailer.validateMailAddress": {
+                "email": "a@example.org"
+            }
+        },
+        {
+            "orgConfig.resolve": {
+                "orgSlug": "org-1",
+                "locale": "nl"
+            }
+        },
+        {
+            "deepLinks.forNotice": {
+                "organisation": "org-1",
+                "record": []
+            }
+        },
+        {
+            "mailer.createMessage": []
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "You have a new message in the portal of %1$s",
+                "parameters": [
+                    "Org One"
+                ]
+            }
+        },
+        {
+            "message.setSubject": {
+                "subject": "You have a new message in the portal of %1$s [\"Org One\"]"
+            }
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "You have a new message in the portal of %1$s. Log in to view it: %2$s",
+                "parameters": [
+                    "Org One",
+                    "https://site/org-1/-"
+                ]
+            }
+        },
+        {
+            "message.setPlainBody": {
+                "body": "You have a new message in the portal of %1$s. Log in to view it: %2$s [\"Org One\",\"https:\\/\\/site\\/org-1\\/-\"]"
+            }
+        },
+        {
+            "message.setTo": {
+                "recipients": [
+                    "a@example.org"
+                ]
+            }
+        },
+        {
+            "mailer.send": {
+                "message": "double"
+            }
+        },
+        {
+            "writer.createObject": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "acc-1",
+                "organisation": "org-1",
+                "data": {
+                    "ruleKey": "message.created",
+                    "appId": "app-x",
+                    "channel": "email",
+                    "status": "sent",
+                    "attempts": 0,
+                    "lastAttemptAt": "NOW"
+                }
+            }
+        },
+        {
+            "config.getAppValue": {
+                "appName": "portaliq",
+                "key": "notification_failure_threshold",
+                "default": "3"
+            }
+        }
+    ],
+    "logWriteFails": [
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "subjectRef",
+                "subjectRef": "s1",
+                "organisation": "org-1",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "channels.record": {
+                "argument": {
+                    "subjectRef": "s1",
+                    "organisation": "org-1",
+                    "appId": "app-x",
+                    "ruleKey": "message.created"
+                }
+            }
+        },
+        {
+            "channels.kindOf": {
+                "record": []
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "@self": {
+                        "uuid": "acc-1"
+                    },
+                    "email": "a@example.org",
+                    "status": "active"
+                },
+                "kind": "kind-x",
+                "channel": "email"
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "@self": {
+                        "uuid": "acc-1"
+                    },
+                    "email": "a@example.org",
+                    "status": "active"
+                },
+                "kind": "kind-x",
+                "channel": "push"
+            }
+        },
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "acc-1",
+                "organisation": "org-1",
+                "limit": 50,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "mailer.validateMailAddress": {
+                "email": "a@example.org"
+            }
+        },
+        {
+            "orgConfig.resolve": {
+                "orgSlug": "org-1",
+                "locale": "nl"
+            }
+        },
+        {
+            "deepLinks.forNotice": {
+                "organisation": "org-1",
+                "record": []
+            }
+        },
+        {
+            "mailer.createMessage": []
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "You have a new message in the portal of %1$s",
+                "parameters": [
+                    "Org One"
+                ]
+            }
+        },
+        {
+            "message.setSubject": {
+                "subject": "You have a new message in the portal of %1$s [\"Org One\"]"
+            }
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "You have a new message in the portal of %1$s. Log in to view it: %2$s",
+                "parameters": [
+                    "Org One",
+                    "https://site/org-1/-"
+                ]
+            }
+        },
+        {
+            "message.setPlainBody": {
+                "body": "You have a new message in the portal of %1$s. Log in to view it: %2$s [\"Org One\",\"https:\\/\\/site\\/org-1\\/-\"]"
+            }
+        },
+        {
+            "message.setTo": {
+                "recipients": [
+                    "a@example.org"
+                ]
+            }
+        },
+        {
+            "mailer.send": {
+                "message": "double"
+            }
+        },
+        {
+            "writer.createObject": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "acc-1",
+                "organisation": "org-1",
+                "data": {
+                    "ruleKey": "message.created",
+                    "appId": "app-x",
+                    "channel": "email",
+                    "status": "sent",
+                    "attempts": 0,
+                    "lastAttemptAt": "NOW"
+                }
+            }
+        },
+        {
+            "logger.warning": {
+                "message": "Portaliq: portalNotification log write failed \u2014 the dispatch attempt itself already ran",
+                "context": {
+                    "subjectRef": "s1",
+                    "ruleKey": "message.created",
+                    "status": "sent"
+                }
+            }
+        },
+        {
+            "config.getAppValue": {
+                "appName": "portaliq",
+                "key": "notification_failure_threshold",
+                "default": "3"
+            }
+        }
+    ],
+    "flagWriteFails": [
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "subjectRef",
+                "subjectRef": "s1",
+                "organisation": "org-1",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "channels.record": {
+                "argument": {
+                    "subjectRef": "s1",
+                    "organisation": "org-1",
+                    "appId": "app-x",
+                    "ruleKey": "message.created"
+                }
+            }
+        },
+        {
+            "channels.kindOf": {
+                "record": []
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "@self": {
+                        "uuid": "acc-1"
+                    },
+                    "email": "a@example.org",
+                    "status": "active"
+                },
+                "kind": "kind-x",
+                "channel": "email"
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "@self": {
+                        "uuid": "acc-1"
+                    },
+                    "email": "a@example.org",
+                    "status": "active"
+                },
+                "kind": "kind-x",
+                "channel": "push"
+            }
+        },
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "acc-1",
+                "organisation": "org-1",
+                "limit": 50,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "mailer.validateMailAddress": {
+                "email": "a@example.org"
+            }
+        },
+        {
+            "orgConfig.resolve": {
+                "orgSlug": "org-1",
+                "locale": "nl"
+            }
+        },
+        {
+            "deepLinks.forNotice": {
+                "organisation": "org-1",
+                "record": []
+            }
+        },
+        {
+            "mailer.createMessage": []
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "You have a new message in the portal of %1$s",
+                "parameters": [
+                    "Org One"
+                ]
+            }
+        },
+        {
+            "message.setSubject": {
+                "subject": "You have a new message in the portal of %1$s [\"Org One\"]"
+            }
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "You have a new message in the portal of %1$s. Log in to view it: %2$s",
+                "parameters": [
+                    "Org One",
+                    "https://site/org-1/-"
+                ]
+            }
+        },
+        {
+            "message.setPlainBody": {
+                "body": "You have a new message in the portal of %1$s. Log in to view it: %2$s [\"Org One\",\"https:\\/\\/site\\/org-1\\/-\"]"
+            }
+        },
+        {
+            "message.setTo": {
+                "recipients": [
+                    "a@example.org"
+                ]
+            }
+        },
+        {
+            "mailer.send": {
+                "message": "double"
+            }
+        },
+        {
+            "logger.warning": {
+                "message": "Portaliq: notification email send failed",
+                "context": {
+                    "reason": "SMTP down"
+                }
+            }
+        },
+        {
+            "writer.createObject": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "acc-1",
+                "organisation": "org-1",
+                "data": {
+                    "ruleKey": "message.created",
+                    "appId": "app-x",
+                    "channel": "email",
+                    "status": "failed",
+                    "attempts": 3,
+                    "lastAttemptAt": "NOW"
+                }
+            }
+        },
+        {
+            "config.getAppValue": {
+                "appName": "portaliq",
+                "key": "notification_failure_threshold",
+                "default": "3"
+            }
+        },
+        {
+            "writer.updateObject": {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "subjectRef",
+                "subjectRef": "s1",
+                "organisation": "org-1",
+                "id": "acc-1",
+                "data": {
+                    "needsAlternativeContact": true
+                }
+            }
+        },
+        {
+            "logger.warning": {
+                "message": "Portaliq: failed to update portalAccount.needsAlternativeContact",
+                "context": {
+                    "subjectRef": "s1",
+                    "flag": true
+                }
+            }
+        }
+    ],
+    "changeRule": [
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "subjectRef",
+                "subjectRef": "s1",
+                "organisation": "org-1",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "channels.record": {
+                "argument": {
+                    "subjectRef": "s1",
+                    "organisation": "org-1",
+                    "appId": "app-x",
+                    "ruleKey": "message.created",
+                    "record": {
+                        "id": "r1",
+                        "label": "Case"
+                    }
+                }
+            }
+        },
+        {
+            "channels.kindOf": {
+                "record": {
+                    "id": "r1",
+                    "label": "Case"
+                }
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "@self": {
+                        "uuid": "acc-1"
+                    },
+                    "email": "a@example.org",
+                    "status": "active"
+                },
+                "kind": "kind-x",
+                "channel": "email"
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "@self": {
+                        "uuid": "acc-1"
+                    },
+                    "email": "a@example.org",
+                    "status": "active"
+                },
+                "kind": "kind-x",
+                "channel": "push"
+            }
+        },
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "acc-1",
+                "organisation": "org-1",
+                "limit": 50,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "mailer.validateMailAddress": {
+                "email": "a@example.org"
+            }
+        },
+        {
+            "orgConfig.resolve": {
+                "orgSlug": "org-1",
+                "locale": "nl"
+            }
+        },
+        {
+            "deepLinks.forNotice": {
+                "organisation": "org-1",
+                "record": {
+                    "id": "r1",
+                    "label": "Case"
+                }
+            }
+        },
+        {
+            "mailer.createMessage": []
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "Something changed in the portal of %1$s",
+                "parameters": [
+                    "Org One"
+                ]
+            }
+        },
+        {
+            "message.setSubject": {
+                "subject": "Something changed in the portal of %1$s [\"Org One\"]"
+            }
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "Something changed on your %1$s in the portal of %2$s. Sign in to see it: %3$s",
+                "parameters": [
+                    "Case",
+                    "Org One",
+                    "https://site/org-1/r1"
+                ]
+            }
+        },
+        {
+            "message.setPlainBody": {
+                "body": "Something changed on your %1$s in the portal of %2$s. Sign in to see it: %3$s [\"Case\",\"Org One\",\"https:\\/\\/site\\/org-1\\/r1\"]"
+            }
+        },
+        {
+            "message.setTo": {
+                "recipients": [
+                    "a@example.org"
+                ]
+            }
+        },
+        {
+            "mailer.send": {
+                "message": "double"
+            }
+        },
+        {
+            "writer.createObject": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "acc-1",
+                "organisation": "org-1",
+                "data": {
+                    "ruleKey": "message.created",
+                    "appId": "app-x",
+                    "channel": "email",
+                    "status": "sent",
+                    "attempts": 0,
+                    "lastAttemptAt": "NOW"
+                }
+            }
+        },
+        {
+            "config.getAppValue": {
+                "appName": "portaliq",
+                "key": "notification_failure_threshold",
+                "default": "3"
+            }
+        }
+    ],
+    "pushOnly": [
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "subjectRef",
+                "subjectRef": "s1",
+                "organisation": "org-1",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "channels.record": {
+                "argument": {
+                    "subjectRef": "s1",
+                    "organisation": "org-1",
+                    "appId": "app-x",
+                    "ruleKey": "message.created"
+                }
+            }
+        },
+        {
+            "channels.kindOf": {
+                "record": []
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "@self": {
+                        "uuid": "acc-1"
+                    },
+                    "email": "a@example.org",
+                    "status": "active"
+                },
+                "kind": "kind-x",
+                "channel": "email"
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "@self": {
+                        "uuid": "acc-1"
+                    },
+                    "email": "a@example.org",
+                    "status": "active"
+                },
+                "kind": "kind-x",
+                "channel": "push"
+            }
+        },
+        {
+            "orgConfig.resolve": {
+                "orgSlug": "org-1",
+                "locale": "nl"
+            }
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "You have a new message in the portal of %1$s",
+                "parameters": [
+                    "Org One"
+                ]
+            }
+        },
+        {
+            "deepLinks.forNotice": {
+                "organisation": "org-1",
+                "record": []
+            }
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "You have a new message in the portal of %1$s. Log in to view it: %2$s",
+                "parameters": [
+                    "Org One",
+                    "https://site/org-1/-"
+                ]
+            }
+        },
+        {
+            "channels.push": {
+                "subjectRef": "s1",
+                "title": "You have a new message in the portal of %1$s [\"Org One\"]",
+                "body": "You have a new message in the portal of %1$s. Log in to view it: %2$s [\"Org One\",\"https:\\/\\/site\\/org-1\\/-\"]"
+            }
+        },
+        {
+            "writer.createObject": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "acc-1",
+                "organisation": "org-1",
+                "data": {
+                    "ruleKey": "message.created",
+                    "appId": "app-x",
+                    "channel": "push",
+                    "status": "sent",
+                    "attempts": 0,
+                    "lastAttemptAt": "NOW"
+                }
+            }
+        }
+    ],
+    "pushNoDevice": [
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "subjectRef",
+                "subjectRef": "s1",
+                "organisation": "org-1",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "channels.record": {
+                "argument": {
+                    "subjectRef": "s1",
+                    "organisation": "org-1",
+                    "appId": "app-x",
+                    "ruleKey": "message.created"
+                }
+            }
+        },
+        {
+            "channels.kindOf": {
+                "record": []
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "@self": {
+                        "uuid": "acc-1"
+                    },
+                    "email": "a@example.org",
+                    "status": "active"
+                },
+                "kind": "kind-x",
+                "channel": "email"
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "@self": {
+                        "uuid": "acc-1"
+                    },
+                    "email": "a@example.org",
+                    "status": "active"
+                },
+                "kind": "kind-x",
+                "channel": "push"
+            }
+        },
+        {
+            "orgConfig.resolve": {
+                "orgSlug": "org-1",
+                "locale": "nl"
+            }
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "You have a new message in the portal of %1$s",
+                "parameters": [
+                    "Org One"
+                ]
+            }
+        },
+        {
+            "deepLinks.forNotice": {
+                "organisation": "org-1",
+                "record": []
+            }
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "You have a new message in the portal of %1$s. Log in to view it: %2$s",
+                "parameters": [
+                    "Org One",
+                    "https://site/org-1/-"
+                ]
+            }
+        },
+        {
+            "channels.push": {
+                "subjectRef": "s1",
+                "title": "You have a new message in the portal of %1$s [\"Org One\"]",
+                "body": "You have a new message in the portal of %1$s. Log in to view it: %2$s [\"Org One\",\"https:\\/\\/site\\/org-1\\/-\"]"
+            }
+        }
+    ],
+    "pushAndEmail": [
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "subjectRef",
+                "subjectRef": "s1",
+                "organisation": "org-1",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "channels.record": {
+                "argument": {
+                    "subjectRef": "s1",
+                    "organisation": "org-1",
+                    "appId": "app-x",
+                    "ruleKey": "message.created"
+                }
+            }
+        },
+        {
+            "channels.kindOf": {
+                "record": []
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "@self": {
+                        "uuid": "acc-1"
+                    },
+                    "email": "a@example.org",
+                    "status": "active"
+                },
+                "kind": "kind-x",
+                "channel": "email"
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "@self": {
+                        "uuid": "acc-1"
+                    },
+                    "email": "a@example.org",
+                    "status": "active"
+                },
+                "kind": "kind-x",
+                "channel": "push"
+            }
+        },
+        {
+            "orgConfig.resolve": {
+                "orgSlug": "org-1",
+                "locale": "nl"
+            }
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "You have a new message in the portal of %1$s",
+                "parameters": [
+                    "Org One"
+                ]
+            }
+        },
+        {
+            "deepLinks.forNotice": {
+                "organisation": "org-1",
+                "record": []
+            }
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "You have a new message in the portal of %1$s. Log in to view it: %2$s",
+                "parameters": [
+                    "Org One",
+                    "https://site/org-1/-"
+                ]
+            }
+        },
+        {
+            "channels.push": {
+                "subjectRef": "s1",
+                "title": "You have a new message in the portal of %1$s [\"Org One\"]",
+                "body": "You have a new message in the portal of %1$s. Log in to view it: %2$s [\"Org One\",\"https:\\/\\/site\\/org-1\\/-\"]"
+            }
+        },
+        {
+            "writer.createObject": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "acc-1",
+                "organisation": "org-1",
+                "data": {
+                    "ruleKey": "message.created",
+                    "appId": "app-x",
+                    "channel": "push",
+                    "status": "failed",
+                    "attempts": 0,
+                    "lastAttemptAt": "NOW"
+                }
+            }
+        },
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "acc-1",
+                "organisation": "org-1",
+                "limit": 50,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "mailer.validateMailAddress": {
+                "email": "a@example.org"
+            }
+        },
+        {
+            "orgConfig.resolve": {
+                "orgSlug": "org-1",
+                "locale": "nl"
+            }
+        },
+        {
+            "deepLinks.forNotice": {
+                "organisation": "org-1",
+                "record": []
+            }
+        },
+        {
+            "mailer.createMessage": []
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "You have a new message in the portal of %1$s",
+                "parameters": [
+                    "Org One"
+                ]
+            }
+        },
+        {
+            "message.setSubject": {
+                "subject": "You have a new message in the portal of %1$s [\"Org One\"]"
+            }
+        },
+        {
+            "language.forOrganisation": {
+                "organisation": "org-1"
+            }
+        },
+        {
+            "l10n.t": {
+                "text": "You have a new message in the portal of %1$s. Log in to view it: %2$s",
+                "parameters": [
+                    "Org One",
+                    "https://site/org-1/-"
+                ]
+            }
+        },
+        {
+            "message.setPlainBody": {
+                "body": "You have a new message in the portal of %1$s. Log in to view it: %2$s [\"Org One\",\"https:\\/\\/site\\/org-1\\/-\"]"
+            }
+        },
+        {
+            "message.setTo": {
+                "recipients": [
+                    "a@example.org"
+                ]
+            }
+        },
+        {
+            "mailer.send": {
+                "message": "double"
+            }
+        },
+        {
+            "writer.createObject": {
+                "register": "portaliq",
+                "schema": "portalNotification",
+                "scopeField": "accountRef",
+                "subjectRef": "acc-1",
+                "organisation": "org-1",
+                "data": {
+                    "ruleKey": "message.created",
+                    "appId": "app-x",
+                    "channel": "email",
+                    "status": "sent",
+                    "attempts": 0,
+                    "lastAttemptAt": "NOW"
+                }
+            }
+        },
+        {
+            "config.getAppValue": {
+                "appName": "portaliq",
+                "key": "notification_failure_threshold",
+                "default": "3"
+            }
+        }
+    ],
+    "nothingWanted": [
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "subjectRef",
+                "subjectRef": "s1",
+                "organisation": "org-1",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "channels.record": {
+                "argument": {
+                    "subjectRef": "s1",
+                    "organisation": "org-1",
+                    "appId": "app-x",
+                    "ruleKey": "message.created"
+                }
+            }
+        },
+        {
+            "channels.kindOf": {
+                "record": []
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "@self": {
+                        "uuid": "acc-1"
+                    },
+                    "email": "a@example.org",
+                    "status": "active"
+                },
+                "kind": "kind-x",
+                "channel": "email"
+            }
+        },
+        {
+            "channels.wants": {
+                "account": {
+                    "@self": {
+                        "uuid": "acc-1"
+                    },
+                    "email": "a@example.org",
+                    "status": "active"
+                },
+                "kind": "kind-x",
+                "channel": "push"
+            }
+        }
+    ],
+    "readerThrows": [
+        {
+            "reader.readCollection": {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "subjectRef",
+                "subjectRef": "s1",
+                "organisation": "org-1",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        },
+        {
+            "logger.error": {
+                "message": "Portaliq: NotificationDispatchJob failed entirely",
+                "context": {
+                    "reason": "reader down"
+                }
+            }
+        }
+    ]
+}

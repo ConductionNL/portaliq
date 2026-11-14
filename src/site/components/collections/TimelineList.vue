@@ -34,7 +34,7 @@ import { newestFirst } from './timeline.js'
  * The history of one record as its contributing app returned it (slice b,
  * b6): every entry, newest first, under the label the app declared.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-records-timeline-must-show-as-its-app-returned-it-req-srp-019
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-records-timeline-must-show-as-its-app-returned-it-req-srp-019
  */
 export default {
 	name: 'TimelineList',
@@ -55,7 +55,7 @@ export default {
 	computed: {
 		/**
 		 * @return {string} The declared label, else "What happened".
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-records-timeline-must-show-as-its-app-returned-it-req-srp-019
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-records-timeline-must-show-as-its-app-returned-it-req-srp-019
 		 */
 		heading() {
 			return this.label || this.t('What happened')
@@ -63,7 +63,7 @@ export default {
 
 		/**
 		 * @return {Array<object>} The entries, newest first.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-records-timeline-must-show-as-its-app-returned-it-req-srp-019
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-records-timeline-must-show-as-its-app-returned-it-req-srp-019
 		 */
 		ordered() {
 			return newestFirst(this.entries)
@@ -71,7 +71,7 @@ export default {
 
 		/**
 		 * @return {(key: string, vars?: object) => string} The translator of the mijn omgeving components.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 		 */
 		mijnTr() {
 			return mijnTranslator(this.t, this.locale)

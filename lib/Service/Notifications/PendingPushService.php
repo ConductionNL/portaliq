@@ -21,24 +21,25 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/push-notifications-quiet-hours/specs/guardian-push-notifications/spec.md#requirement-a-due-deferred-push-is-delivered-by-the-background-job-an-undue-one-is-left-alone
+ * @spec openspec/specs/guardian-push-notifications/spec.md#requirement-a-due-deferred-push-is-delivered-by-the-background-job-an-undue-one-is-left-alone
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Notifications;
 
+use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\PendingPushServiceInterface;
 use OCA\Portaliq\Service\ObjectRowNormaliser;
 use OCA\Portaliq\Service\ObjectServiceLookup;
-use DateTimeImmutable;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * @spec openspec/changes/push-notifications-quiet-hours/specs/guardian-push-notifications/spec.md#requirement-a-due-deferred-push-is-delivered-by-the-background-job-an-undue-one-is-left-alone
+ * @spec openspec/specs/guardian-push-notifications/spec.md#requirement-a-due-deferred-push-is-delivered-by-the-background-job-an-undue-one-is-left-alone
  */
-class PendingPushService {
+class PendingPushService implements PendingPushServiceInterface {
 	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
 
@@ -79,7 +80,7 @@ class PendingPushService {
 	 *
 	 * @return bool True on success.
 	 *
-	 * @spec openspec/changes/push-notifications-quiet-hours/specs/guardian-push-notifications/spec.md#requirement-a-non-emergency-push-during-quiet-hours-is-deferred-not-dropped
+	 * @spec openspec/specs/guardian-push-notifications/spec.md#requirement-a-non-emergency-push-during-quiet-hours-is-deferred-not-dropped
 	 */
 	public function queue(string $subjectRef, string $title, string $body, DateTimeImmutable $deliverAfter): bool {
 		$objectService = $this->objectService();
@@ -117,7 +118,7 @@ class PendingPushService {
 	 *
 	 * @return int The number of rows delivered.
 	 *
-	 * @spec openspec/changes/push-notifications-quiet-hours/specs/guardian-push-notifications/spec.md#requirement-a-due-deferred-push-is-delivered-by-the-background-job-an-undue-one-is-left-alone
+	 * @spec openspec/specs/guardian-push-notifications/spec.md#requirement-a-due-deferred-push-is-delivered-by-the-background-job-an-undue-one-is-left-alone
 	 */
 	public function deliverDue(DateTimeImmutable $now): int {
 		$objectService = $this->objectService();

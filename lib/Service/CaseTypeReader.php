@@ -26,13 +26,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+ * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\CaseTypeReaderInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -40,9 +41,9 @@ use Throwable;
 /**
  * Resolves a case type object by id, fail closed.
  *
- * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+ * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
-class CaseTypeReader {
+class CaseTypeReader implements CaseTypeReaderInterface {
 	use ObjectServiceLookup;
 
 	/**
@@ -71,7 +72,7 @@ class CaseTypeReader {
 	 *
 	 * @return array<string, mixed>|null The case type, or null.
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	public function readCaseType(string $register, string $schema, string $id): ?array {
 		if ($register === '' || $schema === '' || $id === '') {

@@ -21,19 +21,21 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-search-names-the-organisation/specs/portal-federated-search/spec.md#requirement-the-organisation-filter-reads-the-organisations-name
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-organisation-filter-reads-the-organisations-name
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\SiteOrganisationInterface;
+
 /**
  * Names a portal's organisation by id and name.
  *
- * @spec openspec/changes/woo-search-names-the-organisation/specs/portal-federated-search/spec.md#requirement-the-organisation-filter-reads-the-organisations-name
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-organisation-filter-reads-the-organisations-name
  */
-class SiteOrganisation {
+class SiteOrganisation implements SiteOrganisationInterface {
 	/**
 	 * Constructor.
 	 *
@@ -51,7 +53,7 @@ class SiteOrganisation {
 	 *
 	 * @return array{id: string, name: string}|null
 	 *
-	 * @spec openspec/changes/woo-search-names-the-organisation/specs/portal-federated-search/spec.md#requirement-the-organisation-filter-reads-the-organisations-name
+	 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-organisation-filter-reads-the-organisations-name
 	 */
 	public function forPortal(array $portal): ?array {
 		$slug = (string)($portal['organisation'] ?? '');

@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
  */
 
 declare(strict_types=1);
@@ -74,7 +74,7 @@ final class TrafficLogImportRun {
 	 *
 	 * @return string|null The visitor whose batch is now full, or null.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
 	 */
 	public function add(?array $view): ?string {
 		$this->outcome['lines']++;
@@ -101,7 +101,7 @@ final class TrafficLogImportRun {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
 	 */
 	public function take(string $visitor): array {
 		$events = ($this->batches[$visitor] ?? []);
@@ -115,7 +115,7 @@ final class TrafficLogImportRun {
 	 *
 	 * @return array<int, string>
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
 	 */
 	public function waiting(): array {
 		return array_map('strval', array_keys($this->batches));
@@ -128,7 +128,7 @@ final class TrafficLogImportRun {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
 	 */
 	public function count(array $result): void {
 		$this->outcome['accepted'] += (int)$result['accepted'];

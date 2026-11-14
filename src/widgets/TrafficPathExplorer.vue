@@ -20,8 +20,8 @@
   the next steps then count only the visits that passed it. The same
   numbers are in a table under "Show as a table".
 
-  @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-follow-the-pages-portal-period-and-segment
-  @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-be-operable-by-keyboard-and-readable-without-the-diagram
+  @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-follow-the-pages-portal-period-and-segment
+  @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-be-operable-by-keyboard-and-readable-without-the-diagram
 -->
 <template>
 	<div class="traffic-paths" data-testid="traffic-paths">
@@ -315,7 +315,7 @@ export default {
 		/**
 		 * Everything the answer depends on, as one key to watch.
 		 *
-		 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-follow-the-pages-portal-period-and-segment
+		 * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-follow-the-pages-portal-period-and-segment
 		 * @return {string} The key, '' when there is nothing to ask for.
 		 */
 		query() {
@@ -342,7 +342,7 @@ export default {
 		/**
 		 * The two directions, for the direction picker.
 		 *
-		 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-start-from-a-visits-start-or-a-page-or-end-at-a-visits-end-or-a-page
+		 * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-start-from-a-visits-start-or-a-page-or-end-at-a-visits-end-or-a-page
 		 * @return {Array<{id: string, label: string}>} The options.
 		 */
 		modeOptions() {
@@ -358,7 +358,7 @@ export default {
 		/**
 		 * The chosen direction's option.
 		 *
-		 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-start-from-a-visits-start-or-a-page-or-end-at-a-visits-end-or-a-page
+		 * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-start-from-a-visits-start-or-a-page-or-end-at-a-visits-end-or-a-page
 		 * @return {object} The option.
 		 */
 		selectedMode() {
@@ -372,7 +372,7 @@ export default {
 		 * The start or end of a visit, then the portal's top pages for the
 		 * period, then the chosen page when it is not among them.
 		 *
-		 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-start-from-a-visits-start-or-a-page-or-end-at-a-visits-end-or-a-page
+		 * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-start-from-a-visits-start-or-a-page-or-end-at-a-visits-end-or-a-page
 		 * @return {Array<{id: string, label: string}>} The options.
 		 */
 		anchorOptions() {
@@ -395,7 +395,7 @@ export default {
 		/**
 		 * The chosen point's option.
 		 *
-		 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-start-from-a-visits-start-or-a-page-or-end-at-a-visits-end-or-a-page
+		 * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-start-from-a-visits-start-or-a-page-or-end-at-a-visits-end-or-a-page
 		 * @return {object} The option.
 		 */
 		selectedAnchor() {
@@ -408,7 +408,7 @@ export default {
 		/**
 		 * The drawing's geometry.
 		 *
-		 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-each-step-must-show-its-busiest-pages-the-rest-as-one-node-and-where-visits-ended
+		 * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-each-step-must-show-its-busiest-pages-the-rest-as-one-node-and-where-visits-ended
 		 * @return {object} See `layoutPaths`.
 		 */
 		drawing() {
@@ -418,7 +418,7 @@ export default {
 		/**
 		 * The SVG view box, with room for the drop-off stubs on either side.
 		 *
-		 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-each-step-must-show-its-busiest-pages-the-rest-as-one-node-and-where-visits-ended
+		 * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-each-step-must-show-its-busiest-pages-the-rest-as-one-node-and-where-visits-ended
 		 * @return {string} The view box.
 		 */
 		viewBox() {
@@ -433,7 +433,7 @@ export default {
 		/**
 		 * The table's rows.
 		 *
-		 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-be-operable-by-keyboard-and-readable-without-the-diagram
+		 * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-be-operable-by-keyboard-and-readable-without-the-diagram
 		 * @return {Array<object>} See `pathRows`.
 		 */
 		rows() {
@@ -443,7 +443,7 @@ export default {
 		/**
 		 * What a screen reader hears for the diagram as a whole.
 		 *
-		 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-be-operable-by-keyboard-and-readable-without-the-diagram
+		 * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-be-operable-by-keyboard-and-readable-without-the-diagram
 		 * @return {string} The label.
 		 */
 		diagramLabel() {
@@ -458,7 +458,7 @@ export default {
 		/**
 		 * The note for a period that reaches past the kept raw events.
 		 *
-		 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-say-when-it-shows-less-than-the-chosen-period
+		 * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-say-when-it-shows-less-than-the-chosen-period
 		 * @return {string} The note, '' when the period is fully kept.
 		 */
 		retentionNote() {
@@ -488,7 +488,7 @@ export default {
 		/**
 		 * The note for a read the event cap stopped.
 		 *
-		 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-say-when-it-shows-less-than-the-chosen-period
+		 * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-say-when-it-shows-less-than-the-chosen-period
 		 * @return {string} The note, '' when nothing was cut.
 		 */
 		truncatedNote() {
@@ -522,14 +522,14 @@ export default {
 		/**
 		 * Ask again whenever the portal, period, segment or a choice changes.
 		 *
-		 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-follow-the-pages-portal-period-and-segment
+		 * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-follow-the-pages-portal-period-and-segment
 		 * @return {void}
 		 */
 		query: {
 			/**
 			 * Load the paths for the new query.
 			 *
-			 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-follow-the-pages-portal-period-and-segment
+			 * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-follow-the-pages-portal-period-and-segment
 			 * @return {void}
 			 */
 			handler() {
@@ -542,7 +542,7 @@ export default {
 		/**
 		 * Another portal starts over: its pages are not this portal's pages.
 		 *
-		 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-reader-must-be-able-to-expand-from-a-node-and-change-the-number-of-steps
+		 * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-reader-must-be-able-to-expand-from-a-node-and-change-the-number-of-steps
 		 * @return {void}
 		 */
 		'report.portalSlug': function () {
@@ -556,7 +556,7 @@ export default {
 		 * Fetch the paths for the current query. An answer that arrives
 		 * after a newer question was asked is dropped.
 		 *
-		 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-follow-the-pages-portal-period-and-segment
+		 * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-follow-the-pages-portal-period-and-segment
 		 * @return {Promise<void>}
 		 */
 		async load() {
@@ -592,7 +592,7 @@ export default {
 		 * Switch between forward and backward. The point and the choices
 		 * belong to one direction, so both start over.
 		 *
-		 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-start-from-a-visits-start-or-a-page-or-end-at-a-visits-end-or-a-page
+		 * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-start-from-a-visits-start-or-a-page-or-end-at-a-visits-end-or-a-page
 		 * @param {object|null} option The chosen option.
 		 * @return {void}
 		 */
@@ -608,7 +608,7 @@ export default {
 		/**
 		 * Choose the starting or ending point.
 		 *
-		 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-start-from-a-visits-start-or-a-page-or-end-at-a-visits-end-or-a-page
+		 * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-start-from-a-visits-start-or-a-page-or-end-at-a-visits-end-or-a-page
 		 * @param {object|null} option The chosen option.
 		 * @return {void}
 		 */
@@ -620,7 +620,7 @@ export default {
 		/**
 		 * Show more or fewer steps; a choice on a step that is removed goes.
 		 *
-		 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-reader-must-be-able-to-expand-from-a-node-and-change-the-number-of-steps
+		 * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-reader-must-be-able-to-expand-from-a-node-and-change-the-number-of-steps
 		 * @param {number} steps The new number.
 		 * @return {void}
 		 */
@@ -635,7 +635,7 @@ export default {
 		 * Choose a page node, or undo the choice. A "+N more" node holds
 		 * several pages and cannot be followed.
 		 *
-		 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-reader-must-be-able-to-expand-from-a-node-and-change-the-number-of-steps
+		 * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-reader-must-be-able-to-expand-from-a-node-and-change-the-number-of-steps
 		 * @param {object} box The node's drawing.
 		 * @return {void}
 		 */
@@ -649,7 +649,7 @@ export default {
 		/**
 		 * A step's heading: "Step 0", "Step +2", or "Step -2" reading back.
 		 *
-		 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-each-step-must-show-its-busiest-pages-the-rest-as-one-node-and-where-visits-ended
+		 * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-each-step-must-show-its-busiest-pages-the-rest-as-one-node-and-where-visits-ended
 		 * @param {number} step The step.
 		 * @return {string} The heading.
 		 */
@@ -665,7 +665,7 @@ export default {
 		/**
 		 * A step's totals: its visits, and how many ended (or began) there.
 		 *
-		 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-each-step-must-show-its-busiest-pages-the-rest-as-one-node-and-where-visits-ended
+		 * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-each-step-must-show-its-busiest-pages-the-rest-as-one-node-and-where-visits-ended
 		 * @param {object} column The step's column.
 		 * @return {string} The line.
 		 */
@@ -685,7 +685,7 @@ export default {
 		/**
 		 * A node's page, or "+N more" for the rest of a step.
 		 *
-		 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-each-step-must-show-its-busiest-pages-the-rest-as-one-node-and-where-visits-ended
+		 * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-each-step-must-show-its-busiest-pages-the-rest-as-one-node-and-where-visits-ended
 		 * @param {object} node The node, or a table row.
 		 * @return {string} The name.
 		 */
@@ -699,7 +699,7 @@ export default {
 		/**
 		 * The name cut to what fits inside a node.
 		 *
-		 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-each-step-must-show-its-busiest-pages-the-rest-as-one-node-and-where-visits-ended
+		 * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-each-step-must-show-its-busiest-pages-the-rest-as-one-node-and-where-visits-ended
 		 * @param {object} node The node.
 		 * @return {string} The label.
 		 */
@@ -714,7 +714,7 @@ export default {
 		/**
 		 * What a screen reader hears for a node, and the tooltip.
 		 *
-		 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-be-operable-by-keyboard-and-readable-without-the-diagram
+		 * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-be-operable-by-keyboard-and-readable-without-the-diagram
 		 * @param {object} box The node's drawing.
 		 * @return {string} The label.
 		 */
@@ -742,7 +742,7 @@ export default {
 		/**
 		 * The tooltip of a band.
 		 *
-		 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-each-step-must-show-its-busiest-pages-the-rest-as-one-node-and-where-visits-ended
+		 * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-each-step-must-show-its-busiest-pages-the-rest-as-one-node-and-where-visits-ended
 		 * @param {object} link The band's drawing.
 		 * @return {string} The text.
 		 */

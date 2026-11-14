@@ -35,7 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
-use OCA\Portaliq\Service\PortalSchemaReader;
+use OCA\Portaliq\Kernel\Contracts\PortalSchemaReaderInterface;
 
 /**
  * Validates and sanitises the v3 action form config, fail-closed.
@@ -63,7 +63,7 @@ class ActionConfigNormaliser {
 	 *
 	 * @param ManifestValueNormaliser $values The shared value-level primitives.
 	 * @param ActionOptionsNormaliser $options The option-provider validator.
-	 * @param PortalSchemaReader|null $schemaReader Resolves an action's schema
+	 * @param PortalSchemaReaderInterface|null $schemaReader Resolves an action's schema
 	 *                                              `required` set for the WMEBV
 	 *                                              data-minimisation guard. A
 	 *                                              null reader means the guard
@@ -93,7 +93,7 @@ class ActionConfigNormaliser {
 	public function __construct(
 		private readonly ManifestValueNormaliser $values,
 		private readonly ActionOptionsNormaliser $options,
-		private readonly ?PortalSchemaReader $schemaReader = null,
+		private readonly ?PortalSchemaReaderInterface $schemaReader = null,
 		private readonly ?CitizenWriteConfigNormaliser $citizenWrite = null,
 		private readonly ?CrossRefConfigNormaliser $crossRefs = null,
 	) {
@@ -335,8 +335,8 @@ class ActionConfigNormaliser {
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
-	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-an-action-must-be-able-to-declare-a-file-field
-	 * @spec openspec/changes/contribution-value-labels/specs/portal-contribution-contract/spec.md#requirement-a-column-and-a-form-field-may-declare-how-their-values-read
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-action-must-be-able-to-declare-a-file-field
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-column-and-a-form-field-may-declare-how-their-values-read
 	 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
 	 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-word-its-own-error-req-smf-006
 	 * @spec openspec/specs/site-forms/spec.md#requirement-an-endpoint-action-may-declare-a-fields-input-req-eaf-001
@@ -409,7 +409,7 @@ class ActionConfigNormaliser {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
 	 */
 	private function schemaDefinition(array $action): ?array {
 		if ($this->schemaReader === null) {

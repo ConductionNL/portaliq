@@ -26,15 +26,15 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-cms-content-model/tasks.md#task-4
+ * @spec openspec/changes/archive/2026-10-09-portal-cms-content-model/tasks.md#task-4
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Repair;
 
+use OCA\Portaliq\Kernel\Contracts\PortalRegisterContextInterface;
 use OCA\Portaliq\Service\ObjectServiceLookup;
-use OCA\Portaliq\Service\PortalRegisterContext;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Container\ContainerInterface;
@@ -44,7 +44,7 @@ use Throwable;
 /**
  * Assigns the only portal to content that has none.
  *
- * @spec openspec/changes/portal-cms-content-model/tasks.md#task-4
+ * @spec openspec/changes/archive/2026-10-09-portal-cms-content-model/tasks.md#task-4
  */
 class BackfillCmsPortalReference implements IRepairStep {
 	use ObjectServiceLookup;
@@ -80,12 +80,12 @@ class BackfillCmsPortalReference implements IRepairStep {
 	 * Constructor.
 	 *
 	 * @param ContainerInterface    $container Resolves OpenRegister's object service, which may be absent.
-	 * @param PortalRegisterContext $context   Points the object service at a schema.
+	 * @param PortalRegisterContextInterface $context   Points the object service at a schema.
 	 * @param LoggerInterface       $logger    Names an object that could not be written.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
-		private readonly PortalRegisterContext $context,
+		private readonly PortalRegisterContextInterface $context,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -95,7 +95,7 @@ class BackfillCmsPortalReference implements IRepairStep {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/portal-cms-content-model/tasks.md#task-4
+	 * @spec openspec/changes/archive/2026-10-09-portal-cms-content-model/tasks.md#task-4
 	 */
 	public function getName(): string {
 		return 'Give existing site content its portal';
@@ -108,7 +108,7 @@ class BackfillCmsPortalReference implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-cms-content-model/tasks.md#task-4
+	 * @spec openspec/changes/archive/2026-10-09-portal-cms-content-model/tasks.md#task-4
 	 */
 	public function run(IOutput $output): void {
 		$objectService = $this->objectService();

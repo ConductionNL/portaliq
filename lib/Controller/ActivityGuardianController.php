@@ -20,18 +20,18 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/extracurricular-activity-offer/contract.md
+ * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/contract.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
-use OCA\Portaliq\Service\ActivityFeedReader;
-use OCA\Portaliq\Service\ActivitySignupService;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\ActivityFeedReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\ActivitySignupServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -43,36 +43,36 @@ use OCP\IRequest;
 /**
  * Guardian read, sign-up and withdraw for activities.
  *
- * @spec openspec/changes/extracurricular-activity-offer/contract.md
+ * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/contract.md
  */
 class ActivityGuardianController extends Controller implements PortalProtected {
 	/**
 	 * HTTP status per sign-up refusal.
 	 */
 	private const REFUSAL_STATUS = [
-		ActivitySignupService::REASON_NOT_FOUND => Http::STATUS_NOT_FOUND,
-		ActivitySignupService::REASON_CLOSED => Http::STATUS_UNPROCESSABLE_ENTITY,
-		ActivitySignupService::REASON_FULL => Http::STATUS_UNPROCESSABLE_ENTITY,
-		ActivitySignupService::REASON_DUPLICATE => Http::STATUS_CONFLICT,
-		ActivitySignupService::REASON_UNAVAILABLE => Http::STATUS_BAD_GATEWAY,
-		ActivitySignupService::REASON_CONSENT_REQUIRED => Http::STATUS_UNPROCESSABLE_ENTITY,
+		ActivitySignupServiceInterface::REASON_NOT_FOUND => Http::STATUS_NOT_FOUND,
+		ActivitySignupServiceInterface::REASON_CLOSED => Http::STATUS_UNPROCESSABLE_ENTITY,
+		ActivitySignupServiceInterface::REASON_FULL => Http::STATUS_UNPROCESSABLE_ENTITY,
+		ActivitySignupServiceInterface::REASON_DUPLICATE => Http::STATUS_CONFLICT,
+		ActivitySignupServiceInterface::REASON_UNAVAILABLE => Http::STATUS_BAD_GATEWAY,
+		ActivitySignupServiceInterface::REASON_CONSENT_REQUIRED => Http::STATUS_UNPROCESSABLE_ENTITY,
 	];
 
 	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param ActivityFeedReader $feedReader The guardian-scoped read.
-	 * @param ActivitySignupService $signups Sign-up and withdraw.
+	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
+	 * @param ActivityFeedReaderInterface $feedReader The guardian-scoped read.
+	 * @param ActivitySignupServiceInterface $signups Sign-up and withdraw.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
-		private readonly ActivityFeedReader $feedReader,
-		private readonly ActivitySignupService $signups,
+		private readonly PortalSessionServiceInterface $session,
+		private readonly ActivityFeedReaderInterface $feedReader,
+		private readonly ActivitySignupServiceInterface $signups,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -81,7 +81,7 @@ class ActivityGuardianController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-guardian-must-be-able-to-sign-up-one-of-their-own-children-with-a-waiting-list-when-full
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-guardian-must-be-able-to-sign-up-one-of-their-own-children-with-a-waiting-list-when-full
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -105,8 +105,8 @@ class ActivityGuardianController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{status, position?}`, or 401 / 404 / 409 / 422 / 502.
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-guardian-must-be-able-to-sign-up-one-of-their-own-children-with-a-waiting-list-when-full
-	 * @spec openspec/changes/activity-parental-consent/specs/portaliq-cms/spec.md#requirement-an-activity-must-be-able-to-require-a-guardians-consent-recorded-on-the-sign-up
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-guardian-must-be-able-to-sign-up-one-of-their-own-children-with-a-waiting-list-when-full
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-an-activity-must-be-able-to-require-a-guardians-consent-recorded-on-the-sign-up
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -133,7 +133,7 @@ class ActivityGuardianController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse 204, or 401 / 404 / 502.
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

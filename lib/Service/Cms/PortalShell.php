@@ -72,7 +72,7 @@ class PortalShell {
 	 * @spec openspec/changes/resident-menu-badges-and-cards/specs/site-resident-menu/spec.md#requirement-the-menu-may-open-with-whom-the-resident-acts-for
 	 *
 	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-header-must-be-a-block-whose-shape-the-portal-chooses-req-ptb-004
-	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
+	 * @spec openspec/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
 	 * @spec openspec/changes/site-breadcrumb-follows-the-school-boards/specs/site-look/spec.md#requirement-a-portal-chooses-the-words-of-the-last-crumb
 	 */
 	public function project(array $portal): array {
@@ -128,7 +128,7 @@ class PortalShell {
 	 *
 	 * @return array{enabled: bool, label: string, placeholder: string, route: string} The box.
 	 *
-	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
+	 * @spec openspec/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
 	 */
 	public function headerSearch(array $portal): array {
 		$search = $portal['headerSearch'] ?? [];
@@ -201,7 +201,7 @@ class PortalShell {
 	 * @return array<string, mixed> `{modes, register?, registerLabel?}`.
 	 *
 	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-header-must-be-a-block-whose-shape-the-portal-chooses-req-ptb-004
-	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
+	 * @spec openspec/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
 	 */
 	public function authentication(array $portal): array {
 		$auth   = (array)($portal['authentication'] ?? []);
@@ -229,7 +229,7 @@ class PortalShell {
 	 * @return array<string, mixed> `{description, colophon, socials, legalLinks, badges, cta, contact}`; each list holds `{label, href}` entries.
 	 *
 	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-footer-must-be-a-block-whose-bands-are-styled-by-role-req-ptb-005
-	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
+	 * @spec openspec/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
 	 */
 	public function footer(array $portal): array {
 		$footer = $portal['footer'] ?? [];
@@ -258,7 +258,7 @@ class PortalShell {
 	 *
 	 * @return array{title: string, lines: list<array<string, string>>}|null The column.
 	 *
-	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
+	 * @spec openspec/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
 	 */
 	private function contact(mixed $contact): ?array {
 		if (is_array($contact) === false) {

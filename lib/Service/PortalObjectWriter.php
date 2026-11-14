@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\PortalObjectWriterInterface;
 use OCA\Portaliq\Service\Tenancy\ActsForTheOrganisation;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -50,7 +51,7 @@ use Throwable;
  * moving a write path to another class would copy that boundary
  * (inbox-delete-own-messages added the delete).
  */
-class PortalObjectWriter {
+class PortalObjectWriter implements PortalObjectWriterInterface {
 	use ActsForTheOrganisation;
 	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
@@ -101,7 +102,7 @@ class PortalObjectWriter {
 	 * @return array<string, mixed>|null The created object, or null on failure.
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T06
-	 * @spec openspec/changes/portal-scope-list-membership/specs/portal-contribution-contract/spec.md#requirement-a-write-must-keep-a-verified-list-and-stamp-a-list-for-an-array-scope-field
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-write-must-keep-a-verified-list-and-stamp-a-list-for-an-array-scope-field
 	 */
 	public function createObject(
 		string $register,
@@ -191,7 +192,7 @@ class PortalObjectWriter {
 	 *
 	 * @return int The matching count, or 0 on failure.
 	 *
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T10
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T10
 	 */
 	public function countObjects(string $register, string $schema, array $filters = []): int {
 		$objectService = $this->objectService();
@@ -240,7 +241,7 @@ class PortalObjectWriter {
 	 * @return array<string, mixed>|null The updated object, or null on ownership/OR failure.
 	 *
 	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T2
-	 * @spec openspec/changes/portal-scope-list-membership/specs/portal-contribution-contract/spec.md#requirement-a-write-must-keep-a-verified-list-and-stamp-a-list-for-an-array-scope-field
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-write-must-keep-a-verified-list-and-stamp-a-list-for-an-array-scope-field
 	 */
 	public function updateObject(
 		string $register,
@@ -276,39 +277,9 @@ class PortalObjectWriter {
 			return null;
 		}
 
-		// A callable decides the fields from the row just verified as the
-		// subject's own, so a write that depends on the stored value (the
-		// first read moment) cannot race a second read.
-		if ($data instanceof \Closure) {
-			$data = (array)$data($existing);
-		}
-
-		// (2) Merge the whitelisted fields onto the existing object; drop the
-		// OR-managed `@self` envelope (id/schema/register travel as explicit
-		// save arguments, not as object data).
-		$merged = array_merge($existing, $data);
-		unset($merged['@self']);
-
-		// (3) The stored organisation stays exactly as it is. The tenant was
-		// decided when the object was created; `$organisation` only takes part
-		// in the ownership check above. An update never overwrites it and never
-		// adds one, whatever the subject's portal is or the payload says.
-		unset($merged['organisation']);
-		if (array_key_exists('organisation', $existing) === true) {
-			$merged['organisation'] = $existing['organisation'];
-		}
-
-		// (4) RE-STAMP the scope field AFTER the merge, so a client value can
-		// never win: a patch can never move the row out of scope. A verified
-		// membership list is re-stamped with the stored list itself: it
-		// already contains the subject, and portaliq never edits who else is
-		// on it.
-		if ($scopeField !== '') {
-			$merged[$scopeField] = $subjectRef;
-			if ($this->isScopeList(stored: ($existing[$scopeField] ?? null)) === true) {
-				$merged[$scopeField] = $existing[$scopeField];
-			}
-		}
+		// (2)-(4) Merge the fields onto the verified row, keeping the stored
+		// organisation and re-stamping the scope field.
+		$merged = $this->mergedUpdate(existing: $existing, data: $data, scopeField: $scopeField, subjectRef: $subjectRef);
 
 		// (5) Save with the id preserved (`uuid`) so OR UPDATES this row.
 		try {
@@ -328,6 +299,59 @@ class PortalObjectWriter {
 
 		return $this->normalise(row: $saved);
 	}//end updateObject()
+
+	/**
+	 * The object an update saves: the client fields merged onto the row just
+	 * verified as the subject's own, with the stored organisation kept and
+	 * the scope field re-stamped.
+	 *
+	 * @param array<string, mixed> $existing The verified, owned row.
+	 * @param array<string, mixed>|\Closure $data The whitelisted fields, or a closure that returns them from the verified row.
+	 * @param string $scopeField The row field carrying the subject reference (may be empty).
+	 * @param string $subjectRef The server-derived subject reference.
+	 *
+	 * @return array<string, mixed> The object to save.
+	 *
+	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T2
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-write-must-keep-a-verified-list-and-stamp-a-list-for-an-array-scope-field
+	 */
+	private function mergedUpdate(array $existing, array|\Closure $data, string $scopeField, string $subjectRef): array {
+		// A callable decides the fields from the row just verified as the
+		// subject's own, so a write that depends on the stored value (the
+		// first read moment) cannot race a second read.
+		if ($data instanceof \Closure) {
+			$data = (array)$data($existing);
+		}
+
+		// (2) Merge the whitelisted fields onto the existing object; drop the
+		// OR-managed `@self` envelope (id/schema/register travel as explicit
+		// save arguments, not as object data).
+		$merged = array_merge($existing, $data);
+		unset($merged['@self']);
+
+		// (3) The stored organisation stays exactly as it is. The tenant was
+		// decided when the object was created; `$organisation` only takes part
+		// in the ownership check. An update never overwrites it and never
+		// adds one, whatever the subject's portal is or the payload says.
+		unset($merged['organisation']);
+		if (array_key_exists('organisation', $existing) === true) {
+			$merged['organisation'] = $existing['organisation'];
+		}
+
+		// (4) RE-STAMP the scope field AFTER the merge, so a client value can
+		// never win: a patch can never move the row out of scope. A verified
+		// membership list is re-stamped with the stored list itself: it
+		// already contains the subject, and portaliq never edits who else is
+		// on it.
+		if ($scopeField !== '') {
+			$merged[$scopeField] = $subjectRef;
+			if ($this->isScopeList(stored: ($existing[$scopeField] ?? null)) === true) {
+				$merged[$scopeField] = $existing[$scopeField];
+			}
+		}
+
+		return $merged;
+	}//end mergedUpdate()
 
 	/**
 	 * Why the last create or update was refused, as the store said it, or ''
@@ -359,7 +383,7 @@ class PortalObjectWriter {
 	 *
 	 * @return bool True when the row was the subject's and is deleted.
 	 *
-	 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
 	 */
 	public function deleteObject(
 		string $register,
@@ -422,7 +446,7 @@ class PortalObjectWriter {
 	 * @return array<string, mixed>|null The owned row, or null.
 	 *
 	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T2
-	 * @spec openspec/changes/portal-scope-list-membership/specs/portal-contribution-contract/spec.md#requirement-a-direct-scope-field-must-match-a-single-value-or-strict-list-membership
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-direct-scope-field-must-match-a-single-value-or-strict-list-membership
 	 */
 	private function fetchOwnedObject(
 		object $objectService,
@@ -521,7 +545,7 @@ class PortalObjectWriter {
 	 *
 	 * @return string|array<int, string>
 	 *
-	 * @spec openspec/changes/portal-scope-list-membership/specs/portal-contribution-contract/spec.md#requirement-a-write-must-keep-a-verified-list-and-stamp-a-list-for-an-array-scope-field
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-write-must-keep-a-verified-list-and-stamp-a-list-for-an-array-scope-field
 	 */
 	private function createStamp(string $schema, string $scopeField, string $subjectRef): string|array {
 		$definition = $this->schemaReader?->readSchema(slug: $schema);

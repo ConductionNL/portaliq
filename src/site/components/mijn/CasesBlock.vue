@@ -103,7 +103,7 @@ function caseIdOf(row) {
 }
 
 /**
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
  */
 export default {
 	name: 'CasesBlock',
@@ -148,7 +148,7 @@ export default {
 	computed: {
 		/**
 		 * @return {(key: string, vars?: object) => string} The translator.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
 		 */
 		tr() {
 			return mijnTranslator(this.t, this.locale)
@@ -156,7 +156,7 @@ export default {
 
 		/**
 		 * @return {string} The block's heading, or ''.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
 		 */
 		label() {
 			return this.block?.label || ''
@@ -164,7 +164,7 @@ export default {
 
 		/**
 		 * @return {string} The heading's id.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
 		 */
 		headingId() {
 			return `pq-cases-${String(this.block?.collection || '').replace(/[^A-Za-z0-9_-]/g, '')}`
@@ -172,7 +172,7 @@ export default {
 
 		/**
 		 * @return {{rows: Array<object>, more: boolean}} The cases on screen.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
 		 */
 		shown() {
 			return casesOnScreen(this.rows, this.block, this.collection)
@@ -201,7 +201,7 @@ export default {
 		 * The cards, each with the route of the page that shows the case.
 		 *
 		 * @return {Array<object>}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
 		 */
 		entries() {
 			return this.shown.rows.map((row, index) => this.entryOf(row, index))
@@ -211,7 +211,7 @@ export default {
 		 * What every card of the block reads besides its row and its steps.
 		 *
 		 * @return {{tr: (key: string, vars?: object) => string, locale: string, today: Date, yourTurn: Array<string>}} The context.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
 		 */
 		cardContext() {
 			return {
@@ -224,7 +224,7 @@ export default {
 
 		/**
 		 * @return {string} The route of the collection's own page, or ''.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
 		 */
 		allRoute() {
 			return (
@@ -237,7 +237,7 @@ export default {
 
 		/**
 		 * @return {string} That page's real address.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
 		 */
 		allHref() {
 			return siteHref(this.allRoute)
@@ -251,7 +251,7 @@ export default {
 			 * Ask the steps provider for the cards that came on screen.
 			 *
 			 * @return {void}
-			 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+			 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
 			 */
 			handler() {
 				this.loadSteps()
@@ -266,7 +266,7 @@ export default {
 		 * @param {object} row The case row.
 		 * @param {number} index Its place, the key of a row without an id.
 		 * @return {object} `{id, link, route, card}`.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
 		 */
 		entryOf(row, index) {
 			const id = caseIdOf(row)
@@ -288,7 +288,7 @@ export default {
 		 * without a step position; it never hides the card.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
 		 */
 		async loadSteps() {
 			if (
@@ -319,7 +319,7 @@ export default {
 		 *
 		 * @param {object} entry The card.
 		 * @return {void}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
 		 */
 		open(entry) {
 			if (!entry.route) {
@@ -332,7 +332,7 @@ export default {
 		/**
 		 * @param {MouseEvent} event The click.
 		 * @return {void}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
 		 */
 		openAll(event) {
 			if (event?.ctrlKey || event?.metaKey || event?.shiftKey) {

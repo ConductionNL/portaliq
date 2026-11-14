@@ -72,7 +72,7 @@ import { rowIdOf } from './cells.js'
  * publication is no longer public stays, marked so. With a declared remove
  * action, each item can be removed on its own.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-an-item-list-must-show-and-remove-items-req-srp-020
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-an-item-list-must-show-and-remove-items-req-srp-020
  */
 export default {
 	name: 'ItemList',

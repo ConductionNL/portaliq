@@ -24,27 +24,29 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+ * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
+
 /**
  * Finds the contributed action a citizen write runs under.
  *
- * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+ * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
 class CitizenWriteActionFinder {
 
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalContributionRegistry $registry What the subject's apps contribute.
+	 * @param PortalContributionRegistryInterface $registry What the subject's apps contribute.
 	 */
 	public function __construct(
-		private readonly PortalContributionRegistry $registry,
+		private readonly PortalContributionRegistryInterface $registry,
 	) {
 	}//end __construct()
 
@@ -67,7 +69,7 @@ class CitizenWriteActionFinder {
 	 *         `closedField` is the closed marker a collection there
 	 *         declares, or ''.
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	public function forSubject(array $subject, string $register, string $schema): ?array {
 		$aggregate = $this->registry->aggregateFor($subject);
@@ -168,7 +170,7 @@ class CitizenWriteActionFinder {
 	 *
 	 * @return mixed The raw `fields` declaration, or null.
 	 *
-	 * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	private function caseFields(array $contribution, string $register, string $schema): mixed {
 		foreach (($contribution['collections'] ?? []) as $collection) {
@@ -200,7 +202,7 @@ class CitizenWriteActionFinder {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/citizen-case-ended-shows-only-its-state/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-case-that-has-ended-offers-nothing-and-explains-nothing
+	 * @spec openspec/changes/archive/2026-10-07-citizen-case-ended-shows-only-its-state/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-case-that-has-ended-offers-nothing-and-explains-nothing
 	 */
 	private function closedField(array $contribution, string $register, string $schema): string {
 		foreach (($contribution['collections'] ?? []) as $collection) {

@@ -23,7 +23,7 @@
  * @param {string} authBase The auth edge base, e.g. `/index.php/apps/portaliq/portal/api`.
  * @return {{url: string, scope: string}|null} The worker address and scope, or null when the base is not one.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-service-worker-must-cache-the-site-shell-req-srp-045
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-service-worker-must-cache-the-site-shell-req-srp-045
  */
 export function serviceWorkerAddress(authBase) {
 	const base = String(authBase || '').replace(/\/$/, '')
@@ -49,7 +49,7 @@ export function serviceWorkerAddress(authBase) {
  * @param {object} [options.nav] The navigator (test seam).
  * @return {Promise<object|null>} The registration, or null when there is none.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-service-worker-must-cache-the-site-shell-req-srp-045
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-service-worker-must-cache-the-site-shell-req-srp-045
  */
 export async function registerSiteServiceWorker(
 	authBase,

@@ -28,20 +28,22 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/contribution-pay-screen/specs/portal-contribution-contract/spec.md#requirement-server-enforced-status-transitions
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-server-enforced-status-transitions
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\RowActionResolverInterface;
+
 /**
  * Resolves `rowActions` (and the singular `rowAction`) against the actions of
  * the same contribution, and sanitises `noticeField`.
  *
- * @spec openspec/changes/contribution-pay-screen/specs/portal-contribution-contract/spec.md#requirement-server-enforced-status-transitions
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-server-enforced-status-transitions
  */
-class RowActionResolver {
+class RowActionResolver implements RowActionResolverInterface {
 	/**
 	 * A field name the portal may read or stamp.
 	 */
@@ -61,7 +63,7 @@ class RowActionResolver {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/contribution-pay-screen/specs/portal-contribution-contract/spec.md#requirement-server-enforced-status-transitions
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-server-enforced-status-transitions
 	 */
 	public function resolve(array $collections, array $actions): array {
 		$rowIds = $this->rowActionIds(actions: $actions);
@@ -79,7 +81,7 @@ class RowActionResolver {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/contribution-pay-screen/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-name-a-notice-field
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-name-a-notice-field
 	 */
 	public function normaliseNoticeField(array $collection): array {
 		if (array_key_exists('noticeField', $collection) === false) {
@@ -102,7 +104,7 @@ class RowActionResolver {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/contribution-pay-screen/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
 	 */
 	public function isEndpointRowAction(array $action): bool {
 		if (in_array(($action['type'] ?? ''), self::NON_ENDPOINT_TYPES, true) === true) {
@@ -127,7 +129,7 @@ class RowActionResolver {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/contribution-pay-screen/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-must-be-offered-only-on-the-rows-its-rowwhen-names
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-must-be-offered-only-on-the-rows-its-rowwhen-names
 	 */
 	public function rowMatches(array $action, array $row): bool {
 		if (array_key_exists('rowWhen', $action) === false) {

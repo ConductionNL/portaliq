@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Cms;
 
+use OCA\Portaliq\Kernel\Contracts\SiteHeadInterface;
 use OCA\Portaliq\Service\CmsReader;
 
 /**
@@ -32,7 +33,7 @@ use OCA\Portaliq\Service\CmsReader;
  * A route with no published page gets the portal's title and `noindex`: a
  * crawler must not index a page that does not exist.
  */
-class SiteHead {
+class SiteHead implements SiteHeadInterface {
 
 	/**
 	 * Constructor.

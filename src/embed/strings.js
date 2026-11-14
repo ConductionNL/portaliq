@@ -67,7 +67,7 @@ export default STRINGS
  * @param {string} locale The page language, e.g. `nl` or `en-GB`.
  * @return {(key: string, vars?: object) => string} The translator.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-embed-frame-must-render-its-form-from-a-small-entry-req-srp-047
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-embed-frame-must-render-its-form-from-a-small-entry-req-srp-047
  */
 export function createEmbedTranslator(locale) {
 	const lang = String(locale || 'nl')
@@ -90,7 +90,7 @@ export function createEmbedTranslator(locale) {
  * @param {object} payload The boot payload from the frame route.
  * @return {string|null} The key, or null when there is a form to render.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-embed-frame-must-render-its-form-from-a-small-entry-req-srp-047
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-embed-frame-must-render-its-form-from-a-small-entry-req-srp-047
  */
 export function refusalKey(payload) {
 	const reason = payload?.refused

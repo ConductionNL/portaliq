@@ -7,7 +7,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Controller\ExampleResidentController;
 use OCA\Portaliq\Service\ExampleResident\ExampleResidentSignIn;
 use OCA\Portaliq\Service\ExampleResident\ExampleSetResidents;
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
@@ -32,7 +32,7 @@ class ExampleResidentControllerTest extends TestCase {
 	 *
 	 * @param PortalSessionService          $session          The session service.
 	 * @param IConfig|null                  $config           The config.
-	 * @param PortalAccountService|null     $accounts         The account service.
+	 * @param PortalAccountLookup|null      $accounts         The account lookup.
 	 * @param IURLGenerator|null            $urlGenerator     The URL generator.
 	 * @param PortalResolver|null           $portals          The portal resolver.
 	 * @param ExampleSetResidents|null      $exampleResidents The installed example residents.
@@ -42,7 +42,7 @@ class ExampleResidentControllerTest extends TestCase {
 	private function controller(
 		PortalSessionService $session,
 		?IConfig $config = null,
-		?PortalAccountService $accounts = null,
+		?PortalAccountLookup $accounts = null,
 		?IURLGenerator $urlGenerator = null,
 		?PortalResolver $portals = null,
 		?ExampleSetResidents $exampleResidents = null,
@@ -50,7 +50,7 @@ class ExampleResidentControllerTest extends TestCase {
 		return new ExampleResidentController(
 			$this->createMock(originalClassName: IRequest::class),
 			$session,
-			($accounts ?? $this->createMock(originalClassName: PortalAccountService::class)),
+			($accounts ?? $this->createMock(originalClassName: PortalAccountLookup::class)),
 			($urlGenerator ?? $this->createMock(originalClassName: IURLGenerator::class)),
 			($portals ?? $this->createMock(originalClassName: PortalResolver::class)),
 			new ExampleResidentSignIn(
@@ -72,7 +72,7 @@ class ExampleResidentControllerTest extends TestCase {
 	 * @param array<int, string> $modes      The sign-in modes the portals offer.
 	 * @param string             $resolvesTo When set, the slug every portal lookup answers with.
 	 *
-	 * @return array{config: IConfig, residents: ExampleSetResidents, portals: PortalResolver, accounts: PortalAccountService}
+	 * @return array{config: IConfig, residents: ExampleSetResidents, portals: PortalResolver, accounts: PortalAccountLookup}
 	 */
 	private function demoParts(
 		string $switch,
@@ -103,8 +103,8 @@ class ExampleResidentControllerTest extends TestCase {
 					: null
 			)
 		);
-		$accounts = $this->createMock(originalClassName: PortalAccountService::class);
-		$accounts->method('findBySubjectRef')->willReturnCallback(
+		$accounts = $this->createMock(originalClassName: PortalAccountLookup::class);
+		$accounts->method('bySubjectRef')->willReturnCallback(
 			static fn (string $subjectRef): ?array => (in_array(needle: $subjectRef, haystack: ['sanne.devries', 'linda.bakker'], strict: true) ? ['status' => 'active', 'audience' => 'citizen', 'organisation' => 'zuiddrecht'] : null)
 		);
 
@@ -198,6 +198,9 @@ class ExampleResidentControllerTest extends TestCase {
 
 		$this->assertInstanceOf(expected: RedirectResponse::class, actual: $response);
 		$this->assertSame(expected: 'https://demo.test/apps/portaliq/site?portal=zuiddrecht#token=tok.en', actual: $response->getRedirectURL());
+		// REQ-SEE-003: the bearer is in the fragment only; no query parameter holds it.
+		parse_str((string)parse_url($response->getRedirectURL(), PHP_URL_QUERY), $query);
+		$this->assertArrayNotHasKey('token', $query);
 	}//end testTheOneClickSignInMintsForTheExampleResidentOnly()
 
 
@@ -212,8 +215,8 @@ class ExampleResidentControllerTest extends TestCase {
 	 */
 	public function testTheDefaultsTheReturnPathAndTheThrottleAreAsRecorded(): void {
 		$parts    = $this->demoParts(switch: 'yes');
-		$accounts = $this->createMock(originalClassName: PortalAccountService::class);
-		$accounts->method('findBySubjectRef')->willReturn(['status' => 'active']);
+		$accounts = $this->createMock(originalClassName: PortalAccountLookup::class);
+		$accounts->method('bySubjectRef')->willReturn(['status' => 'active']);
 		$session = $this->createMock(originalClassName: PortalSessionService::class);
 		$session->expects($this->once())->method('issueSession')
 			->with('sanne.devries', 'client', 'dev-org', 'low', ['client:read'])
@@ -283,8 +286,8 @@ class ExampleResidentControllerTest extends TestCase {
 	 */
 	public function testTheOneClickSignInRefusesAnInactiveAccount(): void {
 		$parts    = $this->demoParts(switch: 'yes');
-		$accounts = $this->createMock(originalClassName: PortalAccountService::class);
-		$accounts->method('findBySubjectRef')->willReturn(['status' => 'blocked']);
+		$accounts = $this->createMock(originalClassName: PortalAccountLookup::class);
+		$accounts->method('bySubjectRef')->willReturn(['status' => 'blocked']);
 		$session = $this->createMock(originalClassName: PortalSessionService::class);
 		$session->expects($this->never())->method('issueSession');
 

@@ -52,14 +52,15 @@
  * @link https://conduction.nl
  *
  * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-case-app-declares-which-change-a-resident-hears-about-req-nap-001
- * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+ * @spec openspec/specs/portal-notifications-and-preferences/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
-use OCA\Portaliq\Service\NotificationDispatchService;
+use OCA\Portaliq\Kernel\Contracts\NotificationDispatchServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\NotificationRuleNormaliserInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -67,7 +68,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-case-app-declares-which-change-a-resident-hears-about-req-nap-001
  */
-class NotificationRuleNormaliser {
+class NotificationRuleNormaliser implements NotificationRuleNormaliserInterface {
 
 	/**
 	 * The only operator a change rule may use.
@@ -77,22 +78,13 @@ class NotificationRuleNormaliser {
 	public const OPERATOR_CHANGED = 'changed';
 
 	/**
-	 * The shape of a rule key an app sends on a portalMessage it writes: the
-	 * app id, a dot, the app's own key. The app is the part before the first
-	 * dot (PortalRecordChangeListener::onForeignMessage).
-	 *
-	 * @var string
-	 */
-	public const APP_RULE_KEY_PATTERN = '/^([a-z][a-z0-9_-]*)\.[A-Za-z0-9_.-]+$/';
-
-	/**
 	 * The plain rule keys portaliq fires itself.
 	 *
 	 * @var array<int, string>
 	 */
 	private const BUILT_IN_RULE_KEYS = [
-		NotificationDispatchService::RULE_MESSAGE_CREATED,
-		NotificationDispatchService::RULE_STATUS_CHANGED,
+		NotificationDispatchServiceInterface::RULE_MESSAGE_CREATED,
+		NotificationDispatchServiceInterface::RULE_STATUS_CHANGED,
 	];
 
 	/**
@@ -133,7 +125,7 @@ class NotificationRuleNormaliser {
 	 * @return array{kept: array<int, string|array<string, mixed>>, dropped: array<int, string>}
 	 *
 	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-case-app-declares-which-change-a-resident-hears-about-req-nap-001
-	 * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md
 	 */
 	public function normalise(mixed $notifications, array $collections, string $appId = ''): array {
 		if (is_array($notifications) === false) {
@@ -239,8 +231,8 @@ class NotificationRuleNormaliser {
 		return sprintf(
 			'key %s: nothing fires it; declare %s, %s, a change rule with this ruleKey, or %s.%s sent on a portalMessage',
 			$key,
-			NotificationDispatchService::RULE_MESSAGE_CREATED,
-			NotificationDispatchService::RULE_STATUS_CHANGED,
+			NotificationDispatchServiceInterface::RULE_MESSAGE_CREATED,
+			NotificationDispatchServiceInterface::RULE_STATUS_CHANGED,
 			$namespace,
 			$key
 		);
@@ -287,7 +279,7 @@ class NotificationRuleNormaliser {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md
 	 */
 	public function scopedElsewhere(array $collection): bool {
 		return $this->filled(value: ($collection['scopeClaim'] ?? null)) || $this->filled(value: ($collection['via'] ?? null));

@@ -12,7 +12,7 @@
   would double what the app keeps for no gain, and the map's whole point
   is that it holds positions and nothing else. The widget says so.
 
-  @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
+  @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
 -->
 <template>
 	<div class="traffic-heatmap" data-testid="traffic-heatmap">
@@ -134,7 +134,7 @@ export default {
 		/**
 		 * Whether the portal switched heatmaps on.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
 		 * @return {boolean} True when on.
 		 */
 		heatmapsOn() {
@@ -146,7 +146,7 @@ export default {
 		/**
 		 * The pages with a heatmap in the range, busiest first.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
 		 * @return {Array<object>} The rows.
 		 */
 		pages() {
@@ -156,7 +156,7 @@ export default {
 		/**
 		 * The pages as select options.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
 		 * @return {Array<{id: string, label: string}>} The options.
 		 */
 		pageOptions() {
@@ -172,7 +172,7 @@ export default {
 		/**
 		 * The chosen page's row, defaulting to the busiest.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
 		 * @return {object|null} The row.
 		 */
 		page() {
@@ -184,7 +184,7 @@ export default {
 		/**
 		 * The selected option.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
 		 * @return {object|null} The option.
 		 */
 		selectedPage() {
@@ -197,7 +197,7 @@ export default {
 		/**
 		 * The chosen page's scroll deciles.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
 		 * @return {Array<number>} Ten counts.
 		 */
 		scroll() {
@@ -209,7 +209,7 @@ export default {
 		/**
 		 * The chosen page's clicks, summed.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
 		 * @return {number} The clicks.
 		 */
 		clickCount() {
@@ -222,7 +222,7 @@ export default {
 		/**
 		 * What a screen reader gets instead of the canvas.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
 		 * @return {string} The label.
 		 */
 		canvasLabel() {
@@ -247,7 +247,7 @@ export default {
 		/**
 		 * Choose a page.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
 		 * @param {object|null} option The chosen option.
 		 * @return {void}
 		 */
@@ -261,7 +261,7 @@ export default {
 		 * Draw the grid: the page as a rectangle, each clicked cell shaded
 		 * by its share of the busiest cell.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
 		 * @return {void}
 		 */
 		draw() {
@@ -298,7 +298,7 @@ export default {
 		/**
 		 * A decile's bar width as a share of the busiest decile.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
 		 * @param {number} count The decile's count.
 		 * @return {string} A CSS width.
 		 */
@@ -310,7 +310,7 @@ export default {
 		/**
 		 * A decile's label for a screen reader.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
 		 * @param {number} index The decile, 0 to 9.
 		 * @param {number} count The count.
 		 * @return {string} The label.

@@ -20,26 +20,21 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/create-names-its-action/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-create-names-its-action/tasks.md#T1
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\CreateActionMatcherInterface;
+
 /**
  * Matches a create to one of the subject's create actions.
  *
- * @spec openspec/changes/create-names-its-action/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-create-names-its-action/tasks.md#T1
  */
-class CreateActionMatcher {
-
-	/**
-	 * The answer when several actions write the target and none was named.
-	 *
-	 * @var string
-	 */
-	public const AMBIGUOUS = 'ambiguous';
+class CreateActionMatcher implements CreateActionMatcherInterface {
 
 	/**
 	 * The matched action, AMBIGUOUS, or null.
@@ -55,7 +50,7 @@ class CreateActionMatcher {
 	 *
 	 * @return array{action: array<string, mixed>, app: string}|string|null
 	 *
-	 * @spec openspec/changes/create-names-its-action/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-10-07-create-names-its-action/tasks.md#T1
 	 */
 	public function match(array $aggregate, string $register, string $schema, mixed $actionId): array|string|null {
 		return $this->pick(
@@ -77,7 +72,7 @@ class CreateActionMatcher {
 	 *
 	 * @return array{action: array<string, mixed>, app: string}|string|null
 	 *
-	 * @spec openspec/changes/create-names-its-action/tasks.md#T3
+	 * @spec openspec/changes/archive/2026-10-07-create-names-its-action/tasks.md#T3
 	 */
 	public function matchAnonymous(array $aggregate, string $register, string $schema, mixed $actionId): array|string|null {
 		$candidates = array_values(

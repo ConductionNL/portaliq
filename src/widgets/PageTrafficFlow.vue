@@ -15,7 +15,7 @@
   available for this period" for a list no day of the period counted,
   never an empty table that reads as nobody.
 
-  @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
+  @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
 -->
 <template>
 	<div class="traffic-table" :data-testid="testId">
@@ -165,7 +165,7 @@ export default {
 	/**
 	 * The chosen period, the answer and the request state.
 	 *
-	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
+	 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
 	 * @return {object} The state.
 	 */
 	data() {
@@ -182,7 +182,7 @@ export default {
 		/**
 		 * Whether this widget shows where visitors came from.
 		 *
-		 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
+		 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
 		 * @return {boolean} True for incoming.
 		 */
 		incoming() {
@@ -192,7 +192,7 @@ export default {
 		/**
 		 * The widget's test id.
 		 *
-		 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
+		 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
 		 * @return {string} The test id.
 		 */
 		testId() {
@@ -207,7 +207,7 @@ export default {
 		/**
 		 * The period select's element id, unique per widget.
 		 *
-		 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
+		 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
 		 * @return {string} The id.
 		 */
 		selectId() {
@@ -217,7 +217,7 @@ export default {
 		/**
 		 * The periods on offer, labelled like the KPI cards' picker.
 		 *
-		 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
+		 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
 		 * @return {Array<{id: string, label: string}>} The periods.
 		 */
 		periods() {
@@ -232,7 +232,7 @@ export default {
 		/**
 		 * The page's portal and route, or null when it has neither.
 		 *
-		 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
+		 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
 		 * @return {{portal: string, route: string}|null} The query.
 		 */
 		query() {
@@ -247,7 +247,7 @@ export default {
 		/**
 		 * Why no lists are shown: `unmeasured`, `failed`, or '' to show them.
 		 *
-		 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
+		 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
 		 * @return {string} The state.
 		 */
 		state() {
@@ -269,7 +269,7 @@ export default {
 		/**
 		 * The sentence for a state.
 		 *
-		 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
+		 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
 		 * @return {string} The text.
 		 */
 		stateText() {
@@ -282,7 +282,7 @@ export default {
 		/**
 		 * This direction's lists.
 		 *
-		 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
+		 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
 		 * @return {{pages: Array<object>, boundary: number, sources: Array<object>|null}} The lists.
 		 */
 		flow() {
@@ -297,7 +297,7 @@ export default {
 		/**
 		 * The label of the entrances or exits count.
 		 *
-		 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
+		 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
 		 * @return {string} The label.
 		 */
 		boundaryLabel() {
@@ -309,7 +309,7 @@ export default {
 		/**
 		 * The heading of the pages column.
 		 *
-		 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
+		 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
 		 * @return {string} The heading.
 		 */
 		pagesHeading() {
@@ -321,7 +321,7 @@ export default {
 		/**
 		 * The row shown when no visitor moved between this page and another.
 		 *
-		 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
+		 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
 		 * @return {string} The text.
 		 */
 		noPagesText() {
@@ -333,7 +333,7 @@ export default {
 		/**
 		 * The heading of the sources list.
 		 *
-		 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
+		 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
 		 * @return {string} The heading.
 		 */
 		sourcesHeading() {
@@ -347,7 +347,7 @@ export default {
 		/**
 		 * A new period asks again.
 		 *
-		 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
+		 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
 		 * @return {void}
 		 */
 		days() {
@@ -357,7 +357,7 @@ export default {
 		/**
 		 * Another page, or the same page with a new route, asks again.
 		 *
-		 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
+		 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
 		 * @return {void}
 		 */
 		query() {
@@ -368,7 +368,7 @@ export default {
 	/**
 	 * Ask for the page's traffic once the widget is on screen.
 	 *
-	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
+	 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
 	 * @return {void}
 	 */
 	mounted() {
@@ -380,7 +380,7 @@ export default {
 		 * Fetch the page endpoint's answer for the chosen period. A page
 		 * without a portal or a route asks nothing and reads "Not measured".
 		 *
-		 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
+		 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-show-where-visitors-came-from-and-went-next
 		 * @return {Promise<void>} Resolves when the answer is in.
 		 */
 		async load() {

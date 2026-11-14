@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\PortalNoticeReaderInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\ICache;
 use OCP\ICacheFactory;
@@ -46,7 +47,7 @@ use Throwable;
  *
  * @spec openspec/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
  */
-class PortalNoticeReader {
+class PortalNoticeReader implements PortalNoticeReaderInterface {
 
 	/**
 	 * OpenRegister's object service, resolved lazily.
@@ -54,13 +55,6 @@ class PortalNoticeReader {
 	 * @var string
 	 */
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
-
-	/**
-	 * The schema slug.
-	 *
-	 * @var string
-	 */
-	public const SCHEMA = 'portalNotice';
 
 	/**
 	 * At most this many notices show at once: more is noise above every page.
@@ -83,7 +77,6 @@ class PortalNoticeReader {
 	 */
 	private readonly ICache $cache;
 
-
 	/**
 	 * Constructor.
 	 *
@@ -105,7 +98,6 @@ class PortalNoticeReader {
 		$this->cache = $cacheFactory->createDistributed('portaliq_notices');
 	}//end __construct()
 
-
 	/**
 	 * The notices active now for one portal on one surface, newest first.
 	 *
@@ -123,7 +115,6 @@ class PortalNoticeReader {
 
 		return self::select(rows: $this->published(portal: $portal), portal: $portal, surface: $surface, now: $this->time->now());
 	}//end active()
-
 
 	/**
 	 * Keep the rows that are active now, shaped for the client.
@@ -157,7 +148,6 @@ class PortalNoticeReader {
 		);
 	}//end select()
 
-
 	/**
 	 * Whether a row has an id, a window that holds now, and may show on
 	 * this portal and surface.
@@ -172,7 +162,6 @@ class PortalNoticeReader {
 			&& self::isRunning(row: $row, now: $query->now) === true
 			&& self::isShown(row: $row, query: $query) === true;
 	}//end isActive()
-
 
 	/**
 	 * Whether a row's window holds now: started, and not yet ended. A window
@@ -192,7 +181,6 @@ class PortalNoticeReader {
 
 		return $starts <= $now && $ends > $now;
 	}//end isRunning()
-
 
 	/**
 	 * An active row shaped for the client, with its start kept for sorting.
@@ -218,7 +206,6 @@ class PortalNoticeReader {
 		];
 	}//end shaped()
 
-
 	/**
 	 * A row's id: its `@self` id, else its own.
 	 *
@@ -229,7 +216,6 @@ class PortalNoticeReader {
 	private static function idOf(array $row): string {
 		return (string)($row['@self']['id'] ?? $row['id'] ?? '');
 	}//end idOf()
-
 
 	/**
 	 * Whether a row is a published notice of this portal for this surface.
@@ -244,7 +230,6 @@ class PortalNoticeReader {
 			&& ($row['status'] ?? '') === 'published'
 			&& in_array($query->surface, (array)($row['surfaces'] ?? []), true) === true;
 	}//end isShown()
-
 
 	/**
 	 * Parse a date-time, or null.
@@ -265,7 +250,6 @@ class PortalNoticeReader {
 		}
 	}//end time()
 
-
 	/**
 	 * A link is only offered when it is https.
 	 *
@@ -280,7 +264,6 @@ class PortalNoticeReader {
 
 		return '';
 	}//end httpsOnly()
-
 
 	/**
 	 * The published notices of one portal, cached for a minute.
@@ -305,7 +288,6 @@ class PortalNoticeReader {
 		return $rows;
 	}//end published()
 
-
 	/**
 	 * The cached published notices of one portal, or null on a miss.
 	 *
@@ -326,7 +308,6 @@ class PortalNoticeReader {
 
 		return $decoded;
 	}//end cached()
-
 
 	/**
 	 * Read the published notices of one portal from OpenRegister.
@@ -354,7 +335,6 @@ class PortalNoticeReader {
 			return null;
 		}//end try
 	}//end readPublished()
-
 
 	/**
 	 * The found objects as plain rows.

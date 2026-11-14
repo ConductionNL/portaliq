@@ -28,17 +28,17 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use Closure;
-use OCA\Portaliq\Contribution\PortalContributionFilter;
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
-use OCA\Portaliq\Service\Assistant\PublicAssistantChannel;
-use OCA\Portaliq\Service\Assistant\PublicSourceScope;
-use OCA\Portaliq\Service\CmsReader;
-use OCA\Portaliq\Service\Identity\NextcloudRegistrationDoor;
-use OCA\Portaliq\Service\PortalNoticeReader;
-use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
-use OCA\Portaliq\Service\SiteOrganisation;
-use OCA\Portaliq\Service\TrafficConfigResolver;
+use OCA\Portaliq\Kernel\Contracts\CmsReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\NextcloudRegistrationDoorInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionFilterInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalNoticeReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PublicAssistantChannelInterface;
+use OCA\Portaliq\Kernel\Contracts\PublicSourceScopeInterface;
+use OCA\Portaliq\Kernel\Contracts\SiteOrganisationInterface;
+use OCA\Portaliq\Kernel\Contracts\TrafficConfigResolverInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -85,40 +85,42 @@ class ContentController extends Controller {
 	 *
 	 * @param string                     $appName      The app id.
 	 * @param IRequest                   $request      The request.
-	 * @param PortalResolver             $resolver     Resolves the serving portal.
-	 * @param CmsReader                  $reader       Reads portal-scoped content.
-	 * @param PortalContributionRegistry $registry     Aggregates leaf apps' contributions.
-	 * @param PortalContributionFilter   $contribFilter Scopes that aggregate to one portal.
+	 * @param PortalResolverInterface             $resolver     Resolves the serving portal.
+	 * @param CmsReaderInterface                  $reader       Reads portal-scoped content.
+	 * @param PortalContributionRegistryInterface $registry     Aggregates leaf apps' contributions.
+	 * @param PortalContributionFilterInterface   $contribFilter Scopes that aggregate to one portal.
 	 * @param LoggerInterface            $logger       Records a provider failure the visitor never sees.
-	 * @param PortalSessionService       $session      Resolves the caller's portal session for the content gate.
-	 * @param TrafficConfigResolver      $traffic      Resolves the portal's measurement configuration.
+	 * @param PortalSessionServiceInterface       $session      Resolves the caller's portal session for the content gate.
+	 * @param TrafficConfigResolverInterface      $traffic      Resolves the portal's measurement configuration.
 	 * @param IURLGenerator              $urlGenerator Builds the absolute collector URL.
-	 * @param PortalNoticeReader         $notices      The notices running on the site now.
+	 * @param PortalNoticeReaderInterface         $notices      The notices running on the site now.
 	 * @param IUserSession               $userSession  Tells a signed-in Nextcloud user (an editor) from a visitor.
-	 * @param PublicAssistantChannel|null $assistant   The public assistant's channel, when wired.
-	 * @param PublicSourceScope|null     $assistantScope What the public assistant may read.
-	 * @param NextcloudRegistrationDoor|null $registrationDoor Where "Create an account" leads (REQ-NCL-005).
-	 * @param SiteOrganisation|null      $siteOrganisation Names the portal's organisation.
+	 * @param PublicSourceScopeInterface $publicSourceScope The PublicSourceScope helper.
+	 * @param PublicAssistantChannelInterface|null $assistant   The public assistant's channel, when wired.
+	 * @param PublicSourceScopeInterface|null     $assistantScope What the public assistant may read.
+	 * @param NextcloudRegistrationDoorInterface|null $registrationDoor Where "Create an account" leads (REQ-NCL-005).
+	 * @param SiteOrganisationInterface|null      $siteOrganisation Names the portal's organisation.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly PortalResolver $resolver,
-		private readonly CmsReader $reader,
-		private readonly PortalContributionRegistry $registry,
-		private readonly PortalContributionFilter $contribFilter,
+		private readonly PortalResolverInterface $resolver,
+		private readonly CmsReaderInterface $reader,
+		private readonly PortalContributionRegistryInterface $registry,
+		private readonly PortalContributionFilterInterface $contribFilter,
 		private readonly LoggerInterface $logger,
-		private readonly PortalSessionService $session,
-		private readonly TrafficConfigResolver $traffic,
+		private readonly PortalSessionServiceInterface $session,
+		private readonly TrafficConfigResolverInterface $traffic,
 		private readonly IURLGenerator $urlGenerator,
-		private readonly PortalNoticeReader $notices,
+		private readonly PortalNoticeReaderInterface $notices,
 		private readonly IUserSession $userSession,
-		private readonly ?PublicAssistantChannel $assistant = null,
-		private readonly ?PublicSourceScope $assistantScope = null,
-		private readonly ?NextcloudRegistrationDoor $registrationDoor = null,
-		private readonly ?SiteOrganisation $siteOrganisation = null,
+		private readonly PublicSourceScopeInterface $publicSourceScope,
+		private readonly ?PublicAssistantChannelInterface $assistant = null,
+		private readonly ?PublicSourceScopeInterface $assistantScope = null,
+		private readonly ?NextcloudRegistrationDoorInterface $registrationDoor = null,
+		private readonly ?SiteOrganisationInterface $siteOrganisation = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -545,7 +547,7 @@ class ContentController extends Controller {
 	 *
 	 * @return JSONResponse The response.
 	 *
-	 * @spec openspec/changes/site-shows-what-was-published/specs/portal-in-place-editing/spec.md#requirement-the-site-must-show-what-an-editor-published-not-a-cached-copy-req-ssp-001
+	 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-the-site-must-show-what-an-editor-published-not-a-cached-copy-req-ssp-001
 	 */
 	private function publicJson(array $payload): JSONResponse {
 		$response = new JSONResponse($payload);
@@ -596,7 +598,7 @@ class ContentController extends Controller {
 	 * @spec openspec/changes/search-assistant-from-public-content/tasks.md#t05
 	 */
 	private function assistantEnabled(array $portal): bool {
-		$scope = $this->assistantScope ?? new PublicSourceScope();
+		$scope = $this->assistantScope ?? $this->publicSourceScope;
 		return $scope->enabledFor(portal: $portal) === true && $this->assistant !== null && $this->assistant->isAvailable() === true;
 	}//end assistantEnabled()
 }//end class

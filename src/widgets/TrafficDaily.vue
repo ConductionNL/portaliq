@@ -8,7 +8,7 @@
   Renders NOTHING chart-shaped for a portal that is not measured: an
   empty chart is a zero, and a zero is a claim.
 
-  @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-traffic-page-must-show-what-was-measured-and-say-when-it-was-not
+  @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-traffic-page-must-show-what-was-measured-and-say-when-it-was-not
 -->
 <template>
 	<div class="traffic-daily" data-testid="traffic-daily">
@@ -43,7 +43,7 @@ export default {
 		/**
 		 * The three series the chart draws.
 		 *
-		 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+		 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 		 * @return {Array<{name: string, data: Array<number>}>} The series.
 		 */
 		series() {

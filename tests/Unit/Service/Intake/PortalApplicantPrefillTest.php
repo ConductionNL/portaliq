@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service\Intake;
 
 use OCA\Portaliq\Service\Intake\PortalApplicantPrefill;
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -55,11 +55,11 @@ class PortalApplicantPrefillTest extends TestCase {
 	public function testAReaderThatAnswersSomebodyElseIsIgnored(): void {
 		// The reader is told to answer the wrong account: the service must
 		// re-check the subjectRef rather than trust what came back.
-		$accounts = $this->getMockBuilder(PortalAccountService::class)
+		$accounts = $this->getMockBuilder(PortalAccountLookup::class)
 			->disableOriginalConstructor()
-			->onlyMethods(['findBySubjectRef'])
+			->onlyMethods(['bySubjectRef'])
 			->getMock();
-		$accounts->method('findBySubjectRef')->willReturn(['subjectRef' => 'subject-2', 'displayName' => 'Iemand anders']);
+		$accounts->method('bySubjectRef')->willReturn(['subjectRef' => 'subject-2', 'displayName' => 'Iemand anders']);
 
 		$values = (new PortalApplicantPrefill($accounts))->forSubject(subject: ['subjectRef' => 'subject-1'], fields: $this->applicantFields());
 
@@ -96,11 +96,11 @@ class PortalApplicantPrefillTest extends TestCase {
 	 * @return PortalApplicantPrefill
 	 */
 	private function prefill(array $accounts): PortalApplicantPrefill {
-		$service = $this->getMockBuilder(PortalAccountService::class)
+		$service = $this->getMockBuilder(PortalAccountLookup::class)
 			->disableOriginalConstructor()
-			->onlyMethods(['findBySubjectRef'])
+			->onlyMethods(['bySubjectRef'])
 			->getMock();
-		$service->method('findBySubjectRef')->willReturnCallback(
+		$service->method('bySubjectRef')->willReturnCallback(
 			static function (string $subjectRef) use ($accounts): ?array {
 				return ($accounts[$subjectRef] ?? null);
 			}

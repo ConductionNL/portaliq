@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+ * @spec openspec/specs/portal-notifications-and-preferences/spec.md
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ use Throwable;
 /**
  * The active accounts whose app claim holds a value.
  *
- * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+ * @spec openspec/specs/portal-notifications-and-preferences/spec.md
  */
 class PortalAccountsByClaim {
 	use ActsForTheOrganisation;
@@ -110,7 +110,7 @@ class PortalAccountsByClaim {
 	 *
 	 * @return array<int, array<string, mixed>> The accounts; empty when none or OpenRegister is unavailable.
 	 *
-	 * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md
 	 * @spec openspec/changes/portal-acts-for-its-organisation/specs/portal-tenancy/spec.md#requirement-claim-addressed-recipients-are-found-in-the-records-organisation-req-pao-003
 	 */
 	public function find(string $appId, string $claim, string $value, string $organisation=''): array {

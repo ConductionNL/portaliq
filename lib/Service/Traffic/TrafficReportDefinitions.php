@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
  */
 
 declare(strict_types=1);
@@ -29,7 +29,7 @@ namespace OCA\Portaliq\Service\Traffic;
  * be computed for nobody; an alert on a metric this app does not count
  * would never fire and never say why.
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
  */
 class TrafficReportDefinitions {
 
@@ -80,7 +80,7 @@ class TrafficReportDefinitions {
 	 *
 	 * @return array<int, array<string, mixed>> The usable reports.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
 	 */
 	public function reports(mixed $value): array {
 		$out = [];
@@ -117,7 +117,7 @@ class TrafficReportDefinitions {
 	 *
 	 * @return array<int, array<string, mixed>> The usable alerts.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-an-alert-must-fire-once-per-period
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-alert-must-fire-once-per-period
 	 */
 	public function alerts(mixed $value, array $goals = []): array {
 		$goalIds = [];
@@ -156,7 +156,7 @@ class TrafficReportDefinitions {
 	 *
 	 * @return string[] The member slugs.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-roll-up-portal-must-sum-its-members-and-never-count-its-own
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-roll-up-portal-must-sum-its-members-and-never-count-its-own
 	 */
 	public function rollupOf(mixed $value, string $self): array {
 		if (is_array($value) === false) {

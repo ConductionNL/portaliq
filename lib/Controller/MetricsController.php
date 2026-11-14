@@ -25,16 +25,16 @@
  *
  *   Point @spec at the canonical spec under `openspec/specs/`, never at
  *   `openspec/changes/<name>/` — see ConductionNL/.github#228.)
- * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T10
+ * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T10
  * @spec openspec/specs/supplier-portal/spec.md#repeated-failure-flags-an-alternative-contact-fallback
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\MetricsSources;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -110,7 +110,7 @@ class MetricsController extends Controller {
 		private LoggerInterface $logger,
 		private MetricsSources $sources,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -126,7 +126,7 @@ class MetricsController extends Controller {
 	 *
 	 * @spec openspec/specs/observability/spec.md#REQ-OBS-001
 	 * @spec openspec/specs/supplier-portal/spec.md#repeated-failure-flags-an-alternative-contact-fallback
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
 	 */
 	public function index(): DataDisplayResponse {
 		try {
@@ -162,7 +162,7 @@ class MetricsController extends Controller {
 		$lines  = [
 			'# HELP ' . $prefix . '_info Static app information',
 			'# TYPE ' . $prefix . '_info gauge',
-			$prefix . '_info{app="' . Application::APP_ID . '",version="0.1.0"} 1',
+			$prefix . '_info{app="' . AppIdentity::APP_ID . '",version="0.1.0"} 1',
 		];
 		foreach (self::GAUGE_HELP as $name => $help) {
 			$metric = $prefix . '_' . $name;

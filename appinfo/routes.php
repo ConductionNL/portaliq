@@ -3,8 +3,11 @@
 
 declare(strict_types=1);
 
-return [
+// Every unversioned API route is also served under /api/v1/; see ApiPathAliases.
+return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
     'routes' => [
+        // The OpenAPI document of portaliq's own API, public, served under /api/v1/ too.
+        ['name' => 'openApi#show', 'url' => '/api/openapi.json', 'verb' => 'GET'],
         // Dashboard + Settings.
         // First-time setup wizard (ADR-042) - the standard CnSetupWizard contract.
         ['name' => 'setup#status',    'url' => '/api/setup/status',            'verb' => 'GET'],
@@ -186,6 +189,7 @@ return [
         // Events and sign-ups (events-and-signups, findings 9.6, 9.8). Staff
         // authoring requires a Nextcloud session; the guardian-facing
         // feed/rsvp/signup routes are PortalProtected (bearer session).
+        ['name' => 'event#index', 'url' => '/api/events', 'verb' => 'GET'],
         ['name' => 'event#create', 'url' => '/api/events', 'verb' => 'POST'],
         ['name' => 'event#publish', 'url' => '/api/events/{id}/publish', 'verb' => 'PUT'],
         ['name' => 'eventGuardian#feed', 'url' => '/api/events/feed', 'verb' => 'GET'],
@@ -629,4 +633,4 @@ return [
         // (WOO-559). A missing `/api/…` route now fails loudly.
         ['name' => 'dashboard#catchAll', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '(?!api/).+'], 'defaults' => ['path' => '']],
     ],
-];
+]);

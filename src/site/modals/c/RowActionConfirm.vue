@@ -185,7 +185,7 @@ function goTo(url) {
  * runs, and the browser follows a checked redirect or the answer shows in one
  * line, with any link the action answered.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-an-endpoint-row-action-must-confirm-before-it-runs-req-srp-026
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-an-endpoint-row-action-must-confirm-before-it-runs-req-srp-026
  */
 export default {
 	name: 'RowActionConfirm',
@@ -281,7 +281,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-an-endpoint-row-action-must-confirm-before-it-runs-req-srp-026
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-an-endpoint-row-action-must-confirm-before-it-runs-req-srp-026
 		 */
 		async confirm() {
 			if (this.fileSlot && this.checkFiles() === false) {

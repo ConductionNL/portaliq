@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+ * @spec openspec/specs/change-proposal-queue/spec.md
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use Throwable;
 /**
  * Writes a record as the reviewer, with their rights.
  *
- * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+ * @spec openspec/specs/change-proposal-queue/spec.md
  */
 class ReviewerObjectWriter {
 	/**
@@ -68,7 +68,7 @@ class ReviewerObjectWriter {
 	 *
 	 * @return bool True when the write landed.
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function write(string $register, string $schema, string $id, array $values): bool {
 		if ($register === '' || $schema === '' || $id === '' || $values === []) {

@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t02
+ * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t02
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ use OCP\AppFramework\Http\Response;
  * Plain bytes with the headers of a download, and nothing the framework has to
  * guess: the name is reduced to safe characters here.
  *
- * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t02
+ * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t02
  */
 class PdfDownloadResponse extends Response {
 
@@ -61,7 +61,7 @@ class PdfDownloadResponse extends Response {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t02
 	 */
 	public function fileName(): string {
 		return $this->fileName;
@@ -88,7 +88,7 @@ class PdfDownloadResponse extends Response {
 	 *
 	 * @return string The PDF.
 	 *
-	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t02
 	 */
 	public function render(): string {
 		return $this->bytes;

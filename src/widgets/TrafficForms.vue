@@ -7,7 +7,7 @@
   rate and the field most people left on. Ids and times only; no value
   is ever collected, so none can be shown.
 
-  @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-form-analytics-must-never-carry-a-value
+  @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-form-analytics-must-never-carry-a-value
 -->
 <template>
 	<div class="traffic-table" data-testid="traffic-forms">

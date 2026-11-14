@@ -26,21 +26,22 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
+use OCA\Portaliq\Kernel\Contracts\PortalAccountLookupInterface;
 use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 
 /**
  * Finds an existing portal account, three ways.
  *
- * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
-class PortalAccountLookup {
+class PortalAccountLookup implements PortalAccountLookupInterface {
 
 	/**
 	 * The OpenRegister register the `portalAccount` schema lives in.
@@ -126,7 +127,7 @@ class PortalAccountLookup {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function byIdentity(string $identityType, string $identityRef, string $organisation): ?array {
 		$rows = $this->reader->readCollection(
@@ -207,7 +208,7 @@ class PortalAccountLookup {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function pendingByVerifiedEmail(string $email, string $organisation): ?array {
 		if ($email === '' || $organisation === '') {
@@ -248,7 +249,7 @@ class PortalAccountLookup {
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function identifierOf(array $row): ?string {
 		$self = ($row['@self'] ?? null);

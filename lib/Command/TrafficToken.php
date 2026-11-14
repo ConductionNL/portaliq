@@ -19,14 +19,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Command;
 
-use OCA\Portaliq\Service\Traffic\TrafficServerToken;
+use OCA\Portaliq\Kernel\Contracts\TrafficServerTokenInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -35,19 +35,19 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Mint a portal's server token.
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
  */
 class TrafficToken extends Command {
 
 	/**
 	 * Constructor.
 	 *
-	 * @param TrafficServerToken $tokens Mints and stores.
+	 * @param TrafficServerTokenInterface $tokens Mints and stores.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly TrafficServerToken $tokens,
+		private readonly TrafficServerTokenInterface $tokens,
 	) {
 		parent::__construct();
 	}//end __construct()
@@ -58,7 +58,7 @@ class TrafficToken extends Command {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
 	 */
 	protected function configure(): void {
 		$this->setName(name: 'portaliq:traffic:token');
@@ -75,7 +75,7 @@ class TrafficToken extends Command {
 	 *
 	 * @return int 0 when minted, 1 when the portal is unknown or the write failed.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
 	 */
 	protected function execute(InputInterface $input, OutputInterface $output): int {
 		$slug = trim((string)$input->getArgument('portal'));

@@ -19,16 +19,16 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\ActionAuthService;
-use OCA\Portaliq\Service\NewsletterPreflightService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\ActionAuthServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\NewsletterPreflightServiceInterface;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -43,7 +43,7 @@ use Throwable;
 /**
  * Staff authoring for newsletters.
  *
- * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- `IUserSession` is the
  * gate-7 (no-admin-idor) authorization guard every `#[NoAdminRequired]`
@@ -73,19 +73,19 @@ class NewsletterController extends Controller {
 	 * @param IRequest $request The request.
 	 * @param IUserSession $userSession Confirms an authenticated Nextcloud user reached this endpoint.
 	 * @param ContainerInterface $container For resolving OpenRegister services.
-	 * @param NewsletterPreflightService $preflight The recipient-count/refusal check.
+	 * @param NewsletterPreflightServiceInterface $preflight The recipient-count/refusal check.
 	 * @param LoggerInterface $logger The logger.
-	 * @param ActionAuthService $actionAuth Decides whether this staff user may send newsletters (ADR-023).
+	 * @param ActionAuthServiceInterface $actionAuth Decides whether this staff user may send newsletters (ADR-023).
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly IUserSession $userSession,
 		private readonly ContainerInterface $container,
-		private readonly NewsletterPreflightService $preflight,
+		private readonly NewsletterPreflightServiceInterface $preflight,
 		private readonly LoggerInterface $logger,
-		private readonly ActionAuthService $actionAuth,
+		private readonly ActionAuthServiceInterface $actionAuth,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -97,7 +97,7 @@ class NewsletterController extends Controller {
 	 *
 	 * @return JSONResponse The created draft, or 400/500.
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsletter-composes-existing-news-items-with-an-archive
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsletter-composes-existing-news-items-with-an-archive
 	 */
 	#[NoAdminRequired]
 	public function create(string $title, array $itemRefs, array $target): JSONResponse {
@@ -127,7 +127,7 @@ class NewsletterController extends Controller {
 	 *
 	 * @return JSONResponse `{recipientCount}`, or 404.
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
 	 */
 	#[NoAdminRequired]
 	public function preflight(string $id): JSONResponse {
@@ -155,7 +155,7 @@ class NewsletterController extends Controller {
 	 *
 	 * @return JSONResponse The sent object, 422 `{"error":"empty-audience"}`, or 404.
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
 	 */
 	#[NoAdminRequired]
 	public function send(string $id): JSONResponse {

@@ -15,7 +15,7 @@
 //
 // Imports nothing, so tests/record-page.spec.mjs runs it as node.
 //
-// @spec openspec/changes/contribution-record-page/tasks.md#T2
+// @spec openspec/changes/archive/2026-10-07-contribution-record-page/tasks.md#T2
 
 /**
  * The id of a row, wherever the envelope keeps it.
@@ -24,10 +24,50 @@
  * @return {string}
  */
 function idOf(row) {
-	if (!row || typeof row !== 'object') {
+	if (!isObject(row)) {
 		return ''
 	}
-	return String(row.id || row.uuid || row['@self']?.id || '')
+	return String(firstId(row))
+}
+
+/**
+ * Whether a value is an object (and not null).
+ *
+ * @param {unknown} value The value.
+ * @return {boolean}
+ */
+function isObject(value) {
+	return Boolean(value) && typeof value === 'object'
+}
+
+/**
+ * The first id a row carries: its own, its uuid, then its envelope's.
+ *
+ * @param {object} row The row.
+ * @return {string|number}
+ */
+function firstId(row) {
+	return row.id || row.uuid || row['@self']?.id || ''
+}
+
+/**
+ * Whether a value is missing: null or undefined.
+ *
+ * @param {unknown} value The value.
+ * @return {boolean}
+ */
+function isMissing(value) {
+	return value === null || value === undefined
+}
+
+/**
+ * Whether a record field names the record's id.
+ *
+ * @param {string} [key] The record field.
+ * @return {boolean}
+ */
+function isIdKey(key) {
+	return !key || key === 'id'
 }
 
 /**
@@ -41,11 +81,11 @@ export function recordValue(record, key = 'id') {
 	if (!record) {
 		return ''
 	}
-	if (!key || key === 'id') {
+	if (isIdKey(key)) {
 		return idOf(record)
 	}
 	const value = record[key]
-	return value === null || value === undefined ? '' : String(value)
+	return isMissing(value) ? '' : String(value)
 }
 
 /**
@@ -201,21 +241,45 @@ export function pickRow(rows, pick) {
 	if (!pick || !pick.field) {
 		return list[0]
 	}
+	return [...list].sort(byPick(pick))[0]
+}
+
+/**
+ * The sort order of a pick: by `pick.field`, highest first unless the
+ * direction is `asc`, rows without the field last either way.
+ *
+ * @param {{field: string, direction?: string}} pick The pick rule.
+ * @return {(a: object, b: object) => number} The comparator.
+ */
+function byPick(pick) {
 	const sign = pick.direction === 'asc' ? 1 : -1
-	return [...list].sort((a, b) => {
+	return (a, b) => {
 		const x = a[pick.field]
 		const y = b[pick.field]
 		if (x === y) {
 			return 0
 		}
-		if (x === null || x === undefined) {
-			return 1
-		}
-		if (y === null || y === undefined) {
-			return -1
-		}
-		return (x < y ? -1 : 1) * sign
-	})[0]
+		const missing = missingLast(x, y)
+		return missing !== 0 ? missing : (x < y ? -1 : 1) * sign
+	}
+}
+
+/**
+ * The order of two values when one of them is missing: the missing one
+ * last; 0 when both are present.
+ *
+ * @param {unknown} x The first value.
+ * @param {unknown} y The second value.
+ * @return {number}
+ */
+function missingLast(x, y) {
+	if (isMissing(x)) {
+		return 1
+	}
+	if (isMissing(y)) {
+		return -1
+	}
+	return 0
 }
 
 /**
@@ -252,17 +316,40 @@ export function figure(row, field, locale) {
  * @param {string|{one: string, other: string}|undefined} word The declared word.
  * @param {unknown} value The figure the word follows.
  * @return {string}
- * @spec openspec/changes/kpi-unit-singular-and-plural/specs/portal-contribution-contract/spec.md#requirement-a-figure-cards-unit-may-name-its-singular-and-plural
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-figure-cards-unit-may-name-its-singular-and-plural
  */
 export function countedWord(word, value) {
 	if (typeof word === 'string') {
 		return word
 	}
-	if (!word || typeof word.one !== 'string' || typeof word.other !== 'string') {
+	if (!isWordPair(word)) {
 		return ''
 	}
-	const isOne = value !== null && value !== '' && Number(value) === 1
-	return isOne ? word.one : word.other
+	return isOne(value) ? word.one : word.other
+}
+
+/**
+ * Whether a declared word names both its singular and its plural.
+ *
+ * @param {unknown} word The declared word.
+ * @return {boolean}
+ */
+function isWordPair(word) {
+	return (
+		Boolean(word)
+		&& typeof word.one === 'string'
+		&& typeof word.other === 'string'
+	)
+}
+
+/**
+ * Whether a figure is exactly one (none and an empty figure are not).
+ *
+ * @param {unknown} value The figure.
+ * @return {boolean}
+ */
+function isOne(value) {
+	return value !== null && value !== '' && Number(value) === 1
 }
 
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/
@@ -686,7 +773,7 @@ function publishedMoment(item) {
  *
  * @param {Array<object>} items The news items.
  * @return {Array<object>} A newest-first copy; undated items last, ties keep their order.
- * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-news-block-must-show-the-subjects-latest-news
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-news-block-must-show-the-subjects-latest-news
  */
 export function newestNewsFirst(items) {
 	return (Array.isArray(items) ? items : [])

@@ -22,21 +22,21 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/guardian-direct-messages/design.md#api-design
+ * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#api-design
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
-use OCA\Portaliq\Service\Identity\PortalContactService;
-use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\MessageContactReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContactServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSelfServiceServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Service\Messaging\GuardianMessageTranslator;
 use OCA\Portaliq\Service\Messaging\GuardianMessagingLeafInterface;
-use OCA\Portaliq\Service\Messaging\MessageContactReader;
-use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -48,7 +48,7 @@ use OCP\IRequest;
 /**
  * Guardian read/create/post/mark-read path for message threads.
  *
- * @spec openspec/changes/guardian-direct-messages/design.md#api-design
+ * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#api-design
  */
 class MessageGuardianController extends Controller implements PortalProtected {
 	/**
@@ -70,29 +70,29 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
+	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
 	 * @param GuardianMessagingLeafInterface $messaging The messaging leaf.
 	 * @param GuardianMessageTranslator|null $translator Shows messages in the reader's
 	 *                                                   language (translated-message-notice).
 	 *                                                   Nullable and trailing so a
 	 *                                                   controller built by hand keeps
 	 *                                                   its old shape.
-	 * @param PortalSelfServiceService|null $selfService Reads the reader's own `messageLanguage`.
-	 * @param MessageContactReader|null $contacts Who the resident may write to, per record
+	 * @param PortalSelfServiceServiceInterface|null $selfService Reads the reader's own `messageLanguage`.
+	 * @param MessageContactReaderInterface|null $contacts Who the resident may write to, per record
 	 *                                            (site-messages-per-record).
-	 * @param PortalContactService|null $portalContacts The resident's own approved contacts
+	 * @param PortalContactServiceInterface|null $portalContacts The resident's own approved contacts
 	 *                                                  (own-contacts-and-invitations T07).
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
+		private readonly PortalSessionServiceInterface $session,
 		private readonly GuardianMessagingLeafInterface $messaging,
 		private readonly ?GuardianMessageTranslator $translator = null,
-		private readonly ?PortalSelfServiceService $selfService = null,
-		private readonly ?MessageContactReader $contacts = null,
-		private readonly ?PortalContactService $portalContacts = null,
+		private readonly ?PortalSelfServiceServiceInterface $selfService = null,
+		private readonly ?MessageContactReaderInterface $contacts = null,
+		private readonly ?PortalContactServiceInterface $portalContacts = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -110,7 +110,7 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{id}` on success, 400 or 403 on refusal.
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/specs/guardian-direct-messaging/spec.md#requirement-a-guardian-may-start-a-direct-thread-with-a-teacher-who-teaches-their-childs-group
+	 * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-a-guardian-may-start-a-direct-thread-with-a-teacher-who-teaches-their-childs-group
 	 * @spec openspec/changes/site-messages-per-record/specs/portal-contribution-contract/spec.md#requirement-a-resident-may-start-a-conversation-only-with-a-contact-of-their-own-record
 	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
 	 */
@@ -157,7 +157,7 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/design.md#api-design
+	 * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#api-design
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -343,8 +343,8 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	 * @return JSONResponse The messages, or 404. A message translated into the
 	 *                      reader's `messageLanguage` carries `translation`.
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/specs/guardian-direct-messaging/spec.md#requirement-every-readpostmark-read-re-verifies-participation-server-side
-	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-the-stored-message-keeps-both-texts-and-the-provenance
+	 * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-every-readpostmark-read-re-verifies-participation-server-side
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-the-stored-message-keeps-both-texts-and-the-provenance
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -373,7 +373,7 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-translation-work-per-request-is-bounded-and-skips-what-needs-none
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-translation-work-per-request-is-bounded-and-skips-what-needs-none
 	 */
 	private function inReadersLanguage(array $messages, string $subjectRef): array {
 		if ($this->translator === null || $this->selfService === null || $subjectRef === '') {
@@ -396,7 +396,7 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse 204 on success, 404 otherwise.
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/specs/guardian-direct-messaging/spec.md#requirement-every-readpostmark-read-re-verifies-participation-server-side
+	 * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-every-readpostmark-read-re-verifies-participation-server-side
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -422,7 +422,7 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse 204 on success, 404 otherwise.
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/specs/guardian-direct-messaging/spec.md#requirement-a-message-tracks-who-has-read-it
+	 * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-a-message-tracks-who-has-read-it
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

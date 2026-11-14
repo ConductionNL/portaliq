@@ -33,6 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\WriteRefusalInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 
@@ -41,7 +42,7 @@ use OCP\AppFramework\Http\JSONResponse;
  *
  * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
  */
-class WriteRefusal {
+class WriteRefusal implements WriteRefusalInterface {
 	/**
 	 * The kinds a refused value may have, by the schema type the store named.
 	 */

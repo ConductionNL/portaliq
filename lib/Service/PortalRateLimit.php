@@ -25,13 +25,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-subject-rate-limit/specs/portal-contribution-contract/spec.md#requirement-a-signed-in-portal-session-must-be-rate-limited-per-subject
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-signed-in-portal-session-must-be-rate-limited-per-subject
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\PortalRateLimitInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -41,9 +42,9 @@ use OCP\Security\RateLimiting\IRateLimitExceededException;
 /**
  * Per-subject limit for a portal session, per-IP limit without one.
  *
- * @spec openspec/changes/portal-subject-rate-limit/specs/portal-contribution-contract/spec.md#requirement-a-signed-in-portal-session-must-be-rate-limited-per-subject
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-signed-in-portal-session-must-be-rate-limited-per-subject
  */
-class PortalRateLimit {
+class PortalRateLimit implements PortalRateLimitInterface {
 	/**
 	 * Calls a minute for one signed-in subject: twenty blocks on fifteen
 	 * page loads.
@@ -81,7 +82,7 @@ class PortalRateLimit {
 	 *
 	 * @return JSONResponse|null 429, or null when the call may go on.
 	 *
-	 * @spec openspec/changes/portal-subject-rate-limit/specs/portal-contribution-contract/spec.md#requirement-a-signed-in-portal-session-must-be-rate-limited-per-subject
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-signed-in-portal-session-must-be-rate-limited-per-subject
 	 */
 	public function refusal(string $endpoint, ?array $subject): ?JSONResponse {
 		$subjectRef = (string)($subject['subjectRef'] ?? '');

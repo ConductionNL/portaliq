@@ -16,7 +16,7 @@ export default {
 		/**
 		 * The shared report store.
 		 *
-		 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-traffic-page-must-show-what-was-measured-and-say-when-it-was-not
+		 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-traffic-page-must-show-what-was-measured-and-say-when-it-was-not
 		 * @return {object} The store.
 		 */
 		report() {
@@ -26,7 +26,7 @@ export default {
 		/**
 		 * The selected portal, or null.
 		 *
-		 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-traffic-page-must-show-what-was-measured-and-say-when-it-was-not
+		 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-traffic-page-must-show-what-was-measured-and-say-when-it-was-not
 		 * @return {object|null} The portal.
 		 */
 		portal() {
@@ -36,7 +36,7 @@ export default {
 		/**
 		 * Whether the selected portal measures traffic.
 		 *
-		 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-traffic-page-must-show-what-was-measured-and-say-when-it-was-not
+		 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-traffic-page-must-show-what-was-measured-and-say-when-it-was-not
 		 * @return {boolean} True when `traffic.enabled`.
 		 */
 		measured() {
@@ -46,7 +46,7 @@ export default {
 		/**
 		 * The folded summary for the range.
 		 *
-		 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+		 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 		 * @return {object} See `summarise`.
 		 */
 		summary() {
@@ -56,7 +56,7 @@ export default {
 		/**
 		 * The wording under a tile: "in 30 days", "in 1 day".
 		 *
-		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
+		 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
 		 * @return {string} The label.
 		 */
 		rangeLabel() {
@@ -66,7 +66,7 @@ export default {
 		/**
 		 * Whether anything is still loading.
 		 *
-		 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-traffic-page-must-show-what-was-measured-and-say-when-it-was-not
+		 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-traffic-page-must-show-what-was-measured-and-say-when-it-was-not
 		 * @return {boolean} True while loading.
 		 */
 		loading() {
@@ -78,7 +78,7 @@ export default {
 		 * with measurement off, 'no-data' for a measured portal with no
 		 * rollup in the range, '' when there is something to draw.
 		 *
-		 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-traffic-page-must-show-what-was-measured-and-say-when-it-was-not
+		 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-traffic-page-must-show-what-was-measured-and-say-when-it-was-not
 		 * @return {string} The state.
 		 */
 		emptyState() {

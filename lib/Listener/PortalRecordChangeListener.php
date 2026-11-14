@@ -51,19 +51,21 @@ namespace OCA\Portaliq\Listener;
 
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
-use OCA\Portaliq\Contribution\NotificationRuleNormaliser;
-use OCA\Portaliq\Service\NotificationDispatchService;
-use OCA\Portaliq\Service\Notifications\ChangeRuleNotices;
-use OCA\Portaliq\Service\Notifications\MessageBoxChannel;
-use OCA\Portaliq\Service\Notifications\PortalChangeRuleIndex;
-use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
-use OCA\Portaliq\Service\PortalAccountService;
-use OCA\Portaliq\Service\PortalObjectWriter;
-use OCA\Portaliq\Service\PortalWriteContext;
+use OCA\Portaliq\Kernel\Contracts\ChangeRuleNoticesInterface;
+use OCA\Portaliq\Kernel\Contracts\MessageBoxChannelInterface;
+use OCA\Portaliq\Kernel\Contracts\NotificationDispatchServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalAccountServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalChangeRuleIndexInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalNoticeLanguageInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectWriterInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalWriteContextInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
 use Throwable;
+use OCA\Portaliq\Kernel\Contracts\NotificationRuleNormaliserInterface;
+use OCA\Portaliq\Kernel\Contracts\PublicDetailShapeInterface;
+use OCA\Portaliq\Kernel\Contracts\PublicIndexKindsInterface;
 
 /**
  * Writes the inbox message for a declared change and dispatches the rule.
@@ -97,26 +99,26 @@ class PortalRecordChangeListener implements IEventListener {
 	/**
 	 * Wire the listener.
 	 *
-	 * @param PortalChangeRuleIndex       $rules        Which apps want a notice for a record.
-	 * @param PortalWriteContext          $writeContext Whether portaliq itself is writing.
-	 * @param PortalAccountService        $accounts     Finds the resident's account.
-	 * @param PortalObjectWriter          $writer       Writes the inbox message.
-	 * @param NotificationDispatchService $dispatch     Dispatches the rule's key.
-	 * @param PortalNoticeLanguage        $language     The message text, in the portal's language.
+	 * @param PortalChangeRuleIndexInterface       $rules        Which apps want a notice for a record.
+	 * @param PortalWriteContextInterface          $writeContext Whether portaliq itself is writing.
+	 * @param PortalAccountServiceInterface        $accounts     Finds the resident's account.
+	 * @param PortalObjectWriterInterface          $writer       Writes the inbox message.
+	 * @param NotificationDispatchServiceInterface $dispatch     Dispatches the rule's key.
+	 * @param PortalNoticeLanguageInterface        $language     The message text, in the portal's language.
 	 * @param LoggerInterface             $logger       The logger.
-	 * @param MessageBoxChannel|null      $messageBox   Queues the government message box send.
-	 * @param ChangeRuleNotices|null      $ruleNotices  Who a claim-addressed rule reaches, and a rule's own words.
+	 * @param MessageBoxChannelInterface|null      $messageBox   Queues the government message box send.
+	 * @param ChangeRuleNoticesInterface|null      $ruleNotices  Who a claim-addressed rule reaches, and a rule's own words.
 	 */
 	public function __construct(
-		private readonly PortalChangeRuleIndex $rules,
-		private readonly PortalWriteContext $writeContext,
-		private readonly PortalAccountService $accounts,
-		private readonly PortalObjectWriter $writer,
-		private readonly NotificationDispatchService $dispatch,
-		private readonly PortalNoticeLanguage $language,
+		private readonly PortalChangeRuleIndexInterface $rules,
+		private readonly PortalWriteContextInterface $writeContext,
+		private readonly PortalAccountServiceInterface $accounts,
+		private readonly PortalObjectWriterInterface $writer,
+		private readonly NotificationDispatchServiceInterface $dispatch,
+		private readonly PortalNoticeLanguageInterface $language,
 		private readonly LoggerInterface $logger,
-		private readonly ?MessageBoxChannel $messageBox = null,
-		private readonly ?ChangeRuleNotices $ruleNotices = null,
+		private readonly ?MessageBoxChannelInterface $messageBox = null,
+		private readonly ?ChangeRuleNoticesInterface $ruleNotices = null,
 	) {
 	}//end __construct()
 
@@ -218,7 +220,7 @@ class PortalRecordChangeListener implements IEventListener {
 	 *
 	 * @return array<int, array<string, array<string, mixed>>> Each with `account` and `row`.
 	 *
-	 * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md
 	 */
 	private function recipients(array $rule, RecordChange $change): array {
 		$data = $change->newData;
@@ -361,7 +363,7 @@ class PortalRecordChangeListener implements IEventListener {
 		$created->told[$key] = true;
 		if ($inbox['nudge'] === '1') {
 			$this->dispatch->dispatch(
-				ruleKey: NotificationDispatchService::RULE_MESSAGE_CREATED,
+				ruleKey: NotificationDispatchServiceInterface::RULE_MESSAGE_CREATED,
 				appId: $inbox['app'],
 				subject: $this->subject(account: $account)
 			);
@@ -385,11 +387,11 @@ class PortalRecordChangeListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-journey-entry-points/specs/portal-notifications-and-preferences/spec.md#requirement-another-apps-notice-with-a-declared-rule-key-must-be-sent-by-email-req-wje-006
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-another-apps-notice-with-a-declared-rule-key-must-be-sent-by-email-req-wje-006
 	 */
 	private function onForeignMessage(array $data, string $recordId): void {
 		$ruleKey = ($data['ruleKey'] ?? null);
-		if (is_string($ruleKey) === false || preg_match(NotificationRuleNormaliser::APP_RULE_KEY_PATTERN, $ruleKey, $match) !== 1) {
+		if (is_string($ruleKey) === false || preg_match(NotificationRuleNormaliserInterface::APP_RULE_KEY_PATTERN, $ruleKey, $match) !== 1) {
 			return;
 		}
 
@@ -424,7 +426,7 @@ class PortalRecordChangeListener implements IEventListener {
 		}
 
 		$account = $this->accounts->findBySubjectRef(subjectRef: $subjectRef);
-		if (($account['status'] ?? '') === PortalAccountService::STATUS_VOID) {
+		if (($account['status'] ?? '') === PortalAccountServiceInterface::STATUS_VOID) {
 			$this->logger->info('Portaliq: no change notice to a withdrawn account', ['account' => (string)($account['id'] ?? '')]);
 			return null;
 		}

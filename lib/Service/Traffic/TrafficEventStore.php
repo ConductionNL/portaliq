@@ -13,13 +13,14 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-raw-events-must-be-retained-for-a-finite-configured-period
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-raw-events-must-be-retained-for-a-finite-configured-period
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic;
 
+use OCA\Portaliq\Kernel\Contracts\TrafficEventStoreInterface;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCA\Portaliq\Service\RowAsArray;
@@ -47,7 +48,7 @@ use Throwable;
  * way every other reader in this app does it, so a missing OpenRegister
  * degrades to "nothing stored, nothing read" rather than a fatal.
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-raw-events-must-be-retained-for-a-finite-configured-period
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-raw-events-must-be-retained-for-a-finite-configured-period
  *
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- every read and
  * write of the two traffic schemas lives here on purpose (the class
@@ -59,7 +60,7 @@ use Throwable;
  * path explorer needs (portal-traffic-path-explorer) is the eleventh
  * entry point, and it pages through the same helper as the other reads.
  */
-class TrafficEventStore {
+class TrafficEventStore implements TrafficEventStoreInterface {
 	use ObjectServiceLookup;
 	use ExpiredRowPurge;
 	use RowAsArray;
@@ -125,7 +126,7 @@ class TrafficEventStore {
 	 *
 	 * @return int How many were written.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-page-view-must-be-reported-by-the-client-never-inferred-from-a-server-side-read
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-page-view-must-be-reported-by-the-client-never-inferred-from-a-server-side-read
 	 */
 	public function append(array $records): int {
 		if ($records === []) {
@@ -178,7 +179,7 @@ class TrafficEventStore {
 	 *
 	 * @return int How many were removed, or 0 when the platform cannot say.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-raw-events-must-be-retained-for-a-finite-configured-period
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-raw-events-must-be-retained-for-a-finite-configured-period
 	 */
 	public function purgeExpired(): int {
 		return $this->purgeExpiredOf(schema: self::EVENT_SCHEMA, failure: 'Portaliq: traffic purge failed');
@@ -193,7 +194,7 @@ class TrafficEventStore {
 	 *
 	 * @return int How many were removed.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-raw-events-must-be-retained-for-a-finite-configured-period
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-raw-events-must-be-retained-for-a-finite-configured-period
 	 */
 	protected function deleteExpired(object $objectService): int {
 		$now = gmdate('Y-m-d\TH:i:s\Z');
@@ -227,7 +228,7 @@ class TrafficEventStore {
 	 *
 	 * @return array<int, array<string, mixed>> The events.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 	 */
 	public function eventsBetween(string $portal, string $from, string $to): array {
 		return $this->findAll(
@@ -260,7 +261,7 @@ class TrafficEventStore {
 	 *
 	 * @return array{events: array<int, array<string, mixed>>, truncated: bool} The events, and whether more existed.
 	 *
-	 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-say-when-it-shows-less-than-the-chosen-period
+	 * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-say-when-it-shows-less-than-the-chosen-period
 	 */
 	public function eventsForPaths(string $portal, string $from, string $to, int $limit): array {
 		if ($limit <= 0) {
@@ -291,7 +292,7 @@ class TrafficEventStore {
 	 *
 	 * @return array<int, array<string, mixed>> The events.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 	 */
 	public function receivedSince(string $since): array {
 		return $this->findAll(
@@ -309,7 +310,7 @@ class TrafficEventStore {
 	 *
 	 * @return array<string, mixed>|null The rollup object.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 	 */
 	public function findDaily(string $portal, string $date): ?array {
 		foreach ($this->findDailyRows(portal: $portal, date: $date) as $row) {
@@ -335,7 +336,7 @@ class TrafficEventStore {
 	 *
 	 * @return array<int, array<string, mixed>> The rollups.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
 	 */
 	public function findDailyRows(string $portal, string $date): array {
 		return $this->findAll(schema: self::DAILY_SCHEMA, filters: ['portal' => $portal, 'date' => $date], limit: self::PAGE);
@@ -351,7 +352,7 @@ class TrafficEventStore {
 	 *
 	 * @return array<int, array<string, mixed>> The rollups.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
 	 */
 	public function dailyBetween(string $portal, string $from, string $to, string $segment = ''): array {
 		$rows = $this->findAll(
@@ -374,7 +375,7 @@ class TrafficEventStore {
 	 *
 	 * @return bool True when removed.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
 	 */
 	public function deleteDaily(string $uuid): bool {
 		$objectService = $this->objectService();
@@ -414,7 +415,7 @@ class TrafficEventStore {
 	 *
 	 * @return bool True when saved.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 	 */
 	public function saveDaily(array $rollup, ?string $uuid): bool {
 		$objectService = $this->objectService();
@@ -520,7 +521,6 @@ class TrafficEventStore {
 
 		return $out;
 	}
-
 
 	/**
 	 * A row without `@self` and without its empty fields.

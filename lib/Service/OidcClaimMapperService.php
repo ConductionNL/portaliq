@@ -11,7 +11,7 @@
  *
  * Under-privilege on ambiguity (ADR-005, design.md): an unmapped or missing
  * LoA maps to `low`, never higher — the final safety net is
- * {@see PortalSessionService::normaliseTrust()} itself, so even a malformed
+ * {@see SessionTrust::normaliseTrust()} itself, so even a malformed
  * `loaMap` VALUE in the org's own config cannot mint a session above `low`.
  * `subjectRef` is either the literal keyword `derive` (the caller — {@see
  * PortalAccountService} — mints/reuses a stable server-side reference) or a
@@ -30,21 +30,23 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T05
+ * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T05
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\OidcClaimMapperServiceInterface;
 use OCA\Portaliq\Service\Branch\BranchNumber;
+use OCA\Portaliq\Kernel\Support\SessionTrust;
 
 /**
  * Provider presets + claim/LoA mapping for the OIDC broker login edge.
  *
- * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T05
+ * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T05
  */
-class OidcClaimMapperService {
+class OidcClaimMapperService implements OidcClaimMapperServiceInterface {
 	/**
 	 * The special `subjectRef` claim-map keyword: PortalAccountService derives
 	 * (mints once, reuses thereafter) the subjectRef server-side rather than
@@ -121,7 +123,9 @@ class OidcClaimMapperService {
 	 * @return array<string, mixed>|null The merged config, or null when the
 	 *                                   provider is unknown.
 	 *
-	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T05
+	 * @spec openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md#requirement-an-eherkenning-sign-in-is-a-business-sign-in-req-see-001
+	 * @spec openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md#requirement-an-eidas-sign-in-is-a-visitor-from-another-eu-country-req-see-002
 	 */
 	public function applyPreset(string $provider, array $rawConfig): ?array {
 		$preset = (self::PRESETS[$provider] ?? null);
@@ -183,6 +187,11 @@ class OidcClaimMapperService {
 			// vestigingsnummer. No preset names one, because brokers name it
 			// differently; an organisation sets it in its claimMap.
 			'branchClaim' => (string)($claimMap['branch'] ?? ''),
+			// Change site-mandates-the-represented-manage D8: the claim that
+			// carries the KVK number of the company the person signs in for,
+			// beside the per-person `identityRef`. No preset names one: which
+			// claim a broker uses is configured, never guessed.
+			'kvkClaim' => (string)($claimMap['kvk'] ?? ''),
 		];
 	}//end claimPart()
 
@@ -240,7 +249,7 @@ class OidcClaimMapperService {
 	 *
 	 * @return array{identityType: string, identityRef: string, subjectRef: string|null, audience: string, branch: string}|null
 	 *
-	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T05
 	 * @spec openspec/specs/supplier-portal/spec.md#the-subject-reference-is-server-derived-never-client-supplied
 	 */
 	public function mapClaims(array $claims, array $config): ?array {
@@ -273,8 +282,34 @@ class OidcClaimMapperService {
 			'subjectRef' => $resolvedSubjectRef,
 			'audience' => $audience,
 			'branch' => $this->branchOf(claims: $claims, config: $config),
+			'kvk' => $this->kvkOf(claims: $claims, config: $config),
 		];
 	}//end mapClaims()
+
+	/**
+	 * The KVK number of the company the person signs in for: the configured
+	 * claim's value when it is exactly eight digits, else '' (no company).
+	 *
+	 * @param array<string, mixed> $claims The validated ID-token claims.
+	 * @param array<string, mixed> $config The provider config.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/tasks.md#t0
+	 */
+	private function kvkOf(array $claims, array $config): string {
+		$claim = (string)($config['kvkClaim'] ?? '');
+		if ($claim === '') {
+			return '';
+		}
+
+		$value = ($claims[$claim] ?? null);
+		if ((is_string($value) === false && is_int($value) === false) || preg_match('/^\d{8}$/', trim((string)$value)) !== 1) {
+			return '';
+		}
+
+		return trim((string)$value);
+	}//end kvkOf()
 
 	/**
 	 * The branch (vestigingsnummer) the login was restricted to, or '' when
@@ -309,11 +344,11 @@ class OidcClaimMapperService {
 	 *
 	 * @return string One of `low`, `substantial`, `high`.
 	 *
-	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T05
 	 * @spec openspec/specs/supplier-portal/spec.md#broker-loa-maps-to-portal-trust-under-privileging-on-ambiguity
 	 *
 	 * @SuppressWarnings(PHPMD.StaticAccess) -- deliberate reuse of the ONE
-	 * canonical trust-normalisation point (PortalSessionService's own
+	 * canonical trust-normalisation point (SessionTrust's own
 	 * docblock: "the single normalisation point used by the session edge,
 	 * the registry, and the contribution controller") — duplicating it here
 	 * would risk the trust vocabulary drifting between call sites.
@@ -329,7 +364,7 @@ class OidcClaimMapperService {
 
 		$mapped = ($loaMap[$loaValue] ?? 'low');
 
-		return PortalSessionService::normaliseTrust(trust: $mapped);
+		return SessionTrust::normaliseTrust(trust: $mapped);
 	}//end mapLoaToTrust()
 
 	/**
@@ -400,7 +435,7 @@ class OidcClaimMapperService {
 	 *
 	 * @return array<string, string> provider => label.
 	 *
-	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T05
 	 */
 	public function providerLabels(): array {
 		$labels = [];

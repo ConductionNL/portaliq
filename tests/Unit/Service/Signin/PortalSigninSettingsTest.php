@@ -41,6 +41,20 @@ class PortalSigninSettingsTest extends TestCase {
 	private array $config = [];
 
 	/**
+	 * The app config key prefix whose writes fail, or '' when every write lands.
+	 *
+	 * @var string
+	 */
+	private string $refusedPrefix = '';
+
+	/**
+	 * The organisation config the last settings() built.
+	 *
+	 * @var OrganisationLoginConfig|null
+	 */
+	private ?OrganisationLoginConfig $orgConfig = null;
+
+	/**
 	 * The portal every call is about.
 	 */
 	private const PORTAL = ['slug' => 'venray', 'organisation' => 'gemeente-x'];
@@ -80,17 +94,23 @@ class PortalSigninSettingsTest extends TestCase {
 		$appConfig->method('getValueString')->willReturnCallback(fn (string $app, string $key, string $default = ''): string => ($this->config[$key] ?? $default));
 		$appConfig->method('setValueString')->willReturnCallback(
 			function (string $app, string $key, string $value): bool {
+				if ($this->refusedPrefix !== '' && str_starts_with($key, $this->refusedPrefix) === true) {
+					return false;
+				}
+
 				$this->config[$key] = $value;
 				return true;
 			}
 		);
 
+		$this->orgConfig = new OrganisationLoginConfig(
+			new PortalOrganisationConfigService($container, $appConfig, $this->createMock(LoggerInterface::class), new OidcClaimMapperService()),
+			$appConfig
+		);
+
 		return new PortalSigninSettings(
 			$this->createMock(PortalObjectReader::class),
-			new OrganisationLoginConfig(
-				new PortalOrganisationConfigService($container, $appConfig, $this->createMock(LoggerInterface::class), new OidcClaimMapperService()),
-				$appConfig
-			)
+			$this->orgConfig
 		);
 	}//end settings()
 
@@ -172,4 +192,74 @@ class PortalSigninSettingsTest extends TestCase {
 		$this->assertSame('broker', $again['providers'][1]['route']);
 		$this->assertSame('s3cret', $this->config['broker_secret_org-uuid-1'], 'an empty secret keeps the stored one');
 	}//end testACompleteBrokerIsSavedAndTheSecretIsWriteOnly()
+
+
+	/**
+	 * A portal with no organisation, or one that does not exist, saves
+	 * nothing.
+	 *
+	 * @return void
+	 */
+	public function testAPortalWithoutAKnownOrganisationSavesNothing(): void {
+		$broker = ['startUrl' => 'https://integriq.example/idp/start', 'exchangeUrl' => 'https://integriq.example/api/idp/envelope/exchange', 'consumerId' => 'portaliq-venray'];
+
+		foreach (['', '  ', 'unknown'] as $organisation) {
+			$result = $this->settings()->save(portal: ['slug' => 'venray', 'organisation' => $organisation], routes: [], broker: $broker, secret: 's3cret');
+			$this->assertSame(['error' => 'no_organisation'], $result, '"' . $organisation . '"');
+		}
+
+		$this->assertSame([], $this->config);
+	}//end testAPortalWithoutAKnownOrganisationSavesNothing()
+
+
+	/**
+	 * A presentation that cannot be stored is a failed save, and the secret
+	 * is then not written either.
+	 *
+	 * @return void
+	 */
+	public function testAPresentationThatCannotBeStoredFailsTheSave(): void {
+		$this->refusedPrefix = 'org_presentation_';
+		$broker = ['startUrl' => 'https://integriq.example/idp/start', 'exchangeUrl' => 'https://integriq.example/api/idp/envelope/exchange', 'consumerId' => 'portaliq-venray'];
+
+		$result = $this->settings()->save(portal: self::PORTAL, routes: ['digid' => 'broker'], broker: $broker, secret: 's3cret');
+
+		$this->assertSame(['error' => 'save_failed'], $result);
+		$this->assertSame([], $this->config);
+	}//end testAPresentationThatCannotBeStoredFailsTheSave()
+
+
+	/**
+	 * A secret that cannot be stored is a failed save, even though the routes
+	 * were written.
+	 *
+	 * @return void
+	 */
+	public function testASecretThatCannotBeStoredFailsTheSave(): void {
+		$this->refusedPrefix = 'broker_secret_';
+		$broker = ['startUrl' => 'https://integriq.example/idp/start', 'exchangeUrl' => 'https://integriq.example/api/idp/envelope/exchange', 'consumerId' => 'portaliq-venray'];
+
+		$result = $this->settings()->save(portal: self::PORTAL, routes: ['digid' => 'broker'], broker: $broker, secret: ' s3cret ');
+
+		$this->assertSame(['error' => 'save_failed'], $result);
+		$this->assertArrayHasKey('org_presentation_org-uuid-1', $this->config);
+		$this->assertArrayNotHasKey('broker_secret_org-uuid-1', $this->config);
+	}//end testASecretThatCannotBeStoredFailsTheSave()
+
+
+	/**
+	 * The organisation config refuses a write without an organisation and
+	 * resolves no broker for a blank organisation.
+	 *
+	 * @return void
+	 */
+	public function testTheOrganisationConfigRefusesAnEmptyOrganisation(): void {
+		$this->settings();
+
+		$this->assertFalse($this->orgConfig->writePresentation(organisationUuid: '', overrides: ['loginRoutes' => []]));
+		$this->assertFalse($this->orgConfig->setBrokerSecret(organisationUuid: '', secret: 's3cret'));
+		$this->assertNull($this->orgConfig->resolveBrokerConfig(orgSlug: ' ', provider: 'digid'));
+		$this->assertNull($this->orgConfig->resolveBrokerConfig(orgSlug: 'unknown', provider: 'digid'));
+		$this->assertSame([], $this->config);
+	}//end testTheOrganisationConfigRefusesAnEmptyOrganisation()
 }//end class

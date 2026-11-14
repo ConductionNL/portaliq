@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
@@ -32,15 +32,15 @@ use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Support\SessionTrust;
 
 /**
  * Joins the waiting account for an address its holder just confirmed.
  *
- * @SuppressWarnings(PHPMD.StaticAccess) -- PortalSessionService::trustSatisfies
+ * @SuppressWarnings(PHPMD.StaticAccess) -- SessionTrust::trustSatisfies
  * is the one trust comparison every portal surface uses.
  *
- * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 class ConfirmedAddressJoin {
 	/**
@@ -106,7 +106,7 @@ class ConfirmedAddressJoin {
 	 *
 	 * @return bool True when a waiting account was joined.
 	 *
-	 * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function join(array $account, string $email, ?array $session = null): bool {
 		$organisation = (string)($account['organisation'] ?? '');
@@ -189,7 +189,7 @@ class ConfirmedAddressJoin {
 			&& (string)($session['subjectRef'] ?? '') === $subjectRef
 			&& $organisation !== ''
 			&& (string)($session['organisation'] ?? '') === $organisation
-			&& PortalSessionService::trustSatisfies(subjectTrust: ($session['trust'] ?? ''), minTrust: self::MIN_TRUST) === true;
+			&& SessionTrust::trustSatisfies(subjectTrust: ($session['trust'] ?? ''), minTrust: self::MIN_TRUST) === true;
 	}//end isHoldersOwnSession()
 
 	/**

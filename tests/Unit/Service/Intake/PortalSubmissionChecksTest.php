@@ -11,14 +11,17 @@ use OCA\Portaliq\Service\Intake\PortalFormCalculator;
 use OCA\Portaliq\Service\Intake\PortalFormDecision;
 use OCA\Portaliq\Service\Intake\PortalFormValidator;
 use OCA\Portaliq\Service\Intake\PortalSubmissionChecks;
+use OCA\Portaliq\Service\Intake\SubmissionDecisions;
 use OCP\AppFramework\Http\JSONResponse;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Pre-submission checks: validation, family refs, e-mail proofs, decisions, statements.
  */
 #[CoversClass(PortalSubmissionChecks::class)]
+#[UsesClass(SubmissionDecisions::class)]
 class PortalSubmissionChecksTest extends TestCase {
 	/**
 	 * A validator that accepts what it is given.
@@ -196,4 +199,62 @@ class PortalSubmissionChecksTest extends TestCase {
 
 		$this->assertSame([['id' => 'a', 'decides' => true], ['id' => 'b'], 'junk'], $out);
 	}//end testStepsForTheBrowser()
+	/**
+	 * A step without an outcome records nothing and the calculator runs once;
+	 * a decision without a calculator computes only its output.
+	 *
+	 * @return void
+	 */
+	public function testNoOutcomeAndNoCalculator(): void {
+		$render = ['steps' => [['id' => 's1', 'decision' => ['rule' => 'r']], 'junk', ['id' => 's2', 'decision' => ['rule' => 'q']]]];
+		$decision = $this->createMock(PortalFormDecision::class);
+		$decision->method('decide')->willReturnOnConsecutiveCalls(
+			['status' => PortalFormDecision::NO_OUTCOME],
+			['status' => PortalFormDecision::DECIDED, 'outcome' => 'no', 'output' => 'eligible', 'nextStep' => []]
+		);
+		$calc = $this->createMock(PortalFormCalculator::class);
+		$calc->expects($this->once())->method('apply')->willReturnCallback(static fn (array $f, array $a): array => ['answers' => $a + ['calc' => 1], 'computed' => ['calc', 'calc']]);
+		$noOutcome = $this->createMock(PortalFormDecision::class);
+		$noOutcome->method('decide')->willReturn(['status' => PortalFormDecision::NO_OUTCOME]);
+
+		$quiet = (new PortalSubmissionChecks($this->validator(), null, null, $calc, $noOutcome))->prepare($render, [], '/r', ['a' => 1], null, [], []);
+		$this->assertSame(['answers' => ['a' => 1, 'calc' => 1], 'computed' => ['calc'], 'decisions' => [], 'statements' => [], 'verified' => []], $quiet);
+
+		$bare = (new PortalSubmissionChecks($this->validator(), null, null, null, $decision))->prepare($render, [], '/r', ['a' => 1], null, [], []);
+		$this->assertSame(['answers' => ['a' => 1, 'eligible' => 'no'], 'computed' => ['eligible'], 'decisions' => ['s2' => 'no'], 'statements' => [], 'verified' => []], $bare);
+	}//end testNoOutcomeAndNoCalculator()
+
+	/**
+	 * Family fields without a name or an answer are skipped; a session without
+	 * a subject trusts no reference even with the family service.
+	 *
+	 * @return void
+	 */
+	public function testFamilyFieldsSkippedAndNoSubject(): void {
+		$render = ['fields' => [['type' => 'familyMembers'], ['name' => 'empty', 'type' => 'familyMembers'], ['name' => 'kids', 'type' => 'familyMembers']]];
+		$family = $this->createMock(PortalFamilyMembers::class);
+		$family->expects($this->never())->method('forged');
+
+		$refused = (new PortalSubmissionChecks($this->validator(), $family))->prepare($render, [], '/r', ['empty' => [], 'kids' => ['good']], null, [], []);
+		$this->assertSame(['errors' => ['kids' => 'Choose the people from the list we found.']], $refused->getData());
+
+		$skipped = (new PortalSubmissionChecks($this->validator(), $family))->prepare($render, [], '/r', ['empty' => []], null, [], []);
+		$this->assertIsArray($skipped);
+	}//end testFamilyFieldsSkippedAndNoSubject()
+
+	/**
+	 * decideStep takes the last matching step and hands the engine only the
+	 * form's own fields when no calculator is there.
+	 *
+	 * @return void
+	 */
+	public function testDecideStepLastMatchWithoutCalculator(): void {
+		$render = ['fields' => [['name' => 'age']], 'steps' => [['id' => 's1', 'decision' => ['rule' => 'first']], ['id' => 's1', 'decision' => ['rule' => 'last']]]];
+		$decision = $this->createMock(PortalFormDecision::class);
+		$decision->expects($this->once())->method('decide')->with(['rule' => 'last'], ['age' => 3])
+			->willReturn(['status' => PortalFormDecision::DECIDED, 'outcome' => 'yes', 'output' => 'o', 'nextStep' => []]);
+
+		$response = (new PortalSubmissionChecks($this->validator(), null, null, null, $decision))->decideStep($render, 's1', ['age' => 3, 'junk' => 1]);
+		$this->assertSame(['outcome' => 'yes', 'output' => 'o', 'nextStep' => []], $response->getData());
+	}//end testDecideStepLastMatchWithoutCalculator()
 }//end class

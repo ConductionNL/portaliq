@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/my-dossiers/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-an-item-list-read-from-its-app-req-myd-001
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-an-item-list-read-from-its-app-req-myd-001
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ namespace OCA\Portaliq\Contribution;
 /**
  * Validates `itemList`, fail closed.
  *
- * @spec openspec/changes/my-dossiers/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-an-item-list-read-from-its-app-req-myd-001
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-an-item-list-read-from-its-app-req-myd-001
  */
 class ItemListConfigNormaliser {
 	/**
@@ -46,8 +46,8 @@ class ItemListConfigNormaliser {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/my-dossiers/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-an-item-list-read-from-its-app-req-myd-001
-	 * @spec openspec/changes/my-dossiers/specs/portal-contribution-contract/spec.md#requirement-a-resident-must-be-able-to-remove-one-item-req-myd-003
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-an-item-list-read-from-its-app-req-myd-001
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-resident-must-be-able-to-remove-one-item-req-myd-003
 	 */
 	public function resolve(array $collections, array $actions): array {
 		foreach ($collections as $index => $collection) {

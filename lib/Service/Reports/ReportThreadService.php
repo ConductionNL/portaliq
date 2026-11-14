@@ -26,7 +26,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+ * @spec openspec/specs/report-without-an-account/spec.md
  */
 
 declare(strict_types=1);
@@ -34,16 +34,17 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Reports;
 
 use DateTimeImmutable;
-use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\ReportThreadServiceInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCP\Security\Bruteforce\IThrottler;
 
 /**
  * Opens a report's thread on a code, and carries messages both ways.
  *
- * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+ * @spec openspec/specs/report-without-an-account/spec.md
  */
-class ReportThreadService {
+class ReportThreadService implements ReportThreadServiceInterface {
 	/**
 	 * The throttler action a failed code attempt is registered under.
 	 */
@@ -87,7 +88,7 @@ class ReportThreadService {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 */
 	public function openByCode(string $code, string $address = ''): ?array {
 		if ($code === '') {
@@ -126,7 +127,7 @@ class ReportThreadService {
 	 * @return array<int, array<string, mixed>> Only the messages declared
 	 *         visible to the reporter, oldest first.
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 */
 	public function messagesForReporter(string $reportId): array {
 		$out = [];
@@ -154,7 +155,7 @@ class ReportThreadService {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 */
 	public function allMessages(string $reportId): array {
 		if ($reportId === '') {
@@ -202,7 +203,7 @@ class ReportThreadService {
 	 *
 	 * @return bool True when the message landed.
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- stored field, not a mode
 	 * switch: it becomes the message's own visibility, and the one branch on it

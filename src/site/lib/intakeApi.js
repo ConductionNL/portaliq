@@ -36,7 +36,7 @@
  * @param {object} query Query parameters; empty values are left out.
  * @return {string} The URL, relative to the origin.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
+ * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
  */
 export function intakeUrl(base, path, query = {}) {
 	const params = new URLSearchParams()
@@ -132,7 +132,7 @@ function intakeError(what, response) {
  * @param {IntakeConnection} conn The connection (`base`, `portal`, `fetchImpl`).
  * @return {Promise<Array<{topic: string, entries: Array<object>}>>} The topics.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
+ * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
  */
 export async function fetchCatalogue(conn) {
 	const response = await fetcher(conn.fetchImpl)(
@@ -169,7 +169,7 @@ export async function fetchCatalogue(conn) {
  * @param {string} bindingRoute The entry's binding route.
  * @return {string} The in-site route.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
+ * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
  */
 export function formRouteFor(formPage, bindingRoute) {
 	const page = `/${String(formPage || '').replace(/^\/+|\/+$/g, '')}`
@@ -188,7 +188,7 @@ export function formRouteFor(formPage, bindingRoute) {
  * @param {string} fixedRoute The route the author placed on the block, or ''.
  * @return {string} The binding route, or ''.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
+ * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
  */
 export function bindingRouteFrom(routeParam, fixedRoute) {
 	if (fixedRoute) {
@@ -214,7 +214,7 @@ export function bindingRouteFrom(routeParam, fixedRoute) {
  * @param {string} route The binding route.
  * @return {Promise<{state: string, render: object}>} The view.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-applicant-block-is-prefilled-from-the-signed-in-identity-only-req-pifo-003
+ * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-applicant-block-is-prefilled-from-the-signed-in-identity-only-req-pifo-003
  */
 export async function loadForm(conn, route) {
 	const response = await fetcher(conn.fetchImpl)(
@@ -255,7 +255,7 @@ export async function loadForm(conn, route) {
  * @param {object} prefill The prefill the endpoint answered.
  * @return {object} Values keyed by field name.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-applicant-block-is-prefilled-from-the-signed-in-identity-only-req-pifo-003
+ * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-applicant-block-is-prefilled-from-the-signed-in-identity-only-req-pifo-003
  */
 export function initialValues(fields, prefill) {
 	const values = {}
@@ -309,6 +309,17 @@ function startValue(field, own) {
 	if (own !== undefined && own !== null && own !== '') {
 		return String(own)
 	}
+	return emptyOrPreset(field)
+}
+
+/**
+ * The value a field starts with without the visitor's own detail: the empty
+ * value its type needs, else its preset, else ''.
+ *
+ * @param {object} field The rendered field.
+ * @return {string|Array|object} The value.
+ */
+function emptyOrPreset(field) {
 	if (Object.hasOwn(TYPED_START_VALUES, field.type)) {
 		return TYPED_START_VALUES[field.type]()
 	}
@@ -333,7 +344,7 @@ function startValue(field, own) {
  * @param {Record<string, string>} [submission.verifiedEmails] The proof of each verified e-mail address, by address.
  * @return {Promise<{reference: string, confirmationText: string, errors: object, moments?: object}>} The outcome.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
+ * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
  * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-the-case-is-created-in-the-request-and-the-citizen-gets-its-reference-at-once-req-pifo-005
  */
 export async function submitIntake(conn, submission) {
@@ -404,7 +415,7 @@ function submittedOutcome(parsed) {
  * @param {string} reference The reference the visitor was given.
  * @return {Promise<object|null>} The status, or null.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
+ * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
  */
 export async function lookUpStatus(conn, reference) {
 	const trimmed = String(reference || '').trim()
@@ -431,7 +442,7 @@ export async function lookUpStatus(conn, reference) {
  * @param {string|undefined} value An ISO 8601 moment.
  * @return {string} Such as "2 november 2026".
  *
- * @spec openspec/changes/woo-request-intake-through-opencatalogi/specs/portal-intake-form/spec.md#requirement-a-woo-request-form-is-delivered-to-opencatalogis-intake
+ * @spec openspec/specs/portal-intake-form/spec.md#requirement-a-woo-request-form-is-delivered-to-opencatalogis-intake
  */
 function readableDate(value) {
 	const moment = new Date(String(value || ''))
@@ -495,8 +506,8 @@ const STATE_VIEWS = {
  * @param {object|null} status The status, or null when none was found.
  * @return {{tone: string, sentence: string}} The view.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
- * @spec openspec/changes/woo-request-intake-through-opencatalogi/specs/portal-intake-form/spec.md#requirement-a-woo-request-form-is-delivered-to-opencatalogis-intake
+ * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
+ * @spec openspec/specs/portal-intake-form/spec.md#requirement-a-woo-request-form-is-delivered-to-opencatalogis-intake
  */
 export function statusView(status) {
 	if (!status) {
@@ -531,25 +542,44 @@ export function statusView(status) {
  */
 export async function lookupAddress(conn, block) {
 	try {
-		const response = await fetcher(conn.fetchImpl)(
-			intakeUrl(conn.base, '/intake/address', {
-				postcode: block.postcode,
-				number: block.number,
-				letter: block.letter,
-				addition: block.addition,
-			}),
-			{ headers: headersFor('') },
-		)
+		const response = await fetcher(conn.fetchImpl)(addressUrl(conn, block), {
+			headers: headersFor(''),
+		})
 		if (!response.ok) {
 			return null
 		}
-		const body = await response.json()
-		return body && body.street && body.town
-			? { street: String(body.street), town: String(body.town) }
-			: null
+		return foundAddress(await response.json())
 	} catch {
 		return null
 	}
+}
+
+/**
+ * The address route's address for one address block.
+ *
+ * @param {IntakeConnection} conn The connection (`base`).
+ * @param {object} block The address block (`postcode`, `number`, `letter`, `addition`).
+ * @return {string} The address.
+ */
+function addressUrl(conn, block) {
+	return intakeUrl(conn.base, '/intake/address', {
+		postcode: block.postcode,
+		number: block.number,
+		letter: block.letter,
+		addition: block.addition,
+	})
+}
+
+/**
+ * The street and town an address answer names, or null without both.
+ *
+ * @param {object|null} body The answer.
+ * @return {{street: string, town: string}|null} The address.
+ */
+function foundAddress(body) {
+	return body && body.street && body.town
+		? { street: String(body.street), town: String(body.town) }
+		: null
 }
 
 /**
@@ -600,6 +630,16 @@ export async function decideStep(conn, { route, step, answers }) {
 		throw intakeError('intake decide', response)
 	}
 
+	return decisionOf(parsed)
+}
+
+/**
+ * A decision as the form reads it.
+ *
+ * @param {object} parsed The decide answer.
+ * @return {{outcome: string, output: string, nextStep: string}} The decision.
+ */
+function decisionOf(parsed) {
 	return {
 		outcome: String(parsed.outcome || ''),
 		output: String(parsed.output || ''),
@@ -651,13 +691,25 @@ export async function requestEmailCode(conn, { route, email }) {
 			body: withPortal({ route, email }, conn.portal),
 		})
 		const parsed = await response.json().catch(() => ({}))
-		return {
-			ok: response.ok === true,
-			error: response.ok ? '' : String(parsed?.error || 'failed'),
-			resendAfter: Number(parsed?.resendAfter) || 60,
-		}
+		return codeRequestOutcome(response, parsed)
 	} catch {
 		return { ok: false, error: 'failed', resendAfter: 60 }
+	}
+}
+
+/**
+ * What a code request answered: sent, or refused with its reason, and when
+ * the resident may ask again.
+ *
+ * @param {{ok: boolean}} response The response.
+ * @param {object} parsed Its body, `{}` when it was not JSON.
+ * @return {{ok: boolean, error: string, resendAfter: number}} The outcome.
+ */
+function codeRequestOutcome(response, parsed) {
+	return {
+		ok: response.ok === true,
+		error: response.ok ? '' : String(parsed?.error || 'failed'),
+		resendAfter: Number(parsed?.resendAfter) || 60,
 	}
 }
 
@@ -678,15 +730,37 @@ export async function checkEmailCode(conn, { route, email, code }) {
 			body: withPortal({ route, email, code }, conn.portal),
 		})
 		const parsed = await response.json().catch(() => ({}))
-		if (
-			response.ok
-			&& typeof parsed?.proof === 'string'
-			&& parsed.proof !== ''
-		) {
-			return { ok: true, error: '', proof: parsed.proof }
-		}
-		return { ok: false, error: String(parsed?.error || 'failed'), proof: '' }
+		return codeCheckOutcome(response, parsed)
 	} catch {
 		return { ok: false, error: 'failed', proof: '' }
 	}
+}
+
+/**
+ * What a code check answered: the proof for a right code, else why not.
+ *
+ * @param {{ok: boolean}} response The response.
+ * @param {object} parsed Its body, `{}` when it was not JSON.
+ * @return {{ok: boolean, error: string, proof: string}} The outcome.
+ */
+function codeCheckOutcome(response, parsed) {
+	if (carriesProof(response, parsed)) {
+		return { ok: true, error: '', proof: parsed.proof }
+	}
+	return { ok: false, error: String(parsed?.error || 'failed'), proof: '' }
+}
+
+/**
+ * Whether a code check answered a proof: an ok answer with a non-empty one.
+ *
+ * @param {{ok: boolean}} response The response.
+ * @param {object} parsed Its body.
+ * @return {boolean}
+ */
+function carriesProof(response, parsed) {
+	return (
+		Boolean(response.ok)
+		&& typeof parsed?.proof === 'string'
+		&& parsed.proof !== ''
+	)
 }
