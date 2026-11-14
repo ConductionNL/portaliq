@@ -28,7 +28,7 @@ use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\PortalAccountLookupInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalContactServiceInterface;
-use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
+use OCA\Portaliq\Kernel\Contracts\BearerSessionResolverInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -48,13 +48,13 @@ class PortalContactsController extends Controller implements PortalProtected {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param BearerSessionResolver $session Resolves the subject from the bearer.
+	 * @param BearerSessionResolverInterface $session Resolves the subject from the bearer.
 	 * @param PortalContactServiceInterface $contacts The contact rules.
 	 * @param PortalAccountLookupInterface $accounts Reads the bearer's name.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly BearerSessionResolver $session,
+		private readonly BearerSessionResolverInterface $session,
 		private readonly PortalContactServiceInterface $contacts,
 		private readonly PortalAccountLookupInterface $accounts,
 	) {

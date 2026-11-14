@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Kernel\Support;
 
+use OCA\Portaliq\Kernel\Contracts\BearerSessionResolverInterface;
 use OCA\Portaliq\Service\PortalJwtService;
 use OCA\Portaliq\Service\SessionClaims;
 use Psr\Log\LoggerInterface;
@@ -38,7 +39,7 @@ use Throwable;
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T02
  */
-class BearerSessionResolver {
+class BearerSessionResolver implements BearerSessionResolverInterface {
 	/**
 	 * The bearer scheme prefix, case-sensitive per RFC 6750.
 	 */

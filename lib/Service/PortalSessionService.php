@@ -52,7 +52,7 @@ use DateTimeImmutable;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Service\Branch\BranchNumber;
-use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
+use OCA\Portaliq\Kernel\Contracts\BearerSessionResolverInterface;
 use OCA\Portaliq\Kernel\Support\SessionRecords;
 use OCA\Portaliq\Kernel\Support\SessionSigningKey;
 use OCA\Portaliq\Kernel\Support\SessionTrust;
@@ -162,7 +162,7 @@ class PortalSessionService implements PortalSessionServiceInterface {
 	 * @param AuditTrailService $auditor Records login/logout/refresh session events
 	 *                                   (portal-session-hardening-v2).
 	 * @param SessionSigningKey $signingKey The signer built from the dedicated secret, or none.
-	 * @param BearerSessionResolver $bearers Resolves incoming bearers (fail-closed).
+	 * @param BearerSessionResolverInterface $bearers Resolves incoming bearers (fail-closed).
 	 *
 	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.1
 	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T01
@@ -175,7 +175,7 @@ class PortalSessionService implements PortalSessionServiceInterface {
 		private readonly PortalObjectReader $reader,
 		private readonly AuditTrailService $auditor,
 		SessionSigningKey $signingKey,
-		private readonly BearerSessionResolver $bearers,
+		private readonly BearerSessionResolverInterface $bearers,
 	) {
 		$this->jwt = $signingKey->jwt();
 	}//end __construct()
@@ -459,7 +459,7 @@ class PortalSessionService implements PortalSessionServiceInterface {
 	/**
 	 * Resolve an Authorization header to a server-derived subject. FAILS
 	 * CLOSED; kept for the callers not yet moved to
-	 * {@see BearerSessionResolver::resolveFromBearer()}, and used by the
+	 * {@see BearerSessionResolverInterface::resolveFromBearer()}, and used by the
 	 * refresh and rebranch paths.
 	 *
 	 * @param string|null $authorizationHeader The raw Authorization header value.
@@ -547,7 +547,7 @@ class PortalSessionService implements PortalSessionServiceInterface {
 	/**
 	 * Resolve a reference session, and only a reference session. FAILS
 	 * CLOSED; kept for the callers not yet moved to
-	 * {@see BearerSessionResolver::resolveReferenceFromBearer()}.
+	 * {@see BearerSessionResolverInterface::resolveReferenceFromBearer()}.
 	 *
 	 * @param string|null $authorizationHeader The raw Authorization header value.
 	 *
