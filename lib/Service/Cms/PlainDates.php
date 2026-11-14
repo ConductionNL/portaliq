@@ -38,6 +38,46 @@ use Throwable;
 class PlainDates {
 
 	/**
+	 * Dutch month names, January first.
+	 *
+	 * @var string[]
+	 */
+	private const MONTHS_NL = [
+		'januari',
+		'februari',
+		'maart',
+		'april',
+		'mei',
+		'juni',
+		'juli',
+		'augustus',
+		'september',
+		'oktober',
+		'november',
+		'december',
+	];
+
+	/**
+	 * English month names, January first.
+	 *
+	 * @var string[]
+	 */
+	private const MONTHS_EN = [
+		'January',
+		'February',
+		'March',
+		'April',
+		'May',
+		'June',
+		'July',
+		'August',
+		'September',
+		'October',
+		'November',
+		'December',
+	];
+
+	/**
 	 * The date in words, or '' for a value that is not a date.
 	 *
 	 * @param string $value  The stored date.
@@ -68,15 +108,35 @@ class PlainDates {
 		}
 
 		if (class_exists(IntlDateFormatter::class) === false) {
-			return $day->format('Y-m-d');
+			return $this->inWords(day: $day, language: $language);
 		}
 
 		$formatter = new IntlDateFormatter($language, IntlDateFormatter::LONG, IntlDateFormatter::NONE, 'UTC');
 		$text = $formatter->format($day);
 		if (is_string($text) === false || $text === '') {
-			return $day->format('Y-m-d');
+			return $this->inWords(day: $day, language: $language);
 		}
 
 		return $text;
 	}//end readable()
+
+	/**
+	 * The date in words without the intl extension: `1 maart 2026` in Dutch,
+	 * `March 1, 2026` in English, the same text the long intl format gives.
+	 *
+	 * @param DateTimeImmutable $day      The calendar day.
+	 * @param string            $language `nl` or `en`.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/site-honest-without-javascript/tasks.md#3.2
+	 */
+	private function inWords(DateTimeImmutable $day, string $language): string {
+		$month = (int) $day->format('n');
+		if ($language === 'en') {
+			return self::MONTHS_EN[$month - 1] . ' ' . $day->format('j') . ', ' . $day->format('Y');
+		}
+
+		return $day->format('j') . ' ' . self::MONTHS_NL[$month - 1] . ' ' . $day->format('Y');
+	}//end inWords()
 }//end class
