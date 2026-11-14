@@ -140,6 +140,20 @@ final class ListenerRegistrar {
 		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $event) {
 			$context->registerEventListener($event, NoticeWriteGuardListener::class);
 		}
+
+		// A portal's administrators write only that portal's content, and its
+		// `adminGroups` enter the content rules (operate-portals-per-organisation REQ-OPO-005).
+		$portalAdminEvents = [
+			ObjectCreatingEvent::class,
+			ObjectUpdatingEvent::class,
+			ObjectDeletingEvent::class,
+			ObjectCreatedEvent::class,
+			ObjectUpdatedEvent::class,
+			ObjectDeletedEvent::class,
+		];
+		foreach ($portalAdminEvents as $event) {
+			$context->registerEventListener($event, PortalAdminListener::class);
+		}
 	}//end registerCmsListeners()
 
 	/**

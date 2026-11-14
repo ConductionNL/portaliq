@@ -62,6 +62,13 @@ class PageEditorServiceTest extends TestCase {
 	public ?array $seedRead = null;
 
 	/**
+	 * Write rules each schema double starts with, by action.
+	 *
+	 * @var array<string, array>
+	 */
+	public array $seedWrites = [];
+
+	/**
 	 * The authorization block the schema double was last given.
 	 *
 	 * @var array|null
@@ -226,6 +233,10 @@ class PageEditorServiceTest extends TestCase {
 					$double->authorization['read'] = $this->test->seedRead;
 				}
 
+				foreach ($this->test->seedWrites as $action => $rules) {
+					$double->authorization[$action] = $rules;
+				}
+
 				return $double;
 			}
 
@@ -270,6 +281,7 @@ class PageEditorServiceTest extends TestCase {
 		$this->stored = '';
 		$this->storedByKey = [];
 		$this->seedRead = null;
+		$this->seedWrites = [];
 		$this->written = null;
 		$this->writtenBySlug = [];
 	}//end setUp()
@@ -360,6 +372,32 @@ class PageEditorServiceTest extends TestCase {
 		$this->assertSame(['redacteuren', 'webmasters'], $this->written['update']);
 		$this->assertSame(['redacteuren', 'webmasters'], $this->written['delete']);
 	}//end testSavingWritesTheSchemaWriteRules()
+
+
+	/**
+	 * A portal's own administrators keep their grant on that portal's rows when
+	 * the instance-wide editor groups are saved, cleared included
+	 * (operate-portals-per-organisation REQ-OPO-005).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t11
+	 */
+	public function testSavingTheEditorGroupsKeepsThePortalAdministratorsGrants(): void {
+		$grant = ['group' => 'zeist-beheer', 'match' => ['portal' => 'zeist']];
+		$this->seedWrites = ['create' => ['oud', $grant], 'update' => [$grant], 'delete' => ['oud']];
+
+		$service = $this->service(isAdmin: true);
+		$service->setEditorGroups(['redacteuren']);
+
+		$this->assertSame(['redacteuren', $grant], $this->written['create']);
+		$this->assertSame(['redacteuren', $grant], $this->written['update']);
+		$this->assertSame(['redacteuren'], $this->written['delete']);
+
+		$service->setEditorGroups([]);
+		$this->assertSame([$grant], $this->written['create']);
+		$this->assertSame([], $this->written['delete']);
+	}//end testSavingTheEditorGroupsKeepsThePortalAdministratorsGrants()
 
 
 	/**

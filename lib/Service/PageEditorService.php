@@ -28,6 +28,7 @@ namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\PageEditorServiceInterface;
+use OCA\Portaliq\Service\Tenancy\PortalAdminGrants;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
 use OCP\IUser;
@@ -320,8 +321,10 @@ class PageEditorService implements PageEditorServiceInterface {
 			$authorization = [];
 		}
 
+		// A portal's own administrators keep their grants on that portal's rows
+		// (operate-portals-per-organisation REQ-OPO-005).
 		foreach (self::WRITE_ACTIONS as $action) {
-			$authorization[$action] = array_values($groups);
+			$authorization[$action] = array_merge(array_values($groups), PortalAdminGrants::grantsIn(rules: ($authorization[$action] ?? [])));
 		}
 
 		// The editor groups also read the schema. The register names only the
