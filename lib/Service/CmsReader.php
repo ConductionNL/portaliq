@@ -193,22 +193,70 @@ class CmsReader implements CmsReaderInterface {
 		// The organisation is part of the key: a placed shared block expands for
 		// the organisation it is read for, and a read without one must not
 		// hand its unexpanded page to a read with one.
+		$selector = $this->pageSelector(route: $route, organisation: $organisation);
+
+		$key = $this->cache->key(portal: $portal, kind: 'page', selector: $selector, locale: $locale, audience: $audience);
+		$hit = $this->cache->lookup(key: $key);
+		if ($hit !== null) {
+			return $this->cachedPage(hit: $hit);
+		}
+
+		$page = $this->publishedPage(portal: $portal, route: $route, organisation: $organisation);
+
+		$this->cache->store($key, json_encode($page ?? []));
+
+		return $page;
+	}//end page()
+
+	/**
+	 * The page's cache selector: the route, with the organisation when there is one.
+	 *
+	 * @param string $route        The in-site route.
+	 * @param string $organisation The serving portal's organisation, or ''.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t02
+	 */
+	private function pageSelector(string $route, string $organisation): string {
 		$selector = $route;
 		if ($organisation !== '') {
 			$selector = $route . '#org=' . $organisation;
 		}
 
-		$key = $this->cache->key(portal: $portal, kind: 'page', selector: $selector, locale: $locale, audience: $audience);
-		$hit = $this->cache->lookup(key: $key);
-		if ($hit !== null) {
-			$decoded = json_decode($hit, true);
-			if ($decoded === []) {
-				return null;
-			}
+		return $selector;
+	}//end pageSelector()
 
-			return $decoded;
+	/**
+	 * A cached page, or null when the cache holds the empty answer.
+	 *
+	 * @param string $hit The cached JSON.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
+	 */
+	private function cachedPage(string $hit): array|null {
+		$decoded = json_decode($hit, true);
+		if ($decoded === []) {
+			return null;
 		}
 
+		return $decoded;
+	}//end cachedPage()
+
+	/**
+	 * The published page on the route, shaped, or null.
+	 *
+	 * @param string $portal       The portal slug.
+	 * @param string $route        The in-site route.
+	 * @param string $organisation The serving portal's organisation, or ''.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
+	 */
+	private function publishedPage(string $portal, string $route, string $organisation): array|null {
 		// The `status` filter is applied in the QUERY, not after. A draft page
 		// must never reach this process's memory, let alone a response: an
 		// unpublished route and a non-existent route are answered identically,
@@ -222,10 +270,8 @@ class CmsReader implements CmsReaderInterface {
 			}
 		}
 
-		$this->cache->store($key, json_encode($page ?? []));
-
 		return $page;
-	}//end page()
+	}//end publishedPage()
 
 	/**
 	 * Resolve the stored identifier of a page at a route, published or not.
