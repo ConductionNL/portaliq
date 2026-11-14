@@ -51,6 +51,50 @@ class OidcClaimMapperServiceTest extends TestCase {
 
 	}//end testApplyPresetFillsProviderDefaultsWhenTheOrgOmitsThem()
 
+	/**
+	 * An eHerkenning sign-in is a business sign-in: identity type
+	 * `eherkenning`, audience `supplier` (REQ-SEE-001).
+	 *
+	 * @spec openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md#requirement-an-eherkenning-sign-in-is-a-business-sign-in-req-see-001
+	 */
+	public function testTheEherkenningPresetIsABusinessSignin(): void {
+		$config = $this->mapper->applyPreset('eherkenning', ['issuer' => 'https://broker.example', 'clientId' => 'c1', 'clientSecret' => 's1']);
+
+		$this->assertSame('eherkenning', $config['identityType']);
+		$this->assertSame('eHerkenning', $config['label']);
+		$this->assertSame('supplier', $config['audienceMap']);
+		$this->assertSame('acr', $config['loaClaim']);
+
+		$mapped = $this->mapper->mapClaims(['sub' => 'kvk-12345678', 'acr' => 'eh3'], $config);
+		$this->assertSame('eherkenning', $mapped['identityType']);
+		$this->assertSame('supplier', $mapped['audience']);
+
+	}//end testTheEherkenningPresetIsABusinessSignin()
+
+	/**
+	 * An eIDAS sign-in is a visitor from another EU country: identity type
+	 * `eidas`, audience `client`, and a subject reference portaliq derives,
+	 * never one taken from a citizen service number claim (REQ-SEE-002).
+	 *
+	 * @spec openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md#requirement-an-eidas-sign-in-is-a-visitor-from-another-eu-country-req-see-002
+	 */
+	public function testTheEidasPresetIsAClientWithADerivedSubject(): void {
+		$config = $this->mapper->applyPreset('eidas', ['issuer' => 'https://broker.example', 'clientId' => 'c1', 'clientSecret' => 's1']);
+
+		$this->assertSame('eidas', $config['identityType']);
+		$this->assertSame('eIDAS', $config['label']);
+		$this->assertSame('client', $config['audienceMap']);
+		$this->assertSame('derive', $config['subjectRefMap']);
+
+		$mapped = $this->mapper->mapClaims(['sub' => 'DE/NL/0123456789', 'bsn' => '999993653', 'acr' => 'substantial'], $config);
+		$this->assertSame('eidas', $mapped['identityType']);
+		$this->assertSame('client', $mapped['audience']);
+		$this->assertSame('DE/NL/0123456789', $mapped['identityRef']);
+		$this->assertNull($mapped['subjectRef']);
+		$this->assertSame('substantial', $this->mapper->mapLoaToTrust(['acr' => 'substantial'], array_merge($config, ['loaMap' => ['substantial' => 'substantial']])));
+
+	}//end testTheEidasPresetIsAClientWithADerivedSubject()
+
 	public function testApplyPresetHonoursAnOrgScopesOverride(): void {
 		$merged = $this->mapper->applyPreset('eherkenning', ['issuer' => 'i', 'clientId' => 'c', 'clientSecret' => 's', 'scopes' => ['openid', 'kvk']]);
 
@@ -236,5 +280,49 @@ class OidcClaimMapperServiceTest extends TestCase {
 		$this->assertSame('', $mapped['branch'], 'the preset names no branch claim, so none is read');
 
 	}//end testNoBranchClaimConfiguredMapsNone()
+
+	// -- kvk (site-mandates-the-represented-manage D8, T0) ---------------------
+
+	/**
+	 * The company's KVK number travels beside the person: `identityRef` stays
+	 * the per-person reference and `kvk` carries the company.
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/tasks.md#t0
+	 */
+	public function testTheKvkClaimTravelsBesideThePerson(): void {
+		$config = $this->mapper->applyPreset('eherkenning', ['issuer' => 'i', 'clientId' => 'c', 'clientSecret' => 's', 'claimMap' => ['identityRef' => 'sub', 'kvk' => 'urn:etoegang:kvk']]);
+		$mapped = $this->mapper->mapClaims(['sub' => 'person-7f3', 'urn:etoegang:kvk' => ' 87654321 '], $config);
+
+		$this->assertSame('person-7f3', $mapped['identityRef']);
+		$this->assertSame('87654321', $mapped['kvk']);
+		$this->assertSame('87654321', $this->mapper->mapClaims(['sub' => 'person-7f3', 'urn:etoegang:kvk' => 87654321], $config)['kvk']);
+
+	}//end testTheKvkClaimTravelsBesideThePerson()
+
+	/**
+	 * A missing, malformed or unconfigured KVK claim gives no company, and the
+	 * login goes on as the person alone.
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/tasks.md#t0
+	 */
+	public function testAMissingKvkClaimGivesNoCompany(): void {
+		$config = $this->mapper->applyPreset('eherkenning', ['issuer' => 'i', 'clientId' => 'c', 'clientSecret' => 's', 'claimMap' => ['kvk' => 'kvkNummer']]);
+
+		foreach ([null, '', '1234567', '123456789', '8765432X', ['87654321'], 87654321.0] as $bad) {
+			$claims = ['sub' => 'person-7f3'];
+			if ($bad !== null) {
+				$claims['kvkNummer'] = $bad;
+			}
+
+			$mapped = $this->mapper->mapClaims($claims, $config);
+			$this->assertNotNull($mapped, 'a bad KVK claim never refuses the login');
+			$this->assertSame('', $mapped['kvk']);
+		}
+
+		$preset = $this->mapper->applyPreset('eherkenning', ['issuer' => 'i', 'clientId' => 'c', 'clientSecret' => 's']);
+		$this->assertSame('', $preset['kvkClaim'], 'no preset names a KVK claim');
+		$this->assertSame('', $this->mapper->mapClaims(['sub' => '87654321', 'kvk' => '87654321'], $preset)['kvk']);
+
+	}//end testAMissingKvkClaimGivesNoCompany()
 
 }//end class

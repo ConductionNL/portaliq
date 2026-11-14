@@ -24,13 +24,15 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Assistant;
 
+use OCA\Portaliq\Kernel\Contracts\PublicSourceScopeInterface;
+
 /**
  * Public is a declaration, not a guess: the sources are a constant list, and a
  * test pins it so no schema that holds a resident's data can be added by accident.
  *
  * @spec openspec/changes/search-assistant-from-public-content/tasks.md#t02
  */
-class PublicSourceScope {
+class PublicSourceScope implements PublicSourceScopeInterface {
 
 	/**
 	 * The only schemas the assistant may read: published pages, glossary

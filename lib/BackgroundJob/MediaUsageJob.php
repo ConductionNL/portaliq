@@ -26,7 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\BackgroundJob;
 
-use OCA\Portaliq\Service\Cms\MediaUsage;
+use OCA\Portaliq\Kernel\Contracts\MediaUsageInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
 
@@ -45,11 +45,11 @@ class MediaUsageJob extends TimedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory $time The clock.
-	 * @param MediaUsage $usage Recounts the library.
+	 * @param MediaUsageInterface $usage Recounts the library.
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly MediaUsage $usage,
+		private readonly MediaUsageInterface $usage,
 	) {
 		parent::__construct(time: $time);
 		$this->setInterval(seconds: self::INTERVAL);

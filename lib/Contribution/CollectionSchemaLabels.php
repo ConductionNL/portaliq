@@ -32,7 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
-use OCA\Portaliq\Service\PortalSchemaReader;
+use OCA\Portaliq\Kernel\Contracts\PortalSchemaReaderInterface;
 
 /**
  * Labels a collection's projected fields with their schema property titles.
@@ -56,10 +56,10 @@ class CollectionSchemaLabels {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalSchemaReader|null $schemaReader Reads a schema by slug; null changes nothing.
+	 * @param PortalSchemaReaderInterface|null $schemaReader Reads a schema by slug; null changes nothing.
 	 */
 	public function __construct(
-		private readonly ?PortalSchemaReader $schemaReader = null,
+		private readonly ?PortalSchemaReaderInterface $schemaReader = null,
 	) {
 	}//end __construct()
 

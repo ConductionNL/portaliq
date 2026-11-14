@@ -18,6 +18,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Signin;
 
+use OCA\Portaliq\Kernel\Contracts\BrokerLoginInterface;
 use OCA\Portaliq\Service\OidcStateStoreService;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -35,14 +36,13 @@ use OCA\Portaliq\Service\PortalSessionService;
  *
  * @spec openspec/specs/portal-broker-envelope-login/spec.md
  */
-class BrokerLogin {
+class BrokerLogin implements BrokerLoginInterface {
 
 	/**
 	 * The trust level asked of integriq. Integriq maps the login it actually
 	 * got to the envelope's `trust`, and that answer is what the session gets.
 	 */
 	private const REQUESTED_TRUST = 'substantial';
-
 
 	/**
 	 * Constructor.
@@ -65,7 +65,6 @@ class BrokerLogin {
 		private readonly BrokerEnvelopeCheck $envelopes = new BrokerEnvelopeCheck(),
 	) {
 	}//end __construct()
-
 
 	/**
 	 * The address to send the browser to, or null when this organisation does
@@ -121,7 +120,6 @@ class BrokerLogin {
 		return $broker['startUrl'] . $separator . $query;
 	}//end start()
 
-
 	/**
 	 * Complete a login: the minted bearer and where to land, or null when no
 	 * state row of this route was spent.
@@ -165,7 +163,6 @@ class BrokerLogin {
 		return ['token' => $token, 'returnTo' => $returnTo];
 	}//end complete()
 
-
 	/**
 	 * Redeem the code and check the envelope's claims against the state row.
 	 *
@@ -173,6 +170,9 @@ class BrokerLogin {
 	 * @param string                $code    The one-time code.
 	 *
 	 * @return array{sub: string, provider: string, trust: string, audience: string, attributes?: array<string, string>}|null
+	 *
+	 * @spec openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md#requirement-an-eherkenning-sign-in-is-a-business-sign-in-req-see-001
+	 * @spec openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md#requirement-an-eidas-sign-in-is-a-visitor-from-another-eu-country-req-see-002
 	 */
 	private function redeem(array $pending, string $code): ?array {
 		$broker = $this->orgConfig->resolveBrokerConfig(orgSlug: $pending['org'], provider: $pending['provider']);
@@ -203,7 +203,6 @@ class BrokerLogin {
 
 		return $claims + ['audience' => $broker['audience']];
 	}//end redeem()
-
 
 	/**
 	 * The envelope as an ordinary portal session (design D6): the provider is

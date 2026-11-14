@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Kernel\Contracts\PortalCatalogueReaderInterface;
 use OCA\Portaliq\Service\CaseTypeVisibility;
 use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 
@@ -37,7 +38,7 @@ use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
  *
  * @spec openspec/specs/portal-intake-form/spec.md
  */
-class PortalCatalogueReader {
+class PortalCatalogueReader implements PortalCatalogueReaderInterface {
 	/**
 	 * The register opencatalogi publishes into.
 	 */

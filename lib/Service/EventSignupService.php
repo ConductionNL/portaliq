@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\EventSignupServiceInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -37,7 +38,7 @@ use Throwable;
 /**
  * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-sign-up-role-enforces-its-capacity-server-side
  */
-class EventSignupService {
+class EventSignupService implements EventSignupServiceInterface {
 	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
 	use PagedObjectReads;
@@ -47,10 +48,6 @@ class EventSignupService {
 	private const REGISTER = 'portaliq';
 
 	private const SCHEMA = 'eventSignup';
-
-	public const REASON_ROLE_NOT_FOUND = 'role-not-found';
-
-	public const REASON_ROLE_FULL = 'role-full';
 
 	/**
 	 * Constructor.

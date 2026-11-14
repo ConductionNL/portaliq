@@ -3,37 +3,41 @@
 //
 // The plain rules of a theme page (life-domain-theme-pages): what a theme
 // gathers from the contributions, the validity of a product a resident holds,
-// and when an action is offered. Imports nothing, so the node specs run it as
-// a plain script.
+// the running cases of the theme, and when an action is offered. No Vue, so
+// the node specs run it as a plain script.
 //
 // @spec openspec/changes/life-domain-theme-pages/specs/life-domain-themes/spec.md
+
+import { caseStatus, caseTitle } from '../../../shared/myCases.js'
+import { isClosedCase } from '../../components/mijn/cases.js'
 
 /** The most products the theme page shows before it links to the full list. */
 export const PRODUCT_LIMIT = 3
 
+/** Where a tagged collection goes on the theme page, by its kind; any other kind lists as tasks. */
+const BUCKETS = { products: 'products', cases: 'cases' }
+
 /**
- * What a theme gathers: the tasks, products and actions of every contribution
- * that tagged themselves with its slug. The server already dropped tags the
- * portal does not declare.
+ * What a theme gathers: the tasks, products, cases and actions of every
+ * contribution that tagged themselves with its slug. The server already
+ * dropped tags the portal does not declare.
  *
  * @param {string} slug The theme.
  * @param {Array<object>} contributions The aggregate's contributions.
- * @return {{tasks: Array<object>, products: Array<object>, actions: Array<object>}} Each entry carries its `app`.
+ * @return {{tasks: Array<object>, products: Array<object>, cases: Array<object>, actions: Array<object>}} Each entry carries its `app`.
  *
  * @spec openspec/changes/life-domain-theme-pages/tasks.md#t03
+ * @spec openspec/changes/life-domain-theme-pages/tasks.md#t10
  */
 export function gather(slug, contributions) {
-	const out = { tasks: [], products: [], actions: [] }
+	const out = { tasks: [], products: [], cases: [], actions: [] }
 	for (const contribution of Array.isArray(contributions) ? contributions : []) {
 		const app = String(contribution?.app || '')
 		for (const collection of contribution?.collections || []) {
 			if (collection?.theme !== slug) {
 				continue
 			}
-			out[collection.kind === 'products' ? 'products' : 'tasks'].push({
-				app,
-				collection,
-			})
+			out[BUCKETS[collection.kind] || 'tasks'].push({ app, collection })
 		}
 		for (const action of contribution?.actions || []) {
 			if (action?.theme === slug) {
@@ -329,4 +333,75 @@ export function themesToList(themes) {
 				&& typeof theme.title === 'string',
 		)
 		.map((theme) => ({ slug: theme.slug, title: theme.title }))
+}
+
+/**
+ * The running cases of a cases collection: every row but a closed one, as the
+ * theme page lists them.
+ *
+ * @param {Array<object>} rows The collection's rows.
+ * @param {object} collection The `cases` collection.
+ * @return {Array<{id: string, title: string, status: string}>} The running cases.
+ *
+ * @spec openspec/changes/life-domain-theme-pages/tasks.md#t10
+ */
+export function runningCases(rows, collection) {
+	return (Array.isArray(rows) ? rows : [])
+		.filter((row) => row && !isClosedCase(row, collection))
+		.map((row) => ({
+			id: String(row.id ?? row.uuid ?? ''),
+			title: caseTitle(row),
+			status: caseStatus(row),
+		}))
+}
+
+/**
+ * Every cases collection a contribution tagged with a theme, keyed as the
+ * shell keeps known rows (`<app>:<collection>`).
+ *
+ * @param {Array<object>} contributions The aggregate's contributions.
+ * @return {Array<{key: string, slug: string, collection: object}>} The collections.
+ *
+ * @spec openspec/changes/life-domain-theme-pages/tasks.md#t10
+ */
+export function themeCaseCollections(contributions) {
+	const out = []
+	for (const contribution of Array.isArray(contributions) ? contributions : []) {
+		for (const collection of contribution?.collections || []) {
+			if (
+				collection?.kind === 'cases'
+				&& typeof collection.theme === 'string'
+				&& collection.theme !== ''
+				&& collection.id
+			) {
+				out.push({
+					key: `${contribution.app || ''}:${collection.id}`,
+					slug: collection.theme,
+					collection,
+				})
+			}
+		}
+	}
+	return out
+}
+
+/**
+ * How many running cases each theme holds, for the menu: only themes whose
+ * cases collections were read and hold a running case are counted.
+ *
+ * @param {Array<object>} contributions The aggregate's contributions.
+ * @param {Record<string, Array<object>>} rows The known rows, by `<app>:<collection>`.
+ * @return {Record<string, number>} Theme slug => running cases.
+ *
+ * @spec openspec/changes/life-domain-theme-pages/tasks.md#t10
+ */
+export function themeCaseCounts(contributions, rows) {
+	const counts = {}
+	for (const { key, slug, collection } of themeCaseCollections(contributions)) {
+		const running = runningCases(rows?.[key], collection).length
+		if (running > 0) {
+			counts[slug] = (counts[slug] || 0) + running
+		}
+	}
+	return counts
 }

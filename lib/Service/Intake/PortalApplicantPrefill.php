@@ -31,6 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Kernel\Contracts\PortalApplicantPrefillInterface;
 use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use OCA\Portaliq\Service\Signin\YiviAttributes;
 
@@ -39,7 +40,7 @@ use OCA\Portaliq\Service\Signin\YiviAttributes;
  *
  * @spec openspec/specs/portal-intake-form/spec.md
  */
-class PortalApplicantPrefill {
+class PortalApplicantPrefill implements PortalApplicantPrefillInterface {
 	/**
 	 * The applicant fields that may be prefilled, and the account field each
 	 * one is taken from. Nothing outside this map is ever prefilled, so adding

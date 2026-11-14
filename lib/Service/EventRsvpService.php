@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\EventRsvpServiceInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -36,7 +37,7 @@ use Throwable;
 /**
  * @spec openspec/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
  */
-class EventRsvpService {
+class EventRsvpService implements EventRsvpServiceInterface {
 	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
 	use PagedObjectReads;
@@ -60,11 +61,6 @@ class EventRsvpService {
 	private const REGISTER = 'portaliq';
 
 	private const SCHEMA = 'eventRsvp';
-
-	/**
-	 * The refusals attempt() answers with; null is a recorded answer.
-	 */
-	public const REASON_NOT_FOUND = 'not_found';
 
 	public const REASON_FULL = 'event-full';
 

@@ -35,7 +35,9 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use InvalidArgumentException;
+use OCA\Portaliq\Kernel\Contracts\PortalJwtServiceInterface;
 use RuntimeException;
+use OCA\Portaliq\Kernel\ScopeClaims;
 use OCA\Portaliq\Service\Signin\YiviAttributes;
 
 /**
@@ -43,7 +45,7 @@ use OCA\Portaliq\Service\Signin\YiviAttributes;
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T02
  */
-class PortalJwtService {
+class PortalJwtService implements PortalJwtServiceInterface {
 	/**
 	 * HMAC algorithm — HS256.
 	 */
@@ -78,14 +80,14 @@ class PortalJwtService {
 	 *
 	 * @var string[]
 	 */
-	public const RESERVED_ASSERTION_CLAIMS = ['sub', 'audience', 'organisation', 'trust', 'jti', 'use', 'iat', 'exp', 'iss'];
+	public const RESERVED_ASSERTION_CLAIMS = ScopeClaims::RESERVED_ASSERTION_CLAIMS;
 
 	/**
 	 * The optional assertion claim that names the company branch the session
 	 * acts for (decision 173). Only the session fills it, so a declared scope
 	 * claim may not take this name either.
 	 */
-	public const BRANCH_ASSERTION_CLAIM = 'branch';
+	public const BRANCH_ASSERTION_CLAIM = ScopeClaims::BRANCH_ASSERTION_CLAIM;
 
 	/**
 	 * The `use` claim value marking a reference session (identity-ways-in-screens
@@ -134,7 +136,7 @@ class PortalJwtService {
 	 *                           so the absolute session lifetime can be enforced from
 	 *                           the true origin, not the most recent mint. Defaults to
 	 *                           `$iat` (a fresh login) when not supplied.
-	 * @param array{number?: string, restricted?: bool, provider?: string} $context The login's context: the branch in
+	 * @param array{number?: string, restricted?: bool, provider?: string, kvk?: string} $context The login's context: the branch in
 	 *                                                                             effect, whether the login restricted
 	 *                                                                             the session to it, and the OIDC
 	 *                                                                             provider the session came through.
@@ -180,6 +182,7 @@ class PortalJwtService {
 				$claims,
 				$this->branchClaims(context: $context),
 				$this->providerClaim(context: $context),
+				$this->kvkClaim(context: $context),
 				$this->attributesClaim(context: $context)
 			)
 		);
@@ -190,7 +193,7 @@ class PortalJwtService {
 	 * login restricted the session to it. Signed only when set, so a session
 	 * without a branch carries exactly the claims it did before.
 	 *
-	 * @param array{number?: string, restricted?: bool, provider?: string} $context The login's context.
+	 * @param array{number?: string, restricted?: bool, provider?: string, kvk?: string} $context The login's context.
 	 *
 	 * @return array<string, mixed>
 	 */
@@ -210,7 +213,7 @@ class PortalJwtService {
 	 * session came through, so signing out can reach that broker. Signed only
 	 * when set: dev-login and the Nextcloud mode carry none.
 	 *
-	 * @param array{number?: string, restricted?: bool, provider?: string} $context The login's context.
+	 * @param array{number?: string, restricted?: bool, provider?: string, kvk?: string} $context The login's context.
 	 *
 	 * @return array<string, string>
 	 */
@@ -221,6 +224,26 @@ class PortalJwtService {
 
 		return ['provider' => (string)$context['provider']];
 	}//end providerClaim()
+
+	/**
+	 * Change site-mandates-the-represented-manage D8: the KVK number of the
+	 * company the session signs in for. Signed only when it is eight digits,
+	 * so a session without a company carries exactly the claims it did before.
+	 *
+	 * @param array<string, mixed> $context The login's context.
+	 *
+	 * @return array<string, string>
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/tasks.md#t0
+	 */
+	private function kvkClaim(array $context): array {
+		$kvk = (string)($context['kvk'] ?? '');
+		if (preg_match('/^\d{8}$/', $kvk) !== 1) {
+			return [];
+		}
+
+		return ['kvk' => $kvk];
+	}//end kvkClaim()
 
 	/**
 	 * Change resident-identity-in-forms T05: the attributes a resident
@@ -371,12 +394,7 @@ class PortalJwtService {
 	 * @spec openspec/changes/archive/2026-09-28-case-actions-sign-a-document/tasks.md#T03
 	 */
 	public static function isReservedScopeClaim(mixed $scopeClaim): bool {
-		if (is_string($scopeClaim) === false || $scopeClaim === '') {
-			return false;
-		}
-
-		$name = self::bareClaimName(scopeClaim: $scopeClaim);
-		return in_array($name, self::RESERVED_ASSERTION_CLAIMS, true) === true || $name === self::BRANCH_ASSERTION_CLAIM;
+		return ScopeClaims::isReserved(scopeClaim: $scopeClaim);
 	}//end isReservedScopeClaim()
 
 	/**

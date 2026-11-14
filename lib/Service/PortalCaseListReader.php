@@ -32,10 +32,11 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Service\Session\SessionTrust;
 use OCA\Portaliq\Contribution\CaseStatusLabelField;
-use OCA\Portaliq\Service\Branch\PortalBranchScope;
+use OCA\Portaliq\Kernel\Contracts\PortalCaseListReaderInterface;
+use OCA\Portaliq\Kernel\Support\PortalBranchScope;
 use OCA\Portaliq\Service\Identity\MandateParties;
+use OCA\Portaliq\Kernel\Support\SessionTrust;
 
 /**
  * Merges every `kind: cases` collection into the subject's own case list.
@@ -48,7 +49,7 @@ use OCA\Portaliq\Service\Identity\MandateParties;
  * reasoning, and the same suppression, as ContentController and
  * ContributionController.
  */
-class PortalCaseListReader {
+class PortalCaseListReader implements PortalCaseListReaderInterface {
 	/**
 	 * The collection kind this reader fans out over.
 	 */

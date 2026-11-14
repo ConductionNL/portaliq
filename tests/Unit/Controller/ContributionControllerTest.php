@@ -32,6 +32,17 @@ use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Portaliq\Service\CaseRowMarker;
+use OCA\Portaliq\Contribution\CreateActionMatcher;
+use OCA\Portaliq\Contribution\CreateBody;
+use OCA\Portaliq\Contribution\InboxMessageFields;
+use OCA\Portaliq\Contribution\PageChoice;
+use OCA\Portaliq\Service\RequestedPortal;
+use OCA\Portaliq\Service\RequiredFieldsGuard;
+use OCA\Portaliq\Contribution\RowIdentifier;
+use OCA\Portaliq\Contribution\ThemeChoice;
+use OCA\Portaliq\Service\VisibleFromGate;
+use OCA\Portaliq\Service\WriteRefusal;
 
 /**
  * Contract v2 controller tests: the fail-closed minTrust re-checks on the
@@ -2433,7 +2444,18 @@ class ContributionControllerTest extends TestCase {
 			$this->createMock(AuditTrailService::class),
 			$this->createMock(SubmissionReceiptService::class),
 			$this->createMock(NotificationDispatchService::class),
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(LoggerInterface::class),
+			new CaseRowMarker(),
+			new CreateActionMatcher(),
+			new CreateBody(),
+			new InboxMessageFields(),
+			new PageChoice(),
+			new RequestedPortal(),
+			new RequiredFieldsGuard(),
+			new RowIdentifier(),
+			new ThemeChoice(),
+			new VisibleFromGate(),
+			new WriteRefusal()
 		);
 
 		$response = $controller->uploadFile('portaliq', 'exampleDocument', 'd-1');
@@ -2711,7 +2733,18 @@ class ContributionControllerTest extends TestCase {
 			$this->createMock(AuditTrailService::class),
 			$this->createMock(SubmissionReceiptService::class),
 			$this->createMock(NotificationDispatchService::class),
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(LoggerInterface::class),
+			new CaseRowMarker(),
+			new CreateActionMatcher(),
+			new CreateBody(),
+			new InboxMessageFields(),
+			new PageChoice(),
+			new RequestedPortal(),
+			new RequiredFieldsGuard(),
+			new RowIdentifier(),
+			new ThemeChoice(),
+			new VisibleFromGate(),
+			new WriteRefusal()
 		);
 
 	}//end controllerWithCollectionParam()
@@ -2834,6 +2867,17 @@ class ContributionControllerTest extends TestCase {
 			($receiptService ?? $this->createMock(SubmissionReceiptService::class)),
 			($notificationDispatch ?? $this->createMock(NotificationDispatchService::class)),
 			$this->createMock(LoggerInterface::class),
+			new CaseRowMarker(),
+			new CreateActionMatcher(),
+			new CreateBody(),
+			new InboxMessageFields(),
+			new PageChoice(),
+			new RequestedPortal(),
+			new RequiredFieldsGuard(),
+			new RowIdentifier(),
+			new ThemeChoice(),
+			new VisibleFromGate(),
+			new WriteRefusal(),
 			null,
 			null,
 			$caseTypes,
