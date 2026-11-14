@@ -159,13 +159,27 @@ class MandateStore {
 			limit: 5
 		);
 		foreach ($rows as $row) {
-			if (is_array($row) === true && hash_equals((string)($row['tokenHash'] ?? ''), $hash) === true && isset($row['mandate']) === true) {
+			if ($this->isInvitationFor(row: $row, hash: $hash) === true) {
 				return $row;
 			}
 		}
 
 		return null;
 	}//end invitationByToken()
+
+	/**
+	 * Whether a row is the invitation of a mandate whose token hashes to the hash.
+	 *
+	 * @param mixed  $row  The row.
+	 * @param string $hash The token's hash.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md
+	 */
+	private function isInvitationFor(mixed $row, string $hash): bool {
+		return is_array($row) === true && hash_equals((string)($row['tokenHash'] ?? ''), $hash) === true && isset($row['mandate']) === true;
+	}//end isInvitationFor()
 
 	/**
 	 * @param string               $schema The schema.
