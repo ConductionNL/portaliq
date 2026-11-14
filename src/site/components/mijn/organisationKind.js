@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 //
 // The words the site names the organisation's kind with: "het waterschap",
-// "de gemeente", "de organisatie". The kind is the portal's organisation
+// "de provincie", "de organisatie". The kind is the portal's organisation
 // type label (`organisationTypeLabel`, a TOOI concept's Dutch label stored on
 // save), never assumed: a portal without one is "de organisatie".
 //

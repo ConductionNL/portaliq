@@ -25,7 +25,9 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Kernel\Contracts\SiteShellInterface;
+use OCA\Portaliq\Service\Cms\SiteCreator;
 use OCA\Portaliq\Service\Cms\SiteIcon;
+use OCA\Portaliq\Kernel\Contracts\SiteOrganisationInterface;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
@@ -72,6 +74,7 @@ class SiteShell implements SiteShellInterface {
 	 * @param PortalNoticeReaderInterface          $notices        The notices running on the signed-in surface now.
 	 * @param PortalRuntimeConfigResolverInterface $configResolver Resolves the runtime config built from the portal.
 	 * @param SiteIcon|null               $siteIcon       The portal's own tab icon; null leaves it to the theme.
+	 * @param SiteOrganisationInterface|null $siteOrganisation Names the portal's organisation in the head's creator.
 	 */
 	public function __construct(
 		private readonly IRequest $request,
@@ -82,6 +85,7 @@ class SiteShell implements SiteShellInterface {
 		private readonly PortalNoticeReaderInterface $notices,
 		private readonly PortalRuntimeConfigResolverInterface $configResolver,
 		private readonly ?SiteIcon $siteIcon=null,
+		private readonly ?SiteOrganisationInterface $siteOrganisation=null,
 	) {
 		$this->addressing = new SiteAddressing(portalResolver: $portalResolver, urlGenerator: $urlGenerator);
 	}//end __construct()
@@ -164,6 +168,8 @@ class SiteShell implements SiteShellInterface {
 			// REQ-PIA-002). The template falls back to the theme's icon, then
 			// this app's own mark.
 			'portalIcon'      => $this->sitePortalIcon(),
+			// Who made the pages, with the organisation's kind (REQ-PIA-003).
+			'creator'         => $this->siteCreator(),
 		];
 	}//end templateParams()
 
@@ -391,6 +397,26 @@ class SiteShell implements SiteShellInterface {
 			return '';
 		}
 	}//end sitePortalIcon()
+
+	/**
+	 * The head's `DCTERMS.creator`: the portal's organisation and its type, or ''.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+	 */
+	private function siteCreator(): string {
+		try {
+			$portal = $this->portalResolver->resolve(request: $this->request, portalSlug: $this->requestedPortalSlug());
+			if ($portal === null) {
+				return '';
+			}
+
+			return SiteCreator::content(portal: $portal, organisation: $this->siteOrganisation?->forPortal(portal: $portal));
+		} catch (\Throwable) {
+			return '';
+		}
+	}//end siteCreator()
 
 	/**
 	 * The sign-in settings the site needs at boot, from the same resolver

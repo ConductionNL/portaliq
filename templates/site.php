@@ -320,6 +320,9 @@ $favicon = SiteIcon::first((string)($_['portalIcon'] ?? ''), $themeIcon, $asset(
     <?php } ?>
     <meta name="robots" content="<?php p(($head['robots'] ?? '') !== '' ? $head['robots'] : 'noindex'); ?>">
     <meta property="og:title" content="<?php p($headTitle); ?>">
+    <?php if ((string)($_['creator'] ?? '') !== '') { ?>
+    <meta name="DCTERMS.creator" content="<?php p((string)$_['creator']); ?>">
+    <?php } ?>
     <meta property="og:type" content="website">
     <?php if (($head['canonical'] ?? '') !== '') { ?>
     <link rel="canonical" href="<?php p($head['canonical']); ?>">

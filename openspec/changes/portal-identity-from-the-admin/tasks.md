@@ -82,9 +82,12 @@ that is not in `check:specs` does not run in CI.
     (`fileLine`) and a mandate's "gegeven door ..." line read the portal's `organisationTypeLabel`, which
     `ContentController::site()` sends and `App.vue` provides; the report pages say "de organisatie".
     Node tests in `tests/mijn-components.spec.mjs`.
-  - Left: the footer line and `<meta name="DCTERMS.creator">` in `templates/site.php`. The template has
-    the portal's title but not the organisation's name (`SiteOrganisation` is wired into the content API
-    only), so the creator needs that name passed to the template first.
+  - Built: `<meta name="DCTERMS.creator">` in `templates/site.php` from `SiteShell`'s `creator`
+    (`lib/Service/Cms/SiteCreator.php`: the organisation's name, else the portal's title, with the type
+    label), tests in `tests/Unit/Service/Cms/SiteCreatorTest.php`, `SiteShellTest` and
+    `tests/site-head.spec.mjs`.
+  - Left: the footer line. The proposal does not say what the footer line reads or where it sits in the
+    footer's named keys, so it waits for that wording.
 
 ## 4. Live
 
