@@ -266,6 +266,7 @@ export default {
 		'Expected decision': 'Verwacht besluit',
 		'Ready by': 'Uiterlijk klaar op',
 		'Next step: {step}': 'Volgende stap: {step}',
+		Outcome: 'Uitkomst',
 		'Yes, remove my account': 'Ja, verwijder mijn account',
 		'You have no e-mail address on your account.':
 			'Er staat geen e-mailadres bij uw account.',
@@ -551,6 +552,7 @@ export default {
 		'Expected decision': 'Expected decision',
 		'Ready by': 'Ready by',
 		'Next step: {step}': 'Next step: {step}',
+		Outcome: 'Outcome',
 		'Yes, remove my account': 'Yes, remove my account',
 		'You have no e-mail address on your account.':
 			'You have no e-mail address on your account.',
