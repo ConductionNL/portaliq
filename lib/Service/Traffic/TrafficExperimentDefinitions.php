@@ -112,6 +112,27 @@ class TrafficExperimentDefinitions {
 			return null;
 		}
 
+		$head = $this->head(row: $row);
+		if ($head === null) {
+			return null;
+		}
+
+		$variants = $this->variants(value: ($row['variants'] ?? null), page: $head['page']);
+		if (count($variants) < 2) {
+			return null;
+		}
+
+		return $this->experiment(row: $row, head: $head, variants: $variants);
+	}
+
+	/**
+	 * The experiment's id, status and page, or null when one is unusable or it is a draft.
+	 *
+	 * @param array<string, mixed> $row The configured row.
+	 *
+	 * @return array{id: string, status: string, page: string}|null
+	 */
+	private function head(array $row): array|null {
 		$id = $this->token(value: ($row['id'] ?? null));
 		$status = (string)($row['status'] ?? 'draft');
 		$page = $this->route(value: ($row['page'] ?? null));
@@ -119,16 +140,25 @@ class TrafficExperimentDefinitions {
 			return null;
 		}
 
-		$variants = $this->variants(value: ($row['variants'] ?? null), page: $page);
-		if (count($variants) < 2) {
-			return null;
-		}
+		return ['id' => $id, 'status' => $status, 'page' => $page];
+	}
 
+	/**
+	 * The experiment from its row, head and variants.
+	 *
+	 * @param array<string, mixed>                            $row      The configured row.
+	 * @param array{id: string, status: string, page: string} $head     The id, status and page.
+	 * @param array<int, array<string, mixed>>                $variants The usable variants.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function experiment(array $row, array $head, array $variants): array {
+		$id = $head['id'];
 		return [
 			'id' => $id,
 			'name' => $this->text(value: ($row['name'] ?? null), max: self::MAX_NAME, fallback: $id),
-			'status' => $status,
-			'page' => $page,
+			'status' => $head['status'],
+			'page' => $head['page'],
 			'variants' => $variants,
 			'goal' => $this->token(value: ($row['goal'] ?? null)),
 			'startedAt' => $this->instant(value: ($row['startedAt'] ?? null)),
@@ -154,31 +184,61 @@ class TrafficExperimentDefinitions {
 
 		$out = [];
 		foreach (array_slice(array_values($value), 0, self::MAX_VARIANTS) as $row) {
-			if (is_array($row) === false) {
+			$id = $this->newVariantId(row: $row, seen: $out);
+			if ($id === '') {
 				continue;
 			}
 
-			$id = $this->token(value: ($row['id'] ?? null));
-			if ($id === '' || isset($out[$id]) === true) {
-				continue;
-			}
-
-			$variant = [
-				'id' => $id,
-				'name' => $this->text(value: ($row['name'] ?? null), max: self::MAX_NAME, fallback: $id),
-				'weight' => $this->weight(value: ($row['weight'] ?? null)),
-				'changes' => $this->changes(value: ($row['changes'] ?? null)),
-			];
-			$route = $this->route(value: ($row['pageRoute'] ?? null));
-			if ($route !== '' && $route !== $page) {
-				unset($variant['changes']);
-				$variant['pageRoute'] = $route;
-			}
-
-			$out[$id] = $variant;
+			$out[$id] = $this->variant(row: $row, id: $id, page: $page);
 		}
 
 		return array_values($out);
+	}
+
+	/**
+	 * The variant's id, or '' when the row is unusable or its id was seen before.
+	 *
+	 * @param mixed                $row  The configured variant.
+	 * @param array<string, mixed> $seen The variants so far, by id.
+	 *
+	 * @return string
+	 */
+	private function newVariantId(mixed $row, array $seen): string {
+		if (is_array($row) === false) {
+			return '';
+		}
+
+		$id = $this->token(value: ($row['id'] ?? null));
+		if ($id === '' || isset($seen[$id]) === true) {
+			return '';
+		}
+
+		return $id;
+	}
+
+	/**
+	 * One usable variant: its page route when it names another page, else its text changes.
+	 *
+	 * @param array<string, mixed> $row  The configured variant.
+	 * @param string               $id   The variant's id.
+	 * @param string               $page The experiment's page.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function variant(array $row, string $id, string $page): array {
+		$variant = [
+			'id' => $id,
+			'name' => $this->text(value: ($row['name'] ?? null), max: self::MAX_NAME, fallback: $id),
+			'weight' => $this->weight(value: ($row['weight'] ?? null)),
+			'changes' => $this->changes(value: ($row['changes'] ?? null)),
+		];
+		$route = $this->route(value: ($row['pageRoute'] ?? null));
+		if ($route !== '' && $route !== $page) {
+			unset($variant['changes']);
+			$variant['pageRoute'] = $route;
+		}
+
+		return $variant;
 	}
 
 	/**

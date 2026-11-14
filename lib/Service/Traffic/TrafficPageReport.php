@@ -264,18 +264,33 @@ class TrafficPageReport implements TrafficPageReportInterface {
 				continue;
 			}
 
-			$from = $this->paths->route(value: (string)($row['from'] ?? ''));
-			$to = $this->paths->route(value: (string)($row['to'] ?? ''));
-			$count = $this->int(value: ($row['count'] ?? 0));
-			if ($to === $route && $from !== $route) {
-				$lists['previous'][$from] ??= ['path' => $from, 'count' => 0];
-				$lists['previous'][$from]['count'] += $count;
-			}
+			$lists = $this->addTransition(lists: $lists, row: $row, route: $route);
+		}
 
-			if ($from === $route && $to !== $route) {
-				$lists['next'][$to] ??= ['path' => $to, 'count' => 0];
-				$lists['next'][$to]['count'] += $count;
-			}
+		return $lists;
+	}
+
+	/**
+	 * Add one transition into or out of the route to its list.
+	 *
+	 * @param array<string, array<string, array<string, mixed>>> $lists The accumulators.
+	 * @param array<string, mixed>                               $row   One transition.
+	 * @param string                                             $route The route.
+	 *
+	 * @return array<string, array<string, array<string, mixed>>> The accumulators.
+	 */
+	private function addTransition(array $lists, array $row, string $route): array {
+		$from = $this->paths->route(value: (string)($row['from'] ?? ''));
+		$to = $this->paths->route(value: (string)($row['to'] ?? ''));
+		$count = $this->int(value: ($row['count'] ?? 0));
+		if ($to === $route && $from !== $route) {
+			$lists['previous'][$from] ??= ['path' => $from, 'count' => 0];
+			$lists['previous'][$from]['count'] += $count;
+		}
+
+		if ($from === $route && $to !== $route) {
+			$lists['next'][$to] ??= ['path' => $to, 'count' => 0];
+			$lists['next'][$to]['count'] += $count;
 		}
 
 		return $lists;

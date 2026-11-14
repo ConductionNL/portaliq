@@ -140,19 +140,15 @@ class PortalEmailVerification implements PortalEmailVerificationInterface {
 		$now  = ($now ?? time());
 		$slug = (string)($site['slug'] ?? '');
 		$key  = $this->keyOf(portal: $slug, route: $route, email: $email);
-		$held = $cache->get('code:'.$key);
-		if (is_array($held) === true && ($now - (int)($held['sentAt'] ?? 0)) < self::RESEND_AFTER) {
+		if ($this->sentRecently(cache: $cache, key: $key, now: $now) === true) {
 			return self::WAIT;
 		}
 
-		if ($this->spend(cache: $cache, name: 'address:'.hash('sha256', $email), limit: self::PER_ADDRESS, now: $now) === false
-			|| $this->spend(cache: $cache, name: 'client:'.hash('sha256', $client), limit: self::PER_CLIENT, now: $now) === false
-		) {
+		if ($this->throttled(cache: $cache, email: $email, client: $client, now: $now) === true) {
 			return self::THROTTLED;
 		}
 
-		$code = $this->random->generate(6, ISecureRandom::CHAR_DIGITS);
-		$cache->set('code:'.$key, ['hash' => $this->hashOf(key: $key, code: $code), 'sentAt' => $now, 'tries' => 0], self::CODE_TTL);
+		$code = $this->storedCode(cache: $cache, key: $key, now: $now);
 		if ($this->mailer->send(email: $email, code: $code, site: $site) === false) {
 			$cache->remove('code:'.$key);
 			return self::FAILED;
@@ -160,6 +156,58 @@ class PortalEmailVerification implements PortalEmailVerificationInterface {
 
 		return self::SENT;
 	}//end request()
+
+	/**
+	 * Whether a code went to this key too recently to send another.
+	 *
+	 * @param ICache $cache The store.
+	 * @param string $key   The portal, route and address key.
+	 * @param int    $now   The unix second.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#t03
+	 */
+	private function sentRecently(ICache $cache, string $key, int $now): bool {
+		$held = $cache->get('code:'.$key);
+
+		return is_array($held) === true && ($now - (int)($held['sentAt'] ?? 0)) < self::RESEND_AFTER;
+	}//end sentRecently()
+
+	/**
+	 * Whether the address or the client has used up its sends; each check spends one.
+	 *
+	 * @param ICache $cache  The store.
+	 * @param string $email  The address.
+	 * @param string $client The client's address.
+	 * @param int    $now    The unix second.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#t03
+	 */
+	private function throttled(ICache $cache, string $email, string $client, int $now): bool {
+		return $this->spend(cache: $cache, name: 'address:'.hash('sha256', $email), limit: self::PER_ADDRESS, now: $now) === false
+			|| $this->spend(cache: $cache, name: 'client:'.hash('sha256', $client), limit: self::PER_CLIENT, now: $now) === false;
+	}//end throttled()
+
+	/**
+	 * A new code, stored hashed under the key with no tries yet.
+	 *
+	 * @param ICache $cache The store.
+	 * @param string $key   The portal, route and address key.
+	 * @param int    $now   The unix second.
+	 *
+	 * @return string The code.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#t03
+	 */
+	private function storedCode(ICache $cache, string $key, int $now): string {
+		$code = $this->random->generate(6, ISecureRandom::CHAR_DIGITS);
+		$cache->set('code:'.$key, ['hash' => $this->hashOf(key: $key, code: $code), 'sentAt' => $now, 'tries' => 0], self::CODE_TTL);
+
+		return $code;
+	}//end storedCode()
 
 	/**
 	 * Check a code. A right code answers a proof; a wrong one counts as a try.
@@ -183,25 +231,67 @@ class PortalEmailVerification implements PortalEmailVerificationInterface {
 
 		$now  = ($now ?? time());
 		$key  = $this->keyOf(portal: $portal, route: $route, email: $email);
-		$held = $cache->get('code:'.$key);
-		if (is_array($held) === false || ($now - (int)($held['sentAt'] ?? 0)) > self::CODE_TTL) {
+		$held = $this->liveCode(cache: $cache, key: $key, now: $now);
+		if ($held === null) {
 			return ['ok' => false, 'error' => self::EXPIRED, 'proof' => ''];
 		}
 
-		if ((int)($held['tries'] ?? 0) >= self::MAX_TRIES) {
-			$cache->remove('code:'.$key);
-			return ['ok' => false, 'error' => self::TOO_MANY, 'proof' => ''];
-		}
-
-		if (hash_equals((string)$held['hash'], $this->hashOf(key: $key, code: trim($code))) === false) {
-			$held['tries'] = ((int)($held['tries'] ?? 0) + 1);
-			$cache->set('code:'.$key, $held, self::CODE_TTL);
-			return ['ok' => false, 'error' => self::WRONG, 'proof' => ''];
+		$failure = $this->codeFailure(cache: $cache, key: $key, held: $held, code: $code);
+		if ($failure !== null) {
+			return ['ok' => false, 'error' => $failure, 'proof' => ''];
 		}
 
 		$cache->remove('code:'.$key);
 		return ['ok' => true, 'error' => '', 'proof' => $this->proofFor(portal: $portal, route: $route, email: $email, now: $now)];
 	}//end check()
+
+	/**
+	 * The stored code under the key, or null when there is none or it expired.
+	 *
+	 * @param ICache $cache The store.
+	 * @param string $key   The portal, route and address key.
+	 * @param int    $now   The unix second.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#t03
+	 */
+	private function liveCode(ICache $cache, string $key, int $now): array|null {
+		$held = $cache->get('code:'.$key);
+		if (is_array($held) === false || ($now - (int)($held['sentAt'] ?? 0)) > self::CODE_TTL) {
+			return null;
+		}
+
+		return $held;
+	}//end liveCode()
+
+	/**
+	 * Why a typed code fails, or null when it is right. Too many tries drops
+	 * the code; a wrong one counts as a try.
+	 *
+	 * @param ICache               $cache The store.
+	 * @param string               $key   The portal, route and address key.
+	 * @param array<string, mixed> $held  The stored code.
+	 * @param string               $code  What the resident typed.
+	 *
+	 * @return string|null TOO_MANY, WRONG or null.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#t03
+	 */
+	private function codeFailure(ICache $cache, string $key, array $held, string $code): string|null {
+		if ((int)($held['tries'] ?? 0) >= self::MAX_TRIES) {
+			$cache->remove('code:'.$key);
+			return self::TOO_MANY;
+		}
+
+		if (hash_equals((string)$held['hash'], $this->hashOf(key: $key, code: trim($code))) === false) {
+			$held['tries'] = ((int)($held['tries'] ?? 0) + 1);
+			$cache->set('code:'.$key, $held, self::CODE_TTL);
+			return self::WRONG;
+		}
+
+		return null;
+	}//end codeFailure()
 
 	/**
 	 * Whether a proof was issued here for this address on this form and still counts.

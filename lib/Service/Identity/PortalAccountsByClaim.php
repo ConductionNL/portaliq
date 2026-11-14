@@ -145,14 +145,7 @@ class PortalAccountsByClaim {
 		$index = [];
 		for ($page = 0; $page < self::MAX_PAGES; $page++) {
 			$rows = $this->page(objectService: $objectService, offset: ($page * self::PAGE));
-			foreach ($rows as $row) {
-				$account = $this->activeAccount(row: $row);
-				$held = ($account['claims'][$address['appId']][$address['claimName']] ?? null);
-				$admitted = ($account !== null && is_string($held) === true && $held !== '');
-				if ($admitted === true && $this->admitted(address: $address, account: $account) === true) {
-					$index[$held][] = $account;
-				}
-			}
+			$index = $this->withAdmittedAccounts(index: $index, rows: $rows, address: $address);
 
 			if (count($rows) < self::PAGE) {
 				break;
@@ -161,6 +154,46 @@ class PortalAccountsByClaim {
 
 		return $index;
 	}//end index()
+
+	/**
+	 * The index with the active accounts of one page that hold the claim, and
+	 * whose app lets it stand, added under the claim's value.
+	 *
+	 * @param array<string, array<int, array<string, mixed>>> $index   The index so far.
+	 * @param array<int, mixed>                               $rows    One page of accounts.
+	 * @param array{appId: string, claimName: string}         $address The claim's app and name.
+	 *
+	 * @return array<string, array<int, array<string, mixed>>>
+	 */
+	private function withAdmittedAccounts(array $index, array $rows, array $address): array {
+		foreach ($rows as $row) {
+			$account = $this->activeAccount(row: $row);
+			$held = $this->admittedClaim(account: $account, address: $address);
+			if ($held !== null) {
+				$index[$held][] = $account;
+			}
+		}
+
+		return $index;
+	}//end withAdmittedAccounts()
+
+	/**
+	 * The claim value an active account holds when its app lets it stand, or null.
+	 *
+	 * @param array<string, mixed>|null               $account The active account, or null.
+	 * @param array{appId: string, claimName: string} $address The claim's app and name.
+	 *
+	 * @return string|null
+	 */
+	private function admittedClaim(array|null $account, array $address): string|null {
+		$held = ($account['claims'][$address['appId']][$address['claimName']] ?? null);
+		$admitted = ($account !== null && is_string($held) === true && $held !== '');
+		if ($admitted === true && $this->admitted(address: $address, account: $account) === true) {
+			return $held;
+		}
+
+		return null;
+	}//end admittedClaim()
 
 	/**
 	 * Whether the app that owns the claim lets it stand for the account's organisation.

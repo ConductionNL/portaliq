@@ -75,6 +75,22 @@ class AccessibilityRun implements AccessibilityRunInterface {
 			return ['error' => 'axe_version_missing'];
 		}
 
+		$rows = $this->rowsOf(pages: $pages);
+		if ($rows === [] || count($rows) > self::MAX_PAGES) {
+			return ['error' => 'pages_invalid'];
+		}
+
+		return $this->run(axeVersion: $axeVersion, tags: $tags, theme: $theme, rows: $rows);
+	}//end normalise()
+
+	/**
+	 * The page rows that name a page.
+	 *
+	 * @param array<array-key, mixed> $pages Per page what was found.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function rowsOf(array $pages): array {
 		$rows = [];
 		foreach ($pages as $page) {
 			$row = $this->page(page: $page);
@@ -83,17 +99,27 @@ class AccessibilityRun implements AccessibilityRunInterface {
 			}
 		}
 
-		if ($rows === [] || count($rows) > self::MAX_PAGES) {
-			return ['error' => 'pages_invalid'];
-		}
+		return $rows;
+	}//end rowsOf()
 
+	/**
+	 * The run's fields.
+	 *
+	 * @param string                           $axeVersion The axe-core version.
+	 * @param array<array-key, mixed>          $tags       The rule sets.
+	 * @param string                           $theme      The theme in use.
+	 * @param array<int, array<string, mixed>> $rows       The page rows.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function run(string $axeVersion, array $tags, string $theme, array $rows): array {
 		return [
 			'axeVersion' => $axeVersion,
 			'tags' => array_values(array_unique(array_filter($tags, static fn ($tag): bool => is_string($tag) === true && $tag !== ''))),
 			'theme' => trim($theme),
 			'pages' => $rows,
 		];
-	}//end normalise()
+	}//end run()
 
 	/**
 	 * One page row, or null when it names no page.
@@ -107,20 +133,59 @@ class AccessibilityRun implements AccessibilityRunInterface {
 			return null;
 		}
 
+		$url = $this->urlOf(page: $page);
+		if ($url === null) {
+			return null;
+		}
+
+		if (($page['measured'] ?? null) !== true) {
+			return $this->unmeasured(url: $url, page: $page);
+		}
+
+		return ['url' => $url, 'measured' => true, 'violations' => $this->violationsOf(page: $page)];
+	}//end page()
+
+	/**
+	 * The page's address, or null when it is missing or too long.
+	 *
+	 * @param array<array-key, mixed> $page The posted row.
+	 *
+	 * @return string|null
+	 */
+	private function urlOf(array $page): string|null {
 		$url = trim((string)($page['url'] ?? ''));
 		if ($url === '' || strlen($url) > 500) {
 			return null;
 		}
 
-		if (($page['measured'] ?? null) !== true) {
-			$reason = trim((string)($page['reason'] ?? ''));
-			if ($reason === '') {
-				$reason = self::NO_REASON;
-			}
+		return $url;
+	}//end urlOf()
 
-			return ['url' => $url, 'measured' => false, 'reason' => mb_substr($reason, 0, 300)];
+	/**
+	 * The row of a page that was not measured, with why.
+	 *
+	 * @param string                  $url  The page's address.
+	 * @param array<array-key, mixed> $page The posted row.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function unmeasured(string $url, array $page): array {
+		$reason = trim((string)($page['reason'] ?? ''));
+		if ($reason === '') {
+			$reason = self::NO_REASON;
 		}
 
+		return ['url' => $url, 'measured' => false, 'reason' => mb_substr($reason, 0, 300)];
+	}//end unmeasured()
+
+	/**
+	 * The page's violations that axe-core reports.
+	 *
+	 * @param array<array-key, mixed> $page The posted row.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function violationsOf(array $page): array {
 		$violations = [];
 		foreach ((array)($page['violations'] ?? []) as $violation) {
 			$clean = $this->violation(violation: $violation);
@@ -129,8 +194,8 @@ class AccessibilityRun implements AccessibilityRunInterface {
 			}
 		}
 
-		return ['url' => $url, 'measured' => true, 'violations' => $violations];
-	}//end page()
+		return $violations;
+	}//end violationsOf()
 
 	/**
 	 * One violation, or null when it is not one axe-core reports.
@@ -151,7 +216,20 @@ class AccessibilityRun implements AccessibilityRunInterface {
 		}
 
 		$clean = ['rule' => $rule, 'impact' => $impact, 'nodes' => max(0, (int)($violation['nodes'] ?? 0))];
-		$help  = trim((string)($violation['help'] ?? ''));
+
+		return $this->withHelp(clean: $clean, violation: $violation);
+	}//end violation()
+
+	/**
+	 * The violation with its help text and a safe help address, when given.
+	 *
+	 * @param array<string, mixed>    $clean     The violation so far.
+	 * @param array<array-key, mixed> $violation The posted violation.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withHelp(array $clean, array $violation): array {
+		$help = trim((string)($violation['help'] ?? ''));
 		if ($help !== '') {
 			$clean['help'] = mb_substr($help, 0, 300);
 		}
@@ -162,5 +240,5 @@ class AccessibilityRun implements AccessibilityRunInterface {
 		}
 
 		return $clean;
-	}//end violation()
+	}//end withHelp()
 }//end class

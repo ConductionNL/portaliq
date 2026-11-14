@@ -176,7 +176,7 @@ class NewsController extends Controller {
 	): JSONResponse {
 		$this->requireAuthenticatedStaff();
 
-		if ($title === '' || $body === '' || $this->hasAnyTarget(target: $target) === false) {
+		if ($this->isValidChange(title: $title, body: $body, target: $target) === false) {
 			return new JSONResponse(['error' => 'invalid_target'], Http::STATUS_BAD_REQUEST);
 		}
 
@@ -186,12 +186,43 @@ class NewsController extends Controller {
 			$data += $this->website(public: $public, portal: $portal, audienceLabel: $audienceLabel);
 		}
 
+		$data = $this->withEventRef(data: $data, eventRef: $eventRef);
+
+		return $this->write(id: $id, data: $data);
+	}//end update()
+
+	/**
+	 * Whether a change has a title, a body and an audience.
+	 *
+	 * @param string               $title  The title.
+	 * @param string               $body   The body.
+	 * @param array<string, mixed> $target The target (schoolRef/groupRefs/childRefs).
+	 *
+	 * @return bool
+	 */
+	private function isValidChange(string $title, string $body, array $target): bool {
+		if ($title === '' || $body === '' || $this->hasAnyTarget(target: $target) === false) {
+			return false;
+		}
+
+		return true;
+	}//end isValidChange()
+
+	/**
+	 * The change with the event whose sign-up the article carries; null leaves it out.
+	 *
+	 * @param array<string, mixed> $data     The change so far.
+	 * @param string|null          $eventRef The event; empty clears it, null leaves it.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withEventRef(array $data, string|null $eventRef): array {
 		if ($eventRef !== null) {
 			$data['eventRef'] = $this->eventRef(value: $eventRef);
 		}
 
-		return $this->write(id: $id, data: $data);
-	}//end update()
+		return $data;
+	}//end withEventRef()
 
 	/**
 	 * The schools and groups the News screen offers as a news item's audience.

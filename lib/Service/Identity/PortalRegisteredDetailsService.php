@@ -38,6 +38,8 @@ use Throwable;
 
  *
  * @spec openspec/changes/identity-registered-details/specs/registered-details/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class PortalRegisteredDetailsService implements PortalRegisteredDetailsServiceInterface {
 
@@ -208,12 +210,48 @@ class PortalRegisteredDetailsService implements PortalRegisteredDetailsServiceIn
 	 * @spec openspec/changes/identity-registered-details/tasks.md#t07
 	 */
 	private function residentsAt(array $raw): ?int {
+		$identifier = $this->addressObjectOf(raw: $raw);
+		if ($identifier === null) {
+			return null;
+		}
+
+		[$answer, $cause] = $this->residentCount(identifier: $identifier);
+		$total = $this->totalOf(answer: $answer);
+		if ($total === null) {
+			$this->logger->info(
+				'Portaliq: the count of residents at an address is not available',
+				['provider' => 'BrpPersonProvider', 'cause' => $cause]
+			);
+		}
+
+		return $total;
+	}//end residentsAt()
+
+	/**
+	 * The person's address object id when it is one: sixteen digits.
+	 *
+	 * @param array<string, mixed> $raw The HaalCentraal person.
+	 *
+	 * @return string|null
+	 */
+	private function addressObjectOf(array $raw): string|null {
 		$place      = (array)($raw['verblijfplaats'] ?? []);
 		$identifier = ($place['adresseerbaarObjectIdentificatie'] ?? (((array)($place['verblijfadres'] ?? []))['adresseerbaarObjectIdentificatie'] ?? ''));
 		if (is_string($identifier) === false || preg_match('/^\d{16}$/', $identifier) !== 1) {
 			return null;
 		}
 
+		return $identifier;
+	}//end addressObjectOf()
+
+	/**
+	 * Ask the person provider how many people live at the address object.
+	 *
+	 * @param string $identifier The address object id.
+	 *
+	 * @return array{0: array<mixed>, 1: string} The provider's answer and the cause it gives.
+	 */
+	private function residentCount(string $identifier): array {
 		$cause  = 'provider_missing';
 		$answer = [];
 		try {
@@ -227,16 +265,23 @@ class PortalRegisteredDetailsService implements PortalRegisteredDetailsServiceIn
 			$cause  = 'provider_missing';
 		}
 
+		return [$answer, $cause];
+	}//end residentCount()
+
+	/**
+	 * The count in the provider's answer, or null when it gives none.
+	 *
+	 * @param array<mixed> $answer The provider's answer.
+	 *
+	 * @return int|null
+	 */
+	private function totalOf(array $answer): int|null {
 		if (($answer['unavailable'] ?? false) !== true && is_int($answer['total'] ?? null) === true && $answer['total'] >= 0) {
 			return $answer['total'];
 		}
 
-		$this->logger->info(
-			'Portaliq: the count of residents at an address is not available',
-			['provider' => 'BrpPersonProvider', 'cause' => $cause]
-		);
 		return null;
-	}//end residentsAt()
+	}//end totalOf()
 
 	/**
 	 * The company record for one KvK number.
@@ -277,6 +322,28 @@ class PortalRegisteredDetailsService implements PortalRegisteredDetailsServiceIn
 	 * @return array<string, mixed>|null
 	 */
 	private function lookup(string $class, string $method, string $identifier): ?array {
+		[$answer, $cause] = $this->called(class: $class, method: $method, identifier: $identifier);
+		if ($answer !== null && ($answer['unavailable'] ?? false) !== true) {
+			return $answer;
+		}
+
+		$this->logger->warning(
+			'Portaliq: registered details cannot be read',
+			['provider' => substr($class, (int)strrpos($class, '\\') + 1), 'cause' => $cause]
+		);
+		return null;
+	}//end lookup()
+
+	/**
+	 * Call the provider's lookup method.
+	 *
+	 * @param string $class      The provider class.
+	 * @param string $method     The lookup method.
+	 * @param string $identifier The BSN or KvK number.
+	 *
+	 * @return array{0: array<mixed>|null, 1: string} The provider's answer, or null when it is missing, and the cause.
+	 */
+	private function called(string $class, string $method, string $identifier): array {
 		$cause  = 'provider_missing';
 		$answer = null;
 		try {
@@ -290,16 +357,8 @@ class PortalRegisteredDetailsService implements PortalRegisteredDetailsServiceIn
 			$cause  = 'provider_missing';
 		}
 
-		if ($answer !== null && ($answer['unavailable'] ?? false) !== true) {
-			return $answer;
-		}
-
-		$this->logger->warning(
-			'Portaliq: registered details cannot be read',
-			['provider' => substr($class, (int)strrpos($class, '\\') + 1), 'cause' => $cause]
-		);
-		return null;
-	}//end lookup()
+		return [$answer, $cause];
+	}//end called()
 
 	/**
 	 * Whether a value is a BSN: nine digits passing the eleven test, the same

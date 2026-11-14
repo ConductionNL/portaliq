@@ -55,6 +55,19 @@ class PortalHelp {
 			return [];
 		}
 
+		$out = $this->keyTexts(help: $help);
+
+		return $this->withContact(out: $out, help: $help);
+	}//end details()
+
+	/**
+	 * The help texts under the known keys, left out when empty.
+	 *
+	 * @param array<array-key, mixed> $help The record's `help`.
+	 *
+	 * @return array<string, string>
+	 */
+	private function keyTexts(array $help): array {
 		$out = [];
 		foreach (self::KEYS as $key) {
 			$text = $this->text(value: ($help[$key] ?? null));
@@ -63,6 +76,18 @@ class PortalHelp {
 			}
 		}
 
+		return $out;
+	}//end keyTexts()
+
+	/**
+	 * The details with a valid e-mail address and a local or https image, when given.
+	 *
+	 * @param array<string, string>   $out  The details so far.
+	 * @param array<array-key, mixed> $help The record's `help`.
+	 *
+	 * @return array<string, string>
+	 */
+	private function withContact(array $out, array $help): array {
 		$email = $this->text(value: ($help['email'] ?? null));
 		if (filter_var($email, FILTER_VALIDATE_EMAIL) !== false) {
 			$out['email'] = $email;
@@ -74,7 +99,7 @@ class PortalHelp {
 		}
 
 		return $out;
-	}//end details()
+	}//end withContact()
 
 	/**
 	 * The help text of each part of Mijn omgeving; unknown parts and empty

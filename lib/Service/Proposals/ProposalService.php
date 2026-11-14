@@ -396,18 +396,7 @@ class ProposalService implements ProposalServiceInterface {
 	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	private function applyProposal(array $proposal, string $reviewer): array {
-		$values = [];
-		foreach ((array)($proposal['changes'] ?? []) as $change) {
-			if (is_array($change) === false) {
-				continue;
-			}
-
-			$property = (string)($change['property'] ?? '');
-			if ($property !== '') {
-				$values[$property] = ($change['proposedValue'] ?? null);
-			}
-		}
-
+		$values = $this->proposedValues(proposal: $proposal);
 		if ($values === []) {
 			return ['error' => 'nothing_to_apply'];
 		}
@@ -429,6 +418,31 @@ class ProposalService implements ProposalServiceInterface {
 
 		return ['accepted' => true];
 	}//end applyProposal()
+
+	/**
+	 * The proposed value of each property the proposal changes.
+	 *
+	 * @param array<string, mixed> $proposal The proposal.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/change-proposal-queue/spec.md
+	 */
+	private function proposedValues(array $proposal): array {
+		$values = [];
+		foreach ((array)($proposal['changes'] ?? []) as $change) {
+			if (is_array($change) === false) {
+				continue;
+			}
+
+			$property = (string)($change['property'] ?? '');
+			if ($property !== '') {
+				$values[$property] = ($change['proposedValue'] ?? null);
+			}
+		}
+
+		return $values;
+	}//end proposedValues()
 
 	/**
 	 * Reject a proposal, with a reason, touching only the proposal.

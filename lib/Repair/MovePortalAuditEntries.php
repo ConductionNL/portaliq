@@ -178,8 +178,19 @@ class MovePortalAuditEntries implements IRepairStep {
 			return [];
 		}
 
+		return $this->rowsAsArrays(rows: (array)$rows);
+	}//end page()
+
+	/**
+	 * The rows as arrays; an object row is serialised, anything else left out.
+	 *
+	 * @param array $rows The rows as read.
+	 *
+	 * @return list<array<string, mixed>>
+	 */
+	private function rowsAsArrays(array $rows): array {
 		$out = [];
-		foreach ((array)$rows as $row) {
+		foreach ($rows as $row) {
 			if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
 				$row = $row->jsonSerialize();
 			}
@@ -190,7 +201,7 @@ class MovePortalAuditEntries implements IRepairStep {
 		}
 
 		return $out;
-	}//end page()
+	}//end rowsAsArrays()
 
 	/**
 	 * OpenRegister's object service.

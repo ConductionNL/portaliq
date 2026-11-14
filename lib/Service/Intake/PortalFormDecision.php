@@ -100,16 +100,47 @@ class PortalFormDecision implements PortalFormDecisionInterface {
 			return $result;
 		}
 
+		$inputs  = $this->inputsOf(decision: $decision, answers: $answers);
+		$outcome = $this->outcomeOf(engine: $engine, decision: $decision, inputs: $inputs);
+		if ($outcome === null) {
+			return $result;
+		}
+
+		return $this->decided(result: $result, decision: $decision, outcome: $outcome);
+	}//end decide()
+
+	/**
+	 * The rule's inputs, each read from the answers by its path.
+	 *
+	 * @param array<string, mixed> $decision The step's `decision`.
+	 * @param array<string, mixed> $answers  The answers so far.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function inputsOf(array $decision, array $answers): array {
 		$inputs = [];
 		foreach ((array)($decision['inputs'] ?? []) as $name => $path) {
 			$inputs[(string)$name] = $this->read(path: (string)$path, answers: $answers);
 		}
 
+		return $inputs;
+	}//end inputsOf()
+
+	/**
+	 * Ask the engine and read the outcome it answers.
+	 *
+	 * @param object               $engine   The rule engine.
+	 * @param array<string, mixed> $decision The step's `decision`.
+	 * @param array<string, mixed> $inputs   The rule's inputs.
+	 *
+	 * @return string|null The trimmed outcome, '' when it gave none, or null when the engine failed.
+	 */
+	private function outcomeOf(object $engine, array $decision, array $inputs): string|null {
 		try {
 			$answer = $engine->evaluate((string)($decision['rule'] ?? ''), $inputs);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: the rule engine failed', ['reason' => $e->getMessage()]);
-			return $result;
+			return null;
 		}
 
 		$outcome = '';
@@ -117,6 +148,19 @@ class PortalFormDecision implements PortalFormDecisionInterface {
 			$outcome = trim((string)$answer['outcome']);
 		}
 
+		return $outcome;
+	}//end outcomeOf()
+
+	/**
+	 * The result for an outcome: none, or decided with the step it opens.
+	 *
+	 * @param array{status: string, outcome: string, output: string, nextStep: string} $result   The result so far.
+	 * @param array<string, mixed>                                                      $decision The step's `decision`.
+	 * @param string                                                                    $outcome  The engine's outcome, or ''.
+	 *
+	 * @return array{status: string, outcome: string, output: string, nextStep: string}
+	 */
+	private function decided(array $result, array $decision, string $outcome): array {
 		if ($outcome === '') {
 			$result['status'] = self::NO_OUTCOME;
 			return $result;
@@ -131,7 +175,7 @@ class PortalFormDecision implements PortalFormDecisionInterface {
 		}
 
 		return $result;
-	}//end decide()
+	}//end decided()
 
 	/**
 	 * The answer a dotted path names (`adres.plaats`), or null.

@@ -92,25 +92,11 @@ class IntakeDrain extends Command {
 	protected function execute(InputInterface $input, OutputInterface $output): int {
 		$limit = max(1, (int)$input->getOption('limit'));
 		if ((bool)$input->getOption('dry-run') === true) {
-			$waiting = $this->drain->waiting(limit: $limit);
-			$drafts  = (int)$this->drafts?->waiting(limit: $limit);
-			$landing = (int)$this->landing?->waiting(limit: $limit);
-			$output->writeln('Waiting: ' . $waiting);
-			$output->writeln('Drafts waiting: ' . $drafts);
-			$output->writeln('Landing-page submissions waiting: ' . $landing);
-
-			return (int)($waiting + $drafts + $landing > 0);
+			return $this->dryRun(limit: $limit, output: $output);
 		}
 
 		$result = $this->drain->drain(limit: $limit);
-
-		$output->writeln('Delivered: ' . $result['delivered']);
-		$output->writeln('Refused: ' . $result['refused']);
-		foreach ($result['reasons'] as $reference => $reason) {
-			$output->writeln('  ' . $reference . ': ' . $reason);
-		}
-
-		$output->writeln('Still waiting: ' . $result['waiting']);
+		$this->reportDrain(result: $result, output: $output);
 		$draftsWaiting  = $this->drainDrafts(limit: $limit, output: $output);
 		$landingWaiting = $this->drainLanding(limit: $limit, output: $output);
 		if ($result['waiting'] === 0 && $draftsWaiting === 0 && $landingWaiting === 0) {
@@ -119,6 +105,47 @@ class IntakeDrain extends Command {
 
 		return 1;
 	}//end execute()
+
+	/**
+	 * Say how much waits, without delivering anything.
+	 *
+	 * @param int             $limit  The most submissions to count.
+	 * @param OutputInterface $output The console output.
+	 *
+	 * @return int 1 when anything waits, else 0.
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#4.1
+	 */
+	private function dryRun(int $limit, OutputInterface $output): int {
+		$waiting = $this->drain->waiting(limit: $limit);
+		$drafts  = (int)$this->drafts?->waiting(limit: $limit);
+		$landing = (int)$this->landing?->waiting(limit: $limit);
+		$output->writeln('Waiting: ' . $waiting);
+		$output->writeln('Drafts waiting: ' . $drafts);
+		$output->writeln('Landing-page submissions waiting: ' . $landing);
+
+		return (int)($waiting + $drafts + $landing > 0);
+	}//end dryRun()
+
+	/**
+	 * Report what the drain delivered, refused and left waiting.
+	 *
+	 * @param array{delivered: int, refused: int, waiting: int, reasons: array<string, string>} $result The drain's result.
+	 * @param OutputInterface                                                             $output The console output.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#4.1
+	 */
+	private function reportDrain(array $result, OutputInterface $output): void {
+		$output->writeln('Delivered: ' . $result['delivered']);
+		$output->writeln('Refused: ' . $result['refused']);
+		foreach ($result['reasons'] as $reference => $reason) {
+			$output->writeln('  ' . $reference . ': ' . $reason);
+		}
+
+		$output->writeln('Still waiting: ' . $result['waiting']);
+	}//end reportDrain()
 
 	/**
 	 * Move saved `portalDraft` rows into OpenRegister drafts and report (task 5.3).
