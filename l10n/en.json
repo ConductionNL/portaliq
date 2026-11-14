@@ -1,6 +1,8 @@
 {
     "translations": {
         "Marketplace": "Marketplace",
+        "This site uses JavaScript for its interactive parts, and JavaScript is off in your browser.": "This site uses JavaScript for its interactive parts, and JavaScript is off in your browser.",
+        "Open the plain version of this page": "Open the plain version of this page",
         "A part with a text shows \"Hulp bij deze pagina\" under its heading; a part without shows nothing.": "A part with a text shows \"Hulp bij deze pagina\" under its heading; a part without shows nothing.",
         "An e-mail address looks like info@example.nl.": "An e-mail address looks like info@example.nl.",
         "An image address starts with / or https://.": "An image address starts with / or https://.",
