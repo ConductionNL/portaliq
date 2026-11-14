@@ -419,6 +419,9 @@
 									:source="
 										(page.body && page.body.markdown) || ''
 									" />
+								<PageArticleBlock
+									v-if="page.body && page.body.article"
+									:article="page.body.article" />
 							</div>
 						</article>
 					</div>
@@ -515,6 +518,7 @@ import BrandHeader from './components/BrandHeader.vue'
 import FooterColumns from './components/FooterColumns.vue'
 import IdleWarningDialog from './components/IdleWarningDialog.vue'
 import MarkdownBlock from './components/MarkdownBlock.vue'
+import PageArticleBlock from './components/PageArticleBlock.vue'
 import WidgetGrid from './components/WidgetGrid.vue'
 import {
 	codeOutcome,
@@ -686,6 +690,7 @@ export default {
 		IdleWarningDialog,
 		InstallBanner,
 		MarkdownBlock,
+		PageArticleBlock,
 		NotFoundPage,
 		SharedDossierPage,
 		AccessibilityStatementPage,
