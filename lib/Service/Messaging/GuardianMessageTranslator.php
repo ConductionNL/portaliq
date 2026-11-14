@@ -98,24 +98,54 @@ class GuardianMessageTranslator {
 
 		$remaining = $budget ?? self::NEW_PER_REQUEST;
 		foreach ($messages as $index => $message) {
-			if ((string)($message['senderRef'] ?? '') === $readerRef || (string)($message[$textField] ?? '') === '') {
+			if ($this->needsNoTranslation(message: $message, readerRef: $readerRef, textField: $textField) === true) {
 				continue;
 			}
 
-			$entry = $this->entryFor(
+			$messages[$index] = $this->withTranslation(
 				message: $message,
 				language: $language,
 				fields: ['schema' => $schema, 'title' => $titleField, 'text' => $textField],
 				budget: $remaining
 			);
-			if ($entry !== null && $this->differs(entry: $entry, language: $language) === true) {
-				$messages[$index]['translation'] = $entry;
-			}
 		}
 
 		$budget = $remaining;
 		return $messages;
 	}//end forReader()
+
+	/**
+	 * Whether a message is the reader's own, or has no text to translate.
+	 *
+	 * @param array<string, mixed> $message   The message.
+	 * @param string               $readerRef The reader's own subjectRef.
+	 * @param string               $textField The field translated into the entry's `text`.
+	 *
+	 * @return bool
+	 */
+	private function needsNoTranslation(array $message, string $readerRef, string $textField): bool {
+		return (string)($message['senderRef'] ?? '') === $readerRef || (string)($message[$textField] ?? '') === '';
+	}//end needsNoTranslation()
+
+	/**
+	 * The message carrying its `translation` when one applies.
+	 *
+	 * @param array<string, mixed>                               $message  The row.
+	 * @param string                                             $language The reader's language.
+	 * @param array{schema: string, title: string, text: string} $fields   The schema the row is stored back to,
+	 *                                                                     its title field and its text field.
+	 * @param int                                                $budget   The remaining per-request budget, spent in place.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withTranslation(array $message, string $language, array $fields, int &$budget): array {
+		$entry = $this->entryFor(message: $message, language: $language, fields: $fields, budget: $budget);
+		if ($entry !== null && $this->differs(entry: $entry, language: $language) === true) {
+			$message['translation'] = $entry;
+		}
+
+		return $message;
+	}//end withTranslation()
 
 	/**
 	 * The reader's entry for one row: the stored one, a new one while the
@@ -199,21 +229,48 @@ class GuardianMessageTranslator {
 			return null;
 		}
 
+		$entry = $this->withNewsletterTitle(entry: $entry, fields: $fields);
+		if ($fields['title'] !== $fields['text']) {
+			$entry = $this->withTitle(entry: $entry, message: $message, schema: $schema, id: $id, titleField: $fields['title']);
+		}
+
+		$this->appendEntry(message: $message, entry: $entry, schema: $schema, id: $id);
+
+		return $entry;
+	}//end translateAndStore()
+
+	/**
+	 * A newsletter's entry with its title set to its text: the text is the title.
+	 *
+	 * @param array<string, mixed>                               $entry  The new entry.
+	 * @param array{schema: string, title: string, text: string} $fields The title field and the text field.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withNewsletterTitle(array $entry, array $fields): array {
 		if ($fields['title'] !== '' && $fields['title'] === $fields['text']) {
 			// A newsletter: the text is the title, so the entry's title is its text.
 			$entry['title'] = (string)$entry['text'];
 		}
 
-		if ($fields['title'] !== $fields['text']) {
-			$entry = $this->withTitle(entry: $entry, message: $message, schema: $schema, id: $id, titleField: $fields['title']);
-		}
+		return $entry;
+	}//end withNewsletterTitle()
 
+	/**
+	 * Store the message's translations with the new entry added.
+	 *
+	 * @param array<string, mixed> $message The message.
+	 * @param array<string, mixed> $entry   The new entry.
+	 * @param string               $schema  The schema the row is stored back to.
+	 * @param string               $id      The row's id.
+	 *
+	 * @return void
+	 */
+	private function appendEntry(array $message, array $entry, string $schema, string $id): void {
 		$entries   = array_values((array)($message['translations'] ?? []));
 		$entries[] = $entry;
 		$this->storeEntries(message: $message, entries: $entries, schema: $schema, id: $id);
-
-		return $entry;
-	}//end translateAndStore()
+	}//end appendEntry()
 
 	/**
 	 * Whether a stored entry still needs the title a news item has.

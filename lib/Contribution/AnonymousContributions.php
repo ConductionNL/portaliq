@@ -171,24 +171,35 @@ class AnonymousContributions {
 				continue;
 			}
 
-			$kept = [];
-			foreach ($contribution[$section] as $entry) {
-				if (is_array($entry) === false) {
-					continue;
-				}
-
-				if (($entry['anonymous'] ?? false) !== true) {
-					continue;
-				}
-
-				$kept[] = $entry;
-			}
-
-			$contribution[$section] = $kept;
-		}//end foreach
+			$contribution[$section] = $this->anonymousEntries(entries: $contribution[$section]);
+		}
 
 		return $contribution;
 	}//end keepAnonymousOnly()
+
+	/**
+	 * The entries explicitly flagged `anonymous: true`.
+	 *
+	 * @param array<mixed> $entries The section's entries.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function anonymousEntries(array $entries): array {
+		$kept = [];
+		foreach ($entries as $entry) {
+			if (is_array($entry) === false) {
+				continue;
+			}
+
+			if (($entry['anonymous'] ?? false) !== true) {
+				continue;
+			}
+
+			$kept[] = $entry;
+		}
+
+		return $kept;
+	}//end anonymousEntries()
 
 	/**
 	 * Whether an (already anonymous-filtered) contribution carries at least

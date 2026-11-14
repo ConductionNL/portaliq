@@ -168,6 +168,29 @@ class TrafficReportService implements TrafficReportServiceInterface {
 			return false;
 		}
 
+		$evaluated = $this->evaluation(slug: $slug, alert: $alert, period: $period);
+		if ($evaluated['fires'] === false) {
+			return false;
+		}
+
+		$this->appConfig->setValueString(AppIdentity::APP_ID, $key, $period['key']);
+		$delivered = $this->delivery->sendAlert(portal: $portal, alert: $alert, period: $period, value: $evaluated['value'], change: $evaluated['change']);
+		$this->logFired(slug: $slug, alert: $alert, period: $period, delivered: $delivered);
+
+		return true;
+	}
+
+	/**
+	 * Whether the alert's condition holds in the period, with the metric's
+	 * value and, for `changeAbove`, its change against the previous period.
+	 *
+	 * @param string               $slug   The portal slug.
+	 * @param array<string, mixed> $alert  The resolved alert.
+	 * @param array<string, mixed> $period The alert period.
+	 *
+	 * @return array{fires: bool, value: float, change: float|null}
+	 */
+	private function evaluation(string $slug, array $alert, array $period): array {
 		$value = $this->numbers->metric(metric: (string)$alert['metric'], records: $this->records(slug: $slug, from: $period['from'], to: $period['to']));
 		$change = null;
 		$threshold = (float)$alert['threshold'];
@@ -177,26 +200,46 @@ class TrafficReportService implements TrafficReportServiceInterface {
 			default => false,
 		};
 		if ((string)$alert['comparison'] === 'changeAbove') {
-			$before = $this->numbers->metric(
-				metric: (string)$alert['metric'],
-				records: $this->records(slug: $slug, from: $period['previousFrom'], to: $period['previousTo'])
-			);
-			$change = $this->numbers->change(current: $value, previous: $before);
+			$change = $this->changeOf(slug: $slug, alert: $alert, period: $period, value: $value);
 			$fires = ($change !== null && $change > $threshold);
 		}
 
-		if ($fires === false) {
-			return false;
-		}
+		return ['fires' => $fires, 'value' => $value, 'change' => $change];
+	}
 
-		$this->appConfig->setValueString(AppIdentity::APP_ID, $key, $period['key']);
-		$delivered = $this->delivery->sendAlert(portal: $portal, alert: $alert, period: $period, value: $value, change: $change);
+	/**
+	 * The metric's change against the previous period.
+	 *
+	 * @param string               $slug   The portal slug.
+	 * @param array<string, mixed> $alert  The resolved alert.
+	 * @param array<string, mixed> $period The alert period.
+	 * @param float                $value  The metric's value in the period.
+	 *
+	 * @return float|null Null when there is no previous value to compare with.
+	 */
+	private function changeOf(string $slug, array $alert, array $period, float $value): float|null {
+		$before = $this->numbers->metric(
+			metric: (string)$alert['metric'],
+			records: $this->records(slug: $slug, from: $period['previousFrom'], to: $period['previousTo'])
+		);
+		return $this->numbers->change(current: $value, previous: $before);
+	}
+
+	/**
+	 * Log a fired alert.
+	 *
+	 * @param string               $slug      The portal slug.
+	 * @param array<string, mixed> $alert     The resolved alert.
+	 * @param array<string, mixed> $period    The alert period.
+	 * @param int                  $delivered The number of deliveries.
+	 *
+	 * @return void
+	 */
+	private function logFired(string $slug, array $alert, array $period, int $delivered): void {
 		$this->logger->info(
 			'Portaliq: traffic alert fired',
 			['portal' => $slug, 'alert' => $alert['id'], 'period' => $period['key'], 'deliveries' => $delivered]
 		);
-
-		return true;
 	}
 
 	/**

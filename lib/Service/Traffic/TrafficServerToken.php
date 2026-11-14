@@ -97,6 +97,23 @@ class TrafficServerToken implements TrafficServerTokenInterface {
 		}
 
 		$token = $this->random->generate(self::LENGTH, ISecureRandom::CHAR_ALPHANUMERIC . '-_');
+		$record = $this->withTokenHash(portal: $portal, token: $token);
+		if ($this->saved(portal: $portal, record: $record) === false) {
+			return null;
+		}
+
+		return $token;
+	}
+
+	/**
+	 * The portal record with the token's hash in its traffic settings.
+	 *
+	 * @param array<string, mixed> $portal The portal record.
+	 * @param string               $token  The minted token.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withTokenHash(array $portal, string $token): array {
 		$traffic = $portal['traffic'] ?? [];
 		if (is_array($traffic) === false) {
 			$traffic = [];
@@ -105,13 +122,26 @@ class TrafficServerToken implements TrafficServerTokenInterface {
 		$traffic['serverToken'] = $this->hash(token: $token);
 		$record = $portal;
 		$record['traffic'] = $traffic;
+
+		return $record;
+	}
+
+	/**
+	 * Save the record over the portal.
+	 *
+	 * @param array<string, mixed> $portal The portal record as read.
+	 * @param array<string, mixed> $record The record to write.
+	 *
+	 * @return bool False when the portal has no id or the write failed.
+	 */
+	private function saved(array $portal, array $record): bool {
 		$uuid = trim((string)($portal['@self']['uuid'] ?? $portal['uuid'] ?? $portal['@self']['id'] ?? $portal['id'] ?? ''));
 		unset($record['@self']);
 		if ($uuid === '' || $this->save(record: $record, uuid: $uuid) === false) {
-			return null;
+			return false;
 		}
 
-		return $token;
+		return true;
 	}
 
 	/**

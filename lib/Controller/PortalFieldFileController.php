@@ -159,30 +159,77 @@ class PortalFieldFileController extends Controller implements PortalProtected {
 	 */
 	private function authorise(array $subject, array $target): array|JSONResponse {
 		$match = $this->authorisedAction(subject: $subject, register: $target['register'], schema: $target['schema']);
-		$config = null;
-		if ($match !== null) {
-			$config = $this->policy->fileConfig(action: $match['action'], field: $target['field']);
-		}
-
-		if ($match === null
-			|| $config === null
-			|| SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($match['action']['minTrust'] ?? null)) === false
-		) {
+		$config = $this->declaredFileConfig(granted: $match, field: $target['field']);
+		if ($this->mayUpload(subject: $subject, granted: $match, config: $config) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		$scope = $this->ownershipScope(action: $match['action'], app: $match['app'], subject: $subject);
+		return $this->ownedUploadContext(subject: $subject, target: $target, granted: $match, config: $config);
+	}//end authorise()
+
+	/**
+	 * The file config the action declares for the field, or null.
+	 *
+	 * @param array<string, mixed>|null $granted The subject's own action and its app, or null.
+	 * @param string                    $field   The field.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+	 */
+	private function declaredFileConfig(array|null $granted, string $field): array|null {
+		$config = null;
+		if ($granted !== null) {
+			$config = $this->policy->fileConfig(action: $granted['action'], field: $field);
+		}
+
+		return $config;
+	}//end declaredFileConfig()
+
+	/**
+	 * Whether the action is the subject's, the field a declared file field of
+	 * it, and the subject's trust at least the action's.
+	 *
+	 * @param array<string, mixed>      $subject The resolved subject.
+	 * @param array<string, mixed>|null $granted The subject's own action and its app, or null.
+	 * @param array<string, mixed>|null $config  The field's file config, or null.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+	 */
+	private function mayUpload(array $subject, array|null $granted, array|null $config): bool {
+		return ($granted === null
+			|| $config === null
+			|| SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($granted['action']['minTrust'] ?? null)) === false) === false;
+	}//end mayUpload()
+
+	/**
+	 * The upload context once the object is proven the subject's and the
+	 * window is open, or the refusal.
+	 *
+	 * @param array<string, mixed>                                               $subject The resolved subject.
+	 * @param array{register: string, schema: string, id: string, field: string} $target  The route parameters.
+	 * @param array<string, mixed>                                               $granted The subject's own action and its app.
+	 * @param array<string, mixed>                                               $config  The field's file config.
+	 *
+	 * @return array<string, mixed>|JSONResponse
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+	 */
+	private function ownedUploadContext(array $subject, array $target, array $granted, array $config): array|JSONResponse {
+		$scope = $this->ownershipScope(action: $granted['action'], app: $granted['app'], subject: $subject);
 		$owned = $this->ownedObject(target: $target, scope: $scope, subject: $subject);
 		if ($scope === null || $owned === null) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		if ($this->policy->windowOpen(actionType: (string)($match['action']['type'] ?? ''), row: $owned) === false) {
+		if ($this->policy->windowOpen(actionType: (string)($granted['action']['type'] ?? ''), row: $owned) === false) {
 			return new JSONResponse(['error' => 'upload_window_closed'], Http::STATUS_FORBIDDEN);
 		}
 
 		return $target + ['subject' => $subject, 'config' => $config, 'scope' => $scope, 'current' => ($owned[$target['field']] ?? null)];
-	}//end authorise()
+	}//end ownedUploadContext()
 
 	/**
 	 * Read the file and check it fits the field, before anything is attached.

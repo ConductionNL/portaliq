@@ -332,7 +332,8 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// armed (woo-request-intake-through-opencatalogi). Additive.
 		// 0.5.0: `destination` replaces caseRegister/caseSchema/deliverTo (decision 179); those stay, deprecated.
 		// 0.6.0: `intro.enabled`, the form settings page's switch for the introduction (form-statements-intro-and-confirmation-mail T06). Additive.
-		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalFormBinding']['version']);
+		// 0.7.0: `availability` (form-governance-availability-retention-and-routing REQ-FGV-001). Additive.
+		$this->assertSame('0.7.0', self::$register['components']['schemas']['portalFormBinding']['version']);
 		$this->assertSame('boolean', self::$register['components']['schemas']['portalFormBinding']['properties']['intro']['properties']['enabled']['type']);
 		$this->assertSame(['case', 'wooRequest'], self::$register['components']['schemas']['portalFormBinding']['properties']['deliverTo']['enum']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalIntakeSubmission']['version']);
@@ -405,11 +406,13 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.108.0 (portalPage 0.10.0): a cta's `messageTo`, the field naming whom the message form opens for (guardian-message-to-and-whole-day). Additive.
 		// 0.109.0 (portalFormBinding 0.6.0): `intro.enabled`, whether the form opens with its introduction (form-statements-intro-and-confirmation-mail T06). Additive.
 		// 0.110.0 (portal 0.29.0): a portal's `favicon` and `heroImage`, and a `logo` that may be a media reference (portal-identity-from-the-admin). Additive.
-		// 0.111.0 (portalAccount 0.19.0): identity type `yivi`, a sign-in through the broker that shares only what a form asks (resident-identity-in-forms T05). Additive.
-		// 0.112.0 (portal 0.30.0): a portal's `authentication.deskGroup`, the Nextcloud group whose members may fill a form in for a resident (resident-identity-in-forms T06). Additive.
-		$this->assertSame(expected: '0.112.0', actual: self::$register['info']['version']);
-		$this->assertSame(expected: '0.112.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		// 0.111.0 (portalFormBinding 0.7.0): a binding's `availability`, its active period, limit per period, maintenance window and successor (form-governance-availability-retention-and-routing REQ-FGV-001). Additive.
+		// 0.112.0 (portalAccount 0.19.0): identity type `yivi`, a sign-in through the broker that shares only what a form asks (resident-identity-in-forms T05). Additive.
+		// 0.113.0 (portal 0.30.0): a portal's `authentication.deskGroup`, the Nextcloud group whose members may fill a form in for a resident (resident-identity-in-forms T06). Additive.
+		$this->assertSame(expected: '0.113.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.113.0', actual: self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portal']['properties']['authentication']['properties']['deskGroup']['type']);
+		$this->assertSame(expected: ['total', 'month', 'year'], actual: self::$register['components']['schemas']['portalFormBinding']['properties']['availability']['properties']['limit']['properties']['per']['enum']);
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portalPage']['properties']['pages']['items']['properties']['blocks']['items']['properties']['messageTo']['type']);
 		$this->assertContains(needle: 'yivi', haystack: self::$register['components']['schemas']['portalAccount']['properties']['identityType']['enum']);
 		$this->assertSame(expected: 'date-time', actual: self::$register['components']['schemas']['guardianMessage']['properties']['readAt']['format']);

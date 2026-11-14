@@ -194,13 +194,7 @@ class PortalFilteredRows {
 	 * @return array<int, mixed>
 	 */
 	private function withoutDuplicates(array $rows, array $page): array {
-		$seen = [];
-		foreach ($rows as $row) {
-			foreach ($this->ids(row: $row) as $id) {
-				$seen[$id] = true;
-			}
-		}
-
+		$seen = $this->seenIds(rows: $rows);
 		foreach ($page as $row) {
 			$ids = $this->ids(row: $row);
 			if (array_intersect_key(array_flip($ids), $seen) !== []) {
@@ -216,6 +210,24 @@ class PortalFilteredRows {
 
 		return $rows;
 	}//end withoutDuplicates()
+
+	/**
+	 * The ids of the rows read so far.
+	 *
+	 * @param array<int, mixed> $rows The rows read so far.
+	 *
+	 * @return array<array-key, true>
+	 */
+	private function seenIds(array $rows): array {
+		$seen = [];
+		foreach ($rows as $row) {
+			foreach ($this->ids(row: $row) as $id) {
+				$seen[$id] = true;
+			}
+		}
+
+		return $seen;
+	}//end seenIds()
 
 	/**
 	 * A row's own identifiers, for an array or a serialisable entity.

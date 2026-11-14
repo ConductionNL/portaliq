@@ -274,11 +274,43 @@ class OidcClaimMapperService implements OidcClaimMapperServiceInterface {
 			return null;
 		}
 
+		return $this->mappedWith(identityRef: $identityRef, subjectRef: $subjectRef, claims: $claims, config: $config);
+	}//end mapClaims()
+
+	/**
+	 * The mapped identity once the identity and subject references resolved, or null without an audience.
+	 *
+	 * @param string               $identityRef The identity reference claim's value.
+	 * @param string               $subjectRef  The resolved subjectRef mapping, or the `derive` keyword.
+	 * @param array<string, mixed> $claims      The validated ID token claim set.
+	 * @param array<string, mixed> $config      The merged provider config.
+	 *
+	 * @return array{identityType: string, identityRef: string, subjectRef: string|null, audience: string, branch: string}|null
+	 */
+	private function mappedWith(string $identityRef, string $subjectRef, array $claims, array $config): array|null {
 		$audience = $this->resolveFixedOrClaim(mapping: (string)($config['audienceMap'] ?? ''), claims: $claims);
 		if ($audience === null || $audience === '') {
 			return null;
 		}
 
+		return [
+			'identityType' => (string)$config['identityType'],
+			'identityRef' => $identityRef,
+			'subjectRef' => $this->resolvedSubjectRef(subjectRef: $subjectRef),
+			'audience' => $audience,
+			'branch' => $this->branchOf(claims: $claims, config: $config),
+			'kvk' => $this->kvkOf(claims: $claims, config: $config),
+		];
+	}//end mappedWith()
+
+	/**
+	 * The subjectRef to store: null to derive or reuse one server-side, else the validated claim value.
+	 *
+	 * @param string $subjectRef The resolved subjectRef mapping, or the `derive` keyword.
+	 *
+	 * @return string|null
+	 */
+	private function resolvedSubjectRef(string $subjectRef): string|null {
 		// Null = "derive/reuse server-side"; a non-null string is a
 		// validated-claim value, still never a request parameter.
 		$resolvedSubjectRef = null;
@@ -286,15 +318,8 @@ class OidcClaimMapperService implements OidcClaimMapperServiceInterface {
 			$resolvedSubjectRef = $subjectRef;
 		}
 
-		return [
-			'identityType' => (string)$config['identityType'],
-			'identityRef' => $identityRef,
-			'subjectRef' => $resolvedSubjectRef,
-			'audience' => $audience,
-			'branch' => $this->branchOf(claims: $claims, config: $config),
-			'kvk' => $this->kvkOf(claims: $claims, config: $config),
-		];
-	}//end mapClaims()
+		return $resolvedSubjectRef;
+	}//end resolvedSubjectRef()
 
 	/**
 	 * The KVK number of the company the person signs in for: the configured
@@ -314,7 +339,7 @@ class OidcClaimMapperService implements OidcClaimMapperServiceInterface {
 		}
 
 		$value = ($claims[$claim] ?? null);
-		if ((is_string($value) === false && is_int($value) === false) || preg_match('/^\d{8}$/', trim((string)$value)) !== 1) {
+		if ((is_string($value) === false && is_int($value) === false) || preg_match('/^\d{8}$/D', trim((string)$value)) !== 1) {
 			return '';
 		}
 

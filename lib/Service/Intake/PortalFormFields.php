@@ -58,23 +58,7 @@ class PortalFormFields {
 		}
 
 		$presets = (array)($form['presets'] ?? []);
-		$out = [];
-		foreach ($fields as $field) {
-			if (is_array($field) === false) {
-				continue;
-			}
-
-			$name = (string)($field['name'] ?? '');
-			if ($name === '') {
-				continue;
-			}
-
-			if (array_key_exists($name, $presets) === true) {
-				$field['preset'] = $presets[$name];
-			}
-
-			$out[] = $this->withReferenceList(field: $field);
-		}
+		$out     = $this->collected(fields: $fields, presets: $presets);
 
 		usort(
 			$out,
@@ -85,6 +69,51 @@ class PortalFormFields {
 
 		return $out;
 	}//end fieldsOf()
+
+	/**
+	 * The named fields with their presets and reference lists, in declaration order.
+	 *
+	 * @param array<mixed>         $fields  The form's declared fields.
+	 * @param array<string, mixed> $presets The form's presets by field name.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function collected(array $fields, array $presets): array {
+		$out = [];
+		foreach ($fields as $field) {
+			if (is_array($field) === false) {
+				continue;
+			}
+
+			$prepared = $this->prepared(field: $field, presets: $presets);
+			if ($prepared !== null) {
+				$out[] = $prepared;
+			}
+		}
+
+		return $out;
+	}//end collected()
+
+	/**
+	 * One field with its preset and reference list, or null when it has no name.
+	 *
+	 * @param array<string, mixed> $field   The field.
+	 * @param array<string, mixed> $presets The form's presets by field name.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function prepared(array $field, array $presets): array|null {
+		$name = (string)($field['name'] ?? '');
+		if ($name === '') {
+			return null;
+		}
+
+		if (array_key_exists($name, $presets) === true) {
+			$field['preset'] = $presets[$name];
+		}
+
+		return $this->withReferenceList(field: $field);
+	}//end prepared()
 
 	/**
 	 * A field that names a reference list gets that list's active items as

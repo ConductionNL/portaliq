@@ -56,6 +56,8 @@ use OCA\Portaliq\Kernel\Contracts\NotificationRuleNormaliserInterface;
  * Looks up change rules and inbox collections by register and schema.
  *
  * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-declared-change-reaches-the-residents-inbox-req-nap-002
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class PortalChangeRuleIndex implements PortalChangeRuleIndexInterface {
 
@@ -309,6 +311,22 @@ class PortalChangeRuleIndex implements PortalChangeRuleIndexInterface {
 			$notifications = [];
 		}
 
+		$collections = $this->collectionsById(contribution: $contribution);
+
+		return array_merge(
+			$this->changeEntries(app: $app, notifications: $notifications, collections: $collections),
+			$this->inboxEntries(app: $app, notifications: $notifications, collections: $collections)
+		);
+	}//end entriesOf()
+
+	/**
+	 * The contribution's collections by id.
+	 *
+	 * @param array<string, mixed> $contribution The normalised contribution.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function collectionsById(array $contribution): array {
 		$collections = [];
 		foreach ((array)($contribution['collections'] ?? []) as $collection) {
 			if (is_array($collection) === true && (string)($collection['id'] ?? '') !== '') {
@@ -316,11 +334,8 @@ class PortalChangeRuleIndex implements PortalChangeRuleIndexInterface {
 			}
 		}
 
-		return array_merge(
-			$this->changeEntries(app: $app, notifications: $notifications, collections: $collections),
-			$this->inboxEntries(app: $app, notifications: $notifications, collections: $collections)
-		);
-	}//end entriesOf()
+		return $collections;
+	}//end collectionsById()
 
 	/**
 	 * The change rules of one contribution.
@@ -334,18 +349,12 @@ class PortalChangeRuleIndex implements PortalChangeRuleIndexInterface {
 	private function changeEntries(string $app, array $notifications, array $collections): array {
 		$entries = [];
 		foreach ($notifications as $rule) {
-			if (is_array($rule) === false || isset($collections[(string)($rule['collection'] ?? '')]) === false) {
+			$collection = $this->ruleCollection(rule: $rule, collections: $collections);
+			if ($collection === null) {
 				continue;
 			}
 
-			$collection = $collections[(string)$rule['collection']];
 			$recipientClaim = (string)($rule['recipients']['claim'] ?? '');
-			if ($recipientClaim === '' && $this->notificationRuleNormaliser->scopedElsewhere(collection: $collection) === true) {
-				// The normaliser already drops this; a record of a claim or
-				// via collection does not say whose it is.
-				continue;
-			}
-
 			$entry = $this->entry(kind: 'change', app: $app, collection: $collection) + [
 				'ruleKey' => (string)$rule['ruleKey'],
 				'field' => (string)($rule['on']['field'] ?? ''),
@@ -359,6 +368,32 @@ class PortalChangeRuleIndex implements PortalChangeRuleIndexInterface {
 
 		return $entries;
 	}//end changeEntries()
+
+	/**
+	 * The collection a change rule watches, or null when the rule is no
+	 * array, names no known collection, or has no recipient claim on a claim
+	 * or via collection.
+	 *
+	 * @param mixed                               $rule        The notification rule.
+	 * @param array<string, array<string, mixed>> $collections The collections by id.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function ruleCollection(mixed $rule, array $collections): array|null {
+		if (is_array($rule) === false || isset($collections[(string)($rule['collection'] ?? '')]) === false) {
+			return null;
+		}
+
+		$collection = $collections[(string)$rule['collection']];
+		$recipientClaim = (string)($rule['recipients']['claim'] ?? '');
+		if ($recipientClaim === '' && $this->notificationRuleNormaliser->scopedElsewhere(collection: $collection) === true) {
+			// The normaliser already drops this; a record of a claim or
+			// via collection does not say whose it is.
+			return null;
+		}
+
+		return $collection;
+	}//end ruleCollection()
 
 	/**
 	 * The key of a change rule's details.

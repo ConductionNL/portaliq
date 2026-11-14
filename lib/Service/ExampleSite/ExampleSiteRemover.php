@@ -64,7 +64,33 @@ class ExampleSiteRemover implements ExampleSiteRemoverInterface {
 	 */
 	public function remove(string $site, string $slug): array {
 		$record = $this->record->read(site: $site);
-		$report = [
+		$report = $this->emptyReport(site: $site, record: $record);
+		if ($report['recorded'] === false || $report['available'] === false) {
+			return $report;
+		}
+
+		[$report, $left] = $this->removeRecordedRows(report: $report, record: $record, slug: $slug);
+
+		$report['portal'] = $this->removePortal(recordedId: $record['portal'], slug: $slug);
+		if ($report['portal'] === 'deleted' || $report['portal'] === 'kept-not-ours') {
+			$left['portal'] = '';
+		}
+
+		$this->record->write(site: $site, record: $left);
+
+		return $report;
+	}//end remove()
+
+	/**
+	 * The report before anything is removed.
+	 *
+	 * @param string               $site   The site's id.
+	 * @param array<string, mixed> $record What the install recorded.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function emptyReport(string $site, array $record): array {
+		return [
 			'site'      => $site,
 			'recorded'  => ($this->record->isEmpty(record: $record) === false),
 			'available' => $this->store->available(),
@@ -73,10 +99,19 @@ class ExampleSiteRemover implements ExampleSiteRemoverInterface {
 			'failed'    => [],
 			'portal'    => 'kept-not-ours',
 		];
-		if ($report['recorded'] === false || $report['available'] === false) {
-			return $report;
-		}
+	}//end emptyReport()
 
+	/**
+	 * Remove the recorded rows of every schema, noting the outcome in the
+	 * report and keeping what failed for the next attempt.
+	 *
+	 * @param array<string, mixed> $report The report so far.
+	 * @param array<string, mixed> $record What the install recorded.
+	 * @param string               $slug   The slug of its portal.
+	 *
+	 * @return array{0: array<string, mixed>, 1: array<string, mixed>} The report, and what is left recorded.
+	 */
+	private function removeRecordedRows(array $report, array $record, string $slug): array {
 		$left = ['portal' => $record['portal'], 'menu' => [], 'page' => [], 'newsItem' => [], 'glossaryTerm' => [], 'form' => []];
 		foreach (ExampleSiteRecord::SCHEMAS as $schema) {
 			$outcome = $this->removeRows(schema: $schema, slug: $slug, ids: $record[$schema]);
@@ -88,15 +123,8 @@ class ExampleSiteRemover implements ExampleSiteRemoverInterface {
 			}
 		}
 
-		$report['portal'] = $this->removePortal(recordedId: $record['portal'], slug: $slug);
-		if ($report['portal'] === 'deleted' || $report['portal'] === 'kept-not-ours') {
-			$left['portal'] = '';
-		}
-
-		$this->record->write(site: $site, record: $left);
-
-		return $report;
-	}//end remove()
+		return [$report, $left];
+	}//end removeRecordedRows()
 
 	/**
 	 * Delete the recorded rows of one schema that are still in the portal.

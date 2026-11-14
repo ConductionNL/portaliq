@@ -90,32 +90,12 @@ class MessageBoxChannel implements MessageBoxChannelInterface {
 	 * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-portaliq-asks-integriq-to-send-and-records-the-answer-req-mbc-003
 	 */
 	public function enqueue(array $account, array $inbox, string $recordId): bool {
-		$organisation = (string)($account['organisation'] ?? '');
-		$subjectRef = (string)($account['subjectRef'] ?? '');
-		if ($recordId === '' || $subjectRef === '' || ($inbox['recipientProvider'] ?? '') === '') {
-			return false;
-		}
-
-		if ($this->orgConfig->messageBox(orgSlug: $organisation) === null || $this->wants(account: $account) === false) {
+		if ($this->mayEnqueue(account: $account, inbox: $inbox, recordId: $recordId) === false) {
 			return false;
 		}
 
 		try {
-			$this->jobList->add(
-				MessageBoxDispatchJob::class,
-				[
-					'subjectRef' => $subjectRef,
-					'organisation' => $organisation,
-					'audience' => (string)($account['audience'] ?? ''),
-					'appId' => $inbox['app'],
-					'ruleKey' => NotificationDispatchService::RULE_MESSAGE_CREATED,
-					'channel' => self::CHANNEL,
-					'recipientProvider' => $inbox['recipientProvider'],
-					'record' => ['app' => $inbox['app'], 'collection' => $inbox['collection'], 'id' => $recordId, 'label' => $inbox['label']],
-					'source' => ['register' => $inbox['register'], 'schema' => $inbox['schema'], 'scopeField' => $inbox['scopeField']],
-					'letterFields' => ['body' => (string)($inbox['bodyField'] ?? ''), 'subject' => (string)($inbox['subjectField'] ?? '')],
-				]
-			);
+			$this->jobList->add(MessageBoxDispatchJob::class, $this->jobArgument(account: $account, inbox: $inbox, recordId: $recordId));
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: message box send was not queued', ['app' => $inbox['app'], 'reason' => $e->getMessage()]);
 			return false;
@@ -123,4 +103,48 @@ class MessageBoxChannel implements MessageBoxChannelInterface {
 
 		return true;
 	}//end enqueue()
+
+	/**
+	 * Whether the send may be queued: a record, a resident and a recipient
+	 * provider, an organisation with a message box and a resident who wants it.
+	 *
+	 * @param array<string, mixed> $account  The resident's account row.
+	 * @param array<string, mixed> $inbox    The inbox collection.
+	 * @param string               $recordId The record's id.
+	 *
+	 * @return bool
+	 */
+	private function mayEnqueue(array $account, array $inbox, string $recordId): bool {
+		$organisation = (string)($account['organisation'] ?? '');
+		$subjectRef = (string)($account['subjectRef'] ?? '');
+		if ($recordId === '' || $subjectRef === '' || ($inbox['recipientProvider'] ?? '') === '') {
+			return false;
+		}
+
+		return $this->orgConfig->messageBox(orgSlug: $organisation) !== null && $this->wants(account: $account) === true;
+	}//end mayEnqueue()
+
+	/**
+	 * The dispatch job's argument for one send.
+	 *
+	 * @param array<string, mixed> $account  The resident's account row.
+	 * @param array<string, mixed> $inbox    The inbox collection.
+	 * @param string               $recordId The record's id.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function jobArgument(array $account, array $inbox, string $recordId): array {
+		return [
+			'subjectRef' => (string)($account['subjectRef'] ?? ''),
+			'organisation' => (string)($account['organisation'] ?? ''),
+			'audience' => (string)($account['audience'] ?? ''),
+			'appId' => $inbox['app'],
+			'ruleKey' => NotificationDispatchService::RULE_MESSAGE_CREATED,
+			'channel' => self::CHANNEL,
+			'recipientProvider' => $inbox['recipientProvider'],
+			'record' => ['app' => $inbox['app'], 'collection' => $inbox['collection'], 'id' => $recordId, 'label' => $inbox['label']],
+			'source' => ['register' => $inbox['register'], 'schema' => $inbox['schema'], 'scopeField' => $inbox['scopeField']],
+			'letterFields' => ['body' => (string)($inbox['bodyField'] ?? ''), 'subject' => (string)($inbox['subjectField'] ?? '')],
+		];
+	}//end jobArgument()
 }//end class

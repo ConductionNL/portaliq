@@ -83,7 +83,7 @@ final class SessionClaims {
 	 */
 	private function kvk(array $claims): string {
 		$kvk = ($claims['kvk'] ?? '');
-		if (is_string($kvk) === false || preg_match('/^\d{8}$/', $kvk) !== 1) {
+		if (is_string($kvk) === false || preg_match('/^\d{8}$/D', $kvk) !== 1) {
 			return '';
 		}
 

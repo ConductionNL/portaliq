@@ -258,6 +258,22 @@ class AvailabilityStore implements AvailabilityStoreInterface {
 			return [];
 		}
 
+		$rows = $this->read(objectService: $objectService, schema: $schema, filters: $filters, offset: $offset);
+
+		return $this->arrays(rows: $rows);
+	}//end findAll()
+
+	/**
+	 * One page of a schema as OpenRegister returns it; none when the read failed.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param string               $schema        The schema.
+	 * @param array<string, mixed> $filters       The filters.
+	 * @param int                  $offset        Records to skip, for the next page.
+	 *
+	 * @return mixed
+	 */
+	private function read(object $objectService, string $schema, array $filters, int $offset): mixed {
 		try {
 			if ($this->context->apply(objectService: $objectService, schemaSlug: $schema) === false) {
 				return [];
@@ -270,6 +286,17 @@ class AvailabilityStore implements AvailabilityStoreInterface {
 			return [];
 		}
 
+		return $rows;
+	}//end read()
+
+	/**
+	 * The rows normalised to arrays.
+	 *
+	 * @param mixed $rows The rows as read.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function arrays(mixed $rows): array {
 		$out = [];
 		foreach ((array)$rows as $row) {
 			if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
@@ -282,5 +309,5 @@ class AvailabilityStore implements AvailabilityStoreInterface {
 		}
 
 		return $out;
-	}//end findAll()
+	}//end arrays()
 }//end class

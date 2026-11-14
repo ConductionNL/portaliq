@@ -57,6 +57,8 @@ use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSubmissionChecksInterface;
 use OCA\Portaliq\Service\Intake\OnBehalfFilling;
+use OCA\Portaliq\Service\Intake\PortalFormAvailability;
+use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\Intake\PortalIntakeConfirmation;
 use OCA\Portaliq\Service\Intake\PortalIntakePayments;
 use OCA\Portaliq\Service\Intake\PortalSubmissionChecks;
@@ -130,6 +132,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param PortalEmailVerificationInterface|null $emailVerification Checks the proof that an e-mail address was verified.
 	 * @param DestinationIntakeInterface|null $intake Submits the answers into the binding's destination (decision 179).
 	 * @param DestinationLookupInterface|null $lookup Finds the object a reference belongs to.
+	 * @param PortalFormAvailability|null $availability Whether a form takes submissions now (REQ-FGV-001).
 	 * @param OnBehalfFilling|null $onBehalf The desk employee who fills a form in for a resident (resident-identity-in-forms T06).
 	 */
 	public function __construct(
@@ -156,6 +159,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		?PortalEmailVerificationInterface $emailVerification = null,
 		private readonly ?DestinationIntakeInterface $intake = null,
 		private readonly ?DestinationLookupInterface $lookup = null,
+		private readonly ?PortalFormAvailability $availability = null,
 		private readonly ?OnBehalfFilling $onBehalf = null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
@@ -244,6 +248,34 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 60, period: 60)]
 	public function form(string $route, string $portal = ''): JSONResponse {
+		$bound = $this->bound(route: $route, portal: $portal);
+		if ($bound instanceof JSONResponse) {
+			return $bound;
+		}
+
+		[$site, $binding] = $bound;
+		$unavailable      = $this->availability?->unavailable(binding: $binding);
+		if ($unavailable !== null) {
+			// Closed, replaced, in maintenance or full: the page shows that
+			// situation instead of the form; a saved draft is not touched
+			// (form-governance-availability-retention-and-routing REQ-FGV-001).
+			return $this->unavailableForm(unavailable: $unavailable);
+		}
+
+		return $this->renderForm(site: $site, binding: $binding);
+	}//end form()
+
+	/**
+	 * The portal and the form binding a route names, or the not-found answer.
+	 *
+	 * @param string $route  The in-portal route of the form page.
+	 * @param string $portal The portal's slug; empty resolves the portal from the host.
+	 *
+	 * @return array{0: array<string, mixed>, 1: array<string, mixed>}|JSONResponse The portal and the binding, or a 404.
+	 *
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 */
+	private function bound(string $route, string $portal): array|JSONResponse {
 		$site = $this->site(portal: $portal);
 		if ($site === null) {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
@@ -254,7 +286,42 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'form_not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$render = $this->bindings->render(binding: $binding);
+		return [$site, $binding];
+	}//end bound()
+
+	/**
+	 * The render payload of a form that is not available: no fields, only the situation.
+	 *
+	 * @param array<string, mixed> $unavailable The situation and what its page shows.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 */
+	private function unavailableForm(array $unavailable): JSONResponse {
+		return new JSONResponse(
+			[
+				'kind' => PortalFormBindingResolver::KIND_HOSTED,
+				'resolvesToNoForm' => true,
+				'reason' => 'unavailable',
+				'unavailable' => $unavailable,
+				'fields' => [],
+			]
+		);
+	}//end unavailableForm()
+
+	/**
+	 * The render payload of an available form, or the sign-in refusal.
+	 *
+	 * @param array<string, mixed> $site    The portal.
+	 * @param array<string, mixed> $binding The form binding.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 */
+	private function renderForm(array $site, array $binding): JSONResponse {
+		$render  = $this->bindings->render(binding: $binding);
 		$subject = $this->subject();
 		$employee = $this->deskEmployee(site: $site, binding: $binding, subject: $subject);
 		if ($employee instanceof JSONResponse) {
@@ -270,6 +337,24 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			return $refusal;
 		}
 
+		return new JSONResponse($this->withCompanions(render: $render, site: $site, subject: $subject, binding: $binding, employee: $employee));
+	}//end renderForm()
+
+	/**
+	 * The render payload with the prefill, the statements, the browser steps and the challenge added.
+	 *
+	 * @param array<string, mixed>      $render  The rendered form.
+	 * @param array<string, mixed>      $site    The portal.
+	 * @param array<string, mixed>|null $subject The signed-in subject, if any.
+	 * @param array<string, mixed>      $binding  The form binding.
+	 * @param array<string, mixed>|null $employee The desk employee filling the form in, if any.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-an-employee-can-fill-in-a-form-for-a-resident-or-company-req-rif-005
+	 */
+	private function withCompanions(array $render, array $site, array|null $subject, array $binding, array|null $employee): array {
 		// An employee's own account never prefills the applicant: the
 		// applicant's details come from the lookup on the BSN or KvK number.
 		$render['prefill'] = [];
@@ -292,8 +377,8 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			$render['challenge'] = $this->challenge->issue(site: $site, surface: 'form');
 		}
 
-		return new JSONResponse($render);
-	}//end form()
+		return $render;
+	}//end withCompanions()
 
 	/**
 	 * Submit a form.
@@ -329,33 +414,18 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		array $verifiedEmails = [],
 		array $onBehalf = [],
 	): JSONResponse {
-		$site = $this->site(portal: $portal);
-		if ($site === null) {
-			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
+		$bound = $this->bound(route: $route, portal: $portal);
+		if ($bound instanceof JSONResponse) {
+			return $bound;
 		}
 
-		$binding = $this->bindings->bindingFor(portal: (string)($site['slug'] ?? ''), route: $route);
-		if ($binding === null) {
-			return new JSONResponse(['error' => 'form_not_found'], Http::STATUS_NOT_FOUND);
+		[$site, $binding] = $bound;
+		$admitted         = $this->admitted(site: $site, binding: $binding, onBehalf: $onBehalf);
+		if ($admitted instanceof JSONResponse) {
+			return $admitted;
 		}
 
-		$render = $this->bindings->render(binding: $binding);
-		$subject = $this->subject();
-		$desk = $this->deskSubmission(site: $site, binding: $binding, subject: $subject, onBehalf: $onBehalf);
-		if ($desk instanceof JSONResponse) {
-			return $desk;
-		}
-
-		if ($desk !== []) {
-			// The employee sends it; the resident's own session plays no part.
-			$subject = null;
-		}
-
-		$refusal = $this->submitRefusal(site: $site, binding: $binding, render: $render, subject: $subject, desk: ($desk !== []));
-		if ($refusal !== null) {
-			return $refusal;
-		}
-
+		[$render, $subject, $desk] = $admitted;
 		$proof = ['nonce' => $nonce, 'solution' => $solution, 'expiresAt' => $expiresAt, 'signature' => $signature];
 		if ($this->challengeFailed(site: $site, render: $render, answers: $answers, proof: $proof) === true) {
 			return new JSONResponse(['error' => 'challenge_failed'], Http::STATUS_FORBIDDEN);
@@ -376,6 +446,47 @@ class PortalIntakeController extends Controller implements PortalProtected {
 
 		return $this->deliver(binding: $binding, render: $render, prepared: $prepared, subject: $subject, site: $site, extra: $desk);
 	}//end submit()
+
+	/**
+	 * Whether the form takes this submission at all: available, submittable here,
+	 * and the session meets its sign-in level.
+	 *
+	 * @param array<string, mixed> $site    The portal.
+	 * @param array<string, mixed> $binding The form binding.
+	 * @param array<string, mixed> $onBehalf The request's applicant, for a desk employee's submission.
+	 *
+	 * @return array{0: array<string, mixed>, 1: array<string, mixed>|null, 2: array<string, mixed>}|JSONResponse The rendered
+	 *         form, the subject and the desk employee's server values, or the refusal.
+	 *
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-an-employee-can-fill-in-a-form-for-a-resident-or-company-req-rif-005
+	 */
+	private function admitted(array $site, array $binding, array $onBehalf = []): array|JSONResponse {
+		$unavailable = $this->availability?->unavailable(binding: $binding);
+		if ($unavailable !== null) {
+			// The server refuses what the page no longer offers (REQ-FGV-001).
+			return new JSONResponse(['error' => 'form_unavailable', 'unavailable' => $unavailable], Http::STATUS_CONFLICT);
+		}
+
+		$render = $this->bindings->render(binding: $binding);
+		$subject = $this->subject();
+		$desk = $this->deskSubmission(site: $site, binding: $binding, subject: $subject, onBehalf: $onBehalf);
+		if ($desk instanceof JSONResponse) {
+			return $desk;
+		}
+
+		if ($desk !== []) {
+			// The employee sends it; the resident's own session plays no part.
+			$subject = null;
+		}
+
+		$refusal = $this->submitRefusal(site: $site, binding: $binding, render: $render, subject: $subject, desk: ($desk !== []));
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		return [$render, $subject, $desk];
+	}//end admitted()
 
 	/**
 	 * Look up the applicant a desk employee fills the form in for, and
@@ -546,14 +657,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			render: $render,
 			answers: $prepared['answers'],
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			server: [
-				'portal' => (string)($site['slug'] ?? ''),
-				'origin' => (string)$this->request->getHeader('Origin'),
-				'statements' => $prepared['statements'],
-				'decisions' => $prepared['decisions'],
-				'verifiedEmails' => $prepared['verified'],
-				'fieldMeta' => $this->destinationMapping->fieldMeta(computed: $prepared['computed']),
-			] + $extra,
+			server: $this->serverFacts(site: $site, prepared: $prepared) + $extra,
 			idempotencyKey: (string)$this->request->getHeader('Idempotency-Key')
 		);
 		if ($submitted === null || $submitted['ok'] === false) {
@@ -561,6 +665,43 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			return new JSONResponse($refusal['body'], $refusal['status']);
 		}
 
+		return $this->acknowledged(submitted: $submitted, site: $site, render: $render, prepared: $prepared);
+	}//end deliver()
+
+	/**
+	 * What the server knows about the submission, for the destination intake.
+	 *
+	 * @param array<string, mixed> $site     The portal.
+	 * @param array<string, mixed> $prepared The checked answers and their server-side companions.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 */
+	private function serverFacts(array $site, array $prepared): array {
+		return [
+			'portal' => (string)($site['slug'] ?? ''),
+			'origin' => (string)$this->request->getHeader('Origin'),
+			'statements' => $prepared['statements'],
+			'decisions' => $prepared['decisions'],
+			'verifiedEmails' => $prepared['verified'],
+			'fieldMeta' => $this->destinationMapping->fieldMeta(computed: $prepared['computed']),
+		];
+	}//end serverFacts()
+
+	/**
+	 * Send the confirmation mail and answer the citizen with the reference and the confirmation moments.
+	 *
+	 * @param array<string, mixed> $submitted The intake's accepted answer.
+	 * @param array<string, mixed> $site      The portal.
+	 * @param array<string, mixed> $render    The rendered form.
+	 * @param array<string, mixed> $prepared  The checked answers and their server-side companions.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 */
+	private function acknowledged(array $submitted, array $site, array $render, array $prepared): JSONResponse {
 		$answer    = $submitted['answer'];
 		$reference = (string)($answer['reference'] ?? '');
 		$moments   = (array)($answer['confirmation'] ?? []);
@@ -569,18 +710,34 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		return new JSONResponse(
 			array_merge(
 				$moments,
-				[
-					'reference' => $reference,
-					'id' => (string)($answer['id'] ?? ''),
-					'receivedAt' => (string)($answer['receivedAt'] ?? ''),
-					'state' => PortalIntakeQueueInterface::STATE_REGISTERED,
-					'confirmationText' => (string)($render['settings']['confirmationText'] ?? ''),
-					'confirmation' => ($render['settings']['confirmation'] ?? null),
-					'mailedTo' => $mailedTo,
-				]
+				$this->acknowledgement(answer: $answer, reference: $reference, render: $render, mailedTo: $mailedTo)
 			)
 		);
-	}//end deliver()
+	}//end acknowledged()
+
+	/**
+	 * The acknowledgement fields next to the confirmation moments.
+	 *
+	 * @param array<string, mixed> $answer    The intake's answer.
+	 * @param string               $reference The case reference.
+	 * @param array<string, mixed> $render    The rendered form.
+	 * @param string               $mailedTo  The address the mail went to, or empty.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 */
+	private function acknowledgement(array $answer, string $reference, array $render, string $mailedTo): array {
+		return [
+			'reference' => $reference,
+			'id' => (string)($answer['id'] ?? ''),
+			'receivedAt' => (string)($answer['receivedAt'] ?? ''),
+			'state' => PortalIntakeQueueInterface::STATE_REGISTERED,
+			'confirmationText' => (string)($render['settings']['confirmationText'] ?? ''),
+			'confirmation' => ($render['settings']['confirmation'] ?? null),
+			'mailedTo' => $mailedTo,
+		];
+	}//end acknowledgement()
 
 	/**
 	 * Decide one step at the step change: ask the rule engine on the server and

@@ -41,6 +41,8 @@ namespace OCA\Portaliq\Contribution;
  * Normalises and applies the input and availability keys of an endpoint row action.
  *
  * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class RowActionInputs {
 	private const FIELD_NAME = '/^[a-zA-Z][a-zA-Z0-9_]*$/';
@@ -77,17 +79,43 @@ class RowActionInputs {
 		$action = $this->availabilityKeys(action: $action);
 		// The files the resident may add (row-action-carries-files REQ-RAF-001).
 		$action = (new RowActionFiles())->normalise(action: $action, whitelist: $whitelist);
+
+		return $this->withValidTexts(action: $action);
+	}//end normaliseAction()
+
+	/**
+	 * The action without a confirm or success text that is not a short, non-blank string.
+	 *
+	 * @param array<string, mixed> $action The action.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/case-actions-row-inputs-and-conditions/tasks.md#t01
+	 */
+	private function withValidTexts(array $action): array {
 		foreach (['confirmText', 'successText'] as $textKey) {
 			if (array_key_exists($textKey, $action) === true) {
-				$text = $action[$textKey];
-				if (is_string($text) === false || trim($text) === '' || mb_strlen($text) > self::MAX_TEXT) {
+				if ($this->isInvalidText(text: $action[$textKey]) === true) {
 					unset($action[$textKey]);
 				}
 			}
 		}
 
 		return $action;
-	}//end normaliseAction()
+	}//end withValidTexts()
+
+	/**
+	 * Whether a text is not a non-blank string within the length limit.
+	 *
+	 * @param mixed $text The text.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/case-actions-row-inputs-and-conditions/tasks.md#t01
+	 */
+	private function isInvalidText(mixed $text): bool {
+		return is_string($text) === false || trim($text) === '' || mb_strlen($text) > self::MAX_TEXT;
+	}//end isInvalidText()
 
 	/**
 	 * Whether the action is available on this row. An action without
@@ -218,12 +246,7 @@ class RowActionInputs {
 		$values = [];
 		$errors = [];
 		foreach ($this->declaredInputs(action: $action, row: $row) as $input) {
-			$value = $asked[$input['name']] ?? null;
-			$text  = '';
-			if (is_scalar($value) === true) {
-				$text = mb_substr(trim((string)$value), 0, self::MAX_VALUE);
-			}
-
+			$text = $this->inputText(value: $asked[$input['name']] ?? null);
 			if ($text === '') {
 				if ($input['required'] === true) {
 					$errors[$input['name']] = 'required';
@@ -237,6 +260,24 @@ class RowActionInputs {
 
 		return ['values' => $values, 'errors' => $errors];
 	}//end collect()
+
+	/**
+	 * A submitted value as trimmed, capped text; '' for anything not scalar.
+	 *
+	 * @param mixed $value The submitted value.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/case-actions-row-inputs-and-conditions/tasks.md#t02
+	 */
+	private function inputText(mixed $value): string {
+		$text = '';
+		if (is_scalar($value) === true) {
+			$text = mb_substr(trim((string)$value), 0, self::MAX_VALUE);
+		}
+
+		return $text;
+	}//end inputText()
 
 	/**
 	 * Keep `rowInputs` only as `{from, into}`: both plain names, `into` not

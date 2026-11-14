@@ -23,6 +23,10 @@
 			{{ noFormLabel }}
 		</p>
 
+		<FormUnavailable
+			v-else-if="state === 'unavailable'"
+			:unavailable="render.unavailable" />
+
 		<div v-else-if="state === 'signIn'" data-testid="intake-form-sign-in">
 			<p v-if="feeAmountText" class="utrecht-paragraph">
 				{{ text.signInFee.split('{amount}').join(feeAmountText) }}
@@ -416,6 +420,7 @@ import FamilyMembers from './forms/FamilyMembers.vue'
 import FieldShell from './forms/FieldShell.vue'
 import FormIntro from './forms/FormIntro.vue'
 import FormProgress from './forms/FormProgress.vue'
+import FormUnavailable from './forms/FormUnavailable.vue'
 import RepeatingGroup from './forms/RepeatingGroup.vue'
 import ReviewList from './forms/ReviewList.vue'
 import SignatureField from './forms/SignatureField.vue'
@@ -659,6 +664,7 @@ export default {
 		ErrorSummary,
 		FieldShell,
 		FormProgress,
+		FormUnavailable,
 		RepeatingGroup,
 		ReviewList,
 		SignatureField,
@@ -1269,6 +1275,11 @@ export default {
 					onBehalf: this.onBehalf,
 					verifiedEmails: this.verifiedEmails,
 				})
+				if (outcome.unavailable) {
+					this.render = { ...this.render, unavailable: outcome.unavailable }
+					this.state = 'unavailable'
+					return
+				}
 				if (outcome.reference === '') {
 					const { _form: formLevel, ...fieldErrors } = outcome.errors || {}
 					this.formError = String(formLevel || '')
