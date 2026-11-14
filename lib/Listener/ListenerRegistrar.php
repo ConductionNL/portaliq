@@ -126,6 +126,12 @@ final class ListenerRegistrar {
 			$context->registerEventListener($event, MediaWriteGuardListener::class);
 		}
 
+		// A portal's logo, favicon and hero image: its own media only, and a
+		// favicon that is a PNG, SVG or ICO (portal-identity-from-the-admin).
+		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $event) {
+			$context->registerEventListener($event, PortalImagesGuardListener::class);
+		}
+
 		// A glossary term relates only to terms of its own portal (portal-cms-content-model).
 		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $event) {
 			$context->registerEventListener($event, GlossaryRelationGuardListener::class);
