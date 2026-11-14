@@ -508,6 +508,8 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         ['name' => 'portalTimeline#show', 'url' => '/portal/api/collections/{register}/{schema}/{id}/timeline', 'verb' => 'GET'],
         // Where one case stands, from its app's steps provider (site-mijn-omgeving-components REQ-SMO-022).
         ['name' => 'portalTimeline#steps', 'url' => '/portal/api/collections/{register}/{schema}/{id}/steps', 'verb' => 'GET'],
+        // The messages about one case, both ways, from its app's messages provider (capability-rows-said-and-planned T07).
+        ['name' => 'portalTimeline#messages', 'url' => '/portal/api/collections/{register}/{schema}/{id}/messages', 'verb' => 'GET'],
         // One object's items, e.g. a dossier's publications (my-dossiers).
         ['name' => 'portalTimeline#items', 'url' => '/portal/api/collections/{register}/{schema}/{id}/items', 'verb' => 'GET'],
         ['name' => 'contribution#update', 'url' => '/portal/api/collections/{register}/{schema}/{id}', 'verb' => 'PATCH'],

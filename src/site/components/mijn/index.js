@@ -23,6 +23,8 @@ export const blocks = {
 	progressCards: () => import('./ProgressCards.vue'),
 	documents: () => import('./DocumentsBlock.vue'),
 	timeline: () => import('./TimelineBlock.vue'),
+	// capability-rows-said-and-planned T07
+	messages: () => import('./MessagesBlock.vue'),
 	// site-school-blocks
 	dateRows: () => import('./DateRows.vue'),
 	bars: () => import('./GradeBars.vue'),

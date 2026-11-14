@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.111.0"
+        "version": "0.112.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.111.0",
+                "version": "0.112.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -1741,7 +1741,7 @@
                     ]
                 },
                 "icon": "WebBox",
-                "version": "0.10.0",
+                "version": "0.11.0",
                 "title": "Portal Page",
                 "description": "A data-provisioned portal contribution (ADR-046, portal-page-provisioning). Mirrors the IPortalContributionProvider manifest shape 1:1 so Portaliq's built-in provider can read this object and hand it to the same PortalManifestNormaliser every PHP provider's output passes through. Owned by the app that provisions the page; never publicly readable — the built-in provider is the only reader, server-side.",
                 "type": "object",
@@ -2000,6 +2000,11 @@
                                     "title": "Documents",
                                     "type": "object",
                                     "description": "The label and the provider method that lists a case's documents."
+                                },
+                                "messages": {
+                                    "title": "Messages",
+                                    "type": "object",
+                                    "description": "The label and the provider method that lists the messages about a record, both ways."
                                 },
                                 "itemList": {
                                     "title": "Item list",
@@ -2307,6 +2312,7 @@
                                                     "steps",
                                                     "documents",
                                                     "timeline",
+                                                    "messages",
                                                     "greeting"
                                                 ]
                                             },
@@ -2432,6 +2438,16 @@
                                                 "title": "Route",
                                                 "type": "string",
                                                 "description": "On a call to action: an address inside the portal, starting with one slash."
+                                            },
+                                            "askAction": {
+                                                "title": "Ask action",
+                                                "type": "string",
+                                                "description": "For type=messages: references actions[].id, the create action that asks a question about the open record."
+                                            },
+                                            "askLabel": {
+                                                "title": "Ask label",
+                                                "type": "string",
+                                                "description": "For type=messages: the label of the ask button."
                                             },
                                             "withRecord": {
                                                 "title": "With the open record",

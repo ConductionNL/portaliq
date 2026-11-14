@@ -34,6 +34,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Auth\PortalProtected;
+use OCA\Portaliq\Contribution\CaseMessageEntries;
+use OCA\Portaliq\Contribution\CaseMessagesProviderMethod;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\MandatedCaseReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
@@ -152,6 +154,44 @@ class PortalTimelineController extends Controller implements PortalProtected {
 	}//end steps()
 
 	/**
+	 * The messages about one object the subject owns, both ways, newest
+	 * first: what its app's `messages` provider answers, held to
+	 * `{id, subject, body, receivedAt, fromResident, senderName, read}`.
+	 * Ownership is proven first, as for the timeline, so a foreign or absent
+	 * id is one 404 and the provider is never asked.
+	 *
+	 * @param string $register The register of the collection.
+	 * @param string $schema   The schema of the collection.
+	 * @param string $id       The object id (never trusted; ownership proven first).
+	 *
+	 * @return JSONResponse `{label, messages}`, or 401 / 403 / 404 / 502.
+	 *
+	 * @spec openspec/changes/capability-rows-said-and-planned/tasks.md#t07
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
+	public function messages(string $register, string $schema, string $id): JSONResponse {
+		$proven = $this->provenObject(register: $register, schema: $schema, id: $id, key: CaseMessagesProviderMethod::KEY);
+		if ($proven instanceof JSONResponse) {
+			return $proven;
+		}
+
+		$entries = $this->timelines->entries(appId: $proven['app'], method: $proven['declared']['provider'], id: $id);
+		if ($entries === null) {
+			// Messages that could not be read are not a case without messages.
+			return new JSONResponse(['error' => 'messages_unavailable'], Http::STATUS_BAD_GATEWAY);
+		}
+
+		return new JSONResponse(
+			[
+				'label' => (string)($proven['declared']['label'] ?? ''),
+				'messages' => (new CaseMessageEntries())->entries(entries: $entries),
+			]
+		);
+	}//end messages()
+
+	/**
 	 * The items of one object the subject owns (my-dossiers): a dossier's
 	 * publications, from the provider method its collection's `itemList`
 	 * names. Proven exactly as the history is.
@@ -198,7 +238,7 @@ class PortalTimelineController extends Controller implements PortalProtected {
 	 * @param string $register The register of the collection.
 	 * @param string $schema   The schema of the collection.
 	 * @param string $id       The object id.
-	 * @param string $key      `timeline`, `steps` or `itemList`.
+	 * @param string $key      `timeline`, `steps`, `messages` or `itemList`.
 	 *
 	 * @return JSONResponse|array{app: string, declared: array<string, mixed>} The refusal, or the proven match.
 	 *
@@ -256,7 +296,7 @@ class PortalTimelineController extends Controller implements PortalProtected {
 	 * @param array<string, mixed> $subject  The resolved subject.
 	 * @param string               $register The register of the collection.
 	 * @param string               $schema   The schema of the collection.
-	 * @param string               $key      `timeline`, `steps` or `itemList`.
+	 * @param string               $key      `timeline`, `steps`, `messages` or `itemList`.
 	 *
 	 * @return JSONResponse|array{match: array{collection: array<string, mixed>, app: string}, declared: array<string, mixed>}
 	 *
@@ -301,7 +341,7 @@ class PortalTimelineController extends Controller implements PortalProtected {
 	 * The collection's `$key` declaration, or null when it names no provider.
 	 *
 	 * @param array<string, mixed> $collection The collection.
-	 * @param string               $key        `timeline`, `steps` or `itemList`.
+	 * @param string               $key        `timeline`, `steps`, `messages` or `itemList`.
 	 *
 	 * @return array<string, mixed>|null
 	 *

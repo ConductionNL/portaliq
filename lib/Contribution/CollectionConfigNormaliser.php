@@ -114,6 +114,8 @@ class CollectionConfigNormaliser {
 		$collection = $this->normaliseDetail(collection: $collection);
 		$collection = (new CollectionFieldConfigNormaliser())->normalise(collection: $collection);
 		$collection = (new TimelineProviderMethod())->normaliseTimeline(collection: $collection);
+		// The messages about one record, both ways (capability-rows-said-and-planned T07).
+		$collection = (new CaseMessagesProviderMethod())->normalise(collection: $collection);
 		$collection = (new DocumentsProviderMethod())->normalise(collection: $collection);
 		$collection = $this->normaliseDefaults(collection: $collection);
 		$collection = $this->normaliseFileFlags(collection: $collection);

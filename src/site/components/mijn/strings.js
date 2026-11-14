@@ -14,6 +14,17 @@
 
 export default {
 	nl: {
+		// capability-rows-said-and-planned T07: the messages on a case
+		Messages: 'Berichten',
+		'The messages could not be loaded.':
+			'De berichten konden niet worden geladen.',
+		'There are no messages about this case yet.':
+			'Er zijn nog geen berichten over deze zaak.',
+		'Ask a question about this case': 'Stel een vraag over deze zaak',
+		'You wrote': 'U schreef',
+		'{name} wrote': '{name} schreef',
+		'The organisation wrote': 'De organisatie schreef',
+		Unread: 'Ongelezen',
 		// calendar-timetable-display
 		'Choose a day': 'Kies een dag',
 		'Nothing on the timetable this day.':
@@ -116,6 +127,16 @@ export default {
 		'{value} of {total} {label}': '{value} van {total} {label}',
 	},
 	en: {
+		// capability-rows-said-and-planned T07: the messages on a case
+		Messages: 'Messages',
+		'The messages could not be loaded.': 'The messages could not be loaded.',
+		'There are no messages about this case yet.':
+			'There are no messages about this case yet.',
+		'Ask a question about this case': 'Ask a question about this case',
+		'You wrote': 'You wrote',
+		'{name} wrote': '{name} wrote',
+		'The organisation wrote': 'The organisation wrote',
+		Unread: 'Unread',
 		// calendar-timetable-display
 		'Choose a day': 'Choose a day',
 		'Nothing on the timetable this day.': 'Nothing on the timetable this day.',
