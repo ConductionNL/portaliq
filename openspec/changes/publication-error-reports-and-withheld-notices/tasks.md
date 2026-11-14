@@ -75,11 +75,12 @@ test marked **fails today** must be run on `origin/development` first and seen r
   written in the PR body as the proposed contract, leave this box open, and say in the PR body that
   6.16's second half waits on opencatalogi.
   - node test `two withheld documents list their grounds`, `notices off lists nothing`.
-  - Rendering built against the proposed contract (`withheldDocumentsOf()` in `src/site/lib/publicationDetail.js`,
-    the "Niet openbaar gemaakt" section of `PublicationDetailBlock.vue`, both tests in
-    `tests/publication-detail.spec.mjs`): the publication read carries `withheldDocuments`, a list of
-    `{reference, grounds: [{code, label}]}`. Left open: no opencatalogi change exposes withheld documents with
-    their grounds on the public read yet, so 6.16's second half waits on opencatalogi.
+  - Rendering built (`withheldDocumentsOf()` in `src/site/lib/publicationDetail.js`, the "Niet openbaar gemaakt"
+    section of `PublicationDetailBlock.vue`, both tests in `tests/publication-detail.spec.mjs`) against the contract
+    opencatalogi plans but has not shipped: `withheld: [{position, grounds, title?, groundDetails?}]` on the public
+    read (opencatalogi `publication-detail-for-the-portal` REQ-PDP-004, `woo-decision-shows-what-was-withheld`
+    REQ-WDW-003). Left open: neither change is merged on opencatalogi `development`, so 6.16's second half waits on
+    opencatalogi.
 
 ## 4. Live
 

@@ -405,35 +405,72 @@ export function withdrawalLines(withdrawal, locale) {
  * portal shows withheld notices (publication-error-reports-and-withheld-notices
  * REQ-PER-005). Only what the public read carries is shown.
  *
- * PROPOSED CONTRACT, not yet answered by opencatalogi: the publication read
- * carries `withheldDocuments`, a list of `{reference, grounds: [{code,
- * label}]}`. A row without a reference, and a ground without a code, is left
- * out; a document without a usable ground is still listed, with none.
+ * The contract is opencatalogi's planned `withheld` on the public read
+ * (publication-detail-for-the-portal REQ-PDP-004, woo-decision-shows-what-was-withheld
+ * REQ-WDW-003): a list of `{position, grounds, title?, groundDetails?}`,
+ * `grounds` the codes and `groundDetails` `{code, article, label}`. A row is
+ * named by its title when the read carries one, else by its position. Labels
+ * come from `groundDetails`; a code without one reads as its code alone.
  *
  * @param {object|null} publication The publication the read returned.
  * @param {object|null} publications The site record's `publications`.
+ * @param {string} [locale] The site's language.
  * @return {Array<{reference: string, grounds: Array<{code: string, label: string}>}>}
  * @spec openspec/changes/publication-error-reports-and-withheld-notices/specs/portal-federated-search/spec.md#requirement-a-publication-lists-what-was-held-back-with-the-ground-req-per-005
  */
-export function withheldDocumentsOf(publication, publications) {
+export function withheldDocumentsOf(publication, publications, locale = 'nl') {
 	if (!publications || publications.withheldNotices !== true) {
 		return []
 	}
 
-	const rows = (publication || {}).withheldDocuments
+	const rows = (publication || {}).withheld
 	if (!Array.isArray(rows)) {
 		return []
 	}
 
 	return rows
-		.filter((row) => row && typeof row.reference === 'string' && row.reference.trim() !== '')
-		.map((row) => ({
-			reference: row.reference.trim(),
-			grounds: (Array.isArray(row.grounds) ? row.grounds : [])
-				.filter((ground) => ground && typeof ground.code === 'string' && ground.code.trim() !== '')
-				.map((ground) => ({
-					code: ground.code.trim(),
-					label: typeof ground.label === 'string' ? ground.label.trim() : '',
-				})),
-		}))
+		.filter((row) => row && typeof row === 'object')
+		.map((row) => ({ reference: withheldReference(row, locale), grounds: withheldGrounds(row) }))
+		.filter((row) => row.reference !== '')
+}
+
+/**
+ * @param {object} row One `withheld` entry.
+ * @param {string} locale The site's language.
+ * @return {string} Its title, else "Document <position>", else ''.
+ */
+function withheldReference(row, locale) {
+	if (typeof row.title === 'string' && row.title.trim() !== '') {
+		return row.title.trim()
+	}
+	const position = Number(row.position)
+	if (Number.isInteger(position) && position > 0) {
+		return `${locale === 'en' ? 'Document' : 'Document'} ${position}`
+	}
+	return ''
+}
+
+/**
+ * @param {object} row One `withheld` entry.
+ * @return {Array<{code: string, label: string}>} Its grounds, in the read's order.
+ */
+function withheldGrounds(row) {
+	const details = Array.isArray(row.groundDetails) ? row.groundDetails : []
+	const labels = {}
+	for (const detail of details) {
+		if (detail && typeof detail.code === 'string') {
+			labels[detail.code.trim()] = typeof detail.label === 'string' ? detail.label.trim() : ''
+		}
+	}
+
+	const codes = (Array.isArray(row.grounds) ? row.grounds : [])
+		.filter((code) => typeof code === 'string' && code.trim() !== '')
+		.map((code) => code.trim())
+	for (const code of Object.keys(labels)) {
+		if (code !== '' && codes.includes(code) === false) {
+			codes.push(code)
+		}
+	}
+
+	return codes.map((code) => ({ code, label: labels[code] || '' }))
 }

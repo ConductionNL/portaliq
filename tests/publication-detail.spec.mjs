@@ -174,26 +174,37 @@ test('a tombstone without a title shows none', async () => {
 	)
 })
 
-// REQ-PER-005 against the PROPOSED contract: opencatalogi's public read does
-// not carry withheld documents yet, so the fixture's keys are the proposal.
+// REQ-PER-005 against opencatalogi's planned `withheld` on the public read
+// (publication-detail-for-the-portal REQ-PDP-004, woo-decision-shows-what-was-withheld
+// REQ-WDW-003), not shipped yet.
 const WITH_WITHHELD = {
 	id: 'pub-1',
 	title: 'Besluit op Woo-verzoek',
-	withheldDocuments: [
+	withheld: [
 		{
-			reference: 'Document 4',
-			grounds: [
+			position: 3,
+			grounds: ['5.1.2.e'],
+			groundDetails: [
 				{
 					code: '5.1.2.e',
+					article: '5.1 lid 2 sub e',
 					label: 'Eerbiediging van de persoonlijke levenssfeer',
 				},
 			],
 		},
 		{
-			reference: 'Document 7',
-			grounds: [{ code: '5.2.1', label: 'Persoonlijke beleidsopvattingen' }],
+			position: 7,
+			grounds: ['5.2.1'],
+			title: 'Interne notitie wethouder',
+			groundDetails: [
+				{
+					code: '5.2.1',
+					article: '5.2 lid 1',
+					label: 'Persoonlijke beleidsopvattingen',
+				},
+			],
 		},
-		{ grounds: [{ code: '5.1.1.c' }] },
+		{ grounds: ['5.1.1.c'] },
 	],
 }
 
@@ -226,7 +237,7 @@ async function renderPublication(publications) {
 test('two withheld documents list their grounds', async () => {
 	assert.deepEqual(withheldDocumentsOf(WITH_WITHHELD, { withheldNotices: true }), [
 		{
-			reference: 'Document 4',
+			reference: 'Document 3',
 			grounds: [
 				{
 					code: '5.1.2.e',
@@ -235,13 +246,23 @@ test('two withheld documents list their grounds', async () => {
 			],
 		},
 		{
-			reference: 'Document 7',
+			reference: 'Interne notitie wethouder',
 			grounds: [{ code: '5.2.1', label: 'Persoonlijke beleidsopvattingen' }],
 		},
 	])
 
+	// A batch entry carries codes only: the code reads alone, never a guessed label.
+	assert.deepEqual(
+		withheldDocumentsOf(
+			{ withheld: [{ position: 2, grounds: ['5.1.1.c'] }] },
+			{ withheldNotices: true },
+		),
+		[{ reference: 'Document 2', grounds: [{ code: '5.1.1.c', label: '' }] }],
+	)
+
 	const html = await renderPublication({ withheldNotices: true })
 	assert.match(html, /Niet openbaar gemaakt/)
+	assert.match(html, /Interne notitie wethouder/)
 	assert.equal(
 		(html.match(/data-testid="publication-withheld-document"/g) || []).length,
 		2,
@@ -265,10 +286,7 @@ test('notices off lists nothing', async () => {
 		)
 	}
 	assert.deepEqual(
-		withheldDocumentsOf(
-			{ withheldDocuments: 'no list' },
-			{ withheldNotices: true },
-		),
+		withheldDocumentsOf({ withheld: 'no list' }, { withheldNotices: true }),
 		[],
 	)
 })

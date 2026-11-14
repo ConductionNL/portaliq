@@ -510,7 +510,7 @@ export default {
 		 * @spec openspec/changes/publication-error-reports-and-withheld-notices/specs/portal-federated-search/spec.md#requirement-a-publication-lists-what-was-held-back-with-the-ground-req-per-005
 		 */
 		withheld() {
-			return withheldDocumentsOf(this.publication, this.publications)
+			return withheldDocumentsOf(this.publication, this.publications, this.locale)
 		},
 
 		/**
