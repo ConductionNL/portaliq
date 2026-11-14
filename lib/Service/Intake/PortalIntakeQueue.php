@@ -375,6 +375,19 @@ class PortalIntakeQueue implements PortalIntakeQueueInterface {
 			filter: ['portal' => $portal]
 		);
 
+		return $this->firstSubmission(rows: $rows, reference: $reference, portal: $portal);
+	}//end byReference()
+
+	/**
+	 * The first row that is the submission with this reference on this portal, or null.
+	 *
+	 * @param array<int, mixed> $rows      The rows read.
+	 * @param string            $reference The reference.
+	 * @param string            $portal    The portal.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function firstSubmission(array $rows, string $reference, string $portal): array|null {
 		foreach ($rows as $row) {
 			if (is_array($row) === true && ($row['reference'] ?? '') === $reference && ($row['portal'] ?? '') === $portal) {
 				return $row;
@@ -382,7 +395,7 @@ class PortalIntakeQueue implements PortalIntakeQueueInterface {
 		}
 
 		return null;
-	}//end byReference()
+	}//end firstSubmission()
 
 	/**
 	 * A submission by its reference, as the portal stored it.

@@ -429,6 +429,42 @@ final class ContractRegistrar {
 	 * @spec exclude Structural contract wiring, no functional requirement.
 	 */
 	public function register(IRegistrationContext $context): void {
+		$this->aliasAccessibilityFramingThroughPortalFamilyMembers(context: $context);
+		$this->aliasPortalFeeThroughWriteRefusal(context: $context);
+	}//end register()
+
+	/**
+	 * Alias the contracts AccessibilityFraming through PortalFamilyMembers.
+	 *
+	 * @param IRegistrationContext $context Registration context
+	 *
+	 * @return void
+	 *
+	 * @spec exclude Structural contract wiring, no functional requirement.
+	 */
+	private function aliasAccessibilityFramingThroughPortalFamilyMembers(IRegistrationContext $context): void {
+		$this->aliasAccessibilityFramingToActivityRoster(context: $context);
+		$this->aliasActivitySignupServiceToCaseTypeNames(context: $context);
+		$this->aliasCaseTypeReaderToContactAddressValues(context: $context);
+		$this->aliasContactConfirmationMailerToEmailLinkTokens(context: $context);
+		$this->aliasEventFeedReaderToGuardianAudienceFixtureReader(context: $context);
+		$this->aliasHostRootRedirectToMessageBoxChannel(context: $context);
+		$this->aliasMessageBoxSenderToOidcClientService(context: $context);
+		$this->aliasOidcStateStoreServiceToPortalAccountService(context: $context);
+		$this->aliasPortalActionForwarderToPortalChallengeService(context: $context);
+		$this->aliasPortalChangeRuleIndexToPortalFamilyMembers(context: $context);
+	}//end aliasAccessibilityFramingThroughPortalFamilyMembers()
+
+	/**
+	 * Alias the contracts AccessibilityFraming to ActivityRoster.
+	 *
+	 * @param IRegistrationContext $context Registration context
+	 *
+	 * @return void
+	 *
+	 * @spec exclude Structural contract wiring, no functional requirement.
+	 */
+	private function aliasAccessibilityFramingToActivityRoster(IRegistrationContext $context): void {
 		$context->registerServiceAlias(AccessibilityFramingInterface::class, AccessibilityFraming::class);
 		$context->registerServiceAlias(AccessibilityMeasurementsInterface::class, AccessibilityMeasurements::class);
 		$context->registerServiceAlias(AccessibilityRunInterface::class, AccessibilityRun::class);
@@ -442,6 +478,18 @@ final class ContractRegistrar {
 		$context->registerServiceAlias(ActivityFeedReaderInterface::class, ActivityFeedReader::class);
 		$context->registerServiceAlias(ActivityPlacesInterface::class, ActivityPlaces::class);
 		$context->registerServiceAlias(ActivityRosterInterface::class, ActivityRoster::class);
+	}//end aliasAccessibilityFramingToActivityRoster()
+
+	/**
+	 * Alias the contracts ActivitySignupService to CaseTypeNames.
+	 *
+	 * @param IRegistrationContext $context Registration context
+	 *
+	 * @return void
+	 *
+	 * @spec exclude Structural contract wiring, no functional requirement.
+	 */
+	private function aliasActivitySignupServiceToCaseTypeNames(IRegistrationContext $context): void {
 		$context->registerServiceAlias(ActivitySignupServiceInterface::class, ActivitySignupService::class);
 		$context->registerServiceAlias(ActivityStoreInterface::class, ActivityStore::class);
 		$context->registerServiceAlias(AdminMenuAccessInterface::class, AdminMenuAccess::class);
@@ -455,6 +503,18 @@ final class ContractRegistrar {
 		$context->registerServiceAlias(CaseRowMarkerInterface::class, CaseRowMarker::class);
 		$context->registerServiceAlias(CaseTypeColumnSettingsInterface::class, CaseTypeColumnSettings::class);
 		$context->registerServiceAlias(CaseTypeNamesInterface::class, CaseTypeNames::class);
+	}//end aliasActivitySignupServiceToCaseTypeNames()
+
+	/**
+	 * Alias the contracts CaseTypeReader to ContactAddressValues.
+	 *
+	 * @param IRegistrationContext $context Registration context
+	 *
+	 * @return void
+	 *
+	 * @spec exclude Structural contract wiring, no functional requirement.
+	 */
+	private function aliasCaseTypeReaderToContactAddressValues(IRegistrationContext $context): void {
 		$context->registerServiceAlias(CaseTypeReaderInterface::class, CaseTypeReader::class);
 		$context->registerServiceAlias(CaseTypeVisibilityInterface::class, CaseTypeVisibility::class);
 		$context->registerServiceAlias(ChangeRuleNoticesInterface::class, ChangeRuleNotices::class);
@@ -468,6 +528,18 @@ final class ContractRegistrar {
 		$context->registerServiceAlias(CollectionDocumentsInterface::class, CollectionDocuments::class);
 		$context->registerServiceAlias(ColumnOverridesInterface::class, ColumnOverrides::class);
 		$context->registerServiceAlias(ContactAddressValuesInterface::class, ContactAddressValues::class);
+	}//end aliasCaseTypeReaderToContactAddressValues()
+
+	/**
+	 * Alias the contracts ContactConfirmationMailer to EmailLinkTokens.
+	 *
+	 * @param IRegistrationContext $context Registration context
+	 *
+	 * @return void
+	 *
+	 * @spec exclude Structural contract wiring, no functional requirement.
+	 */
+	private function aliasContactConfirmationMailerToEmailLinkTokens(IRegistrationContext $context): void {
 		$context->registerServiceAlias(ContactConfirmationMailerInterface::class, ContactConfirmationMailer::class);
 		$context->registerServiceAlias(ContributionCensusInterface::class, ContributionCensus::class);
 		$context->registerServiceAlias(DemoDataServiceInterface::class, DemoDataService::class);
@@ -481,6 +553,18 @@ final class ContractRegistrar {
 		$context->registerServiceAlias(EmailLinkSenderInterface::class, EmailLinkSender::class);
 		$context->registerServiceAlias(EmailLinkSettingInterface::class, EmailLinkSetting::class);
 		$context->registerServiceAlias(EmailLinkTokensInterface::class, EmailLinkTokens::class);
+	}//end aliasContactConfirmationMailerToEmailLinkTokens()
+
+	/**
+	 * Alias the contracts EventFeedReader to GuardianAudienceFixtureReader.
+	 *
+	 * @param IRegistrationContext $context Registration context
+	 *
+	 * @return void
+	 *
+	 * @spec exclude Structural contract wiring, no functional requirement.
+	 */
+	private function aliasEventFeedReaderToGuardianAudienceFixtureReader(IRegistrationContext $context): void {
 		$context->registerServiceAlias(EventFeedReaderInterface::class, EventFeedReader::class);
 		$context->registerServiceAlias(EventRsvpServiceInterface::class, EventRsvpService::class);
 		$context->registerServiceAlias(EventSignupServiceInterface::class, EventSignupService::class);
@@ -494,6 +578,18 @@ final class ContractRegistrar {
 		$context->registerServiceAlias(GeoRefreshServiceInterface::class, GeoRefreshService::class);
 		$context->registerServiceAlias(GlossaryRelationsInterface::class, GlossaryRelations::class);
 		$context->registerServiceAlias(GuardianAudienceFixtureReaderInterface::class, GuardianAudienceFixtureReader::class);
+	}//end aliasEventFeedReaderToGuardianAudienceFixtureReader()
+
+	/**
+	 * Alias the contracts HostRootRedirect to MessageBoxChannel.
+	 *
+	 * @param IRegistrationContext $context Registration context
+	 *
+	 * @return void
+	 *
+	 * @spec exclude Structural contract wiring, no functional requirement.
+	 */
+	private function aliasHostRootRedirectToMessageBoxChannel(IRegistrationContext $context): void {
 		$context->registerServiceAlias(HostRootRedirectInterface::class, HostRootRedirect::class);
 		$context->registerServiceAlias(IntakeQueueDrainInterface::class, IntakeQueueDrain::class);
 		$context->registerServiceAlias(InternalBaseUrlInterface::class, InternalBaseUrl::class);
@@ -507,6 +603,18 @@ final class ContractRegistrar {
 		$context->registerServiceAlias(MediaLibraryReaderInterface::class, MediaLibraryReader::class);
 		$context->registerServiceAlias(MediaUsageInterface::class, MediaUsage::class);
 		$context->registerServiceAlias(MessageBoxChannelInterface::class, MessageBoxChannel::class);
+	}//end aliasHostRootRedirectToMessageBoxChannel()
+
+	/**
+	 * Alias the contracts MessageBoxSender to OidcClientService.
+	 *
+	 * @param IRegistrationContext $context Registration context
+	 *
+	 * @return void
+	 *
+	 * @spec exclude Structural contract wiring, no functional requirement.
+	 */
+	private function aliasMessageBoxSenderToOidcClientService(IRegistrationContext $context): void {
 		$context->registerServiceAlias(MessageBoxSenderInterface::class, MessageBoxSender::class);
 		$context->registerServiceAlias(MessageBoxStatusInterface::class, MessageBoxStatus::class);
 		$context->registerServiceAlias(MessageContactReaderInterface::class, MessageContactReader::class);
@@ -520,6 +628,18 @@ final class ContractRegistrar {
 		$context->registerServiceAlias(NotificationDispatchServiceInterface::class, NotificationDispatchService::class);
 		$context->registerServiceAlias(OidcClaimMapperServiceInterface::class, OidcClaimMapperService::class);
 		$context->registerServiceAlias(OidcClientServiceInterface::class, OidcClientService::class);
+	}//end aliasMessageBoxSenderToOidcClientService()
+
+	/**
+	 * Alias the contracts OidcStateStoreService to PortalAccountService.
+	 *
+	 * @param IRegistrationContext $context Registration context
+	 *
+	 * @return void
+	 *
+	 * @spec exclude Structural contract wiring, no functional requirement.
+	 */
+	private function aliasOidcStateStoreServiceToPortalAccountService(IRegistrationContext $context): void {
 		$context->registerServiceAlias(OidcStateStoreServiceInterface::class, OidcStateStoreService::class);
 		$context->registerServiceAlias(OrganisationLoginConfigInterface::class, OrganisationLoginConfig::class);
 		$context->registerServiceAlias(PageEditorServiceInterface::class, PageEditorService::class);
@@ -533,6 +653,18 @@ final class ContractRegistrar {
 		$context->registerServiceAlias(PortalAccountActivationServiceInterface::class, PortalAccountActivationService::class);
 		$context->registerServiceAlias(PortalAccountLookupInterface::class, PortalAccountLookup::class);
 		$context->registerServiceAlias(PortalAccountServiceInterface::class, PortalAccountService::class);
+	}//end aliasOidcStateStoreServiceToPortalAccountService()
+
+	/**
+	 * Alias the contracts PortalActionForwarder to PortalChallengeService.
+	 *
+	 * @param IRegistrationContext $context Registration context
+	 *
+	 * @return void
+	 *
+	 * @spec exclude Structural contract wiring, no functional requirement.
+	 */
+	private function aliasPortalActionForwarderToPortalChallengeService(IRegistrationContext $context): void {
 		$context->registerServiceAlias(PortalActionForwarderInterface::class, PortalActionForwarder::class);
 		$context->registerServiceAlias(PortalActionServiceInterface::class, PortalActionService::class);
 		$context->registerServiceAlias(PortalAddressLookupInterface::class, PortalAddressLookup::class);
@@ -546,6 +678,18 @@ final class ContractRegistrar {
 		$context->registerServiceAlias(PortalCaseTypeChoicesInterface::class, PortalCaseTypeChoices::class);
 		$context->registerServiceAlias(PortalCatalogueReaderInterface::class, PortalCatalogueReader::class);
 		$context->registerServiceAlias(PortalChallengeServiceInterface::class, PortalChallengeService::class);
+	}//end aliasPortalActionForwarderToPortalChallengeService()
+
+	/**
+	 * Alias the contracts PortalChangeRuleIndex to PortalFamilyMembers.
+	 *
+	 * @param IRegistrationContext $context Registration context
+	 *
+	 * @return void
+	 *
+	 * @spec exclude Structural contract wiring, no functional requirement.
+	 */
+	private function aliasPortalChangeRuleIndexToPortalFamilyMembers(IRegistrationContext $context): void {
 		$context->registerServiceAlias(PortalChangeRuleIndexInterface::class, PortalChangeRuleIndex::class);
 		$context->registerServiceAlias(PortalContactAddressServiceInterface::class, PortalContactAddressService::class);
 		$context->registerServiceAlias(PortalContactServiceInterface::class, PortalContactService::class);
@@ -559,6 +703,39 @@ final class ContractRegistrar {
 		$context->registerServiceAlias(PortalEmbedSnippetDescriptionInterface::class, PortalEmbedSnippetDescription::class);
 		$context->registerServiceAlias(PortalEmbedThrottleInterface::class, PortalEmbedThrottle::class);
 		$context->registerServiceAlias(PortalFamilyMembersInterface::class, PortalFamilyMembers::class);
+	}//end aliasPortalChangeRuleIndexToPortalFamilyMembers()
+
+	/**
+	 * Alias the contracts PortalFee through WriteRefusal.
+	 *
+	 * @param IRegistrationContext $context Registration context
+	 *
+	 * @return void
+	 *
+	 * @spec exclude Structural contract wiring, no functional requirement.
+	 */
+	private function aliasPortalFeeThroughWriteRefusal(IRegistrationContext $context): void {
+		$this->aliasPortalFeeToPortalIntakePayments(context: $context);
+		$this->aliasPortalIntakeQueueToPortalOverview(context: $context);
+		$this->aliasPortalPartyTreeResolverToPortalRuntimeConfigResolver(context: $context);
+		$this->aliasPortalSchemaReaderToProposalService(context: $context);
+		$this->aliasPublicAssistantChannelToReportProjection(context: $context);
+		$this->aliasReportTermsServiceToSignInAddressChange(context: $context);
+		$this->aliasSiteHeadToTrafficLogImporter(context: $context);
+		$this->aliasTrafficLogParserToVisibleFromGate(context: $context);
+		$this->aliasWaitingAccountInvitationToWriteRefusal(context: $context);
+	}//end aliasPortalFeeThroughWriteRefusal()
+
+	/**
+	 * Alias the contracts PortalFee to PortalIntakePayments.
+	 *
+	 * @param IRegistrationContext $context Registration context
+	 *
+	 * @return void
+	 *
+	 * @spec exclude Structural contract wiring, no functional requirement.
+	 */
+	private function aliasPortalFeeToPortalIntakePayments(IRegistrationContext $context): void {
 		$context->registerServiceAlias(PortalFeeInterface::class, PortalFee::class);
 		$context->registerServiceAlias(PortalFileFieldPolicyInterface::class, PortalFileFieldPolicy::class);
 		$context->registerServiceAlias(PortalFileReaderInterface::class, PortalFileReader::class);
@@ -572,6 +749,18 @@ final class ContractRegistrar {
 		$context->registerServiceAlias(PortalInboxReaderInterface::class, PortalInboxReader::class);
 		$context->registerServiceAlias(PortalIntakeConfirmationInterface::class, PortalIntakeConfirmation::class);
 		$context->registerServiceAlias(PortalIntakePaymentsInterface::class, PortalIntakePayments::class);
+	}//end aliasPortalFeeToPortalIntakePayments()
+
+	/**
+	 * Alias the contracts PortalIntakeQueue to PortalOverview.
+	 *
+	 * @param IRegistrationContext $context Registration context
+	 *
+	 * @return void
+	 *
+	 * @spec exclude Structural contract wiring, no functional requirement.
+	 */
+	private function aliasPortalIntakeQueueToPortalOverview(IRegistrationContext $context): void {
 		$context->registerServiceAlias(PortalIntakeQueueInterface::class, PortalIntakeQueue::class);
 		$context->registerServiceAlias(PortalInvitationServiceInterface::class, PortalInvitationService::class);
 		$context->registerServiceAlias(PortalItemReaderInterface::class, PortalItemReader::class);
@@ -585,6 +774,18 @@ final class ContractRegistrar {
 		$context->registerServiceAlias(PortalOrganisationConfigServiceInterface::class, PortalOrganisationConfigService::class);
 		$context->registerServiceAlias(PortalOrganisationRestampInterface::class, PortalOrganisationRestamp::class);
 		$context->registerServiceAlias(PortalOverviewInterface::class, PortalOverview::class);
+	}//end aliasPortalIntakeQueueToPortalOverview()
+
+	/**
+	 * Alias the contracts PortalPartyTreeResolver to PortalRuntimeConfigResolver.
+	 *
+	 * @param IRegistrationContext $context Registration context
+	 *
+	 * @return void
+	 *
+	 * @spec exclude Structural contract wiring, no functional requirement.
+	 */
+	private function aliasPortalPartyTreeResolverToPortalRuntimeConfigResolver(IRegistrationContext $context): void {
 		$context->registerServiceAlias(PortalPartyTreeResolverInterface::class, PortalPartyTreeResolver::class);
 		$context->registerServiceAlias(PortalPdfExportInterface::class, PortalPdfExport::class);
 		$context->registerServiceAlias(PortalPlanServiceInterface::class, PortalPlanService::class);
@@ -598,6 +799,18 @@ final class ContractRegistrar {
 		$context->registerServiceAlias(PortalRegistrationPolicyServiceInterface::class, PortalRegistrationPolicyService::class);
 		$context->registerServiceAlias(PortalResolverInterface::class, PortalResolver::class);
 		$context->registerServiceAlias(PortalRuntimeConfigResolverInterface::class, PortalRuntimeConfigResolver::class);
+	}//end aliasPortalPartyTreeResolverToPortalRuntimeConfigResolver()
+
+	/**
+	 * Alias the contracts PortalSchemaReader to ProposalService.
+	 *
+	 * @param IRegistrationContext $context Registration context
+	 *
+	 * @return void
+	 *
+	 * @spec exclude Structural contract wiring, no functional requirement.
+	 */
+	private function aliasPortalSchemaReaderToProposalService(IRegistrationContext $context): void {
 		$context->registerServiceAlias(PortalSchemaReaderInterface::class, PortalSchemaReader::class);
 		$context->registerServiceAlias(PortalSelfServiceServiceInterface::class, PortalSelfServiceService::class);
 		$context->registerServiceAlias(PortalSessionServiceInterface::class, PortalSessionService::class);
@@ -611,6 +824,18 @@ final class ContractRegistrar {
 		$context->registerServiceAlias(PortalUserDisplayNamesInterface::class, PortalUserDisplayNames::class);
 		$context->registerServiceAlias(PortalWriteContextInterface::class, PortalWriteContext::class);
 		$context->registerServiceAlias(ProposalServiceInterface::class, ProposalService::class);
+	}//end aliasPortalSchemaReaderToProposalService()
+
+	/**
+	 * Alias the contracts PublicAssistantChannel to ReportProjection.
+	 *
+	 * @param IRegistrationContext $context Registration context
+	 *
+	 * @return void
+	 *
+	 * @spec exclude Structural contract wiring, no functional requirement.
+	 */
+	private function aliasPublicAssistantChannelToReportProjection(IRegistrationContext $context): void {
 		$context->registerServiceAlias(PublicAssistantChannelInterface::class, PublicAssistantChannel::class);
 		$context->registerServiceAlias(PublicCatalogueInterface::class, PublicCatalogue::class);
 		$context->registerServiceAlias(PublicCatalogueQueryInterface::class, PublicCatalogueQuery::class);
@@ -624,6 +849,18 @@ final class ContractRegistrar {
 		$context->registerServiceAlias(RecipientMaskInterface::class, RecipientMask::class);
 		$context->registerServiceAlias(ReportIntakeServiceInterface::class, ReportIntakeService::class);
 		$context->registerServiceAlias(ReportProjectionInterface::class, ReportProjection::class);
+	}//end aliasPublicAssistantChannelToReportProjection()
+
+	/**
+	 * Alias the contracts ReportTermsService to SignInAddressChange.
+	 *
+	 * @param IRegistrationContext $context Registration context
+	 *
+	 * @return void
+	 *
+	 * @spec exclude Structural contract wiring, no functional requirement.
+	 */
+	private function aliasReportTermsServiceToSignInAddressChange(IRegistrationContext $context): void {
 		$context->registerServiceAlias(ReportTermsServiceInterface::class, ReportTermsService::class);
 		$context->registerServiceAlias(ReportThreadServiceInterface::class, ReportThreadService::class);
 		$context->registerServiceAlias(RequestedPortalInterface::class, RequestedPortal::class);
@@ -637,6 +874,18 @@ final class ContractRegistrar {
 		$context->registerServiceAlias(SharedBlockPortalsInterface::class, SharedBlockPortals::class);
 		$context->registerServiceAlias(ShillinqContributionRaiserInterface::class, ShillinqContributionRaiser::class);
 		$context->registerServiceAlias(SignInAddressChangeInterface::class, SignInAddressChange::class);
+	}//end aliasReportTermsServiceToSignInAddressChange()
+
+	/**
+	 * Alias the contracts SiteHead to TrafficLogImporter.
+	 *
+	 * @param IRegistrationContext $context Registration context
+	 *
+	 * @return void
+	 *
+	 * @spec exclude Structural contract wiring, no functional requirement.
+	 */
+	private function aliasSiteHeadToTrafficLogImporter(IRegistrationContext $context): void {
 		$context->registerServiceAlias(SiteHeadInterface::class, SiteHead::class);
 		$context->registerServiceAlias(SiteOrganisationInterface::class, SiteOrganisation::class);
 		$context->registerServiceAlias(SiteReturnAddressInterface::class, SiteReturnAddress::class);
@@ -650,6 +899,18 @@ final class ContractRegistrar {
 		$context->registerServiceAlias(TrafficEventValidatorInterface::class, TrafficEventValidator::class);
 		$context->registerServiceAlias(TrafficIngestServiceInterface::class, TrafficIngestService::class);
 		$context->registerServiceAlias(TrafficLogImporterInterface::class, TrafficLogImporter::class);
+	}//end aliasSiteHeadToTrafficLogImporter()
+
+	/**
+	 * Alias the contracts TrafficLogParser to VisibleFromGate.
+	 *
+	 * @param IRegistrationContext $context Registration context
+	 *
+	 * @return void
+	 *
+	 * @spec exclude Structural contract wiring, no functional requirement.
+	 */
+	private function aliasTrafficLogParserToVisibleFromGate(IRegistrationContext $context): void {
 		$context->registerServiceAlias(TrafficLogParserInterface::class, TrafficLogParser::class);
 		$context->registerServiceAlias(TrafficPagePathInterface::class, TrafficPagePath::class);
 		$context->registerServiceAlias(TrafficPageReportInterface::class, TrafficPageReport::class);
@@ -663,7 +924,19 @@ final class ContractRegistrar {
 		$context->registerServiceAlias(TrafficServerTokenInterface::class, TrafficServerToken::class);
 		$context->registerServiceAlias(UploadedFileInterface::class, UploadedFile::class);
 		$context->registerServiceAlias(VisibleFromGateInterface::class, VisibleFromGate::class);
+	}//end aliasTrafficLogParserToVisibleFromGate()
+
+	/**
+	 * Alias the contracts WaitingAccountInvitation to WriteRefusal.
+	 *
+	 * @param IRegistrationContext $context Registration context
+	 *
+	 * @return void
+	 *
+	 * @spec exclude Structural contract wiring, no functional requirement.
+	 */
+	private function aliasWaitingAccountInvitationToWriteRefusal(IRegistrationContext $context): void {
 		$context->registerServiceAlias(WaitingAccountInvitationInterface::class, WaitingAccountInvitation::class);
 		$context->registerServiceAlias(WriteRefusalInterface::class, WriteRefusal::class);
-	}//end register()
+	}//end aliasWaitingAccountInvitationToWriteRefusal()
 }//end class

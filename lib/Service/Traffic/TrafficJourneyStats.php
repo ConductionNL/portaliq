@@ -78,35 +78,9 @@ class TrafficJourneyStats {
 		$transitions = [];
 		foreach ($sessions as $key => $session) {
 			$views = $this->pageViews(events: $session['events']);
-			$seen = [];
-			foreach ($views as $index => $view) {
-				$path = $view['path'];
-				$pages[$path] ??= $this->emptyPage(path: $path);
-				$pages[$path]['views']++;
-				$pages[$path]['entrances'] += (int)($index === 0);
-				$pages[$path]['exits'] += (int)($index === count($views) - 1);
-				if ($view['seconds'] !== null) {
-					$pages[$path]['seconds'] += $view['seconds'];
-					$pages[$path]['timed']++;
-				}
-
-				if (isset($seen[$path]) === false) {
-					$seen[$path] = true;
-					$pages[$path]['sessions']++;
-					$pages[$path]['visitors'][(string)($session['visitor'] ?? '')] = true;
-					$pages[$path]['engagedSessions'] += (int)(($engaged[$key] ?? false) === true);
-				}
-
-				if ($index > 0) {
-					$edge = $views[$index - 1]['path'] . "\0" . $path;
-					$transitions[$edge] = ($transitions[$edge] ?? 0) + 1;
-				}
-			}
-
-			if ($views !== []) {
-				$pages[$views[0]['path']] = $this->addReferrer(page: $pages[$views[0]['path']], first: ($session['events'][0] ?? []));
-			}
-
+			$pages = $this->countViews(pages: $pages, views: $views, session: $session, engaged: (($engaged[$key] ?? false) === true));
+			$transitions = $this->countTransitions(transitions: $transitions, views: $views);
+			$pages = $this->withEntryReferrer(pages: $pages, views: $views, session: $session);
 			$pages = $this->addOutbound(pages: $pages, events: $session['events']);
 		}
 
@@ -114,6 +88,106 @@ class TrafficJourneyStats {
 			'pages' => $this->rankPages(pages: $pages),
 			'transitions' => $this->rankTransitions(transitions: $transitions),
 		];
+	}
+
+	/**
+	 * The page accumulators with one session's page views counted.
+	 *
+	 * @param array<string, array<string, mixed>> $pages   The accumulators, by path.
+	 * @param array<int, array<string, mixed>>    $views   The session's page views, in order.
+	 * @param array<string, mixed>                $session The session.
+	 * @param bool                                $engaged Whether the session was engaged.
+	 *
+	 * @return array<string, array<string, mixed>> The accumulators.
+	 */
+	private function countViews(array $pages, array $views, array $session, bool $engaged): array {
+		$seen = [];
+		foreach ($views as $index => $view) {
+			$path = $view['path'];
+			$pages[$path] ??= $this->emptyPage(path: $path);
+			$pages[$path] = $this->withView(page: $pages[$path], view: $view, index: $index, total: count($views));
+			if (isset($seen[$path]) === false) {
+				$seen[$path] = true;
+				$pages[$path] = $this->withSession(page: $pages[$path], visitor: (string)($session['visitor'] ?? ''), engaged: $engaged);
+			}
+		}
+
+		return $pages;
+	}
+
+	/**
+	 * A page accumulator with one view of it counted.
+	 *
+	 * @param array<string, mixed> $page  The accumulator.
+	 * @param array<string, mixed> $view  The page view.
+	 * @param int                  $index The view's place in the session.
+	 * @param int                  $total The session's number of views.
+	 *
+	 * @return array<string, mixed> The accumulator.
+	 */
+	private function withView(array $page, array $view, int $index, int $total): array {
+		$page['views']++;
+		$page['entrances'] += (int)($index === 0);
+		$page['exits'] += (int)($index === $total - 1);
+		if ($view['seconds'] !== null) {
+			$page['seconds'] += $view['seconds'];
+			$page['timed']++;
+		}
+
+		return $page;
+	}
+
+	/**
+	 * A page accumulator with the first view of it in a session counted.
+	 *
+	 * @param array<string, mixed> $page    The accumulator.
+	 * @param string               $visitor The session's visitor.
+	 * @param bool                 $engaged Whether the session was engaged.
+	 *
+	 * @return array<string, mixed> The accumulator.
+	 */
+	private function withSession(array $page, string $visitor, bool $engaged): array {
+		$page['sessions']++;
+		$page['visitors'][$visitor] = true;
+		$page['engagedSessions'] += (int)$engaged;
+
+		return $page;
+	}
+
+	/**
+	 * The page accumulators with the referrer of the session's entry page added.
+	 *
+	 * @param array<string, array<string, mixed>> $pages   The accumulators, by path.
+	 * @param array<int, array<string, mixed>>    $views   The session's page views, in order.
+	 * @param array<string, mixed>                $session The session.
+	 *
+	 * @return array<string, array<string, mixed>> The accumulators.
+	 */
+	private function withEntryReferrer(array $pages, array $views, array $session): array {
+		if ($views !== []) {
+			$pages[$views[0]['path']] = $this->addReferrer(page: $pages[$views[0]['path']], first: ($session['events'][0] ?? []));
+		}
+
+		return $pages;
+	}
+
+	/**
+	 * The transition counts with one session's consecutive page views counted.
+	 *
+	 * @param array<string, int>               $transitions The counts, by "from\0to" edge.
+	 * @param array<int, array<string, mixed>> $views       The session's page views, in order.
+	 *
+	 * @return array<string, int> The counts.
+	 */
+	private function countTransitions(array $transitions, array $views): array {
+		foreach ($views as $index => $view) {
+			if ($index > 0) {
+				$edge = $views[$index - 1]['path'] . "\0" . $view['path'];
+				$transitions[$edge] = ($transitions[$edge] ?? 0) + 1;
+			}
+		}
+
+		return $transitions;
 	}
 
 	/**

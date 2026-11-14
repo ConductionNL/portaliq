@@ -181,10 +181,7 @@ class PortalRuntimeConfigResolver implements PortalRuntimeConfigResolverInterfac
 		// are offered (portal-signin-on-its-own-address). `signinOrganisation`
 		// is what the login buttons start with: the SPA's `organisationSlug`
 		// becomes the PORTAL's slug below, which is not an organisation.
-		$orgValue = trim($orgValue);
-		if ($orgValue === '' && $portal !== null && is_string(($portal['organisation'] ?? null)) === true) {
-			$orgValue = trim($portal['organisation']);
-		}
+		$orgValue = $this->signinOrganisation(portal: $portal, orgValue: $orgValue);
 
 		$config['signinOrganisation'] = $orgValue;
 		$config['devLogin'] = $this->devLoginEnabled();
@@ -192,12 +189,7 @@ class PortalRuntimeConfigResolver implements PortalRuntimeConfigResolverInterfac
 		// (demo-sign-in-beside-the-account); '' and none otherwise.
 		$config['exampleResident']  = '';
 		$config['exampleResidents'] = [];
-		if ($orgValue !== '') {
-			$resolved = $this->orgResolver->resolve(orgSlug: $orgValue, locale: $locale);
-			$config['oidcProviders'] = (array)($resolved['oidcProviders'] ?? []);
-			// Silent sign-in goes through the same broker (signin-session-idle-warning-and-sso T09).
-			$config['silentSignIn'] = (string)($resolved['silentSignIn'] ?? '');
-		}
+		$config = $this->withBrokers(config: $config, orgValue: $orgValue, locale: $locale);
 
 		// The doors besides the sign-in buttons (identity-ways-in-screens
 		// D3): closed unless a portal opens them.
@@ -206,6 +198,61 @@ class PortalRuntimeConfigResolver implements PortalRuntimeConfigResolverInterfac
 			return $config;
 		}
 
+		return $this->forPortal(config: $config, portal: $portal);
+	}//end runtimeConfigFor()
+
+	/**
+	 * The organisation the login buttons start with: the `?org=` value, else the portal's own organisation.
+	 *
+	 * @param array|null $portal   The serving portal, or null.
+	 * @param string     $orgValue The `?org=` value.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+	 */
+	private function signinOrganisation(array|null $portal, string $orgValue): string {
+		$orgValue = trim($orgValue);
+		if ($orgValue === '' && $portal !== null && is_string(($portal['organisation'] ?? null)) === true) {
+			$orgValue = trim($portal['organisation']);
+		}
+
+		return $orgValue;
+	}//end signinOrganisation()
+
+	/**
+	 * The config with the organisation's brokers, when it names one.
+	 *
+	 * @param array<string, mixed> $config   The SPA runtime config so far.
+	 * @param string               $orgValue The sign-in organisation, or ''.
+	 * @param string               $locale   The visitor's resolved locale.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+	 */
+	private function withBrokers(array $config, string $orgValue, string $locale): array {
+		if ($orgValue !== '') {
+			$resolved = $this->orgResolver->resolve(orgSlug: $orgValue, locale: $locale);
+			$config['oidcProviders'] = (array)($resolved['oidcProviders'] ?? []);
+			// Silent sign-in goes through the same broker (signin-session-idle-warning-and-sso T09).
+			$config['silentSignIn'] = (string)($resolved['silentSignIn'] ?? '');
+		}
+
+		return $config;
+	}//end withBrokers()
+
+	/**
+	 * The config with the serving portal's ways in, example residents and branding.
+	 *
+	 * @param array<string, mixed> $config The SPA runtime config so far.
+	 * @param array                $portal The serving portal.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+	 */
+	private function forPortal(array $config, array $portal): array {
 		if ($this->waysIn !== null) {
 			$config['waysIn'] = $this->waysIn->waysIn(portal: $portal, oidcProviders: (array)($config['oidcProviders'] ?? []));
 		}
@@ -217,7 +264,7 @@ class PortalRuntimeConfigResolver implements PortalRuntimeConfigResolverInterfac
 		$config['exampleResidents'] = $residents->offeredResidents(portal: $portal);
 
 		return $this->applyPortalBranding(config: $config, portal: $portal);
-	}//end runtimeConfigFor()
+	}//end forPortal()
 
 	/**
 	 * What the site may offer for this portal's example resident, read from

@@ -145,7 +145,6 @@ class AccessibilityMeasurements implements AccessibilityMeasurementsInterface {
 			return null;
 		}
 
-		$latest = null;
 		$rows = $this->reader->readCollection(
 			register: self::REGISTER,
 			schema: self::SCHEMA,
@@ -154,18 +153,48 @@ class AccessibilityMeasurements implements AccessibilityMeasurementsInterface {
 			organisation: '',
 			limit: 200
 		);
+
+		return $this->newestOf(rows: $rows, slug: $slug);
+	}//end latest()
+
+	/**
+	 * The newest of the portal's measurement rows, or null.
+	 *
+	 * @param array<int, mixed> $rows The rows read.
+	 * @param string            $slug The portal slug.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+	 */
+	private function newestOf(array $rows, string $slug): array|null {
+		$latest = null;
 		foreach ($rows as $row) {
 			if (is_array($row) === false || ($row['portal'] ?? null) !== $slug) {
 				continue;
 			}
 
-			if ($latest === null || strcmp((string)($row['measuredAt'] ?? ''), (string)($latest['measuredAt'] ?? '')) > 0) {
+			if ($this->isNewer(row: $row, latest: $latest) === true) {
 				$latest = $row;
 			}
 		}
 
 		return $latest;
-	}//end latest()
+	}//end newestOf()
+
+	/**
+	 * Whether a row was measured after the newest so far.
+	 *
+	 * @param array<string, mixed>      $row    The row.
+	 * @param array<string, mixed>|null $latest The newest so far, or null.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+	 */
+	private function isNewer(array $row, array|null $latest): bool {
+		return $latest === null || strcmp((string)($row['measuredAt'] ?? ''), (string)($latest['measuredAt'] ?? '')) > 0;
+	}//end isNewer()
 
 	/**
 	 * Record the audit, the register entry and the added pages on the
@@ -183,12 +212,10 @@ class AccessibilityMeasurements implements AccessibilityMeasurementsInterface {
 	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
 	 */
 	public function saveSettings(array $portal, array $audit, string $registerUrl, array $pages, DateTimeImmutable $now): array {
-		$clean = self::auditOf(audit: $audit);
-		if (in_array($clean['result'] ?? '', ['A', 'B'], true) === true) {
-			$verdict = $this->statement->verdict(audit: $clean, now: $now);
-			if ($verdict !== AccessibilityStatement::AUDIT_OK) {
-				return ['error' => 'audit_'.$verdict];
-			}
+		$clean   = self::auditOf(audit: $audit);
+		$refusal = $this->auditRefusal(clean: $clean, now: $now);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		$registerUrl = trim($registerUrl);
@@ -196,7 +223,49 @@ class AccessibilityMeasurements implements AccessibilityMeasurementsInterface {
 			return ['error' => 'register_url_invalid'];
 		}
 
-		$saved = $this->writer->updateObject(
+		$saved = $this->writeSettings(portal: $portal, clean: $clean, registerUrl: $registerUrl, pages: $pages);
+		if ($saved === null) {
+			return ['error' => 'save_failed'];
+		}
+
+		return $saved;
+	}//end saveSettings()
+
+	/**
+	 * The refusal of an audit that claims A or B without holding up, else null.
+	 *
+	 * @param array<string, string> $clean The clean audit.
+	 * @param DateTimeImmutable     $now   The clock.
+	 *
+	 * @return array{error: string}|null
+	 *
+	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
+	 */
+	private function auditRefusal(array $clean, DateTimeImmutable $now): array|null {
+		if (in_array($clean['result'] ?? '', ['A', 'B'], true) === true) {
+			$verdict = $this->statement->verdict(audit: $clean, now: $now);
+			if ($verdict !== AccessibilityStatement::AUDIT_OK) {
+				return ['error' => 'audit_'.$verdict];
+			}
+		}
+
+		return null;
+	}//end auditRefusal()
+
+	/**
+	 * Write the audit, the register entry and the added pages on the portal.
+	 *
+	 * @param array<string, mixed>    $portal      The portal record.
+	 * @param array<string, string>   $clean       The clean audit.
+	 * @param string                  $registerUrl The register entry, trimmed.
+	 * @param array<array-key, mixed> $pages       Added site routes.
+	 *
+	 * @return array<string, mixed>|null The saved portal, or null.
+	 *
+	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
+	 */
+	private function writeSettings(array $portal, array $clean, string $registerUrl, array $pages): array|null {
+		return $this->writer->updateObject(
 			register: self::REGISTER,
 			schema: 'portal',
 			scopeField: 'slug',
@@ -209,12 +278,7 @@ class AccessibilityMeasurements implements AccessibilityMeasurementsInterface {
 				'accessibilityPages' => self::routes(pages: $pages),
 			]
 		);
-		if ($saved === null) {
-			return ['error' => 'save_failed'];
-		}
-
-		return $saved;
-	}//end saveSettings()
+	}//end writeSettings()
 
 	/**
 	 * An empty audit as a JSON object, so the schema's `type: object` holds

@@ -235,6 +235,26 @@ class GzipExtractor {
 			throw new RuntimeException('The target file cannot be written.');
 		}
 
+		$remaining = $this->copyBytes(archive: $archive, out: $out, size: $size);
+
+		fclose($out);
+		if ($remaining > 0) {
+			throw new RuntimeException('The archive ended inside a member.');
+		}
+
+		$this->skip(archive: $archive, bytes: $this->padded(size: $size) - $size);
+	}
+
+	/**
+	 * Copy up to `$size` bytes from the archive to the output, chunk by chunk.
+	 *
+	 * @param resource $archive The open archive.
+	 * @param resource $out     The open target file.
+	 * @param int      $size    The member size.
+	 *
+	 * @return int The bytes not copied because the archive ended first.
+	 */
+	private function copyBytes($archive, $out, int $size): int {
 		$remaining = $size;
 		while ($remaining > 0) {
 			$chunk = gzread($archive, min(self::CHUNK, $remaining));
@@ -246,12 +266,7 @@ class GzipExtractor {
 			$remaining -= strlen($chunk);
 		}
 
-		fclose($out);
-		if ($remaining > 0) {
-			throw new RuntimeException('The archive ended inside a member.');
-		}
-
-		$this->skip(archive: $archive, bytes: $this->padded(size: $size) - $size);
+		return $remaining;
 	}
 
 	/**
