@@ -18,6 +18,7 @@ use OCA\Portaliq\Service\ActionDueMailer;
 use OCA\Portaliq\Service\Mail\MailLog;
 use OCA\Portaliq\Service\Mail\MailSite;
 use OCA\Portaliq\Service\Mail\MailTemplateRenderer;
+use OCA\Portaliq\Service\Mail\ReminderMailer;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCP\IL10N;
@@ -32,6 +33,7 @@ use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 #[CoversClass(ActionDueMailer::class)]
+#[CoversClass(ReminderMailer::class)]
 #[UsesClass(MailTemplateRenderer::class)]
 class ActionDueMailerTest extends TestCase {
 	/**
