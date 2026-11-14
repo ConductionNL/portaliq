@@ -36,6 +36,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\ProposalServiceInterface;
+use OCA\Portaliq\Service\Proposals\DeclaredProposableProperties;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -121,16 +122,22 @@ class ProposalController extends Controller {
 	/**
 	 * Propose a change as a colleague who may read the record but not write it.
 	 *
+	 * The properties a colleague may propose on are the ones the owning app's
+	 * contribution declares on a `propose-change` action for this register and
+	 * schema, joined across audiences. A `proposable` list in the request is
+	 * not a parameter and is never read: the caller does not choose its own
+	 * allow-list.
+	 *
 	 * @param string $register The register the record lives in.
 	 * @param string $schema The schema the record lives in.
 	 * @param string $id The record.
 	 * @param array<int, array<string, mixed>> $changes Each `property` and `proposedValue`.
-	 * @param array<int, string> $proposable The properties the host app allows.
 	 * @param string $note What the proposer says about it.
 	 *
 	 * @return JSONResponse The queued proposal, or a refusal.
 	 *
 	 * @spec openspec/specs/change-proposal-queue/spec.md
+	 * @spec openspec/changes/change-proposals-reach-the-case-page/specs/change-proposal-queue/spec.md#requirement-the-colleague-route-takes-the-allow-list-from-the-server-req-cpc-003
 	 */
 	#[NoAdminRequired]
 	public function proposeAsColleague(
@@ -138,7 +145,6 @@ class ProposalController extends Controller {
 		string $schema,
 		string $id,
 		array $changes = [],
-		array $proposable = [],
 		string $note = '',
 	): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -150,6 +156,11 @@ class ProposalController extends Controller {
 		// account could queue a proposal on whatever id it named.
 		if ($this->guard->mayRead(register: $register, schema: $schema, id: $id) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		$proposable = $this->declared()->forRecord(register: $register, schema: $schema);
+		if ($proposable === []) {
+			return new JSONResponse(['error' => 'not_proposable'], Http::STATUS_FORBIDDEN);
 		}
 
 		return $this->answer(
@@ -167,6 +178,115 @@ class ProposalController extends Controller {
 			)
 		);
 	}//end proposeAsColleague()
+
+	/**
+	 * What the queue widget shows this user on one record: whether they may
+	 * review its proposals, and the properties they may propose a change on,
+	 * each with its value now.
+	 *
+	 * A user who may not read the record gets 403 and nothing about it.
+	 *
+	 * @param string $register The register the record lives in.
+	 * @param string $schema The schema the record lives in.
+	 * @param string $id The record.
+	 *
+	 * @return JSONResponse `{mayReview, proposable: [{property, value}]}`, or a refusal.
+	 *
+	 * @spec openspec/changes/change-proposals-reach-the-case-page/specs/change-proposal-queue/spec.md#requirement-a-colleague-who-may-read-a-record-proposes-from-the-queue-widget-req-cpc-001
+	 */
+	#[NoAdminRequired]
+	public function context(string $register, string $schema, string $id): JSONResponse {
+		$user = $this->readerOf(register: $register, schema: $schema, id: $id);
+		if ($user instanceof JSONResponse) {
+			return $user;
+		}
+
+		$subject   = ['subjectRegister' => $register, 'subjectSchema' => $schema, 'subjectId' => $id];
+		$mayReview = $this->mayReview(user: $user, proposal: $subject);
+
+		$properties = $this->declared()->forRecord(register: $register, schema: $schema);
+		$row        = [];
+		if ($properties !== []) {
+			$row = $this->subjectRowOf(proposal: $subject);
+		}
+
+		$proposable = [];
+		foreach ($properties as $property) {
+			$proposable[] = ['property' => $property, 'value' => ($row[$property] ?? null)];
+		}
+
+		return new JSONResponse(['mayReview' => $mayReview, 'proposable' => $proposable]);
+	}//end context()
+
+	/**
+	 * The signed-in colleague's own proposals on one record, any state.
+	 *
+	 * @param string $register The register the record lives in.
+	 * @param string $schema The schema the record lives in.
+	 * @param string $id The record.
+	 *
+	 * @return JSONResponse `{proposals}`, or a refusal.
+	 *
+	 * @spec openspec/changes/change-proposals-reach-the-case-page/specs/change-proposal-queue/spec.md#requirement-a-colleague-lists-their-own-proposals-on-a-record-req-cpc-002
+	 */
+	#[NoAdminRequired]
+	public function mineOnRecord(string $register, string $schema, string $id): JSONResponse {
+		$user = $this->readerOf(register: $register, schema: $schema, id: $id);
+		if ($user instanceof JSONResponse) {
+			return $user;
+		}
+
+		// Scoped on the session's own uid, then narrowed to this record and to
+		// the staff channel: a portal proposer's reference is never a uid,
+		// and only a colleague's proposal is theirs to see here.
+		$own = [];
+		foreach ($this->proposals->mine(proposedBy: $user->getUID()) as $proposal) {
+			if (($proposal['channel'] ?? '') === 'staff'
+				&& ($proposal['subjectRegister'] ?? '') === $register
+				&& ($proposal['subjectSchema'] ?? '') === $schema
+				&& ($proposal['subjectId'] ?? '') === $id
+			) {
+				$own[] = $proposal;
+			}
+		}
+
+		return new JSONResponse(['proposals' => $own]);
+	}//end mineOnRecord()
+
+	/**
+	 * Withdraw your own colleague proposal while it is queued.
+	 *
+	 * @param string $id The proposal id.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/change-proposals-reach-the-case-page/specs/change-proposal-queue/spec.md#requirement-a-colleague-who-may-read-a-record-proposes-from-the-queue-widget-req-cpc-001
+	 */
+	#[NoAdminRequired]
+	public function withdrawAsColleague(string $id): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$proposal = $this->proposalById(id: $id);
+		if ($proposal === null) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		// Only a colleague's own staff proposal: a portal proposal is
+		// withdrawn by its proposer on the portal route.
+		if (($proposal['channel'] ?? '') !== 'staff') {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		$result = $this->proposals->withdraw(proposal: $proposal, proposedBy: $user->getUID());
+		if (isset($result['error']) === true) {
+			return new JSONResponse($result, Http::STATUS_FORBIDDEN);
+		}
+
+		return new JSONResponse($result);
+	}//end withdrawAsColleague()
 
 	/**
 	 * The queued proposals on one record.
@@ -391,6 +511,31 @@ class ProposalController extends Controller {
 	}//end decidable()
 
 	/**
+	 * The signed-in user when they may read the record, else the refusal:
+	 * 401 without a session, 403 when the record is not theirs to read.
+	 *
+	 * @param string $register The register the record lives in.
+	 * @param string $schema   The schema the record lives in.
+	 * @param string $id       The record.
+	 *
+	 * @return IUser|JSONResponse
+	 *
+	 * @spec openspec/changes/change-proposals-reach-the-case-page/specs/change-proposal-queue/spec.md#requirement-a-colleague-who-may-read-a-record-proposes-from-the-queue-widget-req-cpc-001
+	 */
+	private function readerOf(string $register, string $schema, string $id): IUser|JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->guard->mayRead(register: $register, schema: $schema, id: $id) === false) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		return $user;
+	}//end readerOf()
+
+	/**
 	 * Whether this user may review a proposal on its record.
 	 *
 	 * @param IUser                $user     The signed-in user.
@@ -467,33 +612,13 @@ class ProposalController extends Controller {
 	 * @return array{action: array<string, mixed>, app: string, proposable: array<int, string>}|null
 	 */
 	private function proposableFor(array $subject, string $register, string $schema): ?array {
-		$aggregate = $this->registry->aggregateFor($subject);
-		foreach (($aggregate['contributions'] ?? []) as $contribution) {
-			foreach ((array)($contribution['actions'] ?? []) as $action) {
-				if (is_array($action) === false || ($action['type'] ?? '') !== 'propose-change') {
-					continue;
-				}
+		$matches = $this->declared()->matchIn(
+			aggregate: $this->registry->aggregateFor($subject),
+			register: $register,
+			schema: $schema
+		);
 
-				if (($action['register'] ?? '') !== $register || ($action['schema'] ?? '') !== $schema) {
-					continue;
-				}
-
-				$proposable = ($action['proposable'] ?? []);
-				if (is_array($proposable) === false || $proposable === []) {
-					// An action with an empty allow-list proposes nothing:
-					// silence is not permission.
-					continue;
-				}
-
-				return [
-					'action' => $action,
-					'app' => (string)($contribution['app'] ?? ''),
-					'proposable' => array_values(array_filter($proposable, static fn (mixed $entry): bool => is_string($entry) === true)),
-				];
-			}
-		}
-
-		return null;
+		return ($matches[0] ?? null);
 	}//end proposableFor()
 
 	/**
@@ -541,6 +666,15 @@ class ProposalController extends Controller {
 			note: $edit['note']
 		);
 	}//end proposed()
+
+	/**
+	 * The propose-change declarations of the contributing apps.
+	 *
+	 * @return DeclaredProposableProperties
+	 */
+	private function declared(): DeclaredProposableProperties {
+		return new DeclaredProposableProperties(registry: $this->registry);
+	}//end declared()
 
 	/**
 	 * Turn a service answer into a response.
