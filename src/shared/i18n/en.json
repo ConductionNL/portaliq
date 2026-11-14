@@ -500,5 +500,6 @@
 	"My cases and requests": "My cases and requests",
 	"Your details": "Your details",
 	"Logged in as {name}, to {area}": "Logged in as {name}, to {area}",
-	"Logged in, to {area}": "Logged in, to {area}"
+	"Logged in, to {area}": "Logged in, to {area}",
+	"Share only the details this form needs.": "Share only the details this form needs."
 }

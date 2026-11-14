@@ -65,9 +65,10 @@ class BrokerEnvelopeCheck {
 	 * @param string $provider   The provider the login was started for.
 	 * @param int    $now        The current unix time.
 	 *
-	 * @return array{sub: string, provider: string, trust: string}|null
+	 * @return array{sub: string, provider: string, trust: string, attributes?: array<string, string>}|null
 	 *
 	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-every-claim-portaliq-acts-on-is-checked-req-bel-004
+	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#T05
 	 */
 	public function check(string $envelope, string $consumerId, string $org, string $provider, int $now): ?array {
 		$claims = $this->claims(envelope: $envelope);
@@ -104,7 +105,15 @@ class BrokerEnvelopeCheck {
 			$trust = $claims['trust'];
 		}
 
-		return ['sub' => $subject, 'provider' => $provider, 'trust' => $trust];
+		$checked = ['sub' => $subject, 'provider' => $provider, 'trust' => $trust];
+		// A Yivi envelope carries what the resident disclosed, and only that
+		// is kept (resident-identity-in-forms REQ-RIF-004). Other providers
+		// carry no attributes into the session.
+		if ($provider === YiviAttributes::PROVIDER) {
+			$checked['attributes'] = (new YiviAttributes())->disclosed(claim: ($claims['attributes'] ?? null));
+		}
+
+		return $checked;
 	}//end check()
 
 

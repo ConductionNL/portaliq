@@ -155,4 +155,45 @@ class BrokerEnvelopeCheckTest extends TestCase {
 		$this->assertSame('low', $this->check(self::envelope(array_merge(self::claims(), ['trust' => 3])))['trust']);
 		$this->assertSame('high', $this->check(self::envelope(array_merge(self::claims(), ['trust' => 'high'])))['trust']);
 	}//end testAnUnknownTrustIsLow()
+
+
+	/**
+	 * A Yivi envelope carries the disclosed attributes, filtered; its trust
+	 * is what the broker states, so a form asking more does not open.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#T05
+	 */
+	public function testAYiviEnvelopeCarriesOnlyTheDisclosedAttributes(): void {
+		$claims = array_merge(
+			self::claims(),
+			[
+				'provider' => 'yivi',
+				'trust' => 'low',
+				'attributes' => ['pbdf.gemeente.personalData.fullname' => 'Sanne de Vries', 'bsn' => '123456789'],
+			]
+		);
+
+		$checked = (new BrokerEnvelopeCheck())->check(envelope: self::envelope($claims), consumerId: 'portaliq-venray', org: 'gemeente-x', provider: 'yivi', now: self::NOW);
+
+		$this->assertSame(
+			['sub' => 'pseudonym-3f2a', 'provider' => 'yivi', 'trust' => 'low', 'attributes' => ['pbdf.gemeente.personalData.fullname' => 'Sanne de Vries']],
+			$checked
+		);
+	}//end testAYiviEnvelopeCarriesOnlyTheDisclosedAttributes()
+
+
+	/**
+	 * Another provider's envelope carries no attributes, even when it names some.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#T05
+	 */
+	public function testANonYiviEnvelopeCarriesNoAttributes(): void {
+		$checked = $this->check(self::envelope(array_merge(self::claims(), ['attributes' => ['pbdf.gemeente.personalData.fullname' => 'X']])));
+
+		$this->assertArrayNotHasKey('attributes', $checked);
+	}//end testANonYiviEnvelopeCarriesNoAttributes()
 }//end class

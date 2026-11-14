@@ -123,7 +123,7 @@ class PortalSigninSettingsTest extends TestCase {
 	public function testANewOrganisationKeepsTheOidcRoute(): void {
 		$view = $this->settings()->view(portal: self::PORTAL);
 
-		$this->assertSame([['provider' => 'digid', 'route' => 'oidc'], ['provider' => 'eherkenning', 'route' => 'oidc'], ['provider' => 'eidas', 'route' => 'oidc']], $view['providers']);
+		$this->assertSame([['provider' => 'digid', 'route' => 'oidc'], ['provider' => 'eherkenning', 'route' => 'oidc'], ['provider' => 'eidas', 'route' => 'oidc'], ['provider' => 'yivi', 'route' => 'oidc']], $view['providers']);
 		$this->assertSame(['startUrl' => '', 'exchangeUrl' => '', 'consumerId' => ''], $view['broker']);
 		$this->assertFalse($view['hasSecret']);
 		$this->assertNull($this->settings()->view(portal: ['slug' => 'x', 'organisation' => 'unknown']));

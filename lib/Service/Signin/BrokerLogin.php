@@ -169,7 +169,7 @@ class BrokerLogin implements BrokerLoginInterface {
 	 * @param array<string, string|bool> $pending The consumed state row.
 	 * @param string                $code    The one-time code.
 	 *
-	 * @return array{sub: string, provider: string, trust: string, audience: string}|null
+	 * @return array{sub: string, provider: string, trust: string, audience: string, attributes?: array<string, string>}|null
 	 *
 	 * @spec openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md#requirement-an-eherkenning-sign-in-is-a-business-sign-in-req-see-001
 	 * @spec openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md#requirement-an-eidas-sign-in-is-a-visitor-from-another-eu-country-req-see-002
@@ -210,7 +210,7 @@ class BrokerLogin implements BrokerLoginInterface {
 	 * audience the audience, and integriq's trust the session's trust.
 	 *
 	 * @param array<string, string|bool> $pending The consumed state row.
-	 * @param array<string, string> $claims  The checked claims plus the audience.
+	 * @param array<string, mixed>  $claims  The checked claims plus the audience.
 	 *
 	 * @return string|null The bearer.
 	 */
@@ -235,7 +235,8 @@ class BrokerLogin implements BrokerLoginInterface {
 			audience: $audience,
 			organisation: $pending['org'],
 			trust: $claims['trust'],
-			roles: [$audience . ':read']
+			roles: [$audience . ':read'],
+			attributes: (array)($claims['attributes'] ?? [])
 		);
 		if ($issued === null) {
 			return null;

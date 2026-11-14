@@ -266,6 +266,7 @@ class PortalSessionService implements PortalSessionServiceInterface {
 	 * @param string $branch The vestigingsnummer the login was restricted to, or ''.
 	 * @param string $provider The OIDC provider the login came through, or '' (dev-login, Nextcloud mode, integriq route).
 	 * @param string $kvk The KVK number of the company an eHerkenning login signs in for, or ''.
+	 * @param array<string, string> $attributes The attributes a Yivi login disclosed, or [].
 	 *
 	 * @return array{token: string, jti: string, expiresAt: int, hardExpiresAt: int, idleTimeout: int}|null The minted
 	 *         bearer token, its id and the session's times, or null when the edge is not yet configured.
@@ -287,6 +288,7 @@ class PortalSessionService implements PortalSessionServiceInterface {
 		string $branch = '',
 		string $provider = '',
 		string $kvk = '',
+		array $attributes = [],
 	): ?array {
 		// A branch from the login restricts the session to it
 		// (signin-eherkenning-branch D1); a malformed one is never signed.
@@ -298,7 +300,13 @@ class PortalSessionService implements PortalSessionServiceInterface {
 			trust: $trust,
 			roles: $roles,
 			authTime: null,
-			context: ['number' => $branchNumber, 'restricted' => ($branchNumber !== ''), 'provider' => $provider, 'kvk' => $kvk]
+			context: [
+				'number' => $branchNumber,
+				'restricted' => ($branchNumber !== ''),
+				'provider' => $provider,
+				'kvk' => $kvk,
+				'attributes' => $attributes,
+			]
 		);
 		if ($issued === null) {
 			return null;
@@ -343,7 +351,7 @@ class PortalSessionService implements PortalSessionServiceInterface {
 	 * @param int|null $authTime The ORIGIN login's unix timestamp to carry
 	 *                           forward unchanged (a refresh rotation); null
 	 *                           mints a fresh origin (a genuine new login).
-	 * @param array{number?: string, restricted?: bool, provider?: string, kvk?: string} $context The branch in effect
+	 * @param array{number?: string, restricted?: bool, provider?: string, kvk?: string, attributes?: array<string,string>} $context The branch in effect
 	 *                                                                             (signin-eherkenning-branch) and the
 	 *                                                                             OIDC provider (signin-session-idle-
 	 *                                                                             warning-and-sso).
@@ -762,6 +770,9 @@ class PortalSessionService implements PortalSessionServiceInterface {
 				'restricted' => (($subject['branchRestricted'] ?? false) === true),
 				'provider' => (string)($subject['provider'] ?? ''),
 				'kvk' => (string)($subject['kvk'] ?? ''),
+				// The disclosed Yivi attributes stay with the session chain,
+				// as they were disclosed (resident-identity-in-forms T05).
+				'attributes' => (array)($subject['attributes'] ?? []),
 			]
 		);
 	}//end refreshSession()
@@ -795,7 +806,13 @@ class PortalSessionService implements PortalSessionServiceInterface {
 
 		return $this->rotate(
 			subject: $subject,
-			context: ['number' => $number, 'restricted' => false, 'provider' => (string)($subject['provider'] ?? ''), 'kvk' => (string)($subject['kvk'] ?? '')]
+			context: [
+				'number' => $number,
+				'restricted' => false,
+				'provider' => (string)($subject['provider'] ?? ''),
+				'kvk' => (string)($subject['kvk'] ?? ''),
+				'attributes' => (array)($subject['attributes'] ?? []),
+			]
 		);
 	}//end rebranchSession()
 
@@ -804,7 +821,7 @@ class PortalSessionService implements PortalSessionServiceInterface {
 	 * revoke the old one quietly and record one `refresh`.
 	 *
 	 * @param array<string, mixed>                                          $subject The resolved subject.
-	 * @param array{number?: string, restricted?: bool, provider?: string, kvk?: string} $context The new bearer's context.
+	 * @param array{number?: string, restricted?: bool, provider?: string, kvk?: string, attributes?: array<string,string>} $context The new context.
 	 *
 	 * @return array{token: string, jti: string, expiresAt: int, hardExpiresAt: int, idleTimeout: int}|null
 	 */
