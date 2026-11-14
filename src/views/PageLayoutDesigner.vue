@@ -139,7 +139,7 @@
 					variant="primary"
 					data-testid="designer-publish"
 					:disabled="state.loading || state.saving"
-					@click="editor.publish()">
+					@click="isBlock ? editor.publish() : (confirmingPublish = true)">
 					{{ t('portaliq', 'Publish') }}
 				</NcButton>
 				<NcButton
@@ -203,6 +203,10 @@
 			:pageId="pageId"
 			:busy="state.saving"
 			@restore="restoreVersion" />
+		<PublishPageDialog
+			v-if="confirmingPublish"
+			:address="siteUrl"
+			@close="publishConfirmed" />
 	</div>
 </template>
 
@@ -220,6 +224,7 @@ import Redo from 'vue-material-design-icons/Redo.vue'
 import Undo from 'vue-material-design-icons/Undo.vue'
 import MediaPickerDialog from '../dialogs/MediaPickerDialog.vue'
 import PageHistoryDialog from '../dialogs/PageHistoryDialog.vue'
+import PublishPageDialog from '../dialogs/PublishPageDialog.vue'
 import PageGridEditor from '../editor/PageGridEditor.vue'
 import {
 	blockToPage,
@@ -247,6 +252,7 @@ export default {
 		NcNoteCard,
 		PageGridEditor,
 		PageHistoryDialog,
+		PublishPageDialog,
 		Plus,
 		Redo,
 		Undo,
@@ -271,6 +277,7 @@ export default {
 			paletteOpen: false,
 			historyOpen: false,
 			mediaOpen: false,
+			confirmingPublish: false,
 
 			/**
 			 * The page's portal `traffic.excludedPaths`, or null until read
@@ -348,6 +355,22 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * Publish once the editor confirmed that anyone may read the page;
+		 * cancelled, the page stays as it is.
+		 *
+		 * @param {boolean} confirmed Whether the editor chose Publish.
+		 * @return {Promise<void>} Resolves when published, refused or cancelled.
+		 *
+		 * @spec openspec/changes/page-public-on-purpose/tasks.md#1.1
+		 */
+		async publishConfirmed(confirmed) {
+			this.confirmingPublish = false
+			if (confirmed === true) {
+				await this.editor.publish()
+			}
+		},
+
 		/**
 		 * The shared editor over OpenRegister's object API.
 		 *
