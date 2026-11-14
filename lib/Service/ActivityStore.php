@@ -33,6 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\ActivityStoreInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -42,14 +43,9 @@ use Throwable;
  *
  * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/design.md#d6-a-store-class-instead-of-openregister-calls-in-every-service
  */
-class ActivityStore {
+class ActivityStore implements ActivityStoreInterface {
 	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
-
-	/**
-	 * The activity schema.
-	 */
-	public const OFFER = 'activityOffer';
 
 	/**
 	 * The sign-up schema.

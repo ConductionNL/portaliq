@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Cms;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\AccessibilityStatementInterface;
 use Throwable;
 
 /**
@@ -36,7 +37,7 @@ use Throwable;
  *
  * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
  */
-class AccessibilityStatement {
+class AccessibilityStatement implements AccessibilityStatementInterface {
 
 	/**
 	 * The axe-core rule sets the measurement runs, the same five the e2e

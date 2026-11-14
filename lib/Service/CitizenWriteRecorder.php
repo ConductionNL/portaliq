@@ -39,6 +39,7 @@ namespace OCA\Portaliq\Service;
 use DateTimeImmutable;
 use OCA\Portaliq\Event\PortalClientWithdrawalEvent;
 use OCA\Portaliq\Event\PortalClientWriteEvent;
+use OCA\Portaliq\Kernel\Contracts\CitizenWriteRecorderInterface;
 use OCP\EventDispatcher\IEventDispatcher;
 
 /**
@@ -46,7 +47,7 @@ use OCP\EventDispatcher\IEventDispatcher;
  *
  * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
-class CitizenWriteRecorder {
+class CitizenWriteRecorder implements CitizenWriteRecorderInterface {
 	/**
 	 * Constructor.
 	 *

@@ -47,6 +47,13 @@ class EmailLinkTokensTest extends TestCase {
 	private ?\Closure $duringSpend = null;
 
 	/**
+	 * When true, the writer's spend update does not land (returns null).
+	 *
+	 * @var boolean
+	 */
+	private bool $spendFails = false;
+
+	/**
 	 * @return void
 	 */
 	public function testOnlyTheHashIsStoredWithTheAccountTheCookieAndTheExpiry(): void {
@@ -164,6 +171,42 @@ class EmailLinkTokensTest extends TestCase {
 	}//end testAnUnknownTokenIsNotValid()
 
 	/**
+	 * Peeking without a token reads nothing and is not valid.
+	 *
+	 * @return void
+	 */
+	public function testPeekingAnEmptyTokenIsNotValidAndReadsNoRow(): void {
+		$tokens = $this->tokens();
+		$tokens->issue(account: $this->account(), portal: 'academie', cookieHash: self::COOKIE, addressHash: 'h');
+
+		$peek = $tokens->peek(token: '');
+
+		$this->assertSame(EmailLinkTokens::NOT_VALID, $peek['state']);
+		$this->assertNull($peek['row']);
+	}//end testPeekingAnEmptyTokenIsNotValidAndReadsNoRow()
+
+	/**
+	 * A spend whose write does not land signs nobody in, leaves the link
+	 * live and releases the lock, so a later open can still spend it.
+	 *
+	 * @return void
+	 */
+	public function testASpendThatDoesNotLandSignsNobodyInAndKeepsTheLinkLive(): void {
+		$tokens = $this->tokens();
+		$token  = (string)$tokens->issue(account: $this->account(), portal: 'academie', cookieHash: self::COOKIE, addressHash: 'h');
+
+		$this->spendFails = true;
+		$failed           = $tokens->spend(token: $token, cookieHash: self::COOKIE, addressHash: '');
+
+		$this->assertSame(['outcome' => EmailLinkTokens::NOT_VALID, 'row' => null], $failed);
+		$this->assertSame('sent', $this->storedRows('portalEmailLink')[0]['state']);
+		$this->assertSame([], $this->held);
+
+		$this->spendFails = false;
+		$this->assertSame(EmailLinkTokens::SPENT, $tokens->spend(token: $token, cookieHash: self::COOKIE, addressHash: '')['outcome']);
+	}//end testASpendThatDoesNotLandSignsNobodyInAndKeepsTheLinkLive()
+
+	/**
 	 * @return array<string, string>
 	 */
 	private function account(): array {
@@ -204,6 +247,10 @@ class EmailLinkTokensTest extends TestCase {
 		$writer->method('createObject')->willReturnCallback(fn (...$args) => $inner->createObject(...$args));
 		$writer->method('updateObject')->willReturnCallback(
 			function (...$args) use ($inner) {
+				if ($this->spendFails === true) {
+					return null;
+				}
+
 				$hook = $this->duringSpend;
 				if ($hook !== null && (($args['data'] ?? $args[6])['state'] ?? '') === 'used') {
 					$hook();

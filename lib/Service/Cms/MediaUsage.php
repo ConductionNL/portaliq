@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Cms;
 
+use OCA\Portaliq\Kernel\Contracts\MediaUsageInterface;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PublishedPortals;
@@ -36,7 +37,7 @@ use OCA\Portaliq\Service\PublishedPortals;
  *
  * @spec openspec/changes/media-usage-count/specs/site-page-seo-history-and-media/spec.md#requirement-a-media-item-knows-how-many-records-use-it-req-mu-001
  */
-class MediaUsage {
+class MediaUsage implements MediaUsageInterface {
 	/**
 	 * The register the library and its users live in.
 	 */

@@ -29,8 +29,9 @@ namespace OCA\Portaliq\Service\Identity;
 
 use DateInterval;
 use DateTimeImmutable;
-use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalReferenceLinkServiceInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCP\Security\ISecureRandom;
 
 /**
@@ -38,7 +39,7 @@ use OCP\Security\ISecureRandom;
  *
  * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
-class PortalReferenceLinkService {
+class PortalReferenceLinkService implements PortalReferenceLinkServiceInterface {
 	/**
 	 * The identity kind this route belongs to.
 	 */

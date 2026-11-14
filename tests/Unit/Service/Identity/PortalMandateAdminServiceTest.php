@@ -290,7 +290,8 @@ class PortalMandateAdminServiceTest extends TestCase {
 			$this->createMock(\OCA\Portaliq\Service\Identity\PortalIdentityMailer::class),
 			new \OCA\Portaliq\Service\Identity\PortalAccountLookup($this->fakeReader()),
 			$this->createMock(\OCA\Portaliq\Service\Intake\PortalCaseTypeChoices::class),
-			$this->createMock(\OCA\Portaliq\Service\PortalResolver::class)
+			$this->createMock(\OCA\Portaliq\Service\PortalResolver::class),
+			new MandateParties()
 		);
 
 		$given    = $controller->given()->getData()['items'];
@@ -384,7 +385,8 @@ class PortalMandateAdminServiceTest extends TestCase {
 			$this->createMock(\OCA\Portaliq\Service\Identity\PortalIdentityMailer::class),
 			new \OCA\Portaliq\Service\Identity\PortalAccountLookup($this->fakeReader()),
 			$this->createMock(\OCA\Portaliq\Service\Intake\PortalCaseTypeChoices::class),
-			$this->createMock(\OCA\Portaliq\Service\PortalResolver::class)
+			$this->createMock(\OCA\Portaliq\Service\PortalResolver::class),
+			new MandateParties()
 		);
 
 		$data = $controller->given()->getData();
@@ -466,7 +468,8 @@ class PortalMandateAdminServiceTest extends TestCase {
 			$mailer,
 			$this->createMock(\OCA\Portaliq\Service\Identity\PortalAccountLookup::class),
 			$this->createMock(\OCA\Portaliq\Service\Intake\PortalCaseTypeChoices::class),
-			$this->createMock(\OCA\Portaliq\Service\PortalResolver::class)
+			$this->createMock(\OCA\Portaliq\Service\PortalResolver::class),
+			new MandateParties()
 		);
 
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->given()->getStatus());

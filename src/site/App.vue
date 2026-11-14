@@ -614,7 +614,8 @@ import { menuRouteOf, subjectCrumbs, subjectOf } from './lib/subjectTrail.js'
 import { hasWayInLink, waysInFrom, waysInTranslator } from './lib/waysIn.js'
 import { openRecordEntry } from './pages/collections/index.js'
 import { confirmEmailFromLink, contactPromptWanted } from './pages/e/index.js'
-import { TASK_STORAGE_KEY } from './pages/inbox/inbox.js'
+import { themeCaseCounts } from './pages/e/themes.js'
+import { TASK_STORAGE_KEY } from './pages/inbox/taskStorage.js'
 
 /**
  * LOADED ON DEMAND, and the budget is why — the same reason the detail and
@@ -1075,7 +1076,8 @@ export default {
 		 * What the resident menu is built from: the translator, the unread
 		 * count, the address of a route, the known rows, the portal's own
 		 * groups (zuiddrecht-resident-pages-match-the-boards), the items it
-		 * leaves out (resident-menu-leave-out) and the open tasks.
+		 * leaves out (resident-menu-leave-out), the open tasks and the
+		 * running cases per theme (life-domain-theme-pages T10).
 		 *
 		 * @return {object} The second argument of residentMenuGroups().
 		 */
@@ -1088,6 +1090,7 @@ export default {
 				layout: this.site?.residentMenu?.groups,
 				leaveOut: this.site?.residentMenu?.leaveOut,
 				openTasks: this.openTasks,
+				themeCases: themeCaseCounts(this.account?.contributions?.contributions, this.recordRows),
 				area: this.site?.accountLabel || '',
 			}
 		},

@@ -30,13 +30,14 @@ namespace OCA\Portaliq\Contribution;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\Portaliq\Kernel\Contracts\CreateBodyInterface;
 
 /**
  * Applies an action's declared defaults over its whitelisted body.
  *
  * @spec openspec/changes/archive/2026-10-07-claim-scoped-create-stamps-the-claim/tasks.md#T1
  */
-class CreateBody {
+class CreateBody implements CreateBodyInterface {
 
 	/**
 	 * The action key naming the field the server stamps with the moment of the create.

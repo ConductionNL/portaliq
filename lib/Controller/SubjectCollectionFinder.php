@@ -25,7 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 
 /**
  * The subject's collection on a register and schema.
@@ -36,10 +36,10 @@ final class SubjectCollectionFinder {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalContributionRegistry $registry The contribution registry.
+	 * @param PortalContributionRegistryInterface $registry The contribution registry.
 	 */
 	public function __construct(
-		private readonly PortalContributionRegistry $registry,
+		private readonly PortalContributionRegistryInterface $registry,
 	) {
 	}//end __construct()
 

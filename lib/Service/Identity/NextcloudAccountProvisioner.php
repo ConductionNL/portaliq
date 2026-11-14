@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\NextcloudAccountProvisionerInterface;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PublishedPortals;
@@ -47,7 +48,7 @@ use OCP\IUserManager;
  *
  * @spec openspec/changes/an-app-provisions-a-nextcloud-account/specs/portal-identity-space/spec.md#requirement-an-app-may-provision-an-active-account-for-a-nextcloud-user
  */
-class NextcloudAccountProvisioner {
+class NextcloudAccountProvisioner implements NextcloudAccountProvisionerInterface {
 	/**
 	 * The register and schema of a portal account.
 	 */

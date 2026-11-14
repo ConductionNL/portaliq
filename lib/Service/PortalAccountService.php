@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\PortalAccountServiceInterface;
 use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use OCA\Portaliq\Service\Identity\WaitingAccountJoin;
 use OCP\Security\ISecureRandom;
@@ -40,7 +41,7 @@ use OCP\Security\ISecureRandom;
  *
  * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T08
  */
-class PortalAccountService {
+class PortalAccountService implements PortalAccountServiceInterface {
 	/**
 	 * The OpenRegister register the `portalAccount` schema lives in.
 	 */
@@ -57,21 +58,6 @@ class PortalAccountService {
 	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public const STATUS_PENDING = 'pending';
-
-	/**
-	 * An account a matching first login has activated.
-	 */
-	public const STATUS_ACTIVE = 'active';
-
-	/**
-	 * A pending account a clerk withdrew. It never matches a login again.
-	 */
-	public const STATUS_VOID = 'void';
-
-	/**
-	 * The `provisionedBy` of an account a stranger created through self-registration.
-	 */
-	public const SELF_REGISTRATION = 'self-registration';
 
 	/**
 	 * The lazily built read half, see lookup().
@@ -252,7 +238,6 @@ class PortalAccountService {
 	public function findBySubjectRef(string $subjectRef): ?array {
 		return $this->lookup()->bySubjectRef(subjectRef: $subjectRef);
 	}//end findBySubjectRef()
-
 
 	/**
 	 * Provision an account before any login (REQ-PIS-001).
@@ -442,7 +427,6 @@ class PortalAccountService {
 			]
 		);
 	}//end voidPending()
-
 
 	/**
 	 * Approve a self-registration that waits for a decision (REQ-ISA-004).
