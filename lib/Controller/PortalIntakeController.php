@@ -56,6 +56,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalIntakeQueueInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSubmissionChecksInterface;
+use OCA\Portaliq\Service\Intake\OnBehalfFilling;
 use OCA\Portaliq\Service\Intake\PortalFormAvailability;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\Intake\PortalIntakeConfirmation;
@@ -132,6 +133,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param DestinationIntakeInterface|null $intake Submits the answers into the binding's destination (decision 179).
 	 * @param DestinationLookupInterface|null $lookup Finds the object a reference belongs to.
 	 * @param PortalFormAvailability|null $availability Whether a form takes submissions now (REQ-FGV-001).
+	 * @param OnBehalfFilling|null $onBehalf The desk employee who fills a form in for a resident (resident-identity-in-forms T06).
 	 */
 	public function __construct(
 		IRequest $request,
@@ -158,6 +160,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		private readonly ?DestinationIntakeInterface $intake = null,
 		private readonly ?DestinationLookupInterface $lookup = null,
 		private readonly ?PortalFormAvailability $availability = null,
+		private readonly ?OnBehalfFilling $onBehalf = null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 		$this->checks       = new PortalSubmissionChecks(
@@ -320,12 +323,21 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	private function renderForm(array $site, array $binding): JSONResponse {
 		$render  = $this->bindings->render(binding: $binding);
 		$subject = $this->subject();
-		$refusal = $this->signInRefusal(site: $site, binding: $binding, render: $render, subject: $subject);
+		$employee = $this->deskEmployee(site: $site, binding: $binding, subject: $subject);
+		if ($employee instanceof JSONResponse) {
+			return $employee;
+		}
+
+		$refusal = null;
+		if ($employee === null) {
+			$refusal = $this->signInRefusal(site: $site, binding: $binding, render: $render, subject: $subject);
+		}
+
 		if ($refusal !== null) {
 			return $refusal;
 		}
 
-		return new JSONResponse($this->withCompanions(render: $render, site: $site, subject: $subject));
+		return new JSONResponse($this->withCompanions(render: $render, site: $site, subject: $subject, binding: $binding, employee: $employee));
 	}//end renderForm()
 
 	/**
@@ -334,16 +346,29 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param array<string, mixed>      $render  The rendered form.
 	 * @param array<string, mixed>      $site    The portal.
 	 * @param array<string, mixed>|null $subject The signed-in subject, if any.
+	 * @param array<string, mixed>      $binding  The form binding.
+	 * @param array<string, mixed>|null $employee The desk employee filling the form in, if any.
 	 *
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/specs/portal-intake-form/spec.md
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-an-employee-can-fill-in-a-form-for-a-resident-or-company-req-rif-005
 	 */
-	private function withCompanions(array $render, array $site, array|null $subject): array {
-		$render['prefill'] = $this->prefill->forSubject(
-			subject: $subject,
-			fields: (array)($render['fields'] ?? [])
-		);
+	private function withCompanions(array $render, array $site, array|null $subject, array $binding, array|null $employee): array {
+		// An employee's own account never prefills the applicant: the
+		// applicant's details come from the lookup on the BSN or KvK number.
+		$render['prefill'] = [];
+		$render['staff'] = $employee;
+		if ($employee === null) {
+			$render['prefill'] = $this->prefill->forSubject(
+				subject: $subject,
+				fields: (array)($render['fields'] ?? []),
+				binding: $binding
+			);
+		}
+		// The Yivi attributes the form asks for, listed before the Yivi app
+		// opens (resident-identity-in-forms REQ-RIF-004).
+		$render['yiviAttributes'] = $this->prefill->yiviRequest(binding: $binding);
 
 		$render['statements'] = $this->checks->askedStatements(render: $render, site: $site);
 		$render['steps']      = $this->checks->stepsForTheBrowser(steps: (array)($render['steps'] ?? []));
@@ -367,10 +392,12 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param string $portal The portal's slug, as the site renderer names it inside Nextcloud; empty resolves the portal from the host.
 	 * @param array<int, string> $statements The keys of the statements the citizen ticked.
 	 * @param array<string, string> $verifiedEmails Proofs of verified e-mail addresses, by address.
+	 * @param array<string, mixed> $onBehalf The applicant a desk employee fills the form in for: `{kind, value}`.
 	 *
 	 * @return JSONResponse The reference, the per-field errors, or a refusal.
 	 *
 	 * @spec openspec/specs/portal-intake-form/spec.md
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-an-employee-can-fill-in-a-form-for-a-resident-or-company-req-rif-005
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -385,6 +412,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		string $portal = '',
 		array $statements = [],
 		array $verifiedEmails = [],
+		array $onBehalf = [],
 	): JSONResponse {
 		$bound = $this->bound(route: $route, portal: $portal);
 		if ($bound instanceof JSONResponse) {
@@ -392,12 +420,12 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		}
 
 		[$site, $binding] = $bound;
-		$admitted         = $this->admitted(site: $site, binding: $binding);
+		$admitted         = $this->admitted(site: $site, binding: $binding, onBehalf: $onBehalf);
 		if ($admitted instanceof JSONResponse) {
 			return $admitted;
 		}
 
-		[$render, $subject] = $admitted;
+		[$render, $subject, $desk] = $admitted;
 		$proof = ['nonce' => $nonce, 'solution' => $solution, 'expiresAt' => $expiresAt, 'signature' => $signature];
 		if ($this->challengeFailed(site: $site, render: $render, answers: $answers, proof: $proof) === true) {
 			return new JSONResponse(['error' => 'challenge_failed'], Http::STATUS_FORBIDDEN);
@@ -416,7 +444,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			return $prepared;
 		}
 
-		return $this->deliver(binding: $binding, render: $render, prepared: $prepared, subject: $subject, site: $site);
+		return $this->deliver(binding: $binding, render: $render, prepared: $prepared, subject: $subject, site: $site, extra: $desk);
 	}//end submit()
 
 	/**
@@ -425,12 +453,15 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 *
 	 * @param array<string, mixed> $site    The portal.
 	 * @param array<string, mixed> $binding The form binding.
+	 * @param array<string, mixed> $onBehalf The request's applicant, for a desk employee's submission.
 	 *
-	 * @return array{0: array<string, mixed>, 1: array<string, mixed>|null}|JSONResponse The rendered form and the subject, or the refusal.
+	 * @return array{0: array<string, mixed>, 1: array<string, mixed>|null, 2: array<string, mixed>}|JSONResponse The rendered
+	 *         form, the subject and the desk employee's server values, or the refusal.
 	 *
 	 * @spec openspec/specs/portal-intake-form/spec.md
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-an-employee-can-fill-in-a-form-for-a-resident-or-company-req-rif-005
 	 */
-	private function admitted(array $site, array $binding): array|JSONResponse {
+	private function admitted(array $site, array $binding, array $onBehalf = []): array|JSONResponse {
 		$unavailable = $this->availability?->unavailable(binding: $binding);
 		if ($unavailable !== null) {
 			// The server refuses what the page no longer offers (REQ-FGV-001).
@@ -439,13 +470,139 @@ class PortalIntakeController extends Controller implements PortalProtected {
 
 		$render = $this->bindings->render(binding: $binding);
 		$subject = $this->subject();
-		$refusal = $this->submitRefusal(site: $site, binding: $binding, render: $render, subject: $subject);
+		$desk = $this->deskSubmission(site: $site, binding: $binding, subject: $subject, onBehalf: $onBehalf);
+		if ($desk instanceof JSONResponse) {
+			return $desk;
+		}
+
+		if ($desk !== []) {
+			// The employee sends it; the resident's own session plays no part.
+			$subject = null;
+		}
+
+		$refusal = $this->submitRefusal(site: $site, binding: $binding, render: $render, subject: $subject, desk: ($desk !== []));
 		if ($refusal !== null) {
 			return $refusal;
 		}
 
-		return [$render, $subject];
+		return [$render, $subject, $desk];
 	}//end admitted()
+
+	/**
+	 * Look up the applicant a desk employee fills the form in for, and
+	 * prefill the form from the BRP or the KvK. Every lookup writes an audit
+	 * line naming the employee and the number.
+	 *
+	 * @param string $route The form page.
+	 * @param string $portal The portal's slug; empty resolves the portal from the host.
+	 * @param string $kind `bsn`, `kvk` or `named`.
+	 * @param string $value The BSN, the KvK number or the applicant's name.
+	 *
+	 * @return JSONResponse `{applicant, filledBy, available, prefill, reason}`, or 400, 403 or 404.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-an-employee-can-fill-in-a-form-for-a-resident-or-company-req-rif-005
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 20, period: 60)]
+	public function onBehalf(string $route = '', string $portal = '', string $kind = '', string $value = ''): JSONResponse {
+		$site = $this->site(portal: $portal);
+		$binding = null;
+		if ($site !== null) {
+			$binding = $this->bindings->bindingFor(portal: (string)($site['slug'] ?? ''), route: $route);
+		}
+
+		if ($site === null || $binding === null) {
+			return new JSONResponse(['error' => 'form_not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$employee = $this->deskEmployee(site: $site, binding: $binding, subject: $this->subject());
+		if ($employee === null || $employee instanceof JSONResponse) {
+			return ($employee ?? self::staffRefused());
+		}
+
+		$applicant = $this->onBehalf?->applicant(raw: ['kind' => $kind, 'value' => $value]);
+		if ($applicant === null || $this->onBehalf === null) {
+			return new JSONResponse(['error' => 'invalid_applicant'], Http::STATUS_BAD_REQUEST);
+		}
+
+		$render = $this->bindings->render(binding: $binding);
+		$found  = $this->onBehalf->lookUp(site: $site, employee: $employee, applicant: $applicant, fields: (array)($render['fields'] ?? []));
+
+		return new JSONResponse(['applicant' => $applicant, 'filledBy' => $employee] + $found);
+	}//end onBehalf()
+
+	/**
+	 * The desk employee behind a desk session, checked again now: null for
+	 * any other session or none, 403 for a desk session whose user may no
+	 * longer fill this form in (out of the desk group, or the form no longer
+	 * allows staff).
+	 *
+	 * @param array<string, mixed> $site The portal.
+	 * @param array<string, mixed> $binding The binding.
+	 * @param array<string, mixed>|null $subject The subject, or null.
+	 *
+	 * @return array{uid: string, displayName: string}|JSONResponse|null
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-an-employee-can-fill-in-a-form-for-a-resident-or-company-req-rif-005
+	 */
+	private function deskEmployee(array $site, array $binding, ?array $subject): array|JSONResponse|null {
+		if ($subject === null || ($subject['provider'] ?? '') !== OnBehalfFilling::PROVIDER) {
+			return null;
+		}
+
+		$employee = $this->onBehalf?->employee(site: $site, binding: $binding, uid: (string)($subject['subjectRef'] ?? ''));
+		if ($employee === null) {
+			return self::staffRefused();
+		}
+
+		return $employee;
+	}//end deskEmployee()
+
+	/**
+	 * What a desk employee's submission records: `filledBy` and `applicant`;
+	 * [] for a resident's own submission; 403 when a resident sends an
+	 * applicant or the employee may not fill this form in; 400 for an
+	 * applicant that is not one.
+	 *
+	 * @param array<string, mixed> $site The portal.
+	 * @param array<string, mixed> $binding The binding.
+	 * @param array<string, mixed>|null $subject The subject, or null.
+	 * @param array<string, mixed> $onBehalf The request's applicant.
+	 *
+	 * @return array<string, mixed>|JSONResponse
+	 */
+	private function deskSubmission(array $site, array $binding, ?array $subject, array $onBehalf): array|JSONResponse {
+		$employee = $this->deskEmployee(site: $site, binding: $binding, subject: $subject);
+		if ($employee instanceof JSONResponse) {
+			return $employee;
+		}
+
+		if ($employee === null) {
+			// Only an employee names an applicant; anybody else who does is refused, not ignored.
+			if ($onBehalf !== []) {
+				return self::staffRefused();
+			}
+
+			return [];
+		}
+
+		$applicant = $this->onBehalf?->applicant(raw: $onBehalf);
+		if ($applicant === null || $this->onBehalf === null) {
+			return new JSONResponse(['error' => 'invalid_applicant'], Http::STATUS_BAD_REQUEST);
+		}
+
+		return $this->onBehalf->serverValues(employee: $employee, applicant: $applicant);
+	}//end deskSubmission()
+
+	/**
+	 * The refusal of staff mode.
+	 *
+	 * @return JSONResponse 403 `staff_mode_refused`.
+	 */
+	private static function staffRefused(): JSONResponse {
+		return new JSONResponse(['error' => 'staff_mode_refused'], Http::STATUS_FORBIDDEN);
+	}//end staffRefused()
 
 	/**
 	 * Whether the form asks for a challenge and the one sent does not hold.
@@ -488,18 +645,19 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param array<string, mixed> $prepared The checked answers and their server-side companions.
 	 * @param array<string, mixed>|null $subject The signed-in subject, if any.
 	 * @param array<string, mixed> $site The portal.
+	 * @param array<string, mixed> $extra More server values: `filledBy` and `applicant` for a desk employee's submission.
 	 *
 	 * @return JSONResponse The acknowledgement or the refusal.
 	 *
 	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
-	private function deliver(array $binding, array $render, array $prepared, ?array $subject, array $site): JSONResponse {
+	private function deliver(array $binding, array $render, array $prepared, ?array $subject, array $site, array $extra = []): JSONResponse {
 		$submitted = $this->intake?->submit(
 			binding: $binding,
 			render: $render,
 			answers: $prepared['answers'],
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			server: $this->serverFacts(site: $site, prepared: $prepared),
+			server: $this->serverFacts(site: $site, prepared: $prepared) + $extra,
 			idempotencyKey: (string)$this->request->getHeader('Idempotency-Key')
 		);
 		if ($submitted === null || $submitted['ok'] === false) {
@@ -751,14 +909,19 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param array<string, mixed> $binding The binding.
 	 * @param array<string, mixed> $render What the binding renders to.
 	 * @param array<string, mixed>|null $subject The subject, or null.
+	 * @param bool $desk Whether a desk employee sends it, for whom the resident's sign-in level does not apply.
 	 *
 	 * @return JSONResponse|null
 	 */
-	private function submitRefusal(array $site, array $binding, array $render, ?array $subject): ?JSONResponse {
+	private function submitRefusal(array $site, array $binding, array $render, ?array $subject, bool $desk = false): ?JSONResponse {
 		if (($render['resolvesToNoForm'] ?? false) === true || ($render['kind'] ?? '') === PortalFormBindingResolverInterface::KIND_EXTERNAL) {
 			// An external intake is filled in at its own host; the portal has
 			// nothing to accept here.
 			return new JSONResponse(['error' => 'form_not_submittable'], Http::STATUS_FORBIDDEN);
+		}
+
+		if ($desk === true) {
+			return null;
 		}
 
 		return $this->signInRefusal(site: $site, binding: $binding, render: $render, subject: $subject);
@@ -785,12 +948,22 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			return null;
 		}
 
+		// What the sign-in page shows beside the choice: the Yivi attributes
+		// the form asks for (REQ-RIF-004) and whether an employee may fill it
+		// in (REQ-RIF-005).
+		$body = [
+			'error' => 'sign_in_required',
+			'minTrust' => $required,
+			'fee' => ($render['fee'] ?? null),
+			'yiviAttributes' => $this->prefill->yiviRequest(binding: $binding),
+			'staffMayFill' => (($binding['staffMayFill'] ?? false) === true),
+		];
 		if ($subject === null) {
-			return new JSONResponse(['error' => 'sign_in_required', 'minTrust' => $required, 'fee' => ($render['fee'] ?? null)], Http::STATUS_UNAUTHORIZED);
+			return new JSONResponse($body, Http::STATUS_UNAUTHORIZED);
 		}
 
 		if (SessionTrust::trustSatisfies(subjectTrust: ($subject['trust'] ?? ''), minTrust: $required) === false) {
-			return new JSONResponse(['error' => 'sign_in_required', 'minTrust' => $required, 'fee' => ($render['fee'] ?? null)], Http::STATUS_FORBIDDEN);
+			return new JSONResponse($body, Http::STATUS_FORBIDDEN);
 		}
 
 		return null;

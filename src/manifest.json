@@ -5715,7 +5715,8 @@
                 {
                   "key": "cosign.required",
                   "label": "A second person must co-sign",
-                  "type": "switch"
+                  "type": "switch",
+                  "hint": "Off: no second signer is needed."
                 },
                 {
                   "key": "cosign.deadlineDays",

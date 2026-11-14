@@ -66,6 +66,7 @@ class SessionClaimsTest extends TestCase {
 				'provider'         => 'eherkenning',
 				'expiresAt'        => 1700003600,
 				'kvk'              => '12345678',
+				'attributes'       => [],
 			],
 			actual: $subject
 		);
@@ -91,6 +92,7 @@ class SessionClaimsTest extends TestCase {
 				'provider'         => '',
 				'expiresAt'        => 0,
 				'kvk'              => '',
+				'attributes'       => [],
 			],
 			actual: (new SessionClaims())->subject(claims: [], trust: 'low')
 		);
