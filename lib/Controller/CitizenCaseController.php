@@ -57,6 +57,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalObjectWriterInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalPartyTreeResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Kernel\Support\PortalBranchScope;
+use OCA\Portaliq\Service\CaseQuestions;
 use OCA\Portaliq\Service\CaseResultLink;
 use OCA\Portaliq\Service\CitizenCaseProjection;
 use OCA\Portaliq\Kernel\Support\SessionTrust;
@@ -130,6 +131,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 *                                               Absent opens only own cases.
 	 * @param PortalBranchScopeInterface $branches The branch filter of signin-eherkenning-branch.
 	 * @param CaseResultLink|null $resultLinks Keeps a case's result link only on a trusted domain (woo-dossier-in-my-cases).
+	 * @param CaseQuestions|null $questions Reads the open questions of the case's app on this case (woo-dossier-in-my-cases).
 	 */
 	public function __construct(
 		IRequest $request,
@@ -152,6 +154,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		private readonly ?MandatedCaseReaderInterface $mandatedCases = null,
 		private readonly PortalBranchScopeInterface $branches = new PortalBranchScope(),
 		private readonly ?CaseResultLink $resultLinks = null,
+		private readonly ?CaseQuestions $questions = null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
@@ -200,8 +203,33 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			),
 			'documents' => $this->documents->listFor(context: $context, register: $register, schema: $schema, id: $id),
 			'documentsLabel' => (string)($context['documents']['label'] ?? ''),
+			// The open questions of the case's app on this case, each with the
+			// row action that answers it (woo-dossier-in-my-cases REQ-WDM-001).
+			'questions' => $this->openQuestions(context: $context),
 		]);
 	}//end show()
+
+	/**
+	 * The open questions on the case, each with its answer action; none without the reader.
+	 *
+	 * @param array<string, mixed> $context The resolved case context.
+	 *
+	 * @return list<array<string, mixed>>
+	 *
+	 * @spec openspec/changes/woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-open-question-is-answered-on-the-case-page-req-wdm-001
+	 */
+	private function openQuestions(array $context): array {
+		if ($this->questions === null) {
+			return [];
+		}
+
+		return $this->questions->forCase(
+			subject: $context['subject'],
+			contributions: (array)($this->registry->aggregateFor($context['subject'])['contributions'] ?? []),
+			app: (string)$context['app'],
+			case: $context['case']
+		);
+	}//end openQuestions()
 
 	/**
 	 * Open one document the case screen listed. The id picks among what this

@@ -4,7 +4,7 @@ Read `openspec/woo-build-rules.md` first. New frontend work lands in the Vue sit
 
 ## 1. The question on the case
 
-- [ ] 1.1 Answer `questions` from `CitizenCaseController` for the case's contributing app, scoped and `open` only (REQ-WDM-001). Verify: `tests/Unit/Controller/CitizenCaseControllerTest.php::testOpenQuestionsOfThisCaseAreListed`, `::testQuestionsOfAnotherCaseAreNotAnswered`.
+- [x] 1.1 (`lib/Service/CaseQuestions.php`, called from `CitizenCaseController::show()`; reads each `aanvullingsverzoek` collection of the case's app under its own scope and trust, keeps rows on this case whose `state` is `open`, and returns each with the endpoint row action declared on that collection, which for dossiq is `beantwoordVraag`; any failure gives none; `tests/Unit/Service/CaseQuestionsTest.php` for the edges) Answer `questions` from `CitizenCaseController` for the case's contributing app, scoped and `open` only (REQ-WDM-001). Verify: `tests/Unit/Controller/CitizenCaseControllerTest.php::testOpenQuestionsOfThisCaseAreListed`, `::testQuestionsOfAnotherCaseAreNotAnswered`.
 - [ ] 1.2 Render the questions in the banner of `src/site/components/e/CitizenCase.vue` with the action's form, the sent state and the refused state (REQ-WDM-001). Verify: `CitizenCaseQuestion.spec.js` (vitest).
 
 ## 2. Term sentence
