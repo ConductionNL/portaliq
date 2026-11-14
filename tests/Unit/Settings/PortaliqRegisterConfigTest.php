@@ -414,6 +414,8 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portal']['properties']['adminGroups']['items']['type']);
 		// The portal form offers a group picker for it (operate-portals-per-organisation T12).
 		$this->assertSame(expected: 'nextcloud-group', actual: self::$register['components']['schemas']['portal']['properties']['adminGroups']['items']['referenceType']);
+		// Only an instance administrator is offered the picker (x-admin-only, nextcloud-vue fieldsFromSchema); PortalAdminWriteGate still refuses anyone else.
+		$this->assertTrue(self::$register['components']['schemas']['portal']['properties']['adminGroups']['x-admin-only']);
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portalPage']['properties']['pages']['items']['properties']['blocks']['items']['properties']['messageTo']['type']);
 		$this->assertSame(expected: 'date-time', actual: self::$register['components']['schemas']['guardianMessage']['properties']['readAt']['format']);
 		// 0.107.0 (portal 0.28.0): a portal's `caseTypeColumns`, how each case type's columns read in Mijn zaken (case-type-columns-in-my-cases). Additive.
