@@ -5120,7 +5120,7 @@
             "page": {
                 "slug": "page",
                 "icon": "FileDocument",
-                "version": "0.7.0",
+                "version": "0.8.0",
                 "title": "Page",
                 "authorization": {
                     "read": [
@@ -5266,6 +5266,12 @@
                                 "type": "string",
                                 "description": "Markdown SOURCE for a markdown body. Served as source, never converted to HTML by the API — a consumer that renders markdown itself needs no parsing step, and no fidelity is lost to a round-trip.",
                                 "example": "## Over ons\n\nWij zijn ..."
+                            },
+                            "articleRef": {
+                                "title": "Article",
+                                "type": "string",
+                                "description": "An article this markdown page shows in place: its id or slug. The site renders the article's title, hero image and body, so the page carries no copy of the text. A published or archived article shows; a draft does not.",
+                                "example": "openregister-3-0-is-uit"
                             },
                             "widgets": {
                                 "title": "Widgets",
