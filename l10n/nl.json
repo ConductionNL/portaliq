@@ -3467,7 +3467,9 @@
         "No favicon": "Geen tabbladpictogram",
         "No hero image": "Geen hero-afbeelding",
         "A PNG, SVG or ICO from Media of this portal, shown as the tab icon. Without one the tab shows the logo.": "Een PNG, SVG of ICO uit Media van deze portal, getoond als tabbladpictogram. Zonder pictogram toont het tabblad het logo.",
-        "A published image from Media of this portal, shown by a home page hero that has no image of its own.": "Een gepubliceerde afbeelding uit Media van deze portal, getoond door een hero op de startpagina die zelf geen afbeelding heeft."
+        "A published image from Media of this portal, shown by a home page hero that has no image of its own.": "Een gepubliceerde afbeelding uit Media van deze portal, getoond door een hero op de startpagina die zelf geen afbeelding heeft.",
+        "Choose the organisation type from the TOOI list.": "Kies het organisatietype uit de TOOI-lijst.",
+        "The TOOI list of organisation types is not installed in the concept register, so there is nothing to choose yet.": "De TOOI-lijst met organisatietypen staat niet in het begrippenregister, dus er is nog niets te kiezen."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

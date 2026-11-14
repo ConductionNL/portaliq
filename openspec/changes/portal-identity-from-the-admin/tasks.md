@@ -58,6 +58,17 @@ that is not in `check:specs` does not run in CI.
   - **fails today**: `tests/Unit/Service/OrganisationTypeOptionsTest.php`
     `testTheOptionsComeFromTheConceptRegister`, `testAMissingSchemeOffersNothing`. Build the
     OpenRegister double from the real class signature, not from a local stub.
+  - Built (server half): `#portal.organisationType` (uri) and `organisationTypeLabel` (register 0.112.0,
+    portal 0.30.0); `lib/Service/OrganisationTypeOptions.php` reads the scheme through OpenRegister's
+    `OCA\OpenRegister\Service\Vocabulary\ConceptRepository` (`scheme()`, `conceptsOf()`; the bound
+    `ConceptRepositoryInterface` declares only `schemeByReference()`), looked up lazily. The scheme uri is
+    `OrganisationTypeOptions::DEFAULT_SCHEME`, overridable by the app-config key `organisationTypeScheme`
+    because no TOOI organisation type scheme is in OpenRegister's or OpenCatalogi's bundled lists yet.
+    `PortalOrganisationTypeListener` settles every portal save: a concept of the scheme stores its label,
+    anything else is refused, and without the list only the stored type is kept.
+  - Left: the picker in the portal details form. The settings-form widget reads choices only from an
+    OpenRegister register and schema, and a concept's `inScheme` holds the scheme's uuid, which differs per
+    instance, so it cannot list one scheme's concepts; it needs a choices source in the widget library.
 - [ ] 3.2 Replace "Van de gemeente" in `src/site/components/mijn/strings.js` and every other place
   the site names the organisation's kind with the label and its article; add the footer line and
   `DCTERMS.creator` (REQ-PIA-003).

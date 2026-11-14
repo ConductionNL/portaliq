@@ -132,6 +132,12 @@ final class ListenerRegistrar {
 			$context->registerEventListener($event, PortalImagesGuardListener::class);
 		}
 
+		// A portal's organisation type: a concept of the TOOI scheme, its label
+		// stored beside it (portal-identity-from-the-admin REQ-PIA-003).
+		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $event) {
+			$context->registerEventListener($event, PortalOrganisationTypeListener::class);
+		}
+
 		// A glossary term relates only to terms of its own portal (portal-cms-content-model).
 		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $event) {
 			$context->registerEventListener($event, GlossaryRelationGuardListener::class);

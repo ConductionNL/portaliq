@@ -407,8 +407,9 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.109.0 (portalFormBinding 0.6.0): `intro.enabled`, whether the form opens with its introduction (form-statements-intro-and-confirmation-mail T06). Additive.
 		// 0.110.0 (portal 0.29.0): a portal's `favicon` and `heroImage`, and a `logo` that may be a media reference (portal-identity-from-the-admin). Additive.
 		// 0.111.0 (portalFormBinding 0.7.0): a binding's `availability`, its active period, limit per period, maintenance window and successor (form-governance-availability-retention-and-routing REQ-FGV-001). Additive.
-		$this->assertSame(expected: '0.111.0', actual: self::$register['info']['version']);
-		$this->assertSame(expected: '0.111.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		// 0.112.0 (portal 0.30.0): a portal's `organisationType` and `organisationTypeLabel` (portal-identity-from-the-admin REQ-PIA-003). Additive.
+		$this->assertSame(expected: '0.112.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.112.0', actual: self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame(expected: ['total', 'month', 'year'], actual: self::$register['components']['schemas']['portalFormBinding']['properties']['availability']['properties']['limit']['properties']['per']['enum']);
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portalPage']['properties']['pages']['items']['properties']['blocks']['items']['properties']['messageTo']['type']);
 		$this->assertSame(expected: 'date-time', actual: self::$register['components']['schemas']['guardianMessage']['properties']['readAt']['format']);
@@ -481,7 +482,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.7.0', self::$register['components']['schemas']['page']['version']);
-		$this->assertSame('0.29.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('0.30.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portal']['properties']['authentication']['properties']['registration']['properties']['businessGroup']['type']);
 		$this->assertSame('string', self::$register['components']['schemas']['portal']['properties']['tokens']['additionalProperties']['type']);
 		$this->assertTrue(self::$register['components']['schemas']['portal']['properties']['searchInsideDocuments']['default']);
@@ -1309,4 +1310,21 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertNotContains(needle: 'favicon', haystack: (self::$register['components']['schemas']['portal']['required'] ?? []));
 		$this->assertNotContains(needle: 'heroImage', haystack: (self::$register['components']['schemas']['portal']['required'] ?? []));
 	}//end testThePortalDeclaresFaviconAndHeroImage()
+
+	/**
+	 * REQ-PIA-003: the portal names its organisation type by a TOOI concept uri,
+	 * with the label stored beside it, and neither is required.
+	 *
+	 * @return void
+	 */
+	public function testThePortalDeclaresItsOrganisationType(): void {
+		$portal = self::$register['components']['schemas']['portal'];
+
+		$this->assertSame(expected: 'string', actual: $portal['properties']['organisationType']['type']);
+		$this->assertSame(expected: 'uri', actual: $portal['properties']['organisationType']['format']);
+		$this->assertStringContainsString(needle: 'TOOI', haystack: $portal['properties']['organisationType']['description']);
+		$this->assertSame(expected: 'string', actual: $portal['properties']['organisationTypeLabel']['type']);
+		$this->assertNotContains(needle: 'organisationType', haystack: ($portal['required'] ?? []));
+		$this->assertNotContains(needle: 'organisationTypeLabel', haystack: ($portal['required'] ?? []));
+	}//end testThePortalDeclaresItsOrganisationType()
 }//end class
