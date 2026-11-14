@@ -115,15 +115,10 @@ class FormBindingCounter {
 			return null;
 		}
 
-		if (is_array($entity) === true) {
-			return $entity;
-		}
-
-		if (is_object($entity) === true && method_exists($entity, 'jsonSerialize') === true) {
-			$data = $entity->jsonSerialize();
-			if (is_array($data) === true) {
-				return $data;
-			}
+		// An entity serialises to its row; a row stays a row.
+		$row = json_decode((string)json_encode($entity), true);
+		if (is_array($row) === true && $row !== []) {
+			return $row;
 		}
 
 		return null;

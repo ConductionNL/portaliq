@@ -78,7 +78,7 @@ test('the availability tab carries the status panel and the availability setting
 	for (const key of ['availability.activeFrom', 'availability.activeUntil', 'availability.limit.count', 'availability.limit.per', 'availability.reopensOn', 'availability.replacedBy', 'availability.maintenance.from', 'availability.maintenance.until', 'availability.maintenance.text']) {
 		assert.ok(keys.includes(key), key)
 	}
-	assert.match(read('appinfo/routes.php'), /'formBindingAdmin#counter', 'url' => '\/api\/form-bindings\/\{id\}\/counter', 'verb' => 'GET'/)
+	assert.match(read('appinfo/routes.php'), /'formBindingCounter#show', 'url' => '\/api\/form-bindings\/\{id\}\/counter', 'verb' => 'GET'/)
 })
 
 test('every field is a path of the binding schema, every choice one of its values', () => {

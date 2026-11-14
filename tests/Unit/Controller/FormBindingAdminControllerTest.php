@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\FormBindingAdminController;
-use OCA\Portaliq\Service\Intake\FormBindingCounter;
 use OCA\Portaliq\Service\Intake\PortalBindingPreview;
 use OCA\Portaliq\Service\Intake\PortalEmbedGuard;
 use OCA\Portaliq\Service\Intake\PortalEmbedSnippetDescription;
@@ -204,70 +203,4 @@ class FormBindingAdminControllerTest extends TestCase {
 
 		$this->assertSame(400, $response->getStatus());
 	}//end testAnEmptyEmbedRequestIsRefused()
-	/**
-	 * A controller whose counter answers $answer for binding b-1.
-	 *
-	 * @param array<string, mixed>|null $answer The counter's answer; null for no counter.
-	 *
-	 * @return FormBindingAdminController The controller.
-	 */
-	private function controllerWithCounter(?array $answer): FormBindingAdminController {
-		$counter = null;
-		if ($answer !== null) {
-			$counter = $this->createMock(FormBindingCounter::class);
-			$counter->expects($this->once())->method('forBinding')->with('b-1')->willReturn($answer);
-		}
-
-		$resolver = new PortalFormBindingResolver(
-			reader: $this->createMock(PortalObjectReader::class),
-			formStepsNormaliser: new FormStepsNormaliser()
-		);
-
-		return new FormBindingAdminController(
-			request: $this->createMock(IRequest::class),
-			preview: new PortalBindingPreview(resolver: $resolver),
-			embed: new PortalEmbedSnippetDescription(guard: new PortalEmbedGuard()),
-			urls: $this->urlsStub(),
-			counter: $counter,
-		);
-	}//end controllerWithCounter()
-
-	/**
-	 * The status panel reads the period's count against the limit.
-	 *
-	 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#scenario-the-admin-sees-the-counter
-	 *
-	 * @return void
-	 */
-	public function testTheCounterAnswersTheCountAndTheLimit(): void {
-		$response = $this->controllerWithCounter(['found' => true, 'limited' => true, 'count' => 41, 'limit' => 500, 'per' => 'month'])->counter(id: 'b-1');
-
-		$this->assertSame(200, $response->getStatus());
-		$this->assertSame(['limited' => true, 'count' => 41, 'limit' => 500, 'per' => 'month'], $response->getData());
-	}//end testTheCounterAnswersTheCountAndTheLimit()
-
-	/**
-	 * A binding without a limit says so.
-	 *
-	 * @return void
-	 */
-	public function testABindingWithoutALimitIsNotLimited(): void {
-		$response = $this->controllerWithCounter(['found' => true, 'limited' => false, 'count' => null, 'limit' => null, 'per' => null])->counter(id: 'b-1');
-
-		$this->assertSame(200, $response->getStatus());
-		$this->assertSame(['limited' => false, 'count' => null, 'limit' => null, 'per' => null], $response->getData());
-	}//end testABindingWithoutALimitIsNotLimited()
-
-	/**
-	 * An unknown binding, and a controller without a counter, answer 404.
-	 *
-	 * @return void
-	 */
-	public function testAnUnknownBindingIsNotFound(): void {
-		$missing = $this->controllerWithCounter(['found' => false, 'limited' => false, 'count' => null, 'limit' => null, 'per' => null])->counter(id: 'b-1');
-		$this->assertSame(404, $missing->getStatus());
-		$this->assertSame(['error' => 'binding_not_found'], $missing->getData());
-
-		$this->assertSame(404, $this->controllerWithCounter(null)->counter(id: 'b-1')->getStatus());
-	}//end testAnUnknownBindingIsNotFound()
 }//end class
