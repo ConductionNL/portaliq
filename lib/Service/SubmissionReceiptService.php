@@ -47,6 +47,8 @@ namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalPdfExportInterface;
 use OCA\Portaliq\Kernel\Contracts\SubmissionReceiptServiceInterface;
 use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -111,6 +113,8 @@ class SubmissionReceiptService implements SubmissionReceiptServiceInterface {
 	 *                                                          on a successful receipt write; itself
 	 *                                                          fail-safe, never affects this call.
 	 * @param IDateTimeZone|null $timeZone The instance's time zone, in which the receipt names the moment.
+	 * @param PortalObjectReaderInterface|null $reader Reads one receipt back for its own subject only.
+	 * @param PortalPdfExportInterface|null $pdf Renders the receipt's PDF through OpenRegister.
 	 *
 	 * @spec openspec/changes/receipt-date-reads-in-the-portals-language/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-names-the-moment-in-words-of-the-portals-language
 	 */
@@ -121,6 +125,8 @@ class SubmissionReceiptService implements SubmissionReceiptServiceInterface {
 		private readonly LoggerInterface $logger,
 		private readonly NotificationDispatchService $notificationDispatch,
 		private readonly ?IDateTimeZone $timeZone = null,
+		private readonly ?PortalObjectReaderInterface $reader = null,
+		private readonly ?PortalPdfExportInterface $pdf = null,
 	) {
 	}//end __construct()
 
@@ -595,4 +601,141 @@ class SubmissionReceiptService implements SubmissionReceiptServiceInterface {
 		return $recorded;
 	}//end recordedOutcome()
 
+	/**
+	 * The PDF of one of the subject's own receipts: the reference, the moment
+	 * of receipt and the submitted answers from its data copy, rendered
+	 * through OpenRegister. Someone else's receipt, an unknown id and a
+	 * message that is no receipt all answer RECEIPT_NOT_FOUND, read before
+	 * anything is rendered.
+	 *
+	 * @param array<string, mixed> $subject The resolved session subject.
+	 * @param string $id The receipt message's id, as the client sent it.
+	 *
+	 * @return array{status: string, bytes?: string, name?: string} `status` is
+	 *         RECEIPT_PDF, RECEIPT_NOT_FOUND, RECEIPT_PDF_UNAVAILABLE or RECEIPT_PDF_FAILED.
+	 *
+	 * @spec openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+	 */
+	public function receiptPdf(array $subject, string $id): array {
+		$message = $this->ownReceipt(subject: $subject, id: $id);
+		if ($message === null) {
+			return ['status' => self::RECEIPT_NOT_FOUND];
+		}
+
+		if ($this->pdf === null || $this->pdf->available() === false) {
+			return ['status' => self::RECEIPT_PDF_UNAVAILABLE];
+		}
+
+		$document = $this->receiptDocument(
+			message: $message,
+			l10n: $this->language->forOrganisation(organisation: (string)($subject['organisation'] ?? ''))
+		);
+		$bytes    = $this->pdf->render(title: $document['title'], columns: $document['columns'], rows: $document['rows']);
+		if ($bytes === null || $bytes === PortalPdfExportInterface::TOO_LARGE) {
+			return ['status' => self::RECEIPT_PDF_FAILED];
+		}
+
+		return ['status' => self::RECEIPT_PDF, 'bytes' => $bytes, 'name' => $document['title']];
+	}//end receiptPdf()
+
+	/**
+	 * What the receipt's PDF holds: the reference, the moment of receipt and
+	 * every answer of the data copy, and nothing else of the message.
+	 *
+	 * @param array<string, mixed> $message The receipt message.
+	 * @param IL10N $l10n The portal's language.
+	 *
+	 * @return array{title: string, columns: array<int, array{key: string, label: string}>, rows: array<int, array<string, string>>}
+	 *
+	 * @spec openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+	 */
+	public function receiptDocument(array $message, IL10N $l10n): array {
+		$reference = (string)$message['referenceId'];
+		$rows      = [
+			['part' => $l10n->t('Reference'), 'content' => $reference],
+			['part' => $l10n->t('Received'), 'content' => $this->readable(l10n: $l10n, moment: (string)($message['receivedAt'] ?? ''))],
+		];
+		foreach ((array)$message['dataCopy'] as $field => $answer) {
+			$rows[] = ['part' => (string)$field, 'content' => $this->answerText(answer: $answer)];
+		}
+
+		return [
+			'title'   => $l10n->t(self::SUBJECT_KEY, [$reference]),
+			'columns' => [['key' => 'part', 'label' => $l10n->t('Part')], ['key' => 'content', 'label' => $l10n->t('Content')]],
+			'rows'    => $rows,
+		];
+	}//end receiptDocument()
+
+	/**
+	 * The subject's own receipt message, or null: read on `subjectRef` with
+	 * the subject's own reference and organisation, as the inbox reads it,
+	 * and only a message that carries a reference and a data copy.
+	 *
+	 * @param array<string, mixed> $subject The resolved session subject.
+	 * @param string $id The message id.
+	 *
+	 * @return array<string, mixed>|null The receipt.
+	 */
+	private function ownReceipt(array $subject, string $id): ?array {
+		$subjectRef = (string)($subject['subjectRef'] ?? '');
+		if ($this->reader === null || $subjectRef === '' || $id === '') {
+			return null;
+		}
+
+		try {
+			$message = $this->reader->readObject(
+				register: self::REGISTER,
+				schema: self::MESSAGE_SCHEMA,
+				scopeField: 'subjectRef',
+				subjectRef: $subjectRef,
+				id: $id,
+				organisation: (string)($subject['organisation'] ?? ''),
+				audience: (string)($subject['audience'] ?? '')
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: a receipt could not be read for its PDF', ['reason' => $e->getMessage()]);
+			return null;
+		}
+
+		if (is_array($message) === false
+			|| ($message['subjectRef'] ?? null) !== $subjectRef
+			|| is_string($message['referenceId'] ?? null) === false
+			|| $message['referenceId'] === ''
+			|| is_array($message['dataCopy'] ?? null) === false
+		) {
+			return null;
+		}
+
+		return $message;
+	}//end ownReceipt()
+
+	/**
+	 * One answer as text: a list joined by commas, a yes/no as `true`/`false`,
+	 * anything else that is no scalar as nothing.
+	 *
+	 * @param mixed $answer The submitted answer.
+	 *
+	 * @return string The text.
+	 */
+	private function answerText(mixed $answer): string {
+		if ($answer === true) {
+			return 'true';
+		}
+
+		if ($answer === false) {
+			return 'false';
+		}
+
+		if (is_array($answer) === true) {
+			$parts = array_map(fn ($item): string => $this->answerText(answer: $item), $answer);
+
+			return implode(', ', array_filter($parts, static fn (string $part): bool => $part !== ''));
+		}
+
+		if (is_scalar($answer) === false) {
+			return '';
+		}
+
+		return (string)$answer;
+	}//end answerText()
 }//end class

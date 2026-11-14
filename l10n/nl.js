@@ -1196,6 +1196,7 @@ OC.L10N.register(
         "Portal writes": "Portaalwijzigingen",
         "Public status labels": "Publieke statuslabels",
         "Reference": "Kenmerk",
+        "Received": "Ontvangen",
         "The case number the citizen quotes.": "Het zaaknummer dat de burger noemt.",
         "The case type's name.": "De naam van het zaaktype.",
         "The case's current status; the case type says what a citizen may change in it.": "De huidige status van de zaak; het zaaktype bepaalt wat een burger daarin mag wijzigen.",

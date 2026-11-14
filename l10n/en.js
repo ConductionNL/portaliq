@@ -1148,6 +1148,7 @@ OC.L10N.register(
         "Portal writes": "Portal writes",
         "Public status labels": "Public status labels",
         "Reference": "Reference",
+        "Received": "Received",
         "The case number the citizen quotes.": "The case number the citizen quotes.",
         "The case type's name.": "The case type's name.",
         "The case's current status; the case type says what a citizen may change in it.": "The case's current status; the case type says what a citizen may change in it.",
