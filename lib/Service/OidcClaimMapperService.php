@@ -329,7 +329,7 @@ class OidcClaimMapperService implements OidcClaimMapperServiceInterface {
 		}
 
 		$value = ($claims[$claim] ?? null);
-		if ((is_string($value) === false && is_int($value) === false) || preg_match('/^\d{8}$/', trim((string)$value)) !== 1) {
+		if ((is_string($value) === false && is_int($value) === false) || preg_match('/^\d{8}$/D', trim((string)$value)) !== 1) {
 			return '';
 		}
 

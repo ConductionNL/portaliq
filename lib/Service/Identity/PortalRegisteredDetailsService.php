@@ -122,7 +122,7 @@ class PortalRegisteredDetailsService implements PortalRegisteredDetailsServiceIn
 	 * @spec openspec/changes/identity-registered-details/specs/registered-details/spec.md#requirement-a-business-user-sees-their-companys-kvk-record-req-ird-002
 	 */
 	public function companyBranches(string $kvkNumber): ?array {
-		if (preg_match('/^\d{8}$/', $kvkNumber) !== 1) {
+		if (preg_match('/^\d{8}$/D', $kvkNumber) !== 1) {
 			return null;
 		}
 
@@ -165,7 +165,7 @@ class PortalRegisteredDetailsService implements PortalRegisteredDetailsServiceIn
 			return 'person';
 		}
 
-		if ($identityType === 'eherkenning' && preg_match('/^\d{8}$/', $reference) === 1) {
+		if ($identityType === 'eherkenning' && preg_match('/^\d{8}$/D', $reference) === 1) {
 			return 'company';
 		}
 

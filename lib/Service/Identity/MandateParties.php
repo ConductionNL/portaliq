@@ -47,7 +47,7 @@ class MandateParties implements MandatePartiesInterface {
 	public function partyOf(array $subject): ?string {
 		if (($subject['provider'] ?? '') === 'eherkenning') {
 			$kvk = (string)($subject['kvk'] ?? '');
-			if (preg_match('/^\d{8}$/', $kvk) === 1) {
+			if (preg_match('/^\d{8}$/D', $kvk) === 1) {
 				return 'kvk:' . $kvk;
 			}
 
@@ -79,7 +79,7 @@ class MandateParties implements MandatePartiesInterface {
 		}
 
 		$kvk = (string)($subject['kvk'] ?? '');
-		if (($subject['provider'] ?? '') === 'eherkenning' && preg_match('/^\d{8}$/', $kvk) === 1) {
+		if (($subject['provider'] ?? '') === 'eherkenning' && preg_match('/^\d{8}$/D', $kvk) === 1) {
 			$out[] = 'kvk:' . $kvk;
 		}
 
@@ -102,7 +102,7 @@ class MandateParties implements MandatePartiesInterface {
 			return $value;
 		}
 
-		if (preg_match('/^\d{8}$/', $value) === 1) {
+		if (preg_match('/^\d{8}$/D', $value) === 1) {
 			return 'kvk:' . $value;
 		}
 
