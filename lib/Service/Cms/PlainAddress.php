@@ -109,10 +109,10 @@ class PlainAddress {
 		$link = trim($link);
 		if (preg_match('#^/(?!/)#', $link) === 1) {
 			$query = '';
-			$at = strpos($link, '?');
-			if ($at !== false) {
-				$query = substr($link, $at + 1);
-				$link = substr($link, 0, $at);
+			$mark = strpos($link, '?');
+			if ($mark !== false) {
+				$query = substr($link, $mark + 1);
+				$link = substr($link, 0, $mark);
 			}
 
 			// Split by hand: parse_str() would turn `f.wooCategory` into

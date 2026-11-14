@@ -65,6 +65,7 @@ class PlainPageRenderer {
 		'nlParagraph' => 'paragraph',
 		'nlList' => 'list',
 		'nlLinkList' => 'links',
+		'siteNavigation' => 'links',
 	];
 
 	/**
@@ -81,6 +82,7 @@ class PlainPageRenderer {
 	 * @param IL10N                  $l10n     The words.
 	 * @param PlainMarkdown          $markdown The markdown subset.
 	 * @param PlainWidgetLabels      $labels   The widgets' names.
+	 * @param PlainTextBlocks        $text     The text widgets.
 	 * @param PlainPublicationSearch $search   The publication search.
 	 * @param PlainPublicationDetail $detail   The publication detail.
 	 */
@@ -89,6 +91,7 @@ class PlainPageRenderer {
 		private readonly IL10N $l10n,
 		private readonly PlainMarkdown $markdown,
 		private readonly PlainWidgetLabels $labels,
+		private readonly PlainTextBlocks $text,
 		private readonly PlainPublicationSearch $search,
 		private readonly PlainPublicationDetail $detail,
 	) {
@@ -131,7 +134,15 @@ class PlainPageRenderer {
 			return $this->notFound(view: $view);
 		}
 
-		$context = new PlainContext(route: $route, routeParam: $routeParam, query: $query, page: $page, address: $address, locale: $locale);
+		$context = new PlainContext(
+			route: $route,
+			routeParam: $routeParam,
+			query: $query,
+			page: $page,
+			address: $address,
+			locale: $locale,
+			menu: $view['menu']
+		);
 		$blocks = $this->blocks(page: $found, context: $context);
 		foreach ($blocks as $block) {
 			if (($block['kind'] ?? '') === 'publication' && ($block['state'] ?? '') === 'not-found') {
@@ -290,11 +301,12 @@ class PlainPageRenderer {
 		$key = (string)($widget['widgetKey'] ?? '');
 		$props = (array)($widget['props'] ?? []);
 		$block = match ($key) {
-			'markdown' => $this->markdownBlock(props: $props),
-			'nlHeading' => $this->headingBlock(props: $props),
-			'nlParagraph' => $this->paragraphBlock(props: $props),
-			'nlList' => $this->listBlock(props: $props),
-			'nlLinkList' => $this->linksBlock(props: $props, address: $context->address),
+			'markdown' => $this->text->markdownBlock(props: $props),
+			'nlHeading' => $this->text->headingBlock(props: $props),
+			'nlParagraph' => $this->text->paragraphBlock(props: $props),
+			'nlList' => $this->text->listBlock(props: $props),
+			'nlLinkList' => $this->text->linksBlock(props: $props, address: $context->address),
+			'siteNavigation' => $this->navigationBlock(context: $context),
 			'federatedSearch' => $this->search->build(
 				props: $props,
 				route: $context->route,
@@ -335,127 +347,28 @@ class PlainPageRenderer {
 	}//end needsJavascript()
 
 	/**
-	 * A markdown widget, or null when it holds no text.
+	 * The menu block: the portal's main menu, the same links the page's own
+	 * header shows, children after their parent.
 	 *
-	 * @param array<string, mixed> $props The props.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function markdownBlock(array $props): ?array {
-		$html = $this->markdown->render(markdown: $this->text(value: $props['markdown'] ?? null));
-		if ($html === '') {
-			return null;
-		}
-
-		return ['kind' => 'html', 'html' => $html];
-	}//end markdownBlock()
-
-	/**
-	 * A heading widget: its text at its level, held to 1 to 6 (2 by default).
-	 *
-	 * @param array<string, mixed> $props The props.
+	 * @param PlainContext $context The request.
 	 *
 	 * @return array<string, mixed>|null
 	 */
-	private function headingBlock(array $props): ?array {
-		$text = $this->text(value: $props['text'] ?? null);
-		if ($text === '') {
-			return null;
-		}
-
-		$level = 2;
-		if (is_numeric($props['level'] ?? null) === true) {
-			$level = max(1, min(6, (int)$props['level']));
-		}
-
-		return ['kind' => 'heading', 'level' => $level, 'text' => $text];
-	}//end headingBlock()
-
-	/**
-	 * A paragraph widget.
-	 *
-	 * @param array<string, mixed> $props The props.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function paragraphBlock(array $props): ?array {
-		$text = $this->text(value: $props['text'] ?? null);
-		if ($text === '') {
-			return null;
-		}
-
-		return ['kind' => 'paragraph', 'text' => $text, 'lead' => (($props['lead'] ?? false) === true)];
-	}//end paragraphBlock()
-
-	/**
-	 * A list widget: its lines (a string, or `{title, text}`), as
-	 * `src/site/widgets/nlList/lines.js` reads them.
-	 *
-	 * @param array<string, mixed> $props The props.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function listBlock(array $props): ?array {
-		$items = [];
-		foreach ((is_array($props['items'] ?? null) === true ? $props['items'] : []) as $item) {
-			$line = ['title' => $this->text(value: $item), 'text' => ''];
-			if (is_array($item) === true) {
-				$line = ['title' => $this->text(value: $item['title'] ?? null), 'text' => $this->text(value: $item['text'] ?? null)];
-			}
-
-			if ($line['title'] !== '') {
-				$items[] = $line;
-			}
-		}
-
-		if ($items === []) {
-			return null;
-		}
-
-		return ['kind' => 'list', 'ordered' => (($props['ordered'] ?? false) === true), 'items' => $items];
-	}//end listBlock()
-
-	/**
-	 * A link list widget: its heading, intro and the links that have an
-	 * address this page may link, as `NlLinkList.vue` keeps them.
-	 *
-	 * @param array<string, mixed> $props   The props.
-	 * @param PlainAddress         $address The addresses.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function linksBlock(array $props, PlainAddress $address): ?array {
+	private function navigationBlock(PlainContext $context): ?array {
 		$links = [];
-		foreach ((is_array($props['links'] ?? null) === true ? $props['links'] : []) as $link) {
-			if (is_array($link) === false) {
-				continue;
+		foreach ($context->menu as $item) {
+			$links[] = ['label' => $item['label'], 'href' => $item['href'], 'description' => ''];
+			foreach ($item['items'] as $child) {
+				$links[] = ['label' => $child['label'], 'href' => $child['href'], 'description' => ''];
 			}
-
-			$raw = $this->text(value: $link['href'] ?? null);
-			$href = $address->authored(link: $raw);
-			if ($href === '') {
-				continue;
-			}
-
-			$label = $this->text(value: $link['label'] ?? null);
-			$links[] = [
-				'label' => ($label !== '' ? $label : $raw),
-				'href' => $href,
-				'description' => $this->text(value: $link['description'] ?? null),
-			];
 		}
 
 		if ($links === []) {
 			return null;
 		}
 
-		return [
-			'kind' => 'links',
-			'heading' => $this->text(value: $props['heading'] ?? null),
-			'intro' => $this->text(value: $props['intro'] ?? null),
-			'links' => $links,
-		];
-	}//end linksBlock()
+		return ['kind' => 'links', 'heading' => '', 'intro' => '', 'links' => $links];
+	}//end navigationBlock()
 
 	/**
 	 * The publication detail widget, for the route's trailing segment. On the
@@ -496,18 +409,4 @@ class PlainPageRenderer {
 		return $params;
 	}//end searchParams()
 
-	/**
-	 * A prop as a trimmed string; anything that is not a string or a number is ''.
-	 *
-	 * @param mixed $value The prop.
-	 *
-	 * @return string
-	 */
-	private function text(mixed $value): string {
-		if (is_string($value) === true || is_int($value) === true || is_float($value) === true) {
-			return trim((string)$value);
-		}
-
-		return '';
-	}//end text()
 }//end class

@@ -319,15 +319,19 @@ class PortalPageController extends Controller {
 			siteBase: $this->urlGenerator->linkToRoute('portaliq.portalPage.site'),
 			portalSlug: $asked['slug']
 		);
-		$renderer = ($this->plainPage ?? \OCP\Server::get(PlainPageRenderer::class));
-		$view = $renderer->render(
-			portal: $asked['portal'],
-			route: $asked['route'],
-			locale: $asked['locale'],
-			query: $asked['query'],
-			page: $asked['page'],
-			address: $address
-		);
+		// Without the renderer (never so through the container) the page
+		// answers as a route that does not exist, never with content.
+		$view = ['status' => self::STATUS_NOT_FOUND, 'title' => '', 'summary' => '', 'blocks' => [], 'menu' => []];
+		if ($this->plainPage !== null) {
+			$view = $this->plainPage->render(
+				portal: $asked['portal'],
+				route: $asked['route'],
+				locale: $asked['locale'],
+				query: $asked['query'],
+				page: $asked['page'],
+				address: $address
+			);
+		}
 
 		$params = $this->shell->templateParams(path: '');
 		$params['plain'] = $view;

@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service\Cms;
 
 use OCA\Portaliq\Service\Cms\PlainPublicationReader;
+use OCA\Portaliq\Service\Cms\PlainPublicationRows;
 use OCA\Portaliq\Service\InstanceLoopback;
 use OCP\App\IAppManager;
 use OCP\Http\Client\IResponse;
@@ -35,6 +36,7 @@ use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
 #[CoversClass(PlainPublicationReader::class)]
+#[CoversClass(PlainPublicationRows::class)]
 class PlainPublicationReaderTest extends TestCase {
 
 	/**

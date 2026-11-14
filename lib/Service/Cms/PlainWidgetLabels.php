@@ -114,6 +114,16 @@ class PlainWidgetLabels {
 	];
 
 	/**
+	 * Keys the site renders that `PUBLIC_LABELS` does not name, because the
+	 * editor reads their name from the shared dashboard registry instead.
+	 *
+	 * @var array<string, string>
+	 */
+	public const SITE_ONLY_LABELS = [
+		'form' => 'Formulier',
+	];
+
+	/**
 	 * The label of one widget key.
 	 *
 	 * @param string $key The widget key.
@@ -125,6 +135,10 @@ class PlainWidgetLabels {
 	public function label(string $key): string {
 		if (array_key_exists($key, self::LABELS) === true) {
 			return self::LABELS[$key];
+		}
+
+		if (array_key_exists($key, self::SITE_ONLY_LABELS) === true) {
+			return self::SITE_ONLY_LABELS[$key];
 		}
 
 		$spaced = trim((string)preg_replace(['/([a-z0-9])([A-Z])/', '/[-_]+/'], ['$1 $2', ' '], $key));

@@ -39,6 +39,7 @@ class PlainContext {
 	 * @param int          $page       The request's `_page`, from 1.
 	 * @param PlainAddress $address    The addresses.
 	 * @param string       $locale     The document language.
+	 * @param list<array{label: string, href: string, items: list<array{label: string, href: string}>}> $menu The main menu as plain links.
 	 */
 	public function __construct(
 		public readonly string $route,
@@ -47,6 +48,7 @@ class PlainContext {
 		public readonly int $page,
 		public readonly PlainAddress $address,
 		public readonly string $locale,
+		public readonly array $menu = [],
 	) {
 	}//end __construct()
 

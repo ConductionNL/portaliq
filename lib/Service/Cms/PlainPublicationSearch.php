@@ -113,12 +113,32 @@ class PlainPublicationSearch {
 		$pages = max(1, (int)ceil($total / $pageSize));
 		$results = [];
 		foreach ($found['results'] as $result) {
+			$title = $result['title'];
+			if ($title === '') {
+				$title = $this->l10n->t('Untitled');
+			}
+
 			$results[] = [
-				'title' => ($result['title'] !== '' ? $result['title'] : $this->l10n->t('Untitled')),
+				'title' => $title,
 				'href' => $this->detailHref(address: $address, detailRoute: $detailRoute, id: $result['id']),
 				'date' => $this->dates->readable(value: $result['date'], locale: $locale),
 				'summary' => $result['summary'],
 			];
+		}
+
+		$empty = '';
+		if ($total === 0) {
+			$empty = $this->l10n->t('No publications match this search.');
+		}
+
+		$previous = '';
+		if ($page > 1) {
+			$previous = $address->plain(route: $route, extra: $this->searchParams(query: $query, page: $page - 1));
+		}
+
+		$next = '';
+		if ($page < $pages) {
+			$next = $address->plain(route: $route, extra: $this->searchParams(query: $query, page: $page + 1));
 		}
 
 		return $block + [
@@ -126,12 +146,12 @@ class PlainPublicationSearch {
 			'sentence' => '',
 			'total' => $total,
 			'totalText' => $this->l10n->n('%n result', '%n results', $total),
-			'empty' => ($total === 0 ? $this->l10n->t('No publications match this search.') : ''),
+			'empty' => $empty,
 			'results' => $results,
 			'page' => $page,
 			'pages' => $pages,
-			'previous' => ($page > 1 ? $address->plain(route: $route, extra: $this->searchParams(query: $query, page: $page - 1)) : ''),
-			'next' => ($page < $pages ? $address->plain(route: $route, extra: $this->searchParams(query: $query, page: $page + 1)) : ''),
+			'previous' => $previous,
+			'next' => $next,
 			'previousLabel' => $this->l10n->t('Previous page'),
 			'nextLabel' => $this->l10n->t('Next page'),
 			'pageText' => $this->l10n->t('Page %1$d of %2$d', [$page, $pages]),

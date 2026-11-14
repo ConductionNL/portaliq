@@ -11,7 +11,7 @@
 // body, which `PlainMarkdown` has already escaped and reduced to a fixed subset.
 //
 // NO SCRIPT ELEMENT, NOT EVEN DATA. The page has to work, and be measured, as
-// the visitor gets it; `tests/site-plain.spec.mjs` fails on any `<script` in
+// the visitor gets it; `tests/site-plain.spec.mjs` fails on any script tag in
 // this file. The stylesheets and theme come from the partial `site.php`
 // includes too, so both versions wear the same theme.
 
@@ -59,22 +59,22 @@ if ($headTitle === '') {
     <p>
         <a id="skip-link"
            class="utrecht-skip-link utrecht-skip-link--visible-on-focus pq-site__skip"
-           href="#pq-main"><?php p($l->t('Skip to the content')); ?></a>
+           href="#pq-main" aria-label="<?php p($l->t('Skip to the content')); ?>"><?php p($l->t('Skip to the content')); ?></a>
     </p>
     <header class="pq-plain__header container">
         <p class="utrecht-paragraph pq-plain__portal">
-            <a class="utrecht-link" href="<?php p((string)($plain['homeUrl'] ?? '')); ?>"><?php p($portalTitle !== '' ? $portalTitle : 'Portaal'); ?></a>
+            <a class="utrecht-link" href="<?php p((string)($plain['homeUrl'] ?? '')); ?>" aria-label="<?php p($portalTitle !== '' ? $portalTitle : 'Portaal'); ?>"><?php p($portalTitle !== '' ? $portalTitle : 'Portaal'); ?></a>
         </p>
         <?php if ((array)($plain['menu'] ?? []) !== []) { ?>
         <nav aria-label="<?php p((string)($plain['menuLabel'] ?? '')); ?>">
             <ul class="utrecht-link-list">
                 <?php foreach ((array)$plain['menu'] as $item) { ?>
                 <li class="utrecht-link-list__item">
-                    <a class="utrecht-link utrecht-link-list__link" href="<?php p($item['href']); ?>"><?php p($item['label']); ?></a>
+                    <a class="utrecht-link utrecht-link-list__link" href="<?php p($item['href']); ?>" aria-label="<?php p($item['label']); ?>"><?php p($item['label']); ?></a>
                     <?php if ((array)($item['items'] ?? []) !== []) { ?>
                     <ul class="utrecht-link-list">
                         <?php foreach ((array)$item['items'] as $child) { ?>
-                        <li class="utrecht-link-list__item"><a class="utrecht-link utrecht-link-list__link" href="<?php p($child['href']); ?>"><?php p($child['label']); ?></a></li>
+                        <li class="utrecht-link-list__item"><a class="utrecht-link utrecht-link-list__link" href="<?php p($child['href']); ?>" aria-label="<?php p($child['label']); ?>"><?php p($child['label']); ?></a></li>
                         <?php } ?>
                     </ul>
                     <?php } ?>
@@ -87,7 +87,7 @@ if ($headTitle === '') {
     <main id="pq-main" class="pq-plain container" tabindex="-1">
         <p class="utrecht-paragraph pq-plain__note">
             <?php p((string)($plain['plainNote'] ?? '')); ?>
-            <a class="utrecht-link" href="<?php p((string)($plain['fullUrl'] ?? '')); ?>"><?php p((string)($plain['fullLabel'] ?? '')); ?></a>
+            <a class="utrecht-link" href="<?php p((string)($plain['fullUrl'] ?? '')); ?>" aria-label="<?php p((string)($plain['fullLabel'] ?? '')); ?>"><?php p((string)($plain['fullLabel'] ?? '')); ?></a>
         </p>
         <h1 class="utrecht-heading-1"><?php p($pageTitle); ?></h1>
         <?php if ((string)($plain['summary'] ?? '') !== '') { ?>
@@ -120,7 +120,7 @@ if ($headTitle === '') {
             <ul class="utrecht-link-list">
                 <?php foreach ((array)$block['links'] as $link) { ?>
                 <li class="utrecht-link-list__item">
-                    <a class="utrecht-link utrecht-link-list__link" href="<?php p((string)$link['href']); ?>"><?php p((string)$link['label']); ?></a>
+                    <a class="utrecht-link utrecht-link-list__link" href="<?php p((string)$link['href']); ?>" aria-label="<?php p((string)$link['label']); ?>"><?php p((string)$link['label']); ?></a>
                     <?php if ((string)($link['description'] ?? '') !== '') { ?>
                     <span class="utrecht-link-list__description"><?php p((string)$link['description']); ?></span>
                     <?php } ?>
@@ -138,10 +138,10 @@ if ($headTitle === '') {
                 <?php } ?>
                 <label class="utrecht-form-label" for="pq-plain-search"><?php p((string)$block['label']); ?></label>
                 <input id="pq-plain-search" class="utrecht-textbox utrecht-textbox--html-input" type="search" name="_search" value="<?php p((string)$block['query']); ?>">
-                <button type="submit" class="utrecht-button utrecht-button--primary-action"><?php p((string)$block['submit']); ?></button>
+                <button type="submit" class="utrecht-button utrecht-button--primary-action" aria-label="<?php p((string)$block['submit']); ?>"><?php p((string)$block['submit']); ?></button>
             </form>
             <?php if ((string)($block['state'] ?? '') !== 'ok') { ?>
-            <p class="utrecht-paragraph" role="status"><?php p((string)$block['sentence']); ?> <a class="utrecht-link" href="<?php p((string)$block['fullUrl']); ?>"><?php p((string)$block['fullLabel']); ?></a></p>
+            <p class="utrecht-paragraph" role="status"><?php p((string)$block['sentence']); ?> <a class="utrecht-link" href="<?php p((string)$block['fullUrl']); ?>" aria-label="<?php p((string)$block['fullLabel']); ?>"><?php p((string)$block['fullLabel']); ?></a></p>
             <?php } else { ?>
             <p class="utrecht-paragraph" role="status"><?php p((string)$block['totalText']); ?></p>
             <?php if ((string)($block['empty'] ?? '') !== '') { ?>
@@ -152,7 +152,7 @@ if ($headTitle === '') {
                 <?php foreach ((array)$block['results'] as $result) { ?>
                 <li>
                     <?php if ((string)$result['href'] !== '') { ?>
-                    <h3 class="utrecht-heading-3"><a class="utrecht-link" href="<?php p((string)$result['href']); ?>"><?php p((string)$result['title']); ?></a></h3>
+                    <h3 class="utrecht-heading-3"><a class="utrecht-link" href="<?php p((string)$result['href']); ?>" aria-label="<?php p((string)$result['title']); ?>"><?php p((string)$result['title']); ?></a></h3>
                     <?php } else { ?>
                     <h3 class="utrecht-heading-3"><?php p((string)$result['title']); ?></h3>
                     <?php } ?>
@@ -169,11 +169,11 @@ if ($headTitle === '') {
             <?php if ((string)$block['previous'] !== '' || (string)$block['next'] !== '') { ?>
             <nav aria-label="<?php p((string)$block['pageText']); ?>">
                 <?php if ((string)$block['previous'] !== '') { ?>
-                <a class="utrecht-link" rel="prev" href="<?php p((string)$block['previous']); ?>"><?php p((string)$block['previousLabel']); ?></a>
+                <a class="utrecht-link" rel="prev" href="<?php p((string)$block['previous']); ?>" aria-label="<?php p((string)$block['previousLabel']); ?>"><?php p((string)$block['previousLabel']); ?></a>
                 <?php } ?>
                 <span><?php p((string)$block['pageText']); ?></span>
                 <?php if ((string)$block['next'] !== '') { ?>
-                <a class="utrecht-link" rel="next" href="<?php p((string)$block['next']); ?>"><?php p((string)$block['nextLabel']); ?></a>
+                <a class="utrecht-link" rel="next" href="<?php p((string)$block['next']); ?>" aria-label="<?php p((string)$block['nextLabel']); ?>"><?php p((string)$block['nextLabel']); ?></a>
                 <?php } ?>
             </nav>
             <?php } ?>
@@ -199,7 +199,7 @@ if ($headTitle === '') {
                 <?php $facts = trim(implode(', ', array_filter([(string)$document['type'], (string)$document['size']]))); ?>
                 <li class="utrecht-link-list__item">
                     <?php if ((string)$document['href'] !== '') { ?>
-                    <a class="utrecht-link utrecht-link-list__link" href="<?php p((string)$document['href']); ?>" download><?php p((string)$document['name']); ?></a>
+                    <a class="utrecht-link utrecht-link-list__link" href="<?php p((string)$document['href']); ?>" download aria-label="<?php p((string)$document['name']); ?>"><?php p((string)$document['name']); ?></a>
                     <?php } else { ?>
                     <?php p((string)$document['name']); ?>
                     <?php } ?>
@@ -214,10 +214,10 @@ if ($headTitle === '') {
             <h2 class="utrecht-heading-2"><?php p((string)$block['title']); ?></h2>
             <p class="utrecht-paragraph"><?php p((string)$block['sentence']); ?></p>
             <?php } else { ?>
-            <p class="utrecht-paragraph" role="status"><?php p((string)$block['sentence']); ?> <a class="utrecht-link" href="<?php p((string)$block['fullUrl']); ?>"><?php p((string)$block['fullLabel']); ?></a></p>
+            <p class="utrecht-paragraph" role="status"><?php p((string)$block['sentence']); ?> <a class="utrecht-link" href="<?php p((string)$block['fullUrl']); ?>" aria-label="<?php p((string)$block['fullLabel']); ?>"><?php p((string)$block['fullLabel']); ?></a></p>
             <?php } ?>
             <?php } else { ?>
-            <p class="utrecht-paragraph pq-plain__needs-js"><?php p((string)($block['sentence'] ?? '')); ?> <a class="utrecht-link" href="<?php p((string)($block['fullUrl'] ?? '')); ?>"><?php p((string)($block['fullLabel'] ?? '')); ?></a></p>
+            <p class="utrecht-paragraph pq-plain__needs-js"><?php p((string)($block['sentence'] ?? '')); ?> <a class="utrecht-link" href="<?php p((string)($block['fullUrl'] ?? '')); ?>" aria-label="<?php p((string)($block['fullLabel'] ?? '')); ?>"><?php p((string)($block['fullLabel'] ?? '')); ?></a></p>
             <?php } ?>
         </section>
         <?php } ?>

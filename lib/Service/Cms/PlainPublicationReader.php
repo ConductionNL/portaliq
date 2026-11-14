@@ -72,11 +72,11 @@ class PlainPublicationReader {
 	private const CATALOGUE_APP = 'opencatalogi';
 
 	/**
-	 * Characters of a summary kept, as the search block keeps them.
+	 * Shapes the endpoint's rows the way the blocks read them.
 	 *
-	 * @var int
+	 * @var PlainPublicationRows
 	 */
-	private const SUMMARY_LENGTH = 280;
+	private readonly PlainPublicationRows $rows;
 
 	/**
 	 * Constructor.
@@ -88,6 +88,7 @@ class PlainPublicationReader {
 		private readonly InstanceLoopback $loopback,
 		private readonly IAppManager $appManager,
 	) {
+		$this->rows = new PlainPublicationRows();
 	}//end __construct()
 
 	/**
@@ -117,7 +118,7 @@ class PlainPublicationReader {
 		$results = [];
 		foreach ((array)($answer['body']['results'] ?? []) as $row) {
 			if (is_array($row) === true) {
-				$results[] = $this->resultOf(row: $row);
+				$results[] = $this->rows->result(row: $row);
 			}
 		}
 
@@ -147,7 +148,7 @@ class PlainPublicationReader {
 		}
 
 		$body = $answer['body'];
-		if ($answer['status'] !== 200 || is_array($body) === false || $this->matches(row: $body, id: $id) === false) {
+		if ($answer['status'] !== 200 || is_array($body) === false || $this->rows->isPublication(row: $body, id: $id) === false) {
 			// 404, 403 and an answer that is not this publication all read the
 			// same: one cause must not be told from the other.
 			return ['state' => 'not-found'];
@@ -213,7 +214,7 @@ class PlainPublicationReader {
 		$documents = [];
 		foreach ($files as $file) {
 			if (is_array($file) === true) {
-				$documents[] = $this->documentOf(file: $file);
+				$documents[] = $this->rows->document(file: $file);
 			}
 		}
 
@@ -277,107 +278,4 @@ class PlainPublicationReader {
 			return false;
 		}
 	}//end catalogueIsThere()
-
-	/**
-	 * One result row as the plain page shows it.
-	 *
-	 * @param array<string, mixed> $row The endpoint's row.
-	 *
-	 * @return array{id: string, title: string, date: string, summary: string}
-	 */
-	private function resultOf(array $row): array {
-		$self = (array)($row['@self'] ?? []);
-
-		return [
-			'id' => $this->text(values: [$self['id'] ?? null, $row['id'] ?? null]),
-			'title' => $this->text(values: [$row['name'] ?? null, $self['name'] ?? null, $self['title'] ?? null, $row['title'] ?? null]),
-			'date' => $this->text(values: [$row['publicationDate'] ?? null, $self['published'] ?? null]),
-			'summary' => mb_substr($this->text(values: [$self['summary'] ?? null, $row['summary'] ?? null, $row['description'] ?? null]), 0, self::SUMMARY_LENGTH),
-		];
-	}//end resultOf()
-
-	/**
-	 * One file as the plain page links it.
-	 *
-	 * @param array<string, mixed> $file The endpoint's file.
-	 *
-	 * @return array{name: string, type: string, size: int, href: string}
-	 */
-	private function documentOf(array $file): array {
-		$name = $this->text(values: [$file['title'] ?? null, $file['name'] ?? null]);
-		$type = strtoupper($this->text(values: [$file['extension'] ?? null]));
-		if ($type === '' && preg_match('/\.([A-Za-z0-9]{1,8})$/', $name, $match) === 1) {
-			$type = strtoupper($match[1]);
-		}
-
-		$href = $this->safeLink(value: $file['downloadUrl'] ?? null);
-		if ($href === '') {
-			$href = $this->safeLink(value: $file['accessUrl'] ?? null);
-		}
-
-		$size = 0;
-		if (is_numeric($file['size'] ?? null) === true) {
-			$size = max(0, (int)$file['size']);
-		}
-
-		if ($name === '') {
-			$name = 'Document';
-		}
-
-		return ['name' => $name, 'type' => $type, 'size' => $size, 'href' => $href];
-	}//end documentOf()
-
-	/**
-	 * Whether a by-id answer is the publication asked for.
-	 *
-	 * @param array<string, mixed> $row The answer.
-	 * @param string               $id  The id asked for.
-	 *
-	 * @return bool
-	 */
-	private function matches(array $row, string $id): bool {
-		$self = (array)($row['@self'] ?? []);
-
-		return (string)($self['id'] ?? '') === $id || (string)($row['id'] ?? '') === $id;
-	}//end matches()
-
-	/**
-	 * The first value that is a non-blank string or a number, trimmed.
-	 *
-	 * @param array<int, mixed> $values The candidates, preferred first.
-	 *
-	 * @return string
-	 */
-	private function text(array $values): string {
-		foreach ($values as $value) {
-			if (is_string($value) === true || is_int($value) === true || is_float($value) === true) {
-				$value = trim((string)$value);
-				if ($value !== '') {
-					return $value;
-				}
-			}
-		}
-
-		return '';
-	}//end text()
-
-	/**
-	 * An http(s) address or a path on this instance, else ''.
-	 *
-	 * @param mixed $value The stored address.
-	 *
-	 * @return string
-	 */
-	private function safeLink(mixed $value): string {
-		$text = '';
-		if (is_string($value) === true) {
-			$text = trim($value);
-		}
-
-		if (preg_match('#^https?://#i', $text) === 1 || preg_match('#^/(?!/)#', $text) === 1) {
-			return $text;
-		}
-
-		return '';
-	}//end safeLink()
 }//end class

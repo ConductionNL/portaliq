@@ -176,18 +176,13 @@ class PlainPublicationDetail {
 	 * @return list<string>
 	 */
 	private function themeNames(mixed $themes, string $endpoint): array {
-		$names = [];
-		foreach ((is_array($themes) === true ? $themes : []) as $theme) {
-			$name = '';
-			if (is_array($theme) === true) {
-				$name = $this->first(values: [$theme['title'] ?? null, $theme['name'] ?? null]);
-				if ($name === '' && is_string($theme['id'] ?? null) === true && $theme['id'] !== '') {
-					$name = $this->reader->themeName(endpoint: $endpoint, id: $theme['id']);
-				}
-			} else if (is_string($theme) === true && $theme !== '') {
-				$name = $this->reader->themeName(endpoint: $endpoint, id: $theme);
-			}
+		if (is_array($themes) === false) {
+			return [];
+		}
 
+		$names = [];
+		foreach ($themes as $theme) {
+			$name = $this->themeName(theme: $theme, endpoint: $endpoint);
 			if ($name !== '') {
 				$names[] = $name;
 			}
@@ -195,6 +190,34 @@ class PlainPublicationDetail {
 
 		return $names;
 	}//end themeNames()
+
+	/**
+	 * One theme's name: its own, else the one the themes endpoint gives its id.
+	 *
+	 * @param mixed  $theme    The stored theme: an object or an id.
+	 * @param string $endpoint The themes endpoint.
+	 *
+	 * @return string The name, or ''.
+	 */
+	private function themeName(mixed $theme, string $endpoint): string {
+		$id = '';
+		if (is_array($theme) === true) {
+			$name = $this->first(values: [$theme['title'] ?? null, $theme['name'] ?? null]);
+			if ($name !== '') {
+				return $name;
+			}
+
+			$id = $this->first(values: [$theme['id'] ?? null]);
+		} else if (is_string($theme) === true) {
+			$id = trim($theme);
+		}
+
+		if ($id === '') {
+			return '';
+		}
+
+		return $this->reader->themeName(endpoint: $endpoint, id: $id);
+	}//end themeName()
 
 	/**
 	 * The documents as links: name, type, readable size and address. A
