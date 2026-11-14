@@ -92,7 +92,7 @@ class PortalDraftStore implements PortalDraftStoreInterface {
 		int $retentionDays,
 		?DateTimeImmutable $now = null,
 	): ?array {
-		if ($subjectRef === '' || $actionKey === '') {
+		if ($this->namesNoDraft(subjectRef: $subjectRef, actionKey: $actionKey) === true) {
 			return null;
 		}
 
@@ -115,6 +115,20 @@ class PortalDraftStore implements PortalDraftStoreInterface {
 
 		return ['step' => $step, 'expiresAt' => $expiresAt, 'answers' => $answers];
 	}//end save()
+
+	/**
+	 * Whether a save names no subject or no action, and so saves nothing.
+	 *
+	 * @param string $subjectRef The signed-in subject.
+	 * @param string $actionKey  The contribution and action, `app/action`.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/site-multi-step-forms/tasks.md#T8
+	 */
+	private function namesNoDraft(string $subjectRef, string $actionKey): bool {
+		return $subjectRef === '' || $actionKey === '';
+	}//end namesNoDraft()
 
 	/**
 	 * Update the subject's existing draft, or create it.
