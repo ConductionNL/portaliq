@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\PortalObjectWriterInterface;
 use OCA\Portaliq\Service\Tenancy\ActsForTheOrganisation;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -50,7 +51,7 @@ use Throwable;
  * moving a write path to another class would copy that boundary
  * (inbox-delete-own-messages added the delete).
  */
-class PortalObjectWriter {
+class PortalObjectWriter implements PortalObjectWriterInterface {
 	use ActsForTheOrganisation;
 	use ObjectRowNormaliser;
 	use ObjectServiceLookup;

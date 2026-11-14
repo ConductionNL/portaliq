@@ -12,6 +12,7 @@ use OCA\Portaliq\Service\Intake\PortalFormTrustLevel;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Tests\Unit\Service\Identity\PortalIdentityStoreTrait;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Contribution\FormStepsNormaliser;
 
 /**
  * portal-intake-form-as-an-object REQ-PIFO-001 and REQ-PIFO-002: a page binds
@@ -176,7 +177,7 @@ class PortalFormBindingResolverTest extends TestCase {
 			static fn (string $list): array => $list === 'woningtypen' ? [['value' => 'flat', 'label' => 'Flat'], ['value' => 'huis', 'label' => 'Huis']] : []
 		);
 
-		$fields = (new PortalFormBindingResolver($this->fakeReader(), null, new VisibleWhenLocal(), $lists))->render(binding: $this->binding())['fields'];
+		$fields = (new PortalFormBindingResolver($this->fakeReader(), new FormStepsNormaliser(), null, new VisibleWhenLocal(), $lists))->render(binding: $this->binding())['fields'];
 
 		$this->assertSame([['value' => 'flat', 'label' => 'Flat'], ['value' => 'huis', 'label' => 'Huis']], $fields[0]['options']);
 		$this->assertArrayNotHasKey('referenceListEmpty', $fields[0]);
@@ -184,7 +185,7 @@ class PortalFormBindingResolverTest extends TestCase {
 		$this->assertTrue($fields[1]['referenceListEmpty']);
 		$this->assertSame(['a', 'b'], $fields[2]['options'], 'a plain list is left as it is');
 
-		$none = (new PortalFormBindingResolver($this->fakeReader()))->render(binding: $this->binding())['fields'];
+		$none = (new PortalFormBindingResolver($this->fakeReader(), new FormStepsNormaliser()))->render(binding: $this->binding())['fields'];
 		$this->assertTrue($none[0]['referenceListEmpty'], 'without a reader the field is closed, not open');
 	}//end testAReferenceListFillsTheFieldsOptionsAndAnEmptyOneClosesIt()
 
@@ -198,7 +199,7 @@ class PortalFormBindingResolverTest extends TestCase {
 		$this->seedForm(audience: 'client', fields: [['name' => 'kenteken', 'order' => 1]]);
 		$reader = $this->createMock(\OCA\Portaliq\Service\CaseTypeReader::class);
 		$reader->method('readCaseType')->willReturn(['portalFee' => ['amount' => '38.50', 'currency' => 'EUR', 'payAction' => 'create-payment']]);
-		$resolver = new PortalFormBindingResolver($this->fakeReader(), null, new VisibleWhenLocal(), null, new \OCA\Portaliq\Service\Intake\PortalFormCalculator(), new \OCA\Portaliq\Service\Intake\PortalFee($reader));
+		$resolver = new PortalFormBindingResolver($this->fakeReader(), new FormStepsNormaliser(), null, new VisibleWhenLocal(), null, new \OCA\Portaliq\Service\Intake\PortalFormCalculator(), new \OCA\Portaliq\Service\Intake\PortalFee($reader));
 
 		$render = $resolver->render(binding: $this->binding());
 
@@ -509,7 +510,7 @@ class PortalFormBindingResolverTest extends TestCase {
 			['slug' => 'gemeente-y'],
 		]);
 
-		return new PortalFormBindingResolver($this->fakeReader(), new CaseTypeVisibility($portals));
+		return new PortalFormBindingResolver($this->fakeReader(), new FormStepsNormaliser(), new CaseTypeVisibility($portals));
 	}//end hidingResolver()
 
 	/**
@@ -559,7 +560,7 @@ class PortalFormBindingResolverTest extends TestCase {
 	 * @return PortalFormBindingResolver
 	 */
 	private function resolver(): PortalFormBindingResolver {
-		return new PortalFormBindingResolver($this->fakeReader());
+		return new PortalFormBindingResolver($this->fakeReader(), new FormStepsNormaliser());
 	}//end resolver()
 
 }//end class

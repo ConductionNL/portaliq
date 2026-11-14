@@ -25,6 +25,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\ThemeChoiceInterface;
+
 /**
  * A contribution tags a collection or an action with a `theme` slug. The
  * portal decides which slugs exist (`portal.themes`): a tag the portal does not
@@ -33,7 +35,7 @@ namespace OCA\Portaliq\Contribution;
  *
  * @spec openspec/changes/life-domain-theme-pages/specs/life-domain-themes/spec.md
  */
-class ThemeChoice {
+class ThemeChoice implements ThemeChoiceInterface {
 
 	/**
 	 * A theme slug, as it appears in an address.

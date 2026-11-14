@@ -22,6 +22,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Cms;
 
+use OCA\Portaliq\Kernel\Contracts\SharedBlockPortalsInterface;
+
 /**
  * Which portals a write to a shared block can touch.
  *
@@ -31,7 +33,7 @@ namespace OCA\Portaliq\Service\Cms;
  *
  * @spec openspec/changes/site-shared-page-blocks/tasks.md#t03
  */
-class SharedBlockPortals {
+class SharedBlockPortals implements SharedBlockPortalsInterface {
 	/**
 	 * Whether the written data is a shared block: an organisation, no portal, and a widget grid.
 	 *

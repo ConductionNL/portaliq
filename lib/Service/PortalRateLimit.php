@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\PortalRateLimitInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -43,7 +44,7 @@ use OCP\Security\RateLimiting\IRateLimitExceededException;
  *
  * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-signed-in-portal-session-must-be-rate-limited-per-subject
  */
-class PortalRateLimit {
+class PortalRateLimit implements PortalRateLimitInterface {
 	/**
 	 * Calls a minute for one signed-in subject: twenty blocks on fifteen
 	 * page loads.

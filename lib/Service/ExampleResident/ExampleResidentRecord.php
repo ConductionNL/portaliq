@@ -26,7 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\ExampleResident;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCP\IAppConfig;
 
 /**
@@ -75,7 +75,7 @@ class ExampleResidentRecord {
 	 */
 	public function read(string $id): array {
 		$record  = self::BLANK;
-		$decoded = json_decode($this->appConfig->getValueString(Application::APP_ID, self::PREFIX . $id, ''), true);
+		$decoded = json_decode($this->appConfig->getValueString(AppIdentity::APP_ID, self::PREFIX . $id, ''), true);
 		if (is_array($decoded) === false) {
 			return $record;
 		}
@@ -128,10 +128,10 @@ class ExampleResidentRecord {
 	 */
 	public function write(string $id, array $record): void {
 		if ($this->isEmpty(record: $record) === true) {
-			$this->appConfig->deleteKey(Application::APP_ID, self::PREFIX . $id);
+			$this->appConfig->deleteKey(AppIdentity::APP_ID, self::PREFIX . $id);
 			return;
 		}
 
-		$this->appConfig->setValueString(Application::APP_ID, self::PREFIX . $id, (string)json_encode($record));
+		$this->appConfig->setValueString(AppIdentity::APP_ID, self::PREFIX . $id, (string)json_encode($record));
 	}//end write()
 }//end class

@@ -14,6 +14,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Portaliq\Contribution\TimelineProviderMethod;
 
 /**
  * A stand-in for decidiq's provider: the `opened` hook answers what the test sets.
@@ -104,7 +105,7 @@ class CollectionDocumentsTest extends TestCase {
 			$this->warnings[] = $message . ' ' . json_encode($context);
 		});
 
-		return new CollectionDocuments($published, $this->files, $this->audit, $locator, $logger);
+		return new CollectionDocuments($published, $this->files, $this->audit, $locator, $logger, new TimelineProviderMethod());
 	}
 
 	public function testTheListNeverSaysWhereAFileLives(): void {
@@ -190,7 +191,8 @@ class CollectionDocumentsTest extends TestCase {
 			$this->files,
 			$this->audit = $this->createMock(PortalAuditHook::class),
 			$this->createConfiguredMock(PortalProviderLocator::class, ['locate' => $this->provider]),
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(LoggerInterface::class),
+			new TimelineProviderMethod()
 		);
 		$this->files->method('streamFile')->willReturn(null);
 		$this->audit->expects($this->never())->method('download');

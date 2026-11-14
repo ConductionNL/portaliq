@@ -29,10 +29,10 @@ namespace OCA\Portaliq\BackgroundJob;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use OCA\Portaliq\Service\Availability\AvailabilityProbe;
-use OCA\Portaliq\Service\Availability\AvailabilityRollup;
-use OCA\Portaliq\Service\Availability\AvailabilityStore;
-use OCA\Portaliq\Service\PublishedPortals;
+use OCA\Portaliq\Kernel\Contracts\AvailabilityProbeInterface;
+use OCA\Portaliq\Kernel\Contracts\AvailabilityRollupInterface;
+use OCA\Portaliq\Kernel\Contracts\AvailabilityStoreInterface;
+use OCA\Portaliq\Kernel\Contracts\PublishedPortalsInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
 use Psr\Log\LoggerInterface;
@@ -55,22 +55,22 @@ class AvailabilityProbeJob extends TimedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory $time Testable clock (job base class).
-	 * @param PublishedPortals $portals Lists the published portals.
-	 * @param AvailabilityProbe $probe Checks one portal.
-	 * @param AvailabilityStore $store Keeps the records.
-	 * @param AvailabilityRollup $rollup Folds a check into the records.
+	 * @param PublishedPortalsInterface $portals Lists the published portals.
+	 * @param AvailabilityProbeInterface $probe Checks one portal.
+	 * @param AvailabilityStoreInterface $store Keeps the records.
+	 * @param AvailabilityRollupInterface $rollup Folds a check into the records.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly PublishedPortals $portals,
-		private readonly AvailabilityProbe $probe,
-		private readonly AvailabilityStore $store,
-		private readonly AvailabilityRollup $rollup,
+		private readonly PublishedPortalsInterface $portals,
+		private readonly AvailabilityProbeInterface $probe,
+		private readonly AvailabilityStoreInterface $store,
+		private readonly AvailabilityRollupInterface $rollup,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(time: $time);
-		$this->setInterval(seconds: AvailabilityRollup::INTERVAL);
+		$this->setInterval(seconds: AvailabilityRollupInterface::INTERVAL);
 		$this->setAllowParallelRuns(allow: false);
 	}//end __construct()
 
@@ -137,16 +137,16 @@ class AvailabilityProbeJob extends TimedJob {
 
 		foreach ($result['days'] as $date => $day) {
 			if (($days[$date] ?? null) !== $day) {
-				$this->store->save(schema: AvailabilityStore::DAILY_SCHEMA, row: $day);
+				$this->store->save(schema: AvailabilityStoreInterface::DAILY_SCHEMA, row: $day);
 			}
 		}
 
 		foreach ($result['closed'] as $outage) {
-			$this->store->save(schema: AvailabilityStore::OUTAGE_SCHEMA, row: $outage);
+			$this->store->save(schema: AvailabilityStoreInterface::OUTAGE_SCHEMA, row: $outage);
 		}
 
 		if ($result['open'] !== null) {
-			$this->store->save(schema: AvailabilityStore::OUTAGE_SCHEMA, row: $result['open']);
+			$this->store->save(schema: AvailabilityStoreInterface::OUTAGE_SCHEMA, row: $result['open']);
 		}
 	}//end checkOne()
 }//end class

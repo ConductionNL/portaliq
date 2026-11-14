@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Cms;
 
+use OCA\Portaliq\Kernel\Contracts\MediaLibraryReaderInterface;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCP\ICache;
 use OCP\ICacheFactory;
@@ -42,7 +43,7 @@ use Throwable;
  * in CmsReader's cache under the portal's prefix, so CmsReader::invalidate()
  * on a media write drops them with the rest of the portal's content.
  */
-class MediaLibraryReader {
+class MediaLibraryReader implements MediaLibraryReaderInterface {
 
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 

@@ -13,6 +13,7 @@ use OCA\Portaliq\Service\PortalTimelineReader;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Contribution\StepsProviderMethod;
 
 /**
  * portaliq#723: a case's history reaches the portal only after the subject
@@ -256,7 +257,7 @@ class PortalTimelineControllerTest extends TestCase {
 
 		$this->doubles = ['reader' => $reader, 'timelines' => $timelines];
 
-		return new PortalTimelineController($request, $registry, $session, $reader, $timelines, null, $mandatedCases);
+		return new PortalTimelineController($request, $registry, $session, $reader, $timelines, new StepsProviderMethod(), null, $mandatedCases);
 
 	}//end controller()
 

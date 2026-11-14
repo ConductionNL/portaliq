@@ -79,7 +79,7 @@ class MandateControllerTest extends TestCase {
 		$portals = $this->createMock(PortalResolver::class);
 		$portals->method('resolve')->willReturnCallback(fn (): ?array => $this->site);
 
-		return new MandateController($request, $session, $mandates, $mailer, $accounts, $choices, $portals);
+		return new MandateController($request, $session, $mandates, $mailer, $accounts, $choices, $portals, new MandateParties());
 	}//end controller()
 
 	/**

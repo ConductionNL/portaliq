@@ -28,7 +28,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\CaseTypeColumns;
 
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Kernel\Contracts\CaseTypeColumnSettingsInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use stdClass;
 
@@ -37,16 +38,16 @@ use stdClass;
  *
  * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
  */
-class CaseTypeColumnSettings {
+class CaseTypeColumnSettings implements CaseTypeColumnSettingsInterface {
 	/**
 	 * Constructor.
 	 *
 	 * @param PortalObjectWriter $writer Writes the portal.
-	 * @param PortalContributionRegistry $registry The contributing apps.
+	 * @param PortalContributionRegistryInterface $registry The contributing apps.
 	 */
 	public function __construct(
 		private readonly PortalObjectWriter $writer,
-		private readonly PortalContributionRegistry $registry,
+		private readonly PortalContributionRegistryInterface $registry,
 	) {
 	}//end __construct()
 

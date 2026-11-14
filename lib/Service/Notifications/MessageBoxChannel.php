@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Notifications;
 
 use OCA\Portaliq\BackgroundJob\MessageBoxDispatchJob;
+use OCA\Portaliq\Kernel\Contracts\MessageBoxChannelInterface;
 use OCA\Portaliq\Service\NotificationDispatchService;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCP\BackgroundJob\IJobList;
@@ -42,14 +43,7 @@ use Throwable;
  *
  * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-portaliq-asks-integriq-to-send-and-records-the-answer-req-mbc-003
  */
-class MessageBoxChannel {
-
-	/**
-	 * The channel's name in the notification log and the job argument.
-	 *
-	 * @var string
-	 */
-	public const CHANNEL = 'messageBox';
+class MessageBoxChannel implements MessageBoxChannelInterface {
 
 	/**
 	 * Wire the channel.

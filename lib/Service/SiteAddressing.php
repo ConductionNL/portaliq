@@ -28,6 +28,7 @@ namespace OCA\Portaliq\Service;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 use Throwable;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 
 /**
  * The addressing of the site for one request.
@@ -57,11 +58,11 @@ class SiteAddressing {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalResolver $portalResolver Names the verified domain a request is served on.
+	 * @param PortalResolverInterface $portalResolver Names the verified domain a request is served on.
 	 * @param IURLGenerator  $urlGenerator   Builds the long site address.
 	 */
 	public function __construct(
-		private readonly PortalResolver $portalResolver,
+		private readonly PortalResolverInterface $portalResolver,
 		private readonly IURLGenerator $urlGenerator,
 	) {
 	}//end __construct()

@@ -31,6 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\NewsFeedReaderInterface;
 use OCA\Portaliq\Service\Messaging\GuardianMessageTranslator;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -43,7 +44,7 @@ use Psr\Log\LoggerInterface;
  * GuardianAudienceFixtureReader::guardiansMatching()), so the preflight count
  * and this read path can never disagree.
  */
-class NewsFeedReader {
+class NewsFeedReader implements NewsFeedReaderInterface {
 	use PublishedMoment;
 
 	/**

@@ -10,6 +10,7 @@ use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Tests\Unit\Service\Identity\PortalIdentityStoreTrait;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Contribution\FormStepsNormaliser;
 
 /**
  * portal-intake-form-as-an-object REQ-PIFO-006: the entry point lists what the
@@ -82,7 +83,7 @@ class PortalCatalogueReaderTest extends TestCase {
 		$portals->method('allPublishedPortals')->willReturn([['slug' => 'gemeente-x', 'hiddenCaseTypes' => [['typeId' => 'verhuizing']]]]);
 		$reader = $this->fakeReader();
 
-		$topics = (new PortalCatalogueReader($reader, new PortalFormBindingResolver($reader), new CaseTypeVisibility($portals)))->topicsFor(portal: 'gemeente-x');
+		$topics = (new PortalCatalogueReader($reader, new PortalFormBindingResolver($reader, new FormStepsNormaliser()), new CaseTypeVisibility($portals)))->topicsFor(portal: 'gemeente-x');
 
 		$this->assertSame(['Kapvergunning'], array_column($topics[0]['entries'], 'title'));
 	}//end testAnEntryForAHiddenCaseTypeIsLeftOut()

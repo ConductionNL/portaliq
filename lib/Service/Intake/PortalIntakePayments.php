@@ -26,11 +26,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
-use OCA\Portaliq\Service\PortalActionForwarder;
-use OCA\Portaliq\Service\PortalDeepLinkBuilder;
+use OCA\Portaliq\Kernel\Contracts\PortalActionForwarderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalDeepLinkBuilderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalIntakePaymentsInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
+use OCA\Portaliq\Kernel\Contracts\DestinationLookupInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFeeInterface;
 
 /**
  * Forwards the case app's pay action for a created object and reports the state of the payment.
@@ -42,22 +45,22 @@ use OCP\AppFramework\Http\JSONResponse;
  * @spec openspec/changes/intake-pay-on-submit/tasks.md#t04
  * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#3.3
  */
-class PortalIntakePayments {
+class PortalIntakePayments implements PortalIntakePaymentsInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param DestinationLookup|null          $lookup    Finds the object behind a reference.
-	 * @param PortalFee|null                  $fees      Checks a fee and the address a resident may be sent to pay at.
-	 * @param PortalContributionRegistry|null $registry  Finds the case app's pay action in the subject's own manifest.
-	 * @param PortalActionForwarder|null      $forwarder Forwards the pay action with a server-built body.
-	 * @param PortalDeepLinkBuilder|null      $deepLinks Builds the address the resident returns to.
+	 * @param DestinationLookupInterface|null          $lookup    Finds the object behind a reference.
+	 * @param PortalFeeInterface|null                  $fees      Checks a fee and the address a resident may be sent to pay at.
+	 * @param PortalContributionRegistryInterface|null $registry  Finds the case app's pay action in the subject's own manifest.
+	 * @param PortalActionForwarderInterface|null      $forwarder Forwards the pay action with a server-built body.
+	 * @param PortalDeepLinkBuilderInterface|null      $deepLinks Builds the address the resident returns to.
 	 */
 	public function __construct(
-		private readonly ?DestinationLookup $lookup = null,
-		private readonly ?PortalFee $fees = null,
-		private readonly ?PortalContributionRegistry $registry = null,
-		private readonly ?PortalActionForwarder $forwarder = null,
-		private readonly ?PortalDeepLinkBuilder $deepLinks = null,
+		private readonly ?DestinationLookupInterface $lookup = null,
+		private readonly ?PortalFeeInterface $fees = null,
+		private readonly ?PortalContributionRegistryInterface $registry = null,
+		private readonly ?PortalActionForwarderInterface $forwarder = null,
+		private readonly ?PortalDeepLinkBuilderInterface $deepLinks = null,
 	) {
 	}//end __construct()
 
@@ -102,12 +105,12 @@ class PortalIntakePayments {
 	/**
 	 * The fee the object's case type declares, or null when there is none or it is paid.
 	 *
-	 * @param PortalFee                                                                                       $fees  Reads the fee of a binding.
+	 * @param PortalFeeInterface                                                                                       $fees  Reads the fee of a binding.
 	 * @param array{object: array<string, mixed>, binding: array<string, mixed>, schema: array<string, mixed>} $found The object.
 	 *
 	 * @return array<string, mixed>|null
 	 */
-	private function feeToPay(PortalFee $fees, array $found): ?array {
+	private function feeToPay(PortalFeeInterface $fees, array $found): ?array {
 		if (($this->paymentOf(found: $found)['state'] ?? '') === 'paid') {
 			return null;
 		}
@@ -167,14 +170,14 @@ class PortalIntakePayments {
 	/**
 	 * The object behind a reference, when the binding stamps the subject on it and it is this subject's.
 	 *
-	 * @param DestinationLookup    $lookup    Finds the object.
+	 * @param DestinationLookupInterface    $lookup    Finds the object.
 	 * @param array<string, mixed> $subject   The signed-in subject.
 	 * @param string               $slug      The portal's slug.
 	 * @param string               $reference The request's reference.
 	 *
 	 * @return array{object: array<string, mixed>, binding: array<string, mixed>, schema: array<string, mixed>}|null
 	 */
-	private function ownObject(DestinationLookup $lookup, array $subject, string $slug, string $reference): ?array {
+	private function ownObject(DestinationLookupInterface $lookup, array $subject, string $slug, string $reference): ?array {
 		$subjectRef = (string)($subject['subjectRef'] ?? '');
 		$found      = $lookup->find(portal: $slug, reference: $reference, subjectRef: $subjectRef);
 		$field      = trim((string)($found['binding']['destination']['subjectField'] ?? ''));
@@ -191,13 +194,13 @@ class PortalIntakePayments {
 	 * The case app's pay action keeps the payment intent on its own object;
 	 * the portal stores nothing.
 	 *
-	 * @param PortalActionForwarder $forwarder Forwards the pay action.
-	 * @param PortalFee             $fees      Checks the checkout address.
+	 * @param PortalActionForwarderInterface $forwarder Forwards the pay action.
+	 * @param PortalFeeInterface             $fees      Checks the checkout address.
 	 * @param array<string, mixed>  $context   The action, subject, site, binding, fee and reference.
 	 *
 	 * @return JSONResponse `{checkoutUrl}` or a 502.
 	 */
-	private function forward(PortalActionForwarder $forwarder, PortalFee $fees, array $context): JSONResponse {
+	private function forward(PortalActionForwarderInterface $forwarder, PortalFeeInterface $fees, array $context): JSONResponse {
 		$fee      = $context['fee'];
 		$response = $forwarder->forward(
 			action: $context['action'],

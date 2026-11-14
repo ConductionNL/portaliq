@@ -30,13 +30,11 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Contribution\GuestActionRegistry;
-use OCA\Portaliq\Service\AuditTrailService;
-use OCA\Portaliq\Service\PortalActionForwarder;
-use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\RequestedPortal;
-use OCA\Portaliq\Service\RequiredFieldsGuard;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\AuditTrailServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\GuestActionRegistryInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalActionForwarderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -44,6 +42,8 @@ use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCA\Portaliq\Kernel\Contracts\RequestedPortalInterface;
+use OCA\Portaliq\Kernel\Contracts\RequiredFieldsGuardInterface;
 
 /**
  * Forwards one declared guest action, or its preview, for a signed token.
@@ -60,19 +60,23 @@ class GuestActionController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param GuestActionRegistry $registry Finds the declared guest action.
-	 * @param PortalActionForwarder $forwarder Forwards with the signed assertion.
-	 * @param PortalResolver $portals Resolves the serving portal for its organisation.
-	 * @param AuditTrailService $auditor Records each forward with the token's hash.
+	 * @param GuestActionRegistryInterface $registry Finds the declared guest action.
+	 * @param PortalActionForwarderInterface $forwarder Forwards with the signed assertion.
+	 * @param PortalResolverInterface $portals Resolves the serving portal for its organisation.
+	 * @param AuditTrailServiceInterface $auditor Records each forward with the token's hash.
+	 * @param RequestedPortalInterface $requestedPortal The RequestedPortal helper.
+	 * @param RequiredFieldsGuardInterface $requiredFieldsGuard The RequiredFieldsGuard helper.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly GuestActionRegistry $registry,
-		private readonly PortalActionForwarder $forwarder,
-		private readonly PortalResolver $portals,
-		private readonly AuditTrailService $auditor,
+		private readonly GuestActionRegistryInterface $registry,
+		private readonly PortalActionForwarderInterface $forwarder,
+		private readonly PortalResolverInterface $portals,
+		private readonly AuditTrailServiceInterface $auditor,
+		private readonly RequestedPortalInterface $requestedPortal,
+		private readonly RequiredFieldsGuardInterface $requiredFieldsGuard,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -200,7 +204,7 @@ class GuestActionController extends Controller {
 
 		// The action's required fields (REQ-SMF-024): refused before the audit
 		// and the forward.
-		$missing = (new RequiredFieldsGuard())->refusal(action: $action, body: $body);
+		$missing = $this->requiredFieldsGuard->refusal(action: $action, body: $body);
 		if ($missing !== null) {
 			return $missing;
 		}
@@ -261,11 +265,11 @@ class GuestActionController extends Controller {
 	 * @return array{subjectRef: string, audience: string, organisation: string, trust: string, jti: string}
 	 */
 	private function guestSubject(string $token): array {
-		$site = $this->portals->resolve(request: $this->request, portalSlug: (new RequestedPortal())->slug(request: $this->request));
+		$site = $this->portals->resolve(request: $this->request, portalSlug: $this->requestedPortal->slug(request: $this->request));
 
 		return [
 			'subjectRef' => 'guest:' . hash('sha256', $token),
-			'audience' => GuestActionRegistry::GUEST_AUDIENCE,
+			'audience' => GuestActionRegistryInterface::GUEST_AUDIENCE,
 			'organisation' => (string)($site['organisation'] ?? ''),
 			'trust' => 'low',
 			'jti' => bin2hex(random_bytes(16)),

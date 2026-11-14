@@ -461,6 +461,7 @@ class PortalIntakeControllerTest extends TestCase {
 			emailVerification: $pay['verification'] ?? null,
 			intake: $intake,
 			lookup: $this->doubles['lookup'],
+			destinationMapping: new DestinationMapping(),
 			availability: $availability
 		);
 	}//end controller()

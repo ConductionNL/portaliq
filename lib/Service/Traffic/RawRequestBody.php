@@ -20,6 +20,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic;
 
+use OCA\Portaliq\Kernel\Contracts\RawRequestBodyInterface;
+
 /**
  * The request body as bytes, bounded.
  *
@@ -34,7 +36,7 @@ namespace OCA\Portaliq\Service\Traffic;
  *
  * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
  */
-class RawRequestBody {
+class RawRequestBody implements RawRequestBodyInterface {
 
 	/**
 	 * Read up to `$max` bytes of the request body.

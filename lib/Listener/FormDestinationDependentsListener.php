@@ -32,10 +32,10 @@ namespace OCA\Portaliq\Listener;
 use OCA\OpenRegister\Event\FormDestinationDependentsEvent;
 use OCA\OpenRegister\Service\Form\FormDependent;
 use OCA\OpenRegister\Service\Form\PublishedForm;
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\Intake\DestinationMapping;
-use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
-use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\DestinationMappingInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFormBindingResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectWriterInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -57,15 +57,15 @@ class FormDestinationDependentsListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalFormBindingResolver $bindings Reads the published bindings and what each renders.
-	 * @param DestinationMapping        $mapping  Builds the mapping a submit of a binding sends.
-	 * @param PortalObjectWriter        $writer   Sets a binding back to draft.
+	 * @param PortalFormBindingResolverInterface $bindings Reads the published bindings and what each renders.
+	 * @param DestinationMappingInterface        $mapping  Builds the mapping a submit of a binding sends.
+	 * @param PortalObjectWriterInterface        $writer   Sets a binding back to draft.
 	 * @param LoggerInterface           $logger   The logger.
 	 */
 	public function __construct(
-		private readonly PortalFormBindingResolver $bindings,
-		private readonly DestinationMapping $mapping,
-		private readonly PortalObjectWriter $writer,
+		private readonly PortalFormBindingResolverInterface $bindings,
+		private readonly DestinationMappingInterface $mapping,
+		private readonly PortalObjectWriterInterface $writer,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -125,7 +125,7 @@ class FormDestinationDependentsListener implements IEventListener {
 		}
 
 		$render = $this->bindings->render(binding: $binding);
-		if ((string)($render['kind'] ?? '') === PortalFormBindingResolver::KIND_EXTERNAL || ($render['resolvesToNoForm'] ?? false) === true) {
+		if ((string)($render['kind'] ?? '') === PortalFormBindingResolverInterface::KIND_EXTERNAL || ($render['resolvesToNoForm'] ?? false) === true) {
 			return null;
 		}
 
@@ -136,7 +136,7 @@ class FormDestinationDependentsListener implements IEventListener {
 			// (DestinationSubmit), so the form is judged as a public one.
 			form: new PublishedForm(
 				id: $bindingId,
-				app: Application::APP_ID,
+				app: AppIdentity::APP_ID,
 				title: $this->titleOf(binding: $binding, render: $render),
 				audience: 'public'
 			),
@@ -145,7 +145,7 @@ class FormDestinationDependentsListener implements IEventListener {
 				binding: $binding,
 				fields: (array)($render['fields'] ?? []),
 				schema: $schema,
-				subjectRef: DestinationMapping::SUBJECT_PLACEHOLDER
+				subjectRef: DestinationMappingInterface::SUBJECT_PLACEHOLDER
 			),
 			unpublish: function () use ($bindingId, $portal): void {
 				$this->unpublish(bindingId: $bindingId, portal: $portal);
