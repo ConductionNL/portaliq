@@ -204,25 +204,38 @@ class TrafficRecordingStore {
 		}
 
 		try {
-			if ($this->context->apply(objectService: $objectService, schemaSlug: self::SCHEMA) === false) {
-				return [];
-			}
-
-			$rows = $objectService->findAll(config: ['filters' => $filters, 'limit' => $limit, 'offset' => 0], _rbac: false, _multitenancy: false);
-			if (is_array($rows) === false) {
-				return [];
-			}
-
-			$out = [];
-			foreach ($rows as $row) {
-				$out[] = $this->asArray(row: $row);
-			}
-
-			return $out;
+			return $this->readRows(objectService: $objectService, filters: $filters, limit: $limit);
 		} catch (Throwable $e) {
 			$this->logger->error('Portaliq: traffic recording read failed', ['reason' => $e->getMessage()]);
 
 			return [];
 		}
+	}
+
+	/**
+	 * The recording rows matching the filters, as arrays.
+	 *
+	 * @param object               $objectService OpenRegister's ObjectService.
+	 * @param array<string, mixed> $filters       The filters.
+	 * @param int                  $limit         The most rows.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function readRows(object $objectService, array $filters, int $limit): array {
+		if ($this->context->apply(objectService: $objectService, schemaSlug: self::SCHEMA) === false) {
+			return [];
+		}
+
+		$rows = $objectService->findAll(config: ['filters' => $filters, 'limit' => $limit, 'offset' => 0], _rbac: false, _multitenancy: false);
+		if (is_array($rows) === false) {
+			return [];
+		}
+
+		$out = [];
+		foreach ($rows as $row) {
+			$out[] = $this->asArray(row: $row);
+		}
+
+		return $out;
 	}
 }

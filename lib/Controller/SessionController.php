@@ -1256,13 +1256,7 @@ class SessionController extends Controller {
 	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#8
 	 */
 	private function brokerLogoutUrl(array $subject): string {
-		$provider = (string)($subject['provider'] ?? '');
-		// An e-mail link session has no broker to sign out of (REQ-IWI-011).
-		if ($provider === '' || $provider === EmailLinkSettingInterface::MODE) {
-			return '';
-		}
-
-		$config = $this->orgConfig->resolveOidcConfig(orgSlug: (string)($subject['organisation'] ?? ''), provider: $provider);
+		$config = $this->brokerConfig(subject: $subject);
 		if ($config === null) {
 			return '';
 		}
@@ -1277,7 +1271,41 @@ class SessionController extends Controller {
 			$separator = '&';
 		}
 
-		$query = http_build_query(
+		return $endSession . $separator . $this->logoutQuery(config: $config);
+	}//end brokerLogoutUrl()
+
+	/**
+	 * The OIDC config of the broker the session was minted through, or null.
+	 *
+	 * @param array<string, mixed> $subject The resolved session.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
+	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#8
+	 */
+	private function brokerConfig(array $subject): array|null {
+		$provider = (string)($subject['provider'] ?? '');
+		// An e-mail link session has no broker to sign out of (REQ-IWI-011).
+		if ($provider === '' || $provider === EmailLinkSettingInterface::MODE) {
+			return null;
+		}
+
+		return $this->orgConfig->resolveOidcConfig(orgSlug: (string)($subject['organisation'] ?? ''), provider: $provider);
+	}//end brokerConfig()
+
+	/**
+	 * The sign-out query: `client_id` and `post_logout_redirect_uri`.
+	 *
+	 * @param array<string, mixed> $config The broker's OIDC config.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
+	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#8
+	 */
+	private function logoutQuery(array $config): string {
+		return http_build_query(
 			[
 				'client_id' => (string)$config['clientId'],
 				'post_logout_redirect_uri' => $this->urlGenerator->getAbsoluteURL($this->portalReturnTo()),
@@ -1286,9 +1314,7 @@ class SessionController extends Controller {
 			'&',
 			PHP_QUERY_RFC3986
 		);
-
-		return $endSession . $separator . $query;
-	}//end brokerLogoutUrl()
+	}//end logoutQuery()
 
 	/**
 	 * Rotate the caller's bearer within the absolute session lifetime cap
