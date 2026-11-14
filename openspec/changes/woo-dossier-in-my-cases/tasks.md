@@ -20,4 +20,4 @@ Read `openspec/woo-build-rules.md` first. New frontend work lands in the Vue sit
 ## 4. End to end
 
 - [ ] 4.1 `tests/e2e/woo-dossier-in-my-cases.spec.ts`, the three scenarios marked e2e, against the board `portaliq/ZaakWooVerzoek`. Verify: the run.
-- [ ] 4.2 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, `npm run lint`, `npm run test:l10n`. No `Co-Authored-By`.
+- [x] 4.2 (ran on the branch merged with development. `lint`, phpstan and the unit suite (5211 tests) pass; `npm run lint` has 0 errors. The remaining findings are all inherited from development, on lines this change did not touch: phpcs on `NotificationDispatchJob.php:354`, psalm `UndefinedClass ObjectLeavingEvent` in `ListenerRegistrar.php:125`, and phpmd on classes that were already over the limit, including `CitizenCaseController` at 1040 lines. The repo has no `test:l10n` script.) Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, `npm run lint`, `npm run test:l10n`. No `Co-Authored-By`.
