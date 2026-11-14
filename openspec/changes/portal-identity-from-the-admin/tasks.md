@@ -77,6 +77,14 @@ that is not in `check:specs` does not run in CI.
   - `grep -rn -i "de gemeente" src/site` answers nothing that is not inside a test or a
     portal-authored string; put the grep output in the PR body.
   - Strings in nl, en and en_US; `npm run check:l10n-js` exits 0.
+  - Built: `src/site/components/mijn/organisationKind.js` names the kind with its article ("het
+    waterschap", "de gemeente", "de organisatie" without a type); the documents' "Van ..." line
+    (`fileLine`) and a mandate's "gegeven door ..." line read the portal's `organisationTypeLabel`, which
+    `ContentController::site()` sends and `App.vue` provides; the report pages say "de organisatie".
+    Node tests in `tests/mijn-components.spec.mjs`.
+  - Left: the footer line and `<meta name="DCTERMS.creator">` in `templates/site.php`. The template has
+    the portal's title but not the organisation's name (`SiteOrganisation` is wired into the content API
+    only), so the creator needs that name passed to the template first.
 
 ## 4. Live
 

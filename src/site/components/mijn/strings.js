@@ -91,7 +91,7 @@ export default {
 		'New messages': 'Nieuwe berichten',
 		'Choose for whom': 'Kies voor wie',
 		'From you': 'Van u',
-		'From the municipality': 'Van de gemeente',
+		'From {organisation}': 'Van {organisation}',
 		Documents: 'Documenten',
 		'What happened': 'Wat er is gebeurd',
 		'The documents could not be loaded.':
@@ -191,7 +191,7 @@ export default {
 		'New messages': 'New messages',
 		'Choose for whom': 'Choose for whom',
 		'From you': 'From you',
-		'From the municipality': 'From the municipality',
+		'From {organisation}': 'From {organisation}',
 		Documents: 'Documents',
 		'What happened': 'What happened',
 		'The documents could not be loaded.': 'The documents could not be loaded.',

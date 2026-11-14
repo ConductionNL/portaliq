@@ -189,6 +189,10 @@ class ContentController extends Controller {
 				// sent as their public address, never as the reference.
 				'logo'    => $this->portalImage(portal: $portal, field: 'logo'),
 				'heroImage' => $this->portalImage(portal: $portal, field: 'heroImage'),
+				// The organisation type's label, stored from the TOOI concept on
+				// save: the site names the organisation's kind with it, and says
+				// "de organisatie" without it (REQ-PIA-003).
+				'organisationTypeLabel' => (string)($portal['organisationTypeLabel'] ?? ''),
 				// The line under the name in the footer's logo block. The
 				// reference carries one ("Één plek voor alle publicaties van
 				// Gemeente Tilburg") and this app had no field for it at all,

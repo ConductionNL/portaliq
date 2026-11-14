@@ -703,7 +703,12 @@ export default {
 	 * @spec openspec/changes/site-dates-in-content-language/specs/site-look/spec.md#requirement-a-date-inside-page-content-must-read-in-the-content-language
 	 */
 	provide() {
-		return { siteContentLocale: () => this.contentLocale }
+		return {
+			siteContentLocale: () => this.contentLocale,
+			// The portal's organisation type label, so a line names the kind of
+			// organisation that runs it (portal-identity-from-the-admin REQ-PIA-003).
+			siteOrganisationType: () => this.site?.organisationTypeLabel || '',
+		}
 	},
 
 	props: {
