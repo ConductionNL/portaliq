@@ -95,6 +95,18 @@ class TeacherInboxService implements TeacherInboxServiceInterface {
 			return 0;
 		}
 
+		return $this->unreadIn(messages: $messages, staffRef: $staffRef);
+	}//end unreadCount()
+
+	/**
+	 * How many of the messages the staff member has not read.
+	 *
+	 * @param array<int, array<string, mixed>> $messages The thread's messages.
+	 * @param string                           $staffRef The calling staff member's own subjectRef.
+	 *
+	 * @return int
+	 */
+	private function unreadIn(array $messages, string $staffRef): int {
 		$unread = 0;
 		foreach ($messages as $message) {
 			$readBy = [];
@@ -108,7 +120,7 @@ class TeacherInboxService implements TeacherInboxServiceInterface {
 		}
 
 		return $unread;
-	}//end unreadCount()
+	}//end unreadIn()
 
 	/**
 	 * The row's id/uuid, from a flat property or its `@self` envelope.

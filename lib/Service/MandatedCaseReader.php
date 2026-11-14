@@ -83,12 +83,42 @@ class MandatedCaseReader implements MandatedCaseReaderInterface {
 			return null;
 		}
 
+		$mandate = $this->scopedMandate(mandate: $mandate);
+		if ($mandate === null) {
+			return null;
+		}
+
+		$rows = $this->mandatedRows(subject: $subject, mandate: $mandate);
+
+		return $this->matchingRow(rows: $rows, register: $register, schema: $schema, id: $id);
+	}//end read()
+
+	/**
+	 * The party a mandate acts for: whom it is on behalf of, else its organisation.
+	 *
+	 * @param array<string, mixed> $mandate The held mandate.
+	 *
+	 * @return string
+	 */
+	private function partyOf(array $mandate): string {
 		$described = $this->mandates->describe(mandate: $mandate);
 		$party = $described['onBehalfOf'];
 		if ($party === '') {
 			$party = $described['organisation'];
 		}
 
+		return $party;
+	}//end partyOf()
+
+	/**
+	 * The mandate with the entities it reaches, or null when the party tree refuses.
+	 *
+	 * @param array<string, mixed> $mandate The held mandate.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function scopedMandate(array $mandate): array|null {
+		$party = $this->partyOf(mandate: $mandate);
 		$scope = $this->tree->entitiesFor(
 			root: $party,
 			reachesDown: ($this->mandates->reachOf(mandate: $mandate) === PortalMandateService::REACH_TREE)
@@ -98,12 +128,37 @@ class MandatedCaseReader implements MandatedCaseReaderInterface {
 		}
 
 		$mandate['_entities'] = $scope['entities'];
-		$rows = $this->cases->listMandatedCases(
+
+		return $mandate;
+	}//end scopedMandate()
+
+	/**
+	 * The cases the subject sees under the mandate.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param array<string, mixed> $mandate The scoped mandate.
+	 *
+	 * @return array<int|string, mixed>
+	 */
+	private function mandatedRows(array $subject, array $mandate): array {
+		return $this->cases->listMandatedCases(
 			subject: $subject,
 			aggregate: $this->registry->aggregateFor($subject),
 			mandates: [$mandate]
 		);
+	}//end mandatedRows()
 
+	/**
+	 * The row for the case asked for, or null.
+	 *
+	 * @param array<int|string, mixed> $rows     The mandated cases.
+	 * @param string                   $register The register the case lives in.
+	 * @param string                   $schema   The schema the case lives in.
+	 * @param string                   $id       The case id.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function matchingRow(array $rows, string $register, string $schema, string $id): array|null {
 		foreach ($rows as $row) {
 			$source = (array)($row['_source'] ?? []);
 			if (($source['register'] ?? '') === $register && ($source['schema'] ?? '') === $schema && $this->idOf(row: $row) === $id) {
@@ -112,7 +167,7 @@ class MandatedCaseReader implements MandatedCaseReaderInterface {
 		}
 
 		return null;
-	}//end read()
+	}//end matchingRow()
 
 	/**
 	 * The refusal, or the read-only screen of the case the person sees under
