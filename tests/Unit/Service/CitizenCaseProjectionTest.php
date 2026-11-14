@@ -69,6 +69,21 @@ class CitizenCaseProjectionTest extends TestCase {
 		);
 	}
 
+	public function testTheOutcomeFieldsReachTheScreen(): void {
+		$case = self::CASE + ['resultLabel' => 'Vergunning verleend', 'resultText' => 'Voldoet.'];
+		$context = [
+			'fields' => ['title'],
+			'action' => ['citizenWrite' => []],
+			'outcome' => ['labelField' => 'resultLabel', 'descriptionField' => 'resultText'],
+		];
+
+		$visible = $this->projection()->visible($context, $case);
+
+		$this->assertSame('Vergunning verleend', $visible['resultLabel']);
+		$this->assertSame('Voldoet.', $visible['resultText']);
+		$this->assertArrayNotHasKey('secret', $visible);
+	}
+
 	public function testTheStatusFieldDefaultsToStatus(): void {
 		$visible = $this->projection()->visible(['fields' => ['title']], self::CASE);
 
