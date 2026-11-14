@@ -60,12 +60,12 @@ class PortalCatalogueRecordedTest extends TestCase {
 				[
 					'topic' => 'Wonen',
 					'entries' => [
-						['title' => 'Verhuizen', 'summary' => 'Geef het door', 'route' => '/verhuizen'],
-						['title' => '', 'summary' => '', 'route' => '/bare'],
+						['title' => 'Verhuizen', 'summary' => 'Geef het door', 'route' => '/verhuizen', 'fee' => null],
+						['title' => '', 'summary' => '', 'route' => '/bare', 'fee' => null],
 					],
 				],
-				['topic' => '', 'entries' => [['title' => 'No topic, a route', 'summary' => '', 'route' => '/nt']]],
-				['topic' => 'Afval', 'entries' => [['title' => 'Container', 'summary' => '', 'route' => '/container']]],
+				['topic' => '', 'entries' => [['title' => 'No topic, a route', 'summary' => '', 'route' => '/nt', 'fee' => null]]],
+				['topic' => 'Afval', 'entries' => [['title' => 'Container', 'summary' => '', 'route' => '/container', 'fee' => null]]],
 			],
 			$topics
 		);
