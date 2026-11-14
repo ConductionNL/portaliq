@@ -190,11 +190,11 @@ class PortalFormCalculator implements PortalFormCalculatorInterface {
 	 * @param array<int, mixed>    $args    The calculation's arguments.
 	 * @param array<string, mixed> $answers The answers so far.
 	 *
-	 * @return int|float|string|null
+	 * @return int|string|null
 	 *
 	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
 	 */
-	private function operandResult(string $op, array $args, array $answers): int|float|string|null {
+	private function operandResult(string $op, array $args, array $answers): int|string|null {
 		if ($op === 'count') {
 			return $this->operands->count(arg: $args[0], answers: $answers);
 		}
@@ -213,11 +213,11 @@ class PortalFormCalculator implements PortalFormCalculatorInterface {
 	 * @param array<int, mixed>    $args    The calculation's arguments.
 	 * @param array<string, mixed> $answers The answers so far.
 	 *
-	 * @return int|float|string|null
+	 * @return int|float|null
 	 *
 	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
 	 */
-	private function numericResult(string $op, array $args, array $answers): int|float|string|null {
+	private function numericResult(string $op, array $args, array $answers): int|float|null {
 		$numbers = $this->numbersOf(args: $args, answers: $answers);
 		if ($numbers === null) {
 			return null;
