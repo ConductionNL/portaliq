@@ -416,8 +416,9 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertTrue(self::$register['components']['schemas']['portal']['properties']['adminGroups']['x-admin-only']);
 		// 0.113.0 (portalAccount 0.19.0): identity type `yivi`, a sign-in through the broker that shares only what a form asks (resident-identity-in-forms T05). Additive; moved past development's 0.112.0 at merge time.
 		// 0.114.0 (portal 0.31.0): a portal's `authentication.deskGroup`, the Nextcloud group whose members may fill a form in for a resident (resident-identity-in-forms T06). Additive; portal moved past development's 0.30.0.
-		$this->assertSame(expected: '0.114.0', actual: self::$register['info']['version']);
-		$this->assertSame(expected: '0.114.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		// 0.115.0: a submission's state can be `awaiting-cosign` (held for a co-signer) or `not-cosigned` (refused or lapsed) (resident-identity-in-forms T04). Additive.
+		$this->assertSame(expected: '0.115.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.115.0', actual: self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portal']['properties']['authentication']['properties']['deskGroup']['type']);
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portalPage']['properties']['pages']['items']['properties']['blocks']['items']['properties']['messageTo']['type']);
 		$this->assertContains(needle: 'yivi', haystack: self::$register['components']['schemas']['portalAccount']['properties']['identityType']['enum']);

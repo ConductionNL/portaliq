@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.114.0"
+        "version": "0.115.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.114.0",
+                "version": "0.115.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -9097,7 +9097,9 @@
                         "enum": [
                             "queued",
                             "registered",
-                            "failed"
+                            "failed",
+                            "awaiting-cosign",
+                            "not-cosigned"
                         ],
                         "description": "Where the submission has got to. `failed` is shown to the citizen with what to do, never hidden.",
                         "example": "queued"
