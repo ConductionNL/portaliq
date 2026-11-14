@@ -9,13 +9,14 @@ each test carries the `@e2e portaliq site-without-javascript::<scenario>` tag of
 
 ## 1. The notice on every page (REQ-SHJ-001)
 
-- [ ] 1.1 In `templates/site.php`, directly after the skip link, emit `<noscript><main id="pq-main">` with the notice
+- [x] 1.1 In `templates/site.php`, directly after the skip link, emit `<noscript><main id="pq-main">` with the notice
   and a link to `/site/plain` carrying `route`, `portal`, `_search` and `_page` from the request (built by
   `PortalPageController::site()` as `plainUrl`, escaped with `p()`). Strings through `IL10N`, Dutch and English in
   `l10n/`; `npm run check:l10n-js` stays green.
   - **fails today**: e2e `a visitor without JavaScript is told and given a way on` (notice text, link href, skip link
     focus) and `a visitor with JavaScript sees no notice` (exactly one `#pq-main`, notice hidden).
   - unit `tests/Unit/Controller/PortalPageControllerTest.php::testThePlainUrlCarriesTheRouteAndTheSearch`.
+  - done: `SiteShell::plainUrl()` (in the shell's template params as `plainUrl`, for `site()` and `sitePath()` alike) carries `route` (the path under the site route, else `?route=`), the named portal slug, `_search` and `_page`, keeping `/` readable; `templates/site.php` emits the `<noscript><main id="pq-main">` notice after the skip link, strings in `l10n/en.json` and `nl.json` with the `.js` rebuilt. The link points at `/site/plain` under the site route, so it is right once 2.1 adds that route. Unit test added; the two e2e tests are browser tests and were not run.
 
 ## 2. The plain version (REQ-SHJ-002)
 
