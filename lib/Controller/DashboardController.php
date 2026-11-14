@@ -24,9 +24,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\AdminMenuAccess;
-use OCA\Portaliq\Service\Identity\NextcloudRegistrationDoor;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\AdminMenuAccessInterface;
+use OCA\Portaliq\Kernel\Contracts\NextcloudRegistrationDoorInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\RedirectResponse;
@@ -47,9 +47,9 @@ class DashboardController extends Controller {
 	 * Constructor for the DashboardController.
 	 *
 	 * @param IRequest             $request      The request object
-	 * @param AdminMenuAccess|null $access       Which pages the signed-in user may use.
+	 * @param AdminMenuAccessInterface|null $access       Which pages the signed-in user may use.
 	 * @param IInitialState|null   $initialState Hands those flags to the app.
-	 * @param NextcloudRegistrationDoor|null $residents Which portal a resident belongs to (REQ-NCL-006).
+	 * @param NextcloudRegistrationDoorInterface|null $residents Which portal a resident belongs to (REQ-NCL-006).
 	 * @param IUserSession|null    $userSession  The signed-in user.
 	 * @param IURLGenerator|null   $urls         Builds the portal's account route.
 	 *
@@ -57,13 +57,13 @@ class DashboardController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly ?AdminMenuAccess $access=null,
+		private readonly ?AdminMenuAccessInterface $access=null,
 		private readonly ?IInitialState $initialState=null,
-		private readonly ?NextcloudRegistrationDoor $residents=null,
+		private readonly ?NextcloudRegistrationDoorInterface $residents=null,
 		private readonly ?IUserSession $userSession=null,
 		private readonly ?IURLGenerator $urls=null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -106,7 +106,7 @@ class DashboardController extends Controller {
 			$this->initialState->provideInitialState('access', $this->access->forCurrentUser());
 		}
 
-		return new TemplateResponse(Application::APP_ID, 'index');
+		return new TemplateResponse(AppIdentity::APP_ID, 'index');
 	}//end page()
 
 	/**

@@ -22,6 +22,7 @@ namespace OCA\Portaliq\Service\Traffic;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\Portaliq\Kernel\Contracts\TrafficLogParserInterface;
 use Throwable;
 
 /**
@@ -38,14 +39,7 @@ use Throwable;
  *
  * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
  */
-class TrafficLogParser {
-
-	/**
-	 * The formats.
-	 *
-	 * @var string[]
-	 */
-	public const FORMATS = ['combined', 'json'];
+class TrafficLogParser implements TrafficLogParserInterface {
 
 	/**
 	 * Path extensions that are assets, not pages.

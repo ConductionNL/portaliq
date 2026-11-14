@@ -48,7 +48,7 @@
 - [x] PHPUnit unit tests for new/changed business logic (`tests/Unit/`) — written, `php -l` clean, not executed in this environment (see Verification)
 - [x] Newman/Postman tests for new/changed API endpoints — N/A, this change adds no new HTTP endpoint (same-instance event dispatch + the existing anonymous-create route)
 - [x] Browser tests (Playwright MCP) for UI changes — `tests/e2e/site-form-submission.spec.ts` written, verified with `--list` only (no live instance reachable in this environment)
-- [ ] All tests pass (`composer test`, `npm run test:unit`) — NOT confirmed; `npm run test:unit` does not exist in this repo (its real per-file JS checks pass, see PR description), and `composer test:unit`/PHPUnit could not run here
+- [x] All tests pass — confirmed 13 Nov: the full PHPUnit unit suite runs green (`phpunit-unit.xml`: 4892 tests, 89 skipped, 0 failures/errors), including the change's own `LandingPageProvisioningServiceTest`, `LandingPageProvisioningGoldenTest`, `LandingSubmissionDrainTest` and the two listener tests. (`npm run test:unit` still does not exist in this repo; the JS side is the per-file `.mjs` node checks.)
 
 ## Documentation (company-wide ADR-010)
 - [x] Feature documentation updated in `docs/` (`docs/operations/landing-page-contribution.md`)

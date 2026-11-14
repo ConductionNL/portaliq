@@ -22,6 +22,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\ConfirmationMailKeysInterface;
+
 /**
  * Keeps an action's `confirmationMail` and `topicField` when they fit.
  *
@@ -33,13 +35,7 @@ namespace OCA\Portaliq\Contribution;
  *
  * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t02
  */
-class ConfirmationMailKeys {
-	/**
-	 * The mails an action may ask for.
-	 *
-	 * @var string[]
-	 */
-	public const TEMPLATES = ['contact-confirmation'];
+class ConfirmationMailKeys implements ConfirmationMailKeysInterface {
 
 	/**
 	 * Keep each key that fits and drop the rest, on a `create` action only.

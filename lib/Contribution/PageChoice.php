@@ -31,12 +31,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\PageChoiceInterface;
+
 /**
  * Applies a portal's page choice and an account's hidden pages to an aggregate.
  *
  * @spec openspec/changes/operate-pages-per-portal-and-client/specs/portal-page-choice/spec.md
  */
-class PageChoice {
+class PageChoice implements PageChoiceInterface {
 	/**
 	 * The key a choice uses for one page.
 	 *

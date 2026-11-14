@@ -19,6 +19,7 @@ import {
 	isAccountRoute,
 	routeForNav,
 } from '../../shared/portalNav.js'
+import { themeCaseCollections } from '../pages/e/themes.js'
 
 /** Shell sections about cases, in "Mijn zaken en verzoeken". */
 const CASE_SECTIONS = ['cases', 'tasks', 'access']
@@ -104,6 +105,7 @@ export function ownAreaLink(session, t, hrefFor) {
  * @property {(route: string) => string} hrefFor A real address for a route.
  * @property {Record<string, Array<object>>} [recordRows] Known rows, by `<app>:<collection>`.
  * @property {number} [openTasks] The resident's open tasks.
+ * @property {Record<string, number>} [themeCases] The running cases per theme slug.
  * @property {string} [area] The name the portal gives its own area ("Mijn Zuiddrecht").
  */
 
@@ -284,7 +286,7 @@ const NAMES = new WeakMap()
  */
 export function residentMenuGroups(nav, menu) {
 	const { t, unread, hrefFor, recordRows = {}, layout = null, leaveOut = null, openTasks = 0 } = menu
-	const ctx = { entries: Array.isArray(nav) ? nav : [], t, unread, hrefFor, recordRows, openTasks, area: menu.area }
+	const ctx = { entries: Array.isArray(nav) ? nav : [], t, unread, hrefFor, recordRows, openTasks, area: menu.area, themeCases: menu.themeCases || {} }
 	const groups = defaultGroups(ctx).filter((group) => group.items.length > 0)
 	withDistinctNames(groups, t)
 	return laidOut(withoutLeftOut(groups, leaveOut), { layout, t, hrefFor })
@@ -377,8 +379,27 @@ function themeGroup(ctx) {
 		title: ctx.t('Themes'),
 		items: ctx.entries
 			.filter((entry) => entry.theme)
-			.map((entry) => named(itemFor(entry, ctx), entry.key)),
+			.map((entry) => named(withRunningCases(itemFor(entry, ctx), entry, ctx), entry.key)),
 	}
+}
+
+/**
+ * A theme's item with the count of the resident's running cases in that
+ * theme beside it, once those cases are known (life-domain-theme-pages T10).
+ *
+ * @param {object} item The item (changed in place).
+ * @param {object} entry The theme's navigation entry.
+ * @param {MenuContext} ctx What the items are built from.
+ * @return {object} The item.
+ * @spec openspec/changes/life-domain-theme-pages/tasks.md#t10
+ */
+function withRunningCases(item, entry, ctx) {
+	const count = ctx.themeCases?.[entry.theme?.slug] || 0
+	if (count > 0) {
+		item.badge = String(count)
+		item.badgeLabel = ctx.t('{count} running', { count })
+	}
+	return item
 }
 
 /**
@@ -774,7 +795,8 @@ function withRestOf(out, { groups, placed }) {
 
 /**
  * Read the rows of every collection a page lists itself per row of
- * (`perRecord`), scoped to the resident, by `<app>:<collection>`. A
+ * (`perRecord`) or counts (`badge`), and of every cases collection tagged
+ * with a theme, scoped to the resident, by `<app>:<collection>`. A
  * collection that cannot be read is left out, and its pages are then listed
  * once, as any page.
  *
@@ -797,6 +819,10 @@ export async function loadPerRecordRows(contributions, api) {
 				}
 			}
 		}
+	}
+	// The cases collections tagged with a theme, to count the theme's running cases.
+	for (const { key, collection } of themeCaseCollections(contributions)) {
+		wanted.set(key, collection)
 	}
 	const rows = {}
 	if (typeof api?.fetchCollection !== 'function') {

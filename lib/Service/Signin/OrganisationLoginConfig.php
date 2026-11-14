@@ -18,7 +18,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Signin;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\OrganisationLoginConfigInterface;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCP\IAppConfig;
 
@@ -31,8 +32,7 @@ use OCP\IAppConfig;
  *
  * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
  */
-class OrganisationLoginConfig {
-
+class OrganisationLoginConfig implements OrganisationLoginConfigInterface {
 
 	/**
 	 * Constructor.
@@ -51,7 +51,6 @@ class OrganisationLoginConfig {
 		private readonly BrokerLoginRoute $route = new BrokerLoginRoute(),
 	) {
 	}//end __construct()
-
 
 	/**
 	 * The route an organisation chose for a provider: `oidc` unless its
@@ -72,7 +71,6 @@ class OrganisationLoginConfig {
 
 		return $this->route->routeFor(overrides: $presentation['overrides'], provider: $provider);
 	}//end loginRouteFor()
-
 
 	/**
 	 * The broker settings with the secret, the organisation's uuid, and the
@@ -104,7 +102,6 @@ class OrganisationLoginConfig {
 		return $settings + ['organisationUuid' => $presentation['uuid']];
 	}//end resolveBrokerConfig()
 
-
 	/**
 	 * The organisation's uuid, its override and whether a broker secret is
 	 * stored, for the settings screen, or null.
@@ -124,7 +121,6 @@ class OrganisationLoginConfig {
 		return $presentation + ['hasBrokerSecret' => ($this->brokerSecret(organisationUuid: $presentation['uuid']) !== '')];
 	}//end presentationFor()
 
-
 	/**
 	 * Replace an organisation's presentation override.
 	 *
@@ -143,7 +139,6 @@ class OrganisationLoginConfig {
 		return $this->orgConfig->writePresentation(organisationUuid: $organisationUuid, overrides: $overrides);
 	}//end writePresentation()
 
-
 	/**
 	 * Store the broker secret in its own sensitive entry (design D8).
 	 *
@@ -159,9 +154,8 @@ class OrganisationLoginConfig {
 			return false;
 		}
 
-		return $this->appConfig->setValueString(Application::APP_ID, LoginProviders::SECRET_KEY_PREFIX . $organisationUuid, $secret, false, true);
+		return $this->appConfig->setValueString(AppIdentity::APP_ID, LoginProviders::SECRET_KEY_PREFIX . $organisationUuid, $secret, false, true);
 	}//end setBrokerSecret()
-
 
 	/**
 	 * The organisation's uuid and override, or null for an empty or unknown slug.
@@ -178,7 +172,6 @@ class OrganisationLoginConfig {
 		return $this->orgConfig->presentationFor(orgSlug: $orgSlug);
 	}//end presentation()
 
-
 	/**
 	 * The organisation's broker secret, or ''.
 	 *
@@ -187,6 +180,6 @@ class OrganisationLoginConfig {
 	 * @return string
 	 */
 	private function brokerSecret(string $organisationUuid): string {
-		return $this->appConfig->getValueString(Application::APP_ID, LoginProviders::SECRET_KEY_PREFIX . $organisationUuid, '');
+		return $this->appConfig->getValueString(AppIdentity::APP_ID, LoginProviders::SECRET_KEY_PREFIX . $organisationUuid, '');
 	}//end brokerSecret()
 }//end class

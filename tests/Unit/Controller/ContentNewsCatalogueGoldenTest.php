@@ -29,6 +29,7 @@ use OCA\Portaliq\Service\PublicNewsReader;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Service\PublicCatalogueQuery;
 
 /**
  * The public news and catalogue routes answer every portal and caller as
@@ -43,6 +44,7 @@ use PHPUnit\Framework\TestCase;
  * @uses   \OCA\Portaliq\Service\PublicCatalogueQuery
  * @uses   \OCA\Portaliq\Service\DerivedCatalogueFacets
  * @uses   \OCA\Portaliq\Service\CatalogueScope
+ * @uses   \OCA\Portaliq\Kernel\Support\SessionTrust
  */
 class ContentNewsCatalogueGoldenTest extends TestCase {
 
@@ -202,6 +204,6 @@ class ContentNewsCatalogueGoldenTest extends TestCase {
 		$catalogue->method('itemsFor')->willReturn([]);
 		$catalogue->method('visitorValuesFor')->willReturn([]);
 
-		return new ContentCatalogueController('portaliq', $request, $resolver, $session, $catalogue);
+		return new ContentCatalogueController('portaliq', $request, $resolver, $session, $catalogue, new PublicCatalogueQuery());
 	}//end catalogue()
 }//end class

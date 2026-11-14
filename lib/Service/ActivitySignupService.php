@@ -34,6 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\ActivitySignupServiceInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 
 /**
@@ -41,36 +42,7 @@ use OCP\AppFramework\Utility\ITimeFactory;
  *
  * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-guardian-must-be-able-to-sign-up-one-of-their-own-children-with-a-waiting-list-when-full
  */
-class ActivitySignupService {
-	/**
-	 * Refusal: the activity is out of reach, or the child is not the guardian's (404).
-	 */
-	public const REASON_NOT_FOUND = 'not_found';
-
-	/**
-	 * Refusal: the activity is closed or its deadline passed (422).
-	 */
-	public const REASON_CLOSED = 'signup_closed';
-
-	/**
-	 * Refusal: no place and no waiting list (422).
-	 */
-	public const REASON_FULL = 'activity_full';
-
-	/**
-	 * Refusal: the child already has a sign-up that counts (409).
-	 */
-	public const REASON_DUPLICATE = 'already_signed_up';
-
-	/**
-	 * Refusal: the sign-ups could not be read or written, so no place can be promised (502).
-	 */
-	public const REASON_UNAVAILABLE = 'activity_unavailable';
-
-	/**
-	 * Refusal: the activity needs consent and the current consent text was not accepted (422).
-	 */
-	public const REASON_CONSENT_REQUIRED = 'consent_required';
+class ActivitySignupService implements ActivitySignupServiceInterface {
 
 	/**
 	 * Constructor.

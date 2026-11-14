@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ */
+
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Identity;
@@ -8,9 +13,10 @@ use OCA\Portaliq\Service\Identity\RegisteredDetailsShape;
 use PHPUnit\Framework\TestCase;
 
 /**
- * identity-registered-details REQ-IRD-001 and REQ-IRD-002: the raw BRP and KvK
- * answers are reduced to the small fixed shape the portal shows, and nothing
- * else of the raw object survives.
+ * The registered details a person or company sees, read from the BRP and
+ * KVK answers: names are joined from their parts when the full one is
+ * missing, blanks and non-text parts are left out, and the company takes
+ * its main branch's name.
  *
  * @covers \OCA\Portaliq\Service\Identity\RegisteredDetailsShape
  *
@@ -18,176 +24,93 @@ use PHPUnit\Framework\TestCase;
  */
 class RegisteredDetailsShapeTest extends TestCase {
 
-	private RegisteredDetailsShape $shape;
-
-	protected function setUp(): void {
-		$this->shape = new RegisteredDetailsShape();
-
-	}//end setUp()
-
-	public function testThePersonTakesTheFullNameWhenTheRecordGivesOne(): void {
-		$person = $this->shape->person([
-			'naam' => ['volledigeNaam' => 'Dr. Jan de Vries', 'voornamen' => 'Jan', 'geslachtsnaam' => 'de Vries'],
-			'geboorte' => ['datum' => '1980-04-01'],
+	public function testAPersonsNameIsJoinedFromItsPartsWhenTheFullOneIsMissing(): void {
+		$person = (new RegisteredDetailsShape())->person([
+			'naam' => ['voornamen' => ' Sanne ', 'voorvoegsel' => 'de', 'geslachtsnaam' => 'Vries'],
+			'geboorte' => ['datum' => ['datum' => '1990-05-01', 'langFormaat' => '1 mei 1990']],
 			'verblijfplaats' => ['verblijfadres' => [
-				'officieleStraatnaam' => 'Dorpsstraat',
-				'huisnummer' => '4',
-				'huisletter' => 'A',
-				'huisnummertoevoeging' => 'bis',
-				'postcode' => '1234 AB',
-				'woonplaats' => 'Utrecht',
+				'korteStraatnaam' => 'Dorpsstr',
+				'huisnummer' => 12,
+				'huisletter' => 'a',
+				'huisnummertoevoeging' => ' 2 ',
+				'postcode' => '1234AB',
+				'woonplaats' => 'Tilburg',
 			]],
 		]);
 
-		$this->assertSame('Dr. Jan de Vries', $person['name']);
-		$this->assertSame('1980-04-01', $person['birthDate']);
-		$this->assertSame('Dorpsstraat', $person['address']['street']);
-		// The house number parts join with no glue.
-		$this->assertSame('4Abis', $person['address']['number']);
-		$this->assertSame('1234 AB', $person['address']['postcode']);
-		$this->assertSame('Utrecht', $person['address']['city']);
-		// The resident count is never guessed (design D5).
-		$this->assertNull($person['residentsAtAddress']);
-
-	}//end testThePersonTakesTheFullNameWhenTheRecordGivesOne()
-
-	public function testThePersonNameIsAssembledFromThePartsWhenNoFullNameIsGiven(): void {
-		$person = $this->shape->person([
-			'naam' => ['voornamen' => 'Anna', 'voorvoegsel' => 'van der', 'geslachtsnaam' => 'Berg'],
-		]);
-
-		$this->assertSame('Anna van der Berg', $person['name']);
-
-	}//end testThePersonNameIsAssembledFromThePartsWhenNoFullNameIsGiven()
-
-	public function testAssemblingTheNameSkipsANonScalarPart(): void {
-		// A malformed BRP answer can hand an array where a name part should be;
-		// the join drops it rather than rendering "Array".
-		$person = $this->shape->person([
-			'naam' => ['voornamen' => ['unexpected'], 'geslachtsnaam' => 'Jansen'],
-		]);
-
-		$this->assertSame('Jansen', $person['name']);
-
-	}//end testAssemblingTheNameSkipsANonScalarPart()
-
-	public function testThePersonFallsBackToTheShortStreetNameAndReadsANestedBirthDate(): void {
-		$person = $this->shape->person([
-			'naam' => ['volledigeNaam' => 'Kees Bakker'],
-			// Some BRP paths nest the date one level deeper.
-			'geboorte' => ['datum' => ['datum' => '1975-12-31']],
-			'verblijfplaats' => ['verblijfadres' => ['korteStraatnaam' => 'Kerkln', 'huisnummer' => '10']],
-		]);
-
-		$this->assertSame('1975-12-31', $person['birthDate']);
-		$this->assertSame('Kerkln', $person['address']['street']);
-		$this->assertSame('10', $person['address']['number']);
-
-	}//end testThePersonFallsBackToTheShortStreetNameAndReadsANestedBirthDate()
-
-	public function testAnEmptyPersonRecordYieldsTheEmptyShapeAndNeverAFatal(): void {
-		$person = $this->shape->person([]);
-
-		$this->assertSame('', $person['name']);
-		$this->assertSame('', $person['birthDate']);
-		$this->assertSame(['street' => '', 'number' => '', 'postcode' => '', 'city' => ''], $person['address']);
-		$this->assertNull($person['residentsAtAddress']);
-
-	}//end testAnEmptyPersonRecordYieldsTheEmptyShapeAndNeverAFatal()
-
-	public function testTheCompanyTakesTheMainBranchNameAndMarksItMain(): void {
-		$company = $this->shape->company(
+		$this->assertSame(
 			[
-				[
-					'type' => 'rechtspersoon',
-					'naam' => 'Conduction Holding B.V.',
-					'rechtsvorm' => 'Besloten Vennootschap',
-				],
+				'name' => 'Sanne de Vries',
+				'birthDate' => '1990-05-01',
+				'address' => ['street' => 'Dorpsstr', 'number' => '12a2', 'postcode' => '1234AB', 'city' => 'Tilburg'],
+				'residentsAtAddress' => null,
+			],
+			$person
+		);
+	}//end testAPersonsNameIsJoinedFromItsPartsWhenTheFullOneIsMissing()
+
+	public function testTheFullNameAndTheOfficialStreetWin(): void {
+		$person = (new RegisteredDetailsShape())->person([
+			'naam' => ['volledigeNaam' => ' S. de Vries ', 'voornamen' => 'Sanne'],
+			'geboorte' => ['datum' => '1990-01-01'],
+			'verblijfplaats' => ['verblijfadres' => ['officieleStraatnaam' => 'Dorpsstraat', 'korteStraatnaam' => 'Dorpsstr']],
+		]);
+
+		$this->assertSame('S. de Vries', $person['name']);
+		$this->assertSame('1990-01-01', $person['birthDate']);
+		$this->assertSame('Dorpsstraat', $person['address']['street']);
+	}//end testTheFullNameAndTheOfficialStreetWin()
+
+	public function testAnEmptyAnswerGivesBlankDetailsAndNonTextPartsAreLeftOut(): void {
+		$shape = new RegisteredDetailsShape();
+
+		$this->assertSame(
+			['name' => '', 'birthDate' => '', 'address' => ['street' => '', 'number' => '', 'postcode' => '', 'city' => ''], 'residentsAtAddress' => null],
+			$shape->person([])
+		);
+		$this->assertSame('Vries', $shape->person(['naam' => ['voornamen' => ['Sanne'], 'voorvoegsel' => null, 'geslachtsnaam' => 'Vries']])['name']);
+	}//end testAnEmptyAnswerGivesBlankDetailsAndNonTextPartsAreLeftOut()
+
+	public function testACompanyTakesItsMainBranchsNameAndListsEveryNumberedBranch(): void {
+		$company = (new RegisteredDetailsShape())->company(
+			rows: [
+				['type' => 'rechtspersoon', 'naam' => 'Holding BV', 'rechtsvorm' => 'BV'],
 				[
 					'type' => 'hoofdvestiging',
-					'naam' => 'Conduction B.V.',
+					'handelsnaam' => 'Bakkerij Zuid',
 					'vestigingsnummer' => '000012345678',
-					'adres' => ['binnenlandsAdres' => [
-						'straatnaam' => 'Nieuwe Gracht',
-						'huisnummer' => '7',
-						'postcode' => '3512 LD',
-						'plaats' => 'Utrecht',
-					]],
+					'adres' => ['binnenlandsAdres' => ['straatnaam' => 'Markt', 'huisnummer' => 1, 'huisletter' => '', 'postcode' => '5038AA', 'plaats' => 'Tilburg']],
 				],
-            ],
-			'90001234'
-		);
-
-		// The main branch's name wins over the legal entity's.
-		$this->assertSame('Conduction B.V.', $company['tradeName']);
-		$this->assertSame('90001234', $company['kvkNumber']);
-		$this->assertSame('Besloten Vennootschap', $company['legalForm']);
-		$this->assertCount(1, $company['branches']);
-		$branch = $company['branches'][0];
-		$this->assertSame('000012345678', $branch['number']);
-		$this->assertSame('Conduction B.V.', $branch['name']);
-		$this->assertTrue($branch['main']);
-		$this->assertSame('Nieuwe Gracht 7, 3512 LD Utrecht', $branch['address']);
-
-	}//end testTheCompanyTakesTheMainBranchNameAndMarksItMain()
-
-	public function testTheCompanyFallsBackToTheLegalEntityNameThenTheFirstRow(): void {
-		$legalOnly = $this->shape->company(
-			[['type' => 'rechtspersoon', 'naam' => 'Alleen Rechtspersoon B.V.']],
-			'11112222'
-		);
-		$this->assertSame('Alleen Rechtspersoon B.V.', $legalOnly['tradeName']);
-		$this->assertSame([], $legalOnly['branches']);
-
-		$neither = $this->shape->company(
-			[['type' => 'nevenvestiging', 'naam' => 'Eerste Rij', 'vestigingsnummer' => '42']],
-			'33334444'
-		);
-		// No main branch and no legal entity: the first row's name stands in.
-		$this->assertSame('Eerste Rij', $neither['tradeName']);
-		$this->assertFalse($neither['branches'][0]['main']);
-
-	}//end testTheCompanyFallsBackToTheLegalEntityNameThenTheFirstRow()
-
-	public function testACompanyRowWithoutABranchNumberIsNotABranch(): void {
-		$company = $this->shape->company(
-			[
-				['type' => 'rechtspersoon', 'naam' => 'Zonder Vestiging B.V.'],
-				['type' => 'hoofdvestiging', 'naam' => 'Zonder Vestiging B.V.'],
+				['type' => 'nevenvestiging', 'naam' => 'Bakkerij Noord', 'vestigingsnummer' => '000087654321', 'straatnaam' => 'Kerkstraat', 'huisnummer' => '5', 'plaats' => 'Breda'],
+				['type' => 'hoofdvestiging', 'naam' => 'Tweede hoofd', 'vestigingsnummer' => ''],
 			],
-			'55556666'
+			kvkNumber: '12345678'
 		);
 
-		$this->assertSame([], $company['branches']);
-
-	}//end testACompanyRowWithoutABranchNumberIsNotABranch()
-
-	public function testAKvkV1RowCarriesTheAddressFlatOnTheRow(): void {
-		$company = $this->shape->company(
-			[[
-				'type' => 'hoofdvestiging',
-				'handelsnaam' => 'Flat Address V1',
-				'vestigingsnummer' => '77',
-				'straatnaam' => 'Oudegracht',
-				'huisnummer' => '1',
-				'postcode' => '3511 AA',
-				'plaats' => 'Utrecht',
-			]],
-			'88889999'
+		$this->assertSame(
+			[
+				'tradeName' => 'Bakkerij Zuid',
+				'kvkNumber' => '12345678',
+				'legalForm' => 'BV',
+				'branches' => [
+					['number' => '000012345678', 'name' => 'Bakkerij Zuid', 'address' => 'Markt 1, 5038AA Tilburg', 'main' => true],
+					['number' => '000087654321', 'name' => 'Bakkerij Noord', 'address' => 'Kerkstraat 5, Breda', 'main' => false],
+				],
+			],
+			$company
 		);
+	}//end testACompanyTakesItsMainBranchsNameAndListsEveryNumberedBranch()
 
-		$this->assertSame('Flat Address V1', $company['tradeName']);
-		$this->assertSame('Oudegracht 1, 3511 AA Utrecht', $company['branches'][0]['address']);
+	public function testWithoutAMainBranchTheNameFallsBackToTheLegalEntityThenTheFirstRow(): void {
+		$shape = new RegisteredDetailsShape();
 
-	}//end testAKvkV1RowCarriesTheAddressFlatOnTheRow()
+		$this->assertSame('RP', $shape->company(rows: [['type' => 'nevenvestiging', 'naam' => 'Eerste'], ['type' => 'rechtspersoon', 'naam' => 'RP']], kvkNumber: '1')['tradeName']);
 
-	public function testAnEmptyCompanyAnswerKeepsTheNumberAndIsOtherwiseEmpty(): void {
-		$company = $this->shape->company([], '12345678');
+		$firstRow = $shape->company(rows: [['type' => 'x', 'naam' => 'Eerste', 'rechtsvorm' => ''], ['type' => 'y', 'rechtsvorm' => 'VOF']], kvkNumber: '1');
+		$this->assertSame('Eerste', $firstRow['tradeName']);
+		$this->assertSame('VOF', $firstRow['legalForm']);
+		$this->assertSame([], $firstRow['branches']);
 
-		$this->assertSame('', $company['tradeName']);
-		$this->assertSame('12345678', $company['kvkNumber']);
-		$this->assertSame('', $company['legalForm']);
-		$this->assertSame([], $company['branches']);
-
-	}//end testAnEmptyCompanyAnswerKeepsTheNumberAndIsOtherwiseEmpty()
+		$this->assertSame(['tradeName' => '', 'kvkNumber' => '9', 'legalForm' => '', 'branches' => []], $shape->company(rows: [], kvkNumber: '9'));
+	}//end testWithoutAMainBranchTheNameFallsBackToTheLegalEntityThenTheFirstRow()
 }//end class

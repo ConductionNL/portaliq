@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic;
 
+use OCA\Portaliq\Kernel\Contracts\TrafficEventStoreInterface;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCA\Portaliq\Service\RowAsArray;
@@ -59,7 +60,7 @@ use Throwable;
  * path explorer needs (portal-traffic-path-explorer) is the eleventh
  * entry point, and it pages through the same helper as the other reads.
  */
-class TrafficEventStore {
+class TrafficEventStore implements TrafficEventStoreInterface {
 	use ObjectServiceLookup;
 	use ExpiredRowPurge;
 	use RowAsArray;
@@ -520,7 +521,6 @@ class TrafficEventStore {
 
 		return $out;
 	}
-
 
 	/**
 	 * A row without `@self` and without its empty fields.

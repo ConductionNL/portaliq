@@ -26,9 +26,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\ActionAuthService;
-use OCA\Portaliq\Service\NewsletterPreflightService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\ActionAuthServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\NewsletterPreflightServiceInterface;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -73,19 +73,19 @@ class NewsletterController extends Controller {
 	 * @param IRequest $request The request.
 	 * @param IUserSession $userSession Confirms an authenticated Nextcloud user reached this endpoint.
 	 * @param ContainerInterface $container For resolving OpenRegister services.
-	 * @param NewsletterPreflightService $preflight The recipient-count/refusal check.
+	 * @param NewsletterPreflightServiceInterface $preflight The recipient-count/refusal check.
 	 * @param LoggerInterface $logger The logger.
-	 * @param ActionAuthService $actionAuth Decides whether this staff user may send newsletters (ADR-023).
+	 * @param ActionAuthServiceInterface $actionAuth Decides whether this staff user may send newsletters (ADR-023).
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly IUserSession $userSession,
 		private readonly ContainerInterface $container,
-		private readonly NewsletterPreflightService $preflight,
+		private readonly NewsletterPreflightServiceInterface $preflight,
 		private readonly LoggerInterface $logger,
-		private readonly ActionAuthService $actionAuth,
+		private readonly ActionAuthServiceInterface $actionAuth,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

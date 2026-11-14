@@ -25,6 +25,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Kernel\Contracts\PortalFormCalculatorInterface;
+
 /**
  * Six operations: `sum`, `multiply`, `subtract`, `addDays`, `diffDays` and
  * `count`. An argument is a field name, a group sub-field written
@@ -33,7 +35,7 @@ namespace OCA\Portaliq\Service\Intake;
  *
  * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
  */
-class PortalFormCalculator {
+class PortalFormCalculator implements PortalFormCalculatorInterface {
 	/**
 	 * Constructor.
 	 *
@@ -43,7 +45,6 @@ class PortalFormCalculator {
 		private readonly PortalFormOperands $operands = new PortalFormOperands(),
 	) {
 	}//end __construct()
-
 
 	/**
 	 * The operations a form may name.

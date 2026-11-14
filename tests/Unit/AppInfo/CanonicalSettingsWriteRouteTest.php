@@ -55,6 +55,8 @@ use ReflectionClass;
  * existing).
  *
  * @covers \OCA\Portaliq\Controller\SettingsController
+ * @uses \OCA\Portaliq\Middleware\Support\ApiPathAliases
+ * @uses \OCA\Portaliq\Middleware\Support\StandardProtocolPaths
  */
 class CanonicalSettingsWriteRouteTest extends TestCase {
 

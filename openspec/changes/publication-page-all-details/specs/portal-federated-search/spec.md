@@ -18,11 +18,13 @@ Rows: `srch-detail-generic-properties` (portaliq matrix).
 - WHEN a visitor opens its page on the site
 - THEN the worded part shows "Informatiecategorie: Woo-verzoeken en -besluiten"
 - AND below it the "All details" table lists Woo category with `infocat014` and Source URL as a link to `https://example.org/besluit.pdf`
+- @e2e exclude pinned by `tests/publication-documents.spec.mjs` ("the publication page renders the summary and the visitor rows, no internal field")
 
 #### Scenario: Object metadata and empty values stay out of the table
 - GIVEN a publication whose `depublicationDate` is empty
 - WHEN a visitor opens its page
 - THEN the "All details" table has no row for `@self`, `id` or the depublication date
+- @e2e exclude pinned by `tests/publication-documents.spec.mjs` ("the All details table lists every stored property except metadata and empty values")
 
 ## MODIFIED Requirements
 
