@@ -2798,6 +2798,23 @@
         "actions": [
           "builtin:edit",
           {
+            "id": "link-form",
+            "label": "Link a form",
+            "icon": "FileLinkOutline",
+            "type": "handler",
+            "handler": "linkSubmissionForm"
+          },
+          {
+            "id": "conversation-in-talk",
+            "label": "Conversation in Talk",
+            "icon": "Chat",
+            "type": "handler",
+            "handler": "startSubmissionConversation",
+            "visibleWhen": {
+              "appInstalled": "spreed"
+            }
+          },
+          {
             "id": "register-again",
             "label": "Register again",
             "icon": "Refresh",

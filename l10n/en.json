@@ -3230,7 +3230,16 @@
         "The receipt is registered again": "The receipt is registered again",
         "The receipt could not be registered again": "The receipt could not be registered again",
         "The proof of a submission cannot be changed.": "The proof of a submission cannot be changed.",
-        "The request form (`portalFormBinding`) this submission came through. Linked by an employee from the Submissions list; the only field besides the delivery state that changes after the write.": "The request form (`portalFormBinding`) this submission came through. Linked by an employee from the Submissions list; the only field besides the delivery state that changes after the write."
+        "The request form (`portalFormBinding`) this submission came through. Linked by an employee from the Submissions list; the only field besides the delivery state that changes after the write.": "The request form (`portalFormBinding`) this submission came through. Linked by an employee from the Submissions list; the only field besides the delivery state that changes after the write.",
+        "Conversation in Talk": "Conversation in Talk",
+        "Choose the request form this submission came through": "Choose the request form this submission came through",
+        "Choose a request form.": "Choose a request form.",
+        "The conversation could not be started.": "The conversation could not be started.",
+        "The request forms could not be loaded.": "The request forms could not be loaded.",
+        "This portal has no request forms to link.": "This portal has no request forms to link.",
+        "The form could not be linked.": "The form could not be linked.",
+        "The form is linked.": "The form is linked.",
+        "Submission": "Submission"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"
