@@ -326,6 +326,8 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         // Nextcloud session IS the credential, and an anonymous visitor is
         // handed to Nextcloud's own login form.
         ['name' => 'session#nextcloud', 'url' => '/portal/api/session/nextcloud', 'verb' => 'GET'],
+        // An employee in the portal's desk group fills a form in for a resident (resident-identity-in-forms T06).
+        ['name' => 'deskSession#start', 'url' => '/portal/api/session/desk', 'verb' => 'GET'],
         // One click on a demo: the example resident's session, closed unless
         // an administrator sets example_resident_demo_login=yes
         // (example-resident-demo-login).
@@ -398,6 +400,7 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         ['name' => 'portalIntake#family', 'url' => '/portal/api/intake/family', 'verb' => 'GET'],
         ['name' => 'portalIntake#form', 'url' => '/portal/api/intake/form', 'verb' => 'GET'],
         ['name' => 'portalIntake#submit', 'url' => '/portal/api/intake/submit', 'verb' => 'POST'],
+        ['name' => 'portalIntake#onBehalf', 'url' => '/portal/api/intake/on-behalf', 'verb' => 'POST'],
         // The code that proves a form's e-mail address is the resident's (resident-identity-in-forms).
         ['name' => 'portalFormEmailCode#send', 'url' => '/portal/api/intake/email-code', 'verb' => 'POST'],
         ['name' => 'portalFormEmailCode#check', 'url' => '/portal/api/intake/email-code/check', 'verb' => 'POST'],

@@ -295,6 +295,8 @@ class PortalFormBindingResolver implements PortalFormBindingResolverInterface {
 			'addressLookup' => (($binding['addressLookup'] ?? false) === true),
 			'prefillFromEarlierCases' => (($binding['prefillFromEarlierCases'] ?? false) === true),
 			'challenge' => (($binding['challenge'] ?? false) === true),
+			// The form shows "Voor medewerkers" (resident-identity-in-forms T06).
+			'staffMayFill' => (($binding['staffMayFill'] ?? false) === true),
 			'confirmationText' => (string)($binding['confirmationText'] ?? ''),
 			// The introduction, the statements asked, the confirmation page and
 			// mail (form-statements-intro-and-confirmation-mail). Carried as the

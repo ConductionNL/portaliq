@@ -162,6 +162,29 @@ class PortalRegisteredDetailsServiceTest extends TestCase {
 
 	}//end testTheBranchNumbersOfACompanyAreReadForTheBranchChoice()
 
+	/**
+	 * resident-identity-in-forms REQ-RIF-005: an employee's BSN and KvK number
+	 * are read from the same providers, and a number that is not one is
+	 * refused before any provider is asked.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#T06
+	 */
+	public function testAnEmployeeLooksUpABsnAndAKvkNumberDirectly(): void {
+		$brp = $this->provider(self::BRP, 'lookupByBsn');
+		$brp->expects($this->once())->method('lookupByBsn')->with(self::BSN)->willReturn(['results' => [$this->haalCentraalPerson()], 'total' => 1]);
+		$kvk = $this->provider(self::KVK, 'lookupByKvkNumber');
+		$kvk->expects($this->once())->method('lookupByKvkNumber')->with('12345678')->willReturn(['results' => $this->kvkRows(), 'total' => 3]);
+		$service = $this->service([], [self::BRP => $brp, self::KVK => $kvk]);
+
+		$person  = $service->forBsn(self::BSN);
+		$company = $service->forKvkNumber('12345678');
+
+		$this->assertSame('Jan de Vries', $person['person']['name']);
+		$this->assertSame('Bakkerij de Korenschoof', $company['company']['tradeName']);
+		$this->assertSame(['available' => false, 'reason' => 'no_registration_identifier'], $service->forBsn('123456789'));
+		$this->assertSame(['available' => false, 'reason' => 'no_registration_identifier'], $service->forKvkNumber('1234567'));
+	}//end testAnEmployeeLooksUpABsnAndAKvkNumberDirectly()
+
 	public function testAnUnavailableSourceSaysSoAndTheLogNeverHoldsTheBsn(): void {
 		$brp = $this->provider(self::BRP, 'lookupByBsn');
 		$brp->method('lookupByBsn')->willReturn(['unavailable' => true, 'cause' => 'upstream_service_down', 'results' => [], 'total' => 0]);

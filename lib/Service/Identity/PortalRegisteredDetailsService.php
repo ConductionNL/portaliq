@@ -106,6 +106,44 @@ class PortalRegisteredDetailsService implements PortalRegisteredDetailsServiceIn
 	}//end forSubject()
 
 	/**
+	 * The person record the BRP holds for one BSN, for an employee filling a
+	 * form in for a resident (resident-identity-in-forms REQ-RIF-005).
+	 *
+	 * @param string $bsn The BSN the employee entered.
+	 *
+	 * @return array<string, mixed> As forSubject(): `{available: true, kind: person, person}`
+	 *                              or `{available: false, reason}`.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#T06
+	 */
+	public function forBsn(string $bsn): array {
+		if (self::isBsn(value: $bsn) === false) {
+			return self::refusal(reason: 'no_registration_identifier');
+		}
+
+		return $this->person(bsn: $bsn);
+	}//end forBsn()
+
+	/**
+	 * The company record the KvK holds for one KvK number, for an employee
+	 * filling a form in for a company (resident-identity-in-forms REQ-RIF-005).
+	 *
+	 * @param string $kvkNumber The 8-digit KvK number the employee entered.
+	 *
+	 * @return array<string, mixed> As forSubject(): `{available: true, kind: company, company}`
+	 *                              or `{available: false, reason}`.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#T06
+	 */
+	public function forKvkNumber(string $kvkNumber): array {
+		if (preg_match('/^\d{8}$/', $kvkNumber) !== 1) {
+			return self::refusal(reason: 'no_registration_identifier');
+		}
+
+		return $this->company(kvkNumber: $kvkNumber);
+	}//end forKvkNumber()
+
+	/**
 	 * The branches the KvK holds for one company, for the branch choice of
 	 * signin-eherkenning-branch.
 	 *
