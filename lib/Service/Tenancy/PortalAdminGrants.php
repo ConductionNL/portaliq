@@ -149,29 +149,44 @@ class PortalAdminGrants {
 		$drop   = array_values(array_filter([$slug, $previousSlug], static fn (string $s): bool => $s !== ''));
 		$groups = PortalAdminScope::adminGroupsOf(portal: ['adminGroups' => $groups]);
 
+		$portal = ['field' => $field, 'slug' => $slug, 'drop' => $drop, 'groups' => $groups];
 		foreach (self::ACTIONS as $action) {
 			if (isset($authorization[$action]) === false || is_array($authorization[$action]) === false) {
 				continue;
 			}
 
-			$kept = [];
-			foreach ($authorization[$action] as $rule) {
-				if (in_array(self::portalOf(rule: $rule, field: $field), $drop, true) === false) {
-					$kept[] = $rule;
-				}
-			}
-
-			if ($slug !== '') {
-				foreach ($groups as $gid) {
-					$kept[] = ['group' => $gid, 'match' => [$field => $slug]];
-				}
-			}
-
-			$authorization[$action] = $kept;
+			$authorization[$action] = self::rulesWithPortal(rules: $authorization[$action], portal: $portal);
 		}
 
 		return $authorization;
 	}//end withPortal()
+
+	/**
+	 * One action's rules without the portal's old rules, plus one rule per group of the portal.
+	 *
+	 * @param array<mixed>         $rules  The action's rules.
+	 * @param array<string, mixed> $portal `field`, `slug` ('' adds nothing), `drop` (slugs whose rules go) and `groups`.
+	 *
+	 * @return list<mixed>
+	 */
+	private static function rulesWithPortal(array $rules, array $portal): array {
+		$kept = [];
+		foreach ($rules as $rule) {
+			if (in_array(self::portalOf(rule: $rule, field: $portal['field']), $portal['drop'], true) === false) {
+				$kept[] = $rule;
+			}
+		}
+
+		if ($portal['slug'] === '') {
+			return $kept;
+		}
+
+		foreach ($portal['groups'] as $gid) {
+			$kept[] = ['group' => $gid, 'match' => [$portal['field'] => $portal['slug']]];
+		}
+
+		return $kept;
+	}//end rulesWithPortal()
 
 	/**
 	 * The rules among these that this class wrote, for any portal.

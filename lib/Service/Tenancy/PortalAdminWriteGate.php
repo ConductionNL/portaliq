@@ -72,7 +72,7 @@ class PortalAdminWriteGate {
 	 */
 	public function refusal(string $schema, array $row, ?array $before = null): ?string {
 		$field = (PortalAdminGrants::SCHEMAS[$schema] ?? null);
-		if ($field === null || $this->userSession->getUser() === null || $this->scope->isInstanceAdmin() === true) {
+		if ($this->isExempt(field: $field) === true) {
 			return null;
 		}
 
@@ -84,6 +84,31 @@ class PortalAdminWriteGate {
 			return null;
 		}
 
+		return $this->slugRefusal(row: $row, before: $before, field: (string)$field);
+	}//end refusal()
+
+	/**
+	 * Whether the write is not this gate's to judge: a schema without a portal
+	 * field, no signed-in user, or an instance administrator.
+	 *
+	 * @param string|null $field The row field naming the portal, null for a schema the gate does not cover.
+	 *
+	 * @return bool
+	 */
+	private function isExempt(?string $field): bool {
+		return $field === null || $this->userSession->getUser() === null || $this->scope->isInstanceAdmin() === true;
+	}//end isExempt()
+
+	/**
+	 * Refused when the row names, or named before the update, a portal the user does not look after.
+	 *
+	 * @param array<string, mixed>      $row    The row as it will be (or, on delete, as it is).
+	 * @param array<string, mixed>|null $before The row before an update; null on create and delete.
+	 * @param string                    $field  The row field naming the portal.
+	 *
+	 * @return string|null
+	 */
+	private function slugRefusal(array $row, ?array $before, string $field): ?string {
 		$portals = [(string)($row[$field] ?? '')];
 		if ($before !== null) {
 			$portals[] = (string)($before[$field] ?? '');
@@ -96,7 +121,7 @@ class PortalAdminWriteGate {
 		}
 
 		return null;
-	}//end refusal()
+	}//end slugRefusal()
 
 	/**
 	 * A portal write by someone who is not an instance administrator: refused
