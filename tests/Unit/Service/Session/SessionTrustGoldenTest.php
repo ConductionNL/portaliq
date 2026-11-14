@@ -50,28 +50,28 @@ class SessionTrustGoldenTest extends TestCase {
 	public function testEverySubjectTrustAgainstEveryMinimum(): void {
 		foreach (self::MATRIX as $subject => $row) {
 			foreach ($row as $min => $expected) {
-				$this->assertSame($expected, SessionTrust::trustSatisfies($subject, $min), "{$subject} vs {$min}");
+				$this->assertSame($expected, (new SessionTrust())->trustSatisfies($subject, $min), "{$subject} vs {$min}");
 			}
 		}
 
 	}//end testEverySubjectTrustAgainstEveryMinimum()
 
 	public function testAMissingOrMalformedMinimum(): void {
-		$this->assertTrue(SessionTrust::trustSatisfies('low', null));
-		$this->assertFalse(SessionTrust::trustSatisfies('high', ['high']));
-		$this->assertFalse(SessionTrust::trustSatisfies('high', 3));
-		$this->assertFalse(SessionTrust::trustSatisfies('high', 'High'));
-		$this->assertFalse(SessionTrust::trustSatisfies(['high'], 'substantial'));
+		$this->assertTrue((new SessionTrust())->trustSatisfies('low', null));
+		$this->assertFalse((new SessionTrust())->trustSatisfies('high', ['high']));
+		$this->assertFalse((new SessionTrust())->trustSatisfies('high', 3));
+		$this->assertFalse((new SessionTrust())->trustSatisfies('high', 'High'));
+		$this->assertFalse((new SessionTrust())->trustSatisfies(['high'], 'substantial'));
 
 	}//end testAMissingOrMalformedMinimum()
 
 	public function testNormalisation(): void {
 		foreach (['low', 'substantial', 'high'] as $known) {
-			$this->assertSame($known, SessionTrust::normaliseTrust(trust: $known));
+			$this->assertSame($known, (new SessionTrust())->normaliseTrust(trust: $known));
 		}
 
 		foreach (['', 'dev', 'EH3', 'HIGH', null, 3, ['high']] as $unknown) {
-			$this->assertSame('low', SessionTrust::normaliseTrust(trust: $unknown));
+			$this->assertSame('low', (new SessionTrust())->normaliseTrust(trust: $unknown));
 		}
 
 	}//end testNormalisation()
@@ -79,10 +79,10 @@ class SessionTrustGoldenTest extends TestCase {
 	public function testTheSessionServiceDelegatesAnswerTheSame(): void {
 		foreach (self::MATRIX as $subject => $row) {
 			foreach (array_keys($row) as $min) {
-				$this->assertSame(SessionTrust::trustSatisfies($subject, $min), PortalSessionService::trustSatisfies($subject, $min));
+				$this->assertSame((new SessionTrust())->trustSatisfies($subject, $min), PortalSessionService::trustSatisfies($subject, $min));
 			}
 
-			$this->assertSame(SessionTrust::normaliseTrust(trust: $subject), PortalSessionService::normaliseTrust(trust: $subject));
+			$this->assertSame((new SessionTrust())->normaliseTrust(trust: $subject), PortalSessionService::normaliseTrust(trust: $subject));
 		}
 
 	}//end testTheSessionServiceDelegatesAnswerTheSame()

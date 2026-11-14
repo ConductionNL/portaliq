@@ -847,7 +847,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		}
 
 		$action = $match['action'];
-		if (SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
+		if ((new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
 			return $this->refuse(
 				message: $this->l10n->t('This case cannot be changed from the portal.'),
 				slug: 'portal-writes-not-declared',

@@ -163,7 +163,7 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 
 		$match = $this->collectionOf(subject: $subject, register: $register, schema: $schema);
 		$notFound = new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
-		if ($match === null || SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
+		if ($match === null || (new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
 			return $notFound;
 		}
 

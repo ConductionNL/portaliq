@@ -25,7 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -40,14 +40,14 @@ final class SignedInSubject {
 	 * The subject behind the bearer, or null when there is none or it names
 	 * no subject.
 	 *
-	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
+	 * @param BearerSessionResolver $session Resolves the subject from the bearer.
 	 * @param IRequest             $request The request carrying the bearer.
 	 *
 	 * @return array<string, mixed>|null
 	 *
 	 * @spec exclude Shared request helper; the @spec of each calling route covers the behaviour it reads for.
 	 */
-	public function resolve(PortalSessionServiceInterface $session, IRequest $request): ?array {
+	public function resolve(BearerSessionResolver $session, IRequest $request): ?array {
 		$subject = $session->resolveFromBearer($request->getHeader('Authorization'));
 		if ($subject === null || (string)($subject['subjectRef'] ?? '') === '') {
 			return null;

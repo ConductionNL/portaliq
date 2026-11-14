@@ -582,7 +582,7 @@ class ContributionController extends Controller implements PortalProtected {
 
 		// Defense in depth (contract v2, A3): re-check the matched collection's
 		// minTrust — 403 before any OpenRegister write.
-		if (SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
+		if ((new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -659,7 +659,7 @@ class ContributionController extends Controller implements PortalProtected {
 
 		$collection = $match['collection'];
 		if (InboxDeletion::residentMayDelete(collection: $collection) === false
-			|| SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false
+			|| (new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false
 		) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
@@ -724,7 +724,7 @@ class ContributionController extends Controller implements PortalProtected {
 
 		$collectionId = (string)$this->request->getParam('collection', '');
 		$match = $this->authorisedInboxCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
-		if ($match === null || SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
+		if ($match === null || (new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -745,7 +745,7 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		if (SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
+		if ((new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -974,7 +974,7 @@ class ContributionController extends Controller implements PortalProtected {
 			schema: $target['schema'],
 			collectionId: $collectionId
 		);
-		if ($match === null || SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
+		if ($match === null || (new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
 			return null;
 		}
 
@@ -1167,7 +1167,7 @@ class ContributionController extends Controller implements PortalProtected {
 
 		// Defense in depth (contract v2, A3): re-check the matched collection's
 		// minTrust — 403 before any OpenRegister call.
-		if (SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
+		if ((new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -1296,7 +1296,7 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		if (SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
+		if ((new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -1502,7 +1502,7 @@ class ContributionController extends Controller implements PortalProtected {
 
 		$collection = $match['collection'];
 
-		if (SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
+		if ((new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -1676,7 +1676,7 @@ class ContributionController extends Controller implements PortalProtected {
 
 		// Defense in depth (contract v2, A3): re-check the matched action's
 		// minTrust — 403 before any OpenRegister write.
-		if (SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
+		if ((new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -2251,7 +2251,7 @@ class ContributionController extends Controller implements PortalProtected {
 
 		// Defense in depth (contract v2, A3): re-check the matched action's
 		// minTrust — 403 before any OpenRegister write.
-		if (SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
+		if ((new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -2566,7 +2566,7 @@ class ContributionController extends Controller implements PortalProtected {
 			return false;
 		}
 
-		return SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null));
+		return (new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null));
 	}//end isForwardableAction()
 
 	/**
@@ -2649,7 +2649,7 @@ class ContributionController extends Controller implements PortalProtected {
 
 		$collectionId = (string)$this->request->getParam('collection', '');
 		$match        = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
-		if ($match === null || SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
+		if ($match === null || (new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -2693,7 +2693,7 @@ class ContributionController extends Controller implements PortalProtected {
 
 		$collectionId = (string)$this->request->getParam('collection', '');
 		$match        = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
-		if ($match === null || SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
+		if ($match === null || (new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 

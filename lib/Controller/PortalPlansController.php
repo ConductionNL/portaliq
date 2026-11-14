@@ -33,7 +33,7 @@ use OCA\Portaliq\Kernel\Contracts\PlanFilesInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalPdfExportInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalPlanServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
-use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -73,7 +73,7 @@ class PortalPlansController extends Controller implements PortalProtected {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
+	 * @param BearerSessionResolver $session Resolves the subject from the bearer.
 	 * @param PortalPlanServiceInterface $plans The plan rules.
 	 * @param PortalResolverInterface $portals Finds the serving portal, for its templates.
 	 * @param RequestedPortalInterface $requestedPortal The RequestedPortal helper.
@@ -82,7 +82,7 @@ class PortalPlansController extends Controller implements PortalProtected {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionServiceInterface $session,
+		private readonly BearerSessionResolver $session,
 		private readonly PortalPlanServiceInterface $plans,
 		private readonly PortalResolverInterface $portals,
 		private readonly RequestedPortalInterface $requestedPortal,

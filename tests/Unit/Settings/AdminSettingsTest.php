@@ -17,10 +17,11 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Settings;
 
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Support\SessionSigningKey;
 use OCA\Portaliq\Settings\AdminSettings;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Http\TemplateResponse;
+use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -28,6 +29,8 @@ use PHPUnit\Framework\TestCase;
  * and whether the session signing secret is set, in portaliq's section.
  *
  * @covers \OCA\Portaliq\Settings\AdminSettings
+ * @uses   \OCA\Portaliq\Kernel\Support\SessionSigningKey
+ * @uses   \OCA\Portaliq\Service\PortalJwtService
  */
 final class AdminSettingsTest extends TestCase {
 
@@ -42,11 +45,22 @@ final class AdminSettingsTest extends TestCase {
 		$apps = $this->createMock(IAppManager::class);
 		$apps->expects($this->once())->method('getAppVersion')->with('portaliq')->willReturn('1.4.2');
 
-		$session = $this->createMock(PortalSessionService::class);
-		$session->method('isConfigured')->willReturn($configured);
-
-		return new AdminSettings(appManager: $apps, session: $session);
+		return new AdminSettings(appManager: $apps, session: $this->signingKey(configured: $configured));
 	}//end settings()
+
+	/**
+	 * A signing key over a secret that is set or not.
+	 *
+	 * @param bool $configured Whether the signing secret is set.
+	 *
+	 * @return SessionSigningKey
+	 */
+	private function signingKey(bool $configured): SessionSigningKey {
+		$config = $this->createMock(IAppConfig::class);
+		$config->method('getValueString')->willReturn($configured === true ? str_repeat('s', 32) : '');
+
+		return new SessionSigningKey(appConfig: $config);
+	}//end signingKey()
 
 	public function testTheFormRendersTheAdminTemplateWithTheVersion(): void {
 		$form = $this->settings(configured: true)->getForm();
@@ -69,7 +83,7 @@ final class AdminSettingsTest extends TestCase {
 	public function testThePageSitsInPortaliqsSectionAtPriorityTen(): void {
 		$settings = new AdminSettings(
 			appManager: $this->createMock(IAppManager::class),
-			session: $this->createMock(PortalSessionService::class)
+			session: $this->signingKey(configured: false)
 		);
 
 		$this->assertSame('portaliq', $settings->getSection());

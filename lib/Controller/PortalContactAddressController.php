@@ -31,7 +31,7 @@ use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\PortalContactAddressServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalIdentityMailerInterface;
-use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -51,13 +51,13 @@ class PortalContactAddressController extends Controller implements PortalProtect
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
+	 * @param BearerSessionResolver $session Resolves the subject from the bearer.
 	 * @param PortalContactAddressServiceInterface $addresses The address and channel rules.
 	 * @param PortalIdentityMailerInterface $mailer Mails the confirmation to a new address.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionServiceInterface $session,
+		private readonly BearerSessionResolver $session,
 		private readonly PortalContactAddressServiceInterface $addresses,
 		private readonly PortalIdentityMailerInterface $mailer,
 	) {

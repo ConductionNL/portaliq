@@ -29,7 +29,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCA\Portaliq\Service\ObjectRowNormaliser;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\PagedObjectReads;
@@ -75,13 +75,13 @@ class PushSubscriptionController extends Controller implements PortalProtected {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
+	 * @param BearerSessionResolver $session Resolves the subject from the bearer.
 	 * @param ContainerInterface $container For resolving OpenRegister services.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionServiceInterface $session,
+		private readonly BearerSessionResolver $session,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 	) {

@@ -34,7 +34,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalContributionFilterInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalNoticeReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
-use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCA\Portaliq\Kernel\Contracts\PublicAssistantChannelInterface;
 use OCA\Portaliq\Kernel\Contracts\PublicSourceScopeInterface;
 use OCA\Portaliq\Kernel\Contracts\SiteOrganisationInterface;
@@ -90,7 +90,7 @@ class ContentController extends Controller {
 	 * @param PortalContributionRegistryInterface $registry     Aggregates leaf apps' contributions.
 	 * @param PortalContributionFilterInterface   $contribFilter Scopes that aggregate to one portal.
 	 * @param LoggerInterface            $logger       Records a provider failure the visitor never sees.
-	 * @param PortalSessionServiceInterface       $session      Resolves the caller's portal session for the content gate.
+	 * @param BearerSessionResolver       $session      Resolves the caller's portal session for the content gate.
 	 * @param TrafficConfigResolverInterface      $traffic      Resolves the portal's measurement configuration.
 	 * @param IURLGenerator              $urlGenerator Builds the absolute collector URL.
 	 * @param PortalNoticeReaderInterface         $notices      The notices running on the site now.
@@ -111,7 +111,7 @@ class ContentController extends Controller {
 		private readonly PortalContributionRegistryInterface $registry,
 		private readonly PortalContributionFilterInterface $contribFilter,
 		private readonly LoggerInterface $logger,
-		private readonly PortalSessionServiceInterface $session,
+		private readonly BearerSessionResolver $session,
 		private readonly TrafficConfigResolverInterface $traffic,
 		private readonly IURLGenerator $urlGenerator,
 		private readonly PortalNoticeReaderInterface $notices,

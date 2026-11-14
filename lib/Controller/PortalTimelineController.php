@@ -212,7 +212,7 @@ class PortalTimelineController extends Controller implements PortalProtected {
 		}
 
 		$match = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema);
-		if ($match === null || SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
+		if ($match === null || (new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 

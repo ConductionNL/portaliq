@@ -24,8 +24,8 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\ProposalController;
 use OCA\Portaliq\Service\PortalObjectReader;
-use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\Proposals\ProposalService;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCA\Portaliq\Service\Tasks\PortalCaseAccessGuard;
 use OCP\IRequest;
 use OCP\IUserSession;
@@ -55,7 +55,7 @@ class ProposalPortalProposeGoldenTest extends TestCase {
 		$this->calls = [];
 		$request     = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('Bearer token');
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
 		$registry = $this->createMock(PortalContributionRegistry::class);
 		$registry->method('aggregateFor')->willReturn(['contributions' => [['app' => 'dossiq', 'actions' => [$action]]]]);

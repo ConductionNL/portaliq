@@ -26,7 +26,7 @@ use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Controller\PortalContactsController;
 use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use OCA\Portaliq\Service\Identity\PortalContactService;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 
@@ -47,7 +47,7 @@ class PortalContactsControllerTest extends TestCase {
 	 */
 	private function controller(?array $subject, PortalContactService $service): PortalContactsController {
 		$request = $this->createMock(IRequest::class);
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
 		$lookup = $this->createMock(PortalAccountLookup::class);
 		$lookup->method('bySubjectRef')->willReturn(['displayName' => 'Ada']);

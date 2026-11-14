@@ -31,7 +31,7 @@ use OCA\Portaliq\Service\PortalNoticeReader;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\SiteOrganisation;
 use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCA\Portaliq\Service\PublishedPortals;
 use OCA\Portaliq\Service\TrafficConfigResolver;
 use OCP\App\IAppManager;
@@ -83,7 +83,7 @@ class ContentControllerTest extends TestCase {
 	private ?PortalContributionRegistry $registry = null;
 
 	/** Set by the gate tests; null means the gate is never consulted. */
-	private ?PortalSessionService $session = null;
+	private ?BearerSessionResolver $session = null;
 
 	/**
 	 * The notice reader, when a test sets one.
@@ -170,7 +170,7 @@ class ContentControllerTest extends TestCase {
 			// assertion here uses a portal whose modes include `public`, so the
 			// content gate never consults this — which is the point: adding the
 			// gate must not change what a public portal serves.
-			session: ($this->session ?? $this->createMock(PortalSessionService::class)),
+			session: ($this->session ?? $this->createMock(BearerSessionResolver::class)),
 			traffic: new TrafficConfigResolver(),
 			urlGenerator: $this->urlGenerator(),
 			notices: ($this->notices ?? $this->createMock(PortalNoticeReader::class)),
@@ -832,7 +832,7 @@ class ContentControllerTest extends TestCase {
 	 */
 	public function testASessionBelowTheTrustFloorIsRefusedAsForbidden(): void {
 		$this->resolver->method('resolve')->willReturn($this->privatePortal(minTrust: 'high'));
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn(
 			['subjectRef' => 's-1', 'audience' => 'client', 'organisation' => 'org-1', 'trust' => 'low']
 		);
@@ -856,7 +856,7 @@ class ContentControllerTest extends TestCase {
 	 */
 	public function testASessionMeetingTheTrustFloorIsServed(): void {
 		$this->resolver->method('resolve')->willReturn($this->privatePortal(minTrust: 'substantial'));
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn(
 			['subjectRef' => 's-1', 'audience' => 'client', 'organisation' => 'org-1', 'trust' => 'high']
 		);

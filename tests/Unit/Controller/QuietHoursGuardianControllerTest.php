@@ -24,7 +24,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\QuietHoursGuardianController;
 use OCA\Portaliq\Service\Notifications\QuietHoursPolicy;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
@@ -38,7 +38,7 @@ class QuietHoursGuardianControllerTest extends TestCase {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('Bearer token');
 
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
 
 		return new QuietHoursGuardianController($request, $session, $quietHours ?? $this->createMock(QuietHoursPolicy::class));

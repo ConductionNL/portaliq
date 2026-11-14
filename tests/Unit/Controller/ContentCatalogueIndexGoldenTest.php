@@ -21,9 +21,9 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Controller\ContentCatalogueController;
 use OCA\Portaliq\Service\DerivedCatalogueFacets;
 use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PublicCatalogue;
 use OCA\Portaliq\Service\PublicCatalogueQuery;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\IRequest;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -42,7 +42,7 @@ use TypeError;
 #[CoversClass(ContentCatalogueController::class)]
 #[UsesClass(PublicCatalogueQuery::class)]
 #[UsesClass(DerivedCatalogueFacets::class)]
-#[UsesClass(PortalSessionService::class)]
+#[UsesClass(BearerSessionResolver::class)]
 #[UsesClass(\OCA\Portaliq\Service\CatalogueScope::class)]
 #[UsesClass(\OCA\Portaliq\Service\CatalogueScopeFilter::class)]
 class ContentCatalogueIndexGoldenTest extends TestCase {
@@ -110,7 +110,7 @@ class ContentCatalogueIndexGoldenTest extends TestCase {
 				return ['slug' => 'zuid'];
 			}
 		);
-		$session = $this->createMock(originalClassName: PortalSessionService::class);
+		$session = $this->createMock(originalClassName: BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturnCallback(
 			static function (string $header) use (&$log, $world): ?array {
 				$log[] = ['session.resolveFromBearer', $header];

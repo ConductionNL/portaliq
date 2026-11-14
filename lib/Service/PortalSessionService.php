@@ -52,12 +52,13 @@ use DateTimeImmutable;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Service\Branch\BranchNumber;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
+use OCA\Portaliq\Kernel\Support\SessionRecords;
+use OCA\Portaliq\Kernel\Support\SessionSigningKey;
 use OCA\Portaliq\Kernel\Support\SessionTrust;
-use OCP\IAppConfig;
 use OCP\IConfig;
 use OCP\Security\ISecureRandom;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 use Throwable;
 
 /**
@@ -77,11 +78,6 @@ use Throwable;
  * a session's life, including revoking one session as an admin.
  */
 class PortalSessionService implements PortalSessionServiceInterface {
-	/**
-	 * The bearer scheme prefix, case-sensitive per RFC 6750.
-	 */
-	private const BEARER_PREFIX = 'Bearer ';
-
 	/**
 	 * The OpenRegister register the `portalSession` schema lives in.
 	 */
@@ -153,9 +149,8 @@ class PortalSessionService implements PortalSessionServiceInterface {
 	 * app config value (>= 16 chars) — it NEVER falls back to Nextcloud's
 	 * shared instance secret (portal-auth-edge-session-hardening). When unset
 	 * or too short, `$jwt` stays null and every issue/resolve call fails
-	 * closed until the install-time repair step generates one. Building
-	 * PortalJwtService here (rather than via a DI factory) keeps the whole
-	 * service auto-wireable — only core services are injected.
+	 * closed until the install-time repair step generates one
+	 * ({@see SessionSigningKey}).
 	 *
 	 * @param IConfig $config The configuration source for the secret + the
 	 *                        absolute max session lifetime (portal-session-
@@ -166,7 +161,8 @@ class PortalSessionService implements PortalSessionServiceInterface {
 	 * @param PortalObjectReader $reader Looks up sessions by jti / organisation.
 	 * @param AuditTrailService $auditor Records login/logout/refresh session events
 	 *                                   (portal-session-hardening-v2).
-	 * @param IAppConfig $appConfig Holds the signing secret, flagged sensitive.
+	 * @param SessionSigningKey $signingKey The signer built from the dedicated secret, or none.
+	 * @param BearerSessionResolver $bearers Resolves incoming bearers (fail-closed).
 	 *
 	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.1
 	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T01
@@ -178,41 +174,15 @@ class PortalSessionService implements PortalSessionServiceInterface {
 		private readonly PortalObjectWriter $writer,
 		private readonly PortalObjectReader $reader,
 		private readonly AuditTrailService $auditor,
-		IAppConfig $appConfig,
+		SessionSigningKey $signingKey,
+		private readonly BearerSessionResolver $bearers,
 	) {
-		// The secret is a sensitive app value (security review S4): read it
-		// through IAppConfig, which decrypts it, never through IConfig.
-		$secret = $appConfig->getValueString(AppIdentity::APP_ID, 'jwt_signing_secret', '');
-		$jwt = null;
-		if ($secret !== '') {
-			$jwt = self::buildJwtService(secret: $secret);
-		}
-
-		$this->jwt = $jwt;
+		$this->jwt = $signingKey->jwt();
 	}//end __construct()
 
 	/**
-	 * Build the token minter/validator from a candidate secret, or null when
-	 * it is empty or too short — the single point that decides whether the
-	 * auth edge is configured (used once, from the constructor, to keep
-	 * `$jwt` a single-assignment readonly property).
-	 *
-	 * @param string $secret The candidate `jwt_signing_secret` value.
-	 *
-	 * @return PortalJwtService|null
-	 */
-	private static function buildJwtService(string $secret): ?PortalJwtService {
-		if ($secret === '' || strlen($secret) < 16) {
-			return null;
-		}
-
-		return new PortalJwtService(signingSecret: $secret);
-	}//end buildJwtService()
-
-	/**
-	 * Whether a dedicated signing secret is configured. Surfaced by
-	 * `AdminSettings` so an operator can see the auth edge is not yet safe to
-	 * use, rather than discovering it via failed logins.
+	 * Whether a dedicated signing secret is configured; kept for the callers
+	 * of the contract not yet moved to {@see SessionSigningKey::isConfigured()}.
 	 *
 	 * @return bool
 	 *
@@ -233,7 +203,7 @@ class PortalSessionService implements PortalSessionServiceInterface {
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T1
 	 */
 	public static function normaliseTrust(mixed $trust): string {
-		return SessionTrust::normaliseTrust(trust: $trust);
+		return (new SessionTrust())->normaliseTrust(trust: $trust);
 	}//end normaliseTrust()
 
 	/**
@@ -248,7 +218,7 @@ class PortalSessionService implements PortalSessionServiceInterface {
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T1
 	 */
 	public static function trustSatisfies(mixed $subjectTrust, mixed $minTrust): bool {
-		return SessionTrust::trustSatisfies(subjectTrust: $subjectTrust, minTrust: $minTrust);
+		return (new SessionTrust())->trustSatisfies(subjectTrust: $subjectTrust, minTrust: $minTrust);
 	}//end trustSatisfies()
 
 	/**
@@ -487,13 +457,10 @@ class PortalSessionService implements PortalSessionServiceInterface {
 	}//end maxLifetimeSeconds()
 
 	/**
-	 * Resolve an Authorization header to a server-derived subject. FAILS CLOSED.
-	 *
-	 * Fails closed when no dedicated signing secret is configured, when the
-	 * bearer is absent/malformed/forged/expired, or when the token's `jti` has
-	 * no matching (non-revoked) `portalSession` row — a revoked or unknown jti
-	 * is rejected exactly like a bad signature, including when the lookup
-	 * itself fails (OpenRegister unavailable never means "not revoked").
+	 * Resolve an Authorization header to a server-derived subject. FAILS
+	 * CLOSED; kept for the callers not yet moved to
+	 * {@see BearerSessionResolver::resolveFromBearer()}, and used by the
+	 * refresh and rebranch paths.
 	 *
 	 * @param string|null $authorizationHeader The raw Authorization header value.
 	 *
@@ -502,85 +469,10 @@ class PortalSessionService implements PortalSessionServiceInterface {
 	 *                                   expired, or revoked.
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
-	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.3
-	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#2.2
-	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#2.3
 	 */
 	public function resolveFromBearer(?string $authorizationHeader): ?array {
-		if ($this->jwt === null || $this->hasBearer(authorizationHeader: $authorizationHeader) === false) {
-			return null;
-		}
-
-		$claims = $this->sessionClaimsOf(jwt: $this->jwt, token: substr($authorizationHeader, strlen(self::BEARER_PREFIX)));
-		if ($claims === null) {
-			return null;
-		}
-
-		return (new SessionClaims())->subject(claims: $claims, trust: SessionTrust::normaliseTrust(trust: ($claims['trust'] ?? '')));
+		return $this->bearers->resolveFromBearer(authorizationHeader: $authorizationHeader);
 	}//end resolveFromBearer()
-
-	/**
-	 * Whether the header carries a bearer.
-	 *
-	 * @param string|null $authorizationHeader The raw Authorization header value.
-	 *
-	 * @return bool
-	 *
-	 * @phpstan-assert-if-true string $authorizationHeader
-	 */
-	private function hasBearer(?string $authorizationHeader): bool {
-		return $authorizationHeader !== null && str_starts_with($authorizationHeader, self::BEARER_PREFIX) === true;
-	}//end hasBearer()
-
-	/**
-	 * The claims of a bearer token when it validates as a live portal
-	 * session, else null.
-	 *
-	 * @param PortalJwtService $jwt   The configured signer.
-	 * @param string           $token The bearer token.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function sessionClaimsOf(PortalJwtService $jwt, string $token): ?array {
-		if ($token === '') {
-			return null;
-		}
-
-		try {
-			$claims = $jwt->validate($token);
-		} catch (Throwable $e) {
-			// Fail closed — never leak why. Debug-level only.
-			$this->logger->debug('Portaliq: bearer rejected', ['reason' => $e->getMessage()]);
-			return null;
-		}
-
-		return $this->activeSessionClaims(claims: $claims);
-	}//end sessionClaimsOf()
-
-	/**
-	 * The claims when they are a portal session whose `jti` is still live,
-	 * else null.
-	 *
-	 * @param array<string, mixed> $claims The validated token claims.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function activeSessionClaims(array $claims): ?array {
-		// Token-confusion guard (contract v2, A6): a subject assertion — or any
-		// future special-use token — is NOT a portal session. A relayed or
-		// leaked X-Portal-Subject assertion can never be replayed as a bearer.
-		if (($claims['use'] ?? '') !== '') {
-			$this->logger->debug('Portaliq: bearer rejected', ['reason' => 'special-use token presented as session']);
-			return null;
-		}
-
-		if ($this->isJtiActive(jti: (string)($claims['jti'] ?? '')) === false) {
-			$this->logger->debug('Portaliq: bearer rejected', ['reason' => 'revoked or unknown jti']);
-			return null;
-		}
-
-		return $claims;
-	}//end activeSessionClaims()
 
 	/**
 	 * Mint the short, read-only session a redeemed reference link opens
@@ -653,7 +545,9 @@ class PortalSessionService implements PortalSessionServiceInterface {
 	}//end issueReferenceSession()
 
 	/**
-	 * Resolve a reference session, and only a reference session. FAILS CLOSED.
+	 * Resolve a reference session, and only a reference session. FAILS
+	 * CLOSED; kept for the callers not yet moved to
+	 * {@see BearerSessionResolver::resolveReferenceFromBearer()}.
 	 *
 	 * @param string|null $authorizationHeader The raw Authorization header value.
 	 *
@@ -662,57 +556,8 @@ class PortalSessionService implements PortalSessionServiceInterface {
 	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/design.md
 	 */
 	public function resolveReferenceFromBearer(?string $authorizationHeader): ?array {
-		if ($this->jwt === null || $this->hasBearer(authorizationHeader: $authorizationHeader) === false) {
-			return null;
-		}
-
-		return $this->referenceOfToken(jwt: $this->jwt, token: substr($authorizationHeader, strlen(self::BEARER_PREFIX)));
+		return $this->bearers->resolveReferenceFromBearer(authorizationHeader: $authorizationHeader);
 	}//end resolveReferenceFromBearer()
-
-	/**
-	 * The reference a bearer token carries when it validates as a live
-	 * reference session, else null.
-	 *
-	 * @param PortalJwtService $jwt   The configured signer.
-	 * @param string           $token The bearer token.
-	 *
-	 * @return array{subjectRef: string, organisation: string, caseReference: string, register: string, schema: string, jti: string}|null
-	 */
-	private function referenceOfToken(PortalJwtService $jwt, string $token): ?array {
-		try {
-			$claims = $jwt->validate($token);
-		} catch (Throwable $e) {
-			$this->logger->debug('Portaliq: reference bearer rejected', ['reason' => $e->getMessage()]);
-			return null;
-		}
-
-		if (($claims['use'] ?? '') !== PortalJwtService::USE_REFERENCE) {
-			return null;
-		}
-
-		return $this->liveReference(claims: $claims);
-	}//end referenceOfToken()
-
-	/**
-	 * The reference of a reference session's claims when its `jti` is live
-	 * and every field is present, else null.
-	 *
-	 * @param array<string, mixed> $claims The reference session's claims.
-	 *
-	 * @return array{subjectRef: string, organisation: string, caseReference: string, register: string, schema: string, jti: string}|null
-	 */
-	private function liveReference(array $claims): ?array {
-		if ($this->isJtiActive(jti: (string)($claims['jti'] ?? '')) === false) {
-			return null;
-		}
-
-		$reference = (new SessionClaims())->reference(claims: $claims);
-		if (in_array('', $reference, true) === true) {
-			return null;
-		}
-
-		return $reference;
-	}//end liveReference()
 
 	/**
 	 * Rotate a valid, unexpired, not-yet-revoked bearer into a NEW session with
@@ -865,28 +710,17 @@ class PortalSessionService implements PortalSessionServiceInterface {
 	}//end rotate()
 
 	/**
-	 * Whether a `jti` has a corresponding, not-revoked `portalSession` row.
-	 * A missing row, an unreachable OpenRegister, or an explicitly revoked row
-	 * ALL resolve to `false` — fail closed, never "not revoked by default".
+	 * Whether a `jti` has a corresponding, not-revoked `portalSession` row
+	 * (fail closed, see {@see SessionRecords::isJtiActive()}).
 	 *
 	 * @param string $jti The session's token id.
 	 *
 	 * @return bool
 	 *
 	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#2.2
-	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#2.3
 	 */
 	private function isJtiActive(string $jti): bool {
-		if ($jti === '') {
-			return false;
-		}
-
-		$row = $this->findSessionByJti(jti: $jti);
-		if ($row === null) {
-			return false;
-		}
-
-		return $this->revoker()->isRevoked(row: $row) === false;
+		return $this->records()->isJtiActive(jti: $jti);
 	}//end isJtiActive()
 
 	/**
@@ -897,19 +731,7 @@ class PortalSessionService implements PortalSessionServiceInterface {
 	 * @return array<string, mixed>|null
 	 */
 	private function findSessionByJti(string $jti): ?array {
-		if ($jti === '') {
-			return null;
-		}
-
-		$rows = $this->reader->readCollection(
-			register: self::SESSION_REGISTER,
-			schema: self::SESSION_SCHEMA,
-			scopeField: 'jti',
-			subjectRef: $jti,
-			limit: 2
-		);
-
-		return ($rows[0] ?? null);
+		return $this->records()->findSessionByJti(jti: $jti);
 	}//end findSessionByJti()
 
 	/**
@@ -1067,41 +889,11 @@ class PortalSessionService implements PortalSessionServiceInterface {
 	}//end revoker()
 
 	/**
-	 * Mint a short-lived `X-Portal-Subject` assertion for a resolved subject.
+	 * The session records over this service's OpenRegister reader.
 	 *
-	 * Delegates to PortalJwtService::createAssertion() so the assertion uses
-	 * exactly the same secret sourcing as sessions. The assertion carries the
-	 * SESSION's jti (audit correlation to the originating, revocable session)
-	 * plus `use: "assertion"`, which resolveFromBearer() rejects — an assertion
-	 * can never come back as a portal session (contract v2, A6).
-	 *
-	 * @param array<string, mixed> $subject The resolved subject (from resolveFromBearer).
-	 * @param string $scopeClaim The action's declared scope claim, or ''.
-	 * @param string $scopeValue The server-resolved value of that claim, or ''.
-	 *
-	 * @return string Compact assertion JWT (TTL ~60s).
-	 *
-	 * @throws RuntimeException When no dedicated signing secret is configured
-	 *                          — should be unreachable in practice, since a
-	 *                          resolved subject implies `resolveFromBearer()`
-	 *                          already required `$jwt` to be non-null.
-	 *
-	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T7
+	 * @return SessionRecords
 	 */
-	public function issueAssertion(array $subject, string $scopeClaim = '', string $scopeValue = ''): string {
-		if ($this->jwt === null) {
-			throw new RuntimeException('Portaliq: cannot issue an assertion — no dedicated jwt_signing_secret configured');
-		}
-
-		return $this->jwt->createAssertion(
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			audience: (string)($subject['audience'] ?? ''),
-			organisation: (string)($subject['organisation'] ?? ''),
-			trust: SessionTrust::normaliseTrust(trust: ($subject['trust'] ?? '')),
-			jti: (string)($subject['jti'] ?? ''),
-			scopeClaim: $scopeClaim,
-			scopeValue: $scopeValue,
-			branch: (string)($subject['branch'] ?? '')
-		);
-	}//end issueAssertion()
+	private function records(): SessionRecords {
+		return new SessionRecords(reader: $this->reader, revoker: $this->revoker());
+	}//end records()
 }//end class

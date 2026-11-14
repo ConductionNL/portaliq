@@ -6,7 +6,7 @@ namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\InstanceLoopback;
 use OCA\Portaliq\Service\PortalActionForwarder;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Support\SubjectAssertionIssuer;
 use OCP\Http\Client\IResponse;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
@@ -28,7 +28,7 @@ class PortalActionForwarderTest extends TestCase {
 		return new PortalActionForwarder(
 			$this->createMock(IRequest::class),
 			$this->createMock(InstanceLoopback::class),
-			$this->createMock(PortalSessionService::class),
+			$this->createMock(SubjectAssertionIssuer::class),
 		);
 	}//end forwarder()
 
@@ -63,7 +63,7 @@ class PortalActionForwarderTest extends TestCase {
 	public function testTheForwardGoesThroughTheInstanceLoopback(): void {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('Bearer client-token');
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(SubjectAssertionIssuer::class);
 		$session->method('issueAssertion')->willReturn('minted-assertion');
 		$response = $this->createMock(IResponse::class);
 
@@ -102,7 +102,7 @@ class PortalActionForwarderTest extends TestCase {
 	public function testFilesGoMultipartBesideTheFields(): void {
 		$tmp = tempnam(sys_get_temp_dir(), 'raf');
 		file_put_contents($tmp, 'scan bytes');
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(SubjectAssertionIssuer::class);
 		$session->method('issueAssertion')->willReturn('minted-assertion');
 		$seen = [];
 
@@ -156,7 +156,7 @@ class PortalActionForwarderTest extends TestCase {
 			}
 		);
 
-		$forwarder = new PortalActionForwarder($this->createMock(IRequest::class), $loopback, $this->createMock(PortalSessionService::class));
+		$forwarder = new PortalActionForwarder($this->createMock(IRequest::class), $loopback, $this->createMock(SubjectAssertionIssuer::class));
 		$forwarder->forward(
 			action: ['endpoint' => '/apps/dossiq/api/portal/woo/answer', 'files' => ['field' => 'attachments', 'max' => 5, 'maxBytes' => 1000]],
 			subject: [],
@@ -190,7 +190,7 @@ class PortalActionForwarderTest extends TestCase {
 				return $this->createMock(IResponse::class);
 			}
 		);
-		$forwarder = new PortalActionForwarder($this->createMock(IRequest::class), $loopback, $this->createMock(PortalSessionService::class));
+		$forwarder = new PortalActionForwarder($this->createMock(IRequest::class), $loopback, $this->createMock(SubjectAssertionIssuer::class));
 
 		$forwarder->forward(action: ['endpoint' => '/apps/x/api/y', 'files' => ['field' => 'attachments']], subject: [], whitelisted: ['a' => 1]);
 		$forwarder->forward(action: ['endpoint' => '/apps/x/api/y'], subject: [], whitelisted: ['a' => 1], files: [['name' => 'n', 'type' => 't', 'tmp_name' => '/nonexistent', 'size' => 1]]);
@@ -208,7 +208,7 @@ class PortalActionForwarderTest extends TestCase {
 			->getMock();
 		$loopback->method('request')->willThrowException(new RuntimeException('cURL error 7: refused'));
 
-		$forwarder = new PortalActionForwarder($this->createMock(IRequest::class), $loopback, $this->createMock(PortalSessionService::class));
+		$forwarder = new PortalActionForwarder($this->createMock(IRequest::class), $loopback, $this->createMock(SubjectAssertionIssuer::class));
 
 		$this->assertNull($forwarder->forward(action: ['endpoint' => '/apps/x/api/y'], subject: [], whitelisted: []));
 	}//end testAForwardThatReachesNoAddressDegradesToNull()
@@ -239,7 +239,7 @@ class PortalActionForwarderTest extends TestCase {
 				}
 			);
 
-			$forwarder = new PortalActionForwarder($request, $loopback, $this->createMock(PortalSessionService::class));
+			$forwarder = new PortalActionForwarder($request, $loopback, $this->createMock(SubjectAssertionIssuer::class));
 			$forwarder->forward(action: ['endpoint' => '/apps/x/api/y'], subject: [], whitelisted: []);
 
 			if ($relayed === true) {
@@ -265,7 +265,7 @@ class PortalActionForwarderTest extends TestCase {
 				->getMock();
 			$loopback->method('request')->willThrowException(new RuntimeException($message));
 
-			$forwarder = new PortalActionForwarder($this->createMock(IRequest::class), $loopback, $this->createMock(PortalSessionService::class));
+			$forwarder = new PortalActionForwarder($this->createMock(IRequest::class), $loopback, $this->createMock(SubjectAssertionIssuer::class));
 
 			$this->assertNull($forwarder->forward(action: ['endpoint' => '/apps/x/api/y'], subject: [], whitelisted: []));
 			$this->assertSame($status === 504, $forwarder->lastForwardTimedOut());
@@ -288,7 +288,7 @@ class PortalActionForwarderTest extends TestCase {
 		$forwarder = new class(
 			$this->createMock(IRequest::class),
 			$this->createMock(InstanceLoopback::class),
-			$this->createMock(PortalSessionService::class),
+			$this->createMock(SubjectAssertionIssuer::class),
 		) extends PortalActionForwarder {
 			protected function rawInput(): string {
 				return '{"collectionId":"c-1"}';

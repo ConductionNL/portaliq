@@ -166,7 +166,7 @@ class PortalFieldFileController extends Controller implements PortalProtected {
 
 		if ($match === null
 			|| $config === null
-			|| SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($match['action']['minTrust'] ?? null)) === false
+			|| (new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($match['action']['minTrust'] ?? null)) === false
 		) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
