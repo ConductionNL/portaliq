@@ -1605,6 +1605,9 @@ OC.L10N.register(
         "Verklaringen": "Verklaringen",
         "Write {reference} and {deadline} where they belong.": "Write {reference} and {deadline} where they belong.",
         "Check form": "Check form",
+        "Copy name": "Copy name",
+        "Copy value": "Copy value",
+        "Copying did not work. Select the text and copy it yourself.": "Copying did not work. Select the text and copy it yourself.",
         "This entry opens \"{form}\" today.": "This entry opens \"{form}\" today.",
         "This entry sends people to {destination}. Nothing arrives here.": "This entry sends people to {destination}. Nothing arrives here.",
         "This entry sends people to another website, but has no address. Nobody can start it.": "This entry sends people to another website, but has no address. Nobody can start it.",
@@ -3212,7 +3215,9 @@ OC.L10N.register(
         "Open the form with an introduction page": "Open the form with an introduction page",
         "Off: the form opens at step 1. The introduction's text is kept.": "Off: the form opens at step 1. The introduction's text is kept.",
         "Introduction text": "Introduction text",
-        "The opening sentence under the form's heading.": "The opening sentence under the form's heading."
+        "The opening sentence under the form's heading.": "The opening sentence under the form's heading.",
+        "Event to sign up for": "Event to sign up for",
+        "No event": "No event"
     },
     "nplurals=2; plural=(n != 1);"
 )

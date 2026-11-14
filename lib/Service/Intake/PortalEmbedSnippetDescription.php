@@ -40,10 +40,12 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Kernel\Contracts\PortalEmbedSnippetDescriptionInterface;
+
 /**
  * Describes one form's embed for the screen where the snippet is copied.
  */
-class PortalEmbedSnippetDescription {
+class PortalEmbedSnippetDescription implements PortalEmbedSnippetDescriptionInterface {
 
 	/**
 	 * Wire the description.

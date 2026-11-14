@@ -27,6 +27,7 @@ use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Service\RequestedPortal;
 
 /**
  * The staff lists of reports and reveal requests answer only what the
@@ -220,7 +221,7 @@ class ReportListsControllerTest extends TestCase {
 			projection: new ReportProjection(),
 			reader: $reader,
 			caseTypes: $caseTypes,
-			userSession: $session
+			userSession: $session, requestedPortal: new RequestedPortal()
 		);
 	}//end controller()
 }//end class

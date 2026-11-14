@@ -207,6 +207,21 @@ class BrokerLoginTest extends TestCase {
 
 
 	/**
+	 * The organisation's override with one provider routed to a complete broker.
+	 *
+	 * @param string $provider The provider.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function routedFor(string $provider): array {
+		$routed = $this->routed();
+		$routed['loginRoutes'] = [$provider => 'broker'];
+		unset($routed['oidc']);
+		return $routed;
+	}//end routedFor()
+
+
+	/**
 	 * The writer over $this->rows.
 	 *
 	 * @return PortalObjectWriter
@@ -351,9 +366,66 @@ class BrokerLoginTest extends TestCase {
 		// subjectRef, audience, organisation, trust, roles, and no branch:
 		// integriq's envelope carries none yet (signin-eherkenning-branch),
 		// and no OIDC provider: integriq's route has no broker sign-out
-		// (signin-session-idle-warning-and-sso D6).
-		$this->assertSame(['subject-9', 'client', 'gemeente-x', 'substantial', ['client:read'], '', ''], $this->sessionCalls[0]);
+		// (signin-session-idle-warning-and-sso D6), and no company KVK number
+		// (site-mandates-the-represented-manage D8).
+		$this->assertSame(['subject-9', 'client', 'gemeente-x', 'substantial', ['client:read'], '', '', ''], $this->sessionCalls[0]);
 	}//end testEnvelopeMintsASessionWithItsTrust()
+
+
+	/**
+	 * An eHerkenning envelope mints a business session: identity type
+	 * `eherkenning`, audience `supplier`.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md#requirement-an-eherkenning-sign-in-is-a-business-sign-in-req-see-001
+	 */
+	public function testAnEherkenningEnvelopeMintsASupplierSession(): void {
+		$login = $this->login($this->routedFor('eherkenning'), 200, $this->exchangeBody(['provider' => 'eherkenning', 'sub' => 'kvk-12345678', 'subType' => 'kvk']));
+		$state = $this->queryOf((string)$login->start(org: 'gemeente-x', provider: 'eherkenning', returnTo: '/p', callbackUrl: 'https://p/cb'))['relayState'];
+
+		$this->assertSame('bearer-1', $login->complete(state: $state, code: 'one-time-code')['token']);
+		$this->assertSame(['eherkenning', 'kvk-12345678', 'gemeente-x', 'supplier', null, ''], $this->accountCalls[0]);
+		$this->assertSame('supplier', $this->sessionCalls[0][1]);
+		$this->assertSame(['supplier:read'], $this->sessionCalls[0][4]);
+	}//end testAnEherkenningEnvelopeMintsASupplierSession()
+
+
+	/**
+	 * An eIDAS envelope mints a visitor's session: identity type `eidas`,
+	 * audience `client`, and the trust integriq states.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md#requirement-an-eidas-sign-in-is-a-visitor-from-another-eu-country-req-see-002
+	 */
+	public function testAnEidasEnvelopeMintsAClientSession(): void {
+		$login = $this->login($this->routedFor('eidas'), 200, $this->exchangeBody(['provider' => 'eidas', 'sub' => 'DE/NL/0123456789', 'subType' => 'eidas']));
+		$state = $this->queryOf((string)$login->start(org: 'gemeente-x', provider: 'eidas', returnTo: '/p', callbackUrl: 'https://p/cb'))['relayState'];
+
+		$this->assertSame('bearer-1', $login->complete(state: $state, code: 'one-time-code')['token']);
+		$this->assertSame(['eidas', 'DE/NL/0123456789', 'gemeente-x', 'client', null, ''], $this->accountCalls[0]);
+		$this->assertSame('client', $this->sessionCalls[0][1]);
+		$this->assertSame('substantial', $this->sessionCalls[0][3]);
+	}//end testAnEidasEnvelopeMintsAClientSession()
+
+
+	/**
+	 * An eHerkenning account that names its own audience keeps it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md#requirement-an-eherkenning-sign-in-is-a-business-sign-in-req-see-001
+	 */
+	public function testAnEherkenningAccountThatNamesItsAudienceKeepsIt(): void {
+		$this->accountAudience = 'employer';
+		$login = $this->login($this->routedFor('eherkenning'), 200, $this->exchangeBody(['provider' => 'eherkenning', 'sub' => 'kvk-12345678', 'subType' => 'kvk']));
+		$state = $this->queryOf((string)$login->start(org: 'gemeente-x', provider: 'eherkenning', returnTo: '/p', callbackUrl: 'https://p/cb'))['relayState'];
+
+		$this->assertSame('bearer-1', $login->complete(state: $state, code: 'one-time-code')['token']);
+		$this->assertSame('supplier', $this->accountCalls[0][3]);
+		$this->assertSame('employer', $this->sessionCalls[0][1]);
+	}//end testAnEherkenningAccountThatNamesItsAudienceKeepsIt()
 
 
 	/**

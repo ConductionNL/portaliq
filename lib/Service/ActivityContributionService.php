@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\ActivityContributionServiceInterface;
 use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 
 /**
@@ -40,33 +41,7 @@ use OCA\Portaliq\Service\Identity\PortalAccountLookup;
  *
  * @spec openspec/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-raise-the-contribution-for-an-activitys-confirmed-places-and-portaliq-must-write-the-reference
  */
-class ActivityContributionService {
-	/**
-	 * The activity does not exist.
-	 */
-	public const REASON_NOT_FOUND = 'not_found';
-
-	/**
-	 * The activity asks no contribution.
-	 */
-	public const REASON_NOT_REQUESTED = 'payment_not_requested';
-
-	/**
-	 * The sign-ups could not be read.
-	 */
-	public const REASON_UNAVAILABLE = 'activity_unavailable';
-
-	/**
-	 * The raise answers the service passes on from shillinq, named here so a
-	 * caller maps one vocabulary.
-	 */
-	public const ERROR_INVALID = ShillinqContributionRaiser::ERROR_INVALID;
-
-	public const ERROR_FORBIDDEN = ShillinqContributionRaiser::ERROR_FORBIDDEN;
-
-	public const ERROR_SHILLINQ_UNAVAILABLE = ShillinqContributionRaiser::ERROR_UNAVAILABLE;
-
-	public const ERROR_FAILED = ShillinqContributionRaiser::ERROR_FAILED;
+class ActivityContributionService implements ActivityContributionServiceInterface {
 
 	/**
 	 * Shillinq's most recipients per call.

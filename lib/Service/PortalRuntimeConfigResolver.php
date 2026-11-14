@@ -27,8 +27,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Service\ExampleResident\ExampleSetResidents;
+use OCA\Portaliq\Kernel\Contracts\PortalRuntimeConfigResolverInterface;
 use OCA\Portaliq\Service\ExampleResident\ExampleResidentSignIn;
+use OCA\Portaliq\Service\ExampleResident\ExampleSetResidents;
 use OCA\Portaliq\Service\Identity\PortalWaysInResolver;
 use OCP\IConfig;
 use OCP\IRequest;
@@ -63,8 +64,7 @@ use OCP\IRequest;
  *
  * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-request-must-resolve-to-exactly-one-portal-or-to-none
  */
-class PortalRuntimeConfigResolver {
-
+class PortalRuntimeConfigResolver implements PortalRuntimeConfigResolverInterface {
 
 	/**
 	 * Constructor.
@@ -91,7 +91,6 @@ class PortalRuntimeConfigResolver {
 		private readonly ?ExampleSetResidents $exampleResidents=null,
 	) {
 	}//end __construct()
-
 
 	/**
 	 * Which portal serves this request.
@@ -137,7 +136,6 @@ class PortalRuntimeConfigResolver {
 			return null;
 		}
 	}//end resolvePortal()
-
 
 	/**
 	 * The runtime config for a resolved portal (or for none).
@@ -221,7 +219,6 @@ class PortalRuntimeConfigResolver {
 		return $this->applyPortalBranding(config: $config, portal: $portal);
 	}//end runtimeConfigFor()
 
-
 	/**
 	 * What the site may offer for this portal's example resident, read from
 	 * the switch and the install records (example-resident-demo-login).
@@ -256,7 +253,6 @@ class PortalRuntimeConfigResolver {
 		return $this->config->getAppValue('portaliq', 'dev_login_enabled', 'no') === 'yes';
 	}//end devLoginEnabled()
 
-
 	/**
 	 * The thematiq token stylesheet for a resolved portal, or ''.
 	 *
@@ -285,7 +281,6 @@ class PortalRuntimeConfigResolver {
 			return '';
 		}
 	}//end themeStylesheetFor()
-
 
 	/**
 	 * Overlay a resolved portal's presentation onto the neutral default.
@@ -343,7 +338,6 @@ class PortalRuntimeConfigResolver {
 		return $config;
 	}//end applyPortalBranding()
 
-
 	/**
 	 * The portal's declared frame ancestors, as CSP source expressions.
 	 *
@@ -393,7 +387,6 @@ class PortalRuntimeConfigResolver {
 		return array_values(array_unique($origins));
 	}//end frameAncestors()
 
-
 	/**
 	 * One frame ancestor rebuilt as `scheme://host[:port]`, or '' to drop it.
 	 *
@@ -419,7 +412,6 @@ class PortalRuntimeConfigResolver {
 
 		return $origin.':'.(int)$parts['port'];
 	}//end cspOrigin()
-
 
 	/**
 	 * Whether parsed URL parts describe an origin and nothing more.
@@ -454,7 +446,6 @@ class PortalRuntimeConfigResolver {
 		return in_array(($parts['path'] ?? ''), ['', '/'], true);
 	}//end isBareOrigin()
 
-
 	/**
 	 * The portal's logo URL, or '' when it is absent or not a safe URL.
 	 *
@@ -480,6 +471,5 @@ class PortalRuntimeConfigResolver {
 
 		return '';
 	}//end logoUrl()
-
 
 }//end class

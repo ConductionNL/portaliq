@@ -33,14 +33,15 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Messaging;
 
-use OCA\Portaliq\Contribution\MessageContactsKeys;
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
-use OCA\Portaliq\Contribution\PortalProviderLocator;
-use OCA\Portaliq\Contribution\TimelineProviderMethod;
+use OCA\Portaliq\Kernel\Contracts\MessageContactReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalProviderLocatorInterface;
 use OCA\Portaliq\Service\PortalObjectReader;
-use OCA\Portaliq\Service\Session\SessionTrust;
+use OCA\Portaliq\Kernel\Support\SessionTrust;
 use Psr\Log\LoggerInterface;
 use Throwable;
+use OCA\Portaliq\Kernel\Contracts\MessageContactsKeysInterface;
+use OCA\Portaliq\Kernel\Contracts\TimelineProviderMethodInterface;
 
 /**
  * Reads a resident's message contacts per record, and proves one.
@@ -50,7 +51,7 @@ use Throwable;
  * @SuppressWarnings(PHPMD.StaticAccess) -- SessionTrust::trustSatisfies,
  * the one trust ordering every portal gate shares.
  */
-class MessageContactReader {
+class MessageContactReader implements MessageContactReaderInterface {
 	/**
 	 * The most rows of one collection asked about.
 	 */
@@ -59,16 +60,20 @@ class MessageContactReader {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalContributionRegistry $registry The contributions of the resident's audience.
+	 * @param PortalContributionRegistryInterface $registry The contributions of the resident's audience.
 	 * @param PortalObjectReader         $reader   The scoped reader every collection read goes through.
-	 * @param PortalProviderLocator      $locator  Finds the contributing app's provider.
+	 * @param PortalProviderLocatorInterface      $locator  Finds the contributing app's provider.
 	 * @param LoggerInterface            $logger   Logs a provider that failed.
+	 * @param MessageContactsKeysInterface $messageContactsKeys The MessageContactsKeys helper.
+	 * @param TimelineProviderMethodInterface $timelineProviderMethod The TimelineProviderMethod helper.
 	 */
 	public function __construct(
-		private readonly PortalContributionRegistry $registry,
+		private readonly PortalContributionRegistryInterface $registry,
 		private readonly PortalObjectReader $reader,
-		private readonly PortalProviderLocator $locator,
+		private readonly PortalProviderLocatorInterface $locator,
 		private readonly LoggerInterface $logger,
+		private readonly MessageContactsKeysInterface $messageContactsKeys,
+		private readonly TimelineProviderMethodInterface $timelineProviderMethod,
 	) {
 	}//end __construct()
 
@@ -225,7 +230,7 @@ class MessageContactReader {
 
 		$method   = (string)$match['collection']['contacts']['provider'];
 		$provider = $this->locator->locate(appId: $match['app']);
-		if ($provider === null || (new TimelineProviderMethod())->callableOn(provider: $provider, method: $method) === false) {
+		if ($provider === null || $this->timelineProviderMethod->callableOn(provider: $provider, method: $method) === false) {
 			return [];
 		}
 
@@ -242,7 +247,7 @@ class MessageContactReader {
 
 		$label = $this->recordLabel(row: $row, fields: (array)($match['collection']['contacts']['recordLabelFields'] ?? []));
 		$out   = [];
-		foreach ((new MessageContactsKeys())->contacts(entries: $entries) as $contact) {
+		foreach ($this->messageContactsKeys->contacts(entries: $entries) as $contact) {
 			$out[] = $contact + ['recordRef' => $recordRef, 'recordLabel' => $label, 'collection' => (string)($match['collection']['id'] ?? '')];
 		}
 

@@ -37,7 +37,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Portaliq\Service\Plans\PlanFiles
  * @uses   \OCA\Portaliq\Contribution\CitizenDocumentUpload
- * @uses   \OCA\Portaliq\Service\UploadedFile
+ * @uses   \OCA\Portaliq\Kernel\Support\UploadedFile
  * @uses   \OCA\Portaliq\Service\Plans\PlanRules
  */
 class PlanFilesTest extends TestCase {

@@ -37,7 +37,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Contribution\CitizenWriteConfigNormaliser;
+use OCA\Portaliq\Kernel\Contracts\CitizenWritableSetResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\CitizenWriteConfigNormaliserInterface;
 use OCP\IL10N;
 
 /**
@@ -46,7 +47,7 @@ use OCP\IL10N;
  *
  * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
-class CitizenWritableSetResolver {
+class CitizenWritableSetResolver implements CitizenWritableSetResolverInterface {
 	/**
 	 * The property on the case type listing the fields a portal audience may
 	 * change. Each entry IS the field's flag (D16).
@@ -143,7 +144,6 @@ class CitizenWritableSetResolver {
 			]
 		);
 	}//end resolve()
-
 
 	/**
 	 * The writable set as the case type declares it for the case's status.
@@ -317,7 +317,7 @@ class CitizenWritableSetResolver {
 	 * @return array<string, mixed>|null
 	 */
 	private function actionCaseType(array $action, array $caseRow): ?array {
-		$config = ($action[CitizenWriteConfigNormaliser::KEY] ?? null);
+		$config = ($action[CitizenWriteConfigNormaliserInterface::KEY] ?? null);
 		if (is_array($config) === false) {
 			return null;
 		}
@@ -339,7 +339,7 @@ class CitizenWritableSetResolver {
 	 * @return string
 	 */
 	private function caseStatusOf(array $action, array $caseRow): string {
-		$config = (array)$action[CitizenWriteConfigNormaliser::KEY];
+		$config = (array)$action[CitizenWriteConfigNormaliserInterface::KEY];
 		return (string)($caseRow[$config['statusField']] ?? '');
 	}//end caseStatusOf()
 

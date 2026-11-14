@@ -3114,6 +3114,9 @@ OC.L10N.register(
         "Code for your website": "Code voor uw website",
         "Copy code": "Code kopiëren",
         "Copied": "Gekopieerd",
+        "Copy name": "Naam kopiëren",
+        "Copy value": "Waarde kopiëren",
+        "Copying did not work. Select the text and copy it yourself.": "Kopiëren lukte niet. Selecteer de tekst en kopieer hem zelf.",
         "Websites that may show the form": "Websites waarop het formulier mag staan",
         "On any other website the browser does not show the form.": "Op een andere website laat de browser het formulier niet zien.",
         "This form cannot be put on another website yet. Add the website addresses that may show it.": "Dit formulier kan nog niet op een andere website. Voeg de websites toe die het mogen tonen.",
@@ -3366,7 +3369,9 @@ OC.L10N.register(
         "Open the form with an introduction page": "Het formulier opent met een introductiepagina",
         "Off: the form opens at step 1. The introduction's text is kept.": "Uit: het formulier opent bij stap 1. De tekst van de introductie blijft bewaard.",
         "Introduction text": "Tekst van de introductie",
-        "The opening sentence under the form's heading.": "De openingszin onder de kop van het formulier."
+        "The opening sentence under the form's heading.": "De openingszin onder de kop van het formulier.",
+        "Event to sign up for": "Evenement om je voor aan te melden",
+        "No event": "Geen evenement"
     },
     "nplurals=2; plural=(n != 1);"
 )
