@@ -12,8 +12,8 @@
   - GIVEN `portalSubmission`, `portalAuditEntry` and `portalNotification` WHEN each declares `x-openregister-mcp` THEN it MUST carry `search` + `get` only, `scope: 'read'`, `readOnlyHint: true`, and the filters listed in the spec — each a verified declared property, so `McpAnnotationValidator` accepts the import
   - GIVEN the full register WHEN the derived catalog is built THEN no derived tool id for `portaliq` ends in `.create`, `.update` or `.delete`
   - GIVEN `portalAccount` and `portalSession` WHEN the diff is reviewed THEN neither gains an `x-openregister-mcp` block
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test
 
 ### Task 2: Build the governed `PortaliqToolProvider` — curated writes + `trafficSummary`
 - **spec_ref**: `openspec/changes/hermiq-ai-tooling/specs/portaliq-mcp-surface/spec.md#requirement-every-staff-write-action-is-a-curated-tool-governed-by-scope-and-reach`

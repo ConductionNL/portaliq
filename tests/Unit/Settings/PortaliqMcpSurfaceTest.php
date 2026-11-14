@@ -84,10 +84,51 @@ class PortaliqMcpSurfaceTest extends TestCase {
 	 */
 	public function testTheCatalogIsTheInboxSearchAndGet(): void {
 		$this->assertSame(
-			['portaliq.portalmessage.get', 'portaliq.portalmessage.search'],
+			[
+				'portaliq.portalmessage.get',
+				'portaliq.portalmessage.search',
+				'portaliq.portalnotification.get',
+				'portaliq.portalnotification.search',
+				'portaliq.portalsubmission.get',
+				'portaliq.portalsubmission.search',
+			],
 			$this->derivedCatalog()
 		);
 	}//end testTheCatalogIsTheInboxSearchAndGet()
+
+	/**
+	 * The operational records each carry a read-only search and get, with
+	 * exactly the filters the spec names, and each filter is a declared
+	 * property, or OpenRegister refuses the schema at import.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/hermiq-ai-tooling/specs/portaliq-mcp-surface/spec.md#requirement-derived-read-dialects-cover-the-operational-record
+	 */
+	public function testTheOperationalRecordsCarryReadOnlyDialects(): void {
+		$expected = [
+			'portalSubmission' => ['deliveryStatus', 'organisation', 'appId', 'actionId'],
+			'portalNotification' => ['status', 'channel', 'appId', 'organisation'],
+		];
+		foreach ($expected as $slug => $filters) {
+			$schema = $this->schemas()[$slug];
+			$tools = $schema['x-openregister-mcp']['tools'];
+
+			$this->assertTrue($schema['x-openregister-mcp']['enabled'], $slug . ' dialect must be enabled');
+			$this->assertSame(['search', 'get'], array_keys($tools), $slug . ' must offer search and get only');
+			foreach ($tools as $verb => $config) {
+				$this->assertSame('read', $config['scope'], $slug . '.' . $verb . ' must be read-scoped');
+				$this->assertTrue($config['readOnlyHint'], $slug . '.' . $verb . ' must carry readOnlyHint');
+				$this->assertArrayNotHasKey('destructiveHint', $config);
+				$this->assertGreaterThan(40, strlen($config['description']), $slug . '.' . $verb . ' needs agent-facing prose');
+			}
+
+			$this->assertSame($filters, $tools['search']['filters']);
+			foreach ($filters as $filter) {
+				$this->assertArrayHasKey($filter, $schema['properties'], $slug . ' filter ' . $filter . ' is not a property');
+			}
+		}
+	}//end testTheOperationalRecordsCarryReadOnlyDialects()
 
 	/**
 	 * No derived tool writes: no id ends in create, update or delete.
