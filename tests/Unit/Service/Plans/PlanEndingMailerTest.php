@@ -17,6 +17,7 @@ namespace OCA\Portaliq\Tests\Unit\Service\Plans;
 use OCA\Portaliq\Service\Mail\MailLog;
 use OCA\Portaliq\Service\Mail\MailSite;
 use OCA\Portaliq\Service\Mail\MailTemplateRenderer;
+use OCA\Portaliq\Service\Mail\ReminderMailer;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\Plans\PlanEndingMailer;
@@ -32,6 +33,7 @@ use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 #[CoversClass(PlanEndingMailer::class)]
+#[UsesClass(ReminderMailer::class)]
 #[UsesClass(MailTemplateRenderer::class)]
 class PlanEndingMailerTest extends TestCase {
 	/**

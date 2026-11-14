@@ -25,51 +25,29 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Plans;
 
-use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\Mail\MailLog;
-use OCA\Portaliq\Service\Mail\MailSite;
-use OCA\Portaliq\Service\Mail\MailTemplateRenderer;
-use OCA\Portaliq\Service\PortalAccountService;
-use OCA\Portaliq\Service\PortalDeepLinkBuilder;
-use OCP\L10N\IFactory;
-use OCP\Mail\IMailer;
-use Psr\Log\LoggerInterface;
-use Throwable;
+use OCA\Portaliq\Service\Mail\ReminderMailer;
+use OCP\IL10N;
 
 /**
  * Mails one participant that a plan is nearly ending (template `plan-ending`).
  *
  * @spec openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md#requirement-a-plan-near-its-end-date-asks-for-action-req-spl-004
  */
-class PlanEndingMailer {
+class PlanEndingMailer extends ReminderMailer {
 	/**
 	 * The template key, also the mail log's.
 	 */
 	public const TEMPLATE = 'plan-ending';
 
 	/**
-	 * Constructor.
-	 *
-	 * @param IMailer               $mailer      Sends the mail.
-	 * @param IFactory              $l10nFactory The portal's language.
-	 * @param PortalDeepLinkBuilder $deepLinks   The link back to the portal.
-	 * @param MailSite              $site        The portal the mail speaks for.
-	 * @param PortalAccountService  $accounts    The participant's address.
-	 * @param MailTemplateRenderer  $renderer    The portal's own text, when it has one.
-	 * @param MailLog               $mailLog     Records the outcome.
-	 * @param LoggerInterface       $logger      Notes a failure, without the address.
+	 * The id of the mail template.
 	 */
-	public function __construct(
-		private readonly IMailer $mailer,
-		private readonly IFactory $l10nFactory,
-		private readonly PortalDeepLinkBuilder $deepLinks,
-		private readonly MailSite $site,
-		private readonly PortalAccountService $accounts,
-		private readonly MailTemplateRenderer $renderer,
-		private readonly MailLog $mailLog,
-		private readonly LoggerInterface $logger,
-	) {
-	}//end __construct()
+	protected const MAIL_ID = 'portaliq.plan.ending';
+
+	/**
+	 * What the mail is about, as it appears in log lines.
+	 */
+	protected const NOUN = 'plan end';
 
 	/**
 	 * Mail one participant about a plan near its end date.
@@ -85,94 +63,31 @@ class PlanEndingMailer {
 	 * @spec openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md#requirement-a-plan-near-its-end-date-asks-for-action-req-spl-004
 	 */
 	public function send(string $subjectRef, string $organisation, string $plan, string $endDate, int $open): bool {
-		try {
-			$email = $this->address(subjectRef: $subjectRef);
-			if ($email === '' || $this->mailer->validateMailAddress($email) === false) {
-				return false;
-			}
-
-			return $this->mail(
-				email: $email,
-				subjectRef: $subjectRef,
-				organisation: $organisation,
-				values: ['plan' => $plan, 'date' => $endDate, 'open' => (string)$open]
-			);
-		} catch (Throwable $failure) {
-			$this->logger->warning('Portaliq: plan end mail not sent', ['exception' => get_class($failure)]);
-
-			return false;
-		}
+		return $this->deliver(
+			subjectRef: $subjectRef,
+			organisation: $organisation,
+			values: ['plan' => $plan, 'date' => $endDate, 'open' => (string)$open]
+		);
 	}//end send()
 
 	/**
-	 * The participant's address, or '' when there is none or the account was withdrawn.
+	 * The heading, default subject and default body of the mail.
 	 *
-	 * @param string $subjectRef The participant.
+	 * @param IL10N                 $l10n   The portal's language.
+	 * @param array<string, string> $values `plan`, `date` and `open`.
 	 *
-	 * @return string
+	 * @return array{heading: string, subject: string, body: string}
+	 *
+	 * @spec openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md#requirement-a-plan-near-its-end-date-asks-for-action-req-spl-004
 	 */
-	private function address(string $subjectRef): string {
-		$account = $this->accounts->findBySubjectRef(subjectRef: $subjectRef);
-		if (($account['status'] ?? '') === PortalAccountService::STATUS_VOID) {
-			$this->logger->info('Portaliq: no plan end mail to a withdrawn account', ['account' => (string)($account['id'] ?? '')]);
-			return '';
-		}
-
-		return trim((string)($account['email'] ?? ''));
-	}//end address()
-
-	/**
-	 * Compose, send and log the mail.
-	 *
-	 * @param string                $email        The address.
-	 * @param string                $subjectRef   The participant.
-	 * @param string                $organisation The tenant.
-	 * @param array<string, string> $values       `plan`, `date` and `open`.
-	 *
-	 * @return bool
-	 */
-	private function mail(string $email, string $subjectRef, string $organisation, array $values): bool {
-		$portal = $this->site->portal(organisation: $organisation);
-		$name   = $this->site->name(portal: $portal, organisation: $organisation);
-		$slug   = trim((string)($portal['slug'] ?? ''));
-		$l10n   = $this->l10nFactory->get(AppIdentity::APP_ID, $this->site->language(portal: $portal));
-		$day    = strtotime($values['date']);
-		if ($day !== false) {
-			$values['date'] = (string)$l10n->l('date', $day, ['width' => 'long']);
-		}
-
-		$heading = $l10n->t('Your plan is nearly ending');
-		$text    = $this->renderer->render(
-			portal: $slug,
-			key: self::TEMPLATE,
-			values: ['portal' => $name] + $values,
-			subject: $l10n->t('The plan %1$s ends on %2$s', [$values['plan'], $values['date']]),
-			body: $l10n->t(
+	protected function text(IL10N $l10n, array $values): array {
+		return [
+			'heading' => $l10n->t('Your plan is nearly ending'),
+			'subject' => $l10n->t('The plan %1$s ends on %2$s', [$values['plan'], $values['date']]),
+			'body'    => $l10n->t(
 				'The plan "%1$s" ends on %2$s. %3$s actions are still open. Extend the plan with your caseworker, or complete the actions.',
 				[$values['plan'], $values['date'], $values['open']]
-			)
-		);
-
-		$mail = $this->mailer->createEMailTemplate('portaliq.plan.ending', []);
-		$mail->setSubject($text['subject']);
-		$mail->addHeader();
-		$mail->addHeading($heading);
-		$mail->addBodyText($text['body']);
-		$mail->addBodyButton($l10n->t('Go to %1$s', [$name]), $this->deepLinks->forSite(portalSlug: $slug, organisation: $organisation));
-		$mail->addFooter();
-
-		$message = $this->mailer->createMessage();
-		$message->setTo([$email]);
-		$message->useTemplate($mail);
-
-		$sent   = (count($this->mailer->send($message)) === 0);
-		$status = 'failed';
-		if ($sent === true) {
-			$status = 'delivered';
-		}
-
-		$this->mailLog->record(portal: $slug, templateKey: self::TEMPLATE, email: $email, status: $status, subjectRef: $subjectRef);
-
-		return $sent;
-	}//end mail()
+			),
+		];
+	}//end text()
 }//end class

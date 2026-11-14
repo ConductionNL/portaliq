@@ -118,6 +118,15 @@ interface MailTemplateRendererInterface {
 				'open' => '3',
 			],
 		],
+		'action-due' => [
+			'label' => 'An action is nearly due',
+			'variables' => ['portal', 'action', 'date'],
+			'sample' => [
+				'portal' => 'Gemeente Voorbeeld',
+				'action' => 'Formulier inleveren',
+				'date' => '2026-10-14',
+			],
+		],
 	];
 
 	/**
