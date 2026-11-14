@@ -5,4 +5,4 @@
 - [x] **T03**: Node test `tests/intake-catalogue-costs.spec.mjs`: cost line, no cost line, conditions, malformed conditions.
 - [ ] **T04**: Ask opencatalogi, in its issue tracker, whether its `publication` schema can carry `conditions` as a list of strings; until it does, the conditions list stays empty.
 - [ ] **T05**: Playwright `tests/e2e/catalogue-entry-shows-costs-and-conditions.spec.ts` and a live check against the PtProducten and PtProduct boards; screenshots in the build PR.
-- [ ] **T06**: `openspec validate catalogue-entry-shows-costs-and-conditions --strict`.
+- [x] **T06**: `openspec validate catalogue-entry-shows-costs-and-conditions --strict` passes (REQ-CSC-001 text shortened under the 500-character limit, same rules).
