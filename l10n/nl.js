@@ -3468,6 +3468,7 @@ OC.L10N.register(
         "Feedback due on": "Terugkoppeling uiterlijk op",
         "Internal note": "Interne notitie",
         "No messages yet.": "Nog geen berichten.",
+        "Off: no second signer is needed.": "Uit: geen tweede ondertekenaar nodig.",
         "For example Gemeente Zeist.": "Bijvoorbeeld Gemeente Zeist.",
         "Lower case letters, digits and hyphens. It names the portal in links.": "Kleine letters, cijfers en streepjes. Hiermee heet het portaal in links.",
         "The organisation the portal and its data belong to.": "De organisatie waar het portaal en zijn gegevens bij horen.",

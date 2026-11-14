@@ -838,11 +838,12 @@ test('the Zuiddrecht site lays out its own area as the MijnMenu and MijnZaken bo
 		'rows',
 		'folders',
 	])
-	assert.equal(portal.version, '0.31.0')
+	assert.equal(portal.version, '0.32.0')
 	// 0.111.0: a form binding's `availability` (form-governance-availability-retention-and-routing).
 	// 0.112.0: a portal's `adminGroups` (operate-portals-per-organisation).
-	// 0.113.0: a portal's `traffic.excludedPaths` (intake-report-pages T07).
-	assert.equal(register.info.version, '0.113.0')
+	// 0.113.0 and 0.114.0: the Yivi identity type and the portal's desk group (resident-identity-in-forms).
+	// 0.115.0: a portal's `traffic.excludedPaths` (intake-report-pages T07), portal 0.32.0.
+	assert.equal(register.info.version, '0.115.0')
 })
 
 // zuiddrecht-site-details: the portal names the organisation of the example

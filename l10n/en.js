@@ -3315,6 +3315,7 @@ OC.L10N.register(
         "Feedback due on": "Feedback due on",
         "Internal note": "Internal note",
         "No messages yet.": "No messages yet.",
+        "Off: no second signer is needed.": "Off: no second signer is needed.",
         "New portal": "New portal",
         "For example Gemeente Zeist.": "For example Gemeente Zeist.",
         "Lower case letters, digits and hyphens. It names the portal in links.": "Lower case letters, digits and hyphens. It names the portal in links.",
