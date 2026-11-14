@@ -43,9 +43,9 @@ namespace OCA\Portaliq\Middleware;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Auth\PortalReadOnlySessionException;
 use OCA\Portaliq\Auth\PortalUnauthorizedException;
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
-use OCA\Portaliq\Service\PortalRateLimit;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalRateLimitInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Http\Response;
@@ -81,20 +81,20 @@ class PortalAuthMiddleware extends Middleware {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request object.
-	 * @param PortalSessionService $session The session resolver.
-	 * @param PortalContributionRegistry $registry Resolves the anonymous-reachable
+	 * @param PortalSessionServiceInterface $session The session resolver.
+	 * @param PortalContributionRegistryInterface $registry Resolves the anonymous-reachable
 	 *                                             surface
 	 *                                             (portal-page-provisioning).
 	 * @param IL10N $l10n Localises the message of a refused staff action.
-	 * @param PortalRateLimit|null $rateLimit Counts a collection read without a session
+	 * @param PortalRateLimitInterface|null $rateLimit Counts a collection read without a session
 	 *                                        per IP (portal-subject-rate-limit).
 	 */
 	public function __construct(
 		private readonly IRequest $request,
-		private readonly PortalSessionService $session,
-		private readonly PortalContributionRegistry $registry,
+		private readonly PortalSessionServiceInterface $session,
+		private readonly PortalContributionRegistryInterface $registry,
 		private readonly IL10N $l10n,
-		private readonly ?PortalRateLimit $rateLimit = null,
+		private readonly ?PortalRateLimitInterface $rateLimit = null,
 	) {
 	}//end __construct()
 

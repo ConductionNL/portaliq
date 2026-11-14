@@ -2501,6 +2501,35 @@
             }
         },
         "/events": {
+            "get": {
+                "operationId": "event-index",
+                "summary": "Every event, for staff choosing one: its id, title, start and status, the latest start first",
+                "description": "Every event, for staff choosing one: its id, title, start and status, the latest start first. A news item names the event whose sign-up it carries. Needs a signed-in Nextcloud user.",
+                "tags": [
+                    "event"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/Problem500"
+                    }
+                }
+            },
             "post": {
                 "operationId": "event-create",
                 "summary": "Create a draft event. The author is the signed-in staff member, never a value from the request",

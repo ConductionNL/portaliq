@@ -189,6 +189,7 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         // Events and sign-ups (events-and-signups, findings 9.6, 9.8). Staff
         // authoring requires a Nextcloud session; the guardian-facing
         // feed/rsvp/signup routes are PortalProtected (bearer session).
+        ['name' => 'event#index', 'url' => '/api/events', 'verb' => 'GET'],
         ['name' => 'event#create', 'url' => '/api/events', 'verb' => 'POST'],
         ['name' => 'event#publish', 'url' => '/api/events/{id}/publish', 'verb' => 'PUT'],
         ['name' => 'eventGuardian#feed', 'url' => '/api/events/feed', 'verb' => 'GET'],

@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\PortalSchemaReaderInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -39,7 +40,7 @@ use Throwable;
  *
  * @spec openspec/specs/portal-contribution-contract/spec.md#scoped-schema-introspection
  */
-class PortalSchemaReader {
+class PortalSchemaReader implements PortalSchemaReaderInterface {
 	/**
 	 * OpenRegister's schema mapper.
 	 */

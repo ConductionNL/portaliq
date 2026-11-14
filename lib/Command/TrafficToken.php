@@ -26,7 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Command;
 
-use OCA\Portaliq\Service\Traffic\TrafficServerToken;
+use OCA\Portaliq\Kernel\Contracts\TrafficServerTokenInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -42,12 +42,12 @@ class TrafficToken extends Command {
 	/**
 	 * Constructor.
 	 *
-	 * @param TrafficServerToken $tokens Mints and stores.
+	 * @param TrafficServerTokenInterface $tokens Mints and stores.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly TrafficServerToken $tokens,
+		private readonly TrafficServerTokenInterface $tokens,
 	) {
 		parent::__construct();
 	}//end __construct()

@@ -32,6 +32,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use InvalidArgumentException;
+use OCA\Portaliq\Kernel\Contracts\ShillinqContributionRaiserInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -43,26 +44,7 @@ use Throwable;
  *
  * @spec openspec/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-raise-the-contribution-for-an-activitys-confirmed-places-and-portaliq-must-write-the-reference
  */
-class ShillinqContributionRaiser {
-	/**
-	 * Shillinq is not installed or does not ship the raise.
-	 */
-	public const ERROR_UNAVAILABLE = 'shillinq_unavailable';
-
-	/**
-	 * Shillinq refused the charge as a whole (its 400).
-	 */
-	public const ERROR_INVALID = 'invalid_charge';
-
-	/**
-	 * Shillinq refused the staff member (its 403).
-	 */
-	public const ERROR_FORBIDDEN = 'forbidden';
-
-	/**
-	 * Any other failure.
-	 */
-	public const ERROR_FAILED = 'raise_failed';
+class ShillinqContributionRaiser implements ShillinqContributionRaiserInterface {
 
 	/**
 	 * Shillinq's raise service, by name only.

@@ -17,6 +17,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\PortalContributionFilterInterface;
+
 /**
  * Decides which contributions belong on a given portal.
  *
@@ -45,8 +47,7 @@ namespace OCA\Portaliq\Contribution;
  *
  * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-contribution-must-be-scoped-to-the-portal-it-targets
  */
-class PortalContributionFilter {
-
+class PortalContributionFilter implements PortalContributionFilterInterface {
 
 	/**
 	 * Keep only the contributions that belong on `$portalSlug`.
@@ -87,7 +88,6 @@ class PortalContributionFilter {
 		return $kept;
 	}//end forPortal()
 
-
 	/**
 	 * Whether one contribution belongs on the given portal.
 	 *
@@ -121,6 +121,5 @@ class PortalContributionFilter {
 
 		return false;
 	}//end targetsPortal()
-
 
 }//end class

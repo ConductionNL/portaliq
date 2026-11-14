@@ -25,7 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Proposals;
 
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 
 /**
  * Reads the `propose-change` actions the contributions declare for a register
@@ -48,10 +48,10 @@ class DeclaredProposableProperties {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalContributionRegistry $registry The contributing apps.
+	 * @param PortalContributionRegistryInterface $registry The contributing apps.
 	 */
 	public function __construct(
-		private readonly PortalContributionRegistry $registry,
+		private readonly PortalContributionRegistryInterface $registry,
 	) {
 	}//end __construct()
 

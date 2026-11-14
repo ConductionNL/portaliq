@@ -26,9 +26,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Command;
 
-use OCA\Portaliq\Service\Intake\IntakeQueueDrain;
-use OCA\Portaliq\Service\Intake\LandingSubmissionDrain;
-use OCA\Portaliq\Service\Intake\PortalDraftDrain;
+use OCA\Portaliq\Kernel\Contracts\IntakeQueueDrainInterface;
+use OCA\Portaliq\Kernel\Contracts\LandingSubmissionDrainInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalDraftDrainInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -46,14 +46,14 @@ class IntakeDrain extends Command {
 	/**
 	 * Constructor.
 	 *
-	 * @param IntakeQueueDrain      $drain  Does the work.
-	 * @param PortalDraftDrain|null $drafts Moves saved `portalDraft` rows into OpenRegister drafts (task 5.3).
-	 * @param LandingSubmissionDrain|null $landing Submits stored landing-page submissions into their form's destination.
+	 * @param IntakeQueueDrainInterface      $drain  Does the work.
+	 * @param PortalDraftDrainInterface|null $drafts Moves saved `portalDraft` rows into OpenRegister drafts (task 5.3).
+	 * @param LandingSubmissionDrainInterface|null $landing Submits stored landing-page submissions into their form's destination.
 	 */
 	public function __construct(
-		private readonly IntakeQueueDrain $drain,
-		private readonly ?PortalDraftDrain $drafts = null,
-		private readonly ?LandingSubmissionDrain $landing = null,
+		private readonly IntakeQueueDrainInterface $drain,
+		private readonly ?PortalDraftDrainInterface $drafts = null,
+		private readonly ?LandingSubmissionDrainInterface $landing = null,
 	) {
 		parent::__construct();
 	}//end __construct()

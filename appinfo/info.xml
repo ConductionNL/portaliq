@@ -167,6 +167,9 @@
         <!-- submit-creates-the-case-directly: send the requests still waiting
              in the old intake queue into their destination, then report. -->
         <command>OCA\Portaliq\Command\IntakeDrain</command>
+        <!-- contributing-apps-census: which enabled apps contribute to the
+             portal, per audience; plain text or JSON output. -->
+        <command>OCA\Portaliq\Command\Contributions</command>
     </commands>
 
     <settings>

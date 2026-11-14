@@ -35,13 +35,15 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\RowActionResolverInterface;
+
 /**
  * Resolves `rowActions` (and the singular `rowAction`) against the actions of
  * the same contribution, and sanitises `noticeField`.
  *
  * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-server-enforced-status-transitions
  */
-class RowActionResolver {
+class RowActionResolver implements RowActionResolverInterface {
 	/**
 	 * A field name the portal may read or stamp.
 	 */
