@@ -42,7 +42,6 @@ use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Stamps a missing organisation from the row's portal, or reports the row.
@@ -51,6 +50,7 @@ use Throwable;
  */
 class StampMissingOrganisation implements IRepairStep {
 	use ObjectServiceLookup;
+	use SchemaRowAccess;
 
 	/**
 	 * The register the rows live in.
@@ -76,6 +76,16 @@ class StampMissingOrganisation implements IRepairStep {
 	 * A bound on the pages read per schema.
 	 */
 	private const MAX_PAGES = 10000;
+
+	/**
+	 * Logged when a schema cannot be read.
+	 */
+	private const ROWS_UNREADABLE_LOG = 'Portaliq: no rows to stamp';
+
+	/**
+	 * Logged when a row cannot be written.
+	 */
+	private const WRITE_FAILED_LOG = 'Portaliq: a row could not be given its organisation';
 
 	/**
 	 * Constructor.
@@ -120,29 +130,19 @@ class StampMissingOrganisation implements IRepairStep {
 		}
 
 		$portals = $this->rows(objectService: $objectService, schema: self::PORTAL_SCHEMA);
-		$byPortal = $this->organisationsByPortal(portals: $portals);
-		$sole = $this->soleOrganisation(portals: $portals);
+		$placing = [
+			'portals' => $portals,
+			'byPortal' => $this->organisationsByPortal(portals: $portals),
+			'sole' => $this->soleOrganisation(portals: $portals),
+		];
 
 		$stamped = 0;
 		$left = [];
 		foreach ($this->organisationSchemas() as $schema) {
-			$rows = $portals;
-			if ($schema !== self::PORTAL_SCHEMA) {
-				$rows = $this->rows(objectService: $objectService, schema: $schema);
-			}
-
-			foreach ($rows as $row) {
-				if ($this->text(value: $row['organisation'] ?? null) !== '') {
-					continue;
-				}
-
-				$organisation = $this->placement(schema: $schema, row: $row, byPortal: $byPortal, sole: $sole);
-				if ($organisation !== null && $this->stamp(objectService: $objectService, schema: $schema, row: $row, organisation: $organisation) === true) {
-					$stamped++;
-					continue;
-				}
-
-				$left[$schema] = (($left[$schema] ?? 0) + 1);
+			$counts = $this->stampSchema(objectService: $objectService, schema: $schema, placing: $placing);
+			$stamped += $counts['stamped'];
+			if ($counts['left'] > 0) {
+				$left[$schema] = $counts['left'];
 			}
 		}
 
@@ -153,26 +153,74 @@ class StampMissingOrganisation implements IRepairStep {
 	}//end run()
 
 	/**
+	 * Stamp the rows of one schema that name no organisation.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param string               $schema        The schema slug.
+	 * @param array<string, mixed> $placing       The stored portals, portal slug to organisation, and the sole organisation.
+	 *
+	 * @return array{stamped: int, left: int}
+	 */
+	private function stampSchema(object $objectService, string $schema, array $placing): array {
+		$rows = $placing['portals'];
+		if ($schema !== self::PORTAL_SCHEMA) {
+			$rows = $this->rows(objectService: $objectService, schema: $schema);
+		}
+
+		$counts = ['stamped' => 0, 'left' => 0];
+		foreach ($this->unplaced(rows: $rows) as $row) {
+			$organisation = $this->placement(schema: $schema, row: $row, placing: $placing);
+			if ($organisation !== null
+				&& $this->writeFields(objectService: $objectService, schema: $schema, row: $row, fields: ['organisation' => $organisation]) === true
+			) {
+				$counts['stamped']++;
+				continue;
+			}
+
+			$counts['left']++;
+		}
+
+		return $counts;
+	}//end stampSchema()
+
+	/**
+	 * The rows that name no organisation.
+	 *
+	 * @param list<array<string, mixed>> $rows The stored rows.
+	 *
+	 * @return list<array<string, mixed>>
+	 */
+	private function unplaced(array $rows): array {
+		$out = [];
+		foreach ($rows as $row) {
+			if ($this->text(value: $row['organisation'] ?? null) === '') {
+				$out[] = $row;
+			}
+		}
+
+		return $out;
+	}//end unplaced()
+
+	/**
 	 * The organisation a row without one is given, or null when that would be a guess.
 	 *
-	 * @param string                $schema   The schema slug.
-	 * @param array<string, mixed>  $row      The stored row.
-	 * @param array<string, string> $byPortal Portal slug to its organisation.
-	 * @param string|null           $sole     The one organisation every portal belongs to.
+	 * @param string               $schema  The schema slug.
+	 * @param array<string, mixed> $row     The stored row.
+	 * @param array<string, mixed> $placing Portal slug to its organisation (`byPortal`) and the one organisation every portal belongs to (`sole`).
 	 *
 	 * @return string|null
 	 */
-	private function placement(string $schema, array $row, array $byPortal, ?string $sole): ?string {
+	private function placement(string $schema, array $row, array $placing): ?string {
 		if ($schema === self::PORTAL_SCHEMA) {
 			return null;
 		}
 
 		$portal = $this->text(value: $row['portal'] ?? null);
 		if ($portal !== '') {
-			return ($byPortal[$portal] ?? null);
+			return ($placing['byPortal'][$portal] ?? null);
 		}
 
-		return $sole;
+		return $placing['sole'];
 	}//end placement()
 
 	/**
@@ -237,47 +285,6 @@ class StampMissingOrganisation implements IRepairStep {
 	}//end soleOrganisation()
 
 	/**
-	 * Write the organisation onto one row.
-	 *
-	 * @param object               $objectService OpenRegister's object service.
-	 * @param string               $schema        The schema slug.
-	 * @param array<string, mixed> $row           The stored row.
-	 * @param string               $organisation  The organisation slug.
-	 *
-	 * @return bool True when the row was written.
-	 */
-	private function stamp(object $objectService, string $schema, array $row, string $organisation): bool {
-		$self = [];
-		if (is_array($row['@self'] ?? null) === true) {
-			$self = $row['@self'];
-		}
-
-		$uuid = (string)($self['uuid'] ?? $self['id'] ?? $row['id'] ?? '');
-		if ($uuid === '') {
-			return false;
-		}
-
-		try {
-			if ($this->context->apply(objectService: $objectService, schemaSlug: $schema) === false) {
-				return false;
-			}
-
-			unset($row['@self']);
-			$row['organisation'] = $organisation;
-			$objectService->saveObject(object: $row, register: self::REGISTER, schema: $schema, uuid: $uuid, _rbac: false, _multitenancy: false);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Portaliq: a row could not be given its organisation',
-				['uuid' => $uuid, 'schema' => $schema, 'reason' => $e->getMessage()]
-			);
-
-			return false;
-		}
-
-		return true;
-	}//end stamp()
-
-	/**
 	 * A value as a trimmed string; anything that is not a string is ''.
 	 *
 	 * @param mixed $value The value.
@@ -291,46 +298,4 @@ class StampMissingOrganisation implements IRepairStep {
 
 		return trim($value);
 	}//end text()
-
-	/**
-	 * Every stored row of a schema, a page at a time.
-	 *
-	 * @param object $objectService OpenRegister's object service.
-	 * @param string $schema        The schema slug.
-	 *
-	 * @return list<array<string, mixed>>
-	 */
-	private function rows(object $objectService, string $schema): array {
-		$out    = [];
-		$offset = 0;
-		$pages  = 0;
-		do {
-			$pages++;
-			try {
-				if ($this->context->apply(objectService: $objectService, schemaSlug: $schema) === false) {
-					return $out;
-				}
-
-				$page = (array)$objectService->findAll(config: ['limit' => self::PAGE, 'offset' => $offset], _rbac: false, _multitenancy: false);
-			} catch (Throwable $e) {
-				$this->logger->info('Portaliq: no rows to stamp', ['schema' => $schema, 'reason' => $e->getMessage()]);
-
-				return $out;
-			}
-
-			$read    = count($page);
-			$offset += $read;
-			foreach ($page as $row) {
-				if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-					$row = $row->jsonSerialize();
-				}
-
-				if (is_array($row) === true) {
-					$out[] = $row;
-				}
-			}
-		} while ($read === self::PAGE && $pages < self::MAX_PAGES);
-
-		return $out;
-	}//end rows()
 }//end class

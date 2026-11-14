@@ -39,7 +39,6 @@ use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Assigns the only portal to content that has none.
@@ -48,6 +47,7 @@ use Throwable;
  */
 class BackfillCmsPortalReference implements IRepairStep {
 	use ObjectServiceLookup;
+	use SchemaRowAccess;
 
 	/**
 	 * The schemas whose objects must name a portal.
@@ -75,6 +75,16 @@ class BackfillCmsPortalReference implements IRepairStep {
 	 * A bound on the pages read per schema.
 	 */
 	private const MAX_PAGES = 10000;
+
+	/**
+	 * Logged when a schema cannot be read.
+	 */
+	private const ROWS_UNREADABLE_LOG = 'Portaliq: no content to place';
+
+	/**
+	 * Logged when an object cannot be written.
+	 */
+	private const WRITE_FAILED_LOG = 'Portaliq: content could not be given its portal';
 
 	/**
 	 * Constructor.
@@ -169,31 +179,7 @@ class BackfillCmsPortalReference implements IRepairStep {
 	 * @return bool True when the object was written.
 	 */
 	private function assign(object $objectService, string $schema, array $row, string $portal): bool {
-		$self = [];
-		if (is_array($row['@self'] ?? null) === true) {
-			$self = $row['@self'];
-		}
-
-		$uuid = (string)($self['uuid'] ?? $self['id'] ?? $row['id'] ?? '');
-		if ($uuid === '') {
-			return false;
-		}
-
-		try {
-			if ($this->context->apply(objectService: $objectService, schemaSlug: $schema) === false) {
-				return false;
-			}
-
-			unset($row['@self']);
-			$row['portal'] = $portal;
-			$objectService->saveObject(object: $row, register: self::REGISTER, schema: $schema, uuid: $uuid, _rbac: false, _multitenancy: false);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: content could not be given its portal', ['uuid' => $uuid, 'schema' => $schema, 'reason' => $e->getMessage()]);
-
-			return false;
-		}
-
-		return true;
+		return $this->writeFields(objectService: $objectService, schema: $schema, row: $row, fields: ['portal' => $portal]);
 	}//end assign()
 
 	/**
@@ -215,45 +201,4 @@ class BackfillCmsPortalReference implements IRepairStep {
 		return $slugs;
 	}//end portalSlugs()
 
-	/**
-	 * Every stored object of a schema, a page at a time.
-	 *
-	 * @param object $objectService OpenRegister's object service.
-	 * @param string $schema        The schema slug.
-	 *
-	 * @return list<array<string, mixed>>
-	 */
-	private function rows(object $objectService, string $schema): array {
-		$out    = [];
-		$offset = 0;
-		$pages  = 0;
-		do {
-			$pages++;
-			try {
-				if ($this->context->apply(objectService: $objectService, schemaSlug: $schema) === false) {
-					return $out;
-				}
-
-				$page = (array)$objectService->findAll(config: ['limit' => self::PAGE, 'offset' => $offset], _rbac: false, _multitenancy: false);
-			} catch (Throwable $e) {
-				$this->logger->info('Portaliq: no content to place', ['schema' => $schema, 'reason' => $e->getMessage()]);
-
-				return $out;
-			}
-
-			$read    = count($page);
-			$offset += $read;
-			foreach ($page as $row) {
-				if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-					$row = $row->jsonSerialize();
-				}
-
-				if (is_array($row) === true) {
-					$out[] = $row;
-				}
-			}
-		} while ($read === self::PAGE && $pages < self::MAX_PAGES);
-
-		return $out;
-	}//end rows()
 }//end class
