@@ -49,10 +49,10 @@
 				class="portaliq-proposal-queue__item">
 				<ProposalSummary
 					:label="channelLabel(proposal)"
-					:proposed-at="proposal.proposedAt || ''"
+					:proposedAt="proposal.proposedAt || ''"
 					:note="proposal.note || ''"
 					:changes="proposal.changes || []"
-					show-current />
+					showCurrent />
 
 				<div
 					v-if="driftFor(proposal).length > 0"
@@ -192,7 +192,7 @@
 					<ProposalSummary
 						:changes="proposal.changes || []"
 						:note="proposal.note || ''"
-						:proposed-at="proposal.proposedAt || ''"
+						:proposedAt="proposal.proposedAt || ''"
 						:label="stateLabel(proposal.state)" />
 					<div
 						v-if="proposal.state === 'queued'"
@@ -217,9 +217,9 @@
 import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
+import ProposalSummary from './ProposalSummary.vue'
 import { leafReportMixin } from './leafReport.js'
 import { createProposalQueue, formatDate, formatValue, inputValue } from './proposalQueue.js'
-import ProposalSummary from './ProposalSummary.vue'
 
 export default {
 	name: 'ProposalQueueWidget',

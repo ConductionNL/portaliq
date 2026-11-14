@@ -196,13 +196,9 @@ class ProposalController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function context(string $register, string $schema, string $id): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->guard->mayRead(register: $register, schema: $schema, id: $id) === false) {
-			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		$user = $this->readerOf(register: $register, schema: $schema, id: $id);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		$subject   = ['subjectRegister' => $register, 'subjectSchema' => $schema, 'subjectId' => $id];
@@ -235,13 +231,9 @@ class ProposalController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function mineOnRecord(string $register, string $schema, string $id): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->guard->mayRead(register: $register, schema: $schema, id: $id) === false) {
-			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		$user = $this->readerOf(register: $register, schema: $schema, id: $id);
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		// Scoped on the session's own uid, then narrowed to this record and to
@@ -517,6 +509,31 @@ class ProposalController extends Controller {
 
 		return ['proposal' => $proposal, 'subjectRow' => $this->subjectRowOf(proposal: $proposal), 'reviewer' => $user->getUID()];
 	}//end decidable()
+
+	/**
+	 * The signed-in user when they may read the record, else the refusal:
+	 * 401 without a session, 403 when the record is not theirs to read.
+	 *
+	 * @param string $register The register the record lives in.
+	 * @param string $schema   The schema the record lives in.
+	 * @param string $id       The record.
+	 *
+	 * @return IUser|JSONResponse
+	 *
+	 * @spec openspec/changes/change-proposals-reach-the-case-page/specs/change-proposal-queue/spec.md#requirement-a-colleague-who-may-read-a-record-proposes-from-the-queue-widget-req-cpc-001
+	 */
+	private function readerOf(string $register, string $schema, string $id): IUser|JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->guard->mayRead(register: $register, schema: $schema, id: $id) === false) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		return $user;
+	}//end readerOf()
 
 	/**
 	 * Whether this user may review a proposal on its record.
