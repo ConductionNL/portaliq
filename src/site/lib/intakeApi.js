@@ -375,10 +375,14 @@ export async function submitIntake(conn, submission) {
  * @param {string} [portal] The portal slug, or ''.
  * @return {object} The body.
  */
-function submissionBody({ route, answers, statements = [], verifiedEmails = {} }, portal) {
+function submissionBody({ route, answers, statements = [], verifiedEmails = {}, onBehalf = null }, portal) {
 	const body = { route, answers: answers || {} }
 	if (verifiedEmails && Object.keys(verifiedEmails).length > 0) {
 		body.verifiedEmails = verifiedEmails
+	}
+	// The applicant a desk employee fills the form in for (resident-identity-in-forms T06).
+	if (onBehalf && typeof onBehalf.kind === 'string' && typeof onBehalf.value === 'string') {
+		body.onBehalf = { kind: onBehalf.kind, value: onBehalf.value }
 	}
 	withPortal(body, portal)
 	if (Array.isArray(statements) && statements.length > 0) {
@@ -763,4 +767,49 @@ function carriesProof(response, parsed) {
 		&& typeof parsed?.proof === 'string'
 		&& parsed.proof !== ''
 	)
+}
+
+/**
+ * Look up the applicant a desk employee fills the form in for: the BRP for a
+ * BSN, the KvK for a KvK number, nothing for a name. The server writes the
+ * audit line.
+ *
+ * @param {IntakeConnection} conn The connection, with the desk session's bearer.
+ * @param {{route: string, kind: string, value: string}} ask The form, the kind and the number or name.
+ * @return {Promise<{ok: boolean, error: string, applicant: object|null, available: boolean, prefill: object, reason: string}>} The outcome.
+ *
+ * @spec openspec/changes/resident-identity-in-forms/tasks.md#T06
+ */
+export async function lookUpApplicant(conn, { route, kind, value }) {
+	try {
+		const response = await postIntake(conn, {
+			path: '/intake/on-behalf',
+			body: withPortal({ route, kind, value }, conn.portal),
+		})
+		const parsed = await response.json().catch(() => ({}))
+		return {
+			ok: response.ok === true,
+			error: response.ok ? '' : String(parsed?.error || 'failed'),
+			applicant: response.ok ? parsed?.applicant || null : null,
+			available: parsed?.available === true,
+			prefill: parsed?.prefill && typeof parsed.prefill === 'object' ? parsed.prefill : {},
+			reason: String(parsed?.reason || ''),
+		}
+	} catch {
+		return { ok: false, error: 'failed', applicant: null, available: false, prefill: {}, reason: '' }
+	}
+}
+
+/**
+ * Where "Inloggen met werkaccount" starts: the desk sign-in for this form,
+ * coming back to the page the employee is on.
+ *
+ * @param {string} base The portal API base.
+ * @param {{portal: string, route: string, returnTo: string}} where The portal, the form and the page to come back to.
+ * @return {string} The address.
+ *
+ * @spec openspec/changes/resident-identity-in-forms/tasks.md#T06
+ */
+export function deskSignInUrl(base, { portal, route, returnTo }) {
+	return intakeUrl(base, '/session/desk', { portal, route, returnTo })
 }

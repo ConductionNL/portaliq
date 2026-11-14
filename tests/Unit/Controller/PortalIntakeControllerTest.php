@@ -637,6 +637,23 @@ class PortalIntakeControllerTest extends TestCase {
 	 *
 	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-an-employee-can-fill-in-a-form-for-a-resident-or-company-req-rif-005
 	 */
+	/**
+	 * The sign-in refusal tells the page what to show beside the choice: the
+	 * Yivi attributes the form asks for and whether staff may fill it in.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-resident-can-sign-in-with-yivi-and-share-only-what-the-form-asks-req-rif-004
+	 */
+	public function testTheSignInRefusalNamesTheYiviAttributesAndTheStaffMode(): void {
+		$desk = self::deskSetting();
+		$controller = $this->controller(render: $this->hostedForm() + ['minTrust' => 'substantial'], binding: $desk['binding'], site: $desk['site']);
+		$this->doubles['prefill']->method('yiviRequest')->willReturn(['pbdf.gemeente.personalData.fullname']);
+
+		$data = $controller->form(route: 'aanvragen/verhuizing')->getData();
+
+		$this->assertSame(['pbdf.gemeente.personalData.fullname'], $data['yiviAttributes']);
+		$this->assertTrue($data['staffMayFill']);
+	}//end testTheSignInRefusalNamesTheYiviAttributesAndTheStaffMode()
+
 	public function testTheLookupRouteRefusesAnyoneButAnEmployee(): void {
 		$desk = self::deskSetting();
 		$controller = $this->controller(render: $this->hostedForm(), binding: $desk['binding'], subject: ['subjectRef' => 'bsn:999993653', 'trust' => 'substantial'], site: $desk['site'], onBehalf: $this->onBehalf());

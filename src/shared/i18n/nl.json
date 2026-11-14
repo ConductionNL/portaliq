@@ -500,5 +500,6 @@
 	"My cases and requests": "Mijn zaken en verzoeken",
 	"Your details": "Uw gegevens",
 	"Logged in as {name}, to {area}": "Ingelogd als {name}, naar {area}",
-	"Logged in, to {area}": "Ingelogd, naar {area}"
+	"Logged in, to {area}": "Ingelogd, naar {area}",
+	"Share only the details this form needs.": "Deel alleen de gegevens die dit formulier nodig heeft."
 }

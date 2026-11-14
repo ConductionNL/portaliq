@@ -791,12 +791,22 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			return null;
 		}
 
+		// What the sign-in page shows beside the choice: the Yivi attributes
+		// the form asks for (REQ-RIF-004) and whether an employee may fill it
+		// in (REQ-RIF-005).
+		$body = [
+			'error' => 'sign_in_required',
+			'minTrust' => $required,
+			'fee' => ($render['fee'] ?? null),
+			'yiviAttributes' => $this->prefill->yiviRequest(binding: $binding),
+			'staffMayFill' => (($binding['staffMayFill'] ?? false) === true),
+		];
 		if ($subject === null) {
-			return new JSONResponse(['error' => 'sign_in_required', 'minTrust' => $required, 'fee' => ($render['fee'] ?? null)], Http::STATUS_UNAUTHORIZED);
+			return new JSONResponse($body, Http::STATUS_UNAUTHORIZED);
 		}
 
 		if (SessionTrust::trustSatisfies(subjectTrust: ($subject['trust'] ?? ''), minTrust: $required) === false) {
-			return new JSONResponse(['error' => 'sign_in_required', 'minTrust' => $required, 'fee' => ($render['fee'] ?? null)], Http::STATUS_FORBIDDEN);
+			return new JSONResponse($body, Http::STATUS_FORBIDDEN);
 		}
 
 		return null;
