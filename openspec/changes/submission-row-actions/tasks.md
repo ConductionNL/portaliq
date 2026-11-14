@@ -12,9 +12,10 @@
 - [x] 1.4 A write guard refuses a `portalSubmission` update that changes a proof field
   - Files: lib/Listener/SubmissionWriteGuardListener.php, lib/AppInfo/Application.php
   - Test: tests/Unit/Listener/SubmissionWriteGuardListenerTest.php
-- [ ] 2.1 nc-vue: an `api-call` can open what the call answered (`openResponse`), if the dispatcher still lacks it
+- [x] 2.1 nc-vue: an `api-call` can open what the call answered (`openResponse`), if the dispatcher still lacks it
   - Files: nextcloud-vue src/utils/actionsDispatcher.js, manifest schema
-- [ ] 2.2 `PortalSubmissions.config.actions`: Edit, Link a form, Conversation in Talk, Register again, nothing else; visibility per deliveryStatus and per installed app; showCopyAction, showDeleteAction, showMassCopy and showMassDelete false
+  - Not needed: nc-vue 2.180.0 still lacks it, so "Conversation in Talk" is an app handler (`startSubmissionConversation` in src/lib/submissionActions.js) that reads the linked room first and opens what OpenRegister answers. No library change.
+- [x] 2.2 `PortalSubmissions.config.actions`: Edit, Link a form, Conversation in Talk, Register again, nothing else; visibility per deliveryStatus and per installed app; showCopyAction, showDeleteAction, showMassCopy and showMassDelete false
   - Files: src/manifest.json, l10n/en.json, l10n/nl.json
   - Test: tests/submission-row-actions.spec.mjs
 - [ ] 3.1 Live: on PtInzendingen, register a failed row again, start a Talk room and link a form; the open row menu matches the board
