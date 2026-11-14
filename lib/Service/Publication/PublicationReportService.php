@@ -472,7 +472,7 @@ class PublicationReportService {
 	 * @return DateTimeImmutable
 	 */
 	private function now(): DateTimeImmutable {
-		return DateTimeImmutable::createFromInterface($this->time->getDateTime());
+		return new DateTimeImmutable($this->time->getDateTime()->format(DateTimeInterface::ATOM));
 	}//end now()
 
 	/**

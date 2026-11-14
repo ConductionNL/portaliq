@@ -36,7 +36,7 @@ function idOf(row) {
  */
 export function closeFailureKey(status) {
 	if (status === 403) {
-		return 'Only the owner of this portal\'s error reports can close them.'
+		return "Only the owner of this portal's error reports can close them."
 	}
 	return 'The report could not be closed. Try again.'
 }
@@ -78,7 +78,9 @@ export function createPublicationReportHandlers({
 		}
 		try {
 			await post(
-				generateUrl('/apps/portaliq/api/publication-reports/{id}/close', { id }),
+				generateUrl('/apps/portaliq/api/publication-reports/{id}/close', {
+					id,
+				}),
 				{ portal: String(row?.portal || ''), status },
 			)
 		} catch (error) {
@@ -106,7 +108,11 @@ export function createPublicationReportHandlers({
 		 * @spec openspec/changes/publication-error-reports-and-withheld-notices/specs/portal-federated-search/spec.md#requirement-a-report-reaches-the-named-owner-req-per-002
 		 */
 		markReportNotApplicable({ item }) {
-			return close(item, 'not-applicable', 'The report is marked not applicable.')
+			return close(
+				item,
+				'not-applicable',
+				'The report is marked not applicable.',
+			)
 		},
 	}
 }

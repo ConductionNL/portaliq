@@ -88,7 +88,7 @@
     {
       "id": "PublicationReportsMenu",
       "label": "Error reports",
-      "icon": "AlertOctagonOutline",
+      "icon": "AlertCircleOutline",
       "route": "PublicationReports",
       "order": 26,
       "visibleIf": {
@@ -5296,7 +5296,7 @@
             "id": "report-data",
             "type": "data",
             "title": "Report",
-            "icon": "AlertOctagonOutline",
+            "icon": "AlertCircleOutline",
             "content": {
               "columns": 2,
               "include": [

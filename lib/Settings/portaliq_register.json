@@ -12193,7 +12193,7 @@
                         "portaliq-medewerkers"
                     ]
                 },
-                "icon": "AlertOctagon",
+                "icon": "AlertCircleOutline",
                 "version": "0.1.0",
                 "title": "Publication Error Report",
                 "description": "A visitor's report of an error in a publication, sent from its page while the portal has error reports on (publication-error-reports-and-withheld-notices REQ-PER-002). It reaches the portal's owner of error reports, who marks it handled or not applicable. It holds no IP address and no user agent.",

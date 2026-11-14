@@ -28,6 +28,10 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Publication;
 
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCP\IRequest;
+use Throwable;
+
 /**
  * Tells the site shell that a path is a withdrawn publication's page.
  *
@@ -47,14 +51,42 @@ class WithdrawnPublication {
 	/**
 	 * Constructor.
 	 *
-	 * @param PublicPublicationRead $publications Reads the publication anonymously.
+	 * @param PublicPublicationRead        $publications Reads the publication anonymously.
+	 * @param PortalResolverInterface|null $portals      Resolves the serving portal for a request.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly PublicPublicationRead $publications,
+		private readonly ?PortalResolverInterface $portals = null,
 	) {
 	}//end __construct()
+
+	/**
+	 * The same answer for a site request: the portal it resolves to, by the
+	 * slug it names or else by its host. A resolver failure is no portal.
+	 *
+	 * @param IRequest    $request The site request.
+	 * @param string|null $slug    The slug it names, or null.
+	 * @param string      $path    The path under the site route.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/publication-error-reports-and-withheld-notices/specs/portal-federated-search/spec.md#requirement-a-withdrawn-link-says-it-was-withdrawn-and-why-req-per-004
+	 */
+	public function isWithdrawnRequest(IRequest $request, ?string $slug, string $path): bool {
+		if ($this->portals === null) {
+			return false;
+		}
+
+		try {
+			$portal = $this->portals->resolve(request: $request, portalSlug: $slug);
+		} catch (Throwable) {
+			return false;
+		}
+
+		return $this->isWithdrawnPage(portal: $portal, path: $path);
+	}//end isWithdrawnRequest()
 
 	/**
 	 * Whether the path is `/publicatie/<id>` for a publication the public read

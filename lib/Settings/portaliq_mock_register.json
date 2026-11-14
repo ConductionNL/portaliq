@@ -4128,6 +4128,55 @@
             "violations": []
           }
         ]
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "publicationErrorReport",
+          "slug": "publicationerrorreport-conceptversie-bijlage"
+        },
+        "portal": "zuiddrecht",
+        "publication": "7f3c2a9e-1b4d-4e8a-9c2f-5d6e7a8b9c0d",
+        "publicationTitle": "Besluit op Woo-verzoek parkeerbeleid",
+        "document": "Bijlage 2",
+        "description": "Bijlage 2 is de conceptversie, niet het vastgestelde stuk.",
+        "contactEmail": "h.bakker@example.nl",
+        "status": "new",
+        "receivedAt": "2026-10-02T10:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "publicationErrorReport",
+          "slug": "publicationerrorreport-naam-niet-gelakt"
+        },
+        "portal": "zuiddrecht",
+        "publication": "3b9d1e70-5c2a-4f6b-8e1d-2a7c9f0b4e15",
+        "publicationTitle": "Raadsinformatiebrief jeugdzorg",
+        "document": "Brief",
+        "description": "Op pagina 3 staat de naam van een inwoner, die had onleesbaar moeten zijn.",
+        "contactEmail": "",
+        "status": "handled",
+        "receivedAt": "2026-09-20T08:15:00+00:00",
+        "closedAt": "2026-09-21T14:30:00+00:00",
+        "closedBy": "anna"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "publicationErrorReport",
+          "slug": "publicationerrorreport-verkeerde-datum"
+        },
+        "portal": "zuiddrecht",
+        "publication": "9a4c7e21-0d3b-4a8f-b6e2-1f5d8c3a7b90",
+        "publicationTitle": "Vergunning evenement Zomerfeest",
+        "document": "",
+        "description": "De datum van het besluit klopt niet, het moet 12 augustus zijn.",
+        "contactEmail": "",
+        "status": "not-applicable",
+        "receivedAt": "2026-08-30T16:40:00+00:00",
+        "closedAt": "2026-09-01T09:00:00+00:00",
+        "closedBy": "bram"
       }
     ]
   }

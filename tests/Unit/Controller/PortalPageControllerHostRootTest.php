@@ -166,13 +166,13 @@ class PortalPageControllerHostRootTest extends TestCase {
 		$fixture = new PublicationReportFixture(test: $this);
 		$fixture->publications['pub-gone'] = [410, ['id' => 'pub-gone', 'withdrawnAt' => '2026-10-01', 'publicReason' => 'Gepubliceerd in strijd met de AVG']];
 		$fixture->publications['pub-open'] = [200, ['id' => 'pub-open', 'title' => 'Besluit']];
-		$withdrawn = new WithdrawnPublication(publications: new PublicPublicationRead(loopback: $fixture->loopback(), logger: new NullLogger()));
+		$read      = new PublicPublicationRead(loopback: $fixture->loopback(), logger: new NullLogger());
 		$on        = ['showWithheldNotices' => true];
 
-		$this->assertSame(Http::STATUS_GONE, $this->controller(host: 'www.gemeente.example', withdrawn: $withdrawn, gemeente: $on)->sitePath('publicatie/pub-gone')->getStatus());
-		$this->assertSame(Http::STATUS_OK, $this->controller(host: 'www.gemeente.example', withdrawn: $withdrawn, gemeente: $on)->sitePath('publicatie/pub-open')->getStatus());
-		$this->assertSame(Http::STATUS_OK, $this->controller(host: 'www.gemeente.example', withdrawn: $withdrawn, gemeente: $on)->sitePath('afval')->getStatus());
-		$this->assertSame(Http::STATUS_OK, $this->controller(host: 'www.gemeente.example', withdrawn: $withdrawn)->sitePath('publicatie/pub-gone')->getStatus(), 'notices off');
+		$this->assertSame(Http::STATUS_GONE, $this->controller(host: 'www.gemeente.example', withdrawnRead: $read, gemeente: $on)->sitePath('publicatie/pub-gone')->getStatus());
+		$this->assertSame(Http::STATUS_OK, $this->controller(host: 'www.gemeente.example', withdrawnRead: $read, gemeente: $on)->sitePath('publicatie/pub-open')->getStatus());
+		$this->assertSame(Http::STATUS_OK, $this->controller(host: 'www.gemeente.example', withdrawnRead: $read, gemeente: $on)->sitePath('afval')->getStatus());
+		$this->assertSame(Http::STATUS_OK, $this->controller(host: 'www.gemeente.example', withdrawnRead: $read)->sitePath('publicatie/pub-gone')->getStatus(), 'notices off');
 		$this->assertSame(['pub-gone', 'pub-open'], $fixture->paths, 'only a publication page on a portal with notices on is read');
 	}//end testATombstoneAnswers410()
 
@@ -274,7 +274,7 @@ class PortalPageControllerHostRootTest extends TestCase {
 	 *
 	 * @return PortalPageController
 	 */
-	private function controller(string $host, string $portalParam = '', string $forgedHost = '', ?WithdrawnPublication $withdrawn = null, array $gemeente = []): PortalPageController {
+	private function controller(string $host, string $portalParam = '', string $forgedHost = '', ?PublicPublicationRead $withdrawnRead = null, array $gemeente = []): PortalPageController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getServerHost')->willReturn($host);
 		$request->method('getServerProtocol')->willReturn('https');
@@ -347,7 +347,7 @@ class PortalPageControllerHostRootTest extends TestCase {
 			$head,
 			$this->createMock(PortalNoticeReader::class),
 			$framing,
-			$withdrawn
+			($withdrawnRead === null ? null : new WithdrawnPublication(publications: $withdrawnRead, portals: $resolver))
 		);
 	}//end controller()
 }//end class

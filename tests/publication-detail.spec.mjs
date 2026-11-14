@@ -24,7 +24,8 @@ import { loadSfc, renderComponent } from './support/render-sfc.mjs'
 const BLOCK = 'src/site/components/PublicationDetailBlock.vue'
 // The block's translator reads JSON node cannot import bare; the keys stand in.
 const STUBS = {
-	'../../shared/i18n/index.js': 'export function createTranslator() { return (key) => key }\n',
+	'../../shared/i18n/index.js':
+		'export function createTranslator() { return (key) => key }\n',
 }
 const TOMBSTONE = {
 	id: 'pub-1',
@@ -77,11 +78,18 @@ test('a 410 with notices on shows the withdrawal', async () => {
 	const lines = withdrawalLines(vm.withdrawal, 'nl')
 	assert.equal(lines.sentence, 'Deze publicatie is ingetrokken op 1 oktober 2026')
 	assert.equal(lines.reason, 'Gepubliceerd in strijd met de AVG')
-	assert.equal(withdrawalLines(vm.withdrawal, 'en').sentence, 'This publication was withdrawn on 1 October 2026')
+	assert.equal(
+		withdrawalLines(vm.withdrawal, 'en').sentence,
+		'This publication was withdrawn on 1 October 2026',
+	)
 })
 
 test('a 410 with notices off shows not found', async () => {
-	for (const publications of [null, { withheldNotices: false }, { errorReports: true }]) {
+	for (const publications of [
+		null,
+		{ withheldNotices: false },
+		{ errorReports: true },
+	]) {
 		const vm = await loadWith(publications, 410, TOMBSTONE)
 		assert.equal(vm.withdrawal, null, JSON.stringify(publications))
 		assert.equal(vm.error, true)
@@ -116,7 +124,9 @@ async function renderWithdrawal(withdrawal) {
 }
 
 test('a tombstone without a title shows none', async () => {
-	const html = await renderWithdrawal(withdrawalFrom(410, TOMBSTONE, { withheldNotices: true }))
+	const html = await renderWithdrawal(
+		withdrawalFrom(410, TOMBSTONE, { withheldNotices: true }),
+	)
 	assert.match(html, /data-testid="publication-withdrawn"/)
 	assert.match(html, /Deze publicatie is ingetrokken op 1 oktober 2026/)
 	assert.match(html, /Gepubliceerd in strijd met de AVG/)
@@ -125,23 +135,43 @@ test('a tombstone without a title shows none', async () => {
 	assert.doesNotMatch(html, /Fout melden/)
 
 	const withTitle = await renderWithdrawal(
-		withdrawalFrom(410, { ...TOMBSTONE, title: 'Besluit parkeerbeleid' }, { withheldNotices: true }),
+		withdrawalFrom(
+			410,
+			{ ...TOMBSTONE, title: 'Besluit parkeerbeleid' },
+			{ withheldNotices: true },
+		),
 	)
 	assert.match(withTitle, /data-testid="publication-withdrawn-title"/)
 	assert.match(withTitle, /Besluit parkeerbeleid/)
 
-	const untitled = withdrawalLines(withdrawalFrom(410, TOMBSTONE, { withheldNotices: true }), 'nl')
+	const untitled = withdrawalLines(
+		withdrawalFrom(410, TOMBSTONE, { withheldNotices: true }),
+		'nl',
+	)
 	assert.equal(untitled.title, '')
 
 	const titled = withdrawalLines(
-		withdrawalFrom(410, { ...TOMBSTONE, title: 'Besluit parkeerbeleid' }, { withheldNotices: true }),
+		withdrawalFrom(
+			410,
+			{ ...TOMBSTONE, title: 'Besluit parkeerbeleid' },
+			{ withheldNotices: true },
+		),
 		'nl',
 	)
 	assert.equal(titled.title, 'Besluit parkeerbeleid')
 
 	// Nothing else of the record travels, and an empty answer still says it was withdrawn.
-	assert.deepEqual(Object.keys(withdrawalFrom(410, TOMBSTONE, { withheldNotices: true })).sort(), ['publicReason', 'withdrawnAt'])
-	assert.equal(withdrawalLines(withdrawalFrom(410, null, { withheldNotices: true }), 'nl').sentence, 'Deze publicatie is ingetrokken.')
+	assert.deepEqual(
+		Object.keys(
+			withdrawalFrom(410, TOMBSTONE, { withheldNotices: true }),
+		).sort(),
+		['publicReason', 'withdrawnAt'],
+	)
+	assert.equal(
+		withdrawalLines(withdrawalFrom(410, null, { withheldNotices: true }), 'nl')
+			.sentence,
+		'Deze publicatie is ingetrokken.',
+	)
 })
 
 // REQ-PER-005 against the PROPOSED contract: opencatalogi's public read does
@@ -150,8 +180,19 @@ const WITH_WITHHELD = {
 	id: 'pub-1',
 	title: 'Besluit op Woo-verzoek',
 	withheldDocuments: [
-		{ reference: 'Document 4', grounds: [{ code: '5.1.2.e', label: 'Eerbiediging van de persoonlijke levenssfeer' }] },
-		{ reference: 'Document 7', grounds: [{ code: '5.2.1', label: 'Persoonlijke beleidsopvattingen' }] },
+		{
+			reference: 'Document 4',
+			grounds: [
+				{
+					code: '5.1.2.e',
+					label: 'Eerbiediging van de persoonlijke levenssfeer',
+				},
+			],
+		},
+		{
+			reference: 'Document 7',
+			grounds: [{ code: '5.2.1', label: 'Persoonlijke beleidsopvattingen' }],
+		},
 		{ grounds: [{ code: '5.1.1.c' }] },
 	],
 }
@@ -170,7 +211,12 @@ async function renderPublication(publications) {
 			...component,
 			mounted() {},
 			data() {
-				return { ...data.call(this), loading: false, publication: WITH_WITHHELD, documents: [] }
+				return {
+					...data.call(this),
+					loading: false,
+					publication: WITH_WITHHELD,
+					documents: [],
+				}
 			},
 		},
 		{ subjectId: 'pub-1', publications },
@@ -179,22 +225,50 @@ async function renderPublication(publications) {
 
 test('two withheld documents list their grounds', async () => {
 	assert.deepEqual(withheldDocumentsOf(WITH_WITHHELD, { withheldNotices: true }), [
-		{ reference: 'Document 4', grounds: [{ code: '5.1.2.e', label: 'Eerbiediging van de persoonlijke levenssfeer' }] },
-		{ reference: 'Document 7', grounds: [{ code: '5.2.1', label: 'Persoonlijke beleidsopvattingen' }] },
+		{
+			reference: 'Document 4',
+			grounds: [
+				{
+					code: '5.1.2.e',
+					label: 'Eerbiediging van de persoonlijke levenssfeer',
+				},
+			],
+		},
+		{
+			reference: 'Document 7',
+			grounds: [{ code: '5.2.1', label: 'Persoonlijke beleidsopvattingen' }],
+		},
 	])
 
 	const html = await renderPublication({ withheldNotices: true })
 	assert.match(html, /Niet openbaar gemaakt/)
-	assert.equal((html.match(/data-testid="publication-withheld-document"/g) || []).length, 2)
+	assert.equal(
+		(html.match(/data-testid="publication-withheld-document"/g) || []).length,
+		2,
+	)
 	assert.match(html, /5\.1\.2\.e: Eerbiediging van de persoonlijke levenssfeer/)
 	assert.match(html, /5\.2\.1: Persoonlijke beleidsopvattingen/)
 })
 
 test('notices off lists nothing', async () => {
-	for (const publications of [null, { withheldNotices: false }, { errorReports: true }]) {
+	for (const publications of [
+		null,
+		{ withheldNotices: false },
+		{ errorReports: true },
+	]) {
 		assert.deepEqual(withheldDocumentsOf(WITH_WITHHELD, publications), [])
 		const html = await renderPublication(publications)
-		assert.doesNotMatch(html, /publication-withheld/, JSON.stringify(publications))
+		assert.doesNotMatch(
+			html,
+			/publication-withheld/,
+			JSON.stringify(publications),
+		)
 	}
-	assert.deepEqual(withheldDocumentsOf({ withheldDocuments: 'no list' }, { withheldNotices: true }), [])
+	assert.deepEqual(
+		withheldDocumentsOf(
+			{ withheldDocuments: 'no list' },
+			{ withheldNotices: true },
+		),
+		[],
+	)
 })

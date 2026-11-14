@@ -199,7 +199,8 @@ test('a refused send says why, and a failed network says try again', async () =>
 })
 
 test('the owner closes a report through the close route, and a refusal says why', async () => {
-	const { createPublicationReportHandlers, closeFailureKey } = await import('../src/lib/publicationReportActions.js')
+	const { createPublicationReportHandlers, closeFailureKey } =
+		await import('../src/lib/publicationReportActions.js')
 	const posts = []
 	const said = []
 	let reloads = 0
@@ -220,14 +221,24 @@ test('the owner closes a report through the close route, and a refusal says why'
 		reload: () => reloads++,
 	})
 
-	assert.equal(await handlers.markReportHandled({ item: { id: 'report-7', portal: 'zuiddrecht' } }), true)
+	assert.equal(
+		await handlers.markReportHandled({
+			item: { id: 'report-7', portal: 'zuiddrecht' },
+		}),
+		true,
+	)
 	assert.deepEqual(posts[0], {
 		url: '/apps/portaliq/api/publication-reports/report-7/close',
 		body: { portal: 'zuiddrecht', status: 'handled' },
 	})
 	assert.equal(reloads, 1)
 
-	assert.equal(await handlers.markReportNotApplicable({ item: { uuid: 'report-8', portal: 'zuiddrecht' } }), false)
+	assert.equal(
+		await handlers.markReportNotApplicable({
+			item: { uuid: 'report-8', portal: 'zuiddrecht' },
+		}),
+		false,
+	)
 	assert.equal(posts[1].body.status, 'not-applicable')
 	assert.deepEqual(said, [
 		['ok', 'The report is marked handled.'],

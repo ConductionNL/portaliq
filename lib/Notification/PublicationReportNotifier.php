@@ -100,11 +100,12 @@ class PublicationReportNotifier implements INotifier {
 		$portal     = (string)($parameters['portal'] ?? '');
 		$id         = (string)($parameters['id'] ?? $notification->getObjectId());
 
+		$subject = $l->t('Error report on a publication (%s)', [$portal]);
 		if ($title !== '') {
-			$notification->setParsedSubject($l->t('Error report on "%1$s" (%2$s)', [$title, $portal]));
-		} else {
-			$notification->setParsedSubject($l->t('Error report on a publication (%s)', [$portal]));
+			$subject = $l->t('Error report on "%1$s" (%2$s)', [$title, $portal]);
 		}
+
+		$notification->setParsedSubject($subject);
 
 		$notification->setParsedMessage($l->t('A visitor reported an error. Open the report to handle it.'));
 		$notification->setLink(

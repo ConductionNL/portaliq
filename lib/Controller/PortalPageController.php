@@ -120,7 +120,7 @@ class PortalPageController extends Controller {
 		IRequest $request,
 		PortalRuntimeConfigResolverInterface $configResolver,
 		private readonly IURLGenerator $urlGenerator,
-		private readonly PortalResolverInterface $portalResolver,
+		PortalResolverInterface $portalResolver,
 		PortalThemeResolverInterface $themeResolver,
 		SiteHeadInterface $siteHead,
 		PortalNoticeReaderInterface $notices,
@@ -357,13 +357,7 @@ class PortalPageController extends Controller {
 			$slug = null;
 		}
 
-		try {
-			$portal = $this->portalResolver->resolve(request: $this->request, portalSlug: $slug);
-		} catch (\Throwable) {
-			return false;
-		}
-
-		return $this->withdrawn->isWithdrawnPage(portal: $portal, path: $path);
+		return $this->withdrawn->isWithdrawnRequest(request: $this->request, slug: $slug, path: $path);
 	}//end isWithdrawnPage()
 
 
