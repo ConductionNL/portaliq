@@ -218,6 +218,20 @@ class SiteShellTheme {
 			return '';
 		}
 
+		return $this->themeLogoUrl(theme: $theme, variant: $variant);
+	}//end logoUrl()
+
+	/**
+	 * The URL of the theme's logo file, or '' when the theme has none or its app is not served.
+	 *
+	 * @param string $theme   The theme.
+	 * @param string $variant The logo variant, or '' for the default.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
+	 */
+	private function themeLogoUrl(string $theme, string $variant): string {
 		try {
 			$relative = $this->themeResolver->logoFileFor(theme: $theme, variant: $variant);
 
@@ -239,7 +253,7 @@ class SiteShellTheme {
 		} catch (\Throwable) {
 			return '';
 		}
-	}//end logoUrl()
+	}//end themeLogoUrl()
 
 	/**
 	 * The NLDS token stylesheet this app ships for the serving portal, or ''.
