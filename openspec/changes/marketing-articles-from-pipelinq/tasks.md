@@ -14,7 +14,7 @@ Spec only in this PR. Tier V1. pipelinq's `marketing-articles-move-to-portaliq` 
   - spec_ref: `#requirement-an-article-moves-through-a-declared-lifecycle`, `#requirement-an-agent-drafted-article-is-marked-as-such`
   - files: `lib/Service/ArticleService.php`, `lib/Controller/ArticleController.php`, `appinfo/routes.php`, tests
   - test: `vendor/bin/phpunit --no-coverage --filter Article`
-- [ ] 2.2 `ArticleUsagesRequestedEvent` and the usages endpoint; portaliq contributes pages that name the article. — partial: `ArticleUsagesRequestedEvent` and `GET /api/articles/{id}/usages` are built (`ArticleUsagesRequestedEventTest`); portaliq's own pages that name an article come with 3.2, which adds the reference on a page.
+- [x] 2.2 `ArticleUsagesRequestedEvent` and the usages endpoint; portaliq contributes pages that name the article. — `ArticleUsagesRequestedEvent` and `GET /api/articles/{id}/usages` are built (`ArticleUsagesRequestedEventTest`); `ArticlePageUsagesListener` adds every CMS page whose body names the article by id or slug, drafts included, linked to the page in the admin (`ArticlePageUsagesListenerTest`).
   - spec_ref: `#requirement-an-article-reports-where-it-has-been-used`
 
 ## 3. Pages

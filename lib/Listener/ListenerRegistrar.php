@@ -31,6 +31,7 @@ use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectLeavingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
+use OCA\Portaliq\Event\ArticleUsagesRequestedEvent;
 use OCA\Portaliq\Event\LandingPageRequestedEvent;
 use OCA\Portaliq\Event\PortalAccountClaimRequestedEvent;
 use OCA\Portaliq\Event\PortalAccountInvitationRequestedEvent;
@@ -117,6 +118,9 @@ final class ListenerRegistrar {
 	 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
 	 */
 	private function registerCmsListeners(IRegistrationContext $context): void {
+		// The pages that name an article answer where it is used (marketing-articles-from-pipelinq).
+		$context->registerEventListener(ArticleUsagesRequestedEvent::class, ArticlePageUsagesListener::class);
+
 		foreach ([ObjectCreatedEvent::class, ObjectUpdatedEvent::class, ObjectDeletedEvent::class] as $event) {
 			$context->registerEventListener($event, CmsCacheInvalidationListener::class);
 		}
