@@ -1,8 +1,25 @@
 <?php
 
 /**
+ * PortalSigninController: a portal's sign-in settings are read and saved by
+ * that portal's administrators only; anyone else gets the unknown-portal 404
+ * and nothing is saved (operate-portals-per-organisation REQ-OPO-005).
+ *
+ * @category Test
+ * @package  OCA\Portaliq\Tests\Unit\Controller
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t11
+ *
+ * phpcs:disable CustomSniffs.Functions.NamedParameters
  */
 
 declare(strict_types=1);
@@ -11,90 +28,104 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\PortalSigninController;
 use OCA\Portaliq\Service\Signin\PortalSigninSettings;
+use OCA\Portaliq\Service\Tenancy\PortalAdminScope;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
 
-/**
- * The sign-in settings screen: an unknown portal is a 404, and each save
- * error maps to its own status.
- *
- * @covers \OCA\Portaliq\Controller\PortalSigninController
- */
+#[CoversClass(PortalSigninController::class)]
 class PortalSigninControllerTest extends TestCase {
 
-	private const PORTAL = ['id' => 'p-1', 'slug' => 'zuid'];
-
-	public function testIndexAnswersTheViewOfTheNamedPortal(): void {
-		$settings = $this->createMock(PortalSigninSettings::class);
-		$settings->expects($this->once())->method('portalBySlug')->with('zuid')->willReturn(self::PORTAL);
-		$settings->expects($this->once())->method('view')->with(self::PORTAL)->willReturn(['routes' => ['digid']]);
-
-		$response = $this->controller(settings: $settings)->index(slug: 'zuid');
-
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$this->assertSame(['routes' => ['digid']], $response->getData());
-	}//end testIndexAnswersTheViewOfTheNamedPortal()
-
-	public function testIndexIsNotFoundForAnUnknownPortalOrOneWithoutAView(): void {
-		$settings = $this->createMock(PortalSigninSettings::class);
-		$settings->method('portalBySlug')->willReturnCallback(static fn (string $slug): ?array => $slug === 'zuid' ? self::PORTAL : null);
-		$settings->method('view')->willReturn(null);
-		$controller = $this->controller(settings: $settings);
-
-		foreach (['zuid', 'nergens'] as $slug) {
-			$response = $controller->index(slug: $slug);
-			$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus(), $slug);
-			$this->assertSame(['error' => 'portal_not_found'], $response->getData(), $slug);
-		}
-	}//end testIndexIsNotFoundForAnUnknownPortalOrOneWithoutAView()
-
-	public function testUpdateOfAnUnknownPortalSavesNothing(): void {
-		$settings = $this->createMock(PortalSigninSettings::class);
-		$settings->method('portalBySlug')->willReturn(null);
-		$settings->expects($this->never())->method('save');
-
-		$response = $this->controller(settings: $settings)->update(slug: 'nergens', routes: ['digid']);
-
-		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
-		$this->assertSame(['error' => 'portal_not_found'], $response->getData());
-	}//end testUpdateOfAnUnknownPortalSavesNothing()
+	/**
+	 * The portal the slug finds.
+	 *
+	 * @var array<string, mixed>
+	 */
+	private const PORTAL = ['slug' => 'zeist', 'adminGroups' => ['zeist-beheer']];
 
 	/**
-	 * Each save outcome and the status it is answered with.
+	 * The settings double.
 	 *
-	 * @return array<string, array{0: array<string, mixed>, 1: int}>
+	 * @var PortalSigninSettings&MockObject
 	 */
-	public static function outcomes(): array {
-		return [
-			'saved'             => [['routes' => ['digid']], Http::STATUS_OK],
-			'no organisation'   => [['error' => 'no_organisation'], Http::STATUS_NOT_FOUND],
-			'broker incomplete' => [['error' => 'broker_incomplete'], Http::STATUS_UNPROCESSABLE_ENTITY],
-			'anything else'     => [['error' => 'broker_unreachable'], Http::STATUS_BAD_GATEWAY],
-		];
-	}//end outcomes()
+	private $settings;
 
 	/**
-	 * @dataProvider outcomes
+	 * A controller whose scope answers `$may` for the portal the slug finds.
 	 *
-	 * @param array<string, mixed> $result The save's answer.
-	 * @param int                  $status The expected status.
+	 * @param bool $may What the scope answers.
+	 *
+	 * @return PortalSigninController
 	 */
-	public function testUpdatePassesTheFormOnAndMapsTheOutcomeToAStatus(array $result, int $status): void {
-		$settings = $this->createMock(PortalSigninSettings::class);
-		$settings->method('portalBySlug')->willReturn(self::PORTAL);
-		$settings->expects($this->once())
-			->method('save')
-			->with(self::PORTAL, ['digid', 'eherkenning'], ['url' => 'https://broker.example'], 's3cret')
-			->willReturn($result);
+	private function controller(bool $may): PortalSigninController {
+		$this->settings = $this->createMock(PortalSigninSettings::class);
+		$this->settings->method('portalBySlug')->willReturnCallback(
+			static fn (string $slug): ?array => (['zeist' => self::PORTAL][$slug] ?? null)
+		);
 
-		$response = $this->controller(settings: $settings)->update(slug: 'zuid', routes: ['digid', 'eherkenning'], broker: ['url' => 'https://broker.example'], secret: 's3cret');
+		$scope = $this->createMock(PortalAdminScope::class);
+		$scope->method('mayAdminister')->with(self::PORTAL)->willReturn($may);
 
-		$this->assertSame($status, $response->getStatus());
-		$this->assertSame($result, $response->getData());
-	}//end testUpdatePassesTheFormOnAndMapsTheOutcomeToAStatus()
-
-	private function controller(PortalSigninSettings $settings): PortalSigninController {
-		return new PortalSigninController(request: $this->createMock(IRequest::class), settings: $settings);
+		return new PortalSigninController($this->createMock(IRequest::class), $this->settings, $scope);
 	}//end controller()
+
+	/**
+	 * The portal's administrator reads and saves its settings.
+	 *
+	 * @return void
+	 */
+	public function testThePortalsAdministratorReadsAndSaves(): void {
+		$controller = $this->controller(may: true);
+		$this->settings->method('view')->with(self::PORTAL)->willReturn(['routes' => ['digid' => 'oidc']]);
+		$this->settings->expects($this->once())
+			->method('save')
+			->with(self::PORTAL, ['digid' => 'broker'], ['startUrl' => 'https://b.example/start'], '')
+			->willReturn(['routes' => ['digid' => 'broker']]);
+
+		$read = $controller->index(slug: 'zeist');
+		$saved = $controller->update(slug: 'zeist', routes: ['digid' => 'broker'], broker: ['startUrl' => 'https://b.example/start']);
+
+		$this->assertSame(Http::STATUS_OK, $read->getStatus());
+		$this->assertSame(['routes' => ['digid' => 'oidc']], $read->getData());
+		$this->assertSame(Http::STATUS_OK, $saved->getStatus());
+	}//end testThePortalsAdministratorReadsAndSaves()
+
+	/**
+	 * Anyone else gets the unknown-portal 404, and nothing is read or saved.
+	 *
+	 * @return void
+	 */
+	public function testAnyoneElseGetsTheUnknownPortal404(): void {
+		$controller = $this->controller(may: false);
+		$this->settings->expects($this->never())->method('view');
+		$this->settings->expects($this->never())->method('save');
+
+		$read = $controller->index(slug: 'zeist');
+		$saved = $controller->update(slug: 'zeist', routes: ['digid' => 'broker']);
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $read->getStatus());
+		$this->assertSame(['error' => 'portal_not_found'], $read->getData());
+		$this->assertSame(Http::STATUS_NOT_FOUND, $saved->getStatus());
+		$this->assertSame(['error' => 'portal_not_found'], $saved->getData());
+		$this->assertSame($read->getData(), $controller->index(slug: 'nowhere')->getData(), 'the same answer as an unknown portal');
+	}//end testAnyoneElseGetsTheUnknownPortal404()
+
+	/**
+	 * Both routes are open to signed-in users and decided by the scope; neither is public.
+	 *
+	 * @return void
+	 */
+	public function testBothRoutesAreForThePortalsAdministrators(): void {
+		foreach (['index', 'update'] as $method) {
+			$names = array_map(
+				static fn ($attribute): string => $attribute->getName(),
+				(new ReflectionMethod(PortalSigninController::class, $method))->getAttributes()
+			);
+			$this->assertContains('OCP\AppFramework\Http\Attribute\NoAdminRequired', $names);
+			$this->assertNotContains('OCP\AppFramework\Http\Attribute\PublicPage', $names);
+		}
+	}//end testBothRoutesAreForThePortalsAdministrators()
 }//end class
