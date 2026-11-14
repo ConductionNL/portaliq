@@ -53,11 +53,12 @@ class BrokerLoginRoute {
 
 	/**
 	 * The providers integriq brokers. `generic` is an organisation's own
-	 * OIDC provider and has no government login behind it.
+	 * OIDC provider and has no government login behind it. `yivi` shares
+	 * only the attributes a form asks for (resident-identity-in-forms T05).
 	 *
 	 * @var string[]
 	 */
-	public const BROKERED_PROVIDERS = ['digid', 'eherkenning', 'eidas'];
+	public const BROKERED_PROVIDERS = ['digid', 'eherkenning', 'eidas', 'yivi'];
 
 
 	/**

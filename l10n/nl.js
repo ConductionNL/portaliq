@@ -3467,6 +3467,7 @@ OC.L10N.register(
         "This publication does not exist, or it is not public.": "Deze publicatie bestaat niet, of is niet openbaar.",
         "Untitled": "Zonder titel",
         "_%n result_::_%n results_": ["%n resultaat","%n resultaten"],
+        "Off: no second signer is needed.": "Uit: geen tweede ondertekenaar nodig.",
         "For example Gemeente Zeist.": "Bijvoorbeeld Gemeente Zeist.",
         "Lower case letters, digits and hyphens. It names the portal in links.": "Kleine letters, cijfers en streepjes. Hiermee heet het portaal in links.",
         "The organisation the portal and its data belong to.": "De organisatie waar het portaal en zijn gegevens bij horen.",

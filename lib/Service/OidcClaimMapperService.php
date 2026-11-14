@@ -66,7 +66,7 @@ class OidcClaimMapperService implements OidcClaimMapperServiceInterface {
 	 * override outside this set is a misconfiguration and must fail closed,
 	 * never silently widen to an arbitrary string.
 	 */
-	private const VALID_IDENTITY_TYPES = ['eherkenning', 'digid', 'eidas', 'generic', 'dev'];
+	private const VALID_IDENTITY_TYPES = ['eherkenning', 'digid', 'eidas', 'yivi', 'generic', 'dev'];
 
 	/**
 	 * Broker-agnostic provider presets (design.md). `generic` has no natural
@@ -93,6 +93,16 @@ class OidcClaimMapperService implements OidcClaimMapperServiceInterface {
 		'eidas' => [
 			'identityType' => 'eidas',
 			'label' => 'eIDAS',
+			'scopes' => ['openid'],
+			'audience' => 'client',
+			'loaClaim' => 'acr',
+		],
+		// Yivi through the broker (resident-identity-in-forms T05): the
+		// subject is the pseudonym the broker states, and the disclosed
+		// attributes ride on the envelope, not on the account.
+		'yivi' => [
+			'identityType' => 'yivi',
+			'label' => 'Yivi',
 			'scopes' => ['openid'],
 			'audience' => 'client',
 			'loaClaim' => 'acr',

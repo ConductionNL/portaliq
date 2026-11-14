@@ -3314,6 +3314,7 @@ OC.L10N.register(
         "This publication does not exist, or it is not public.": "This publication does not exist, or it is not public.",
         "Untitled": "Untitled",
         "_%n result_::_%n results_": ["%n result","%n results"],
+        "Off: no second signer is needed.": "Off: no second signer is needed.",
         "New portal": "New portal",
         "For example Gemeente Zeist.": "For example Gemeente Zeist.",
         "Lower case letters, digits and hyphens. It names the portal in links.": "Lower case letters, digits and hyphens. It names the portal in links.",
