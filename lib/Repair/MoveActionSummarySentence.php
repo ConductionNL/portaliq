@@ -30,8 +30,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Repair;
 
+use OCA\Portaliq\Kernel\Contracts\PortalRegisterContextInterface;
 use OCA\Portaliq\Service\ObjectServiceLookup;
-use OCA\Portaliq\Service\PortalRegisterContext;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Container\ContainerInterface;
@@ -81,12 +81,12 @@ class MoveActionSummarySentence implements IRepairStep {
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container The container (OpenRegister is optional).
-	 * @param PortalRegisterContext $context Points the object service at a portaliq schema.
+	 * @param PortalRegisterContextInterface $context Points the object service at a portaliq schema.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
-		private readonly PortalRegisterContext $context,
+		private readonly PortalRegisterContextInterface $context,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

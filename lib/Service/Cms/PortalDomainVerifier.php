@@ -28,8 +28,9 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Cms;
 
 use Closure;
-use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalDomainVerifierInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -38,12 +39,8 @@ use Throwable;
  *
  * @spec openspec/changes/portal-cms-admin-ui/tasks.md#task-3
  */
-class PortalDomainVerifier {
+class PortalDomainVerifier implements PortalDomainVerifierInterface {
 	public const PENDING = 'pending';
-
-	public const VERIFIED = 'verified';
-
-	public const NOT_FOUND = 'not_found';
 
 	private const REGISTER = 'portaliq';
 

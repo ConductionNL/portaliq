@@ -62,8 +62,29 @@ final class SessionClaims {
 			// ('' for none) and when this bearer expires.
 			'provider' => (string)($claims['provider'] ?? ''),
 			'expiresAt' => (int)($claims['exp'] ?? 0),
+			// Change site-mandates-the-represented-manage D8: the company an
+			// eHerkenning session signs in for ('' for none).
+			'kvk' => $this->kvk(claims: $claims),
 		];
 	}//end subject()
+
+	/**
+	 * The signed KVK number, or '' when absent or not eight digits.
+	 *
+	 * @param array<string, mixed> $claims The live session's claims.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/tasks.md#t0
+	 */
+	private function kvk(array $claims): string {
+		$kvk = ($claims['kvk'] ?? '');
+		if (is_string($kvk) === false || preg_match('/^\d{8}$/', $kvk) !== 1) {
+			return '';
+		}
+
+		return $kvk;
+	}//end kvk()
 
 	/**
 	 * The reference fields of a reference session's claims.

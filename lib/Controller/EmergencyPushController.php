@@ -28,10 +28,10 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\ActionAuthService;
-use OCA\Portaliq\Service\GuardianAudienceFixtureReader;
-use OCA\Portaliq\Service\Notifications\PushDeliveryService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\ActionAuthServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\GuardianAudienceFixtureReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PushDeliveryServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -57,20 +57,20 @@ class EmergencyPushController extends Controller {
 	 *
 	 * @param IRequest $request The request.
 	 * @param IUserSession $userSession Resolves the calling staff member's Nextcloud user id.
-	 * @param GuardianAudienceFixtureReader $audienceReader Resolves guardians matching the target.
-	 * @param PushDeliveryService $delivery Delivers the emergency push, bypassing quiet hours.
+	 * @param GuardianAudienceFixtureReaderInterface $audienceReader Resolves guardians matching the target.
+	 * @param PushDeliveryServiceInterface $delivery Delivers the emergency push, bypassing quiet hours.
 	 * @param LoggerInterface $logger The logger.
-	 * @param ActionAuthService $actionAuth Decides whether this staff user may send an emergency push (ADR-023).
+	 * @param ActionAuthServiceInterface $actionAuth Decides whether this staff user may send an emergency push (ADR-023).
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly IUserSession $userSession,
-		private readonly GuardianAudienceFixtureReader $audienceReader,
-		private readonly PushDeliveryService $delivery,
+		private readonly GuardianAudienceFixtureReaderInterface $audienceReader,
+		private readonly PushDeliveryServiceInterface $delivery,
 		private readonly LoggerInterface $logger,
-		private readonly ActionAuthService $actionAuth,
+		private readonly ActionAuthServiceInterface $actionAuth,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity\EmailLink;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\SignInAddressChangeInterface;
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
 use OCA\Portaliq\Service\PortalObjectWriter;
 
@@ -37,11 +38,7 @@ use OCA\Portaliq\Service\PortalObjectWriter;
  *
  * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#9
  */
-class SignInAddressChange {
-	/**
-	 * The address changed.
-	 */
-	public const CHANGED = 'changed';
+class SignInAddressChange implements SignInAddressChangeInterface {
 
 	/**
 	 * The session is not trusted enough to change it.
@@ -52,11 +49,6 @@ class SignInAddressChange {
 	 * The new address is malformed, or the account is not an `email` one.
 	 */
 	public const REFUSED = 'refused';
-
-	/**
-	 * The store did not take the write.
-	 */
-	public const FAILED = 'failed';
 
 	/**
 	 * The session trust levels that may change it themselves: `substantial`

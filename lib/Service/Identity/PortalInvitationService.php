@@ -32,6 +32,7 @@ namespace OCA\Portaliq\Service\Identity;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\PortalInvitationServiceInterface;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
@@ -45,7 +46,7 @@ use OCP\Security\ISecureRandom;
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- issue, resend, withdraw
  * and redeem each check the invitation's state before they act.
  */
-class PortalInvitationService {
+class PortalInvitationService implements PortalInvitationServiceInterface {
 	/**
 	 * The register the invitation lives in.
 	 */

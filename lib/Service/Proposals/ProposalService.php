@@ -34,6 +34,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Proposals;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\ProposalServiceInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 
 /**
@@ -41,11 +42,7 @@ use OCA\Portaliq\Service\PortalObjectWriter;
  *
  * @spec openspec/specs/change-proposal-queue/spec.md
  */
-class ProposalService {
-	/**
-	 * A proposal waiting for a reviewer.
-	 */
-	public const STATE_QUEUED = 'queued';
+class ProposalService implements ProposalServiceInterface {
 
 	/**
 	 * A proposal whose values are on the record.

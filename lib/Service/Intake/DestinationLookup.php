@@ -25,8 +25,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
-use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\DestinationLookupInterface;
 use OCA\Portaliq\Service\PortalSchemaReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 
 /**
  * Reads a destination object by reference.
@@ -42,7 +43,7 @@ use OCA\Portaliq\Service\PortalSchemaReader;
  *
  * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md
  */
-class DestinationLookup {
+class DestinationLookup implements DestinationLookupInterface {
 	/**
 	 * The property the drain copies an earlier reference onto.
 	 */

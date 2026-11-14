@@ -25,11 +25,11 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
-use OCA\Portaliq\Service\Intake\PortalEmailVerification;
-use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalEmailVerificationInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFormBindingResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -50,17 +50,17 @@ class PortalFormEmailCodeController extends Controller implements PortalProtecte
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalResolver $portals Resolves the portal being visited.
-	 * @param PortalFormBindingResolver $bindings Resolves the form.
-	 * @param PortalEmailVerification $verification The code rules.
+	 * @param PortalResolverInterface $portals Resolves the portal being visited.
+	 * @param PortalFormBindingResolverInterface $bindings Resolves the form.
+	 * @param PortalEmailVerificationInterface $verification The code rules.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalResolver $portals,
-		private readonly PortalFormBindingResolver $bindings,
-		private readonly PortalEmailVerification $verification,
+		private readonly PortalResolverInterface $portals,
+		private readonly PortalFormBindingResolverInterface $bindings,
+		private readonly PortalEmailVerificationInterface $verification,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -85,16 +85,16 @@ class PortalFormEmailCodeController extends Controller implements PortalProtecte
 
 		$result = $this->verification->request(site: $site, route: $route, email: $email, client: $this->request->getRemoteAddress());
 		$status = match ($result) {
-			PortalEmailVerification::SENT => Http::STATUS_OK,
-			PortalEmailVerification::INVALID => Http::STATUS_BAD_REQUEST,
-			PortalEmailVerification::WAIT, PortalEmailVerification::THROTTLED => Http::STATUS_TOO_MANY_REQUESTS,
+			PortalEmailVerificationInterface::SENT => Http::STATUS_OK,
+			PortalEmailVerificationInterface::INVALID => Http::STATUS_BAD_REQUEST,
+			PortalEmailVerificationInterface::WAIT, PortalEmailVerificationInterface::THROTTLED => Http::STATUS_TOO_MANY_REQUESTS,
 			default => Http::STATUS_SERVICE_UNAVAILABLE,
 		};
 		if ($status !== Http::STATUS_OK) {
 			return new JSONResponse(['error' => $result], $status);
 		}
 
-		return new JSONResponse(['sent' => true, 'resendAfter' => PortalEmailVerification::RESEND_AFTER]);
+		return new JSONResponse(['sent' => true, 'resendAfter' => PortalEmailVerificationInterface::RESEND_AFTER]);
 	}//end send()
 
 	/**

@@ -40,6 +40,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\PublicNewsReaderInterface;
 use OCA\Portaliq\Service\Cms\MediaReferences;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -52,7 +53,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-a-news-item-shows-on-a-portals-public-website-only-when-staff-put-it-there
  */
-class PublicNewsReader {
+class PublicNewsReader implements PublicNewsReaderInterface {
 	use PublishedMoment;
 
 	/**

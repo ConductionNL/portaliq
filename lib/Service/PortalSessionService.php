@@ -49,9 +49,10 @@ namespace OCA\Portaliq\Service;
 
 use DateInterval;
 use DateTimeImmutable;
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Service\Branch\BranchNumber;
-use OCA\Portaliq\Service\Session\SessionTrust;
+use OCA\Portaliq\Kernel\Support\SessionTrust;
 use OCP\IAppConfig;
 use OCP\IConfig;
 use OCP\Security\ISecureRandom;
@@ -75,7 +76,7 @@ use Throwable;
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)     -- one method per step of
  * a session's life, including revoking one session as an admin.
  */
-class PortalSessionService {
+class PortalSessionService implements PortalSessionServiceInterface {
 	/**
 	 * The bearer scheme prefix, case-sensitive per RFC 6750.
 	 */
@@ -181,7 +182,7 @@ class PortalSessionService {
 	) {
 		// The secret is a sensitive app value (security review S4): read it
 		// through IAppConfig, which decrypts it, never through IConfig.
-		$secret = $appConfig->getValueString(Application::APP_ID, 'jwt_signing_secret', '');
+		$secret = $appConfig->getValueString(AppIdentity::APP_ID, 'jwt_signing_secret', '');
 		$jwt = null;
 		if ($secret !== '') {
 			$jwt = self::buildJwtService(secret: $secret);
@@ -264,6 +265,7 @@ class PortalSessionService {
 	 * @param array<int, string> $roles Roles carried in the session.
 	 * @param string $branch The vestigingsnummer the login was restricted to, or ''.
 	 * @param string $provider The OIDC provider the login came through, or '' (dev-login, Nextcloud mode, integriq route).
+	 * @param string $kvk The KVK number of the company an eHerkenning login signs in for, or ''.
 	 *
 	 * @return array{token: string, jti: string, expiresAt: int, hardExpiresAt: int, idleTimeout: int}|null The minted
 	 *         bearer token, its id and the session's times, or null when the edge is not yet configured.
@@ -284,6 +286,7 @@ class PortalSessionService {
 		array $roles = [],
 		string $branch = '',
 		string $provider = '',
+		string $kvk = '',
 	): ?array {
 		// A branch from the login restricts the session to it
 		// (signin-eherkenning-branch D1); a malformed one is never signed.
@@ -295,7 +298,7 @@ class PortalSessionService {
 			trust: $trust,
 			roles: $roles,
 			authTime: null,
-			context: ['number' => $branchNumber, 'restricted' => ($branchNumber !== ''), 'provider' => $provider]
+			context: ['number' => $branchNumber, 'restricted' => ($branchNumber !== ''), 'provider' => $provider, 'kvk' => $kvk]
 		);
 		if ($issued === null) {
 			return null;
@@ -340,7 +343,7 @@ class PortalSessionService {
 	 * @param int|null $authTime The ORIGIN login's unix timestamp to carry
 	 *                           forward unchanged (a refresh rotation); null
 	 *                           mints a fresh origin (a genuine new login).
-	 * @param array{number?: string, restricted?: bool, provider?: string} $context The branch in effect
+	 * @param array{number?: string, restricted?: bool, provider?: string, kvk?: string} $context The branch in effect
 	 *                                                                             (signin-eherkenning-branch) and the
 	 *                                                                             OIDC provider (signin-session-idle-
 	 *                                                                             warning-and-sso).
@@ -423,7 +426,7 @@ class PortalSessionService {
 	 * @spec openspec/changes/archive/2026-10-30-idle-warning-preview/tasks.md#T01
 	 */
 	private function idlePreviewEnabled(): bool {
-		return $this->config->getAppValue(Application::APP_ID, self::IDLE_PREVIEW_CONFIG_KEY, 'no') === 'yes';
+		return $this->config->getAppValue(AppIdentity::APP_ID, self::IDLE_PREVIEW_CONFIG_KEY, 'no') === 'yes';
 	}//end idlePreviewEnabled()
 
 	/**
@@ -436,7 +439,7 @@ class PortalSessionService {
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T01
 	 */
 	private function idleTimeoutSeconds(): int {
-		$configured = (int)$this->config->getAppValue(Application::APP_ID, self::IDLE_TIMEOUT_CONFIG_KEY, (string)self::DEFAULT_IDLE_TIMEOUT);
+		$configured = (int)$this->config->getAppValue(AppIdentity::APP_ID, self::IDLE_TIMEOUT_CONFIG_KEY, (string)self::DEFAULT_IDLE_TIMEOUT);
 		if ($configured <= 0) {
 			return self::DEFAULT_IDLE_TIMEOUT;
 		}
@@ -475,7 +478,7 @@ class PortalSessionService {
 	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T01
 	 */
 	private function maxLifetimeSeconds(): int {
-		$configured = (int)$this->config->getAppValue(Application::APP_ID, self::MAX_LIFETIME_CONFIG_KEY, (string)self::DEFAULT_MAX_LIFETIME);
+		$configured = (int)$this->config->getAppValue(AppIdentity::APP_ID, self::MAX_LIFETIME_CONFIG_KEY, (string)self::DEFAULT_MAX_LIFETIME);
 		if ($configured <= 0) {
 			return self::DEFAULT_MAX_LIFETIME;
 		}
@@ -758,6 +761,7 @@ class PortalSessionService {
 				'number' => (string)($subject['branch'] ?? ''),
 				'restricted' => (($subject['branchRestricted'] ?? false) === true),
 				'provider' => (string)($subject['provider'] ?? ''),
+				'kvk' => (string)($subject['kvk'] ?? ''),
 			]
 		);
 	}//end refreshSession()
@@ -791,7 +795,7 @@ class PortalSessionService {
 
 		return $this->rotate(
 			subject: $subject,
-			context: ['number' => $number, 'restricted' => false, 'provider' => (string)($subject['provider'] ?? '')]
+			context: ['number' => $number, 'restricted' => false, 'provider' => (string)($subject['provider'] ?? ''), 'kvk' => (string)($subject['kvk'] ?? '')]
 		);
 	}//end rebranchSession()
 
@@ -800,7 +804,7 @@ class PortalSessionService {
 	 * revoke the old one quietly and record one `refresh`.
 	 *
 	 * @param array<string, mixed>                                          $subject The resolved subject.
-	 * @param array{number?: string, restricted?: bool, provider?: string} $context The new bearer's context.
+	 * @param array{number?: string, restricted?: bool, provider?: string, kvk?: string} $context The new bearer's context.
 	 *
 	 * @return array{token: string, jti: string, expiresAt: int, hardExpiresAt: int, idleTimeout: int}|null
 	 */

@@ -199,6 +199,62 @@ function myCasesAnswer(res, json) {
 }
 
 /**
+ * Where one of the resident's inbox messages lives, with an action suffix
+ * (`/read`, `/reply`, or none), or null when the message does not name its
+ * id, register and schema.
+ *
+ * @param {object} message An inbox row, carrying its `_source` provenance tag.
+ * @param {string} suffix The action's path suffix.
+ * @return {string|null} The path.
+ */
+function inboxMessagePath(message, suffix) {
+	const source = message._source || {}
+	const id = inboxIdOf(message)
+	if (!id || !source.register || !source.schema) {
+		return null
+	}
+	return `/inbox/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}/${encodeURIComponent(id)}${suffix}?collection=${encodeURIComponent(source.collection || '')}`
+}
+
+/**
+ * An inbox message's id, wherever the row keeps it.
+ *
+ * @param {object} message An inbox row.
+ * @return {string|undefined} The id.
+ */
+function inboxIdOf(message) {
+	return message.id || message['@self']?.id
+}
+
+/**
+ * The bearer a session answer issues, or '' when it issues none.
+ *
+ * @param {{json: () => Promise<object>}} res The response.
+ * @return {Promise<string>} The bearer.
+ */
+async function issuedToken(res) {
+	const body = await res.json().catch(() => null)
+	return body && body.token ? body.token : ''
+}
+
+/**
+ * The dev-login request: JSON, for one audience, without a bearer.
+ *
+ * @param {string} audience The session audience.
+ * @return {object} The request init.
+ */
+function devLoginRequest(audience) {
+	return {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			Accept: 'application/json',
+		},
+		body: JSON.stringify({ audience }),
+	}
+}
+
+/**
  * A list an answer's body carries under a key, or none.
  *
  * @param {object|null} json The body.
@@ -762,12 +818,10 @@ export function createPortalApi(config, store = {}) {
 		 * @return {Promise<object>} `{ ok, status }` result envelope.
 		 */
 		async markMessageRead(message) {
-			const source = message._source || {}
-			const id = message.id || message['@self']?.id
-			if (!id || !source.register || !source.schema) {
+			const path = inboxMessagePath(message, '/read')
+			if (path === null) {
 				return { ok: false, status: 0 }
 			}
-			const path = `/inbox/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}/${encodeURIComponent(id)}/read?collection=${encodeURIComponent(source.collection || '')}`
 			return send('PATCH', path, {})
 		},
 
@@ -779,12 +833,10 @@ export function createPortalApi(config, store = {}) {
 		 * @return {Promise<{ok: boolean, status: number}>}
 		 */
 		async deleteMessage(message) {
-			const source = message._source || {}
-			const id = message.id || message['@self']?.id
-			if (!id || !source.register || !source.schema) {
+			const path = inboxMessagePath(message, '')
+			if (path === null) {
 				return { ok: false, status: 0 }
 			}
-			const path = `/inbox/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}/${encodeURIComponent(id)}?collection=${encodeURIComponent(source.collection || '')}`
 			return send('DELETE', path, {})
 		},
 
@@ -799,12 +851,10 @@ export function createPortalApi(config, store = {}) {
 		 * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t05
 		 */
 		async replyToMessage(message, data) {
-			const source = message._source || {}
-			const id = message.id || message['@self']?.id
-			if (!id || !source.register || !source.schema) {
+			const path = inboxMessagePath(message, '/reply')
+			if (path === null) {
 				return { ok: false, status: 0, object: null, error: '', errors: {} }
 			}
-			const path = `/inbox/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}/${encodeURIComponent(id)}/reply?collection=${encodeURIComponent(source.collection || '')}`
 			return send('POST', path, data)
 		},
 
@@ -1880,23 +1930,18 @@ export function createPortalApi(config, store = {}) {
 		 * @spec openspec/specs/portal-branch-scope/spec.md#requirement-a-whole-company-user-can-narrow-to-a-branch-req-seb-003
 		 */
 		async chooseBranch(branch) {
-			const res = await fetch(`${base}/session/branch`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					Accept: 'application/json',
-					...authHeaders(),
-				},
-				body: JSON.stringify({ branch: branch || '' }),
-			})
+			const res = await fetch(
+				`${base}/session/branch`,
+				jsonInit('POST', { branch: branch || '' }),
+			)
 			if (!res.ok) {
 				return { ok: false }
 			}
-			const body = await res.json().catch(() => null)
-			if (!body || !body.token) {
+			const token = await issuedToken(res)
+			if (!token) {
 				return { ok: false }
 			}
-			writeToken(body.token)
+			writeToken(token)
 			return { ok: true }
 		},
 
@@ -1935,25 +1980,19 @@ export function createPortalApi(config, store = {}) {
 		 * @return {Promise<string|null>} The minted bearer, or null.
 		 */
 		async devLogin(audience) {
-			const res = await fetch(`${base}/session/dev-login`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					Accept: 'application/json',
-				},
-				body: JSON.stringify({
-					audience: audience || config.audience || 'supplier',
-				}),
-			})
+			const res = await fetch(
+				`${base}/session/dev-login`,
+				devLoginRequest(audience || config.audience || 'supplier'),
+			)
 			if (!res.ok) {
 				return null
 			}
-			const body = await res.json().catch(() => null)
-			if (body && body.token) {
-				writeToken(body.token)
-				return body.token
+			const token = await issuedToken(res)
+			if (!token) {
+				return null
 			}
-			return null
+			writeToken(token)
+			return token
 		},
 
 		/**
@@ -2004,6 +2043,7 @@ export function createPortalApi(config, store = {}) {
  * A no-op (returns false) when there is no `#token=` fragment.
  *
  * @return {boolean} Whether a token was picked up.
+ * @spec openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md#requirement-the-bearer-reaches-the-browser-in-the-fragment-and-leaves-the-address-req-see-003
  */
 export function consumeOidcCallbackFragment() {
 	const hash = window.location.hash || ''

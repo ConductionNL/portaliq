@@ -70,6 +70,7 @@ namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
 use OCA\Portaliq\Event\PortalClaimScopeEvent;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
 use OCA\Portaliq\Service\Tenancy\ActsForTheOrganisation;
 use OCA\Portaliq\Service\Tenancy\ClaimScopeCheck;
 use Psr\Container\ContainerInterface;
@@ -94,7 +95,7 @@ use Throwable;
  * public read of an `anonymous` collection shares the tenant check, the row
  * normalising and the projection with the scoped reads, so it lives beside them.
  */
-class PortalObjectReader implements ScopedCollectionReaderInterface {
+class PortalObjectReader implements ScopedCollectionReaderInterface, PortalObjectReaderInterface {
 	use ActsForTheOrganisation;
 	use PortalScopeMatch;
 
