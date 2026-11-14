@@ -27,9 +27,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\ActionAuthService;
-use OCA\Portaliq\Service\NewsAudienceOptions;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\ActionAuthServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\NewsAudienceOptionsInterface;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -76,8 +76,8 @@ class NewsController extends Controller {
 	 * @param IUserSession $userSession Confirms an authenticated Nextcloud user reached this endpoint.
 	 * @param ContainerInterface $container For resolving OpenRegister services.
 	 * @param LoggerInterface $logger The logger.
-	 * @param ActionAuthService $actionAuth Decides whether this staff user may author news (ADR-023).
-	 * @param NewsAudienceOptions|null $audienceOptions The school and group choices for the News screen.
+	 * @param ActionAuthServiceInterface $actionAuth Decides whether this staff user may author news (ADR-023).
+	 * @param NewsAudienceOptionsInterface|null $audienceOptions The school and group choices for the News screen.
 	 * @param ITimeFactory|null $timeFactory The server clock that stamps the publish moment.
 	 */
 	public function __construct(
@@ -85,11 +85,11 @@ class NewsController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
-		private readonly ActionAuthService $actionAuth,
-		private readonly ?NewsAudienceOptions $audienceOptions=null,
+		private readonly ActionAuthServiceInterface $actionAuth,
+		private readonly ?NewsAudienceOptionsInterface $audienceOptions=null,
 		private readonly ?ITimeFactory $timeFactory=null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

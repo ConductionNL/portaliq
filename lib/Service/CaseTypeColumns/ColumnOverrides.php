@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\CaseTypeColumns;
 
+use OCA\Portaliq\Kernel\Contracts\ColumnOverridesInterface;
 use OCA\Portaliq\Service\CaseTypeVisibility;
 
 /**
@@ -35,7 +36,7 @@ use OCA\Portaliq\Service\CaseTypeVisibility;
  *
  * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-case-row-reads-with-its-case-types-columns
  */
-class ColumnOverrides {
+class ColumnOverrides implements ColumnOverridesInterface {
 	/**
 	 * Constructor.
 	 *

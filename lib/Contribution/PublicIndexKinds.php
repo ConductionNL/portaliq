@@ -29,23 +29,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\PublicIndexKindsInterface;
+
 /**
  * Holds an app's declared index kinds to a fixed shape.
  *
  * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-1
  */
-class PublicIndexKinds {
-	/**
-	 * The contract method an app may implement.
-	 */
-	public const METHOD = 'getPublicIndexKinds';
-
-	/**
-	 * The contract method that resolves the value `visitor` for a signed-in
-	 * person: `getPublicIndexVisitor(string $portal, array $subject): array`
-	 * answering `{filter label: values[]}`.
-	 */
-	public const VISITOR_METHOD = 'getPublicIndexVisitor';
+class PublicIndexKinds implements PublicIndexKindsInterface {
 
 	private const MAX_KINDS = 20;
 

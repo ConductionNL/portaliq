@@ -47,7 +47,7 @@ use RuntimeException;
 #[UsesClass(\OCA\Portaliq\Contribution\RowActionResolver::class)]
 #[UsesClass(\OCA\Portaliq\Contribution\RowWhenNormaliser::class)]
 #[UsesClass(\OCA\Portaliq\Contribution\TimedTaskConfigNormaliser::class)]
-#[UsesClass(\OCA\Portaliq\Service\Session\SessionTrust::class)]
+#[UsesClass(\OCA\Portaliq\Kernel\Support\SessionTrust::class)]
 #[UsesClass(\OCA\Portaliq\Contribution\StartTileCollector::class)]
 class PortalContributionRegistryFailuresTest extends TestCase {
 

@@ -31,16 +31,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\CitizenWriteConfigNormaliserInterface;
+
 /**
  * Validates the per-action `citizenWrite` declaration, fail closed.
  *
  * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
-class CitizenWriteConfigNormaliser {
-	/**
-	 * The manifest key carrying the declaration.
-	 */
-	public const KEY = 'citizenWrite';
+class CitizenWriteConfigNormaliser implements CitizenWriteConfigNormaliserInterface {
 
 	/**
 	 * Keys the case app MUST supply; without all three the portal cannot

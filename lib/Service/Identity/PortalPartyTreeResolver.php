@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
+use OCA\Portaliq\Kernel\Contracts\PortalPartyTreeResolverInterface;
 use OCA\Portaliq\Service\PortalObjectReader;
 
 /**
@@ -43,7 +44,7 @@ use OCA\Portaliq\Service\PortalObjectReader;
  *
  * @spec openspec/specs/portal-visibility-and-the-party-tree/spec.md
  */
-class PortalPartyTreeResolver {
+class PortalPartyTreeResolver implements PortalPartyTreeResolverInterface {
 	/**
 	 * The default maximum depth of the walk.
 	 */

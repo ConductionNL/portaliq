@@ -18,8 +18,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Signin;
 
-use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSigninSettingsInterface;
 use OCA\Portaliq\Service\PortalSlugLookup;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 
 /**
  * The sign-in settings an administrator edits on a portal's page: per
@@ -34,7 +35,7 @@ use OCA\Portaliq\Service\PortalSlugLookup;
  *
  * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
  */
-class PortalSigninSettings {
+class PortalSigninSettings implements PortalSigninSettingsInterface {
 
 	/**
 	 * The broker fields an administrator sets.
@@ -42,7 +43,6 @@ class PortalSigninSettings {
 	 * @var string[]
 	 */
 	private const BROKER_FIELDS = ['startUrl', 'exchangeUrl', 'consumerId'];
-
 
 	/**
 	 * Constructor.
@@ -60,7 +60,6 @@ class PortalSigninSettings {
 	) {
 	}//end __construct()
 
-
 	/**
 	 * The portal with this slug, or null.
 	 *
@@ -73,7 +72,6 @@ class PortalSigninSettings {
 	public function portalBySlug(string $slug): ?array {
 		return (new PortalSlugLookup(reader: $this->reader))->find(slug: $slug);
 	}//end portalBySlug()
-
 
 	/**
 	 * What the settings screen shows, secret-free, or null when the portal
@@ -110,7 +108,6 @@ class PortalSigninSettings {
 			'hasSecret' => $presentation['hasBrokerSecret'],
 		];
 	}//end view()
-
 
 	/**
 	 * Save the routes and the broker settings. Answers the new view, or an
@@ -159,7 +156,6 @@ class PortalSigninSettings {
 		return (array)$this->view(portal: $portal);
 	}//end save()
 
-
 	/**
 	 * The routes map: only brokered providers, only the two routes, and only
 	 * the `broker` entries (a missing entry is `oidc`).
@@ -178,7 +174,6 @@ class PortalSigninSettings {
 
 		return $clean;
 	}//end routesFrom()
-
 
 	/**
 	 * The broker fields as trimmed text; anything else is dropped.

@@ -34,12 +34,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\InboxMessageFieldsInterface;
+
 /**
  * Normalises and applies an inbox collection's `messageFields`.
  *
  * @spec openspec/specs/supplier-portal/spec.md#requirement-an-inbox-collection-names-its-own-message-fields-req-imf-001
  */
-class InboxMessageFields {
+class InboxMessageFields implements InboxMessageFieldsInterface {
 	/**
 	 * The inbox fields an app may name, as the inbox row calls them.
 	 * `readAt` is the one exception: the row gets `read`, true when the

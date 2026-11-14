@@ -38,12 +38,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\AttachedActionResolverInterface;
+
 /**
  * Resolves `attachTo` declarations into `attachedActions` on target collections.
  *
  * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
  */
-class AttachedActionResolver {
+class AttachedActionResolver implements AttachedActionResolverInterface {
 	/**
 	 * The manifest key on the collection.
 	 */

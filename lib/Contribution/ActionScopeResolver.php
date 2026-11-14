@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
 
 /**
  * Resolves the subject's scope an endpoint action declares it needs.
@@ -39,10 +39,10 @@ class ActionScopeResolver {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Resolves a scope claim for a subject.
+	 * @param PortalObjectReaderInterface $reader Resolves a scope claim for a subject.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly PortalObjectReaderInterface $reader,
 	) {
 	}//end __construct()
 

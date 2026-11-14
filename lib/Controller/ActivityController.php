@@ -27,15 +27,15 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\ActionAuthService;
-use OCA\Portaliq\Service\ActivityAttendanceService;
-use OCA\Portaliq\Service\ActivityContributionService;
-use OCA\Portaliq\Service\ActivityDraft;
-use OCA\Portaliq\Service\ActivityPlaces;
-use OCA\Portaliq\Service\ActivityRoster;
-use OCA\Portaliq\Service\ActivitySignupService;
-use OCA\Portaliq\Service\ActivityStore;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\ActionAuthServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\ActivityAttendanceServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\ActivityContributionServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\ActivityDraftInterface;
+use OCA\Portaliq\Kernel\Contracts\ActivityPlacesInterface;
+use OCA\Portaliq\Kernel\Contracts\ActivityRosterInterface;
+use OCA\Portaliq\Kernel\Contracts\ActivitySignupServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\ActivityStoreInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -70,24 +70,24 @@ class ActivityController extends Controller {
 	 * HTTP status per attendance refusal.
 	 */
 	private const ATTENDANCE_STATUS = [
-		ActivityAttendanceService::REASON_NOT_FOUND => Http::STATUS_NOT_FOUND,
-		ActivityAttendanceService::REASON_UNKNOWN_SESSION => Http::STATUS_UNPROCESSABLE_ENTITY,
-		ActivityAttendanceService::REASON_NOT_CONFIRMED => Http::STATUS_UNPROCESSABLE_ENTITY,
-		ActivityAttendanceService::REASON_INVALID_STATUS => Http::STATUS_UNPROCESSABLE_ENTITY,
-		ActivityAttendanceService::REASON_UNAVAILABLE => Http::STATUS_BAD_GATEWAY,
+		ActivityAttendanceServiceInterface::REASON_NOT_FOUND => Http::STATUS_NOT_FOUND,
+		ActivityAttendanceServiceInterface::REASON_UNKNOWN_SESSION => Http::STATUS_UNPROCESSABLE_ENTITY,
+		ActivityAttendanceServiceInterface::REASON_NOT_CONFIRMED => Http::STATUS_UNPROCESSABLE_ENTITY,
+		ActivityAttendanceServiceInterface::REASON_INVALID_STATUS => Http::STATUS_UNPROCESSABLE_ENTITY,
+		ActivityAttendanceServiceInterface::REASON_UNAVAILABLE => Http::STATUS_BAD_GATEWAY,
 	];
 
 	/**
 	 * HTTP status per contribution raise refusal (activity-offer-contract-fix).
 	 */
 	private const CONTRIBUTION_STATUS = [
-		ActivityContributionService::REASON_NOT_FOUND => Http::STATUS_NOT_FOUND,
-		ActivityContributionService::REASON_NOT_REQUESTED => Http::STATUS_UNPROCESSABLE_ENTITY,
-		ActivityContributionService::REASON_UNAVAILABLE => Http::STATUS_BAD_GATEWAY,
-		ActivityContributionService::ERROR_INVALID => Http::STATUS_BAD_REQUEST,
-		ActivityContributionService::ERROR_FORBIDDEN => Http::STATUS_FORBIDDEN,
-		ActivityContributionService::ERROR_SHILLINQ_UNAVAILABLE => Http::STATUS_SERVICE_UNAVAILABLE,
-		ActivityContributionService::ERROR_FAILED => Http::STATUS_BAD_GATEWAY,
+		ActivityContributionServiceInterface::REASON_NOT_FOUND => Http::STATUS_NOT_FOUND,
+		ActivityContributionServiceInterface::REASON_NOT_REQUESTED => Http::STATUS_UNPROCESSABLE_ENTITY,
+		ActivityContributionServiceInterface::REASON_UNAVAILABLE => Http::STATUS_BAD_GATEWAY,
+		ActivityContributionServiceInterface::ERROR_INVALID => Http::STATUS_BAD_REQUEST,
+		ActivityContributionServiceInterface::ERROR_FORBIDDEN => Http::STATUS_FORBIDDEN,
+		ActivityContributionServiceInterface::ERROR_SHILLINQ_UNAVAILABLE => Http::STATUS_SERVICE_UNAVAILABLE,
+		ActivityContributionServiceInterface::ERROR_FAILED => Http::STATUS_BAD_GATEWAY,
 	];
 
 	/**
@@ -95,29 +95,29 @@ class ActivityController extends Controller {
 	 *
 	 * @param IRequest $request The request.
 	 * @param IUserSession $userSession Confirms a Nextcloud user reached this endpoint.
-	 * @param ActivityStore $store The activity rows.
-	 * @param ActivityPlaces $places The places arithmetic.
-	 * @param ActivitySignupService $signups Supervisors and promotion.
-	 * @param ActivityAttendanceService $attendance Attendance marks.
-	 * @param ActivityDraft $drafts Validates and sanitises a new activity.
-	 * @param ActivityRoster $rosters The staff roster.
-	 * @param ActivityContributionService $contributions Raises the contribution per confirmed
+	 * @param ActivityStoreInterface $store The activity rows.
+	 * @param ActivityPlacesInterface $places The places arithmetic.
+	 * @param ActivitySignupServiceInterface $signups Supervisors and promotion.
+	 * @param ActivityAttendanceServiceInterface $attendance Attendance marks.
+	 * @param ActivityDraftInterface $drafts Validates and sanitises a new activity.
+	 * @param ActivityRosterInterface $rosters The staff roster.
+	 * @param ActivityContributionServiceInterface $contributions Raises the contribution per confirmed
 	 *                                                   place through shillinq (activity-offer-contract-fix).
-	 * @param ActionAuthService $actionAuth Decides whether this staff user may manage activities (ADR-023).
+	 * @param ActionAuthServiceInterface $actionAuth Decides whether this staff user may manage activities (ADR-023).
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly IUserSession $userSession,
-		private readonly ActivityStore $store,
-		private readonly ActivityPlaces $places,
-		private readonly ActivitySignupService $signups,
-		private readonly ActivityAttendanceService $attendance,
-		private readonly ActivityDraft $drafts,
-		private readonly ActivityRoster $rosters,
-		private readonly ActivityContributionService $contributions,
-		private readonly ActionAuthService $actionAuth,
+		private readonly ActivityStoreInterface $store,
+		private readonly ActivityPlacesInterface $places,
+		private readonly ActivitySignupServiceInterface $signups,
+		private readonly ActivityAttendanceServiceInterface $attendance,
+		private readonly ActivityDraftInterface $drafts,
+		private readonly ActivityRosterInterface $rosters,
+		private readonly ActivityContributionServiceInterface $contributions,
+		private readonly ActionAuthServiceInterface $actionAuth,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -149,7 +149,7 @@ class ActivityController extends Controller {
 			return new JSONResponse(['error' => 'invalid_activity'], Http::STATUS_BAD_REQUEST);
 		}
 
-		$saved = $this->store->save(schema: ActivityStore::OFFER, data: $activity);
+		$saved = $this->store->save(schema: ActivityStoreInterface::OFFER, data: $activity);
 		if ($saved === null) {
 			return new JSONResponse(['error' => 'write_failed'], Http::STATUS_BAD_GATEWAY);
 		}
@@ -171,7 +171,7 @@ class ActivityController extends Controller {
 	public function open(string $id): JSONResponse {
 		$this->requireAuthenticatedStaff();
 
-		$activity = $this->store->lookup(schema: ActivityStore::OFFER, id: $id);
+		$activity = $this->store->lookup(schema: ActivityStoreInterface::OFFER, id: $id);
 		if ($activity === null) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
@@ -201,7 +201,7 @@ class ActivityController extends Controller {
 	public function close(string $id): JSONResponse {
 		$this->requireAuthenticatedStaff();
 
-		$activity = $this->store->lookup(schema: ActivityStore::OFFER, id: $id);
+		$activity = $this->store->lookup(schema: ActivityStoreInterface::OFFER, id: $id);
 		if ($activity === null) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
@@ -312,7 +312,7 @@ class ActivityController extends Controller {
 	 */
 	private function saveStatus(array $activity, string $status): JSONResponse {
 		$saved = $this->store->save(
-			schema: ActivityStore::OFFER,
+			schema: ActivityStoreInterface::OFFER,
 			data: array_merge($activity, ['status' => $status]),
 			id: $this->store->idOf(row: $activity)
 		);

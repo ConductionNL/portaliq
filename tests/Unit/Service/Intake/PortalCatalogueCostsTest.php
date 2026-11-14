@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Intake;
 
+use OCA\Portaliq\Contribution\FormStepsNormaliser;
 use OCA\Portaliq\Service\CaseTypeReader;
 use OCA\Portaliq\Service\Intake\PortalCatalogueReader;
 use OCA\Portaliq\Service\Intake\PortalFee;
@@ -59,7 +60,7 @@ class PortalCatalogueCostsTest extends TestCase {
 			}
 		);
 
-		return new PortalCatalogueReader($store, new PortalFormBindingResolver($store), null, new PortalFee($caseTypes));
+		return new PortalCatalogueReader($store, new PortalFormBindingResolver($store, new FormStepsNormaliser()), null, new PortalFee($caseTypes));
 
 	}//end catalogue()
 
@@ -164,7 +165,7 @@ class PortalCatalogueCostsTest extends TestCase {
 		$this->seedEntryWithBinding('aanvragen/parkeren', 'parkeren');
 		$store = $this->fakeReader();
 
-		$topics = (new PortalCatalogueReader($store, new PortalFormBindingResolver($store)))->topicsFor(portal: 'gemeente-x');
+		$topics = (new PortalCatalogueReader($store, new PortalFormBindingResolver($store, new FormStepsNormaliser())))->topicsFor(portal: 'gemeente-x');
 
 		$this->assertNull($topics[0]['entries'][0]['fee']);
 
