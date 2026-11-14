@@ -49,6 +49,7 @@ import NewsItemDialog from './dialogs/NewsItemDialog.vue'
 import RefuseAccessRequestDialog from './dialogs/RefuseAccessRequestDialog.vue'
 import RevealDecisionDialog from './dialogs/RevealDecisionDialog.vue'
 import RevealedContactDialog from './dialogs/RevealedContactDialog.vue'
+import { createPageSaver } from './editor/pageSaver.js'
 import { createAccessRequestHandlers } from './lib/accessRequestActions.js'
 import { createConnectionHandlers } from './lib/connectionRegistry.js'
 import { spawnLookDialog } from './lib/dialogLook.js'
@@ -58,6 +59,7 @@ import { refreshList } from './lib/listRefresh.js'
 import { createMailTemplateApi, createMailTemplateHandlers } from './lib/mailTemplateEditing.js'
 import { createNewsApi, createNewsHandlers, NEWS_LIST } from './lib/newsAuthoring.js'
 import { createOpenPortalSite } from './lib/openPortalSite.js'
+import { createPageVisibilityHandlers } from './lib/pageVisibility.js'
 import { createRevealHandlers } from './lib/revealActions.js'
 import { createSessionHandlers } from './lib/sessionActions.js'
 import {
@@ -223,6 +225,24 @@ const newsHandlers = createNewsHandlers({
 })
 
 /**
+ * `Take back to draft` on the Pages list (page-public-on-purpose): the page's
+ * route then answers as one that does not exist. Version-checked like the
+ * page designer's own writes; see src/lib/pageVisibility.js.
+ */
+const pageVisibilityHandlers = createPageVisibilityHandlers({
+	saver: createPageSaver({
+		get: (url) => axios.get(url),
+		put: (url, payload, config) => axios.put(url, payload, config),
+		url: (id) =>
+			generateUrl(`/apps/openregister/api/objects/portaliq/page/${encodeURIComponent(id)}`),
+	}),
+	translate: (text) => t('portaliq', text),
+	notify: showSuccess,
+	notifyError: showError,
+	reload: () => window.location.reload(),
+})
+
+/**
  * `New mail text`, `Change` and `Back to the default text` on the Mail
  * templates page (mail-templates-admin-screen T06). The editor checks a text
  * against its kind's variables before it is stored; see
@@ -292,6 +312,10 @@ export default {
 	 * form, because news is written through NewsController's staff routes.
 	 */
 	...newsHandlers,
+	/**
+	 * The Pages list's `Take back to draft` (page-public-on-purpose).
+	 */
+	...pageVisibilityHandlers,
 	/**
 	 * The Sessions list's row actions (staff-revoke-one-session).
 	 */
