@@ -5250,9 +5250,6 @@
                                     "changes": {
                                         "description": "The changes."
                                     },
-                                    "proposable": {
-                                        "description": "The proposable."
-                                    },
                                     "note": {
                                         "type": "string",
                                         "description": "What the proposer says about it."
@@ -5268,6 +5265,126 @@
                         }
                     }
                 },
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    }
+                }
+            }
+        },
+        "/proposals/context": {
+            "get": {
+                "operationId": "proposal-context",
+                "summary": "What the queue widget shows this user on one record",
+                "description": "Whether the signed-in user may review proposals on the record, and the properties they may propose a change on, each with its value now. Needs a signed-in Nextcloud user who may read the record.",
+                "tags": [
+                    "proposal"
+                ],
+                "parameters": [
+                    {
+                        "name": "register",
+                        "in": "query",
+                        "required": true,
+                        "description": "The register the record lives in.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "schema",
+                        "in": "query",
+                        "required": true,
+                        "description": "The schema the record lives in.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "id",
+                        "in": "query",
+                        "required": true,
+                        "description": "The record.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    }
+                }
+            }
+        },
+        "/proposals/mine": {
+            "get": {
+                "operationId": "proposal-mine-on-record",
+                "summary": "The signed-in colleague's own proposals on one record",
+                "description": "The signed-in colleague's own proposals on one record, any state. Needs a signed-in Nextcloud user who may read the record.",
+                "tags": [
+                    "proposal"
+                ],
+                "parameters": [
+                    {
+                        "name": "register",
+                        "in": "query",
+                        "required": true,
+                        "description": "The register the record lives in.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "schema",
+                        "in": "query",
+                        "required": true,
+                        "description": "The schema the record lives in.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "id",
+                        "in": "query",
+                        "required": true,
+                        "description": "The record.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "The request succeeded.",
@@ -5424,6 +5541,51 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/Problem401"
+                    }
+                }
+            }
+        },
+        "/proposals/{id}/withdraw": {
+            "post": {
+                "operationId": "proposal-withdraw-as-colleague",
+                "summary": "Withdraw your own colleague proposal while it is queued",
+                "description": "Withdraw your own colleague proposal while it is queued. Needs a signed-in Nextcloud user who made the proposal.",
+                "tags": [
+                    "proposal"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "The proposal id.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Problem404"
                     }
                 }
             }

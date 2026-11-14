@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\BackgroundJob\ActionReminderJob;
+use OCA\Portaliq\Service\ActionDueMailer;
 use OCA\Portaliq\Service\ActionReminderService;
 use OCA\Portaliq\Service\PortalAccountService;
 use PHPUnit\Framework\TestCase;
@@ -33,7 +34,7 @@ class ActionReminderServiceTest extends TestCase {
 	 *
 	 * @return array{0: ActionReminderService, 1: object}
 	 */
-	private function service(array $actions, ?PortalAccountService $accounts = null): array {
+	private function service(array $actions, ?PortalAccountService $accounts = null, ?ActionDueMailer $mail = null): array {
 		$store = new class ($actions) {
 			/**
 			 * @var array<int, array{schema: string, uuid: ?string, object: array<string, mixed>}>
@@ -77,7 +78,8 @@ class ActionReminderServiceTest extends TestCase {
 		$service = new ActionReminderService(
 			container: $container,
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
-			accounts: $accounts
+			accounts: $accounts,
+			mail: $mail
 		);
 
 		return [$service, $store];
@@ -113,6 +115,51 @@ class ActionReminderServiceTest extends TestCase {
 		$this->assertSame('action-due', $messages[0]['object']['ruleKey']);
 		$this->assertSame('2026-10-14', $store->actions[0]['reminderForEndDate']);
 	}
+
+	/**
+	 * Beside the portal message, the assignee gets one mail with the action
+	 * and its end date, and no second one for the same end date.
+	 *
+	 * @return void
+	 */
+	public function testTheAssigneeIsMailedOnceBesideTheMessage(): void {
+		$mail = $this->createMock(originalClassName: ActionDueMailer::class);
+		$mail->expects($this->once())->method('send')->with('mark', 'gemeente-x', 'Bankafschriften uploaden', '2026-10-14')->willReturn(true);
+		[$service] = $this->service(actions: [self::action(extra: ['assignee' => 'mark', 'endDate' => '2026-10-14T00:00:00+02:00'])], mail: $mail);
+
+		$this->assertSame(expected: 1, actual: $service->remindDue(today: '2026-10-11'));
+		$this->assertSame(expected: 0, actual: $service->remindDue(today: '2026-10-11'));
+	}//end testTheAssigneeIsMailedOnceBesideTheMessage()
+
+	/**
+	 * A mail that does not leave still records the reminder: the portal
+	 * message is the reminder, the mail is its copy.
+	 *
+	 * @return void
+	 */
+	public function testAFailedMailStillRecordsTheReminder(): void {
+		$mail = $this->createMock(originalClassName: ActionDueMailer::class);
+		$mail->method('send')->willReturn(false);
+		[$service, $store] = $this->service(actions: [self::action()], mail: $mail);
+
+		$this->assertSame(expected: 1, actual: $service->remindDue(today: '2026-10-11'));
+		$this->assertSame(expected: '2026-10-14', actual: $store->actions[0]['reminderForEndDate']);
+	}//end testAFailedMailStillRecordsTheReminder()
+
+	/**
+	 * A withdrawn assignee is not mailed either.
+	 *
+	 * @return void
+	 */
+	public function testAWithdrawnAssigneeIsNotMailed(): void {
+		$accounts = $this->createMock(originalClassName: PortalAccountService::class);
+		$accounts->method('findBySubjectRef')->willReturn(['id' => 'account-sanne', 'status' => 'void']);
+		$mail = $this->createMock(originalClassName: ActionDueMailer::class);
+		$mail->expects($this->never())->method('send');
+		[$service] = $this->service(actions: [self::action()], accounts: $accounts, mail: $mail);
+
+		$this->assertSame(expected: 0, actual: $service->remindDue(today: '2026-10-11'));
+	}//end testAWithdrawnAssigneeIsNotMailed()
 
 	public function testAChangedEndDateEarnsANewReminder(): void {
 		[$service, $store] = $this->service([self::action(['reminderForEndDate' => '2026-10-14', 'reminderSentAt' => '2026-10-11T07:00:00+00:00'])]);

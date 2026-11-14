@@ -55,6 +55,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalThemeResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\SiteHeadInterface;
 use OCA\Portaliq\Kernel\Contracts\SiteShellInterface;
 use OCA\Portaliq\Service\SiteShell;
+use OCA\Portaliq\Service\Cms\SiteIcon;
 use OCA\Portaliq\Service\Publication\WithdrawnPublication;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -115,6 +116,7 @@ class PortalPageController extends Controller {
 	 * @param PortalNoticeReaderInterface $notices The notices running on the signed-in surface now.
 	 * @param AccessibilityFramingInterface $framing Whether the accessibility measurement may frame this request.
 	 * @param WithdrawnPublication|null $withdrawn Whether a path is a withdrawn publication's page; absent, none is.
+	 * @param SiteIcon|null $siteIcon The portal's own tab icon.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -126,6 +128,7 @@ class PortalPageController extends Controller {
 		PortalNoticeReaderInterface $notices,
 		private readonly AccessibilityFramingInterface $framing,
 		private readonly ?WithdrawnPublication $withdrawn = null,
+		?SiteIcon $siteIcon=null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 		$this->shell = new SiteShell(
@@ -135,7 +138,8 @@ class PortalPageController extends Controller {
 			urlGenerator: $urlGenerator,
 			siteHead: $siteHead,
 			notices: $notices,
-			configResolver: $configResolver
+			configResolver: $configResolver,
+			siteIcon: $siteIcon
 		);
 	}//end __construct()
 

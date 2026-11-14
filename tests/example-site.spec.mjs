@@ -796,10 +796,11 @@ test('the Zuiddrecht site lays out its own area as the MijnMenu and MijnZaken bo
 		'rows',
 		'folders',
 	])
-	// portal 0.29.0 / register 0.110.0: the publication features
-	// (publication-error-reports-and-withheld-notices); myCases is unchanged.
-	assert.equal(portal.version, '0.29.0')
-	assert.equal(register.info.version, '0.110.0')
+	// portal 0.30.0 / register 0.111.0: the publication features
+	// (publication-error-reports-and-withheld-notices), past development's
+	// portal identity at 0.29.0 / 0.110.0; myCases is unchanged.
+	assert.equal(portal.version, '0.30.0')
+	assert.equal(register.info.version, '0.111.0')
 })
 
 // zuiddrecht-site-details: the portal names the organisation of the example
