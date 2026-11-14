@@ -1605,6 +1605,9 @@ OC.L10N.register(
         "Verklaringen": "Verklaringen",
         "Write {reference} and {deadline} where they belong.": "Write {reference} and {deadline} where they belong.",
         "Check form": "Check form",
+        "Copy name": "Copy name",
+        "Copy value": "Copy value",
+        "Copying did not work. Select the text and copy it yourself.": "Copying did not work. Select the text and copy it yourself.",
         "This entry opens \"{form}\" today.": "This entry opens \"{form}\" today.",
         "This entry sends people to {destination}. Nothing arrives here.": "This entry sends people to {destination}. Nothing arrives here.",
         "This entry sends people to another website, but has no address. Nobody can start it.": "This entry sends people to another website, but has no address. Nobody can start it.",
@@ -3212,7 +3215,9 @@ OC.L10N.register(
         "Favicon": "Favicon",
         "The image the home page hero shows when its block sets no image of its own: an item of this portal's media library as media:<id>.": "The image the home page hero shows when its block sets no image of its own: an item of this portal's media library as media:<id>.",
         "The site logo shown in the portal header: an item of this portal's media library as media:<id>, or an address. Also the tab icon when the portal has no favicon.": "The site logo shown in the portal header: an item of this portal's media library as media:<id>, or an address. Also the tab icon when the portal has no favicon.",
-        "The tab icon of the site: an item of this portal's media library as media:<id>. A PNG, SVG or ICO. Empty uses the logo, then the theme's icon.": "The tab icon of the site: an item of this portal's media library as media:<id>. A PNG, SVG or ICO. Empty uses the logo, then the theme's icon."
+        "The tab icon of the site: an item of this portal's media library as media:<id>. A PNG, SVG or ICO. Empty uses the logo, then the theme's icon.": "The tab icon of the site: an item of this portal's media library as media:<id>. A PNG, SVG or ICO. Empty uses the logo, then the theme's icon.",
+        "Event to sign up for": "Event to sign up for",
+        "No event": "No event"
     },
     "nplurals=2; plural=(n != 1);"
 )

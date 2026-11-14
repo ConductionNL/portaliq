@@ -32,6 +32,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\PortalMandateServiceInterface;
 use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 
 /**
@@ -39,7 +40,7 @@ use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
  *
  * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
-class PortalMandateService {
+class PortalMandateService implements PortalMandateServiceInterface {
 	/**
 	 * The register the mandate lives in.
 	 */
@@ -54,11 +55,6 @@ class PortalMandateService {
 	 * A mandate covering only the entity it names. The default.
 	 */
 	public const REACH_ORGANISATION = 'organisation';
-
-	/**
-	 * A mandate covering the entity it names and those below it.
-	 */
-	public const REACH_TREE = 'tree';
 
 	/**
 	 * Row cap per identity. A person with more mandates than this has an
@@ -180,7 +176,6 @@ class PortalMandateService {
 
 		return $out;
 	}//end readBy()
-
 
 	/**
 	 * The mandate the identity is acting under, out of the ones it holds.

@@ -20,7 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCP\IAppConfig;
 
 /**
@@ -107,7 +107,7 @@ class TrafficMetrics {
 	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
 	 */
 	public function acceptedTotal(): int {
-		return $this->config->getValueInt(Application::APP_ID, self::ACCEPTED_KEY, 0);
+		return $this->config->getValueInt(AppIdentity::APP_ID, self::ACCEPTED_KEY, 0);
 	}
 
 	/**
@@ -119,12 +119,12 @@ class TrafficMetrics {
 	 */
 	public function refusedByReason(): array {
 		$out = [];
-		foreach ($this->config->getKeys(Application::APP_ID) as $key) {
+		foreach ($this->config->getKeys(AppIdentity::APP_ID) as $key) {
 			if (str_starts_with($key, self::REFUSED_PREFIX) === false) {
 				continue;
 			}
 
-			$out[substr($key, strlen(self::REFUSED_PREFIX))] = $this->config->getValueInt(Application::APP_ID, $key, 0);
+			$out[substr($key, strlen(self::REFUSED_PREFIX))] = $this->config->getValueInt(AppIdentity::APP_ID, $key, 0);
 		}
 
 		ksort($out);
@@ -141,7 +141,7 @@ class TrafficMetrics {
 	 * @return void
 	 */
 	private function add(string $key, int $count): void {
-		$current = $this->config->getValueInt(Application::APP_ID, $key, 0);
-		$this->config->setValueInt(Application::APP_ID, $key, $current + $count);
+		$current = $this->config->getValueInt(AppIdentity::APP_ID, $key, 0);
+		$this->config->setValueInt(AppIdentity::APP_ID, $key, $current + $count);
 	}
 }

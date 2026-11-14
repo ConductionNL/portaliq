@@ -28,12 +28,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\SiteOrganisationInterface;
+
 /**
  * Names a portal's organisation by id and name.
  *
  * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-organisation-filter-reads-the-organisations-name
  */
-class SiteOrganisation {
+class SiteOrganisation implements SiteOrganisationInterface {
 	/**
 	 * Constructor.
 	 *

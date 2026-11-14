@@ -23,6 +23,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Cms;
 
+use OCA\Portaliq\Kernel\Contracts\AccessibilityRunInterface;
+
 /**
  * Keeps only the keys the `accessibilityMeasurement` schema declares. A page
  * that was not measured keeps its reason and loses any violations, so it can
@@ -30,7 +32,7 @@ namespace OCA\Portaliq\Service\Cms;
  *
  * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
  */
-class AccessibilityRun {
+class AccessibilityRun implements AccessibilityRunInterface {
 
 	/**
 	 * @param AccessibilityStatement $statement The address rule.

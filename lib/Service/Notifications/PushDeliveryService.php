@@ -28,12 +28,13 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Notifications;
 
+use OCA\Portaliq\Kernel\Contracts\PushDeliveryServiceInterface;
 use Psr\Log\LoggerInterface;
 
 /**
  * @spec openspec/specs/guardian-push-notifications/spec.md#requirement-an-emergency-push-bypasses-quiet-hours-unconditionally
  */
-class PushDeliveryService {
+class PushDeliveryService implements PushDeliveryServiceInterface {
 	/**
 	 * Constructor.
 	 *

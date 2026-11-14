@@ -26,12 +26,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity\EmailLink;
 
+use OCA\Portaliq\Kernel\Contracts\EmailLinkAddressInterface;
+
 /**
  * Normalises, hashes and masks a sign-in address.
  *
  * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#6
  */
-class EmailLinkAddress {
+class EmailLinkAddress implements EmailLinkAddressInterface {
 	/**
 	 * The address as it is stored and compared: trimmed, lower case.
 	 *

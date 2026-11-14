@@ -28,15 +28,16 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Intake;
 
 use DateTimeImmutable;
-use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalDraftStoreInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 
 /**
  * Saves, reads, deletes and purges the drafts of an action.
  *
  * @spec openspec/changes/site-multi-step-forms/tasks.md#T8
  */
-class PortalDraftStore {
+class PortalDraftStore implements PortalDraftStoreInterface {
 	/**
 	 * The shortest retention a draft may be given, in days.
 	 */

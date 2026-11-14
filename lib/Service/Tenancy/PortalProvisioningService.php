@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Tenancy;
 
+use OCA\Portaliq\Kernel\Contracts\PortalProvisioningServiceInterface;
 use OCA\Portaliq\Service\Cms\PortalDomainVerifier;
 use OCA\Portaliq\Service\ExampleSite\ExampleSiteStore;
 
@@ -34,19 +35,7 @@ use OCA\Portaliq\Service\ExampleSite\ExampleSiteStore;
  *
  * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t06
  */
-class PortalProvisioningService {
-
-	public const CREATED = 'created';
-
-	public const INVALID = 'invalid';
-
-	public const SLUG_TAKEN = 'slug_taken';
-
-	public const HOST_TAKEN = 'host_taken';
-
-	public const UNAVAILABLE = 'unavailable';
-
-	public const FAILED = 'failed';
+class PortalProvisioningService implements PortalProvisioningServiceInterface {
 
 	/**
 	 * Constructor.

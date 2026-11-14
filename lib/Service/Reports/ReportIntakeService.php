@@ -34,6 +34,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Reports;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\ReportIntakeServiceInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\Security\ISecureRandom;
 
@@ -42,7 +43,7 @@ use OCP\Security\ISecureRandom;
  *
  * @spec openspec/specs/report-without-an-account/spec.md
  */
-class ReportIntakeService {
+class ReportIntakeService implements ReportIntakeServiceInterface {
 	/**
 	 * The register the report lives in.
 	 */

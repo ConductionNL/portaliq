@@ -3114,6 +3114,9 @@ OC.L10N.register(
         "Code for your website": "Code voor uw website",
         "Copy code": "Code kopiëren",
         "Copied": "Gekopieerd",
+        "Copy name": "Naam kopiëren",
+        "Copy value": "Waarde kopiëren",
+        "Copying did not work. Select the text and copy it yourself.": "Kopiëren lukte niet. Selecteer de tekst en kopieer hem zelf.",
         "Websites that may show the form": "Websites waarop het formulier mag staan",
         "On any other website the browser does not show the form.": "Op een andere website laat de browser het formulier niet zien.",
         "This form cannot be put on another website yet. Add the website addresses that may show it.": "Dit formulier kan nog niet op een andere website. Voeg de websites toe die het mogen tonen.",
@@ -3366,7 +3369,9 @@ OC.L10N.register(
         "Favicon": "Tabbladpictogram",
         "The image the home page hero shows when its block sets no image of its own: an item of this portal's media library as media:<id>.": "De afbeelding die de hero op de startpagina toont als het blok zelf geen afbeelding heeft: een item uit de mediabibliotheek van dit portaal, als media:<id>.",
         "The site logo shown in the portal header: an item of this portal's media library as media:<id>, or an address. Also the tab icon when the portal has no favicon.": "Het logo van de site in de kop van het portaal: een item uit de mediabibliotheek van dit portaal als media:<id>, of een adres. Ook het tabbladpictogram als het portaal er geen heeft.",
-        "The tab icon of the site: an item of this portal's media library as media:<id>. A PNG, SVG or ICO. Empty uses the logo, then the theme's icon.": "Het tabbladpictogram van de site: een item uit de mediabibliotheek van dit portaal als media:<id>. Een PNG, SVG of ICO. Leeg gebruikt het logo, daarna het pictogram van het thema."
+        "The tab icon of the site: an item of this portal's media library as media:<id>. A PNG, SVG or ICO. Empty uses the logo, then the theme's icon.": "Het tabbladpictogram van de site: een item uit de mediabibliotheek van dit portaal als media:<id>. Een PNG, SVG of ICO. Leeg gebruikt het logo, daarna het pictogram van het thema.",
+        "Event to sign up for": "Evenement om je voor aan te melden",
+        "No event": "Geen evenement"
     },
     "nplurals=2; plural=(n != 1);"
 )

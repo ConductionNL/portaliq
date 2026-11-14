@@ -27,11 +27,11 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
-use OCA\Portaliq\Service\ActivityFeedReader;
-use OCA\Portaliq\Service\ActivitySignupService;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\ActivityFeedReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\ActivitySignupServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -50,29 +50,29 @@ class ActivityGuardianController extends Controller implements PortalProtected {
 	 * HTTP status per sign-up refusal.
 	 */
 	private const REFUSAL_STATUS = [
-		ActivitySignupService::REASON_NOT_FOUND => Http::STATUS_NOT_FOUND,
-		ActivitySignupService::REASON_CLOSED => Http::STATUS_UNPROCESSABLE_ENTITY,
-		ActivitySignupService::REASON_FULL => Http::STATUS_UNPROCESSABLE_ENTITY,
-		ActivitySignupService::REASON_DUPLICATE => Http::STATUS_CONFLICT,
-		ActivitySignupService::REASON_UNAVAILABLE => Http::STATUS_BAD_GATEWAY,
-		ActivitySignupService::REASON_CONSENT_REQUIRED => Http::STATUS_UNPROCESSABLE_ENTITY,
+		ActivitySignupServiceInterface::REASON_NOT_FOUND => Http::STATUS_NOT_FOUND,
+		ActivitySignupServiceInterface::REASON_CLOSED => Http::STATUS_UNPROCESSABLE_ENTITY,
+		ActivitySignupServiceInterface::REASON_FULL => Http::STATUS_UNPROCESSABLE_ENTITY,
+		ActivitySignupServiceInterface::REASON_DUPLICATE => Http::STATUS_CONFLICT,
+		ActivitySignupServiceInterface::REASON_UNAVAILABLE => Http::STATUS_BAD_GATEWAY,
+		ActivitySignupServiceInterface::REASON_CONSENT_REQUIRED => Http::STATUS_UNPROCESSABLE_ENTITY,
 	];
 
 	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param ActivityFeedReader $feedReader The guardian-scoped read.
-	 * @param ActivitySignupService $signups Sign-up and withdraw.
+	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
+	 * @param ActivityFeedReaderInterface $feedReader The guardian-scoped read.
+	 * @param ActivitySignupServiceInterface $signups Sign-up and withdraw.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
-		private readonly ActivityFeedReader $feedReader,
-		private readonly ActivitySignupService $signups,
+		private readonly PortalSessionServiceInterface $session,
+		private readonly ActivityFeedReaderInterface $feedReader,
+		private readonly ActivitySignupServiceInterface $signups,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

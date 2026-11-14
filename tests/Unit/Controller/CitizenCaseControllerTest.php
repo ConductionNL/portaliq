@@ -40,6 +40,8 @@ use OCP\IL10N;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Service\Identity\MandateParties;
+use OCA\Portaliq\Contribution\TimelineProviderMethod;
 
 /**
  * The probes here are deliberately taken with the LEAST privileged principal
@@ -62,7 +64,7 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Portaliq\Contribution\TimelineProviderMethod
  * @uses   \OCA\Portaliq\Service\Identity\MandateParties
  * @uses   \OCA\Portaliq\Service\Branch\BranchNumber
- * @uses   \OCA\Portaliq\Service\Branch\PortalBranchScope
+ * @uses   \OCA\Portaliq\Kernel\Support\PortalBranchScope
  * @uses   \OCA\Portaliq\Service\CitizenCaseDocuments
  * @uses   \OCA\Portaliq\Service\PortalCaseDocumentReader
  * @uses   \OCA\Portaliq\Service\MandatedCaseReader
@@ -73,8 +75,8 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Portaliq\Controller\CaseWithdrawal
  * @uses   \OCA\Portaliq\Controller\CaseWriteRun
  * @uses   \OCA\Portaliq\Service\DocumentEntryExtras
- * @uses   \OCA\Portaliq\Service\UploadedFile
- * @uses   \OCA\Portaliq\Service\Session\SessionTrust
+ * @uses   \OCA\Portaliq\Kernel\Support\UploadedFile
+ * @uses   \OCA\Portaliq\Kernel\Support\SessionTrust
  *
  * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
  */
@@ -531,6 +533,41 @@ class CitizenCaseControllerTest extends TestCase {
 	}//end testPastTheThrottleTheWriteIsRefused()
 
 	/**
+	 * Past the throttle a withdrawal and an added document are refused with
+	 * 429 `too-many-writes` and the sentence, and neither the case writer nor
+	 * the file writer is called (REQ-CWL-001).
+	 *
+	 * @spec openspec/changes/citizen-case-write-limit/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-residents-writes-on-her-own-case-are-limited-per-case-and-per-identity-req-cwl-001
+	 */
+	public function testPastTheThrottleAWithdrawalAndADocumentAreRefused(): void {
+		$refusal = [
+			'message' => 'You have made a lot of changes in a short time. Please try again later.',
+			'error' => 'too-many-writes',
+		];
+
+		$withdrawal = $this->controller(
+			caseType: $this->caseType(withdrawal: $this->withdrawalDeclaration()),
+			throttleOpen: false,
+			params: ['reason' => 'Verhuisd.']
+		)->withdraw('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_TOO_MANY_REQUESTS, $withdrawal->getStatus());
+		$this->assertSame($refusal, $withdrawal->getData());
+
+		$document = $this->controller(
+			upload: ['name' => 'aanvulling.pdf', 'content' => '%PDF'],
+			throttleOpen: false
+		)->addDocument('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_TOO_MANY_REQUESTS, $document->getStatus());
+		$this->assertSame($refusal, $document->getData());
+
+		$this->assertSame([], $this->writes);
+		$this->assertSame([], $this->attached);
+		$this->assertSame([], $this->events);
+	}//end testPastTheThrottleAWithdrawalAndADocumentAreRefused()
+
+	/**
 	 * The citizen reads the label the case app supplied, unchanged, and the
 	 * portal invents nothing when there is none.
 	 */
@@ -856,6 +893,7 @@ class CitizenCaseControllerTest extends TestCase {
 			$l10n,
 			$this->createMock(LoggerInterface::class),
 			$this->documents(fileReader: $fileReader, published: $published),
+			new MandateParties(),
 			$mandatedCases
 		);
 	}//end controller()
@@ -901,7 +939,7 @@ class CitizenCaseControllerTest extends TestCase {
 
 		return new CitizenCaseDocuments(
 			files: $fileReader,
-			published: new PortalCaseDocumentReader(locator: $locator, logger: $this->createMock(LoggerInterface::class)),
+			published: new PortalCaseDocumentReader(locator: $locator, logger: $this->createMock(LoggerInterface::class), timelineProviderMethod: new TimelineProviderMethod()),
 			audit: $audit
 		);
 	}//end documents()

@@ -20,7 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IAppConfig;
 
@@ -80,21 +80,21 @@ class VisitorHasher {
 	 */
 	private function salt(): string {
 		$today = self::SALT_PREFIX . gmdate('Ymd', $this->time->getTime());
-		$existing = $this->config->getValueString(Application::APP_ID, $today, '');
+		$existing = $this->config->getValueString(AppIdentity::APP_ID, $today, '');
 		if ($existing !== '') {
 			return $existing;
 		}
 
 		// Rotation IS deletion. The old salt is not archived anywhere; that
 		// is what makes yesterday's hashes unrecomputable today.
-		foreach ($this->config->getKeys(Application::APP_ID) as $key) {
+		foreach ($this->config->getKeys(AppIdentity::APP_ID) as $key) {
 			if (str_starts_with($key, self::SALT_PREFIX) === true && $key !== $today) {
-				$this->config->deleteKey(Application::APP_ID, $key);
+				$this->config->deleteKey(AppIdentity::APP_ID, $key);
 			}
 		}
 
 		$salt = bin2hex(random_bytes(32));
-		$this->config->setValueString(Application::APP_ID, $today, $salt, false, true);
+		$this->config->setValueString(AppIdentity::APP_ID, $today, $salt, false, true);
 
 		return $salt;
 	}
