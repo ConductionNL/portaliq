@@ -77,13 +77,14 @@ trait SchemaRowAccess {
 	 */
 	private static function arraysOf(array $page): array {
 		$out = [];
-		foreach ($page as $row) {
-			if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-				$row = $row->jsonSerialize();
+		foreach ($page as $entry) {
+			$value = $entry;
+			if (is_object($entry) === true && method_exists($entry, 'jsonSerialize') === true) {
+				$value = $entry->jsonSerialize();
 			}
 
-			if (is_array($row) === true) {
-				$out[] = $row;
+			if (is_array($value) === true) {
+				$out[] = $value;
 			}
 		}
 
