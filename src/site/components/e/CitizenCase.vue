@@ -75,6 +75,24 @@
 		</p>
 
 		<div
+			v-if="!actionsOnly && outcome"
+			class="pq-case-outcome"
+			data-testid="case-outcome">
+			<h3 class="utrecht-heading-3">
+				{{ t('Outcome') }}
+			</h3>
+			<p class="utrecht-paragraph pq-case-outcome-label" data-testid="case-outcome-label">
+				<strong>{{ outcome.label }}</strong>
+			</p>
+			<p
+				v-if="outcome.description"
+				class="utrecht-paragraph"
+				data-testid="case-outcome-description">
+				{{ outcome.description }}
+			</p>
+		</div>
+
+		<div
 			v-if="!actionsOnly && writableSet.status && writableSet.status.label"
 			class="pq-case-status"
 			data-testid="case-status">
@@ -273,6 +291,7 @@ import WithdrawCaseConfirm from '../../modals/e/WithdrawCaseConfirm.vue'
 import FileItem from '../mijn/FileItem.vue'
 import CaseField from './CaseField.vue'
 import { groupDocuments } from '../../../shared/caseDocuments.js'
+import { caseOutcome } from '../../../shared/caseOutcome.js'
 import {
 	bannerSentence,
 	decisionDateRows,
@@ -456,6 +475,11 @@ export default {
 		/** Withdrawn or closed: the screen shows the state, not why a window shut. */
 		ended() {
 			return caseHasEnded(this.writableSet, this.withdrawal)
+		},
+
+		/** The ended case's outcome label and explanation, or null (REQ-COC-001). */
+		outcome() {
+			return caseOutcome(this.caseRow, this.data?.outcome, this.ended)
 		},
 
 		groups() {

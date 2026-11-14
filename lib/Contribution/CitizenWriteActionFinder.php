@@ -90,6 +90,7 @@ class CitizenWriteActionFinder {
 					'documents' => $this->documents(contribution: $contribution, register: $register, schema: $schema),
 					'fields' => $this->caseFields(contribution: $contribution, register: $register, schema: $schema),
 					'closedField' => $this->closedField(contribution: $contribution, register: $register, schema: $schema),
+					'outcome' => $this->outcome(contribution: $contribution, register: $register, schema: $schema),
 				];
 			}
 		}
@@ -217,4 +218,45 @@ class CitizenWriteActionFinder {
 
 		return '';
 	}//end closedField()
+	/**
+	 * The outcome declaration of the contribution's case collection on this
+	 * register and schema: which field holds the public result label and which
+	 * its explanation, or null when none declares one.
+	 *
+	 * The contribution is already normalised, so a field the collection does
+	 * not project is gone by now; only non-empty string names are passed on.
+	 *
+	 * @param array<string, mixed> $contribution One app's contribution.
+	 * @param string               $register     The case's register.
+	 * @param string               $schema       The case's schema.
+	 *
+	 * @return array{labelField?: string, descriptionField?: string}|null
+	 *
+	 * @spec openspec/changes/case-outcome-on-the-case-page/specs/portal-contribution-contract/spec.md
+	 */
+	private function outcome(array $contribution, string $register, string $schema): ?array {
+		foreach (($contribution['collections'] ?? []) as $collection) {
+			if (is_array($collection) === false
+				|| ($collection['register'] ?? '') !== $register
+				|| ($collection['schema'] ?? '') !== $schema
+				|| is_array(($collection['outcome'] ?? null)) === false
+			) {
+				continue;
+			}
+
+			$kept = [];
+			foreach (['labelField', 'descriptionField'] as $key) {
+				$field = ($collection['outcome'][$key] ?? null);
+				if (is_string($field) === true && $field !== '') {
+					$kept[$key] = $field;
+				}
+			}
+
+			if (isset($kept['labelField']) === true) {
+				return $kept;
+			}
+		}
+
+		return null;
+	}//end outcome()
 }//end class

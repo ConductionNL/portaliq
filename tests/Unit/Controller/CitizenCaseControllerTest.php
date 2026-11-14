@@ -1241,6 +1241,28 @@ class CitizenCaseControllerTest extends TestCase {
 	}//end testShowNeverReturnsAFileReference()
 
 	/**
+	 * The collection's outcome declaration reaches the screen, which decides
+	 * when to show it; a collection without one sends null
+	 * (case-outcome-on-the-case-page REQ-COC-001).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-outcome-on-the-case-page/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	public function testShowCarriesTheOutcomeDeclaration(): void {
+		$outcome = ['labelField' => 'resultPublicLabel', 'descriptionField' => 'resultPublicDescription'];
+		$withOutcome = [['id' => 'mijn-zaken', 'register' => 'zaken', 'schema' => 'zaak', 'outcome' => $outcome]];
+
+		$response = $this->controller(collections: $withOutcome)->show('zaken', 'zaak', self::CASE_ID);
+		$this->assertSame(
+			['labelField' => 'resultPublicLabel', 'descriptionField' => 'resultPublicDescription'],
+			$response->getData()['outcome']
+		);
+
+		$this->assertNull($this->controller(collections: self::WITH_DOCUMENTS)->show('zaken', 'zaak', self::CASE_ID)->getData()['outcome']);
+	}//end testShowCarriesTheOutcomeDeclaration()
+
+	/**
 	 * The resident's own uploads are listed under "Sent by you", and a file in
 	 * the case folder without the tag is not (REQ-CDC-004).
 	 *

@@ -89,6 +89,7 @@ class CitizenWriteActionFinderTest extends TestCase {
 				'documents'     => ['label' => 'Stukken', 'provider' => ''],
 				'fields'        => ['title', 'status'],
 				'closedField'   => 'closed',
+				'outcome'       => null,
 			],
 			$this->finder->forSubject(subject: $subject, register: 'zaken', schema: 'case')
 		);
@@ -104,7 +105,7 @@ class CitizenWriteActionFinderTest extends TestCase {
 		$this->registry->method('aggregateFor')->willReturn(['contributions' => [['actions' => [$action]]]]);
 
 		$this->assertSame(
-			['action' => $action, 'app' => '', 'filesDownload' => false, 'documents' => null, 'fields' => null, 'closedField' => ''],
+			['action' => $action, 'app' => '', 'filesDownload' => false, 'documents' => null, 'fields' => null, 'closedField' => '', 'outcome' => null],
 			$this->finder->forSubject(subject: [], register: 'r', schema: 's')
 		);
 	}//end testWithoutACollectionTheExtrasAreEmpty()
@@ -123,4 +124,49 @@ class CitizenWriteActionFinderTest extends TestCase {
 		$this->assertNull($this->finder->forSubject(subject: [], register: 'r', schema: 's'));
 		$this->assertNull($this->finder->forSubject(subject: [], register: 'r', schema: 's'));
 	}//end testNothingMatches()
+	/**
+	 * The case collection's outcome declaration is passed on, without a blank
+	 * or non-string description field; a declaration without a label field is
+	 * no outcome at all.
+	 *
+	 * @return void
+	 */
+	public function testTheCollectionsOutcomeIsPassedOn(): void {
+		$action = ['type' => 'update', 'register' => 'r', 'schema' => 's', 'citizenWrite' => []];
+		$this->registry->method('aggregateFor')->willReturnOnConsecutiveCalls(
+			[
+				'contributions' => [
+					[
+						'actions'     => [$action],
+						'collections' => [
+							['register' => 'r', 'schema' => 'other', 'outcome' => ['labelField' => 'wrong']],
+							['register' => 'r', 'schema' => 's', 'outcome' => ['labelField' => 'resultLabel', 'descriptionField' => 'resultText']],
+						],
+					],
+				],
+			],
+			$this->withOutcome(action: $action, outcome: ['labelField' => 'resultLabel', 'descriptionField' => '']),
+			$this->withOutcome(action: $action, outcome: ['descriptionField' => 'resultText']),
+			$this->withOutcome(action: $action, outcome: 'resultLabel')
+		);
+
+		$this->assertSame(
+			['labelField' => 'resultLabel', 'descriptionField' => 'resultText'],
+			$this->finder->forSubject(subject: [], register: 'r', schema: 's')['outcome']
+		);
+		$this->assertSame(['labelField' => 'resultLabel'], $this->finder->forSubject(subject: [], register: 'r', schema: 's')['outcome']);
+		$this->assertNull($this->finder->forSubject(subject: [], register: 'r', schema: 's')['outcome']);
+		$this->assertNull($this->finder->forSubject(subject: [], register: 'r', schema: 's')['outcome']);
+	}//end testTheCollectionsOutcomeIsPassedOn()
+	/**
+	 * One contribution with one action and one collection carrying the outcome.
+	 *
+	 * @param array<string, mixed> $action  The action.
+	 * @param mixed                $outcome The collection's outcome value.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withOutcome(array $action, mixed $outcome): array {
+		return ['contributions' => [['actions' => [$action], 'collections' => [['register' => 'r', 'schema' => 's', 'outcome' => $outcome]]]]];
+	}//end withOutcome()
 }//end class

@@ -74,6 +74,7 @@ class CitizenCaseProjection implements CitizenCaseProjectionInterface {
 	 * @return array<string, mixed> The projected case.
 	 *
 	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/changes/case-outcome-on-the-case-page/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	public function visible(array $context, array $case): array {
 		$declared = ($context['fields'] ?? null);
@@ -94,7 +95,8 @@ class CitizenCaseProjection implements CitizenCaseProjectionInterface {
 			(array)($action['fields'] ?? []),
 			array_keys((array)($context['set']['fields'] ?? [])),
 			[(string)($config['statusField'] ?? 'status')],
-			self::WITHDRAWAL_FIELDS
+			self::WITHDRAWAL_FIELDS,
+			array_values((array)($context['outcome'] ?? []))
 		);
 
 		return (new PortalFieldProjector(logger: $this->logger))->projectRow(
