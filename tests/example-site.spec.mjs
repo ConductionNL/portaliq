@@ -211,6 +211,23 @@ const { default: taskIcons } = await import(
  * @return {Array<{href: string, where: string}>} The links.
  */
 function linksOf(site) {
+	return [
+		...menuLinksOf(site),
+		...footerLinksOf(site.portal.footer || {}),
+		...headerLinksOf(site.portal),
+		...site.pages.flatMap((page) =>
+			(page.body.widgets || []).flatMap((widget) => widgetLinksOf(page, widget)),
+		),
+	]
+}
+
+/**
+ * The links in the declaration's menus, one level of children deep.
+ *
+ * @param {object} site The declaration.
+ * @return {Array<{href: string, where: string}>} The links.
+ */
+function menuLinksOf(site) {
 	const links = []
 	for (const menu of site.menus) {
 		for (const item of menu.items || []) {
@@ -226,7 +243,17 @@ function linksOf(site) {
 			}
 		}
 	}
-	const footer = site.portal.footer || {}
+	return links
+}
+
+/**
+ * The links in the portal footer.
+ *
+ * @param {object} footer The portal's footer declaration.
+ * @return {Array<{href: string, where: string}>} The links.
+ */
+function footerLinksOf(footer) {
+	const links = []
 	if (footer.cta) {
 		links.push({ href: footer.cta.href, where: 'footer button' })
 	}
@@ -240,59 +267,74 @@ function linksOf(site) {
 			links.push({ href: entry.href, where: `footer ${key} "${entry.label}"` })
 		}
 	}
-	if (site.portal.headerSearch) {
-		links.push({
-			href: site.portal.headerSearch.route || '/zoeken',
-			where: 'header search',
-		})
+	return links
+}
+
+/**
+ * The link of the header search, when the portal has one.
+ *
+ * @param {object} portal The portal declaration.
+ * @return {Array<{href: string, where: string}>} The links.
+ */
+function headerLinksOf(portal) {
+	if (!portal.headerSearch) {
+		return []
 	}
-	for (const page of site.pages) {
-		for (const widget of page.body.widgets || []) {
-			const props = widget.props || {}
-			const where = `page ${page.route} widget ${widget.id}`
-			for (const key of [
-				'href',
-				'moreHref',
-				'articleRoute',
-				'signInHref',
-				'linkHref',
-			]) {
-				if (props[key]) {
-					links.push({ href: props[key], where: `${where} ${key}` })
-				}
-			}
-			for (const key of [
-				'items',
-				'links',
-				'actions',
-				'buttons',
-				'popularLinks',
-			]) {
-				for (const entry of Array.isArray(props[key]) ? props[key] : []) {
-					if (entry && entry.href) {
-						links.push({
-							href: entry.href,
-							where: `${where} ${key} "${entry.label}"`,
-						})
-					}
-				}
-			}
-			// The link columns' links (site-matches-the-zuiddrecht-boards).
-			for (const column of Array.isArray(props.columns) ? props.columns : []) {
-				for (const entry of Array.isArray(column?.links)
-					? column.links
-					: []) {
-					if (entry && entry.href) {
-						links.push({
-							href: entry.href,
-							where: `${where} column "${column.title}" "${entry.label}"`,
-						})
-					}
-				}
-			}
+	return [{
+		href: portal.headerSearch.route || '/zoeken',
+		where: 'header search',
+	}]
+}
+
+/**
+ * The links one page widget declares in its props.
+ *
+ * @param {object} page The page holding the widget.
+ * @param {object} widget The widget.
+ * @return {Array<{href: string, where: string}>} The links.
+ */
+function widgetLinksOf(page, widget) {
+	const props = widget.props || {}
+	const where = `page ${page.route} widget ${widget.id}`
+	const links = []
+	for (const key of [
+		'href',
+		'moreHref',
+		'articleRoute',
+		'signInHref',
+		'linkHref',
+	]) {
+		if (props[key]) {
+			links.push({ href: props[key], where: `${where} ${key}` })
 		}
 	}
+	for (const key of [
+		'items',
+		'links',
+		'actions',
+		'buttons',
+		'popularLinks',
+	]) {
+		links.push(...entryLinksOf(props[key], (entry) => `${where} ${key} "${entry.label}"`))
+	}
+	// The link columns' links (site-matches-the-zuiddrecht-boards).
+	for (const column of Array.isArray(props.columns) ? props.columns : []) {
+		links.push(...entryLinksOf(column?.links, (entry) => `${where} column "${column.title}" "${entry.label}"`))
+	}
 	return links
+}
+
+/**
+ * The entries of a list that carry an href, as links.
+ *
+ * @param {*} list A list of entries, or anything else (read as empty).
+ * @param {Function} whereOf Describes where an entry stands.
+ * @return {Array<{href: string, where: string}>} The links.
+ */
+function entryLinksOf(list, whereOf) {
+	return (Array.isArray(list) ? list : [])
+		.filter((entry) => entry && entry.href)
+		.map((entry) => ({ href: entry.href, where: whereOf(entry) }))
 }
 
 /**
