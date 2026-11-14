@@ -797,7 +797,8 @@ test('the Zuiddrecht site lays out its own area as the MijnMenu and MijnZaken bo
 		'folders',
 	])
 	assert.equal(portal.version, '0.29.0')
-	assert.equal(register.info.version, '0.110.0')
+	// 0.111.0: a form binding's `availability` (form-governance-availability-retention-and-routing).
+	assert.equal(register.info.version, '0.111.0')
 })
 
 // zuiddrecht-site-details: the portal names the organisation of the example
