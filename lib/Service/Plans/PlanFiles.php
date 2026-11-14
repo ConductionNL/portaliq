@@ -77,6 +77,31 @@ class PlanFiles implements PlanFilesInterface {
 	 * @spec openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md#requirement-participants-share-the-goal-actions-note-and-file-versions-req-spl-003
 	 */
 	public function add(array $subject, string $id, ?array $uploaded, string $previousVersion='', string $now=''): string {
+		$membership = $this->openPlan(subject: $subject, id: $id);
+		if (is_string($membership) === true) {
+			return $membership;
+		}
+
+		$files = $this->rules->filesOf(plan: $membership['plan']);
+		$entry = $this->attachedEntry(files: $files, previousVersion: $previousVersion, uploaded: $uploaded, id: $id);
+		if (is_string($entry) === true) {
+			return $entry;
+		}
+
+		$files[] = $this->stamped(entry: $entry, subject: $subject, now: $now);
+
+		return $this->plans->saveFiles(subject: $subject, plan: $membership['plan'], isOwner: $membership['isOwner'], files: $files);
+	}//end add()
+
+	/**
+	 * The participant's plan when it still takes files.
+	 *
+	 * @param array<string, mixed> $subject The session subject.
+	 * @param string               $id      The plan.
+	 *
+	 * @return array{plan: array<string, mixed>, isOwner: bool}|string The membership, or NOT_FOUND, FORBIDDEN (a done plan).
+	 */
+	private function openPlan(array $subject, string $id): array|string {
 		$membership = $this->plans->membership(subject: $subject, id: $id);
 		if ($membership === null) {
 			return PortalPlanService::NOT_FOUND;
@@ -87,13 +112,62 @@ class PlanFiles implements PlanFilesInterface {
 			return PortalPlanService::FORBIDDEN;
 		}
 
-		$files = $this->rules->filesOf(plan: $plan);
+		return $membership;
+	}//end openPlan()
+
+	/**
+	 * Attach the upload to the plan object and answer with its file-list entry.
+	 *
+	 * @param array<int, array<string, mixed>> $files           The plan's files.
+	 * @param string                           $previousVersion The file this one is a new version of, or ''.
+	 * @param array<string, mixed>|null        $uploaded        The entry from IRequest::getUploadedFile().
+	 * @param string                           $id              The plan.
+	 *
+	 * @return array<string, mixed>|string The entry, or INVALID (no file, or not the newest version) or FAILED.
+	 */
+	private function attachedEntry(array $files, string $previousVersion, array|null $uploaded, string $id): array|string {
 		$entry = self::nextEntry(files: $files, previousVersion: $previousVersion);
 		$file  = $this->upload->read($uploaded);
 		if ($entry === null || $file === null) {
 			return PortalPlanService::INVALID;
 		}
 
+		$fileId = $this->attach(id: $id, file: $file);
+		if ($fileId === '') {
+			return PortalPlanService::FAILED;
+		}
+
+		return $this->identified(entry: $entry, fileId: $fileId, name: $file['name']);
+	}//end attachedEntry()
+
+	/**
+	 * The entry with the attached file's id and name; a first version starts its own series.
+	 *
+	 * @param array<string, mixed> $entry  The series, version and predecessor of the file.
+	 * @param string               $fileId The attached file's id.
+	 * @param string               $name   The file name.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function identified(array $entry, string $fileId, string $name): array {
+		$entry['id']   = $fileId;
+		$entry['name'] = $name;
+		if ($entry['series'] === '') {
+			$entry['series'] = $fileId;
+		}
+
+		return $entry;
+	}//end identified()
+
+	/**
+	 * Attach the file to the plan object under a unique stored name.
+	 *
+	 * @param string                                $id   The plan.
+	 * @param array{name: string, content: string}  $file The upload.
+	 *
+	 * @return string The attached file's id, or '' when attaching failed.
+	 */
+	private function attach(string $id, array $file): string {
 		$attached = $this->writer->attachFile(
 			register: PortalPlanService::REGISTER,
 			schema: self::SCHEMA,
@@ -104,27 +178,29 @@ class PlanFiles implements PlanFilesInterface {
 			),
 			content: $file['content']
 		);
-		$fileId = (string)($attached['id'] ?? '');
-		if ($fileId === '') {
-			return PortalPlanService::FAILED;
-		}
 
+		return (string)($attached['id'] ?? '');
+	}//end attach()
+
+	/**
+	 * The entry with who added it and when.
+	 *
+	 * @param array<string, mixed> $entry   The attached file's entry.
+	 * @param array<string, mixed> $subject The session subject.
+	 * @param string               $now     The moment, ISO 8601; now when empty.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function stamped(array $entry, array $subject, string $now): array {
 		if ($now === '') {
 			$now = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
 		}
 
-		$entry['id']      = $fileId;
-		$entry['name']    = $file['name'];
 		$entry['addedBy'] = (string)($subject['subjectRef'] ?? '');
 		$entry['addedAt'] = $now;
-		if ($entry['series'] === '') {
-			$entry['series'] = $fileId;
-		}
 
-		$files[] = $entry;
-
-		return $this->plans->saveFiles(subject: $subject, plan: $plan, isOwner: $membership['isOwner'], files: $files);
-	}//end add()
+		return $entry;
+	}//end stamped()
 
 	/**
 	 * Open one file of a plan.
