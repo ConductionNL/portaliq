@@ -14,7 +14,7 @@ that is not in `check:specs` does not run in CI.
   register version. `npm run check:register` exits 0 (REQ-PIA-001).
   - unit `tests/Unit/Settings/PortaliqRegisterConfigTest.php`
     `testThePortalDeclaresFaviconAndHeroImage`.
-- [ ] 1.2 The portal settings form gets three media pickers using the media library's existing
+- [x] 1.2 The portal settings form gets three media pickers using the media library's existing
   picker and upload. The save path refuses a favicon type other than PNG, SVG or ICO and a media
   object of another portal (REQ-PIA-001).
   - **fails today**: `tests/Unit/Service/PortalSettingsServiceTest.php` (or the service the form
@@ -25,7 +25,12 @@ that is not in `check:specs` does not run in CI.
     OpenRegister, so the rules run on OpenRegister's creating/updating events
     (`PortalImagesGuardListener` over `lib/Service/Cms/PortalImageChoice.php`): a `media:<id>` must be a
     published item of this portal's own library, and a favicon's newest file a PNG, SVG or ICO.
-    Tests in `tests/Unit/Service/Cms/PortalImageChoiceTest.php`. The three pickers in the form are left.
+    Tests in `tests/Unit/Service/Cms/PortalImageChoiceTest.php`.
+  - Pickers built: the portal details form (`portal-settings-details` in `src/manifest.json`) keeps its
+    logo picker and gains `favicon` and `heroImage` reference pickers over this portal's published
+    images, stored as `media:<id>`; node test `tests/portal-details.spec.mjs`. The settings-form
+    reference field has no upload of its own: an image is uploaded on the portal's Media page and then
+    picked here.
 
 ## 2. The head and the hero
 

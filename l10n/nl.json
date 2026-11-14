@@ -3463,7 +3463,11 @@
         "Change a value before sending the proposal.": "Wijzig eerst een waarde voordat u het voorstel verstuurt.",
         "The proposal was refused.": "Het voorstel is geweigerd.",
         "Your proposal is sent for review.": "Uw voorstel is ter beoordeling verstuurd.",
-        "The proposal is withdrawn.": "Het voorstel is ingetrokken."
+        "The proposal is withdrawn.": "Het voorstel is ingetrokken.",
+        "No favicon": "Geen tabbladpictogram",
+        "No hero image": "Geen hero-afbeelding",
+        "A PNG, SVG or ICO from Media of this portal, shown as the tab icon. Without one the tab shows the logo.": "Een PNG, SVG of ICO uit Media van deze portal, getoond als tabbladpictogram. Zonder pictogram toont het tabblad het logo.",
+        "A published image from Media of this portal, shown by a home page hero that has no image of its own.": "Een gepubliceerde afbeelding uit Media van deze portal, getoond door een hero op de startpagina die zelf geen afbeelding heeft."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

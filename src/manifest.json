@@ -3985,6 +3985,38 @@
                   "freePatternMessage": "A logo address starts with /, http:// or https://."
                 },
                 {
+                  "key": "favicon",
+                  "label": "Favicon",
+                  "type": "reference",
+                  "register": "portaliq",
+                  "schema": "media",
+                  "labelField": "title",
+                  "filter": {
+                    "kind": "image",
+                    "status": "published",
+                    "portal": "@object.slug"
+                  },
+                  "valueTemplate": "media:{id}",
+                  "emptyLabel": "No favicon",
+                  "hint": "A PNG, SVG or ICO from Media of this portal, shown as the tab icon. Without one the tab shows the logo."
+                },
+                {
+                  "key": "heroImage",
+                  "label": "Hero image",
+                  "type": "reference",
+                  "register": "portaliq",
+                  "schema": "media",
+                  "labelField": "title",
+                  "filter": {
+                    "kind": "image",
+                    "status": "published",
+                    "portal": "@object.slug"
+                  },
+                  "valueTemplate": "media:{id}",
+                  "emptyLabel": "No hero image",
+                  "hint": "A published image from Media of this portal, shown by a home page hero that has no image of its own."
+                },
+                {
                   "key": "frameAncestors",
                   "label": "May be embedded on",
                   "type": "chips",
