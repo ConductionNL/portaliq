@@ -35,8 +35,9 @@ namespace OCA\Portaliq\Service\Reports;
 
 use DateTimeImmutable;
 use OCA\Portaliq\Event\PortalReportRevealedEvent;
-use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\RevealServiceInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IGroupManager;
 use OCP\IUser;
@@ -46,7 +47,7 @@ use OCP\IUser;
  *
  * @spec openspec/specs/report-without-an-account/spec.md
  */
-class RevealService {
+class RevealService implements RevealServiceInterface {
 	/**
 	 * The register the request lives in.
 	 */

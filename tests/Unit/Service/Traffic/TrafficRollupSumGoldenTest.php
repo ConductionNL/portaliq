@@ -29,8 +29,8 @@ use stdClass;
  *
  * @covers \OCA\Portaliq\Service\Traffic\TrafficRollupSum
  * @uses   \OCA\Portaliq\Service\Traffic\TrafficExperiments
- * @uses \OCA\Portaliq\Service\Traffic\TrafficRollupOutcomes
- * @uses \OCA\Portaliq\Service\Traffic\TrafficRollupValues
+ * @uses   \OCA\Portaliq\Service\Traffic\TrafficRollupOutcomes
+ * @uses   \OCA\Portaliq\Service\Traffic\TrafficRollupValues
  */
 class TrafficRollupSumGoldenTest extends TestCase {
 

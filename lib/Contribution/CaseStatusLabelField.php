@@ -27,12 +27,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\CaseStatusLabelFieldInterface;
+
 /**
  * Normalises a collection's `statusLabelField` and stamps its words on a row.
  *
  * @spec openspec/specs/portal-my-cases/spec.md
  */
-class CaseStatusLabelField {
+class CaseStatusLabelField implements CaseStatusLabelFieldInterface {
 	/**
 	 * Keep `statusLabelField` only when it names a field the collection projects.
 	 *

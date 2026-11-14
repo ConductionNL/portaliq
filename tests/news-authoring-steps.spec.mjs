@@ -49,7 +49,9 @@ test('formFromItem picks the audience from the target', () => {
 		schoolRef: 's1',
 		groupRefs: ['g1'],
 		childRefs: ['c1'],
+		eventRef: '',
 	})
+	assert.equal(formFromItem({ eventRef: ' ev-1 ' }).eventRef, 'ev-1')
 	assert.equal(formFromItem({ target: { childRefs: ['c1'] } }).audience, 'children')
 	assert.equal(formFromItem({ target: { schoolRef: 's', childRefs: ['c1'] } }).audience, 'school')
 	assert.equal(formFromItem({ target: 'x', body: 5 }).body, '')
@@ -113,9 +115,9 @@ test('the News calls: audiences, a new draft, a change and publishing', async ()
 	const { api, calls } = newsApi()
 	const form = { title: ' T ', body: ' B ', audience: 'groups', groupRefs: ['g'] }
 	assert.deepEqual(await api.save(form, '', 'staff-1'), { ok: 1 })
-	assert.deepEqual(calls[0], { verb: 'post', url: '/nc/apps/portaliq/api/news', body: { title: 'T', body: 'B', target: { groupRefs: ['g'] }, authorRef: 'staff-1' } })
+	assert.deepEqual(calls[0], { verb: 'post', url: '/nc/apps/portaliq/api/news', body: { title: 'T', body: 'B', target: { groupRefs: ['g'] }, eventRef: '', authorRef: 'staff-1' } })
 	await api.save(form, 'a/b', 'staff-1')
-	assert.deepEqual(calls[1], { verb: 'put', url: '/nc/apps/portaliq/api/news/a%2Fb', body: { title: 'T', body: 'B', target: { groupRefs: ['g'] } } })
+	assert.deepEqual(calls[1], { verb: 'put', url: '/nc/apps/portaliq/api/news/a%2Fb', body: { title: 'T', body: 'B', target: { groupRefs: ['g'] }, eventRef: '' } })
 	await api.setPublished('n1', true)
 	await api.setPublished('n1', false)
 	await api.setPublished(undefined, true)
@@ -136,6 +138,7 @@ function handlers(setup) {
 	const done = { notified: [], errors: [], reloads: 0, dialogs: [], saves: [] }
 	const api = {
 		audiences: setup.audiences || (async () => ({ schools: [{ id: 's' }], groups: [] })),
+		events: setup.events,
 		save: async (form, id, author) => {
 			done.saves.push([form, id, author])
 			if (setup.saveFails) {
@@ -181,6 +184,30 @@ test('a new item and a change are saved through the dialog', async () => {
 	assert.deepEqual(change.done.dialogs[0].options, { schools: [], groups: [] })
 	assert.deepEqual(change.done.saves[0], [{ title: 'T' }, 'n1', 'staff-1'])
 	assert.equal(change.done.submitted.message, 't:The news item is changed.')
+})
+
+test('the event choices: latest first from the server, labelled with their day (event-sign-up-by-a-pupil-with-seats task 4)', async () => {
+	const lists = newsApi({ data: { events: [
+		{ id: 'e2', title: 'Kerstviering', start: '2026-12-18T18:00:00+00:00' },
+		{ id: '', title: 'No id' },
+		{ id: 'e1', title: '', start: '' },
+	] } })
+	assert.deepEqual(await lists.api.events(), [
+		{ id: 'e2', label: 'Kerstviering (2026-12-18)' },
+		{ id: 'e1', label: 'e1' },
+	])
+	assert.equal(lists.calls[0].url, '/nc/apps/portaliq/api/events')
+	assert.deepEqual(await newsApi({ data: { events: 'x' } }).api.events(), [])
+})
+
+test('the dialog is offered the events, or none when they cannot be read', async () => {
+	const offered = handlers({ events: async () => [{ id: 'e1', label: 'Avond (2026-11-03)' }] })
+	await offered.made.newNewsItem()
+	assert.deepEqual(offered.done.dialogs[0].events, [{ id: 'e1', label: 'Avond (2026-11-03)' }])
+
+	const down = handlers({ events: async () => { throw new Error('down') } })
+	await down.made.newNewsItem()
+	assert.deepEqual(down.done.dialogs[0].events, [])
 })
 
 test('a refused save stays in the dialog, a closed dialog changes nothing', async () => {

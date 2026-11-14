@@ -2004,6 +2004,7 @@ export function createPortalApi(config, store = {}) {
  * A no-op (returns false) when there is no `#token=` fragment.
  *
  * @return {boolean} Whether a token was picked up.
+ * @spec openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md#requirement-the-bearer-reaches-the-browser-in-the-fragment-and-leaves-the-address-req-see-003
  */
 export function consumeOidcCallbackFragment() {
 	const hash = window.location.hash || ''

@@ -36,19 +36,20 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Tenancy;
 
-use RuntimeException;
-use Throwable;
+use OCA\Portaliq\Kernel\Contracts\PortalOrganisationRestampInterface;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
+use Throwable;
 
 /**
  * Restamps `@self.organisation` of portaliq rows from their organisation slug.
  *
  * @spec openspec/changes/portal-acts-for-its-organisation/specs/portal-tenancy/spec.md#requirement-existing-rows-get-their-organisation-from-a-reported-dry-run-then-an-explicit-apply-req-pao-004
  */
-class PortalOrganisationRestamp {
+class PortalOrganisationRestamp implements PortalOrganisationRestampInterface {
 	use ObjectServiceLookup;
 
 	/**

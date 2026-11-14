@@ -34,7 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\MetricsSources;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -110,7 +110,7 @@ class MetricsController extends Controller {
 		private LoggerInterface $logger,
 		private MetricsSources $sources,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -162,7 +162,7 @@ class MetricsController extends Controller {
 		$lines  = [
 			'# HELP ' . $prefix . '_info Static app information',
 			'# TYPE ' . $prefix . '_info gauge',
-			$prefix . '_info{app="' . Application::APP_ID . '",version="0.1.0"} 1',
+			$prefix . '_info{app="' . AppIdentity::APP_ID . '",version="0.1.0"} 1',
 		];
 		foreach (self::GAUGE_HELP as $name => $help) {
 			$metric = $prefix . '_' . $name;

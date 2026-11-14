@@ -35,11 +35,12 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\PortalSelfServiceServiceInterface;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\Notifications\NotificationChannels;
 use OCA\Portaliq\Service\Notifications\PushDeliveryService;
-use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCP\Security\ISecureRandom;
 
 /**
@@ -47,7 +48,7 @@ use OCP\Security\ISecureRandom;
  *
  * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
-class PortalSelfServiceService {
+class PortalSelfServiceService implements PortalSelfServiceServiceInterface {
 	/**
 	 * The register the account lives in.
 	 */

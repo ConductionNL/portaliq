@@ -389,6 +389,71 @@ class ConnectionReporterTest extends TestCase {
 	}//end testAThrowingListenerNeverEscapes()
 
 	/**
+	 * A failure while observing or reading the report memory never escapes,
+	 * is logged, and sends nothing.
+	 *
+	 * @return void
+	 */
+	public function testAFailureBeforeSendingNeverEscapes(): void {
+		$clock = $this->createMock(originalClassName: ITimeFactory::class);
+		$clock->method('getTime')->willThrowException(new RuntimeException('clock unavailable'));
+		$this->logger->expects($this->once())->method('warning')
+			->with($this->stringContains(string: 'could not report a connection'), $this->equalTo(['key' => 'oidc', 'exception' => 'clock unavailable']));
+
+		$reporter = new ConnectionReporter(eventDispatcher: $this->dispatcher, appConfig: $this->appConfig, timeFactory: $clock, logger: $this->logger);
+
+		$this->assertFalse(condition: $reporter->oidcDiscoveryFailed(issuer: 'https://broker.example', answered: false));
+		$this->assertSame(expected: [], actual: $this->sent);
+		$this->assertSame(expected: [], actual: $this->stored);
+	}//end testAFailureBeforeSendingNeverEscapes()
+
+	/**
+	 * A report memory that cannot be cleared on save is logged, and the save
+	 * still refreshes and reports.
+	 *
+	 * @return void
+	 */
+	public function testAMemoryThatCannotBeClearedStillReports(): void {
+		$appConfig = $this->createMock(originalClassName: IAppConfig::class);
+		$appConfig->method('getValueString')->willReturn('');
+		$appConfig->method('setValueString')->willReturn(true);
+		$appConfig->method('deleteKey')->willThrowException(new RuntimeException('config locked'));
+		$this->logger->expects($this->once())->method('warning')
+			->with($this->stringContains(string: 'could not clear a connection report memory'), $this->equalTo(['key' => 'geo-db', 'exception' => 'config locked']));
+
+		$reporter = new ConnectionReporter(eventDispatcher: $this->dispatcher, appConfig: $appConfig, timeFactory: $this->clock, logger: $this->logger);
+
+		$this->assertTrue(condition: $reporter->geoSettingsSaved(settings: ['provider' => 'dbip'], status: ['present' => false]));
+		$this->assertSame(expected: ['refresh:geo-db', 'report:geo-db:unconfigured'], actual: $this->sentSummary());
+	}//end testAMemoryThatCannotBeClearedStillReports()
+
+	/**
+	 * A resolved class that is not an event is never dispatched, and no
+	 * window starts for it.
+	 *
+	 * @return void
+	 */
+	public function testAClassThatIsNotAnEventIsNeverDispatched(): void {
+		$reporter = new class($this->dispatcher, $this->appConfig, $this->clock, $this->logger) extends ConnectionReporter {
+			/**
+			 * Every name resolves to a class that is not an event.
+			 *
+			 * @param string $eventClass The class name asked for.
+			 *
+			 * @return string|null The non-event class.
+			 */
+			protected function resolveEventClass(string $eventClass): ?string {
+				return '\\' . NotAConnectionEvent::class;
+			}//end resolveEventClass()
+		};
+
+		$this->assertFalse(condition: $reporter->geoRefreshed(result: ['status' => 'failed', 'provider' => 'dbip']));
+		$this->assertFalse(condition: $reporter->geoSettingsSaved(settings: ['provider' => 'dbip'], status: ['present' => false]));
+		$this->assertSame(expected: [], actual: $this->sent);
+		$this->assertSame(expected: [], actual: $this->stored);
+	}//end testAClassThatIsNotAnEventIsNeverDispatched()
+
+	/**
 	 * The class lookup answers null for a class nobody ships, and the class for a stub.
 	 *
 	 * This is the real guard, not the test double above.
@@ -435,4 +500,27 @@ class ConnectionReporterTest extends TestCase {
 
 		$this->assertSame(expected: array_column($declaration['connections'], 'key'), actual: ConnectionReporter::KEYS);
 	}//end testTheKeysAreTheDeclaredOnes()
+}//end class
+
+
+/**
+ * A class with the events' constructor that is not an event.
+ */
+final class NotAConnectionEvent {
+
+	/**
+	 * Accept what the reporter passes.
+	 *
+	 * @param string $app     The app.
+	 * @param string $key     The connection key.
+	 * @param string $status  The status.
+	 * @param string $message The message.
+	 */
+	public function __construct(
+		public readonly string $app,
+		public readonly string $key,
+		public readonly string $status = '',
+		public readonly string $message = '',
+	) {
+	}//end __construct()
 }//end class

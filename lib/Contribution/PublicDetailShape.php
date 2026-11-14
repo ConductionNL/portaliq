@@ -35,16 +35,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\PublicDetailShapeInterface;
+
 /**
  * Holds a public detail answer to its fixed shape.
  *
  * @spec openspec/changes/public-detail-page-for-a-provider-item/tasks.md#task-1
  */
-class PublicDetailShape {
-	/**
-	 * The contract method an app may implement.
-	 */
-	public const METHOD = 'getPublicDetail';
+class PublicDetailShape implements PublicDetailShapeInterface {
 
 	private const MAX_ROWS = 50;
 

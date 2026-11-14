@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Repair;
 
-use OCA\Portaliq\Service\ActionAuthService;
+use OCA\Portaliq\Kernel\Contracts\ActionAuthServiceInterface;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -45,11 +45,11 @@ class InitializeActions implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param ActionAuthService $actionAuth The action authorization service.
+	 * @param ActionAuthServiceInterface $actionAuth The action authorization service.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
-		private ActionAuthService $actionAuth,
+		private ActionAuthServiceInterface $actionAuth,
 		private LoggerInterface $logger,
 	) {
 	}//end __construct()

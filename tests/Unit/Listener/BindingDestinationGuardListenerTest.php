@@ -46,7 +46,7 @@ class BindingDestinationGuardListenerTest extends TestCase {
 	}//end testAnotherSchemasWriteIsNotLookedAt()
 
 	public function testTheGuardIsRegisteredOnTheCreatingAndUpdatingEvents(): void {
-		$source = (string)file_get_contents(__DIR__ . '/../../../lib/AppInfo/Application.php');
+		$source = (string)file_get_contents(__DIR__ . '/../../../lib/Listener/ListenerRegistrar.php');
 
 		$this->assertMatchesRegularExpression(
 			'/ObjectCreatingEvent::class, ObjectUpdatingEvent::class\] as \$event\) \{\s+\$context->registerEventListener\(\$event, BindingDestinationGuardListener::class\)/',

@@ -27,8 +27,9 @@ namespace OCA\Portaliq\Service\Identity;
 
 use DateInterval;
 use DateTimeImmutable;
-use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContactServiceInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCP\Security\ISecureRandom;
 
 /**
@@ -42,21 +43,11 @@ use OCP\Security\ISecureRandom;
  *
  * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
  */
-class PortalContactService {
+class PortalContactService implements PortalContactServiceInterface {
 
 	public const REGISTER = 'portaliq';
 
 	public const SCHEMA = 'portalContact';
-
-	public const SENT = 'sent';
-
-	public const INVALID = 'invalid';
-
-	public const LIMIT = 'limit';
-
-	public const DUPLICATE = 'duplicate';
-
-	public const NOT_FOUND = 'not_found';
 
 	public const FAILED = 'failed';
 
@@ -309,11 +300,6 @@ class PortalContactService {
 	public function invitationEmail(string $token, string $organisation, ?DateTimeImmutable $now=null): string {
 		return $this->link->invitationEmail(token: $token, organisation: $organisation, now: $now);
 	}//end invitationEmail()
-
-
-
-
-
 
 	/**
 	 * The resident's contacts, and what waits for an answer.

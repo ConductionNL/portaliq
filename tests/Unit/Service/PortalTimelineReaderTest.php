@@ -9,6 +9,7 @@ use OCA\Portaliq\Service\PortalTimelineReader;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Portaliq\Contribution\TimelineProviderMethod;
 
 /**
  * portaliq#723: the case history a contributing app declares through a
@@ -70,7 +71,7 @@ class PortalTimelineReaderTest extends TestCase {
 			->getMock();
 		$locator->method('locate')->willReturn($provider);
 
-		return new PortalTimelineReader($locator, $this->createMock(LoggerInterface::class));
+		return new PortalTimelineReader($locator, $this->createMock(LoggerInterface::class), new TimelineProviderMethod());
 
 	}//end reader()
 

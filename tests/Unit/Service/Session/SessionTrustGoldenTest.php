@@ -21,7 +21,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service\Session;
 
 use OCA\Portaliq\Service\PortalSessionService;
-use OCA\Portaliq\Service\Session\SessionTrust;
+use OCA\Portaliq\Kernel\Support\SessionTrust;
 use PHPUnit\Framework\TestCase;
 
 /**

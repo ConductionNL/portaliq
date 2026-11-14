@@ -30,9 +30,10 @@ namespace OCA\Portaliq\Service\Identity;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\PortalAccountActivationServiceInterface;
 use OCA\Portaliq\Service\PortalAccountService;
-use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCP\Security\ISecureRandom;
 
 /**
@@ -40,7 +41,7 @@ use OCP\Security\ISecureRandom;
  *
  * @spec openspec/specs/portal-ways-in/spec.md#requirement-you-can-create-an-account-where-the-portal-allows-it-req-iwi-002
  */
-class PortalAccountActivationService {
+class PortalAccountActivationService implements PortalAccountActivationServiceInterface {
 
 	/**
 	 * How long an activation link works.

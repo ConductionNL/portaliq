@@ -62,6 +62,7 @@ const TOKEN_KEY = 'portaliq.session.token'
  * ticket.
  *
  * @return {string} The adopted token, or the stored one, or ''.
+ * @spec openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md#requirement-the-bearer-reaches-the-browser-in-the-fragment-and-leaves-the-address-req-see-003
  */
 export function adoptSessionToken() {
 	if (typeof window === 'undefined') {
