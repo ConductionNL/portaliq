@@ -17,7 +17,7 @@ import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { authoredLink } from '../src/site/components/mijn/links.js'
-import { withoutStyling } from '../src/site/lib/blockProps.js'
+import { heroWithPortalImage, withoutStyling } from '../src/site/lib/blockProps.js'
 import {
 	footerContentOf,
 	footerMenusOf,
@@ -589,4 +589,19 @@ test('a block link with a query keeps the query beside the route in the site add
 		'/zoeken?q=a',
 		'outside a browser the route and its query',
 	)
+})
+
+// portal-identity-from-the-admin REQ-PIA-002: the portal's hero image fills a
+// hero block that sets none of its own; the block's own image always wins.
+test('a hero without its own image uses the portal\'s', () => {
+	const portalImage = 'https://zuid.nl/apps/portaliq/api/content/media/hero?portal=zuid'
+	assert.equal(heroWithPortalImage({ title: 'Welkom' }, portalImage).backgroundImage, portalImage)
+	assert.equal(heroWithPortalImage({ title: 'Welkom', backgroundImage: '  ' }, portalImage).backgroundImage, portalImage)
+	assert.equal(heroWithPortalImage({ backgroundImage: '/eigen.jpg' }, portalImage).backgroundImage, '/eigen.jpg')
+	assert.deepEqual(heroWithPortalImage({ title: 'Welkom' }, ''), { title: 'Welkom' })
+
+	const grid = readFileSync(join(ROOT, 'src/site/components/WidgetGrid.vue'), 'utf8')
+	assert.match(grid, /widgetKey === 'hero'\) \{\s*return \{ \.\.\.heroWithPortalImage\(props, this\.heroImage\)/)
+	const app = readFileSync(join(ROOT, 'src/site/App.vue'), 'utf8')
+	assert.match(app, /heroImage: this\.site\.heroImage \|\| ''/, 'the shell hands the site payload\'s hero image to every grid')
 })

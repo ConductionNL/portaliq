@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\Cms\SiteHead;
+use OCA\Portaliq\Service\Cms\SiteIcon;
 use OCA\Portaliq\Service\PortalNoticeReader;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
@@ -43,7 +44,7 @@ class SiteShellTest extends TestCase {
 	 *
 	 * @return array{0: SiteShell, 1: array<string, \PHPUnit\Framework\MockObject\MockObject>}
 	 */
-	private function shell(array $params, string $accept, ?array $portal, bool $resolverThrows=false, bool $orgThrows=false, array $headers=[]): array {
+	private function shell(array $params, string $accept, ?array $portal, bool $resolverThrows=false, bool $orgThrows=false, array $headers=[], ?SiteIcon $siteIcon=null): array {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParam')->willReturnCallback(static fn (string $key, $default = null) => ($params[$key] ?? $default));
 		$request->method('getHeader')->willReturnCallback(static fn (string $name): string => ($name === 'Accept-Language' ? $accept : ($headers[$name] ?? '')));
@@ -84,7 +85,7 @@ class SiteShellTest extends TestCase {
 		$config->method('resolvePortal')->willReturn($portal);
 		$config->method('runtimeConfigFor')->willReturn(['devLogin' => true, 'silentSignIn' => 'digid', 'waysIn' => ['digid']]);
 
-		$shell = new SiteShell($request, $resolver, $theme, $urls, $head, $notices, $config);
+		$shell = new SiteShell($request, $resolver, $theme, $urls, $head, $notices, $config, $siteIcon);
 
 		return [$shell, ['resolver' => $resolver, 'notices' => $notices]];
 	}//end shell()
@@ -131,6 +132,39 @@ class SiteShellTest extends TestCase {
 		$this->assertSame('/b.css', $params['themeAppSheets']['bridge']);
 		$this->assertSame('/apps/nldesign/img/child.css.svg', $params['themeLogoUrl']);
 	}//end testTemplateParamsForThemedPortal()
+
+	/**
+	 * The template gets the serving portal's own tab icon (portal-identity-from-the-admin REQ-PIA-002).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+	 */
+	public function testTheTemplateGetsThePortalsOwnIcon(): void {
+		$portal = ['slug' => 'zuid', 'favicon' => 'media:fav'];
+		$icon = $this->createMock(SiteIcon::class);
+		$icon->expects($this->once())->method('forPortal')->with($portal)->willReturn('https://zuid.nl/media/fav');
+		[$shell] = $this->shell(['portal' => 'zuid'], 'nl', $portal, siteIcon: $icon);
+
+		$this->assertSame('https://zuid.nl/media/fav', $shell->templateParams()['portalIcon']);
+	}//end testTheTemplateGetsThePortalsOwnIcon()
+
+	/**
+	 * Without an icon service, or when the portal cannot be resolved, the template falls back to the theme.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+	 */
+	public function testNoPortalIconLeavesItToTheTheme(): void {
+		[$withoutService] = $this->shell(['portal' => 'zuid'], 'nl', ['slug' => 'zuid', 'favicon' => 'media:fav']);
+		$this->assertSame('', $withoutService->templateParams()['portalIcon']);
+
+		$icon = $this->createMock(SiteIcon::class);
+		$icon->expects($this->never())->method('forPortal');
+		[$failing] = $this->shell(['portal' => 'zuid'], 'nl', null, resolverThrows: true, siteIcon: $icon);
+		$this->assertSame('', $failing->templateParams()['portalIcon']);
+	}//end testNoPortalIconLeavesItToTheTheme()
 
 	/**
 	 * No portal means empty theme output, a default locale and no notices.

@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Kernel\Contracts\SiteShellInterface;
+use OCA\Portaliq\Service\Cms\SiteIcon;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
@@ -70,6 +71,7 @@ class SiteShell implements SiteShellInterface {
 	 * @param SiteHeadInterface                    $siteHead       The head of the page a site request asks for.
 	 * @param PortalNoticeReaderInterface          $notices        The notices running on the signed-in surface now.
 	 * @param PortalRuntimeConfigResolverInterface $configResolver Resolves the runtime config built from the portal.
+	 * @param SiteIcon|null               $siteIcon       The portal's own tab icon; null leaves it to the theme.
 	 */
 	public function __construct(
 		private readonly IRequest $request,
@@ -79,6 +81,7 @@ class SiteShell implements SiteShellInterface {
 		private readonly SiteHeadInterface $siteHead,
 		private readonly PortalNoticeReaderInterface $notices,
 		private readonly PortalRuntimeConfigResolverInterface $configResolver,
+		private readonly ?SiteIcon $siteIcon=null,
 	) {
 		$this->addressing = new SiteAddressing(portalResolver: $portalResolver, urlGenerator: $urlGenerator);
 	}//end __construct()
@@ -154,6 +157,10 @@ class SiteShell implements SiteShellInterface {
 			// carrying no Accept-Language would otherwise produce.
 			'locale'          => $this->siteLocale(),
 			'head'            => $this->siteHead(path: $path),
+			// The portal's favicon, else its logo (portal-identity-from-the-admin
+			// REQ-PIA-002). The template falls back to the theme's icon, then
+			// this app's own mark.
+			'portalIcon'      => $this->sitePortalIcon(),
 		];
 	}//end templateParams()
 
@@ -299,6 +306,26 @@ class SiteShell implements SiteShellInterface {
 			canonical: $this->addressing->canonical(request: $this->request, portalSlug: $portalSlug, route: $route)
 		);
 	}//end siteHead()
+
+	/**
+	 * The serving portal's own tab icon, or '' when it sets none that resolves.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+	 */
+	private function sitePortalIcon(): string {
+		if ($this->siteIcon === null) {
+			return '';
+		}
+
+		try {
+			$portal = $this->portalResolver->resolve(request: $this->request, portalSlug: $this->requestedPortalSlug());
+			return $this->siteIcon->forPortal(portal: $portal);
+		} catch (\Throwable) {
+			return '';
+		}
+	}//end sitePortalIcon()
 
 	/**
 	 * The sign-in settings the site needs at boot, from the same resolver

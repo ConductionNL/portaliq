@@ -39,6 +39,7 @@ use OCA\Portaliq\Kernel\Contracts\PublicAssistantChannelInterface;
 use OCA\Portaliq\Kernel\Contracts\PublicSourceScopeInterface;
 use OCA\Portaliq\Kernel\Contracts\SiteOrganisationInterface;
 use OCA\Portaliq\Kernel\Contracts\TrafficConfigResolverInterface;
+use OCA\Portaliq\Service\Cms\MediaReferences;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -100,6 +101,7 @@ class ContentController extends Controller {
 	 * @param PublicSourceScopeInterface|null     $assistantScope What the public assistant may read.
 	 * @param NextcloudRegistrationDoorInterface|null $registrationDoor Where "Create an account" leads (REQ-NCL-005).
 	 * @param SiteOrganisationInterface|null      $siteOrganisation Names the portal's organisation.
+	 * @param MediaReferences|null       $media        Resolves the portal's media:<id> images.
 	 *
 	 * @return void
 	 */
@@ -121,10 +123,40 @@ class ContentController extends Controller {
 		private readonly ?PublicSourceScopeInterface $assistantScope = null,
 		private readonly ?NextcloudRegistrationDoorInterface $registrationDoor = null,
 		private readonly ?SiteOrganisationInterface $siteOrganisation = null,
+		private readonly ?MediaReferences $media = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
 
+
+	/**
+	 * A portal image field as the address the site can load: a media:<id>
+	 * reference becomes the published item's public address of this portal,
+	 * '' when it does not resolve; any other value is sent as it is stored.
+	 *
+	 * @param array<string, mixed> $portal The serving portal.
+	 * @param string               $field  The image field.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+	 */
+	private function portalImage(array $portal, string $field): string {
+		$value = $portal[$field] ?? '';
+		if (is_string($value) === false) {
+			return '';
+		}
+
+		if (MediaReferences::isReference(value: $value) === false) {
+			return $value;
+		}
+
+		if ($this->media === null) {
+			return '';
+		}
+
+		return $this->media->image(portal: (string)($portal['slug'] ?? ''), value: $value);
+	}//end portalImage()
 
 	/**
 	 * The resolved site's own presentation record.
@@ -152,7 +184,11 @@ class ContentController extends Controller {
 				'title'   => (string)($portal['title'] ?? ''),
 				'slug'    => (string)($portal['slug'] ?? ''),
 				'theme'   => (string)($portal['theme'] ?? ''),
-				'logo'    => (string)($portal['logo'] ?? ''),
+				// The logo and the hero image may be items of the portal's
+				// media library (portal-identity-from-the-admin REQ-PIA-001):
+				// sent as their public address, never as the reference.
+				'logo'    => $this->portalImage(portal: $portal, field: 'logo'),
+				'heroImage' => $this->portalImage(portal: $portal, field: 'heroImage'),
 				// The line under the name in the footer's logo block. The
 				// reference carries one ("Één plek voor alle publicaties van
 				// Gemeente Tilburg") and this app had no field for it at all,
