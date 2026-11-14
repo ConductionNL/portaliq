@@ -56,6 +56,8 @@ use OCA\Portaliq\Kernel\Contracts\PortalIntakeQueueInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSubmissionChecksInterface;
+use OCA\Portaliq\Service\Intake\PortalFormAvailability;
+use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\Intake\PortalIntakeConfirmation;
 use OCA\Portaliq\Service\Intake\PortalIntakePayments;
 use OCA\Portaliq\Service\Intake\PortalSubmissionChecks;
@@ -129,6 +131,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param PortalEmailVerificationInterface|null $emailVerification Checks the proof that an e-mail address was verified.
 	 * @param DestinationIntakeInterface|null $intake Submits the answers into the binding's destination (decision 179).
 	 * @param DestinationLookupInterface|null $lookup Finds the object a reference belongs to.
+	 * @param PortalFormAvailability|null $availability Whether a form takes submissions now (REQ-FGV-001).
 	 */
 	public function __construct(
 		IRequest $request,
@@ -154,6 +157,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		?PortalEmailVerificationInterface $emailVerification = null,
 		private readonly ?DestinationIntakeInterface $intake = null,
 		private readonly ?DestinationLookupInterface $lookup = null,
+		private readonly ?PortalFormAvailability $availability = null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 		$this->checks       = new PortalSubmissionChecks(
@@ -251,6 +255,22 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'form_not_found'], Http::STATUS_NOT_FOUND);
 		}
 
+		$unavailable = $this->availability?->unavailable(binding: $binding);
+		if ($unavailable !== null) {
+			// Closed, replaced, in maintenance or full: the page shows that
+			// situation instead of the form; a saved draft is not touched
+			// (form-governance-availability-retention-and-routing REQ-FGV-001).
+			return new JSONResponse(
+				[
+					'kind' => PortalFormBindingResolver::KIND_HOSTED,
+					'resolvesToNoForm' => true,
+					'reason' => 'unavailable',
+					'unavailable' => $unavailable,
+					'fields' => [],
+				]
+			);
+		}
+
 		$render = $this->bindings->render(binding: $binding);
 		$subject = $this->subject();
 		$refusal = $this->signInRefusal(site: $site, binding: $binding, render: $render, subject: $subject);
@@ -312,6 +332,12 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		$binding = $this->bindings->bindingFor(portal: (string)($site['slug'] ?? ''), route: $route);
 		if ($binding === null) {
 			return new JSONResponse(['error' => 'form_not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$unavailable = $this->availability?->unavailable(binding: $binding);
+		if ($unavailable !== null) {
+			// The server refuses what the page no longer offers (REQ-FGV-001).
+			return new JSONResponse(['error' => 'form_unavailable', 'unavailable' => $unavailable], Http::STATUS_CONFLICT);
 		}
 
 		$render = $this->bindings->render(binding: $binding);

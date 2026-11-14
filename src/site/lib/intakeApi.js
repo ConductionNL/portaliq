@@ -207,7 +207,8 @@ export function bindingRouteFrom(routeParam, fixedRoute) {
  *
  * States: `form` (render it), `external` (a start card naming the
  * destination), `noForm` (the binding resolves to no published form),
- * `signIn` (the form asks for a sign-in level the visitor does not have) and
+ * `unavailable` (closed, replaced, in maintenance or full: `render.unavailable`
+ * says which), `signIn` (the form asks for a sign-in level the visitor does not have) and
  * `notFound` (no binding on that route).
  *
  * @param {IntakeConnection} conn The connection.
@@ -235,6 +236,11 @@ export async function loadForm(conn, route) {
 
 	if (body?.kind === 'external' && body?.resolvesToNoForm !== true) {
 		return { state: 'external', render: body }
+	}
+
+	if (body?.resolvesToNoForm === true && body?.unavailable) {
+		// Closed, replaced, in maintenance or full (REQ-FGV-001).
+		return { state: 'unavailable', render: body }
 	}
 
 	if (body?.resolvesToNoForm === true) {
@@ -342,7 +348,7 @@ function emptyOrPreset(field) {
  * @param {object} submission.answers The answers, keyed by field name.
  * @param {string[]} [submission.statements] The keys of the statements ticked.
  * @param {Record<string, string>} [submission.verifiedEmails] The proof of each verified e-mail address, by address.
- * @return {Promise<{reference: string, confirmationText: string, errors: object, moments?: object}>} The outcome.
+ * @return {Promise<{reference: string, confirmationText: string, errors: object, moments?: object, unavailable?: object}>} The outcome.
  *
  * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
  * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-the-case-is-created-in-the-request-and-the-citizen-gets-its-reference-at-once-req-pifo-005
@@ -358,6 +364,12 @@ export async function submitIntake(conn, submission) {
 	// (decision 179); nothing was stored and the answers stay in the form.
 	if (response.status === 400 || response.status === 422) {
 		return { reference: '', confirmationText: '', errors: parsed?.errors || {} }
+	}
+
+	// 409: the form closed, filled up or went into maintenance after it was
+	// opened (REQ-FGV-001); nothing was stored and the answers stay.
+	if (response.status === 409 && parsed?.unavailable) {
+		return { reference: '', confirmationText: '', errors: {}, unavailable: parsed.unavailable }
 	}
 
 	if (!response.ok || !parsed?.reference) {

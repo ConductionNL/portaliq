@@ -332,7 +332,8 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// armed (woo-request-intake-through-opencatalogi). Additive.
 		// 0.5.0: `destination` replaces caseRegister/caseSchema/deliverTo (decision 179); those stay, deprecated.
 		// 0.6.0: `intro.enabled`, the form settings page's switch for the introduction (form-statements-intro-and-confirmation-mail T06). Additive.
-		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalFormBinding']['version']);
+		// 0.7.0: `availability` (form-governance-availability-retention-and-routing REQ-FGV-001). Additive.
+		$this->assertSame('0.7.0', self::$register['components']['schemas']['portalFormBinding']['version']);
 		$this->assertSame('boolean', self::$register['components']['schemas']['portalFormBinding']['properties']['intro']['properties']['enabled']['type']);
 		$this->assertSame(['case', 'wooRequest'], self::$register['components']['schemas']['portalFormBinding']['properties']['deliverTo']['enum']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalIntakeSubmission']['version']);
@@ -404,8 +405,10 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.106.0 (guardianMessage 0.3.0): a message's `readAt`, when the other side first read it (message-read-time). Additive.
 		// 0.108.0 (portalPage 0.10.0): a cta's `messageTo`, the field naming whom the message form opens for (guardian-message-to-and-whole-day). Additive.
 		// 0.109.0 (portalFormBinding 0.6.0): `intro.enabled`, whether the form opens with its introduction (form-statements-intro-and-confirmation-mail T06). Additive.
-		$this->assertSame(expected: '0.109.0', actual: self::$register['info']['version']);
-		$this->assertSame(expected: '0.109.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		// 0.110.0 (portalFormBinding 0.7.0): a binding's `availability`, its active period, limit per period, maintenance window and successor (form-governance-availability-retention-and-routing REQ-FGV-001). Additive.
+		$this->assertSame(expected: '0.110.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.110.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame(expected: ['total', 'month', 'year'], actual: self::$register['components']['schemas']['portalFormBinding']['properties']['availability']['properties']['limit']['properties']['per']['enum']);
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portalPage']['properties']['pages']['items']['properties']['blocks']['items']['properties']['messageTo']['type']);
 		$this->assertSame(expected: 'date-time', actual: self::$register['components']['schemas']['guardianMessage']['properties']['readAt']['format']);
 		// 0.107.0 (portal 0.28.0): a portal's `caseTypeColumns`, how each case type's columns read in Mijn zaken (case-type-columns-in-my-cases). Additive.
