@@ -11,6 +11,7 @@
 - [ ] **T07**: `lib/BackgroundJob/FormFailureDigestJob.php` at 07:00, template `form-failure-digest` listed in the mail templates screen; no mail when empty; PHPUnit (REQ-FGV-003)
 - [ ] **T08**: `lib/BackgroundJob/IntakeRetentionJob.php`: expiry per state, delete through OpenRegister or anonymise; PHPUnit for both methods and the defaults (REQ-FGV-004)
 - [ ] **T09**: export route and "Inzendingen downloaden" under "Meer" on the form settings page, built on OpenRegister's object export filtered on the binding; audit line; PtInzendingen "Downloaden" without answers; PHPUnit for the rights check (REQ-FGV-005)
-- [ ] **T10**: admin tabs Beschikbaarheid, Bewaartermijn and Doorsturen and the status panel on the form settings page, per PtFormulierInstellingen; strings in nl, en, en_US
+- [x] **T10**: admin tabs Beschikbaarheid, Bewaartermijn and Doorsturen and the status panel on the form settings page, per PtFormulierInstellingen; strings in nl, en, en_US
+  - Tab Beschikbaarheid (manifest settings form over `availability`) with the status panel, a stat tile over `GET /api/form-bindings/{id}/counter` (`FormBindingCounter`, the same count the submit path's limit check uses). Bewaartermijn and Doorsturen are not built: decision 179 removed routing and moved retention to the destination objects, so the binding holds neither setting.
 - [ ] **T11**: Playwright: a form at its limit shows situation 3 (cites REQ-FGV-001); a retry from the reference page (cites REQ-FGV-003)
 - [ ] **T12**: Live check against PtFormulierInstellingen, FormulierNietBeschikbaar, FormulierVerwerken and PtInzendingen; screenshots in the build PR

@@ -34,6 +34,7 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\PortalBindingPreviewInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalEmbedSnippetDescriptionInterface;
+use OCA\Portaliq\Service\Intake\FormBindingCounter;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -54,12 +55,14 @@ class FormBindingAdminController extends Controller {
 	 * @param PortalBindingPreviewInterface $preview What a binding resolves to today.
 	 * @param PortalEmbedSnippetDescriptionInterface $embed The code a website puts on a page to show a form.
 	 * @param IURLGenerator $urls Builds the address of the embed frame.
+	 * @param FormBindingCounter|null $counter Counts a binding's current period against its limit.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalBindingPreviewInterface $preview,
 		private readonly PortalEmbedSnippetDescriptionInterface $embed,
 		private readonly IURLGenerator $urls,
+		private readonly ?FormBindingCounter $counter = null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
@@ -114,4 +117,32 @@ class FormBindingAdminController extends Controller {
 
 		return new JSONResponse($this->embed->describe(binding: $binding, frameUrl: $frameUrl));
 	}//end embedSnippet()
+
+	/**
+	 * The submissions of this binding's current period against its limit,
+	 * for the status panel on the form's settings page.
+	 *
+	 * @param string $id The binding's id.
+	 *
+	 * @return JSONResponse `{limited, count, limit, per}`; `limited` false and
+	 *                      the rest null when the binding sets no limit; 404 for
+	 *                      an unknown binding.
+	 *
+	 * @auth admin-only The count reads the destination past any resident's
+	 *       scope, which is an administrator's view. Nextcloud expresses
+	 *       admin-only as the ABSENCE of an opt-out attribute, so this tag is
+	 *       the declaration.
+	 *
+	 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#scenario-the-admin-sees-the-counter
+	 */
+	public function counter(string $id): JSONResponse {
+		$result = $this->counter?->forBinding(id: $id);
+		if ($result === null || $result['found'] === false) {
+			return new JSONResponse(['error' => 'binding_not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		unset($result['found']);
+
+		return new JSONResponse($result);
+	}//end counter()
 }//end class

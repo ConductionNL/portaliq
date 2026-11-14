@@ -5489,6 +5489,136 @@
             }
           },
           {
+            "id": "binding-availability",
+            "type": "settings-form",
+            "title": "Availability",
+            "content": {
+              "columns": 2,
+              "saveLabel": "Save",
+              "savedText": "The form settings are saved.",
+              "fields": [
+                {
+                  "key": "availability.activeFrom",
+                  "label": "Active from",
+                  "placeholder": "2026-01-01",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                  "patternMessage": "Write a date as 2026-01-31.",
+                  "hint": "The first day the form takes submissions. Empty: open now."
+                },
+                {
+                  "key": "availability.activeUntil",
+                  "label": "Active until",
+                  "placeholder": "2026-12-31",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                  "patternMessage": "Write a date as 2026-01-31.",
+                  "hint": "The last day the form takes submissions. Empty: no end date."
+                },
+                {
+                  "key": "availability.limit.count",
+                  "label": "At most this many submissions",
+                  "type": "number",
+                  "min": 1,
+                  "hint": "Empty: no limit."
+                },
+                {
+                  "key": "availability.limit.per",
+                  "label": "Counted per",
+                  "type": "select",
+                  "options": [
+                    {
+                      "value": "month",
+                      "label": "Calendar month"
+                    },
+                    {
+                      "value": "year",
+                      "label": "Calendar year"
+                    },
+                    {
+                      "value": "total",
+                      "label": "Whole period"
+                    }
+                  ],
+                  "default": "month"
+                },
+                {
+                  "key": "availability.reopensOn",
+                  "label": "Open again on",
+                  "placeholder": "2027-01-05",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                  "patternMessage": "Write a date as 2026-01-31.",
+                  "hint": "Shown to the resident once the limit is reached."
+                },
+                {
+                  "key": "availability.replacedBy",
+                  "label": "Replaced by the form at",
+                  "placeholder": "/aanvragen/nieuw-formulier",
+                  "pattern": "^/\\S*$",
+                  "patternMessage": "A route on this portal starts with /.",
+                  "hint": "The route of the form that replaced this one. The resident is sent there."
+                },
+                {
+                  "key": "availability.maintenance.from",
+                  "label": "Maintenance from",
+                  "placeholder": "2026-10-09T18:00",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}$",
+                  "patternMessage": "Write a moment as 2026-10-09T18:00.",
+                  "hint": "Local time."
+                },
+                {
+                  "key": "availability.maintenance.until",
+                  "label": "Maintenance until",
+                  "placeholder": "2026-10-09T22:00",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}$",
+                  "patternMessage": "Write a moment as 2026-10-09T18:00.",
+                  "hint": "Local time."
+                },
+                {
+                  "key": "availability.maintenance.text",
+                  "label": "Maintenance text",
+                  "type": "textarea",
+                  "rows": 2,
+                  "hint": "Shown to the resident during maintenance."
+                }
+              ]
+            }
+          },
+          {
+            "id": "binding-counter",
+            "type": "stat",
+            "title": "Submissions in this period",
+            "content": {
+              "label": "Submissions in this period",
+              "layout": "stacked",
+              "endpointSource": {
+                "url": "/apps/portaliq/api/form-bindings/@objectId/counter"
+              },
+              "valueField": "count",
+              "limitField": "limit",
+              "limitStyle": "of",
+              "emptyText": "No limit set"
+            }
+          },
+          {
+            "id": "binding-availability-tab",
+            "type": "sections",
+            "title": "Beschikbaarheid",
+            "content": {
+              "cards": true,
+              "sections": [
+                {
+                  "key": "counter",
+                  "title": "Status",
+                  "widgetId": "binding-counter"
+                },
+                {
+                  "key": "availability",
+                  "title": "Availability",
+                  "widgetId": "binding-availability"
+                }
+              ]
+            }
+          },
+          {
             "id": "binding-confirmation",
             "type": "settings-form",
             "title": "Confirmation",
@@ -5585,6 +5715,10 @@
                 {
                   "widgetId": "binding-general",
                   "label": "Algemeen"
+                },
+                {
+                  "widgetId": "binding-availability-tab",
+                  "label": "Beschikbaarheid"
                 },
                 {
                   "widgetId": "binding-confirmation",

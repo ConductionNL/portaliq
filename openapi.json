@@ -2914,6 +2914,51 @@
                 }
             }
         },
+        "/form-bindings/{id}/counter": {
+            "get": {
+                "operationId": "form-binding-admin-counter",
+                "summary": "The submissions of this binding's current period against its limit",
+                "description": "The submissions of this binding's current period against its limit, for the status panel on the form's settings page. Needs a Nextcloud administrator.",
+                "tags": [
+                    "form-binding-admin"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "The binding's id.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Problem404"
+                    }
+                }
+            }
+        },
         "/invitations": {
             "post": {
                 "operationId": "portal-account-admin-invite",

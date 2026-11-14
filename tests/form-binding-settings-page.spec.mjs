@@ -57,13 +57,28 @@ test('the page opens a binding from the Request forms list', () => {
 
 test('the tabs follow the board, as far as the binding holds the settings', () => {
 	const tabs = widget('binding-tabs').content.tabs
-	assert.deepEqual(tabs.map((tab) => tab.label), ['Algemeen', 'Bevestiging', 'Verklaringen', 'Mede-ondertekenen', 'Historie'])
+	assert.deepEqual(tabs.map((tab) => tab.label), ['Algemeen', 'Beschikbaarheid', 'Bevestiging', 'Verklaringen', 'Mede-ondertekenen', 'Historie'])
 	for (const tab of tabs) {
 		assert.ok(widget(tab.widgetId), `tab ${tab.label} names an undeclared widget`)
 		assert.ok(NL[tab.label], `"${tab.label}" is not in the Dutch catalogue`)
 	}
 	const sections = widget('binding-general').content.sections.map((s) => s.title)
 	assert.deepEqual(sections, ['Form', 'Sign in', 'Status'])
+})
+
+test('the availability tab carries the status panel and the availability settings (REQ-FGV-001)', () => {
+	const tab = widget('binding-availability-tab').content.sections
+	assert.deepEqual(tab.map((s) => s.widgetId), ['binding-counter', 'binding-availability'])
+	const counter = widget('binding-counter').content
+	assert.equal(counter.endpointSource.url, '/apps/portaliq/api/form-bindings/@objectId/counter')
+	assert.equal(counter.valueField, 'count')
+	assert.equal(counter.limitField, 'limit')
+	assert.ok(NL[counter.label] && NL[counter.emptyText], 'the status panel is in the Dutch catalogue')
+	const keys = widget('binding-availability').content.fields.map((f) => f.key)
+	for (const key of ['availability.activeFrom', 'availability.activeUntil', 'availability.limit.count', 'availability.limit.per', 'availability.reopensOn', 'availability.replacedBy', 'availability.maintenance.from', 'availability.maintenance.until', 'availability.maintenance.text']) {
+		assert.ok(keys.includes(key), key)
+	}
+	assert.match(read('appinfo/routes.php'), /'formBindingAdmin#counter', 'url' => '\/api\/form-bindings\/\{id\}\/counter', 'verb' => 'GET'/)
 })
 
 test('every field is a path of the binding schema, every choice one of its values', () => {
