@@ -118,13 +118,7 @@ class AvailabilityProbeJob extends TimedJob {
 	private function checkOne(string $slug, DateTimeImmutable $now): void {
 		$check = $this->probe->check(slug: $slug);
 
-		$today = $now->format('Y-m-d');
-		$days = $this->store->dailyBetween(portal: $slug, from: $now->modify('-1 day')->format('Y-m-d'), until: $today);
-		if ($this->rollup->lastCheckAt(days: $days) === null) {
-			// No check in the last two days: read the whole kept window, so
-			// an instance that was off for longer still counts its gap.
-			$days = $this->store->dailyBetween(portal: $slug, from: $now->modify(self::RETENTION)->format('Y-m-d'), until: $today);
-		}
+		$days = $this->recentDays(slug: $slug, now: $now);
 
 		$result = $this->rollup->record(
 			portal: $slug,
@@ -135,6 +129,39 @@ class AvailabilityProbeJob extends TimedJob {
 			openOutage: $this->store->openOutage(portal: $slug)
 		);
 
+		$this->saveChanges(result: $result, days: $days);
+	}//end checkOne()
+
+	/**
+	 * The stored days the rollup continues from: the last two, or the whole
+	 * kept window when there was no check in them.
+	 *
+	 * @param string            $slug The portal slug.
+	 * @param DateTimeImmutable $now  This run.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function recentDays(string $slug, DateTimeImmutable $now): array {
+		$today = $now->format('Y-m-d');
+		$days = $this->store->dailyBetween(portal: $slug, from: $now->modify('-1 day')->format('Y-m-d'), until: $today);
+		if ($this->rollup->lastCheckAt(days: $days) === null) {
+			// No check in the last two days: read the whole kept window, so
+			// an instance that was off for longer still counts its gap.
+			$days = $this->store->dailyBetween(portal: $slug, from: $now->modify(self::RETENTION)->format('Y-m-d'), until: $today);
+		}
+
+		return $days;
+	}//end recentDays()
+
+	/**
+	 * Store the days that changed and the outages closed or still open.
+	 *
+	 * @param array<string, mixed>                $result What the rollup recorded.
+	 * @param array<string, array<string, mixed>> $days   The days it started from.
+	 *
+	 * @return void
+	 */
+	private function saveChanges(array $result, array $days): void {
 		foreach ($result['days'] as $date => $day) {
 			if (($days[$date] ?? null) !== $day) {
 				$this->store->save(schema: AvailabilityStoreInterface::DAILY_SCHEMA, row: $day);
@@ -148,5 +175,5 @@ class AvailabilityProbeJob extends TimedJob {
 		if ($result['open'] !== null) {
 			$this->store->save(schema: AvailabilityStoreInterface::OUTAGE_SCHEMA, row: $result['open']);
 		}
-	}//end checkOne()
+	}//end saveChanges()
 }//end class

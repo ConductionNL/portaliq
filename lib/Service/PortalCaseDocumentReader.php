@@ -73,22 +73,68 @@ class PortalCaseDocumentReader {
 	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-case-app-declares-which-documents-a-resident-may-see-req-cdc-001
 	 */
 	public function entries(string $appId, string $method, string $caseId): array {
-		$provider = $this->locator->locate(appId: $appId);
-		if ($provider === null || $this->timelineProviderMethod->callableOn(provider: $provider, method: $method) === false) {
+		$answer = $this->answerOf(appId: $appId, method: $method, caseId: $caseId);
+		if ($answer === null) {
 			return [];
 		}
 
+		return $this->keptEntries(answer: $answer, appId: $appId, method: $method);
+	}//end entries()
+
+	/**
+	 * What the app's provider answers for the case, or null when it has no such method, fails or answers no list.
+	 *
+	 * @param string $appId  The contributing app.
+	 * @param string $method The declared `documents.provider`.
+	 * @param string $caseId The case id.
+	 *
+	 * @return array<mixed>|null
+	 */
+	private function answerOf(string $appId, string $method, string $caseId): array|null {
+		$provider = $this->locator->locate(appId: $appId);
+		if ($provider === null || $this->timelineProviderMethod->callableOn(provider: $provider, method: $method) === false) {
+			return null;
+		}
+
+		$answer = $this->called(provider: $provider, method: $method, caseId: $caseId, appId: $appId);
+		if (is_array($answer) === false) {
+			return null;
+		}
+
+		return $answer;
+	}//end answerOf()
+
+	/**
+	 * Call the provider's documents method for the case; null, logged, when it throws.
+	 *
+	 * @param object $provider The app's provider.
+	 * @param string $method   The declared `documents.provider`.
+	 * @param string $caseId   The case id.
+	 * @param string $appId    The contributing app, for the log.
+	 *
+	 * @return mixed
+	 */
+	private function called(object $provider, string $method, string $caseId, string $appId): mixed {
 		try {
 			$answer = $provider->{$method}($caseId);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: documents provider failed', ['app' => $appId, 'method' => $method, 'reason' => $e->getMessage()]);
-			return [];
+			return null;
 		}
 
-		if (is_array($answer) === false) {
-			return [];
-		}
+		return $answer;
+	}//end called()
 
+	/**
+	 * The well-formed entries of the answer; each one dropped is logged.
+	 *
+	 * @param array<mixed> $answer The provider's answer.
+	 * @param string       $appId  The contributing app.
+	 * @param string       $method The declared `documents.provider`.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function keptEntries(array $answer, string $appId, string $method): array {
 		$entries = [];
 		foreach ($answer as $entry) {
 			$kept = $this->wellFormed(entry: $entry);
@@ -101,7 +147,7 @@ class PortalCaseDocumentReader {
 		}
 
 		return $entries;
-	}//end entries()
+	}//end keptEntries()
 
 	/**
 	 * The entry in portaliq's shape, or null when it lacks an id, a title or a

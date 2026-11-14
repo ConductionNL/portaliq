@@ -77,19 +77,8 @@ trait PagedObjectReads {
 	private function readEveryPage(object $objectService, string $register, string $schema, array $filters = [], ?array $ids = null): ?array {
 		$rows = [];
 		for ($page = 0; $page < self::PAGED_READ_MAX_PAGES; $page++) {
-			$config = [
-				'filters' => $filters,
-				'limit' => self::PAGED_READ_SIZE,
-				'offset' => ($page * self::PAGED_READ_SIZE),
-				'sort' => self::PAGED_READ_ORDER,
-			];
-			if ($ids !== null) {
-				$config['ids'] = $ids;
-			}
-
-			$objectService->setRegister(register: $register);
-			$objectService->setSchema(schema: $schema);
-			$batch = $objectService->findAll(config: $config, _rbac: false, _multitenancy: false);
+			$config = $this->pagedReadConfig(filters: $filters, page: $page, ids: $ids);
+			$batch  = $this->pagedReadBatch(objectService: $objectService, register: $register, schema: $schema, config: $config);
 
 			if (is_array($batch) === false) {
 				return null;
@@ -103,4 +92,47 @@ trait PagedObjectReads {
 
 		throw new RuntimeException('more than ' . (self::PAGED_READ_MAX_PAGES * self::PAGED_READ_SIZE) . ' rows in ' . $schema);
 	}//end readEveryPage()
+
+	/**
+	 * The read configuration of one page.
+	 *
+	 * @param array<string, mixed>    $filters The filters, as OpenRegister takes them.
+	 * @param int                     $page    The page, from 0.
+	 * @param array<int, string>|null $ids     Only these object ids, or null for any.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec exclude Shared read helper; the @spec of each calling method covers the behaviour it reads for.
+	 */
+	private function pagedReadConfig(array $filters, int $page, array|null $ids): array {
+		$config = [
+			'filters' => $filters,
+			'limit' => self::PAGED_READ_SIZE,
+			'offset' => ($page * self::PAGED_READ_SIZE),
+			'sort' => self::PAGED_READ_ORDER,
+		];
+		if ($ids !== null) {
+			$config['ids'] = $ids;
+		}
+
+		return $config;
+	}//end pagedReadConfig()
+
+	/**
+	 * One page of rows as OpenRegister returns it.
+	 *
+	 * @param object               $objectService OpenRegister's ObjectService.
+	 * @param string               $register      The register slug.
+	 * @param string               $schema        The schema slug.
+	 * @param array<string, mixed> $config        The page's read configuration.
+	 *
+	 * @return mixed
+	 *
+	 * @spec exclude Shared read helper; the @spec of each calling method covers the behaviour it reads for.
+	 */
+	private function pagedReadBatch(object $objectService, string $register, string $schema, array $config): mixed {
+		$objectService->setRegister(register: $register);
+		$objectService->setSchema(schema: $schema);
+		return $objectService->findAll(config: $config, _rbac: false, _multitenancy: false);
+	}//end pagedReadBatch()
 }//end trait

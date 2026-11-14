@@ -52,6 +52,7 @@ use OCA\Portaliq\Kernel\Contracts\OidcClientServiceInterface;
 use OCA\Portaliq\Service\Connection\ConnectionReporter;
 use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
+use OCP\ICache;
 use OCP\ICacheFactory;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -69,6 +70,8 @@ use Throwable;
  * boundary (the OIDC RP); splitting them would scatter that boundary across
  * classes with no corresponding safety gain — see PortalObjectReader's
  * identical rationale.
+ *
+ * @SuppressWarnings(PHPMD.TooManyMethods) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class OidcClientService implements OidcClientServiceInterface {
 	/**
@@ -479,7 +482,25 @@ class OidcClientService implements OidcClientServiceInterface {
 			return null;
 		}
 
-		$cache = $this->cacheFactory->createDistributed(self::CACHE_PREFIX . '_jwks');
+		$cache  = $this->cacheFactory->createDistributed(self::CACHE_PREFIX . '_jwks');
+		$cached = $this->cachedJwks(cache: $cache, jwksUri: $jwksUri, forceRefresh: $forceRefresh);
+		if ($cached !== null) {
+			return $cached;
+		}
+
+		return $this->downloadAndCache(cache: $cache, jwksUri: $jwksUri);
+	}//end fetchJwks()
+
+	/**
+	 * The cached JWKS document, unless the cache is bypassed.
+	 *
+	 * @param ICache $cache        The JWKS cache.
+	 * @param string $jwksUri      The broker's JWKS endpoint.
+	 * @param bool   $forceRefresh Bypass the cache (key-rotation retry).
+	 *
+	 * @return array{keys: array<int, mixed>}|null
+	 */
+	private function cachedJwks(ICache $cache, string $jwksUri, bool $forceRefresh): array|null {
 		if ($forceRefresh === false) {
 			$cached = $cache->get($jwksUri);
 			if (is_array($cached) === true) {
@@ -487,6 +508,36 @@ class OidcClientService implements OidcClientServiceInterface {
 			}
 		}
 
+		return null;
+	}//end cachedJwks()
+
+	/**
+	 * Fetch the JWKS document and cache it.
+	 *
+	 * @param ICache $cache   The JWKS cache.
+	 * @param string $jwksUri The broker's JWKS endpoint.
+	 *
+	 * @return array{keys: array<int, mixed>}|null
+	 */
+	private function downloadAndCache(ICache $cache, string $jwksUri): array|null {
+		$decoded = $this->downloadedJwks(jwksUri: $jwksUri);
+		if ($decoded === null) {
+			return null;
+		}
+
+		$cache->set($jwksUri, $decoded, self::CACHE_TTL);
+
+		return $decoded;
+	}//end downloadAndCache()
+
+	/**
+	 * Fetch the JWKS document, or null when it cannot be fetched or carries no key list.
+	 *
+	 * @param string $jwksUri The broker's JWKS endpoint.
+	 *
+	 * @return array{keys: array<int, mixed>}|null
+	 */
+	private function downloadedJwks(string $jwksUri): array|null {
 		try {
 			$client = $this->clientService->newClient();
 			$response = $client->get($jwksUri, ['timeout' => self::HTTP_TIMEOUT]);
@@ -500,10 +551,8 @@ class OidcClientService implements OidcClientServiceInterface {
 			return null;
 		}
 
-		$cache->set($jwksUri, $decoded, self::CACHE_TTL);
-
 		return $decoded;
-	}//end fetchJwks()
+	}//end downloadedJwks()
 
 	/**
 	 * Validate an ID token against an in-memory JWKS — the pure, network-free
@@ -539,7 +588,28 @@ class OidcClientService implements OidcClientServiceInterface {
 			return null;
 		}
 
-		[$headerPart, $claimsPart, $signaturePart] = $parts;
+		$claims = $this->signedClaims(parts: $parts, jwks: $jwks);
+		if ($claims === null) {
+			return null;
+		}
+
+		if ($this->claimsMatch(claims: $claims, issuer: $issuer, clientId: $clientId, expectedNonce: $expectedNonce) === false) {
+			return null;
+		}
+
+		return $claims;
+	}//end validateIdTokenAgainstJwks()
+
+	/**
+	 * The token's claims when its header and signature hold, else null.
+	 *
+	 * @param array<int, string>             $parts The header, claims and signature segments.
+	 * @param array{keys: array<int, mixed>} $jwks  The JWKS to verify against.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function signedClaims(array $parts, array $jwks): array|null {
+		[$headerPart, $claimsPart] = $parts;
 
 		$header = $this->decodeJsonSegment(segment: $headerPart);
 		$claims = $this->decodeJsonSegment(segment: $claimsPart);
@@ -547,31 +617,58 @@ class OidcClientService implements OidcClientServiceInterface {
 			return null;
 		}
 
-		// Strict allow-list — rejects `alg: none` and every non-RS256 value,
-		// including a same-length HS256 confusion attempt.
-		if (($header['alg'] ?? '') !== self::ACCEPTED_ALG) {
-			return null;
-		}
-
-		$publicKeyPem = $this->resolveSigningKeyPem(jwks: $jwks, kid: (string)($header['kid'] ?? ''));
-		if ($publicKeyPem === null) {
-			return null;
-		}
-
-		$signature = $this->b64UrlDecode(encoded: $signaturePart);
-		$verified = openssl_verify($headerPart . '.' . $claimsPart, $signature, $publicKeyPem, OPENSSL_ALGO_SHA256);
-		if ($verified !== 1) {
-			return null;
-		}
-
-		$expected = new IdTokenExpectation(issuer: $issuer, clientId: $clientId);
-		$expected->nonce = $expectedNonce;
-		if ($this->claimsAreValid(claims: $claims, expected: $expected) === false) {
+		if ($this->signatureHolds(header: $header, parts: $parts, jwks: $jwks) === false) {
 			return null;
 		}
 
 		return $claims;
-	}//end validateIdTokenAgainstJwks()
+	}//end signedClaims()
+
+	/**
+	 * Whether the header names RS256 and the signature verifies against the resolved key.
+	 *
+	 * @param array<string, mixed>           $header The decoded header.
+	 * @param array<int, string>             $parts  The header, claims and signature segments.
+	 * @param array{keys: array<int, mixed>} $jwks   The JWKS to verify against.
+	 *
+	 * @return bool
+	 */
+	private function signatureHolds(array $header, array $parts, array $jwks): bool {
+		[$headerPart, $claimsPart, $signaturePart] = $parts;
+
+		// Strict allow-list — rejects `alg: none` and every non-RS256 value,
+		// including a same-length HS256 confusion attempt.
+		if (($header['alg'] ?? '') !== self::ACCEPTED_ALG) {
+			return false;
+		}
+
+		$publicKeyPem = $this->resolveSigningKeyPem(jwks: $jwks, kid: (string)($header['kid'] ?? ''));
+		if ($publicKeyPem === null) {
+			return false;
+		}
+
+		$signature = $this->b64UrlDecode(encoded: $signaturePart);
+		$verified = openssl_verify($headerPart . '.' . $claimsPart, $signature, $publicKeyPem, OPENSSL_ALGO_SHA256);
+
+		return $verified === 1;
+	}//end signatureHolds()
+
+	/**
+	 * Whether the verified claims carry the configured issuer, client id and nonce, and are current.
+	 *
+	 * @param array<string, mixed> $claims        The decoded ID token claims.
+	 * @param string               $issuer        The configured issuer.
+	 * @param string               $clientId      This RP's client id.
+	 * @param string               $expectedNonce The nonce stored at `start`.
+	 *
+	 * @return bool
+	 */
+	private function claimsMatch(array $claims, string $issuer, string $clientId, string $expectedNonce): bool {
+		$expected = new IdTokenExpectation(issuer: $issuer, clientId: $clientId);
+		$expected->nonce = $expectedNonce;
+
+		return $this->claimsAreValid(claims: $claims, expected: $expected);
+	}//end claimsMatch()
 
 	/**
 	 * The claim-level checks (iss/aud/nonce/exp/iat) once the signature has

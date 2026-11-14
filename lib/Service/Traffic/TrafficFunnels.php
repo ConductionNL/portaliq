@@ -105,23 +105,36 @@ class TrafficFunnels {
 		$total = count($events);
 		$from = 0;
 		foreach ($steps as $step) {
-			$found = false;
-			for ($i = $from; $i < $total; $i++) {
-				if ($this->match->matches(match: $step['match'], event: $events[$i]) === true) {
-					$found = true;
-					$from = $i + 1;
-					break;
-				}
-			}
-
-			if ($found === false) {
+			$next = $this->nextMatch(step: $step, events: $events, from: $from, total: $total);
+			if ($next === null) {
 				break;
 			}
 
+			$from = $next;
 			$depth++;
 		}
 
 		return $depth;
+	}
+
+	/**
+	 * The position after the first event from `$from` on that matches the step.
+	 *
+	 * @param array<string, mixed> $step   The funnel step.
+	 * @param array                $events The session's events.
+	 * @param int                  $from   The first event to look at.
+	 * @param int                  $total  The number of events.
+	 *
+	 * @return int|null Null when no later event matches.
+	 */
+	private function nextMatch(array $step, array $events, int $from, int $total): int|null {
+		for ($i = $from; $i < $total; $i++) {
+			if ($this->match->matches(match: $step['match'], event: $events[$i]) === true) {
+				return $i + 1;
+			}
+		}
+
+		return null;
 	}
 
 	/**

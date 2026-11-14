@@ -134,21 +134,61 @@ class GuestActionController extends Controller {
 	 * @return array<string, mixed>
 	 */
 	private function declaration(array $action): array {
+		$fields      = $this->declaredFields(action: $action);
+		$declaration = ['fields' => $fields] + $this->declaredTexts(action: $action);
+
+		$configs = $this->declaredConfigs(action: $action, fields: $fields);
+		if ($configs !== []) {
+			$declaration['fieldConfigs'] = $configs;
+		}
+
+		return $declaration;
+	}//end declaration()
+
+	/**
+	 * The fields the action asks for, without the token field.
+	 *
+	 * @param array<string, mixed> $action The declared guest action.
+	 *
+	 * @return array<int, string>
+	 */
+	private function declaredFields(array $action): array {
 		$tokenField = (string)$action['tokenField'];
-		$fields = array_values(
+		return array_values(
 			array_filter(
 				(array)($action['fields'] ?? []),
 				static fn ($field) => is_string($field) === true && $field !== $tokenField
 			)
 		);
+	}//end declaredFields()
 
-		$declaration = ['fields' => $fields];
+	/**
+	 * The action's label, confirmation and success texts it declares.
+	 *
+	 * @param array<string, mixed> $action The declared guest action.
+	 *
+	 * @return array<string, string>
+	 */
+	private function declaredTexts(array $action): array {
+		$texts = [];
 		foreach (['label', 'confirmText', 'successText'] as $key) {
 			if (is_string(($action[$key] ?? null)) === true) {
-				$declaration[$key] = $action[$key];
+				$texts[$key] = $action[$key];
 			}
 		}
 
+		return $texts;
+	}//end declaredTexts()
+
+	/**
+	 * The field configs of the fields the page asks for.
+	 *
+	 * @param array<string, mixed> $action The declared guest action.
+	 * @param array<int, string>   $fields The fields the page asks for.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function declaredConfigs(array $action, array $fields): array {
 		$configs = [];
 		foreach ((array)($action['fieldConfigs'] ?? []) as $field => $config) {
 			if (in_array($field, $fields, true) === true && is_array($config) === true) {
@@ -156,12 +196,8 @@ class GuestActionController extends Controller {
 			}
 		}
 
-		if ($configs !== []) {
-			$declaration['fieldConfigs'] = $configs;
-		}
-
-		return $declaration;
-	}//end declaration()
+		return $configs;
+	}//end declaredConfigs()
 
 	/**
 	 * Forward the confirmed act: the declared fields only, with the token
@@ -188,6 +224,46 @@ class GuestActionController extends Controller {
 			return $this->notFound();
 		}
 
+		return $this->guardedRelay(action: $action, appId: $appId, actionId: $actionId, token: $token);
+	}//end act()
+
+	/**
+	 * Forward the act unless a required field is missing.
+	 *
+	 * @param array<string, mixed> $action   The declared guest action.
+	 * @param string               $appId    The contributing app.
+	 * @param string               $actionId The declared guest action's id.
+	 * @param string               $token    The signed token.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T02
+	 */
+	private function guardedRelay(array $action, string $appId, string $actionId, string $token): JSONResponse {
+		$body = $this->actBody(action: $action, token: $token);
+
+		// The action's required fields (REQ-SMF-024): refused before the audit
+		// and the forward.
+		$missing = $this->requiredFieldsGuard->refusal(action: $action, body: $body);
+		if ($missing !== null) {
+			return $missing;
+		}
+
+		return $this->relay(action: $action, appId: $appId, auditAs: $actionId, token: $token, body: $body);
+	}//end guardedRelay()
+
+	/**
+	 * The declared fields the request carries, with the token stamped under
+	 * the action's `tokenField` over any client value.
+	 *
+	 * @param array<string, mixed> $action The declared guest action.
+	 * @param string               $token  The signed token.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T02
+	 */
+	private function actBody(array $action, string $token): array {
 		$body = [];
 		foreach ((array)($action['fields'] ?? []) as $field) {
 			if (is_string($field) === false) {
@@ -201,16 +277,8 @@ class GuestActionController extends Controller {
 		}
 
 		$body[(string)$action['tokenField']] = $token;
-
-		// The action's required fields (REQ-SMF-024): refused before the audit
-		// and the forward.
-		$missing = $this->requiredFieldsGuard->refusal(action: $action, body: $body);
-		if ($missing !== null) {
-			return $missing;
-		}
-
-		return $this->relay(action: $action, appId: $appId, auditAs: $actionId, token: $token, body: $body);
-	}//end act()
+		return $body;
+	}//end actBody()
 
 	/**
 	 * Audit, forward with a guest subject, and relay status and body. An

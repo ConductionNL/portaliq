@@ -101,10 +101,30 @@ class ActivityStore implements ActivityStoreInterface {
 			return null;
 		}
 
+		$rows = $this->readAll(objectService: $objectService, schema: $schema);
+		if (is_array($rows) === false) {
+			return null;
+		}
+
+		return $this->normalisedRows(rows: $rows);
+	}//end rows()
+
+	/**
+	 * Every stored row of one activity schema as OpenRegister returns it, or
+	 * null when the read fails.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $schema        One of the schema constants.
+	 *
+	 * @return mixed
+	 *
+	 * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/design.md#d6-a-store-class-instead-of-openregister-calls-in-every-service
+	 */
+	private function readAll(object $objectService, string $schema): mixed {
 		try {
 			$objectService->setRegister(register: self::REGISTER);
 			$objectService->setSchema(schema: $schema);
-			$rows = $objectService->findAll(
+			return $objectService->findAll(
 				config: ['filters' => [], 'limit' => self::READ_LIMIT, 'offset' => 0],
 				_rbac: false,
 				_multitenancy: false
@@ -113,11 +133,18 @@ class ActivityStore implements ActivityStoreInterface {
 			$this->logger->warning('Portaliq: activity read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
 			return null;
 		}
+	}//end readAll()
 
-		if (is_array($rows) === false) {
-			return null;
-		}
-
+	/**
+	 * The rows normalised, leaving out what does not normalise.
+	 *
+	 * @param array<int|string, mixed> $rows The rows read.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/design.md#d6-a-store-class-instead-of-openregister-calls-in-every-service
+	 */
+	private function normalisedRows(array $rows): array {
 		$normalised = [];
 		foreach ($rows as $row) {
 			$row = $this->normalise(row: $row);
@@ -127,7 +154,7 @@ class ActivityStore implements ActivityStoreInterface {
 		}
 
 		return $normalised;
-	}//end rows()
+	}//end normalisedRows()
 
 	/**
 	 * One row of a schema by its id, uuid or slug, or null.

@@ -215,6 +215,17 @@ class FieldWidgetNormaliser {
 			return $config;
 		}
 
+		return $this->withStaticSubset(config: $config, known: $this->staticValues(provider: $provider));
+	}//end fitChoices()
+
+	/**
+	 * The values of a static options provider.
+	 *
+	 * @param array<string, mixed> $provider The field's static options provider.
+	 *
+	 * @return array<int, string>
+	 */
+	private function staticValues(array $provider): array {
 		$known = [];
 		foreach (($provider['options'] ?? []) as $option) {
 			if (is_array($option) === true && isset($option['value']) === true) {
@@ -222,6 +233,19 @@ class FieldWidgetNormaliser {
 			}
 		}
 
+		return $known;
+	}//end staticValues()
+
+	/**
+	 * The config with its `choiceOptions` narrowed to the known values, or
+	 * without its choices when none is left.
+	 *
+	 * @param array<string, mixed> $config The field config.
+	 * @param array<int, string>   $known  The static option values.
+	 *
+	 * @return array<string, mixed> The config.
+	 */
+	private function withStaticSubset(array $config, array $known): array {
 		$subset = array_values(array_filter($config['choiceOptions'], static fn (string $value): bool => in_array($value, $known, true)));
 		if ($subset === []) {
 			unset($config['choiceOptions'], $config['otherLabel']);
@@ -230,7 +254,7 @@ class FieldWidgetNormaliser {
 
 		$config['choiceOptions'] = $subset;
 		return $config;
-	}//end fitChoices()
+	}//end withStaticSubset()
 
 	/**
 	 * A list of distinct option values, strings, capped.

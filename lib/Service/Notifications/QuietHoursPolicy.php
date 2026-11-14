@@ -110,22 +110,31 @@ class QuietHoursPolicy implements QuietHoursPolicyInterface {
 
 		$existingId = $this->findExistingId(objectService: $objectService, subjectRef: $subjectRef);
 
+		$window = ['subjectRef' => $subjectRef, 'startTime' => $start, 'endTime' => $end];
+		return $this->saveWindow(objectService: $objectService, window: $window, existingId: $existingId);
+	}//end setWindow()
+
+	/**
+	 * Save the window over the subject's existing row, if any.
+	 *
+	 * @param object               $objectService OpenRegister's ObjectService.
+	 * @param array<string, mixed> $window        The window row.
+	 * @param string|null          $existingId    The subject's existing row, or null.
+	 *
+	 * @return bool False when the save failed.
+	 *
+	 * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#api-design
+	 */
+	private function saveWindow(object $objectService, array $window, string|null $existingId): bool {
 		try {
-			$objectService->saveObject(
-				object: ['subjectRef' => $subjectRef, 'startTime' => $start, 'endTime' => $end],
-				register: self::REGISTER,
-				schema: self::SCHEMA,
-				uuid: $existingId,
-				_rbac: false,
-				_multitenancy: false
-			);
+			$objectService->saveObject(object: $window, register: self::REGISTER, schema: self::SCHEMA, uuid: $existingId, _rbac: false, _multitenancy: false);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: quiet hours save failed', ['reason' => $e->getMessage()]);
 			return false;
 		}
 
 		return true;
-	}//end setWindow()
+	}//end saveWindow()
 
 	/**
 	 * A subject's own configured window, or the documented default.

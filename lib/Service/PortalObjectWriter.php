@@ -253,11 +253,7 @@ class PortalObjectWriter implements PortalObjectWriterInterface {
 		array|\Closure $data,
 	): ?array {
 		$this->lastFailure = '';
-		if ($id === '') {
-			return null;
-		}
-
-		$objectService = $this->actingObjectService(organisation: $organisation);
+		$objectService     = $this->updateService(id: $id, organisation: $organisation);
 		if ($objectService === null) {
 			return null;
 		}
@@ -299,6 +295,25 @@ class PortalObjectWriter implements PortalObjectWriterInterface {
 
 		return $this->normalise(row: $saved);
 	}//end updateObject()
+
+	/**
+	 * The ObjectService an update writes through, acting for the tenant, or
+	 * null when there is no id to update or no service.
+	 *
+	 * @param string $id           The client-supplied object id.
+	 * @param string $organisation The subject's tenant (may be empty).
+	 *
+	 * @return object|null
+	 *
+	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T2
+	 */
+	private function updateService(string $id, string $organisation): object|null {
+		if ($id === '') {
+			return null;
+		}
+
+		return $this->actingObjectService(organisation: $organisation);
+	}//end updateService()
 
 	/**
 	 * The object an update saves: the client fields merged onto the row just
@@ -394,7 +409,7 @@ class PortalObjectWriter implements PortalObjectWriterInterface {
 		string $id,
 	): bool {
 		$objectService = $this->actingObjectService(organisation: $organisation);
-		if ($id === '' || $scopeField === '' || $subjectRef === '' || $objectService === null) {
+		if ($this->cannotDelete(id: $id, scopeField: $scopeField, subjectRef: $subjectRef, objectService: $objectService) === true) {
 			return false;
 		}
 
@@ -407,12 +422,61 @@ class PortalObjectWriter implements PortalObjectWriterInterface {
 			organisation: $organisation,
 			id: $id
 		);
-		$stored = ($existing[$scopeField] ?? null);
-		if ($existing === null || (is_array($stored) === true && array_values(array_unique($stored)) !== [$subjectRef])) {
+		if ($this->isMissingOrShared(existing: $existing, scopeField: $scopeField, subjectRef: $subjectRef) === true) {
 			return false;
 		}
 
 		$uuid = (string)($existing['@self']['uuid'] ?? $existing['@self']['id'] ?? $existing['uuid'] ?? $existing['id'] ?? $id);
+		return $this->deleteRow(objectService: $objectService, uuid: $uuid, register: $register, schema: $schema);
+	}//end deleteObject()
+
+	/**
+	 * Whether a delete is refused before anything is read: no id, no scope
+	 * field, no subject reference, or no ObjectService.
+	 *
+	 * @param string      $id            The client-supplied id.
+	 * @param string      $scopeField    The field that must own the row.
+	 * @param string      $subjectRef    The server-derived subject reference.
+	 * @param object|null $objectService OpenRegister's ObjectService, or null.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+	 */
+	private function cannotDelete(string $id, string $scopeField, string $subjectRef, object|null $objectService): bool {
+		return $id === '' || $scopeField === '' || $subjectRef === '' || $objectService === null;
+	}//end cannotDelete()
+
+	/**
+	 * Whether the owned row is absent, or its scope field is a list naming
+	 * anyone besides the subject.
+	 *
+	 * @param array<string, mixed>|null $existing   The owned row, or null.
+	 * @param string                    $scopeField The field that must own the row.
+	 * @param string                    $subjectRef The server-derived subject reference.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+	 */
+	private function isMissingOrShared(array|null $existing, string $scopeField, string $subjectRef): bool {
+		$stored = ($existing[$scopeField] ?? null);
+		return $existing === null || (is_array($stored) === true && array_values(array_unique($stored)) !== [$subjectRef]);
+	}//end isMissingOrShared()
+
+	/**
+	 * Delete a verified row; an OpenRegister failure is logged and answers false.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $uuid          The row's stored identifier.
+	 * @param string $register      The register slug/id.
+	 * @param string $schema        The schema slug.
+	 *
+	 * @return bool True when the row is deleted.
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+	 */
+	private function deleteRow(object $objectService, string $uuid, string $register, string $schema): bool {
 		try {
 			$deleted = $this->insideWriteContext(
 				write: static fn () => $objectService->deleteObject(uuid: $uuid, register: $register, schema: $schema, _rbac: false, _multitenancy: false)
@@ -423,7 +487,7 @@ class PortalObjectWriter implements PortalObjectWriterInterface {
 		}
 
 		return $deleted !== false;
-	}//end deleteObject()
+	}//end deleteRow()
 
 	/**
 	 * Re-read a row by id and return it ONLY when it is the subject's: the row
@@ -457,21 +521,29 @@ class PortalObjectWriter implements PortalObjectWriterInterface {
 		string $organisation,
 		string $id,
 	): ?array {
-		// OR only honours DATA-property filters, so findAll(filters:['id'=>…])
-		// does NOT select by identifier — fetch by id directly with find().
-		try {
-			$entity = $objectService->find(
-				id: $id,
-				register: $register,
-				schema: $schema,
-				_rbac: false,
-				_multitenancy: false
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: OR ownership read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
+		$row = $this->candidateRow(objectService: $objectService, register: $register, schema: $schema, id: $id);
+		if ($row === null || $this->ownedBy(row: $row, scopeField: $scopeField, subjectRef: $subjectRef, organisation: $organisation) === false) {
 			return null;
 		}
 
+		return $row;
+	}//end fetchOwnedObject()
+
+	/**
+	 * The row an id selects, normalised, or null when it cannot be read, does
+	 * not exist, or does not carry the requested id.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $register      The register slug/id.
+	 * @param string $schema        The schema slug.
+	 * @param string $id            The client-supplied id/uuid.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T2
+	 */
+	private function candidateRow(object $objectService, string $register, string $schema, string $id): array|null {
+		$entity = $this->entityById(objectService: $objectService, register: $register, schema: $schema, id: $id);
 		if ($entity === null) {
 			return null;
 		}
@@ -486,20 +558,65 @@ class PortalObjectWriter implements PortalObjectWriterInterface {
 			return null;
 		}
 
-		// THE ownership boundary — identical to the reader's verifyScope. The
-		// client id only SELECTS a candidate; the row's own stored scopeField
-		// value decides whether the subject may touch it: an equal single
-		// value or a list that contains it, the one rule the reader uses too.
-		if ($scopeField !== '' && $this->scopeMatches(stored: ($row[$scopeField] ?? null), scopeValue: $subjectRef) === false) {
+		return $row;
+	}//end candidateRow()
+
+	/**
+	 * The entity stored under an id, or null when the read fails.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $register      The register slug/id.
+	 * @param string $schema        The schema slug.
+	 * @param string $id            The client-supplied id/uuid.
+	 *
+	 * @return mixed
+	 *
+	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T2
+	 */
+	private function entityById(object $objectService, string $register, string $schema, string $id): mixed {
+		// OR only honours DATA-property filters, so findAll(filters:['id'=>…])
+		// does NOT select by identifier — fetch by id directly with find().
+		try {
+			return $objectService->find(
+				id: $id,
+				register: $register,
+				schema: $schema,
+				_rbac: false,
+				_multitenancy: false
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: OR ownership read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
 			return null;
+		}
+	}//end entityById()
+
+	/**
+	 * THE ownership boundary — identical to the reader's verifyScope. The
+	 * client id only SELECTS a candidate; the row's own stored scopeField
+	 * value decides whether the subject may touch it: an equal single value
+	 * or a list that contains it, the one rule the reader uses too. The
+	 * tenant check follows.
+	 *
+	 * @param array<string, mixed> $row          The candidate row.
+	 * @param string               $scopeField   The field that must own the row.
+	 * @param string               $subjectRef   The subject's reference.
+	 * @param string               $organisation The subject's tenant (may be empty).
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-direct-scope-field-must-match-a-single-value-or-strict-list-membership
+	 */
+	private function ownedBy(array $row, string $scopeField, string $subjectRef, string $organisation): bool {
+		if ($scopeField !== '' && $this->scopeMatches(stored: ($row[$scopeField] ?? null), scopeValue: $subjectRef) === false) {
+			return false;
 		}
 
 		if ($this->organisationMatches(row: $row, organisation: $organisation) === false) {
-			return null;
+			return false;
 		}
 
-		return $row;
-	}//end fetchOwnedObject()
+		return true;
+	}//end ownedBy()
 
 	/**
 	 * The server-side ownership stamps a create writes over the client's data.

@@ -124,15 +124,7 @@ class PortalHomePage implements PortalHomePageInterface {
 	 */
 	public static function classify(array $rows): array {
 		$draft = null;
-		foreach ($rows as $row) {
-			if (is_array($row) === false) {
-				continue;
-			}
-
-			if ((string)($row['route'] ?? '') !== self::ROOT_ROUTE) {
-				continue;
-			}
-
+		foreach (self::rootRows(rows: $rows) as $row) {
 			if ((string)($row['status'] ?? '') === self::PUBLISHED) {
 				return self::state(state: self::PUBLISHED, row: $row);
 			}
@@ -148,6 +140,28 @@ class PortalHomePage implements PortalHomePageInterface {
 
 		return self::state(state: 'missing', row: null);
 	}//end classify()
+
+	/**
+	 * The rows that are arrays at the root route.
+	 *
+	 * @param array<int, mixed> $rows The rows read at the root route.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-without-a-published-home-page-must-be-reported-as-a-configuration-error
+	 */
+	private static function rootRows(array $rows): array {
+		$root = [];
+		foreach ($rows as $row) {
+			if (is_array($row) === false || (string)($row['route'] ?? '') !== self::ROOT_ROUTE) {
+				continue;
+			}
+
+			$root[] = $row;
+		}
+
+		return $root;
+	}//end rootRows()
 
 	/**
 	 * One verdict, with the page it names when there is one.
@@ -188,6 +202,17 @@ class PortalHomePage implements PortalHomePageInterface {
 	 * @return string|null The identifier, or null when the row carries none.
 	 */
 	private static function rowId(array $row): ?string {
+		return self::firstId(candidates: self::idCandidates(row: $row));
+	}//end rowId()
+
+	/**
+	 * The row's flat and enveloped `id` and `uuid`, in that order.
+	 *
+	 * @param array<string, mixed> $row The stored row.
+	 *
+	 * @return array<int, mixed>
+	 */
+	private static function idCandidates(array $row): array {
 		$candidates = [
 			($row['id'] ?? null),
 			($row['uuid'] ?? null),
@@ -199,6 +224,17 @@ class PortalHomePage implements PortalHomePageInterface {
 			$candidates[] = ($self['uuid'] ?? null);
 		}
 
+		return $candidates;
+	}//end idCandidates()
+
+	/**
+	 * The first candidate that is a non-empty string or an integer, as a string.
+	 *
+	 * @param array<int, mixed> $candidates The candidates.
+	 *
+	 * @return string|null The identifier, or null when none is one.
+	 */
+	private static function firstId(array $candidates): string|null {
 		foreach ($candidates as $candidate) {
 			if (is_string($candidate) === true && $candidate !== '') {
 				return $candidate;
@@ -210,5 +246,5 @@ class PortalHomePage implements PortalHomePageInterface {
 		}
 
 		return null;
-	}//end rowId()
+	}//end firstId()
 }//end class

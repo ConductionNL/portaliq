@@ -70,6 +70,22 @@ class ReportTermsService implements ReportTermsServiceInterface {
 		}
 
 		$moment = ($now ?? new DateTimeImmutable());
+		return $this->terms(declaration: $declaration, report: $report, received: $received, moment: $moment);
+	}//end forReport()
+
+	/**
+	 * One entry per declared term with a positive number of days.
+	 *
+	 * @param array<string, mixed> $declaration The case type's report declaration.
+	 * @param array<string, mixed> $report      The report.
+	 * @param DateTimeImmutable    $received    When the report was received.
+	 * @param DateTimeImmutable    $moment      The moment to measure from.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/specs/report-without-an-account/spec.md
+	 */
+	private function terms(array $declaration, array $report, DateTimeImmutable $received, DateTimeImmutable $moment): array {
 		$terms = [];
 		foreach ([['acknowledgementDays', 'acknowledgement', 'acknowledgedAt'], ['feedbackDays', 'feedback', 'feedbackAt']] as $declared) {
 			[$key, $name, $metField] = $declared;
@@ -79,21 +95,35 @@ class ReportTermsService implements ReportTermsServiceInterface {
 			}
 
 			$due = $received->modify('+' . $days . ' days');
-			$metAt = (string)($report[$metField] ?? '');
-
-			$terms[] = [
-				'term' => $name,
-				'days' => $days,
-				'dueAt' => $due->format(DATE_ATOM),
-				'met' => ($metAt !== ''),
-				'metAt' => $metAt,
-				// Negative means the term has passed. The reporter is told
-				// that plainly rather than shown a term that quietly stopped
-				// counting.
-				'daysLeft' => (int)$moment->diff($due)->format('%r%a'),
-			];
-		}//end foreach
+			// Negative means the term has passed. The reporter is told
+			// that plainly rather than shown a term that quietly stopped
+			// counting.
+			$terms[] = $this->term(name: $name, days: $days, due: $due, metAt: (string)($report[$metField] ?? ''))
+				+ ['daysLeft' => (int)$moment->diff($due)->format('%r%a')];
+		}
 
 		return $terms;
-	}//end forReport()
+	}//end terms()
+
+	/**
+	 * A term's name, days, due date and whether and when it was met.
+	 *
+	 * @param string            $name  The term's name.
+	 * @param int               $days  The term's days.
+	 * @param DateTimeImmutable $due   The term's due date.
+	 * @param string            $metAt When it was met, or ''.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/report-without-an-account/spec.md
+	 */
+	private function term(string $name, int $days, DateTimeImmutable $due, string $metAt): array {
+		return [
+			'term' => $name,
+			'days' => $days,
+			'dueAt' => $due->format(DATE_ATOM),
+			'met' => ($metAt !== ''),
+			'metAt' => $metAt,
+		];
+	}//end term()
 }//end class

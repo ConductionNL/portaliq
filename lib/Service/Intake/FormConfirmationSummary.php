@@ -95,22 +95,45 @@ class FormConfirmationSummary {
 	 */
 	private function text(array $field, mixed $value): string {
 		if (is_array($value) === true) {
-			if (($field['type'] ?? '') !== 'addressNL') {
-				return '';
-			}
-
-			$house  = trim((string)($value['number'] ?? '') . (string)($value['letter'] ?? '') . (string)($value['addition'] ?? ''));
-			$street = trim((string)($value['street'] ?? '') . ' ' . $house);
-			$town   = trim((string)($value['postcode'] ?? '') . ' ' . (string)($value['town'] ?? ''));
-
-			return trim($street . ', ' . $town, ', ');
+			return $this->addressText(field: $field, value: $value);
 		}
 
 		if (is_scalar($value) === false) {
 			return '';
 		}
 
-		$text = trim((string)$value);
+		return $this->optionText(field: $field, text: trim((string)$value));
+	}//end text()
+
+	/**
+	 * A Dutch address answer on one line; '' for any other list answer.
+	 *
+	 * @param array<string, mixed> $field The field.
+	 * @param array<string, mixed> $value The answer.
+	 *
+	 * @return string
+	 */
+	private function addressText(array $field, array $value): string {
+		if (($field['type'] ?? '') !== 'addressNL') {
+			return '';
+		}
+
+		$house  = trim((string)($value['number'] ?? '') . (string)($value['letter'] ?? '') . (string)($value['addition'] ?? ''));
+		$street = trim((string)($value['street'] ?? '') . ' ' . $house);
+		$town   = trim((string)($value['postcode'] ?? '') . ' ' . (string)($value['town'] ?? ''));
+
+		return trim($street . ', ' . $town, ', ');
+	}//end addressText()
+
+	/**
+	 * The label of the option the answer picks, else the answer itself.
+	 *
+	 * @param array<string, mixed> $field The field.
+	 * @param string               $text  The trimmed answer.
+	 *
+	 * @return string
+	 */
+	private function optionText(array $field, string $text): string {
 		foreach ((array)($field['options'] ?? []) as $option) {
 			if (is_array($option) === true && (string)($option['value'] ?? '') === $text && trim((string)($option['label'] ?? '')) !== '') {
 				return trim((string)$option['label']);
@@ -118,5 +141,5 @@ class FormConfirmationSummary {
 		}
 
 		return $text;
-	}//end text()
+	}//end optionText()
 }//end class
