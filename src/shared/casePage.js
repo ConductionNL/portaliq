@@ -260,7 +260,46 @@ export function decisionDateRows(caseRow, t, locale) {
 			rows.push({ key, label: t(label), value })
 		}
 	}
-	return rows
+	return rows.concat(termNoteRows(caseRow, t, rows.some((row) => row.key === 'legalDecisionDate')))
+}
+
+/**
+ * The case app's own sentence about the term (woo-dossier-in-my-cases
+ * REQ-WDM-002): under "Ready by", or in its place when no date is set. It is
+ * text the case app wrote, shown as text, with no words of the portal's own.
+ *
+ * @param {object|null} caseRow The case.
+ * @param {Function} t The translator.
+ * @param {boolean} underDate Whether the "Ready by" row is shown.
+ * @return {Array<{key: string, label: string, value: string}>} No row, or one.
+ * @spec openspec/changes/woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-case-shows-the-sentence-the-case-app-wrote-about-the-term-req-wdm-002
+ */
+export function termNoteRows(caseRow, t, underDate) {
+	const note = typeof caseRow?.termNote === 'string' ? caseRow.termNote.trim().slice(0, 200) : ''
+	if (note === '') {
+		return []
+	}
+	return [{ key: 'termNote', label: underDate ? '' : t('Ready by'), value: note }]
+}
+
+/**
+ * The link to where the case's result is public (woo-dossier-in-my-cases
+ * REQ-WDM-003), or null. The server already dropped a link that is not https
+ * on a trusted domain; this keeps an https url only, as a second guard.
+ *
+ * @param {object|null} caseRow The case.
+ * @param {Function} t The translator.
+ * @return {{label: string, url: string}|null} The link.
+ * @spec openspec/changes/woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-case-links-to-where-its-result-is-public-req-wdm-003
+ */
+export function resultLinkOf(caseRow, t) {
+	const link = caseRow?.resultLink
+	const url = typeof link?.url === 'string' ? link.url.trim() : ''
+	if (!/^https:\/\/[^\s/]+/i.test(url)) {
+		return null
+	}
+	const label = typeof link.label === 'string' ? link.label.trim().slice(0, 80) : ''
+	return { label: label || t('See the result'), url }
 }
 
 /**

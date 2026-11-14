@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.109.0"
+        "version": "0.110.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.109.0",
+                "version": "0.110.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -7619,7 +7619,7 @@
                     ]
                 },
                 "icon": "FolderOutline",
-                "version": "0.2.0",
+                "version": "0.3.0",
                 "title": "Portal Case",
                 "description": "A citizen's own case as the portal sees it: scoped by subjectRef, pointing at its case type, carrying its status and the answers the citizen gave. `portalWrites` is the append-only record of what the citizen changed, naming the identity and the mandate each change acted under.",
                 "type": "object",
@@ -7703,6 +7703,32 @@
                         "format": "date",
                         "description": "The last day the law allows for the decision. Written by the case app. The case page shows it as Uiterlijk klaar op, and the case card takes it as its due day.",
                         "example": "2026-11-01"
+                    },
+                    "termNote": {
+                        "title": "Term note",
+                        "type": "string",
+                        "maxLength": 200,
+                        "description": "A plain sentence the case app writes about the term: why it stands still or moved. The case page shows it under Uiterlijk klaar op, or in its place when no date is set, as text and with no words of the portal's own.",
+                        "example": "De termijn staat stil sinds 6 oktober 2026. Hij loopt weer zodra wij uw antwoord hebben."
+                    },
+                    "resultLink": {
+                        "title": "Result link",
+                        "type": "object",
+                        "description": "Where the case's result is public, written by the case app. The case page shows it under the steps only when the url is https on one of the instance's trusted domains.",
+                        "properties": {
+                            "label": {
+                                "title": "Label",
+                                "type": "string",
+                                "maxLength": 80,
+                                "description": "The link's words. Empty shows Bekijk het resultaat."
+                            },
+                            "url": {
+                                "title": "URL",
+                                "type": "string",
+                                "format": "uri",
+                                "description": "The public address of the result."
+                            }
+                        }
                     }
                 }
             },

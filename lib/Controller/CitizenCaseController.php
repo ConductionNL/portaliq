@@ -57,6 +57,8 @@ use OCA\Portaliq\Kernel\Contracts\PortalObjectWriterInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalPartyTreeResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Kernel\Support\PortalBranchScope;
+use OCA\Portaliq\Service\CaseQuestions;
+use OCA\Portaliq\Service\CaseResultLink;
 use OCA\Portaliq\Service\CitizenCaseProjection;
 use OCA\Portaliq\Kernel\Support\SessionTrust;
 use OCP\AppFramework\Controller;
@@ -128,6 +130,8 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 *                                               mandate (cases-my-cases-page).
 	 *                                               Absent opens only own cases.
 	 * @param PortalBranchScopeInterface $branches The branch filter of signin-eherkenning-branch.
+	 * @param CaseResultLink|null $resultLinks Keeps a case's result link only on a trusted domain (woo-dossier-in-my-cases).
+	 * @param CaseQuestions|null $questions Reads the open questions of the case's app on this case (woo-dossier-in-my-cases).
 	 */
 	public function __construct(
 		IRequest $request,
@@ -149,6 +153,8 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		private readonly MandatePartiesInterface $mandateParties,
 		private readonly ?MandatedCaseReaderInterface $mandatedCases = null,
 		private readonly PortalBranchScopeInterface $branches = new PortalBranchScope(),
+		private readonly ?CaseResultLink $resultLinks = null,
+		private readonly ?CaseQuestions $questions = null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
@@ -185,7 +191,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		}
 
 		return new JSONResponse([
-			'case' => (new CitizenCaseProjection(logger: $this->logger))->visible(context: $context, case: $context['case']),
+			'case' => $this->projected(context: $context, case: $context['case']),
 			'writableSet' => $context['set'],
 			// What the portal may offer about ending this request, resolved
 			// from the case type rather than from any list the portal keeps
@@ -197,8 +203,33 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			),
 			'documents' => $this->documents->listFor(context: $context, register: $register, schema: $schema, id: $id),
 			'documentsLabel' => (string)($context['documents']['label'] ?? ''),
+			// The open questions of the case's app on this case, each with the
+			// row action that answers it (woo-dossier-in-my-cases REQ-WDM-001).
+			'questions' => $this->openQuestions(context: $context),
 		]);
 	}//end show()
+
+	/**
+	 * The open questions on the case, each with its answer action; none without the reader.
+	 *
+	 * @param array<string, mixed> $context The resolved case context.
+	 *
+	 * @return list<array<string, mixed>>
+	 *
+	 * @spec openspec/changes/woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-open-question-is-answered-on-the-case-page-req-wdm-001
+	 */
+	private function openQuestions(array $context): array {
+		if ($this->questions === null) {
+			return [];
+		}
+
+		return $this->questions->forCase(
+			subject: $context['subject'],
+			contributions: (array)($this->registry->aggregateFor($context['subject'])['contributions'] ?? []),
+			app: (string)$context['app'],
+			case: $context['case']
+		);
+	}//end openQuestions()
 
 	/**
 	 * Open one document the case screen listed. The id picks among what this
@@ -630,6 +661,29 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	}//end announceWithdrawal()
 
 	/**
+	 * The case as the resident reads it: the fields the collection declares,
+	 * and a result link only when it is https on a trusted domain
+	 * (woo-dossier-in-my-cases REQ-WDM-003). Without the filter no link is
+	 * shown at all.
+	 *
+	 * @param array<string, mixed> $context The resolved case context.
+	 * @param array<string, mixed> $case    The case as read or written.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-case-links-to-where-its-result-is-public-req-wdm-003
+	 */
+	private function projected(array $context, array $case): array {
+		$visible = (new CitizenCaseProjection(logger: $this->logger))->visible(context: $context, case: $case);
+		if ($this->resultLinks === null) {
+			unset($visible[CaseResultLink::FIELD]);
+			return $visible;
+		}
+
+		return $this->resultLinks->kept(case: $visible);
+	}//end projected()
+
+	/**
 	 * The withdrawn case and its withdrawal state. Nothing is deleted and no
 	 * undo is offered: the answers stay readable, with the withdrawal beside
 	 * them.
@@ -642,7 +696,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	private function withdrawnAnswer(CaseWriteRun $write, array $updated): JSONResponse {
 		$context = $write->context;
 		return new JSONResponse([
-			'case' => (new CitizenCaseProjection(logger: $this->logger))->visible(context: $context, case: $updated),
+			'case' => $this->projected(context: $context, case: $updated),
 			'withdrawal' => $this->writableSet->withdrawal(action: $context['action'], case: $updated, closedField: (string)($context['closedField'] ?? '')),
 		]);
 	}//end withdrawnAnswer()
@@ -956,7 +1010,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 
 		$this->announceWrite(write: $write, fields: array_map(strval(...), array_keys($submitted)));
 
-		return new JSONResponse(['case' => (new CitizenCaseProjection(logger: $this->logger))->visible(context: $write->context, case: $updated)]);
+		return new JSONResponse(['case' => $this->projected(context: $write->context, case: $updated)]);
 	}//end applyAmendment()
 
 	/**
