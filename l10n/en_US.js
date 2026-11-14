@@ -542,7 +542,8 @@ OC.L10N.register(
         "The columns are saved.": "The columns are saved.",
         "The columns could not be saved. Try again.": "The columns could not be saved. Try again.",
         "Event to sign up for": "Event to sign up for",
-        "No event": "No event"
+        "No event": "No event",
+        "Plan templates": "Plan templates"
     },
     "nplurals=2; plural=(n != 1);"
 )

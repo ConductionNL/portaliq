@@ -3227,7 +3227,8 @@ OC.L10N.register(
         "Introduction text": "Introduction text",
         "The opening sentence under the form's heading.": "The opening sentence under the form's heading.",
         "Event to sign up for": "Event to sign up for",
-        "No event": "No event"
+        "No event": "No event",
+        "Plan templates": "Plan templates"
     },
     "nplurals=2; plural=(n != 1);"
 )

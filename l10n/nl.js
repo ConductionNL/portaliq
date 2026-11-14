@@ -3381,7 +3381,8 @@ OC.L10N.register(
         "Introduction text": "Tekst van de introductie",
         "The opening sentence under the form's heading.": "De openingszin onder de kop van het formulier.",
         "Event to sign up for": "Evenement om je voor aan te melden",
-        "No event": "Geen evenement"
+        "No event": "Geen evenement",
+        "Plan templates": "Plansjablonen"
     },
     "nplurals=2; plural=(n != 1);"
 )
