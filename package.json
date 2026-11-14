@@ -328,7 +328,10 @@
   "overrides": {
     "libxmljs2": "^0.37.0",
     "@nextcloud/axios": "$@nextcloud/axios",
-    "@nextcloud/vue": "$@nextcloud/vue"
+    "@nextcloud/vue": "$@nextcloud/vue",
+    "webdav": {
+      "minimatch": "^11.0.1"
+    }
   },
   "devDependencies": {
     "@cyclonedx/cyclonedx-npm": "^6.0.0",
