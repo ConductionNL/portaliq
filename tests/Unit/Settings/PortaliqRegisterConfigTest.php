@@ -404,8 +404,10 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.106.0 (guardianMessage 0.3.0): a message's `readAt`, when the other side first read it (message-read-time). Additive.
 		// 0.108.0 (portalPage 0.10.0): a cta's `messageTo`, the field naming whom the message form opens for (guardian-message-to-and-whole-day). Additive.
 		// 0.109.0 (portalFormBinding 0.6.0): `intro.enabled`, whether the form opens with its introduction (form-statements-intro-and-confirmation-mail T06). Additive.
-		$this->assertSame(expected: '0.109.0', actual: self::$register['info']['version']);
-		$this->assertSame(expected: '0.109.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		// 0.109.0 (portalMessage 0.8.0): the read-only x-openregister-mcp dialect on the portal inbox (portaliq-mcp-adoption). Additive.
+		// 0.111.0 (portalSubmission 0.4.0, portalNotification 0.4.0): read-only x-openregister-mcp dialects on the operational records (hermiq-ai-tooling). Additive.
+		$this->assertSame(expected: '0.111.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.111.0', actual: self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portalPage']['properties']['pages']['items']['properties']['blocks']['items']['properties']['messageTo']['type']);
 		$this->assertSame(expected: 'date-time', actual: self::$register['components']['schemas']['guardianMessage']['properties']['readAt']['format']);
 		// 0.107.0 (portal 0.28.0): a portal's `caseTypeColumns`, how each case type's columns read in Mijn zaken (case-type-columns-in-my-cases). Additive.
@@ -430,7 +432,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame('date-time', self::$register['components']['schemas']['newsItem']['properties']['publishedAt']['format']);
 		$this->assertSame('0.18.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['activationExpiresAt']['format']);
-		$this->assertSame('0.7.0', self::$register['components']['schemas']['portalMessage']['version']);
+		$this->assertSame('0.8.0', self::$register['components']['schemas']['portalMessage']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalMessage']['properties']['ruleKey']['type']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalOidcState']['version']);
 		$this->assertSame('boolean', self::$register['components']['schemas']['portalOidcState']['properties']['silent']['type']);
@@ -752,7 +754,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 
 	public function testTheMessageBoxRowsFitThePortalNotificationSchema(): void {
 		$schema = self::$register['components']['schemas']['portalNotification'];
-		$this->assertSame('0.3.0', $schema['version']);
+		$this->assertSame('0.4.0', $schema['version']);
 		$this->assertSame('0.18.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$jsonSchema = json_decode((string)json_encode(['type' => 'object', 'required' => $schema['required'], 'properties' => $schema['properties']]), false);
 
@@ -1172,18 +1174,10 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertContains('portaliq-medewerkers', $read, 'staff still read drafts; the editor groups are added by PageEditorService');
 	}//end testPageIsPublicOnlyWhilePublished()
 
-		// The x-openregister-mcp dialect that used to be asserted here is GONE from
-	// portalMessage, and this test with it. #112 added the dialect; with it in
-	// place OpenRegister refuses to import the schema at all, so portalMessage
-	// was the one schema of thirteen missing after every seed and the whole
-	// portal SPA had no data surface. Bisected: ac96e1cc (before #112) seeds
-	// green, c287056f (the #112 merge) and everything after fails.
-	//
-	// testIdentityAndSessionSchemasCarryNoMcpDialect below is KEPT. It asserts
-	// that portalAccount, portalSession and exampleDocument carry no dialect,
-	// which is still the rule that matters — no derived tool may return an IdP
-	// claims blob or a session jti — and it will start doing real work again the
-	// moment a dialect is reintroduced anywhere.
+	// The read-only dialect on portalMessage, and the derived catalog it yields,
+	// is asserted in PortaliqMcpSurfaceTest. The shape that once kept
+	// portalMessage from importing (no `enabled` gate, verbs outside `tools`)
+	// is guarded by RegisterMcpAnnotationTest.
 
 	/**
 	 * portaliq-mcp-adoption T03: `portalAccount` (raw IdP claims),

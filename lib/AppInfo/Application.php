@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\AppInfo;
 
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Mcp\PortaliqToolProvider;
 use OCA\Portaliq\Middleware\ApiContractMiddleware;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
 use OCA\Portaliq\Middleware\PublicApiCorsMiddleware;
@@ -111,11 +112,15 @@ class Application extends App implements IBootstrap {
 		// during the Coordinator pass, blanks the whole Settings framework and
 		// blocks the app's own version-upgrade from recording). info.xml is the
 		// NC34-supported mechanism and already declares this step.
-		// AI Chat Companion (hydra ADR-034/035): this app no longer registers a
-		// hand-written IMcpToolProvider. Its tools are derived from the
+		// AI Chat Companion (hydra ADR-034/035): reads are derived from the
 		// `x-openregister-mcp` dialect declared on the schemas in
-		// lib/Settings/portaliq_register.json, so ExampleToolProvider.php was
-		// deleted rather than filled in.
+		// lib/Settings/portaliq_register.json. The staff write actions are the
+		// one governed hand-written provider (hermiq-ai-tooling), registered
+		// under the per-app key OpenRegister's tool discovery enumerates.
+		$context->registerServiceAlias(
+			'OCA\\OpenRegister\\Mcp\\IMcpToolProvider::' . self::APP_ID,
+			PortaliqToolProvider::class
+		);
 
 		// Fail-closed bearer guard for PortalProtected controllers (e.g.
 		// ContributionController). Public auth-edge routes are untouched.

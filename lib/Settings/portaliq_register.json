@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.109.0"
+        "version": "0.111.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.109.0",
+                "version": "0.111.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -1263,7 +1263,7 @@
                     ]
                 },
                 "icon": "EmailOutline",
-                "version": "0.7.0",
+                "version": "0.8.0",
                 "configuration": {
                     "linkedTypes": [
                         "talk"
@@ -1411,6 +1411,26 @@
                         "description": "An id the sending app chooses, shared by every copy of one sending, so the readers of one letter can be listed together.",
                         "example": "brief-groep-5b-2026-10-07"
                     }
+                },
+                "x-openregister-mcp": {
+                    "enabled": true,
+                    "tools": {
+                        "search": {
+                            "description": "Search messages in portal inboxes: what the organisation sent a resident or supplier through the portal. Filter by subjectRef to list one recipient's inbox, by read to find the messages still unread, or by organisation. Results are limited to the messages the caller may already see; this tool never marks a message read.",
+                            "scope": "read",
+                            "readOnlyHint": true,
+                            "filters": [
+                                "read",
+                                "organisation",
+                                "subjectRef"
+                            ]
+                        },
+                        "get": {
+                            "description": "Fetch one portal inbox message by id: its subject line, body, when it was received, whether and when it was read, and the record or case it links to. Use to answer what a specific message says. Reading it through this tool does not mark it read.",
+                            "scope": "read",
+                            "readOnlyHint": true
+                        }
+                    }
                 }
             },
             "portalSubmission": {
@@ -1424,7 +1444,7 @@
                     ]
                 },
                 "icon": "FileCheckOutline",
-                "version": "0.3.0",
+                "version": "0.4.0",
                 "configuration": {
                     "linkedTypes": [
                         "forms"
@@ -1503,6 +1523,27 @@
                         ],
                         "example": "delivered"
                     }
+                },
+                "x-openregister-mcp": {
+                    "enabled": true,
+                    "tools": {
+                        "search": {
+                            "description": "Search what residents and suppliers submitted through the portal: one row per submitted action, with its proof of receipt and whether it reached the contributing app. Filter by deliveryStatus to find submissions that failed delivery, by organisation, by appId or by actionId. Results are limited to the submissions the caller may already see.",
+                            "scope": "read",
+                            "readOnlyHint": true,
+                            "filters": [
+                                "deliveryStatus",
+                                "organisation",
+                                "appId",
+                                "actionId"
+                            ]
+                        },
+                        "get": {
+                            "description": "Fetch one portal submission by id: which action was submitted, by which subject, when, the receipt message it produced and its delivery status. Use to answer what happened to one specific submission.",
+                            "scope": "read",
+                            "readOnlyHint": true
+                        }
+                    }
                 }
             },
             "portalNotification": {
@@ -1516,7 +1557,7 @@
                     ]
                 },
                 "icon": "BellOutline",
-                "version": "0.3.0",
+                "version": "0.4.0",
                 "title": "Portal Notification",
                 "description": "Append-only per-attempt log of an out-of-band (email) nudge dispatched by NotificationDispatchJob when a contributing app's manifest `notifications` rule key matches a portalMessage create or a successful status transition (portal-notifications-dispatch). One row per attempt, so the burden-of-proof/audit trail is complete. The one exception is a `messageBox` row: integriq reports what became of the letter later, and that status is written onto the row the send created (inbox-berichtenbox-channel). Never publicly readable; recipients are never exposed via metrics.",
                 "type": "object",
@@ -1632,6 +1673,27 @@
                         "type": "string",
                         "description": "For a failed `messageBox` row: why no letter left. `not_installed` when integriq is absent, `unhandled` when nothing answered, `empty_body` when the message held no text, or the code integriq's refusal carried.",
                         "example": "not_installed"
+                    }
+                },
+                "x-openregister-mcp": {
+                    "enabled": true,
+                    "tools": {
+                        "search": {
+                            "description": "Search the portal's outgoing notification bookkeeping: one row per notification sent or attempted to a portal account, with its channel, status, attempts and last attempt time. Filter by status to find failed or pending deliveries, by channel, by appId or by organisation. Results are limited to the rows the caller may already see.",
+                            "scope": "read",
+                            "readOnlyHint": true,
+                            "filters": [
+                                "status",
+                                "channel",
+                                "appId",
+                                "organisation"
+                            ]
+                        },
+                        "get": {
+                            "description": "Fetch one portal notification row by id: the rule that triggered it, the channel, its delivery status, how many attempts were made and why a channel refused it. Use to explain why one notification did or did not arrive.",
+                            "scope": "read",
+                            "readOnlyHint": true
+                        }
                     }
                 }
             },

@@ -506,7 +506,6 @@ portaliq/
 ├── lib/                        # PHP backend
 │   ├── AppInfo/Application.php
 │   ├── Controller/             # DashboardController, SettingsController
-│   ├── Mcp/ExampleToolProvider.php  # AI Chat Companion tools (hydra ADR-034/035)
 │   ├── Service/SettingsService.php
 │   ├── Listener/DeepLinkRegistrationListener.php
 │   ├── Repair/InitializeSettings.php
@@ -774,40 +773,48 @@ in the hydra repo for the full rationale.
 
 ### AI Chat Companion / MCP tools
 
-The template ships an example **MCP tool provider** so the in-app AI Chat
-Companion (a floating assistant rendered by `CnAppRoot` from
-`@conduction/nextcloud-vue`) can call your app's capabilities. See:
+Reads are derived by OpenRegister from the `x-openregister-mcp` dialect
+declared on the schemas in `lib/Settings/portaliq_register.json` (hydra
+ADR-063); staff write actions are curated tools in the one governed provider,
+`lib/Mcp/PortaliqToolProvider.php`. Hermiq governs both from the declared
+`scope` and `reach`: writes are denied to an agent until granted, and the
+three high-impact tools carry `requiresApproval: true` so a person approves
+each run. Annotations only restrict; the server-side checks are the UI's own.
 
-- `lib/Mcp/ExampleToolProvider.php` — the heavily-commented starting point. It
-  implements `OCA\OpenRegister\Mcp\IMcpToolProvider` and exposes two trivial
-  tools: `portaliq.ping` (echoes a message) and `portaliq.describeApp`
-  (returns the app id, version, and name).
-- `lib/AppInfo/Application.php` — registers the provider under the service
-  alias `OCA\OpenRegister\Mcp\IMcpToolProvider::{appId}`; OpenRegister's
-  `McpToolsService` discovers per-app providers by exactly that alias.
-- `tests/Stubs/Mcp/IMcpToolProvider.php` — a stand-in for the interface until
-  [openregister](https://github.com/ConductionNL/openregister) Codeberg PR #1466
-  (pre-migration, not migrated to GitHub)
-  merges; once the openregister app is installed alongside your app the real
-  interface takes over transparently.
-- `tests/Unit/Mcp/ExampleToolProviderTest.php` — the contract test.
+Derived reads (`search` and `get`, read-only, served through OpenRegister's
+`ObjectService` with the same authorization as the UI):
 
-**To wire up your app:**
+| Tool ids | Schema | scope × reach |
+| --- | --- | --- |
+| `portaliq.portalmessage.search` / `.get` | `portalMessage` | read × self |
+| `portaliq.portalsubmission.search` / `.get` | `portalSubmission` | read × instance |
+| `portaliq.portalnotification.search` / `.get` | `portalNotification` | read × instance |
 
-1. Rename `ExampleToolProvider` → `{YourApp}ToolProvider` (update the alias in
-   `Application.php` and the test).
-2. Replace the two example tools with real ones — each descriptor needs
-   `id` (`{appId}.{toolName}`), `name`, `description`, and an `inputSchema`
-   (JSON Schema object).
-3. In `invokeTool()`, **run per-object authorisation before any business logic
-   or data access** — validate args, then authorise, then delegate, then
-   return. `invokeTool()` MUST NOT throw — every failure path returns a
-   structured `['error' => ['code' => ..., 'message' => ...]]` array.
+Curated tools (each re-runs the check its screen needs: administrator, or
+content editor through the page editor's groups):
 
-References: hydra
-[ADR-034 (AI Chat Companion)](https://github.com/ConductionNL/hydra/blob/development/openspec/architecture/adr-034-ai-chat-companion.md)
-and ADR-035; and decidesk's `OCA\Decidesk\Mcp\DecideskToolProvider` as the
-production example (five real tools, deep links, source descriptors).
+| Tool id | Drives | scope × reach | Approval |
+| --- | --- | --- | --- |
+| `portaliq.trafficSummary` | `TrafficReportController::summary` totals | read × instance | — |
+| `portaliq.updatePortalContent` | page draft, menu or glossary term, as the caller | update × instance | — |
+| `portaliq.updatePageRegions` | a portal's regions, through `PortalRegionResolver` | update × instance | — |
+| `portaliq.applyTheme` | `PortalThemeChoice`, as `PortalThemeController::update` | update × instance | — |
+| `portaliq.publishPortalPage` | a page's draft becomes its live body | update × instance | required |
+| `portaliq.sendPortalMessage` | a staff message in one portal inbox | create × external | required |
+| `portaliq.revokeOrganisationSessions` | `SessionAdminController::revokeOrganisation`; answers counts only | delete × instance | required |
+
+Every executed curated tool writes a fact-only audit row (verb, target, acting
+user, tool id; never content). `portalAccount`, `portalSession` and
+`exampleDocument` are never tools.
+
+**No tool is reachable from the portal edge (ADR-046).** MCP lives on
+OpenRegister's internal Nextcloud surface; every curated tool refuses a call
+without a signed-in Nextcloud user, and a portal bearer never signs one in. No
+`/portal/` route and no public or bearer-guarded controller reaches the MCP
+surface (`tests/Unit/Mcp/PortalEdgeMcpTest.php`).
+
+See `openspec/changes/portaliq-mcp-adoption` and
+`openspec/changes/hermiq-ai-tooling`.
 
 ### Code quality
 
