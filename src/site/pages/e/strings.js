@@ -9,6 +9,11 @@
 
 export default {
 	nl: {
+		'How you are signed in, how we reach you and what we let you know about.':
+			'Hoe u bent ingelogd, hoe wij u bereiken en waarover wij u laten weten.',
+		'Contact preferences': 'Contactvoorkeuren',
+		'For example the name or the KvK number of a company':
+			'Bijvoorbeeld de naam of het KvK-nummer van een bedrijf',
 		'Send the invitation': 'Uitnodiging sturen',
 		'Who may arrange matters for you, and for whom you arrange matters.':
 			'Wie zaken voor u mag regelen, en voor wie u zaken regelt.',
@@ -33,9 +38,9 @@ export default {
 			'Kiest u een bedrijf of persoon? Dan ziet u bij Mijn zaken hun zaken.',
 		'Your mandate for {party}': 'Uw machtiging voor {party}',
 		'given by {party} on {date}': 'gegeven door {party} op {date}',
-		'given by the municipality on {date}': 'gegeven door de gemeente op {date}',
+		'given by {organisation} on {date}': 'gegeven door {organisation} op {date}',
 		'given by {party}': 'gegeven door {party}',
-		'given by the municipality': 'gegeven door de gemeente',
+		'given by {organisation}': 'gegeven door {organisation}',
 		'Stop mandate': 'Machtiging stoppen',
 		'Stop this mandate? You can no longer act for them.':
 			'Deze machtiging stoppen? U kunt dan niet meer namens hen handelen.',
@@ -59,6 +64,7 @@ export default {
 			'Heeft u iemand gemachtigd via DigiD Machtigen? Die machtiging ziet u hier niet. U regelt en bekijkt haar op digid.nl.',
 		'What do I need to arrange': 'Wat moet ik regelen',
 		'View all tasks ({count})': 'Bekijk alle taken ({count})',
+		'View all my cases': 'Bekijk al mijn zaken',
 		'What can I arrange': 'Wat kan ik regelen',
 		'My {products}': 'Mijn {products}',
 		products: 'producten',
@@ -152,6 +158,7 @@ export default {
 		'By phone': 'Telefonisch',
 		'By post': 'Per post',
 		Cancel: 'Annuleren',
+		Close: 'Sluiten',
 		'Check the address and try again.':
 			'Controleer het adres en probeer het opnieuw.',
 		'Choose another preferred address first.':
@@ -223,7 +230,7 @@ export default {
 		'The portal cannot show registered details for this way of signing in.':
 			'Bij deze manier van inloggen kan het portaal geen geregistreerde gegevens tonen.',
 		'There are no documents on this case yet.':
-			'Er staan nog geen documenten bij deze zaak.',
+			'Er staan nog geen stukken bij deze zaak.',
 		'There is no portal account for this sign-in.':
 			'Er is geen portaalaccount voor deze inlog.',
 		'These are the details the Chamber of Commerce (KvK) holds about your company.':
@@ -244,12 +251,11 @@ export default {
 		'We sent a link to {address}. Follow it to confirm the address.':
 			'We hebben een link gestuurd naar {address}. Open de link om het adres te bevestigen.',
 		'Whose cases do you need access to?': 'Voor wiens zaken wilt u toegang?',
-		'Why are you withdrawing? (optional)':
-			'Waarom trekt u de aanvraag in? (niet verplicht)',
+		'Why are you withdrawing? (optional)': 'Waarom trekt u in? (niet verplicht)',
 		'Why do you need access?': 'Waarom hebt u toegang nodig?',
 		'Withdraw request': 'Aanvraag intrekken',
-		'Withdraw this request': 'Deze aanvraag intrekken',
-		'Withdraw this request?': 'Deze aanvraag intrekken?',
+		'Withdraw this request': 'Aanvraag intrekken',
+		'Withdraw this request?': 'Wilt u deze aanvraag intrekken?',
 		'Withdrawn on {date}.': 'Ingetrokken op {date}.',
 		'We still need documents from you. Send them before {due}, and we will decide by {legal}.':
 			'Wij hebben nog stukken van u nodig. Stuur ze voor {due}, dan nemen wij uiterlijk {legal} een besluit.',
@@ -290,6 +296,11 @@ export default {
 		'{name} has been added to your case.': '{name} is aan uw zaak toegevoegd.',
 	},
 	en: {
+		'How you are signed in, how we reach you and what we let you know about.':
+			'How you are signed in, how we reach you and what we let you know about.',
+		'Contact preferences': 'Contact preferences',
+		'For example the name or the KvK number of a company':
+			'For example the name or the KvK number of a company',
 		'Send the invitation': 'Send the invitation',
 		'Who may arrange matters for you, and for whom you arrange matters.':
 			'Who may arrange matters for you, and for whom you arrange matters.',
@@ -314,9 +325,9 @@ export default {
 			'Do you choose a company or person? Then My cases shows their cases.',
 		'Your mandate for {party}': 'Your mandate for {party}',
 		'given by {party} on {date}': 'given by {party} on {date}',
-		'given by the municipality on {date}': 'given by the municipality on {date}',
+		'given by {organisation} on {date}': 'given by {organisation} on {date}',
 		'given by {party}': 'given by {party}',
-		'given by the municipality': 'given by the municipality',
+		'given by {organisation}': 'given by {organisation}',
 		'Stop mandate': 'Stop mandate',
 		'Stop this mandate? You can no longer act for them.':
 			'Stop this mandate? You can no longer act for them.',
@@ -340,6 +351,7 @@ export default {
 			'Did you authorise someone through DigiD Machtigen? You do not see that mandate here. You arrange and view it on digid.nl.',
 		'What do I need to arrange': 'What do I need to arrange',
 		'View all tasks ({count})': 'View all tasks ({count})',
+		'View all my cases': 'View all my cases',
 		'What can I arrange': 'What can I arrange',
 		'My {products}': 'My {products}',
 		products: 'products',
@@ -434,6 +446,7 @@ export default {
 		'By phone': 'By phone',
 		'By post': 'By post',
 		Cancel: 'Cancel',
+		Close: 'Close',
 		'Check the address and try again.': 'Check the address and try again.',
 		'Choose another preferred address first.':
 			'Choose another preferred address first.',

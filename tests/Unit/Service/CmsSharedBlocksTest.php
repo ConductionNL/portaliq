@@ -18,6 +18,7 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(CmsSharedBlocks::class)]
 #[UsesClass(FormPlacementHelp::class)]
 #[UsesClass(PortalHelp::class)]
+#[UsesClass(\OCA\Portaliq\Service\Cms\FormPlacementRun::class)]
 class CmsSharedBlocksTest extends TestCase {
 	/**
 	 * Raw widgets are normalised and ordered by row then column.

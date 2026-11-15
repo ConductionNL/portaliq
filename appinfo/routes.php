@@ -3,8 +3,11 @@
 
 declare(strict_types=1);
 
-return [
+// Every unversioned API route is also served under /api/v1/; see ApiPathAliases.
+return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
     'routes' => [
+        // The OpenAPI document of portaliq's own API, public, served under /api/v1/ too.
+        ['name' => 'openApi#show', 'url' => '/api/openapi.json', 'verb' => 'GET'],
         // Dashboard + Settings.
         // First-time setup wizard (ADR-042) - the standard CnSetupWizard contract.
         ['name' => 'setup#status',    'url' => '/api/setup/status',            'verb' => 'GET'],
@@ -22,6 +25,7 @@ return [
         // Which groups may do which action (operate-roles-for-content-and-actions). Admin-only.
         ['name' => 'actionSettings#index', 'url' => '/api/settings/actions', 'verb' => 'GET'],
         ['name' => 'actionSettings#update', 'url' => '/api/settings/actions', 'verb' => 'PUT'],
+        ['name' => 'actionSettings#byGroup', 'url' => '/api/settings/action-groups', 'verb' => 'GET'],
 
         // Generic per-user preferences (used by shared nextcloud-vue widgets, e.g. CnSupportDialog).
         ['name' => 'preferences#getPreference', 'url' => '/api/preferences/{key}', 'verb' => 'GET'],
@@ -55,6 +59,7 @@ return [
         ['name' => 'portalAccountAdmin#invite', 'url' => '/api/invitations', 'verb' => 'POST'],
         ['name' => 'portalAccountAdmin#invitations', 'url' => '/api/invitations', 'verb' => 'GET'],
         ['name' => 'portalAccountAdmin#revokeInvitation', 'url' => '/api/invitations/{id}/revoke', 'verb' => 'POST'],
+        ['name' => 'portalAccountAdmin#resendInvitation', 'url' => '/api/invitations/{id}/resend', 'verb' => 'POST'],
 
         // The owner's side of an access request (identity-access-requests):
         // staff holding `portal.answer-access-request` list, grant and refuse.
@@ -69,14 +74,18 @@ return [
         ['name' => 'mailTemplateAdmin#resend', 'url' => '/api/mail-log/{id}/resend', 'verb' => 'POST'],
         ['name' => 'formBindingAdmin#preview', 'url' => '/api/form-bindings/preview', 'verb' => 'POST'],
         ['name' => 'formBindingAdmin#embedSnippet', 'url' => '/api/form-bindings/embed-snippet', 'verb' => 'POST'],
+        ['name' => 'formBindingCounter#show', 'url' => '/api/form-bindings/{id}/counter', 'verb' => 'GET'],
         // A portal's "Case types" page: which case types residents see
         // (operate-show-per-case-type). Admin-only.
         ['name' => 'portalCaseTypes#index', 'url' => '/api/portals/{slug}/case-types', 'verb' => 'GET'],
         ['name' => 'portalCaseTypes#update', 'url' => '/api/portals/{slug}/case-types', 'verb' => 'PUT'],
+        ['name' => 'portalCaseTypes#updateColumns', 'url' => '/api/portals/{slug}/case-types/{typeId}/columns', 'verb' => 'PUT'],
         // A portal's house style, picked from the theme app's catalogue with a
         // contrast verdict per set (nldesign-theme-integration). Admin-only.
         ['name' => 'portalTheme#index', 'url' => '/api/portals/{slug}/theme', 'verb' => 'GET'],
         ['name' => 'portalTheme#update', 'url' => '/api/portals/{slug}/theme', 'verb' => 'PUT'],
+        // Every portal with its theme and contrast, for the Themes page (themes-contrast-column). Admin only.
+        ['name' => 'themeOverview#portals', 'url' => '/api/themes/portals', 'verb' => 'GET'],
         // Whether the portal has a published page at its root, for the "Home
         // page" report on the portal's own page (portaliq-cms). Admin-only: it
         // says whether a DRAFT page sits at a route, which the public content
@@ -111,6 +120,11 @@ return [
         // operate-availability-report: a portal's last twelve months, admin-only.
         ['name' => 'availability#index', 'url' => '/api/availability/{portal}', 'verb' => 'GET'],
         ['name' => 'availability#export', 'url' => '/api/availability/{portal}/export', 'verb' => 'GET'],
+        // The same download as a POST, for the page's header action (an api-call download).
+        ['name' => 'availability#export', 'url' => '/api/availability/{portal}/export', 'verb' => 'POST', 'postfix' => 'download'],
+        // Dashboard-figures-across-portals: the dashboard's figures of all portals together, admin-only.
+        ['name' => 'portalOverview#traffic', 'url' => '/api/overview/traffic', 'verb' => 'GET'],
+        ['name' => 'portalOverview#availability', 'url' => '/api/overview/availability', 'verb' => 'GET'],
 
         // Headless content API (ADR-086 §1) — the CMS contract. Public and
         // read-only: a Docusaurus build or any third-party front-end reads
@@ -176,6 +190,7 @@ return [
         // Events and sign-ups (events-and-signups, findings 9.6, 9.8). Staff
         // authoring requires a Nextcloud session; the guardian-facing
         // feed/rsvp/signup routes are PortalProtected (bearer session).
+        ['name' => 'event#index', 'url' => '/api/events', 'verb' => 'GET'],
         ['name' => 'event#create', 'url' => '/api/events', 'verb' => 'POST'],
         ['name' => 'event#publish', 'url' => '/api/events/{id}/publish', 'verb' => 'PUT'],
         ['name' => 'eventGuardian#feed', 'url' => '/api/events/feed', 'verb' => 'GET'],
@@ -269,6 +284,9 @@ return [
         // What would render broken if a portal's content went out as it is (portal-cms-admin-ui).
         ['name' => 'cmsEditor#publishCheck', 'url' => '/api/cms/publish-check', 'verb' => 'GET'],
         // The TXT record a portal's domains publish, and the check that reads it (portal-cms-admin-ui).
+        // The "New portal" dialog on the Portals page, instance admins only
+        // (operate-portals-per-organisation T07).
+        ['name' => 'portalProvision#provision', 'url' => '/api/portals/provision', 'verb' => 'POST'],
         ['name' => 'cmsDomain#records', 'url' => '/api/cms/domains', 'verb' => 'GET'],
         ['name' => 'cmsDomain#verify', 'url' => '/api/cms/domains/verify', 'verb' => 'POST'],
         // A page's published versions for the designer's History dialog
@@ -295,6 +313,10 @@ return [
         // deleted is not a comparison. `/site` retires `/portal` once the
         // control pair is recorded, not before.
         ['name' => 'portalPage#site', 'url' => '/site', 'verb' => 'GET'],
+        // The plain version of a site page, for a browser without JavaScript
+        // (site-honest-without-javascript). Before sitePath, which would
+        // otherwise read `plain` as a page route.
+        ['name' => 'portalPage#plain', 'url' => '/site/plain', 'verb' => 'GET'],
         // The same site with the page in the path: /site/afval is the route
         // /afval. A proxy in front of Nextcloud rewrites the short address of
         // a portal's own host to this one (site-at-the-root-of-a-portal-host).
@@ -312,6 +334,8 @@ return [
         // Nextcloud session IS the credential, and an anonymous visitor is
         // handed to Nextcloud's own login form.
         ['name' => 'session#nextcloud', 'url' => '/portal/api/session/nextcloud', 'verb' => 'GET'],
+        // An employee in the portal's desk group fills a form in for a resident (resident-identity-in-forms T06).
+        ['name' => 'deskSession#start', 'url' => '/portal/api/session/desk', 'verb' => 'GET'],
         // One click on a demo: the example resident's session, closed unless
         // an administrator sets example_resident_demo_login=yes
         // (example-resident-demo-login).
@@ -341,6 +365,7 @@ return [
         // revoke every active portal session for an Organisation.
         ['name' => 'sessionAdmin#revokeOrganisation', 'url' => '/api/session-admin/revoke-organisation', 'verb' => 'POST'],
         ['name' => 'sessionAdmin#revokeAccount', 'url' => '/api/session-admin/revoke-account', 'verb' => 'POST'],
+        ['name' => 'sessionAdmin#revokeSession', 'url' => '/api/session-admin/revoke-session', 'verb' => 'POST'],
 
         // Aggregated portal contributions for the authenticated subject
         // (supplier-portal T04). Guarded by PortalAuthMiddleware (fail-closed).
@@ -383,9 +408,16 @@ return [
         ['name' => 'portalIntake#family', 'url' => '/portal/api/intake/family', 'verb' => 'GET'],
         ['name' => 'portalIntake#form', 'url' => '/portal/api/intake/form', 'verb' => 'GET'],
         ['name' => 'portalIntake#submit', 'url' => '/portal/api/intake/submit', 'verb' => 'POST'],
+        ['name' => 'portalIntake#onBehalf', 'url' => '/portal/api/intake/on-behalf', 'verb' => 'POST'],
         // The code that proves a form's e-mail address is the resident's (resident-identity-in-forms).
         ['name' => 'portalFormEmailCode#send', 'url' => '/portal/api/intake/email-code', 'verb' => 'POST'],
         ['name' => 'portalFormEmailCode#check', 'url' => '/portal/api/intake/email-code/check', 'verb' => 'POST'],
+        // The co-signer's side of a form that needs a second signature (resident-identity-in-forms).
+        ['name' => 'portalCosign#open', 'url' => '/portal/api/cosign', 'verb' => 'GET'],
+        ['name' => 'portalCosign#sign', 'url' => '/portal/api/cosign/sign', 'verb' => 'POST'],
+        ['name' => 'portalCosign#refuse', 'url' => '/portal/api/cosign/refuse', 'verb' => 'POST'],
+        // Mijn zaken: the resident's own requests that wait for a co-signer (resident-identity-in-forms T04).
+        ['name' => 'portalCosign#held', 'url' => '/portal/api/cosign/held', 'verb' => 'GET'],
         ['name' => 'portalIntake#status', 'url' => '/portal/api/intake/status', 'verb' => 'GET'],
 
         // The citizen's own identity (portal-identity-and-the-organisations-cases):
@@ -416,6 +448,7 @@ return [
         ['name' => 'portalAccountSelf#details', 'url' => '/portal/api/identity/details', 'verb' => 'GET'],
         // The resident's saved draft of a create or endpoint action
         // (site-multi-step-forms T8). Subject from the bearer only.
+        ['name' => 'portalDraft#index', 'url' => '/portal/api/drafts', 'verb' => 'GET'],
         ['name' => 'portalDraft#show', 'url' => '/portal/api/drafts/{appId}/{actionId}', 'verb' => 'GET'],
         ['name' => 'portalDraft#save', 'url' => '/portal/api/drafts/{appId}/{actionId}', 'verb' => 'PUT'],
         ['name' => 'portalDraft#discard', 'url' => '/portal/api/drafts/{appId}/{actionId}', 'verb' => 'DELETE'],
@@ -449,10 +482,20 @@ return [
         ['name' => 'portalPlans#update', 'url' => '/portal/api/plans/{id}', 'verb' => 'PATCH'],
         ['name' => 'portalPlans#destroy', 'url' => '/portal/api/plans/{id}', 'verb' => 'DELETE'],
         ['name' => 'portalPlans#pdf', 'url' => '/portal/api/plans/{id}/pdf', 'verb' => 'GET'],
+        ['name' => 'portalPlans#addFile', 'url' => '/portal/api/plans/{id}/files', 'verb' => 'POST'],
+        ['name' => 'portalPlans#file', 'url' => '/portal/api/plans/{id}/files/{fileId}', 'verb' => 'GET'],
         ['name' => 'portalPlans#addParticipants', 'url' => '/portal/api/plans/{id}/participants', 'verb' => 'POST'],
         ['name' => 'portalPlans#removeParticipant', 'url' => '/portal/api/plans/{id}/participants/{ref}', 'verb' => 'DELETE'],
         ['name' => 'portalPlans#addAction', 'url' => '/portal/api/plans/{id}/actions', 'verb' => 'POST'],
         ['name' => 'portalPlans#updateAction', 'url' => '/portal/api/plans/{id}/actions/{actionId}', 'verb' => 'PATCH'],
+        // Mijn acties (personal-action-list); `plan` names the plan for an action read through it.
+        ['name' => 'portalActions#index', 'url' => '/portal/api/my-actions', 'verb' => 'GET'],
+        ['name' => 'portalActions#create', 'url' => '/portal/api/my-actions', 'verb' => 'POST'],
+        ['name' => 'portalActions#update', 'url' => '/portal/api/my-actions/{id}', 'verb' => 'PATCH'],
+        ['name' => 'portalActions#destroy', 'url' => '/portal/api/my-actions/{id}', 'verb' => 'DELETE'],
+        ['name' => 'portalActions#history', 'url' => '/portal/api/my-actions/{id}/history', 'verb' => 'GET'],
+        ['name' => 'portalActions#attach', 'url' => '/portal/api/my-actions/{id}/file', 'verb' => 'POST'],
+        ['name' => 'portalActions#file', 'url' => '/portal/api/my-actions/{id}/file', 'verb' => 'GET'],
         ['name' => 'portalAccountSelf#removeAccount', 'url' => '/portal/api/identity/remove', 'verb' => 'POST'],
         ['name' => 'portalAccountSelf#requestAccess', 'url' => '/portal/api/identity/access-requests', 'verb' => 'POST'],
         ['name' => 'portalAccountSelf#myAccessRequests', 'url' => '/portal/api/identity/access-requests', 'verb' => 'GET'],
@@ -481,6 +524,8 @@ return [
         ['name' => 'portalTimeline#show', 'url' => '/portal/api/collections/{register}/{schema}/{id}/timeline', 'verb' => 'GET'],
         // Where one case stands, from its app's steps provider (site-mijn-omgeving-components REQ-SMO-022).
         ['name' => 'portalTimeline#steps', 'url' => '/portal/api/collections/{register}/{schema}/{id}/steps', 'verb' => 'GET'],
+        // The messages about one case, both ways, from its app's messages provider (capability-rows-said-and-planned T07).
+        ['name' => 'portalTimeline#messages', 'url' => '/portal/api/collections/{register}/{schema}/{id}/messages', 'verb' => 'GET'],
         // One object's items, e.g. a dossier's publications (my-dossiers).
         ['name' => 'portalTimeline#items', 'url' => '/portal/api/collections/{register}/{schema}/{id}/items', 'verb' => 'GET'],
         ['name' => 'contribution#update', 'url' => '/portal/api/collections/{register}/{schema}/{id}', 'verb' => 'PATCH'],
@@ -531,8 +576,22 @@ return [
         // The change-proposal queue (change-proposal-queue). A proposal never
         // writes the record: only a reviewer accepting one does, with their
         // own rights. The staff routes are gated by `portal.review-proposal`.
+        // Marketing articles, moved here from pipelinq (marketing-articles-from-pipelinq).
+        ['name' => 'article#index', 'url' => '/api/articles', 'verb' => 'GET'],
+        ['name' => 'article#create', 'url' => '/api/articles', 'verb' => 'POST'],
+        ['name' => 'article#publish', 'url' => '/api/articles/{id}/publish', 'verb' => 'POST'],
+        ['name' => 'article#archive', 'url' => '/api/articles/{id}/archive', 'verb' => 'POST'],
+        ['name' => 'article#transition', 'url' => '/api/articles/{id}/transition', 'verb' => 'POST'],
+        ['name' => 'article#usages', 'url' => '/api/articles/{id}/usages', 'verb' => 'GET'],
+        ['name' => 'article#show', 'url' => '/api/articles/{id}', 'verb' => 'GET'],
+        ['name' => 'article#update', 'url' => '/api/articles/{id}', 'verb' => 'PATCH'],
         ['name' => 'proposal#index', 'url' => '/api/proposals', 'verb' => 'GET'],
         ['name' => 'proposal#proposeAsColleague', 'url' => '/api/proposals', 'verb' => 'POST'],
+        // change-proposals-reach-the-case-page: what the widget shows this
+        // user on a record, their own proposals on it, and withdrawing one.
+        ['name' => 'proposal#context', 'url' => '/api/proposals/context', 'verb' => 'GET'],
+        ['name' => 'proposal#mineOnRecord', 'url' => '/api/proposals/mine', 'verb' => 'GET'],
+        ['name' => 'proposal#withdrawAsColleague', 'url' => '/api/proposals/{id}/withdraw', 'verb' => 'POST'],
         ['name' => 'proposal#accept', 'url' => '/api/proposals/{id}/accept', 'verb' => 'POST'],
         ['name' => 'proposal#acceptConfirmingDrift', 'url' => '/api/proposals/{id}/accept-confirming-drift', 'verb' => 'POST'],
         ['name' => 'proposal#reject', 'url' => '/api/proposals/{id}/reject', 'verb' => 'POST'],
@@ -558,6 +617,8 @@ return [
         ['name' => 'report#file', 'url' => '/portal/api/reports', 'verb' => 'POST'],
         ['name' => 'report#thread', 'url' => '/portal/api/reports/thread', 'verb' => 'POST'],
         ['name' => 'report#answer', 'url' => '/portal/api/reports/thread/answer', 'verb' => 'POST'],
+        ['name' => 'report#index', 'url' => '/api/reports', 'verb' => 'GET'],
+        ['name' => 'report#revealRequests', 'url' => '/api/reveal-requests', 'verb' => 'GET'],
         ['name' => 'report#show', 'url' => '/api/reports/{id}', 'verb' => 'GET'],
         ['name' => 'report#reply', 'url' => '/api/reports/{id}/messages', 'verb' => 'POST'],
         ['name' => 'report#requestReveal', 'url' => '/api/reports/{id}/reveal-requests', 'verb' => 'POST'],
@@ -605,4 +666,4 @@ return [
         // (WOO-559). A missing `/api/…` route now fails loudly.
         ['name' => 'dashboard#catchAll', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '(?!api/).+'], 'defaults' => ['path' => '']],
     ],
-];
+]);

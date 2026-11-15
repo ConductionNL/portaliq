@@ -97,7 +97,7 @@ export default {
 	 *
 	 * @return {void}
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
+	 * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
 	 */
 	mounted() {
 		const given = new URLSearchParams(window.location.search).get('reference')
@@ -113,15 +113,14 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when answered.
 		 *
-		 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
+		 * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
 		 */
 		async lookUp() {
 			this.busy = true
 			try {
 				const status = await lookUpStatus(
-					authBaseFrom(resolveApiBase()),
+					{ base: authBaseFrom(resolveApiBase()), portal: this.portal },
 					this.reference,
-					this.portal,
 				)
 				this.view = statusView(status)
 			} catch {

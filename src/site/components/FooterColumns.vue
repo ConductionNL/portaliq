@@ -175,7 +175,7 @@
 <script>
 import { CnSiteIcon } from '@conduction/nextcloud-vue/public'
 import { contactLineParts } from '../lib/footerLine.js'
-import { footerContentOf, isSiteRoute } from '../lib/shellData.js'
+import { footerContentOf, linkAddress } from '../lib/shellData.js'
 
 // The button links' classes need their stylesheet, or the browser draws its own blue link.
 import '@utrecht/button-link-css/dist/index.css'
@@ -221,7 +221,7 @@ export default {
 		 *
 		 * @return {boolean}
 		 *
-		 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
+		 * @spec openspec/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
 		 */
 		designed() {
 			return Boolean(this.content.cta || this.content.contact)
@@ -245,7 +245,7 @@ export default {
 		 *
 		 * @return {Array<object>} `{key, brand?, contact?, menu?}` entries.
 		 *
-		 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
+		 * @spec openspec/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
 		 */
 		columns() {
 			const menus = this.menus.map((menu) => ({
@@ -273,14 +273,10 @@ export default {
 		 * @param {string} link The authored link.
 		 * @return {string} The href.
 		 *
-		 * @spec openspec/changes/site-links-follow-the-site-address/specs/site-navigation/spec.md#requirement-a-menu-link-to-a-site-page-carries-the-sites-own-address
+		 * @spec openspec/specs/site-navigation/spec.md#requirement-a-menu-link-to-a-site-page-carries-the-sites-own-address
 		 */
 		addressFor(link) {
-			if (this.addressOf && isSiteRoute(link)) {
-				return this.addressOf(link)
-			}
-
-			return link
+			return linkAddress(link, this.addressOf)
 		},
 
 		/**

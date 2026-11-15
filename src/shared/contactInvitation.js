@@ -9,43 +9,24 @@
 // registration. Signed in, the shell hands it back once. A fragment never
 // reaches a server access log.
 //
-// Imports nothing, so tests/resident-contacts.spec.mjs runs it as plain node.
+// Imports no browser code, so tests/resident-contacts.spec.mjs runs it as
+// plain node.
 //
 // @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
 
 import { contactsApi } from './areaApi.js'
+import {
+	acceptedNotice,
+	forgetSecret,
+	heldInvitation,
+	keepInvitationSecret,
+	noLongerValid,
+	settlesInvitation,
+} from './invitationSecret.js'
 
 export const CONTACT_INVITATION_KEY = 'portaliq.contactInvitation'
 
 const LINK = /^#contact-invitation=([^&]+)$/
-
-/**
- * A fragment value, decoded, or '' when it is not decodable.
- *
- * @param {string} value The encoded value.
- * @return {string}
- */
-function decodedSecret(value) {
-	try {
-		return decodeURIComponent(value)
-	} catch {
-		return ''
-	}
-}
-
-/**
- * The secret kept before the sign-in, or ''.
- *
- * @param {Storage|null} storage sessionStorage, or null.
- * @return {string}
- */
-function keptSecret(storage) {
-	try {
-		return storage?.getItem(CONTACT_INVITATION_KEY) || ''
-	} catch {
-		return ''
-	}
-}
 
 /**
  * Read the secret from the address, strip it and keep it for after sign-in.
@@ -58,28 +39,10 @@ function keptSecret(storage) {
  * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
  */
 export function keepContactInvitation(location, history, storage) {
-	const match = String(location?.hash || '').match(LINK)
-	if (!match) {
-		return ''
-	}
-	const secret = decodedSecret(match[1])
-	try {
-		history?.replaceState(
-			null,
-			'',
-			`${location.pathname || ''}${location.search || ''}`,
-		)
-	} catch {
-		// An address bar that cannot be rewritten still keeps the secret.
-	}
-	if (secret !== '') {
-		try {
-			storage?.setItem(CONTACT_INVITATION_KEY, secret)
-		} catch {
-			// Without storage the link in the mail still works afterwards.
-		}
-	}
-	return secret
+	return keepInvitationSecret(
+		{ pattern: LINK, key: CONTACT_INVITATION_KEY },
+		{ location, history, storage },
+	)
 }
 
 /**
@@ -99,35 +62,15 @@ export function keepContactInvitation(location, history, storage) {
  * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
  */
 export async function redeemKeptContactInvitation({ api, session, t, storage }) {
-	const secret = keptSecret(storage)
-	if (secret === '') {
-		return null
-	}
-	if (!session) {
-		return {
-			role: 'status',
-			text: t('Sign in to accept your invitation.'),
-			claimed: false,
-		}
+	const { secret, notice } = heldInvitation({ session, t, storage }, CONTACT_INVITATION_KEY)
+	if (notice !== false) {
+		return notice
 	}
 	const answer = await contactsApi(api).contactAction('accept', { token: secret })
-	if (answer.ok || (answer.status >= 400 && answer.status < 500)) {
-		try {
-			storage?.removeItem(CONTACT_INVITATION_KEY)
-		} catch {
-			// Nothing more to do.
-		}
+	if (settlesInvitation(answer)) {
+		forgetSecret(storage, CONTACT_INVITATION_KEY)
 	}
-	if (answer.ok) {
-		return {
-			role: 'status',
-			text: t('You are now connected with the person who invited you.'),
-			claimed: true,
-		}
-	}
-	return {
-		role: 'alert',
-		text: t('This invitation is no longer valid. Ask for a new one.'),
-		claimed: false,
-	}
+	return answer.ok
+		? acceptedNotice(t('You are now connected with the person who invited you.'))
+		: noLongerValid(t)
 }

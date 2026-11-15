@@ -89,4 +89,63 @@ class SessionAdminControllerTest extends TestCase {
 		$this->assertSame(['links' => 2, 'revoked' => 1, 'failed' => 0, 'complete' => true], $response->getData());
 		$this->assertSame(Http::STATUS_BAD_REQUEST, $controller->revokeAccount('', 'academie')->getStatus());
 	}//end testRevokeAccountVoidsTheLinksAndTheSessionsOfOneAccount()
+	/**
+	 * The controller over a session service whose one-session revoke answers `$found`.
+	 *
+	 * @param bool $found Whether the service finds and revokes the session.
+	 * @param int $calls How often the service may be asked.
+	 *
+	 * @return SessionAdminController
+	 */
+	private function oneSession(bool $found, int $calls = 1): SessionAdminController {
+		$session = $this->createMock(originalClassName: PortalSessionService::class);
+		$session->expects($this->exactly(count: $calls))->method('revokeByAdmin')->with('jti-1', 'beheerder')->willReturn($found);
+		$user = $this->createMock(originalClassName: IUser::class);
+		$user->method('getUID')->willReturn('beheerder');
+		$users = $this->createMock(originalClassName: IUserSession::class);
+		$users->method('getUser')->willReturn($user);
+
+		return new SessionAdminController(request: $this->createMock(originalClassName: IRequest::class), session: $session, userSession: $users);
+	}//end oneSession()
+
+	/**
+	 * Staff revoke one session by its token id, named as the acting admin.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/staff-revoke-one-session/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
+	 */
+	public function testRevokeSessionRevokesOneSessionAsTheAdmin(): void {
+		$response = $this->oneSession(found: true)->revokeSession(jti: 'jti-1');
+
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$this->assertSame(expected: ['revoked' => true], actual: $response->getData());
+	}//end testRevokeSessionRevokesOneSessionAsTheAdmin()
+
+	/**
+	 * An unknown or already revoked session answers 404, not a quiet success.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/staff-revoke-one-session/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
+	 */
+	public function testRevokeSessionOfAnUnknownSessionIsNotFound(): void {
+		$response = $this->oneSession(found: false)->revokeSession(jti: 'jti-1');
+
+		$this->assertSame(expected: Http::STATUS_NOT_FOUND, actual: $response->getStatus());
+		$this->assertSame(expected: ['error' => 'not_found'], actual: $response->getData());
+	}//end testRevokeSessionOfAnUnknownSessionIsNotFound()
+
+	/**
+	 * Without a token id nothing is asked of the service.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/staff-revoke-one-session/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
+	 */
+	public function testRevokeSessionWithoutATokenIdIsRefused(): void {
+		$response = $this->oneSession(found: true, calls: 0)->revokeSession(jti: '');
+
+		$this->assertSame(expected: Http::STATUS_BAD_REQUEST, actual: $response->getStatus());
+	}//end testRevokeSessionWithoutATokenIdIsRefused()
 }//end class

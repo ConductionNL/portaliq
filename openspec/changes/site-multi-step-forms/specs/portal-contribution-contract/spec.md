@@ -94,7 +94,7 @@ For a create action with `draft`, the site MUST offer "Opslaan en later verderga
 #### Scenario: Sanne continues her Woo request
 - GIVEN Sanne saved a Woo request draft on 2 October 2026 and the action keeps drafts 30 days
 - WHEN she opens the action on 5 October 2026
-- THEN the first step with a missing answer opens with her answers, marked "Voorlopig"
+- THEN the first step with a missing answer opens with her answers; in Mijn zaken the draft reads "nog niet ingediend" with "Formulier afmaken" (board MijnZaken)
 - AND dossiq holds the case in status `draft`, without a case number, hidden from staff work lists unless they filter for drafts
 
 #### Scenario: Another resident cannot read the draft

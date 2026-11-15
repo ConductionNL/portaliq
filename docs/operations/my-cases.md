@@ -28,6 +28,12 @@ The page reads every contribution collection that declares `kind: cases`. A coll
 - `closedField` names the field that makes a case closed once it holds a value. The portal keeps it only when the field is in `fields`, or when the collection projects no `fields` at all; otherwise it drops it and every case counts as open.
 - The row's name is its `title`, else `name`, `reference` or `identifier`. The page also shows `status` and the `created` date when the row carries them.
 
+## A text above the list
+
+A collection may declare `intro`: a short text the portal shows above its list, for example `'intro' => 'Hier ziet u al uw lopende zaken.'`. **My cases** shows the intro of every `kind: cases` collection under its heading, each text once; a page that shows the collection shows it above that collection's table. Any collection can carry one.
+
+The portal shows it as plain text, so markup shows as typed. An empty value, or one that is not text, is dropped.
+
 ## Open and closed
 
 With at least one collection declaring `closedField`, the page shows two tabs, **Open** ("Lopend") and **Closed** ("Afgerond"), each with its count. A case of a collection that declares no `closedField` is always open. With no `closedField` anywhere, the page shows one list and no tabs.

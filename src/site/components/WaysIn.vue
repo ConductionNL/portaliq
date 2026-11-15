@@ -170,6 +170,32 @@ function sessionStore() {
  *
  * @spec openspec/specs/portal-ways-in/spec.md#requirement-the-sign-in-screen-shows-only-the-doors-that-lead-somewhere-req-iwi-005
  */
+/**
+ * The proof of work a challenge asks for, or '' when it asks none.
+ *
+ * @param {{nonce?: string, difficulty?: number}} challenge The challenge.
+ * @return {Promise<string>} The solution.
+ */
+async function solutionOf(challenge) {
+	return challenge.difficulty
+		? solveChallenge(challenge.nonce, challenge.difficulty)
+		: ''
+}
+
+/**
+ * The honeypot to send: the field the challenge named with what the hidden
+ * input holds, or null when it named none.
+ *
+ * @param {{honeypotField?: string}} challenge The challenge.
+ * @param {string} trap The hidden input's value.
+ * @return {{field: string, value: string}|null} The honeypot.
+ */
+function honeypotOf(challenge, trap) {
+	return challenge.honeypotField
+		? { field: challenge.honeypotField, value: trap }
+		: null
+}
+
 export default {
 	name: 'WaysIn',
 
@@ -250,21 +276,13 @@ export default {
 			this.registration.busy = true
 			this.registration.outcome = null
 			const challenge = (await this.api.challenge('registration')) || {}
-			const solution = challenge.difficulty
-				? await solveChallenge(challenge.nonce, challenge.difficulty)
-				: ''
 			const answer = await this.api.registerAccount({
 				email: this.registration.email,
 				displayName: this.registration.name,
 				challenge,
-				solution,
+				solution: await solutionOf(challenge),
 				contactInvitation: this.contactInvitation,
-				honeypot: challenge.honeypotField
-					? {
-							field: challenge.honeypotField,
-							value: this.registration.trap,
-						}
-					: null,
+				honeypot: honeypotOf(challenge, this.registration.trap),
 			})
 			this.registration.busy = false
 			this.registration.outcome = answer.ok

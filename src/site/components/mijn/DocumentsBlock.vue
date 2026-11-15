@@ -37,13 +37,17 @@
 				{{ tr('Add a document') }}
 			</label>
 		</div>
-		<component
-			:is="`h${level}`"
-			v-else
-			:id="headingId"
-			class="utrecht-heading-3">
-			{{ heading }}
-		</component>
+		<div v-else class="pq-documents-block__title">
+			<component :is="`h${level}`" :id="headingId" class="utrecht-heading-3">
+				{{ heading }}
+			</component>
+			<span
+				v-if="block.subtitle"
+				class="pq-documents-block__subtitle"
+				data-testid="mijn-documents-subtitle">
+				{{ block.subtitle }}
+			</span>
+		</div>
 		<p
 			v-if="uploadNotice"
 			class="utrecht-paragraph"
@@ -62,7 +66,7 @@
 			@retry="load" />
 		<EmptyState
 			v-else-if="documents.length === 0"
-			:text="tr('There are no documents on this case yet.')" />
+			:text="block.emptyLabel || tr('There are no documents on this case yet.')" />
 		<template v-else>
 			<section
 				v-for="(group, g) in groups"
@@ -109,16 +113,20 @@ import EmptyState from './EmptyState.vue'
 import FileItem from './FileItem.vue'
 import LoadError from './LoadError.vue'
 import Skeleton from './Skeleton.vue'
-import { fileLine, groupDocuments, statusState } from './documents.js'
+import { fileLine, groupDocuments, paperLine, statusState } from './documents.js'
 import { mijnTranslator } from './rows.js'
 
 /**
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
  */
 export default {
 	name: 'DocumentsBlock',
 
 	components: { EmptyState, FileItem, LoadError, Skeleton },
+
+	// The portal's organisation type label, from the site shell (App.vue);
+	// none reads "de organisatie" (portal-identity-from-the-admin REQ-PIA-003).
+	inject: { siteOrganisationType: { default: () => () => '' } },
 
 	props: {
 		/** The normalised block: `collection`, `label?`. */
@@ -164,7 +172,7 @@ export default {
 
 		/**
 		 * @return {(key: string, vars?: object) => string} The translator.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 		 */
 		tr() {
 			return mijnTranslator(this.t, this.locale)
@@ -172,7 +180,7 @@ export default {
 
 		/**
 		 * @return {string} The open case's id, or ''.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 		 */
 		recordId() {
 			const row = this.record
@@ -181,7 +189,7 @@ export default {
 
 		/**
 		 * @return {string} The block's label, else the app's, else "Documenten".
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 		 */
 		heading() {
 			return (
@@ -194,15 +202,18 @@ export default {
 
 		/**
 		 * @return {string} The heading's id.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 * @spec openspec/changes/documents-for-each-record/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
 		 */
 		headingId() {
-			return `pq-documents-${String(this.block?.collection || '').replace(/[^A-Za-z0-9_-]/g, '')}`
+			// One block per record draws several headings: each its own id.
+			const own = this.block?.eachRecord === true ? `-${this.recordId}` : ''
+			return `pq-documents-${`${this.block?.collection || ''}${own}`.replace(/[^A-Za-z0-9_-]/g, '')}`
 		},
 
 		/**
 		 * @return {Array<object>} The listed documents.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 		 */
 		groups() {
 			return groupDocuments(this.documents, this.block?.groupBy)
@@ -218,7 +229,7 @@ export default {
 		 * Another case opened: read its documents.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 		 */
 		recordId() {
 			this.load()
@@ -228,7 +239,7 @@ export default {
 	/**
 	 * Read the open case's documents on arrival.
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+	 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 	 */
 	created() {
 		if (this.answer === null) {
@@ -241,7 +252,7 @@ export default {
 		 * Read the case's documents; a read that fails says so.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 		 */
 		async load() {
 			const id = this.recordId
@@ -256,7 +267,11 @@ export default {
 				// any other collection that declares `documents` through its own
 				// (site-member-voting-record-and-confidential-papers, T4).
 				answer = this.isCase
-					? await this.api?.fetchCitizenCase?.(this.collection, id)
+					? await this.api?.fetchCitizenCase?.(
+							this.collection,
+							id,
+							this.record?._mandate?.id || '',
+						)
 					: await this.api?.fetchCollectionDocuments?.(this.collection, id)
 			} catch {
 				answer = null
@@ -271,13 +286,18 @@ export default {
 		/**
 		 * @param {object} entry A document.
 		 * @return {string} Who added it, when, its type and size.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 * @spec openspec/changes/documents-for-each-record/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
 		 */
 		lineOf(entry) {
-			// The provider's own line is shown as written.
-			return typeof entry?.meta === 'string' && entry.meta !== ''
-				? entry.meta
-				: fileLine(entry, this.tr, this.locale)
+			// The provider's own line is shown as written; a paper that is not
+			// a case's names no sender.
+			if (typeof entry?.meta === 'string' && entry.meta !== '') {
+				return entry.meta
+			}
+			return this.isCase
+				? fileLine(entry, this.tr, this.locale, this.siteOrganisationType())
+				: paperLine(entry, this.locale)
 		},
 
 		/**
@@ -294,7 +314,7 @@ export default {
 		 *
 		 * @param {object} entry A document.
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 		 */
 		async openDocument(entry) {
 			this.busyId = entry.id
@@ -379,6 +399,18 @@ export default {
 
 .pq-documents-block__head > * {
 	margin: 0;
+}
+
+/* The heading with its subtitle on one baseline ("Vera  Groep 7"). */
+.pq-documents-block__title {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	column-gap: 0.875rem;
+}
+
+.pq-documents-block__subtitle {
+	color: var(--nldesign-color-text-muted, inherit);
 }
 
 .pq-documents-block__upload {

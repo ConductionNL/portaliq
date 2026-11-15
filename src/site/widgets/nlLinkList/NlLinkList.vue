@@ -80,7 +80,7 @@ export default {
 	 * page.
 	 *
 	 * @return {{headingId: string}} The state.
-	 * @spec openspec/changes/site-content-blocks-styled/specs/site-look/spec.md#requirement-a-link-list-must-be-a-named-landmark-with-targets-of-at-least-24px
+	 * @spec openspec/specs/site-look/spec.md#requirement-a-link-list-must-be-a-named-landmark-with-targets-of-at-least-24px
 	 */
 	data() {
 		instances += 1
@@ -158,7 +158,10 @@ export default {
 .nl-link-list--card {
 	padding: 1.75rem 2rem;
 	border: 1px solid
-		var(--nldesign-color-border-dark, var(--utrecht-color-grey-80, currentcolor));
+		var(
+			--nldesign-website-card-border-color,
+			var(--nldesign-color-border-dark, var(--utrecht-color-grey-80, currentcolor))
+		);
 	border-radius: var(
 		--nldesign-website-border-radius-large,
 		var(--utrecht-border-radius-md, 0.75rem)
@@ -188,6 +191,12 @@ export default {
 
 .nl-link-list h2 {
 	margin-block-start: 0;
+}
+
+/* A card's heading stands 0.75rem above what follows, as the boards draw it. */
+.nl-link-list--card h2,
+.nl-link-list--tinted h2 {
+	margin-block-end: 0.75rem;
 }
 
 .nl-link-list .utrecht-link-list {

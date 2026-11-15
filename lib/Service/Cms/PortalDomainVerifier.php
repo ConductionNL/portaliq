@@ -28,8 +28,9 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Cms;
 
 use Closure;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Kernel\Contracts\PortalDomainVerifierInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -38,12 +39,8 @@ use Throwable;
  *
  * @spec openspec/changes/portal-cms-admin-ui/tasks.md#task-3
  */
-class PortalDomainVerifier {
+class PortalDomainVerifier implements PortalDomainVerifierInterface {
 	public const PENDING = 'pending';
-
-	public const VERIFIED = 'verified';
-
-	public const NOT_FOUND = 'not_found';
 
 	private const REGISTER = 'portaliq';
 
@@ -69,14 +66,14 @@ class PortalDomainVerifier {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader The portal reader.
+	 * @param ScopedCollectionReaderInterface $reader The portal reader.
 	 * @param PortalObjectWriter $writer The portal writer.
 	 * @param LoggerInterface    $logger The logger.
 	 * @param Closure|null       $lookup Resolves a TXT name to its values; DNS by default.
 	 * @param Closure|null       $probe  Reads the end of a host's certificate as a timestamp; a TLS connection to port 443 by default.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly LoggerInterface $logger,
 		?Closure $lookup = null,
@@ -117,6 +114,22 @@ class PortalDomainVerifier {
 			return null;
 		}
 
+		[$domains, $changed] = $this->tokened(portal: $portal);
+		if ($changed === true && $this->save(portal: $portal, domains: $domains) === false) {
+			return null;
+		}
+
+		return $this->recordViews(domains: $domains);
+	}//end records()
+
+	/**
+	 * The portal's domains, each with a verification token; a domain without one gets one now.
+	 *
+	 * @param array<string, mixed> $portal The portal row.
+	 *
+	 * @return array{0: array<int, array<string, mixed>>, 1: bool} The domains, and whether a token was added.
+	 */
+	private function tokened(array $portal): array {
 		$domains = $this->domains(portal: $portal);
 		$changed = false;
 		foreach ($domains as $i => $domain) {
@@ -126,10 +139,17 @@ class PortalDomainVerifier {
 			}
 		}
 
-		if ($changed === true && $this->save(portal: $portal, domains: $domains) === false) {
-			return null;
-		}
+		return [$domains, $changed];
+	}//end tokened()
 
+	/**
+	 * The record each domain must publish, with its verification and certificate state.
+	 *
+	 * @param array<int, array<string, mixed>> $domains The domains.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function recordViews(array $domains): array {
 		return array_map(
 			static fn (array $domain): array => [
 				'hostname' => (string)$domain['hostname'],
@@ -141,7 +161,7 @@ class PortalDomainVerifier {
 			],
 			$domains
 		);
-	}//end records()
+	}//end recordViews()
 
 	/**
 	 * Check one domain's record. A record that is not there yet leaves the
@@ -167,23 +187,36 @@ class PortalDomainVerifier {
 				continue;
 			}
 
-			if ($this->published(domain: $domain) === false) {
-				return self::PENDING;
-			}
-
-			$domains[$i]['verified']   = true;
-			$domains[$i]['verifiedAt'] = gmdate('c');
-			$domains[$i]            = $this->withCertificate(domain: $domains[$i]);
-
-			if ($portal === null || $this->save(portal: $portal, domains: $domains) === false) {
-				return null;
-			}
-
-			return self::VERIFIED;
+			return $this->verifyDomain(portal: $portal, domains: $domains, index: $i);
 		}
 
 		return self::NOT_FOUND;
 	}//end verify()
+
+	/**
+	 * Mark one listed domain verified when its record is published, and save.
+	 *
+	 * @param array<string, mixed>|null        $portal  The portal row.
+	 * @param array<int, array<string, mixed>> $domains The portal's domains.
+	 * @param int                              $index   The position of the domain to check.
+	 *
+	 * @return string|null `verified` or `pending`; null when the save failed.
+	 */
+	private function verifyDomain(array|null $portal, array $domains, int $index): string|null {
+		if ($this->published(domain: $domains[$index]) === false) {
+			return self::PENDING;
+		}
+
+		$domains[$index]['verified']   = true;
+		$domains[$index]['verifiedAt'] = gmdate('c');
+		$domains[$index]            = $this->withCertificate(domain: $domains[$index]);
+
+		if ($portal === null || $this->save(portal: $portal, domains: $domains) === false) {
+			return null;
+		}
+
+		return self::VERIFIED;
+	}//end verifyDomain()
 
 	/**
 	 * The domain with the end of its certificate and the moment it was looked
@@ -225,25 +258,67 @@ class PortalDomainVerifier {
 	 * @spec openspec/changes/archive/2026-10-12-portal-domains-and-editors/tasks.md#t03
 	 */
 	public static function probeCertificate(string $host): ?int {
-		$errorCode    = 0;
-		$errorMessage = '';
-		$address = gethostbyname($host);
-		if ($address === $host || filter_var($address, FILTER_VALIDATE_IP, (FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) === false) {
+		$address = self::publicAddress(host: $host);
+		if ($address === null) {
 			return null;
 		}
 
-		$context = stream_context_create(
-			[
-				'ssl' => [
-					'capture_peer_cert' => true,
-					'verify_peer'       => false,
-					'verify_peer_name'  => false,
-					'peer_name'         => $host,
-					'SNI_enabled'       => true,
-					'SNI_server_name'   => $host,
-				],
-			]
-		);
+		$certificate = self::peerCertificate(host: $host, address: $address);
+		if ($certificate === null) {
+			return null;
+		}
+
+		$parsed = openssl_x509_parse($certificate);
+		if ($parsed === false || isset($parsed['validTo_time_t']) === false) {
+			return null;
+		}
+
+		return (int)$parsed['validTo_time_t'];
+	}//end probeCertificate()
+
+	/**
+	 * The address a host resolves to, unless it is private or reserved.
+	 *
+	 * @param string $host The host name.
+	 *
+	 * @return string|null The address, null when the host must not be contacted.
+	 */
+	private static function publicAddress(string $host): ?string {
+		$address = gethostbyname($host);
+		if ($address === $host || self::isGlobalAddress(address: $address) === false) {
+			return null;
+		}
+
+		return $address;
+	}//end publicAddress()
+
+	/**
+	 * Whether an address is globally routable: not private, reserved, shared
+	 * (CGNAT), benchmarking or documentation space.
+	 *
+	 * @param string $address The IP address.
+	 *
+	 * @return bool
+	 */
+	private static function isGlobalAddress(string $address): bool {
+		$flags = (FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE | FILTER_FLAG_GLOBAL_RANGE);
+
+		return filter_var($address, FILTER_VALIDATE_IP, $flags) !== false;
+	}//end isGlobalAddress()
+
+	/**
+	 * The certificate a host presents on port 443 of an address already checked.
+	 * The connection goes to the address, so a second lookup cannot redirect it.
+	 *
+	 * @param string $host    The host name, sent as the TLS server name.
+	 * @param string $address The checked address.
+	 *
+	 * @return mixed The certificate, null when the connection failed or gave none.
+	 */
+	private static function peerCertificate(string $host, string $address): mixed {
+		$errorCode    = 0;
+		$errorMessage = '';
+		$context      = self::tlsContext(host: $host);
 
 		set_error_handler(static fn (): bool => true);
 		try {
@@ -265,18 +340,31 @@ class PortalDomainVerifier {
 
 		$params = stream_context_get_params($socket);
 		fclose($socket);
-		$certificate = ($params['options']['ssl']['peer_certificate'] ?? null);
-		if ($certificate === null) {
-			return null;
-		}
 
-		$parsed = openssl_x509_parse($certificate);
-		if ($parsed === false || isset($parsed['validTo_time_t']) === false) {
-			return null;
-		}
+		return ($params['options']['ssl']['peer_certificate'] ?? null);
+	}//end peerCertificate()
 
-		return (int)$parsed['validTo_time_t'];
-	}//end probeCertificate()
+	/**
+	 * A TLS context that captures the peer's certificate without verifying the chain.
+	 *
+	 * @param string $host The host name, sent as the TLS server name.
+	 *
+	 * @return resource The context.
+	 */
+	private static function tlsContext(string $host) {
+		return stream_context_create(
+			[
+				'ssl' => [
+					'capture_peer_cert' => true,
+					'verify_peer'       => false,
+					'verify_peer_name'  => false,
+					'peer_name'         => $host,
+					'SNI_enabled'       => true,
+					'SNI_server_name'   => $host,
+				],
+			]
+		);
+	}//end tlsContext()
 
 	/**
 	 * Whether the domain's record is published with this portal's token.

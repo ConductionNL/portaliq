@@ -27,7 +27,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service\Identity;
 
 use OCA\Portaliq\Service\Identity\PortalRegisteredDetailsService;
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -38,8 +38,6 @@ class PortalRegisteredDetailsServiceTest extends TestCase {
 	private const BRP = 'OCA\\OpenRegister\\Service\\Integration\\Providers\\BrpPersonProvider';
 
 	private const KVK = 'OCA\\OpenRegister\\Service\\Integration\\Providers\\KvkProvider';
-
-	private const COUNT = 'countResidentsAtAddressObject';
 
 	/**
 	 * A BSN that passes the eleven test.
@@ -164,6 +162,29 @@ class PortalRegisteredDetailsServiceTest extends TestCase {
 
 	}//end testTheBranchNumbersOfACompanyAreReadForTheBranchChoice()
 
+	/**
+	 * resident-identity-in-forms REQ-RIF-005: an employee's BSN and KvK number
+	 * are read from the same providers, and a number that is not one is
+	 * refused before any provider is asked.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#T06
+	 */
+	public function testAnEmployeeLooksUpABsnAndAKvkNumberDirectly(): void {
+		$brp = $this->provider(self::BRP, 'lookupByBsn');
+		$brp->expects($this->once())->method('lookupByBsn')->with(self::BSN)->willReturn(['results' => [$this->haalCentraalPerson()], 'total' => 1]);
+		$kvk = $this->provider(self::KVK, 'lookupByKvkNumber');
+		$kvk->expects($this->once())->method('lookupByKvkNumber')->with('12345678')->willReturn(['results' => $this->kvkRows(), 'total' => 3]);
+		$service = $this->service([], [self::BRP => $brp, self::KVK => $kvk]);
+
+		$person  = $service->forBsn(self::BSN);
+		$company = $service->forKvkNumber('12345678');
+
+		$this->assertSame('Jan de Vries', $person['person']['name']);
+		$this->assertSame('Bakkerij de Korenschoof', $company['company']['tradeName']);
+		$this->assertSame(['available' => false, 'reason' => 'no_registration_identifier'], $service->forBsn('123456789'));
+		$this->assertSame(['available' => false, 'reason' => 'no_registration_identifier'], $service->forKvkNumber('1234567'));
+	}//end testAnEmployeeLooksUpABsnAndAKvkNumberDirectly()
+
 	public function testAnUnavailableSourceSaysSoAndTheLogNeverHoldsTheBsn(): void {
 		$brp = $this->provider(self::BRP, 'lookupByBsn');
 		$brp->method('lookupByBsn')->willReturn(['unavailable' => true, 'cause' => 'upstream_service_down', 'results' => [], 'total' => 0]);
@@ -202,10 +223,10 @@ class PortalRegisteredDetailsServiceTest extends TestCase {
 
 	}//end testNoRecordFoundSaysNotFound()
 
-	public function testTheResidentSeesHowManyPeopleLiveAtTheirOwnAddressAndNoOneElse(): void {
-		$brp = $this->provider(self::BRP, 'lookupByBsn', self::COUNT);
+	public function testTheCountOfResidentsIsShownAsANumberWithoutTheAddressObject(): void {
+		$brp = $this->provider(self::BRP, ['lookupByBsn', 'countResidentsAtAddressObject']);
 		$brp->method('lookupByBsn')->willReturn(['results' => [$this->haalCentraalPerson()], 'total' => 1]);
-		$brp->expects($this->once())->method(self::COUNT)->with('0344010000012345')->willReturn(
+		$brp->expects($this->once())->method('countResidentsAtAddressObject')->with('0344010000012345')->willReturn(
 			['total' => 3, 'meta' => ['correlationId' => 'c-2', 'durationMs' => 9, 'status' => 200]]
 		);
 
@@ -215,40 +236,52 @@ class PortalRegisteredDetailsServiceTest extends TestCase {
 		$encoded = (string)json_encode($result);
 		$this->assertStringNotContainsString('0344010000012345', $encoded);
 		$this->assertStringNotContainsString('c-2', $encoded);
+		$this->assertSame([], $this->logged);
 
-	}//end testTheResidentSeesHowManyPeopleLiveAtTheirOwnAddressAndNoOneElse()
+	}//end testTheCountOfResidentsIsShownAsANumberWithoutTheAddressObject()
 
-	public function testTheCountIsNotClaimedWhenOpenRegisterCannotGiveIt(): void {
-		$brp = $this->provider(self::BRP, 'lookupByBsn', self::COUNT);
+	public function testTheCountOfResidentsIsNotClaimedWhenTheSourceDoesNotAllowIt(): void {
+		$brp = $this->provider(self::BRP, ['lookupByBsn', 'countResidentsAtAddressObject']);
 		$brp->method('lookupByBsn')->willReturn(['results' => [$this->haalCentraalPerson()], 'total' => 1]);
-		$brp->method(self::COUNT)->willReturnOnConsecutiveCalls(
-			['unavailable' => true, 'cause' => 'resident-count-not-enabled'],
-			['unavailable' => true, 'cause' => 'upstream-service-down'],
-			['total' => '3'],
-			$this->throwException(new RuntimeException('down'))
-		);
-		$service = $this->service(['identityType' => 'digid', 'identityRef' => self::BSN], [self::BRP => $brp]);
+		$brp->method('countResidentsAtAddressObject')->willReturn(['unavailable' => true, 'cause' => 'resident-count-not-enabled']);
 
-		for ($call = 1; $call <= 4; $call++) {
-			$result = $service->forSubject('subject-1');
-			$this->assertTrue($result['available'], 'the record itself still shows (call ' . $call . ')');
-			$this->assertNull($result['person']['residentsAtAddress'], 'call ' . $call);
-		}
+		$result = $this->service(['identityType' => 'digid', 'identityRef' => self::BSN], [self::BRP => $brp])->forSubject('subject-1');
 
-	}//end testTheCountIsNotClaimedWhenOpenRegisterCannotGiveIt()
+		$this->assertTrue($result['available']);
+		$this->assertNull($result['person']['residentsAtAddress']);
+		$logged = (string)json_encode($this->logged);
+		$this->assertStringContainsString('resident-count-not-enabled', $logged);
+		$this->assertStringNotContainsString('0344010000012345', $logged);
+		$this->assertStringNotContainsString(self::BSN, $logged);
 
-	public function testAPersonWithoutAnAddressObjectIsNotCounted(): void {
+	}//end testTheCountOfResidentsIsNotClaimedWhenTheSourceDoesNotAllowIt()
+
+	public function testTheCountOfResidentsIsNotClaimedWhenTheCountFails(): void {
+		$brp = $this->provider(self::BRP, ['lookupByBsn', 'countResidentsAtAddressObject']);
+		$brp->method('lookupByBsn')->willReturn(['results' => [$this->haalCentraalPerson()], 'total' => 1]);
+		$brp->method('countResidentsAtAddressObject')->willThrowException(new RuntimeException('down'));
+
+		$result = $this->service(['identityType' => 'digid', 'identityRef' => self::BSN], [self::BRP => $brp])->forSubject('subject-1');
+
+		$this->assertTrue($result['available']);
+		$this->assertNull($result['person']['residentsAtAddress']);
+		$this->assertStringContainsString('provider_missing', (string)json_encode($this->logged));
+
+	}//end testTheCountOfResidentsIsNotClaimedWhenTheCountFails()
+
+	public function testARecordWithoutAnAddressObjectIsNotCounted(): void {
 		$person = $this->haalCentraalPerson();
 		unset($person['verblijfplaats']['adresseerbaarObjectIdentificatie']);
-		$brp = $this->provider(self::BRP, 'lookupByBsn', self::COUNT);
+		$brp = $this->provider(self::BRP, ['lookupByBsn', 'countResidentsAtAddressObject']);
 		$brp->method('lookupByBsn')->willReturn(['results' => [$person], 'total' => 1]);
-		$brp->expects($this->never())->method(self::COUNT);
+		$brp->expects($this->never())->method('countResidentsAtAddressObject');
 
 		$result = $this->service(['identityType' => 'digid', 'identityRef' => self::BSN], [self::BRP => $brp])->forSubject('subject-1');
 
 		$this->assertNull($result['person']['residentsAtAddress']);
+		$this->assertSame('Dorpsstraat', $result['person']['address']['street']);
 
-	}//end testAPersonWithoutAnAddressObjectIsNotCounted()
+	}//end testARecordWithoutAnAddressObjectIsNotCounted()
 
 	/**
 	 * The service over one account and a container holding the given providers.
@@ -278,14 +311,14 @@ class PortalRegisteredDetailsServiceTest extends TestCase {
 	 *
 	 * @param array<string, mixed>|null $account The account, or null for none.
 	 *
-	 * @return PortalAccountService
+	 * @return PortalAccountLookup
 	 */
-	private function accounts(?array $account): PortalAccountService {
-		$accounts = $this->getMockBuilder(PortalAccountService::class)
+	private function accounts(?array $account): PortalAccountLookup {
+		$accounts = $this->getMockBuilder(PortalAccountLookup::class)
 			->disableOriginalConstructor()
-			->onlyMethods(['findBySubjectRef'])
+			->onlyMethods(['bySubjectRef'])
 			->getMock();
-		$accounts->method('findBySubjectRef')->willReturnCallback(
+		$accounts->method('bySubjectRef')->willReturnCallback(
 			static fn (string $ref): ?array => ($ref === '' ? null : $account)
 		);
 		return $accounts;
@@ -313,25 +346,19 @@ class PortalRegisteredDetailsServiceTest extends TestCase {
 	/**
 	 * A double of OpenRegister's real provider class on its real lookup method.
 	 *
-	 * @param string $class  The provider class.
-	 * @param string ...$methods The lookup methods.
+	 * @param string               $class  The provider class.
+	 * @param string|array<string> $method The lookup method(s).
 	 *
 	 * @return mixed
 	 */
-	private function provider(string $class, string ...$methods): mixed {
+	private function provider(string $class, string|array $method): mixed {
 		if (class_exists($class) === false) {
 			$this->markTestSkipped($class . ' is not loadable: set PORTALIQ_OPENREGISTER_LIB to an openregister checkout\'s lib/.');
 		}
 
-		foreach ($methods as $method) {
-			if (method_exists($class, $method) === false) {
-				$this->markTestSkipped($class . '::' . $method . ' arrives with ConductionNL/openregister brp-residents-at-address-count.');
-			}
-		}
-
 		return $this->getMockBuilder($class)
 			->disableOriginalConstructor()
-			->onlyMethods($methods)
+			->onlyMethods((array)$method)
 			->getMock();
 	}//end provider()
 

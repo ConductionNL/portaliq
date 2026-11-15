@@ -7,11 +7,11 @@
  * signed in by that app and sent to Nextcloud's default page, which is the
  * workplace (`linkToDefaultPageUrl()`). Nextcloud reads the user's own
  * `core`/`defaultapp` preference before the system `defaultapp`, so when a
- * user joins a group a published portal names as its resident group, this
- * listener makes portaliq that user's start page. Portaliq's app page then
+ * user joins a group a published portal names as its resident group or its
+ * business group, this listener makes portaliq that user's start page. Portaliq's app page then
  * sends a resident on to their portal (REQ-NCL-006). A preference the user
  * already has is left alone, an administrator is never touched, and the
- * preference is taken back when the user leaves the last resident group, if
+ * preference is taken back when the user leaves the last such group, if
  * it is still portaliq's.
  *
  * @category Listener
@@ -33,9 +33,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Listener;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\Identity\NextcloudRegistrationDoor;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\NextcloudRegistrationDoorInterface;
+use OCA\Portaliq\Kernel\Contracts\PublishedPortalsInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\Group\Events\UserAddedEvent;
@@ -69,15 +69,15 @@ class ResidentLandingListener implements IEventListener {
 	 *
 	 * @param IConfig                   $config    The user's preferences.
 	 * @param IGroupManager             $groups    Whether the user is an administrator.
-	 * @param PortalResolver            $portals   The published portals.
-	 * @param NextcloudRegistrationDoor $residents Which group a portal names, and who is a resident.
+	 * @param PublishedPortalsInterface            $portals   The published portals.
+	 * @param NextcloudRegistrationDoorInterface $residents Which group a portal names, and who is a resident.
 	 * @param LoggerInterface           $logger    Records a failure, which never stops the membership.
 	 */
 	public function __construct(
 		private readonly IConfig $config,
 		private readonly IGroupManager $groups,
-		private readonly PortalResolver $portals,
-		private readonly NextcloudRegistrationDoor $residents,
+		private readonly PublishedPortalsInterface $portals,
+		private readonly NextcloudRegistrationDoorInterface $residents,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -106,7 +106,7 @@ class ResidentLandingListener implements IEventListener {
 			// must never fail because of it.
 			$this->logger->warning(
 				'Portaliq: the start page of a resident was not changed',
-				['app' => Application::APP_ID, 'reason' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'reason' => $e->getMessage()]
 			);
 		}
 	}//end handle()
@@ -130,7 +130,7 @@ class ResidentLandingListener implements IEventListener {
 			return;
 		}
 
-		$this->config->setUserValue($uid, self::CORE, self::DEFAULT_APP, Application::APP_ID);
+		$this->config->setUserValue($uid, self::CORE, self::DEFAULT_APP, AppIdentity::APP_ID);
 	}//end joined()
 
 	/**
@@ -147,7 +147,7 @@ class ResidentLandingListener implements IEventListener {
 			return;
 		}
 
-		if ($this->config->getUserValue($uid, self::CORE, self::DEFAULT_APP, '') !== Application::APP_ID) {
+		if ($this->config->getUserValue($uid, self::CORE, self::DEFAULT_APP, '') !== AppIdentity::APP_ID) {
 			return;
 		}
 
@@ -159,7 +159,7 @@ class ResidentLandingListener implements IEventListener {
 	}//end left()
 
 	/**
-	 * Whether a published portal names this group as its resident group.
+	 * Whether a published portal names this group as its resident or business group.
 	 *
 	 * @param string $gid The group id.
 	 *
@@ -171,7 +171,7 @@ class ResidentLandingListener implements IEventListener {
 		}
 
 		foreach ($this->portals->allPublishedPortals() as $portal) {
-			if (is_array($portal) === true && $this->residents->residentGroup(portal: $portal) === $gid) {
+			if (is_array($portal) === true && array_key_exists($gid, $this->residents->portalGroups(portal: $portal)) === true) {
 				return true;
 			}
 		}

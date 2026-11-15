@@ -30,7 +30,7 @@
 				:key="entry.value"
 				class="nl-portal-counts__item"
 				data-testid="nl-portal-count">
-				<a class="utrecht-link" :href="entry.href">
+				<a class="utrecht-link" :href="hrefOf(entry)">
 					<span class="nl-portal-counts__number">{{ entry.count }}</span>
 					<span class="nl-portal-counts__label">{{ entry.label }}</span>
 				</a>
@@ -40,6 +40,7 @@
 </template>
 
 <script>
+import { authoredLink } from '../../components/mijn/links.js'
 import { fetchCounts } from '../../lib/subjects.js'
 import { pageLocale } from '../../pages/inbox/translate.js'
 import strings from './strings.js'
@@ -82,6 +83,15 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * @param {{href: string}} entry A count.
+		 * @return {string} Its search page in the site's own addressing.
+		 * @spec openspec/changes/hero-links-follow-the-site-address/specs/site-navigation/spec.md#requirement-a-block-link-to-a-site-page-carries-the-sites-own-address
+		 */
+		hrefOf(entry) {
+			return authoredLink(entry.href)?.href || ''
+		},
+
 		/**
 		 * @param {string} key A string key.
 		 * @return {string} The words in the page language.

@@ -12,7 +12,7 @@
   rather than a zero, and a dimension the portal never enabled reads "not
   measured" rather than an empty list.
 
-  @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-visitors-widget-must-show-who-visited-without-inventing-a-number
+  @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-visitors-widget-must-show-who-visited-without-inventing-a-number
 -->
 <template>
 	<div class="traffic-visitors" data-testid="traffic-visitors">
@@ -125,7 +125,7 @@ export default {
 		 * The five breakdowns with their heading, whether the portal
 		 * measures them, and the ranked rows.
 		 *
-		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-visitors-widget-must-show-who-visited-without-inventing-a-number
+		 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-visitors-widget-must-show-who-visited-without-inventing-a-number
 		 * @return {Array<{key: string, title: string, measured: boolean, rows: Array<object>}>} The lists.
 		 */
 		lists() {

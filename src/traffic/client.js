@@ -56,6 +56,355 @@ const FLUSH_AFTER = 2000
 const FLUSH_AT = 20
 
 /**
+ * The state of one client in a window: nothing measured, nothing queued,
+ * no identity, and the random half of a cookieless experiment seed.
+ *
+ * @param {Window} win The window.
+ * @return {object} The state.
+ */
+function newClientState(win) {
+return {
+	traffic: null,
+	collector: '',
+	consent: false,
+	disabled: false,
+	sequence: 0,
+	queue: [],
+	timer: null,
+	clientId: '',
+	sessionId: '',
+	scrolled: false,
+	location: '',
+	// Form analytics (portal-traffic-outcomes): the forms started on
+	// this page, by id, each with the field in focus and when it got
+	// it. Ids and times only; no field's value is ever read.
+	forms: {},
+	// Custom dimensions the page set, by id, attached to what is sent.
+	dimensions: {},
+	notFound: false,
+	// Page experiments (portal-traffic-experiments): the experiment
+	// and variant this session was put on, once, and the random half
+	// of the seed that makes a cookieless pick sticky for the page
+	// load. Stored nowhere: a cookieless client writes nothing.
+	experiment: null,
+	loadId: randomId(win.crypto),
+	changes: null,
+	// Heatmaps: the deepest scroll of the current page view.
+	heatDepth: 0,
+	// Session recording: whether the recorder script was asked for.
+	recorderLoaded: false,
+}
+}
+
+/**
+ * The portal's site record, where the traffic configuration lives.
+ *
+ * @param {{origin: string, appPath: string, portal: string}} config The client's config.
+ * @return {string} The address.
+ */
+function siteUrlOf(config) {
+	return (
+		config.origin
+		+ config.appPath
+		+ '/api/content/site'
+		+ (config.portal ? '?portal=' + encodeURIComponent(config.portal) : '')
+	)
+}
+
+/**
+ * Whether the site record says this portal measures, and where to.
+ *
+ * @param {object|null} site The site record.
+ * @return {boolean} True to start.
+ */
+function isMeasured(site) {
+	return Boolean(
+		site && site.traffic && site.traffic.enabled === true && site.collector,
+	)
+}
+
+/**
+ * The page's handle on a client that measures nothing (yet): every call is
+ * a no-op until the portal says what to measure.
+ *
+ * @return {object} The handle: `track`, `consent`, `disable` and `dimension` doing nothing, no `recording`.
+ */
+function idleApi() {
+	return {
+		track() {},
+		consent() {},
+		disable() {},
+		dimension() {},
+		recording: null,
+	}
+}
+
+/**
+ * The link a click landed on: the nearest anchor up from its target, when
+ * it has an address.
+ *
+ * @param {Node|null} target The click's target.
+ * @return {Element|null} The anchor, or null.
+ */
+function anchorOf(target) {
+	let node = target
+	while (isElement(node) && node.tagName !== 'A') {
+		node = node.parentNode
+	}
+	return isElement(node) && node.href ? node : null
+}
+
+/**
+ * Whether a node is an element.
+ *
+ * @param {Node|null} node The node.
+ * @return {boolean} True for an element.
+ */
+function isElement(node) {
+	return Boolean(node) && node.nodeType === 1
+}
+
+/**
+ * How far a window's page is scrolled down, in pixels.
+ *
+ * @param {Window} win The window.
+ * @return {number} The offset.
+ */
+function scrollTopOf(win) {
+	return win.pageYOffset || win.document.documentElement.scrollTop || 0
+}
+
+/**
+ * A document's full height, in pixels.
+ *
+ * @param {Document} doc The document.
+ * @return {number} The height.
+ */
+function pageHeightOf(doc) {
+	return Math.max(
+		doc.documentElement.scrollHeight,
+		doc.body ? doc.body.scrollHeight : 0,
+	)
+}
+
+/**
+ * Whether a variant lives on another page than the route.
+ *
+ * @param {object} variant The variant.
+ * @param {string} route The in-site route.
+ * @return {boolean} True when the visitor has to move.
+ */
+function isElsewhere(variant, route) {
+	return Boolean(variant.pageRoute) && siteRoute(variant.pageRoute) !== route
+}
+
+/**
+ * The text changes a variant names, or null for none.
+ *
+ * @param {object} variant The variant.
+ * @return {Array<object>|null} The changes.
+ */
+function changesOf(variant) {
+	return Array.isArray(variant.changes) ? variant.changes : null
+}
+
+/**
+ * Whether the experiment running on a route is the one the session joined.
+ *
+ * @param {object} state The client's state, with the joined `experiment`.
+ * @param {string} route The in-site route.
+ * @return {boolean} True on the joined experiment's page.
+ */
+function onJoinedExperiment(state, route) {
+	const page = experimentFor(state.traffic, route)
+	return Boolean(page) && String(page.id) === state.experiment.id
+}
+
+/**
+ * A popstate event, also where the browser has no PopStateEvent.
+ *
+ * @param {Window} win The window.
+ * @return {Event} The event.
+ */
+function popStateEvent(win) {
+	try {
+		return new win.PopStateEvent('popstate', {
+			state: win.history.state,
+		})
+	} catch {
+		const event = win.document.createEvent('Event')
+		event.initEvent('popstate', false, false)
+		return event
+	}
+}
+
+/**
+ * Stop a variant's observer, when one watches the page.
+ *
+ * @param {{observer: MutationObserver|null}|null} changes The variant's watched changes.
+ * @return {void}
+ */
+function stopObserving(changes) {
+	if (changes && changes.observer) {
+		changes.observer.disconnect()
+	}
+}
+
+/**
+ * Whether a window can watch its page for changes.
+ *
+ * @param {Window} win The window.
+ * @return {boolean} True when a MutationObserver and a document element exist.
+ */
+function canObserve(win) {
+	return (
+		typeof win.MutationObserver === 'function'
+		&& Boolean(win.document.documentElement)
+	)
+}
+
+/**
+ * Watch a window's page text and tree for a re-render.
+ *
+ * @param {Window} win The window.
+ * @param {MutationCallback} onChange Called after the page changed.
+ * @return {MutationObserver} The observer.
+ */
+function observeTree(win, onChange) {
+	const observer = new win.MutationObserver(onChange)
+	observer.observe(win.document.documentElement, {
+		childList: true,
+		subtree: true,
+		characterData: true,
+	})
+	return observer
+}
+
+/**
+ * The elements a selector names; none for a selector the browser refuses.
+ *
+ * @param {Document} doc The document.
+ * @param {string|undefined} selector The selector.
+ * @return {NodeList|Array} The elements.
+ */
+function elementsMatching(doc, selector) {
+	try {
+		return doc.querySelectorAll(String(selector || ''))
+	} catch {
+		return []
+	}
+}
+
+/**
+ * Set the text of every element one change names, when it differs. Text
+ * only, through textContent, so a variant can never add markup.
+ *
+ * @param {Document} doc The document.
+ * @param {{selector?: string, text?: string}} change The change.
+ * @return {void}
+ */
+function applyChange(doc, change) {
+	const nodes = elementsMatching(doc, change.selector)
+	const text = String(change.text || '')
+	for (let i = 0; i < nodes.length; i++) {
+		if (nodes[i].textContent !== text) {
+			nodes[i].textContent = text
+		}
+	}
+}
+
+/**
+ * The route the renderer could not find, when it says: the built-in site
+ * carries its route in the query string, which the collector strips from
+ * the path.
+ *
+ * @param {Element} marker The renderer's not-found marker.
+ * @return {{path?: string}} The params.
+ */
+function notFoundParams(marker) {
+	const path = String(marker.getAttribute(PATH_ATTRIBUTE) || '')
+	return path === '' ? {} : { path: path.substring(0, 256) }
+}
+
+/**
+ * The headers of a batch sent by fetch, with the bearer when there is one.
+ *
+ * @param {string} bearer The bearer, or ''.
+ * @return {object} The headers.
+ */
+function batchHeaders(bearer) {
+	const headers = { 'Content-Type': 'text/plain' }
+	if (bearer !== '') {
+		headers.Authorization = 'Bearer ' + bearer
+	}
+	return headers
+}
+
+/**
+ * The fetch request that posts one batch, with the bearer of a linked
+ * account when there is one.
+ *
+ * @param {string} body The batch's envelope.
+ * @param {string} bearer The bearer, or ''.
+ * @return {object} The request init.
+ */
+function batchRequest(body, bearer) {
+	return {
+		method: 'POST',
+		body,
+		headers: batchHeaders(bearer),
+		mode: 'cors',
+		credentials: 'omit',
+		keepalive: true,
+	}
+}
+
+/**
+ * Whether the portal links visits to accounts.
+ *
+ * @param {object|null} traffic The portal's traffic configuration.
+ * @return {boolean} True when account linking is on.
+ */
+function linksAccounts(traffic) {
+	const sensitive = traffic && traffic.sensitive
+	return Boolean(sensitive) && sensitive.accountLinking === true
+}
+
+/**
+ * The portal session bearer, ONLY for a portal that links accounts
+ * (Ruben, decision 6). The built-in portal keeps its session token in
+ * local storage; a batch that carries it lets the collector attach the
+ * account's pseudonymous reference. sendBeacon cannot carry a header,
+ * so such a batch goes by fetch. Every other portal never reads the
+ * token at all.
+ *
+ * @param {Window} win The window.
+ * @param {object|null} traffic The portal's traffic configuration.
+ * @return {string} The bearer, or ''.
+ */
+function linkedBearer(win, traffic) {
+	if (!linksAccounts(traffic)) {
+		return ''
+	}
+	try {
+		return String(win.localStorage.getItem('portaliq_token') || '')
+	} catch {
+		return ''
+	}
+}
+
+/**
+ * A session's stored sequence number, or 0.
+ *
+ * @param {Storage} storage The session storage.
+ * @param {string} key The storage key prefix.
+ * @return {number} The sequence.
+ */
+function storedSequence(storage, key) {
+	return parseInt(storage.getItem(key + ':sequence') || '0', 10) || 0
+}
+
+/**
  * Boot the client in a window.
  *
  * Exported for the bundle's own entry below; a test that wants the pure
@@ -66,13 +415,7 @@ const FLUSH_AT = 20
  */
 export function boot(win) {
 	const doc = win.document
-	const api = {
-		track() {},
-		consent() {},
-		disable() {},
-		dimension() {},
-		recording: null,
-	}
+	const api = idleApi()
 	win.portaliqTraffic = api
 
 	if (optedOut(win.navigator)) {
@@ -84,37 +427,7 @@ export function boot(win) {
 		return
 	}
 
-	const state = {
-		traffic: null,
-		collector: '',
-		consent: false,
-		disabled: false,
-		sequence: 0,
-		queue: [],
-		timer: null,
-		clientId: '',
-		sessionId: '',
-		scrolled: false,
-		location: '',
-		// Form analytics (portal-traffic-outcomes): the forms started on
-		// this page, by id, each with the field in focus and when it got
-		// it. Ids and times only; no field's value is ever read.
-		forms: {},
-		// Custom dimensions the page set, by id, attached to what is sent.
-		dimensions: {},
-		notFound: false,
-		// Page experiments (portal-traffic-experiments): the experiment
-		// and variant this session was put on, once, and the random half
-		// of the seed that makes a cookieless pick sticky for the page
-		// load. Stored nowhere: a cookieless client writes nothing.
-		experiment: null,
-		loadId: randomId(win.crypto),
-		changes: null,
-		// Heatmaps: the deepest scroll of the current page view.
-		heatDepth: 0,
-		// Session recording: whether the recorder script was asked for.
-		recorderLoaded: false,
-	}
+	const state = newClientState(win)
 
 	// A page sets its dimensions while this client is still asking the
 	// portal what to measure, so the setter works from the first moment
@@ -123,29 +436,27 @@ export function boot(win) {
 		state.dimensions[String(id || '')] = value
 	}
 
-	const siteUrl =
-		config.origin
-		+ config.appPath
-		+ '/api/content/site'
-		+ (config.portal ? '?portal=' + encodeURIComponent(config.portal) : '')
-
-	win.fetch(siteUrl, { credentials: 'omit', mode: 'cors' })
+	win.fetch(siteUrlOf(config), { credentials: 'omit', mode: 'cors' })
 		.then((response) => (response.ok ? response.json() : null))
-		.then((site) => {
-			if (
-				!site
-				|| !site.traffic
-				|| site.traffic.enabled !== true
-				|| !site.collector
-			) {
-				return
-			}
-			state.traffic = site.traffic
-			state.collector = String(site.collector)
-			state.consent = site.traffic.consentRequired !== true
-			start()
-		})
+		.then(measure)
 		.catch(() => {})
+
+	/**
+	 * Start measuring when the site record says this portal measures, under
+	 * the consent it asks for.
+	 *
+	 * @param {object|null} site The site record.
+	 * @return {void}
+	 */
+	function measure(site) {
+		if (!isMeasured(site)) {
+			return
+		}
+		state.traffic = site.traffic
+		state.collector = String(site.collector)
+		state.consent = site.traffic.consentRequired !== true
+		start()
+	}
 
 	/**
 	 * Wire the listeners and send the first page view.
@@ -154,7 +465,18 @@ export function boot(win) {
 	 */
 	function start() {
 		restoreIdentity()
+		exposeApi()
+		listen()
+		pageView()
+	}
 
+	/**
+	 * The page's handle on the client: track an event, give or withdraw
+	 * consent, switch the client off.
+	 *
+	 * @return {void}
+	 */
+	function exposeApi() {
 		api.track = (name, params) => record(String(name || ''), params || {})
 		api.consent = (granted) => {
 			state.consent = granted === true
@@ -173,7 +495,15 @@ export function boot(win) {
 				api.recording.stop()
 			}
 		}
+	}
 
+	/**
+	 * Wire the listeners: links, forms, errors, scrolling, heatmaps, the
+	 * recorder, the not-found marker, the page going away and navigation.
+	 *
+	 * @return {void}
+	 */
+	function listen() {
 		doc.addEventListener('click', onClick, true)
 		doc.addEventListener('submit', onSubmit, true)
 		doc.addEventListener('focusin', onFocusIn, true)
@@ -198,8 +528,6 @@ export function boot(win) {
 		})
 		win.addEventListener('popstate', () => pageView())
 		patchHistory()
-
-		pageView()
 	}
 
 	/**
@@ -265,12 +593,8 @@ export function boot(win) {
 		if (state.scrolled) {
 			return
 		}
-		const root = doc.documentElement
-		const top = win.pageYOffset || root.scrollTop || 0
-		const height = Math.max(
-			root.scrollHeight,
-			doc.body ? doc.body.scrollHeight : 0,
-		)
+		const top = scrollTopOf(win)
+		const height = pageHeightOf(doc)
 		if (scrollPercent(top, win.innerHeight, height) >= SCROLL_AT) {
 			state.scrolled = true
 			record('scroll', { percent: SCROLL_AT })
@@ -284,11 +608,8 @@ export function boot(win) {
 	 * @return {void}
 	 */
 	function onClick(event) {
-		let node = event.target
-		while (node && node.nodeType === 1 && node.tagName !== 'A') {
-			node = node.parentNode
-		}
-		if (!node || node.nodeType !== 1 || !node.href) {
+		const node = anchorOf(event.target)
+		if (!node) {
 			return
 		}
 		const link = classifyLink(String(node.href), win.location.host)
@@ -409,43 +730,68 @@ export function boot(win) {
 	 */
 	function applyExperiment(location) {
 		const route = siteRoute(location)
-		if (state.experiment === null) {
-			const experiment = experimentFor(state.traffic, route)
-			if (!experiment) {
-				return false
-			}
-			const variant = pickVariant(
-				experiment.variants,
-				experiment.id + ':' + (state.clientId || state.loadId),
-			)
-			if (!variant) {
-				return false
-			}
-			state.experiment = { id: String(experiment.id), variant }
+		if (state.experiment === null && !joinExperiment(route)) {
+			return false
 		}
-		const variant = state.experiment.variant
-		const page = experimentFor(state.traffic, route)
-		if (!page || String(page.id) !== state.experiment.id) {
+		if (!onJoinedExperiment(state, route)) {
 			watchChanges(null)
 			return false
 		}
-		if (variant.pageRoute && siteRoute(variant.pageRoute) !== route) {
-			const target = variantUrl(location, String(variant.pageRoute))
-			win.history.replaceState(win.history.state, '', target)
-			let event
-			try {
-				event = new win.PopStateEvent('popstate', {
-					state: win.history.state,
-				})
-			} catch {
-				event = doc.createEvent('Event')
-				event.initEvent('popstate', false, false)
-			}
-			win.dispatchEvent(event)
+		return applyVariant(location, route)
+	}
+
+	/**
+	 * Apply the joined variant on its experiment's page: move to the
+	 * variant's own page, or watch for the text it changes.
+	 *
+	 * @param {string} location The page URL.
+	 * @param {string} route The in-site route.
+	 * @return {boolean} True when the location changed.
+	 */
+	function applyVariant(location, route) {
+		const variant = state.experiment.variant
+		if (isElsewhere(variant, route)) {
+			moveToVariant(location, variant)
 			return true
 		}
-		watchChanges(Array.isArray(variant.changes) ? variant.changes : null)
+		watchChanges(changesOf(variant))
 		return false
+	}
+
+	/**
+	 * Put this session on a variant of the experiment running on a route.
+	 *
+	 * @param {string} route The in-site route.
+	 * @return {boolean} True when the session is now in an experiment.
+	 */
+	function joinExperiment(route) {
+		const experiment = experimentFor(state.traffic, route)
+		if (!experiment) {
+			return false
+		}
+		const variant = pickVariant(
+			experiment.variants,
+			experiment.id + ':' + (state.clientId || state.loadId),
+		)
+		if (!variant) {
+			return false
+		}
+		state.experiment = { id: String(experiment.id), variant }
+		return true
+	}
+
+	/**
+	 * Move to the variant's page without a reload, so the site's own
+	 * router renders it.
+	 *
+	 * @param {string} location The page URL.
+	 * @param {object} variant The variant with its `pageRoute`.
+	 * @return {void}
+	 */
+	function moveToVariant(location, variant) {
+		const target = variantUrl(location, String(variant.pageRoute))
+		win.history.replaceState(win.history.state, '', target)
+		win.dispatchEvent(popStateEvent(win))
 	}
 
 	/**
@@ -456,34 +802,35 @@ export function boot(win) {
 	 * @return {void}
 	 */
 	function watchChanges(changes) {
-		if (state.changes && state.changes.observer) {
-			state.changes.observer.disconnect()
-		}
+		stopObserving(state.changes)
 		state.changes = null
 		if (!changes || changes.length === 0) {
 			return
 		}
 		state.changes = { list: changes, observer: null, timer: null }
 		applyChanges()
-		if (typeof win.MutationObserver !== 'function' || !doc.documentElement) {
+		if (!canObserve(win)) {
 			return
 		}
-		const observer = new win.MutationObserver(() => {
-			if (state.changes && state.changes.timer === null) {
-				state.changes.timer = win.setTimeout(() => {
-					if (state.changes) {
-						state.changes.timer = null
-						applyChanges()
-					}
-				}, 50)
+		state.changes.observer = observeTree(win, scheduleChanges)
+	}
+
+	/**
+	 * Apply the variant's changes again soon after the page changed,
+	 * coalescing a burst of changes into one pass.
+	 *
+	 * @return {void}
+	 */
+	function scheduleChanges() {
+		if (!state.changes || state.changes.timer !== null) {
+			return
+		}
+		state.changes.timer = win.setTimeout(() => {
+			if (state.changes) {
+				state.changes.timer = null
+				applyChanges()
 			}
-		})
-		observer.observe(doc.documentElement, {
-			childList: true,
-			subtree: true,
-			characterData: true,
-		})
-		state.changes.observer = observer
+		}, 50)
 	}
 
 	/**
@@ -496,20 +843,7 @@ export function boot(win) {
 		if (!state.changes) {
 			return
 		}
-		state.changes.list.forEach((change) => {
-			let nodes
-			try {
-				nodes = doc.querySelectorAll(String(change.selector || ''))
-			} catch {
-				return
-			}
-			const text = String(change.text || '')
-			for (let i = 0; i < nodes.length; i++) {
-				if (nodes[i].textContent !== text) {
-					nodes[i].textContent = text
-				}
-			}
-		})
+		state.changes.list.forEach((change) => applyChange(doc, change))
 	}
 
 	/**
@@ -639,17 +973,11 @@ export function boot(win) {
 			return
 		}
 		const marker = doc.querySelector('[' + STATUS_ATTRIBUTE + '="404"]')
-		if (marker) {
-			state.notFound = true
-			// The route the renderer could not find, when it says: the
-			// built-in site carries its route in the query string, which
-			// the collector strips from the path.
-			const path = String(marker.getAttribute(PATH_ATTRIBUTE) || '')
-			record(
-				'page_not_found',
-				path === '' ? {} : { path: path.substring(0, 256) },
-			)
+		if (!marker) {
+			return
 		}
+		state.notFound = true
+		record('page_not_found', notFoundParams(marker))
 	}
 
 	/**
@@ -659,7 +987,7 @@ export function boot(win) {
 	 * @return {void}
 	 */
 	function watchNotFound() {
-		if (typeof win.MutationObserver !== 'function' || !doc.documentElement) {
+		if (!canObserve(win)) {
 			return
 		}
 		new win.MutationObserver(notFoundCheck).observe(doc.documentElement, {
@@ -685,7 +1013,24 @@ export function boot(win) {
 		if (state.disabled || !allowedEvent(state.traffic, name, state.consent)) {
 			return
 		}
-		const event = {
+		const event = newEvent(name)
+		event.params = eventParams(event, fields)
+		if (state.clientId) {
+			event.clientId = state.clientId
+			event.sessionId = state.sessionId
+			persistSequence()
+		}
+		enqueue(event)
+	}
+
+	/**
+	 * A new event of this page, numbered in the session's sequence.
+	 *
+	 * @param {string} name The event name.
+	 * @return {object} The event, without its params yet.
+	 */
+	function newEvent(name) {
+		return {
 			name,
 			timestamp: new Date().toISOString(),
 			sequence: state.sequence++,
@@ -697,6 +1042,18 @@ export function boot(win) {
 			pageTitle: String(doc.title || '').substring(0, 256),
 			params: {},
 		}
+	}
+
+	/**
+	 * An event's params: the custom dimensions, the fields that are not
+	 * dimension-shaped (those go on the event itself), and the experiment
+	 * the session is on.
+	 *
+	 * @param {object} event The event, given its dimension-shaped fields.
+	 * @param {object} fields Dimension fields and params.
+	 * @return {object} The params.
+	 */
+	function eventParams(event, fields) {
 		const params = dimensionParams(state.traffic, state.dimensions)
 		Object.keys(fields).forEach((key) => {
 			if (key === 'searchTerm' || key === 'linkUrl' || key === 'fileName') {
@@ -709,12 +1066,16 @@ export function boot(win) {
 			params.experiment = state.experiment.id
 			params.variant = String(state.experiment.variant.id)
 		}
-		event.params = params
-		if (state.clientId) {
-			event.clientId = state.clientId
-			event.sessionId = state.sessionId
-			persistSequence()
-		}
+		return params
+	}
+
+	/**
+	 * Queue an event: post at once when the queue is full, else soon.
+	 *
+	 * @param {object} event The event.
+	 * @return {void}
+	 */
+	function enqueue(event) {
 		state.queue.push(event)
 		if (state.queue.length >= FLUSH_AT) {
 			flush()
@@ -741,51 +1102,28 @@ export function boot(win) {
 		}
 		const batches = chunk(state.queue)
 		state.queue = []
-		const bearer = linkedBearer()
-		batches.forEach((events) => {
-			const body = envelope(config.portal, state.consent, events)
-			if (
-				bearer === ''
-				&& win.navigator.sendBeacon
-				&& win.navigator.sendBeacon(state.collector, body)
-			) {
-				return
-			}
-			const headers = { 'Content-Type': 'text/plain' }
-			if (bearer !== '') {
-				headers.Authorization = 'Bearer ' + bearer
-			}
-			win.fetch(state.collector, {
-				method: 'POST',
-				body,
-				headers,
-				mode: 'cors',
-				credentials: 'omit',
-				keepalive: true,
-			}).catch(() => {})
-		})
+		const bearer = linkedBearer(win, state.traffic)
+		batches.forEach((events) => sendBatch(events, bearer))
 	}
 
 	/**
-	 * The portal session bearer, ONLY for a portal that links accounts
-	 * (Ruben, decision 6). The built-in portal keeps its session token in
-	 * local storage; a batch that carries it lets the collector attach the
-	 * account's pseudonymous reference. sendBeacon cannot carry a header,
-	 * so such a batch goes by fetch. Every other portal never reads the
-	 * token at all.
+	 * Post one batch: by beacon when no bearer goes along and the browser
+	 * takes it, else by fetch, with the bearer of a linked account.
 	 *
-	 * @return {string} The bearer, or ''.
+	 * @param {Array<object>} events The batch.
+	 * @param {string} bearer The bearer, or ''.
+	 * @return {void}
 	 */
-	function linkedBearer() {
-		const sensitive = state.traffic && state.traffic.sensitive
-		if (!sensitive || sensitive.accountLinking !== true) {
-			return ''
+	function sendBatch(events, bearer) {
+		const body = envelope(config.portal, state.consent, events)
+		if (
+			bearer === ''
+			&& win.navigator.sendBeacon
+			&& win.navigator.sendBeacon(state.collector, body)
+		) {
+			return
 		}
-		try {
-			return String(win.localStorage.getItem('portaliq_token') || '')
-		} catch {
-			return ''
-		}
+		win.fetch(state.collector, batchRequest(body, bearer)).catch(() => {})
 	}
 
 	/**
@@ -802,32 +1140,63 @@ export function boot(win) {
 		}
 		const key = storageKey()
 		try {
-			let clientId = win.localStorage.getItem(key + ':client')
-			let first = false
-			if (!clientId) {
-				clientId = randomId(win.crypto)
-				win.localStorage.setItem(key + ':client', clientId)
-				first = true
-			}
-			let sessionId = win.sessionStorage.getItem(key + ':session')
-			if (!sessionId) {
-				sessionId = randomId(win.crypto)
-				win.sessionStorage.setItem(key + ':session', sessionId)
-				win.sessionStorage.setItem(key + ':sequence', '0')
-				state.sequence = 0
-				state.clientId = clientId
-				state.sessionId = sessionId
-				record('session_start', { visitorType: first ? 'new' : 'returning' })
-				return
-			}
-			state.sequence =
-				parseInt(win.sessionStorage.getItem(key + ':sequence') || '0', 10)
-				|| 0
-			state.clientId = clientId
-			state.sessionId = sessionId
+			resumeSession(key)
 		} catch {
 			// Storage refused (private mode, a blocking policy): cookieless it is.
 		}
+	}
+
+	/**
+	 * Pick up the stored session and its sequence, or start a new session.
+	 *
+	 * @param {string} key The storage key prefix.
+	 * @return {void}
+	 */
+	function resumeSession(key) {
+		const client = storedClient(key)
+		const sessionId = win.sessionStorage.getItem(key + ':session')
+		if (!sessionId) {
+			startSession(key, client)
+			return
+		}
+		state.sequence = storedSequence(win.sessionStorage, key)
+		state.clientId = client.id
+		state.sessionId = sessionId
+	}
+
+	/**
+	 * The portal's client id from local storage, created and kept the first
+	 * time.
+	 *
+	 * @param {string} key The storage key prefix.
+	 * @return {{id: string, first: boolean}} The id, and whether it is new.
+	 */
+	function storedClient(key) {
+		const kept = win.localStorage.getItem(key + ':client')
+		if (kept) {
+			return { id: kept, first: false }
+		}
+		const id = randomId(win.crypto)
+		win.localStorage.setItem(key + ':client', id)
+		return { id, first: true }
+	}
+
+	/**
+	 * Start a session for the client: a new session id, the sequence from
+	 * zero, and a `session_start` saying whether the visitor is new.
+	 *
+	 * @param {string} key The storage key prefix.
+	 * @param {{id: string, first: boolean}} client The client id.
+	 * @return {void}
+	 */
+	function startSession(key, client) {
+		const sessionId = randomId(win.crypto)
+		win.sessionStorage.setItem(key + ':session', sessionId)
+		win.sessionStorage.setItem(key + ':sequence', '0')
+		state.sequence = 0
+		state.clientId = client.id
+		state.sessionId = sessionId
+		record('session_start', { visitorType: client.first ? 'new' : 'returning' })
 	}
 
 	/**

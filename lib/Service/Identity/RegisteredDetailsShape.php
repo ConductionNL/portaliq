@@ -87,33 +87,88 @@ class RegisteredDetailsShape {
 	 * @spec openspec/changes/identity-registered-details/specs/registered-details/spec.md#requirement-a-business-user-sees-their-companys-kvk-record-req-ird-002
 	 */
 	public function company(array $rows, string $kvkNumber): array {
-		$names     = ['hoofdvestiging' => '', 'rechtspersoon' => ''];
-		$legalForm = '';
-		$branches  = [];
+		$names = $this->typeNames(rows: $rows);
+
+		return [
+			'tradeName' => $this->firstFilled(values: [$names['hoofdvestiging'], $names['rechtspersoon'], (string)(($rows[0] ?? [])['naam'] ?? '')]),
+			'kvkNumber' => $kvkNumber,
+			'legalForm' => $this->legalForm(rows: $rows),
+			'branches'  => $this->branches(rows: $rows),
+		];
+	}//end company()
+
+	/**
+	 * The name of the first main branch and of the first legal entity row.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The rows.
+	 *
+	 * @return array{hoofdvestiging: string, rechtspersoon: string}
+	 *
+	 * @spec openspec/changes/identity-registered-details/specs/registered-details/spec.md#requirement-a-business-user-sees-their-companys-kvk-record-req-ird-002
+	 */
+	private function typeNames(array $rows): array {
+		$names = ['hoofdvestiging' => '', 'rechtspersoon' => ''];
 		foreach ($rows as $row) {
-			$name = (string)($row['naam'] ?? $row['handelsnaam'] ?? '');
 			$type = (string)($row['type'] ?? '');
 			if (isset($names[$type]) === true && $names[$type] === '') {
-				$names[$type] = $name;
+				$names[$type] = $this->rowName(row: $row);
 			}
+		}
 
+		return $names;
+	}//end typeNames()
+
+	/**
+	 * The first legal form a row carries.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The rows.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/identity-registered-details/specs/registered-details/spec.md#requirement-a-business-user-sees-their-companys-kvk-record-req-ird-002
+	 */
+	private function legalForm(array $rows): string {
+		$legalForm = '';
+		foreach ($rows as $row) {
 			if ($legalForm === '') {
 				$legalForm = (string)($row['rechtsvorm'] ?? '');
 			}
+		}
 
-			$branch = $this->branch(row: $row, name: $name, type: $type);
+		return $legalForm;
+	}//end legalForm()
+
+	/**
+	 * Every row with a branch number, as a branch.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The rows.
+	 *
+	 * @return list<array{number: string, name: string, address: string, main: bool}>
+	 *
+	 * @spec openspec/changes/identity-registered-details/specs/registered-details/spec.md#requirement-a-business-user-sees-their-companys-kvk-record-req-ird-002
+	 */
+	private function branches(array $rows): array {
+		$branches = [];
+		foreach ($rows as $row) {
+			$branch = $this->branch(row: $row, name: $this->rowName(row: $row), type: (string)($row['type'] ?? ''));
 			if ($branch !== null) {
 				$branches[] = $branch;
 			}
 		}
 
-		return [
-			'tradeName' => $this->firstFilled(values: [$names['hoofdvestiging'], $names['rechtspersoon'], (string)(($rows[0] ?? [])['naam'] ?? '')]),
-			'kvkNumber' => $kvkNumber,
-			'legalForm' => $legalForm,
-			'branches'  => $branches,
-		];
-	}//end company()
+		return $branches;
+	}//end branches()
+
+	/**
+	 * A row's name: its `naam`, else its trade name.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return string
+	 */
+	private function rowName(array $row): string {
+		return (string)($row['naam'] ?? $row['handelsnaam'] ?? '');
+	}//end rowName()
 
 	/**
 	 * One KvK row as a branch, or null for a row without a branch number.

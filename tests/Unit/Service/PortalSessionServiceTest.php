@@ -195,6 +195,73 @@ class PortalSessionServiceTest extends TestCase {
 
 	}//end testRealSessionBearerStillResolves()
 
+	/**
+	 * Every header that does not carry a valid session bearer resolves to no
+	 * subject: absent, empty, another scheme, an empty bearer, garbage and a
+	 * session token whose signature was tampered with.
+	 */
+	public function testAMalformedOrForgedBearerResolvesToNoSubject(): void {
+		$service = $this->service();
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1', trust: 'high');
+
+		$this->assertNotNull($service->resolveFromBearer('Bearer ' . $issued['token']));
+		$this->assertNull($service->resolveFromBearer(null));
+		$this->assertNull($service->resolveFromBearer(''));
+		$this->assertNull($service->resolveFromBearer('Basic ' . $issued['token']));
+		$this->assertNull($service->resolveFromBearer('bearer ' . $issued['token']));
+		$this->assertNull($service->resolveFromBearer('Bearer '));
+		$this->assertNull($service->resolveFromBearer('Bearer not-a-jwt'));
+		$this->assertNull($service->resolveFromBearer('Bearer ' . $issued['token'] . 'x'));
+
+	}//end testAMalformedOrForgedBearerResolvesToNoSubject()
+
+	/**
+	 * The company's KVK number is signed on the session and survives a
+	 * refresh; a session without one, or with a malformed one, carries none.
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/tasks.md#t0
+	 */
+	public function testTheCompanyKvkRidesOnTheSessionAndItsRefresh(): void {
+		$service = $this->service();
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1', trust: 'substantial', roles: ['supplier:read'], provider: 'eherkenning', kvk: '87654321');
+
+		$subject = $service->resolveFromBearer('Bearer ' . $issued['token']);
+		$this->assertSame('87654321', $subject['kvk']);
+
+		$refreshed = $service->refreshSession('Bearer ' . $issued['token']);
+		$this->assertSame('87654321', $service->resolveFromBearer('Bearer ' . $refreshed['token'])['kvk']);
+
+		$none = $service->issueSession(subjectRef: 's2', audience: 'supplier', organisation: 'org-1', kvk: '1234');
+		$this->assertSame('', $service->resolveFromBearer('Bearer ' . $none['token'])['kvk']);
+	}//end testTheCompanyKvkRidesOnTheSessionAndItsRefresh()
+
+	/**
+	 * The resolved subject has exactly these fields, in this order.
+	 */
+	public function testAResolvedSubjectHasItsFieldsInOrder(): void {
+		$service = $this->service();
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1', trust: 'substantial', roles: ['supplier:read'], branch: '000012345678', provider: 'eherkenning');
+
+		$subject = $service->resolveFromBearer('Bearer ' . $issued['token']);
+
+		$this->assertSame(
+			['subjectRef', 'audience', 'organisation', 'trust', 'roles', 'jti', 'authTime', 'branch', 'branchRestricted', 'provider', 'expiresAt', 'kvk', 'attributes'],
+			array_keys($subject)
+		);
+		$this->assertSame('s1', $subject['subjectRef']);
+		$this->assertSame('supplier', $subject['audience']);
+		$this->assertSame('org-1', $subject['organisation']);
+		$this->assertSame('substantial', $subject['trust']);
+		$this->assertSame(['supplier:read'], $subject['roles']);
+		$this->assertSame($issued['jti'], $subject['jti']);
+		$this->assertGreaterThan(0, $subject['authTime']);
+		$this->assertSame('000012345678', $subject['branch']);
+		$this->assertTrue($subject['branchRestricted']);
+		$this->assertSame('eherkenning', $subject['provider']);
+		$this->assertGreaterThan($subject['authTime'], $subject['expiresAt']);
+
+	}//end testAResolvedSubjectHasItsFieldsInOrder()
+
 	public function testNoDedicatedSecretRefusesIssuanceAndResolution(): void {
 		// Empty app config → NEVER falls back to a system/instance secret
 		// (portal-auth-edge-session-hardening) — the edge fails closed.
@@ -273,6 +340,52 @@ class PortalSessionServiceTest extends TestCase {
 
 	}//end testLogoutRevokesOnlyItsOwnSession()
 
+	/**
+	 * An admin revokes one session: only that bearer stops working, and the
+	 * history names the admin as an `admin-revoke`, not as a logout.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/staff-revoke-one-session/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
+	 */
+	public function testAnAdminRevokesOneSessionAndIsNamed(): void {
+		$store = [];
+		$issuer = $this->service(store: $store);
+		$mine = $issuer->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1');
+		$theirs = $issuer->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1');
+
+		$seen = [];
+		$auditor = $this->createMock(originalClassName: AuditTrailService::class);
+		$auditor->method('record')->willReturnCallback(
+			function (string $verb, string $subjectRef, string $organisation, string $register, string $schema, string $id, ...$rest) use (&$seen) {
+				$seen[] = [$verb, $subjectRef, $organisation, $id, ($rest[2] ?? [])];
+			}
+		);
+		$service = $this->service(store: $store, auditor: $auditor);
+
+		$this->assertTrue(condition: $service->revokeByAdmin(jti: $mine['jti'], admin: 'beheerder'));
+		$this->assertNull(actual: $service->resolveFromBearer(authorizationHeader: 'Bearer ' . $mine['token']));
+		$this->assertNotNull(actual: $service->resolveFromBearer(authorizationHeader: 'Bearer ' . $theirs['token']));
+		$revokes = array_values(array_filter($seen, fn (array $entry) => $entry[0] === 'admin-revoke'));
+		$this->assertSame(expected: [['admin-revoke', 's1', 'org-1', $mine['jti'], ['admin' => 'beheerder']]], actual: $revokes);
+	}//end testAnAdminRevokesOneSessionAndIsNamed()
+
+	/**
+	 * An unknown token id revokes nothing and records nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/staff-revoke-one-session/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
+	 */
+	public function testAnAdminRevokeOfAnUnknownSessionDoesNothing(): void {
+		$store = [];
+		$auditor = $this->createMock(originalClassName: AuditTrailService::class);
+		$auditor->expects($this->never())->method('record');
+
+		$this->assertFalse(condition: $this->service(store: $store, auditor: $auditor)->revokeByAdmin(jti: 'no-such-jti', admin: 'beheerder'));
+		$this->assertFalse(condition: $this->service(store: $store, auditor: $auditor)->revokeByAdmin(jti: '', admin: 'beheerder'));
+	}//end testAnAdminRevokeOfAnUnknownSessionDoesNothing()
+
 	public function testRevokeAllForOrganisationRevokesEveryActiveSession(): void {
 		$store = [];
 		$service = $this->service(store: $store);
@@ -336,6 +449,37 @@ class PortalSessionServiceTest extends TestCase {
 		$this->assertFalse(PortalSessionService::trustSatisfies($subject['trust'], 'substantial'));
 
 	}//end testAnEmailLinkSessionStaysLowThroughARefresh()
+
+	/**
+	 * A Yivi session carries its disclosed attributes, filtered, through a
+	 * refresh and a branch change; a session without any carries none.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#T05
+	 */
+	public function testDisclosedAttributesStayWithTheSessionChain(): void {
+		$service = $this->service();
+		$issued = $service->issueSession(
+			subjectRef: 'yivi:p1',
+			audience: 'client',
+			organisation: 'org-1',
+			trust: 'low',
+			roles: ['client:read'],
+			attributes: ['pbdf.gemeente.personalData.fullname' => 'Sanne de Vries', 'bsn' => '123456789']
+		);
+
+		$subject = $service->resolveFromBearer('Bearer ' . $issued['token']);
+		$this->assertSame(['pbdf.gemeente.personalData.fullname' => 'Sanne de Vries'], $subject['attributes']);
+
+		$refreshed = $service->refreshSession('Bearer ' . $issued['token']);
+		$this->assertSame(['pbdf.gemeente.personalData.fullname' => 'Sanne de Vries'], $service->resolveFromBearer('Bearer ' . $refreshed['token'])['attributes']);
+
+		$rebranched = $service->rebranchSession('Bearer ' . $refreshed['token'], '');
+		$this->assertSame(['pbdf.gemeente.personalData.fullname' => 'Sanne de Vries'], $service->resolveFromBearer('Bearer ' . $rebranched['token'])['attributes']);
+
+		$plain = $service->issueSession(subjectRef: 's2', audience: 'client', organisation: 'org-1', trust: 'substantial');
+		$this->assertSame([], $service->resolveFromBearer('Bearer ' . $plain['token'])['attributes']);
+
+	}//end testDisclosedAttributesStayWithTheSessionChain()
 
 	/**
 	 * Review B1: an organisation with more than one page of session rows,
@@ -996,11 +1140,29 @@ class PortalSessionServiceTest extends TestCase {
 		$claims = (new PortalJwtService(self::SECRET))->validate($issued['token']);
 
 		$this->assertSame(
-			['expiresAt' => (int)$claims['exp'], 'hardExpiresAt' => ((int)$claims['authTime'] + 28800), 'idleTimeout' => 900],
+			['expiresAt' => (int)$claims['exp'], 'hardExpiresAt' => ((int)$claims['authTime'] + 28800), 'idleTimeout' => 900, 'idlePreview' => false],
 			$service->sessionTimes($subject)
 		);
 
 	}//end testSessionTimesComeFromTheBearer()
+
+	/**
+	 * REQ-SIS-007: a session reports `idlePreview` only when the instance
+	 * sets `session_idle_preview_enabled` to `yes`; any other value is off.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-10-30-idle-warning-preview/tasks.md#T01
+	 */
+	public function testIdlePreviewFollowsItsOwnFlag(): void {
+		foreach (['yes' => true, 'no' => false, '1' => false, 'true' => false] as $value => $expected) {
+			$service = $this->service(idlePreview: (string) $value);
+			$issued = $service->issueSession(subjectRef: 's1', audience: 'client', organisation: 'org-1');
+			$subject = $service->resolveFromBearer('Bearer ' . $issued['token']);
+			$this->assertSame(expected: $expected, actual: $service->sessionTimes(subject: $subject)['idlePreview'], message: 'flag value ' . $value);
+		}
+
+	}//end testIdlePreviewFollowsItsOwnFlag()
 
 	/**
 	 * REQ-SIS-006: an OIDC-minted session carries the provider it came from,
@@ -1037,8 +1199,23 @@ class PortalSessionServiceTest extends TestCase {
 	 * @param array<string, mixed>& $store      Backing store, keyed by uuid.
 	 * @param AuditTrailService|null $auditor Override the audit recorder; null uses a permissive mock.
 	 * @param int $maxLifetime Override `session_max_lifetime` (seconds); the default 8h otherwise.
+	 * @param string|null $idleTimeout Override `session_idle_timeout`; null keeps its default.
+	 * @param callable|null $onCreate Called with each created session row.
+	 * @param bool $orDown Whether the store fails as if OpenRegister were down.
+	 * @param string|null $idlePreview Override `session_idle_preview_enabled`; null keeps its default.
+	 *
+	 * @return PortalSessionService
 	 */
-	private function service(?string $secret = self::SECRET, array &$store = [], ?AuditTrailService $auditor = null, int $maxLifetime = 0, ?string $idleTimeout = null, ?callable $onCreate = null, bool $orDown = false): PortalSessionService {
+	private function service(
+		?string $secret = self::SECRET,
+		array &$store = [],
+		?AuditTrailService $auditor = null,
+		int $maxLifetime = 0,
+		?string $idleTimeout = null,
+		?callable $onCreate = null,
+		bool $orDown = false,
+		?string $idlePreview = null,
+	): PortalSessionService {
 		// The signing secret lives in IAppConfig, flagged sensitive (review S4);
 		// IConfig answers the other session settings only.
 		$appConfig = $this->createMock(IAppConfig::class);
@@ -1047,7 +1224,10 @@ class PortalSessionServiceTest extends TestCase {
 		);
 		$config = $this->createMock(IConfig::class);
 		$config->method('getAppValue')->willReturnCallback(
-			function (string $appId, string $key, string $default = '') use ($secret, $maxLifetime, $idleTimeout) {
+			function (string $appId, string $key, string $default = '') use ($secret, $maxLifetime, $idleTimeout, $idlePreview) {
+				if ($key === 'session_idle_preview_enabled') {
+					return ($idlePreview ?? $default);
+				}
 				if ($key === 'session_max_lifetime' && $maxLifetime > 0) {
 					return (string)$maxLifetime;
 				}

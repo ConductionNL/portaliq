@@ -33,11 +33,16 @@
 				:t="t"
 				:send="sendOpen"
 				@submitted="afterSteps" />
+			<!-- Once sent, nothing is left to cancel: the form shows its
+			     confirmation and this closes it. -->
 			<button
 				type="button"
 				class="utrecht-button utrecht-button--subtle"
-				@click="open = null">
-				{{ translate('Cancel') }}
+				:data-testid="
+					sent ? 'attached-action-close' : 'attached-action-cancel'
+				"
+				@click="close">
+				{{ sent ? translate('Close') : translate('Cancel') }}
 			</button>
 		</div>
 
@@ -124,7 +129,7 @@ import {
  * the record's id through the row-action route with `actionApp`, so the
  * server proves the record is the resident's first.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-another-apps-actions-must-show-on-a-record-req-srp-028
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-another-apps-actions-must-show-on-a-record-req-srp-028
  */
 export default {
 	name: 'AttachedActions',
@@ -151,6 +156,7 @@ export default {
 			errors: {},
 			busy: false,
 			message: '',
+			sent: false,
 		}
 	},
 
@@ -166,7 +172,7 @@ export default {
 		 *
 		 * @return {Array<object>} The actions.
 		 *
-		 * @spec openspec/changes/attach-to-own-collection/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-carry-its-rowwhen-to-the-renderer-req-ato-002
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-carry-its-rowwhen-to-the-renderer-req-ato-002
 		 */
 		actions() {
 			return this.row ? attachedActionsOf(this.collection, this.row) : []
@@ -228,18 +234,17 @@ export default {
 		 * @return {Promise<{ok: boolean, status: number, object: object, errors: object, invalid: object}>} The result.
 		 *
 		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-create-or-endpoint-action-may-run-in-steps-with-a-review-a-draft-and-a-confirmation-req-smf-020
-		 * @spec openspec/changes/endpoint-action-forms-keep-their-field-shape/specs/site-forms/spec.md#requirement-a-refusal-of-a-form-attached-to-a-record-lands-on-its-field-req-eaf-003
+		 * @spec openspec/specs/site-forms/spec.md#requirement-a-refusal-of-a-form-attached-to-a-record-lands-on-its-field-req-eaf-003
 		 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
 		 */
 		async sendOpen(body, options = {}) {
-			const result = await runAttachedAction(
-				this.api,
-				this.collection,
-				this.row,
-				this.open,
-				body,
+			const result = await runAttachedAction(this.api, {
+				collection: this.collection,
+				row: this.row,
+				action: this.open,
+				values: body,
 				options,
-			)
+			})
 			// The status and the app's per-field refusal (`errors`,
 			// `invalid`) go to the form as an endpoint form gets them
 			// (forwardResult), so a refused answer lands on its field instead
@@ -261,6 +266,7 @@ export default {
 		 */
 		afterSteps() {
 			if (this.open && this.open.confirmation) {
+				this.sent = true
 				return
 			}
 			const success = this.open ? this.open.successMessage : ''
@@ -269,6 +275,19 @@ export default {
 					? success
 					: this.translate('Done.')
 			this.open = null
+		},
+
+		/**
+		 * Close the stepped form: before the send it is cancelled, after it the
+		 * confirmation is put away.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/attached-form-confirmation-drops-cancel/specs/site-forms/spec.md#requirement-a-sent-stepped-form-offers-no-cancel
+		 */
+		close() {
+			this.open = null
+			this.sent = false
 		},
 
 		/**
@@ -291,6 +310,7 @@ export default {
 		 */
 		choose(entry) {
 			this.open = entry
+			this.sent = false
 			this.values = Object.fromEntries(
 				formFields(entry).map((field) => [field, '']),
 			)
@@ -303,7 +323,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-another-apps-actions-must-show-on-a-record-req-srp-028
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-another-apps-actions-must-show-on-a-record-req-srp-028
 		 */
 		async submit() {
 			this.errors = fieldErrors(this.open, this.values, {}, this.t)
@@ -312,13 +332,12 @@ export default {
 				return
 			}
 			this.busy = true
-			const result = await runAttachedAction(
-				this.api,
-				this.collection,
-				this.row,
-				this.open,
-				this.values,
-			)
+			const result = await runAttachedAction(this.api, {
+				collection: this.collection,
+				row: this.row,
+				action: this.open,
+				values: this.values,
+			})
 			this.busy = false
 			// The server refuses an empty required field per field
 			// (REQ-SMF-024); those land in the summary like the form's own.

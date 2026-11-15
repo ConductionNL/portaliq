@@ -140,7 +140,7 @@
 import { move, renderAs } from '../../../shared/timedTask.js'
 
 /**
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
  */
 export default {
 	name: 'TimedTaskItem',
@@ -161,7 +161,7 @@ export default {
 	computed: {
 		/**
 		 * @return {string} The element ids' stem.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
 		 */
 		id() {
 			return `tt-${this.item.itemId}`
@@ -169,7 +169,7 @@ export default {
 
 		/**
 		 * @return {string} How the item renders.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
 		 */
 		as() {
 			return renderAs(this.item)
@@ -177,7 +177,7 @@ export default {
 
 		/**
 		 * @return {Array<string>} The current order.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
 		 */
 		order() {
 			return Array.isArray(this.value) ? this.value : []
@@ -185,7 +185,7 @@ export default {
 
 		/**
 		 * @return {Record<string, string>} The current pairs.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
 		 */
 		pairs() {
 			return this.value
@@ -200,7 +200,7 @@ export default {
 		/**
 		 * @param {string} optionId An option.
 		 * @return {string} Its label.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
 		 */
 		labelOf(optionId) {
 			return (
@@ -213,7 +213,7 @@ export default {
 		 * @param {number} index The option's place.
 		 * @param {number} step -1 up, 1 down.
 		 * @return {Array<string>} The new order.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
 		 */
 		moved(index, step) {
 			return move(this.order, index, step)

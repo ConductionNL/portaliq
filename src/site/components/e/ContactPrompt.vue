@@ -86,7 +86,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
 		 */
 		open() {
 			this.navigate('__account__')
@@ -97,7 +97,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
 		 */
 		dismiss() {
 			dismissPrompt(sessionStore())

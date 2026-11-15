@@ -21,7 +21,7 @@ globalThis.window = {
 	sessionStorage: { getItem: () => null, setItem() {}, removeItem() {} },
 	history: { replaceState() {} },
 }
-const FEE = { amount: '45.00', currency: 'EUR', description: 'Parkeren', payAction: 'create-payment' }
+const FEE = { amount: '38.50', currency: 'EUR', description: 'Parkeren', payAction: 'create-payment' }
 const { inState, t } = await import('./support/page-instance.mjs')
 const { loadSfc, renderComponent } = await import('./support/render-sfc.mjs')
 const BLOCK = await loadSfc('src/site/components/IntakeFormBlock.vue')
@@ -31,8 +31,8 @@ function render (data) {
 }
 
 test('feeAmount writes the declared amount and nothing else', () => {
-	assert.match(feeAmount(FEE, 'nl'), /^€\s?45,00$/)
-	assert.match(feeAmount(FEE, 'en'), /^€45\.00$/)
+	assert.match(feeAmount(FEE, 'nl'), /^€\s?38,50$/)
+	assert.match(feeAmount(FEE, 'en'), /^€38\.50$/)
 	assert.equal(feeAmount(null, 'nl'), '')
 	assert.equal(feeAmount({ amount: '0', currency: 'EUR' }, 'nl'), '')
 	assert.equal(feeAmount({ amount: '12.00', currency: 'euro' }, 'nl'), '')
@@ -59,7 +59,7 @@ test('payIntake sends the reference and the bearer, never an amount, and fails c
 		seen = { url, init }
 		return { ok: true, status: 200, json: async () => ({ checkoutUrl: 'https://www.mollie.com/x' }) }
 	}
-	const paid = await payIntake('/api', 'AANVRAAG-1', 'gemeente-x', 'tok', ok)
+	const paid = await payIntake({ base: '/api', portal: 'gemeente-x', token: 'tok', fetchImpl: ok }, 'AANVRAAG-1')
 
 	assert.equal(paid.ok, true)
 	assert.equal(paid.checkoutUrl, 'https://www.mollie.com/x')
@@ -67,16 +67,16 @@ test('payIntake sends the reference and the bearer, never an amount, and fails c
 	assert.deepEqual(JSON.parse(seen.init.body), { reference: 'AANVRAAG-1', portal: 'gemeente-x' })
 	assert.equal(seen.init.headers.Authorization, 'Bearer tok')
 
-	assert.equal((await payIntake('/api', 'R', '', 't', async () => ({ ok: false, status: 502, json: async () => ({ error: 'payment_unavailable' }) }))).ok, false)
-	assert.equal((await payIntake('/api', 'R', '', 't', async () => ({ ok: true, status: 200, json: async () => ({}) }))).ok, false)
-	assert.equal((await payIntake('/api', 'R', '', 't', async () => { throw new Error('down') })).ok, false)
+	assert.equal((await payIntake({ base: '/api', portal: '', token: 't', fetchImpl: async () => ({ ok: false, status: 502, json: async () => ({ error: 'payment_unavailable' }) }) }, 'R')).ok, false)
+	assert.equal((await payIntake({ base: '/api', portal: '', token: 't', fetchImpl: async () => ({ ok: true, status: 200, json: async () => ({}) }) }, 'R')).ok, false)
+	assert.equal((await payIntake({ base: '/api', portal: '', token: 't', fetchImpl: async () => { throw new Error('down') } }, 'R')).ok, false)
 })
 
 test('site: after sending, a fee shows the amount and "Pay now"', async () => {
 	const html = await render({ state: 'done', render: { fee: FEE } })
 
-	assert.match(html, /data-testid="intake-form-fee"[^>]*>\s*Deze aanvraag kost €\s?45,00\./)
-	assert.match(html, /data-testid="intake-form-pay"[^>]*>\s*Betaal €\s?45,00 nu/)
+	assert.match(html, /data-testid="intake-form-fee"[^>]*>\s*Deze aanvraag kost €\s?38,50\./)
+	assert.match(html, /data-testid="intake-form-pay"[^>]*>\s*Betaal €\s?38,50 nu/)
 })
 
 test('site: a free request shows no fee and no button', async () => {
@@ -104,7 +104,7 @@ test('site: on return the page says Paid and offers no second payment; Not paid 
 test('site: a visitor without a session is asked to sign in with the fee named, before any question', async () => {
 	const html = await render({ state: 'signIn', render: { fee: FEE } })
 
-	assert.match(html, /data-testid="intake-form-sign-in"[^>]*>\s*Log in om deze aanvraag in te dienen\. Er hoort een bedrag van €\s?45,00 bij\./)
+	assert.match(html, /data-testid="intake-form-sign-in"[^>]*>\s*<p[^>]*>\s*Voor deze aanvraag betaalt u €\s?38,50 leges\.\s*<\/p>\s*<p[^>]*>\s*Log eerst in\./)
 	assert.doesNotMatch(html, /intake-field-/)
 })
 

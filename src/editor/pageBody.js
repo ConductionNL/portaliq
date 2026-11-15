@@ -124,19 +124,29 @@ export function bodyFor(state) {
 		return { type: 'markdown', markdown: String(state.markdown || '') }
 	}
 	const source = sourceBodyOf(state.page)
-	const kept =
-		source.type === 'markdown' || !Array.isArray(source.widgets)
-			? []
-			: source.widgets
-					.filter((widget) => !isMainWidget(widget))
-					.map((widget) => JSON.parse(JSON.stringify(widget)))
 	const rest = source.type === 'markdown' ? {} : { ...source }
 	delete rest.markdown
 	return {
 		...rest,
 		type: 'grid',
-		widgets: [...kept, ...(state.widgets || []).map(storedWidget)],
+		widgets: [...keptWidgets(source), ...(state.widgets || []).map(storedWidget)],
 	}
+}
+
+/**
+ * The stored widgets outside `main`, copied untouched; none from a markdown
+ * body or one without widgets.
+ *
+ * @param {object} source The body the editor opened.
+ * @return {Array<object>} The widgets.
+ */
+function keptWidgets(source) {
+	if (source.type === 'markdown' || !Array.isArray(source.widgets)) {
+		return []
+	}
+	return source.widgets
+		.filter((widget) => !isMainWidget(widget))
+		.map((widget) => JSON.parse(JSON.stringify(widget)))
 }
 
 /**
@@ -162,9 +172,23 @@ export function draftPayload(page, body) {
  * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-designer-must-keep-a-markdown-pages-markdown-req-pie-001
  */
 export function publishPayload(page, body) {
-	const payload = { ...withoutEnvelope(page), body }
+	// Publishing is the act that makes a page public (page-public-on-purpose):
+	// the page is served without signing in from here on.
+	const payload = { ...withoutEnvelope(page), body, status: 'published' }
 	delete payload.draftBody
 	return payload
+}
+
+/**
+ * The page taken back to a draft: its route then answers as one that does
+ * not exist. Its body and its draft stay as they are.
+ *
+ * @param {object} page The page as loaded.
+ * @return {object} The payload.
+ * @spec openspec/changes/page-public-on-purpose/tasks.md#1.2
+ */
+export function draftStatusPayload(page) {
+	return { ...withoutEnvelope(page), status: 'draft' }
 }
 
 /**

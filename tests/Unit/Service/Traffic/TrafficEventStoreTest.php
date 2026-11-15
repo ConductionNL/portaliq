@@ -23,6 +23,8 @@ use OCA\Portaliq\Service\Traffic\TrafficEventStore;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\BulkSaveOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * The two write paths, and which one the store takes.
@@ -138,7 +140,10 @@ class TrafficEventStoreTest extends TestCase {
 				return [['@self' => ['uuid' => 'u-1'], 'portal' => 'p', 'date' => '2026-09-04', 'pageViews' => 3]];
 			}
 
-			public function saveObject(array $object, ?string $register = null, ?string $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saves[] = ['uuid' => $uuid, 'schema' => $schema, 'object' => $object];
 				return $object;
 			}

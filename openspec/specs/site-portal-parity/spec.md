@@ -85,7 +85,7 @@ region. At expiry the site SHALL sign the resident out and say why.
 #### Scenario: Signed out for inactivity
 - **GIVEN** a signed-in resident who does nothing past the idle window
 - **WHEN** the window ends
-- **THEN** the sign-in screen says "You were signed out because you were inactive." in the site's language
+- **THEN** the sign-in screen says "U bent uitgelogd omdat u een tijd niets deed." (board Inloggen) in the site's language
 - test: `tests/idle-session.spec.mjs`
 
 ### Requirement: Sign-out MUST end the session at the edge and at the broker (REQ-SRP-006)
@@ -504,7 +504,7 @@ selected, also when read under a mandate.
 
 ### Requirement: A resident MUST be able to act for someone else (REQ-SRP-041)
 
-The header SHALL offer "acting for" with the resident and each mandate held,
+The acting-for bar (REQ-SMO-008) SHALL offer the resident and each mandate held,
 kept for the session, applied to "My cases" and every case screen. A refusal
 SHALL NOT forget the mandates.
 
@@ -659,3 +659,34 @@ A site component that gives a link the `utrecht-button-link` classes MUST import
 - THEN "Inloggen met DigiD" in the page body draws as the theme's primary button
 - AND its colour is not the browser's rgb(0, 0, 238)
 - @e2e exclude pinned by `tests/ways-in-screens.spec.mjs` ("a button link ships its stylesheet, so a sign-in link never falls back to browser blue"); checked live on the Wilgenboom portal
+
+### Requirement: The account pages speak the page's language
+
+Every account page (my cases, access to cases, my details, my account, contacts, theme, plans) MUST translate a string the shell's translator does not know from its own strings in the page's language. The shell's answer MUST win where it knows the key. These strings MUST load with the page, not in the site entry.
+
+#### Scenario: Toegang tot zaken in Dutch
+- GIVEN a Dutch portal and a signed-in resident
+- WHEN they open "Toegang tot zaken"
+- THEN the introduction reads "Wie zaken voor u mag regelen, en voor wie u zaken regelt."
+- AND the DigiD note reads "Machtigen via DigiD Machtigen"
+- @e2e exclude pinned by `tests/account-pages-language.spec.mjs`; the live check on the rehearsal follows the merge
+
+### Requirement: A mandate is named by its party
+
+A mandate's `label` MUST be the name of the party it acts for, as the holder reads it, because the acting-for bar says "U regelt nu zaken voor {label}" and "Wissel naar" lists the party by its label (board `huisstijl/NamensBalk`). Seeded and demo mandates MUST carry such a name, not a sentence such as "Namens Henk Bakker".
+
+#### Scenario: Linda acts for her father
+- GIVEN Linda Bakker holds the example mandate for Henk Bakker
+- WHEN she chooses to act for him
+- THEN the bar reads "U regelt nu zaken voor Henk Bakker"
+- @e2e exclude pinned by `tests/account-pages-language.spec.mjs` "an example mandate is named by its party, not by a sentence"
+
+### Requirement: A date and time reads to the minute
+
+A `datetime` cell in a collection and a date on an inbox message SHALL read as the day and the time to the minute in the page's language, without seconds.
+
+#### Scenario: A meeting on the Vergaderkalender
+@e2e exclude formatting rule; covered by tests/date-times-to-the-minute.spec.mjs
+- **GIVEN** a meeting at 19:30 on 24 September 2026
+- **WHEN** a resident reads the Vergaderkalender in Dutch
+- **THEN** the date column reads "24-9-2026, 19:30"

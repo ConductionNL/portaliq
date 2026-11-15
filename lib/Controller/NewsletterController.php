@@ -19,22 +19,22 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\ActionAuthService;
-use OCA\Portaliq\Service\NewsletterPreflightService;
-use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\ActionAuthServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\NewsletterPreflightServiceInterface;
+use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
-use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
@@ -44,7 +44,7 @@ use Throwable;
 /**
  * Staff authoring for newsletters.
  *
- * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- `IUserSession` is the
  * gate-7 (no-admin-idor) authorization guard every `#[NoAdminRequired]`
@@ -52,6 +52,11 @@ use Throwable;
  * coupling (see `ContributionController`'s identical suppression).
  */
 class NewsletterController extends Controller {
+	use ObjectServiceLookup;
+	use StaffActionGuard;
+	use ObjectArrayRow;
+	use StaffRowWrite;
+
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
 	private const REGISTER = 'portaliq';
@@ -69,39 +74,20 @@ class NewsletterController extends Controller {
 	 * @param IRequest $request The request.
 	 * @param IUserSession $userSession Confirms an authenticated Nextcloud user reached this endpoint.
 	 * @param ContainerInterface $container For resolving OpenRegister services.
-	 * @param NewsletterPreflightService $preflight The recipient-count/refusal check.
+	 * @param NewsletterPreflightServiceInterface $preflight The recipient-count/refusal check.
 	 * @param LoggerInterface $logger The logger.
-	 * @param ActionAuthService $actionAuth Decides whether this staff user may send newsletters (ADR-023).
+	 * @param ActionAuthServiceInterface $actionAuth Decides whether this staff user may send newsletters (ADR-023).
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly IUserSession $userSession,
 		private readonly ContainerInterface $container,
-		private readonly NewsletterPreflightService $preflight,
+		private readonly NewsletterPreflightServiceInterface $preflight,
 		private readonly LoggerInterface $logger,
-		private readonly ActionAuthService $actionAuth,
+		private readonly ActionAuthServiceInterface $actionAuth,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
-
-	/**
-	 * The staff authorization guard every `#[NoAdminRequired]` method calls
-	 * FIRST, before any read or write (see `NewsController`'s identical
-	 * guard for the full rationale).
-	 *
-	 * @return void
-	 *
-	 * @throws OCSForbiddenException When no Nextcloud user is authenticated, or the
-	 *                               user's groups do not hold self::ACTION.
-	 */
-	private function requireAuthenticatedStaff(): void {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			throw new OCSForbiddenException('Authentication required');
-		}
-
-		$this->actionAuth->requireAction(user: $user, action: self::ACTION);
-	}//end requireAuthenticatedStaff()
 
 	/**
 	 * Compose a draft newsletter from existing news items.
@@ -112,7 +98,7 @@ class NewsletterController extends Controller {
 	 *
 	 * @return JSONResponse The created draft, or 400/500.
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsletter-composes-existing-news-items-with-an-archive
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsletter-composes-existing-news-items-with-an-archive
 	 */
 	#[NoAdminRequired]
 	public function create(string $title, array $itemRefs, array $target): JSONResponse {
@@ -122,31 +108,16 @@ class NewsletterController extends Controller {
 			return new JSONResponse(['error' => 'invalid_request'], Http::STATUS_BAD_REQUEST);
 		}
 
-		$objectService = $this->objectService();
-		if ($objectService === null) {
-			return new JSONResponse(['error' => 'server_error'], Http::STATUS_INTERNAL_SERVER_ERROR);
-		}
-
-		try {
-			$saved = $objectService->saveObject(
-				object: [
-					'title' => $title,
-					'itemRefs' => $itemRefs,
-					'target' => $target,
-					'sentAt' => null,
-					'archived' => false,
-				],
-				register: self::REGISTER,
-				schema: self::SCHEMA,
-				_rbac: false,
-				_multitenancy: false
-			);
-		} catch (Throwable $e) {
-			$this->logger->error('Portaliq: newsletter create failed', ['reason' => $e->getMessage()]);
-			return new JSONResponse(['error' => 'server_error'], Http::STATUS_INTERNAL_SERVER_ERROR);
-		}
-
-		return new JSONResponse($this->normalise(row: $saved));
+		return $this->createRow(
+			object: [
+				'title' => $title,
+				'itemRefs' => $itemRefs,
+				'target' => $target,
+				'sentAt' => null,
+				'archived' => false,
+			],
+			failure: 'Portaliq: newsletter create failed'
+		);
 	}//end create()
 
 	/**
@@ -157,7 +128,7 @@ class NewsletterController extends Controller {
 	 *
 	 * @return JSONResponse `{recipientCount}`, or 404.
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
 	 */
 	#[NoAdminRequired]
 	public function preflight(string $id): JSONResponse {
@@ -185,7 +156,7 @@ class NewsletterController extends Controller {
 	 *
 	 * @return JSONResponse The sent object, 422 `{"error":"empty-audience"}`, or 404.
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
 	 */
 	#[NoAdminRequired]
 	public function send(string $id): JSONResponse {
@@ -205,22 +176,7 @@ class NewsletterController extends Controller {
 			return new JSONResponse(['error' => 'empty-audience'], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
 
-		$writer = new PortalObjectWriter(container: $this->container, logger: $this->logger);
-		$updated = $writer->updateObject(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: '',
-			subjectRef: '',
-			organisation: '',
-			id: $id,
-			data: ['sentAt' => gmdate('c')]
-		);
-
-		if ($updated === null) {
-			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
-		}
-
-		return new JSONResponse($updated);
+		return $this->writeRow(id: $id, data: ['sentAt' => gmdate('c')]);
 	}//end send()
 
 	/**
@@ -235,18 +191,7 @@ class NewsletterController extends Controller {
 			return null;
 		}
 
-		$objectService = $this->objectService();
-		if ($objectService === null) {
-			return null;
-		}
-
-		try {
-			$entity = $objectService->find(id: $id, register: self::REGISTER, schema: self::SCHEMA, _rbac: false, _multitenancy: false);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: newsletter fetch failed', ['reason' => $e->getMessage()]);
-			return null;
-		}
-
+		$entity = $this->findEntity(id: $id);
 		if ($entity === null) {
 			return null;
 		}
@@ -260,43 +205,28 @@ class NewsletterController extends Controller {
 	}//end fetch()
 
 	/**
-	 * Normalise an OpenRegister row (array or object) to an associative array.
+	 * The stored newsletter, or null when OpenRegister is unavailable or the read failed.
 	 *
-	 * @param mixed $row The row.
+	 * @param string $id The newsletter id.
 	 *
-	 * @return array<string, mixed>
+	 * @return mixed
 	 */
-	private function normalise(mixed $row): array {
-		if (is_array($row) === true) {
-			return $row;
-		}
-
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			$data = $row->jsonSerialize();
-			if (is_array($data) === true) {
-				return $data;
-			}
-		}
-
-		return [];
-	}//end normalise()
-
-	/**
-	 * Resolve OpenRegister's ObjectService, or null when unavailable.
-	 *
-	 * @return object|null
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable $e) {
+	private function findEntity(string $id): mixed {
+		$objectService = $this->objectService();
+		if ($objectService === null) {
 			return null;
 		}
 
-		if (is_object($service) === true) {
-			return $service;
+		try {
+			return $objectService->find(
+				id: $id,
+				options: new ObjectFindOptions(register: self::REGISTER, schema: self::SCHEMA),
+				_rbac: false,
+				_multitenancy: false
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: newsletter fetch failed', ['reason' => $e->getMessage()]);
+			return null;
 		}
-
-		return null;
-	}//end objectService()
+	}//end findEntity()
 }//end class

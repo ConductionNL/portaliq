@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\BackgroundJob;
 
-use OCA\Portaliq\Service\Identity\EmailLink\EmailLinkSender;
+use OCA\Portaliq\Kernel\Contracts\EmailLinkSenderInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\QueuedJob;
 
@@ -41,11 +41,11 @@ class EmailLinkRequestJob extends QueuedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory    $time   The clock.
-	 * @param EmailLinkSender $sender Looks up and mails, or does nothing.
+	 * @param EmailLinkSenderInterface $sender Looks up and mails, or does nothing.
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly EmailLinkSender $sender,
+		private readonly EmailLinkSenderInterface $sender,
 	) {
 		parent::__construct(time: $time);
 	}//end __construct()
