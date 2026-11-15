@@ -111,7 +111,7 @@ import '@utrecht/checkbox-css/dist/index.css'
  * that they read it; only then is `{consent: true}` forwarded. Without a
  * `viewDocument` action there is nothing to read, so nothing to sign.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-document-must-be-signable-and-declinable-from-its-row-req-srp-029
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-document-must-be-signable-and-declinable-from-its-row-req-srp-029
  */
 export default {
 	name: 'SigningDialog',
@@ -197,7 +197,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-document-must-be-signable-and-declinable-from-its-row-req-srp-029
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-document-must-be-signable-and-declinable-from-its-row-req-srp-029
 		 */
 		async sign() {
 			this.busy = true
@@ -218,20 +218,9 @@ export default {
 }
 </script>
 
+<style scoped src="./rowActionDialog.css"></style>
+
 <style scoped>
-.pq-rowaction {
-	margin-block: var(--utrecht-space-block-md, 1rem);
-	padding: var(--utrecht-space-block-md, 1rem);
-	border: var(--utrecht-border-width-sm, 1px) solid
-		var(--utrecht-color-grey-60, currentcolor);
-}
-
-.pq-rowaction__buttons {
-	display: flex;
-	flex-wrap: wrap;
-	gap: var(--utrecht-space-inline-sm, 0.5rem);
-}
-
 .pq-rowaction__status:empty {
 	display: none;
 }

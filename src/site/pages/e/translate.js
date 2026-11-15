@@ -7,7 +7,7 @@
 // that hands it a translator falling back to ./strings.js: a Dutch page never
 // shows an English source string. Loaded with the page, never in the entry.
 //
-// @spec openspec/changes/acting-for-and-access-page-read-in-dutch/specs/site-portal-parity/spec.md#requirement-the-account-pages-speak-the-pages-language
+// @spec openspec/specs/site-portal-parity/spec.md#requirement-the-account-pages-speak-the-pages-language
 
 import { h } from 'vue'
 import { withBundles } from '../inbox/translate.js'
@@ -20,7 +20,7 @@ import strings from './strings.js'
  * @param {((key: string, vars?: object) => string)|null} t The shell's translator.
  * @param {string} [locale] The page language.
  * @return {(key: string, vars?: object) => string} The translator.
- * @spec openspec/changes/acting-for-and-access-page-read-in-dutch/specs/site-portal-parity/spec.md#requirement-the-account-pages-speak-the-pages-language
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-account-pages-speak-the-pages-language
  */
 export function accountPageTranslator(t, locale) {
 	return withBundles(strings, t, locale)
@@ -33,7 +33,7 @@ export function accountPageTranslator(t, locale) {
  *
  * @param {object} page The page component.
  * @return {object} The wrapping component.
- * @spec openspec/changes/acting-for-and-access-page-read-in-dutch/specs/site-portal-parity/spec.md#requirement-the-account-pages-speak-the-pages-language
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-account-pages-speak-the-pages-language
  */
 export function withAccountStrings(page) {
 	const declared = Array.isArray(page.props)

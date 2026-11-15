@@ -261,6 +261,82 @@
 				</template>
 			</section>
 
+			<section aria-labelledby="pq-plan-files" data-testid="plan-files">
+				<h2 id="pq-plan-files" class="utrecht-heading-3">
+					{{ words.files }}
+				</h2>
+				<input
+					ref="fileInput"
+					type="file"
+					class="pq-plan__file-input"
+					tabindex="-1"
+					aria-hidden="true"
+					data-testid="plan-file-input"
+					@change="upload" />
+				<p
+					v-if="!plan.files || plan.files.length === 0"
+					class="utrecht-paragraph"
+					data-testid="plan-no-files">
+					{{ words.noFiles }}
+				</p>
+				<ul v-else class="pq-plan__files">
+					<li
+						v-for="file in plan.files"
+						:key="file.series"
+						class="pq-plan__file"
+						data-testid="plan-file">
+						<button
+							type="button"
+							class="utrecht-link utrecht-link--button pq-plan__file-name"
+							data-testid="plan-file-open"
+							@click="openFile(file.current)">
+							{{ file.current.name }}
+						</button>
+						<span class="pq-plan__file-meta">
+							{{ versionLine(file.current, true, words) }} ·
+							{{ addedLine(file.current) }}
+						</span>
+						<button
+							v-if="plan.canEdit"
+							type="button"
+							class="utrecht-button utrecht-button--subtle"
+							data-testid="plan-file-new-version"
+							@click="chooseFile(file.current.id)">
+							{{ words.newVersion }}
+						</button>
+						<details v-if="file.earlier.length > 0">
+							<summary data-testid="plan-file-earlier">
+								{{ fill(words.earlier, { count: file.earlier.length }) }}
+							</summary>
+							<ul class="utrecht-unordered-list">
+								<li v-for="older in file.earlier" :key="older.id">
+									<button
+										type="button"
+										class="utrecht-link utrecht-link--button pq-plan__file-name"
+										@click="openFile(older)">
+										{{ older.name }}
+									</button>
+									{{ versionLine(older, false, words) }} ·
+									{{ addedLine(older) }}
+								</li>
+							</ul>
+						</details>
+					</li>
+				</ul>
+				<template v-if="plan.canEdit">
+					<button
+						type="button"
+						class="utrecht-button utrecht-button--secondary-action"
+						data-testid="plan-file-add"
+						@click="chooseFile('')">
+						{{ words.addFile }}
+					</button>
+					<p class="utrecht-paragraph">
+						{{ words.versionNote }}
+					</p>
+				</template>
+			</section>
+
 			<section aria-labelledby="pq-plan-people">
 				<h2 id="pq-plan-people" class="utrecht-heading-3">
 					{{ words.participants }}
@@ -372,7 +448,13 @@
 
 <script>
 import { plansApi } from '../../../shared/areaApi.js'
-import { daysLine, fill, personLine, planWords } from '../../lib/plans.js'
+import {
+	daysLine,
+	fill,
+	personLine,
+	planWords,
+	versionLine,
+} from '../../lib/plans.js'
 
 /**
  * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
@@ -405,6 +487,7 @@ export default {
 			newAction: { title: '', endDate: '', assignee: '' },
 			newPerson: '',
 			confirming: false,
+			versionOf: '',
 		}
 	},
 
@@ -454,6 +537,82 @@ export default {
 
 	methods: {
 		fill,
+		versionLine,
+
+		/**
+		 * @param {{addedBy: string, addedAt: string}} file A file version.
+		 * @return {string} "Mark Jansen, 2026-10-06".
+		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
+		 */
+		addedLine(file) {
+			return fill(this.words.addedBy, {
+				name: file.addedBy,
+				date: String(file.addedAt || '').slice(0, 10),
+			})
+		},
+
+		/**
+		 * Open the file picker for a new file, or for a new version of one.
+		 *
+		 * @param {string} previousVersion The file the new one follows, or ''.
+		 * @return {void}
+		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
+		 */
+		chooseFile(previousVersion) {
+			this.versionOf = previousVersion
+			this.$refs.fileInput?.click()
+		},
+
+		/**
+		 * Send the picked file, as a new file or a new version.
+		 *
+		 * @param {Event} event The picker's change.
+		 * @return {Promise<void>} Resolves when answered.
+		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
+		 */
+		async upload(event) {
+			const input = event?.target
+			const file = input?.files?.[0]
+			if (!file) {
+				return
+			}
+			this.problem = ''
+			this.notice = ''
+			const answer = await plansApi(this.api).addPlanFile(
+				this.planId,
+				file,
+				this.versionOf,
+			)
+			if (input) {
+				input.value = ''
+			}
+			this.versionOf = ''
+			if (!answer.ok) {
+				this.problem = this.words.failed
+				return
+			}
+			this.notice = this.words.saved
+			this.$emit('changed')
+			await this.load()
+		},
+
+		/**
+		 * Save one version of a file.
+		 *
+		 * @param {{id: string, name: string}} file The version.
+		 * @return {Promise<void>} Resolves when answered.
+		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
+		 */
+		async openFile(file) {
+			this.problem = ''
+			const answer = await plansApi(this.api).downloadPlanFile(
+				this.planId,
+				file,
+			)
+			if (!answer.ok) {
+				this.problem = this.words.failed
+			}
+		},
 
 		/**
 		 * @param {{displayName: string, isOwner: boolean, ref: string}} person A participant.
@@ -696,6 +855,38 @@ export default {
 
 .pq-plan textarea {
 	inline-size: 100%;
+}
+
+.pq-plan__file-input {
+	display: none;
+}
+
+.pq-plan__files {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.pq-plan__file {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: var(--utrecht-space-inline-sm, 0.5rem);
+	padding-block: var(--utrecht-space-block-sm, 0.5rem);
+	border-block-end: var(--utrecht-border-width-sm, 1px) solid
+		var(--utrecht-color-grey-80, currentcolor);
+}
+
+.pq-plan__file details {
+	flex-basis: 100%;
+}
+
+.pq-plan__file-name {
+	background: none;
+	border: 0;
+	padding: 0;
+	cursor: pointer;
+	text-decoration: underline;
 }
 
 .pq-plan__error {

@@ -37,6 +37,7 @@ use OCP\Security\RateLimiting\ILimiter;
 use OCP\Security\RateLimiting\IRateLimitExceededException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Service\RequestedPortal;
 
 /**
  * The request endpoint, the link page's describe call and the redeem.
@@ -66,6 +67,20 @@ class EmailLinkControllerTest extends TestCase {
 	private array $minted = [];
 
 	/**
+	 * Whether minting a session fails.
+	 *
+	 * @var bool
+	 */
+	private bool $sessionFails = false;
+
+	/**
+	 * The signed-in notices mailed, with the address and organisation.
+	 *
+	 * @var array<int, array<int, mixed>>
+	 */
+	private array $notices = [];
+
+	/**
 	 * The request's cookie, or null.
 	 */
 	private ?string $cookie = null;
@@ -88,6 +103,27 @@ class EmailLinkControllerTest extends TestCase {
 	/**
 	 * @return void
 	 */
+	/**
+	 * The portal the site names in its header.
+	 *
+	 * @var string
+	 */
+	private string $portalHeader = '';
+
+	/**
+	 * The `portal` query parameter.
+	 *
+	 * @var mixed
+	 */
+	private mixed $portalParam = 'academie';
+
+	/**
+	 * The slug the resolver was asked for.
+	 *
+	 * @var string|null
+	 */
+	private ?string $resolvedSlug = null;
+
 	protected function setUp(): void {
 		$this->seedRow('portalAccount', ['subjectRef' => 'email:tom', 'audience' => 'client', 'organisation' => 'academie', 'identityType' => 'email', 'status' => 'active', 'signInAddress' => 'tom@example.nl']);
 	}//end setUp()
@@ -106,6 +142,20 @@ class EmailLinkControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
 		$this->assertSame([], $this->queued);
 	}//end testWhileTheSwitchIsOffTheRequestIsRefused()
+
+	/**
+	 * The portal the site names in its header alone is the one asked for the link.
+	 *
+	 * @return void
+	 */
+	public function testTheSiteHeaderNamesThePortal(): void {
+		$this->portalHeader = 'academie';
+		$this->portalParam  = null;
+
+		$this->controller()->request(email: 'tom@example.nl');
+
+		$this->assertSame(expected: 'academie', actual: $this->resolvedSlug);
+	}//end testTheSiteHeaderNamesThePortal()
 
 	/**
 	 * @return void
@@ -259,6 +309,43 @@ class EmailLinkControllerTest extends TestCase {
 	}//end testAWithdrawnAccountDoesNotSignIn()
 
 	/**
+	 * A signed-in answer carries exactly the session's moments, clears the
+	 * page cookie and mails the signed-in notice.
+	 *
+	 * @return void
+	 */
+	public function testTheSignedInAnswerAndASessionFailureAreAsRecorded(): void {
+		$token = $this->issue(cookie: 'browser-a');
+		$this->cookie = 'browser-a';
+		$page     = $this->controller()->describe(token: $token)->getData();
+		$response = $this->controller()->redeem(token: $token, nonce: $page['nonce']);
+
+		$this->assertSame(['bearer' => 'bearer-1', 'expiresAt' => 1, 'hardExpiresAt' => 2, 'idleTimeout' => 900], $response->getData());
+		$this->assertSame(['audience' => 'client', 'organisation' => 'academie', 'roles' => ['client:read']], array_intersect_key($this->minted[0], ['audience' => 0, 'organisation' => 0, 'roles' => 0]));
+		$this->assertCount(1, $this->notices);
+		$this->assertSame(['academie', null], [$this->notices[0][1], $this->notices[0][2]]);
+		$this->assertStringContainsString(EmailLinkController::COOKIE, implode(' ', array_keys($response->getCookies())));
+
+	}//end testTheSignedInAnswerAndASessionFailureAreAsRecorded()
+
+	/**
+	 * A session that cannot be made answers 503 and mails nothing.
+	 *
+	 * @return void
+	 */
+	public function testASessionThatCannotBeMadeAnswersUnavailable(): void {
+		$this->sessionFails = true;
+		$token        = $this->issue(cookie: 'browser-a');
+		$this->cookie = 'browser-a';
+		$page         = $this->controller()->describe(token: $token)->getData();
+		$response     = $this->controller()->redeem(token: $token, nonce: $page['nonce']);
+
+		$this->assertSame([Http::STATUS_SERVICE_UNAVAILABLE, ['error' => 'session_unavailable']], [$response->getStatus(), $response->getData()]);
+		$this->assertCount(1, $this->minted);
+		$this->assertSame([], $this->notices);
+	}//end testASessionThatCannotBeMadeAnswersUnavailable()
+
+	/**
 	 * A link of Tom's, issued for the browser holding `$cookie`.
 	 *
 	 * @param string $cookie The browser's cookie.
@@ -290,12 +377,17 @@ class EmailLinkControllerTest extends TestCase {
 	 */
 	private function controller(array $modes = ['eherkenning', 'email-link']): EmailLinkController {
 		$request = $this->createMock(IRequest::class);
-		$request->method('getParam')->willReturn('academie');
+		$request->method('getParam')->willReturnCallback(fn (string $key): mixed => ($key === 'portal' ? $this->portalParam : 'academie'));
 		$request->method('getCookie')->willReturnCallback(fn (string $name): ?string => ($name === EmailLinkController::COOKIE ? $this->cookie : null));
-		$request->method('getHeader')->willReturnCallback(fn (string $name): string => ($name === 'Authorization' ? $this->authorization : ''));
+		$request->method('getHeader')->willReturnCallback(fn (string $name): string => match ($name) { 'Authorization' => $this->authorization, 'X-Portaliq-Portal' => $this->portalHeader, default => '' });
 
 		$portals = $this->getMockBuilder(PortalResolver::class)->disableOriginalConstructor()->onlyMethods(['resolve'])->getMock();
-		$portals->method('resolve')->willReturn(['slug' => 'academie', 'title' => 'Mijn academie', 'organisation' => 'academie', 'authentication' => ['modes' => $modes]]);
+		$portals->method('resolve')->willReturnCallback(
+			function (IRequest $request, ?string $portalSlug = null) use ($modes): array {
+				$this->resolvedSlug = $portalSlug;
+				return ['slug' => 'academie', 'title' => 'Mijn academie', 'organisation' => 'academie', 'authentication' => ['modes' => $modes]];
+			}
+		);
 
 		$config = $this->createMock(IAppConfig::class);
 		$config->method('getValueString')->willReturnCallback(fn (): string => ($this->enabled ? '1' : '0'));
@@ -344,14 +436,25 @@ class EmailLinkControllerTest extends TestCase {
 
 		$sessions = $this->getMockBuilder(PortalSessionService::class)->disableOriginalConstructor()->onlyMethods(['issueSession'])->getMock();
 		$sessions->method('issueSession')->willReturnCallback(
-			function (string $subjectRef, string $audience, string $organisation, string $trust = '', array $roles = [], string $branch = '', string $provider = ''): array {
+			function (string $subjectRef, string $audience, string $organisation, string $trust = '', array $roles = [], string $branch = '', string $provider = ''): ?array {
 				$this->minted[] = compact('subjectRef', 'audience', 'organisation', 'trust', 'roles', 'provider');
+				if ($this->sessionFails === true) {
+					return null;
+				}
+
 				return ['token' => 'bearer-' . count($this->minted), 'jti' => 'jti-' . count($this->minted), 'expiresAt' => 1, 'hardExpiresAt' => 2, 'idleTimeout' => 900];
 			}
 		);
 
 		$reader  = $this->fakeReader();
 		$address = new EmailLinkAddress();
+		$mailer  = $this->createMock(PortalIdentityMailer::class);
+		$mailer->method('sendSignedInNotice')->willReturnCallback(
+			function (string $email, string $organisation, ?array $portal, \DateTimeInterface $moment): bool {
+				$this->notices[] = [$email, $organisation, $portal];
+				return true;
+			}
+		);
 
 		return new EmailLinkController(
 			$request,
@@ -365,8 +468,9 @@ class EmailLinkControllerTest extends TestCase {
 			$random,
 			$cacheFactory,
 			$sessions,
-			$this->createMock(PortalIdentityMailer::class),
-			$this->createMock(LoggerInterface::class)
+			$mailer,
+			$this->createMock(LoggerInterface::class),
+			new RequestedPortal()
 		);
 	}//end controller()
 }//end class

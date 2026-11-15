@@ -43,3 +43,13 @@ test('the renderer prefers the search title for the tab', () => {
 	const app = readFileSync(join(ROOT, 'src', 'site', 'App.vue'), 'utf8')
 	assert.match(app, /this\.page\?\.seo\?\.title \|\| this\.page\?\.title/)
 })
+
+// portal-identity-from-the-admin 3.2 (REQ-PIA-003): the head names who made
+// the pages, with the organisation's kind, from SiteShell's `creator`, and
+// emits nothing when there is no name.
+test('the head carries DCTERMS.creator from the shell, only when there is one', () => {
+	assert.match(template, /<meta name="DCTERMS\.creator" content="<\?php p\(\(string\)\$_\['creator'\]\); \?>">/)
+	assert.match(template, /if \(\(string\)\(\$_\['creator'\] \?\? ''\) !== ''\) \{ \?>\s*<meta name="DCTERMS\.creator"/)
+	const shell = readFileSync(join(ROOT, 'lib', 'Service', 'SiteShell.php'), 'utf8')
+	assert.match(shell, /'creator'\s+=> \$this->siteCreator\(\)/)
+})

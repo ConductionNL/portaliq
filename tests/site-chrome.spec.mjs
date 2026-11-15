@@ -104,8 +104,7 @@ test('the footer carries its button and contact column only when they say someth
 })
 
 test('a sign-in route carries the card the portal wrote, and its button text', () => {
-	const routes = signInRoutes(
-		{
+	const routes = signInRoutes({
 			slug: 'vaartveld',
 			authentication: {
 				modes: ['nextcloud', 'digid'],
@@ -116,9 +115,7 @@ test('a sign-in route carries the card the portal wrote, and its button text', (
 					},
 				},
 			},
-		},
-		'/auth',
-	)
+		}, { authBase: '/auth' })
 	assert.equal(routes[0].label, 'Inloggen met je schoolaccount')
 	assert.equal(routes[0].card.title, 'Ik ben leerling')
 	assert.equal(routes[1].label, 'Inloggen met DigiD')
@@ -173,6 +170,33 @@ test('signed in, the designed header shows the person chip and a sign-out link, 
 	assert.match(html, /data-testid="site-signout"/)
 	assert.equal(count(html, 'site-account-button'), 0)
 	assert.equal(count(html, 'site-header-search'), 0)
+})
+
+test('the account pill is named "Ingelogd als ..., naar ...", and without a name shows a person icon and "Ingelogd"', async () => {
+	const props = {
+		searchBox: { enabled: false },
+		accountLabel: 'Mijn Zuiddrecht',
+		accountLink: { route: '/mijn', href: '?route=%2Fmijn', label: 'Mijn omgeving' },
+		pillLabel: 'Ingelogd als Sanne de Vries, naar Mijn Zuiddrecht',
+		signedInLabel: 'Ingelogd',
+	}
+	const named = await renderSfc('src/site/components/chrome/HeaderTools.vue', {
+		...props,
+		session: { displayName: 'Sanne de Vries' },
+	})
+	assert.match(
+		named,
+		/aria-label="Ingelogd als Sanne de Vries, naar Mijn Zuiddrecht" data-testid="site-own-area"/,
+	)
+	assert.match(named, /class="pq-header-tools__initials" aria-hidden="true">SV</)
+	const nameless = await renderSfc('src/site/components/chrome/HeaderTools.vue', {
+		...props,
+		pillLabel: 'Ingelogd, naar Mijn Zuiddrecht',
+		session: { subjectRef: 's1', displayName: '999993653' },
+	})
+	assert.match(nameless, /data-testid="site-auth-person-icon"/)
+	assert.match(nameless, /data-testid="site-auth-subject">Ingelogd</)
+	assert.doesNotMatch(nameless, /999993653/)
 })
 
 test('a portal that asks for no designed header keeps its header markup', () => {

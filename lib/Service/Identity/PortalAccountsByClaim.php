@@ -27,13 +27,16 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+ * @spec openspec/specs/portal-notifications-and-preferences/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
+use OCA\Portaliq\Event\PortalClaimScopeEvent;
+use OCA\Portaliq\Service\Tenancy\ActsForTheOrganisation;
+use OCA\Portaliq\Service\Tenancy\ClaimScopeCheck;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -41,16 +44,10 @@ use Throwable;
 /**
  * The active accounts whose app claim holds a value.
  *
- * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+ * @spec openspec/specs/portal-notifications-and-preferences/spec.md
  */
 class PortalAccountsByClaim {
-
-	/**
-	 * OpenRegister's object service, resolved by name.
-	 *
-	 * @var string
-	 */
-	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
+	use ActsForTheOrganisation;
 
 	/**
 	 * The register the accounts live in.
@@ -81,7 +78,7 @@ class PortalAccountsByClaim {
 	private const MAX_PAGES = 40;
 
 	/**
-	 * Per `app|claim`: claim value to the accounts holding it.
+	 * Per `app|claim|organisation`: claim value to the accounts holding it.
 	 *
 	 * @var array<string, array<string, array<int, array<string, mixed>>>>
 	 */
@@ -102,22 +99,31 @@ class PortalAccountsByClaim {
 	/**
 	 * The active accounts whose claim `$claim` of `$appId` is `$value`.
 	 *
-	 * @param string $appId The app whose claim it is.
-	 * @param string $claim The claim name.
-	 * @param string $value The value the record holds.
+	 * The accounts are listed acting for the record's organisation, so only
+	 * that organisation's accounts are read. A record without one lists as
+	 * before.
+	 *
+	 * @param string $appId        The app whose claim it is.
+	 * @param string $claim        The claim name.
+	 * @param string $value        The value the record holds.
+	 * @param string $organisation The record's organisation uuid, or ''.
 	 *
 	 * @return array<int, array<string, mixed>> The accounts; empty when none or OpenRegister is unavailable.
 	 *
-	 * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md
+	 * @spec openspec/changes/portal-acts-for-its-organisation/specs/portal-tenancy/spec.md#requirement-claim-addressed-recipients-are-found-in-the-records-organisation-req-pao-003
 	 */
-	public function find(string $appId, string $claim, string $value): array {
+	public function find(string $appId, string $claim, string $value, string $organisation=''): array {
 		if ($appId === '' || $claim === '' || $value === '') {
 			return [];
 		}
 
-		$key = $appId.'|'.$claim;
+		$key = $appId.'|'.$claim.'|'.$organisation;
 		if (isset($this->byValue[$key]) === false) {
-			$this->byValue[$key] = $this->index(appId: $appId, claim: $claim);
+			$this->byValue[$key] = $this->index(
+				address: ['appId' => $appId, 'claimName' => $claim],
+				objectService: $this->actingObjectServiceForUuid(organisationUuid: $organisation)
+			);
 		}
 
 		return ($this->byValue[$key][$value] ?? []);
@@ -126,13 +132,12 @@ class PortalAccountsByClaim {
 	/**
 	 * Every active account holding the app claim, by its value.
 	 *
-	 * @param string $appId The app.
-	 * @param string $claim The claim.
+	 * @param array{appId: string, claimName: string} $address       The claim's app and name.
+	 * @param object|null                             $objectService The object service to list with, or null.
 	 *
 	 * @return array<string, array<int, array<string, mixed>>>
 	 */
-	private function index(string $appId, string $claim): array {
-		$objectService = $this->objectService();
+	private function index(array $address, ?object $objectService): array {
 		if ($objectService === null) {
 			return [];
 		}
@@ -140,13 +145,7 @@ class PortalAccountsByClaim {
 		$index = [];
 		for ($page = 0; $page < self::MAX_PAGES; $page++) {
 			$rows = $this->page(objectService: $objectService, offset: ($page * self::PAGE));
-			foreach ($rows as $row) {
-				$account = $this->activeAccount(row: $row);
-				$held = ($account['claims'][$appId][$claim] ?? null);
-				if ($account !== null && is_string($held) === true && $held !== '') {
-					$index[$held][] = $account;
-				}
-			}
+			$index = $this->withAdmittedAccounts(index: $index, rows: $rows, address: $address);
 
 			if (count($rows) < self::PAGE) {
 				break;
@@ -155,6 +154,66 @@ class PortalAccountsByClaim {
 
 		return $index;
 	}//end index()
+
+	/**
+	 * The index with the active accounts of one page that hold the claim, and
+	 * whose app lets it stand, added under the claim's value.
+	 *
+	 * @param array<string, array<int, array<string, mixed>>> $index   The index so far.
+	 * @param array<int, mixed>                               $rows    One page of accounts.
+	 * @param array{appId: string, claimName: string}         $address The claim's app and name.
+	 *
+	 * @return array<string, array<int, array<string, mixed>>>
+	 */
+	private function withAdmittedAccounts(array $index, array $rows, array $address): array {
+		foreach ($rows as $row) {
+			$account = $this->activeAccount(row: $row);
+			$held = $this->admittedClaim(account: $account, address: $address);
+			if ($held !== null) {
+				$index[$held][] = $account;
+			}
+		}
+
+		return $index;
+	}//end withAdmittedAccounts()
+
+	/**
+	 * The claim value an active account holds when its app lets it stand, or null.
+	 *
+	 * @param array<string, mixed>|null               $account The active account, or null.
+	 * @param array{appId: string, claimName: string} $address The claim's app and name.
+	 *
+	 * @return string|null
+	 */
+	private function admittedClaim(array|null $account, array $address): string|null {
+		$held = ($account['claims'][$address['appId']][$address['claimName']] ?? null);
+		$admitted = ($account !== null && is_string($held) === true && $held !== '');
+		if ($admitted === true && $this->admitted(address: $address, account: $account) === true) {
+			return $held;
+		}
+
+		return null;
+	}//end admittedClaim()
+
+	/**
+	 * Whether the app that owns the claim lets it stand for the account's organisation.
+	 *
+	 * @param array{appId: string, claimName: string} $address The claim's app and name.
+	 * @param array<string, mixed>                    $account The account holding it.
+	 *
+	 * @return bool
+	 */
+	private function admitted(array $address, array $account): bool {
+		$event = new PortalClaimScopeEvent(
+			claim: $address,
+			holder: [
+				'value' => (string)$account['claims'][$address['appId']][$address['claimName']],
+				'organisation' => (string)($account['organisation'] ?? ''),
+			]
+		);
+
+		return (new ClaimScopeCheck(container: $this->container, logger: $this->logger))->admits(event: $event);
+	}//end admitted()
 
 	/**
 	 * One page of active accounts.
@@ -210,23 +269,4 @@ class PortalAccountsByClaim {
 
 		return $row;
 	}//end activeAccount()
-
-	/**
-	 * OpenRegister's ObjectService, or null when unavailable.
-	 *
-	 * @return object|null
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end objectService()
 }//end class

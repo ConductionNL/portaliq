@@ -6,7 +6,7 @@
  * English source strings the React portal used, now in src/shared/i18n, so a key
  * the shell's translator already knows reads the same here.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
  */
 export default {
 	nl: {
@@ -81,6 +81,8 @@ export default {
 		'Choose a file or photo': 'Bestand of foto kiezen',
 		'Remove {file}': '{file} verwijderen',
 		Today: 'Vandaag',
+		Tomorrow: 'Morgen',
+		'the whole day': 'de hele dag',
 		'Another day': 'Een andere dag',
 		'Step {n} of {m}: {title}': 'Stap {n} van {m}: {title}',
 		'Step {n} of {m}': 'Stap {n} van {m}',
@@ -189,6 +191,8 @@ export default {
 		'Choose a file or photo': 'Choose a file or photo',
 		'Remove {file}': 'Remove {file}',
 		Today: 'Today',
+		Tomorrow: 'Tomorrow',
+		'the whole day': 'the whole day',
 		'Another day': 'Another day',
 		'Step {n} of {m}: {title}': 'Step {n} of {m}: {title}',
 		'Step {n} of {m}': 'Step {n} of {m}',

@@ -52,7 +52,7 @@ export function headerMenusOf(menus) {
  * @param {string} link The authored link.
  * @return {boolean} True for a path on this site.
  *
- * @spec openspec/changes/site-links-follow-the-site-address/specs/site-navigation/spec.md#requirement-a-menu-link-to-a-site-page-carries-the-sites-own-address
+ * @spec openspec/specs/site-navigation/spec.md#requirement-a-menu-link-to-a-site-page-carries-the-sites-own-address
  */
 export function isSiteRoute(link) {
 	return /^\/(?!\/)/.test(String(link || ''))
@@ -67,7 +67,7 @@ export function isSiteRoute(link) {
  * @param {function(string): string|null} addressOf A route to the address that opens it.
  * @return {string} The href.
  *
- * @spec openspec/changes/site-links-follow-the-site-address/specs/site-navigation/spec.md#requirement-a-menu-link-to-a-site-page-carries-the-sites-own-address
+ * @spec openspec/specs/site-navigation/spec.md#requirement-a-menu-link-to-a-site-page-carries-the-sites-own-address
  * @spec openspec/changes/hero-links-follow-the-site-address/specs/site-navigation/spec.md#requirement-a-block-link-to-a-site-page-carries-the-sites-own-address
  */
 export function linkAddress(link, addressOf) {
@@ -86,7 +86,7 @@ export function linkAddress(link, addressOf) {
  * @param {function(string): string} addressOf A route to the address that opens it.
  * @return {Array} New menus; the input is not changed.
  *
- * @spec openspec/changes/site-links-follow-the-site-address/specs/site-navigation/spec.md#requirement-a-menu-link-to-a-site-page-carries-the-sites-own-address
+ * @spec openspec/specs/site-navigation/spec.md#requirement-a-menu-link-to-a-site-page-carries-the-sites-own-address
  */
 export function menusWithAddresses(menus, addressOf) {
 	const withAddress = (item) => {
@@ -155,27 +155,53 @@ export function footerMenusOf(menus) {
  *   `cta` is `{label, href}` or null, `contact` is `{title, lines}` or null.
  *
  * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-footer-must-be-a-block-whose-bands-are-styled-by-role-req-ptb-005
- * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
+ * @spec openspec/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
  */
 export function footerContentOf(site) {
 	const footer = (site && site.footer) || {}
-	const list = (value) => (Array.isArray(value) ? value : [])
 
 	return {
 		description: String(footer.description || ''),
 		colophon: String(footer.colophon || ''),
-		socials: list(footer.socials),
-		legalLinks: list(footer.legalLinks),
-		badges: list(footer.badges),
-		cta: footer.cta && footer.cta.label && footer.cta.href ? footer.cta : null,
-		contact:
-			footer.contact && list(footer.contact.lines).length > 0
-				? {
-						title: String(footer.contact.title || ''),
-						lines: footer.contact.lines,
-					}
-				: null,
+		socials: listOf(footer.socials),
+		legalLinks: listOf(footer.legalLinks),
+		badges: listOf(footer.badges),
+		cta: footerCta(footer.cta),
+		contact: footerContact(footer.contact),
 	}
+}
+
+/**
+ * A value when it is a list, else an empty list.
+ *
+ * @param {unknown} value The value.
+ * @return {Array} The list.
+ */
+function listOf(value) {
+	return Array.isArray(value) ? value : []
+}
+
+/**
+ * The footer's call to action, only with both its label and its address.
+ *
+ * @param {object|undefined} cta The authored call to action.
+ * @return {object|null} It, or null.
+ */
+function footerCta(cta) {
+	return cta && cta.label && cta.href ? cta : null
+}
+
+/**
+ * The footer's contact block, only with at least one line.
+ *
+ * @param {object|undefined} contact The authored contact block.
+ * @return {{title: string, lines: Array}|null} The block, or null.
+ */
+function footerContact(contact) {
+	if (!contact || listOf(contact.lines).length === 0) {
+		return null
+	}
+	return { title: String(contact.title || ''), lines: contact.lines }
 }
 
 /**
@@ -235,7 +261,7 @@ export function registerRouteOf(site) {
  * @param {object} site The public site record.
  * @return {{enabled: boolean, label: string, placeholder: string, route: string}} The box.
  *
- * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
+ * @spec openspec/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
  */
 export function headerSearchOf(site) {
 	const search = (site && site.headerSearch) || {}
@@ -264,18 +290,42 @@ export function headerSearchOf(site) {
  */
 export function menuLabelFor(menus, route) {
 	const wanted = String(route || '').replace(/\/+$/, '') || '/'
-	const walk = (items) => {
-		for (const item of items || []) {
-			const link = String(item?.link || '').replace(/\/+$/, '') || '/'
-			if (link === wanted && String(item?.name || '').trim() !== '') {
-				return String(item.name).trim()
-			}
-			const below = walk(item?.children || item?.items)
-			if (below !== '') {
-				return below
-			}
+	return menuItemLabel(
+		headerMenusOf(menus).flatMap((menu) => menu.items || []),
+		wanted,
+	)
+}
+
+/**
+ * The name of the first menu item, at any depth, that links to a route.
+ *
+ * @param {Array<object>|undefined} items The menu items.
+ * @param {string} wanted The route, without a trailing slash.
+ * @return {string} The name, or ''.
+ */
+function menuItemLabel(items, wanted) {
+	for (const item of items || []) {
+		const label = ownLabel(item, wanted)
+		if (label !== '') {
+			return label
 		}
-		return ''
+		const below = menuItemLabel(item?.children || item?.items, wanted)
+		if (below !== '') {
+			return below
+		}
 	}
-	return walk(headerMenusOf(menus).flatMap((menu) => menu.items || []))
+	return ''
+}
+
+/**
+ * A menu item's own name when it links to the route and has one, else ''.
+ *
+ * @param {object|null} item The menu item.
+ * @param {string} wanted The route, without a trailing slash.
+ * @return {string} The name, or ''.
+ */
+function ownLabel(item, wanted) {
+	const link = String(item?.link || '').replace(/\/+$/, '') || '/'
+	const name = String(item?.name || '').trim()
+	return link === wanted ? name : ''
 }

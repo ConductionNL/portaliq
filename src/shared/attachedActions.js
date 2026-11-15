@@ -9,7 +9,7 @@
  * goes through the row-action route with `actionApp`, which proves the row
  * through the collection's own scope before the action's app hears of it.
  *
- * @spec openspec/changes/woo-journey-entry-points/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
  */
 
 import { outcomeKey } from './rowAction.js'
@@ -23,7 +23,7 @@ import { outcomeKey } from './rowAction.js'
  * @param {object} entry The attached action.
  * @param {object} row   The row on screen.
  * @return {boolean}
- * @spec openspec/changes/attach-to-own-collection/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-carry-its-rowwhen-to-the-renderer-req-ato-002
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-carry-its-rowwhen-to-the-renderer-req-ato-002
  */
 function appliesTo(entry, row) {
 	if (!entry.rowWhen) {
@@ -43,7 +43,7 @@ function appliesTo(entry, row) {
  * @param {object} collection The manifest collection.
  * @param {object} [row]      The row on screen; without it nothing is left out.
  * @return {Array<object>} Entries with string `app` and `id`.
- * @spec openspec/changes/attach-to-own-collection/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-carry-its-rowwhen-to-the-renderer-req-ato-002
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-carry-its-rowwhen-to-the-renderer-req-ato-002
  */
 export function attachedActionsOf(collection, row) {
 	const listed =
@@ -67,7 +67,7 @@ export function attachedActionsOf(collection, row) {
  * @param {object} action The attached action.
  * @param {object} values What the resident typed.
  * @return {object} The body.
- * @spec openspec/changes/endpoint-action-forms-keep-their-field-shape/specs/site-forms/spec.md#requirement-a-form-attached-to-a-record-asks-and-sends-what-its-action-declares-req-eaf-002
+ * @spec openspec/specs/site-forms/spec.md#requirement-a-form-attached-to-a-record-asks-and-sends-what-its-action-declares-req-eaf-002
  */
 export function attachedBody(action, values) {
 	const body = {}
@@ -102,22 +102,16 @@ export function fieldLabel(action, field) {
 /**
  * Forward the attached action for one row.
  *
- * @param {object} api        The portal api.
- * @param {object} collection The target collection.
- * @param {object} row        The row on screen.
- * @param {object} action     The attached action.
- * @param {object} values     What the resident typed.
- * @param {{submissionKey?: string}} [options] The form's submission key (REQ-AFS-001).
+ * @param {object} api The portal api.
+ * @param {object} run What to run.
+ * @param {object} run.collection The target collection.
+ * @param {object} run.row The row on screen.
+ * @param {object} run.action The attached action.
+ * @param {object} run.values What the resident typed.
+ * @param {{submissionKey?: string}} [run.options] The form's submission key (REQ-AFS-001).
  * @return {Promise<object>} `{ok, body, messageKey}`.
  */
-export async function runAttachedAction(
-	api,
-	collection,
-	row,
-	action,
-	values,
-	options = {},
-) {
+export async function runAttachedAction(api, { collection, row, action, values, options = {} }) {
 	const rowId = row && (row.id || row['@self']?.id)
 	if (!rowId || !api) {
 		return {

@@ -209,7 +209,7 @@ export default {
 	 *
 	 * @return {Promise<void>} Resolves when read.
 	 *
-	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-their-registered-details-req-srp-038
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-their-registered-details-req-srp-038
 	 */
 	async mounted() {
 		if (this.initialDetails !== null) {

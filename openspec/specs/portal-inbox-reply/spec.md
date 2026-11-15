@@ -12,12 +12,12 @@ A `kind: inbox` collection MAY declare `reply` naming one of the same contributi
 #### Scenario: A message the case app lets you answer
 - **GIVEN** a case app whose inbox collection declares its reply action
 - **WHEN** a resident opens their inbox
-- **THEN** each message from that collection shows a "Reply" button
+- **THEN** each message from that collection shows a "Reageren" button (board BerichtDetail)
 
 #### Scenario: A receipt cannot be answered
 - **GIVEN** a receipt message in portaliq's own inbox collection, which declares no reply
 - **WHEN** the resident opens their inbox
-- **THEN** the receipt shows no "Reply" button
+- **THEN** the receipt shows no "Reageren" button
 
 ### Requirement: The reply is built on the server from the resident's own message (REQ-IRA-002)
 
@@ -45,7 +45,7 @@ The reply form SHALL offer the reply action's declared file fields, honouring th
 #### Scenario: A resident sends a photo with the answer
 - **GIVEN** a reply action whose `attachments` field is a declared file field accepting images
 - **WHEN** the resident writes an answer, adds a photo and presses "Send"
-- **THEN** the reply is written, the photo is attached to it, and the form says "Your reply has been sent."
+- **THEN** the reply is written, the photo is attached to it, and the form says "Uw reactie is verstuurd."
 
 #### Scenario: A file fails after the text arrived
 - **GIVEN** a reply with two files, the second of which the server refuses

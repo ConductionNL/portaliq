@@ -7,17 +7,17 @@ A resident downloads their own information from the portal as a PDF: a list such
 
 ### Requirement: A collection offers a PDF only when its app opts in (REQ-OPX-001)
 
-A collection MAY declare `exportPdf: true`. The portal SHALL show "Download as PDF" above that collection's list and on the detail of one of its rows only when the collection declares it and the OpenRegister renderer is available. A collection that does not declare it SHALL offer no export, and its export routes SHALL answer 404.
+A collection MAY declare `exportPdf: true`. The portal SHALL show "Downloaden als pdf" (board Zaak) above that collection's list and on the detail of one of its rows only when the collection declares it and the OpenRegister renderer is available. A collection that does not declare it SHALL offer no export, and its export routes SHALL answer 404.
 
 #### Scenario: A resident downloads their statements
 - **GIVEN** a statements collection that declares `exportPdf: true`
-- **WHEN** a resident opens their statements page and presses "Download as PDF"
+- **WHEN** a resident opens their statements page and presses "Downloaden als pdf"
 - **THEN** a PDF of the list they see downloads
 
 #### Scenario: A collection without the flag offers nothing
 - **GIVEN** a collection that does not declare `exportPdf`
 - **WHEN** a resident opens it
-- **THEN** no "Download as PDF" button is shown, and `GET .../export.pdf` answers 404
+- **THEN** no "Downloaden als pdf" button is shown, and `GET .../export.pdf` answers 404
 
 ### Requirement: The export reads exactly what the screen reads (REQ-OPX-002)
 

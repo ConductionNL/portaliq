@@ -8,7 +8,7 @@
 // Usage:
 //   node --test tests/site-service-status.spec.mjs
 //
-// @spec openspec/changes/service-status-page/specs/example-site/spec.md
+// @spec openspec/specs/example-site/spec.md
 
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'

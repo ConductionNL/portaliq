@@ -1,7 +1,9 @@
 # source-license-headers Specification
 
 ## Purpose
-TBD - created by archiving change complete-spdx-headers. Update Purpose after archive.
+
+Every PHP source file under lib/ carries the EUPL-1.2 SPDX header so the licence of the code is machine-readable and complete. This spec fixes the header and its enforcement.
+
 ## Requirements
 
 @e2e exclude source-header presence is a STATIC property of the checkout, not a
