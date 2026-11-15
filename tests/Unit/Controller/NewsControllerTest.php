@@ -33,6 +33,8 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Staff authoring: an invalid target is refused before any write, a valid
@@ -99,7 +101,10 @@ class NewsControllerTest extends TestCase {
 			/**
 			 * @param array<string,mixed> $object
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved = $object;
 				return array_merge($object, ['id' => 'n1']);
 			}//end saveObject()
@@ -116,7 +121,9 @@ class NewsControllerTest extends TestCase {
 
 	public function testPublishReturns404ForAMissingId(): void {
 		$objectService = new class {
-			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return null;
 			}//end find()
 		};
@@ -134,14 +141,19 @@ class NewsControllerTest extends TestCase {
 			 */
 			public array $saved = [];
 
-			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return ['id' => $id, 'title' => 'X', 'status' => 'draft'];
 			}//end find()
 
 			/**
 			 * @param array<string,mixed> $object
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved = $object;
 				return $object;
 			}//end saveObject()
@@ -173,14 +185,19 @@ class NewsControllerTest extends TestCase {
 			 */
 			public array $row = ['title' => 'X', 'status' => 'draft', 'publishedAt' => null];
 
-			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return ['id' => $id] + $this->row;
 			}//end find()
 
 			/**
 			 * @param array<string,mixed> $object
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved = $object;
 				$this->row = $object;
 				return $object;
@@ -203,7 +220,9 @@ class NewsControllerTest extends TestCase {
 
 	public function testUnpublishReturns404ForAMissingId(): void {
 		$objectService = new class {
-			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return null;
 			}//end find()
 		};
@@ -221,14 +240,19 @@ class NewsControllerTest extends TestCase {
 			 */
 			public array $saved = [];
 
-			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return ['id' => $id, 'title' => 'X', 'status' => 'published'];
 			}//end find()
 
 			/**
 			 * @param array<string,mixed> $object
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved = $object;
 				return $object;
 			}//end saveObject()
@@ -254,14 +278,19 @@ class NewsControllerTest extends TestCase {
 			 */
 			public array $saved = [];
 
-			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return ['id' => $id, 'title' => 'Old', 'body' => 'Old body', 'target' => ['schoolRef' => 's'], 'status' => 'published', 'authorRef' => 'po-leerkracht-09'];
 			}//end find()
 
 			/**
 			 * @param array<string,mixed> $object
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved = $object;
 				return $object;
 			}//end saveObject()
@@ -298,7 +327,10 @@ class NewsControllerTest extends TestCase {
 			/**
 			 * @param array<string,mixed> $object
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved = $object;
 				return $object;
 			}//end saveObject()
@@ -332,14 +364,19 @@ class NewsControllerTest extends TestCase {
 			 */
 			public array $saved = [];
 
-			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return ['id' => $id, 'title' => 'Old', 'body' => 'B', 'target' => ['schoolRef' => 's'], 'status' => 'published', 'public' => true, 'portal' => 'wilgenboom'];
 			}//end find()
 
 			/**
 			 * @param array<string,mixed> $object
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved = $object;
 				return $object;
 			}//end saveObject()
@@ -432,14 +469,19 @@ class NewsControllerTest extends TestCase {
 			 */
 			public array $saved = [];
 
-			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return ['id' => $id, 'title' => 'Old', 'body' => 'B', 'target' => ['schoolRef' => 's'], 'status' => 'published', 'eventRef' => 'ev1'];
 			}//end find()
 
 			/**
 			 * @param array<string,mixed> $object
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved = $object;
 				return array_merge($object, ['id' => 'n1']);
 			}//end saveObject()
