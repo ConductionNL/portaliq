@@ -23,13 +23,22 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Contribution\PortalContributionFilter;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\ContentController;
+use OCA\Portaliq\Service\Assistant\PublicAssistantChannel;
+use OCA\Portaliq\Service\Cms\MediaReferences;
 use OCA\Portaliq\Service\Cms\PortalShell;
 use OCA\Portaliq\Service\CmsReader;
+use OCA\Portaliq\Service\Identity\NextcloudRegistrationDoor;
 use OCA\Portaliq\Service\PortalNoticeReader;
+use OCA\Portaliq\Service\PortalOrganisationConfigService;
+use OCA\Portaliq\Service\SiteOrganisation;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\PublishedPortals;
 use OCA\Portaliq\Service\TrafficConfigResolver;
+use OCP\App\IAppManager;
 use OCP\AppFramework\Http;
+use OCP\IAppConfig;
+use OCP\IGroupManager;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 use OCP\IUser;
@@ -37,6 +46,7 @@ use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Service\Assistant\PublicSourceScope;
 
 /**
  * The public content API's boundary behaviour.
@@ -91,6 +101,27 @@ class ContentControllerTest extends TestCase {
 	private ?IUserSession $userSession = null;
 
 	/**
+	 * The registration door, or none (nextcloud-account-registration).
+	 *
+	 * @var NextcloudRegistrationDoor|null
+	 */
+	private ?NextcloudRegistrationDoor $registrationDoor = null;
+
+	/**
+	 * Names the portal's organisation, or none.
+	 *
+	 * @var PortalOrganisationConfigService|null
+	 */
+	private ?PortalOrganisationConfigService $organisations = null;
+
+	/**
+	 * Resolves the portal's media:<id> images, or none.
+	 *
+	 * @var MediaReferences|null
+	 */
+	private ?MediaReferences $media = null;
+
+	/**
 	 * The incoming request.
 	 *
 	 * @var IRequest&MockObject
@@ -124,7 +155,7 @@ class ContentControllerTest extends TestCase {
 	 *
 	 * @return ContentController The controller.
 	 */
-	private function controller(string $authorization = ''): ContentController {
+	private function controller(string $authorization = '', ?PublicAssistantChannel $assistant = null): ContentController {
 		$this->request->method('getHeader')->willReturnCallback(
 			static function (string $name) use ($authorization): string {
 				if ($name === 'Authorization') {
@@ -151,7 +182,11 @@ class ContentControllerTest extends TestCase {
 			traffic: new TrafficConfigResolver(),
 			urlGenerator: $this->urlGenerator(),
 			notices: ($this->notices ?? $this->createMock(PortalNoticeReader::class)),
-			userSession: ($this->userSession ?? $this->createMock(IUserSession::class))
+			userSession: ($this->userSession ?? $this->createMock(IUserSession::class)),
+			assistant: $assistant,
+			registrationDoor: $this->registrationDoor,
+			siteOrganisation: ($this->organisations === null) ? null : new SiteOrganisation(organisations: $this->organisations), publicSourceScope: new PublicSourceScope(),
+			media: $this->media
 		);
 	}//end controller()
 
@@ -162,7 +197,14 @@ class ContentControllerTest extends TestCase {
 	 */
 	private function urlGenerator(): IURLGenerator {
 		$generator = $this->createMock(IURLGenerator::class);
-		$generator->method('linkToRouteAbsolute')->willReturn('https://portaal.example/index.php/apps/portaliq/api/traffic');
+		$generator->method('linkToRouteAbsolute')->willReturnCallback(
+			static fn (string $route, array $params = []): string => ($route === 'core.login.showLoginForm'
+				? 'https://portaal.example/index.php/login?redirect_url=' . rawurlencode((string)$params['redirect_url'])
+				: 'https://portaal.example/index.php/apps/portaliq/api/traffic')
+		);
+		$generator->method('linkToRoute')->willReturnCallback(
+			static fn (string $route, array $params = []): string => '/index.php/apps/portaliq/portal/api/session/nextcloud?portal=' . $params['portal']
+		);
 
 		return $generator;
 	}//end urlGenerator()
@@ -243,6 +285,122 @@ class ContentControllerTest extends TestCase {
 
 		$this->assertSame([$notice], $data['notices']);
 	}//end testSiteCarriesActiveNotices()
+
+
+	/**
+	 * woo-search-names-the-organisation: the site names its organisation by
+	 * id and name, so the search's organisation filter reads a name.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-search-names-the-organisation/specs/portal-federated-search/spec.md#requirement-the-organisation-filter-reads-the-organisations-name
+	 */
+	public function testSiteNamesItsOrganisation(): void {
+		$this->resolver->method('resolve')->willReturn([...$this->portal(), 'organisation' => 'zuiddrecht']);
+		$this->organisations = $this->createMock(PortalOrganisationConfigService::class);
+		$this->organisations->expects($this->once())->method('resolve')->with('zuiddrecht')
+			->willReturn(['organisationId' => 'bacda7a4', 'organisationName' => 'Gemeente Zuiddrecht']);
+
+		$data = $this->controller()->site()->getData();
+
+		$this->assertSame(['id' => 'bacda7a4', 'name' => 'Gemeente Zuiddrecht'], $data['organisation']);
+	}//end testSiteNamesItsOrganisation()
+
+
+	/**
+	 * portal-identity-from-the-admin REQ-PIA-001/002: the site sends the
+	 * portal's logo and hero image as public addresses, never as the
+	 * media:<id> reference the site could not load.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+	 */
+	public function testSiteSendsThePortalsImagesAsAddresses(): void {
+		$portal = $this->portal();
+		$this->resolver->method('resolve')->willReturn([...$portal, 'logo' => 'media:logo', 'heroImage' => 'media:hero']);
+		$this->media = $this->createMock(MediaReferences::class);
+		$this->media->expects($this->exactly(2))->method('image')->willReturnCallback(
+			static fn (string $portal, string $value): string => ($value === 'media:hero' ? 'https://x/media/hero?portal=' . $portal : 'https://x/media/logo?portal=' . $portal)
+		);
+
+		$data = $this->controller()->site()->getData();
+
+		$this->assertSame('https://x/media/logo?portal=' . $portal['slug'], $data['logo']);
+		$this->assertSame('https://x/media/hero?portal=' . $portal['slug'], $data['heroImage']);
+	}//end testSiteSendsThePortalsImagesAsAddresses()
+
+
+	/**
+	 * An address logo is sent as stored; a reference that cannot be resolved is sent as nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+	 */
+	public function testSiteNeverSendsAnUnresolvedReference(): void {
+		$this->resolver->method('resolve')->willReturn([...$this->portal(), 'logo' => '/apps/portaliq/logo/zuid.svg', 'heroImage' => 'media:hero']);
+
+		$data = $this->controller()->site()->getData();
+
+		$this->assertSame('/apps/portaliq/logo/zuid.svg', $data['logo']);
+		$this->assertSame('', $data['heroImage']);
+	}//end testSiteNeverSendsAnUnresolvedReference()
+
+
+	/**
+	 * The site names the organisation's kind from the label stored with the
+	 * portal's TOOI organisation type, and gets '' without one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+	 */
+	public function testSiteSendsTheOrganisationTypeLabel(): void {
+		$this->resolver->method('resolve')->willReturnOnConsecutiveCalls(
+			[...$this->portal(), 'organisationType' => 'https://identifier.overheid.nl/tooi/def/ont/Waterschap', 'organisationTypeLabel' => 'waterschap'],
+			$this->portal()
+		);
+
+		$this->assertSame('waterschap', $this->controller()->site()->getData()['organisationTypeLabel']);
+		$this->assertSame('', $this->controller()->site()->getData()['organisationTypeLabel']);
+	}//end testSiteSendsTheOrganisationTypeLabel()
+
+
+	/**
+	 * Without a way to name it, the site names no organisation.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-search-names-the-organisation/specs/portal-federated-search/spec.md#requirement-the-organisation-filter-reads-the-organisations-name
+	 */
+	public function testSiteWithoutAnOrganisationNamesNone(): void {
+		$this->resolver->method('resolve')->willReturn([...$this->portal(), 'organisation' => 'onbekend']);
+		$this->organisations = $this->createMock(PortalOrganisationConfigService::class);
+		// An unknown slug resolves to the neutral default, which has no id.
+		$this->organisations->method('resolve')->willReturn(['organisationId' => '', 'organisationName' => 'Portaliq']);
+
+		$this->assertNull($this->controller()->site()->getData()['organisation']);
+
+		$this->organisations = null;
+		$this->assertNull($this->controller()->site()->getData()['organisation']);
+	}//end testSiteWithoutAnOrganisationNamesNone()
+
+
+	/**
+	 * A portal that names no organisation asks for none.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-search-names-the-organisation/specs/portal-federated-search/spec.md#requirement-the-organisation-filter-reads-the-organisations-name
+	 */
+	public function testAPortalWithoutAnOrganisationSlugAsksForNone(): void {
+		$this->resolver->method('resolve')->willReturn($this->portal());
+		$this->organisations = $this->createMock(PortalOrganisationConfigService::class);
+		$this->organisations->expects($this->never())->method('resolve');
+
+		$this->assertNull($this->controller()->site()->getData()['organisation']);
+	}//end testAPortalWithoutAnOrganisationSlugAsksForNone()
 
 
 	/**
@@ -476,7 +634,7 @@ class ContentControllerTest extends TestCase {
 		$this->resolver->method('resolve')->willReturn($this->portal());
 		$this->reader->expects($this->once())
 			->method('page')
-			->with('open-tilburg', '/over', 'en', 'anonymous', 'nl')
+			->with('open-tilburg', '/over', 'en', 'anonymous', '', 'nl')
 			->willReturn(['route' => '/over']);
 
 		$this->controller()->page(route: 'over', portal: 'open-tilburg', locale: 'en');
@@ -838,4 +996,169 @@ class ContentControllerTest extends TestCase {
 
 		$this->assertFalse($data['traffic']['enabled']);
 	}//end testAnUnconfiguredPortalIsServedAsNotMeasuring()
+
+	/**
+	 * REQ-PFS-CONTENT-001: the search reads inside documents unless the
+	 * portal switched it off, and the site record says which.
+	 *
+	 * @return void
+	 */
+	public function testTheSiteRecordSaysWhetherSearchReadsInsideDocuments(): void {
+		$this->resolver->method('resolve')->willReturn($this->portal());
+		$this->assertTrue($this->controller()->site()->getData()['searchInsideDocuments'], 'on by default');
+	}//end testTheSiteRecordSaysWhetherSearchReadsInsideDocuments()
+
+
+	/**
+	 * The assistant widget is offered only when the portal enabled it AND hermiq's
+	 * entry point answers (search-assistant-from-public-content REQ-SAP-006).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/search-assistant-from-public-content/tasks.md#t05
+	 */
+	public function testTheSiteRecordOffersTheAssistantOnlyWhenEnabledAndAvailable(): void {
+		$portal                = $this->portal();
+		$portal['assistant']   = ['enabled' => true];
+		$this->resolver->method('resolve')->willReturn($portal);
+		$available = $this->createMock(PublicAssistantChannel::class);
+		$available->method('isAvailable')->willReturn(true);
+		$missing = $this->createMock(PublicAssistantChannel::class);
+		$missing->method('isAvailable')->willReturn(false);
+
+		$this->assertTrue($this->controller(assistant: $available)->site()->getData()['assistantEnabled']);
+		$this->assertFalse($this->controller(assistant: $missing)->site()->getData()['assistantEnabled'], 'hermiq is not there');
+		$this->assertFalse($this->controller()->site()->getData()['assistantEnabled'], 'no channel at all');
+	}//end testTheSiteRecordOffersTheAssistantOnlyWhenEnabledAndAvailable()
+
+
+	/**
+	 * A portal that did not enable it is served false, even with hermiq there.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/search-assistant-from-public-content/tasks.md#t05
+	 */
+	public function testAPortalThatDidNotEnableTheAssistantGetsNone(): void {
+		$this->resolver->method('resolve')->willReturn($this->portal());
+		$available = $this->createMock(PublicAssistantChannel::class);
+		$available->method('isAvailable')->willReturn(true);
+
+		$this->assertFalse($this->controller(assistant: $available)->site()->getData()['assistantEnabled']);
+	}//end testAPortalThatDidNotEnableTheAssistantGetsNone()
+
+
+	/**
+	 * A portal that set it to false is served false.
+	 *
+	 * @return void
+	 */
+	public function testAPortalCanSwitchSearchInsideDocumentsOff(): void {
+		$portal = $this->portal();
+		$portal['searchInsideDocuments'] = false;
+		$this->resolver->method('resolve')->willReturn($portal);
+
+		$this->assertFalse($this->controller()->site()->getData()['searchInsideDocuments']);
+	}//end testAPortalCanSwitchSearchInsideDocumentsOff()
+
+	/**
+	 * REQ-PWR-001: a portal offering the account route is served the address of
+	 * Nextcloud's login page with a way back; one that does not is served none.
+	 *
+	 * @return void
+	 */
+	public function testALostPasswordAddressIsServedOnlyWithTheAccountRoute(): void {
+		$withAccount = $this->portal();
+		$withAccount['authentication'] = ['modes' => ['nextcloud']];
+		$this->resolver->method('resolve')->willReturn($withAccount);
+		$url = $this->controller()->site()->getData()['lostPasswordUrl'];
+		$this->assertStringStartsWith('https://portaal.example/index.php/login?redirect_url=', $url);
+		$this->assertStringContainsString(rawurlencode('session/nextcloud?portal=open-tilburg'), $url);
+	}//end testALostPasswordAddressIsServedOnlyWithTheAccountRoute()
+
+
+	/**
+	 * A DigiD-only portal gets no address.
+	 *
+	 * @return void
+	 */
+	public function testADigidOnlyPortalIsServedNoLostPasswordAddress(): void {
+		$digid = $this->portal();
+		$digid['authentication'] = ['modes' => ['digid']];
+		$this->resolver->method('resolve')->willReturn($digid);
+
+		$this->assertSame('', $this->controller()->site()->getData()['lostPasswordUrl']);
+	}//end testADigidOnlyPortalIsServedNoLostPasswordAddress()
+
+	/**
+	 * A real registration door on an instance whose registration app is
+	 * enabled and fills the group `inwoners`.
+	 *
+	 * @return NextcloudRegistrationDoor
+	 */
+	private function registrationDoor(): NextcloudRegistrationDoor {
+		$apps = $this->createMock(IAppManager::class);
+		$apps->method('isEnabledForAnyone')->willReturn(true);
+		$appConfig = $this->createMock(IAppConfig::class);
+		$appConfig->method('getValueString')->willReturn('inwoners');
+		$urls = $this->createMock(IURLGenerator::class);
+		$urls->method('linkToRouteAbsolute')->willReturnCallback(
+			static fn (string $route): string => 'https://portaal.example/index.php/route/' . $route
+		);
+
+		return new NextcloudRegistrationDoor(
+			$apps,
+			$appConfig,
+			$urls,
+			$this->createMock(IGroupManager::class),
+			$this->createMock(PublishedPortals::class)
+		);
+	}//end registrationDoor()
+
+	/**
+	 * REQ-NCL-005: a portal offering the account route and naming the group
+	 * the registration app fills is served the registration form's address.
+	 *
+	 * @return void
+	 */
+	public function testARegistrationAddressIsServedForAPortalWithResidents(): void {
+		$portal = $this->portal();
+		$portal['authentication'] = ['modes' => ['nextcloud'], 'registration' => ['residentGroup' => 'inwoners']];
+		$this->resolver->method('resolve')->willReturn($portal);
+		$this->registrationDoor = $this->registrationDoor();
+
+		$this->assertSame(
+			'https://portaal.example/index.php/route/registration.register.showEmailForm',
+			$this->controller()->site()->getData()['registerUrl']
+		);
+	}//end testARegistrationAddressIsServedForAPortalWithResidents()
+
+	/**
+	 * REQ-NCL-005 and REQ-IWI-014: an e-mail-link portal naming the same group
+	 * is served no registration address; neither is a portal naming none.
+	 *
+	 * @return void
+	 */
+	public function testAnEmailLinkPortalIsServedNoRegistrationAddress(): void {
+		$portal = $this->portal();
+		$portal['authentication'] = ['modes' => ['email-link'], 'registration' => ['residentGroup' => 'inwoners', 'policy' => 'activation']];
+		$this->resolver->method('resolve')->willReturn($portal);
+		$this->registrationDoor = $this->registrationDoor();
+
+		$this->assertSame('', $this->controller()->site()->getData()['registerUrl']);
+	}//end testAnEmailLinkPortalIsServedNoRegistrationAddress()
+
+	/**
+	 * Without a resident group the account route alone opens no registration.
+	 *
+	 * @return void
+	 */
+	public function testAnAccountRouteWithoutAResidentGroupIsServedNoRegistrationAddress(): void {
+		$portal = $this->portal();
+		$portal['authentication'] = ['modes' => ['nextcloud']];
+		$this->resolver->method('resolve')->willReturn($portal);
+		$this->registrationDoor = $this->registrationDoor();
+
+		$this->assertSame('', $this->controller()->site()->getData()['registerUrl']);
+	}//end testAnAccountRouteWithoutAResidentGroupIsServedNoRegistrationAddress()
 }//end class

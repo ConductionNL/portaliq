@@ -33,6 +33,8 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * The preflight and send paths MUST call the identical
@@ -42,6 +44,7 @@ use RuntimeException;
  * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
  */
 class NewsletterControllerTest extends TestCase {
+	use StaffActionDoubleTrait;
 
 	private const OS = 'OCA\\OpenRegister\\Service\\ObjectService';
 
@@ -85,14 +88,19 @@ class NewsletterControllerTest extends TestCase {
 			) {
 			}//end __construct()
 
-			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return $this->newsletter;
 			}//end find()
 
 			/**
 			 * @param array<string,mixed> $object
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved = $object;
 				return $object;
 			}//end saveObject()
@@ -103,7 +111,7 @@ class NewsletterControllerTest extends TestCase {
 		$userSession = $this->createMock(IUserSession::class);
 		$userSession->method('getUser')->willReturn(null);
 
-		$controller = new NewsletterController($this->createMock(IRequest::class), $userSession, $this->createMock(ContainerInterface::class), $this->createMock(NewsletterPreflightService::class), $this->createMock(LoggerInterface::class));
+		$controller = new NewsletterController($this->createMock(IRequest::class), $userSession, $this->createMock(ContainerInterface::class), $this->createMock(NewsletterPreflightService::class), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsletterController::ACTION));
 
 		$this->expectException(OCSForbiddenException::class);
 		$controller->create('Title', ['n1'], ['groupRefs' => ['groep-5a']]);
@@ -114,7 +122,7 @@ class NewsletterControllerTest extends TestCase {
 		$preflight = $this->createMock(NewsletterPreflightService::class);
 		$preflight->expects($this->once())->method('countRecipients')->with(['groupRefs' => ['groep-5a']])->willReturn(3);
 
-		$controller = new NewsletterController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $preflight, $this->createMock(LoggerInterface::class));
+		$controller = new NewsletterController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $preflight, $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsletterController::ACTION));
 		$response = $controller->preflight('nl1');
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
@@ -126,7 +134,7 @@ class NewsletterControllerTest extends TestCase {
 		$preflight = $this->createMock(NewsletterPreflightService::class);
 		$preflight->method('sendIsRefused')->willReturn(true);
 
-		$controller = new NewsletterController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $preflight, $this->createMock(LoggerInterface::class));
+		$controller = new NewsletterController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $preflight, $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsletterController::ACTION));
 		$response = $controller->send('nl1');
 
 		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
@@ -138,10 +146,38 @@ class NewsletterControllerTest extends TestCase {
 		$preflight = $this->createMock(NewsletterPreflightService::class);
 		$preflight->method('sendIsRefused')->willReturn(false);
 
-		$controller = new NewsletterController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $preflight, $this->createMock(LoggerInterface::class));
+		$controller = new NewsletterController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $preflight, $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsletterController::ACTION));
 		$response = $controller->send('nl1');
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertNotNull($objectService->saved['sentAt']);
 	}//end testSendStampsSentAtWhenTheAudienceIsNonEmpty()
+
+	/**
+	 * A signed-in user without portal.send-newsletter is refused by every staff method,
+	 * before anything is read or written (#1094).
+	 *
+	 * @return void
+	 */
+	public function testEveryStaffMethodRefusesAUserWithoutTheAction(): void {
+		$container = $this->createMock(ContainerInterface::class);
+		$container->expects($this->never())->method('get');
+		$controller = new NewsletterController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $container, $this->createMock(NewsletterPreflightService::class), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsletterController::ACTION, false));
+
+		$refused = 0;
+		$calls = [
+			fn () => $controller->create('Title', ['n1'], ['groupRefs' => ['groep-5a']]),
+			fn () => $controller->preflight('nl1'),
+			fn () => $controller->send('nl1'),
+		];
+		foreach ($calls as $call) {
+			try {
+				$call();
+			} catch (\OCP\AppFramework\OCS\OCSForbiddenException $e) {
+				$refused++;
+			}
+		}
+
+		$this->assertSame(count($calls), $refused);
+	}//end testEveryStaffMethodRefusesAUserWithoutTheAction()
 }//end class

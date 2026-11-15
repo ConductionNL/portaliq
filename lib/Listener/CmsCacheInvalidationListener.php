@@ -30,7 +30,10 @@ namespace OCA\Portaliq\Listener;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
-use OCA\Portaliq\Service\CmsReader;
+use OCA\Portaliq\Kernel\Contracts\CmsReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PublishedPortalsInterface;
+use OCA\Portaliq\Kernel\Contracts\SharedBlockPortalsInterface;
+use OCA\Portaliq\Service\Cms\SharedBlockPortals;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -62,20 +65,24 @@ class CmsCacheInvalidationListener implements IEventListener {
 	 *
 	 * @var string[]
 	 */
-	private const CMS_SCHEMAS = ['portal', 'menu', 'page', 'glossaryTerm', 'media'];
+	private const CMS_SCHEMAS = ['portal', 'menu', 'page', 'glossaryTerm', 'media', 'portalFaq', 'portalFinder', 'sharedBlock', 'form'];
 
 
 	/**
 	 * Constructor.
 	 *
-	 * @param CmsReader       $reader The reader owning the cache.
+	 * @param CmsReaderInterface       $reader The reader owning the cache.
 	 * @param LoggerInterface $logger The logger.
+	 * @param PublishedPortalsInterface|null $portals Lists the portals of a shared block's organisation.
+	 * @param SharedBlockPortalsInterface $blocks Tells which portals a write to a shared block can touch.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly CmsReader $reader,
+		private readonly CmsReaderInterface $reader,
 		private readonly LoggerInterface $logger,
+		private readonly ?PublishedPortalsInterface $portals=null,
+		private readonly SharedBlockPortalsInterface $blocks=new SharedBlockPortals(),
 	) {
 	}//end __construct()
 
@@ -87,6 +94,7 @@ class CmsCacheInvalidationListener implements IEventListener {
 	 *
 	 * @return void
 	 *
+	 * @listener-placement inline cache-drop — removes cache keys, no I/O to a service and no write; deferring it would leave the stale entry readable.
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-public-content-reads-must-be-cached-keyed-by-audience
 	 */
 	public function handle(Event $event): void {
@@ -99,30 +107,64 @@ class CmsCacheInvalidationListener implements IEventListener {
 		}
 
 		try {
-			$object = $event->getObject();
-			$data = $object->getObject();
-			if (is_array($data) === false) {
-				return;
-			}
-
-			$portal = (string)($data['portal'] ?? $data['slug'] ?? '');
-			if ($portal === '') {
-				return;
-			}
-
-			// Cheap enough to run unconditionally: this is a cache drop, not
-			// I/O, and getting it wrong the other way (skipping an
-			// invalidation) is invisible until someone reports stale content.
-			$this->reader->invalidate(portal: $portal);
+			$this->invalidateFor(event: $event);
 		} catch (Throwable $e) {
 			// Never let a cache concern break a write. A stale cache is a
 			// nuisance; a failed save is data loss.
-			$this->logger->warning(
-				'Portaliq: CMS cache invalidation failed',
-				['reason' => $e->getMessage()]
-			);
+			$this->logger->warning('Portaliq: CMS cache invalidation failed', ['reason' => $e->getMessage()]);
 		}
 	}//end handle()
+
+
+	/**
+	 * Drop the cache of the written object's portal, or of its organisation's
+	 * portals when it names none.
+	 *
+	 * @param ObjectCreatedEvent|ObjectUpdatedEvent|ObjectDeletedEvent $event The object write.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-public-content-reads-must-be-cached-keyed-by-audience
+	 */
+	private function invalidateFor(ObjectCreatedEvent|ObjectUpdatedEvent|ObjectDeletedEvent $event): void {
+		$object = $event->getObject();
+		$data = $object->getObject();
+		if (is_array($data) === false) {
+			return;
+		}
+
+		$portal = (string)($data['portal'] ?? $data['slug'] ?? '');
+		if ($portal === '') {
+			$this->invalidateOrganisation(data: $data);
+
+			return;
+		}
+
+		// Cheap enough to run unconditionally: this is a cache drop, not
+		// I/O, and getting it wrong the other way (skipping an
+		// invalidation) is invisible until someone reports stale content.
+		$this->reader->invalidate(portal: $portal);
+	}//end invalidateFor()
+
+
+	/**
+	 * A shared block has no portal: clear every portal of its organisation.
+	 *
+	 * @param array<string, mixed> $data The written object's data.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t03
+	 */
+	private function invalidateOrganisation(array $data): void {
+		if ($this->portals === null || $this->blocks->isBlock(data: $data) === false) {
+			return;
+		}
+
+		foreach ($this->blocks->slugsFor(data: $data, portals: $this->portals->allPublishedPortals()) as $slug) {
+			$this->reader->invalidate(portal: $slug);
+		}
+	}//end invalidateOrganisation()
 
 
 	/**

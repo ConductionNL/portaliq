@@ -22,38 +22,62 @@ export const MOUNT_ID = 'portaliq-embed'
  * @param {Document|null} doc The document.
  * @return {{payload: object, submitUrl: string, locale: string}} The boot data.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-embed-frame-must-render-its-form-from-a-small-entry-req-srp-047
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-embed-frame-must-render-its-form-from-a-small-entry-req-srp-047
  */
 export function readEmbedConfig(doc) {
-	const fallback = {
-		payload: { refused: 'form_not_found' },
-		submitUrl: '',
-		locale: 'nl',
-	}
-	let parsed
-	try {
-		parsed = JSON.parse(doc?.getElementById(CONFIG_ID)?.textContent || 'null')
-	} catch {
-		parsed = null
-	}
-
-	if (
-		parsed === null
-		|| typeof parsed !== 'object'
-		|| typeof parsed.payload !== 'object'
-		|| parsed.payload === null
-	) {
-		return fallback
+	const parsed = parsedConfig(doc)
+	if (!hasPayload(parsed)) {
+		return {
+			payload: { refused: 'form_not_found' },
+			submitUrl: '',
+			locale: 'nl',
+		}
 	}
 
 	return {
 		payload: parsed.payload,
 		submitUrl: typeof parsed.submitUrl === 'string' ? parsed.submitUrl : '',
-		locale:
-			typeof parsed.locale === 'string' && parsed.locale !== ''
-				? parsed.locale
-				: 'nl',
+		locale: configLocale(parsed.locale),
 	}
+}
+
+/**
+ * The config block's JSON, or null when it is missing or broken.
+ *
+ * @param {Document|null} doc The document.
+ * @return {object|string|number|boolean|null} The parsed block, or null.
+ */
+function parsedConfig(doc) {
+	try {
+		return JSON.parse(doc?.getElementById(CONFIG_ID)?.textContent || 'null')
+	} catch {
+		return null
+	}
+}
+
+/**
+ * Whether the parsed block is an object with an object payload.
+ *
+ * @param {object|string|number|boolean|null} parsed The parsed block.
+ * @return {boolean} True when it can be used.
+ */
+function hasPayload(parsed) {
+	return (
+		parsed !== null
+		&& typeof parsed === 'object'
+		&& typeof parsed.payload === 'object'
+		&& parsed.payload !== null
+	)
+}
+
+/**
+ * The frame's language: the block's, else Dutch.
+ *
+ * @param {string|number|boolean|object|null|undefined} locale The block's locale.
+ * @return {string} The language tag.
+ */
+function configLocale(locale) {
+	return typeof locale === 'string' && locale !== '' ? locale : 'nl'
 }
 
 /**
@@ -63,22 +87,27 @@ export function readEmbedConfig(doc) {
  * @param {Array<object>} fields The form's fields.
  * @return {object} Field name to value.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-embed-frame-must-render-its-form-from-a-small-entry-req-srp-047
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-embed-frame-must-render-its-form-from-a-small-entry-req-srp-047
  */
 export function initialAnswers(fields) {
 	const answers = {}
 	for (const field of Array.isArray(fields) ? fields : []) {
-		if (
-			field?.name
-			&& field.preset !== undefined
-			&& field.preset !== null
-			&& field.preset !== ''
-		) {
+		if (field?.name && hasPreset(field)) {
 			answers[field.name] = String(field.preset)
 		}
 	}
 
 	return answers
+}
+
+/**
+ * Whether a field carries a preset: anything but undefined, null or ''.
+ *
+ * @param {object} field The field.
+ * @return {boolean} True with a preset.
+ */
+function hasPreset(field) {
+	return field.preset !== undefined && field.preset !== null && field.preset !== ''
 }
 
 /**
@@ -88,21 +117,27 @@ export function initialAnswers(fields) {
  * @param {string} args.submitUrl The submit route.
  * @param {string} args.route The form page being answered.
  * @param {object} args.answers The answers.
+ * @param {string} [args.honeypot] The honeypot's value; sent only when a bot filled it.
  * @param {Function} [args.fetchImpl] fetch (test seam).
  * @return {Promise<object>} The server's answer: `{reference, …}` or `{errors}`.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-embed-frame-must-render-its-form-from-a-small-entry-req-srp-047
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-embed-frame-must-render-its-form-from-a-small-entry-req-srp-047
  */
 export async function submitAnswers({
 	submitUrl,
 	route,
 	answers,
+	honeypot = '',
 	fetchImpl = globalThis.fetch,
 }) {
+	const body = { route, answers }
+	if (honeypot !== '') {
+		body._hp = honeypot
+	}
 	const response = await fetchImpl(submitUrl, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ route, answers }),
+		body: JSON.stringify(body),
 	})
 
 	return await response.json()
@@ -118,17 +153,16 @@ export async function submitAnswers({
  * @param {object} result The server's answer.
  * @return {{fields: object, messages: Array<string>}} Per field, and all of them.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-embed-frame-must-render-its-form-from-a-small-entry-req-srp-047
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-embed-frame-must-render-its-form-from-a-small-entry-req-srp-047
  */
 export function submissionErrors(result) {
 	const raw = result?.errors
+	if (Array.isArray(raw)) {
+		return { fields: {}, messages: raw.map(String) }
+	}
 	const fields = {}
 	const messages = []
-	if (Array.isArray(raw)) {
-		for (const message of raw) {
-			messages.push(String(message))
-		}
-	} else if (raw !== null && typeof raw === 'object') {
+	if (raw !== null && typeof raw === 'object') {
 		for (const [name, message] of Object.entries(raw)) {
 			fields[name] = String(message)
 			messages.push(String(message))

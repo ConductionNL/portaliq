@@ -20,7 +20,14 @@
 			<dt class="utrecht-data-list__item-key pq-description-list__key">
 				{{ item.label }}
 			</dt>
-			<dd class="utrecht-data-list__item-value pq-description-list__value">
+			<dd
+				v-if="item.slot"
+				class="utrecht-data-list__item-value pq-description-list__value">
+				<slot :name="`value-${item.key}`" :item="item" />
+			</dd>
+			<dd
+				v-else
+				class="utrecht-data-list__item-value pq-description-list__value">
 				{{ item.value }}
 			</dd>
 		</div>
@@ -29,7 +36,7 @@
 
 <script>
 /**
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
  */
 export default {
 	name: 'DescriptionList',

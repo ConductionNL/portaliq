@@ -228,6 +228,27 @@ class DemoDataServiceTest extends TestCase {
 		$this->assertSame(3, $result['skipped']);
 	}
 
+	public function testTheImportersOwnSkipCountWinsWhenItIsTheLarger(): void {
+		// When the importer's own skip count is larger than the gap between
+		// declared and landed, its count is the one reported.
+		file_put_contents(
+			$this->descriptor(),
+			json_encode(['components' => ['objects' => [['a' => 1], ['b' => 2]]]])
+		);
+		$importer = new class {
+			public function importFromApp(string $appId, array $data, string $version, bool $force): array {
+				return ['objects' => [['id' => 'x']], 'skipped' => ['objects' => 3]];
+			}
+		};
+		$this->container->method('get')->willReturn($importer);
+
+		$result = $this->service()->install();
+
+		$this->assertSame(1, $result['objects']);
+		$this->assertSame(2, $result['declared']);
+		$this->assertSame(3, $result['skipped']);
+	}
+
 	public function testARerunThatLeavesEveryObjectAloneStillCountsAsLanded(): void {
 		// Newer OpenRegister reports an object it found already present and
 		// identical under `unchanged` rather than `objects`. That is landed data;
@@ -342,6 +363,31 @@ class DemoDataServiceTest extends TestCase {
 		);
 
 		$this->assertSame(7, $this->service()->install()['present']);
+	}
+
+	public function testANumericSchemaSlugIsCountedAsAString(): void {
+		file_put_contents(
+			$this->descriptor(),
+			json_encode(['components' => ['objects' => [
+				['@self' => ['register' => 'portaliq', 'schema' => '42']],
+			]]])
+		);
+		$importer = new class {
+			public function importFromApp(string $appId, array $data, string $version, bool $force): array {
+				return ['registers' => [1], 'objects' => [], 'skipped' => ['objects' => 0]];
+			}
+
+			public function count(array $config = []): int {
+				return 3;
+			}
+		};
+		$this->container->method('get')->willReturn($importer);
+		$this->registerContext = $this->createMock(PortalRegisterContext::class);
+		$this->registerContext->method('apply')->willReturnCallback(
+			static fn (object $objectService, string $schemaSlug): bool => $schemaSlug === '42'
+		);
+
+		$this->assertSame(3, $this->service()->install()['present']);
 	}
 
 	public function testACountThatFailsForOneSchemaDoesNotHideTheOthers(): void {

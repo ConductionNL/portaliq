@@ -30,7 +30,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+ * @spec openspec/specs/portal-notifications-and-preferences/spec.md
  */
 
 declare(strict_types=1);
@@ -39,14 +39,14 @@ namespace OCA\Portaliq\Service\Notifications;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use OCA\Portaliq\Contribution\NoticeRecipientNormaliser;
+use OCA\Portaliq\Kernel\Contracts\NoticeRecipientNormaliserInterface;
 use OCP\IDateTimeZone;
 use Throwable;
 
 /**
  * Renders a declared change notice in one language.
  *
- * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+ * @spec openspec/specs/portal-notifications-and-preferences/spec.md
  */
 class ChangeNoticeText {
 
@@ -78,7 +78,7 @@ class ChangeNoticeText {
 	 *
 	 * @return array{subject: string, body: string}|null
 	 *
-	 * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md
 	 */
 	public function render(array $messages, string $value, array $row, string $language): ?array {
 		$message = ($messages[$value] ?? null);
@@ -124,7 +124,7 @@ class ChangeNoticeText {
 	 */
 	private function fill(string $text, array $row): string {
 		return (string)preg_replace_callback(
-			NoticeRecipientNormaliser::PLACEHOLDER,
+			NoticeRecipientNormaliserInterface::PLACEHOLDER,
 			function (array $match) use ($row): string {
 				$value = ($row[$match[1]] ?? null);
 				if (is_string($value) === false && is_int($value) === false && is_float($value) === false) {

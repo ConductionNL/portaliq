@@ -9,6 +9,7 @@ use OCA\Portaliq\Service\PortalJwtService;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCP\IAppConfig;
 use OCP\IConfig;
 use OCP\Security\ISecureRandom;
 use PHPUnit\Framework\TestCase;
@@ -36,12 +37,12 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T1
  * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T7
- * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.1
- * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.3
- * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#2.1
- * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#2.2
- * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#2.3
- * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#3.1
+ * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.1
+ * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.3
+ * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#2.1
+ * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#2.2
+ * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#2.3
+ * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#3.1
  * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T01
  * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T02
  * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
@@ -131,6 +132,34 @@ class PortalSessionServiceTest extends TestCase {
 
 	}//end testAssertionCarriesUseClaimSessionJtiAndShortTtl()
 
+	/**
+	 * Decision 173: the resolved subject's branch reaches the assertion, and a
+	 * subject without one mints the nine claims only.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
+	 */
+	public function testAssertionCarriesTheSessionBranchOnlyWhenThereIsOne(): void {
+		$service = $this->service();
+		$subject = [
+			'subjectRef' => 's1',
+			'audience' => 'business',
+			'organisation' => 'org-1',
+			'trust' => 'substantial',
+			'jti' => 'session-jti-1',
+		];
+
+		$withBranch = (new PortalJwtService(self::SECRET))->validate(
+			$service->issueAssertion(array_merge($subject, ['branch' => '000012345678']))
+		);
+		$this->assertSame('000012345678', $withBranch['branch']);
+
+		$without = (new PortalJwtService(self::SECRET))->validate($service->issueAssertion($subject));
+		$this->assertArrayNotHasKey('branch', $without);
+
+	}//end testAssertionCarriesTheSessionBranchOnlyWhenThereIsOne()
+
 	public function testAssertionPresentedAsBearerFailsClosed(): void {
 		$service = $this->service();
 		$assertion = $service->issueAssertion(
@@ -165,6 +194,73 @@ class PortalSessionServiceTest extends TestCase {
 		$this->assertSame($issued['jti'], $subject['jti']);
 
 	}//end testRealSessionBearerStillResolves()
+
+	/**
+	 * Every header that does not carry a valid session bearer resolves to no
+	 * subject: absent, empty, another scheme, an empty bearer, garbage and a
+	 * session token whose signature was tampered with.
+	 */
+	public function testAMalformedOrForgedBearerResolvesToNoSubject(): void {
+		$service = $this->service();
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1', trust: 'high');
+
+		$this->assertNotNull($service->resolveFromBearer('Bearer ' . $issued['token']));
+		$this->assertNull($service->resolveFromBearer(null));
+		$this->assertNull($service->resolveFromBearer(''));
+		$this->assertNull($service->resolveFromBearer('Basic ' . $issued['token']));
+		$this->assertNull($service->resolveFromBearer('bearer ' . $issued['token']));
+		$this->assertNull($service->resolveFromBearer('Bearer '));
+		$this->assertNull($service->resolveFromBearer('Bearer not-a-jwt'));
+		$this->assertNull($service->resolveFromBearer('Bearer ' . $issued['token'] . 'x'));
+
+	}//end testAMalformedOrForgedBearerResolvesToNoSubject()
+
+	/**
+	 * The company's KVK number is signed on the session and survives a
+	 * refresh; a session without one, or with a malformed one, carries none.
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/tasks.md#t0
+	 */
+	public function testTheCompanyKvkRidesOnTheSessionAndItsRefresh(): void {
+		$service = $this->service();
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1', trust: 'substantial', roles: ['supplier:read'], provider: 'eherkenning', kvk: '87654321');
+
+		$subject = $service->resolveFromBearer('Bearer ' . $issued['token']);
+		$this->assertSame('87654321', $subject['kvk']);
+
+		$refreshed = $service->refreshSession('Bearer ' . $issued['token']);
+		$this->assertSame('87654321', $service->resolveFromBearer('Bearer ' . $refreshed['token'])['kvk']);
+
+		$none = $service->issueSession(subjectRef: 's2', audience: 'supplier', organisation: 'org-1', kvk: '1234');
+		$this->assertSame('', $service->resolveFromBearer('Bearer ' . $none['token'])['kvk']);
+	}//end testTheCompanyKvkRidesOnTheSessionAndItsRefresh()
+
+	/**
+	 * The resolved subject has exactly these fields, in this order.
+	 */
+	public function testAResolvedSubjectHasItsFieldsInOrder(): void {
+		$service = $this->service();
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1', trust: 'substantial', roles: ['supplier:read'], branch: '000012345678', provider: 'eherkenning');
+
+		$subject = $service->resolveFromBearer('Bearer ' . $issued['token']);
+
+		$this->assertSame(
+			['subjectRef', 'audience', 'organisation', 'trust', 'roles', 'jti', 'authTime', 'branch', 'branchRestricted', 'provider', 'expiresAt', 'kvk', 'attributes'],
+			array_keys($subject)
+		);
+		$this->assertSame('s1', $subject['subjectRef']);
+		$this->assertSame('supplier', $subject['audience']);
+		$this->assertSame('org-1', $subject['organisation']);
+		$this->assertSame('substantial', $subject['trust']);
+		$this->assertSame(['supplier:read'], $subject['roles']);
+		$this->assertSame($issued['jti'], $subject['jti']);
+		$this->assertGreaterThan(0, $subject['authTime']);
+		$this->assertSame('000012345678', $subject['branch']);
+		$this->assertTrue($subject['branchRestricted']);
+		$this->assertSame('eherkenning', $subject['provider']);
+		$this->assertGreaterThan($subject['authTime'], $subject['expiresAt']);
+
+	}//end testAResolvedSubjectHasItsFieldsInOrder()
 
 	public function testNoDedicatedSecretRefusesIssuanceAndResolution(): void {
 		// Empty app config → NEVER falls back to a system/instance secret
@@ -244,6 +340,52 @@ class PortalSessionServiceTest extends TestCase {
 
 	}//end testLogoutRevokesOnlyItsOwnSession()
 
+	/**
+	 * An admin revokes one session: only that bearer stops working, and the
+	 * history names the admin as an `admin-revoke`, not as a logout.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/staff-revoke-one-session/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
+	 */
+	public function testAnAdminRevokesOneSessionAndIsNamed(): void {
+		$store = [];
+		$issuer = $this->service(store: $store);
+		$mine = $issuer->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1');
+		$theirs = $issuer->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1');
+
+		$seen = [];
+		$auditor = $this->createMock(originalClassName: AuditTrailService::class);
+		$auditor->method('record')->willReturnCallback(
+			function (string $verb, string $subjectRef, string $organisation, string $register, string $schema, string $id, ...$rest) use (&$seen) {
+				$seen[] = [$verb, $subjectRef, $organisation, $id, ($rest[2] ?? [])];
+			}
+		);
+		$service = $this->service(store: $store, auditor: $auditor);
+
+		$this->assertTrue(condition: $service->revokeByAdmin(jti: $mine['jti'], admin: 'beheerder'));
+		$this->assertNull(actual: $service->resolveFromBearer(authorizationHeader: 'Bearer ' . $mine['token']));
+		$this->assertNotNull(actual: $service->resolveFromBearer(authorizationHeader: 'Bearer ' . $theirs['token']));
+		$revokes = array_values(array_filter($seen, fn (array $entry) => $entry[0] === 'admin-revoke'));
+		$this->assertSame(expected: [['admin-revoke', 's1', 'org-1', $mine['jti'], ['admin' => 'beheerder']]], actual: $revokes);
+	}//end testAnAdminRevokesOneSessionAndIsNamed()
+
+	/**
+	 * An unknown token id revokes nothing and records nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/staff-revoke-one-session/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
+	 */
+	public function testAnAdminRevokeOfAnUnknownSessionDoesNothing(): void {
+		$store = [];
+		$auditor = $this->createMock(originalClassName: AuditTrailService::class);
+		$auditor->expects($this->never())->method('record');
+
+		$this->assertFalse(condition: $this->service(store: $store, auditor: $auditor)->revokeByAdmin(jti: 'no-such-jti', admin: 'beheerder'));
+		$this->assertFalse(condition: $this->service(store: $store, auditor: $auditor)->revokeByAdmin(jti: '', admin: 'beheerder'));
+	}//end testAnAdminRevokeOfAnUnknownSessionDoesNothing()
+
 	public function testRevokeAllForOrganisationRevokesEveryActiveSession(): void {
 		$store = [];
 		$service = $this->service(store: $store);
@@ -252,15 +394,219 @@ class PortalSessionServiceTest extends TestCase {
 		$b = $service->issueSession(subjectRef: 's2', audience: 'supplier', organisation: 'org-1');
 		$c = $service->issueSession(subjectRef: 's3', audience: 'supplier', organisation: 'org-2');
 
-		$revoked = $service->revokeAllForOrganisation('org-1');
+		$result = $service->revokeAllForOrganisation('org-1', 'admin');
 
-		$this->assertSame(2, $revoked);
+		$this->assertSame(['revoked' => 2, 'failed' => 0, 'complete' => true], $result);
 		$this->assertNull($service->resolveFromBearer('Bearer ' . $a['token']));
 		$this->assertNull($service->resolveFromBearer('Bearer ' . $b['token']));
 		// A different organisation's session is untouched.
 		$this->assertNotNull($service->resolveFromBearer('Bearer ' . $c['token']));
 
 	}//end testRevokeAllForOrganisationRevokesEveryActiveSession()
+
+	/**
+	 * Staff revoke one account's sessions; the rest of the organisation keeps
+	 * theirs (sign-in-with-an-email-link REQ-IWI-013).
+	 *
+	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#12
+	 */
+	public function testRevokeAllForSubjectRevokesOnlyThatAccount(): void {
+		$store = [];
+		$service = $this->service(store: $store);
+
+		$tom1 = $service->issueSession(subjectRef: 'email:tom', audience: 'client', organisation: 'academie', trust: 'low', provider: 'email-link');
+		$tom2 = $service->issueSession(subjectRef: 'email:tom', audience: 'client', organisation: 'academie', trust: 'low', provider: 'email-link');
+		$anna = $service->issueSession(subjectRef: 'email:anna', audience: 'client', organisation: 'academie', trust: 'low', provider: 'email-link');
+
+		$result = $service->revokeAllForOrganisation('academie', 'beheerder', 'email:tom');
+
+		$this->assertSame(['revoked' => 2, 'failed' => 0, 'complete' => true], $result);
+		$this->assertNull($service->resolveFromBearer('Bearer ' . $tom1['token']));
+		$this->assertNull($service->resolveFromBearer('Bearer ' . $tom2['token']));
+		$this->assertNotNull($service->resolveFromBearer('Bearer ' . $anna['token']));
+
+	}//end testRevokeAllForSubjectRevokesOnlyThatAccount()
+
+	/**
+	 * An e-mail link session is `low`, names its method, and a refresh
+	 * cannot raise it.
+	 *
+	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#8
+	 */
+	public function testAnEmailLinkSessionStaysLowThroughARefresh(): void {
+		$store = [];
+		$service = $this->service(store: $store);
+		$issued = $service->issueSession(subjectRef: 'email:tom', audience: 'client', organisation: 'academie', trust: 'low', provider: 'email-link');
+
+		$subject = $service->resolveFromBearer('Bearer ' . $issued['token']);
+		$this->assertSame('low', $subject['trust']);
+		$this->assertSame('email-link', $subject['provider']);
+
+		$refreshed = $service->refreshSession('Bearer ' . $issued['token']);
+		$this->assertNotNull($refreshed);
+		$this->assertNotSame($issued['jti'], $refreshed['jti']);
+		$this->assertSame('low', $service->resolveFromBearer('Bearer ' . $refreshed['token'])['trust']);
+		$this->assertFalse(PortalSessionService::trustSatisfies($subject['trust'], 'substantial'));
+
+	}//end testAnEmailLinkSessionStaysLowThroughARefresh()
+
+	/**
+	 * A Yivi session carries its disclosed attributes, filtered, through a
+	 * refresh and a branch change; a session without any carries none.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#T05
+	 */
+	public function testDisclosedAttributesStayWithTheSessionChain(): void {
+		$service = $this->service();
+		$issued = $service->issueSession(
+			subjectRef: 'yivi:p1',
+			audience: 'client',
+			organisation: 'org-1',
+			trust: 'low',
+			roles: ['client:read'],
+			attributes: ['pbdf.gemeente.personalData.fullname' => 'Sanne de Vries', 'bsn' => '123456789']
+		);
+
+		$subject = $service->resolveFromBearer('Bearer ' . $issued['token']);
+		$this->assertSame(['pbdf.gemeente.personalData.fullname' => 'Sanne de Vries'], $subject['attributes']);
+
+		$refreshed = $service->refreshSession('Bearer ' . $issued['token']);
+		$this->assertSame(['pbdf.gemeente.personalData.fullname' => 'Sanne de Vries'], $service->resolveFromBearer('Bearer ' . $refreshed['token'])['attributes']);
+
+		$rebranched = $service->rebranchSession('Bearer ' . $refreshed['token'], '');
+		$this->assertSame(['pbdf.gemeente.personalData.fullname' => 'Sanne de Vries'], $service->resolveFromBearer('Bearer ' . $rebranched['token'])['attributes']);
+
+		$plain = $service->issueSession(subjectRef: 's2', audience: 'client', organisation: 'org-1', trust: 'substantial');
+		$this->assertSame([], $service->resolveFromBearer('Bearer ' . $plain['token'])['attributes']);
+
+	}//end testDisclosedAttributesStayWithTheSessionChain()
+
+	/**
+	 * Review B1: an organisation with more than one page of session rows,
+	 * most of them revoked by rotation, still loses its one live session,
+	 * which sits on the last page.
+	 *
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#3.2
+	 */
+	public function testRevokeAllReachesALiveSessionPastTheFirstPage(): void {
+		$store = [];
+		$service = $this->service(store: $store);
+		for ($i = 1; $i <= 1200; $i++) {
+			$store['old-' . $i] = ['uuid' => 'old-' . $i, 'jti' => 'old-jti-' . $i, 'organisation' => 'org-1', 'subjectRef' => 's1', 'revoked' => true];
+		}
+
+		$live = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1');
+		$this->assertNotNull($service->resolveFromBearer('Bearer ' . $live['token']));
+
+		$result = $service->revokeAllForOrganisation('org-1', 'admin');
+
+		$this->assertSame(['revoked' => 1, 'failed' => 0, 'complete' => true], $result);
+		$this->assertNull($service->resolveFromBearer('Bearer ' . $live['token']), 'the live session past row 500 is revoked');
+	}//end testRevokeAllReachesALiveSessionPastTheFirstPage()
+
+	/**
+	 * Review B1: more live sessions than one page are all revoked.
+	 *
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#3.2
+	 */
+	public function testRevokeAllRevokesMoreLiveSessionsThanOnePage(): void {
+		$store = [];
+		$service = $this->service(store: $store);
+		for ($i = 1; $i <= 1201; $i++) {
+			$store['live-' . $i] = ['uuid' => 'live-' . $i, 'jti' => 'live-jti-' . $i, 'organisation' => 'org-1', 'subjectRef' => 's' . $i, 'revoked' => false];
+		}
+
+		$result = $service->revokeAllForOrganisation('org-1', 'admin');
+
+		$this->assertSame(['revoked' => 1201, 'failed' => 0, 'complete' => true], $result);
+		$this->assertSame([], array_filter($store, static fn (array $row): bool => $row['revoked'] !== true));
+	}//end testRevokeAllRevokesMoreLiveSessionsThanOnePage()
+
+	/**
+	 * Review S5: an unreachable OpenRegister is reported as incomplete, never
+	 * as "nothing to revoke".
+	 *
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#3.2
+	 */
+	public function testRevokeAllReportsAnUnreachableStoreAsIncomplete(): void {
+		$store = [];
+		$service = $this->service(store: $store, orDown: true);
+
+		$this->assertSame(['revoked' => 0, 'failed' => 0, 'complete' => false], $service->revokeAllForOrganisation('org-1', 'admin'));
+	}//end testRevokeAllReportsAnUnreachableStoreAsIncomplete()
+
+	/**
+	 * Review S6: an admin revocation is audited as `admin-revoke`, naming the
+	 * admin, once per session and once for the call; never as a `logout`.
+	 *
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#3.2
+	 */
+	public function testRevokeAllIsAuditedAsAnAdminRevocationNamingTheAdmin(): void {
+		$store = [];
+		$issuer = $this->service(store: $store);
+		$issued = $issuer->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1');
+
+		$seen = [];
+		$auditor = $this->createMock(AuditTrailService::class);
+		$auditor->method('record')->willReturnCallback(
+			function (string $verb, string $subjectRef, string $organisation, string $register, string $schema, string $id, string $jti = '', string $appId = 'portaliq', array $detail = []) use (&$seen) {
+				$seen[] = [$verb, $subjectRef, $organisation, $id, $detail];
+			}
+		);
+
+		$this->service(store: $store, auditor: $auditor)->revokeAllForOrganisation('org-1', 'beheerder');
+
+		$this->assertSame(
+			[
+				['admin-revoke', 's1', 'org-1', $issued['jti'], ['admin' => 'beheerder']],
+				['admin-revoke', 'beheerder', 'org-1', '', ['admin' => 'beheerder', 'revoked' => '1', 'complete' => 'yes']],
+			],
+			$seen
+		);
+		$this->assertContains('admin-revoke', AuditTrailService::VERBS);
+	}//end testRevokeAllIsAuditedAsAnAdminRevocationNamingTheAdmin()
+
+	/**
+	 * Review S2: a revoked flag that comes back as 1, "1" or "true" still
+	 * means revoked (fail closed), on resolve and on revoke-all.
+	 *
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#2.2
+	 */
+	public function testATruthyRevokedFlagFailsClosed(): void {
+		foreach ([1, '1', 'true'] as $flag) {
+			$store = [];
+			$service = $this->service(store: $store);
+			$issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1');
+			$store[array_key_first($store)]['revoked'] = $flag;
+
+			$this->assertNull($service->resolveFromBearer('Bearer ' . $issued['token']), var_export($flag, true) . ' reads as revoked');
+		}
+	}//end testATruthyRevokedFlagFailsClosed()
+
+	/**
+	 * Review S1: a revoke-all that lands while a refresh is minting must not
+	 * leave the new bearer alive.
+	 *
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#3.2
+	 */
+	public function testARefreshRacingARevokeAllLeavesNoLiveBearer(): void {
+		$store = [];
+		$minted = 0;
+		$service = $this->service(
+			store: $store,
+			onCreate: function (array &$rows, array $row) use (&$minted): void {
+				$minted++;
+				if ($minted === 2) {
+					// revoke-all runs between the refresh's resolve and its mint.
+					$rows['uuid-1']['revoked'] = true;
+				}
+			}
+		);
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1', trust: 'high');
+
+		$this->assertNull($service->refreshSession('Bearer ' . $issued['token']), 'the refresh is refused');
+		$this->assertTrue($store['uuid-2']['revoked'], 'the bearer minted during the race is revoked');
+	}//end testARefreshRacingARevokeAllLeavesNoLiveBearer()
 
 	public function testRevokeUnknownJtiIsANoOp(): void {
 		$service = $this->service();
@@ -618,6 +964,50 @@ class PortalSessionServiceTest extends TestCase {
 	}//end testAWholeCompanySessionNarrowsToABranchAndBack()
 
 	/**
+	 * invitation-joins-an-unbound-account: after a claim moved the account
+	 * into the invitation's audience, the session is reissued for it. The
+	 * subject, organisation, trust and provider stay; the old bearer stops
+	 * working.
+	 *
+	 * @return void
+	 */
+	public function testASessionIsReissuedForTheAudienceItsAccountTookOn(): void {
+		$store = [];
+		$service = $this->service(store: $store);
+
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'client', organisation: 'org-1', trust: 'substantial', roles: ['client:read'], provider: 'digid');
+		$reissued = $service->refreshSession('Bearer ' . $issued['token'], 'parent');
+		$this->assertNotNull($reissued);
+		$subject = $service->resolveFromBearer('Bearer ' . $reissued['token']);
+		$this->assertSame('parent', $subject['audience']);
+		$this->assertSame('s1', $subject['subjectRef']);
+		$this->assertSame('org-1', $subject['organisation']);
+		$this->assertSame('substantial', $subject['trust']);
+		$this->assertSame('digid', $subject['provider']);
+		$this->assertSame(['parent:read'], $subject['roles'], 'The new audience brings its own role, never the old one (review L2).');
+		$this->assertNull($service->resolveFromBearer('Bearer ' . $issued['token']), 'the old bearer is rotated out');
+
+	}//end testASessionIsReissuedForTheAudienceItsAccountTookOn()
+
+	/**
+	 * The audience the session has, the company audience and a missing
+	 * bearer reissue nothing, and the session keeps working.
+	 *
+	 * @return void
+	 */
+	public function testAReissueForNoNewAudienceIsRefused(): void {
+		$store = [];
+		$service = $this->service(store: $store);
+
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'client', organisation: 'org-1', trust: 'substantial');
+		$this->assertNull($service->refreshSession('Bearer ' . $issued['token'], 'client'));
+		$this->assertNull($service->refreshSession('Bearer ' . $issued['token'], 'supplier'));
+		$this->assertNull($service->refreshSession(null, 'parent'));
+		$this->assertSame('client', $service->resolveFromBearer('Bearer ' . $issued['token'])['audience']);
+
+	}//end testAReissueForNoNewAudienceIsRefused()
+
+	/**
 	 * A session the login restricted to one branch cannot choose another, nor
 	 * the whole company, and keeps working.
 	 *
@@ -750,11 +1140,29 @@ class PortalSessionServiceTest extends TestCase {
 		$claims = (new PortalJwtService(self::SECRET))->validate($issued['token']);
 
 		$this->assertSame(
-			['expiresAt' => (int)$claims['exp'], 'hardExpiresAt' => ((int)$claims['authTime'] + 28800), 'idleTimeout' => 900],
+			['expiresAt' => (int)$claims['exp'], 'hardExpiresAt' => ((int)$claims['authTime'] + 28800), 'idleTimeout' => 900, 'idlePreview' => false],
 			$service->sessionTimes($subject)
 		);
 
 	}//end testSessionTimesComeFromTheBearer()
+
+	/**
+	 * REQ-SIS-007: a session reports `idlePreview` only when the instance
+	 * sets `session_idle_preview_enabled` to `yes`; any other value is off.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-10-30-idle-warning-preview/tasks.md#T01
+	 */
+	public function testIdlePreviewFollowsItsOwnFlag(): void {
+		foreach (['yes' => true, 'no' => false, '1' => false, 'true' => false] as $value => $expected) {
+			$service = $this->service(idlePreview: (string) $value);
+			$issued = $service->issueSession(subjectRef: 's1', audience: 'client', organisation: 'org-1');
+			$subject = $service->resolveFromBearer('Bearer ' . $issued['token']);
+			$this->assertSame(expected: $expected, actual: $service->sessionTimes(subject: $subject)['idlePreview'], message: 'flag value ' . $value);
+		}
+
+	}//end testIdlePreviewFollowsItsOwnFlag()
 
 	/**
 	 * REQ-SIS-006: an OIDC-minted session carries the provider it came from,
@@ -791,18 +1199,42 @@ class PortalSessionServiceTest extends TestCase {
 	 * @param array<string, mixed>& $store      Backing store, keyed by uuid.
 	 * @param AuditTrailService|null $auditor Override the audit recorder; null uses a permissive mock.
 	 * @param int $maxLifetime Override `session_max_lifetime` (seconds); the default 8h otherwise.
+	 * @param string|null $idleTimeout Override `session_idle_timeout`; null keeps its default.
+	 * @param callable|null $onCreate Called with each created session row.
+	 * @param bool $orDown Whether the store fails as if OpenRegister were down.
+	 * @param string|null $idlePreview Override `session_idle_preview_enabled`; null keeps its default.
+	 *
+	 * @return PortalSessionService
 	 */
-	private function service(?string $secret = self::SECRET, array &$store = [], ?AuditTrailService $auditor = null, int $maxLifetime = 0, ?string $idleTimeout = null): PortalSessionService {
+	private function service(
+		?string $secret = self::SECRET,
+		array &$store = [],
+		?AuditTrailService $auditor = null,
+		int $maxLifetime = 0,
+		?string $idleTimeout = null,
+		?callable $onCreate = null,
+		bool $orDown = false,
+		?string $idlePreview = null,
+	): PortalSessionService {
+		// The signing secret lives in IAppConfig, flagged sensitive (review S4);
+		// IConfig answers the other session settings only.
+		$appConfig = $this->createMock(IAppConfig::class);
+		$appConfig->method('getValueString')->willReturnCallback(
+			fn (string $app, string $key, string $default = '') => ($key === 'jwt_signing_secret' ? ($secret ?? '') : $default)
+		);
 		$config = $this->createMock(IConfig::class);
 		$config->method('getAppValue')->willReturnCallback(
-			function (string $appId, string $key, string $default = '') use ($secret, $maxLifetime, $idleTimeout) {
+			function (string $appId, string $key, string $default = '') use ($secret, $maxLifetime, $idleTimeout, $idlePreview) {
+				if ($key === 'session_idle_preview_enabled') {
+					return ($idlePreview ?? $default);
+				}
 				if ($key === 'session_max_lifetime' && $maxLifetime > 0) {
 					return (string)$maxLifetime;
 				}
 				if ($key === 'session_idle_timeout') {
 					return ($idleTimeout ?? $default);
 				}
-				return ($secret ?? '');
+				return $default;
 			}
 		);
 
@@ -815,10 +1247,13 @@ class PortalSessionServiceTest extends TestCase {
 
 		$writer = $this->createMock(PortalObjectWriter::class);
 		$writer->method('createObject')->willReturnCallback(
-			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data) use (&$store) {
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data) use (&$store, $onCreate) {
 				$uuid = 'uuid-' . (count($store) + 1);
 				$data['uuid'] = $uuid;
 				$store[$uuid] = $data;
+				if ($onCreate !== null) {
+					$onCreate($store, $data);
+				}
 				return $data;
 			}
 		);
@@ -834,14 +1269,37 @@ class PortalSessionServiceTest extends TestCase {
 
 		$reader = $this->createMock(PortalObjectReader::class);
 		$reader->method('readCollection')->willReturnCallback(
-			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation = '') use (&$store) {
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation = '', int $limit = 200) use (&$store) {
 				$matches = [];
 				foreach ($store as $row) {
 					if ($scopeField !== '' && ($row[$scopeField] ?? null) === $subjectRef) {
 						$matches[] = $row;
 					}
 				}
-				return $matches;
+				return array_slice($matches, 0, $limit);
+			}
+		);
+		// One page of a scoped read, as OpenRegister pages it: the filter
+		// narrows, then offset and limit apply; null when OpenRegister is down.
+		$reader->method('readScopedPage')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $scopeValue, string $organisation, array $filter, int $limit, int $offset) use (&$store, $orDown) {
+				if ($orDown === true) {
+					return null;
+				}
+				$matches = [];
+				foreach ($store as $row) {
+					if (($row[$scopeField] ?? null) !== $scopeValue) {
+						continue;
+					}
+					foreach ($filter as $field => $value) {
+						if (($row[$field] ?? null) !== $value) {
+							continue 2;
+						}
+					}
+					$matches[] = $row;
+				}
+				$page = array_slice($matches, $offset, $limit);
+				return ['rows' => $page, 'read' => count($page)];
 			}
 		);
 
@@ -851,7 +1309,8 @@ class PortalSessionServiceTest extends TestCase {
 			$this->createMock(LoggerInterface::class),
 			$writer,
 			$reader,
-			($auditor ?? $this->createMock(AuditTrailService::class))
+			($auditor ?? $this->createMock(AuditTrailService::class)),
+			$appConfig
 		);
 
 	}//end service()

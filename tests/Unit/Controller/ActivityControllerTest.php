@@ -29,6 +29,8 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/extracurricular-activity-offer/contract.md
  */
 class ActivityControllerTest extends TestCase {
+	use StaffActionDoubleTrait;
+
 	/**
 	 * The controller over a store and optional service doubles.
 	 *
@@ -39,6 +41,7 @@ class ActivityControllerTest extends TestCase {
 	 * @param ActivityAttendanceService|null $attendance The attendance service double.
 	 * @param ActivityRoster|null $rosters The roster double.
 	 * @param ActivityContributionService|null $contributions The contribution raise double.
+	 * @param bool $mayManage Whether the user holds portal.manage-activity.
 	 *
 	 * @return ActivityController
 	 */
@@ -50,6 +53,7 @@ class ActivityControllerTest extends TestCase {
 		?ActivityAttendanceService $attendance = null,
 		?ActivityRoster $rosters = null,
 		?ActivityContributionService $contributions = null,
+		bool $mayManage = true,
 	): ActivityController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParam')->willReturnCallback(fn (string $key, $default = null) => ($params[$key] ?? $default));
@@ -69,7 +73,8 @@ class ActivityControllerTest extends TestCase {
 			($attendance ?? $this->createMock(ActivityAttendanceService::class)),
 			new ActivityDraft(),
 			($rosters ?? $this->createMock(ActivityRoster::class)),
-			($contributions ?? $this->createMock(ActivityContributionService::class))
+			($contributions ?? $this->createMock(ActivityContributionService::class)),
+			$this->staffActionAuth(ActivityController::ACTION, $mayManage)
 		);
 	}//end controller()
 
@@ -109,6 +114,33 @@ class ActivityControllerTest extends TestCase {
 			}
 		}
 	}//end testEveryMethodGuardsFirst()
+
+	/**
+	 * A signed-in user without portal.manage-activity is refused by every
+	 * method, before touching data (#1094).
+	 *
+	 * @return void
+	 */
+	public function testEveryMethodRefusesAUserWithoutTheAction(): void {
+		$calls = [
+			fn (ActivityController $c) => $c->create('Schaakclub', 'club', ['schoolRef' => 's'], '2026-10-05', 16),
+			fn (ActivityController $c) => $c->open('a'),
+			fn (ActivityController $c) => $c->close('a'),
+			fn (ActivityController $c) => $c->supervisors('a', ['s']),
+			fn (ActivityController $c) => $c->roster('a'),
+			fn (ActivityController $c) => $c->attendance('a', 'week-1', 'child', 'present'),
+			fn (ActivityController $c) => $c->contributions('a'),
+		];
+		foreach ($calls as $index => $call) {
+			$store = $this->store([['id' => 'a', 'status' => 'draft', 'capacity' => 5]]);
+			try {
+				$call($this->controller($store, mayManage: false));
+				$this->fail('call ' . $index . ' did not refuse');
+			} catch (OCSForbiddenException $e) {
+				$this->assertSame([], $store->saves, 'call ' . $index . ' wrote before the action check');
+			}
+		}
+	}//end testEveryMethodRefusesAUserWithoutTheAction()
 
 	/**
 	 * Create stores a draft by the signed-in staff member, with the optional

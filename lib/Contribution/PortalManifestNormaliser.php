@@ -49,7 +49,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
-use OCA\Portaliq\Service\PortalSchemaReader;
+use OCA\Portaliq\Kernel\Contracts\PortalSchemaReaderInterface;
 
 /**
  * Validates and sanitises the v3 UI-configuration vocabulary, fail-closed.
@@ -81,6 +81,13 @@ class PortalManifestNormaliser {
 	private readonly PortalPageResolver $pages;
 
 	/**
+	 * Labels collection fields with their schema titles (collection-column-labels).
+	 *
+	 * @var CollectionSchemaLabels
+	 */
+	private readonly CollectionSchemaLabels $schemaLabels;
+
+	/**
 	 * Constructor.
 	 *
 	 * The collaborators are pure value transformers with no I/O of their own,
@@ -88,7 +95,7 @@ class PortalManifestNormaliser {
 	 * constructible with no arguments (its pre-existing default-value call site
 	 * in PortalContributionRegistry and every direct unit-test instantiation).
 	 *
-	 * @param PortalSchemaReader|null $schemaReader Resolves an action's schema
+	 * @param PortalSchemaReaderInterface|null $schemaReader Resolves an action's schema
 	 *                                              `required` set for the WMEBV
 	 *                                              data-minimisation guard.
 	 *                                              Optional/nullable; a null
@@ -98,7 +105,7 @@ class PortalManifestNormaliser {
 	 *
 	 * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
 	 */
-	public function __construct(?PortalSchemaReader $schemaReader = null) {
+	public function __construct(?PortalSchemaReaderInterface $schemaReader = null) {
 		$values = new ManifestValueNormaliser();
 
 		$this->collections = new CollectionConfigNormaliser($values);
@@ -108,6 +115,7 @@ class PortalManifestNormaliser {
 			$schemaReader
 		);
 		$this->pages = new PortalPageResolver(new PortalBlockResolver());
+		$this->schemaLabels = new CollectionSchemaLabels($schemaReader);
 	}//end __construct()
 
 	/**
@@ -119,14 +127,26 @@ class PortalManifestNormaliser {
 	 *                              a resolved/synthesised `pages` array.
 	 *
 	 * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T3
-	 * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-a-timed-task-driven-by-five-endpoint-actions
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-a-timed-task-driven-by-five-endpoint-actions
+	 * @spec openspec/changes/collection-column-labels/specs/portal-contribution-contract/spec.md#requirement-a-collection-field-must-read-under-its-schema-title-when-the-app-gave-no-label
 	 */
 	public function normalise(array $contribution): array {
 		$collections = $this->collections->normaliseCollections(collections: (array)($contribution['collections'] ?? []));
 		// A row may wait for its moment (site-school-blocks, `visibleFromField`).
 		$visibleFrom = new VisibleFromField();
 		$collections = array_map(static fn (array $collection): array => $visibleFrom->normalise(collection: $collection), $collections);
-		$actions = $this->actions->normaliseActions(actions: (array)($contribution['actions'] ?? []));
+		// A field the app did not label reads under its schema title, never
+		// its key (collection-column-labels).
+		$collections = $this->schemaLabels->apply(collections: $collections);
+		// The audiences the provider serves arrive beside the manifest (the
+		// registry stamps them) and bound a start tile's `audiences`.
+		$served = null;
+		if (is_array(($contribution['servedAudiences'] ?? null)) === true) {
+			$served = array_values(array_filter($contribution['servedAudiences'], static fn ($a) => is_string($a) === true && $a !== ''));
+		}
+
+		unset($contribution['servedAudiences']);
+		$actions = $this->actions->normaliseActions(actions: (array)($contribution['actions'] ?? []), served: $served);
 
 		// Resolve each collection's `rowActions` against the update actions in
 		// THIS contribution — a per-row transition button (approve/reject/close)
@@ -141,6 +161,10 @@ class PortalManifestNormaliser {
 		// The item list (my-dossiers): its remove action must be one of the
 		// collection's own row actions, so it resolves after them.
 		$collections = (new ItemListConfigNormaliser())->resolve(collections: $collections, actions: $actions);
+
+		// An inbox collection's reply must be one of this contribution's create
+		// actions (inbox-reply-with-attachments REQ-IRA-001).
+		$collections = (new InboxReplyConfigNormaliser())->resolve(collections: $collections, actions: $actions);
 
 		$contribution['collections'] = $collections;
 		$contribution['actions'] = $actions;

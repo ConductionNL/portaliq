@@ -101,8 +101,8 @@ import {
 	NcNoteCard,
 	NcTextArea,
 } from '@nextcloud/vue'
-import { spawnDialog } from '@nextcloud/vue/functions/dialog'
 import VoidAccountDialog from '../dialogs/VoidAccountDialog.vue'
+import { spawnLookDialog } from '../lib/dialogLook.js'
 import {
 	createRegistrationSettings,
 	parseDomains,
@@ -246,7 +246,7 @@ export default {
 		 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-set-the-registration-policy-and-approve-registrations-req-isa-004
 		 */
 		async refuse(row) {
-			const reason = await spawnDialog(VoidAccountDialog, {
+			const reason = await spawnLookDialog(VoidAccountDialog, {
 				title: t('portaliq', 'Refuse this registration'),
 				confirmLabel: t('portaliq', 'Refuse'),
 			})

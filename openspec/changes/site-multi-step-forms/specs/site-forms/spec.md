@@ -18,7 +18,7 @@ Every form the site renders (the published intake form, a create or update actio
 
 ### Requirement: A failed submit MUST show an error summary that takes focus (REQ-SMF-002)
 
-When a submit or a step fails validation, on the client or on the server, the form MUST show an error summary above its fields. The summary heading MUST receive keyboard focus. The summary MUST list one link per error, in field order. Activating a link MUST move focus to that field, or to the first input of a field group. Each field's own message MUST stay under the field and be referenced by its `aria-describedby`. While errors stand, the document title MUST start with "Fout: ".
+When a submit or a step fails validation, on the client or on the server, the form MUST show an error summary above its fields. The summary heading MUST count the errors of a failed step ("Er is 1 fout", "Er zijn 3 fouten"), and MUST read "Er ontbreekt nog iets" for a failed send. The heading MUST receive keyboard focus. The summary MUST list one link per error, in field order. Activating a link MUST move focus to that field, or to the first input of a field group. Each field's own message MUST stay under the field and be referenced by its `aria-describedby`. While errors stand, the document title MUST start with "Fout: ".
 
 #### Scenario: A guardian forgets the last day
 - GIVEN the absence form with "Tot en met welke dag?" left empty
@@ -26,6 +26,13 @@ When a submit or a step fails validation, on the client or on the server, the fo
 - THEN a summary with the heading "Er ontbreekt nog iets" appears above the fields and has focus
 - AND it holds the link "Kies de laatste dag dat Vera afwezig is"
 - AND following the link puts focus in the "Tot en met welke dag?" field
+
+#### Scenario: A step with three errors
+- GIVEN step 2 of the Woo request with a wrong e-mail address, a wrong postcode and the privacy statement not accepted
+- WHEN the resident presses "Volgende stap"
+- THEN a summary with the heading "Er zijn 3 fouten" appears above the fields and has focus
+- AND it links the three messages
+- @e2e exclude a static board state until the counted heading is built
 
 #### Scenario: A server refusal lands in the same summary
 - GIVEN a published form whose server validation rejects the field `email`

@@ -111,7 +111,11 @@ test('acting for is yourself plus every mandate held, and the choice is kept for
 
 test('site: the shell, the page, the case screen and both locales are wired', () => {
 	const shell = readFileSync(join(ROOT, 'src', 'site', 'App.vue'), 'utf8')
-	assert.match(shell, /<template #account>\s*<ActingForSwitcher :t="t" \/>/)
+	assert.doesNotMatch(
+		shell,
+		/<ActingForSwitcher/,
+		'the header has no "Acting for": the acting-for bar is the one switch (REQ-SMO-008)',
+	)
 	const store = readFileSync(
 		join(ROOT, 'src', 'site', 'components', 'e', 'actingFor.js'),
 		'utf8',
@@ -184,9 +188,9 @@ test('site: the switcher names yourself and each mandate with the choice selecte
 	assert.match(html, /<option value="self">Yourself<\/option>/)
 	assert.match(
 		html,
-		/<option value="mandate-1" selected>Bakkerij Jansen BV<\/option>/,
+		/<option value="mandate-1" selected translate="no">Bakkerij Jansen BV<\/option>/,
 	)
-	assert.match(html, /<option value="mandate-2">Mijn vader<\/option>/)
+	assert.match(html, /<option value="mandate-2" translate="no">Mijn vader<\/option>/)
 	assert.equal(
 		await renderSfc('src/site/components/e/ActingForSwitcher.vue', {
 			t,
@@ -235,7 +239,7 @@ test('site: sign-out forgets whom the resident acted for and the mandates held',
 	)
 })
 
-test('site: the header switcher with only `t` follows the store', async () => {
+test('site: the switcher with only `t` follows the store', async () => {
 	store.learnMandates({ ok: true, mandates: MANDATES })
 	store.chooseActingFor('mandate-1', storage())
 	const html = await renderSfc('src/site/components/e/ActingForSwitcher.vue', {
@@ -243,7 +247,7 @@ test('site: the header switcher with only `t` follows the store', async () => {
 	})
 	assert.match(
 		html,
-		/<option value="mandate-1" selected>Bakkerij Jansen BV<\/option>/,
+		/<option value="mandate-1" selected translate="no">Bakkerij Jansen BV<\/option>/,
 	)
 	const switcher = await loadSfc('src/site/components/e/ActingForSwitcher.vue')
 	const emitted = []
@@ -334,6 +338,7 @@ test('site: a mandated case carries its label, a group too large is refused, and
 		caseId: 'z-9',
 		mandateId: 'mandate-1',
 		collection: { register: 'dossiq', schema: 'case' },
+		loadTasks() {},
 		api: {
 			fetchCitizenCase: async (c, id, mandate) => {
 				read.push([id, mandate])

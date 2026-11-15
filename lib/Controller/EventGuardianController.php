@@ -21,19 +21,19 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/events-and-signups/design.md#api-design
+ * @spec openspec/changes/archive/2026-09-28-events-and-signups/design.md#api-design
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
-use OCA\Portaliq\Service\EventFeedReader;
-use OCA\Portaliq\Service\EventRsvpService;
-use OCA\Portaliq\Service\EventSignupService;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\EventFeedReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\EventRsvpServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\EventSignupServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -45,26 +45,26 @@ use OCP\IRequest;
 /**
  * Guardian read/RSVP/signup path for events.
  *
- * @spec openspec/changes/events-and-signups/design.md#api-design
+ * @spec openspec/changes/archive/2026-09-28-events-and-signups/design.md#api-design
  */
 class EventGuardianController extends Controller implements PortalProtected {
 	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param EventFeedReader $feedReader The guardian-scoped read path.
-	 * @param EventRsvpService $rsvpService Upserts an RSVP.
-	 * @param EventSignupService $signupService Capacity-checked sign-up.
+	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
+	 * @param EventFeedReaderInterface $feedReader The guardian-scoped read path.
+	 * @param EventRsvpServiceInterface $rsvpService Upserts an RSVP.
+	 * @param EventSignupServiceInterface $signupService Capacity-checked sign-up.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
-		private readonly EventFeedReader $feedReader,
-		private readonly EventRsvpService $rsvpService,
-		private readonly EventSignupService $signupService,
+		private readonly PortalSessionServiceInterface $session,
+		private readonly EventFeedReaderInterface $feedReader,
+		private readonly EventRsvpServiceInterface $rsvpService,
+		private readonly EventSignupServiceInterface $signupService,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -72,7 +72,7 @@ class EventGuardianController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -92,23 +92,35 @@ class EventGuardianController extends Controller implements PortalProtected {
 	 * @param string $id The event id.
 	 * @param string $childRef The child.
 	 * @param string $response One of `yes`, `no`, `maybe`.
+	 * @param int|null $seats The seats asked, when the event asks for seats.
 	 *
-	 * @return JSONResponse 204 on success, 404 otherwise.
+	 * @return JSONResponse 204 on success, 404 when unreachable, 422 when the event is full, closed or the seats are out of range.
 	 *
-	 * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 20, period: 60)]
-	public function rsvp(string $id, string $childRef, string $response): JSONResponse {
+	public function rsvp(string $id, string $childRef, string $response, ?int $seats = null): JSONResponse {
 		$subject = $this->subject();
 		if ($subject === null) {
 			return new JSONResponse(['error' => 'unauthorized'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$recorded = $this->rsvpService->rsvp(subjectRef: (string)($subject['subjectRef'] ?? ''), eventId: $id, childRef: $childRef, response: $response);
-		if ($recorded === false) {
+		$reason = $this->rsvpService->attempt(
+			subjectRef: (string)($subject['subjectRef'] ?? ''),
+			eventId: $id,
+			childRef: $childRef,
+			response: $response,
+			seats: $seats
+		);
+		if ($reason === EventRsvpServiceInterface::REASON_NOT_FOUND) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		if ($reason !== null) {
+			// Full, closed or a number of seats out of range: said in words by the page.
+			return new JSONResponse(['error' => $reason], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
 
 		return new JSONResponse([], Http::STATUS_NO_CONTENT);
@@ -124,7 +136,7 @@ class EventGuardianController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse 204 on success, 404 (role/event unreachable) or 422 (role full).
 	 *
-	 * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-a-sign-up-role-enforces-its-capacity-server-side
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-sign-up-role-enforces-its-capacity-server-side
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -143,11 +155,11 @@ class EventGuardianController extends Controller implements PortalProtected {
 			note: $note
 		);
 
-		if ($reason === EventSignupService::REASON_ROLE_NOT_FOUND) {
+		if ($reason === EventSignupServiceInterface::REASON_ROLE_NOT_FOUND) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		if ($reason === EventSignupService::REASON_ROLE_FULL) {
+		if ($reason === EventSignupServiceInterface::REASON_ROLE_FULL) {
 			return new JSONResponse(['error' => 'role-full'], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
 

@@ -74,6 +74,22 @@ test('a resolved binding names the form it opens today', async () => {
 	assert.deepEqual(calls.warnings, [])
 })
 
+test('a resolved binding that its destination would refuse names what stops it (REQ-PIFO-007)', async () => {
+	const { previewFormBinding, calls } = build({
+		state: 'resolved',
+		formName: 'Bezwaar',
+		findings: [
+			{ property: 'caseType', code: 'required-unmapped', message: 'Nothing fills caseType.' },
+			{ property: 'title', code: 'constraint-looser' },
+		],
+	})
+	assert.equal(await previewFormBinding({ item: ROW }), true)
+	assert.deepEqual(calls.notices, [])
+	assert.deepEqual(calls.warnings, [
+		'This entry opens "Bezwaar", but it cannot be published yet: Nothing fills caseType. constraint-looser',
+	])
+})
+
 test('a binding that resolves to no form says so as a warning, with its reason', async () => {
 	for (const [answer, key] of [
 		[

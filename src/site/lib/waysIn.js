@@ -10,7 +10,12 @@
 
 import strings from './waysInStrings.js'
 
-const LINK = /^#(activate|invitation|reference)=([^&]+)$/
+const LINK = /^#(activate|invitation|reference|email-link)=([^&]+)$/
+
+// The e-mail link taken off the address bar at boot, before any other script
+// reads the location (sign-in-with-an-email-link M4); takeWayInLink() hands it
+// to the link page.
+let captured = null
 
 /**
  * The translator the ways in use: the site's own `t` first, then
@@ -29,40 +34,86 @@ export function waysInTranslator(t, locale) {
 		.split(/[-_]/)[0]
 	const own = strings[lang] || strings.en
 	return function translate(key, vars) {
-		const site = typeof t === 'function' ? t(key) : key
-		let text = site !== key || !Object.hasOwn(own, key) ? site : own[key]
-		for (const [name, value] of Object.entries(vars || {})) {
-			text = String(text).split(`{${name}}`).join(String(value))
-		}
-		return text
+		const site = siteText(t, key)
+		const text = site !== key || !Object.hasOwn(own, key) ? site : own[key]
+		return withVariables(text, vars)
 	}
+}
+
+/**
+ * The site's own text for a key, or the key without a site translator.
+ *
+ * @param {(key: string) => string} t The site's translator.
+ * @param {string} key The English source key.
+ * @return {string} The text.
+ */
+function siteText(t, key) {
+	return typeof t === 'function' ? t(key) : key
+}
+
+/**
+ * A text with every `{name}` replaced by its value.
+ *
+ * @param {string} text The text.
+ * @param {object} [vars] The values by name.
+ * @return {string} The filled text; the text as it is without values.
+ */
+function withVariables(text, vars) {
+	let filled = text
+	for (const [name, value] of Object.entries(vars || {})) {
+		filled = String(filled).split(`{${name}}`).join(String(value))
+	}
+	return filled
 }
 
 /**
  * The doors the site config opens, closed when absent (REQ-IWI-005).
  *
  * @param {object} signin The site config's `signin` block.
- * @return {{register: boolean, reference: boolean, emailSignIn: string, referenceCaseTypes: Array<object>}}
+ * @return {{register: boolean, reference: boolean, emailSignIn: string, referenceCaseTypes: Array<object>, emailLink: boolean}}
  *
  * @spec openspec/specs/portal-ways-in/spec.md#requirement-the-sign-in-screen-shows-only-the-doors-that-lead-somewhere-req-iwi-005
  */
 export function waysInFrom(signin) {
 	const ways = (signin && signin.waysIn) || {}
-	const types = Array.isArray(ways.referenceCaseTypes)
-		? ways.referenceCaseTypes.filter(
-				(type) =>
-					type
-					&& typeof type.register === 'string'
-					&& typeof type.schema === 'string'
-					&& typeof type.caseType === 'string',
-			)
-		: []
+	const types = referenceCaseTypesOf(ways)
 	return {
 		register: ways.register === true,
 		reference: ways.reference === true && types.length > 0,
 		emailSignIn: typeof ways.emailSignIn === 'string' ? ways.emailSignIn : '',
 		referenceCaseTypes: types,
+		// The e-mail link (sign-in-with-an-email-link): never a door to
+		// "Create an account" (REQ-IWI-014).
+		emailLink: ways.emailLink === true,
 	}
+}
+
+/**
+ * The case types a reference may be asked for, each naming its register,
+ * schema and case type.
+ *
+ * @param {object} ways The site config's `waysIn` block.
+ * @return {Array<object>} The well-formed case types.
+ */
+function referenceCaseTypesOf(ways) {
+	return Array.isArray(ways.referenceCaseTypes)
+		? ways.referenceCaseTypes.filter(isReferenceCaseType)
+		: []
+}
+
+/**
+ * Whether a declared case type names its register, schema and case type.
+ *
+ * @param {object} type The declared case type.
+ * @return {boolean}
+ */
+function isReferenceCaseType(type) {
+	return (
+		Boolean(type)
+		&& typeof type.register === 'string'
+		&& typeof type.schema === 'string'
+		&& typeof type.caseType === 'string'
+	)
 }
 
 /**
@@ -77,16 +128,101 @@ export function waysInFrom(signin) {
  * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/tasks.md#T06
  */
 export function takeWayInLink(location, history) {
-	const match = String((location && location.hash) || '').match(LINK)
+	if (captured !== null) {
+		return handOverCaptured()
+	}
+	const match = linkInFragment(location)
 	if (!match) {
 		return null
 	}
 
+	stripFragment(location, history)
+	return linkOf(match)
+}
+
+/**
+ * The e-mail link captured at boot, handed over once.
+ *
+ * @return {{kind: string, token: string}} The link.
+ */
+function handOverCaptured() {
+	const link = captured
+	captured = null
+	return link
+}
+
+/**
+ * A mailed link in the location's fragment, or null.
+ *
+ * @param {Location|object} location The window location.
+ * @return {RegExpMatchArray|null} The kind and the encoded secret.
+ */
+function linkInFragment(location) {
+	return String((location && location.hash) || '').match(LINK)
+}
+
+/**
+ * The link a fragment names, with its secret decoded.
+ *
+ * @param {RegExpMatchArray} match The kind and the encoded secret.
+ * @return {{kind: string, token: string}} The link.
+ */
+function linkOf(match) {
+	return { kind: match[1], token: decodeURIComponent(match[2]) }
+}
+
+/**
+ * Take the fragment off the address bar, where the history allows it.
+ *
+ * @param {Location|object} location The window location.
+ * @param {History|object} history The window history.
+ * @return {void}
+ */
+function stripFragment(location, history) {
 	const url = String(location.href || '').replace(/#.*$/, '')
 	if (history && typeof history.replaceState === 'function') {
 		history.replaceState(null, '', url)
 	}
-	return { kind: match[1], token: decodeURIComponent(match[2]) }
+}
+
+/**
+ * At boot: take an `#email-link=` fragment off the address bar at once and
+ * keep it for the link page, so no later script (the traffic client, a
+ * session recorder) ever reads the secret from the location.
+ *
+ * @param {Location|object} location The window location.
+ * @param {History|object} history The window history.
+ * @return {boolean} Whether an e-mail link was taken.
+ *
+ * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-the-e-mail-link-never-reaches-a-log-an-answer-or-the-traffic-store-req-iwi-012
+ */
+export function captureEmailLink(location, history) {
+	const match = linkInFragment(location)
+	if (!match || match[1] !== 'email-link') {
+		return false
+	}
+	captured = linkOf(match)
+	stripFragment(location, history)
+	return true
+}
+
+/**
+ * The secret of a contact invitation the visitor followed, kept in
+ * sessionStorage under the key src/shared/contactInvitation.js names
+ * (CONTACT_INVITATION_KEY), or ''. Read here so the sign-in screen does not
+ * load that module.
+ *
+ * @param {Storage|null} storage sessionStorage, or null.
+ * @return {string}
+ *
+ * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+ */
+export function keptContactInvitation(storage) {
+	try {
+		return storage?.getItem('portaliq.contactInvitation') || ''
+	} catch {
+		return ''
+	}
 }
 
 /**
@@ -96,7 +232,7 @@ export function takeWayInLink(location, history) {
  * @return {boolean}
  */
 export function hasWayInLink(location) {
-	return LINK.test(String((location && location.hash) || ''))
+	return captured !== null || LINK.test(String((location && location.hash) || ''))
 }
 
 /**
@@ -173,8 +309,24 @@ export function wayInRefusalText(code) {
 		invitation_not_valid: 'This invitation is no longer valid.',
 		route_not_offered:
 			'Cases of this kind cannot be followed with a case number.',
+		link_used: 'This link has already been used. Ask for a new link.',
+		address_wrong:
+			'That is not the address this link was sent to. Check it and try again.',
+		mode_not_offered: 'This portal does not offer sign-in with an e-mail link.',
 	}
 	return texts[code] || 'That did not work. Try again later.'
+}
+
+/**
+ * The one sentence after an e-mail link request, known address or not
+ * (sign-in-with-an-email-link REQ-IWI-007).
+ *
+ * @return {string} The sentence key.
+ *
+ * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-the-e-mail-link-form-reveals-nothing-about-accounts-req-iwi-007
+ */
+export function emailLinkSentText() {
+	return 'If this address is known to us, you will receive a link.'
 }
 
 /**
@@ -278,6 +430,33 @@ async function post(url, body, fetchImpl) {
 }
 
 /**
+ * What a registration sends back of the portal's challenge.
+ *
+ * @param {{nonce?: string, expiresAt?: number, signature?: string}} challenge The challenge.
+ * @return {{nonce: string, expiresAt: number, signature: string}} The proof fields.
+ */
+function challengeProof(challenge) {
+	return {
+		nonce: challenge.nonce || '',
+		expiresAt: challenge.expiresAt || 0,
+		signature: challenge.signature || '',
+	}
+}
+
+/**
+ * Put the honeypot's value under its field, when the form had one.
+ *
+ * @param {object} body The body, added to.
+ * @param {{field: string, value: string}|null} honeypot The honeypot.
+ * @return {void}
+ */
+function fillHoneypot(body, honeypot) {
+	if (honeypot && honeypot.field) {
+		body[honeypot.field] = honeypot.value || ''
+	}
+}
+
+/**
  * The identity routes for one portal.
  *
  * @param {string} authBase The portal API base (`.../portal/api`).
@@ -313,20 +492,26 @@ export function waysInApi(
 			challenge = {},
 			solution = '',
 			honeypot = null,
+			contactInvitation = '',
 		}) {
 			const body = {
 				portal: portal || '',
 				email,
 				displayName,
-				nonce: challenge.nonce || '',
-				expiresAt: challenge.expiresAt || 0,
-				signature: challenge.signature || '',
+				contactInvitation,
+				...challengeProof(challenge),
 				solution,
 			}
-			if (honeypot && honeypot.field) {
-				body[honeypot.field] = honeypot.value || ''
-			}
+			fillHoneypot(body, honeypot)
 			return post(`${authBase}/identity/register`, body, fetchImpl)
+		},
+		async contactInvitationEmail(token) {
+			const answer = await post(
+				`${authBase}/identity/contact-invitation`,
+				{ portal: portal || '', token },
+				fetchImpl,
+			)
+			return answer.ok ? String(answer.data.email || '') : ''
 		},
 		activateAccount(token) {
 			return post(`${authBase}/identity/activate`, { token }, fetchImpl)
@@ -367,6 +552,27 @@ export function waysInApi(
 			} catch {
 				return null
 			}
+		},
+		requestEmailLink(email) {
+			return post(
+				`${authBase}/identity/email-link`,
+				{ portal: portal || '', email },
+				fetchImpl,
+			)
+		},
+		describeEmailLink(token) {
+			return post(
+				`${authBase}/identity/email-link/describe`,
+				{ token },
+				fetchImpl,
+			)
+		},
+		redeemEmailLink({ token, nonce, email = '' }) {
+			return post(
+				`${authBase}/identity/email-link/redeem`,
+				{ token, nonce, email },
+				fetchImpl,
+			)
 		},
 		acceptInvitation(token) {
 			return post(

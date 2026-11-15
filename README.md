@@ -45,6 +45,12 @@ portal-contribution registry. Employees stay internal.
 
 > **Canonical root configs** — `phpcs.xml`, `phpmd.xml`, `psalm.xml`, `phpstan.neon`, and `phpstan-bootstrap.php` in this repo are the fleet canonical. All Conduction PHP apps are expected to mirror these files byte-for-byte; per-app deviations belong in baselines (`phpstan-baseline.neon`, `psalm-baseline.xml`) not in the canonical files. Submit changes here and they propagate to the fleet via the template-sync flow — do **not** diverge per-app.
 
+## Test coverage
+
+<!-- coverage:start -->
+Measured test coverage: 90.1% of statements (PHP 90.1% of 35,717 statements), at commit `cf14bd3c8` on 2026-11-13. The JavaScript frontend is not in this figure, because it has no coverage measurement yet. The figures come from [`coverage-summary.json`](coverage-summary.json); refresh them with `composer coverage:publish`.
+<!-- coverage:end -->
+
 ## Screenshots
 
 Screenshots are captured automatically from the tutorial flows, not pasted in by hand. The journeydoc scaffold (hydra ADR-030) ships two tutorial stories under [`docs/tutorials/`](docs/tutorials/) — a user "first launch" walkthrough (the Dashboard) and an admin "manage settings" walkthrough (Admin Settings) — and a Playwright `docs-capture` project that turns each documented step into a PNG under `docs/static/screenshots/tutorials/`.
@@ -96,7 +102,7 @@ the session routes are the public auth edge.
 | Method | Path | Purpose |
 |--------|------|---------|
 | `GET` | `/apps/portaliq/portal/api/session` | Resolve the caller's bearer to a subject (401 without one) |
-| `POST` | `/apps/portaliq/portal/api/session/dev-login` | Mint a dev session (debug-gated; issues `trust: low`) |
+| `POST` | `/apps/portaliq/portal/api/session/dev-login` | Mint a dev session (only with app config `dev_login_enabled` = `yes`; issues `trust: low`) |
 | `DELETE` | `/apps/portaliq/portal/api/session` | End the client session |
 | `POST` | `/apps/portaliq/portal/api/session/refresh` | Rotate the bearer within the absolute session lifetime cap (portal-session-hardening-v2) — mints a NEW `jti`, revokes the OLD one; fails closed (401) on a revoked/expired/malformed bearer, past the cap, or when the edge is unconfigured |
 | `GET` | `/apps/portaliq/portal/api/session/oidc/start?org=&provider=` | Start a broker OIDC login (portal-oidc-broker-login) — 302 to the broker's authorization endpoint with `state`+`nonce`+PKCE; fails closed (generic error, no redirect) on an unconfigured org/provider |
@@ -199,9 +205,16 @@ claims, account/session mint failure — returns the IDENTICAL generic
 `{"error":"oidc_failed"}` response.** No response ever distinguishes which
 check failed (no oracle).
 
-**Dev-login is unaffected.** `POST /portal/api/session/dev-login` remains
-debug-gated and always issues `trust: low` — the local-development door,
+**Dev-login is unaffected.** `POST /portal/api/session/dev-login` opens only
+with app config `dev_login_enabled` = `yes` (system `debug` does not open it)
+and always issues `trust: low` — the local-development door,
 unrelated to and unaffected by the OIDC edge.
+
+**Idle warning on request.** On a test instance, app config
+`session_idle_preview_enabled` = `yes` lets a signed-in page open the idle
+warning at once when its address holds `idleWarning=now`, so the warning
+can be measured and tested without waiting out the idle window. It is off
+unless set to `yes`.
 
 **Decoupling.** The RP is a standard OIDC client and does **not** hard-depend
 on OpenConnector — if OpenConnector later fronts a broker, it is just another
@@ -509,8 +522,8 @@ portaliq/
 │   ├── formFields/             # kind: "form-field" components (EmailField.vue)
 │   ├── cellRenderers/          # kind: "cell-renderer" components (StatusBadge.vue)
 │   ├── settings.js             # Nextcloud admin settings webpack entry-point
-│   ├── store/                  # Pinia stores (used by AdminSettings)
-│   └── views/CustomExample.vue # Example custom component (registry demo)
+│   ├── store/                  # Pinia stores (the Traffic page's shared state)
+│   └── views/                  # kind: "page" components (PageLayoutDesigner.vue)
 ├── openspec/                   # Specifications, decisions, and roadmap
 │   ├── app-config.json         # Canonical app config (id, goal, dependencies, CI)
 │   ├── config.yaml             # OpenSpec CLI configuration
@@ -607,6 +620,29 @@ npm install && npm run build
 php occ app:enable portaliq
 ```
 
+### Try it with Docker
+
+The repository builds an evaluation image: the official Nextcloud image with portaliq and OpenRegister installed and enabled. It is meant for trying the app out and for test environments. For production, install the app from the Nextcloud App Store.
+
+```bash
+docker compose -f docker-compose.yml up -d --build
+```
+
+Open http://localhost:8080/apps/portaliq/ and sign in as `admin` with password `admin`. The first start takes a minute or two. Set `NEXTCLOUD_ADMIN_PASSWORD` and `APP_PORT` to change the password and the port; `docker-compose.yml` lists every setting. `docker compose -f docker-compose.yml down -v` removes the stack and its data.
+
+Released versions are published as `ghcr.io/conductionnl/portaliq`, so leaving out `--build` uses the published image.
+
+### Run it on Kubernetes
+
+`charts/portaliq` wraps the official [Nextcloud Helm chart](https://github.com/nextcloud/helm) and runs the same image with PostgreSQL:
+
+```bash
+helm dependency build charts/portaliq
+helm install portaliq charts/portaliq --set nextcloud.nextcloud.host=portaliq.example.org
+```
+
+Change the passwords in `charts/portaliq/values.yaml` before you install it anywhere that matters.
+
 ## Development
 
 ### Start the environment
@@ -657,10 +693,11 @@ Pages live in [`src/manifest.json`](src/manifest.json) — NOT in
 
 You only write a Vue file when the page is `type: "custom"`. In that
 case, drop the component into `src/views/`, register it in
-[`src/customComponents.js`](src/customComponents.js), and reference
+[`src/registry.js`](src/registry.js) as `kind: "page"`, and reference
 its registry name in the manifest entry's `component` field. See
-[`src/views/CustomExample.vue`](src/views/CustomExample.vue) for the
-canonical example.
+[`src/views/PageLayoutDesigner.vue`](src/views/PageLayoutDesigner.vue)
+(the `PageLayoutDesigner` page in `src/manifest.json`) for a working
+example.
 
 ### Renaming the app
 

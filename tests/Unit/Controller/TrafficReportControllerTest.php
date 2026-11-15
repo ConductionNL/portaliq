@@ -83,7 +83,7 @@ class TrafficReportControllerTest extends TestCase {
 		$this->assertSame('attachment; filename="traffic-open-tilburg-2026-09-01-2026-09-04-desktop.csv"', $headers['Content-Disposition']);
 		$lines = explode("\r\n", trim($response->render()));
 		$this->assertStringStartsWith('portal,date,segment,pageViews', $lines[0]);
-		$this->assertSame('open-tilburg,2026-09-01,desktop,7,,,,,,,,,', $lines[1]);
+		$this->assertSame('open-tilburg,2026-09-01,desktop,7,,,,,,,,,,,', $lines[1]);
 
 		$json = $this->controller()->export(portal: 'open-tilburg', from: '2026-09-01', to: '2026-09-04', format: 'json');
 		$this->assertSame('application/json; charset=utf-8', $this->headers($json)['Content-Type']);
@@ -108,6 +108,25 @@ class TrafficReportControllerTest extends TestCase {
 			$this->assertSame(['error' => $reason], $response->getData());
 		}
 	}//end testABadRequestIsRefusedWithAReason()
+
+
+	/**
+	 * A malformed day is an invalid range, the first refusal wins, and a
+	 * served export is never cached.
+	 *
+	 * @return void
+	 */
+	public function testMalformedDaysTheFirstRefusalAndTheCacheHeaderAreAsRecorded(): void {
+		foreach ([['2026-9-01', '2026-09-04'], ['2026-09-01', 'tomorrow']] as [$from, $to]) {
+			$this->assertSame(['error' => 'invalid-range'], $this->controller()->export(portal: 'open-tilburg', from: $from, to: $to)->getData());
+		}
+
+		$this->assertSame(['error' => 'missing-portal'], $this->controller()->export(portal: '', from: 'x', segment: 'bad segment', format: 'xlsx')->getData());
+		$this->assertSame(['error' => 'invalid-segment'], $this->controller()->export(portal: 'open-tilburg', from: '2026-09-01', to: '2026-09-04', segment: 'bad segment', format: 'xlsx')->getData());
+
+		$served = $this->controller()->export(portal: 'open-tilburg', from: '2026-09-01', to: '2026-09-04');
+		$this->assertSame('private, no-store', $this->headers($served)['Cache-Control']);
+	}//end testMalformedDaysTheFirstRefusalAndTheCacheHeaderAreAsRecorded()
 
 
 	/**

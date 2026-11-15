@@ -69,11 +69,47 @@ class PortalFormTrustLevel {
 	 * @spec openspec/changes/embedded-intake-form/specs/embedded-intake-form/spec.md
 	 */
 	public function required(array $site, array $binding, array $render): ?string {
+		$levels = array_merge(
+			$this->portalLevels(site: $site, render: $render),
+			$this->declaredLevels(binding: $binding, render: $render)
+		);
+
+		return $this->strictest(levels: $levels);
+	}//end required()
+
+	/**
+	 * The levels the portal asks for: any session for identified intake, substantial for a fee.
+	 *
+	 * @param array<string, mixed> $site   The portal.
+	 * @param array<string, mixed> $render What render() returned for it.
+	 *
+	 * @return array<int, string>
+	 */
+	private function portalLevels(array $site, array $render): array {
 		$levels = [];
 		if (($site['authentication']['requiresIdentifiedIntake'] ?? false) === true) {
 			$levels[] = 'low';
 		}
 
+		// A request with a fee ties a payment to a person: it needs a session
+		// at substantial (intake-pay-on-submit REQ-IPS-002).
+		if (is_array($render['fee'] ?? null) === true) {
+			$levels[] = 'substantial';
+		}
+
+		return $levels;
+	}//end portalLevels()
+
+	/**
+	 * The levels the binding and the published form declare.
+	 *
+	 * @param array<string, mixed> $binding The binding.
+	 * @param array<string, mixed> $render  What render() returned for it.
+	 *
+	 * @return array<int, string>
+	 */
+	private function declaredLevels(array $binding, array $render): array {
+		$levels = [];
 		foreach ([($binding['minTrust'] ?? null), ($render['minTrust'] ?? null)] as $declared) {
 			$level = $this->declaredLevel(declared: $declared);
 			if ($level !== null) {
@@ -81,6 +117,17 @@ class PortalFormTrustLevel {
 			}
 		}
 
+		return $levels;
+	}//end declaredLevels()
+
+	/**
+	 * The strictest of the levels, or null when there are none.
+	 *
+	 * @param array<int, string> $levels The levels asked for.
+	 *
+	 * @return string|null
+	 */
+	private function strictest(array $levels): string|null {
 		$strictest = null;
 		foreach ($levels as $level) {
 			if ($strictest === null || $this->rank(level: $level) > $this->rank(level: $strictest)) {
@@ -89,7 +136,7 @@ class PortalFormTrustLevel {
 		}
 
 		return $strictest;
-	}//end required()
+	}//end strictest()
 
 	/**
 	 * What one declared level asks for.

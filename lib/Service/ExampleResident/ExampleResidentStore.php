@@ -1,0 +1,262 @@
+<?php
+
+/**
+ * Portaliq Example Resident Store
+ *
+ * What the example resident's sign-in and removal do to OpenRegister: read
+ * rows, read one row, change one and delete one. The example set writes the
+ * rows; this store only reads them back and takes them away. Unlike the
+ * example site's store it names the register on every call, because a
+ * resident's rows live in the register of the app that handles them. Kept
+ * apart from its callers so their rules can be tested without OpenRegister.
+ *
+ * @category Service
+ * @package  OCA\Portaliq\Service\ExampleResident
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/changes/example-resident-zuiddrecht/specs/example-resident/spec.md#requirement-the-install-must-prove-what-arrived
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Portaliq\Service\ExampleResident;
+
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+use OCA\Portaliq\Service\ObjectRowNormaliser;
+use OCA\Portaliq\Service\ObjectServiceLookup;
+use OCA\Portaliq\Service\RowIdOf;
+use Psr\Container\ContainerInterface;
+use Psr\Log\LoggerInterface;
+use Throwable;
+
+/**
+ * Reads, changes and deletes rows of any register for an administrator.
+ *
+ * Every call runs without OpenRegister's access rules, like the example
+ * site's install: the caller is `occ`, so there is no user whose rights could
+ * be asked.
+ *
+ * @spec openspec/changes/example-resident-zuiddrecht/specs/example-resident/spec.md#requirement-the-install-must-prove-what-arrived
+ */
+class ExampleResidentStore {
+	use ObjectServiceLookup;
+	use ObjectRowNormaliser;
+	use RowIdOf;
+
+	/**
+	 * OpenRegister's ObjectService, fetched by string id: OpenRegister is an
+	 * optional sibling app, so its classes are never imported.
+	 */
+	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
+
+	/**
+	 * The most rows one read returns.
+	 */
+	private const PAGE_SIZE = 500;
+
+	/**
+	 * The most pages one read asks for, so a read always ends.
+	 */
+	private const MAX_PAGES = 20;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param ContainerInterface $container Hands out OpenRegister's ObjectService.
+	 * @param LoggerInterface    $logger    Logger.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly ContainerInterface $container,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
+
+	/**
+	 * Whether OpenRegister can be reached at all.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/example-resident-zuiddrecht/specs/example-resident/spec.md#requirement-an-administrator-must-be-able-to-install-an-example-resident-with-one-command
+	 */
+	public function available(): bool {
+		return $this->objectService() !== null;
+	}//end available()
+
+	/**
+	 * The rows of one schema that match the filters, as plain arrays.
+	 *
+	 * @param string               $register The register slug.
+	 * @param string               $schema   The schema slug.
+	 * @param array<string, mixed> $filters  Property filters; empty reads every row.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/example-resident-zuiddrecht/specs/example-resident/spec.md#requirement-an-administrator-must-be-able-to-install-an-example-resident-with-one-command
+	 */
+	public function find(string $register, string $schema, array $filters): array {
+		$objectService = $this->objectService();
+		if ($objectService === null) {
+			return [];
+		}
+
+		$plain = [];
+		for ($page = 0; $page < self::MAX_PAGES; $page++) {
+			try {
+				$objectService->setRegister(register: $register);
+				$objectService->setSchema(schema: $schema);
+				$rows = (array)$objectService->findAll(
+					config: ['filters' => $filters, 'limit' => self::PAGE_SIZE, 'offset' => ($page * self::PAGE_SIZE)],
+					_rbac: false,
+					_multitenancy: false
+				);
+			} catch (Throwable $e) {
+				$this->logger->warning('Portaliq: example resident read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
+				return $plain;
+			}
+
+			array_push($plain, ...$this->plainRows(rows: $rows));
+
+			if (count($rows) < self::PAGE_SIZE) {
+				break;
+			}
+		}//end for
+
+		return $plain;
+	}//end find()
+
+	/**
+	 * The rows that normalise to arrays, normalised.
+	 *
+	 * @param array<int|string, mixed> $rows The rows as read.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function plainRows(array $rows): array {
+		$plain = [];
+		foreach ($rows as $row) {
+			$row = $this->normalise(row: $row);
+			if ($row !== null) {
+				$plain[] = $row;
+			}
+		}
+
+		return $plain;
+	}//end plainRows()
+
+	/**
+	 * One row by its id, or null when it is not there.
+	 *
+	 * @param string $register The register slug.
+	 * @param string $schema   The schema slug.
+	 * @param string $id       The row's id.
+	 *
+	 * @return array<string, mixed>|null The row, with `id` set.
+	 *
+	 * @spec openspec/changes/example-resident-zuiddrecht/specs/example-resident/spec.md#requirement-the-install-must-prove-what-arrived
+	 */
+	public function get(string $register, string $schema, string $id): ?array {
+		$objectService = $this->objectService();
+		if ($objectService === null || $id === '') {
+			return null;
+		}
+
+		try {
+			$row = $objectService->find(
+				id: $id,
+				options: new ObjectFindOptions(register: $register, schema: $schema),
+				_rbac: false,
+				_multitenancy: false
+			);
+		} catch (Throwable) {
+			return null;
+		}
+
+		$row = $this->normalise(row: $row);
+		if ($row === null || $this->idOf(row: $row) !== $id) {
+			return null;
+		}
+
+		return (['id' => $id] + $row);
+	}//end get()
+
+	/**
+	 * Change the named keys of one row and leave the rest as it is.
+	 *
+	 * @param string               $register The register slug.
+	 * @param string               $schema   The schema slug.
+	 * @param string               $id       The row's id.
+	 * @param array<string, mixed> $changes  The keys to set.
+	 *
+	 * @return bool True when OpenRegister saved the row.
+	 *
+	 * @spec openspec/changes/example-resident-zuiddrecht/specs/example-resident/spec.md#requirement-the-resident-must-sign-in-without-a-test-door
+	 */
+	public function update(string $register, string $schema, string $id, array $changes): bool {
+		$objectService = $this->objectService();
+		$existing      = $this->get(register: $register, schema: $schema, id: $id);
+		if ($objectService === null || $existing === null) {
+			return false;
+		}
+
+		$merged = array_merge($existing, $changes);
+		unset($merged['@self'], $merged['id']);
+
+		try {
+			$objectService->saveObject(
+				object: $merged,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $id),
+				_rbac: false,
+				_multitenancy: false
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: example resident update failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
+			return false;
+		}
+
+		return true;
+	}//end update()
+
+	/**
+	 * Delete one row by its id.
+	 *
+	 * @param string $register The register slug.
+	 * @param string $schema   The schema slug.
+	 * @param string $id       The row's id.
+	 *
+	 * @return bool True when OpenRegister deleted it.
+	 *
+	 * @spec openspec/changes/example-resident-zuiddrecht/specs/example-resident/spec.md#requirement-an-administrator-must-be-able-to-remove-an-example-resident
+	 */
+	public function delete(string $register, string $schema, string $id): bool {
+		$objectService = $this->objectService();
+		if ($objectService === null || $id === '') {
+			return false;
+		}
+
+		try {
+			$deleted = $objectService->deleteObject(
+				new ObjectDeletion(uuid: $id, target: new ObjectFindTarget(register: $register, schema: $schema)),
+				_rbac: false,
+				_multitenancy: false
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: example resident delete failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
+			return false;
+		}
+
+		return $deleted !== false;
+	}//end delete()
+}//end class

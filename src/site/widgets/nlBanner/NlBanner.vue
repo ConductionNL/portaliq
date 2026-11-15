@@ -19,7 +19,29 @@
 		:role="urgent ? 'alert' : 'status'"
 		:aria-live="urgent ? 'assertive' : 'polite'"
 		data-testid="nl-banner">
-		<p class="utrecht-paragraph nl-banner__text">{{ text }}</p>
+		<!-- A banner with only a text keeps the markup it had; a lead or a
+		     link draws the structured line. -->
+		<p
+			v-if="!lead && !link"
+			class="utrecht-paragraph nl-banner__text"
+			:class="{ container: band }">
+			{{ text }}
+		</p>
+		<p
+			v-else
+			class="utrecht-paragraph nl-banner__text nl-banner__text--parts"
+			:class="{ container: band }">
+			<strong v-if="lead" class="nl-banner__lead">{{ lead }}</strong>
+			<span>{{ text }}</span>
+			<a
+				v-if="link"
+				class="utrecht-link nl-banner__link"
+				:href="link.href"
+				data-testid="nl-banner-link"
+				@click="open($event, link)"
+				>{{ linkLabel }}</a
+			>
+		</p>
 		<button
 			v-if="closable"
 			type="button"
@@ -32,6 +54,9 @@
 </template>
 
 <script>
+import { authoredLink, staysInSite } from '../../components/mijn/links.js'
+
+import '@utrecht/link-css/dist/index.css'
 import '@utrecht/paragraph-css/dist/index.css'
 import '@utrecht/button-css/dist/index.css'
 
@@ -39,15 +64,25 @@ export default {
 	name: 'NlBanner',
 
 	props: {
-		/** `info`, `ok`, `warning` or `error`. */
+		/** `info`, `ok`, `warning`, `error` or `notice` (a soft attention strip). */
 		kind: { type: String, default: 'info' },
+		/** The bold words before the text ("Let op"). */
+		lead: { type: String, default: '' },
 		/** The text the visitor reads. */
 		text: { type: String, default: '' },
+		/** The words of the link after the text. */
+		linkLabel: { type: String, default: '' },
+		/** Where that link goes. */
+		linkHref: { type: String, default: '' },
+		/** Paint edge to edge, the text in the page's container (the grid reads this too). */
+		band: { type: Boolean, default: false },
 		/** Whether a visitor may close it. */
 		closable: { type: Boolean, default: false },
 		/** The text on the close button. */
 		closeLabel: { type: String, default: 'Sluiten' },
 	},
+
+	emits: ['navigate'],
 
 	data() {
 		return {
@@ -58,14 +93,23 @@ export default {
 
 	computed: {
 		/**
-		 * @return {string} One of info, ok, warning or error.
+		 * @return {string} One of info, ok, warning, error or notice.
 		 *
 		 * @spec openspec/changes/site-nlds-widget-palette/specs/portaliq-cms/spec.md#requirement-every-nl-design-system-component-must-be-placeable-or-carry-a-reason-req-snw-010
+		 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md#requirement-a-banner-may-carry-a-lead-and-a-link
 		 */
 		safeKind() {
-			return ['info', 'ok', 'warning', 'error'].includes(this.kind)
+			return ['info', 'ok', 'warning', 'error', 'notice'].includes(this.kind)
 				? this.kind
 				: 'info'
+		},
+
+		/**
+		 * @return {object|null} The link after the text, when it has words and an address.
+		 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md#requirement-a-banner-may-carry-a-lead-and-a-link
+		 */
+		link() {
+			return this.linkLabel.trim() ? authoredLink(this.linkHref) : null
 		},
 
 		/**
@@ -80,6 +124,23 @@ export default {
 		 */
 		urgent() {
 			return this.safeKind === 'warning' || this.safeKind === 'error'
+		},
+	},
+
+	methods: {
+		/**
+		 * A plain click on a page of this site stays in the site.
+		 *
+		 * @param {MouseEvent} event The click.
+		 * @param {object} link The link.
+		 * @return {void}
+		 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md#requirement-a-banner-may-carry-a-lead-and-a-link
+		 */
+		open(event, link) {
+			if (staysInSite(event, link)) {
+				event.preventDefault()
+				this.$emit('navigate', link.route)
+			}
 		},
 	},
 }
@@ -144,7 +205,60 @@ export default {
 	color: var(--utrecht-alert-error-color, var(--utrecht-document-color));
 }
 
+/* The soft attention strip (Zuiddrecht "Let op"). A set that names an
+   attention strip (thematiq's --nldesign-website-attention-*, read through
+   the public bridge as --thematiq-attention-*) draws it in those colours;
+   every other set keeps the look it had: the site's notice tokens, else the
+   warning alert's. The plain blue notice stays on --nldesign-website-notice-*. */
+.nl-banner--notice {
+	--nl-banner-notice-line: var(
+		--utrecht-alert-warning-border-color,
+		var(--utrecht-color-orange-30)
+	);
+	--nl-banner-notice-ground: var(--utrecht-alert-warning-background-color, Canvas);
+	--nl-banner-notice-ink: var(--utrecht-alert-warning-color, CanvasText);
+	/* Today's look, the fallback of the attention roles below. */
+	--nl-banner-notice-edge: var(
+		--nldesign-website-notice-border-color,
+		var(--nl-banner-notice-line)
+	);
+	--nl-banner-notice-fill: var(
+		--nldesign-website-notice-background-color,
+		var(--nl-banner-notice-ground)
+	);
+	--nl-banner-notice-text: var(
+		--nldesign-website-notice-color,
+		var(--nl-banner-notice-ink)
+	);
+	border-block-end-color: var(
+		--thematiq-attention-border-color,
+		var(--nl-banner-notice-edge)
+	);
+	background-color: var(
+		--thematiq-attention-background-color,
+		var(--nl-banner-notice-fill)
+	);
+	color: var(--thematiq-attention-color, var(--nl-banner-notice-text));
+}
+
 .nl-banner__text {
 	margin: 0;
+}
+
+.nl-banner__text--parts {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.375rem 0.75rem;
+	align-items: baseline;
+}
+
+.nl-banner__text.container {
+	flex: 1;
+	padding-block: 0.25rem;
+}
+
+.nl-banner .utrecht-link.nl-banner__link {
+	color: inherit;
+	font-weight: 600;
 }
 </style>

@@ -22,26 +22,26 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/admin-menu-follows-roles/specs/admin-ui/spec.md#requirement-the-app-menu-must-show-a-user-only-the-pages-their-role-may-use
+ * @spec openspec/specs/admin-ui/spec.md#requirement-the-app-menu-must-show-a-user-only-the-pages-their-role-may-use
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Controller\AccessRequestAdminController;
-use OCA\Portaliq\Controller\PortalAccountAdminController;
+use OCA\Portaliq\Kernel\Contracts\AdminMenuAccessInterface;
 use OCP\IGroupManager;
 use OCP\IUserSession;
+use OCA\Portaliq\Kernel\StaffAction;
 
 /**
  * The four access flags the app menu reads.
  *
  * Fail-closed: without a signed-in user every flag is false.
  *
- * @spec openspec/changes/admin-menu-follows-roles/specs/admin-ui/spec.md#requirement-the-app-menu-must-show-a-user-only-the-pages-their-role-may-use
+ * @spec openspec/specs/admin-ui/spec.md#requirement-the-app-menu-must-show-a-user-only-the-pages-their-role-may-use
  */
-class AdminMenuAccess {
+class AdminMenuAccess implements AdminMenuAccessInterface {
 
 	/**
 	 * Constructor.
@@ -76,7 +76,7 @@ class AdminMenuAccess {
 	 *
 	 * @return array{admin: bool, pages: bool, accounts: bool, accessRequests: bool}
 	 *
-	 * @spec openspec/changes/admin-menu-follows-roles/specs/admin-ui/spec.md#requirement-the-app-menu-must-show-a-user-only-the-pages-their-role-may-use
+	 * @spec openspec/specs/admin-ui/spec.md#requirement-the-app-menu-must-show-a-user-only-the-pages-their-role-may-use
 	 */
 	public function forCurrentUser(): array {
 		$user = $this->userSession->getUser();
@@ -87,8 +87,46 @@ class AdminMenuAccess {
 		return [
 			'admin'          => $this->groups->isAdmin($user->getUID()),
 			'pages'          => $this->pageEditor->mayEdit(user: $user),
-			'accounts'       => $this->actions->can(user: $user, action: PortalAccountAdminController::ACTION_PROVISION),
-			'accessRequests' => $this->actions->can(user: $user, action: AccessRequestAdminController::ACTION_ANSWER),
+			'accounts'       => $this->actions->can(user: $user, action: StaffAction::PROVISION),
+			'accessRequests' => $this->actions->can(user: $user, action: StaffAction::ANSWER_ACCESS_REQUEST),
 		];
 	}//end forCurrentUser()
+
+	/**
+	 * Whether the signed-in user is portaliq staff and may open the app.
+	 *
+	 * Staff is an administrator, a member of the staff group, a member of a
+	 * configured editor group, or a member of a group the action matrix grants
+	 * any action. Everybody else signed in to Nextcloud (a self-registered
+	 * account, an account in no group) is not staff: the app answers them
+	 * with a refusal, and OpenRegister refuses them the register, which
+	 * names only the staff group (close-portaliq-register-to-staff).
+	 *
+	 * @return bool True when the signed-in user is staff.
+	 *
+	 * @spec openspec/changes/close-portaliq-register-to-staff/specs/admin-ui/spec.md#requirement-only-staff-may-open-portaliqs-nextcloud-app-and-read-its-register
+	 */
+	public function isStaff(): bool {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return false;
+		}
+
+		$uid = $user->getUID();
+		if ($this->groups->isAdmin($uid) === true || $this->groups->isInGroup($uid, self::STAFF_GROUP) === true) {
+			return true;
+		}
+
+		if ($this->pageEditor->mayEdit(user: $user) === true) {
+			return true;
+		}
+
+		foreach (array_keys($this->actions->getMatrix()) as $action) {
+			if ($this->actions->can(user: $user, action: (string)$action) === true) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end isStaff()
 }//end class

@@ -17,8 +17,16 @@ export const metaOf = {
 	nlds: 'Notification Banner',
 	synonyms: ['balk', 'storingsmelding', 'bovenaan', 'onderhoud', 'mededeling'],
 	fields: [
-		{ name: 'kind', kind: 'string', label: 'Soort: info, ok, warning of error' },
+		{
+			name: 'kind',
+			kind: 'string',
+			label: 'Soort: info, ok, warning, error of notice',
+		},
+		{ name: 'lead', kind: 'string', label: 'Vette woorden vooraan (Let op)' },
 		{ name: 'text', kind: 'text', label: 'Tekst' },
+		{ name: 'linkLabel', kind: 'string', label: 'Tekst van de link erachter' },
+		{ name: 'linkHref', kind: 'string', label: 'Adres van die link' },
+		{ name: 'band', kind: 'boolean', label: 'Over de hele breedte' },
 		{ name: 'closable', kind: 'boolean', label: 'Bezoeker kan sluiten' },
 	],
 	defaultSize: { gridWidth: 12, gridHeight: 1 },

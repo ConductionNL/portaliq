@@ -13,7 +13,7 @@ use DateTime;
 use OCA\Portaliq\Controller\AvailabilityController;
 use OCA\Portaliq\Service\Availability\AvailabilityReport;
 use OCA\Portaliq\Service\Availability\AvailabilityStore;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PublishedPortals;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
@@ -76,7 +76,7 @@ class AvailabilityControllerTest extends TestCase {
 		$store->method('dailyBetween')->willReturn(['2026-08-10' => ['intervals' => 288, 'available' => 288]]);
 		$store->method('outagesBetween')->willReturn([]);
 
-		$portals = $this->createMock(PortalResolver::class);
+		$portals = $this->createMock(PublishedPortals::class);
 		$portals->method('allPublishedPortals')->willReturn([['slug' => 'open-tilburg']]);
 
 		$time = $this->createMock(ITimeFactory::class);

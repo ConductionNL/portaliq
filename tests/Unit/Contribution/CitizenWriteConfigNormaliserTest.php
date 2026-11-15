@@ -19,6 +19,7 @@ use PHPUnit\Framework\TestCase;
  * declaration closes the surface rather than opening it.
  *
  * @covers \OCA\Portaliq\Contribution\CitizenWriteConfigNormaliser
+ * @uses   \OCA\Portaliq\Contribution\CaseFieldDisplayHints
  *
  * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
  */
@@ -116,4 +117,44 @@ class CitizenWriteConfigNormaliserTest extends TestCase {
 
 		$this->assertSame($action, (new CitizenWriteConfigNormaliser())->normaliseAction(action: $action));
 	}//end testAnActionWithoutADeclarationIsUntouched()
+
+	/**
+	 * The kept config lists the required keys, then the defaulted ones, in
+	 * a fixed order; an empty or non-string override keeps the default; an
+	 * extra key is dropped.
+	 *
+	 * @return void
+	 */
+	public function testTheKeptConfigIsInTheRecordedOrder(): void {
+		$action = (new CitizenWriteConfigNormaliser())->normaliseAction(action: [
+			'type' => 'update',
+			CitizenWriteConfigNormaliser::KEY => ['documentsField' => 7, 'typeSchema' => 's', 'extra' => 'x', 'statusField' => '', 'typeRegister' => 'r', 'recordField' => 'writes', 'typeField' => 't'],
+		]);
+
+		$this->assertSame(
+			['typeField' => 't', 'typeRegister' => 'r', 'typeSchema' => 's', 'statusField' => 'status', 'recordField' => 'writes', 'documentsField' => 'portalDocuments'],
+			$action[CitizenWriteConfigNormaliser::KEY]
+		);
+	}
+	/**
+	 * Field display hints ride along sanitised, and only when they say something.
+	 *
+	 * @spec openspec/changes/personal-data-left-untranslated/specs/site-chrome/spec.md#scenario-a-personal-field-of-a-contribution
+	 */
+	public function testFieldHintsAreKeptOnlyWhenTheySaySomething(): void {
+		$declared = ['typeField' => 'zaaktype', 'typeRegister' => 'zaken', 'typeSchema' => 'zaaktype'];
+		$normaliser = new CitizenWriteConfigNormaliser();
+
+		$marked = $normaliser->normaliseAction(action: [
+			'type' => 'update',
+			'citizenWrite' => $declared + ['fields' => ['kenteken' => ['personal' => true, 'writable' => true], 'kleur' => ['personal' => 'yes']]],
+		]);
+		$this->assertSame(['kenteken' => ['personal' => true]], $marked['citizenWrite']['fields']);
+
+		$unmarked = $normaliser->normaliseAction(action: [
+			'type' => 'update',
+			'citizenWrite' => $declared + ['fields' => ['kleur' => ['format' => 'colour']]],
+		]);
+		$this->assertArrayNotHasKey('fields', $unmarked['citizenWrite']);
+	}//end testFieldHintsAreKeptOnlyWhenTheySaySomething()
 }//end class

@@ -208,6 +208,29 @@ test('where a case stands, whose turn it is, and which cases are closed', () => 
 	assert.equal(casesOnScreen(rows, { limit: 10 }, ZAKEN).rows.length, 6)
 })
 
+test('the current step names the next one, inside a sentence, and only there', async () => {
+	const html = await renderComponent(ProcessSteps, {
+		steps: STEPS,
+		tr: nl,
+		locale: 'nl',
+		today: TODAY,
+	})
+	const items = html.split('<li ').slice(1)
+	assert.match(
+		items[1],
+		/<p class="pq-process-steps__next" data-testid="mijn-step-next">\s*Volgende stap: besluit\s*<\/p>/,
+	)
+	for (const index of [0, 2, 3]) {
+		assert.doesNotMatch(items[index], /mijn-step-next/)
+	}
+})
+
+test('the last step being current names no next step', async () => {
+	const steps = STEPS.map((step, index) => ({ ...step, state: index === STEPS.length - 1 ? 'current' : 'done' }))
+	const html = await renderComponent(ProcessSteps, { steps, tr: nl, locale: 'nl', today: TODAY })
+	assert.doesNotMatch(html, /mijn-step-next/)
+})
+
 test('process steps are an ordered list; the current step is marked, a done step says so', async () => {
 	// REQ-SMO-003 scenario "The case page of DossiqCase.dc.html".
 	const html = await renderComponent(ProcessSteps, {
@@ -230,7 +253,11 @@ test('process steps are an ordered list; the current step is marked, a done step
 	)
 	assert.doesNotMatch(items[0] + items[2], /aria-current/)
 	assert.match(items[0], /<span class="sr-only">Gereed: <\/span>Ontvangen/)
-	assert.match(items[0], /<time datetime="2026-10-02">2 oktober<\/time>/)
+	assert.match(
+		items[0],
+		/<time datetime="2026-10-02">2 oktober 2026<\/time>/,
+		'a step date carries its year, also in this year',
+	)
 	assert.match(items[1], /Wij zoeken de documenten\./)
 	assert.match(
 		items[0],
@@ -483,4 +510,45 @@ test('a page renders its cases and steps blocks and loads the cases collection',
 	assert.deepEqual(collectionIdsFor(page), ['mijnZaken', 'weg'])
 	assert.equal(typeof blocks.cases, 'function')
 	assert.equal(typeof blocks.steps, 'function')
+})
+
+// mandated-case-opens-on-its-record-page: a case opened under a mandate reads
+// where it stands under that mandate; the API names it on the route.
+test('a case read under a mandate asks its steps under that mandate', async () => {
+	const asked = []
+	const ctx = instance(StepsBlock, {
+		block: { type: 'steps', collection: 'mijnZaken' },
+		collection: ZAKEN,
+		record: { id: 'z-henk', _mandate: { id: 'm-henk', label: 'Henk Bakker' } },
+		api: {
+			fetchSteps: async (collection, id, mandateId) => {
+				asked.push([id, mandateId])
+				return { label: '', steps: STEPS }
+			},
+		},
+	})
+	await ctx.load()
+	assert.deepEqual(asked, [['z-henk', 'm-henk']])
+
+	const calls = []
+	globalThis.window = {
+		localStorage: { getItem: () => 'token-1', setItem() {}, removeItem() {} },
+	}
+	const savedFetch = globalThis.fetch
+	globalThis.fetch = async (url) => {
+		calls.push(url)
+		return { ok: true, json: async () => ({ steps: [], entries: [] }) }
+	}
+	try {
+		const api = createPortalApi({ apiBase: '/apps/portaliq/portal/api' })
+		await api.fetchSteps(ZAKEN, 'z-henk', 'm-henk')
+		await api.fetchTimeline(ZAKEN, 'z-henk', 'm-henk')
+		await api.fetchSteps(ZAKEN, 'z-own')
+	} finally {
+		globalThis.fetch = savedFetch
+		delete globalThis.window
+	}
+	assert.match(calls[0], /\/z-henk\/steps\?collection=mijnZaken&mandate=m-henk$/)
+	assert.match(calls[1], /\/z-henk\/timeline\?collection=mijnZaken&mandate=m-henk$/)
+	assert.match(calls[2], /\/z-own\/steps\?collection=mijnZaken$/, 'an own case names no mandate')
 })

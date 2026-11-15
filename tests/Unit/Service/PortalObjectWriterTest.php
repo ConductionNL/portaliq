@@ -10,6 +10,8 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Tests the OR writer: it degrades to null without OpenRegister, and — the
@@ -30,6 +32,17 @@ class PortalObjectWriterTest extends TestCase {
 		$this->assertNull($writer->createObject('portaliq', 'exampleDocument', 'subjectRef', 's1', 'org-1', ['title' => 'X']));
 
 	}//end testReturnsNullWhenOpenRegisterUnavailable()
+
+	public function testAnUpdateWithoutOpenRegisterWritesNothing(): void {
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willThrowException(new RuntimeException('OR not installed'));
+
+		$writer = new PortalObjectWriter($container, $this->createMock(LoggerInterface::class));
+
+		$this->assertNull($writer->updateObject('portaliq', 'exampleDocument', 'subjectRef', 's1', 'org-1', 'obj-1', ['title' => 'X']));
+		$this->assertNull($writer->updateObject('portaliq', 'exampleDocument', 'subjectRef', 's1', 'org-1', '', ['title' => 'X']));
+
+	}//end testAnUpdateWithoutOpenRegisterWritesNothing()
 
 	public function testStampsOwnershipOverClientInputAndBypassesRbac(): void {
 		$objectService = new class {
@@ -54,13 +67,14 @@ class PortalObjectWriterTest extends TestCase {
 			 */
 			public function saveObject(
 				array $object,
-				?array $extend = null,
-				mixed $register = null,
-				mixed $schema = null,
-				?string $uuid = null,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
 				bool $_rbac = true,
-				bool $_multitenancy = true,
+				bool $_multitenancy = true
 			): array {
+				$extend = $options->extend;
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved = $object;
 				$this->register = $register;
 				$this->schema = $schema;
@@ -136,6 +150,37 @@ class PortalObjectWriterTest extends TestCase {
 		$this->assertSame('New', $result['title']);
 
 	}//end testUpdatePatchesTheSubjectsOwnObjectAndReStampsScope()
+
+	/**
+	 * inbox-read-receipt-on-request T03: a closure decides the fields from the
+	 * row the writer has just proven the subject's own, and a foreign row never
+	 * reaches it.
+	 *
+	 * @spec openspec/changes/inbox-read-receipt-on-request/tasks.md#t03
+	 */
+	public function testAClosureDecidesTheFieldsFromTheVerifiedRow(): void {
+		$objectService = $this->updatableObjectService(
+			['portalMessage' => [['id' => 'm-1', 'subjectRef' => 's1', 'organisation' => 'org-1', 'readAt' => '2026-10-08T09:14:00Z']]]
+		);
+		$writer = new PortalObjectWriter($this->container($objectService), $this->createMock(LoggerInterface::class));
+		$seen = null;
+
+		$writer->updateObject('portaliq', 'portalMessage', 'subjectRef', 's1', 'org-1', 'm-1', static function (array $row) use (&$seen): array {
+			$seen = $row['readAt'];
+			return ['read' => true];
+		});
+		$this->assertSame('2026-10-08T09:14:00Z', $seen);
+		$this->assertTrue($objectService->saved['read']);
+		$this->assertSame('2026-10-08T09:14:00Z', $objectService->saved['readAt']);
+
+		$called = false;
+		$foreign = $writer->updateObject('portaliq', 'portalMessage', 'subjectRef', 'someone-else', 'org-1', 'm-1', static function (array $row) use (&$called): array {
+			$called = true;
+			return [];
+		});
+		$this->assertNull($foreign);
+		$this->assertFalse($called);
+	}//end testAClosureDecidesTheFieldsFromTheVerifiedRow()
 
 	/**
 	 * ISOLATION / IDOR (closes #16): the subject supplies an id it does NOT
@@ -392,7 +437,9 @@ class PortalObjectWriterTest extends TestCase {
 			 *
 			 * @return array<string,mixed>|null
 			 */
-			public function find(string $id, string $register = '', string $schema = '', bool $_rbac = true, bool $_multitenancy = true): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				foreach (($this->rows[$schema] ?? []) as $row) {
 					if (in_array($id, [($row['id'] ?? null), ($row['uuid'] ?? null)], true) === true) {
 						return $row;
@@ -409,13 +456,14 @@ class PortalObjectWriterTest extends TestCase {
 			 */
 			public function saveObject(
 				array $object,
-				?array $extend = null,
-				mixed $register = null,
-				mixed $schema = null,
-				?string $uuid = null,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
 				bool $_rbac = true,
-				bool $_multitenancy = true,
+				bool $_multitenancy = true
 			): array {
+				$extend = $options->extend;
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				if ($this->throwOnSave === true) {
 					throw new RuntimeException('OR write failed');
 				}

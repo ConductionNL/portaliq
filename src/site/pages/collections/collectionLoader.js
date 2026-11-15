@@ -10,17 +10,18 @@
 // load that finishes after a newer one for the same collection is dropped, so
 // a slow first read cannot overwrite the row a create just added.
 //
-// @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-collections-must-reload-after-a-write-req-srp-016
+// @spec openspec/specs/site-portal-parity/spec.md#requirement-collections-must-reload-after-a-write-req-srp-016
 
 import { rowFor } from '../../../shared/openRecord.js'
 
 /**
  * The ids of the collections a page's blocks read: every `collection`,
- * `detail`, `kpi`, `tasks` and `cases` block, every calendar source, and a record page's
- * record collection.
+ * `detail`, `kpi`, `tasks` and `cases` block, a documents block for each
+ * record, every calendar source, and a record page's record collection.
  *
  * @param {object} page The contribution page.
  * @return {Array<string>}
+ * @spec openspec/changes/documents-for-each-record/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
  */
 export function collectionIdsFor(page) {
 	const ids = []
@@ -36,21 +37,52 @@ export function collectionIdsFor(page) {
 	add(page?.records?.collection)
 	add(page?.records?.subtitleLookup?.collection)
 	for (const block of page?.blocks || []) {
-		if (
-			['collection', 'detail', 'kpi', 'tasks', 'cases'].includes(block?.type)
-		) {
-			add(block.collection)
-		}
-		for (const lookup of block?.lookups || []) {
-			add(lookup?.collection)
-		}
-		if (block?.type === 'calendar') {
-			for (const source of block.sources || []) {
-				add(source?.collection)
-			}
-		}
+		blockCollectionIds(block).forEach(add)
 	}
 	return ids
+}
+
+/**
+ * The collections one block reads, in the order it reads them: its own rows,
+ * its lookups, its status (card-status-today) and a calendar's sources.
+ *
+ * @param {object|null} block A page block.
+ * @return {Array<unknown>} The collection ids, unchecked.
+ */
+function blockCollectionIds(block) {
+	return [
+		readsRows(block) ? block.collection : undefined,
+		...[...(block?.lookups || [])].map((lookup) => lookup?.collection),
+		block?.status?.collection,
+		...calendarSourceIds(block),
+	]
+}
+
+/**
+ * @param {object|null} block A page block.
+ * @return {Array<unknown>} A calendar block's source collections, or none.
+ */
+function calendarSourceIds(block) {
+	if (block?.type !== 'calendar') {
+		return []
+	}
+	return [...(block.sources || [])].map((source) => source?.collection)
+}
+
+/**
+ * Whether a block reads the rows of its own collection: a `collection`,
+ * `detail`, `kpi`, `tasks` or `cases` block, or a documents block for each
+ * record.
+ *
+ * @param {object} block The block.
+ * @return {boolean}
+ * @spec openspec/changes/documents-for-each-record/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
+ */
+function readsRows(block) {
+	return (
+		['collection', 'detail', 'kpi', 'tasks', 'cases'].includes(block?.type)
+		|| (block?.type === 'documents' && block.eachRecord === true)
+	)
 }
 
 /**
@@ -71,14 +103,42 @@ export function createCollectionLoader({ api, store }) {
 	 * @return {Promise<void>}
 	 */
 	async function load(collection) {
-		if (
-			!collection
-			|| !collection.id
-			|| !api
-			|| typeof api.fetchCollection !== 'function'
-		) {
+		if (!canRead(collection)) {
 			return
 		}
+		const turn = startRead(collection)
+		const answer = await readRows(collection)
+		// Only the latest read of a collection lands.
+		if (generation.get(collection.id) === turn) {
+			const failed = !Array.isArray(answer)
+			store[collection.id] = {
+				loading: false,
+				failed,
+				objects: failed ? [] : answer,
+			}
+		}
+	}
+
+	/**
+	 * @param {object|null} collection The collection.
+	 * @return {boolean} Whether it names an id and the api can read it.
+	 */
+	function canRead(collection) {
+		return Boolean(
+			collection
+			&& collection.id
+			&& api
+			&& typeof api.fetchCollection === 'function',
+		)
+	}
+
+	/**
+	 * Mark a collection loading, keeping the rows it had, and count the read.
+	 *
+	 * @param {object} collection The collection.
+	 * @return {number} This read's turn.
+	 */
+	function startRead(collection) {
 		const turn = (generation.get(collection.id) || 0) + 1
 		generation.set(collection.id, turn)
 		store[collection.id] = {
@@ -86,22 +146,22 @@ export function createCollectionLoader({ api, store }) {
 			failed: false,
 			objects: store[collection.id]?.objects || [],
 		}
-		// A read that failed is not an empty list: it is marked `failed`, so
-		// a block can say so and offer to try again
-		// (site-mijn-omgeving-components REQ-SMO-009).
-		let answer
+		return turn
+	}
+
+	/**
+	 * Read a collection's rows. A read that failed is not an empty list: it
+	 * answers null, so the block can say so and offer to try again
+	 * (site-mijn-omgeving-components REQ-SMO-009).
+	 *
+	 * @param {object} collection The collection.
+	 * @return {Promise<Array<object>|null>} The rows, or null.
+	 */
+	async function readRows(collection) {
 		try {
-			answer = await api.fetchCollection(collection, { orNull: true })
+			return await api.fetchCollection(collection, { orNull: true })
 		} catch {
-			answer = null
-		}
-		const failed = !Array.isArray(answer)
-		if (generation.get(collection.id) === turn) {
-			store[collection.id] = {
-				loading: false,
-				failed,
-				objects: failed ? [] : answer,
-			}
+			return null
 		}
 	}
 
@@ -126,6 +186,20 @@ export function createCollectionLoader({ api, store }) {
 	}
 
 	/**
+	 * @param {object|null} collection A collection.
+	 * @param {{register: string, schema: string}|null} written What was written to.
+	 * @return {boolean} Whether the collection reads that register and schema.
+	 */
+	function isWrittenTo(collection, written) {
+		return Boolean(
+			collection
+			&& written
+			&& collection.register === written.register
+			&& collection.schema === written.schema,
+		)
+	}
+
+	/**
 	 * After a create or update: load again every collection, of every
 	 * contribution, that reads the same register and schema, whether or not it
 	 * has loaded before. Then read the unread count again, so a receipt the
@@ -139,12 +213,7 @@ export function createCollectionLoader({ api, store }) {
 		const loads = []
 		for (const contribution of contributions || []) {
 			for (const collection of contribution?.collections || []) {
-				if (
-					collection
-					&& written
-					&& collection.register === written.register
-					&& collection.schema === written.schema
-				) {
+				if (isWrittenTo(collection, written)) {
 					loads.push(load(collection))
 				}
 			}
@@ -214,4 +283,44 @@ export function openRecordState(loaded, target) {
 	}
 	const row = rowFor(loaded.objects, target.id) || target.row || null
 	return row ? { state: 'found', row } : { state: 'missing' }
+}
+
+/**
+ * Whether the open record was read under a mandate (`_mandate.id`). A case
+ * read under a mandate is read-only (REQ-CMC-004): the server refuses every
+ * write under it, so the page offers none.
+ *
+ * @param {object|null} record The open record.
+ * @return {boolean}
+ * @spec openspec/changes/mandated-case-offers-no-writes/specs/portal-my-cases/spec.md#requirement-a-case-read-under-a-mandate-offers-no-writes
+ */
+export function readUnderMandate(record) {
+	const id = record?._mandate?.id
+	return typeof id === 'string' && id !== ''
+}
+
+/**
+ * The record a record page opens: the picked row when it is in the resident's
+ * own list, or the picked row a mandate opened. A case opened from "My cases"
+ * under a mandate is the represented party's, so it is never in the person's
+ * own rows; its row carries the mandate (`_mandate.id`) it was read under, and
+ * the blocks on the page read it again under that mandate. Any other row
+ * outside the list opens nothing.
+ *
+ * @param {Array<object>} rows The record collection's scoped rows.
+ * @param {object|null} picked The row picked for the page.
+ * @return {object|null} The open record, or null.
+ * @spec openspec/changes/mandated-case-opens-on-its-record-page/specs/portal-my-cases/spec.md#requirement-a-case-read-under-a-mandate-opens-on-its-record-page
+ */
+export function pickedRecord(rows, picked) {
+	const id = picked?.id || picked?.uuid || picked?.['@self']?.id
+	if (!id) {
+		return null
+	}
+	return (
+		rowFor(rows, id)
+		|| (typeof picked._mandate?.id === 'string' && picked._mandate.id !== ''
+			? picked
+			: null)
+	)
 }

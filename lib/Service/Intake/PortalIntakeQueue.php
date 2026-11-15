@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md
  */
 
 declare(strict_types=1);
@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Intake;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\PortalIntakeQueueInterface;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\Security\ISecureRandom;
@@ -38,23 +39,32 @@ use OCP\Security\ISecureRandom;
 /**
  * Records, acknowledges and reports on intake submissions.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md
  */
-class PortalIntakeQueue {
+class PortalIntakeQueue implements PortalIntakeQueueInterface {
 	/**
 	 * A submission recorded but not yet registered as a case.
 	 */
 	public const STATE_QUEUED = 'queued';
 
 	/**
-	 * A submission whose case exists.
-	 */
-	public const STATE_REGISTERED = 'registered';
-
-	/**
 	 * A submission whose create failed. Shown, never hidden.
 	 */
 	public const STATE_FAILED = 'failed';
+
+	/**
+	 * Held until a second person co-signs; never delivered in this state.
+	 *
+	 * @var string
+	 */
+	public const STATE_AWAITING_COSIGN = 'awaiting-cosign';
+
+	/**
+	 * The co-signer refused or the deadline passed; never delivered.
+	 *
+	 * @var string
+	 */
+	public const STATE_NOT_COSIGNED = 'not-cosigned';
 
 	/**
 	 * The register the submission lives in.
@@ -88,42 +98,256 @@ class PortalIntakeQueue {
 	 * @param array<string, mixed> $answers The validated answers.
 	 * @param string $subjectRef The portal identity, or '' when anonymous.
 	 * @param string $origin The framing origin, or '' on the portal itself.
+	 * @param array<int, array<string, string>> $statements The statements accepted, with text version and time.
+	 * @param array<int, string> $computed The names of the fields the portal worked out or a decision filled.
+	 * @param array<string, string> $decisions The outcome of each decided step, by step id.
+	 * @param array<int, array<string, string>> $verifiedEmails The addresses verified with a code, each with the time.
 	 *
 	 * @return array{reference: string, state: string}|null Null when the
 	 *         submission could not be recorded, in which case nothing is
 	 *         acknowledged: a reference nobody can look up is worse than none.
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
-	public function accept(string $portal, string $route, array $answers, string $subjectRef = '', string $origin = ''): ?array {
-		if ($portal === '') {
+	public function accept(
+		string $portal,
+		string $route,
+		array $answers,
+		string $subjectRef = '',
+		string $origin = '',
+		array $statements = [],
+		array $computed = [],
+		array $decisions = [],
+		array $verifiedEmails = [],
+	): ?array {
+		$submission = new QueuedSubmission(
+			portal: $portal,
+			route: $route,
+			answers: $answers,
+			subjectRef: $subjectRef,
+			origin: $origin,
+			statements: $statements,
+			computed: $computed,
+			decisions: $decisions,
+			verifiedEmails: $verifiedEmails
+		);
+		return $this->acceptSubmission(submission: $submission);
+	}//end accept()
+
+	/**
+	 * Accept a validated submission and hand back its reference.
+	 *
+	 * @param QueuedSubmission $submission The submission and what was checked along the way.
+	 *
+	 * @return array{reference: string, state: string}|null Null when the
+	 *         submission could not be recorded, in which case nothing is
+	 *         acknowledged: a reference nobody can look up is worse than none.
+	 *
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 */
+	public function acceptSubmission(QueuedSubmission $submission): ?array {
+		if ($submission->portal === '') {
 			return null;
 		}
 
 		$reference = 'AANVRAAG-' . strtoupper($this->random->generate(8, (ISecureRandom::CHAR_UPPER . ISecureRandom::CHAR_DIGITS)));
-		$created = $this->writer->createObject(
+		$created   = $this->writer->createObject(
 			register: self::REGISTER,
 			schema: self::SCHEMA,
 			scopeField: '',
 			subjectRef: '',
 			organisation: '',
-			data: [
-				'reference' => $reference,
-				'portal' => $portal,
-				'route' => $route,
-				'subjectRef' => $subjectRef,
-				'origin' => $origin,
-				'answers' => $answers,
-				'state' => self::STATE_QUEUED,
-				'submittedAt' => (new DateTimeImmutable())->format(DATE_ATOM),
-			]
+			data: $this->submissionRow(submission: $submission, reference: $reference)
 		);
 		if ($created === null) {
 			return null;
 		}
 
 		return ['reference' => $reference, 'state' => self::STATE_QUEUED];
-	}//end accept()
+	}//end acceptSubmission()
+
+	/**
+	 * Record a submission that waits for a co-signer, with its co-sign block.
+	 *
+	 * The row is written in `awaiting-cosign`, which the drain never reads, so
+	 * nothing is delivered until the co-signer signs.
+	 *
+	 * @param QueuedSubmission     $submission The checked submission.
+	 * @param array<string, mixed> $cosign     The co-sign block: state, email, code hash, deadline.
+	 *
+	 * @return array{reference: string, state: string}|null The reference, or null when it could not be recorded.
+	 *
+ * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 */
+	public function hold(QueuedSubmission $submission, array $cosign): ?array {
+		if ($submission->portal === '') {
+			return null;
+		}
+
+		$reference = 'AANVRAAG-' . strtoupper($this->random->generate(8, (ISecureRandom::CHAR_UPPER . ISecureRandom::CHAR_DIGITS)));
+		$data      = $this->submissionRow(submission: $submission, reference: $reference);
+		$data['state']  = self::STATE_AWAITING_COSIGN;
+		$data['cosign'] = $cosign;
+		$created        = $this->writer->createObject(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: '',
+			subjectRef: '',
+			organisation: '',
+			data: $data
+		);
+		if ($created === null) {
+			return null;
+		}
+
+		return ['reference' => $reference, 'state' => self::STATE_AWAITING_COSIGN];
+	}//end hold()
+
+	/**
+	 * The submissions waiting for a co-signer.
+	 *
+	 * @param int $limit At most this many.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+ * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 */
+	public function awaitingCosign(int $limit = 500): array {
+		$rows = $this->reader->readCollection(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: 'state',
+			subjectRef: self::STATE_AWAITING_COSIGN,
+			organisation: '',
+			limit: $limit
+		);
+
+		return array_values(
+			array_filter($rows, static fn (mixed $row): bool => is_array($row) === true && ($row['state'] ?? '') === self::STATE_AWAITING_COSIGN)
+		);
+	}//end awaitingCosign()
+
+	/**
+	 * The requests a resident submitted on a portal that wait for a co-signer or were not co-signed, newest first.
+	 *
+	 * These have no case yet (the case is created at delivery), so Mijn zaken
+	 * lists them from here to say who they wait for and until when.
+	 *
+	 * @param string $subjectRef The resident's own portal identity.
+	 * @param string $portal     The portal, re-checked against every row.
+	 * @param int    $limit      At most this many rows are read.
+	 *
+	 * @return array<int, array<string, mixed>> Each with reference, route, submittedAt, state and the cosign line.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 */
+	public function heldFor(string $subjectRef, string $portal, int $limit = 50): array {
+		if ($subjectRef === '' || $portal === '') {
+			return [];
+		}
+
+		$rows = $this->reader->readCollection(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: 'subjectRef',
+			subjectRef: $subjectRef,
+			organisation: '',
+			limit: $limit
+		);
+
+		$held = [];
+		foreach ($rows as $row) {
+			if (is_array($row) === false
+				|| ($row['subjectRef'] ?? '') !== $subjectRef
+				|| ($row['portal'] ?? '') !== $portal
+				|| in_array(($row['state'] ?? ''), [self::STATE_AWAITING_COSIGN, self::STATE_NOT_COSIGNED], true) === false
+			) {
+				continue;
+			}
+
+			$held[] = [
+				'reference' => (string)($row['reference'] ?? ''),
+				'route' => (string)($row['route'] ?? ''),
+				'submittedAt' => (string)($row['submittedAt'] ?? ''),
+				'state' => (string)$row['state'],
+				'cosign' => ($this->cosignStatus(row: $row)['cosign'] ?? ['state' => '', 'name' => '', 'deadline' => '']),
+			];
+		}
+
+		usort($held, static fn (array $a, array $b): int => strcmp($b['submittedAt'], $a['submittedAt']));
+
+		return $held;
+	}//end heldFor()
+
+	/**
+	 * Store the co-signer's answer: signed releases the submission to the drain, anything else stops it.
+	 *
+	 * @param array<string, mixed> $submission The held submission.
+	 * @param array<string, mixed> $cosign     The updated co-sign block.
+	 *
+	 * @return bool Whether it was written.
+	 *
+ * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 */
+	public function answerCosign(array $submission, array $cosign): bool {
+		$state = self::STATE_NOT_COSIGNED;
+		if (($cosign['state'] ?? '') === 'signed') {
+			$state = self::STATE_QUEUED;
+		}
+
+		return $this->write(submission: $submission, data: ['state' => $state, 'cosign' => $cosign]);
+	}//end answerCosign()
+
+	/**
+	 * The fields of a newly queued submission.
+	 *
+	 * @param QueuedSubmission $submission The submission.
+	 * @param string           $reference  The reference minted for it.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function submissionRow(QueuedSubmission $submission, string $reference): array {
+		$data = [
+			'reference' => $reference,
+			'portal' => $submission->portal,
+			'route' => $submission->route,
+			'subjectRef' => $submission->subjectRef,
+			'origin' => $submission->origin,
+			'answers' => $submission->answers,
+			'state' => self::STATE_QUEUED,
+			'submittedAt' => (new DateTimeImmutable())->format(DATE_ATOM),
+		];
+		return $this->withCheckedExtras(data: $data, submission: $submission);
+	}//end submissionRow()
+
+	/**
+	 * Add what the portal checked along the way, each only when there is any.
+	 *
+	 * @param array<string, mixed> $data       The row so far.
+	 * @param QueuedSubmission     $submission The submission.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withCheckedExtras(array $data, QueuedSubmission $submission): array {
+		if ($submission->statements !== []) {
+			$data['statements'] = $submission->statements;
+		}
+
+		// The fields the portal worked out or a decision filled, so delivery can say so.
+		if ($submission->computed !== []) {
+			$data['computed'] = array_values($submission->computed);
+		}
+
+		if ($submission->decisions !== []) {
+			$data['decisions'] = $submission->decisions;
+		}
+
+		if ($submission->verifiedEmails !== []) {
+			$data['verifiedEmails'] = $submission->verifiedEmails;
+		}
+
+		return $data;
+	}//end withCheckedExtras()
 
 	/**
 	 * What the reference page may say about a submission.
@@ -134,8 +358,8 @@ class PortalIntakeQueue {
 	 * @return array<string, mixed>|null The state, and the reason when it
 	 *         failed. Null when no submission carries that reference.
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
-	 * @spec openspec/changes/woo-request-intake-through-opencatalogi/specs/portal-intake-form/spec.md#requirement-a-woo-request-form-is-delivered-to-opencatalogis-intake
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md#requirement-a-woo-request-form-is-delivered-to-opencatalogis-intake
 	 */
 	public function status(string $reference, string $portal): ?array {
 		$row = $this->byReference(reference: $reference, portal: $portal);
@@ -166,8 +390,32 @@ class PortalIntakeQueue {
 			'dueAt' => (string)($registered['dueAt'] ?? ''),
 			'failureReason' => $failureReason,
 			'submittedAt' => (string)($row['submittedAt'] ?? ''),
-		];
+		] + $this->cosignStatus(row: $row);
 	}//end status()
+
+	/**
+	 * The co-sign line of a status answer: state, the co-signer's name and the deadline. Empty without co-signing.
+	 *
+	 * @param array<string, mixed> $row The submission.
+	 *
+	 * @return array<string, array<string, string>>
+	 *
+ * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 */
+	private function cosignStatus(array $row): array {
+		$cosign = $row['cosign'] ?? null;
+		if (is_array($cosign) === false || $cosign === []) {
+			return [];
+		}
+
+		return [
+			'cosign' => [
+				'state' => (string)($cosign['state'] ?? ''),
+				'name' => (string)($cosign['name'] ?? ''),
+				'deadline' => (string)($cosign['deadline'] ?? ''),
+			],
+		];
+	}//end cosignStatus()
 
 	/**
 	 * The submissions still waiting for their case.
@@ -176,7 +424,7 @@ class PortalIntakeQueue {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	public function queued(int $limit = 50): array {
 		$rows = $this->reader->readCollection(
@@ -199,6 +447,36 @@ class PortalIntakeQueue {
 	}//end queued()
 
 	/**
+	 * The submissions the drain still has to send: queued, and failed.
+	 *
+	 * @param int $limit How many of each state to take.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#4.1
+	 */
+	public function pending(int $limit = 200): array {
+		$out = [];
+		foreach ([self::STATE_QUEUED, self::STATE_FAILED] as $state) {
+			$rows = $this->reader->readCollection(
+				register: self::REGISTER,
+				schema: self::SCHEMA,
+				scopeField: 'state',
+				subjectRef: $state,
+				organisation: '',
+				limit: $limit
+			);
+			foreach ($rows as $row) {
+				if (is_array($row) === true && ($row['state'] ?? '') === $state) {
+					$out[] = $row;
+				}
+			}
+		}
+
+		return $out;
+	}//end pending()
+
+	/**
 	 * Record that a submission became a case.
 	 *
 	 * @param array<string, mixed> $submission The submission row.
@@ -208,8 +486,8 @@ class PortalIntakeQueue {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
-	 * @spec openspec/changes/woo-request-intake-through-opencatalogi/specs/portal-intake-form/spec.md#requirement-a-woo-request-form-is-delivered-to-opencatalogis-intake
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md#requirement-a-woo-request-form-is-delivered-to-opencatalogis-intake
 	 */
 	public function markRegistered(array $submission, string $caseId, string $externalReference = '', string $dueAt = ''): bool {
 		$data = [
@@ -238,7 +516,7 @@ class PortalIntakeQueue {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	public function markFailed(array $submission, string $reason): bool {
 		return $this->write(submission: $submission, data: ['state' => self::STATE_FAILED, 'failureReason' => $reason]);
@@ -267,6 +545,19 @@ class PortalIntakeQueue {
 			filter: ['portal' => $portal]
 		);
 
+		return $this->firstSubmission(rows: $rows, reference: $reference, portal: $portal);
+	}//end byReference()
+
+	/**
+	 * The first row that is the submission with this reference on this portal, or null.
+	 *
+	 * @param array<int, mixed> $rows      The rows read.
+	 * @param string            $reference The reference.
+	 * @param string            $portal    The portal.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function firstSubmission(array $rows, string $reference, string $portal): array|null {
 		foreach ($rows as $row) {
 			if (is_array($row) === true && ($row['reference'] ?? '') === $reference && ($row['portal'] ?? '') === $portal) {
 				return $row;
@@ -274,7 +565,21 @@ class PortalIntakeQueue {
 		}
 
 		return null;
-	}//end byReference()
+	}//end firstSubmission()
+
+	/**
+	 * A submission by its reference, as the portal stored it.
+	 *
+	 * @param string $reference The reference.
+	 * @param string $portal    The portal, re-checked against the row.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t04
+	 */
+	public function find(string $reference, string $portal): ?array {
+		return $this->byReference(reference: $reference, portal: $portal);
+	}//end find()
 
 	/**
 	 * Write on a submission row.

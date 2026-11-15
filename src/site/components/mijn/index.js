@@ -6,7 +6,7 @@
 // only when a page holds one, so the site's entry stays inside its budget
 // (site-mijn-omgeving-components design D1).
 //
-// @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-mijn-omgeving-components-must-use-the-den-haag-css-on-our-own-markup-and-load-on-demand-req-smo-001
+// @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-mijn-omgeving-components-must-use-the-den-haag-css-on-our-own-markup-and-load-on-demand-req-smo-001
 
 /**
  * The block components, by block type.
@@ -23,6 +23,8 @@ export const blocks = {
 	progressCards: () => import('./ProgressCards.vue'),
 	documents: () => import('./DocumentsBlock.vue'),
 	timeline: () => import('./TimelineBlock.vue'),
+	// capability-rows-said-and-planned T07
+	messages: () => import('./MessagesBlock.vue'),
 	// site-school-blocks
 	dateRows: () => import('./DateRows.vue'),
 	bars: () => import('./GradeBars.vue'),
@@ -30,4 +32,6 @@ export const blocks = {
 	segments: () => import('./SegmentedFigure.vue'),
 	greeting: () => import('./GreetingBlock.vue'),
 	calendarTiles: () => import('./CalendarTiles.vue'),
+	// calendar-timetable-display
+	timetable: () => import('./TimetableDay.vue'),
 }

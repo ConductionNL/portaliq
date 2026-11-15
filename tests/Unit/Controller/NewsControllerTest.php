@@ -33,6 +33,8 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Staff authoring: an invalid target is refused before any write, a valid
@@ -42,6 +44,7 @@ use RuntimeException;
  * @spec openspec/changes/news-and-newsletter-authoring/design.md#api-design
  */
 class NewsControllerTest extends TestCase {
+	use StaffActionDoubleTrait;
 
 	private const OS = 'OCA\\OpenRegister\\Service\\ObjectService';
 
@@ -74,14 +77,14 @@ class NewsControllerTest extends TestCase {
 		$userSession = $this->createMock(IUserSession::class);
 		$userSession->method('getUser')->willReturn(null);
 
-		$controller = new NewsController($this->createMock(IRequest::class), $userSession, $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class));
+		$controller = new NewsController($this->createMock(IRequest::class), $userSession, $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
 
 		$this->expectException(\OCP\AppFramework\OCS\OCSForbiddenException::class);
 		$controller->create('Title', 'Body', ['groupRefs' => ['groep-5a']]);
 	}//end testCreateRefusesAnUnauthenticatedCaller()
 
 	public function testCreateRejectsATargetWithNoDimension(): void {
-		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class));
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
 
 		$response = $controller->create('Title', 'Body', []);
 
@@ -98,13 +101,16 @@ class NewsControllerTest extends TestCase {
 			/**
 			 * @param array<string,mixed> $object
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved = $object;
 				return array_merge($object, ['id' => 'n1']);
 			}//end saveObject()
 		};
 
-		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
 		$response = $controller->create('Title', 'Body', ['groupRefs' => ['groep-5a']]);
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
@@ -115,12 +121,14 @@ class NewsControllerTest extends TestCase {
 
 	public function testPublishReturns404ForAMissingId(): void {
 		$objectService = new class {
-			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return null;
 			}//end find()
 		};
 
-		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
 		$response = $controller->publish('missing');
 
 		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
@@ -133,20 +141,25 @@ class NewsControllerTest extends TestCase {
 			 */
 			public array $saved = [];
 
-			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return ['id' => $id, 'title' => 'X', 'status' => 'draft'];
 			}//end find()
 
 			/**
 			 * @param array<string,mixed> $object
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved = $object;
 				return $object;
 			}//end saveObject()
 		};
 
-		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
 		$response = $controller->publish('n1');
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
@@ -172,14 +185,19 @@ class NewsControllerTest extends TestCase {
 			 */
 			public array $row = ['title' => 'X', 'status' => 'draft', 'publishedAt' => null];
 
-			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return ['id' => $id] + $this->row;
 			}//end find()
 
 			/**
 			 * @param array<string,mixed> $object
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved = $object;
 				$this->row = $object;
 				return $object;
@@ -189,7 +207,7 @@ class NewsControllerTest extends TestCase {
 		$clock = $this->createMock(ITimeFactory::class);
 		$clock->method('getTime')->willReturn(1791018000);
 
-		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), null, $clock);
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION), null, $clock);
 
 		$controller->publish('n1');
 		$this->assertSame('published', $objectService->saved['status']);
@@ -202,12 +220,14 @@ class NewsControllerTest extends TestCase {
 
 	public function testUnpublishReturns404ForAMissingId(): void {
 		$objectService = new class {
-			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return null;
 			}//end find()
 		};
 
-		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
 		$response = $controller->unpublish('missing');
 
 		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
@@ -220,20 +240,25 @@ class NewsControllerTest extends TestCase {
 			 */
 			public array $saved = [];
 
-			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return ['id' => $id, 'title' => 'X', 'status' => 'published'];
 			}//end find()
 
 			/**
 			 * @param array<string,mixed> $object
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved = $object;
 				return $object;
 			}//end saveObject()
 		};
 
-		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
 		$response = $controller->unpublish('n1');
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
@@ -253,20 +278,25 @@ class NewsControllerTest extends TestCase {
 			 */
 			public array $saved = [];
 
-			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return ['id' => $id, 'title' => 'Old', 'body' => 'Old body', 'target' => ['schoolRef' => 's'], 'status' => 'published', 'authorRef' => 'po-leerkracht-09'];
 			}//end find()
 
 			/**
 			 * @param array<string,mixed> $object
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved = $object;
 				return $object;
 			}//end saveObject()
 		};
 
-		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
 
 		$this->assertSame(Http::STATUS_BAD_REQUEST, $controller->update('n1', 'New', 'New body', [])->getStatus());
 		$this->assertSame([], $objectService->saved);
@@ -297,13 +327,16 @@ class NewsControllerTest extends TestCase {
 			/**
 			 * @param array<string,mixed> $object
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved = $object;
 				return $object;
 			}//end saveObject()
 		};
 
-		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
 
 		$controller->create('T', 'B', ['schoolRef' => 's'], [], true, 'wilgenboom', ' hele school ');
 		$this->assertTrue($objectService->saved['public']);
@@ -331,20 +364,25 @@ class NewsControllerTest extends TestCase {
 			 */
 			public array $saved = [];
 
-			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return ['id' => $id, 'title' => 'Old', 'body' => 'B', 'target' => ['schoolRef' => 's'], 'status' => 'published', 'public' => true, 'portal' => 'wilgenboom'];
 			}//end find()
 
 			/**
 			 * @param array<string,mixed> $object
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved = $object;
 				return $object;
 			}//end saveObject()
 		};
 
-		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
 
 		$controller->update('n1', 'New', 'B', ['schoolRef' => 's']);
 		$this->assertTrue($objectService->saved['public']);
@@ -364,7 +402,7 @@ class NewsControllerTest extends TestCase {
 	public function testUpdateAndAudiencesRefuseAnUnauthenticatedCaller(): void {
 		$userSession = $this->createMock(IUserSession::class);
 		$userSession->method('getUser')->willReturn(null);
-		$controller = new NewsController($this->createMock(IRequest::class), $userSession, $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class));
+		$controller = new NewsController($this->createMock(IRequest::class), $userSession, $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
 
 		$refused = 0;
 		foreach ([fn () => $controller->update('n1', 'T', 'B', ['schoolRef' => 's']), fn () => $controller->audiences()] as $call) {
@@ -386,8 +424,84 @@ class NewsControllerTest extends TestCase {
 	public function testAudiencesListsTheSchoolAndGroupChoices(): void {
 		$options = $this->createMock(NewsAudienceOptions::class);
 		$options->method('options')->willReturn(['schools' => [], 'groups' => [['id' => 'g7', 'label' => 'Groep 7']]]);
-		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class), $options);
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION), $options);
 
 		$this->assertSame(['schools' => [], 'groups' => [['id' => 'g7', 'label' => 'Groep 7']]], $controller->audiences()->getData());
 	}//end testAudiencesListsTheSchoolAndGroupChoices()
+
+	/**
+	 * A signed-in user without portal.author-news is refused by every staff method,
+	 * before anything is read or written (#1094).
+	 *
+	 * @return void
+	 */
+	public function testEveryStaffMethodRefusesAUserWithoutTheAction(): void {
+		$container = $this->createMock(ContainerInterface::class);
+		$container->expects($this->never())->method('get');
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $container, $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION, false));
+
+		$refused = 0;
+		$calls = [
+			fn () => $controller->create('Title', 'Body', ['groupRefs' => ['groep-5a']]),
+			fn () => $controller->update('n1', 'T', 'B', ['schoolRef' => 's']),
+			fn () => $controller->audiences(),
+			fn () => $controller->publish('n1'),
+			fn () => $controller->unpublish('n1'),
+		];
+		foreach ($calls as $call) {
+			try {
+				$call();
+			} catch (\OCP\AppFramework\OCS\OCSForbiddenException $e) {
+				$refused++;
+			}
+		}
+
+		$this->assertSame(count($calls), $refused);
+	}//end testEveryStaffMethodRefusesAUserWithoutTheAction()
+
+	/**
+	 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/tasks.md#task-4
+	 */
+	public function testAnEventRefIsStoredWhenPlainAndKeptWhenNotSent(): void {
+		$objectService = new class {
+			/**
+			 * @var array<string,mixed>
+			 */
+			public array $saved = [];
+
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
+				return ['id' => $id, 'title' => 'Old', 'body' => 'B', 'target' => ['schoolRef' => 's'], 'status' => 'published', 'eventRef' => 'ev1'];
+			}//end find()
+
+			/**
+			 * @param array<string,mixed> $object
+			 */
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
+				$this->saved = $object;
+				return array_merge($object, ['id' => 'n1']);
+			}//end saveObject()
+		};
+
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
+
+		$controller->create('T', 'B', ['schoolRef' => 's'], [], false, '', '', 'ev-1');
+		$this->assertSame('ev-1', $objectService->saved['eventRef']);
+
+		$controller->create('T', 'B', ['schoolRef' => 's'], [], false, '', '', '../etc/passwd');
+		$this->assertSame('', $objectService->saved['eventRef'], 'an id that is not plain is not stored');
+
+		$controller->update('n1', 'T', 'B', ['schoolRef' => 's']);
+		$this->assertSame('ev1', $objectService->saved['eventRef'], 'an update that sends no event keeps it');
+
+		$controller->update('n1', 'T', 'B', ['schoolRef' => 's'], null, '', '', 'ev-2');
+		$this->assertSame('ev-2', $objectService->saved['eventRef']);
+
+		$controller->update('n1', 'T', 'B', ['schoolRef' => 's'], null, '', '', '');
+		$this->assertSame('', $objectService->saved['eventRef'], 'an empty event clears it');
+	}//end testAnEventRefIsStoredWhenPlainAndKeptWhenNotSent()
 }//end class

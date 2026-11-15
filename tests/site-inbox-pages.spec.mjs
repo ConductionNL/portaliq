@@ -152,7 +152,11 @@ test('every string says what the React portal says, in Dutch and English', () =>
 	for (const locale of ['nl', 'en']) {
 		const bundle = portalBundle(locale)
 		for (const [key, value] of Object.entries(strings[locale])) {
-			assert.equal(value, bundle[key], `${locale}: ${key}`)
+			// A string added after the React portal retired lives only in the
+			// folder's strings, and keeps the shared catalogue out of the entry.
+			if (key in bundle) {
+				assert.equal(value, bundle[key], `${locale}: ${key}`)
+			}
 		}
 	}
 	assert.deepEqual(Object.keys(strings.nl).sort(), Object.keys(strings.en).sort())
@@ -334,7 +338,9 @@ test('an inbox row shows unread in text, its readiness fields, its delivery and 
 		inState(InboxPage, { loading: false, messages: MESSAGES }),
 		{ api: {}, t, locale: 'en', nav: NAV },
 	)
-	assert.match(html, /<strong class="pq-inbox-row__unread">Unread<\/strong>/)
+	assert.match(html, /<strong class="pq-inbox-row__unread">New<\/strong>/)
+	// The date with the month in words, as the board draws it.
+	assert.doesNotMatch(html, /pq-inbox-row__date">\s*\d+\/\d+\/\d{4}/)
 	assert.equal(
 		(html.match(/pq-inbox-row__unread"/g) || []).length,
 		1,
@@ -377,7 +383,7 @@ test('an inbox row shows unread in text, its readiness fields, its delivery and 
 	)
 })
 
-test('the messages page opens the first thread and reloads it in the picked language', async () => {
+test('the messages page opens a thread when asked and reloads it in the picked language', async () => {
 	const calls = []
 	let saveOk = true
 	const api = {
@@ -410,6 +416,10 @@ test('the messages page opens the first thread and reloads it in the picked lang
 	})
 	await page.load()
 	assert.equal(page.language, 'ar')
+	// Every conversation opens on its own button, so a new one keeps its
+	// "Nieuw" until the resident opens it (site-messages-per-record).
+	assert.equal(page.activeId, null)
+	await page.choose('t1')
 	assert.equal(page.activeId, 't1')
 	assert.equal(page.isOwn(page.messages[0]), true)
 	assert.equal(page.isOwn(page.messages[1]), false)
@@ -434,16 +444,16 @@ test('the messages page opens the first thread and reloads it in the picked lang
 		}),
 		{ api, t, locale: 'en', session: { subjectRef: 'me' } },
 	)
+	assert.match(html, /<ul class="pq-messages__cards" aria-label="Conversations">/)
+	// Each conversation is a card with its own open button, the open one
+	// expanded with its reply form (site-messages-per-record; this page no
+	// longer draws the action rows of REQ-SMO-004).
 	assert.match(
 		html,
-		/<nav class="pq-messages__threads" aria-label="Conversations">/,
+		/<h3 class="utrecht-heading-4 pq-thread__title">Group conversation<\/h3>/,
 	)
-	// Each conversation is a Den Haag action row that opens it on this page
-	// (site-mijn-omgeving-components REQ-SMO-004).
-	assert.match(
-		html,
-		/<button class="denhaag-action denhaag-action--single pq-action-row__control" type="button" aria-current="true"><span class="denhaag-action__row"><span class="denhaag-action__content"><span class="pq-action-row__title">Group conversation<\/span>/,
-	)
+	assert.match(html, /aria-expanded="true" data-testid="messages-open"/)
+	assert.match(html, /data-testid="messages-reply"/)
 
 	const none = await renderComponent(inState(MessagesPage, { threads: [] }), {
 		api,

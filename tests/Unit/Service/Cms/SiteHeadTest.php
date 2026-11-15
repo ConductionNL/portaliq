@@ -71,7 +71,7 @@ class SiteHeadTest extends TestCase {
 		$reader = $this->getMockBuilder(CmsReader::class)->disableOriginalConstructor()->onlyMethods(['page'])->getMock();
 		$reader->expects($this->once())
 			->method('page')
-			->with('gemeente', '/contact', 'en', 'anonymous', 'nl')
+			->with('gemeente', '/contact', 'en', 'anonymous', '', 'nl')
 			->willReturn(null);
 
 		(new SiteHead($reader))->for(portal: self::PORTAL + ['locales' => ['nl', 'en']], route: '/contact', locale: 'en', canonical: '');

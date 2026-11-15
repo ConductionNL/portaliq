@@ -18,9 +18,37 @@
 		<p v-if="notice" class="utrecht-paragraph pq-detail__notice" role="status">
 			{{ notice }}
 		</p>
+		<!-- A heading over the facts when the block names one
+		     (zuiddrecht-resident-pages-match-the-boards). -->
+		<component
+			:is="`h${level}`"
+			v-if="label"
+			class="utrecht-heading-3 pq-detail__label"
+			data-testid="detail-card-label">
+			{{ label }}
+		</component>
 		<!-- The fields as a description list (site-mijn-omgeving-components
 		     REQ-SMO-005, design D2). -->
-		<DescriptionList :items="facts" itemTestid="detail-card-field" />
+		<DescriptionList :items="facts" itemTestid="detail-card-field">
+			<!-- A `qr` field draws its code in full (link-field-qr-code). -->
+			<template
+				v-for="field in qrFields"
+				:key="field.field"
+				#[`value-${field.field}`]>
+				<QrValue
+					:value="String(detailRow[field.field] ?? '')"
+					:column="field"
+					:locale="locale" />
+			</template>
+		</DescriptionList>
+
+		<!-- The record as a PDF, when its collection opted in (cases-export-own-data-pdf). -->
+		<PdfDownloadButton
+			v-if="collection.exportPdf === true"
+			:id="rowId"
+			:collection="collection"
+			:api="api"
+			:locale="locale" />
 
 		<div
 			v-if="collection.filesUpload === true && api"
@@ -96,7 +124,7 @@
 			:locale="locale" />
 
 		<TimelineList
-			v-if="collection.timeline && timeline !== false"
+			v-if="collection.timeline && timeline !== false && showTimeline"
 			:label="collection.timeline.label || ''"
 			:entries="timeline ? timeline.entries || [] : null"
 			:t="t"
@@ -105,14 +133,40 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
 import DescriptionList from '../mijn/DescriptionList.vue'
 import ItemList from './ItemList.vue'
+import QrValue from './QrValue.vue'
 import SlotHost from './SlotHost.vue'
 import TimelineList from './TimelineList.vue'
 import { rowNotice } from '../../../shared/rowAction.js'
 import { detailFields, formatCell, rowIdOf } from './cells.js'
 
 let uploadCounter = 0
+
+/**
+ * The file a change event chose, if any.
+ *
+ * @param {Event} event The change event.
+ * @return {File|undefined} The first chosen file.
+ */
+function chosenFile(event) {
+	return event?.target?.files?.[0]
+}
+
+/**
+ * The name to report for an upload, or null when it did not work.
+ *
+ * @param {object|null} result The upload's answer.
+ * @param {File} file The chosen file.
+ * @return {string|null} The stored name, else the chosen one; null on a refusal.
+ */
+function addedName(result, file) {
+	if (!result || !result.ok) {
+		return null
+	}
+	return result.file?.name || file.name
+}
 
 /**
  * One record of a collection (slice b, b4): its fields with their labels, its
@@ -128,12 +182,23 @@ let uploadCounter = 0
  * The server checks ownership and the opt-in on every upload and download;
  * these controls are a convenience, not the authority.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-detail-card-must-show-one-record-req-srp-017
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-detail-card-must-show-one-record-req-srp-017
  */
 export default {
 	name: 'DetailCard',
 
-	components: { DescriptionList, ItemList, SlotHost, TimelineList },
+	components: {
+		DescriptionList,
+		ItemList,
+		// On demand: only a collection that opted in with `exportPdf` loads it.
+		PdfDownloadButton: defineAsyncComponent(
+			() => import('./PdfDownloadButton.vue'),
+		),
+
+		QrValue,
+		SlotHost,
+		TimelineList,
+	},
 
 	props: {
 		/** The collection: `detail`, `columns`, `filesUpload`, `filesDownload`, `itemList`, `timeline`. */
@@ -150,6 +215,12 @@ export default {
 		t: { type: Function, required: true },
 		/** The language. */
 		locale: { type: String, default: 'nl' },
+		/** A heading over the facts, or '' (the block's `label`). */
+		label: { type: String, default: '' },
+		/** The heading's level. */
+		level: { type: Number, default: 2 },
+		/** Whether the card draws the collection's history (the block's `timeline`). */
+		showTimeline: { type: Boolean, default: true },
 	},
 
 	data() {
@@ -184,7 +255,7 @@ export default {
 		 * The fields that have a value, formatted for reading.
 		 *
 		 * @return {Array<object>}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 		 */
 		fields() {
 			const row = this.detailRow || {}
@@ -208,14 +279,23 @@ export default {
 		 * The fields as facts for the description list.
 		 *
 		 * @return {Array<{key: string, label: string, value: string}>}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 		 */
 		facts() {
 			return this.fields.map((field) => ({
 				key: field.field,
 				label: field.label,
 				value: field.text,
+				slot: field.render === 'qr',
 			}))
+		},
+
+		/**
+		 * @return {Array<object>} The fields that render as a QR code.
+		 * @spec openspec/changes/link-field-qr-code/tasks.md#t5
+		 */
+		qrFields() {
+			return this.fields.filter((field) => field.render === 'qr')
 		},
 
 		files() {
@@ -289,26 +369,23 @@ export default {
 		 * @return {Promise<void>}
 		 */
 		async onUpload(event) {
-			const file = event?.target?.files && event.target.files[0]
+			const file = chosenFile(event)
 			const id = this.rowId
 			if (!file || !id) {
 				return
 			}
 			this.upload = { busy: true, message: '' }
-			const result = await this.api.uploadFile(this.collection, id, file)
+			const name = addedName(await this.api.uploadFile(this.collection, id, file), file)
 			this.upload = {
 				busy: false,
-				message:
-					result && result.ok
-						? this.t('File added: {name}', {
-								name: result.file?.name || file.name,
-							})
-						: this.t('The upload did not work.'),
+				message: name === null
+					? this.t('The upload did not work.')
+					: this.t('File added: {name}', { name }),
 			}
 			if (this.$refs.upload) {
 				this.$refs.upload.value = ''
 			}
-			if (result && result.ok) {
+			if (name !== null) {
 				await this.readFull()
 			}
 		},

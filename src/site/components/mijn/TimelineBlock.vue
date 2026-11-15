@@ -39,10 +39,11 @@ import ContactTimeline from './ContactTimeline.vue'
 import EmptyState from './EmptyState.vue'
 import LoadError from './LoadError.vue'
 import Skeleton from './Skeleton.vue'
+import { loadRecordAnswer, recordIdOf } from './recordAnswer.js'
 import { mijnTranslator } from './rows.js'
 
 /**
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
  */
 export default {
 	name: 'TimelineBlock',
@@ -75,7 +76,7 @@ export default {
 	computed: {
 		/**
 		 * @return {(key: string, vars?: object) => string} The translator.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 		 */
 		tr() {
 			return mijnTranslator(this.t, this.locale)
@@ -83,16 +84,15 @@ export default {
 
 		/**
 		 * @return {string} The open record's id, or ''.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 		 */
 		recordId() {
-			const row = this.record
-			return String(row?.id || row?.uuid || row?.['@self']?.id || '')
+			return recordIdOf(this.record)
 		},
 
 		/**
 		 * @return {string} The block's label, else the app's, else "Wat er is gebeurd".
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 		 */
 		heading() {
 			return (
@@ -105,7 +105,7 @@ export default {
 
 		/**
 		 * @return {string} The heading's id.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 		 */
 		headingId() {
 			return `pq-timeline-${String(this.block?.collection || '').replace(/[^A-Za-z0-9_-]/g, '')}`
@@ -113,7 +113,7 @@ export default {
 
 		/**
 		 * @return {Array<object>} The entries.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 		 */
 		entries() {
 			return Array.isArray(this.answer?.entries) ? this.answer.entries : []
@@ -125,7 +125,7 @@ export default {
 		 * Another record opened: read its history.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 		 */
 		recordId() {
 			this.load()
@@ -135,7 +135,7 @@ export default {
 	/**
 	 * Read the open record's history on arrival.
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+	 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 	 */
 	created() {
 		if (this.answer === null) {
@@ -148,26 +148,10 @@ export default {
 		 * Read the history; a read that fails says so, it is not "nothing yet".
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 		 */
-		async load() {
-			const id = this.recordId
-			if (!id || !this.collection) {
-				return
-			}
-			this.answer = null
-			this.failed = false
-			let answer
-			try {
-				answer = await this.api?.fetchTimeline?.(this.collection, id)
-			} catch {
-				answer = null
-			}
-			if (id !== this.recordId) {
-				return
-			}
-			this.failed = !answer || !Array.isArray(answer.entries)
-			this.answer = this.failed ? null : answer
+		load() {
+			return loadRecordAnswer(this, { api: this.api, fetch: 'fetchTimeline', list: 'entries' })
 		},
 	},
 }

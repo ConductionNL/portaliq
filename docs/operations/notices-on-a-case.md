@@ -73,6 +73,16 @@ Declare a rule only on a field a resident cares about, such as the status. A fie
 
 `message.created` on an app with a `kind: inbox` collection gives each new message in that collection the e-mail nudge.
 
+### Which plain keys work
+
+A plain key in `notifications` is kept only when something sends it:
+
+- `message.created` and `status.changed`, which portaliq sends itself.
+- The `ruleKey` of a change rule in the same list.
+- A key in the app's own namespace, `<app>.<key>`, such as `dossiq.invoiceDue`. The app sends it by writing a portal message with that `ruleKey`; the part before the first dot names the app whose declaration counts.
+
+Any other key, such as a bare `tenderPublished` or another app's `pipelinq.question.answered`, could never send anything. Portaliq drops it and logs a warning naming the app and the key, with the form to use instead.
+
 ## What is not reported
 
 - A change OpenRegister saves without the previous version: portaliq cannot see what changed, so it says nothing.

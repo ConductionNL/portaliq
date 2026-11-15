@@ -62,6 +62,8 @@
 						:accountHref="accountHref"
 						:session="session"
 						:accountLink="accountLink"
+						:pillLabel="pillLabel"
+						:signedInLabel="signedInLabel"
 						:signOutLabel="signOutLabel"
 						:hasMenu="showNavigation && menus.length > 0"
 						:menuOpen="menuOpen"
@@ -79,9 +81,14 @@
 						<!-- What the shell adds beside the signed-in name, such as
 						     whom the resident acts for. -->
 						<slot name="account" />
-						<span data-testid="site-auth-subject">{{
-							sessionLabel
-						}}</span>
+						<span data-testid="site-auth-subject"
+							><template v-if="sessionParts"
+								>{{ sessionParts.before
+								}}<NoTranslate :value="sessionParts.value" />{{
+									sessionParts.after
+								}}</template
+							><template v-else>{{ sessionLabel }}</template></span
+						>
 						<!-- The way to the resident's own area, on every page
 						     (site-resident-menu REQ-SRM-003). -->
 						<a
@@ -116,7 +123,9 @@
 									{{ registerRoute.label || registerLabel }}
 								</a>
 							</li>
-							<li v-for="entry in signInRoutes" :key="entry.mode">
+							<li
+								v-for="entry in signInRoutes"
+								:key="entry.key || entry.mode">
 								<a
 									:href="entry.href"
 									:data-mode="entry.mode"
@@ -190,7 +199,9 @@
 
 <script>
 import { defineAsyncComponent } from 'vue'
+import NoTranslate from './NoTranslate.vue'
 import SiteMenu from './SiteMenu.vue'
+import { markAround } from '../lib/markAround.js'
 
 /**
  * The portal's header block (`brandHeader`).
@@ -206,6 +217,7 @@ export default {
 	name: 'BrandHeader',
 
 	components: {
+		NoTranslate,
 		SiteMenu,
 		// Only a designed header loads it (site-chrome-follows-the-design).
 		HeaderTools: defineAsyncComponent(() => import('./chrome/HeaderTools.vue')),
@@ -228,6 +240,10 @@ export default {
 		session: { type: Object, default: null },
 		/** How to name the signed-in visitor. */
 		sessionLabel: { type: String, default: '' },
+		/** The account pill's accessible name (designed header). */
+		pillLabel: { type: String, default: '' },
+		/** The account pill's text without a name (designed header). */
+		signedInLabel: { type: String, default: '' },
 		/** `{route, href, label}` of the resident's own area, or null. */
 		accountLink: { type: Object, default: null },
 		/** The sign-in routes the portal declares. */
@@ -266,6 +282,21 @@ export default {
 
 	computed: {
 		/**
+		 * The signed-in line split around the resident's name, so the name stays
+		 * untranslated and "Ingelogd als" does not.
+		 *
+		 * @return {{before: string, value: string, after: string}|null}
+		 *
+		 * @spec openspec/changes/personal-data-left-untranslated/specs/site-chrome/spec.md#requirement-browser-translation-leaves-names-and-personal-data-alone-req-pdu-001
+		 */
+		sessionParts() {
+			const name = String(
+				this.session?.displayName || this.session?.name || '',
+			).trim()
+			return markAround(this.sessionLabel, name)
+		},
+
+		/**
 		 * Whether the navigation shares the masthead's row.
 		 *
 		 * @return {boolean} True for the `single` variant only.
@@ -283,7 +314,7 @@ export default {
 		 *
 		 * @return {boolean}
 		 *
-		 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
+		 * @spec openspec/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
 		 */
 		designed() {
 			return Boolean(this.accountLabel) || this.searchBox.enabled === true

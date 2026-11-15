@@ -1,0 +1,142 @@
+<?php
+
+/**
+ * Portaliq Public Assistant Controller
+ *
+ * The anonymous "ask a question" route of the public assistant widget.
+ *
+ * @category Controller
+ * @package  OCA\Portaliq\Controller
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/changes/search-assistant-from-public-content/tasks.md#t04
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Portaliq\Controller;
+
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PublicAssistantChannelInterface;
+use OCA\Portaliq\Kernel\Contracts\PublicSourceScopeInterface;
+use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
+use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
+use OCP\AppFramework\Http\Attribute\PublicPage;
+use OCP\AppFramework\Http\JSONResponse;
+use OCP\IRequest;
+
+/**
+ * Answers a visitor's question from the portal's published content.
+ *
+ * @spec openspec/changes/search-assistant-from-public-content/tasks.md#t04
+ */
+class PublicAssistantController extends Controller {
+
+	/**
+	 * Constructor.
+	 *
+	 * @param IRequest $request The request.
+	 * @param PortalResolverInterface $portals Resolves the portal being visited.
+	 * @param PublicSourceScopeInterface $scope Whether the portal turned the assistant on.
+	 * @param PublicAssistantChannelInterface $channel The adapter to hermiq.
+	 */
+	public function __construct(
+		IRequest $request,
+		private readonly PortalResolverInterface $portals,
+		private readonly PublicSourceScopeInterface $scope,
+		private readonly PublicAssistantChannelInterface $channel,
+	) {
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
+	}//end __construct()
+
+	/**
+	 * Ask the assistant one question.
+	 *
+	 * @param string $portal The portal's slug; empty resolves it from the host.
+	 * @param string $question The question.
+	 * @param string $locale The visitor's locale.
+	 * @param string $conversationId A conversation id issued earlier in this visit.
+	 *
+	 * @return JSONResponse `{status, answer, sources, removed, conversationId}`; 400 on a bearer.
+	 *
+	 * @spec openspec/changes/search-assistant-from-public-content/tasks.md#t04
+	 *
+	 * @no-admin-idor-exempt Anonymous by design: it reads only the portal's published
+	 * pages, glossary and publications, forwards no identity, and is rate limited per client.
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 10, period: 60)]
+	public function ask(string $portal='', string $question='', string $locale='nl', string $conversationId=''): JSONResponse {
+		// A signed-in resident's identity must not reach the assistant by accident.
+		if (trim($this->request->getHeader('Authorization')) !== '') {
+			return new JSONResponse(['error' => 'bearer_not_accepted'], Http::STATUS_BAD_REQUEST);
+		}
+
+		$site = $this->assistantSite(portal: $portal);
+		if ($site === null) {
+			return new JSONResponse(['error' => 'assistant_off'], Http::STATUS_NOT_FOUND);
+		}
+
+		if (trim($question) === '') {
+			return new JSONResponse(['error' => 'question_required'], Http::STATUS_BAD_REQUEST);
+		}
+
+		return $this->answer(site: $site, question: $question, locale: $locale, conversationId: $conversationId);
+	}//end ask()
+
+	/**
+	 * The portal, when it has the assistant switched on.
+	 *
+	 * @param string $portal The portal's slug; empty resolves it from the host.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/search-assistant-from-public-content/tasks.md#t04
+	 */
+	private function assistantSite(string $portal): array|null {
+		$slug = null;
+		if ($portal !== '') {
+			$slug = $portal;
+		}
+
+		$site = $this->portals->resolve(request: $this->request, portalSlug: $slug);
+		if ($site === null || $this->scope->enabledFor(portal: $site) === false) {
+			return null;
+		}
+
+		return $site;
+	}//end assistantSite()
+
+	/**
+	 * The assistant's answer, or 503 when it is unavailable.
+	 *
+	 * @param array<string, mixed> $site           The portal.
+	 * @param string               $question       The question.
+	 * @param string               $locale         The visitor's locale.
+	 * @param string               $conversationId A conversation id issued earlier in this visit.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/search-assistant-from-public-content/tasks.md#t04
+	 */
+	private function answer(array $site, string $question, string $locale, string $conversationId): JSONResponse {
+		$answer = $this->channel->ask(portal: $site, question: $question, locale: $locale, conversationId: $conversationId);
+		if ($answer['status'] === 'unavailable') {
+			return new JSONResponse(['error' => 'assistant_unavailable'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
+		return new JSONResponse($answer);
+	}//end answer()
+}//end class

@@ -19,6 +19,11 @@ import App from './App.vue'
 import { authBaseFrom } from './lib/authApi.js'
 import { resolveApiBase, runtimeConfig } from './lib/contentApi.js'
 import { registerSiteServiceWorker } from './lib/pwa.js'
+import { captureEmailLink } from './lib/waysIn.js'
+
+// A mailed e-mail link leaves the address bar before anything else reads the
+// location (sign-in-with-an-email-link M4): the link page gets it from memory.
+captureEmailLink(window.location, window.history)
 
 // NL DESIGN SYSTEM, NOT NEXTCLOUD. The public site is a government portal and
 // must look like one, so it renders Utrecht/NLDS components — the same set the

@@ -43,12 +43,15 @@ namespace OCA\Portaliq\Middleware;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Auth\PortalReadOnlySessionException;
 use OCA\Portaliq\Auth\PortalUnauthorizedException;
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalRateLimitInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Http\Response;
 use OCP\AppFramework\Middleware;
+use OCP\AppFramework\OCS\OCSForbiddenException;
+use OCP\IL10N;
 use OCP\IRequest;
 use Throwable;
 
@@ -58,6 +61,12 @@ use Throwable;
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T02
  * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-signed-in-portal-session-must-be-rate-limited-per-subject
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the gate is where a read
+ * without a session ends, so it is also where that read is counted per IP
+ * (portal-subject-rate-limit); a second middleware would never see the
+ * refusal this one answers first.
  */
 class PortalAuthMiddleware extends Middleware {
 	/**
@@ -72,15 +81,20 @@ class PortalAuthMiddleware extends Middleware {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request object.
-	 * @param PortalSessionService $session The session resolver.
-	 * @param PortalContributionRegistry $registry Resolves the anonymous-reachable
+	 * @param PortalSessionServiceInterface $session The session resolver.
+	 * @param PortalContributionRegistryInterface $registry Resolves the anonymous-reachable
 	 *                                             surface
 	 *                                             (portal-page-provisioning).
+	 * @param IL10N $l10n Localises the message of a refused staff action.
+	 * @param PortalRateLimitInterface|null $rateLimit Counts a collection read without a session
+	 *                                        per IP (portal-subject-rate-limit).
 	 */
 	public function __construct(
 		private readonly IRequest $request,
-		private readonly PortalSessionService $session,
-		private readonly PortalContributionRegistry $registry,
+		private readonly PortalSessionServiceInterface $session,
+		private readonly PortalContributionRegistryInterface $registry,
+		private readonly IL10N $l10n,
+		private readonly ?PortalRateLimitInterface $rateLimit = null,
 	) {
 	}//end __construct()
 
@@ -175,21 +189,17 @@ class PortalAuthMiddleware extends Middleware {
 	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
 	 */
 	private function anonymousCreateActionMatches(array $contributions): bool {
-		$register = (string)$this->request->getParam('register', '');
-		$schema = (string)$this->request->getParam('schema', '');
-		if ($register === '' || $schema === '') {
+		$target = [
+			'register' => (string)$this->request->getParam('register', ''),
+			'schema' => (string)$this->request->getParam('schema', ''),
+		];
+		if ($target['register'] === '' || $target['schema'] === '') {
 			return false;
 		}
 
 		foreach ($contributions as $contribution) {
-			foreach ((array)($contribution['actions'] ?? []) as $action) {
-				if (($action['type'] ?? '') === 'create'
-					&& ($action['anonymous'] ?? false) === true
-					&& ($action['register'] ?? '') === $register
-					&& ($action['schema'] ?? '') === $schema
-				) {
-					return true;
-				}
+			if ($this->hasAnonymousCreateFor(contribution: $contribution, target: $target) === true) {
+				return true;
 			}
 		}
 
@@ -197,7 +207,53 @@ class PortalAuthMiddleware extends Middleware {
 	}//end anonymousCreateActionMatches()
 
 	/**
-	 * Convert a portal auth failure to a 401 JSON response.
+	 * Whether one contribution declares an anonymous create action for the
+	 * request's register and schema.
+	 *
+	 * @param mixed                 $contribution One anonymous-only contribution.
+	 * @param array<string, string> $target       The request's `register` and `schema`.
+	 *
+	 * @return bool
+	 */
+	private function hasAnonymousCreateFor(mixed $contribution, array $target): bool {
+		foreach ((array)($contribution['actions'] ?? []) as $action) {
+			if ($this->isAnonymousCreateFor(action: $action, target: $target) === true) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end hasAnonymousCreateFor()
+
+	/**
+	 * Whether an action is a `type: create` with `anonymous` exactly true for
+	 * the request's exact register and schema.
+	 *
+	 * @param mixed                 $action The declared action.
+	 * @param array<string, string> $target The request's `register` and `schema`.
+	 *
+	 * @return bool
+	 */
+	private function isAnonymousCreateFor(mixed $action, array $target): bool {
+		return ($action['type'] ?? '') === 'create'
+			&& ($action['anonymous'] ?? false) === true
+			&& ($action['register'] ?? '') === $target['register']
+			&& ($action['schema'] ?? '') === $target['schema'];
+	}//end isAnonymousCreateFor()
+
+	/**
+	 * Convert a portal auth failure to a 401 JSON response, and a refused
+	 * staff action to a 403.
+	 *
+	 * The staff controllers (news, newsletters, activities, events, …) call
+	 * ActionAuthService::requireAction(), which throws OCSForbiddenException.
+	 * They extend the plain Controller, not OCSController, so Nextcloud's
+	 * OCSMiddleware rethrows it and, unhandled, it ends as a 500 page and an
+	 * error-level log line for every signed-in user without the action. This
+	 * maps it to a 403 with the ADR-050 error envelope: a localised
+	 * `message` plus the `forbidden` slug that PollController and
+	 * EmergencyPushController already return as `error`. Portaliq has no
+	 * OCSController, so no OCS envelope is replaced.
 	 *
 	 * @param object $controller The controller being dispatched.
 	 * @param string $methodName The method being invoked.
@@ -205,19 +261,38 @@ class PortalAuthMiddleware extends Middleware {
 	 *
 	 * @return Response
 	 *
-	 * @throws Throwable Re-thrown when it is not a portal auth failure.
+	 * @throws Throwable Re-thrown when it is not a portal auth failure or a refused action.
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-signed-in-portal-session-must-be-rate-limited-per-subject
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
 	 */
 	public function afterException($controller, $methodName, \Throwable $exception): Response {
 		if ($exception instanceof PortalUnauthorizedException) {
-			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+			// A collection read without a session keeps the tight limit per IP
+			// (portal-subject-rate-limit): the endpoint's own attribute is
+			// wide enough for the blocks of signed-in pages.
+			$limited = null;
+			if ($methodName === 'collection') {
+				$limited = $this->rateLimit?->refusal(endpoint: 'collection', subject: null);
+			}
+
+			return $limited ?? new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}
 
 		if ($exception instanceof PortalReadOnlySessionException) {
 			return new JSONResponse(['error' => 'reference_session_reads_only'], Http::STATUS_FORBIDDEN);
+		}
+
+		if ($exception instanceof OCSForbiddenException) {
+			return new JSONResponse(
+				[
+					'message' => $this->l10n->t('You are not allowed to do this. Ask an administrator for access.'),
+					'error' => 'forbidden',
+				],
+				Http::STATUS_FORBIDDEN
+			);
 		}
 
 		throw $exception;

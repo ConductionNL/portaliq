@@ -6,7 +6,7 @@ The primary-school portal's absence form (board MobielDetail, De Wilgenboom, 5 O
 
 ## What changes
 
-- A create action, or an endpoint action with fields, MAY declare `summary: { label?, template, phrases? }`. `template` names the action's own fields as `{field}`; `phrases` gives the words for a stored answer per field.
+- A create action, or an endpoint action with fields, MAY declare `answerSummary: { label?, template, phrases? }` (named `summary` until decision 127, 9 Oct 2026, gave that key to the start tile's string; the old shape is still read, and the repair step `MoveActionSummarySentence` moves stored ones). `template` names the action's own fields as `{field}`; `phrases` gives the words for a stored answer per field.
 - The server keeps it only when every placeholder is one of the action's fields (`ActionSummaryNormaliser`, called from `FormStepsNormaliser` like `confirmation`), and an attached action lists it.
 - The form shows the sentence above the send button (on a one-page form, or on the review of a stepped one) as soon as every answer it names is given, in a polite live region, and again on the confirmation, as it stood when sent.
 

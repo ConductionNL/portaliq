@@ -40,6 +40,7 @@
  */
 
 export { createEditHistory, HISTORY_LIMIT, historyIntent } from './editHistory.js'
+export { blockToPage, pageToBlock } from './blockSaver.js'
 export { cellOf, cellStyleOf } from './geometry.js'
 export {
 	addWidget,
@@ -57,6 +58,7 @@ export {
 	bodyFor,
 	discardPayload,
 	draftPayload,
+	draftStatusPayload,
 	isMainWidget,
 	publishPayload,
 	readBody,
@@ -84,6 +86,13 @@ export {
 	renamePagePayload,
 } from './pageTree.js'
 export { createPortalObjects } from './portalObjects.js'
+export { recordListChoice, recordListsFrom } from './recordLists.js'
+export {
+	holdsReportWidget,
+	isExcludedPath,
+	loadExcludedPaths,
+	reportPageIsCounted,
+} from './reportExclusion.js'
 export {
 	formWidgetFor,
 	inspectorModeFor,

@@ -27,10 +27,30 @@
 				class="utrecht-textbox pq-header-tools__input"
 				:placeholder="hint"
 				:aria-label="searchBox.label || hint"
-				data-testid="site-header-search-input" />
+				:role="searchBox.suggest ? 'combobox' : null"
+				:aria-autocomplete="searchBox.suggest ? 'list' : null"
+				:aria-expanded="
+					searchBox.suggest ? String(suggestState.expanded) : null
+				"
+				:aria-controls="searchBox.suggest ? suggestListId : null"
+				:aria-activedescendant="suggestState.activeId || null"
+				data-testid="site-header-search-input"
+				@keydown="onSuggestKey" />
+			<SearchSuggestions
+				v-if="searchBox.suggest"
+				ref="suggestions"
+				:query="term"
+				:listId="suggestListId"
+				@state="suggestState = $event"
+				@choose="openSuggestion" />
 			<button type="submit" class="pq-header-tools__submit">
 				<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-					<path :d="SEARCH" fill="currentColor" />
+					<path
+						:d="SEARCH"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2.4"
+						stroke-linecap="round" />
 				</svg>
 				<span class="sr-only">{{ searchLabel }}</span>
 			</button>
@@ -41,16 +61,34 @@
 				v-if="accountLink"
 				class="pq-header-tools__chip"
 				:href="accountLink.href"
+				:aria-label="pillLabel || null"
 				data-testid="site-own-area"
 				@click.prevent="$emit('navigate', accountLink.route)">
-				<span class="pq-header-tools__initials" aria-hidden="true">{{
-					person ? person.initials : ''
-				}}</span>
+				<span
+					v-if="person"
+					class="pq-header-tools__initials"
+					aria-hidden="true"
+					>{{ person.initials }}</span
+				>
+				<svg
+					v-else
+					class="pq-header-tools__initials"
+					viewBox="0 0 24 24"
+					aria-hidden="true"
+					focusable="false"
+					data-testid="site-auth-person-icon">
+					<path
+						:d="PERSON"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2.4"
+						stroke-linecap="round" />
+				</svg>
 				<span class="pq-header-tools__who">
 					<span
 						class="pq-header-tools__name"
 						data-testid="site-auth-subject"
-						>{{ person ? person.name : accountLink.label }}</span
+						>{{ person ? person.name : signedInLabel }}</span
 					>
 					<span
 						v-if="person && person.subline"
@@ -75,7 +113,12 @@
 			data-testid="site-account-button"
 			@click.prevent="$emit('navigate', accountRoute)">
 			<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-				<path :d="PERSON" fill="currentColor" />
+				<path
+					:d="PERSON"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2.4"
+					stroke-linecap="round" />
 			</svg>
 			{{ accountLabel }}
 		</a>
@@ -89,7 +132,12 @@
 			data-testid="site-header-menu-toggle"
 			@click="$emit('toggleMenu')">
 			<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-				<path :d="MENU" fill="currentColor" />
+				<path
+					:d="MENU"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2.4"
+					stroke-linecap="round" />
 			</svg>
 			{{ menuLabel }}
 		</button>
@@ -97,6 +145,8 @@
 </template>
 
 <script>
+import SearchSuggestions from '../SearchSuggestions.vue'
+import { suggestionRoute } from '../../lib/searchSuggestions.js'
 import { personOf } from './person.js'
 
 // The button links' classes need their stylesheet, or the browser draws its own blue link.
@@ -106,10 +156,12 @@ import '@utrecht/button-link-css/dist/index.css'
  * The search box, the way to the own area and the phone menu button of a
  * designed header. Every string is a prop, so it mounts at a public origin.
  *
- * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
+ * @spec openspec/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
  */
 export default {
 	name: 'HeaderTools',
+
+	components: { SearchSuggestions },
 
 	props: {
 		/** `{enabled, placeholder}` from headerSearchOf(). */
@@ -125,6 +177,10 @@ export default {
 		session: { type: Object, default: null },
 		/** `{route, href, label}` of the own area while signed in. */
 		accountLink: { type: Object, default: null },
+		/** The pill's accessible name, "Ingelogd als {name}, naar {own area}". */
+		pillLabel: { type: String, default: '' },
+		/** The pill's text without a name. */
+		signedInLabel: { type: String, default: 'Ingelogd' },
 		signOutLabel: { type: String, default: 'Uitloggen' },
 		/** Whether there is a navigation bar to open on a phone. */
 		hasMenu: { type: Boolean, default: false },
@@ -137,10 +193,13 @@ export default {
 	data() {
 		return {
 			term: '',
-			// Material Design Icons (Apache 2.0): magnify, account-outline, menu.
-			SEARCH: 'M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z',
-			PERSON: 'M12 4a4 4 0 0 1 4 4 4 4 0 0 1-4 4 4 4 0 0 1-4-4 4 4 0 0 1 4-4m0 2a2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2 2 2 0 0 0-2-2m0 7c2.67 0 8 1.33 8 4v3H4v-3c0-2.67 5.33-4 8-4m0 1.9c-2.97 0-6.1 1.46-6.1 2.1v1.1h12.2V17c0-.64-3.13-2.1-6.1-2.1Z',
-			MENU: 'M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z',
+			suggestListId: 'pq-header-suggest',
+			suggestState: { expanded: false, activeId: '' },
+			// Outlined, as the Zuiddrecht Kop and MobielHome boards draw them: a
+			// magnifier, a person and three bars, stroked in the text colour.
+			SEARCH: 'M4 11a7 7 0 1 0 14 0a7 7 0 1 0-14 0M20 20l-4-4',
+			PERSON: 'M8 8a4 4 0 1 0 8 0a4 4 0 1 0-8 0M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6',
+			MENU: 'M4 7h16M4 12h16M4 17h16',
 		}
 	},
 
@@ -157,6 +216,35 @@ export default {
 		 */
 		person() {
 			return personOf(this.session)
+		},
+	},
+
+	methods: {
+		/**
+		 * The search input's keys go to the suggestion list first.
+		 *
+		 * @param {KeyboardEvent} event The key event.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-suggestion-list-works-by-keyboard-and-screen-reader-req-sst-002
+		 */
+		onSuggestKey(event) {
+			const list = this.$refs.suggestions
+			if (list && list.onKey(event)) {
+				event.preventDefault()
+			}
+		},
+
+		/**
+		 * A suggestion opens its publication.
+		 *
+		 * @param {{id: string, kind: string}} item The suggestion.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-search-box-suggests-publications-while-you-type-req-sst-001
+		 */
+		openSuggestion(item) {
+			this.$emit('navigate', suggestionRoute(item))
 		},
 	},
 }

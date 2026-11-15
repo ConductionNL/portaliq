@@ -7,7 +7,7 @@ namespace OCA\Portaliq\Tests\Unit\Repair;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Repair\InitializeSettings;
 use OCA\Portaliq\Service\SettingsService;
-use OCP\IConfig;
+use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Security\ISecureRandom;
 use PHPUnit\Framework\TestCase;
@@ -20,22 +20,29 @@ use Psr\Log\LoggerInterface;
  * re-running the step (upgrades) never overwrites an already-configured
  * secret, which would invalidate every live portal session.
  *
- * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.2
- * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#4.2
+ * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.2
+ * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#4.2
  */
 class InitializeSettingsTest extends TestCase {
 
 	public function testGeneratesADedicatedSecretWhenUnset(): void {
-		$config = $this->createMock(IConfig::class);
-		$config->method('getAppValue')->willReturn('');
+		$config = $this->createMock(IAppConfig::class);
+		$config->method('getValueString')->willReturn('');
 
 		$stored = null;
+		// Security review S4: stored as a SENSITIVE app value through IAppConfig.
 		$config->expects($this->once())
-			->method('setAppValue')
-			->with(Application::APP_ID, 'jwt_signing_secret', $this->callback(function (string $secret) use (&$stored) {
-				$stored = $secret;
-				return strlen($secret) >= 32;
-			}));
+			->method('setValueString')
+			->with(
+				Application::APP_ID,
+				'jwt_signing_secret',
+				$this->callback(function (string $secret) use (&$stored) {
+					$stored = $secret;
+					return strlen($secret) >= 32;
+				}),
+				false,
+				true
+			);
 
 		$this->repair(config: $config)->run($this->repairOutput());
 
@@ -44,22 +51,42 @@ class InitializeSettingsTest extends TestCase {
 	}//end testGeneratesADedicatedSecretWhenUnset()
 
 	public function testIdempotentOnRerunWithAnAlreadyConfiguredSecret(): void {
-		$config = $this->createMock(IConfig::class);
-		$config->method('getAppValue')->willReturn('already-configured-dedicated-secret-000');
+		$config = $this->createMock(IAppConfig::class);
+		$config->method('getValueString')->willReturn('already-configured-dedicated-secret-000');
+		$config->method('isSensitive')->willReturn(true);
 
 		// Re-running the repair step (e.g. on upgrade) must NEVER overwrite an
 		// existing secret — that would invalidate every live session.
-		$config->expects($this->never())->method('setAppValue');
+		$config->expects($this->never())->method('setValueString');
+		$config->expects($this->never())->method('updateSensitive');
 
 		$this->repair(config: $config)->run($this->repairOutput());
 
 	}//end testIdempotentOnRerunWithAnAlreadyConfiguredSecret()
 
-	public function testTooShortExistingSecretIsRegenerated(): void {
-		$config = $this->createMock(IConfig::class);
-		$config->method('getAppValue')->willReturn('short');
+	/**
+	 * Security review S4: a secret stored before the sensitive flag keeps
+	 * its value (live sessions stay valid) and is marked sensitive.
+	 *
+	 * @return void
+	 */
+	public function testAnExistingSecretKeepsItsValueAndBecomesSensitive(): void {
+		$config = $this->createMock(IAppConfig::class);
+		$config->method('getValueString')->willReturn('already-configured-dedicated-secret-000');
+		$config->method('isSensitive')->willReturn(false);
 
-		$config->expects($this->once())->method('setAppValue');
+		$config->expects($this->never())->method('setValueString');
+		$config->expects($this->once())->method('updateSensitive')->with(Application::APP_ID, 'jwt_signing_secret', true);
+
+		$this->repair(config: $config)->run($this->repairOutput());
+
+	}//end testAnExistingSecretKeepsItsValueAndBecomesSensitive()
+
+	public function testTooShortExistingSecretIsRegenerated(): void {
+		$config = $this->createMock(IAppConfig::class);
+		$config->method('getValueString')->willReturn('short');
+
+		$config->expects($this->once())->method('setValueString');
 
 		$this->repair(config: $config)->run($this->repairOutput());
 
@@ -108,6 +135,38 @@ class InitializeSettingsTest extends TestCase {
 	 *
 	 * @return void
 	 */
+	/**
+	 * Every message the import reports to the operator, as recorded: a
+	 * success with and without a version, and an import issue with and
+	 * without a message.
+	 *
+	 * @return void
+	 */
+	public function testTheImportReportsAreAsRecorded(): void {
+		$cases = [
+			[['success' => true, 'version' => '1.2.3'], 'info', 'Portaliq configuration imported successfully (version: 1.2.3)'],
+			[['success' => true], 'info', 'Portaliq configuration imported successfully (version: unknown)'],
+			[['success' => false, 'message' => 'schema clash'], 'warning', 'Portaliq configuration import issue: schema clash'],
+			[['success' => false], 'warning', 'Portaliq configuration import issue: unknown error'],
+		];
+		foreach ($cases as [$result, $channel, $expected]) {
+			$settingsService = $this->createMock(SettingsService::class);
+			$settingsService->method('isOpenRegisterAvailable')->willReturn(true);
+			$settingsService->method('loadConfiguration')->willReturn($result);
+			$seen   = [];
+			$output = $this->createMock(IOutput::class);
+			$output->method($channel)->willReturnCallback(
+				static function (string $message) use (&$seen): void {
+					$seen[] = $message;
+				}
+			);
+
+			$this->repairWith($settingsService)->run($output);
+
+			$this->assertSame($expected, end($seen), $expected);
+		}
+	}//end testTheImportReportsAreAsRecorded()
+
 	public function testHappyPathImportsAndReportsSuccessToTheOperator(): void {
 		$settingsService = $this->createMock(SettingsService::class);
 		$settingsService->method('isOpenRegisterAvailable')->willReturn(true);
@@ -199,12 +258,45 @@ class InitializeSettingsTest extends TestCase {
 	}//end testAThrowingImportIsCaughtLoggedAndDoesNotAbortTheRepairPass()
 
 	/**
-	 * An IConfig whose signing secret is already set, so `ensureSigningSecret()`
+	 * #91: the failure is logged with the Throwable ITSELF under `exception`,
+	 * not its message string. Nextcloud's logger (PSR-3 convention) only
+	 * records class, file, line and stack trace when it is handed the object;
+	 * a bare message string loses every one of those, which is exactly what an
+	 * operator needs to find the broken bundled configuration.
+	 *
+	 * @return void
+	 */
+	public function testAThrowingImportLogsTheThrowableInstanceNotItsMessage(): void {
+		$thrown = new \RuntimeException('malformed bundled configuration');
+
+		$settingsService = $this->createMock(SettingsService::class);
+		$settingsService->method('isOpenRegisterAvailable')->willReturn(true);
+		$settingsService->method('loadConfiguration')->willThrowException($thrown);
+
+		$logged = null;
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())
+			->method('error')
+			->willReturnCallback(
+				static function (string $message, array $context) use (&$logged): void {
+					$logged = ($context['exception'] ?? null);
+				}
+			);
+
+		$this->repairWith($settingsService, $logger)->run($this->repairOutput());
+
+		$this->assertSame($thrown, $logged, 'the logger must receive the Throwable instance, not a string');
+
+	}//end testAThrowingImportLogsTheThrowableInstanceNotItsMessage()
+
+	/**
+	 * An IAppConfig whose signing secret is already set, so `ensureSigningSecret()`
 	 * is a no-op and does not colour the assertions of the tests above.
 	 */
-	private function configWithSecret(): IConfig {
-		$config = $this->createMock(IConfig::class);
-		$config->method('getAppValue')->willReturn('already-configured-dedicated-secret-000');
+	private function configWithSecret(): IAppConfig {
+		$config = $this->createMock(IAppConfig::class);
+		$config->method('getValueString')->willReturn('already-configured-dedicated-secret-000');
+		$config->method('isSensitive')->willReturn(true);
 		return $config;
 	}//end configWithSecret()
 
@@ -225,7 +317,7 @@ class InitializeSettingsTest extends TestCase {
 
 	}//end repairWith()
 
-	private function repair(IConfig $config): InitializeSettings {
+	private function repair(IAppConfig $config): InitializeSettings {
 		$settingsService = $this->createMock(SettingsService::class);
 		$settingsService->method('isOpenRegisterAvailable')->willReturn(false);
 

@@ -42,27 +42,39 @@ import { metaOf as actionGroupMeta } from './nlActionGroup/meta.js'
 import { metaOf as alertMeta } from './nlAlert/meta.js'
 import { metaOf as bannerMeta } from './nlBanner/meta.js'
 import { metaOf as buttonLinkMeta } from './nlButtonLink/meta.js'
+import { metaOf as catalogueMeta } from './nlCatalogue/meta.js'
 import { metaOf as codeBlockMeta } from './nlCodeBlock/meta.js'
 import { metaOf as descriptionListMeta } from './nlDescriptionList/meta.js'
 import { metaOf as dialogMeta } from './nlDialog/meta.js'
 import { metaOf as drawerMeta } from './nlDrawer/meta.js'
 import { metaOf as eventListMeta } from './nlEventList/meta.js'
+import { metaOf as faqListMeta } from './nlFaqList/meta.js'
+import { metaOf as featuredSubjectsMeta } from './nlFeaturedSubjects/meta.js'
 import { metaOf as headingMeta } from './nlHeading/meta.js'
 import { metaOf as imageMeta } from './nlImage/meta.js'
 import { metaOf as languageNavMeta } from './nlLanguageNav/meta.js'
 import { metaOf as linkMeta } from './nlLink/meta.js'
+import { metaOf as linkColumnsMeta } from './nlLinkColumns/meta.js'
 import { metaOf as linkListMeta } from './nlLinkList/meta.js'
 import { metaOf as listMeta } from './nlList/meta.js'
+import { metaOf as locationMapMeta } from './nlLocationMap/meta.js'
+import { metaOf as lookupFormMeta } from './nlLookupForm/meta.js'
 import { metaOf as newsArticleMeta } from './nlNewsArticle/meta.js'
 import { metaOf as newsListMeta } from './nlNewsList/meta.js'
 import { metaOf as noteMeta } from './nlNote/meta.js'
 import { metaOf as paragraphMeta } from './nlParagraph/meta.js'
+import { metaOf as portalCountsMeta } from './nlPortalCounts/meta.js'
+import { metaOf as productFinderMeta } from './nlProductFinder/meta.js'
 import { metaOf as progressBarMeta } from './nlProgressBar/meta.js'
 import { metaOf as progressCircleMeta } from './nlProgressCircle/meta.js'
+import { metaOf as publicDetailMeta } from './nlPublicDetail/meta.js'
+import { metaOf as publicTableMeta } from './nlPublicTable/meta.js'
 import { metaOf as quickTasksMeta } from './nlQuickTasks/meta.js'
 import { metaOf as quoteMeta } from './nlQuote/meta.js'
 import { metaOf as separatorMeta } from './nlSeparator/meta.js'
 import { metaOf as signInMeta } from './nlSignIn/meta.js'
+import { metaOf as startTilesMeta } from './nlStartTiles/meta.js'
+import { metaOf as subjectLandingMeta } from './nlSubjectLanding/meta.js'
 import { metaOf as tableMeta } from './nlTable/meta.js'
 import { metaOf as tabsMeta } from './nlTabs/meta.js'
 import { metaOf as taskNavMeta } from './nlTaskNav/meta.js'
@@ -96,6 +108,9 @@ export const metas = {
 	nlParagraph: paragraphMeta,
 	nlLink: linkMeta,
 	nlLinkList: linkListMeta,
+	nlLocationMap: locationMapMeta,
+	nlLinkColumns: linkColumnsMeta,
+	nlLookupForm: lookupFormMeta,
 	nlList: listMeta,
 	nlQuote: quoteMeta,
 	nlButtonLink: buttonLinkMeta,
@@ -124,6 +139,15 @@ export const metas = {
 	nlNewsList: newsListMeta,
 	nlNewsArticle: newsArticleMeta,
 	nlEventList: eventListMeta,
+	nlCatalogue: catalogueMeta,
+	nlPublicTable: publicTableMeta,
+	nlPublicDetail: publicDetailMeta,
+	nlFaqList: faqListMeta,
+	nlProductFinder: productFinderMeta,
+	nlFeaturedSubjects: featuredSubjectsMeta,
+	nlPortalCounts: portalCountsMeta,
+	nlSubjectLanding: subjectLandingMeta,
+	nlStartTiles: startTilesMeta,
 }
 
 /**
@@ -142,6 +166,83 @@ export const WIDGET_GROUPS = [
 ]
 
 /**
+ * @param {object} meta The candidate.
+ * @param {string} key The key it is registered under.
+ * @return {Array<string>} A problem when its key is not the registered one.
+ */
+function keyProblems(meta, key) {
+	return meta.key === key ? [] : [`${key}: meta.key is ${JSON.stringify(meta.key)}`]
+}
+
+/**
+ * @param {object} meta The candidate.
+ * @param {string} key The key it is registered under.
+ * @return {Array<string>} A problem when its group is not one of the palette's.
+ */
+function groupProblems(meta, key) {
+	return WIDGET_GROUPS.some((entry) => entry.group === meta.group)
+		? []
+		: [`${key}: group ${JSON.stringify(meta.group)} is not one of the six`]
+}
+
+/**
+ * @param {object} meta The candidate.
+ * @param {string} key The key it is registered under.
+ * @return {Array<string>} A problem for its label and its NL Design System name, each when empty.
+ */
+function textProblems(meta, key) {
+	return ['label', 'nlds']
+		.filter((field) => typeof meta[field] !== 'string' || meta[field].trim() === '')
+		.map((field) => `${key}: ${field} is empty`)
+}
+
+/**
+ * @param {object} meta The candidate.
+ * @param {string} key The key it is registered under.
+ * @return {Array<string>} A problem for its synonyms and its fields, each when not a list.
+ */
+function listProblems(meta, key) {
+	return ['synonyms', 'fields']
+		.filter((field) => !Array.isArray(meta[field]))
+		.map((field) => `${key}: ${field} is not a list`)
+}
+
+/**
+ * @param {object} meta The candidate.
+ * @param {string} key The key it is registered under.
+ * @return {Array<string>} A problem when its default size is not two whole numbers.
+ */
+function sizeProblems(meta, key) {
+	const size = meta.defaultSize
+	const whole =
+		Boolean(size)
+		&& Number.isInteger(size.gridWidth)
+		&& Number.isInteger(size.gridHeight)
+	return whole ? [] : [`${key}: defaultSize is not two whole numbers`]
+}
+
+/**
+ * @param {object} meta The candidate.
+ * @param {string} key The key it is registered under.
+ * @return {Array<string>} A problem when its scope is neither public nor signed in.
+ */
+function scopeProblems(meta, key) {
+	return ['public', 'signedIn'].includes(meta.scope)
+		? []
+		: [`${key}: scope ${JSON.stringify(meta.scope)} is neither public nor signedIn`]
+}
+
+/** The checks of a meta, in the order their problems are reported. */
+const META_CHECKS = [
+	keyProblems,
+	groupProblems,
+	textProblems,
+	listProblems,
+	sizeProblems,
+	scopeProblems,
+]
+
+/**
  * Whether a value is a sound widget meta.
  *
  * Checked rather than trusted, because a meta is the only description the
@@ -154,51 +255,11 @@ export const WIDGET_GROUPS = [
  * @return {Array<string>} What is wrong with it, empty when nothing is.
  */
 export function metaProblems(meta, key) {
-	const problems = []
 	if (!meta || typeof meta !== 'object') {
 		return [`${key}: no meta`]
 	}
 
-	if (meta.key !== key) {
-		problems.push(`${key}: meta.key is ${JSON.stringify(meta.key)}`)
-	}
-
-	if (!WIDGET_GROUPS.some((entry) => entry.group === meta.group)) {
-		problems.push(
-			`${key}: group ${JSON.stringify(meta.group)} is not one of the six`,
-		)
-	}
-
-	for (const field of ['label', 'nlds']) {
-		if (typeof meta[field] !== 'string' || meta[field].trim() === '') {
-			problems.push(`${key}: ${field} is empty`)
-		}
-	}
-
-	if (!Array.isArray(meta.synonyms)) {
-		problems.push(`${key}: synonyms is not a list`)
-	}
-
-	if (!Array.isArray(meta.fields)) {
-		problems.push(`${key}: fields is not a list`)
-	}
-
-	const size = meta.defaultSize
-	if (
-		!size
-		|| !Number.isInteger(size.gridWidth)
-		|| !Number.isInteger(size.gridHeight)
-	) {
-		problems.push(`${key}: defaultSize is not two whole numbers`)
-	}
-
-	if (meta.scope !== 'public' && meta.scope !== 'signedIn') {
-		problems.push(
-			`${key}: scope ${JSON.stringify(meta.scope)} is neither public nor signedIn`,
-		)
-	}
-
-	return problems
+	return META_CHECKS.flatMap((check) => check(meta, key))
 }
 
 /**

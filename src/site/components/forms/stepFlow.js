@@ -1,7 +1,68 @@
 // SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
 // SPDX-License-Identifier: EUPL-1.2
 
-import { firstStepWithError, flowSteps, stepErrors, stepTo } from './steps.js'
+import {
+	firstStepWithError,
+	flowSteps,
+	stepErrors,
+	stepIndexById,
+	stepTo,
+} from './steps.js'
+
+/**
+ * @param {object} vm The component running the flow.
+ * @return {Array<object>} The fields of the step on screen that show.
+ */
+function shownFields(vm) {
+	return vm.currentStep.fields.filter((field) => vm.isShownField(field))
+}
+
+/**
+ * @param {object} vm The component running the flow.
+ * @return {boolean} Whether the step on screen decides, and the component can ask.
+ */
+function decidesHere(vm) {
+	return vm.currentStep.decides === true && typeof vm.decideStep === 'function'
+}
+
+/**
+ * The step "Volgende stap" opens: the review when the step was opened from
+ * it, else the next shown step, unless a deciding step names another.
+ *
+ * @param {object} vm The component running the flow.
+ * @return {Promise<number|null>} The step's index, or null while the rule engine is down.
+ */
+async function nextTarget(vm) {
+	const planned = vm.backToReview
+		? vm.flow.length - 1
+		: stepTo(vm.flow, vm.stepIndex, 1, vm.isShownField)
+	return decidesHere(vm) ? decidedTarget(vm, planned) : planned
+}
+
+/**
+ * A step that decides asks the rule engine on the server; the step its
+ * outcome names opens next. The engine being down keeps the answers and
+ * offers a retry (form-flow-repeating-groups-calculations-and-decisions
+ * REQ-FFL-003).
+ *
+ * @param {object} vm The component running the flow.
+ * @param {number} planned The step that opens when the outcome names none.
+ * @return {Promise<number|null>} The step's index, or null when the engine is down.
+ */
+async function decidedTarget(vm, planned) {
+	vm.decisionDown = false
+	vm.deciding = true
+	try {
+		const decided = await vm.decideStep(vm.currentStep)
+		const named = stepIndexById(vm.flow, decided && decided.nextStep)
+		return named >= 0 && !vm.backToReview ? named : planned
+	} catch {
+		vm.decisionDown = true
+		return null
+	} finally {
+		vm.deciding = false
+	}
+}
 
 /**
  * The step flow both form renderers share (site-multi-step-forms T6, T7b):
@@ -15,7 +76,9 @@ import { firstStepWithError, flowSteps, stepErrors, stepTo } from './steps.js'
  * - `stepTitles` (computed): `{other, review}`, the fallback titles;
  * - `isShownField(field)`: whether a field shows;
  * - `checkFields(fields)`: the errors of those fields, `{field: message}`;
- * - `errors` (data) and `focusSummary()`, the error summary's.
+ * - `errors` (data) and `focusSummary()`, the error summary's;
+ * - `decideStep(step)` (optional): asks the server to decide a step that
+ *   `decides`, answering `{nextStep}`; a throw means the rule engine is down.
  * It puts `ref="stepHeading"` on the step heading.
  *
  * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
@@ -25,6 +88,8 @@ export default {
 		return {
 			stepIndex: 0,
 			backToReview: false,
+			deciding: false,
+			decisionDown: false,
 		}
 	},
 
@@ -75,18 +140,16 @@ export default {
 		 *
 		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
 		 */
-		nextStep() {
-			const fields = this.currentStep.fields.filter((field) =>
-				this.isShownField(field),
-			)
-			this.errors = this.checkFields(fields)
+		async nextStep() {
+			this.errors = this.checkFields(shownFields(this))
 			if (Object.keys(this.errors).length > 0) {
 				this.$nextTick(() => this.focusSummary())
 				return
 			}
-			const target = this.backToReview
-				? this.flow.length - 1
-				: stepTo(this.flow, this.stepIndex, 1, this.isShownField)
+			const target = await nextTarget(this)
+			if (target === null) {
+				return
+			}
 			this.backToReview = false
 			this.openStep(target)
 		},

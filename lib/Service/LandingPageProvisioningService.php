@@ -32,6 +32,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Event\LandingPageRequestedEvent;
+use OCA\Portaliq\Kernel\Contracts\LandingPageProvisioningServiceInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -40,7 +41,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-a-contributing-app-requests-a-landing-page-via-a-typed-event
  */
-class LandingPageProvisioningService {
+class LandingPageProvisioningService implements LandingPageProvisioningServiceInterface {
 
 	/**
 	 * The register every schema this service touches lives in.
@@ -63,14 +64,23 @@ class LandingPageProvisioningService {
 	private const FORM_SCHEMA = 'form';
 
 	/**
+	 * The page body's widgets in order: id, widget key, grid row and height.
+	 */
+	private const BODY_LAYOUT = [
+		['hero', 'hero', 0, 3],
+		['article', 'markdown', 3, 6],
+		['form', 'form', 9, 6],
+	];
+
+	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Reads portal/page rows for validation.
+	 * @param ScopedCollectionReaderInterface $reader Reads portal/page rows for validation.
 	 * @param PortalObjectWriter $writer Writes the form + page objects.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly LoggerInterface $logger,
 	) {
@@ -91,100 +101,137 @@ class LandingPageProvisioningService {
 	 * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-requests-fail-closed-with-a-machine-readable-error-and-no-partial-write-plan
 	 */
 	public function provision(LandingPageRequestedEvent $event): void {
-		$portal = $event->getPortal();
-		$route = $event->getRoute();
-
-		if ($this->resolvePublishedPortal(portal: $portal) === null) {
-			$this->fail(event: $event, error: 'unknown_portal');
-			return;
+		$error = ($this->refusal(event: $event) ?? $this->write(event: $event));
+		if ($error === null) {
+			$event->setPublicUrl($this->publicUrlFor(portal: $event->getPortal(), route: $event->getRoute()));
 		}
 
-		if ($this->routeIsTaken(portal: $portal, route: $route) === true) {
-			$this->fail(event: $event, error: 'duplicate_route');
-			return;
-		}
-
-		$article = $event->getArticle();
-		if ($this->articleIsValid(article: $article) === false) {
-			$this->fail(event: $event, error: 'invalid_article');
-			return;
-		}
-
-		$form = $event->getForm();
-		if ($this->formIsValid(form: $form) === false) {
-			$this->fail(event: $event, error: 'invalid_form');
-			return;
-		}
-
-		$createdForm = $this->writer->createAnonymousObject(
-			register: self::REGISTER,
-			schema: self::FORM_SCHEMA,
-			data: [
-				'portal' => $portal,
-				'pageRoute' => $route,
-				'sourceApp' => $event->getSourceApp(),
-				'externalReference' => $event->getExternalReference(),
-				'campaign' => $event->getUtm(),
-				'fields' => (array)($form['fields'] ?? []),
-				'submitLabel' => (string)($form['submitLabel'] ?? ''),
-				'consentText' => (string)($form['consentText'] ?? ''),
-				'status' => 'active',
-			]
-		);
-		$formId = $this->rowId(row: $createdForm);
-		if ($formId === '') {
-			$this->fail(event: $event, error: 'write_failed');
-			return;
-		}
-
-		$createdPage = $this->writer->createAnonymousObject(
-			register: self::REGISTER,
-			schema: self::PAGE_SCHEMA,
-			data: [
-				'title' => $event->getTitle(),
-				'route' => $route,
-				'status' => 'draft',
-				'locale' => $event->getLocale(),
-				'summary' => (string)($article['summary'] ?? ''),
-				'heroImage' => $article['heroImageRef'] ?? null,
-				'portal' => $portal,
-				'body' => $this->buildBody(article: $article, form: $form, formId: $formId),
-			]
-		);
-		$pageId = $this->rowId(row: $createdPage);
-		if ($pageId === '') {
-			// The form object is now orphaned (no page references it, so
-			// nothing ever serves it) — logged, not swept here; see
-			// design.md Risks. The visitor-facing contract still fails
-			// closed: no partial success is reported to the caller.
-			$this->logger->warning(
-				'Portaliq: landing page write failed after its form was created',
-				['formId' => $formId, 'portal' => $portal, 'route' => $route]
-			);
-			$this->fail(event: $event, error: 'write_failed');
-			return;
-		}
-
-		$event->setPageId($pageId);
-		$event->setFormId($formId);
-		$event->setPublicUrl($this->publicUrlFor(portal: $portal, route: $route));
-		$event->setError(null);
+		$event->setError($error);
 		$event->setHandled(true);
 	}//end provision()
 
 	/**
-	 * Mark the event handled-with-failure: no page/form id, the given error
-	 * code, `handled: true`.
+	 * The error code that refuses the request before anything is written, or null.
 	 *
-	 * @param LandingPageRequestedEvent $event The event to mutate.
-	 * @param string $error The machine-readable failure code.
+	 * @param LandingPageRequestedEvent $event The request event.
 	 *
-	 * @return void
+	 * @return string|null
 	 */
-	private function fail(LandingPageRequestedEvent $event, string $error): void {
-		$event->setError($error);
-		$event->setHandled(true);
-	}//end fail()
+	private function refusal(LandingPageRequestedEvent $event): ?string {
+		$portal = $event->getPortal();
+		if ($this->resolvePublishedPortal(portal: $portal) === null) {
+			return 'unknown_portal';
+		}
+
+		if ($this->routeIsTaken(portal: $portal, route: $event->getRoute()) === true) {
+			return 'duplicate_route';
+		}
+
+		// The article needs a non-empty summary and body.
+		$article = $event->getArticle();
+		if (trim((string)($article['summary'] ?? '')) === '' || trim((string)($article['body'] ?? '')) === '') {
+			return 'invalid_article';
+		}
+
+		if ($this->formIsValid(form: $event->getForm()) === false) {
+			return 'invalid_form';
+		}
+
+		return null;
+	}//end refusal()
+
+	/**
+	 * Create the form, then the page bound to it; the error code when a write failed, or null.
+	 *
+	 * @param LandingPageRequestedEvent $event The request event (ids set on success).
+	 *
+	 * @return string|null
+	 */
+	private function write(LandingPageRequestedEvent $event): ?string {
+		$formId = $this->rowId(
+			row: $this->writer->createAnonymousObject(register: self::REGISTER, schema: self::FORM_SCHEMA, data: $this->formData(event: $event))
+		);
+		if ($formId === '') {
+			return 'write_failed';
+		}
+
+		return $this->writePage(event: $event, formId: $formId);
+	}//end write()
+
+	/**
+	 * Create the draft page for an already created form; the error code when that failed, or null.
+	 *
+	 * @param LandingPageRequestedEvent $event  The request event (ids set on success).
+	 * @param string                    $formId The created form's id.
+	 *
+	 * @return string|null
+	 */
+	private function writePage(LandingPageRequestedEvent $event, string $formId): ?string {
+		$pageId = $this->rowId(
+			row: $this->writer->createAnonymousObject(
+				register: self::REGISTER,
+				schema: self::PAGE_SCHEMA,
+				data: $this->pageData(event: $event, formId: $formId)
+			)
+		);
+		if ($pageId === '') {
+			$this->logger->warning(
+				'Portaliq: landing page write failed after its form was created',
+				['formId' => $formId, 'portal' => $event->getPortal(), 'route' => $event->getRoute()]
+			);
+			return 'write_failed';
+		}
+
+		$event->setPageId($pageId);
+		$event->setFormId($formId);
+		return null;
+	}//end writePage()
+
+	/**
+	 * The form object a request creates.
+	 *
+	 * @param LandingPageRequestedEvent $event The request event.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function formData(LandingPageRequestedEvent $event): array {
+		$form = $event->getForm();
+
+		return [
+			'portal' => $event->getPortal(),
+			'pageRoute' => $event->getRoute(),
+			'sourceApp' => $event->getSourceApp(),
+			'externalReference' => $event->getExternalReference(),
+			'campaign' => $event->getUtm(),
+			'fields' => (array)($form['fields'] ?? []),
+			'submitLabel' => (string)($form['submitLabel'] ?? ''),
+			'consentText' => (string)($form['consentText'] ?? ''),
+			'status' => 'active',
+		] + self::destinationOf(form: $form);
+	}//end formData()
+
+	/**
+	 * The draft page object a request creates, bound to its form.
+	 *
+	 * @param LandingPageRequestedEvent $event  The request event.
+	 * @param string                    $formId The created form's id.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function pageData(LandingPageRequestedEvent $event, string $formId): array {
+		$article = $event->getArticle();
+
+		return [
+			'title' => $event->getTitle(),
+			'route' => $event->getRoute(),
+			'status' => 'draft',
+			'locale' => $event->getLocale(),
+			'summary' => (string)($article['summary'] ?? ''),
+			'heroImage' => $article['heroImageRef'] ?? null,
+			'portal' => $event->getPortal(),
+			'body' => $this->buildBody(event: $event, formId: $formId),
+		];
+	}//end pageData()
 
 	/**
 	 * Resolve a `published` `portal` object by slug, or null.
@@ -251,16 +298,36 @@ class LandingPageProvisioningService {
 	}//end routeIsTaken()
 
 	/**
-	 * Validate the article payload: non-empty summary and body.
+	 * The requesting app's destination for the form, as `['destination' => ...]`, or nothing.
 	 *
-	 * @param array<string, mixed> $article The article payload.
+	 * Decision 179: a submit creates the app's own object (a lead) directly.
+	 * Only `register`, `schema`, `fields` and `fixed` are carried; without a
+	 * register and schema the form is created but not submittable until an
+	 * administrator names its destination.
 	 *
-	 * @return bool
+	 * @param array<string, mixed> $form The event's form.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/specs/landing-page-provisioning/spec.md#requirement-a-landing-pages-form-is-submittable-with-no-portal-session
 	 */
-	private function articleIsValid(array $article): bool {
-		return trim((string)($article['summary'] ?? '')) !== ''
-			&& trim((string)($article['body'] ?? '')) !== '';
-	}//end articleIsValid()
+	private static function destinationOf(array $form): array {
+		$destination = (array)($form['destination'] ?? []);
+		$register    = trim((string)($destination['register'] ?? ''));
+		$schema      = trim((string)($destination['schema'] ?? ''));
+		if ($register === '' || $schema === '') {
+			return [];
+		}
+
+		return [
+			'destination' => [
+				'register' => $register,
+				'schema' => $schema,
+				'fields' => array_filter((array)($destination['fields'] ?? []), 'is_string'),
+				'fixed' => (array)($destination['fixed'] ?? []),
+			],
+		];
+	}//end destinationOf()
 
 	/**
 	 * Validate the form payload: at least one well-formed field and a
@@ -306,54 +373,55 @@ class LandingPageProvisioningService {
 	 * widget on this page, whose props are likewise served as authored page
 	 * configuration, not fetched separately.
 	 *
-	 * @param array<string, mixed> $article The article payload.
-	 * @param array<string, mixed> $form The form payload (`fields`/`submitLabel`/`consentText`).
-	 * @param string $formId The created form's id.
+	 * @param LandingPageRequestedEvent $event  The request event (article and form payloads).
+	 * @param string                    $formId The created form's id.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function buildBody(array $article, array $form, string $formId): array {
+	private function buildBody(LandingPageRequestedEvent $event, string $formId): array {
+		$props   = $this->widgetProps(event: $event, formId: $formId);
+		$widgets = [];
+		foreach (self::BODY_LAYOUT as [$id, $widgetKey, $gridY, $gridHeight]) {
+			$widgets[] = [
+				'id' => $id,
+				'widgetKey' => $widgetKey,
+				'gridX' => 0,
+				'gridY' => $gridY,
+				'gridWidth' => 12,
+				'gridHeight' => $gridHeight,
+				'props' => $props[$id],
+			];
+		}
+
+		return ['type' => 'grid', 'widgets' => $widgets];
+	}//end buildBody()
+
+	/**
+	 * The props of each body widget, by widget id.
+	 *
+	 * @param LandingPageRequestedEvent $event  The request event.
+	 * @param string                    $formId The created form's id.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function widgetProps(LandingPageRequestedEvent $event, string $formId): array {
+		$article = $event->getArticle();
+		$form    = $event->getForm();
+
 		return [
-			'type' => 'grid',
-			'widgets' => [
-				[
-					'id' => 'hero',
-					'widgetKey' => 'hero',
-					'gridX' => 0,
-					'gridY' => 0,
-					'gridWidth' => 12,
-					'gridHeight' => 3,
-					'props' => ['summary' => (string)($article['summary'] ?? '')],
-				],
-				[
-					'id' => 'article',
-					'widgetKey' => 'markdown',
-					'gridX' => 0,
-					'gridY' => 3,
-					'gridWidth' => 12,
-					'gridHeight' => 6,
-					'props' => [
-						'markdown' => (string)($article['body'] ?? ''),
-						'links' => (array)($article['links'] ?? []),
-					],
-				],
-				[
-					'id' => 'form',
-					'widgetKey' => 'form',
-					'gridX' => 0,
-					'gridY' => 9,
-					'gridWidth' => 12,
-					'gridHeight' => 6,
-					'props' => [
-						'formId' => $formId,
-						'fields' => (array)($form['fields'] ?? []),
-						'submitLabel' => (string)($form['submitLabel'] ?? ''),
-						'consentText' => (string)($form['consentText'] ?? ''),
-					],
-				],
+			'hero' => ['summary' => (string)($article['summary'] ?? '')],
+			'article' => [
+				'markdown' => (string)($article['body'] ?? ''),
+				'links' => (array)($article['links'] ?? []),
+			],
+			'form' => [
+				'formId' => $formId,
+				'fields' => (array)($form['fields'] ?? []),
+				'submitLabel' => (string)($form['submitLabel'] ?? ''),
+				'consentText' => (string)($form['consentText'] ?? ''),
 			],
 		];
-	}//end buildBody()
+	}//end widgetProps()
 
 	/**
 	 * Derive the page's public URL from the portal's FIRST verified domain,
@@ -369,28 +437,50 @@ class LandingPageProvisioningService {
 		$row = $this->resolvePublishedPortal(portal: $portal);
 		$domains = (array)($row['domains'] ?? []);
 
-		$hostname = null;
-		foreach ($domains as $domain) {
-			if (is_array($domain) === false) {
-				continue;
-			}
-
-			if (($domain['verified'] ?? false) === true) {
-				$hostname = (string)($domain['hostname'] ?? '');
-				break;
-			}
-		}
-
-		if ($hostname === null && count($domains) > 0 && is_array($domains[0]) === true) {
-			$hostname = (string)($domains[0]['hostname'] ?? '');
-		}
-
+		$hostname = $this->hostnameOf(domains: $domains);
 		if ($hostname === null || $hostname === '') {
 			return null;
 		}
 
 		return 'https://' . $hostname . $route;
 	}//end publicUrlFor()
+
+	/**
+	 * The first verified domain's hostname, else the first domain's.
+	 *
+	 * @param array<mixed> $domains The portal's domains.
+	 *
+	 * @return string|null Null when there is no domain to take it from.
+	 */
+	private function hostnameOf(array $domains): string|null {
+		$hostname = $this->verifiedHostname(domains: $domains);
+		if ($hostname === null && count($domains) > 0 && is_array($domains[0]) === true) {
+			$hostname = (string)($domains[0]['hostname'] ?? '');
+		}
+
+		return $hostname;
+	}//end hostnameOf()
+
+	/**
+	 * The first verified domain's hostname.
+	 *
+	 * @param array<mixed> $domains The portal's domains.
+	 *
+	 * @return string|null Null when no domain is verified.
+	 */
+	private function verifiedHostname(array $domains): string|null {
+		foreach ($domains as $domain) {
+			if (is_array($domain) === false) {
+				continue;
+			}
+
+			if (($domain['verified'] ?? false) === true) {
+				return (string)($domain['hostname'] ?? '');
+			}
+		}
+
+		return null;
+	}//end verifiedHostname()
 
 	/**
 	 * Extract a written row's identifier (`id`/`uuid`, flat or `@self`).
@@ -404,19 +494,6 @@ class LandingPageProvisioningService {
 			return '';
 		}
 
-		$self = ($row['@self'] ?? null);
-		$candidates = [($row['id'] ?? null), ($row['uuid'] ?? null)];
-		if (is_array($self) === true) {
-			$candidates[] = ($self['id'] ?? null);
-			$candidates[] = ($self['uuid'] ?? null);
-		}
-
-		foreach ($candidates as $candidate) {
-			if ((is_string($candidate) === true || is_int($candidate) === true) && (string)$candidate !== '') {
-				return (string)$candidate;
-			}
-		}
-
-		return '';
+		return ((new RowIdLookup())->firstIdOrUuid(row: $row) ?? '');
 	}//end rowId()
 }//end class

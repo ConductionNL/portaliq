@@ -24,10 +24,11 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\InternalBaseUrl;
-use OCA\Portaliq\Service\PageEditorService;
-use OCA\Portaliq\Service\SettingsService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\EmailLinkSettingInterface;
+use OCA\Portaliq\Kernel\Contracts\InternalBaseUrlInterface;
+use OCA\Portaliq\Kernel\Contracts\PageEditorServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\SettingsServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -40,17 +41,19 @@ class SettingsController extends Controller {
 	 * Constructor for the SettingsController.
 	 *
 	 * @param IRequest $request The request object
-	 * @param SettingsService $settingsService The settings service
-	 * @param InternalBaseUrl|null $internalBaseUrl The internal address for calls to this instance.
+	 * @param SettingsServiceInterface $settingsService The settings service
+	 * @param InternalBaseUrlInterface|null $internalBaseUrl The internal address for calls to this instance.
+	 * @param EmailLinkSettingInterface|null $emailLinks The e-mail link switch, OFF by default (sign-in-with-an-email-link).
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		IRequest $request,
-		private SettingsService $settingsService,
-		private ?InternalBaseUrl $internalBaseUrl = null,
+		private SettingsServiceInterface $settingsService,
+		private ?InternalBaseUrlInterface $internalBaseUrl = null,
+		private ?EmailLinkSettingInterface $emailLinks = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -65,6 +68,7 @@ class SettingsController extends Controller {
 	 *
 	 * @spec openspec/specs/settings-management/spec.md#REQ-CFG-001
 	 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-an-administrator-can-name-the-internal-address
+	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#1
 	 */
 	public function index(): JSONResponse {
 		$settings = $this->settingsService->getSettings();
@@ -77,16 +81,22 @@ class SettingsController extends Controller {
 			// instance's group structure for a field they have no form for.
 			// `mayEditPages` stays: it says only what THIS caller may do, which
 			// is what the interface asking the question needs.
-			unset($settings[PageEditorService::CONFIG_KEY]);
+			unset($settings[PageEditorServiceInterface::CONFIG_KEY]);
 			// The geography provider and the MaxMind account id are instance
 			// configuration; a non-admin has no form for them either.
-			unset($settings[SettingsService::GEO_KEY]);
+			unset($settings[SettingsServiceInterface::GEO_KEY]);
 		}
 
 		// The internal address for calls to this instance names where the
 		// server reaches itself: administrators only.
 		if ($isAdmin === true && $this->internalBaseUrl !== null) {
-			$settings[InternalBaseUrl::CONFIG_KEY] = $this->internalBaseUrl->stored();
+			$settings[InternalBaseUrlInterface::CONFIG_KEY] = $this->internalBaseUrl->stored();
+		}
+
+		// The e-mail link switch (decision 127): off until an administrator
+		// turns it on after the security review. Administrators only.
+		if ($isAdmin === true && $this->emailLinks !== null) {
+			$settings[EmailLinkSettingInterface::SETTINGS_KEY] = $this->emailLinks->isEnabled();
 		}
 
 		return new JSONResponse($settings);
@@ -134,21 +144,13 @@ class SettingsController extends Controller {
 	 *
 	 * @spec openspec/specs/settings-management/spec.md#REQ-CFG-002
 	 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-an-administrator-can-name-the-internal-address
+	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#1
 	 */
 	public function update(): JSONResponse {
 		$data = $this->request->getParams();
 		$config = $this->settingsService->updateSettings($data);
-
-		// The internal address for calls to this instance
-		// (instance-loopback-self-calls): validated before it is stored; an
-		// invalid one is refused and the stored address stays.
-		if ($this->internalBaseUrl !== null && is_string($data[InternalBaseUrl::CONFIG_KEY] ?? null) === true) {
-			if ($this->internalBaseUrl->store(value: $data[InternalBaseUrl::CONFIG_KEY]) === false) {
-				$config['internal_base_url_refused'] = true;
-			}
-
-			$config[InternalBaseUrl::CONFIG_KEY] = $this->internalBaseUrl->stored();
-		}
+		$config = $this->withInternalBaseUrl(config: $config, data: $data);
+		$config = $this->withEmailLinks(config: $config, data: $data);
 
 		return new JSONResponse(
 			[
@@ -157,6 +159,47 @@ class SettingsController extends Controller {
 			]
 		);
 	}//end update()
+
+	/**
+	 * Store the internal address for calls to this instance when one is sent, and answer what is stored.
+	 *
+	 * @param array<string, mixed> $config The updated settings.
+	 * @param array<string, mixed> $data   The request parameters.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withInternalBaseUrl(array $config, array $data): array {
+		// The internal address for calls to this instance
+		// (instance-loopback-self-calls): validated before it is stored; an
+		// invalid one is refused and the stored address stays.
+		if ($this->internalBaseUrl !== null && is_string($data[InternalBaseUrlInterface::CONFIG_KEY] ?? null) === true) {
+			if ($this->internalBaseUrl->store(value: $data[InternalBaseUrlInterface::CONFIG_KEY]) === false) {
+				$config['internal_base_url_refused'] = true;
+			}
+
+			$config[InternalBaseUrlInterface::CONFIG_KEY] = $this->internalBaseUrl->stored();
+		}
+
+		return $config;
+	}//end withInternalBaseUrl()
+
+	/**
+	 * Switch the e-mail link sign-in when a real boolean is sent, and answer whether it is on.
+	 *
+	 * @param array<string, mixed> $config The updated settings.
+	 * @param array<string, mixed> $data   The request parameters.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withEmailLinks(array $config, array $data): array {
+		// Only a real boolean switches the e-mail link sign-in.
+		if ($this->emailLinks !== null && is_bool($data[EmailLinkSettingInterface::SETTINGS_KEY] ?? null) === true) {
+			$this->emailLinks->setEnabled(enabled: $data[EmailLinkSettingInterface::SETTINGS_KEY]);
+			$config[EmailLinkSettingInterface::SETTINGS_KEY] = $this->emailLinks->isEnabled();
+		}
+
+		return $config;
+	}//end withEmailLinks()
 
 	/**
 	 * Legacy alias for {@see update()} — `POST /api/settings`.
@@ -191,7 +234,10 @@ class SettingsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
+	 * @auth admin-only Re-imports the register and rewrites every schema binding, so only an instance administrator may run it.
+	 *
 	 * @spec openspec/specs/settings-management/spec.md#REQ-CFG-003
+	 * @spec openspec/changes/operate-roles-for-content-and-actions/specs/portal-admin-roles/spec.md#requirement-content-rights-and-settings-rights-stay-apart-req-ora-007
 	 */
 	public function load(): JSONResponse {
 		$result = $this->settingsService->loadConfiguration(force: true);

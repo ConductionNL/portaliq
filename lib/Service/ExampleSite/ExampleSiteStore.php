@@ -26,9 +26,13 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\ExampleSite;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\Portaliq\Service\ObjectRowNormaliser;
+use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalRegisterContext;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\RowIdOf;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -43,6 +47,10 @@ use Throwable;
  * @spec openspec/changes/example-site-zuiddrecht/specs/example-site/spec.md#requirement-the-install-must-prove-what-arrived
  */
 class ExampleSiteStore {
+	use ObjectServiceLookup;
+	use ObjectRowNormaliser;
+	use RowIdOf;
+
 	/**
 	 * OpenRegister's ObjectService, fetched by string id: OpenRegister is an
 	 * optional sibling app, so its classes are never imported.
@@ -99,16 +107,23 @@ class ExampleSiteStore {
 			return [];
 		}
 
-		try {
-			if ($this->context->apply(objectService: $objectService, schemaSlug: $schema) === false) {
-				return [];
-			}
+		$rows = $this->rowsOf(objectService: $objectService, schema: $schema, filters: $filters);
 
-			$rows = $objectService->findAll(
-				config: ['filters' => $filters, 'limit' => self::PAGE_SIZE, 'offset' => 0],
-				_rbac: false,
-				_multitenancy: false
-			);
+		return $this->plain(rows: $rows);
+	}//end find()
+
+	/**
+	 * The schema's rows that match the filters, or none when the read failed.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param string               $schema        The schema slug.
+	 * @param array<string, mixed> $filters       Property filters.
+	 *
+	 * @return array<mixed>
+	 */
+	private function rowsOf(object $objectService, string $schema, array $filters): array {
+		try {
+			$rows = $this->query(objectService: $objectService, schema: $schema, filters: $filters);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: example site read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
 			return [];
@@ -118,19 +133,48 @@ class ExampleSiteStore {
 			return [];
 		}
 
+		return $rows;
+	}//end rowsOf()
+
+	/**
+	 * Read the schema's first page of matching rows; none when the schema cannot be set.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param string               $schema        The schema slug.
+	 * @param array<string, mixed> $filters       Property filters.
+	 *
+	 * @return mixed
+	 */
+	private function query(object $objectService, string $schema, array $filters): mixed {
+		if ($this->context->apply(objectService: $objectService, schemaSlug: $schema) === false) {
+			return [];
+		}
+
+		return $objectService->findAll(
+			config: ['filters' => $filters, 'limit' => self::PAGE_SIZE, 'offset' => 0],
+			_rbac: false,
+			_multitenancy: false
+		);
+	}//end query()
+
+	/**
+	 * The rows as plain arrays.
+	 *
+	 * @param array<mixed> $rows The rows as read.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function plain(array $rows): array {
 		$plain = [];
 		foreach ($rows as $row) {
-			if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-				$row = $row->jsonSerialize();
-			}
-
-			if (is_array($row) === true) {
+			$row = $this->normalise(row: $row);
+			if ($row !== null) {
 				$plain[] = $row;
 			}
 		}
 
 		return $plain;
-	}//end find()
+	}//end plain()
 
 	/**
 	 * Write one row and return its id, or null when the write failed.
@@ -143,7 +187,7 @@ class ExampleSiteStore {
 	 * @spec openspec/changes/example-site-zuiddrecht/specs/example-site/spec.md#requirement-an-administrator-must-be-able-to-install-an-example-site-with-one-command
 	 */
 	public function create(string $schema, array $data): ?string {
-		$saved = $this->writer->createAnonymousObject(register: PortalResolver::REGISTER, schema: $schema, data: $data);
+		$saved = $this->writer->createAnonymousObject(register: PortalRegisterContext::REGISTER, schema: $schema, data: $data);
 		if ($saved === null) {
 			return null;
 		}
@@ -174,9 +218,10 @@ class ExampleSiteStore {
 
 		try {
 			$deleted = $objectService->deleteObject(
-				uuid: $id,
-				register: PortalResolver::REGISTER,
-				schema: $schema,
+				new ObjectDeletion(
+					uuid: $id,
+					target: new ObjectFindTarget(register: PortalRegisterContext::REGISTER, schema: $schema)
+				),
 				_rbac: false,
 				_multitenancy: false
 			);
@@ -187,47 +232,4 @@ class ExampleSiteStore {
 
 		return $deleted !== false;
 	}//end delete()
-
-	/**
-	 * The id OpenRegister gave a row, wherever it put it.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return string The id, or '' when the row names none.
-	 *
-	 * @spec openspec/changes/example-site-zuiddrecht/specs/example-site/spec.md#requirement-an-administrator-must-be-able-to-remove-an-example-site
-	 */
-	public function idOf(array $row): string {
-		$self = [];
-		if (is_array($row['@self'] ?? null) === true) {
-			$self = $row['@self'];
-		}
-
-		foreach ([($self['id'] ?? null), ($self['uuid'] ?? null), ($row['id'] ?? null), ($row['uuid'] ?? null)] as $id) {
-			if (is_string($id) === true && $id !== '') {
-				return $id;
-			}
-		}
-
-		return '';
-	}//end idOf()
-
-	/**
-	 * OpenRegister's ObjectService, or null when it is not installed.
-	 *
-	 * @return object|null
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end objectService()
 }//end class

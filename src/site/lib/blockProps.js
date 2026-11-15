@@ -59,9 +59,10 @@ export function followable(href) {
  * destination, the first two only.
  *
  * @param {Array} actions The authored actions.
- * @return {Array} `{label, href}` entries, two at most.
+ * @return {Array} `{label, href, style?, chevron?}` entries, two at most.
  *
  * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-hero-must-cap-its-calls-to-action-and-keep-one-outline-entry-req-ptb-006
+ * @spec openspec/changes/site-home-follows-the-school-boards/specs/site-look/spec.md#requirement-a-hero-action-may-be-a-text-link-or-carry-a-chevron
  */
 export function heroActions(actions) {
 	return (Array.isArray(actions) ? actions : [])
@@ -74,6 +75,50 @@ export function heroActions(actions) {
 		.map((action) => ({
 			label: String(action.label),
 			href: String(action.href),
+			// An underlined text link instead of a button, and a chevron after
+			// a button's label (boards Home, site-home-follows-the-school-boards).
+			...(action.style === 'link' ? { style: 'link' } : {}),
+			...(action.chevron === true ? { chevron: true } : {}),
 		}))
 		.slice(0, 2)
+}
+
+/**
+ * The hero's popular links that render ("Veel gezocht"): each with a label
+ * and a followable destination, six at most.
+ *
+ * @param {Array} links The authored links.
+ * @return {Array} `{label, href}` entries, six at most.
+ *
+ * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md#requirement-the-hero-may-draw-its-search-plain-with-popular-links
+ */
+export function heroPopularLinks(links) {
+	return (Array.isArray(links) ? links : [])
+		.filter(
+			(link) =>
+				link
+				&& String(link.label || '').trim() !== ''
+				&& followable(link.href),
+		)
+		.map((link) => ({ label: String(link.label), href: String(link.href) }))
+		.slice(0, 6)
+}
+
+/**
+ * A hero's props with the portal's hero image when the block sets none of
+ * its own (portal-identity-from-the-admin REQ-PIA-002). The block's own
+ * image always wins.
+ *
+ * @param {object} props The hero's authored props.
+ * @param {string} heroImage The portal's resolved hero image address, or ''.
+ * @return {object} The props to render.
+ *
+ * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+ */
+export function heroWithPortalImage(props, heroImage) {
+	const own = typeof props?.backgroundImage === 'string' ? props.backgroundImage.trim() : ''
+	if (own !== '' || typeof heroImage !== 'string' || heroImage === '') {
+		return props
+	}
+	return { ...props, backgroundImage: heroImage }
 }

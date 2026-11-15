@@ -30,20 +30,24 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-journey-entry-points/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
- * @spec openspec/changes/attach-to-own-collection/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-be-able-to-name-one-collection-and-its-own-app-req-ato-001
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-be-able-to-name-one-collection-and-its-own-app-req-ato-001
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\AttachedActionResolverInterface;
+
 /**
  * Resolves `attachTo` declarations into `attachedActions` on target collections.
  *
- * @spec openspec/changes/woo-journey-entry-points/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
-class AttachedActionResolver {
+class AttachedActionResolver implements AttachedActionResolverInterface {
 	/**
 	 * The manifest key on the collection.
 	 */
@@ -53,8 +57,24 @@ class AttachedActionResolver {
 	 * The action keys the target collection lists; never the endpoint.
 	 * `rowWhen` is listed so a renderer can leave the action off a row it does
 	 * not apply to; the forward checks it again on the row it read.
+	 * `optionsProviders` is listed because a choice field's options live
+	 * there and nowhere else: without it the form on the record asked every
+	 * choice as free text (zuiddrecht live test, 14 October 2026).
 	 */
-	private const LISTED = ['label', 'fields', 'fieldConfigs', 'submitLabel', 'successMessage', 'rowWhen', 'steps', 'confirmation', 'draft', 'summary'];
+	private const LISTED = [
+		'label',
+		'fields',
+		'fieldConfigs',
+		'optionsProviders',
+		'submitLabel',
+		'successMessage',
+		'rowWhen',
+		'steps',
+		'confirmation',
+		'draft',
+		'summary',
+		'answerSummary',
+	];
 
 	/**
 	 * Add each attaching action to the collections it names.
@@ -66,7 +86,7 @@ class AttachedActionResolver {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/woo-journey-entry-points/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
 	 */
 	public function resolve(array $contributions): array {
 		$attaching = $this->attaching(contributions: $contributions);
@@ -76,30 +96,57 @@ class AttachedActionResolver {
 				continue;
 			}
 
-			$app = (string)($contribution['app'] ?? '');
-			foreach ((array)($contribution['collections'] ?? []) as $position => $collection) {
-				if (is_array($collection) === false) {
-					continue;
-				}
-
-				unset($collection[self::KEY]);
-				$listed = [];
-				foreach ($attaching as $entry) {
-					if ($this->targets(entry: $entry, app: $app, collection: $collection) === true) {
-						$listed[] = $entry['listed'];
-					}
-				}
-
-				if ($listed !== []) {
-					$collection[self::KEY] = $listed;
-				}
-
-				$contributions[$index]['collections'][$position] = $collection;
-			}
-		}//end foreach
+			$contributions[$index] = $this->withAttached(contribution: $contribution, attaching: $attaching);
+		}
 
 		return $contributions;
 	}//end resolve()
+
+	/**
+	 * The contribution with each of its collections listing the actions that attach to it.
+	 *
+	 * @param array<string, mixed>             $contribution The contribution.
+	 * @param array<int, array<string, mixed>> $attaching    The attaching actions.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withAttached(array $contribution, array $attaching): array {
+		$app = (string)($contribution['app'] ?? '');
+		foreach ((array)($contribution['collections'] ?? []) as $position => $collection) {
+			if (is_array($collection) === false) {
+				continue;
+			}
+
+			$contribution['collections'][$position] = $this->listedOn(collection: $collection, app: $app, attaching: $attaching);
+		}
+
+		return $contribution;
+	}//end withAttached()
+
+	/**
+	 * The collection with the list of actions that attach to it, and no list when none does.
+	 *
+	 * @param array<string, mixed>             $collection The collection.
+	 * @param string                           $app        The app that owns the collection.
+	 * @param array<int, array<string, mixed>> $attaching  The attaching actions.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function listedOn(array $collection, string $app, array $attaching): array {
+		unset($collection[self::KEY]);
+		$listed = [];
+		foreach ($attaching as $entry) {
+			if ($this->targets(entry: $entry, app: $app, collection: $collection) === true) {
+				$listed[] = $entry['listed'];
+			}
+		}
+
+		if ($listed !== []) {
+			$collection[self::KEY] = $listed;
+		}
+
+		return $collection;
+	}//end listedOn()
 
 	/**
 	 * The attaching action a forward names, when the collection lists it and
@@ -113,8 +160,8 @@ class AttachedActionResolver {
 	 *
 	 * @return array<string, mixed>|null The action as its own app declares it.
 	 *
-	 * @spec openspec/changes/woo-journey-entry-points/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
-	 * @spec openspec/changes/attach-to-own-collection/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-be-able-to-name-one-collection-and-its-own-app-req-ato-001
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-be-able-to-name-one-collection-and-its-own-app-req-ato-001
 	 */
 	public function attachedAction(array $contributions, string $collectionApp, array $collection, string $actionApp, string $actionId): ?array {
 		if ($this->isListed(collection: $collection, actionApp: $actionApp, actionId: $actionId) === false) {
@@ -185,38 +232,89 @@ class AttachedActionResolver {
 	 * @return array{app: string, target: string, schema: string, collection: string, action: array, listed: array}|null
 	 */
 	private function attachment(string $app, mixed $action): ?array {
-		if (is_array($action) === false || is_string($action['id'] ?? null) === false
-			|| (new RowActionResolver())->isEndpointRowAction(action: $action) === false
-		) {
+		if ($this->isAttachable(action: $action) === false) {
 			return null;
 		}
 
-		$target = ($action['attachTo'] ?? null);
-		if (is_array($target) === false || $this->isName(value: ($target['app'] ?? null)) === false
-			|| $this->isName(value: ($target['schema'] ?? null)) === false
-		) {
+		$target = $this->attachTarget(declared: ($action['attachTo'] ?? null));
+		if ($target === null) {
 			return null;
 		}
-
-		// An optional collection id narrows the target to that one collection.
-		// A malformed one attaches nothing: widening it to every collection on
-		// the schema would show the action where its app never meant it.
-		$collection = ($target['collection'] ?? '');
-		if ($collection !== '' && $this->isName(value: $collection) === false) {
-			return null;
-		}
-
-		$listed = $this->listedFor(app: $app, action: $action);
 
 		return [
 			'app' => $app,
 			'target' => $target['app'],
 			'schema' => $target['schema'],
-			'collection' => (string)$collection,
+			'collection' => $target['collection'],
 			'action' => $action,
-			'listed' => $listed,
+			'listed' => $this->listedFor(app: $app, action: $action),
 		];
 	}//end attachment()
+
+	/**
+	 * Whether an action can attach at all: a map with a string id that is an
+	 * endpoint row action.
+	 *
+	 * @param mixed $action The action.
+	 *
+	 * @return bool
+	 */
+	private function isAttachable(mixed $action): bool {
+		return is_array($action) === true && is_string($action['id'] ?? null) === true
+			&& (new RowActionResolver())->isEndpointRowAction(action: $action) === true;
+	}//end isAttachable()
+
+	/**
+	 * The app, schema and collection an action attaches to, or null when its
+	 * `attachTo` does not name an app and a schema, or names a malformed
+	 * collection.
+	 *
+	 * @param mixed $declared The declared `attachTo`.
+	 *
+	 * @return array{app: string, schema: string, collection: string}|null
+	 */
+	private function attachTarget(mixed $declared): ?array {
+		if (is_array($declared) === false || $this->namesAppAndSchema(declared: $declared) === false) {
+			return null;
+		}
+
+		$collection = $this->targetCollection(declared: $declared);
+		if ($collection === null) {
+			return null;
+		}
+
+		return ['app' => $declared['app'], 'schema' => $declared['schema'], 'collection' => $collection];
+	}//end attachTarget()
+
+	/**
+	 * Whether an `attachTo` names an app and a schema.
+	 *
+	 * @param array<string, mixed> $declared The declared `attachTo`.
+	 *
+	 * @return bool
+	 */
+	private function namesAppAndSchema(array $declared): bool {
+		return $this->isName(value: ($declared['app'] ?? null)) === true && $this->isName(value: ($declared['schema'] ?? null)) === true;
+	}//end namesAppAndSchema()
+
+	/**
+	 * The collection id an `attachTo` narrows the target to, '' for every
+	 * collection on the schema. A malformed one is null and attaches
+	 * nothing: widening it to every collection on the schema would show the
+	 * action where its app never meant it.
+	 *
+	 * @param array<string, mixed> $declared The declared `attachTo`.
+	 *
+	 * @return string|null
+	 */
+	private function targetCollection(array $declared): ?string {
+		$collection = ($declared['collection'] ?? '');
+		if ($collection !== '' && $this->isName(value: $collection) === false) {
+			return null;
+		}
+
+		return (string)$collection;
+	}//end targetCollection()
 
 	/**
 	 * Whether an attachment targets this collection of this app: the app and
@@ -244,6 +342,8 @@ class AttachedActionResolver {
 	 * @param array<string, mixed> $action The action.
 	 *
 	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/site-forms/spec.md#requirement-a-form-attached-to-a-record-asks-and-sends-what-its-action-declares-req-eaf-002
 	 */
 	private function listedFor(string $app, array $action): array {
 		$listed = ['app' => $app, 'id' => $action['id']];

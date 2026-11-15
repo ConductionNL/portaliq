@@ -27,23 +27,23 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+ * @spec openspec/specs/report-without-an-account/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\CaseTypeReader;
-use OCA\Portaliq\Service\Identity\PortalChallengeService;
-use OCA\Portaliq\Service\PortalObjectReader;
-use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\Reports\ReportIntakeService;
-use OCA\Portaliq\Service\Reports\ReportProjection;
-use OCA\Portaliq\Service\Reports\ReportTermsService;
-use OCA\Portaliq\Service\Reports\ReportThreadService;
-use OCA\Portaliq\Service\Reports\RevealService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\CaseTypeReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalChallengeServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\ReportIntakeServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\ReportProjectionInterface;
+use OCA\Portaliq\Kernel\Contracts\ReportTermsServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\ReportThreadServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\RevealServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -54,16 +54,19 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
+use OCA\Portaliq\Kernel\Contracts\RequestedPortalInterface;
 
 /**
  * Files a report, runs its thread, and gates the reveal.
  *
- * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+ * @spec openspec/specs/report-without-an-account/spec.md
  *
  * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- one dependency per step:
  * the portal, the challenge, intake, the thread, the terms, the reveal, the
  * projection, the record, the case type and the staff user.
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)  -- see above.
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- one guarded route per
+ * step of a report's life, for the reporter and for the staff lists.
  */
 class ReportController extends Controller {
 	/**
@@ -82,34 +85,46 @@ class ReportController extends Controller {
 	private const REQUEST_SCHEMA = 'portalRevealRequest';
 
 	/**
+	 * The most rows one list reads per portal.
+	 */
+	private const LIST_LIMIT = 500;
+
+	/**
+	 * What a reveal request shows to staff: never a contact detail.
+	 */
+	private const REQUEST_FIELDS = ['reportRef', 'requestedBy', 'motivation', 'state', 'decidedBy', 'decidedAt', 'decisionReason', 'requestedAt'];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalResolver $portals Resolves the portal being visited.
-	 * @param PortalChallengeService $challenge The portal's own challenge.
-	 * @param ReportIntakeService $intake Accepts a report and mints its code.
-	 * @param ReportThreadService $threads Opens a thread and carries messages.
-	 * @param ReportTermsService $terms Where the declared terms stand.
-	 * @param RevealService $reveals Requests, refusals and reveals.
-	 * @param ReportProjection $projection Strips the reporter from an answer.
-	 * @param PortalObjectReader $reader Reads the report and the request.
-	 * @param CaseTypeReader $caseTypes Reads the declaration.
+	 * @param PortalResolverInterface $portals Resolves the portal being visited.
+	 * @param PortalChallengeServiceInterface $challenge The portal's own challenge.
+	 * @param ReportIntakeServiceInterface $intake Accepts a report and mints its code.
+	 * @param ReportThreadServiceInterface $threads Opens a thread and carries messages.
+	 * @param ReportTermsServiceInterface $terms Where the declared terms stand.
+	 * @param RevealServiceInterface $reveals Requests, refusals and reveals.
+	 * @param ReportProjectionInterface $projection Strips the reporter from an answer.
+	 * @param PortalObjectReaderInterface $reader Reads the report and the request.
+	 * @param CaseTypeReaderInterface $caseTypes Reads the declaration.
 	 * @param IUserSession $userSession The staff user, when there is one.
+	 * @param RequestedPortalInterface $requestedPortal The RequestedPortal helper.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalResolver $portals,
-		private readonly PortalChallengeService $challenge,
-		private readonly ReportIntakeService $intake,
-		private readonly ReportThreadService $threads,
-		private readonly ReportTermsService $terms,
-		private readonly RevealService $reveals,
-		private readonly ReportProjection $projection,
-		private readonly PortalObjectReader $reader,
-		private readonly CaseTypeReader $caseTypes,
+		private readonly PortalResolverInterface $portals,
+		private readonly PortalChallengeServiceInterface $challenge,
+		private readonly ReportIntakeServiceInterface $intake,
+		private readonly ReportThreadServiceInterface $threads,
+		private readonly ReportTermsServiceInterface $terms,
+		private readonly RevealServiceInterface $reveals,
+		private readonly ReportProjectionInterface $projection,
+		private readonly PortalObjectReaderInterface $reader,
+		private readonly CaseTypeReaderInterface $caseTypes,
 		private readonly IUserSession $userSession,
+		private readonly RequestedPortalInterface $requestedPortal,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -127,7 +142,7 @@ class ReportController extends Controller {
 	 *
 	 * @return JSONResponse The receipt code, once.
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -143,35 +158,39 @@ class ReportController extends Controller {
 		int $expiresAt = 0,
 		string $signature = '',
 	): JSONResponse {
-		$site = $this->portals->resolve(request: $this->request);
+		$site = $this->portals->resolve(request: $this->request, portalSlug: $this->requestedPortal->slug(request: $this->request));
 		if ($site === null) {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$solved = $this->checkReporterCredential(
-			site: $site,
-			report: $report,
-			nonce: $nonce,
-			solution: $solution,
-			expiresAt: $expiresAt,
-			signature: $signature
-		);
-		if ($solved === false) {
+		$filing = new ReportFiling(site: $site, report: $report);
+		$filing->contact   = $contact;
+		$filing->caseType  = $caseType;
+		$filing->register  = $register;
+		$filing->schema    = $schema;
+		$filing->challenge = ['nonce' => $nonce, 'solution' => $solution, 'expiresAt' => $expiresAt, 'signature' => $signature];
+		return $this->fileReport(filing: $filing);
+	}//end file()
+
+	/**
+	 * File a report on a portal that exists: refused without the
+	 * challenge's credential or without a body; else accepted, and its code
+	 * answered once.
+	 *
+	 * @param ReportFiling $filing The filing.
+	 *
+	 * @return JSONResponse
+	 */
+	private function fileReport(ReportFiling $filing): JSONResponse {
+		if ($this->checkReporterCredential(filing: $filing) === false) {
 			return new JSONResponse(['error' => 'challenge_failed'], Http::STATUS_FORBIDDEN);
 		}
 
-		if (trim((string)($report['body'] ?? '')) === '') {
+		if (trim((string)($filing->report['body'] ?? '')) === '') {
 			return new JSONResponse(['error' => 'report_empty'], Http::STATUS_BAD_REQUEST);
 		}
 
-		$accepted = $this->intake->accept(
-			portal: (string)($site['slug'] ?? ''),
-			caseType: $caseType,
-			report: $report,
-			contact: $contact,
-			caseTypeRegister: $register,
-			caseTypeSchema: $schema
-		);
+		$accepted = $this->acceptedReport(filing: $filing);
 		if ($accepted === null) {
 			return new JSONResponse(['error' => 'not_accepted'], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
@@ -182,7 +201,25 @@ class ReportController extends Controller {
 			'codeShownOnce' => true,
 			'recoverable' => false,
 		]);
-	}//end file()
+	}//end fileReport()
+
+	/**
+	 * The report the intake accepts, with its code, or null.
+	 *
+	 * @param ReportFiling $filing The filing.
+	 *
+	 * @return array{code: string, reportId: string}|null
+	 */
+	private function acceptedReport(ReportFiling $filing): ?array {
+		return $this->intake->accept(
+			portal: (string)($filing->site['slug'] ?? ''),
+			caseType: $filing->caseType,
+			report: $filing->report,
+			contact: $filing->contact,
+			caseTypeRegister: $filing->register,
+			caseTypeSchema: $filing->schema
+		);
+	}//end acceptedReport()
 
 	/**
 	 * Whether the filing carries the credential this endpoint authenticates with.
@@ -198,26 +235,21 @@ class ReportController extends Controller {
 	 * unconditionally rather than behind isEnabled(): the honeypot costs
 	 * nothing and should not be skipped with it.
 	 *
-	 * @param array<string, mixed> $site The portal the filing arrived on.
-	 * @param array<string, mixed> $report The submitted report.
-	 * @param string $nonce The challenge nonce, when one was issued.
-	 * @param string $solution The solution to it.
-	 * @param int $expiresAt The expiry issued with the nonce.
-	 * @param string $signature This instance's signature over the nonce.
+	 * @param ReportFiling $filing The filing, with the challenge proof it carried.
 	 *
 	 * @return bool Whether the credential checks out.
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 */
-	private function checkReporterCredential(array $site, array $report, string $nonce, string $solution, int $expiresAt, string $signature): bool {
+	private function checkReporterCredential(ReportFiling $filing): bool {
 		return $this->challenge->accepts(
-			site: $site,
+			site: $filing->site,
 			surface: 'report',
-			submission: $report,
-			nonce: $nonce,
-			solution: $solution,
-			expiresAt: $expiresAt,
-			signature: $signature
+			submission: $filing->report,
+			nonce: $filing->challenge['nonce'],
+			solution: $filing->challenge['solution'],
+			expiresAt: $filing->challenge['expiresAt'],
+			signature: $filing->challenge['signature']
 		);
 	}//end checkReporterCredential()
 
@@ -235,7 +267,7 @@ class ReportController extends Controller {
 	 *
 	 * @return array<string, mixed>|null The report, or null when the code opens none.
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 */
 	private function resolveReporterCredential(string $code, string $address): ?array {
 		return $this->threads->openByCode(code: $code, address: $address);
@@ -248,7 +280,7 @@ class ReportController extends Controller {
 	 *
 	 * @return JSONResponse The report, the visible messages and the terms.
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -278,7 +310,7 @@ class ReportController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -305,7 +337,7 @@ class ReportController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 */
 	#[NoAdminRequired]
 	public function show(string $id): JSONResponse {
@@ -322,8 +354,129 @@ class ReportController extends Controller {
 		return new JSONResponse([
 			'report' => $this->projection->one(report: $report),
 			'messages' => $this->threads->allMessages(reportId: $id),
+			'terms' => $this->terms->forReport(caseType: $this->declarationFor(report: $report), report: $report),
+			'revealRequests' => $this->requestsOf(reportId: $id),
 		]);
 	}//end show()
+
+	/**
+	 * The reports this user may handle, on every published portal, newest
+	 * first, each through the projection and with its terms. A report of a
+	 * case type the user does not handle is left out, so the list is no
+	 * oracle for which reports there are.
+	 *
+	 * @return JSONResponse `{results, total}`.
+	 *
+	 * @spec openspec/changes/intake-report-pages/specs/report-pages/spec.md#requirement-handlers-see-reports-through-the-projection-only-req-irp-004
+	 */
+	#[NoAdminRequired]
+	public function index(): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$results = [];
+		foreach ($this->portals->allPublishedPortals() as $portal) {
+			$slug = (string)($portal['slug'] ?? '');
+			if ($slug === '') {
+				continue;
+			}
+
+			$results = $this->withHandled(results: $results, user: $user, slug: $slug);
+		}
+
+		return $this->newestFirst(results: $results);
+	}//end index()
+
+	/**
+	 * The list with the reports of one portal this user may handle added, each through the projection and with its terms.
+	 *
+	 * @param array<int, array<string, mixed>> $results The list so far.
+	 * @param IUser                            $user    The handler.
+	 * @param string                           $slug    The portal slug.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function withHandled(array $results, IUser $user, string $slug): array {
+		$rows = $this->portalReports(slug: $slug);
+		foreach ($rows as $row) {
+			$caseType = $this->declarationFor(report: $row);
+			if ($this->reveals->mayHandle(user: $user, caseType: $caseType) === false) {
+				continue;
+			}
+
+			$results[] = $this->projection->one(report: $row) + ['terms' => $this->terms->forReport(caseType: $caseType, report: $row)];
+		}
+
+		return $results;
+	}//end withHandled()
+
+	/**
+	 * One portal's reports.
+	 *
+	 * @param string $slug The portal slug.
+	 *
+	 * @return array<int|string, mixed>
+	 */
+	private function portalReports(string $slug): array {
+		return $this->reader->readCollection(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: 'portal',
+			subjectRef: $slug,
+			limit: self::LIST_LIMIT
+		);
+	}//end portalReports()
+
+	/**
+	 * The list answer, newest first.
+	 *
+	 * @param array<int, array<string, mixed>> $results The reports.
+	 *
+	 * @return JSONResponse `{results, total}`.
+	 */
+	private function newestFirst(array $results): JSONResponse {
+		usort($results, static fn (array $one, array $two): int => strcmp((string)($two['receivedAt'] ?? ''), (string)($one['receivedAt'] ?? '')));
+
+		return new JSONResponse(['results' => $results, 'total' => count($results)]);
+	}//end newestFirst()
+
+	/**
+	 * The reveal requests waiting for this user's answer: those on reports of
+	 * case types whose custodian group the user is in. An administrator
+	 * outside that group gets none.
+	 *
+	 * @return JSONResponse `{results, total}`, each with the report's subject.
+	 *
+	 * @spec openspec/changes/intake-report-pages/specs/report-pages/spec.md#requirement-the-custodian-decides-a-reveal-on-a-screen-of-their-own-req-irp-006
+	 */
+	#[NoAdminRequired]
+	public function revealRequests(): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$results = [];
+		$pending = $this->reader->readCollection(
+			register: self::REGISTER,
+			schema: self::REQUEST_SCHEMA,
+			scopeField: 'state',
+			subjectRef: 'pending',
+			limit: self::LIST_LIMIT
+		);
+		foreach ($pending as $request) {
+			$report = $this->report(id: (string)($request['reportRef'] ?? ''));
+			if ($report === null || $this->reveals->isCustodian(user: $user, caseType: $this->declarationFor(report: $report)) === false) {
+				continue;
+			}
+
+			$results[] = $this->requestView(request: $request) + ['subject' => (string)($report['subject'] ?? '')];
+		}
+
+		return new JSONResponse(['results' => $results, 'total' => count($results)]);
+	}//end revealRequests()
 
 	/**
 	 * Write on the thread, as a handler.
@@ -334,7 +487,7 @@ class ReportController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- request-bound field, not
 	 * a mode switch: it is stored on the message as its visibility and is not
@@ -376,7 +529,7 @@ class ReportController extends Controller {
 	 *
 	 * @return JSONResponse The recorded request, or a refusal.
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 */
 	#[NoAdminRequired]
 	public function requestReveal(string $id, string $motivation = ''): JSONResponse {
@@ -409,7 +562,7 @@ class ReportController extends Controller {
 	 * @return JSONResponse The contact details on an allowed reveal, the
 	 *                      refusal otherwise.
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- request-bound field: the
 	 * custodian's answer is the payload of this endpoint, and it is recorded on
@@ -422,13 +575,7 @@ class ReportController extends Controller {
 			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$request = $this->reader->readObject(
-			register: self::REGISTER,
-			schema: self::REQUEST_SCHEMA,
-			scopeField: '',
-			subjectRef: '',
-			id: $id
-		);
+		$request = $this->revealRequest(id: $id);
 		if ($request === null) {
 			return new JSONResponse(['error' => 'request_not_found'], Http::STATUS_NOT_FOUND);
 		}
@@ -446,19 +593,85 @@ class ReportController extends Controller {
 			allow: $allow,
 			reason: $reason
 		);
-		if (isset($decided['error']) === true) {
-			// `not_custodian` covers the administrator who is not in the
-			// declared group, and it is a refusal that shows nothing at all.
-			$status = Http::STATUS_CONFLICT;
-			if ($decided['error'] === 'not_custodian') {
-				$status = Http::STATUS_FORBIDDEN;
-			}
+		return $this->decisionAnswer(decided: $decided);
+	}//end decideReveal()
 
-			return new JSONResponse(['error' => $decided['error']], $status);
+	/**
+	 * The reveal request by its id, or null.
+	 *
+	 * @param string $id The request.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function revealRequest(string $id): ?array {
+		return $this->reader->readObject(
+			register: self::REGISTER,
+			schema: self::REQUEST_SCHEMA,
+			scopeField: '',
+			subjectRef: '',
+			id: $id
+		);
+	}//end revealRequest()
+
+	/**
+	 * The answer to the custodian's decision: the decision, or its refusal.
+	 * `not_custodian` covers the administrator who is not in the declared
+	 * group, and it is a refusal that shows nothing at all.
+	 *
+	 * @param array<string, mixed> $decided What the reveal service decided.
+	 *
+	 * @return JSONResponse
+	 */
+	private function decisionAnswer(array $decided): JSONResponse {
+		if (isset($decided['error']) === false) {
+			return new JSONResponse($decided);
 		}
 
-		return new JSONResponse($decided);
-	}//end decideReveal()
+		$status = Http::STATUS_CONFLICT;
+		if ($decided['error'] === 'not_custodian') {
+			$status = Http::STATUS_FORBIDDEN;
+		}
+
+		return new JSONResponse(['error' => $decided['error']], $status);
+	}//end decisionAnswer()
+
+	/**
+	 * The reveal requests on one report, without anything the reporter gave.
+	 *
+	 * @param string $reportId The report.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function requestsOf(string $reportId): array {
+		$rows = $this->reader->readCollection(
+			register: self::REGISTER,
+			schema: self::REQUEST_SCHEMA,
+			scopeField: 'reportRef',
+			subjectRef: $reportId,
+			limit: self::LIST_LIMIT
+		);
+
+		return array_map(fn (array $request): array => $this->requestView(request: $request), array_values(array_filter($rows, 'is_array')));
+	}//end requestsOf()
+
+	/**
+	 * A reveal request as staff see it: its id and the allowed fields.
+	 *
+	 * @param array<string, mixed> $request The stored request.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function requestView(array $request): array {
+		$self = (array)($request['@self'] ?? []);
+		$view = ['id' => (string)($request['uuid'] ?? $request['id'] ?? $self['id'] ?? '')];
+		foreach (self::REQUEST_FIELDS as $field) {
+			if (array_key_exists($field, $request) === true) {
+				$view[$field] = $request[$field];
+			}
+		}
+
+		return $view;
+	}//end requestView()
 
 	/**
 	 * One report, for a user who may handle it. A report the user may not

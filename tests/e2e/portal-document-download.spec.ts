@@ -30,6 +30,7 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { readFile } from 'node:fs/promises'
 import {
 	openPortaliqDemoPage,
 	PORTAL_API,
@@ -68,21 +69,23 @@ async function loginAsSupplier(
 
 test.describe('portal-document-download', () => {
 	// This test seeds its own fixture by UPLOADING through the portal's upload
-	// block before it downloads, so its body really does exercise the scoped
-	// attach path end to end — it drives the detail card's file input
-	// (`detail-card-upload`)
-	// on a row the subject owns and proves the file landed by downloading it
-	// back by name.
+	// block before it downloads, so its body exercises BOTH halves of the file
+	// path end to end on a row the subject owns: it drives the detail card's
+	// file input (`detail-card-upload`), proves the attach by the block's
+	// confirmation and the file appearing in the row's download list, then
+	// downloads it back by name and checks the bytes are the ones uploaded.
 	//
-	// It deliberately carries NO `@e2e` reference to
-	// `portal-contribution-contract::a-subject-attaches-a-file-to-a-row-they-own`,
-	// even though it would satisfy the gate if it did. THIS TEST DOES NOT RUN IN
-	// CI: playwright.config.ts in this directory `grepInvert`s it by title while
-	// ConductionNL/portaliq#29 is open. Measured on hydra-gates @94c855b —
-	// gate-19 honours `testIgnore` but not `grepInvert`, so adding the tag moves
-	// the count from 47 to 46 and buys a green from a test that never executes.
-	// The scenario carries a reason-bearing `@e2e exclude` naming #29 instead;
-	// swap the exclude for the tag here when #29 closes and the grepInvert goes.
+	// It used to be grep-inverted out of every run while ConductionNL/portaliq#29
+	// (a portal subject could not attach on a fresh instance) was open, and so
+	// carried no anchors — a test that never executes is not coverage. #843
+	// removed that filter once OpenRegister #4116 fixed the first upload on a
+	// fresh instance; it runs in CI again, so it now anchors the scenarios it
+	// asserts. The Content-Disposition / filename-sanitisation detail of the
+	// download scenario is not visible here (the SPA fetches with the bearer and
+	// saves through a Blob URL under the listed name); that half stays pinned by
+	// ContributionControllerTest::testDownloadStreamsOwnedFileAndInvokesAuditHookOnSuccess.
+	// @e2e supplier-portal::a-subject-downloads-a-file-on-a-row-they-own
+	// @e2e portal-contribution-contract::a-subject-attaches-a-file-to-a-row-they-own
 	test('a subject downloads a file on a row they own', async ({
 		page,
 		request,
@@ -145,6 +148,10 @@ test.describe('portal-document-download', () => {
 		expect(download.suggestedFilename()).toBe('e2e-besluit.txt')
 		const downloadedPath = await download.path()
 		expect(downloadedPath).toBeTruthy()
+		// The bytes served for the owned row are the file that was attached.
+		expect(await readFile(downloadedPath)).toEqual(
+			Buffer.from('e2e download fixture'),
+		)
 	})
 
 	// Asserts the three-way identical refusal against the running API.
