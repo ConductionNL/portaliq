@@ -1,0 +1,104 @@
+{
+	"a clean tree": {
+		"status": 0,
+		"stdout": "12 file(s) checked via reuse (PATH); 0 without licensing info (baseline 0), 0 stderr ERROR line(s)\n",
+		"stderr": "",
+		"baseline": "{\"missing_licensing_info\":[],\"missing_copyright_info\":[]}"
+	},
+	"below the baseline": {
+		"status": 0,
+		"stdout": "12 file(s) checked via reuse (PATH); 0 without licensing info (baseline 1), 0 stderr ERROR line(s)\n1 fewer than the baseline — lower it with:\n  npm run check:reuse -- --update\n",
+		"stderr": "",
+		"baseline": "{\"missing_licensing_info\":[\"a.woff\"],\"missing_copyright_info\":[]}"
+	},
+	"a new file without licensing": {
+		"status": 1,
+		"stdout": "12 file(s) checked via reuse (PATH); 2 without licensing info (baseline 1), 0 stderr ERROR line(s)\n",
+		"stderr": "\n1 new file(s) with no licensing info:\n  new.xyz\n\nThe likely cause is an extension REUSE.toml does not list —\nit lists extensions rather than using a blanket, so an\nunlisted one falls through silently.\n\nAdd it to the appropriate block in REUSE.toml.\n\n1 new file(s) with no copyright info:\n  new.xyz\n\nThe likely cause is an extension REUSE.toml does not list —\nit lists extensions rather than using a blanket, so an\nunlisted one falls through silently.\n\nAdd it to the appropriate block in REUSE.toml.\n",
+		"baseline": "{\"missing_licensing_info\":[\"a.woff\"],\"missing_copyright_info\":[]}"
+	},
+	"a baseline key that is not a list": {
+		"status": 1,
+		"stdout": "12 file(s) checked via reuse (PATH); 0 without licensing info (baseline 1), 0 stderr ERROR line(s)\n",
+		"stderr": "\nBaseline key `missing_licensing_info` is not a list of paths.\nRegenerate it with `npm run check:reuse -- --update`.\n",
+		"baseline": "{\"missing_licensing_info\":\"x\",\"missing_copyright_info\":[]}"
+	},
+	"no baseline": {
+		"status": 1,
+		"stdout": "",
+		"stderr": "No baseline. Run `npm run check:reuse -- --update` and commit it.\n",
+		"baseline": null
+	},
+	"stderr errors": {
+		"status": 1,
+		"stdout": "12 file(s) checked via reuse (PATH); 0 without licensing info (baseline 0), 2 stderr ERROR line(s)\n",
+		"stderr": "\n2 ERROR line(s) on stderr — a file's own licence header\ncould not be parsed, and `reuse lint` does not fail on that:\n\n  ERROR could not parse a.md\n  ERROR  second\n\nA markdown document that writes the tag and its value inside\nONE code span is the known cause. Give it a `.license`\ncompanion rather than rewriting the prose around the tag.\n",
+		"baseline": "{\"missing_licensing_info\":[],\"missing_copyright_info\":[]}"
+	},
+	"one stderr error": {
+		"status": 1,
+		"stdout": "12 file(s) checked via reuse (PATH); 0 without licensing info (baseline 0), 1 stderr ERROR line(s)\n",
+		"stderr": "\n1 ERROR line(s) on stderr — a file's own licence header\ncould not be parsed, and `reuse lint` does not fail on that:\n\n  ERROR only one\n\nA markdown document that writes the tag and its value inside\nONE code span is the known cause. Give it a `.license`\ncompanion rather than rewriting the prose around the tag.\n",
+		"baseline": "{\"missing_licensing_info\":[],\"missing_copyright_info\":[]}"
+	},
+	"new files out of order": {
+		"status": 1,
+		"stdout": "12 file(s) checked via reuse (PATH); 2 without licensing info (baseline 0), 0 stderr ERROR line(s)\n",
+		"stderr": "\n2 new file(s) with no licensing info:\n  alpha.y\n  zeta.x\n\nThe likely cause is an extension REUSE.toml does not list —\nit lists extensions rather than using a blanket, so an\nunlisted one falls through silently.\n\nAdd it to the appropriate block in REUSE.toml.\n",
+		"baseline": "{\"missing_licensing_info\":[],\"missing_copyright_info\":[]}"
+	},
+	"licence hygiene": {
+		"status": 1,
+		"stdout": "12 file(s) checked via reuse (PATH); 0 without licensing info (baseline 0), 0 stderr ERROR line(s)\n",
+		"stderr": "\nunused_licenses: CC0-1.0\nA licence text in LICENSES/ that nothing references is itself a\nREUSE failure. Changing an override orphans the licence it used\nto name — remove that file in the same commit.\n\nbad_licenses: X-1\n\nmissing_licenses: MIT\n\nread_errors: h\nAn unreadable file is EXCLUDED from files_total, so the coverage\nsets below cannot see it. Hence the absolute check.\n",
+		"baseline": "{\"missing_licensing_info\":[],\"missing_copyright_info\":[]}"
+	},
+	"unparseable json": {
+		"status": 1,
+		"stdout": "",
+		"stderr": "Could not parse the JSON report from reuse (PATH): <parse error>\nnot json at all\n",
+		"baseline": "{}"
+	},
+	"no runner installed": {
+		"status": 1,
+		"stdout": "",
+		"stderr": "Neither `reuse` nor `docker` is available, so REUSE was not\nchecked. This guard fails rather than passes silently — a\nskipped licence check reads exactly like a clean one.\n\nInstall one of:\n  pipx install reuse\n  docker pull fsfe/reuse:5\n",
+		"baseline": null
+	},
+	"an unexpected shape": {
+		"status": 1,
+		"stdout": "",
+		"stderr": "Unexpected report shape from reuse (PATH).\n\nExpected `summary.files_total` (number) and `non_compliant`\n(object); got tool version 9.0.\n\nFailing rather than passing: a report that cannot be read says\nnothing about the tree, and green would claim otherwise.\n",
+		"baseline": null
+	},
+	"an unexpected shape without a version": {
+		"status": 1,
+		"stdout": "",
+		"stderr": "Unexpected report shape from reuse (PATH).\n\nExpected `summary.files_total` (number) and `non_compliant`\n(object); got tool version unknown.\n\nFailing rather than passing: a report that cannot be read says\nnothing about the tree, and green would claim otherwise.\n",
+		"baseline": null
+	},
+	"the list flag": {
+		"status": 0,
+		"stdout": "Files with no licensing information (2):\n  b\n  z\n\nstderr ERROR lines (1):\n  ERROR one\n",
+		"stderr": "",
+		"baseline": null
+	},
+	"the list flag without errors": {
+		"status": 0,
+		"stdout": "Files with no licensing information (0):\n",
+		"stderr": "",
+		"baseline": null
+	},
+	"update over a clean tree": {
+		"status": 0,
+		"stdout": "baseline written: 2 file(s) without licensing info, 1 without copyright info\n",
+		"stderr": "",
+		"baseline": "{\n  \"missing_licensing_info\": [\n    \"b\",\n    \"z\"\n  ],\n  \"missing_copyright_info\": [\n    \"c\"\n  ]\n}\n"
+	},
+	"update over a failing tree": {
+		"status": 1,
+		"stdout": "",
+		"stderr": "\nunused_licenses: CC0-1.0\nA licence text in LICENSES/ that nothing references is itself a\nREUSE failure. Changing an override orphans the licence it used\nto name — remove that file in the same commit.\n\nBaseline NOT written — fix the failures above first.\n",
+		"baseline": null
+	}
+}

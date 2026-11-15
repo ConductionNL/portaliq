@@ -77,6 +77,26 @@ class AuditTrailServiceTest extends TestCase {
 		$this->assertSame('portaliq', $row->getChanged()['appId']);
 	}
 
+	public function testAnAppendedFactKeepsItsUuidTimeAndDetailAndLeavesEmptyPartsUnset(): void {
+		$created = new \DateTime('2026-01-02T03:04:05+00:00');
+		$this->service()->append(
+			fact: ['verb' => 'audience', 'subjectRef' => 'party:1', 'organisation' => '', 'register' => 'r', 'schema' => 's', 'targetId' => 'not-a-uuid', 'jti' => '', 'detail' => ['from' => 'client', 'to' => 'staff', 'bad' => 3]],
+			uuid: 'u-1',
+			created: $created
+		);
+
+		$row = $this->mapper->rows[0];
+		$this->assertSame(['u-1', 'portaliq.audience', 'party:1', 'party:1'], [$row->getUuid(), $row->getAction(), $row->getUser(), $row->getUserName()]);
+		$this->assertSame($created, $row->getCreated());
+		$this->assertNull($row->getSession());
+		$this->assertNull($row->getOrganisationId());
+		$this->assertNull($row->getObjectUuid());
+		$this->assertSame(
+			['appId' => 'portaliq', 'register' => 'r', 'schema' => 's', 'targetId' => 'not-a-uuid', 'detail' => ['from' => 'client', 'to' => 'staff']],
+			$row->getChanged()
+		);
+	}
+
 	public function testAFailureIsLoggedAndNeverThrown(): void {
 		$logger = $this->createMock(LoggerInterface::class);
 		$logger->expects($this->once())->method('warning');

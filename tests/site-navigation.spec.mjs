@@ -71,7 +71,7 @@ function hrefFor(route) {
 }
 
 test("the groups: the resident menu's groups first, then the site pages", () => {
-	const resident = residentMenuGroups(NAV, nl, 2, hrefFor)
+	const resident = residentMenuGroups(NAV, { t: nl, unread: 2, hrefFor })
 	const groups = navigationGroups({ residentGroups: resident, menus: MENUS })
 
 	assert.deepEqual(
@@ -124,7 +124,7 @@ test('a menu block in the side region or the grid leaves the header menu out', (
 
 test('the block is a named landmark with headed groups, the current page marked, and a button for phones', async () => {
 	const groups = navigationGroups({
-		residentGroups: residentMenuGroups(NAV, nl, 0, hrefFor),
+		residentGroups: residentMenuGroups(NAV, { t: nl, unread: 0, hrefFor }),
 		menus: MENUS,
 	})
 	const html = await renderSfc('src/site/components/SiteNavigationBlock.vue', {

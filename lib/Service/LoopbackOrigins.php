@@ -70,10 +70,7 @@ class LoopbackOrigins {
 	 */
 	public function candidates(string $absolute): array {
 		$port = $this->serverPort();
-		$localOnPort = '';
-		if ($port !== null) {
-			$localOnPort = $this->localScheme() . '://127.0.0.1:' . $port;
-		}
+		$localOnPort = $this->localOnPort(port: $port);
 
 		$candidates = [
 			$this->serverAddressOrigin(port: $port),
@@ -82,7 +79,38 @@ class LoopbackOrigins {
 			self::LOCALHOST,
 		];
 
-		$skip = $this->origin(url: $absolute);
+		return $this->distinct(candidates: $candidates, skip: $this->origin(url: $absolute));
+	}//end candidates()
+
+	/**
+	 * The loopback address on the port PHP was reached on, or '' without one.
+	 *
+	 * @param int|null $port The port.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/loopback-tries-the-address-php-was-reached-on/specs/instance-loopback/spec.md#requirement-a-transport-failure-on-the-absolute-url-is-retried-on-the-addresses-this-server-answers-on
+	 */
+	private function localOnPort(int|null $port): string {
+		$localOnPort = '';
+		if ($port !== null) {
+			$localOnPort = $this->localScheme() . '://127.0.0.1:' . $port;
+		}
+
+		return $localOnPort;
+	}//end localOnPort()
+
+	/**
+	 * The non-empty candidates once each, without the one that did not answer.
+	 *
+	 * @param array<int, string> $candidates The candidate origins.
+	 * @param string             $skip       The origin that did not answer.
+	 *
+	 * @return list<string>
+	 *
+	 * @spec openspec/changes/loopback-tries-the-address-php-was-reached-on/specs/instance-loopback/spec.md#requirement-a-transport-failure-on-the-absolute-url-is-retried-on-the-addresses-this-server-answers-on
+	 */
+	private function distinct(array $candidates, string $skip): array {
 		$origins = [];
 		foreach ($candidates as $candidate) {
 			if ($candidate !== '' && $candidate !== $skip && in_array($candidate, $origins, true) === false) {
@@ -91,7 +119,7 @@ class LoopbackOrigins {
 		}
 
 		return $origins;
-	}//end candidates()
+	}//end distinct()
 
 	/**
 	 * The origin of the address and port the web server took this request

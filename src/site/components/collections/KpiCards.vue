@@ -80,7 +80,7 @@ import { countedWord, figure } from '../../../shared/recordPage.js'
 let counter = 0
 
 /**
- * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-kpi-block-must-show-figure-cards-from-one-row
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-kpi-block-must-show-figure-cards-from-one-row
  */
 export default {
 	name: 'KpiCards',
@@ -135,7 +135,7 @@ export default {
 		 *
 		 * @param {object} card The card.
 		 * @return {string}
-		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-kpi-block-must-show-figure-cards-from-one-row
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-kpi-block-must-show-figure-cards-from-one-row
 		 */
 		detailsOf(card) {
 			return (card.details || [])
@@ -150,7 +150,7 @@ export default {
 		 *
 		 * @param {object} card The card.
 		 * @return {string}
-		 * @spec openspec/changes/kpi-unit-singular-and-plural/specs/portal-contribution-contract/spec.md#requirement-a-figure-cards-unit-may-name-its-singular-and-plural
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-figure-cards-unit-may-name-its-singular-and-plural
 		 */
 		unitOf(card) {
 			return countedWord(card.unit, this.row?.[card.field])
@@ -161,7 +161,7 @@ export default {
 		 *
 		 * @param {object} card The card.
 		 * @return {boolean}
-		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-kpi-block-must-show-figure-cards-from-one-row
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-kpi-block-must-show-figure-cards-from-one-row
 		 */
 		needsAttention(card) {
 			return card.highlight === true && Number(this.row?.[card.field]) > 0

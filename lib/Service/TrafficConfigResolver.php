@@ -13,13 +13,14 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\TrafficConfigResolverInterface;
 use OCA\Portaliq\Service\Traffic\TrafficExperimentDefinitions;
 use OCA\Portaliq\Service\Traffic\TrafficOutcomeDefinitions;
 use OCA\Portaliq\Service\Traffic\TrafficReportDefinitions;
@@ -41,9 +42,11 @@ use OCA\Portaliq\Service\Traffic\TrafficSegments;
  * upgraded; consent and retention are decisions its operator makes, and an
  * unconfigured portal has made neither.
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- The total is the sum of small private steps; each method stays under the method thresholds.
  */
-class TrafficConfigResolver {
+class TrafficConfigResolver implements TrafficConfigResolverInterface {
 
 	/**
 	 * The events a portal gets when it enables measurement without naming any.
@@ -312,73 +315,37 @@ class TrafficConfigResolver {
 	 *               reports: array<int, array<string, mixed>>, alerts: array<int, array<string, mixed>>,
 	 *               experiments: array<int, array<string, mixed>>} The effective configuration.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
-	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
+	 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
 	 */
 	public function resolve(array $portal): array {
-		$traffic = $portal['traffic'] ?? [];
-		if (is_array($traffic) === false) {
-			$traffic = [];
-		}
+		$traffic = self::arrayOrEmpty(value: ($portal['traffic'] ?? []));
+		$config  = [
+			'enabled' => ($traffic['enabled'] ?? false) === true,
+			'kind' => $this->kind(value: ($portal['kind'] ?? null)),
+		] + $this->collected(traffic: $traffic);
 
-		$enabled = ($traffic['enabled'] ?? false) === true;
+		return $config + $this->outcomeSettings(traffic: $traffic, slug: (string)($portal['slug'] ?? ''));
+	}
 
-		// An unknown event name is DROPPED from the configuration rather than
-		// carried into the collector. A portal cannot enable a measurement this
-		// app has no storage for, and silently accepting the name would make
-		// the admin UI promise something no aggregate will ever show.
-		$events = $this->intersect(
-			requested: $traffic['events'] ?? null,
-			known: self::KNOWN_EVENTS,
-			fallback: self::DEFAULT_EVENTS
-		);
-
-		$sensitive = $this->sensitive(value: ($traffic['sensitive'] ?? null));
-		$events = $this->heatSwitched(events: $events, sensitive: $sensitive);
-		$regionGranularity = $this->regionGranularity(value: ($traffic['regionGranularity'] ?? null));
-
-		$dimensions = $this->intersect(
-			requested: $traffic['dimensions'] ?? null,
-			known: self::KNOWN_DIMENSIONS,
-			fallback: self::DEFAULT_DIMENSIONS
-		);
-
-		$dimensions = $this->switched(dimensions: $dimensions, sensitive: $sensitive, regionGranularity: $regionGranularity);
-
-		$consent = $traffic['consent'] ?? [];
-		if (is_array($consent) === false) {
-			$consent = [];
-		}
-
-		$goals = $this->outcomes->goals(value: ($traffic['goals'] ?? null));
-
-		// Pre-consent events must themselves be enabled events. Otherwise a
-		// portal could admit before consent something it does not collect
-		// after it, which is exactly backwards.
-		$preConsent = array_values(array_intersect(
-			$this->intersect(
-				requested: $consent['preConsentEvents'] ?? null,
-				known: self::KNOWN_EVENTS,
-				fallback: []
-			),
-			$events
-		));
+	/**
+	 * What is collected and kept: events, dimensions, session and retention, consent, excluded paths and the sensitive switches.
+	 *
+	 * @param array<string, mixed> $traffic The portal's traffic block.
+	 *
+	 * @return array<string, mixed> The keys `events` to `sensitive`, in the order resolve() serves them.
+	 */
+	private function collected(array $traffic): array {
+		$measured = $this->measured(traffic: $traffic);
+		$consent  = self::arrayOrEmpty(value: ($traffic['consent'] ?? []));
 
 		return [
-			'enabled' => $enabled,
-			'kind' => $this->kind(value: ($portal['kind'] ?? null)),
-			'events' => $events,
-			'dimensions' => $dimensions,
-			'sessionTimeoutMinutes' => $this->positiveInt(
-				value: ($traffic['sessionTimeoutMinutes'] ?? null),
-				default: self::DEFAULT_SESSION_TIMEOUT_MINUTES
-			),
-			'retentionDays' => $this->positiveInt(
-				value: ($traffic['retentionDays'] ?? null),
-				default: self::DEFAULT_RETENTION_DAYS
-			),
+			'events' => $measured['events'],
+			'dimensions' => $measured['dimensions'],
+			'sessionTimeoutMinutes' => $this->positiveInt(value: ($traffic['sessionTimeoutMinutes'] ?? null), default: self::DEFAULT_SESSION_TIMEOUT_MINUTES),
+			'retentionDays' => $this->positiveInt(value: ($traffic['retentionDays'] ?? null), default: self::DEFAULT_RETENTION_DAYS),
 			'consentRequired' => ($consent['required'] ?? false) === true,
 			// Paths the portal declares off-limits to analytics entirely
 			// (a-report-without-an-account REQ-RWA-007). A reporting surface
@@ -386,33 +353,113 @@ class TrafficConfigResolver {
 			// that somebody looked at the whistleblowing form, which is
 			// exactly what must not exist.
 			'excludedPaths' => $this->excludedPaths(value: ($traffic['excludedPaths'] ?? null)),
-			'preConsentEvents' => $preConsent,
-			'regionGranularity' => $regionGranularity,
+			'preConsentEvents' => $this->preConsentEvents(consent: $consent, events: $measured['events']),
+			'regionGranularity' => $measured['regionGranularity'],
 			// Mirrored to the top level because it is the one switch the CLIENT
 			// acts on: it decides whether anything is written to the browser.
-			'persistClientId' => $sensitive['persistClientId'],
+			'persistClientId' => $measured['sensitive']['persistClientId'],
+			'sensitive' => $measured['sensitive'],
+		];
+	}
+
+	/**
+	 * The enabled events and dimensions after the sensitive switches and the region granularity are applied.
+	 *
+	 * @param array<string, mixed> $traffic The portal's traffic block.
+	 *
+	 * @return array{events: string[], dimensions: string[], regionGranularity: string, sensitive: array<string, bool>}
+	 */
+	private function measured(array $traffic): array {
+		// An unknown event name is DROPPED from the configuration rather than
+		// carried into the collector. A portal cannot enable a measurement this
+		// app has no storage for, and silently accepting the name would make
+		// the admin UI promise something no aggregate will ever show.
+		$events = $this->intersect(requested: ($traffic['events'] ?? null), known: self::KNOWN_EVENTS, fallback: self::DEFAULT_EVENTS);
+
+		$sensitive         = $this->sensitive(value: ($traffic['sensitive'] ?? null));
+		$regionGranularity = $this->regionGranularity(value: ($traffic['regionGranularity'] ?? null));
+		$dimensions        = $this->intersect(
+			requested: ($traffic['dimensions'] ?? null),
+			known: self::KNOWN_DIMENSIONS,
+			fallback: self::DEFAULT_DIMENSIONS
+		);
+
+		return [
+			'events' => $this->heatSwitched(events: $events, sensitive: $sensitive),
+			'dimensions' => $this->switched(dimensions: $dimensions, sensitive: $sensitive, regionGranularity: $regionGranularity),
+			'regionGranularity' => $regionGranularity,
 			'sensitive' => $sensitive,
-			// The outcomes (portal-traffic-outcomes): what the aggregation
-			// evaluates and what the validator lets through. Normalised
-			// here for the same reason as everything above: the job, the
-			// collector and the client must agree on what a goal is.
+		];
+	}
+
+	/**
+	 * The events admitted before consent, limited to the enabled events.
+	 *
+	 * Pre-consent events must themselves be enabled events. Otherwise a
+	 * portal could admit before consent something it does not collect
+	 * after it, which is exactly backwards.
+	 *
+	 * @param array<string, mixed> $consent The portal's consent block.
+	 * @param string[]             $events  The enabled events.
+	 *
+	 * @return string[]
+	 */
+	private function preConsentEvents(array $consent, array $events): array {
+		return array_values(
+			array_intersect(
+				$this->intersect(requested: ($consent['preConsentEvents'] ?? null), known: self::KNOWN_EVENTS, fallback: []),
+				$events
+			)
+		);
+	}
+
+	/**
+	 * The outcome and reporting definitions: goals, funnels, custom dimensions, segments, roll-up, reports, alerts, experiments.
+	 *
+	 * The outcomes (portal-traffic-outcomes) are what the aggregation
+	 * evaluates and what the validator lets through; the job, the collector
+	 * and the client must agree on what a goal is. The reporting layer
+	 * (portal-traffic-reporting) holds the segments the aggregation computes
+	 * beside "all sessions", the portals a roll-up sums, and what the report
+	 * job sends and watches. The server token's hash is NOT here: this block
+	 * is served to the browser by the content API, and a hash is still a
+	 * secret's shadow. `serverTokenHash()` reads it for the one caller. Page
+	 * experiments (portal-traffic-experiments) are the running and stopped
+	 * ones; a draft is nothing yet and is served to nobody.
+	 *
+	 * @param array<string, mixed> $traffic The portal's traffic block.
+	 * @param string               $slug    The portal's own slug, which a roll-up never sums.
+	 *
+	 * @return array<string, mixed> The keys `goals` to `experiments`, in the order resolve() serves them.
+	 */
+	private function outcomeSettings(array $traffic, string $slug): array {
+		$goals = $this->outcomes->goals(value: ($traffic['goals'] ?? null));
+
+		return [
 			'goals' => $goals,
 			'funnels' => $this->outcomes->funnels(value: ($traffic['funnels'] ?? null)),
 			'customDimensions' => $this->outcomes->customDimensions(value: ($traffic['customDimensions'] ?? null)),
-			// The reporting layer (portal-traffic-reporting): segments the
-			// aggregation computes beside "all sessions", the portals a
-			// roll-up sums, and what the report job sends and watches. The
-			// server token's hash is NOT here: this block is served to the
-			// browser by the content API, and a hash is still a secret's
-			// shadow. `serverTokenHash()` reads it for the one caller.
 			'segments' => $this->segments->definitions(value: ($traffic['segments'] ?? null), goals: $goals),
-			'rollupOf' => $this->reports->rollupOf(value: ($traffic['rollupOf'] ?? null), self: (string)($portal['slug'] ?? '')),
+			'rollupOf' => $this->reports->rollupOf(value: ($traffic['rollupOf'] ?? null), self: $slug),
 			'reports' => $this->reports->reports(value: ($traffic['reports'] ?? null)),
 			'alerts' => $this->reports->alerts(value: ($traffic['alerts'] ?? null), goals: $goals),
-			// Page experiments (portal-traffic-experiments): the running and
-			// stopped ones. A draft is nothing yet and is served to nobody.
 			'experiments' => $this->experiments->definitions(value: ($traffic['experiments'] ?? null)),
 		];
+	}
+
+	/**
+	 * The value when it is an array, else an empty array.
+	 *
+	 * @param mixed $value The configured value.
+	 *
+	 * @return array<mixed>
+	 */
+	private static function arrayOrEmpty(mixed $value): array {
+		if (is_array($value) === true) {
+			return $value;
+		}
+
+		return [];
 	}
 
 	/**
@@ -424,7 +471,7 @@ class TrafficConfigResolver {
 	 *
 	 * @return string The sha256 hex of the token, or ''.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
 	 */
 	public function serverTokenHash(array $portal): string {
 		$traffic = $portal['traffic'] ?? [];
@@ -520,7 +567,7 @@ class TrafficConfigResolver {
 	 *
 	 * @return bool True when the caller may send this event.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-mail-events-must-only-be-written-server-side
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-mail-events-must-only-be-written-server-side
 	 */
 	public function allowsCaller(string $event, bool $serverSide): bool {
 		if (in_array($event, self::SERVER_SIDE_EVENTS, true) === false) {
@@ -539,7 +586,7 @@ class TrafficConfigResolver {
 	 *
 	 * @return bool True when the event may be stored.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-measurement-must-honour-the-portals-consent-posture
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-measurement-must-honour-the-portals-consent-posture
 	 */
 	public function acceptsEvent(array $config, string $event, bool $hasConsent): bool {
 		if (($config['enabled'] ?? false) !== true) {
@@ -669,7 +716,7 @@ class TrafficConfigResolver {
 	 *
 	 * @return array<int, string>
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 */
 	private function excludedPaths(mixed $value): array {
 		if (is_array($value) === false) {
@@ -678,23 +725,40 @@ class TrafficConfigResolver {
 
 		$paths = [];
 		foreach ($value as $entry) {
-			if (is_string($entry) === false) {
-				continue;
+			$path = $this->excludedPath(entry: $entry);
+			if ($path !== null) {
+				$paths[] = $path;
 			}
-
-			$path = trim($entry);
-			if ($path === '') {
-				continue;
-			}
-
-			if (str_starts_with($path, '/') === false) {
-				$path = '/' . $path;
-			}
-
-			$paths[] = rtrim($path, '/');
 		}
 
 		return array_values(array_unique($paths));
 	}//end excludedPaths()
+
+	/**
+	 * One declared path with a leading and without a trailing slash, or null
+	 * when it is no text.
+	 *
+	 * @param mixed $entry The declared path.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/specs/report-without-an-account/spec.md
+	 */
+	private function excludedPath(mixed $entry): string|null {
+		if (is_string($entry) === false) {
+			return null;
+		}
+
+		$path = trim($entry);
+		if ($path === '') {
+			return null;
+		}
+
+		if (str_starts_with($path, '/') === false) {
+			$path = '/' . $path;
+		}
+
+		return rtrim($path, '/');
+	}//end excludedPath()
 
 }

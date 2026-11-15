@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\ExampleSite;
 
+use OCA\Portaliq\Kernel\Contracts\ExampleSiteCatalogueInterface;
 use OCP\App\IAppManager;
 
 /**
@@ -34,11 +35,11 @@ use OCP\App\IAppManager;
  *
  * @spec openspec/changes/example-site-zuiddrecht/specs/example-site/spec.md#requirement-an-administrator-must-be-able-to-install-an-example-site-with-one-command
  */
-class ExampleSiteCatalogue {
+class ExampleSiteCatalogue implements ExampleSiteCatalogueInterface {
 	/**
 	 * The object lists a declaration holds besides its portal, by key.
 	 */
-	public const LISTS = ['menus', 'pages', 'news', 'glossary'];
+	public const LISTS = ['forms', 'menus', 'pages', 'news', 'glossary'];
 
 	/**
 	 * Constructor.
@@ -103,6 +104,7 @@ class ExampleSiteCatalogue {
 		}
 
 		$site['pages'] = $this->pagesWithTheirApps(value: $site['pages']);
+		$site['forms'] = $this->pagesWithTheirApps(value: $site['forms']);
 
 		return $site;
 	}//end find()
@@ -110,7 +112,7 @@ class ExampleSiteCatalogue {
 	/**
 	 * Keep an object that needs an app only when that app is installed, and
 	 * strip the `requiresApp` key so it is never written to the store. It holds
-	 * for a page and for a link inside a page, at any depth.
+	 * for a page, a form and a link inside a page, at any depth.
 	 *
 	 * @param array<int|string, mixed> $value The declared pages, or anything inside them.
 	 *

@@ -27,6 +27,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Availability;
 
+use OCA\Portaliq\Kernel\Contracts\AvailabilityStoreInterface;
+use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -39,14 +41,12 @@ use Throwable;
  *
  * @spec openspec/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
  */
-class AvailabilityStore {
+class AvailabilityStore implements AvailabilityStoreInterface {
+	use ObjectServiceLookup;
+
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
 	private const REGISTER = 'portaliq';
-
-	public const DAILY_SCHEMA = 'portalAvailabilityDaily';
-
-	public const OUTAGE_SCHEMA = 'portalAvailabilityOutage';
 
 	/**
 	 * Rows per page, and the most one read returns.
@@ -258,6 +258,22 @@ class AvailabilityStore {
 			return [];
 		}
 
+		$rows = $this->read(objectService: $objectService, schema: $schema, filters: $filters, offset: $offset);
+
+		return $this->arrays(rows: $rows);
+	}//end findAll()
+
+	/**
+	 * One page of a schema as OpenRegister returns it; none when the read failed.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param string               $schema        The schema.
+	 * @param array<string, mixed> $filters       The filters.
+	 * @param int                  $offset        Records to skip, for the next page.
+	 *
+	 * @return mixed
+	 */
+	private function read(object $objectService, string $schema, array $filters, int $offset): mixed {
 		try {
 			if ($this->context->apply(objectService: $objectService, schemaSlug: $schema) === false) {
 				return [];
@@ -270,6 +286,17 @@ class AvailabilityStore {
 			return [];
 		}
 
+		return $rows;
+	}//end read()
+
+	/**
+	 * The rows normalised to arrays.
+	 *
+	 * @param mixed $rows The rows as read.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function arrays(mixed $rows): array {
 		$out = [];
 		foreach ((array)$rows as $row) {
 			if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
@@ -282,24 +309,5 @@ class AvailabilityStore {
 		}
 
 		return $out;
-	}//end findAll()
-
-	/**
-	 * OpenRegister's object service, or null when it is not installed.
-	 *
-	 * @return object|null
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end objectService()
+	}//end arrays()
 }//end class

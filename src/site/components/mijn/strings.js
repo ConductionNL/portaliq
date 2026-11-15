@@ -10,10 +10,21 @@
 //
 // Imports nothing, so tests/mijn-components.spec.mjs reads it as node.
 //
-// @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+// @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 
 export default {
 	nl: {
+		// capability-rows-said-and-planned T07: the messages on a case
+		Messages: 'Berichten',
+		'The messages could not be loaded.':
+			'De berichten konden niet worden geladen.',
+		'There are no messages about this case yet.':
+			'Er zijn nog geen berichten over deze zaak.',
+		'Ask a question about this case': 'Stel een vraag over deze zaak',
+		'You wrote': 'U schreef',
+		'{name} wrote': '{name} schreef',
+		'The organisation wrote': 'De organisatie schreef',
+		Unread: 'Ongelezen',
 		// calendar-timetable-display
 		'Choose a day': 'Kies een dag',
 		'Nothing on the timetable this day.':
@@ -51,6 +62,8 @@ export default {
 			'Uw berichten konden niet worden geladen.',
 		'Today at {time}': 'Vandaag om {time} uur',
 		'{date} at {time}': '{date} om {time} uur',
+		'today {time}': 'vandaag {time} uur',
+		'{date} {time}': '{date} {time} uur',
 		'Try again': 'Opnieuw proberen',
 		'Your tasks could not be loaded.': 'Uw taken konden niet worden geladen.',
 		'Your conversations could not be loaded.':
@@ -79,16 +92,17 @@ export default {
 			'Het document kon niet worden toegevoegd. Probeer het opnieuw.',
 		Done: 'Gereed',
 		'Current step': 'Huidige stap',
+		'Next step: {step}': 'Volgende stap: {step}',
 		'Still to come': 'Nog niet begonnen',
 		Closed: 'Afgerond',
 		'Welcome, {name}': 'Welkom, {name}',
 		Welcome: 'Welkom',
-		'What you still have to do': 'Dit moet u nog doen',
+		'What you still have to do': 'Wat u nog moet doen',
 		'Running cases': 'Lopende zaken',
 		'New messages': 'Nieuwe berichten',
 		'Choose for whom': 'Kies voor wie',
 		'From you': 'Van u',
-		'From the municipality': 'Van de gemeente',
+		'From {organisation}': 'Van {organisation}',
 		Documents: 'Documenten',
 		'What happened': 'Wat er is gebeurd',
 		'The documents could not be loaded.':
@@ -96,22 +110,33 @@ export default {
 		'What happened could not be loaded.':
 			'Wat er is gebeurd kon niet worden geladen.',
 		'There are no documents on this case yet.':
-			'Er staan nog geen documenten bij deze zaak.',
+			'Er staan nog geen stukken bij deze zaak.',
 		'Nothing has happened yet.': 'Er is nog niets gebeurd.',
 		'The document could not be opened. Try again.':
 			'Het document kon niet worden geopend. Probeer het opnieuw.',
 		'On whose behalf you act': 'Namens wie u werkt',
-		'You are now acting for {party}': 'U regelt nu zaken voor {party}',
-		'Switch to yourself': 'Wissel naar uzelf',
-		// mijn-zaken-chooses-whose-cases
-		'Cases of': 'Zaken van',
-		'Everyone I act for': 'Iedereen voor wie ik werk',
-		'Myself, {name}': 'Mijzelf, {name}',
-		Myself: 'Mijzelf',
+		'You are now acting for {party}.': 'U regelt nu zaken voor {party}.',
+		'You are now handling your own affairs.': 'U regelt nu uw eigen zaken.',
+		'You now see the cases of everyone you act for.':
+			'U ziet nu de zaken van iedereen voor wie u zaken regelt.',
+		'Switch to': 'Wissel naar',
+		'Yourself, {name}': 'Uzelf, {name}',
+		Yourself: 'Uzelf',
+		'Everyone you act for': 'Iedereen voor wie u zaken regelt',
 		'Arrange access to cases': 'Toegang tot zaken regelen',
 		'{value} of {total} {label}': '{value} van {total} {label}',
 	},
 	en: {
+		// capability-rows-said-and-planned T07: the messages on a case
+		Messages: 'Messages',
+		'The messages could not be loaded.': 'The messages could not be loaded.',
+		'There are no messages about this case yet.':
+			'There are no messages about this case yet.',
+		'Ask a question about this case': 'Ask a question about this case',
+		'You wrote': 'You wrote',
+		'{name} wrote': '{name} wrote',
+		'The organisation wrote': 'The organisation wrote',
+		Unread: 'Unread',
 		// calendar-timetable-display
 		'Choose a day': 'Choose a day',
 		'Nothing on the timetable this day.': 'Nothing on the timetable this day.',
@@ -147,6 +172,8 @@ export default {
 		'Your messages could not be loaded.': 'Your messages could not be loaded.',
 		'Today at {time}': 'Today at {time}',
 		'{date} at {time}': '{date} at {time}',
+		'today {time}': 'today {time}',
+		'{date} {time}': '{date} {time}',
 		'Try again': 'Try again',
 		'Your tasks could not be loaded.': 'Your tasks could not be loaded.',
 		'Your conversations could not be loaded.':
@@ -175,6 +202,7 @@ export default {
 			'The document could not be added. Try again.',
 		Done: 'Done',
 		'Current step': 'Current step',
+		'Next step: {step}': 'Next step: {step}',
 		'Still to come': 'Still to come',
 		Closed: 'Closed',
 		'Welcome, {name}': 'Welcome, {name}',
@@ -184,7 +212,7 @@ export default {
 		'New messages': 'New messages',
 		'Choose for whom': 'Choose for whom',
 		'From you': 'From you',
-		'From the municipality': 'From the municipality',
+		'From {organisation}': 'From {organisation}',
 		Documents: 'Documents',
 		'What happened': 'What happened',
 		'The documents could not be loaded.': 'The documents could not be loaded.',
@@ -195,13 +223,15 @@ export default {
 		'The document could not be opened. Try again.':
 			'The document could not be opened. Try again.',
 		'On whose behalf you act': 'On whose behalf you act',
-		'You are now acting for {party}': 'You are now acting for {party}',
-		'Switch to yourself': 'Switch to yourself',
-		// mijn-zaken-chooses-whose-cases
-		'Cases of': 'Cases of',
-		'Everyone I act for': 'Everyone I act for',
-		'Myself, {name}': 'Myself, {name}',
-		Myself: 'Myself',
+		'You are now acting for {party}.': 'You are now acting for {party}.',
+		'You are now handling your own affairs.':
+			'You are now handling your own affairs.',
+		'You now see the cases of everyone you act for.':
+			'You now see the cases of everyone you act for.',
+		'Switch to': 'Switch to',
+		'Yourself, {name}': 'Yourself, {name}',
+		Yourself: 'Yourself',
+		'Everyone you act for': 'Everyone you act for',
 		'Arrange access to cases': 'Arrange access to cases',
 		'{value} of {total} {label}': '{value} of {total} {label}',
 	},

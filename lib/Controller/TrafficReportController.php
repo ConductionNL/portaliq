@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
  */
 
 declare(strict_types=1);
@@ -27,9 +27,9 @@ namespace OCA\Portaliq\Controller;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use OCA\Portaliq\Service\Traffic\TrafficEventStore;
+use OCA\Portaliq\Kernel\Contracts\TrafficEventStoreInterface;
+use OCA\Portaliq\Kernel\Contracts\TrafficReportNumbersInterface;
 use OCA\Portaliq\Service\Traffic\TrafficExport;
-use OCA\Portaliq\Service\Traffic\TrafficReportNumbers;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -47,7 +47,7 @@ use OCP\IRequest;
  * nothing, and the session cookie's SameSite guard is what a cross-site
  * GET meets.
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
  */
 class TrafficReportController extends Controller {
 
@@ -67,18 +67,18 @@ class TrafficReportController extends Controller {
 	 *
 	 * @param string            $appName The app id.
 	 * @param IRequest          $request The request.
-	 * @param TrafficEventStore $store   Reads the daily records.
+	 * @param TrafficEventStoreInterface $store   Reads the daily records.
 	 * @param TrafficExport     $export  Renders the file.
-	 * @param TrafficReportNumbers $numbers Folds the records into totals.
+	 * @param TrafficReportNumbersInterface $numbers Folds the records into totals.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly TrafficEventStore $store,
+		private readonly TrafficEventStoreInterface $store,
 		private readonly TrafficExport $export,
-		private readonly TrafficReportNumbers $numbers,
+		private readonly TrafficReportNumbersInterface $numbers,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -95,32 +95,49 @@ class TrafficReportController extends Controller {
 	 *
 	 * @return Response The file, or a 400 with a reason.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
 	 */
 	#[NoCSRFRequired]
 	public function export(string $portal = '', string $from = '', string $to = '', string $segment = '', string $format = 'csv'): Response {
-		$reason = $this->refusal(portal: $portal, from: $from, to: $to, segment: $segment, format: $format);
+		$export = new RecordsExport(portal: $portal, from: $from, to: $to, segment: $segment, format: $format);
+		$reason = $this->refusal(export: $export);
 		if ($reason !== null) {
 			return new JSONResponse(['error' => $reason], Http::STATUS_BAD_REQUEST);
 		}
 
-		$records = $this->store->dailyBetween(portal: $portal, from: $from, to: $to, segment: $segment);
+		return $this->exportFile(export: $export);
+	}//end export()
+
+
+	/**
+	 * The daily records as a file to download, never cached.
+	 *
+	 * @param RecordsExport $export A well-formed export request.
+	 *
+	 * @return Response
+	 */
+	private function exportFile(RecordsExport $export): Response {
+		$records = $this->store->dailyBetween(portal: $export->portal, from: $export->from, to: $export->to, segment: $export->segment);
 		$body = $this->export->csv(records: $records);
 		$contentType = 'text/csv; charset=utf-8';
-		if ($format === 'json') {
+		if ($export->format === 'json') {
 			$body = $this->export->json(records: $records);
 			$contentType = 'application/json; charset=utf-8';
 		}
 
 		$response = new DataDisplayResponse($body, Http::STATUS_OK, ['Content-Type' => $contentType]);
-		$response->addHeader(
-			'Content-Disposition',
-			'attachment; filename="' . $this->export->fileName(portal: $portal, from: $from, to: $to, segment: $segment, format: $format) . '"'
+		$fileName = $this->export->fileName(
+			portal: $export->portal,
+			from: $export->from,
+			to: $export->to,
+			segment: $export->segment,
+			format: $export->format
 		);
+		$response->addHeader('Content-Disposition', 'attachment; filename="' . $fileName . '"');
 		$response->addHeader('Cache-Control', 'private, no-store');
 
 		return $response;
-	}//end export()
+	}//end exportFile()
 
 
 	/**
@@ -138,7 +155,7 @@ class TrafficReportController extends Controller {
 	 *
 	 * @auth admin-only audience measurement is an operator's surface, the same posture as the export
 	 *
-	 * @spec openspec/changes/portal-traffic-kpi-cards/specs/portal-traffic-kpi-cards/spec.md#requirement-the-summary-endpoint-must-return-a-portals-four-totals-for-a-period
+	 * @spec openspec/specs/portal-traffic-kpi-cards/spec.md#requirement-the-summary-endpoint-must-return-a-portals-four-totals-for-a-period
 	 */
 	public function summary(string $portal = '', string $days = ''): JSONResponse {
 		if (preg_match('/^[A-Za-z0-9][A-Za-z0-9-]{0,127}$/', $portal) !== 1) {
@@ -153,8 +170,20 @@ class TrafficReportController extends Controller {
 			return new JSONResponse(['error' => 'invalid-period'], Http::STATUS_BAD_REQUEST);
 		}
 
-		$span = (int)$days;
+		return $this->totals(portal: $portal, span: (int)$days);
+	}//end summary()
 
+
+	/**
+	 * A portal's four headline totals over the last days up to today, never
+	 * cached.
+	 *
+	 * @param string $portal A well-formed portal slug.
+	 * @param int    $span   How many days, today included.
+	 *
+	 * @return JSONResponse
+	 */
+	private function totals(string $portal, int $span): JSONResponse {
 		$today = new DateTimeImmutable('today', new DateTimeZone('UTC'));
 		$from = $today->modify('-'.($span - 1).' days')->format('Y-m-d');
 		$to = $today->format('Y-m-d');
@@ -175,41 +204,65 @@ class TrafficReportController extends Controller {
 		$response->addHeader('Cache-Control', 'private, no-store');
 
 		return $response;
-	}//end summary()
+	}//end totals()
 
 
 	/**
 	 * Why the request is refused, or null.
 	 *
-	 * @param string $portal  The portal slug.
-	 * @param string $from    The first day.
-	 * @param string $to      The last day.
-	 * @param string $segment The segment id.
-	 * @param string $format  The format.
+	 * @param RecordsExport $export The export request.
 	 *
 	 * @return string|null The reason.
 	 */
-	private function refusal(string $portal, string $from, string $to, string $segment, string $format): ?string {
-		if (preg_match('/^[A-Za-z0-9][A-Za-z0-9-]{0,127}$/', $portal) !== 1) {
+	private function refusal(RecordsExport $export): ?string {
+		if (preg_match('/^[A-Za-z0-9][A-Za-z0-9-]{0,127}$/', $export->portal) !== 1) {
 			return 'missing-portal';
 		}
 
-		if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $from) !== 1 || preg_match('/^\d{4}-\d{2}-\d{2}$/', $to) !== 1 || $from > $to) {
+		return $this->rangeRefusal(export: $export) ?? $this->shapeRefusal(export: $export);
+	}//end refusal()
+
+
+	/**
+	 * Why the days are refused: not two days in order, or too many; null when
+	 * they fit.
+	 *
+	 * @param RecordsExport $export The export request.
+	 *
+	 * @return string|null The reason.
+	 */
+	private function rangeRefusal(RecordsExport $export): ?string {
+		if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $export->from) !== 1
+			|| preg_match('/^\d{4}-\d{2}-\d{2}$/', $export->to) !== 1
+			|| $export->from > $export->to
+		) {
 			return 'invalid-range';
 		}
 
-		if ((strtotime($to) - strtotime($from)) / 86400 >= self::MAX_DAYS) {
+		if ((strtotime($export->to) - strtotime($export->from)) / 86400 >= self::MAX_DAYS) {
 			return 'range-too-long';
 		}
 
-		if ($segment !== '' && preg_match('/^[A-Za-z0-9_-]{1,64}$/', $segment) !== 1) {
+		return null;
+	}//end rangeRefusal()
+
+
+	/**
+	 * Why the segment or the format is refused, or null.
+	 *
+	 * @param RecordsExport $export The export request.
+	 *
+	 * @return string|null The reason.
+	 */
+	private function shapeRefusal(RecordsExport $export): ?string {
+		if ($export->segment !== '' && preg_match('/^[A-Za-z0-9_-]{1,64}$/', $export->segment) !== 1) {
 			return 'invalid-segment';
 		}
 
-		if (in_array($format, TrafficExport::FORMATS, true) === false) {
+		if (in_array($export->format, TrafficExport::FORMATS, true) === false) {
 			return 'invalid-format';
 		}
 
 		return null;
-	}//end refusal()
+	}//end shapeRefusal()
 }//end class

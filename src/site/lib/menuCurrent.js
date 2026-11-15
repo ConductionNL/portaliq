@@ -29,7 +29,7 @@ function pathOf(route) {
  * @param {string} route The route on screen.
  * @return {'page'|'true'|undefined} `page` for the page itself, `true` for its
  *                                   section, else nothing.
- * @spec openspec/changes/site-page-layout/specs/site-look/spec.md#requirement-the-menu-must-mark-the-section-of-the-page-on-screen
+ * @spec openspec/specs/site-look/spec.md#requirement-the-menu-must-mark-the-section-of-the-page-on-screen
  */
 export function menuCurrent(link, route) {
 	if (typeof link !== 'string' || link.startsWith('/') === false) {

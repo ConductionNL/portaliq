@@ -201,6 +201,7 @@ export default {
 
 .pq-form-progress__title {
 	font-weight: 500;
+	color: var(--nldesign-color-text, var(--utrecht-document-color, inherit));
 }
 
 .pq-form-progress__item--current .pq-form-progress__title {
@@ -208,7 +209,10 @@ export default {
 }
 
 .pq-form-progress__item--todo .pq-form-progress__title {
-	color: var(--nldesign-color-text-muted, inherit);
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, inherit)
+	);
 }
 
 .pq-form-progress__item--current .pq-form-progress__marker {
@@ -237,7 +241,10 @@ export default {
 }
 
 .pq-form-progress__state {
-	color: var(--nldesign-color-text-muted, inherit);
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, inherit)
+	);
 	font-size: 0.875rem;
 }
 
@@ -257,9 +264,17 @@ export default {
 		padding: 1rem 1.25rem;
 	}
 
+	/* A step on the band is its two lines at the font leading, 38px beside
+	   the 36px marker, so the band is 70px high (WooVerzoekGegevens). */
 	.pq-form-progress__item {
 		flex: 1 1 0;
 		gap: 0.625rem;
+		padding-block: 0;
+	}
+
+	.pq-form-progress__title,
+	.pq-form-progress__state {
+		line-height: normal;
 	}
 
 	.pq-form-progress__item:last-child {

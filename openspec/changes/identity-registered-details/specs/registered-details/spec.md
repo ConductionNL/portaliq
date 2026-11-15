@@ -40,7 +40,7 @@ record and SHALL NOT send the BSN or the raw lookup answer to the browser.
 #### Scenario: An account without a BSN shows why nothing is there
 - **GIVEN** a resident whose broker supplied a pseudonym instead of a BSN
 - **WHEN** they open "My details"
-- **THEN** they read that the portal cannot show registered details for this way of signing in, and no lookup is made
+- **THEN** they read "Bij deze manier van inloggen kan het portaal geen geregistreerde gegevens tonen." (board MijnAccountZonderDigid), and no lookup is made
 
 ### Requirement: A business user sees their company's KvK record (REQ-IRD-002)
 
@@ -64,7 +64,7 @@ SHALL NOT contain the identifier.
 #### Scenario: The BRP source is down
 - **GIVEN** the OpenConnector source `brp-haalcentraal` is not reachable
 - **WHEN** a resident opens "My details"
-- **THEN** they read "Your registered details cannot be shown right now." and the log holds the cause without the BSN
+- **THEN** they read "Uw gegevens uit de basisregistratie kunnen nu niet worden getoond." (board MijnGegevens) and the log holds the cause without the BSN
 
 ### Requirement: A resident can ask for a correction (REQ-IRD-004)
 
@@ -96,3 +96,16 @@ the block SHALL say the number is not available.
 - **GIVEN** openregister answers a count of 3 for the resident's address object
 - **WHEN** the resident opens "My details"
 - **THEN** they see that 3 people are registered at their address, and no name of any of them
+
+### Requirement: A resident starts an address investigation from their details (REQ-IRD-006)
+
+When the portal names a published form for address investigations, the address block SHALL offer "Something wrong at this address?", which opens that form with the address filled in. Without such a form the link SHALL not show.
+
+#### Scenario: A resident reports a wrong count
+- **GIVEN** a portal with a published address investigation form, and a resident whose address shows 5 registered people
+- **WHEN** the resident chooses "Something wrong at this address?"
+- **THEN** the address investigation form opens with their address filled in
+
+#### Scenario: No form configured
+- **WHEN** the portal names no address investigation form
+- **THEN** the address block shows no "Something wrong at this address?" link

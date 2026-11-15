@@ -39,7 +39,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use DateTime;
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\AuditTrailServiceInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -50,7 +51,7 @@ use Throwable;
  *
  * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T01
  */
-class AuditTrailService {
+class AuditTrailService implements AuditTrailServiceInterface {
 	/**
 	 * OpenRegister's audit-trail mapper: the only place a proof record is written.
 	 */
@@ -59,7 +60,7 @@ class AuditTrailService {
 	/**
 	 * The action prefix of every portal row in the audit trail.
 	 */
-	public const ACTION_PREFIX = Application::APP_ID . '.';
+	public const ACTION_PREFIX = AppIdentity::APP_ID . '.';
 
 	/**
 	 * The verbs the portal records. `claim` is an account taking over the
@@ -104,7 +105,7 @@ class AuditTrailService {
 	 * @return void
 	 *
 	 * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T01
-	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function record(
 		string $verb,
@@ -114,7 +115,7 @@ class AuditTrailService {
 		string $schema,
 		string $id,
 		string $jti = '',
-		string $appId = Application::APP_ID,
+		string $appId = AppIdentity::APP_ID,
 		array $detail = [],
 	): void {
 		$fact = [
@@ -152,24 +153,48 @@ class AuditTrailService {
 	 * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T01
 	 */
 	public function append(array $fact, string $uuid, DateTime $created): void {
-		$verb = (string)($fact['verb'] ?? '');
 		$subject = (string)($fact['subjectRef'] ?? '');
-		$target = (string)($fact['targetId'] ?? '');
 
 		$class = $this->trailEntityClass();
 		$row = new $class();
 		$row->setUuid($uuid);
-		$row->setAction(self::ACTION_PREFIX . $verb);
+		$row->setAction(self::ACTION_PREFIX . (string)($fact['verb'] ?? ''));
 		$row->setUser($subject);
 		$row->setUserName($subject);
-		$row->setChanged(
-			[
-				'appId' => (string)($fact['appId'] ?? Application::APP_ID),
-				'register' => (string)($fact['register'] ?? ''),
-				'schema' => (string)($fact['schema'] ?? ''),
-				'targetId' => $target,
-			] + $this->detailOf(fact: $fact)
-		);
+		$row->setChanged($this->changedOf(fact: $fact));
+		$this->stampContext(row: $row, fact: $fact);
+		$row->setCreated($created);
+
+		$this->mapper()->insertAuditTrails([$row]);
+	}//end append()
+
+	/**
+	 * What a fact changed: its app, register, schema and target, and its
+	 * detail when it has one. Never the object's payload.
+	 *
+	 * @param array<string, mixed> $fact The fact fields.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function changedOf(array $fact): array {
+		return [
+			'appId' => (string)($fact['appId'] ?? AppIdentity::APP_ID),
+			'register' => (string)($fact['register'] ?? ''),
+			'schema' => (string)($fact['schema'] ?? ''),
+			'targetId' => (string)($fact['targetId'] ?? ''),
+		] + $this->detailOf(fact: $fact);
+	}//end changedOf()
+
+	/**
+	 * Stamp the session, the organisation and the object uuid on a row, each
+	 * only when the fact has one.
+	 *
+	 * @param object               $row  The audit-trail row.
+	 * @param array<string, mixed> $fact The fact fields.
+	 *
+	 * @return void
+	 */
+	private function stampContext(object $row, array $fact): void {
 		if ((string)($fact['jti'] ?? '') !== '') {
 			$row->setSession((string)$fact['jti']);
 		}
@@ -178,14 +203,11 @@ class AuditTrailService {
 			$row->setOrganisationId((string)$fact['organisation']);
 		}
 
+		$target = (string)($fact['targetId'] ?? '');
 		if (preg_match(self::UUID_PATTERN, $target) === 1) {
 			$row->setObjectUuid($target);
 		}
-
-		$row->setCreated($created);
-
-		$this->mapper()->insertAuditTrails([$row]);
-	}//end append()
+	}//end stampContext()
 
 	/**
 	 * The detail of a fact as the `detail` key of its changed record, or

@@ -29,21 +29,22 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-visibility-follows-the-party-tree/specs/portal-visibility-and-the-party-tree/spec.md
+ * @spec openspec/specs/portal-visibility-and-the-party-tree/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
+use OCA\Portaliq\Kernel\Contracts\PortalPartyTreeResolverInterface;
 use OCA\Portaliq\Service\PortalObjectReader;
 
 /**
  * Walks the party tree, bounded, without keeping any of it.
  *
- * @spec openspec/changes/portal-visibility-follows-the-party-tree/specs/portal-visibility-and-the-party-tree/spec.md
+ * @spec openspec/specs/portal-visibility-and-the-party-tree/spec.md
  */
-class PortalPartyTreeResolver {
+class PortalPartyTreeResolver implements PortalPartyTreeResolverInterface {
 	/**
 	 * The default maximum depth of the walk.
 	 */
@@ -85,7 +86,7 @@ class PortalPartyTreeResolver {
 	 *         `refused` true means the group is past the bound and NOTHING may
 	 *         be listed from it; `entities` is then empty.
 	 *
-	 * @spec openspec/changes/portal-visibility-follows-the-party-tree/specs/portal-visibility-and-the-party-tree/spec.md
+	 * @spec openspec/specs/portal-visibility-and-the-party-tree/spec.md
 	 */
 	public function entitiesFor(string $root, bool $reachesDown, array $bounds = []): array {
 		$maxDepth = (int)($bounds['maxDepth'] ?? self::DEFAULT_MAX_DEPTH);
@@ -122,7 +123,7 @@ class PortalPartyTreeResolver {
 	 *
 	 * @return array<int, string>|null The entities, or null when refused.
 	 *
-	 * @spec openspec/changes/portal-visibility-follows-the-party-tree/specs/portal-visibility-and-the-party-tree/spec.md
+	 * @spec openspec/specs/portal-visibility-and-the-party-tree/spec.md
 	 */
 	private function walkDown(string $root, int $maxDepth, int $pageSize): ?array {
 		$entities = [$root => true];
@@ -134,32 +135,74 @@ class PortalPartyTreeResolver {
 				return null;
 			}
 
-			$next = [];
-			foreach ($frontier as $parent) {
-				$children = $this->childrenOf(parent: $parent, pageSize: $pageSize);
-				if (count($children) >= $pageSize) {
-					// More children than one page: the level is not fully
-					// read, so the answer would be partial.
-					return null;
-				}
-
-				foreach ($children as $child) {
-					if ($child === '' || isset($entities[$child]) === true) {
-						// A cycle in the recorded relations would otherwise
-						// walk forever; a seen entity is not walked again.
-						continue;
-					}
-
-					$entities[$child] = true;
-					$next[] = $child;
-				}
+			$level = $this->nextLevel(frontier: $frontier, entities: $entities, pageSize: $pageSize);
+			if ($level === null) {
+				return null;
 			}
 
-			$frontier = $next;
+			$entities = $level['entities'];
+			$frontier = $level['next'];
 		}//end while
 
 		return array_keys($entities);
 	}//end walkDown()
+
+	/**
+	 * The entities seen after one more level and that level's new entities,
+	 * or null when a parent has more children than one page holds.
+	 *
+	 * @param array<int, string>  $frontier The level's parents.
+	 * @param array<string, bool> $entities The entities seen so far.
+	 * @param int                 $pageSize How many children one level may hold.
+	 *
+	 * @return array{entities: array<string, bool>, next: array<int, string>}|null
+	 *
+	 * @spec openspec/specs/portal-visibility-and-the-party-tree/spec.md
+	 */
+	private function nextLevel(array $frontier, array $entities, int $pageSize): array|null {
+		$next = [];
+		foreach ($frontier as $parent) {
+			$children = $this->childrenOf(parent: $parent, pageSize: $pageSize);
+			if (count($children) >= $pageSize) {
+				// More children than one page: the level is not fully
+				// read, so the answer would be partial.
+				return null;
+			}
+
+			foreach ($this->unseen(children: $children, entities: $entities) as $child) {
+				$entities[$child] = true;
+				$next[] = $child;
+			}
+		}
+
+		return ['entities' => $entities, 'next' => $next];
+	}//end nextLevel()
+
+	/**
+	 * The children not seen yet, each once.
+	 *
+	 * @param array<int, string>  $children The children read.
+	 * @param array<string, bool> $entities The entities seen so far.
+	 *
+	 * @return array<int, string>
+	 *
+	 * @spec openspec/specs/portal-visibility-and-the-party-tree/spec.md
+	 */
+	private function unseen(array $children, array $entities): array {
+		$unseen = [];
+		foreach ($children as $child) {
+			if ($child === '' || isset($entities[$child]) === true) {
+				// A cycle in the recorded relations would otherwise
+				// walk forever; a seen entity is not walked again.
+				continue;
+			}
+
+			$entities[$child] = true;
+			$unseen[] = $child;
+		}
+
+		return $unseen;
+	}//end unseen()
 
 	/**
 	 * The entities recorded directly below one entity.

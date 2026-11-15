@@ -18,13 +18,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t04
+ * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t04
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\PortalPdfExportInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -33,16 +34,9 @@ use Throwable;
  * Builds the columns and the text rows from the collection's own declaration,
  * so the file holds what the screen holds and nothing else.
  *
- * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t04
+ * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t04
  */
-class PortalPdfExport {
-
-	/**
-	 * What render() answers when OpenRegister refuses the row count.
-	 *
-	 * @var string
-	 */
-	public const TOO_LARGE = 'too_large';
+class PortalPdfExport implements PortalPdfExportInterface {
 
 	/**
 	 * OpenRegister's export service, by name only.
@@ -59,6 +53,13 @@ class PortalPdfExport {
 	public const RENDER_METHOD = 'renderRowsToPdf';
 
 	/**
+	 * OpenRegister's method that says whether an office server can convert to PDF.
+	 *
+	 * @var string
+	 */
+	public const AVAILABILITY_METHOD = 'isPdfAvailable';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container For resolving OpenRegister's ExportService.
@@ -73,14 +74,27 @@ class PortalPdfExport {
 	}//end __construct()
 
 	/**
-	 * Whether OpenRegister's rows renderer is there.
+	 * Whether OpenRegister can render a PDF now.
 	 *
-	 * @return bool True when the service resolves and has the render method.
+	 * OpenRegister converts PDFs through an office server (Collabora or
+	 * Euro-Office) and reports through `isPdfAvailable()` whether one is
+	 * installed. An OpenRegister without that method renders by itself.
 	 *
-	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t01
+	 * @return bool True when the service resolves, has the render method, and can convert.
+	 *
+	 * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t01
 	 */
 	public function available(): bool {
-		return $this->service() !== null;
+		$service = $this->service();
+		if ($service === null) {
+			return false;
+		}
+
+		if (method_exists($service, self::AVAILABILITY_METHOD) === false) {
+			return true;
+		}
+
+		return $service->{self::AVAILABILITY_METHOD}() === true;
 	}//end available()
 
 	/**
@@ -93,7 +107,7 @@ class PortalPdfExport {
 	 *
 	 * @return string|null The PDF bytes, TOO_LARGE, or null on any other failure.
 	 *
-	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t04
+	 * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t04
 	 */
 	public function render(string $title, array $columns, array $rows): ?string {
 		$service = $this->service();
@@ -127,7 +141,7 @@ class PortalPdfExport {
 	 *
 	 * @return array<int, array<string, mixed>> `{key, label, valueLabels?}` per column.
 	 *
-	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t04
+	 * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t04
 	 */
 	public function listColumns(array $collection): array {
 		$columns = [];
@@ -156,7 +170,7 @@ class PortalPdfExport {
 	 *
 	 * @return array<int, array<string, mixed>> `{key, label}` per column.
 	 *
-	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t04
+	 * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t04
 	 */
 	public function recordColumns(array $collection): array {
 		$labels = [];
@@ -187,7 +201,7 @@ class PortalPdfExport {
 	 *
 	 * @return array<int, array<string, string>> The rows.
 	 *
-	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t04
+	 * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t04
 	 */
 	public function textRows(array $columns, array $rows): array {
 		$text = [];
@@ -216,7 +230,7 @@ class PortalPdfExport {
 	 *
 	 * @return string The title.
 	 *
-	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t04
+	 * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t04
 	 */
 	public function title(string $label, string $organisation, string $date): string {
 		return implode(', ', array_filter([$label, $organisation, $date], static fn (string $part): bool => $part !== ''));

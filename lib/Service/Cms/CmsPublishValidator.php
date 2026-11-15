@@ -28,12 +28,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Cms;
 
+use OCA\Portaliq\Kernel\Contracts\CmsPublishValidatorInterface;
+
 /**
  * Finds what would render broken in one portal's pages and menus.
  *
  * @spec openspec/changes/portal-cms-admin-ui/tasks.md#task-2
  */
-class CmsPublishValidator {
+class CmsPublishValidator implements CmsPublishValidatorInterface {
 	public const NO_ROOT_PAGE = 'no-root-page';
 
 	public const DUPLICATE_ROUTE = 'duplicate-route';
@@ -53,10 +55,23 @@ class CmsPublishValidator {
 	 * @spec openspec/changes/portal-cms-admin-ui/tasks.md#task-2
 	 */
 	public function check(array $pages, array $menus): array {
-		$blocking = [];
-		$warnings = [];
+		$byRoute  = $this->byRoute(pages: $pages);
+		$blocking = $this->routeProblems(byRoute: $byRoute);
+		$links    = $this->linkProblems(menus: $menus, byRoute: $byRoute);
+		$blocking = array_merge($blocking, $links['blocking']);
 
-		$byRoute = $this->byRoute(pages: $pages);
+		return ['blocking' => $this->unique(rows: $blocking), 'warnings' => $this->unique(rows: $links['warnings'])];
+	}//end check()
+
+	/**
+	 * The routes more than one page claims, and a missing root page.
+	 *
+	 * @param array<string, array<int, bool>> $byRoute Whether each page of a route is published.
+	 *
+	 * @return array<int, array<string, string>>
+	 */
+	private function routeProblems(array $byRoute): array {
+		$blocking = [];
 		foreach ($byRoute as $route => $states) {
 			if (count($states) > 1) {
 				$blocking[] = ['code' => self::DUPLICATE_ROUTE, 'route' => $route];
@@ -67,24 +82,52 @@ class CmsPublishValidator {
 			$blocking[] = ['code' => self::NO_ROOT_PAGE, 'route' => '/'];
 		}
 
+		return $blocking;
+	}//end routeProblems()
+
+	/**
+	 * The menu links to no page (blocking) and to a page that is only a draft (warnings).
+	 *
+	 * @param array<int, array<string, mixed>> $menus   The portal's menus.
+	 * @param array<string, array<int, bool>>  $byRoute Whether each page of a route is published.
+	 *
+	 * @return array{blocking: array<int, array<string, string>>, warnings: array<int, array<string, string>>}
+	 */
+	private function linkProblems(array $menus, array $byRoute): array {
+		$problems = ['blocking' => [], 'warnings' => []];
 		foreach ($this->links(menus: $menus) as $link) {
 			$route = $this->normalise(route: $link);
 			if ($route === '') {
 				continue;
 			}
 
-			if (isset($byRoute[$route]) === false) {
-				$blocking[] = ['code' => self::MENU_LINK_NO_PAGE, 'route' => $route];
-				continue;
-			}
-
-			if (in_array(true, $byRoute[$route], true) === false) {
-				$warnings[] = ['code' => self::MENU_LINK_DRAFT_PAGE, 'route' => $route];
-			}
+			$problems = $this->withLink(problems: $problems, route: $route, byRoute: $byRoute);
 		}
 
-		return ['blocking' => $this->unique(rows: $blocking), 'warnings' => $this->unique(rows: $warnings)];
-	}//end check()
+		return $problems;
+	}//end linkProblems()
+
+	/**
+	 * The problems with one menu link's route added.
+	 *
+	 * @param array<string, array<int, array<string, string>>> $problems The problems so far: `blocking` and `warnings`.
+	 * @param string                                           $route    The link's normalised route.
+	 * @param array<string, array<int, bool>>                  $byRoute  Whether each page of a route is published.
+	 *
+	 * @return array{blocking: array<int, array<string, string>>, warnings: array<int, array<string, string>>}
+	 */
+	private function withLink(array $problems, string $route, array $byRoute): array {
+		if (isset($byRoute[$route]) === false) {
+			$problems['blocking'][] = ['code' => self::MENU_LINK_NO_PAGE, 'route' => $route];
+			return $problems;
+		}
+
+		if (in_array(true, $byRoute[$route], true) === false) {
+			$problems['warnings'][] = ['code' => self::MENU_LINK_DRAFT_PAGE, 'route' => $route];
+		}
+
+		return $problems;
+	}//end withLink()
 
 	/**
 	 * Whether each page of a route is published, by normalised route.

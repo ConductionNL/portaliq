@@ -25,12 +25,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\ExampleSite;
 
+use OCA\Portaliq\Kernel\Contracts\ExampleSiteRemoverInterface;
+
 /**
  * Removes an example site from its install's own record.
  *
  * @spec openspec/changes/example-site-zuiddrecht/specs/example-site/spec.md#requirement-an-administrator-must-be-able-to-remove-an-example-site
  */
-class ExampleSiteRemover {
+class ExampleSiteRemover implements ExampleSiteRemoverInterface {
 	/**
 	 * Constructor.
 	 *
@@ -62,29 +64,12 @@ class ExampleSiteRemover {
 	 */
 	public function remove(string $site, string $slug): array {
 		$record = $this->record->read(site: $site);
-		$report = [
-			'site'      => $site,
-			'recorded'  => ($this->record->isEmpty(record: $record) === false),
-			'available' => $this->store->available(),
-			'deleted'   => [],
-			'gone'      => [],
-			'failed'    => [],
-			'portal'    => 'kept-not-ours',
-		];
+		$report = $this->emptyReport(site: $site, record: $record);
 		if ($report['recorded'] === false || $report['available'] === false) {
 			return $report;
 		}
 
-		$left = ['portal' => $record['portal'], 'menu' => [], 'page' => [], 'newsItem' => [], 'glossaryTerm' => []];
-		foreach (ExampleSiteRecord::SCHEMAS as $schema) {
-			$outcome = $this->removeRows(schema: $schema, slug: $slug, ids: $record[$schema]);
-			$report['deleted'][$schema] = $outcome['deleted'];
-			$report['gone'][$schema]    = $outcome['gone'];
-			$left[$schema]              = $outcome['failed'];
-			foreach ($outcome['failed'] as $id) {
-				$report['failed'][] = $schema . ' ' . $id;
-			}
-		}
+		[$report, $left] = $this->removeRecordedRows(report: $report, record: $record, slug: $slug);
 
 		$report['portal'] = $this->removePortal(recordedId: $record['portal'], slug: $slug);
 		if ($report['portal'] === 'deleted' || $report['portal'] === 'kept-not-ours') {
@@ -95,6 +80,51 @@ class ExampleSiteRemover {
 
 		return $report;
 	}//end remove()
+
+	/**
+	 * The report before anything is removed.
+	 *
+	 * @param string               $site   The site's id.
+	 * @param array<string, mixed> $record What the install recorded.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function emptyReport(string $site, array $record): array {
+		return [
+			'site'      => $site,
+			'recorded'  => ($this->record->isEmpty(record: $record) === false),
+			'available' => $this->store->available(),
+			'deleted'   => [],
+			'gone'      => [],
+			'failed'    => [],
+			'portal'    => 'kept-not-ours',
+		];
+	}//end emptyReport()
+
+	/**
+	 * Remove the recorded rows of every schema, noting the outcome in the
+	 * report and keeping what failed for the next attempt.
+	 *
+	 * @param array<string, mixed> $report The report so far.
+	 * @param array<string, mixed> $record What the install recorded.
+	 * @param string               $slug   The slug of its portal.
+	 *
+	 * @return array{0: array<string, mixed>, 1: array<string, mixed>} The report, and what is left recorded.
+	 */
+	private function removeRecordedRows(array $report, array $record, string $slug): array {
+		$left = ['portal' => $record['portal'], 'menu' => [], 'page' => [], 'newsItem' => [], 'glossaryTerm' => [], 'form' => []];
+		foreach (ExampleSiteRecord::SCHEMAS as $schema) {
+			$outcome = $this->removeRows(schema: $schema, slug: $slug, ids: $record[$schema]);
+			$report['deleted'][$schema] = $outcome['deleted'];
+			$report['gone'][$schema]    = $outcome['gone'];
+			$left[$schema]              = $outcome['failed'];
+			foreach ($outcome['failed'] as $id) {
+				$report['failed'][] = $schema . ' ' . $id;
+			}
+		}
+
+		return [$report, $left];
+	}//end removeRecordedRows()
 
 	/**
 	 * Delete the recorded rows of one schema that are still in the portal.

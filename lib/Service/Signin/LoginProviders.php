@@ -71,7 +71,7 @@ class LoginProviders {
 	 */
 	public function list(array $overrides, string $brokerSecret, callable $oidcConfig): array {
 		$providers = [];
-		foreach (['digid', 'eherkenning', 'eidas', 'generic'] as $provider) {
+		foreach (['digid', 'eherkenning', 'eidas', 'yivi', 'generic'] as $provider) {
 			$entry = $this->entry(overrides: $overrides, brokerSecret: $brokerSecret, provider: $provider, oidcConfig: $oidcConfig);
 			if ($entry !== null) {
 				$providers[] = $entry;
@@ -121,6 +121,7 @@ class LoginProviders {
 	 * @return array{startUrl: string, exchangeUrl: string, consumerId: string, secret: string, label: string, audience: string}|null
 	 *
 	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 * @spec openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md#requirement-an-eherkenning-sign-in-is-a-business-sign-in-req-see-001
 	 */
 	public function brokerSettings(array $overrides, string $brokerSecret, string $provider): ?array {
 		if ($this->route->routeFor(overrides: $overrides, provider: $provider) !== BrokerLoginRoute::ROUTE_BROKER) {
@@ -133,7 +134,7 @@ class LoginProviders {
 			return null;
 		}
 
-		return $settings + ['label' => (string)($preset['label'] ?? $provider), 'audience' => (string)($preset['audience'] ?? 'client')];
+		return $settings + ['label' => (string)($preset['label'] ?? $provider), 'audience' => (string)($preset['audienceMap'] ?? 'client')];
 	}//end brokerSettings()
 
 
