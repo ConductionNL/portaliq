@@ -68,6 +68,24 @@ class DestinationMappingTest extends TestCase {
 		$this->assertArrayNotHasKey('portal', $built['fixed']);
 	}//end testTheServerSetsTheTypeTheSubjectAndOnlyTheValuesTheDestinationDeclares()
 
+	/**
+	 * A landing-page form's campaign fields reach only a destination that declares
+	 * them, and the fixed values stay the server's (site-organisation-registration-form).
+	 *
+	 * @return void
+	 */
+	public function testCampaignFieldsGoOnlyWhereTheDestinationDeclaresThem(): void {
+		$binding = ['destination' => ['register' => 'stackiq', 'schema' => 'organization', 'fixed' => ['registrationStatus' => 'pending']]];
+		$fields = [['name' => 'name'], ['name' => 'utmFirstTouch'], ['name' => 'referrer'], ['name' => 'nonsense']];
+
+		$organisation = (new DestinationMapping())->mappingFor(binding: $binding, fields: $fields, schema: ['properties' => ['name' => [], 'registrationStatus' => []]]);
+		$lead = (new DestinationMapping())->mappingFor(binding: $binding, fields: $fields, schema: ['properties' => ['name' => [], 'referrer' => []]]);
+
+		$this->assertSame(['name', 'nonsense'], array_column($organisation['fields'], 'property'));
+		$this->assertSame(['name', 'referrer', 'nonsense'], array_column($lead['fields'], 'property'));
+		$this->assertSame('pending', $organisation['fixed']['registrationStatus']);
+	}//end testCampaignFieldsGoOnlyWhereTheDestinationDeclaresThem()
+
 	public function testAnAnonymousSubmitStampsNoSubject(): void {
 		$built = (new DestinationMapping())->mappingFor(
 			binding: ['destination' => ['register' => 'dossiq', 'schema' => 'case', 'subjectField' => 'portalSubject']],
@@ -118,4 +136,55 @@ class DestinationMappingTest extends TestCase {
 	private function caseSchema(): array {
 		return json_decode((string)file_get_contents(__DIR__ . '/../../../Fixtures/dossiq-case-schema-d179.json'), true)['schema'];
 	}//end caseSchema()
+	/**
+	 * Half a destination does not fall back to the old pair; values are trimmed.
+	 *
+	 * @return void
+	 */
+	public function testHalfADestinationIsNoDestination(): void {
+		$mapping = new DestinationMapping();
+
+		$this->assertNull($mapping->destinationOf(binding: ['destination' => ['register' => 'dossiq'], 'caseRegister' => 'x', 'caseSchema' => 'y']));
+		$this->assertSame(['register' => 'x', 'schema' => 'y'], $mapping->destinationOf(binding: ['destination' => 'odd', 'caseRegister' => ' x ', 'caseSchema' => 'y']));
+		$this->assertSame(['register' => 'a', 'schema' => 'b'], $mapping->destinationOf(binding: ['destination' => ['register' => ' a', 'schema' => 'b ']]));
+	}//end testHalfADestinationIsNoDestination()
+
+	/**
+	 * The type id goes to the first property whose `$ref` ends in the type
+	 * schema; without a type id or a matching property none is set; empty
+	 * server values are left out.
+	 *
+	 * @return void
+	 */
+	public function testTheTypePropertyAndEmptyServerValues(): void {
+		$schema = ['properties' => ['plain' => 'x', 'other' => ['$ref' => 'caseTypes'], 'kind' => ['$ref' => '#/components/schemas/caseType'], 'again' => ['$ref' => 'caseType'], 'a' => [], 'b' => [], 'c' => [], 'd' => []]];
+		$typed  = (new DestinationMapping())->mappingFor(
+			binding: ['typeSchema' => 'caseType', 'typeId' => 't1'],
+			fields: [],
+			schema: $schema,
+			server: ['a' => null, 'b' => [], 'c' => '', 'd' => 0, 'e' => 'undeclared']
+		);
+		$this->assertSame(['d' => 0, 'kind' => 't1'], $typed['fixed']);
+
+		$untyped = (new DestinationMapping())->mappingFor(binding: ['typeSchema' => 'caseType', 'typeId' => ' '], fields: [], schema: $schema);
+		$this->assertSame([], $untyped['fixed']);
+
+		$unmatched = (new DestinationMapping())->mappingFor(binding: ['typeSchema' => 'zaak', 'typeId' => 't1'], fields: [], schema: $schema);
+		$this->assertSame([], $unmatched['fixed']);
+	}//end testTheTypePropertyAndEmptyServerValues()
+
+	/**
+	 * A finding without a message files an empty one; a mapping field that is
+	 * not an array is skipped.
+	 *
+	 * @return void
+	 */
+	public function testAFindingWithoutAMessage(): void {
+		$errors = (new DestinationMapping())->fieldErrors(
+			findings: [['property' => 'p']],
+			mapping: ['fields' => ['junk', ['field' => 'f', 'property' => 'p']]]
+		);
+
+		$this->assertSame(['f' => ''], $errors);
+	}//end testAFindingWithoutAMessage()
 }//end class

@@ -1,0 +1,733 @@
+{
+    "no options": {
+        "portal": "open-tilburg",
+        "date": "2026-09-04",
+        "segment": "",
+        "pageViews": 3,
+        "sessions": 5,
+        "visitors": 5,
+        "newVisitors": null,
+        "returningVisitors": null,
+        "accounts": null,
+        "engagedSessions": 2,
+        "avgEngagementSeconds": 20.6,
+        "bounceRate": 0.6,
+        "events": {
+            "email_click": 1,
+            "email_open": 1,
+            "file_download": 1,
+            "form_abandon": 1,
+            "form_start": 1,
+            "heat_click": 1,
+            "heat_scroll": 1,
+            "js_error": 1,
+            "outbound_click": 1,
+            "page_not_found": 1,
+            "page_view": 3,
+            "search": 3,
+            "session_start": 2
+        },
+        "pages": [
+            {
+                "path": "/",
+                "views": 2,
+                "entrances": 2,
+                "exits": 1,
+                "avgEngagementSeconds": 11.5,
+                "sessions": 2,
+                "visitors": 2,
+                "engagedSessions": 1,
+                "referrers": [
+                    {
+                        "host": "",
+                        "channel": "direct",
+                        "count": 1
+                    },
+                    {
+                        "host": "www.google.nl",
+                        "channel": "organic search",
+                        "count": 1
+                    }
+                ],
+                "outbound": []
+            },
+            {
+                "path": "/contact",
+                "views": 1,
+                "entrances": 0,
+                "exits": 1,
+                "avgEngagementSeconds": 20.0,
+                "sessions": 1,
+                "visitors": 1,
+                "engagedSessions": 1,
+                "referrers": [],
+                "outbound": []
+            },
+            {
+                "path": "/docs",
+                "views": 0,
+                "entrances": 0,
+                "exits": 0,
+                "avgEngagementSeconds": 0.0,
+                "sessions": 0,
+                "visitors": 0,
+                "engagedSessions": 0,
+                "referrers": [],
+                "outbound": [
+                    {
+                        "url": "https://rijksoverheid.nl/",
+                        "count": 1
+                    }
+                ]
+            }
+        ],
+        "transitions": [
+            {
+                "from": "/",
+                "to": "/contact",
+                "count": 1
+            }
+        ],
+        "referrers": [
+            {
+                "host": "www.google.nl",
+                "channel": "organic search",
+                "count": 1
+            },
+            {
+                "host": "",
+                "channel": "direct",
+                "count": 1
+            }
+        ],
+        "campaigns": [
+            {
+                "campaign": "woo",
+                "source": "nieuwsbrief",
+                "medium": "email",
+                "sessions": 1
+            }
+        ],
+        "devices": {
+            "desktop": 1,
+            "mobile": 1
+        },
+        "browsers": {
+            "Safari": 1
+        },
+        "os": {
+            "iOS": 1
+        },
+        "languages": {
+            "nl": 1
+        },
+        "regions": {
+            "NL": 1
+        },
+        "searches": [
+            {
+                "term": "afval",
+                "count": 1
+            },
+            {
+                "term": "bouwen",
+                "count": 1
+            },
+            {
+                "term": "parkeren",
+                "count": 1
+            }
+        ],
+        "zeroResultSearches": [
+            {
+                "term": "parkeren",
+                "count": 1
+            }
+        ],
+        "searchesWithoutCount": 1,
+        "downloads": [
+            {
+                "file": "besluit.pdf",
+                "count": 1
+            }
+        ],
+        "outbound": [
+            {
+                "url": "https://rijksoverheid.nl/",
+                "count": 1
+            }
+        ],
+        "goals": [],
+        "conversionRate": 0.0,
+        "funnels": [],
+        "forms": [
+            {
+                "formId": "contact",
+                "starts": 1,
+                "submits": 0,
+                "abandons": 1,
+                "completionRate": 0.0,
+                "fields": [
+                    {
+                        "fieldId": "email",
+                        "avgMs": 0,
+                        "abandonedHere": 1
+                    }
+                ]
+            }
+        ],
+        "notFound": [
+            {
+                "path": "/oud",
+                "hits": 1
+            }
+        ],
+        "errors": [
+            {
+                "message": "x is undefined",
+                "source": "app.js",
+                "hits": 1,
+                "pages": [
+                    "/contact"
+                ]
+            }
+        ],
+        "experiments": [],
+        "heatmaps": [],
+        "customDimensions": null,
+        "emails": {
+            "opens": 1,
+            "clicks": 1
+        },
+        "aggregatedAt": "2026-09-05T00:15:00Z",
+        "lastEventAt": "2026-09-04T11:00:05.000Z"
+    },
+    "persisted ids, linked accounts": {
+        "portal": "open-tilburg",
+        "date": "2026-09-04",
+        "segment": "",
+        "pageViews": 3,
+        "sessions": 5,
+        "visitors": 5,
+        "newVisitors": 1,
+        "returningVisitors": 1,
+        "accounts": 1,
+        "engagedSessions": 2,
+        "avgEngagementSeconds": 20.6,
+        "bounceRate": 0.6,
+        "events": {
+            "email_click": 1,
+            "email_open": 1,
+            "file_download": 1,
+            "form_abandon": 1,
+            "form_start": 1,
+            "heat_click": 1,
+            "heat_scroll": 1,
+            "js_error": 1,
+            "outbound_click": 1,
+            "page_not_found": 1,
+            "page_view": 3,
+            "search": 3,
+            "session_start": 2
+        },
+        "pages": [
+            {
+                "path": "/",
+                "views": 2,
+                "entrances": 2,
+                "exits": 1,
+                "avgEngagementSeconds": 11.5,
+                "sessions": 2,
+                "visitors": 2,
+                "engagedSessions": 1,
+                "referrers": [
+                    {
+                        "host": "",
+                        "channel": "direct",
+                        "count": 1
+                    },
+                    {
+                        "host": "www.google.nl",
+                        "channel": "organic search",
+                        "count": 1
+                    }
+                ],
+                "outbound": []
+            },
+            {
+                "path": "/contact",
+                "views": 1,
+                "entrances": 0,
+                "exits": 1,
+                "avgEngagementSeconds": 20.0,
+                "sessions": 1,
+                "visitors": 1,
+                "engagedSessions": 1,
+                "referrers": [],
+                "outbound": []
+            },
+            {
+                "path": "/docs",
+                "views": 0,
+                "entrances": 0,
+                "exits": 0,
+                "avgEngagementSeconds": 0.0,
+                "sessions": 0,
+                "visitors": 0,
+                "engagedSessions": 0,
+                "referrers": [],
+                "outbound": [
+                    {
+                        "url": "https://rijksoverheid.nl/",
+                        "count": 1
+                    }
+                ]
+            }
+        ],
+        "transitions": [
+            {
+                "from": "/",
+                "to": "/contact",
+                "count": 1
+            }
+        ],
+        "referrers": [
+            {
+                "host": "www.google.nl",
+                "channel": "organic search",
+                "count": 1
+            },
+            {
+                "host": "",
+                "channel": "direct",
+                "count": 1
+            }
+        ],
+        "campaigns": [
+            {
+                "campaign": "woo",
+                "source": "nieuwsbrief",
+                "medium": "email",
+                "sessions": 1
+            }
+        ],
+        "devices": {
+            "desktop": 1,
+            "mobile": 1
+        },
+        "browsers": {
+            "Safari": 1
+        },
+        "os": {
+            "iOS": 1
+        },
+        "languages": {
+            "nl": 1
+        },
+        "regions": {
+            "NL": 1
+        },
+        "searches": [
+            {
+                "term": "afval",
+                "count": 1
+            },
+            {
+                "term": "bouwen",
+                "count": 1
+            },
+            {
+                "term": "parkeren",
+                "count": 1
+            }
+        ],
+        "zeroResultSearches": [
+            {
+                "term": "parkeren",
+                "count": 1
+            }
+        ],
+        "searchesWithoutCount": 1,
+        "downloads": [
+            {
+                "file": "besluit.pdf",
+                "count": 1
+            }
+        ],
+        "outbound": [
+            {
+                "url": "https://rijksoverheid.nl/",
+                "count": 1
+            }
+        ],
+        "goals": [],
+        "conversionRate": 0.0,
+        "funnels": [],
+        "forms": [
+            {
+                "formId": "contact",
+                "starts": 1,
+                "submits": 0,
+                "abandons": 1,
+                "completionRate": 0.0,
+                "fields": [
+                    {
+                        "fieldId": "email",
+                        "avgMs": 0,
+                        "abandonedHere": 1
+                    }
+                ]
+            }
+        ],
+        "notFound": [
+            {
+                "path": "/oud",
+                "hits": 1
+            }
+        ],
+        "errors": [
+            {
+                "message": "x is undefined",
+                "source": "app.js",
+                "hits": 1,
+                "pages": [
+                    "/contact"
+                ]
+            }
+        ],
+        "experiments": [],
+        "heatmaps": [],
+        "customDimensions": null,
+        "emails": {
+            "opens": 1,
+            "clicks": 1
+        },
+        "aggregatedAt": "2026-09-05T00:15:00Z",
+        "lastEventAt": "2026-09-04T11:00:05.000Z"
+    },
+    "outcomes, experiments, heatmaps": {
+        "portal": "open-tilburg",
+        "date": "2026-09-04",
+        "segment": "",
+        "pageViews": 3,
+        "sessions": 5,
+        "visitors": 5,
+        "newVisitors": null,
+        "returningVisitors": null,
+        "accounts": null,
+        "engagedSessions": 2,
+        "avgEngagementSeconds": 20.6,
+        "bounceRate": 0.6,
+        "events": {
+            "email_click": 1,
+            "email_open": 1,
+            "file_download": 1,
+            "form_abandon": 1,
+            "form_start": 1,
+            "heat_click": 1,
+            "heat_scroll": 1,
+            "js_error": 1,
+            "outbound_click": 1,
+            "page_not_found": 1,
+            "page_view": 3,
+            "search": 3,
+            "session_start": 2
+        },
+        "pages": [
+            {
+                "path": "/",
+                "views": 2,
+                "entrances": 2,
+                "exits": 1,
+                "avgEngagementSeconds": 11.5,
+                "sessions": 2,
+                "visitors": 2,
+                "engagedSessions": 1,
+                "referrers": [
+                    {
+                        "host": "",
+                        "channel": "direct",
+                        "count": 1
+                    },
+                    {
+                        "host": "www.google.nl",
+                        "channel": "organic search",
+                        "count": 1
+                    }
+                ],
+                "outbound": []
+            },
+            {
+                "path": "/contact",
+                "views": 1,
+                "entrances": 0,
+                "exits": 1,
+                "avgEngagementSeconds": 20.0,
+                "sessions": 1,
+                "visitors": 1,
+                "engagedSessions": 1,
+                "referrers": [],
+                "outbound": []
+            },
+            {
+                "path": "/docs",
+                "views": 0,
+                "entrances": 0,
+                "exits": 0,
+                "avgEngagementSeconds": 0.0,
+                "sessions": 0,
+                "visitors": 0,
+                "engagedSessions": 0,
+                "referrers": [],
+                "outbound": [
+                    {
+                        "url": "https://rijksoverheid.nl/",
+                        "count": 1
+                    }
+                ]
+            }
+        ],
+        "transitions": [
+            {
+                "from": "/",
+                "to": "/contact",
+                "count": 1
+            }
+        ],
+        "referrers": [
+            {
+                "host": "www.google.nl",
+                "channel": "organic search",
+                "count": 1
+            },
+            {
+                "host": "",
+                "channel": "direct",
+                "count": 1
+            }
+        ],
+        "campaigns": [
+            {
+                "campaign": "woo",
+                "source": "nieuwsbrief",
+                "medium": "email",
+                "sessions": 1
+            }
+        ],
+        "devices": {
+            "desktop": 1,
+            "mobile": 1
+        },
+        "browsers": {
+            "Safari": 1
+        },
+        "os": {
+            "iOS": 1
+        },
+        "languages": {
+            "nl": 1
+        },
+        "regions": {
+            "NL": 1
+        },
+        "searches": [
+            {
+                "term": "afval",
+                "count": 1
+            },
+            {
+                "term": "bouwen",
+                "count": 1
+            },
+            {
+                "term": "parkeren",
+                "count": 1
+            }
+        ],
+        "zeroResultSearches": [
+            {
+                "term": "parkeren",
+                "count": 1
+            }
+        ],
+        "searchesWithoutCount": 1,
+        "downloads": [
+            {
+                "file": "besluit.pdf",
+                "count": 1
+            }
+        ],
+        "outbound": [
+            {
+                "url": "https://rijksoverheid.nl/",
+                "count": 1
+            }
+        ],
+        "goals": [
+            {
+                "id": "contact",
+                "name": "Contact",
+                "conversions": 1,
+                "completions": 1,
+                "value": 10.0
+            }
+        ],
+        "conversionRate": 0.2,
+        "funnels": [
+            {
+                "id": "f",
+                "name": "F",
+                "steps": [
+                    {
+                        "name": "Home",
+                        "sessions": 2,
+                        "dropOff": 0.0
+                    },
+                    {
+                        "name": "Contact",
+                        "sessions": 1,
+                        "dropOff": 0.5
+                    }
+                ]
+            }
+        ],
+        "forms": [
+            {
+                "formId": "contact",
+                "starts": 1,
+                "submits": 0,
+                "abandons": 1,
+                "completionRate": 0.0,
+                "fields": [
+                    {
+                        "fieldId": "email",
+                        "avgMs": 0,
+                        "abandonedHere": 1
+                    }
+                ]
+            }
+        ],
+        "notFound": [
+            {
+                "path": "/oud",
+                "hits": 1
+            }
+        ],
+        "errors": [
+            {
+                "message": "x is undefined",
+                "source": "app.js",
+                "hits": 1,
+                "pages": [
+                    "/contact"
+                ]
+            }
+        ],
+        "experiments": [
+            {
+                "id": "hero",
+                "name": "hero",
+                "status": "running",
+                "variants": [
+                    {
+                        "id": "a",
+                        "name": "a",
+                        "sessions": 0,
+                        "conversions": 0,
+                        "rate": 0.0
+                    },
+                    {
+                        "id": "b",
+                        "name": "b",
+                        "sessions": 1,
+                        "conversions": 1,
+                        "rate": 1.0
+                    }
+                ],
+                "winner": "",
+                "confidence": 0.0
+            }
+        ],
+        "heatmaps": [
+            {
+                "path": "/",
+                "samples": 2,
+                "clicks": [
+                    {
+                        "x": 25,
+                        "y": 25,
+                        "count": 1
+                    }
+                ],
+                "scroll": [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1
+                ]
+            }
+        ],
+        "customDimensions": {
+            "audience": {
+                "inwoner": 1,
+                "ondernemer": 1
+            }
+        },
+        "emails": {
+            "opens": 1,
+            "clicks": 1
+        },
+        "aggregatedAt": "2026-09-05T00:15:00Z",
+        "lastEventAt": "2026-09-04T11:00:05.000Z"
+    },
+    "no sessions": {
+        "portal": "p",
+        "date": "2026-09-04",
+        "segment": "",
+        "pageViews": 0,
+        "sessions": 0,
+        "visitors": 0,
+        "newVisitors": null,
+        "returningVisitors": null,
+        "accounts": null,
+        "engagedSessions": 0,
+        "avgEngagementSeconds": 0.0,
+        "bounceRate": 0.0,
+        "events": [],
+        "pages": [],
+        "transitions": [],
+        "referrers": [],
+        "campaigns": [],
+        "devices": [],
+        "browsers": [],
+        "os": [],
+        "languages": [],
+        "regions": [],
+        "searches": [],
+        "zeroResultSearches": [],
+        "searchesWithoutCount": 0,
+        "downloads": [],
+        "outbound": [],
+        "goals": [],
+        "conversionRate": 0.0,
+        "funnels": [],
+        "forms": [],
+        "notFound": [],
+        "errors": [],
+        "experiments": [],
+        "heatmaps": [],
+        "customDimensions": null,
+        "emails": {
+            "opens": 0,
+            "clicks": 0
+        },
+        "aggregatedAt": "x",
+        "lastEventAt": ""
+    }
+}

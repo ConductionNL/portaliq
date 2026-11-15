@@ -56,7 +56,7 @@ import { proposalsOn, proposalStateKey, rowIdOf, translatorOr } from './forms.js
  * proposals, filtered here to this record; the server re-checks ownership on
  * every read and write.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-propose-a-change-req-srp-024
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-propose-a-change-req-srp-024
  */
 export default {
 	name: 'ProposalQueue',
@@ -136,7 +136,7 @@ export default {
 		 * @param {string} note The note.
 		 * @return {Promise<object>} The api's answer.
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-propose-a-change-req-srp-024
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-propose-a-change-req-srp-024
 		 */
 		async send(changes, note) {
 			const result = await this.api.proposeChange(

@@ -86,7 +86,7 @@ class CollectionColumnsNormaliser {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/contribution-value-labels/specs/portal-contribution-contract/spec.md#requirement-a-column-and-a-form-field-may-declare-how-their-values-read
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-column-and-a-form-field-may-declare-how-their-values-read
 	 */
 	private function normaliseColumn(mixed $column): ?array {
 		if (is_array($column) === false) {

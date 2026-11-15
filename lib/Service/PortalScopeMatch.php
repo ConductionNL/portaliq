@@ -28,7 +28,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-scope-list-membership/specs/portal-contribution-contract/spec.md#requirement-a-direct-scope-field-must-match-a-single-value-or-strict-list-membership
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-direct-scope-field-must-match-a-single-value-or-strict-list-membership
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ namespace OCA\Portaliq\Service;
 /**
  * Shared direct-scope match for the portal reader and writer.
  *
- * @spec openspec/changes/portal-scope-list-membership/specs/portal-contribution-contract/spec.md#requirement-a-direct-scope-field-must-match-a-single-value-or-strict-list-membership
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-direct-scope-field-must-match-a-single-value-or-strict-list-membership
  */
 trait PortalScopeMatch {
 	/**
@@ -49,7 +49,7 @@ trait PortalScopeMatch {
 	 *
 	 * @return bool True for an equal single value or a list that contains it.
 	 *
-	 * @spec openspec/changes/portal-scope-list-membership/specs/portal-contribution-contract/spec.md#requirement-a-direct-scope-field-must-match-a-single-value-or-strict-list-membership
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-direct-scope-field-must-match-a-single-value-or-strict-list-membership
 	 */
 	private function scopeMatches(mixed $stored, string $scopeValue): bool {
 		// An empty scoping value is nobody: it must never match an empty or
@@ -86,7 +86,7 @@ trait PortalScopeMatch {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-scope-list-membership/specs/portal-contribution-contract/spec.md#requirement-a-write-must-keep-a-verified-list-and-stamp-a-list-for-an-array-scope-field
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-write-must-keep-a-verified-list-and-stamp-a-list-for-an-array-scope-field
 	 */
 	private function isScopeList(mixed $stored): bool {
 		return is_array($stored) === true && array_is_list($stored) === true;

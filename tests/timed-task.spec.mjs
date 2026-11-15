@@ -151,11 +151,8 @@ test('counts down from the server deadline, not the client clock', () => {
 test('runs an attempt from start to submit', async () => {
 	const api = fakeApi({ failOnce: new Set(['q3']) })
 	const started = await task.startAttempt(
-		api,
-		'learniq',
-		block,
-		'assessment-1',
-		'EXAMCODE',
+		{ api, app: 'learniq', block },
+		{ taskId: 'assessment-1', accessCode: 'EXAMCODE' },
 	)
 	assert.equal(started.ok, true)
 	assert.deepEqual(api.calls[0], {
@@ -205,11 +202,8 @@ test('runs an attempt from start to submit', async () => {
 
 	queue.set('q2', '13')
 	const handedIn = await task.submitAttempt(
-		api,
-		'learniq',
-		block,
-		'attempt-1',
-		queue,
+		{ api, app: 'learniq', block },
+		{ attemptId: 'attempt-1', queue },
 	)
 	assert.deepEqual(handedIn, { ok: true, allSaved: true })
 	const last = api.calls.slice(-2)
@@ -255,7 +249,7 @@ test('a start refusal carries the leaf app message', async () => {
 			}
 		},
 	}
-	assert.deepEqual(await task.startAttempt(api, 'learniq', block, 'x'), {
+	assert.deepEqual(await task.startAttempt({ api, app: 'learniq', block }, { taskId: 'x' }), {
 		ok: false,
 		error: 'access_code_wrong',
 		message: 'De toegangscode klopt niet.',

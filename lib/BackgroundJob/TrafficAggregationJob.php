@@ -20,15 +20,15 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\BackgroundJob;
 
-use OCA\Portaliq\Service\TrafficAggregationService;
-use OCA\Portaliq\Service\TrafficBackfillService;
+use OCA\Portaliq\Kernel\Contracts\TrafficAggregationServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\TrafficBackfillServiceInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJob;
 use OCP\BackgroundJob\TimedJob;
@@ -43,7 +43,7 @@ use Throwable;
  * runs are refused: two runs recomputing the same day would race on the
  * upsert and the loser's numbers would be the ones that stay.
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
  */
 class TrafficAggregationJob extends TimedJob {
 
@@ -56,17 +56,17 @@ class TrafficAggregationJob extends TimedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory              $time        Testable clock (job base class).
-	 * @param TrafficAggregationService $aggregation Does the work.
+	 * @param TrafficAggregationServiceInterface $aggregation Does the work.
 	 * @param LoggerInterface           $logger      The logger.
-	 * @param TrafficBackfillService    $backfill    Rebuilds the retained days once after an upgrade (portal-page-traffic).
+	 * @param TrafficBackfillServiceInterface    $backfill    Rebuilds the retained days once after an upgrade (portal-page-traffic).
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly TrafficAggregationService $aggregation,
+		private readonly TrafficAggregationServiceInterface $aggregation,
 		private readonly LoggerInterface $logger,
-		private readonly ?TrafficBackfillService $backfill = null,
+		private readonly ?TrafficBackfillServiceInterface $backfill = null,
 	) {
 		parent::__construct(time: $time);
 		$this->setInterval(seconds: self::INTERVAL);
@@ -90,8 +90,8 @@ class TrafficAggregationJob extends TimedJob {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
-	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+	 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- the base class dictates
 	 * the signature; dropping the parameter breaks the override.

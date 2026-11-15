@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\RowActionFilesInterface;
 use OCP\IRequest;
 
 /**
@@ -37,7 +38,7 @@ use OCP\IRequest;
  *
  * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
  */
-class RowActionFiles {
+class RowActionFiles implements RowActionFilesInterface {
 
 	private const FIELD_NAME = '/^[a-zA-Z][a-zA-Z0-9_]*$/';
 
@@ -81,23 +82,53 @@ class RowActionFiles {
 			return $action;
 		}
 
+		$field = $this->fileField(declared: $declared, action: $action, whitelist: $whitelist);
+		if ($field === null) {
+			return $action;
+		}
+
+		$action['files'] = $this->filesOf(declared: $declared, field: $field);
+
+		return $action;
+	}//end normalise()
+
+	/**
+	 * The declared file field when it is a plain name that is neither a text field nor the row field.
+	 *
+	 * @param array<string, mixed> $declared  The declared `files`.
+	 * @param array<string, mixed> $action    The action, without `files`.
+	 * @param list<string>         $whitelist The action's text fields.
+	 *
+	 * @return string|null
+	 */
+	private function fileField(array $declared, array $action, array $whitelist): string|null {
 		$field = ($declared['field'] ?? null);
 		if (is_string($field) === false
 			|| preg_match(self::FIELD_NAME, $field) !== 1
 			|| in_array($field, $whitelist, true) === true
 			|| $field === ($action['rowField'] ?? null)
 		) {
-			return $action;
+			return null;
 		}
 
-		$action['files'] = [
+		return $field;
+	}//end fileField()
+
+	/**
+	 * The `files` declaration: the field and its bounded count and size.
+	 *
+	 * @param array<string, mixed> $declared The declared `files`.
+	 * @param string               $field    The file field.
+	 *
+	 * @return array{field: string, max: int, maxBytes: int}
+	 */
+	private function filesOf(array $declared, string $field): array {
+		return [
 			'field' => $field,
 			'max' => $this->bounded(value: ($declared['max'] ?? null), default: self::DEFAULT_MAX, ceiling: self::HARD_MAX),
 			'maxBytes' => $this->bounded(value: ($declared['maxBytes'] ?? null), default: self::DEFAULT_MAX_BYTES, ceiling: self::HARD_MAX_BYTES),
 		];
-
-		return $action;
-	}//end normalise()
+	}//end filesOf()
 
 	/**
 	 * The uploads under the declared field, or the reason they are refused.
@@ -116,18 +147,36 @@ class RowActionFiles {
 		}
 
 		$files = $this->uploads(uploaded: $request->getUploadedFile($declared['field']));
-		if (count($files) > (int)$declared['max']) {
-			return ['files' => [], 'error' => 'too_many_files'];
-		}
-
-		foreach ($files as $file) {
-			if ($file['size'] > (int)$declared['maxBytes']) {
-				return ['files' => [], 'error' => 'file_too_large'];
-			}
+		$error = $this->refusal(files: $files, declared: $declared);
+		if ($error !== null) {
+			return ['files' => [], 'error' => $error];
 		}
 
 		return ['files' => $files, 'error' => null];
 	}//end collect()
+
+	/**
+	 * Why the uploads are refused: more files, or a larger one, than the
+	 * declaration allows; null when they fit.
+	 *
+	 * @param list<array{name: string, type: string, tmp_name: string, size: int}> $files    The uploads.
+	 * @param array<string, mixed>                                               $declared The `files` declaration.
+	 *
+	 * @return string|null
+	 */
+	private function refusal(array $files, array $declared): ?string {
+		if (count($files) > (int)$declared['max']) {
+			return 'too_many_files';
+		}
+
+		foreach ($files as $file) {
+			if ($file['size'] > (int)$declared['maxBytes']) {
+				return 'file_too_large';
+			}
+		}
+
+		return null;
+	}//end refusal()
 
 	/**
 	 * Flatten one upload or PHP's parallel-array shape into a list; unreadable entries are left out.
@@ -141,37 +190,64 @@ class RowActionFiles {
 			return [];
 		}
 
-		$entries = [$uploaded];
-		if (is_array($uploaded['tmp_name']) === true) {
-			$entries = [];
-			foreach (array_keys($uploaded['tmp_name']) as $key) {
-				$entries[] = [
-					'name' => ($uploaded['name'][$key] ?? ''),
-					'type' => ($uploaded['type'][$key] ?? ''),
-					'tmp_name' => ($uploaded['tmp_name'][$key] ?? ''),
-					'size' => ($uploaded['size'][$key] ?? 0),
-					'error' => ($uploaded['error'][$key] ?? UPLOAD_ERR_OK),
-				];
-			}
-		}
-
 		$files = [];
-		foreach ($entries as $entry) {
-			$tmpName = (string)($entry['tmp_name'] ?? '');
-			if ($tmpName === '' || (int)($entry['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
-				continue;
+		foreach ($this->entriesOf(uploaded: $uploaded) as $entry) {
+			$file = $this->readableFile(entry: $entry);
+			if ($file !== null) {
+				$files[] = $file;
 			}
-
-			$files[] = [
-				'name' => basename((string)($entry['name'] ?? 'upload')),
-				'type' => (string)($entry['type'] ?? 'application/octet-stream'),
-				'tmp_name' => $tmpName,
-				'size' => (int)($entry['size'] ?? 0),
-			];
 		}
 
 		return $files;
 	}//end uploads()
+
+	/**
+	 * One upload as a list of itself, or PHP's parallel-array shape as one
+	 * entry per key.
+	 *
+	 * @param array<string, mixed> $uploaded An upload with a `tmp_name`.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function entriesOf(array $uploaded): array {
+		if (is_array($uploaded['tmp_name']) === false) {
+			return [$uploaded];
+		}
+
+		$entries = [];
+		foreach (array_keys($uploaded['tmp_name']) as $key) {
+			$entries[] = [
+				'name' => ($uploaded['name'][$key] ?? ''),
+				'type' => ($uploaded['type'][$key] ?? ''),
+				'tmp_name' => ($uploaded['tmp_name'][$key] ?? ''),
+				'size' => ($uploaded['size'][$key] ?? 0),
+				'error' => ($uploaded['error'][$key] ?? UPLOAD_ERR_OK),
+			];
+		}
+
+		return $entries;
+	}//end entriesOf()
+
+	/**
+	 * One entry as a file, or null when it has no temporary file or an error.
+	 *
+	 * @param array<string, mixed> $entry The entry.
+	 *
+	 * @return array{name: string, type: string, tmp_name: string, size: int}|null
+	 */
+	private function readableFile(array $entry): ?array {
+		$tmpName = (string)($entry['tmp_name'] ?? '');
+		if ($tmpName === '' || (int)($entry['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
+			return null;
+		}
+
+		return [
+			'name' => basename((string)($entry['name'] ?? 'upload')),
+			'type' => (string)($entry['type'] ?? 'application/octet-stream'),
+			'tmp_name' => $tmpName,
+			'size' => (int)($entry['size'] ?? 0),
+		];
+	}//end readableFile()
 
 	/**
 	 * A positive integer up to a ceiling, or the default.

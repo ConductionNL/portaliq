@@ -17,6 +17,7 @@ import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import {
 	deliveryLine,
+	deliveryMoment,
 	messageBoxChoice,
 	withMessageBoxChoice,
 } from '../src/shared/messageBox.js'
@@ -32,25 +33,42 @@ function t(key, params = {}) {
 	return key.replace(/\{(\w+)\}/g, (_, name) => String(params[name] ?? ''))
 }
 
+/** The translator and locale the inbox hands in. */
+const words = { t, locale: 'en' }
+
 test('a delivered message box send gives the delivery line', () => {
 	const message = {
 		_deliveries: [{ channel: 'messageBox', label: 'MijnOverheid Berichtenbox' }],
 	}
-	assert.equal(deliveryLine(message, t), 'Also sent to MijnOverheid Berichtenbox.')
+	assert.equal(deliveryLine(message, words), 'Also sent to MijnOverheid Berichtenbox.')
+})
+
+test('a delivery that says when names the day and the time, in Dutch time (REQ-MBC-004)', () => {
+	const message = {
+		_deliveries: [
+			{ channel: 'messageBox', label: 'je Berichtenbox van MijnOverheid', at: '2026-10-02T12:02:00Z' },
+		],
+	}
+	assert.equal(
+		deliveryLine(message, { t, locale: 'nl' }),
+		'Also sent to je Berichtenbox van MijnOverheid, on vrijdag 2 oktober at 14:02.',
+	)
+	assert.equal(deliveryMoment('', 'nl'), null)
+	assert.equal(deliveryMoment('not a date', 'nl'), null)
 })
 
 test('no delivery, another channel or no label gives no line', () => {
-	assert.equal(deliveryLine({}, t), null)
-	assert.equal(deliveryLine({ _deliveries: [] }, t), null)
+	assert.equal(deliveryLine({}, words), null)
+	assert.equal(deliveryLine({ _deliveries: [] }, words), null)
 	assert.equal(
-		deliveryLine({ _deliveries: [{ channel: 'email', label: 'x' }] }, t),
+		deliveryLine({ _deliveries: [{ channel: 'email', label: 'x' }] }, words),
 		null,
 	)
 	assert.equal(
-		deliveryLine({ _deliveries: [{ channel: 'messageBox', label: '' }] }, t),
+		deliveryLine({ _deliveries: [{ channel: 'messageBox', label: '' }] }, words),
 		null,
 	)
-	assert.equal(deliveryLine({ _deliveries: 'yes' }, t), null)
+	assert.equal(deliveryLine({ _deliveries: 'yes' }, words), null)
 })
 
 test('the settings row shows only when the organisation offers the channel', () => {
@@ -90,7 +108,10 @@ test('the inbox and the settings section use it, and both locales say it', async
 		new URL('../src/site/pages/inbox/InboxPage.vue', import.meta.url),
 		'utf8',
 	)
-	assert.match(inbox, /deliveryLine\(message, this\.tr\)/)
+	assert.match(
+		inbox,
+		/deliveryLine\(message, \{ t: this\.tr, locale: this\.lang \}\)/,
+	)
 	const settings = readFileSync(
 		new URL(
 			'../src/site/components/inbox/NotificationSettings.vue',

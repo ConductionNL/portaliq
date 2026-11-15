@@ -20,8 +20,8 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
- * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
@@ -34,7 +34,7 @@ use OCA\Portaliq\Service\PortalObjectWriter;
 /**
  * Joins the waiting account a secret opened.
  *
- * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 class WaitingAccountClaim {
 	/**
@@ -77,7 +77,7 @@ class WaitingAccountClaim {
 	 *
 	 * @return string CLAIMED, NOT_VALID or CONFLICT.
 	 *
-	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function claim(
 		array $account,
@@ -156,7 +156,7 @@ class WaitingAccountClaim {
 	 *
 	 * @return UnboundAccount|null
 	 *
-	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	private function moveRules(bool $moving, #[\SensitiveParameter] string $secret, array $account, array $subject): ?UnboundAccount {
 		if ($moving === false || $this->secrets->isCode(secret: $secret) === true) {
@@ -204,7 +204,7 @@ class WaitingAccountClaim {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	private function mayMove(WaitingAccountJoin $join, array $account, array $waiting, ?UnboundAccount $rules): bool {
 		return $rules !== null && $join->mayAdoptAudience(account: $account, waiting: $waiting, unbound: $rules) === true;

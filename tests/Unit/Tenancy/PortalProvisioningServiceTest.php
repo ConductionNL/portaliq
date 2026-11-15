@@ -137,4 +137,61 @@ class PortalProvisioningServiceTest extends TestCase {
 		$this->assertSame([], $this->written);
 
 	}//end testTheCommandPrintsTheDnsRecordOrTheRefusal()
+
+	/**
+	 * Every input is refused or written exactly as recorded, with the token
+	 * of the DNS record the one the domain carries.
+	 *
+	 * @return void
+	 */
+	public function testEveryProvisionIsAsRecorded(): void {
+		$refusals = [
+			[['', 'zeist', 'Zeist', 'mijn.zeist.example'], PortalProvisioningService::INVALID],
+			[['org', 'zeist', '  ', 'mijn.zeist.example'], PortalProvisioningService::INVALID],
+			[['org', 'Zeist', 'Zeist', 'mijn.zeist.example'], PortalProvisioningService::INVALID],
+			[['org', 'z', 'Zeist', 'mijn.zeist.example'], PortalProvisioningService::INVALID],
+			[['org', '-zeist', 'Zeist', 'mijn.zeist.example'], PortalProvisioningService::INVALID],
+			[['org', 'zeist', 'Zeist', 'localhost'], PortalProvisioningService::INVALID],
+			[['org', 'zeist', 'Zeist', 'https://mijn.zeist.example'], PortalProvisioningService::INVALID],
+			[['org', 'zeist', 'Zeist', 'mijn.zeist.example:8080'], PortalProvisioningService::INVALID],
+		];
+		foreach ($refusals as [$input, $status]) {
+			$this->assertSame(['status' => $status, 'dns' => null], $this->service()->provision(...$input));
+			$this->assertSame([], $this->written);
+		}
+
+		$taken = [['slug' => 'other', 'domains' => 'not a list'], ['slug' => 'zeist', 'domains' => [['hostname' => 'mijn.zeist.example']]]];
+		$this->assertSame(['status' => PortalProvisioningService::HOST_TAKEN, 'dns' => null], $this->service(portals: [['slug' => 'x', 'domains' => [['hostname' => 'MIJN.ZEIST.EXAMPLE']]], $taken[1]])->provision('org', 'zeist', 'Zeist', 'mijn.zeist.example'));
+		$this->assertSame(['status' => PortalProvisioningService::SLUG_TAKEN, 'dns' => null], $this->service(portals: $taken)->provision('org', 'zeist', 'Zeist', 'other.example'));
+		$this->assertSame(['status' => PortalProvisioningService::UNAVAILABLE, 'dns' => null], $this->service(portals: $taken, available: false)->provision('org', 'zeist', 'Zeist', 'mijn.zeist.example'));
+
+		$result = $this->service(portals: [['slug' => 'other', 'domains' => [[], ['hostname' => 'b.example']]]])->provision(' org ', ' zeist ', ' Zeist ', ' Mijn.Zeist.Example ');
+		$this->assertSame(PortalProvisioningService::CREATED, $result['status']);
+		$token = $result['dns']['value'];
+		$this->assertMatchesRegularExpression('/^portaliq-site-verification=[0-9a-f]{32}$/', $token);
+		$this->assertSame(\OCA\Portaliq\Service\Cms\PortalDomainVerifier::PREFIX . 'mijn.zeist.example', $result['dns']['name']);
+		$this->assertSame(
+			[
+				[
+					'schema' => 'portal',
+					'data' => [
+						'title' => 'Zeist',
+						'slug' => 'zeist',
+						'status' => 'draft',
+						'kind' => 'site',
+						'organisation' => 'org',
+						'domains' => [['hostname' => 'mijn.zeist.example', 'verified' => false, 'verificationToken' => $token]],
+						'authentication' => ['modes' => ['public']],
+						'locales' => ['nl'],
+					],
+				],
+				['schema' => 'menu', 'data' => ['title' => 'Hoofdmenu', 'position' => 0, 'items' => [], 'portal' => 'zeist']],
+				[
+					'schema' => 'page',
+					'data' => ['title' => 'Zeist', 'route' => '/', 'status' => 'published', 'locale' => 'nl', 'body' => ['type' => 'grid', 'widgets' => []], 'portal' => 'zeist'],
+				],
+			],
+			$this->written
+		);
+	}//end testEveryProvisionIsAsRecorded()
 }//end class

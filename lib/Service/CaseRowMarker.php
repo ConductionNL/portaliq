@@ -27,12 +27,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\CaseRowMarkerInterface;
+
 /**
  * Marks case rows closed or open and announces the "My cases" page.
  *
  * @spec openspec/specs/portal-my-cases/spec.md
  */
-class CaseRowMarker {
+class CaseRowMarker implements CaseRowMarkerInterface {
 	/**
 	 * Whether any contribution declares a case collection, and whether any of
 	 * those declares a closed marker: what the portal needs to know to show
@@ -99,7 +101,7 @@ class CaseRowMarker {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/citizen-case-ended-shows-only-its-state/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-case-that-has-ended-offers-nothing-and-explains-nothing
+	 * @spec openspec/changes/archive/2026-10-07-citizen-case-ended-shows-only-its-state/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-case-that-has-ended-offers-nothing-and-explains-nothing
 	 */
 	public function hasEnded(array $row, string $closedField): bool {
 		$withdrawnAt = ($row['withdrawnAt'] ?? null);

@@ -52,22 +52,25 @@
  * @link https://conduction.nl
  *
  * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-case-app-declares-which-change-a-resident-hears-about-req-nap-001
- * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+ * @spec openspec/specs/portal-notifications-and-preferences/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
-use OCA\Portaliq\Service\NotificationDispatchService;
+use OCA\Portaliq\Kernel\Contracts\NotificationDispatchServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\NotificationRuleNormaliserInterface;
 use Psr\Log\LoggerInterface;
 
 /**
  * Keeps the plain rule keys and the change rules the listener can act on.
  *
  * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-case-app-declares-which-change-a-resident-hears-about-req-nap-001
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- The total is the sum of small private steps; each method stays under the method thresholds.
  */
-class NotificationRuleNormaliser {
+class NotificationRuleNormaliser implements NotificationRuleNormaliserInterface {
 
 	/**
 	 * The only operator a change rule may use.
@@ -77,22 +80,13 @@ class NotificationRuleNormaliser {
 	public const OPERATOR_CHANGED = 'changed';
 
 	/**
-	 * The shape of a rule key an app sends on a portalMessage it writes: the
-	 * app id, a dot, the app's own key. The app is the part before the first
-	 * dot (PortalRecordChangeListener::onForeignMessage).
-	 *
-	 * @var string
-	 */
-	public const APP_RULE_KEY_PATTERN = '/^([a-z][a-z0-9_-]*)\.[A-Za-z0-9_.-]+$/';
-
-	/**
 	 * The plain rule keys portaliq fires itself.
 	 *
 	 * @var array<int, string>
 	 */
 	private const BUILT_IN_RULE_KEYS = [
-		NotificationDispatchService::RULE_MESSAGE_CREATED,
-		NotificationDispatchService::RULE_STATUS_CHANGED,
+		NotificationDispatchServiceInterface::RULE_MESSAGE_CREATED,
+		NotificationDispatchServiceInterface::RULE_STATUS_CHANGED,
 	];
 
 	/**
@@ -133,52 +127,79 @@ class NotificationRuleNormaliser {
 	 * @return array{kept: array<int, string|array<string, mixed>>, dropped: array<int, string>}
 	 *
 	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-case-app-declares-which-change-a-resident-hears-about-req-nap-001
-	 * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md
 	 */
 	public function normalise(mixed $notifications, array $collections, string $appId = ''): array {
-		$kept = [];
-		$dropped = [];
 		if (is_array($notifications) === false) {
-			return ['kept' => $kept, 'dropped' => $dropped];
+			return ['kept' => [], 'dropped' => []];
 		}
 
-		$plainKeys = [];
+		$run = new NotificationNormaliseRun(collections: $collections, appId: $appId);
 		foreach ($notifications as $entry) {
-			if (is_string($entry) === true) {
-				if ($entry !== '') {
-					// Placed now, judged once the change rules are known.
-					$kept[] = $entry;
-					$plainKeys[array_key_last($kept)] = $entry;
-				}
-
-				continue;
-			}
-
-			if (is_array($entry) === false) {
-				continue;
-			}
-
-			$reason = $this->refusal(rule: $entry, collections: $collections, appId: $appId);
-			if ($reason !== null) {
-				$dropped[] = $reason;
-				continue;
-			}
-
-			$kept[] = $this->shape(rule: $entry, collection: $this->collection(id: (string)$entry['collection'], collections: $collections))
-				+ (new NoticeRecipientNormaliser())->shape(rule: $entry, appId: $appId);
-		}//end foreach
-
-		$ruleKeys = array_column(array_filter($kept, 'is_array'), 'ruleKey');
-		foreach ($plainKeys as $index => $key) {
-			$reason = $this->keyRefusal(key: $key, appId: $appId, ruleKeys: $ruleKeys);
-			if ($reason !== null) {
-				$dropped[] = $reason;
-				unset($kept[$index]);
-			}
+			$this->place(run: $run, entry: $entry);
 		}
 
-		return ['kept' => array_values($kept), 'dropped' => $dropped];
+		$this->dropUnfiredKeys(run: $run);
+
+		return ['kept' => array_values($run->kept), 'dropped' => $run->dropped];
 	}//end normalise()
+
+	/**
+	 * Place one entry of the list: a plain key, a change rule, or nothing.
+	 *
+	 * @param NotificationNormaliseRun $run   The pass.
+	 * @param mixed                    $entry The entry.
+	 *
+	 * @return void
+	 */
+	private function place(NotificationNormaliseRun $run, mixed $entry): void {
+		if (is_string($entry) === true && $entry !== '') {
+			// Placed now, judged once the change rules are known.
+			$run->kept[] = $entry;
+			$run->plainKeys[array_key_last($run->kept)] = $entry;
+		}
+
+		if (is_array($entry) === true) {
+			$this->placeRule(run: $run, rule: $entry);
+		}
+	}//end place()
+
+	/**
+	 * Keep a change rule shaped, or drop it with its reason.
+	 *
+	 * @param NotificationNormaliseRun $run  The pass.
+	 * @param array<string, mixed>     $rule The declared rule.
+	 *
+	 * @return void
+	 */
+	private function placeRule(NotificationNormaliseRun $run, array $rule): void {
+		$reason = $this->refusal(rule: $rule, collections: $run->collections, appId: $run->appId);
+		if ($reason !== null) {
+			$run->dropped[] = $reason;
+			return;
+		}
+
+		$run->kept[] = $this->shape(rule: $rule, collection: $this->collection(id: (string)$rule['collection'], collections: $run->collections))
+			+ (new NoticeRecipientNormaliser())->shape(rule: $rule, appId: $run->appId);
+	}//end placeRule()
+
+	/**
+	 * Drop the plain keys nothing fires, now that the kept rules are known.
+	 *
+	 * @param NotificationNormaliseRun $run The pass.
+	 *
+	 * @return void
+	 */
+	private function dropUnfiredKeys(NotificationNormaliseRun $run): void {
+		$ruleKeys = array_column(array_filter($run->kept, 'is_array'), 'ruleKey');
+		foreach ($run->plainKeys as $index => $key) {
+			$reason = $this->keyRefusal(key: $key, appId: $run->appId, ruleKeys: $ruleKeys);
+			if ($reason !== null) {
+				$run->dropped[] = $reason;
+				unset($run->kept[$index]);
+			}
+		}
+	}//end dropUnfiredKeys()
 
 	/**
 	 * Why a plain rule key can never fire, or null when something fires it.
@@ -196,28 +217,73 @@ class NotificationRuleNormaliser {
 			return null;
 		}
 
+		return $this->unfiredReason(key: $key, appId: $appId, namespace: $this->namespaceOf(appId: $appId));
+	}//end keyRefusal()
+
+	/**
+	 * The app's rule key namespace, `<appId>` when the app is unknown.
+	 *
+	 * @param string $appId The contributing app.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-case-app-declares-which-change-a-resident-hears-about-req-nap-001
+	 */
+	private function namespaceOf(string $appId): string {
 		$namespace = $appId;
 		if ($namespace === '') {
 			$namespace = '<appId>';
 		}
 
-		if (preg_match(self::APP_RULE_KEY_PATTERN, $key, $match) === 1) {
-			if ($match[1] === $appId) {
-				return null;
-			}
+		return $namespace;
+	}//end namespaceOf()
 
-			return sprintf('key %s: a portalMessage with it is sent for app "%s", never for this one; use %s.<key>', $key, $match[1], $namespace);
+	/**
+	 * Why a key no built-in or change rule fires can never fire, or null
+	 * when it is this app's own message rule.
+	 *
+	 * @param string $key       The plain rule key.
+	 * @param string $appId     The contributing app.
+	 * @param string $namespace The app's rule key namespace.
+	 *
+	 * @return string|null The reason.
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-case-app-declares-which-change-a-resident-hears-about-req-nap-001
+	 */
+	private function unfiredReason(string $key, string $appId, string $namespace): string|null {
+		if (preg_match(self::APP_RULE_KEY_PATTERN, $key, $found) === 1) {
+			return $this->foreignAppReason(key: $key, keyApp: $found[1], appId: $appId, namespace: $namespace);
 		}
 
 		return sprintf(
 			'key %s: nothing fires it; declare %s, %s, a change rule with this ruleKey, or %s.%s sent on a portalMessage',
 			$key,
-			NotificationDispatchService::RULE_MESSAGE_CREATED,
-			NotificationDispatchService::RULE_STATUS_CHANGED,
+			NotificationDispatchServiceInterface::RULE_MESSAGE_CREATED,
+			NotificationDispatchServiceInterface::RULE_STATUS_CHANGED,
 			$namespace,
 			$key
 		);
-	}//end keyRefusal()
+	}//end unfiredReason()
+
+	/**
+	 * Why an app message rule key of another app never fires here, or null for this app's own.
+	 *
+	 * @param string $key       The plain rule key.
+	 * @param string $keyApp    The app the key names.
+	 * @param string $appId     The contributing app.
+	 * @param string $namespace The app's rule key namespace.
+	 *
+	 * @return string|null The reason.
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-case-app-declares-which-change-a-resident-hears-about-req-nap-001
+	 */
+	private function foreignAppReason(string $key, string $keyApp, string $appId, string $namespace): string|null {
+		if ($keyApp === $appId) {
+			return null;
+		}
+
+		return sprintf('key %s: a portalMessage with it is sent for app "%s", never for this one; use %s.<key>', $key, $keyApp, $namespace);
+	}//end foreignAppReason()
 
 	/**
 	 * Why a rule cannot be kept, or null when it can.
@@ -260,7 +326,7 @@ class NotificationRuleNormaliser {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md
 	 */
 	public function scopedElsewhere(array $collection): bool {
 		return $this->filled(value: ($collection['scopeClaim'] ?? null)) || $this->filled(value: ($collection['via'] ?? null));

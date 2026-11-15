@@ -48,10 +48,15 @@ test('the account shows the board\'s facts and no secrets', () => {
 test('a message is titled by its subject and shows its body first', () => {
 	const config = page('PortalMessageDetail')
 	assert.equal(config.titleField, 'subject')
-	const data = widget(config, 'message-data').content
-	assert.equal(data.include[0], 'body')
-	assert.deepEqual(data.include, ['body', 'subjectRef', 'receivedAt', 'read', 'nature', 'rechtsgevolg', 'term', 'referenceId'])
-	for (const key of data.include) {
+	const data = widget(config, 'message-data')
+	assert.equal(data.type, 'facts')
+	assert.deepEqual(data.content.fields[0], { as: 'text', path: 'body' })
+	const paths = data.content.fields.filter((field) => field.path).map((field) => field.path)
+	assert.deepEqual(paths, ['body', 'subjectRef', 'receivedAt', 'readAt', 'read', 'nature', 'rechtsgevolg', 'term', 'referenceId'])
+	for (const key of paths) {
 		assert.ok(SCHEMAS.portalMessage.properties[key], `the message has no "${key}"`)
+	}
+	for (const field of data.content.fields.filter((entry) => entry.label)) {
+		assert.ok(NL[field.label], `"${field.label}" is not in the Dutch catalogue`)
 	}
 })

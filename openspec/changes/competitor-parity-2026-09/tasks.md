@@ -3,8 +3,10 @@
 The build order of the proposal as checkboxes. A box is ticked when the named
 change is archived.
 
-- [ ] 1 `portal-identity-space`
-- [ ] 2 `change-proposal-queue`
+- [x] 1 `portal-identity-space`
+  Ticked (decision 399): archived as `openspec/changes/archive/2026-09-28-portal-identity-space`.
+- [x] 2 `change-proposal-queue`
+  Ticked (decision 399): archived as `openspec/changes/archive/2026-09-29-change-proposal-queue`.
 - [ ] 3 After `portal-task-delivery` and `portal-identity-space`:
   `partner-tasks-in-the-portal`
 - [ ] 4 After `portal-shared-runtime` and `portal-headless-content-api`:
@@ -18,7 +20,8 @@ change is archived.
 
 ## Wave 2, the round 4 discovery clusters
 
-- [ ] 8 `portal-identity-and-the-organisations-cases` (cluster 7, D8)
+- [x] 8 `portal-identity-and-the-organisations-cases` (cluster 7, D8)
+  Ticked (decision 399): archived as `openspec/changes/archive/2026-09-28-portal-identity-and-the-organisations-cases`.
 - [ ] 9 After `portal-identity-and-the-organisations-cases`:
   `portal-intake-form-as-an-object` (cluster 51, D16)
 - [ ] 10 After `portal-intake-form-as-an-object`:
@@ -31,7 +34,8 @@ change is archived.
 
 ## Wave 3, the pending proposals from the D1 batch
 
-- [ ] 13 `withdrawing-your-own-case-from-the-portal` (row 2.47)
+- [x] 13 `withdrawing-your-own-case-from-the-portal` (row 2.47)
+  Ticked (decision 399): archived as `openspec/changes/archive/2026-09-28-withdrawing-your-own-case-from-the-portal`.
 - [ ] 14 After `portal-identity-and-the-organisations-cases`:
   `portal-visibility-follows-the-party-tree` (row 13.38)
 - [ ] 15 After the two above:

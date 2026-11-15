@@ -72,7 +72,7 @@
 						v-for="option in field.options || []"
 						:key="option"
 						:value="option">
-						{{ option }}
+						{{ optionLabel(field, option) }}
 					</option>
 				</select>
 
@@ -146,9 +146,39 @@ import { hasHelp, mergeHelp } from '../lib/help.js'
 import {
 	DUTCH,
 	explainsOptional,
+	optionLabel,
 	plainFieldErrors,
 	summaryEntries,
 } from './forms/fields.js'
+
+/**
+ * The plain checks for the declared fields.
+ *
+ * @param {Array<object>} fields The declared form fields.
+ * @return {Array<object>} One rule per field: name, label, required, date.
+ */
+function fieldRules(fields) {
+	return fields.map((field) => ({
+		name: field.id,
+		label: field.label,
+		required: !!field.required,
+		date: field.type === 'date',
+	}))
+}
+
+/**
+ * The campaign attribution this visitor arrived with on the portal.
+ *
+ * @param {string} portal The portal slug.
+ * @return {{utmFirstTouch: object|null, utmLastTouch: object|null, referrer: string}} The tracking.
+ */
+function campaignOf(portal) {
+	return {
+		utmFirstTouch: firstTouch(portal),
+		utmLastTouch: lastTouch(portal),
+		referrer: capturedReferrer(portal),
+	}
+}
 
 /**
  * Renders a landing page's bound lead-capture form and submits it through
@@ -326,6 +356,8 @@ export default {
 			return `pq-form-field-${this.formId || 'x'}-${field.id}`
 		},
 
+		optionLabel,
+
 		/**
 		 * @param {object} field One declared form field.
 		 * @return {string} The `<input type>` to use — text-family types pass
@@ -346,19 +378,11 @@ export default {
 		 * @return {Promise<void>}
 		 *
 		 * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-a-landing-pages-form-is-submittable-with-no-portal-session
-		 * @spec openspec/changes/create-names-its-action/tasks.md#T3
+		 * @spec openspec/changes/archive/2026-10-07-create-names-its-action/tasks.md#T3
 		 */
 		async submit() {
 			this.status = null
-			this.errors = plainFieldErrors(
-				this.fields.map((field) => ({
-					name: field.id,
-					label: field.label,
-					required: !!field.required,
-					date: field.type === 'date',
-				})),
-				this.values,
-			)
+			this.errors = plainFieldErrors(fieldRules(this.fields), this.values)
 			if (Object.keys(this.errors).length > 0) {
 				this.$nextTick(() => {
 					if (this.$refs.summary) {
@@ -371,15 +395,7 @@ export default {
 			this.submitting = true
 
 			try {
-				await submitLandingPageForm(
-					this.values,
-					{
-						utmFirstTouch: firstTouch(this.portal),
-						utmLastTouch: lastTouch(this.portal),
-						referrer: capturedReferrer(this.portal),
-					},
-					this.formId,
-				)
+				await submitLandingPageForm(this.values, campaignOf(this.portal), this.formId)
 				this.status = 'success'
 				this.values = {}
 			} catch {

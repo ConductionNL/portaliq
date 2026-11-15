@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
+ * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
  */
 
 declare(strict_types=1);
@@ -35,7 +35,7 @@ namespace OCA\Portaliq\Service\Traffic;
  * Pure, and the same definition against the same event always answers the
  * same, which is what keeps the rollup idempotent.
  *
- * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
+ * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
  */
 class TrafficMatch {
 
@@ -79,7 +79,7 @@ class TrafficMatch {
 	 *
 	 * @return array<string, string>|null The match, or null.
 	 *
-	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
+	 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
 	 */
 	public function normalise(mixed $value): ?array {
 		if (is_array($value) === false) {
@@ -113,7 +113,7 @@ class TrafficMatch {
 	 *
 	 * @return bool True when every key holds.
 	 *
-	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
+	 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
 	 */
 	public function matches(array $match, array $event, string $type = ''): bool {
 		$name = (string)($event['name'] ?? '');

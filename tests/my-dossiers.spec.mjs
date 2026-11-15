@@ -117,7 +117,7 @@ test('answer link', async () => {
 			body: { link: 'https://gemeente.example/shared/abc' },
 		}),
 	}
-	const outcome = await runRowAction(api, {}, { id: 'dos-1' }, { id: 'share' })
+	const outcome = await runRowAction(api, { collection: {}, row: { id: 'dos-1' }, action: { id: 'share' } })
 	assert.equal(outcome.link, 'https://gemeente.example/shared/abc')
 })
 

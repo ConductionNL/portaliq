@@ -6,7 +6,7 @@
 // (site-mijn-omgeving-components wave 5: REQ-SMO-006, REQ-SMO-007,
 // REQ-SMO-008, REQ-SMO-020): `menu: false` leaves the menu and keeps its
 // route, `perRecord` lists a page once per record, the menu draws each
-// page's icon, `/mijn` opens the home with "Dit moet u nog doen", and a
+// page's icon, `/mijn` opens the home with "Wat u nog moet doen", and a
 // `records` page switches between records through its route.
 //
 // Usage:
@@ -82,7 +82,7 @@ const href = (route) => `https://site.example/?route=${route}`
 test('a menu: false page leaves the menu and keeps its route', () => {
 	// REQ-SMO-020 scenario "Old routes stay, the menu shrinks".
 	const nav = buildNav([LEARNIQ], t, {})
-	const names = residentMenuGroups(nav, t, 0, href).flatMap((group) =>
+	const names = residentMenuGroups(nav, { t, unread: 0, hrefFor: href }).flatMap((group) =>
 		group.items.map((item) => item.name),
 	)
 	assert.equal(names.includes('Cijfers'), false, 'not in the menu')
@@ -97,9 +97,9 @@ test('a menu: false page leaves the menu and keeps its route', () => {
 test('a perRecord page is listed under each record, linking to that record', () => {
 	// REQ-SMO-020 scenario "A page per child".
 	const nav = buildNav([LEARNIQ], t, {})
-	const groups = residentMenuGroups(nav, t, 0, href, {
+	const groups = residentMenuGroups(nav, { t, unread: 0, hrefFor: href, recordRows: {
 		'learniq:parentChildren': ROWS,
-	})
+	} })
 	const vera = groups.find((group) => group.title === 'Vera')
 	const sami = groups.find((group) => group.title === 'Sami')
 	assert.ok(vera && sami, 'one group per child')
@@ -122,7 +122,7 @@ test('a perRecord page is listed under each record, linking to that record', () 
 		'no internal mark leaves the function',
 	)
 
-	const before = residentMenuGroups(nav, t, 0, href)
+	const before = residentMenuGroups(nav, { t, unread: 0, hrefFor: href })
 	const listed = before
 		.flatMap((group) => group.items)
 		.filter((item) => item.name === 'Afwezigheid')
@@ -245,9 +245,9 @@ test('/mijn is the home: a greeting, then what is still to do', async () => {
 	)
 	assert.match(html, /id="site-account-title"/)
 	assert.match(html, /Welkom, Sanne/)
-	assert.ok(html.indexOf('Dit moet u nog doen') > html.indexOf('Welkom, Sanne'))
+	assert.ok(html.indexOf('Wat u nog moet doen') > html.indexOf('Welkom, Sanne'))
 	assert.ok(
-		html.indexOf('Dit moet u nog doen') < html.indexOf('Nieuwe berichten'),
+		html.indexOf('Wat u nog moet doen') < html.indexOf('Nieuwe berichten'),
 		'open work before messages',
 	)
 	assert.match(html, /Beantwoord onze vraag over uw Woo-verzoek/)

@@ -31,6 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Kernel\Contracts\PortalEmbedThrottleInterface;
 use OCP\ICacheFactory;
 use Throwable;
 
@@ -39,7 +40,7 @@ use Throwable;
  *
  * @spec openspec/changes/embedded-intake-form/specs/embedded-intake-form/spec.md
  */
-class PortalEmbedThrottle {
+class PortalEmbedThrottle implements PortalEmbedThrottleInterface {
 	/**
 	 * The cache namespace.
 	 */

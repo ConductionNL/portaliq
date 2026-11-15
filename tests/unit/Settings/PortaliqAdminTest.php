@@ -51,6 +51,8 @@ use ReflectionClass;
  * @author   Conduction B.V. <info@conduction.nl>
  * @license  EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link     https://www.conduction.nl
+ *
+ * @covers \OCA\Portaliq\Settings\PortaliqAdmin
  */
 final class PortaliqAdminTest extends TestCase {
 	/**
