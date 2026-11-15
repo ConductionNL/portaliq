@@ -10,24 +10,7 @@
 		:aria-labelledby="headingId"
 		role="group"
 		data-testid="error-summary">
-		<svg
-			class="pq-error-icon"
-			viewBox="0 0 20 20"
-			aria-hidden="true"
-			focusable="false">
-			<circle
-				cx="10"
-				cy="10"
-				r="8"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="1.75" />
-			<path
-				d="M10 5.5v5.5M10 13.75v.5"
-				stroke="currentColor"
-				stroke-width="2"
-				stroke-linecap="round" />
-		</svg>
+		<ErrorIcon />
 		<h2
 			:id="headingId"
 			ref="heading"
@@ -58,6 +41,8 @@
 </template>
 
 <script>
+import ErrorIcon from './ErrorIcon.vue'
+
 /**
  * The NL Design System error summary: shown above a form after a failed
  * submit, with a heading that takes focus and one link per error, in field
@@ -72,6 +57,8 @@
  */
 export default {
 	name: 'ErrorSummary',
+
+	components: { ErrorIcon },
 
 	props: {
 		/** The errors, `[{field, target, message}]` from `summaryEntries()`. */

@@ -34,21 +34,21 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/news-audience-from-the-school-app/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-news-audience-from-the-school-app/tasks.md#T1
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
  * Resolves a guardian's audience from the school app's own collections.
  *
- * @spec openspec/changes/news-audience-from-the-school-app/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-news-audience-from-the-school-app/tasks.md#T1
  */
 class LeafGuardianAudienceReader {
 
@@ -67,12 +67,12 @@ class LeafGuardianAudienceReader {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalContributionRegistry $registry The contributions for the parent audience.
+	 * @param PortalContributionRegistryInterface $registry The contributions for the parent audience.
 	 * @param ScopedCollectionReaderInterface $reader The subject-scoped collection reader.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
-		private readonly PortalContributionRegistry $registry,
+		private readonly PortalContributionRegistryInterface $registry,
 		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly LoggerInterface $logger,
 	) {
@@ -86,7 +86,7 @@ class LeafGuardianAudienceReader {
 	 *
 	 * @return array<string, mixed>|null The audience (schoolRef, groupRefs, childRefs, photoConsent), or null.
 	 *
-	 * @spec openspec/changes/news-audience-from-the-school-app/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-10-07-news-audience-from-the-school-app/tasks.md#T1
 	 */
 	public function resolveAudience(string $subjectRef): ?array {
 		if ($subjectRef === '') {

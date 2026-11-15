@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\BackgroundJob;
 
-use OCA\Portaliq\Service\Mail\MailLog;
+use OCA\Portaliq\Kernel\Contracts\MailLogInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
 
@@ -40,11 +40,11 @@ class MailLogRetentionJob extends TimedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory $time The clock the scheduler uses.
-	 * @param MailLog      $log  The log to clean.
+	 * @param MailLogInterface      $log  The log to clean.
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly MailLog $log,
+		private readonly MailLogInterface $log,
 	) {
 		parent::__construct(time: $time);
 		$this->setInterval(seconds: self::INTERVAL);

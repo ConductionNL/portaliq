@@ -36,10 +36,10 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Contribution\PortalProviderLocator;
-use OCA\Portaliq\Contribution\TimelineProviderMethod;
+use OCA\Portaliq\Kernel\Contracts\PortalProviderLocatorInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
+use OCA\Portaliq\Kernel\Contracts\TimelineProviderMethodInterface;
 
 /**
  * Calls a case app's declared documents method.
@@ -50,12 +50,14 @@ class PortalCaseDocumentReader {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalProviderLocator $locator Finds the app's provider.
+	 * @param PortalProviderLocatorInterface $locator Finds the app's provider.
 	 * @param LoggerInterface       $logger  Records a provider that failed or answered badly.
+	 * @param TimelineProviderMethodInterface $timelineProviderMethod The TimelineProviderMethod helper.
 	 */
 	public function __construct(
-		private readonly PortalProviderLocator $locator,
+		private readonly PortalProviderLocatorInterface $locator,
 		private readonly LoggerInterface $logger,
+		private readonly TimelineProviderMethodInterface $timelineProviderMethod,
 	) {
 	}//end __construct()
 
@@ -71,22 +73,68 @@ class PortalCaseDocumentReader {
 	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-case-app-declares-which-documents-a-resident-may-see-req-cdc-001
 	 */
 	public function entries(string $appId, string $method, string $caseId): array {
-		$provider = $this->locator->locate(appId: $appId);
-		if ($provider === null || (new TimelineProviderMethod())->callableOn(provider: $provider, method: $method) === false) {
+		$answer = $this->answerOf(appId: $appId, method: $method, caseId: $caseId);
+		if ($answer === null) {
 			return [];
 		}
 
+		return $this->keptEntries(answer: $answer, appId: $appId, method: $method);
+	}//end entries()
+
+	/**
+	 * What the app's provider answers for the case, or null when it has no such method, fails or answers no list.
+	 *
+	 * @param string $appId  The contributing app.
+	 * @param string $method The declared `documents.provider`.
+	 * @param string $caseId The case id.
+	 *
+	 * @return array<mixed>|null
+	 */
+	private function answerOf(string $appId, string $method, string $caseId): array|null {
+		$provider = $this->locator->locate(appId: $appId);
+		if ($provider === null || $this->timelineProviderMethod->callableOn(provider: $provider, method: $method) === false) {
+			return null;
+		}
+
+		$answer = $this->called(provider: $provider, method: $method, caseId: $caseId, appId: $appId);
+		if (is_array($answer) === false) {
+			return null;
+		}
+
+		return $answer;
+	}//end answerOf()
+
+	/**
+	 * Call the provider's documents method for the case; null, logged, when it throws.
+	 *
+	 * @param object $provider The app's provider.
+	 * @param string $method   The declared `documents.provider`.
+	 * @param string $caseId   The case id.
+	 * @param string $appId    The contributing app, for the log.
+	 *
+	 * @return mixed
+	 */
+	private function called(object $provider, string $method, string $caseId, string $appId): mixed {
 		try {
 			$answer = $provider->{$method}($caseId);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: documents provider failed', ['app' => $appId, 'method' => $method, 'reason' => $e->getMessage()]);
-			return [];
+			return null;
 		}
 
-		if (is_array($answer) === false) {
-			return [];
-		}
+		return $answer;
+	}//end called()
 
+	/**
+	 * The well-formed entries of the answer; each one dropped is logged.
+	 *
+	 * @param array<mixed> $answer The provider's answer.
+	 * @param string       $appId  The contributing app.
+	 * @param string       $method The declared `documents.provider`.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function keptEntries(array $answer, string $appId, string $method): array {
 		$entries = [];
 		foreach ($answer as $entry) {
 			$kept = $this->wellFormed(entry: $entry);
@@ -99,7 +147,7 @@ class PortalCaseDocumentReader {
 		}
 
 		return $entries;
-	}//end entries()
+	}//end keptEntries()
 
 	/**
 	 * The entry in portaliq's shape, or null when it lacks an id, a title or a
@@ -119,29 +167,50 @@ class PortalCaseDocumentReader {
 			return null;
 		}
 
-		// Anything but a decision is a document.
-		$kind = 'document';
-		if (($entry['kind'] ?? null) === 'decision') {
-			$kind = 'decision';
-		}
-
-		$kept = [
+		return [
 			'id' => $this->text(value: $entry['id']),
 			'title' => $this->text(value: $entry['title']),
-			'kind' => $kind,
+			'kind' => $this->kindOf(entry: $entry),
 			'date' => $this->text(value: ($entry['date'] ?? null)),
 			'file' => $file,
-		];
+		] + $this->fileFacts(entry: $entry) + (new DocumentEntryExtras())->extrasOf(entry: $entry);
+	}//end wellFormed()
+
+	/**
+	 * The entry's kind: anything but a decision is a document.
+	 *
+	 * @param array<string, mixed> $entry The entry as the provider returned it.
+	 *
+	 * @return string
+	 */
+	private function kindOf(array $entry): string {
+		if (($entry['kind'] ?? null) === 'decision') {
+			return 'decision';
+		}
+
+		return 'document';
+	}//end kindOf()
+
+	/**
+	 * The file's type and size, each only when the provider gives it as a
+	 * string and an integer.
+	 *
+	 * @param array<string, mixed> $entry The entry as the provider returned it.
+	 *
+	 * @return array{mimeType?: string, size?: int}
+	 */
+	private function fileFacts(array $entry): array {
+		$facts = [];
 		if (is_string(($entry['mimeType'] ?? null)) === true) {
-			$kept['mimeType'] = $entry['mimeType'];
+			$facts['mimeType'] = $entry['mimeType'];
 		}
 
 		if (is_int(($entry['size'] ?? null)) === true) {
-			$kept['size'] = $entry['size'];
+			$facts['size'] = $entry['size'];
 		}
 
-		return $kept + (new DocumentEntryExtras())->extrasOf(entry: $entry);
-	}//end wellFormed()
+		return $facts;
+	}//end fileFacts()
 
 	/**
 	 * A complete file reference, or null.

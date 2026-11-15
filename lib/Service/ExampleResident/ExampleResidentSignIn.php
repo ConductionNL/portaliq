@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\ExampleResident;
 
+use OCA\Portaliq\Kernel\Contracts\ExampleResidentSignInInterface;
 use OCP\IConfig;
 
 /**
@@ -35,7 +36,7 @@ use OCP\IConfig;
  *
  * @spec openspec/changes/demo-sign-in-beside-the-account/specs/example-resident/spec.md#requirement-a-demo-may-sign-in-each-example-resident-with-one-click
  */
-class ExampleResidentSignIn {
+class ExampleResidentSignIn implements ExampleResidentSignInInterface {
 
 	/**
 	 * Constructor.

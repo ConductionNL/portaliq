@@ -28,10 +28,10 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
-use OCA\Portaliq\Service\PublicCatalogue;
-use OCA\Portaliq\Service\PublicCatalogueQuery;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PublicCatalogueInterface;
+use OCA\Portaliq\Kernel\Contracts\PublicCatalogueQueryInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -86,16 +86,18 @@ class ContentCatalogueController extends Controller {
 	 *
 	 * @param string               $appName   The app name.
 	 * @param IRequest             $request   The request.
-	 * @param PortalResolver       $resolver  Resolves the portal of the request.
-	 * @param PortalSessionService $session   Resolves a bearer, for a portal that is not public.
-	 * @param PublicCatalogue      $catalogue The catalogue.
+	 * @param PortalResolverInterface       $resolver  Resolves the portal of the request.
+	 * @param PortalSessionServiceInterface $session   Resolves a bearer, for a portal that is not public.
+	 * @param PublicCatalogueInterface      $catalogue The catalogue.
+	 * @param PublicCatalogueQueryInterface $publicCatalogueQuery The PublicCatalogueQuery helper.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly PortalResolver $resolver,
-		private readonly PortalSessionService $session,
-		private readonly PublicCatalogue $catalogue,
+		private readonly PortalResolverInterface $resolver,
+		private readonly PortalSessionServiceInterface $session,
+		private readonly PublicCatalogueInterface $catalogue,
+		private readonly PublicCatalogueQueryInterface $publicCatalogueQuery,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -124,19 +126,14 @@ class ContentCatalogueController extends Controller {
 	#[AnonRateLimit(limit: 240, period: 60)]
 	public function index(?string $portal = null): JSONResponse {
 		$asked    = $this->askedQuery();
-		$resolved = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
-		if ($resolved === null) {
-			return $this->notFound();
-		}
-
-		$refusal = $this->refuseUnlessPermitted(portal: $resolved);
-		if ($refusal !== null) {
-			return $refusal;
+		$resolved = $this->permittedPortal(portal: $portal);
+		if ($resolved instanceof JSONResponse) {
+			return $resolved;
 		}
 
 		$slug   = (string)$resolved['slug'];
 		$params = $this->queryParams(asked: $asked, slug: $slug);
-		$result = (new PublicCatalogueQuery())->run(items: $this->catalogue->itemsFor(portal: $slug), params: $params);
+		$result = $this->publicCatalogueQuery->run(items: $this->catalogue->itemsFor(portal: $slug), params: $params);
 
 		return $this->publicJson(payload: $result);
 	}//end index()
@@ -232,7 +229,7 @@ class ContentCatalogueController extends Controller {
 	 * @return string The sort.
 	 */
 	private static function sortKey(string $sort): string {
-		if (in_array($sort, PublicCatalogueQuery::SORTS, true) === true) {
+		if (in_array($sort, PublicCatalogueQueryInterface::SORTS, true) === true) {
 			return $sort;
 		}
 
@@ -296,14 +293,9 @@ class ContentCatalogueController extends Controller {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 60, period: 60)]
 	public function kinds(?string $portal = null): JSONResponse {
-		$resolved = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
-		if ($resolved === null) {
-			return $this->notFound();
-		}
-
-		$refusal = $this->refuseUnlessPermitted(portal: $resolved);
-		if ($refusal !== null) {
-			return $refusal;
+		$resolved = $this->permittedPortal(portal: $portal);
+		if ($resolved instanceof JSONResponse) {
+			return $resolved;
 		}
 
 		return $this->publicJson(payload: ['kinds' => $this->catalogue->kindsFor(portal: (string)$resolved['slug'])]);
@@ -328,14 +320,9 @@ class ContentCatalogueController extends Controller {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 120, period: 60)]
 	public function detail(?string $portal = null, string $app = '', string $kind = '', string $slug = ''): JSONResponse {
-		$resolved = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
-		if ($resolved === null) {
-			return $this->notFound();
-		}
-
-		$refusal = $this->refuseUnlessPermitted(portal: $resolved);
-		if ($refusal !== null) {
-			return $refusal;
+		$resolved = $this->permittedPortal(portal: $portal);
+		if ($resolved instanceof JSONResponse) {
+			return $resolved;
 		}
 
 		$found = $this->catalogue->detailFor(portal: (string)$resolved['slug'], appId: $app, kind: $kind, slug: $slug);
@@ -360,7 +347,6 @@ class ContentCatalogueController extends Controller {
 	 * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-3
 	 */
 	private function withVisitorValues(string $portal, string $app, array $filters): array {
-		$subject  = null;
 		$resolved = null;
 		foreach ($filters as $label => $values) {
 			$values = array_values(array_filter((array)$values, 'is_string'));
@@ -370,11 +356,7 @@ class ContentCatalogueController extends Controller {
 
 			$values = array_values(array_filter($values, static fn (string $value): bool => $value !== self::VISITOR));
 			if ($resolved === null) {
-				$subject  = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
-				$resolved = [];
-				if ($subject !== null && $app !== '') {
-					$resolved = $this->catalogue->visitorValuesFor(portal: $portal, appId: $app, subject: $subject);
-				}
+				$resolved = $this->visitorValues(portal: $portal, app: $app);
 			}
 
 			$values = array_merge($values, ($resolved[$label] ?? []));
@@ -388,4 +370,24 @@ class ContentCatalogueController extends Controller {
 
 		return $filters;
 	}//end withVisitorValues()
+
+	/**
+	 * The signed-in visitor's own values from the app, per filter label; none for an anonymous visitor.
+	 *
+	 * @param string $portal The portal slug.
+	 * @param string $app    The app whose index is read.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-3
+	 */
+	private function visitorValues(string $portal, string $app): array {
+		$subject  = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
+		$resolved = [];
+		if ($subject !== null && $app !== '') {
+			$resolved = $this->catalogue->visitorValuesFor(portal: $portal, appId: $app, subject: $subject);
+		}
+
+		return $resolved;
+	}//end visitorValues()
 }//end class

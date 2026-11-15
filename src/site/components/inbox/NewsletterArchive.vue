@@ -51,7 +51,7 @@ import TranslatedText from './TranslatedText.vue'
 import { hasArchive } from '../../pages/inbox/translation.js'
 
 /**
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-school-news-req-srp-033
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-school-news-req-srp-033
  */
 export default {
 	name: 'NewsletterArchive',
@@ -70,7 +70,7 @@ export default {
 	computed: {
 		/**
 		 * @return {boolean} Whether there is a newsletter to show.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-school-news-req-srp-033
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-school-news-req-srp-033
 		 */
 		shown() {
 			return hasArchive(this.archive)
@@ -82,7 +82,7 @@ export default {
 		 * @param {object} newsletter The newsletter.
 		 * @param {number} i Its position.
 		 * @return {string} Its id.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-school-news-req-srp-033
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-school-news-req-srp-033
 		 */
 		newsletterKey(newsletter, i) {
 			return String(newsletter.id || newsletter['@self']?.id || i)
@@ -91,7 +91,7 @@ export default {
 		/**
 		 * @param {object} newsletter The newsletter.
 		 * @return {Array<object>} Its items.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-school-news-req-srp-033
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-school-news-req-srp-033
 		 */
 		itemsOf(newsletter) {
 			return Array.isArray(newsletter.items) ? newsletter.items : []

@@ -31,7 +31,7 @@ namespace OCA\Portaliq\Listener;
 use DateTimeImmutable;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
-use OCA\Portaliq\Service\PortalNoticeReader;
+use OCA\Portaliq\Kernel\Contracts\PortalNoticeReaderInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\IL10N;
@@ -53,7 +53,7 @@ class NoticeWriteGuardListener implements IEventListener {
 	/**
 	 * The slug of the schema this guard checks.
 	 */
-	private const GUARDED_SCHEMA = PortalNoticeReader::SCHEMA;
+	private const GUARDED_SCHEMA = PortalNoticeReaderInterface::SCHEMA;
 
 	/**
 	 * How this guard names itself in the log.

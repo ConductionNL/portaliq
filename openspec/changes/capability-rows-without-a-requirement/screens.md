@@ -1,0 +1,21 @@
+# Screens
+
+- portaliq/PtSessies portaliq: sessies https://identity.conduction.nl/screens/board?id=portaliq/PtSessies
+- portaliq/PtPortalInstellingen portaliq: portal, instellingen https://identity.conduction.nl/screens/board?id=portaliq/PtPortalInstellingen
+- portaliq/PtBericht portaliq: bericht https://identity.conduction.nl/screens/board?id=portaliq/PtBericht
+- portaliq/PtDashboard portaliq beheer: dashboard https://identity.conduction.nl/screens/board?id=portaliq/PtDashboard
+- portaliq/WooVerzoekVerstuurd Woo-verzoek: bevestiging https://identity.conduction.nl/screens/board?id=portaliq/WooVerzoekVerstuurd
+- portaliq/PtInzending portaliq: inzending https://identity.conduction.nl/screens/board?id=portaliq/PtInzending
+- portaliq/PtInzendingen portaliq: inzendingen https://identity.conduction.nl/screens/board?id=portaliq/PtInzendingen
+- portaliq/Begrippen Site: begrippenlijst https://identity.conduction.nl/screens/board?id=portaliq/Begrippen
+- portaliq/PtBegrippen portaliq: begrippenlijst https://identity.conduction.nl/screens/board?id=portaliq/PtBegrippen
+- portaliq/Home Website: home https://identity.conduction.nl/screens/board?id=portaliq/Home
+- huisstijl/Kop Onderdeel: kop en hoofdmenu https://identity.conduction.nl/screens/board?id=huisstijl/Kop
+- huisstijl/Voet Onderdeel: voettekst https://identity.conduction.nl/screens/board?id=huisstijl/Voet
+- portaliq/EditorMenu Redacteur: menu van het portaal https://identity.conduction.nl/screens/board?id=portaliq/EditorMenu
+- portaliq/MobielHome Telefoon: home https://identity.conduction.nl/screens/board?id=portaliq/MobielHome
+- portaliq/MobielZaak Telefoon: uw zaak https://identity.conduction.nl/screens/board?id=portaliq/MobielZaak
+- portaliq/Zoeken Website: Woo-publicaties zoeken https://identity.conduction.nl/screens/board?id=portaliq/Zoeken
+- portaliq/ZoekenGeenTreffers Site: zoeken zonder treffers https://identity.conduction.nl/screens/board?id=portaliq/ZoekenGeenTreffers
+- portaliq/PtVerkeer portaliq: verkeer https://identity.conduction.nl/screens/board?id=portaliq/PtVerkeer
+- portaliq/Cookieverklaring Site: cookieverklaring https://identity.conduction.nl/screens/board?id=portaliq/Cookieverklaring

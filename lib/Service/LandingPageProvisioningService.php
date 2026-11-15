@@ -32,6 +32,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Event\LandingPageRequestedEvent;
+use OCA\Portaliq\Kernel\Contracts\LandingPageProvisioningServiceInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -40,7 +41,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-a-contributing-app-requests-a-landing-page-via-a-typed-event
  */
-class LandingPageProvisioningService {
+class LandingPageProvisioningService implements LandingPageProvisioningServiceInterface {
 
 	/**
 	 * The register every schema this service touches lives in.
@@ -436,28 +437,50 @@ class LandingPageProvisioningService {
 		$row = $this->resolvePublishedPortal(portal: $portal);
 		$domains = (array)($row['domains'] ?? []);
 
-		$hostname = null;
-		foreach ($domains as $domain) {
-			if (is_array($domain) === false) {
-				continue;
-			}
-
-			if (($domain['verified'] ?? false) === true) {
-				$hostname = (string)($domain['hostname'] ?? '');
-				break;
-			}
-		}
-
-		if ($hostname === null && count($domains) > 0 && is_array($domains[0]) === true) {
-			$hostname = (string)($domains[0]['hostname'] ?? '');
-		}
-
+		$hostname = $this->hostnameOf(domains: $domains);
 		if ($hostname === null || $hostname === '') {
 			return null;
 		}
 
 		return 'https://' . $hostname . $route;
 	}//end publicUrlFor()
+
+	/**
+	 * The first verified domain's hostname, else the first domain's.
+	 *
+	 * @param array<mixed> $domains The portal's domains.
+	 *
+	 * @return string|null Null when there is no domain to take it from.
+	 */
+	private function hostnameOf(array $domains): string|null {
+		$hostname = $this->verifiedHostname(domains: $domains);
+		if ($hostname === null && count($domains) > 0 && is_array($domains[0]) === true) {
+			$hostname = (string)($domains[0]['hostname'] ?? '');
+		}
+
+		return $hostname;
+	}//end hostnameOf()
+
+	/**
+	 * The first verified domain's hostname.
+	 *
+	 * @param array<mixed> $domains The portal's domains.
+	 *
+	 * @return string|null Null when no domain is verified.
+	 */
+	private function verifiedHostname(array $domains): string|null {
+		foreach ($domains as $domain) {
+			if (is_array($domain) === false) {
+				continue;
+			}
+
+			if (($domain['verified'] ?? false) === true) {
+				return (string)($domain['hostname'] ?? '');
+			}
+		}
+
+		return null;
+	}//end verifiedHostname()
 
 	/**
 	 * Extract a written row's identifier (`id`/`uuid`, flat or `@self`).
@@ -471,19 +494,6 @@ class LandingPageProvisioningService {
 			return '';
 		}
 
-		$self = ($row['@self'] ?? null);
-		$candidates = [($row['id'] ?? null), ($row['uuid'] ?? null)];
-		if (is_array($self) === true) {
-			$candidates[] = ($self['id'] ?? null);
-			$candidates[] = ($self['uuid'] ?? null);
-		}
-
-		foreach ($candidates as $candidate) {
-			if ((is_string($candidate) === true || is_int($candidate) === true) && (string)$candidate !== '') {
-				return (string)$candidate;
-			}
-		}
-
-		return '';
+		return ((new RowIdLookup())->firstIdOrUuid(row: $row) ?? '');
 	}//end rowId()
 }//end class

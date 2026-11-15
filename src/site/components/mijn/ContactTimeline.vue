@@ -56,7 +56,7 @@ import { channelIcon, newestFirst, textOf } from '../collections/timeline.js'
 import { momentInWords } from './documents.js'
 
 /**
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
  */
 export default {
 	name: 'ContactTimeline',
@@ -73,7 +73,7 @@ export default {
 	computed: {
 		/**
 		 * @return {Array<object>} The entries, newest first.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 		 */
 		ordered() {
 			return newestFirst(this.entries)
@@ -87,7 +87,7 @@ export default {
 		/**
 		 * @param {object} entry An entry.
 		 * @return {string} Its machine-readable moment, or ''.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 		 */
 		stamp(entry) {
 			const value = entry?.occurredAt || entry?.date || ''
@@ -97,7 +97,7 @@ export default {
 		/**
 		 * @param {object} entry An entry.
 		 * @return {string} Its moment in words.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 		 */
 		moment(entry) {
 			return momentInWords(this.stamp(entry), this.tr, this.locale)

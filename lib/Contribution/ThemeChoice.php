@@ -25,6 +25,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\ThemeChoiceInterface;
+
 /**
  * A contribution tags a collection or an action with a `theme` slug. The
  * portal decides which slugs exist (`portal.themes`): a tag the portal does not
@@ -33,7 +35,7 @@ namespace OCA\Portaliq\Contribution;
  *
  * @spec openspec/changes/life-domain-theme-pages/specs/life-domain-themes/spec.md
  */
-class ThemeChoice {
+class ThemeChoice implements ThemeChoiceInterface {
 
 	/**
 	 * A theme slug, as it appears in an address.
@@ -53,27 +55,47 @@ class ThemeChoice {
 		$out  = [];
 		$seen = [];
 		foreach ($this->asList(value: $themes) as $theme) {
-			if (is_array($theme) === false) {
+			$entry = $this->themeEntry(theme: $theme, seen: $seen);
+			if ($entry === null) {
 				continue;
 			}
 
-			$slug  = $this->text(value: ($theme['slug'] ?? null));
-			$title = $this->text(value: ($theme['title'] ?? null));
-			if (preg_match(self::SLUG, $slug) !== 1 || $title === '' || isset($seen[$slug]) === true) {
-				continue;
-			}
-
-			$seen[$slug] = true;
-			$out[]       = [
-				'slug'          => $slug,
-				'title'         => $title,
-				'intro'         => $this->text(value: ($theme['intro'] ?? null)),
-				'productsLabel' => $this->text(value: ($theme['productsLabel'] ?? null)),
-			];
+			$seen[$entry['slug']] = true;
+			$out[] = $entry;
 		}
 
 		return $out;
 	}//end declared()
+
+	/**
+	 * One declared theme, or null when it is no array, has a bad slug or no
+	 * title, or its slug was seen already.
+	 *
+	 * @param mixed               $theme The declared theme.
+	 * @param array<string, bool> $seen  The slugs seen so far.
+	 *
+	 * @return array{slug: string, title: string, intro: string, productsLabel: string}|null
+	 *
+	 * @spec openspec/changes/life-domain-theme-pages/tasks.md#t01
+	 */
+	private function themeEntry(mixed $theme, array $seen): array|null {
+		if (is_array($theme) === false) {
+			return null;
+		}
+
+		$slug  = $this->text(value: ($theme['slug'] ?? null));
+		$title = $this->text(value: ($theme['title'] ?? null));
+		if (preg_match(self::SLUG, $slug) !== 1 || $title === '' || isset($seen[$slug]) === true) {
+			return null;
+		}
+
+		return [
+			'slug'          => $slug,
+			'title'         => $title,
+			'intro'         => $this->text(value: ($theme['intro'] ?? null)),
+			'productsLabel' => $this->text(value: ($theme['productsLabel'] ?? null)),
+		];
+	}//end themeEntry()
 
 	/**
 	 * A value as an array, or an empty one.
@@ -116,34 +138,61 @@ class ThemeChoice {
 	 * @spec openspec/changes/life-domain-theme-pages/tasks.md#t02
 	 */
 	public function arrange(array $aggregate, mixed $themes): array {
-		$declared = $this->declared(themes: $themes);
-		$slugs    = array_column($declared, 'slug');
-		$used     = [];
+		$declared      = $this->declared(themes: $themes);
+		$run           = new ThemeTagRun(slugs: array_column($declared, 'slug'));
 		$contributions = $this->asList(value: ($aggregate['contributions'] ?? null));
 		foreach ($contributions as $index => $contribution) {
-			if (is_array($contribution) === false) {
-				continue;
-			}
-
-			foreach (['collections', 'actions'] as $kind) {
-				foreach ($this->asList(value: ($contribution[$kind] ?? null)) as $position => $entry) {
-					if (is_array($entry) === false || array_key_exists('theme', $entry) === false) {
-						continue;
-					}
-
-					if (is_string($entry['theme']) === true && in_array($entry['theme'], $slugs, true) === true) {
-						$used[$entry['theme']] = true;
-						continue;
-					}
-
-					unset($contributions[$index][$kind][$position]['theme']);
-				}
+			if (is_array($contribution) === true) {
+				$contributions[$index] = $this->withDeclaredTags(contribution: $contribution, run: $run);
 			}
 		}
 
 		$aggregate['contributions'] = $contributions;
-		$aggregate['themes']        = array_values(array_filter($declared, static fn (array $theme): bool => isset($used[$theme['slug']])));
+		$aggregate['themes']        = array_values(array_filter($declared, static fn (array $theme): bool => isset($run->used[$theme['slug']])));
 
 		return $aggregate;
 	}//end arrange()
+
+	/**
+	 * One contribution with every collection's and action's tag that names
+	 * no declared theme dropped.
+	 *
+	 * @param array<string, mixed> $contribution The contribution.
+	 * @param ThemeTagRun          $run          The declared slugs and the themes used so far.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withDeclaredTags(array $contribution, ThemeTagRun $run): array {
+		foreach (['collections', 'actions'] as $kind) {
+			foreach ($this->asList(value: ($contribution[$kind] ?? null)) as $position => $entry) {
+				if ($this->keepsTag(entry: $entry, run: $run) === false) {
+					unset($contribution[$kind][$position]['theme']);
+				}
+			}
+		}
+
+		return $contribution;
+	}//end withDeclaredTags()
+
+	/**
+	 * Whether an entry keeps its tag: an entry without one is left alone, and
+	 * a tag naming a declared slug is kept and marks its theme used.
+	 *
+	 * @param mixed       $entry The collection or action.
+	 * @param ThemeTagRun $run   The declared slugs and the themes used so far.
+	 *
+	 * @return bool
+	 */
+	private function keepsTag(mixed $entry, ThemeTagRun $run): bool {
+		if (is_array($entry) === false || array_key_exists('theme', $entry) === false) {
+			return true;
+		}
+
+		if (is_string($entry['theme']) === true && in_array($entry['theme'], $run->slugs, true) === true) {
+			$run->used[$entry['theme']] = true;
+			return true;
+		}
+
+		return false;
+	}//end keepsTag()
 }//end class

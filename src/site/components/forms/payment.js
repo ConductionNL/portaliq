@@ -19,26 +19,47 @@
  */
 export function feeAmount(fee, locale) {
 	const value = Number(fee?.amount)
-	if (
-		!fee
-		|| !Number.isFinite(value)
-		|| value <= 0
-		|| !/^[A-Z]{3}$/.test(String(fee.currency || ''))
-	) {
+	if (!isUsableFee(fee, value)) {
 		return ''
 	}
 	try {
-		return new Intl.NumberFormat(
-			String(locale || 'nl').startsWith('en') ? 'en-GB' : 'nl-NL',
-			{
-				style: 'currency',
-				currency: fee.currency,
-			},
-		).format(value)
+		return new Intl.NumberFormat(feeLocale(locale), {
+			style: 'currency',
+			currency: fee.currency,
+		}).format(value)
 	} catch {
 		return `${fee.currency} ${fee.amount}`
 	}
 }
+
+/**
+ * @param {{amount: string, currency: string}|null} fee The declared fee.
+ * @param {number} value Its amount as a number.
+ * @return {boolean} Whether it is an amount above zero in a three-letter currency.
+ */
+function isUsableFee(fee, value) {
+	return (
+		Boolean(fee)
+		&& Number.isFinite(value)
+		&& value > 0
+		&& /^[A-Z]{3}$/.test(String(fee.currency || ''))
+	)
+}
+
+/**
+ * @param {string} locale The page language.
+ * @return {string} The locale a fee is written in.
+ */
+function feeLocale(locale) {
+	return String(locale || 'nl').startsWith('en') ? 'en-GB' : 'nl-NL'
+}
+
+/** What the return page says for each payment state it knows. */
+const PAYMENT_VIEWS = new Map([
+	['paid', { key: 'paid', again: false }],
+	['unpaid', { key: 'unpaid', again: true }],
+	['failed', { key: 'paymentFailed', again: true }],
+])
 
 /**
  * What the return page says about a payment.
@@ -51,16 +72,8 @@ export function paymentView(payment) {
 	if (!payment || typeof payment.state !== 'string') {
 		return null
 	}
-	switch (payment.state) {
-		case 'paid':
-			return { key: 'paid', again: false }
-		case 'unpaid':
-			return { key: 'unpaid', again: true }
-		case 'failed':
-			return { key: 'paymentFailed', again: true }
-		default:
-			return { key: 'paymentUnknown', again: false }
-	}
+	const view = PAYMENT_VIEWS.get(payment.state)
+	return view ? { ...view } : { key: 'paymentUnknown', again: false }
 }
 
 /**

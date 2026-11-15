@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/guardian-direct-messages/design.md#participation-model
+ * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#participation-model
  */
 
 declare(strict_types=1);
@@ -33,7 +33,7 @@ use OCA\Portaliq\Service\GroupStaffFixtureReader;
 use OCA\Portaliq\Service\GuardianAudienceFixtureReader;
 
 /**
- * @spec openspec/changes/guardian-direct-messages/design.md#participation-model
+ * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#participation-model
  */
 class MessageThreadAccessGuard {
 	private const KIND_DIRECT = 'direct';
@@ -62,7 +62,7 @@ class MessageThreadAccessGuard {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/specs/guardian-direct-messaging/spec.md#requirement-a-guardian-may-start-a-direct-thread-with-a-teacher-who-teaches-their-childs-group
+	 * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-a-guardian-may-start-a-direct-thread-with-a-teacher-who-teaches-their-childs-group
 	 */
 	public function canCreateDirect(array $participantRefs, string $createdBy): bool {
 		if (count($participantRefs) !== 2 || in_array($createdBy, $participantRefs, true) === false) {
@@ -87,7 +87,7 @@ class MessageThreadAccessGuard {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/specs/guardian-direct-messaging/spec.md#requirement-a-group-thread-reaches-every-in-audience-guardian-replies-are-two-way
+	 * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-a-group-thread-reaches-every-in-audience-guardian-replies-are-two-way
 	 */
 	public function canCreateGroup(string $groupRef, string $createdBy): bool {
 		return $groupRef !== '' && $this->staffReader->staffTeachesGroup(staffRef: $createdBy, groupRef: $groupRef);
@@ -103,7 +103,7 @@ class MessageThreadAccessGuard {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/specs/guardian-direct-messaging/spec.md#requirement-every-readpostmark-read-re-verifies-participation-server-side
+	 * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-every-readpostmark-read-re-verifies-participation-server-side
 	 */
 	public function isParticipant(array $thread, string $subjectRef, bool $isStaff): bool {
 		if ($subjectRef === '') {

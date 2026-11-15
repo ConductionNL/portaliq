@@ -24,6 +24,7 @@ use OCA\Portaliq\Service\Intake\DestinationDraft;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Contribution\CreateBody;
 
 /**
  * The answers a draft shows and the body a draft holds, pinned per action
@@ -95,7 +96,7 @@ class ActionDraftAnswersGoldenTest extends TestCase {
 			registry: $this->createMock(originalClassName: PortalContributionRegistry::class),
 			reader: $reader,
 			writer: $writer,
-			drafts: $this->createMock(originalClassName: DestinationDraft::class)
+			drafts: $this->createMock(originalClassName: DestinationDraft::class), createBody: new CreateBody()
 		);
 	}//end drafts()
 

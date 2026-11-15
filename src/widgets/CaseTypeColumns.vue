@@ -8,7 +8,7 @@
   link or code, and sees what the resident sees. Saving writes the portal's
   caseTypeColumns for this case type through PortalCaseTypesController.
 
-  @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
+  @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
 -->
 <template>
 	<section
@@ -132,7 +132,7 @@ export default {
 		 * The id of the section heading.
 		 *
 		 * @return {string}
-		 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
+		 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
 		 */
 		headingId() {
 			return `case-type-columns-title-${this.caseType.typeId}`
@@ -142,7 +142,7 @@ export default {
 		 * The display choices, the case app's own first.
 		 *
 		 * @return {Array<{id: string, label: string}>}
-		 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
+		 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
 		 */
 		options() {
 			const labels = {
@@ -161,7 +161,7 @@ export default {
 		 * The address the preview code draws: this portal's My cases page.
 		 *
 		 * @return {string}
-		 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
+		 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
 		 */
 		previewValue() {
 			return `${window.location.origin}/mijn/zaken`
@@ -176,7 +176,7 @@ export default {
 		 *
 		 * @param {string} render The render kind.
 		 * @return {object}
-		 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
+		 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
 		 */
 		optionOf(render) {
 			return this.options.find((option) => option.id === render) || this.options[0]
@@ -188,7 +188,7 @@ export default {
 		 * @param {object} row The column.
 		 * @param {object|null} option The chosen display.
 		 * @return {void}
-		 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
+		 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
 		 */
 		setRender(row, option) {
 			row.render = option?.id || ''
@@ -201,7 +201,7 @@ export default {
 		 * @param {object} row The column.
 		 * @param {string} value The words.
 		 * @return {void}
-		 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
+		 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
 		 */
 		setLinkLabel(row, value) {
 			row.linkLabel = String(value || '')
@@ -212,7 +212,7 @@ export default {
 		 * Save this case type's columns.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
+		 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
 		 */
 		async save() {
 			this.saving = true

@@ -17,21 +17,49 @@
  */
 export function recordListsFrom(answer) {
 	const lists = []
-	for (const contribution of Array.isArray(answer?.contributions)
-		? answer.contributions
-		: []) {
-		for (const entry of Array.isArray(contribution?.publicRecords)
-			? contribution.publicRecords
-			: []) {
-			const app = String(entry?.app || contribution?.app || '')
-			const id = String(entry?.id || '')
-			if (app !== '' && id !== '') {
-				lists.push({ app, id, label: String(entry?.label || id) })
+	for (const contribution of listOf(answer?.contributions)) {
+		for (const entry of listOf(contribution?.publicRecords)) {
+			const list = recordListOf(entry, contribution)
+			if (list !== null) {
+				lists.push(list)
 			}
 		}
 	}
 
 	return lists
+}
+
+/**
+ * @param {unknown} value A value that should be a list.
+ * @return {Array} The value, or an empty list when it is not one.
+ */
+function listOf(value) {
+	return Array.isArray(value) ? value : []
+}
+
+/**
+ * @param {object|null} entry The contribution's public record entry.
+ * @param {object|null} contribution The contribution.
+ * @return {string} The app the list belongs to: its own, else the contribution's.
+ */
+function listApp(entry, contribution) {
+	return String(entry?.app || contribution?.app || '')
+}
+
+/**
+ * One public record list of a contribution, when it names its app and id.
+ *
+ * @param {object|null} entry The contribution's public record entry.
+ * @param {object|null} contribution The contribution.
+ * @return {{app: string, id: string, label: string}|null} The list, or null.
+ */
+function recordListOf(entry, contribution) {
+	const app = listApp(entry, contribution)
+	const id = String(entry?.id || '')
+	if (app === '' || id === '') {
+		return null
+	}
+	return { app, id, label: String(entry?.label || id) }
 }
 
 /**

@@ -29,23 +29,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\PublicIndexKindsInterface;
+
 /**
  * Holds an app's declared index kinds to a fixed shape.
  *
  * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-1
  */
-class PublicIndexKinds {
-	/**
-	 * The contract method an app may implement.
-	 */
-	public const METHOD = 'getPublicIndexKinds';
-
-	/**
-	 * The contract method that resolves the value `visitor` for a signed-in
-	 * person: `getPublicIndexVisitor(string $portal, array $subject): array`
-	 * answering `{filter label: values[]}`.
-	 */
-	public const VISITOR_METHOD = 'getPublicIndexVisitor';
+class PublicIndexKinds implements PublicIndexKindsInterface {
 
 	private const MAX_KINDS = 20;
 
@@ -68,31 +59,72 @@ class PublicIndexKinds {
 			return [];
 		}
 
+		return $this->wellFormed(appId: $appId, entries: array_slice(array_values($answer), 0, self::MAX_KINDS));
+	}//end kinds()
+
+	/**
+	 * Each entry with a well-formed type not seen before, as a kind.
+	 *
+	 * @param string       $appId   The app that answered.
+	 * @param array<mixed> $entries The first entries the app returned.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function wellFormed(string $appId, array $entries): array {
 		$out  = [];
 		$seen = [];
-		foreach (array_slice(array_values($answer), 0, self::MAX_KINDS) as $entry) {
-			$type = null;
-			if (is_array($entry) === true) {
-				$type = ($entry['type'] ?? null);
-			}
-
-			if (is_string($type) === false || preg_match('/^[a-z][A-Za-z0-9]{0,39}$/', $type) !== 1 || isset($seen[$type]) === true) {
+		foreach ($entries as $entry) {
+			$type = $this->typeOf(entry: $entry);
+			if ($type === null || isset($seen[$type]) === true) {
 				continue;
 			}
 
 			$seen[$type] = true;
-			$out[]       = [
-				'app'        => $appId,
-				'type'       => $type,
-				'label'      => ($this->text(value: ($entry['label'] ?? null)) ?? $type),
-				'categories' => $this->texts(values: ($entry['categories'] ?? null)),
-				'filters'    => $this->filters(declared: ($entry['filters'] ?? null)),
-				'columns'    => $this->columns(declared: ($entry['columns'] ?? null)),
-			];
+			$out[]       = $this->kind(appId: $appId, type: $type, entry: $entry);
 		}
 
 		return $out;
-	}//end kinds()
+	}//end wellFormed()
+
+	/**
+	 * The entry's type when it is a well-formed name.
+	 *
+	 * @param mixed $entry One entry the app returned.
+	 *
+	 * @return string|null
+	 */
+	private function typeOf(mixed $entry): string|null {
+		$type = null;
+		if (is_array($entry) === true) {
+			$type = ($entry['type'] ?? null);
+		}
+
+		if (is_string($type) === false || preg_match('/^[a-z][A-Za-z0-9]{0,39}$/', $type) !== 1) {
+			return null;
+		}
+
+		return $type;
+	}//end typeOf()
+
+	/**
+	 * One kind: app, type, label, categories, filters, columns.
+	 *
+	 * @param string               $appId The app that answered.
+	 * @param string               $type  The kind's type.
+	 * @param array<string, mixed> $entry The entry the app returned.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function kind(string $appId, string $type, array $entry): array {
+		return [
+			'app'        => $appId,
+			'type'       => $type,
+			'label'      => ($this->text(value: ($entry['label'] ?? null)) ?? $type),
+			'categories' => $this->texts(values: ($entry['categories'] ?? null)),
+			'filters'    => $this->filters(declared: ($entry['filters'] ?? null)),
+			'columns'    => $this->columns(declared: ($entry['columns'] ?? null)),
+		];
+	}//end kind()
 
 	/**
 	 * The filter values a signed-in person resolves to, held to text.

@@ -76,7 +76,7 @@ export default {
 		 * @param {string} id The mandate id, or `self`.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-act-for-someone-else-req-srp-041
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-act-for-someone-else-req-srp-041
 		 */
 		choose(id) {
 			chooseActingFor(id)

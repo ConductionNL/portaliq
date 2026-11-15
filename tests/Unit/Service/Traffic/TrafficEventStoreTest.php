@@ -18,7 +18,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Traffic;
 
-use OCA\OpenRegister\Service\Object\BulkSaveOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\BulkSaveOptions;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCA\Portaliq\Service\Traffic\TrafficEventStore;
 use PHPUnit\Framework\TestCase;

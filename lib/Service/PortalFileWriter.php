@@ -37,6 +37,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\PortalFileWriterInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -46,7 +47,7 @@ use Throwable;
  *
  * @spec openspec/specs/portal-contribution-contract/spec.md#scoped-file-attachment-on-a-subject-owned-object
  */
-class PortalFileWriter {
+class PortalFileWriter implements PortalFileWriterInterface {
 	use ObjectFileLookup;
 
 	/**
@@ -64,15 +65,6 @@ class PortalFileWriter {
 	 * Logged when the owned object cannot be resolved.
 	 */
 	private const ENTITY_LOOKUP_WARNING = 'Portaliq: object resolve for file attach failed';
-
-	/**
-	 * The tag on a file a resident sent through the portal, so the case screen
-	 * can list it apart from what staff put in the same folder
-	 * (cases-documents-on-the-case, REQ-CDC-004).
-	 *
-	 * @var string
-	 */
-	public const TAG_FROM_APPLICANT = 'portal:from-applicant';
 
 	/**
 	 * Constructor.
@@ -116,11 +108,24 @@ class PortalFileWriter {
 		string $content,
 		array $tags = [],
 	): ?array {
+		$attachment = new FileAttachment(register: $register, schema: $schema, id: $id, fileName: $fileName, content: $content, tags: $tags);
 		$fileService = $this->fileService();
 		if ($fileService === null) {
 			return null;
 		}
 
+		return $this->addFile(fileService: $fileService, attachment: $attachment);
+	}//end attachFile()
+
+	/**
+	 * Add the file to the owned object's folder through OpenRegister's FileService.
+	 *
+	 * @param object         $fileService OpenRegister's FileService.
+	 * @param FileAttachment $attachment  The file and where it goes.
+	 *
+	 * @return array<string, mixed>|null The attached file's metadata, or null on failure.
+	 */
+	private function addFile(object $fileService, FileAttachment $attachment): ?array {
 		// Resolve the object UUID to a full ObjectEntity FIRST. OpenRegister's
 		// addFile() takes `getObjectFolder()`'s entity-input branch (which
 		// resolves the register from the entity itself) only when handed an
@@ -128,7 +133,7 @@ class PortalFileWriter {
 		// `createObjectFolderById(string, registerId: null)` and throws "Failed
 		// to create file because no objectEntity or registerId given" — so every
 		// portal upload 502'd. Mirrors OpenRegister's own SharesProvider.
-		$entity = $this->resolveObjectEntity(register: $register, schema: $schema, id: $id);
+		$entity = $this->resolveObjectEntity(register: $attachment->register, schema: $attachment->schema, id: $attachment->id);
 		if ($entity === null) {
 			return null;
 		}
@@ -136,19 +141,19 @@ class PortalFileWriter {
 		try {
 			$file = $this->insideWriteContext(write: static fn () => $fileService->addFile(
 				objectEntity: $entity,
-				fileName: $fileName,
-				content: $content,
-				tags: $tags,
-				_schema: $schema,
-				_register: $register
+				fileName: $attachment->fileName,
+				content: $attachment->content,
+				tags: $attachment->tags,
+				_schema: $attachment->schema,
+				_register: $attachment->register
 			));
 		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: OR file attach failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
+			$this->logger->warning('Portaliq: OR file attach failed', ['schema' => $attachment->schema, 'reason' => $e->getMessage()]);
 			return null;
 		}
 
-		return $this->normalise(file: $file, fileName: $fileName);
-	}//end attachFile()
+		return $this->normalise(file: $file, fileName: $attachment->fileName);
+	}//end addFile()
 
 	/**
 	 * Run an OpenRegister write inside the write context, so the change
