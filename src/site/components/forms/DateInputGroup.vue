@@ -61,6 +61,36 @@ import '@utrecht/textbox-css/dist/index.css'
  *
  * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-date-field-must-be-asked-as-day-month-and-year-req-smf-003
  */
+/**
+ * Show a box's digits only, when it holds anything else.
+ *
+ * @param {HTMLInputElement|undefined} box The box typed in, if any.
+ * @param {string} digits Its digits.
+ * @return {void}
+ */
+function showDigits(box, digits) {
+	if (box && box.value !== digits) {
+		box.value = digits
+	}
+}
+
+/**
+ * Whether what was typed finishes a part: while typing, two digits, or a
+ * separator after a digit ("1-" in Dag moves on to Maand). Deleting never
+ * does.
+ *
+ * @param {string} raw What the box holds.
+ * @param {InputEvent|undefined} event The input event.
+ * @return {boolean} True to move on to the next box.
+ */
+function partDone(raw, event) {
+	if (!String(event?.inputType || '').startsWith('insert')) {
+		return false
+	}
+	const digits = raw.replace(/\D/g, '')
+	return digits.length >= 2 || (digits !== '' && /\D$/.test(raw))
+}
+
 export default {
 	name: 'DateInputGroup',
 
@@ -167,17 +197,12 @@ export default {
 				this.fill(whole, event?.target)
 				return
 			}
-			// A box holds digits only; a separator typed after a digit means
-			// the part is done ("1-" in Dag moves on to Maand).
+			// A box holds digits only.
 			const digits = raw.replace(/\D/g, '')
-			const separated = digits !== '' && /\D$/.test(raw)
-			if (event?.target && event.target.value !== digits) {
-				event.target.value = digits
-			}
+			showDigits(event?.target, digits)
 			this.parts = { ...this.parts, [key]: digits }
 			this.send()
-			const typed = String(event?.inputType || '').startsWith('insert')
-			if (key !== 'year' && typed && (digits.length >= 2 || separated)) {
+			if (key !== 'year' && partDone(raw, event)) {
 				this.focusBox(ORDER[ORDER.indexOf(key) + 1])
 			}
 		},

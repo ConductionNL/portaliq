@@ -25,13 +25,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-subject-rate-limit/specs/portal-contribution-contract/spec.md#requirement-a-signed-in-portal-session-must-be-rate-limited-per-subject
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-signed-in-portal-session-must-be-rate-limited-per-subject
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\PortalRateLimitInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -41,9 +42,9 @@ use OCP\Security\RateLimiting\IRateLimitExceededException;
 /**
  * Per-subject limit for a portal session, per-IP limit without one.
  *
- * @spec openspec/changes/portal-subject-rate-limit/specs/portal-contribution-contract/spec.md#requirement-a-signed-in-portal-session-must-be-rate-limited-per-subject
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-signed-in-portal-session-must-be-rate-limited-per-subject
  */
-class PortalRateLimit {
+class PortalRateLimit implements PortalRateLimitInterface {
 	/**
 	 * Calls a minute for one signed-in subject: twenty blocks on fifteen
 	 * page loads.
@@ -81,33 +82,75 @@ class PortalRateLimit {
 	 *
 	 * @return JSONResponse|null 429, or null when the call may go on.
 	 *
-	 * @spec openspec/changes/portal-subject-rate-limit/specs/portal-contribution-contract/spec.md#requirement-a-signed-in-portal-session-must-be-rate-limited-per-subject
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-signed-in-portal-session-must-be-rate-limited-per-subject
 	 */
 	public function refusal(string $endpoint, ?array $subject): ?JSONResponse {
 		$subjectRef = (string)($subject['subjectRef'] ?? '');
 		try {
-			if ($subject === null || $subjectRef === '') {
-				$this->limiter->registerAnonRequest(
-					'portaliq-' . $endpoint . '-anonymous',
-					self::ANONYMOUS_LIMIT,
-					self::PERIOD,
-					$this->request->getRemoteAddress()
-				);
-				return null;
-			}
-
-			// The limiter keys a bucket on its identifier plus this value; a
-			// hash of the subject makes it one bucket per subject, from any IP.
-			$this->limiter->registerAnonRequest(
-				'portaliq-' . $endpoint . '-subject',
-				self::SUBJECT_LIMIT,
-				self::PERIOD,
-				'subject:' . hash('sha256', $subjectRef)
-			);
+			$this->count(endpoint: $endpoint, subject: $subject, subjectRef: $subjectRef);
 		} catch (IRateLimitExceededException) {
 			return new JSONResponse(['error' => 'rate_limited'], Http::STATUS_TOO_MANY_REQUESTS);
 		}
 
 		return null;
 	}//end refusal()
+
+	/**
+	 * Count the call in the subject's bucket, or the IP address's without a session.
+	 *
+	 * @param string                    $endpoint   A short name of the endpoint.
+	 * @param array<string, mixed>|null $subject    The resolved portal subject, or null.
+	 * @param string                    $subjectRef The subject's reference, or ''.
+	 *
+	 * @return void
+	 *
+	 * @throws IRateLimitExceededException When the call is over its limit.
+	 */
+	private function count(string $endpoint, array|null $subject, string $subjectRef): void {
+		if ($subject === null || $subjectRef === '') {
+			$this->countAnonymous(endpoint: $endpoint);
+			return;
+		}
+
+		$this->countSubject(endpoint: $endpoint, subjectRef: $subjectRef);
+	}//end count()
+
+	/**
+	 * Count the call per IP address.
+	 *
+	 * @param string $endpoint A short name of the endpoint.
+	 *
+	 * @return void
+	 *
+	 * @throws IRateLimitExceededException When the call is over its limit.
+	 */
+	private function countAnonymous(string $endpoint): void {
+		$this->limiter->registerAnonRequest(
+			'portaliq-' . $endpoint . '-anonymous',
+			self::ANONYMOUS_LIMIT,
+			self::PERIOD,
+			$this->request->getRemoteAddress()
+		);
+	}//end countAnonymous()
+
+	/**
+	 * Count the call per subject.
+	 *
+	 * @param string $endpoint   A short name of the endpoint.
+	 * @param string $subjectRef The subject's reference.
+	 *
+	 * @return void
+	 *
+	 * @throws IRateLimitExceededException When the call is over its limit.
+	 */
+	private function countSubject(string $endpoint, string $subjectRef): void {
+		// The limiter keys a bucket on its identifier plus this value; a
+		// hash of the subject makes it one bucket per subject, from any IP.
+		$this->limiter->registerAnonRequest(
+			'portaliq-' . $endpoint . '-subject',
+			self::SUBJECT_LIMIT,
+			self::PERIOD,
+			'subject:' . hash('sha256', $subjectRef)
+		);
+	}//end countSubject()
 }//end class

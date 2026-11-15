@@ -30,6 +30,29 @@ const WORDS = {
 		emailThrottled: 'Er zijn te veel codes gevraagd. Probeer het later opnieuw.',
 		emailInvalid: 'Vul een geldig e-mailadres in.',
 		emailFailed: 'De code kon niet worden verstuurd. Probeer het later opnieuw.',
+		deskHeading: 'Voor medewerkers',
+		deskIntro:
+			'Medewerker vult in voor een inwoner. De inwoner staat als aanvrager op de zaak.',
+		deskSignIn: 'Inloggen met werkaccount',
+		deskContinueAs: 'Verder als',
+		deskKindBsn: 'Inwoner (BSN)',
+		deskKindKvk: 'Bedrijf (KvK-nummer)',
+		deskKindNamed: 'Uzelf, met de inwoner als aanvrager',
+		deskValueBsn: 'BSN van de inwoner',
+		deskValueKvk: 'KvK-nummer van het bedrijf',
+		deskValueNamed: 'Naam van de inwoner',
+		deskFetch: 'Verder',
+		deskSignedInAs: 'U bent ingelogd met uw werkaccount als {name}.',
+		deskFillingFor: 'U vult dit formulier in voor {applicant}.',
+		deskChange: 'Andere aanvrager kiezen',
+		deskInvalid: 'Vul een geldig BSN, KvK-nummer of een naam in.',
+		deskNotFound: 'Bij dit nummer zijn geen gegevens gevonden. Vul de gegevens zelf in.',
+		deskUnavailable:
+			'De gegevens konden niet worden opgehaald. Vul de gegevens zelf in.',
+		deskRefused: 'U mag dit formulier niet invullen voor een inwoner.',
+		deskChooseFirst: 'Kies eerst voor wie u dit formulier invult.',
+		yiviAsks: 'Met Yivi deelt u voor dit formulier alleen:',
+		yiviHint: 'Deel alleen de gegevens die dit formulier nodig heeft.',
 	},
 	en: {
 		drawHint: 'Draw with your mouse, finger or pen in the box.',
@@ -54,6 +77,28 @@ const WORDS = {
 		emailThrottled: 'Too many codes were asked for. Try again later.',
 		emailInvalid: 'Fill in a valid e-mail address.',
 		emailFailed: 'The code could not be sent. Try again later.',
+		deskHeading: 'For employees',
+		deskIntro:
+			'An employee fills it in for a resident. The resident is the applicant on the case.',
+		deskSignIn: 'Log in with your work account',
+		deskContinueAs: 'Continue as',
+		deskKindBsn: 'Resident (BSN)',
+		deskKindKvk: 'Company (KvK number)',
+		deskKindNamed: 'Yourself, with the resident as applicant',
+		deskValueBsn: 'BSN of the resident',
+		deskValueKvk: 'KvK number of the company',
+		deskValueNamed: 'Name of the resident',
+		deskFetch: 'Continue',
+		deskSignedInAs: 'You are logged in with your work account as {name}.',
+		deskFillingFor: 'You fill in this form for {applicant}.',
+		deskChange: 'Choose another applicant',
+		deskInvalid: 'Fill in a valid BSN, KvK number or a name.',
+		deskNotFound: 'No details were found for this number. Fill in the details yourself.',
+		deskUnavailable: 'The details could not be fetched. Fill in the details yourself.',
+		deskRefused: 'You may not fill in this form for a resident.',
+		deskChooseFirst: 'First choose whom you fill in this form for.',
+		yiviAsks: 'With Yivi you share only this for this form:',
+		yiviHint: 'Share only the details this form needs.',
 	},
 }
 
@@ -92,6 +137,39 @@ export function emailCodeProblem(words, reason) {
 		invalid: words.emailInvalid,
 	}
 	return sentences[reason] || words.emailFailed
+}
+
+/**
+ * The sentence for an applicant lookup that gave no details, by the reason.
+ *
+ * @param {Record<string, string>} words The words.
+ * @param {string} reason The reason: `not_found`, `invalid_applicant`, `staff_mode_refused` or another.
+ * @return {string} The sentence.
+ *
+ * @spec openspec/changes/resident-identity-in-forms/tasks.md#T06
+ */
+export function deskProblem(words, reason) {
+	const sentences = {
+		not_found: words.deskNotFound,
+		invalid_applicant: words.deskInvalid,
+		staff_mode_refused: words.deskRefused,
+	}
+	return sentences[reason] || words.deskUnavailable
+}
+
+/**
+ * The name a Yivi attribute id is shown by: its last part, without the
+ * scheme and issuer before it (`pbdf.gemeente.personalData.fullname` reads
+ * `fullname`).
+ *
+ * @param {string} id The attribute id.
+ * @return {string} The name.
+ *
+ * @spec openspec/changes/resident-identity-in-forms/tasks.md#T05
+ */
+export function yiviAttributeName(id) {
+	const parts = String(id || '').split('.')
+	return parts[parts.length - 1]
 }
 
 /**

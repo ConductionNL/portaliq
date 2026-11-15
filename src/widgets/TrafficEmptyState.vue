@@ -11,7 +11,7 @@
   be the more convincing of the two lies, so neither state renders a
   chart, and each carries its own test id.
 
-  @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-traffic-page-must-show-what-was-measured-and-say-when-it-was-not
+  @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-traffic-page-must-show-what-was-measured-and-say-when-it-was-not
 -->
 <template>
 	<CnWidgetEmptyState

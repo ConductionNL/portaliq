@@ -20,7 +20,9 @@ import AccountLock from 'vue-material-design-icons/AccountLock.vue'
 import AccountMultiple from 'vue-material-design-icons/AccountMultiple.vue'
 import AccountMultipleOutline from 'vue-material-design-icons/AccountMultipleOutline.vue'
 import AccountPlus from 'vue-material-design-icons/AccountPlus.vue'
+import AccountPlusOutline from 'vue-material-design-icons/AccountPlusOutline.vue'
 import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue'
+import AlertOutline from 'vue-material-design-icons/AlertOutline.vue'
 import BellOutline from 'vue-material-design-icons/BellOutline.vue'
 import BookAlphabet from 'vue-material-design-icons/BookAlphabet.vue'
 import BookOpenVariant from 'vue-material-design-icons/BookOpenVariant.vue'
@@ -49,10 +51,12 @@ import CursorDefaultClickOutline from 'vue-material-design-icons/CursorDefaultCl
 import Download from 'vue-material-design-icons/Download.vue'
 import Email from 'vue-material-design-icons/Email.vue'
 import EmailEditOutline from 'vue-material-design-icons/EmailEditOutline.vue'
+import EmailFastOutline from 'vue-material-design-icons/EmailFastOutline.vue'
 import EmailOutline from 'vue-material-design-icons/EmailOutline.vue'
 import EmailPlusOutline from 'vue-material-design-icons/EmailPlusOutline.vue'
 import EmailSearchOutline from 'vue-material-design-icons/EmailSearchOutline.vue'
 import EyeLock from 'vue-material-design-icons/EyeLock.vue'
+import EyeOutline from 'vue-material-design-icons/EyeOutline.vue'
 import FileCheckOutline from 'vue-material-design-icons/FileCheckOutline.vue'
 import FileDocument from 'vue-material-design-icons/FileDocument.vue'
 import FileDocumentEdit from 'vue-material-design-icons/FileDocumentEdit.vue'
@@ -83,6 +87,7 @@ import Pencil from 'vue-material-design-icons/Pencil.vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 import PowerPlugOutline from 'vue-material-design-icons/PowerPlugOutline.vue'
 import Pulse from 'vue-material-design-icons/Pulse.vue'
+import Restore from 'vue-material-design-icons/Restore.vue'
 import ShieldAccount from 'vue-material-design-icons/ShieldAccount.vue'
 import ShieldCheckOutline from 'vue-material-design-icons/ShieldCheckOutline.vue'
 import ShieldKeyOutline from 'vue-material-design-icons/ShieldKeyOutline.vue'
@@ -103,7 +108,9 @@ export default {
 	AccountLock,
 	AccountMultiple,
 	AccountPlus,
+	AccountPlusOutline,
 	AlertCircleOutline,
+	AlertOutline,
 	BellOutline,
 	BookAlphabet,
 	BookOpenVariant,
@@ -122,9 +129,11 @@ export default {
 	Close,
 	CursorDefaultClickOutline,
 	Email,
+	EmailFastOutline,
 	EmailOutline,
 	EmailPlusOutline,
 	EyeLock,
+	EyeOutline,
 	FileCheckOutline,
 	FileDocument,
 	FileDocumentEdit,
@@ -163,6 +172,8 @@ export default {
 	// ADR-077 Tier A: the concept "activity" (the `activityOffer` schema,
 	// extracurricular-activity-offer) is drawn with Pulse.
 	Pulse,
+	// Back to the default text on the Mail templates page.
+	Restore,
 	ShieldAccount,
 	ShieldCheckOutline,
 	ShieldKeyOutline,

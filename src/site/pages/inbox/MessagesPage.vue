@@ -145,6 +145,12 @@
 										:translation="message.translation || null"
 										:t="tr"
 										:locale="lang" />
+									<p
+										v-if="isOwn(message) && readOf(message, thread)"
+										class="pq-message__read"
+										data-testid="messages-read">
+										{{ readOf(message, thread) }}
+									</p>
 								</li>
 							</ol>
 							<form
@@ -258,22 +264,25 @@ import LoadError from '../../components/mijn/LoadError.vue'
 import Skeleton from '../../components/mijn/Skeleton.vue'
 import { mijnTranslator } from '../../components/mijn/rows.js'
 import {
+	chosenContact,
 	contactOptions,
 	conversationTranslator,
 	fetchContacts,
 	markRead,
+	readLine,
 	recordTabs,
 	replyTo,
 	startConversation,
+	takeMessageTo,
 	threadCard,
 	threadsInTab,
 } from './conversations.js'
-import { formatDateTime, rowId } from './inbox.js'
+import { formatDateTime, rowId, sessionStore } from './inbox.js'
 import { PAGE_EMITS, PAGE_PROPS } from './pageProps.js'
 import { pageLocale, withStrings } from './translate.js'
 
 /**
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-messages-in-their-chosen-language-req-srp-032
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-messages-in-their-chosen-language-req-srp-032
  */
 export default {
 	name: 'MessagesPage',
@@ -316,7 +325,7 @@ export default {
 	computed: {
 		/**
 		 * @return {string} `nl` or `en`.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-messages-in-their-chosen-language-req-srp-032
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-messages-in-their-chosen-language-req-srp-032
 		 */
 		lang() {
 			return pageLocale(this.locale)
@@ -324,7 +333,7 @@ export default {
 
 		/**
 		 * @return {(key: string, vars?: object) => string} The translator.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-messages-in-their-chosen-language-req-srp-032
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-messages-in-their-chosen-language-req-srp-032
 		 */
 		tr() {
 			return withStrings(this.t, this.lang)
@@ -332,7 +341,7 @@ export default {
 
 		/**
 		 * @return {(key: string, vars?: object) => string} The translator of the mijn omgeving components.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 		 */
 		mt() {
 			return mijnTranslator(this.t, this.lang)
@@ -410,7 +419,7 @@ export default {
 		 * Read the threads and the chosen language, then open the first thread.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-messages-in-their-chosen-language-req-srp-032
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-messages-in-their-chosen-language-req-srp-032
 		 */
 		async load() {
 			this.failed = false
@@ -436,6 +445,22 @@ export default {
 			this.contacts = found?.contacts || []
 			this.composeLabel = found?.composeLabel || ''
 			this.composeHint = found?.composeHint || ''
+			this.applyMessageTo()
+		},
+
+		/**
+		 * Open the form for the teacher a "Bericht aan ..." button named.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/guardian-message-to-and-whole-day/specs/portal-contribution-contract/spec.md#requirement-a-message-button-opens-the-form-with-its-teacher-chosen
+		 */
+		applyMessageTo() {
+			const value = chosenContact(this.options, takeMessageTo(sessionStore()))
+			if (value === '') {
+				return
+			}
+			this.draft.to = value
+			this.$nextTick(() => this.focusCompose())
 		},
 
 		/**
@@ -545,7 +570,7 @@ export default {
 		 * @param {object} [options] The options.
 		 * @param {boolean} [options.keepNotice] Keep the reply's notice on screen.
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-messages-in-their-chosen-language-req-srp-032
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-messages-in-their-chosen-language-req-srp-032
 		 */
 		async choose(threadId, { keepNotice = false } = {}) {
 			if (!keepNotice) {
@@ -566,7 +591,7 @@ export default {
 		 *
 		 * @param {string} next The language tag, '' for as written.
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-messages-in-their-chosen-language-req-srp-032
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-messages-in-their-chosen-language-req-srp-032
 		 */
 		async changeLanguage(next) {
 			this.error = ''
@@ -583,7 +608,7 @@ export default {
 		 * @param {object} row A thread or message.
 		 * @param {number} [i] Its position.
 		 * @return {string|number} Its id.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-messages-in-their-chosen-language-req-srp-032
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-messages-in-their-chosen-language-req-srp-032
 		 */
 		idOf(row, i = null) {
 			return rowId(row, i)
@@ -592,7 +617,7 @@ export default {
 		/**
 		 * @param {object} message A message.
 		 * @return {boolean} Whether the reader sent it.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-messages-in-their-chosen-language-req-srp-032
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-messages-in-their-chosen-language-req-srp-032
 		 */
 		isOwn(message) {
 			return (
@@ -602,9 +627,21 @@ export default {
 		},
 
 		/**
+		 * When the other side read the resident's own message.
+		 *
+		 * @param {object} message The message.
+		 * @param {object} thread Its conversation.
+		 * @return {string} The line, or '' while unread.
+		 * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-the-sender-sees-when-her-message-was-read
+		 */
+		readOf(message, thread) {
+			return readLine(message, { who: this.cardOf(thread).who, locale: this.lang, tr: this.ct })
+		},
+
+		/**
 		 * @param {string} value An ISO date-time.
 		 * @return {string} The value in the page language.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-messages-in-their-chosen-language-req-srp-032
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-messages-in-their-chosen-language-req-srp-032
 		 */
 		dateTime(value) {
 			return formatDateTime(value, this.lang)
@@ -771,5 +808,11 @@ export default {
 .pq-message__header {
 	display: flex;
 	gap: 8px;
+}
+
+.pq-message__read {
+	margin: 4px 0 0;
+	color: var(--utrecht-document-color, inherit);
+	font-size: 0.9375em;
 }
 </style>

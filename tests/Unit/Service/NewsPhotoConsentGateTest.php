@@ -68,4 +68,28 @@ class NewsPhotoConsentGateTest extends TestCase {
 		$this->assertSame([], $gate->apply(['target' => ['groupRefs' => ['g1']], 'photoRefs' => []])['photoRefs']);
 		$this->assertArrayNotHasKey('photoRefs', $gate->apply(['target' => ['groupRefs' => ['g1']]]));
 	}//end testNoPhotosOrNoChildTargetPassesThroughUnchanged()
+
+	/**
+	 * Children are asked in order, an empty or non-string ref is skipped,
+	 * and the first withheld consent ends the asking.
+	 *
+	 * @return void
+	 */
+	public function testTheChildrenAreAskedInOrderUntilOneWithholds(): void {
+		$asked  = [];
+		$reader = $this->createMock(GuardianAudienceFixtureReader::class);
+		$reader->method('childPhotoConsentGranted')->willReturnCallback(function (string $childRef, string $purpose) use (&$asked): bool {
+			$asked[] = $childRef . '/' . $purpose;
+			return $childRef !== 'c2';
+		});
+		$item = ['title' => 'T', 'photoRefs' => ['p1'], 'target' => ['childRefs' => ['c1', '', 7, 'c2', 'c3']]];
+
+		$this->assertSame(['title' => 'T', 'photoRefs' => [], 'target' => $item['target']], (new NewsPhotoConsentGate($reader))->apply($item));
+		$this->assertSame(['c1/' . GuardianAudienceFixtureReader::PURPOSE_NEWS, 'c2/' . GuardianAudienceFixtureReader::PURPOSE_NEWS], $asked);
+
+		$asked = [];
+		$this->assertSame(['photoRefs' => 'p1', 'target' => ['childRefs' => ['c2']]], (new NewsPhotoConsentGate($reader))->apply(['photoRefs' => 'p1', 'target' => ['childRefs' => ['c2']]]));
+		$this->assertSame(['photoRefs' => ['p1'], 'target' => ['childRefs' => 'c2']], (new NewsPhotoConsentGate($reader))->apply(['photoRefs' => ['p1'], 'target' => ['childRefs' => 'c2']]));
+		$this->assertSame([], $asked);
+	}//end testTheChildrenAreAskedInOrderUntilOneWithholds()
 }//end class

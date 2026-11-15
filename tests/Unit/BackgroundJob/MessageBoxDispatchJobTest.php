@@ -179,6 +179,17 @@ class MessageBoxDispatchJobTest extends TestCase {
 			public function messageBoxRecipient(string $messageId): ?string {
 				return ($messageId === 'bericht-1' ? $this->recipient : 'wrong-message');
 			}
+
+			/**
+			 * A recipient method that fails, quoting the recipient.
+			 *
+			 * @param string $messageId The message.
+			 *
+			 * @return string
+			 */
+			public function failingRecipient(string $messageId): string {
+				throw new \RuntimeException('no recipient for ' . $this->recipient);
+			}
 		};
 		$locator = $this->createMock(PortalProviderLocator::class);
 		$locator->method('locate')->willReturnCallback(static fn (string $appId): ?object => ($appId === 'dossiq' ? $provider : null));
@@ -528,4 +539,57 @@ class MessageBoxDispatchJobTest extends TestCase {
 		$this->assertSame([], $this->events);
 		$this->assertSame([], $created);
 	}//end testNoAccountSendsNothing()
+	/**
+	 * An incomplete record, a missing or failing recipient method send
+	 * nothing; the failure is logged without the recipient.
+	 *
+	 * @return void
+	 */
+	public function testIncompleteRecordAndFailingRecipientSendNothing(): void {
+		$created = [];
+		$updated = [];
+		foreach ([['id' => ''], ['collection' => null], ['app' => 5]] as $broken) {
+			$argument = self::MESSAGE_BOX_ARGUMENT;
+			$argument['record'] = $broken + $argument['record'];
+			$this->invokeRun($this->messageBoxJob(created: $created, updated: $updated, recipient: self::BSN), $argument);
+		}
+
+		$argument = self::MESSAGE_BOX_ARGUMENT;
+		$argument['recipientProvider'] = 'noSuchMethod';
+		$this->invokeRun($this->messageBoxJob(created: $created, updated: $updated, recipient: self::BSN), $argument);
+		$this->assertSame([], $this->logged);
+
+		$argument['recipientProvider'] = 'failingRecipient';
+		$this->invokeRun($this->messageBoxJob(created: $created, updated: $updated, recipient: self::BSN), $argument);
+
+		$this->assertSame([], $this->events);
+		$this->assertSame([], $created);
+		$this->assertSame(
+			[['Portaliq: message box recipient method failed', ['app' => 'dossiq', 'method' => 'failingRecipient', 'exception' => \RuntimeException::class]]],
+			$this->logged
+		);
+	}//end testIncompleteRecordAndFailingRecipientSendNothing()
+
+	/**
+	 * The recipient is trimmed; attachment ids become references, anything
+	 * else is left out.
+	 *
+	 * @return void
+	 */
+	public function testTheRecipientIsTrimmedAndAttachmentsAreReferences(): void {
+		if (class_exists(DigitalPostSendRequestedEvent::class) === false) {
+			$this->markTestSkipped('Integriq is not loadable: run inside Nextcloud or set PORTALIQ_INTEGRIQ_LIB.');
+		}
+
+		$created = [];
+		$updated = [];
+		$message = ['subject' => 'S', 'body' => 'B', 'attachments' => ['doc-1', '', 5, ['documentId' => 'doc-2']], 'ontvanger' => 's1'];
+		$this->invokeRun($this->messageBoxJob(created: $created, updated: $updated, recipient: ' ' . self::BSN . ' ', message: $message), self::MESSAGE_BOX_ARGUMENT);
+		$this->assertSame(self::BSN, $this->events[0]->getRecipient());
+		$this->assertSame([['id' => 'doc-1'], ['documentId' => 'doc-2']], $this->events[0]->getAttachments());
+
+		$message['attachments'] = 'doc-1';
+		$this->invokeRun($this->messageBoxJob(created: $created, updated: $updated, recipient: self::BSN, message: $message), self::MESSAGE_BOX_ARGUMENT);
+		$this->assertSame([], $this->events[1]->getAttachments());
+	}//end testTheRecipientIsTrimmedAndAttachmentsAreReferences()
 }//end class

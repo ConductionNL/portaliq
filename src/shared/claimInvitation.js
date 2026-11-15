@@ -10,10 +10,17 @@
 // never reaches a server access log, and the secret is never put in a
 // return address.
 //
-// Imports nothing, so tests/claim-invitation.spec.mjs runs it as a plain
-// node script.
+// Imports only the shared invitation secret steps, so
+// tests/claim-invitation.spec.mjs runs it as a plain node script.
 //
-// @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+// @spec openspec/specs/portal-identity-space/spec.md
+
+import {
+	forgetSecret,
+	heldInvitation,
+	keepInvitationSecret,
+	keptSecret,
+} from './invitationSecret.js'
 
 export const CLAIM_STORAGE_KEY = 'portaliq.claimInvitation'
 
@@ -28,47 +35,13 @@ const LINK = /^#claim=([^&]+)$/
  * @param {Storage|null} storage sessionStorage, or null.
  * @return {string} The secret, or '' when the page was not opened from an invitation.
  *
- * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 export function keepClaimSecret(location, history, storage) {
-	const match = String(location?.hash || '').match(LINK)
-	if (!match) {
-		return ''
-	}
-
-	const secret = decoded(match[1])
-	try {
-		history?.replaceState(
-			null,
-			'',
-			`${location.pathname || ''}${location.search || ''}`,
-		)
-	} catch {
-		// An address bar that cannot be rewritten still keeps the secret.
-	}
-	if (secret !== '') {
-		try {
-			storage?.setItem(CLAIM_STORAGE_KEY, secret)
-		} catch {
-			// Without storage the invitation is lost at the sign-in; the
-			// link in the mail still works afterwards.
-		}
-	}
-	return secret
-}
-
-/**
- * A fragment value, decoded, or '' when it is not decodable.
- *
- * @param {string} value The encoded value.
- * @return {string}
- */
-function decoded(value) {
-	try {
-		return decodeURIComponent(value)
-	} catch {
-		return ''
-	}
+	return keepInvitationSecret(
+		{ pattern: LINK, key: CLAIM_STORAGE_KEY },
+		{ location, history, storage },
+	)
 }
 
 /**
@@ -78,11 +51,7 @@ function decoded(value) {
  * @return {string}
  */
 export function keptClaimSecret(storage) {
-	try {
-		return String(storage?.getItem(CLAIM_STORAGE_KEY) || '')
-	} catch {
-		return ''
-	}
+	return keptSecret(storage, CLAIM_STORAGE_KEY)
 }
 
 /**
@@ -92,12 +61,23 @@ export function keptClaimSecret(storage) {
  * @return {void}
  */
 export function forgetClaimSecret(storage) {
-	try {
-		storage?.removeItem(CLAIM_STORAGE_KEY)
-	} catch {
-		// Without storage nothing was kept.
-	}
+	forgetSecret(storage, CLAIM_STORAGE_KEY)
 }
+
+/** The sentence for each refusal of the redeem route, by its error. */
+const CLAIM_REFUSALS = new Map([
+	['too_many_attempts', 'Too many attempts. Try again in an hour.'],
+	['trust_too_low', 'You need a more secure way to sign in for this invitation.'],
+	[
+		'account_cannot_receive',
+		'You cannot accept an invitation with this account. Sign in another way and try again.',
+	],
+	[
+		'invitation_conflict',
+		'Your account is already linked in another way. Contact the organisation that invited you.',
+	],
+	['invitation_not_valid', 'This invitation is no longer valid. Ask for a new one.'],
+])
 
 /**
  * The sentence for what the redeem route answered, as an English source key.
@@ -106,7 +86,7 @@ export function forgetClaimSecret(storage) {
  * @param {{ok: boolean, status: number, error: string}} answer The answer.
  * @return {{role: string, text: string}}
  *
- * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 export function claimOutcome(answer) {
 	if (answer && answer.ok) {
@@ -116,37 +96,10 @@ export function claimOutcome(answer) {
 		}
 	}
 	const error = (answer && answer.error) || ''
-	if (error === 'too_many_attempts') {
-		return {
-			role: 'alert',
-			text: 'Too many attempts. Try again in an hour.',
-		}
+	return {
+		role: 'alert',
+		text: CLAIM_REFUSALS.get(error) || 'That did not work. Try again later.',
 	}
-	if (error === 'trust_too_low') {
-		return {
-			role: 'alert',
-			text: 'You need a more secure way to sign in for this invitation.',
-		}
-	}
-	if (error === 'account_cannot_receive') {
-		return {
-			role: 'alert',
-			text: 'You cannot accept an invitation with this account. Sign in another way and try again.',
-		}
-	}
-	if (error === 'invitation_conflict') {
-		return {
-			role: 'alert',
-			text: 'Your account is already linked in another way. Contact the organisation that invited you.',
-		}
-	}
-	if (error === 'invitation_not_valid') {
-		return {
-			role: 'alert',
-			text: 'This invitation is no longer valid. Ask for a new one.',
-		}
-	}
-	return { role: 'alert', text: 'That did not work. Try again later.' }
 }
 
 /**
@@ -156,7 +109,7 @@ export function claimOutcome(answer) {
  * @param {{ok: boolean, status: number, error: string}} answer The answer.
  * @return {{role: string, text: string}}
  *
- * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 export function codeOutcome(answer) {
 	if (answer && answer.ok) {
@@ -212,25 +165,29 @@ function keepsTheSecret(answer) {
  * @param {Storage|null} options.storage sessionStorage, or null.
  * @return {Promise<{role: string, text: string, claimed: boolean}|null>}
  *
- * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 export async function redeemKeptClaim({ api, session, t, storage }) {
-	const secret = keptClaimSecret(storage)
-	if (secret === '') {
-		return null
-	}
-	if (!session) {
-		return {
-			role: 'status',
-			text: t('Sign in to accept your invitation.'),
-			claimed: false,
-		}
+	const { secret, notice } = heldInvitation({ session, t, storage }, CLAIM_STORAGE_KEY)
+	if (notice !== false) {
+		return notice
 	}
 
 	const answer = await api.claimInvitation(secret)
 	if (!keepsTheSecret(answer)) {
 		forgetClaimSecret(storage)
 	}
+	return claimNotice(answer, t)
+}
+
+/**
+ * What the shell shows after the redeem route answered.
+ *
+ * @param {{ok: boolean, status: number, error: string}|null} answer The answer.
+ * @param {(key: string) => string} t The translator.
+ * @return {{role: string, text: string, claimed: boolean}}
+ */
+function claimNotice(answer, t) {
 	const outcome = claimOutcome(answer)
 	return {
 		role: outcome.role,

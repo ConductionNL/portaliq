@@ -149,4 +149,80 @@ class MailLogTest extends TestCase {
 		$run->invoke($job, null);
 		self::assertSame(86400, $job->getInterval());
 	}//end testJobPurges()
+
+	/**
+	 * Every read, write and delete of a send, a retry and a purge, exactly as recorded.
+	 *
+	 * @return void
+	 */
+	public function testEveryStoreCallIsAsRecorded(): void {
+		$calls  = [];
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readObject')->willReturnCallback(
+			static function (...$args) use (&$calls): ?array {
+				$calls[] = ['readObject', array_slice($args, 0, 6)];
+				return match ($args[4]) {
+					'f', 'f2' => ['status' => 'failed', 'portal' => 'p', 'templateKey' => 't', 'recipientMasked' => 'm', 'recipientHash' => 'h', 'subjectRef' => 's', 'caseRef' => 7, 'failureReason' => 'old'],
+					default => null,
+				};
+			}
+		);
+		$reader->method('readCollection')->willReturnCallback(
+			static function (...$args) use (&$calls): array {
+				$calls[] = ['readCollection', array_slice($args, 0, 6)];
+				return [
+					'x',
+					['id' => 'old', 'sentAt' => '2026-06-01T10:00:00+00:00'],
+					['sentAt' => '2026-06-01T10:00:00+00:00'],
+					['@self' => ['uuid' => 'u-1'], 'sentAt' => '2026-06-02T10:00:00+00:00'],
+					['id' => 'stuck', 'sentAt' => '2026-06-03T10:00:00+00:00'],
+					['id' => 'new', 'sentAt' => '2026-10-01T10:00:00+00:00'],
+				];
+			}
+		);
+		$creates = 0;
+		$writer  = $this->createMock(PortalObjectWriter::class);
+		$writer->method('createObject')->willReturnCallback(
+			static function (...$args) use (&$calls, &$creates): ?array {
+				$args[5]['sentAt'] = (DateTimeImmutable::createFromFormat(DATE_ATOM, $args[5]['sentAt']) !== false);
+				$calls[] = ['createObject', array_slice($args, 0, 6)];
+				$creates++;
+				return ($creates === 3 ? null : ['id' => 'n']);
+			}
+		);
+		$writer->method('deleteObject')->willReturnCallback(
+			static function (...$args) use (&$calls): bool {
+				$calls[] = ['deleteObject', array_slice($args, 0, 6)];
+				return $args[5] !== 'stuck';
+			}
+		);
+		$log = new MailLog($reader, $writer);
+
+		self::assertTrue($log->record('p', 't', ' A@B.nl ', 'failed', 'Z-1', 's-1', 'bounce', 'r-0'));
+		self::assertSame('queued', $log->queueRetry(id: 'f'));
+		self::assertSame('error', $log->queueRetry(id: 'f2'));
+		self::assertSame(2, $log->purgeExpired(limit: 9, now: new DateTimeImmutable('2026-10-08T12:00:00+00:00')));
+
+		$row = ['kind' => 'mail', 'portal' => 'p', 'templateKey' => 't', 'recipientMasked' => 'm', 'recipientHash' => 'h', 'subjectRef' => 's', 'caseRef' => '7', 'status' => 'queued', 'failureReason' => '', 'sentAt' => true];
+		self::assertSame(
+			[
+				[
+					'createObject',
+					[
+						MailLog::REGISTER, MailLog::SCHEMA, '', '', '',
+						['kind' => 'mail', 'portal' => 'p', 'templateKey' => 't', 'recipientMasked' => MailLog::mask(email: ' A@B.nl '), 'recipientHash' => hash('sha256', 'a@b.nl'), 'subjectRef' => 's-1', 'caseRef' => 'Z-1', 'status' => 'failed', 'failureReason' => 'bounce', 'sentAt' => true, 'retryOf' => 'r-0'],
+					],
+				],
+				['readObject', [MailLog::REGISTER, MailLog::SCHEMA, 'kind', 'mail', 'f', '']],
+				['createObject', [MailLog::REGISTER, MailLog::SCHEMA, '', '', '', $row + ['retryOf' => 'f']]],
+				['readObject', [MailLog::REGISTER, MailLog::SCHEMA, 'kind', 'mail', 'f2', '']],
+				['createObject', [MailLog::REGISTER, MailLog::SCHEMA, '', '', '', $row + ['retryOf' => 'f2']]],
+				['readCollection', [MailLog::REGISTER, MailLog::SCHEMA, 'kind', 'mail', '', 9]],
+				['deleteObject', [MailLog::REGISTER, MailLog::SCHEMA, 'kind', 'mail', '', 'old']],
+				['deleteObject', [MailLog::REGISTER, MailLog::SCHEMA, 'kind', 'mail', '', 'u-1']],
+				['deleteObject', [MailLog::REGISTER, MailLog::SCHEMA, 'kind', 'mail', '', 'stuck']],
+			],
+			$calls
+		);
+	}//end testEveryStoreCallIsAsRecorded()
 }//end class

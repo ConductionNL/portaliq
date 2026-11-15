@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\CitizenCaseDocumentsInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Http\Response;
@@ -46,7 +47,7 @@ use OCP\AppFramework\Http\StreamResponse;
  *
  * @spec openspec/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
  */
-class CitizenCaseDocuments {
+class CitizenCaseDocuments implements CitizenCaseDocumentsInterface {
 
 	/**
 	 * The id prefix of a resident's own upload.

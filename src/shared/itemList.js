@@ -5,7 +5,7 @@
  * A record's item list (my-dossiers): a dossier's publications, as the
  * owning app lists them through `itemList.provider`, and removing one.
  *
- * @spec openspec/changes/my-dossiers/specs/portal-contribution-contract/spec.md#requirement-an-item-that-is-no-longer-public-must-say-so-req-myd-002
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-item-that-is-no-longer-public-must-say-so-req-myd-002
  */
 
 /**
@@ -49,7 +49,7 @@ export function withoutRemoveAction(collection, actions) {
  * @param {object} row        The record.
  * @param {string} itemId     The item.
  * @return {Promise<object>} `{ok, status}`.
- * @spec openspec/changes/my-dossiers/specs/portal-contribution-contract/spec.md#requirement-a-resident-must-be-able-to-remove-one-item-req-myd-003
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-resident-must-be-able-to-remove-one-item-req-myd-003
  */
 export async function removeItem(api, collection, row, itemId) {
 	const action =

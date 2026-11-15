@@ -11,8 +11,8 @@ and a hairline between rows.
 
 #### Scenario: PtStemgedrag
 
-- **GIVEN** a council member's voting record with three figures
-- **THEN** the side column shows the member, then "Voor 3", "Tegen 0", "Onthouden 0" as label and bold number, then the
+- **GIVEN** a council member's voting record with five figures
+- **THEN** the side column shows the member, then "Voor gestemd 39", "Tegen gestemd 7", "Onthouden 0", "Afwezig 2" and "Nevenfuncties 3" as label and bold number, then the
   links, under a 4px accent rule
 
 ### Requirement: The voting record page carries its help

@@ -30,15 +30,16 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Kernel\Contracts\LandingSubmissionDrainInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 
 /**
  * Drains `landingPageSubmission` objects into their form's destination.
  *
  * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#4.1
  */
-class LandingSubmissionDrain {
+class LandingSubmissionDrain implements LandingSubmissionDrainInterface {
 	/**
 	 * Where portaliq kept the submissions and the forms.
 	 */
@@ -60,12 +61,12 @@ class LandingSubmissionDrain {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Reads the stored submissions and their forms.
+	 * @param ScopedCollectionReaderInterface $reader Reads the stored submissions and their forms.
 	 * @param PortalObjectWriter $writer Deletes a delivered submission.
 	 * @param DestinationIntake  $intake Submits into the destination, as a live submit does.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly DestinationIntake $intake,
 	) {
@@ -121,15 +122,44 @@ class LandingSubmissionDrain {
 	 */
 	private function deliver(array $row, ?array $form): ?string {
 		$destination = (array)($form['destination'] ?? []);
-		if ((string)($destination['register'] ?? '') === '' || (string)($destination['schema'] ?? '') === '') {
+		if ($this->namesNoDestination(destination: $destination) === true) {
 			return 'its form names no destination';
 		}
 
 		$id      = self::idOf(row: $row);
+		$refusal = $this->submitInto(row: $row, destination: $destination, id: $id);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		return $this->deleteDelivered(row: $row, id: $id);
+	}//end deliver()
+
+	/**
+	 * Whether a form's destination lacks a register or a schema.
+	 *
+	 * @param array<string, mixed> $destination The form's destination.
+	 *
+	 * @return bool
+	 */
+	private function namesNoDestination(array $destination): bool {
+		return (string)($destination['register'] ?? '') === '' || (string)($destination['schema'] ?? '') === '';
+	}//end namesNoDestination()
+
+	/**
+	 * Submit a stored submission into its destination; null when it was
+	 * accepted, else why not.
+	 *
+	 * @param array<string, mixed> $row         The stored submission.
+	 * @param array<string, mixed> $destination The form's destination.
+	 * @param string               $id          The submission's id.
+	 *
+	 * @return string|null
+	 */
+	private function submitInto(array $row, array $destination, string $id): string|null {
 		$answers = self::answersOf(row: $row);
 		$fields  = array_map(static fn (string $name): array => ['name' => $name], array_keys($answers));
-		$server  = array_intersect_key($row, array_flip(['formId', 'pageId', 'pageRoute', 'portal', 'sourceApp', 'campaign', 'submittedAt']));
-		$server['externalReference'] = $id;
+		$server  = $this->serverValues(row: $row, id: $id);
 
 		$submitted = $this->intake->submit(
 			binding: ['destination' => $destination, 'portal' => (string)($row['portal'] ?? ''), 'route' => (string)($row['pageRoute'] ?? '')],
@@ -142,6 +172,34 @@ class LandingSubmissionDrain {
 			return 'the destination refused it (' . $submitted['status'] . '): ' . implode('; ', array_values($submitted['errors']));
 		}
 
+		return null;
+	}//end submitInto()
+
+	/**
+	 * The server values a stored submission carries into its destination,
+	 * with its id as the external reference.
+	 *
+	 * @param array<string, mixed> $row The stored submission.
+	 * @param string               $id  The submission's id.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function serverValues(array $row, string $id): array {
+		$server = array_intersect_key($row, array_flip(['formId', 'pageId', 'pageRoute', 'portal', 'sourceApp', 'campaign', 'submittedAt']));
+		$server['externalReference'] = $id;
+
+		return $server;
+	}//end serverValues()
+
+	/**
+	 * Delete a delivered submission; null when it is gone, else why not.
+	 *
+	 * @param array<string, mixed> $row The stored submission.
+	 * @param string               $id  The submission's id.
+	 *
+	 * @return string|null
+	 */
+	private function deleteDelivered(array $row, string $id): string|null {
 		$deleted = $this->writer->deleteObject(
 			register: self::REGISTER,
 			schema: self::SCHEMA,
@@ -155,7 +213,7 @@ class LandingSubmissionDrain {
 		}
 
 		return null;
-	}//end deliver()
+	}//end deleteDelivered()
 
 	/**
 	 * The visitor's answers: the stored `values`, else every field that is not a server value.

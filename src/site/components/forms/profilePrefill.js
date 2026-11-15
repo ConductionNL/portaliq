@@ -6,7 +6,7 @@
 // field is filled, so a saved draft, a preset or what the resident typed
 // stays. Pure functions, so a node test pins each rule.
 //
-// @spec openspec/changes/action-fields-prefill-from-the-residents-profile/specs/portal-contribution-contract/spec.md#requirement-an-action-field-may-start-from-the-signed-in-residents-name-or-e-mail-address
+// @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-action-field-may-start-from-the-signed-in-residents-name-or-e-mail-address
 
 /** The profile value each prefill source reads (`identity/details`). */
 const SOURCES = { name: 'displayName', email: 'email' }

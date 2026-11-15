@@ -33,6 +33,9 @@ export const COUNT_FIELDS = {
 	year: 'publicationDate',
 }
 
+/** A subject's slug: a letter or digit, then letters, digits, `_` and `-`. */
+const SLUG = /^[A-Za-z0-9][A-Za-z0-9_-]*$/
+
 /**
  * A text field of a subject row, trimmed; '' when it is not text.
  *
@@ -54,19 +57,44 @@ function text(value) {
  * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
  */
 export function imageOf(image, title = '') {
-	const url = text(
-		typeof image === 'object' && image !== null
-			? (image.url ?? image.downloadUrl)
-			: image,
-	)
+	const url = imageUrl(image)
 	if (url === '') {
 		return null
 	}
-	const alt =
-		typeof image === 'object' && image !== null
-			? text(image.alt ?? image.title)
-			: ''
+	const alt = imageAlt(image)
 	return { url, alt: alt !== '' ? alt : title }
+}
+
+/**
+ * Whether an image arrives as an object that describes it.
+ *
+ * @param {unknown} image The row's `image`.
+ * @return {boolean}
+ */
+function isDescribed(image) {
+	return typeof image === 'object' && image !== null
+}
+
+/**
+ * An image's address: the bare address, or the object's `url` (else its
+ * `downloadUrl`); '' without one.
+ *
+ * @param {unknown} image The row's `image`.
+ * @return {string} The address.
+ */
+function imageUrl(image) {
+	return text(isDescribed(image) ? (image.url ?? image.downloadUrl) : image)
+}
+
+/**
+ * The alternative text an image object gives (its `alt`, else its
+ * `title`); '' for a bare address.
+ *
+ * @param {unknown} image The row's `image`.
+ * @return {string} The alternative text.
+ */
+function imageAlt(image) {
+	return isDescribed(image) ? text(image.alt ?? image.title) : ''
 }
 
 /**
@@ -86,28 +114,51 @@ export function subjectFrom(row) {
 	if (title === '') {
 		return null
 	}
-	const count = Number(row.publicationCount)
+	return shownSubject(row, title)
+}
+
+/**
+ * The fields of a subject row with a title.
+ *
+ * @param {object} row One row of the answer.
+ * @param {string} title Its title.
+ * @return {object} `{id, slug, title, summary, description, image, publicationCount, featuredOrder, featured}`.
+ */
+function shownSubject(row, title) {
 	return {
 		id: String(row.id ?? row.uuid ?? ''),
-		slug: /^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(text(row.slug))
-			? text(row.slug)
-			: '',
+		slug: SLUG.test(text(row.slug)) ? text(row.slug) : '',
 		title,
 		summary: text(row.summary),
 		description: text(row.description),
 		image: imageOf(row.image, title),
-		publicationCount:
-			Number.isFinite(count) && String(row.publicationCount ?? '') !== ''
-				? count
-				: null,
-		featuredOrder:
-			Number.isFinite(Number(row.featuredOrder))
-			&& row.featuredOrder !== null
-			&& row.featuredOrder !== undefined
-				? Number(row.featuredOrder)
-				: Infinity,
+		publicationCount: publicationCountOf(row),
+		featuredOrder: featuredOrderOf(row),
 		featured: row.featured === true,
 	}
+}
+
+/**
+ * @param {object} row One row of the answer.
+ * @return {number|null} The number of publications it holds, or null when it does not say.
+ */
+function publicationCountOf(row) {
+	const count = Number(row.publicationCount)
+	return Number.isFinite(count) && String(row.publicationCount ?? '') !== ''
+		? count
+		: null
+}
+
+/**
+ * @param {object} row One row of the answer.
+ * @return {number} Its place among the featured subjects, or Infinity when it has none.
+ */
+function featuredOrderOf(row) {
+	return Number.isFinite(Number(row.featuredOrder))
+		&& row.featuredOrder !== null
+		&& row.featuredOrder !== undefined
+		? Number(row.featuredOrder)
+		: Infinity
 }
 
 /**
@@ -126,16 +177,43 @@ export function featuredFrom(body, count = 6) {
 	const rows = Array.isArray(body?.results) ? body.results : []
 	return rows
 		.map(subjectFrom)
-		.filter(
-			(subject) =>
-				subject !== null && subject.featured === true && subject.slug !== '',
-		)
-		.sort(
-			(a, b) =>
-				a.featuredOrder - b.featuredOrder
-				|| a.title.localeCompare(b.title, 'nl'),
-		)
-		.slice(0, Math.max(0, Number(count) || 0))
+		.filter(isFeatured)
+		.sort(byFeaturedOrder)
+		.slice(0, featuredLimit(count))
+}
+
+/**
+ * Whether a subject is featured and has a slug to link to.
+ *
+ * @param {object|null} subject The subject.
+ * @return {boolean}
+ */
+function isFeatured(subject) {
+	return subject !== null && subject.featured === true && subject.slug !== ''
+}
+
+/**
+ * The featured order: `featuredOrder`, then title.
+ *
+ * @param {object} a A subject.
+ * @param {object} b Another subject.
+ * @return {number} The order.
+ */
+function byFeaturedOrder(a, b) {
+	return (
+		a.featuredOrder - b.featuredOrder
+		|| a.title.localeCompare(b.title, 'nl')
+	)
+}
+
+/**
+ * The most featured subjects to show: a count, none when it is not one.
+ *
+ * @param {unknown} count The most to show.
+ * @return {number} The limit.
+ */
+function featuredLimit(count) {
+	return Math.max(0, Number(count) || 0)
 }
 
 /**
@@ -149,6 +227,65 @@ export function featuredFrom(body, count = 6) {
  */
 export function subjectHref(slug, route = '/onderwerp') {
 	return `${route.replace(/\/$/, '')}/${encodeURIComponent(slug)}`
+}
+
+/**
+ * @param {((url: string, init?: object) => Promise<object>)|null} fetchImpl The fetch to use, or null for the page's.
+ * @return {(url: string, init?: object) => Promise<object>} The fetch.
+ */
+function readerOf(fetchImpl) {
+	return fetchImpl || ((...args) => globalThis.window.fetch(...args))
+}
+
+/**
+ * The request of an anonymous read: JSON, without the visitor's cookies.
+ *
+ * @return {object} The request options.
+ */
+function anonymousJson() {
+	return { headers: { Accept: 'application/json' }, credentials: 'omit' }
+}
+
+/**
+ * @return {string} The page's origin, or a stand-in outside a browser.
+ */
+function pageOrigin() {
+	return globalThis.window?.location?.origin || 'http://localhost'
+}
+
+/**
+ * How an answer reads: `ok`, the given state for a 404, or `failed`.
+ *
+ * @param {{status: number, ok: boolean}} response The answer.
+ * @param {string} missing The state a 404 stands for.
+ * @return {string} The state.
+ */
+function answerState(response, missing) {
+	if (response.status === 404) {
+		return missing
+	}
+	return response.ok ? 'ok' : 'failed'
+}
+
+/**
+ * Read one anonymous JSON answer and take what the caller needs from it. A
+ * failure anywhere, the address and the reading included, is `failed`.
+ *
+ * @param {(url: string, init?: object) => Promise<object>} read The fetch.
+ * @param {{address: () => string, stateOf: (response: object) => string, take: (body: object) => unknown}} request Where to ask, how an answer reads and what to take from a good one.
+ * @return {Promise<{state: string, value: unknown}>} The state, and the value taken when it is `ok`.
+ */
+async function readAnswer(read, request) {
+	try {
+		const response = await read(request.address(), anonymousJson())
+		const state = request.stateOf(response)
+		if (state !== 'ok') {
+			return { state, value: null }
+		}
+		return { state, value: request.take(await response.json()) }
+	} catch {
+		return { state: 'failed', value: null }
+	}
 }
 
 /**
@@ -167,27 +304,14 @@ export async function fetchFeatured({
 	fetchImpl = null,
 	endpoint = SUBJECTS_ENDPOINT,
 } = {}) {
-	const url = new URL(
-		endpoint,
-		globalThis.window?.location?.origin || 'http://localhost',
-	)
+	const url = new URL(endpoint, pageOrigin())
 	url.searchParams.set('featured', 'true')
-	const read = fetchImpl || ((...args) => globalThis.window.fetch(...args))
-	try {
-		const response = await read(url.toString(), {
-			headers: { Accept: 'application/json' },
-			credentials: 'omit',
-		})
-		if (response.status === 404) {
-			return { state: 'absent', subjects: [] }
-		}
-		if (!response.ok) {
-			return { state: 'failed', subjects: [] }
-		}
-		return { state: 'ok', subjects: featuredFrom(await response.json(), count) }
-	} catch {
-		return { state: 'failed', subjects: [] }
-	}
+	const answer = await readAnswer(readerOf(fetchImpl), {
+		address: () => url.toString(),
+		stateOf: (response) => answerState(response, 'absent'),
+		take: (body) => featuredFrom(body, count),
+	})
+	return { state: answer.state, subjects: answer.value || [] }
 }
 
 /**
@@ -205,28 +329,38 @@ export async function fetchSubject(
 	slug,
 	{ fetchImpl = null, endpoint = SUBJECTS_ENDPOINT } = {},
 ) {
-	if (!/^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(String(slug || ''))) {
+	if (!SLUG.test(String(slug || ''))) {
 		return { state: 'notFound', subject: null }
 	}
-	const read = fetchImpl || ((...args) => globalThis.window.fetch(...args))
-	try {
-		const response = await read(`${endpoint}/${encodeURIComponent(slug)}`, {
-			headers: { Accept: 'application/json' },
-			credentials: 'omit',
-		})
-		if (response.status === 404 || response.status === 403) {
-			return { state: 'notFound', subject: null }
-		}
-		if (!response.ok) {
-			return { state: 'failed', subject: null }
-		}
-		const subject = subjectFrom(await response.json())
-		return subject === null
-			? { state: 'notFound', subject: null }
-			: { state: 'ok', subject }
-	} catch {
-		return { state: 'failed', subject: null }
-	}
+	const answer = await readAnswer(readerOf(fetchImpl), {
+		address: () => `${endpoint}/${encodeURIComponent(slug)}`,
+		stateOf: subjectState,
+		take: subjectFrom,
+	})
+	return answer.state === 'ok'
+		? subjectAnswer(answer.value)
+		: { state: answer.state, subject: null }
+}
+
+/**
+ * How a subject answer reads: one that is not there or not public is
+ * `notFound`.
+ *
+ * @param {{status: number, ok: boolean}} response The answer.
+ * @return {string} The state.
+ */
+function subjectState(response) {
+	return response.status === 403 ? 'notFound' : answerState(response, 'notFound')
+}
+
+/**
+ * @param {object|null} subject The subject read, or null for a row that cannot be shown.
+ * @return {{state: string, subject: object|null}} The answer.
+ */
+function subjectAnswer(subject) {
+	return subject === null
+		? { state: 'notFound', subject: null }
+		: { state: 'ok', subject }
 }
 
 /**
@@ -334,24 +468,10 @@ export async function fetchCounts(
 		locale = 'nl',
 	} = {},
 ) {
-	const read = fetchImpl || ((...args) => globalThis.window.fetch(...args))
-	try {
-		const origin = globalThis.window?.location?.origin || 'http://localhost'
-		const response = await read(countsUrl(by, endpoint, origin), {
-			headers: { Accept: 'application/json' },
-			credentials: 'omit',
-		})
-		if (response.status === 404) {
-			return { state: 'absent', counts: [] }
-		}
-		if (!response.ok) {
-			return { state: 'failed', counts: [] }
-		}
-		return {
-			state: 'ok',
-			counts: countsFrom(await response.json(), by, searchRoute, locale),
-		}
-	} catch {
-		return { state: 'failed', counts: [] }
-	}
+	const answer = await readAnswer(readerOf(fetchImpl), {
+		address: () => countsUrl(by, endpoint, pageOrigin()),
+		stateOf: (response) => answerState(response, 'absent'),
+		take: (body) => countsFrom(body, by, searchRoute, locale),
+	})
+	return { state: answer.state, counts: answer.value || [] }
 }

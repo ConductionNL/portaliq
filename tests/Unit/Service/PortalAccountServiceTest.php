@@ -34,6 +34,32 @@ class PortalAccountServiceTest extends TestCase {
 
 	}//end testANewIdentityMintsAFreshSubjectRefWhenNoOverrideIsGiven()
 
+	/**
+	 * A new account's row, field by field and in order, and the answer.
+	 */
+	public function testANewAccountRowHasItsFieldsInOrder(): void {
+		$written = [];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->once())->method('createObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data) use (&$written) {
+				$written = [$register, $schema, $scopeField, $subjectRef, $organisation, $data];
+				return $data;
+			}
+		);
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readCollection')->willReturn([]);
+		$random = $this->createMock(ISecureRandom::class);
+		$random->method('generate')->willReturn('minted-1');
+
+		$account = (new PortalAccountService($reader, $writer, $random))->findOrCreate(identityType: 'digid', identityRef: 'bsn-1', organisation: 'gemeente-x', audience: 'client');
+
+		$this->assertSame(['subjectRef' => 'minted-1', 'isNew' => true, 'audience' => 'client'], $account);
+		$this->assertSame(['portaliq', 'portalAccount', '', '', 'gemeente-x'], array_slice($written, 0, 5));
+		$this->assertSame(['audience', 'identityType', 'identityRef', 'subjectRef', 'organisation', 'status', 'lastLoginAt'], array_keys($written[5]));
+		$this->assertSame(['client', 'digid', 'bsn-1', 'minted-1', 'gemeente-x', 'active'], array_slice(array_values($written[5]), 0, 6));
+
+	}//end testANewAccountRowHasItsFieldsInOrder()
+
 	public function testANewIdentityUsesAValidatedClaimOverrideWhenGiven(): void {
 		[$service] = $this->serviceWithStore();
 

@@ -34,12 +34,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Notifications;
 
+use OCA\Portaliq\Kernel\Contracts\MessageBoxStatusInterface;
+
 /**
  * Maps integriq's statuses and remembers an early report.
  *
  * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-the-resident-sees-only-a-real-delivery-req-mbc-004
  */
-class MessageBoxStatus {
+class MessageBoxStatus implements MessageBoxStatusInterface {
 
 	/**
 	 * The statuses a resident may see as a delivery.

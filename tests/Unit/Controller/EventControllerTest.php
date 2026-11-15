@@ -143,6 +143,7 @@ class EventControllerTest extends TestCase {
 		$calls = [
 			fn () => $controller->create('Title', '2026-11-12T09:00:00+00:00', ['groupRefs' => ['groep-5a']]),
 			fn () => $controller->publish('e1'),
+			fn () => $controller->index(),
 		];
 		foreach ($calls as $call) {
 			try {
@@ -154,4 +155,135 @@ class EventControllerTest extends TestCase {
 
 		$this->assertSame(count($calls), $refused);
 	}//end testEveryStaffMethodRefusesAUserWithoutTheAction()
+
+	/**
+	 * An object service double whose findAll answers the given rows, or throws.
+	 *
+	 * @param array<int, mixed>|null $rows The rows; null to answer a non-array.
+	 * @param bool                   $throws Whether findAll throws.
+	 *
+	 * @return object
+	 */
+	private function listingService(?array $rows, bool $throws = false): object {
+		return new class($rows, $throws) {
+			/**
+			 * @var array<int, array<string, mixed>>
+			 */
+			public array $configs = [];
+
+			/**
+			 * @var array<int, string>
+			 */
+			public array $scope = [];
+
+			/**
+			 * @param array<int, mixed>|null $rows   The rows.
+			 * @param bool                   $throws Whether findAll throws.
+			 */
+			public function __construct(private ?array $rows, private bool $throws) {
+			}//end __construct()
+
+			public function setRegister(string $register): void {
+				$this->scope[] = 'register:' . $register;
+			}//end setRegister()
+
+			public function setSchema(string $schema): void {
+				$this->scope[] = 'schema:' . $schema;
+			}//end setSchema()
+
+			public function findAll(array $config, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				if ($this->throws === true) {
+					throw new RuntimeException('store down');
+				}
+
+				$this->configs[] = $config;
+				return $this->rows;
+			}//end findAll()
+		};
+	}//end listingService()
+
+	/**
+	 * Staff get every event with an id, latest start first, as id, title, start and status.
+	 *
+	 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/tasks.md#task-4
+	 */
+	public function testIndexListsEventsLatestStartFirst(): void {
+		$serialisable = new class implements \JsonSerializable {
+			public function jsonSerialize(): array {
+				return ['@self' => ['id' => 'e3'], 'title' => 'Sportdag', 'start' => '2026-06-01T09:00:00+00:00', 'status' => 'draft'];
+			}//end jsonSerialize()
+		};
+		$objectService = $this->listingService(
+			[
+				['id' => 'e1', 'title' => 'Informatieavond', 'start' => '2026-11-03T19:30:00+00:00', 'status' => 'published', 'target' => ['groupRefs' => ['3h']]],
+				['title' => 'No id'],
+				$serialisable,
+				['uuid' => 'e2', 'title' => 'Kerstviering', 'start' => '2026-12-18T18:00:00+00:00'],
+			]
+		);
+
+		$controller = new EventController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(EventController::ACTION));
+		$response = $controller->index();
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(
+			[
+				'events' => [
+					['id' => 'e2', 'title' => 'Kerstviering', 'start' => '2026-12-18T18:00:00+00:00', 'status' => ''],
+					['id' => 'e1', 'title' => 'Informatieavond', 'start' => '2026-11-03T19:30:00+00:00', 'status' => 'published'],
+					['id' => 'e3', 'title' => 'Sportdag', 'start' => '2026-06-01T09:00:00+00:00', 'status' => 'draft'],
+				],
+			],
+			$response->getData()
+		);
+		$this->assertSame(['register:portaliq', 'schema:schoolEvent'], $objectService->scope);
+		$this->assertSame(0, $objectService->configs[0]['offset']);
+	}//end testIndexListsEventsLatestStartFirst()
+
+	/**
+	 * A store that cannot be read answers 500, and the failure is logged.
+	 *
+	 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/tasks.md#task-4
+	 */
+	public function testIndexAnswers500WhenTheEventsCannotBeRead(): void {
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('error')->with('Portaliq: event list failed', ['reason' => 'store down']);
+
+		$controller = new EventController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($this->listingService([], true)), $logger, $this->staffActionAuth(EventController::ACTION));
+		$response = $controller->index();
+
+		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $response->getStatus());
+		$this->assertSame(['error' => 'server_error'], $response->getData());
+	}//end testIndexAnswers500WhenTheEventsCannotBeRead()
+
+	/**
+	 * A non-list answer from the store, or no store at all, answers 500.
+	 *
+	 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/tasks.md#task-4
+	 */
+	public function testIndexAnswers500WithoutAUsableStore(): void {
+		$withNonList = new EventController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($this->listingService(null)), $this->createMock(LoggerInterface::class), $this->staffActionAuth(EventController::ACTION));
+		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $withNonList->index()->getStatus());
+
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willThrowException(new RuntimeException('no openregister'));
+		$withoutStore = new EventController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $container, $this->createMock(LoggerInterface::class), $this->staffActionAuth(EventController::ACTION));
+		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $withoutStore->index()->getStatus());
+	}//end testIndexAnswers500WithoutAUsableStore()
+
+	/**
+	 * A caller without a Nextcloud session is refused before anything is read.
+	 *
+	 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/tasks.md#task-4
+	 */
+	public function testIndexRefusesAnUnauthenticatedCaller(): void {
+		$userSession = $this->createMock(IUserSession::class);
+		$userSession->method('getUser')->willReturn(null);
+		$container = $this->createMock(ContainerInterface::class);
+		$container->expects($this->never())->method('get');
+
+		$controller = new EventController($this->createMock(IRequest::class), $userSession, $container, $this->createMock(LoggerInterface::class), $this->staffActionAuth(EventController::ACTION));
+		$this->expectException(\OCP\AppFramework\OCS\OCSForbiddenException::class);
+		$controller->index();
+	}//end testIndexRefusesAnUnauthenticatedCaller()
 }//end class

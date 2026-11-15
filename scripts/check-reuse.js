@@ -84,7 +84,23 @@ const IMAGE = 'fsfe/reuse:5'
  *   so this helper does not own half the process lifecycle.
  */
 function runLint() {
-	const attempts = [
+	for (const attempt of lintAttempts()) {
+		const result = runAttempt(attempt)
+		if (result !== null) {
+			return result
+		}
+	}
+
+	return null
+}
+
+/**
+ * The two ways to run the linter, in the order they are tried.
+ *
+ * @return {Array<{how: string, cmd: string, args: string[]}>} the runners
+ */
+function lintAttempts() {
+	return [
 		{ how: 'reuse (PATH)', cmd: 'reuse', args: ['lint', '--json'] },
 		{
 			how: `docker ${IMAGE}`,
@@ -100,25 +116,30 @@ function runLint() {
 			],
 		},
 	]
+}
 
-	for (const attempt of attempts) {
-		const result = spawnSync(attempt.cmd, attempt.args, {
-			cwd: REPO_ROOT,
-			encoding: 'utf8',
-			maxBuffer: 64 * 1024 * 1024,
-		})
-		// ENOENT means this runner has no such binary; fall through to the next.
-		// Any other failure is the linter itself talking, and `reuse lint` exits
-		// non-zero on a non-compliant tree, which is the expected state here.
-		if (result.error && result.error.code === 'ENOENT') continue
-		if (result.error) {
-			console.error(`Could not run ${attempt.how}: ${result.error.message}`)
-			process.exit(1)
-		}
-		return { stdout: result.stdout, stderr: result.stderr, how: attempt.how }
+/**
+ * Run one runner: its output, null when it is not installed, or exit when it
+ * could not be started for another reason.
+ *
+ * @param {{how: string, cmd: string, args: string[]}} attempt - the runner
+ * @return {?{stdout: string, stderr: string, how: string}} captured output
+ */
+function runAttempt(attempt) {
+	const result = spawnSync(attempt.cmd, attempt.args, {
+		cwd: REPO_ROOT,
+		encoding: 'utf8',
+		maxBuffer: 64 * 1024 * 1024,
+	})
+	// ENOENT means this runner has no such binary; fall through to the next.
+	// Any other failure is the linter itself talking, and `reuse lint` exits
+	// non-zero on a non-compliant tree, which is the expected state here.
+	if (result.error && result.error.code === 'ENOENT') return null
+	if (result.error) {
+		console.error(`Could not run ${attempt.how}: ${result.error.message}`)
+		process.exit(1)
 	}
-
-	return null
+	return { stdout: result.stdout, stderr: result.stderr, how: attempt.how }
 }
 
 /**
@@ -135,12 +156,12 @@ function errorLines(stderr) {
 }
 
 /**
+ * Run the linter and read its report, or exit when there is none to read.
  *
+ * @return {{report: object, stderr: string, how: string}} the parsed report,
+ *   the captured stderr and which runner produced them
  */
-function main() {
-	const update = process.argv.includes('--update')
-	const list = process.argv.includes('--list')
-
+function readReport() {
 	const runner = runLint()
 	if (runner === null) {
 		console.error('Neither `reuse` nor `docker` is available, so REUSE was not')
@@ -163,14 +184,27 @@ function main() {
 		process.exit(1)
 	}
 
-	// REFUSE TO PASS ON A REPORT THIS SCRIPT CANNOT READ.
-	//
-	// Defaulting a missing block to `{}` would make every assertion below
-	// vacuous and exit 0 — the same failure this guard exists to prevent, one
-	// layer down. It is reachable without a bug in `reuse`: the PATH binary is
-	// resolved by the runner, not pinned like the image, so a different major
-	// with a different --json shape is exactly the drift the pin defends
-	// against on the other path.
+	assertReadable(report, how)
+	return { report, stderr, how }
+}
+
+/**
+ * Exit unless the report has the blocks every assertion reads.
+ *
+ * REFUSE TO PASS ON A REPORT THIS SCRIPT CANNOT READ.
+ *
+ * Defaulting a missing block to `{}` would make every assertion below
+ * vacuous and exit 0 — the same failure this guard exists to prevent, one
+ * layer down. It is reachable without a bug in `reuse`: the PATH binary is
+ * resolved by the runner, not pinned like the image, so a different major
+ * with a different --json shape is exactly the drift the pin defends
+ * against on the other path.
+ *
+ * @param {object} report - the parsed report
+ * @param {string} how - which runner produced it
+ * @return {void}
+ */
+function assertReadable(report, how) {
 	if (
 		typeof report.summary !== 'object'
 		|| report.summary === null
@@ -191,111 +225,260 @@ function main() {
 		console.error('nothing about the tree, and green would claim otherwise.')
 		process.exit(1)
 	}
+}
 
+/**
+ * The findings this guard asserts on, read from one linter run.
+ *
+ * @return {{nonCompliant: object, summary: object, missingLicensing: string[],
+ *   missingCopyright: string[], errors: string[], how: string}} the findings
+ */
+function readFindings() {
+	const { report, stderr, how } = readReport()
 	const nonCompliant = report.non_compliant
-	const summary = report.summary
-	const missingLicensing = nonCompliant.missing_licensing_info || []
-	const missingCopyright = nonCompliant.missing_copyright_info || []
-	const errors = errorLines(stderr)
-
-	if (list) {
-		console.log(
-			`Files with no licensing information (${missingLicensing.length}):`,
-		)
-		for (const file of [...missingLicensing].sort()) console.log(`  ${file}`)
-		if (errors.length) {
-			console.log('')
-			console.log(`stderr ERROR lines (${errors.length}):`)
-			for (const line of errors) console.log(`  ${line}`)
-		}
-		return
+	return {
+		nonCompliant,
+		summary: report.summary,
+		missingLicensing: nonCompliant.missing_licensing_info || [],
+		missingCopyright: nonCompliant.missing_copyright_info || [],
+		errors: errorLines(stderr),
+		how,
 	}
+}
 
-	// The absolute assertions run BEFORE the --update branch. Writing a
-	// baseline over a tree with unparseable headers or an orphaned licence
-	// would exit 0 and defer those failures to the next CI run, which is the
-	// wrong moment to learn about them.
+/**
+ * Print the files without licensing information and the stderr ERROR lines.
+ *
+ * @param {object} findings - the findings
+ * @return {void}
+ */
+function printList(findings) {
+	const { missingLicensing, errors } = findings
+	console.log(`Files with no licensing information (${missingLicensing.length}):`)
+	for (const file of [...missingLicensing].sort()) console.log(`  ${file}`)
+	if (errors.length) {
+		console.log('')
+		console.log(`stderr ERROR lines (${errors.length}):`)
+		for (const line of errors) console.log(`  ${line}`)
+	}
+}
+
+/**
+ * 1. stderr, absolute: report the ERROR lines the linter wrote.
+ *
+ * @param {string[]} errors - the stderr ERROR lines
+ * @return {boolean} true when there were any
+ */
+function stderrFailed(errors) {
+	if (errors.length === 0) return false
+	console.error('')
+	console.error(
+		`${errors.length} ERROR line(s) on stderr — a file's own licence header`,
+	)
+	console.error('could not be parsed, and `reuse lint` does not fail on that:')
+	console.error('')
+	for (const line of errors.slice(0, 10)) console.error(`  ${line}`)
+	console.error('')
+	console.error('A markdown document that writes the tag and its value inside')
+	console.error('ONE code span is the known cause. Give it a `.license`')
+	console.error('companion rather than rewriting the prose around the tag.')
+	return true
+}
+
+/**
+ * The hygiene lists, in the order they are reported.
+ *
+ * @type {string[]}
+ */
+const HYGIENE_KEYS = [
+	'unused_licenses',
+	'bad_licenses',
+	'deprecated_licenses',
+	'missing_licenses',
+	'read_errors',
+]
+
+/**
+ * What to add under a hygiene list that is not empty, by list.
+ *
+ * @type {Object<string, string[]>}
+ */
+const HYGIENE_NOTES = {
+	unused_licenses: [
+		'A licence text in LICENSES/ that nothing references is itself a',
+		'REUSE failure. Changing an override orphans the licence it used',
+		'to name — remove that file in the same commit.',
+	],
+	read_errors: [
+		'An unreadable file is EXCLUDED from files_total, so the coverage',
+		'sets below cannot see it. Hence the absolute check.',
+	],
+}
+
+/**
+ * 2. licence hygiene, absolute. An unused licence is itself a REUSE failure.
+ *
+ * @param {object} nonCompliant - the report's non_compliant block
+ * @return {boolean} true when any hygiene list is not empty
+ */
+function hygieneFailed(nonCompliant) {
 	let failed = false
-
-	// 1. stderr, absolute.
-	if (errors.length > 0) {
-		console.error('')
-		console.error(
-			`${errors.length} ERROR line(s) on stderr — a file's own licence header`,
-		)
-		console.error('could not be parsed, and `reuse lint` does not fail on that:')
-		console.error('')
-		for (const line of errors.slice(0, 10)) console.error(`  ${line}`)
-		console.error('')
-		console.error('A markdown document that writes the tag and its value inside')
-		console.error('ONE code span is the known cause. Give it a `.license`')
-		console.error('companion rather than rewriting the prose around the tag.')
-		failed = true
-	}
-
-	// 2. licence hygiene, absolute. An unused licence is itself a REUSE failure.
-	for (const key of [
-		'unused_licenses',
-		'bad_licenses',
-		'deprecated_licenses',
-		'missing_licenses',
-		'read_errors',
-	]) {
-		const value = nonCompliant[key]
-		const entries = Array.isArray(value) ? value : Object.keys(value || {})
-		if (entries.length > 0) {
-			console.error('')
-			console.error(`${key}: ${entries.join(', ')}`)
-			if (key === 'unused_licenses') {
-				console.error(
-					'A licence text in LICENSES/ that nothing references is itself a',
-				)
-				console.error(
-					'REUSE failure. Changing an override orphans the licence it used',
-				)
-				console.error('to name — remove that file in the same commit.')
-			}
-			if (key === 'read_errors') {
-				console.error(
-					'An unreadable file is EXCLUDED from files_total, so the coverage',
-				)
-				console.error('sets below cannot see it. Hence the absolute check.')
-			}
+	for (const key of HYGIENE_KEYS) {
+		if (hygieneKeyFailed(key, nonCompliant[key]) === true) {
 			failed = true
 		}
 	}
+	return failed
+}
 
-	if (update) {
-		if (failed) {
-			console.error('')
-			console.error('Baseline NOT written — fix the failures above first.')
-			process.exit(1)
-		}
-		fs.writeFileSync(
-			BASELINE,
-			JSON.stringify(
-				{
-					missing_licensing_info: [...missingLicensing].sort(),
-					missing_copyright_info: [...missingCopyright].sort(),
-				},
-				null,
-				2,
-			) + '\n',
-		)
-		console.log(
-			`baseline written: ${missingLicensing.length} file(s) without licensing info, `
-				+ `${missingCopyright.length} without copyright info`,
-		)
-		return
+/**
+ * Report one hygiene list when it is not empty.
+ *
+ * @param {string} key - the list's name in the report
+ * @param {Array|object|undefined} value - the list, or a map keyed by entry
+ * @return {boolean} true when it is not empty
+ */
+function hygieneKeyFailed(key, value) {
+	const entries = Array.isArray(value) ? value : Object.keys(value || {})
+	if (entries.length === 0) return false
+	console.error('')
+	console.error(`${key}: ${entries.join(', ')}`)
+	for (const line of HYGIENE_NOTES[key] || []) console.error(line)
+	return true
+}
+
+/**
+ * Write the baseline from the findings, unless an absolute check failed.
+ *
+ * @param {object} findings - the findings
+ * @param {boolean} failed - whether an absolute check failed
+ * @return {void}
+ */
+function writeBaseline(findings, failed) {
+	const { missingLicensing, missingCopyright } = findings
+	if (failed) {
+		console.error('')
+		console.error('Baseline NOT written — fix the failures above first.')
+		process.exit(1)
 	}
+	fs.writeFileSync(
+		BASELINE,
+		JSON.stringify(
+			{
+				missing_licensing_info: [...missingLicensing].sort(),
+				missing_copyright_info: [...missingCopyright].sort(),
+			},
+			null,
+			2,
+		) + '\n',
+	)
+	console.log(
+		`baseline written: ${missingLicensing.length} file(s) without licensing info, `
+			+ `${missingCopyright.length} without copyright info`,
+	)
+}
 
+/**
+ * The committed baseline, or exit when there is none.
+ *
+ * @return {object} the baseline
+ */
+function readBaseline() {
 	if (!fs.existsSync(BASELINE)) {
 		console.error(
 			'No baseline. Run `npm run check:reuse -- --update` and commit it.',
 		)
 		process.exit(1)
 	}
-	const baseline = JSON.parse(fs.readFileSync(BASELINE, 'utf8'))
+	return JSON.parse(fs.readFileSync(BASELINE, 'utf8'))
+}
+
+/**
+ * 3. coverage, ratcheted BY PATH rather than by count.
+ *
+ * A count lets a net-zero swap through: delete one of the twelve known
+ * fonts, add one source file with an extension REUSE.toml does not list,
+ * and the total is unchanged while a genuinely new uncovered file has
+ * entered the tree -- the exact hole this guard is here to close.
+ * check:schema-l10n can only count because its baseline is 30k opaque
+ * strings; here the baseline is a short list of stable paths, so it names
+ * them. Shrinking the list is always fine.
+ *
+ * @param {object} findings - the findings
+ * @param {object} baseline - the committed baseline
+ * @return {boolean} true when the baseline is malformed or a file is new
+ */
+function ratchetFailed(findings, baseline) {
+	let failed = false
+	for (const entry of [
+		['missing_licensing_info', findings.missingLicensing],
+		['missing_copyright_info', findings.missingCopyright],
+	]) {
+		if (ratchetKeyFailed(entry, baseline) === true) {
+			failed = true
+		}
+	}
+	return failed
+}
+
+/**
+ * The ratchet for one list: the baseline must hold a list, and nothing found
+ * may be missing from it.
+ *
+ * @param {[string, string[]]} entry - the list's key and the files found
+ * @param {object} baseline - the committed baseline
+ * @return {boolean} true when the baseline list is malformed or a file is new
+ */
+function ratchetKeyFailed(entry, baseline) {
+	const [key, found] = entry
+	const allowed = baseline[key]
+	if (!Array.isArray(allowed)) {
+		console.error('')
+		console.error(`Baseline key \`${key}\` is not a list of paths.`)
+		console.error('Regenerate it with `npm run check:reuse -- --update`.')
+		return true
+	}
+	const known = new Set(allowed)
+	const added = found.filter((file) => !known.has(file)).sort()
+	if (added.length === 0) return false
+	reportNewFiles(key, added)
+	return true
+}
+
+/**
+ * Name the new files without licensing or copyright information.
+ *
+ * @param {string} key - the list's key
+ * @param {string[]} added - the new files, sorted
+ * @return {void}
+ */
+function reportNewFiles(key, added) {
+	const what = key.replace('missing_', '').replace(/_/g, ' ')
+	console.error('')
+	console.error(`${added.length} new file(s) with no ${what}:`)
+	for (const file of added) console.error(`  ${file}`)
+	console.error('')
+	console.error(
+		'The likely cause is an extension REUSE.toml does not list —',
+	)
+	console.error('it lists extensions rather than using a blanket, so an')
+	console.error('unlisted one falls through silently.')
+	console.error('')
+	console.error('Add it to the appropriate block in REUSE.toml.')
+}
+
+/**
+ * Check the findings against the committed baseline and exit 1 when the
+ * ratchet or an absolute check failed; say how to lower a baseline that is
+ * higher than it needs to be.
+ *
+ * @param {object} findings - the findings
+ * @param {boolean} failed - whether an absolute check failed
+ * @return {void}
+ */
+function checkAgainstBaseline(findings, failed) {
+	const baseline = readBaseline()
+	const { summary, missingLicensing, errors, how } = findings
 
 	console.log(
 		`${summary.files_total} file(s) checked via ${how}; `
@@ -304,47 +487,7 @@ function main() {
 			+ `${errors.length} stderr ERROR line(s)`,
 	)
 
-	// 3. coverage, ratcheted BY PATH rather than by count.
-	//
-	// A count lets a net-zero swap through: delete one of the twelve known
-	// fonts, add one source file with an extension REUSE.toml does not list,
-	// and the total is unchanged while a genuinely new uncovered file has
-	// entered the tree -- the exact hole this guard is here to close.
-	// check:schema-l10n can only count because its baseline is 30k opaque
-	// strings; here the baseline is a short list of stable paths, so it names
-	// them. Shrinking the list is always fine.
-	for (const [key, found] of [
-		['missing_licensing_info', missingLicensing],
-		['missing_copyright_info', missingCopyright],
-	]) {
-		const allowed = baseline[key]
-		if (!Array.isArray(allowed)) {
-			console.error('')
-			console.error(`Baseline key \`${key}\` is not a list of paths.`)
-			console.error('Regenerate it with `npm run check:reuse -- --update`.')
-			failed = true
-			continue
-		}
-		const known = new Set(allowed)
-		const added = found.filter((file) => !known.has(file)).sort()
-		if (added.length > 0) {
-			const what = key.replace('missing_', '').replace(/_/g, ' ')
-			console.error('')
-			console.error(`${added.length} new file(s) with no ${what}:`)
-			for (const file of added) console.error(`  ${file}`)
-			console.error('')
-			console.error(
-				'The likely cause is an extension REUSE.toml does not list —',
-			)
-			console.error('it lists extensions rather than using a blanket, so an')
-			console.error('unlisted one falls through silently.')
-			console.error('')
-			console.error('Add it to the appropriate block in REUSE.toml.')
-			failed = true
-		}
-	}
-
-	if (failed) process.exit(1)
+	if (ratchetFailed(findings, baseline) || failed) process.exit(1)
 
 	const baselineCount = (baseline.missing_licensing_info || []).length
 	if (missingLicensing.length < baselineCount) {
@@ -353,6 +496,37 @@ function main() {
 		)
 		console.log('  npm run check:reuse -- --update')
 	}
+}
+
+/**
+ * Run the guard: list, write the baseline, or check against it.
+ *
+ * @return {void}
+ */
+function main() {
+	const update = process.argv.includes('--update')
+	const list = process.argv.includes('--list')
+
+	const findings = readFindings()
+	if (list) {
+		printList(findings)
+		return
+	}
+
+	// The absolute assertions run BEFORE the --update branch. Writing a
+	// baseline over a tree with unparseable headers or an orphaned licence
+	// would exit 0 and defer those failures to the next CI run, which is the
+	// wrong moment to learn about them.
+	const stderrFailure = stderrFailed(findings.errors)
+	const hygieneFailure = hygieneFailed(findings.nonCompliant)
+	const failed = stderrFailure || hygieneFailure
+
+	if (update) {
+		writeBaseline(findings, failed)
+		return
+	}
+
+	checkAgainstBaseline(findings, failed)
 }
 
 main()

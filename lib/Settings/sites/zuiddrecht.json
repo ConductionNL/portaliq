@@ -69,7 +69,7 @@
                     ]
                 },
                 {
-                    "title": "Zaken en taken",
+                    "title": "Mijn zaken en verzoeken",
                     "items": [
                         "cases",
                         "tasks",
@@ -84,7 +84,7 @@
                     ]
                 },
                 {
-                    "title": "Vragen en meldingen",
+                    "title": "Vragen en contact",
                     "items": [
                         "portaliq:meldingen"
                     ]
@@ -150,6 +150,73 @@
             }
         ]
     },
+    "forms": [
+        {
+            "externalReference": "organisation-registration",
+            "requiresApp": "stackiq",
+            "sourceApp": "stackiq",
+            "pageRoute": "/softwarecatalogus",
+            "fields": [
+                {
+                    "id": "name",
+                    "label": "Naam organisatie",
+                    "type": "text",
+                    "required": true
+                },
+                {
+                    "id": "type",
+                    "label": "Soort organisatie",
+                    "type": "select",
+                    "required": true,
+                    "options": [
+                        "Supplier",
+                        "Municipality",
+                        "Collaboration",
+                        "Community"
+                    ],
+                    "optionLabels": {
+                        "Supplier": "Leverancier",
+                        "Municipality": "Gemeente",
+                        "Collaboration": "Samenwerkingsverband",
+                        "Community": "Gemeenschap"
+                    }
+                },
+                {
+                    "id": "registrationNumber",
+                    "label": "KvK-nummer of OIN",
+                    "type": "text",
+                    "required": true
+                },
+                {
+                    "id": "registrationContactName",
+                    "label": "Naam contactpersoon",
+                    "type": "text",
+                    "required": true
+                },
+                {
+                    "id": "registrationContactEmail",
+                    "label": "E-mailadres",
+                    "type": "email",
+                    "required": true
+                },
+                {
+                    "id": "website",
+                    "label": "Website",
+                    "type": "url",
+                    "required": false
+                }
+            ],
+            "submitLabel": "Aanmelding versturen",
+            "status": "active",
+            "destination": {
+                "register": "stackiq",
+                "schema": "organization",
+                "fixed": {
+                    "registrationStatus": "pending"
+                }
+            }
+        }
+    ],
     "menus": [
         {
             "title": "Hoofdmenu",
@@ -246,6 +313,11 @@
                     "order": 5,
                     "name": "Kwetsbaarheid melden",
                     "link": "/kwetsbaarheid-melden"
+                },
+                {
+                    "order": 6,
+                    "name": "Status van de dienstverlening",
+                    "link": "/status"
                 }
             ]
         }
@@ -1422,8 +1494,137 @@
                                 {
                                     "label": "Parkeren",
                                     "href": "/parkeren"
+                                },
+                                {
+                                    "label": "Softwarecatalogus",
+                                    "href": "/softwarecatalogus",
+                                    "requiresApp": "stackiq"
                                 }
                             ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/softwarecatalogus",
+            "title": "Softwarecatalogus",
+            "summary": "Welke software leveranciers aan de overheid aanbieden.",
+            "status": "published",
+            "locale": "nl",
+            "requiresApp": "stackiq",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-softwarecatalogus-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Zoek welke software leveranciers aan de overheid aanbieden. U hoeft niet in te loggen."
+                        }
+                    },
+                    {
+                        "id": "zd-softwarecatalogus-02-publicrecords",
+                        "widgetKey": "publicRecords",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 12,
+                        "gridHeight": 6,
+                        "props": {
+                            "app": "stackiq",
+                            "list": "softwareCatalogue",
+                            "searchLabel": "Zoeken in de catalogus",
+                            "backText": "Alle software"
+                        }
+                    },
+                    {
+                        "id": "zd-softwarecatalogus-03-nlheading",
+                        "widgetKey": "nlHeading",
+                        "gridX": 0,
+                        "gridY": 7,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Uw organisatie aanmelden",
+                            "level": 2
+                        }
+                    },
+                    {
+                        "id": "zd-softwarecatalogus-04-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 8,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Bent u leverancier of overheidsorganisatie? Meld uw organisatie aan zonder account. Een beheerder beoordeelt de aanmelding en neemt daarna contact met u op. De catalogus is gratis voor gemeenten en leveranciers."
+                        }
+                    },
+                    {
+                        "id": "zd-softwarecatalogus-05-form",
+                        "widgetKey": "form",
+                        "gridX": 0,
+                        "gridY": 9,
+                        "gridWidth": 8,
+                        "gridHeight": 6,
+                        "props": {
+                            "formKey": "organisation-registration",
+                            "title": "Uw organisatie aanmelden",
+                            "fields": [
+                                {
+                                    "id": "name",
+                                    "label": "Naam organisatie",
+                                    "type": "text",
+                                    "required": true
+                                },
+                                {
+                                    "id": "type",
+                                    "label": "Soort organisatie",
+                                    "type": "select",
+                                    "required": true,
+                                    "options": [
+                                        "Supplier",
+                                        "Municipality",
+                                        "Collaboration",
+                                        "Community"
+                                    ],
+                                    "optionLabels": {
+                                        "Supplier": "Leverancier",
+                                        "Municipality": "Gemeente",
+                                        "Collaboration": "Samenwerkingsverband",
+                                        "Community": "Gemeenschap"
+                                    }
+                                },
+                                {
+                                    "id": "registrationNumber",
+                                    "label": "KvK-nummer of OIN",
+                                    "type": "text",
+                                    "required": true
+                                },
+                                {
+                                    "id": "registrationContactName",
+                                    "label": "Naam contactpersoon",
+                                    "type": "text",
+                                    "required": true
+                                },
+                                {
+                                    "id": "registrationContactEmail",
+                                    "label": "E-mailadres",
+                                    "type": "email",
+                                    "required": true
+                                },
+                                {
+                                    "id": "website",
+                                    "label": "Website",
+                                    "type": "url",
+                                    "required": false
+                                }
+                            ],
+                            "submitLabel": "Aanmelding versturen"
                         }
                     }
                 ]
@@ -2585,8 +2786,8 @@
         },
         {
             "route": "/toegankelijkheid",
-            "title": "Toegankelijkheid",
-            "summary": "Deze website is gemaakt om voor iedereen bruikbaar te zijn.",
+            "title": "Toegankelijkheidsverklaring",
+            "summary": "Gemeente Zuiddrecht wil dat iedereen deze website kan gebruiken. Hier leest u hoe ver wij daarmee zijn.",
             "status": "published",
             "locale": "nl",
             "body": {
@@ -2600,33 +2801,143 @@
                         "gridWidth": 8,
                         "gridHeight": 1,
                         "props": {
-                            "text": "Iedereen moet deze website kunnen gebruiken. Wij bouwen de website volgens WCAG 2.2, niveau AA."
+                            "text": "Gemeente Zuiddrecht wil dat iedereen deze website kan gebruiken. Hier leest u hoe ver wij daarmee zijn."
                         }
                     },
                     {
-                        "id": "zd-toegankelijkheid-02-nlparagraph",
-                        "widgetKey": "nlParagraph",
+                        "id": "zd-toegankelijkheid-02-nlalert",
+                        "widgetKey": "nlAlert",
                         "gridX": 0,
                         "gridY": 1,
                         "gridWidth": 8,
                         "gridHeight": 1,
                         "props": {
-                            "text": "Loopt u ergens tegenaan? Laat het ons weten, dan lossen wij het op."
+                            "kind": "warning",
+                            "heading": "Status: voldoet gedeeltelijk",
+                            "text": "Deze website voldoet gedeeltelijk aan de WCAG 2.2 op niveau AA. Laatst gecontroleerd op 15 september 2026."
                         }
                     },
                     {
-                        "id": "zd-toegankelijkheid-03-nllinklist",
-                        "widgetKey": "nlLinkList",
+                        "id": "zd-toegankelijkheid-03-nldescriptionlist",
+                        "widgetKey": "nlDescriptionList",
                         "gridX": 0,
                         "gridY": 2,
                         "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "items": [
+                                {
+                                    "term": "Website",
+                                    "description": "www.zuiddrecht.nl en Mijn Zuiddrecht"
+                                },
+                                {
+                                    "term": "Onderzocht door",
+                                    "description": "[naam onderzoeksbureau]"
+                                },
+                                {
+                                    "term": "Datum verklaring",
+                                    "description": "15 september 2026"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "id": "zd-toegankelijkheid-04-nlheading",
+                        "widgetKey": "nlHeading",
+                        "gridX": 0,
+                        "gridY": 3,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Wat nog niet goed werkt",
+                            "level": 2
+                        }
+                    },
+                    {
+                        "id": "zd-toegankelijkheid-05-nllist",
+                        "widgetKey": "nlList",
+                        "gridX": 0,
+                        "gridY": 4,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "items": [
+                                "Sommige oudere PDF-documenten bij Woo-publicaties zijn niet toegankelijk. Vraag ze aan in een andere vorm, dan sturen wij die.",
+                                "Een aantal kaarten heeft nog geen tekstalternatief. Wij vullen dat aan voor 1 januari 2027."
+                            ]
+                        }
+                    },
+                    {
+                        "id": "zd-toegankelijkheid-06-nlheading",
+                        "widgetKey": "nlHeading",
+                        "gridX": 0,
+                        "gridY": 5,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Iets niet goed te gebruiken?",
+                            "level": 2
+                        }
+                    },
+                    {
+                        "id": "zd-toegankelijkheid-07-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 6,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Laat het ons weten. Wij antwoorden binnen vijf werkdagen en zoeken samen met u een oplossing."
+                        }
+                    },
+                    {
+                        "id": "zd-toegankelijkheid-08-nlactiongroup",
+                        "widgetKey": "nlActionGroup",
+                        "gridX": 0,
+                        "gridY": 7,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "buttons": [
+                                {
+                                    "label": "Probleem melden",
+                                    "href": "/contact",
+                                    "kind": "primary"
+                                },
+                                {
+                                    "label": "Verklaring in het register bekijken",
+                                    "href": "https://www.toegankelijkheidsverklaring.nl/register",
+                                    "kind": "secondary"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "id": "zd-toegankelijkheid-09-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 8,
+                        "gridY": 0,
+                        "gridWidth": 4,
                         "gridHeight": 3,
                         "props": {
-                            "heading": "Lees ook",
+                            "heading": "Over deze website",
+                            "display": "accent",
                             "links": [
                                 {
-                                    "label": "Contact en openingstijden",
-                                    "href": "/contact"
+                                    "label": "Toegankelijkheid",
+                                    "href": "/toegankelijkheid"
+                                },
+                                {
+                                    "label": "Cookies",
+                                    "href": "/cookies"
+                                },
+                                {
+                                    "label": "Privacy",
+                                    "href": "/privacy"
+                                },
+                                {
+                                    "label": "Kwetsbaarheid melden",
+                                    "href": "/kwetsbaarheid-melden"
                                 }
                             ]
                         }
@@ -2885,6 +3196,73 @@
                         "gridHeight": 1,
                         "props": {
                             "text": "Mail uw melding naar info@zuiddrecht.example. U krijgt binnen drie werkdagen antwoord."
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/status",
+            "title": "Status van de dienstverlening",
+            "summary": "Welke online diensten werken, waar een verstoring is en wanneer er onderhoud is.",
+            "status": "published",
+            "locale": "nl",
+            "requiresApp": "opencatalogi",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-status-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Hier ziet u of onze online diensten werken. Bij een verstoring staat erbij wat er aan de hand is en sinds wanneer."
+                        }
+                    },
+                    {
+                        "id": "zd-status-02-nlpublictable",
+                        "widgetKey": "nlPublicTable",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 12,
+                        "gridHeight": 4,
+                        "props": {
+                            "caption": "Diensten",
+                            "source": {
+                                "app": "opencatalogi",
+                                "kind": "serviceStatus"
+                            },
+                            "columns": [
+                                {
+                                    "key": "service",
+                                    "label": "Dienst"
+                                },
+                                {
+                                    "key": "message",
+                                    "label": "Toelichting"
+                                },
+                                {
+                                    "key": "state",
+                                    "label": "Status"
+                                }
+                            ],
+                            "display": "boxed",
+                            "emptyLabel": "De status van de diensten is nu niet bekend."
+                        },
+                        "requiresApp": "opencatalogi"
+                    },
+                    {
+                        "id": "zd-status-03-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 5,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Werkt iets niet en staat het hier niet bij? Bel of mail ons, dan zoeken wij het uit."
                         }
                     }
                 ]

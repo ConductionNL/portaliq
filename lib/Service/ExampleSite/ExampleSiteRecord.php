@@ -25,7 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\ExampleSite;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCP\IAppConfig;
 
 /**
@@ -37,7 +37,7 @@ class ExampleSiteRecord {
 	/**
 	 * The schemas a record lists ids for, besides the portal.
 	 */
-	public const SCHEMAS = ['menu', 'page', 'newsItem', 'glossaryTerm'];
+	public const SCHEMAS = ['menu', 'page', 'newsItem', 'glossaryTerm', 'form'];
 
 	/**
 	 * The prefix of the app-config key that holds a site's record.
@@ -66,8 +66,8 @@ class ExampleSiteRecord {
 	 * @spec openspec/changes/example-site-zuiddrecht/specs/example-site/spec.md#requirement-an-administrator-must-be-able-to-remove-an-example-site
 	 */
 	public function read(string $site): array {
-		$record  = ['portal' => '', 'menu' => [], 'page' => [], 'newsItem' => [], 'glossaryTerm' => []];
-		$decoded = json_decode($this->appConfig->getValueString(Application::APP_ID, self::PREFIX . $site, ''), true);
+		$record  = ['portal' => '', 'menu' => [], 'page' => [], 'newsItem' => [], 'glossaryTerm' => [], 'form' => []];
+		$decoded = json_decode($this->appConfig->getValueString(AppIdentity::APP_ID, self::PREFIX . $site, ''), true);
 		if (is_array($decoded) === false) {
 			return $record;
 		}
@@ -120,10 +120,10 @@ class ExampleSiteRecord {
 	 */
 	public function write(string $site, array $record): void {
 		if ($this->isEmpty(record: $record) === true) {
-			$this->appConfig->deleteKey(Application::APP_ID, self::PREFIX . $site);
+			$this->appConfig->deleteKey(AppIdentity::APP_ID, self::PREFIX . $site);
 			return;
 		}
 
-		$this->appConfig->setValueString(Application::APP_ID, self::PREFIX . $site, (string)json_encode($record));
+		$this->appConfig->setValueString(AppIdentity::APP_ID, self::PREFIX . $site, (string)json_encode($record));
 	}//end write()
 }//end class

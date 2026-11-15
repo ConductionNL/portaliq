@@ -52,7 +52,8 @@ test('the acting-for bar marks the party and not the sentence', async () => {
 		value: 'm1',
 	})
 	await bar.flush()
-	assert.deepEqual(marked(bar), ['Bakkerij De Korenaar'])
+	// The party in the sentence, and the party's option in "Wissel naar".
+	assert.deepEqual(marked(bar), ['Bakkerij De Korenaar', 'Bakkerij De Korenaar'])
 })
 
 test('an address list marks each value and not its label', async () => {
@@ -94,4 +95,33 @@ test('a case card marks its number and reference, not its title', async () => {
 	await card.flush()
 	assert.ok(marked(card).includes('Z-2026-001'))
 	assert.ok(!marked(card).includes('Vergunning'))
+})
+
+test('the case page marks a field the contribution marked personal, and not the others', async () => {
+	const { renderSfc } = await import('./support/render-sfc.mjs')
+	const html = await renderSfc('src/site/components/e/CitizenCase.vue', {
+		api: {},
+		t: (key) => key,
+		collection: { id: 'mijnZaken', register: 'zaken', schema: 'zaak' },
+		row: { id: 'zaak-1' },
+		initialData: {
+			case: { kenteken: 'AB-123-C', email: 'sanne@example.nl', omschrijving: 'Parkeervergunning' },
+			writableSet: {
+				window: { open: false, reason: 'Gesloten.' },
+				fields: {
+					kenteken: { writable: false, reason: 'Vast.', personal: true },
+					email: { writable: false, reason: 'Vast.', format: 'email' },
+					omschrijving: { writable: false, reason: 'Vast.' },
+				},
+				documents: { open: false },
+			},
+			documents: [],
+		},
+	})
+	// Server rendering wraps slot content in <!--[--> <!--]--> markers.
+	assert.match(html, /data-testid="case-value-kenteken"[^>]*><span translate="no"[^>]*>(<!--\[-->)?AB-123-C(<!--\]-->)?<\/span>/)
+	assert.match(html, /data-testid="case-value-email"[^>]*><span translate="no"[^>]*>(<!--\[-->)?sanne@example\.nl(<!--\]-->)?<\/span>/)
+	assert.match(html, /data-testid="case-value-omschrijving"[^>]*>Parkeervergunning</)
+	assert.doesNotMatch(html, /translate="no"[^>]*>Parkeervergunning/)
+	assert.doesNotMatch(html, /translate="no"[^>]*>kenteken</)
 })

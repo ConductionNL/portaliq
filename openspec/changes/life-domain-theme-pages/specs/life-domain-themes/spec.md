@@ -43,3 +43,12 @@ A product row SHALL show the update actions its contribution declares for that r
 #### Scenario: A new licence plate
 - **WHEN** the resident chooses "Kenteken wijzigen" on her resident permit and enters GZ-519-T
 - **THEN** the permit row reads "Kenteken GZ-519-T"
+
+### Requirement: A theme page lists the resident's cases in that domain (REQ-LDT-005)
+
+A theme page SHALL also list the resident's running cases from every cases collection tagged with that theme's slug, and the theme SHALL count as having content when such a case exists.
+
+#### Scenario: A parking permit request shows under Parkeren
+- **GIVEN** a cases collection tagged `theme: parkeren` and a resident with a running permit request in it
+- **WHEN** the resident opens the page Parkeren
+- **THEN** the page lists that request under their cases, and the menu lists Parkeren

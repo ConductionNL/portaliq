@@ -93,17 +93,54 @@ class ConnectionObservations {
 			return null;
 		}
 
-		if ($provider === 'maxmind'
-			&& ((string) ($settings['maxmindAccountId'] ?? '') === '' || ($settings['maxmindLicenseKeySet'] ?? false) !== true)
-		) {
-			return ['unconfigured', 'MaxMind needs an account id and a licence key before a database can be fetched.'];
+		$missing = $this->missingSetup(settings: $settings, status: $status);
+		if ($missing !== null) {
+			return ['unconfigured', $missing];
+		}
+
+		return $this->installedState(provider: $provider, metadata: (array) ($status['metadata'] ?? []));
+	}//end geoSettings()
+
+	/**
+	 * What still stands between the settings and a database, or null.
+	 *
+	 * @param array<string, mixed> $settings The result of GeoSettings::toArray().
+	 * @param array<string, mixed> $status   The result of GeoRefreshService::status().
+	 *
+	 * @return string|null The message, or null when nothing is missing.
+	 */
+	private function missingSetup(array $settings, array $status): ?string {
+		if ((string) ($settings['provider'] ?? '') === 'maxmind' && $this->hasMaxMindCredentials(settings: $settings) === false) {
+			return 'MaxMind needs an account id and a licence key before a database can be fetched.';
 		}
 
 		if (($status['present'] ?? false) !== true) {
-			return ['unconfigured', 'No database is installed yet. Run occ portaliq:traffic:geo-refresh to fetch one now.'];
+			return 'No database is installed yet. Run occ portaliq:traffic:geo-refresh to fetch one now.';
 		}
 
-		$metadata  = (array) ($status['metadata'] ?? []);
+		return null;
+	}//end missingSetup()
+
+	/**
+	 * Whether the settings hold a MaxMind account id and a saved licence key.
+	 *
+	 * @param array<string, mixed> $settings The result of GeoSettings::toArray().
+	 *
+	 * @return bool
+	 */
+	private function hasMaxMindCredentials(array $settings): bool {
+		return (string) ($settings['maxmindAccountId'] ?? '') !== '' && ($settings['maxmindLicenseKeySet'] ?? false) === true;
+	}//end hasMaxMindCredentials()
+
+	/**
+	 * What the installed database says: from another provider, or the chosen one and when it was fetched.
+	 *
+	 * @param string               $provider The chosen provider.
+	 * @param array<string, mixed> $metadata The installed database's provenance.
+	 *
+	 * @return array{0: string, 1: string}
+	 */
+	private function installedState(string $provider, array $metadata): array {
 		$installed = (string) ($metadata['provider'] ?? '');
 		if ($installed !== '' && $installed !== $provider) {
 			return [
@@ -119,7 +156,7 @@ class ConnectionObservations {
 		}
 
 		return ['configured', 'A ' . self::PROVIDER_LABELS[$provider] . ' database is installed, fetched ' . $fetchedAt . '.'];
-	}//end geoSettings()
+	}//end installedState()
 
 	/**
 	 * What a geography refresh says about the connection.
@@ -200,31 +237,76 @@ class ConnectionObservations {
 	 */
 	public function oidcExchange(string $tokenEndpoint, ?int $httpStatus, string $oauthError, bool $hasToken): ?array {
 		$broker = ucfirst($this->brokerName(url: $tokenEndpoint));
-
 		if ($httpStatus === null) {
 			return ['error', $broker . ' did not answer the last code exchange.'];
 		}
 
-		if ($httpStatus >= 200 && $httpStatus < 300) {
-			if ($hasToken === false) {
-				return ['error', $broker . ' answered the last code exchange without an ID token.'];
-			}
+		return $this->exchangeAnswer(broker: $broker, answer: ['status' => $httpStatus, 'oauthError' => $oauthError, 'hasToken' => $hasToken]);
+	}//end oidcExchange()
 
-			return ['configured', $broker . ' answered the last code exchange.'];
+	/**
+	 * What an answer to the code exchange says: success with or without a
+	 * token, a refusal of the client, or a broker failure.
+	 *
+	 * @param string                                                 $broker The broker, as messages name it.
+	 * @param array{status: int, oauthError: string, hasToken: bool} $answer The answer.
+	 *
+	 * @return array{0: string, 1: string}|null The status and message, or null when the answer is about one login.
+	 */
+	private function exchangeAnswer(string $broker, array $answer): ?array {
+		if ($this->isSuccess(status: $answer['status']) === true) {
+			return $this->exchanged(broker: $broker, hasToken: $answer['hasToken']);
 		}
 
-		if (in_array($httpStatus, self::REFUSED_STATUSES, true) === true
-			|| in_array($oauthError, self::REFUSED_OAUTH_ERRORS, true) === true
-		) {
-			return ['error', $broker . ' refused this portal\'s client credentials (HTTP ' . $httpStatus . ').'];
+		if ($this->isClientRefusal(answer: $answer) === true) {
+			return ['error', $broker . ' refused this portal\'s client credentials (HTTP ' . $answer['status'] . ').'];
 		}
 
-		if ($httpStatus >= 500) {
-			return ['error', $broker . ' answered HTTP ' . $httpStatus . ' on the last code exchange.'];
+		if ($answer['status'] >= 500) {
+			return ['error', $broker . ' answered HTTP ' . $answer['status'] . ' on the last code exchange.'];
 		}
 
 		return null;
-	}//end oidcExchange()
+	}//end exchangeAnswer()
+
+	/**
+	 * Whether an HTTP status is a 2xx success.
+	 *
+	 * @param int $status The status.
+	 *
+	 * @return bool
+	 */
+	private function isSuccess(int $status): bool {
+		return $status >= 200 && $status < 300;
+	}//end isSuccess()
+
+	/**
+	 * What a successful answer says: configured with a token, an error without one.
+	 *
+	 * @param string $broker   The broker, as messages name it.
+	 * @param bool   $hasToken Whether the answer carried a token response.
+	 *
+	 * @return array{0: string, 1: string}
+	 */
+	private function exchanged(string $broker, bool $hasToken): array {
+		if ($hasToken === false) {
+			return ['error', $broker . ' answered the last code exchange without an ID token.'];
+		}
+
+		return ['configured', $broker . ' answered the last code exchange.'];
+	}//end exchanged()
+
+	/**
+	 * Whether an answer refused this portal's client, by status or by OAuth error.
+	 *
+	 * @param array{status: int, oauthError: string} $answer The answer.
+	 *
+	 * @return bool
+	 */
+	private function isClientRefusal(array $answer): bool {
+		return in_array($answer['status'], self::REFUSED_STATUSES, true) === true
+			|| in_array($answer['oauthError'], self::REFUSED_OAUTH_ERRORS, true) === true;
+	}//end isClientRefusal()
 
 	/**
 	 * How a message names a broker: its host, and nothing else from the URL.

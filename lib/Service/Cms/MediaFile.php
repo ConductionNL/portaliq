@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Cms;
 
+use OCA\Portaliq\Kernel\Contracts\MediaFileInterface;
 use OCA\Portaliq\Service\PortalFileReader;
 use OCP\AppFramework\Http\StreamResponse;
 
@@ -42,7 +43,7 @@ use OCP\AppFramework\Http\StreamResponse;
  * so this route cannot tell a signed-in visitor from anyone else, and it does
  * not guess.
  */
-class MediaFile {
+class MediaFile implements MediaFileInterface {
 
 	/**
 	 * Constructor.
