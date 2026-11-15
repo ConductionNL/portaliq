@@ -407,7 +407,7 @@ function submissionBody({ route, answers, statements = [], verifiedEmails = {}, 
  * The outcome of an accepted submission.
  *
  * @param {object} parsed The answer's body.
- * @return {{reference: string, confirmationText: string, confirmation: object|null, mailedTo: string, moments: object, errors: object}} The outcome.
+ * @return {{reference: string, confirmationText: string, confirmation: object|null, mailedTo: string, waiting: string, moments: object, errors: object}} The outcome.
  */
 function submittedOutcome(parsed) {
 	return {
@@ -415,6 +415,8 @@ function submittedOutcome(parsed) {
 		confirmationText: String(parsed.confirmationText || ''),
 		confirmation: parsed.confirmation || null,
 		mailedTo: String(parsed.mailedTo || ''),
+		// A request that waits for its co-signer (resident-identity-in-forms REQ-RIF-003).
+		waiting: cosignWaiting(parsed),
 		moments: {
 			receivedAt: String(parsed.receivedAt || ''),
 			termStartsAt: String(parsed.termStartsAt || ''),
@@ -506,6 +508,14 @@ const STATE_VIEWS = {
 		tone: 'error',
 		sentence: `Uw aanvraag ${reference} is nog niet geregistreerd. Neem contact met ons op en noem uw kenmerk ${reference}.`,
 	}),
+	'awaiting-cosign': (reference, status) => ({
+		tone: 'info',
+		sentence: `Uw aanvraag ${reference} is ontvangen. ${cosignWaiting(status)}`,
+	}),
+	'not-cosigned': (reference) => ({
+		tone: 'error',
+		sentence: `Uw aanvraag ${reference} is niet mede-ondertekend en daarom niet verstuurd.`,
+	}),
 	queued: (reference) => ({
 		tone: 'info',
 		sentence: `Uw aanvraag ${reference} is ontvangen en wordt verwerkt. Kijk later nog eens met hetzelfde kenmerk.`,
@@ -543,7 +553,7 @@ export function statusView(status) {
 	const view = Object.hasOwn(STATE_VIEWS, status.state)
 		? STATE_VIEWS[status.state]
 		: STATE_VIEWS.queued
-	return view(reference)
+	return view(reference, status)
 }
 
 /**
@@ -711,6 +721,25 @@ export async function requestEmailCode(conn, { route, email }) {
 	} catch {
 		return { ok: false, error: 'failed', resendAfter: 60 }
 	}
+}
+
+/**
+ * The waiting line of a request that waits for its co-signer, or '' for any
+ * other request: "Wacht op mede-ondertekening door {naam}" and the deadline.
+ *
+ * @param {{state?: string, cosign?: {name?: string, deadline?: string}}|null} answer The submit or status answer.
+ * @return {string} The sentence.
+ *
+ * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+ */
+export function cosignWaiting(answer) {
+	if (answer?.state !== 'awaiting-cosign') {
+		return ''
+	}
+	const name = String(answer.cosign?.name || '').trim()
+	const day = readableDate(answer.cosign?.deadline)
+	const waits = name ? `Wacht op mede-ondertekening door ${name}.` : 'Wacht op mede-ondertekening.'
+	return day ? `${waits} Dit kan tot ${day}.` : waits
 }
 
 /**
