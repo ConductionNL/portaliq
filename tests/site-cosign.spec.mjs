@@ -19,6 +19,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
+import { createPortalApi } from '../src/shared/portalApi.js'
 import {
 	answerCosign,
 	CODE_KEY,
@@ -26,6 +27,7 @@ import {
 	cosignView,
 	digidHref,
 	forgetCode,
+	heldLine,
 	isCosignRoute,
 	normaliseCode,
 	openCosign,
@@ -259,4 +261,72 @@ test('every string the page shows exists in English and Dutch', () => {
 	assert.equal(nl['Co-sign a request'], 'Aanvraag mede-ondertekenen')
 	assert.equal(nl['I have read the request and co-sign it.'], 'Ik heb de aanvraag gelezen en onderteken mee.')
 	assert.equal(nl['Log in with DigiD and check'], 'Inloggen met DigiD en controleren')
+})
+
+test('Mijn zaken says whom a held request waits for and until when, or that it was not co-signed', () => {
+	const nl = bundle('nl')
+	const tNl = (key, vars = {}) => t(nl[key] || key, vars)
+	const waiting = { reference: 'AANVRAAG-1', state: 'awaiting-cosign', cosign: { state: 'awaiting', name: 'Henk de Vries', deadline: '2026-10-22T10:00:00+00:00' } }
+
+	assert.deepEqual(heldLine(waiting, tNl, 'nl'), {
+		reference: 'AANVRAAG-1',
+		tone: 'info',
+		title: 'Aanvraag AANVRAAG-1',
+		sentence: 'Wacht op mede-ondertekening door Henk de Vries. Dit kan tot 22 oktober 2026.',
+	})
+	assert.equal(heldLine(waiting, t, 'en').sentence, 'Waiting for co-signature by Henk de Vries. This is possible until 22 October 2026.')
+	assert.equal(heldLine({ ...waiting, cosign: {} }, tNl, 'nl').sentence, 'Wacht op mede-ondertekening.')
+	assert.deepEqual(heldLine({ reference: 'AANVRAAG-2', state: 'not-cosigned', cosign: { state: 'expired' } }, tNl, 'nl'), {
+		reference: 'AANVRAAG-2',
+		tone: 'error',
+		title: 'Aanvraag AANVRAAG-2',
+		sentence: 'Niet mede-ondertekend en daarom niet verstuurd.',
+	})
+	assert.equal(heldLine({ reference: 'AANVRAAG-3', state: 'queued' }, tNl, 'nl'), null)
+	assert.equal(heldLine(null, tNl, 'nl'), null)
+})
+
+test('the held requests are read with the bearer and the portal, and a failed read lists nothing', async () => {
+	const calls = []
+	const answers = [
+		{ ok: true, json: async () => ({ requests: [{ reference: 'AANVRAAG-1', state: 'awaiting-cosign' }] }) },
+		{ ok: false, json: async () => ({}) },
+		{ ok: true, json: async () => ({ requests: 'not a list' }) },
+	]
+	const previous = globalThis.fetch
+	globalThis.fetch = async (url, init) => {
+		calls.push({ url, init })
+		return answers.shift()
+	}
+	try {
+		const api = createPortalApi({ apiBase: '/apps/portaliq/portal/api', organisationSlug: 'gemeente-x' }, { getToken: () => 'tok', setToken: () => {} })
+		assert.deepEqual(await api.listHeldRequests(), [{ reference: 'AANVRAAG-1', state: 'awaiting-cosign' }])
+		assert.deepEqual(await api.listHeldRequests(), [])
+		assert.deepEqual(await api.listHeldRequests(), [])
+	} finally {
+		globalThis.fetch = previous
+	}
+	assert.equal(calls[0].url, '/apps/portaliq/portal/api/cosign/held')
+	assert.equal(calls[0].init.headers.Authorization, 'Bearer tok')
+	assert.equal(calls[0].init.headers['X-Portaliq-Portal'], 'gemeente-x')
+})
+
+test('Mijn zaken shows the held requests above the case list, in both languages', () => {
+	const page = readFileSync(join(ROOT, 'src', 'site', 'pages', 'e', 'MyCasesPage.vue'), 'utf8')
+	assert.match(page, /<HeldRequests\s+v-if="session"\s+:api="api"/)
+	assert.ok(page.indexOf('<HeldRequests') < page.indexOf('data-testid="my-cases-list"'))
+
+	const block = readFileSync(join(ROOT, 'src', 'site', 'components', 'forms', 'HeldRequests.vue'), 'utf8')
+	assert.match(block, /this\.requests = await this\.api\.listHeldRequests\(\)/)
+	const lib = readFileSync(join(ROOT, 'src', 'site', 'lib', 'cosign.js'), 'utf8')
+	const shown = lib.slice(lib.indexOf('export function heldLine'))
+	const keys = [...`${block}\n${shown}`.matchAll(/\bt\(\s*'([^']+)'/g)].map((m) => m[1])
+	assert.ok(keys.length >= 6)
+	const en = bundle('en')
+	const nl = bundle('nl')
+	for (const key of keys) {
+		assert.ok(en[key], `en: ${key}`)
+		assert.ok(nl[key], `nl: ${key}`)
+	}
+	assert.equal(nl['Waiting for co-signature by {name}.'], 'Wacht op mede-ondertekening door {name}.')
 })

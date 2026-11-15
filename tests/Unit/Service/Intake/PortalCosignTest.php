@@ -152,6 +152,27 @@ class PortalCosignTest extends TestCase {
 	}//end testAHeldSubmissionWaitsForItsCoSigner()
 
 	/**
+	 * Mijn zaken: the submitter's held request is listed with its waiting line, and the waiting line goes once Henk signs.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 */
+	public function testTheSubmitterSeesTheHeldRequestUntilItIsCoSigned(): void {
+		$cosign = $this->cosign();
+		$held   = $this->held(cosign: $cosign, days: 14);
+
+		$listed = $cosign->heldBy(subjectRef: 'bsn-sanne', portal: 'gemeente-x');
+		$this->assertSame([$held['reference']], array_column($listed, 'reference'));
+		$this->assertSame(['state' => 'awaiting', 'name' => 'Henk de Vries', 'deadline' => '2026-10-22T10:00:00+00:00'], $listed[0]['cosign']);
+		$this->assertSame([], $cosign->heldBy(subjectRef: 'bsn-henk', portal: 'gemeente-x'));
+
+		$cosign->sign(code: '7RQ-K2M', subjectRef: 'bsn-henk', levelOfAssurance: 'substantial', now: new DateTimeImmutable(self::SUBMITTED));
+
+		$this->assertSame([], $cosign->heldBy(subjectRef: 'bsn-sanne', portal: 'gemeente-x'));
+	}//end testTheSubmitterSeesTheHeldRequestUntilItIsCoSigned()
+
+	/**
 	 * A non-positive deadline is the default fourteen days; a bad address holds nothing.
 	 *
 	 * @return void

@@ -196,6 +196,35 @@ class PortalCosignControllerTest extends TestCase {
 	}//end testRefusingYourOwnRequestIsRefusedBeforeTheFlow()
 
 	/**
+	 * Mijn zaken: the signed-in resident gets their own held requests of this portal.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 */
+	public function testHeldListsTheSignedInResidentsOwnRequestsOfThisPortal(): void {
+		$requests = [['reference' => 'AANVRAAG-1', 'route' => 'woo', 'submittedAt' => '', 'state' => 'awaiting-cosign', 'cosign' => ['state' => 'awaiting', 'name' => 'Henk de Vries', 'deadline' => '2026-10-22']]];
+		$this->cosign->expects($this->once())->method('heldBy')->with('bsn-sanne', 'gemeente-x')->willReturn($requests);
+
+		$response = $this->controller(site: self::SITE, subject: ['subjectRef' => 'bsn-sanne', 'trust' => 'low'])->held(portal: 'gemeente-x');
+
+		$this->assertSame([Http::STATUS_OK, ['requests' => $requests]], [$response->getStatus(), $response->getData()]);
+	}//end testHeldListsTheSignedInResidentsOwnRequestsOfThisPortal()
+
+	/**
+	 * Without a session or a portal nothing is listed.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 */
+	public function testHeldNeedsASessionAndAPortal(): void {
+		$this->cosign->expects($this->never())->method('heldBy');
+
+		$none   = $this->controller(site: self::SITE, subject: null)->held();
+		$noSite = $this->controller(site: null, subject: self::HENK)->held(portal: 'elders');
+
+		$this->assertSame([Http::STATUS_UNAUTHORIZED, ['authenticated' => false]], [$none->getStatus(), $none->getData()]);
+		$this->assertSame([Http::STATUS_NOT_FOUND, ['error' => 'portal_not_found']], [$noSite->getStatus(), $noSite->getData()]);
+	}//end testHeldNeedsASessionAndAPortal()
+
+	/**
 	 * The controller over the given portal and session.
 	 *
 	 * @param array<string, mixed>|null $site    The portal the resolver finds.

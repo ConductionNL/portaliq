@@ -521,5 +521,10 @@
 	"You cannot change the request.": "U kunt de aanvraag niet wijzigen.",
 	"You cannot co-sign your own request.": "U kunt uw eigen aanvraag niet mede-ondertekenen.",
 	"You refused to co-sign. The applicant is told.": "U heeft geweigerd mee te ondertekenen. De aanvrager krijgt bericht.",
-	"Your code": "Uw code"
+	"Your code": "Uw code",
+	"Waiting for co-signature by {name}.": "Wacht op mede-ondertekening door {name}.",
+	"Waiting for co-signature.": "Wacht op mede-ondertekening.",
+	"This is possible until {date}.": "Dit kan tot {date}.",
+	"Not co-signed, so it was not sent.": "Niet mede-ondertekend en daarom niet verstuurd.",
+	"Waiting for co-signature": "Wacht op mede-ondertekening"
 }

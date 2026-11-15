@@ -1432,6 +1432,29 @@ export function createPortalApi(config, store = {}) {
 		},
 
 		/**
+		 * The resident's own requests that wait for a co-signer or were not
+		 * co-signed; an empty list when there is none or it cannot be read.
+		 *
+		 * @return {Promise<Array<{reference: string, route: string, submittedAt: string, state: string, cosign: {state: string, name: string, deadline: string}}>>}
+		 *
+		 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+		 */
+		async listHeldRequests() {
+			try {
+				const res = await fetch(`${base}/cosign/held`, {
+					headers: { Accept: 'application/json', ...portalHeader, ...authHeaders() },
+				})
+				if (!res.ok) {
+					return []
+				}
+				const body = await res.json()
+				return Array.isArray(body?.requests) ? body.requests : []
+			} catch {
+				return []
+			}
+		},
+
+		/**
 		 * Delete the draft once the action was sent.
 		 *
 		 * @param {string} app The contributing app, or the action's register.

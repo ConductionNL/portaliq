@@ -166,6 +166,42 @@ class PortalCosignController extends Controller implements PortalProtected {
 	}//end refuse()
 
 	/**
+	 * The signed-in resident's own requests that wait for a co-signer or were not co-signed, for Mijn zaken.
+	 *
+	 * Such a request has no case until it is co-signed and delivered, so this
+	 * is where Mijn zaken reads "Wacht op mede-ondertekening door {naam}".
+	 * Any session of the resident will do: it lists only their own requests.
+	 *
+	 * @param string $portal The portal's slug; empty resolves it from the host.
+	 *
+	 * @return JSONResponse `{requests}`, 401 without a session, 404 without a portal.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
+	public function held(string $portal = ''): JSONResponse {
+		$slug = null;
+		if ($portal !== '') {
+			$slug = $portal;
+		}
+
+		$site = $this->portals->resolve(request: $this->request, portalSlug: $slug);
+		if ($site === null) {
+			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$subject    = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
+		$subjectRef = (string)($subject['subjectRef'] ?? '');
+		if ($subjectRef === '') {
+			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+		}
+
+		return new JSONResponse(['requests' => $this->cosign->heldBy(subjectRef: $subjectRef, portal: (string)($site['slug'] ?? ''))]);
+	}//end held()
+
+	/**
 	 * The portal, a co-signer signed in at the needed level, and a request of this portal the code opens.
 	 *
 	 * @param string $code   The code.

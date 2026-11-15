@@ -284,3 +284,32 @@ export function readableDay(value, locale = 'nl-NL') {
 		timeZone: 'Europe/Amsterdam',
 	}).format(moment)
 }
+
+/**
+ * The line Mijn zaken shows for one of the resident's own held requests: it
+ * waits for "{name}" until the deadline, or it was not co-signed and so not
+ * sent. Such a request has no case until it is co-signed and delivered.
+ *
+ * @param {{reference?: string, state?: string, cosign?: {name?: string, deadline?: string}}} request A row of `/portal/api/cosign/held`.
+ * @param {(key: string, vars?: object) => string} t The translator.
+ * @param {string} [locale] The page language, `nl` by default.
+ * @return {{reference: string, tone: string, title: string, sentence: string}|null} The line, or null for any other request.
+ * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+ */
+export function heldLine(request, t, locale = 'nl') {
+	const reference = String(request?.reference || '')
+	const title = t('Request {reference}', { reference })
+	if (request?.state === 'not-cosigned') {
+		return { reference, tone: 'error', title, sentence: t('Not co-signed, so it was not sent.') }
+	}
+	if (request?.state !== 'awaiting-cosign') {
+		return null
+	}
+	const name = String(request.cosign?.name || '').trim()
+	const waits = name
+		? t('Waiting for co-signature by {name}.', { name })
+		: t('Waiting for co-signature.')
+	const day = readableDay(request.cosign?.deadline, String(locale).startsWith('nl') ? 'nl-NL' : 'en-GB')
+	const sentence = day ? `${waits} ${t('This is possible until {date}.', { date: day })}` : waits
+	return { reference, tone: 'info', title, sentence }
+}

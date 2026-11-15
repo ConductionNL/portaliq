@@ -521,5 +521,10 @@
 	"You cannot change the request.": "You cannot change the request.",
 	"You cannot co-sign your own request.": "You cannot co-sign your own request.",
 	"You refused to co-sign. The applicant is told.": "You refused to co-sign. The applicant is told.",
-	"Your code": "Your code"
+	"Your code": "Your code",
+	"Waiting for co-signature by {name}.": "Waiting for co-signature by {name}.",
+	"Waiting for co-signature.": "Waiting for co-signature.",
+	"This is possible until {date}.": "This is possible until {date}.",
+	"Not co-signed, so it was not sent.": "Not co-signed, so it was not sent.",
+	"Waiting for co-signature": "Waiting for co-signature"
 }

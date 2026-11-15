@@ -158,6 +158,20 @@ class PortalCosign {
 	}//end hold()
 
 	/**
+	 * The resident's own requests on a portal that wait for a co-signer or were not co-signed.
+	 *
+	 * @param string $subjectRef The resident's own portal identity.
+	 * @param string $portal     The portal's slug.
+	 *
+	 * @return array<int, array<string, mixed>> Each with reference, route, submittedAt, state and the cosign line.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 */
+	public function heldBy(string $subjectRef, string $portal): array {
+		return $this->queue->heldFor(subjectRef: $subjectRef, portal: $portal);
+	}//end heldBy()
+
+	/**
 	 * The held submission behind a code, read-only, for the co-signer's review page.
 	 *
 	 * @param string            $code       The code the co-signer typed.

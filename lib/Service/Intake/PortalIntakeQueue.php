@@ -228,6 +228,58 @@ class PortalIntakeQueue implements PortalIntakeQueueInterface {
 	}//end awaitingCosign()
 
 	/**
+	 * The requests a resident submitted on a portal that wait for a co-signer or were not co-signed, newest first.
+	 *
+	 * These have no case yet (the case is created at delivery), so Mijn zaken
+	 * lists them from here to say who they wait for and until when.
+	 *
+	 * @param string $subjectRef The resident's own portal identity.
+	 * @param string $portal     The portal, re-checked against every row.
+	 * @param int    $limit      At most this many rows are read.
+	 *
+	 * @return array<int, array<string, mixed>> Each with reference, route, submittedAt, state and the cosign line.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 */
+	public function heldFor(string $subjectRef, string $portal, int $limit = 50): array {
+		if ($subjectRef === '' || $portal === '') {
+			return [];
+		}
+
+		$rows = $this->reader->readCollection(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: 'subjectRef',
+			subjectRef: $subjectRef,
+			organisation: '',
+			limit: $limit
+		);
+
+		$held = [];
+		foreach ($rows as $row) {
+			if (is_array($row) === false
+				|| ($row['subjectRef'] ?? '') !== $subjectRef
+				|| ($row['portal'] ?? '') !== $portal
+				|| in_array(($row['state'] ?? ''), [self::STATE_AWAITING_COSIGN, self::STATE_NOT_COSIGNED], true) === false
+			) {
+				continue;
+			}
+
+			$held[] = [
+				'reference' => (string)($row['reference'] ?? ''),
+				'route' => (string)($row['route'] ?? ''),
+				'submittedAt' => (string)($row['submittedAt'] ?? ''),
+				'state' => (string)$row['state'],
+				'cosign' => ($this->cosignStatus(row: $row)['cosign'] ?? ['state' => '', 'name' => '', 'deadline' => '']),
+			];
+		}
+
+		usort($held, static fn (array $a, array $b): int => strcmp($b['submittedAt'], $a['submittedAt']));
+
+		return $held;
+	}//end heldFor()
+
+	/**
 	 * Store the co-signer's answer: signed releases the submission to the drain, anything else stops it.
 	 *
 	 * @param array<string, mixed> $submission The held submission.

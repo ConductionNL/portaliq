@@ -416,6 +416,8 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         ['name' => 'portalCosign#open', 'url' => '/portal/api/cosign', 'verb' => 'GET'],
         ['name' => 'portalCosign#sign', 'url' => '/portal/api/cosign/sign', 'verb' => 'POST'],
         ['name' => 'portalCosign#refuse', 'url' => '/portal/api/cosign/refuse', 'verb' => 'POST'],
+        // Mijn zaken: the resident's own requests that wait for a co-signer (resident-identity-in-forms T04).
+        ['name' => 'portalCosign#held', 'url' => '/portal/api/cosign/held', 'verb' => 'GET'],
         ['name' => 'portalIntake#status', 'url' => '/portal/api/intake/status', 'verb' => 'GET'],
 
         // The citizen's own identity (portal-identity-and-the-organisations-cases):
