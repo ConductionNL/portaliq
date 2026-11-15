@@ -51,6 +51,12 @@ Link order in `templates/site.php`: thematiq `css/public-bridge.css`, then the
 token set chain parent first, then the vendored NLDS sheets, then
 `css/site-theme.css`, then the portal's own `:root` override block.
 
+> Amended 2026-10-02 by `site-links-the-theme-bridge`, which takes over the bridge link. The
+> bridge goes first in the token layer, after the vendored sheets and `site-theme.css`, and
+> directly before the set chain. Before the vendored sheets it would lose two `:root`
+> declarations of `nlds-app.css` (`--conduction-primary-top-nav-background-color` and
+> `-color`) and the header bar would stay white. Read that change's design D1.
+
 - The bridge maps `--nldesign-color-*`, which every set defines, onto the
   `--utrecht-*` roles the vendored components read. Without it a set loads and
   paints nothing. Source: thematiq#355 and the asset partial in 19fbcd6.

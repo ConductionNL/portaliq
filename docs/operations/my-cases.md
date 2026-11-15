@@ -28,6 +28,12 @@ The page reads every contribution collection that declares `kind: cases`. A coll
 - `closedField` names the field that makes a case closed once it holds a value. The portal keeps it only when the field is in `fields`, or when the collection projects no `fields` at all; otherwise it drops it and every case counts as open.
 - The row's name is its `title`, else `name`, `reference` or `identifier`. The page also shows `status` and the `created` date when the row carries them.
 
+## A text above the list
+
+A collection may declare `intro`: a short text the portal shows above its list, for example `'intro' => 'Hier ziet u al uw lopende zaken.'`. **My cases** shows the intro of every `kind: cases` collection under its heading, each text once; a page that shows the collection shows it above that collection's table. Any collection can carry one.
+
+The portal shows it as plain text, so markup shows as typed. An empty value, or one that is not text, is dropped.
+
 ## Open and closed
 
 With at least one collection declaring `closedField`, the page shows two tabs, **Open** ("Lopend") and **Closed** ("Afgerond"), each with its count. A case of a collection that declares no `closedField` is always open. With no `closedField` anywhere, the page shows one list and no tabs.
@@ -43,7 +49,7 @@ A person who holds a mandate sees **Acting for** ("Namens") in the portal header
 - **Yourself** lists only the person's own cases.
 - A mandate lists the person's own cases plus the cases that mandate reaches. Each of those shows the mandate's label, so the person sees why they may read it.
 - A mandate whose party tree is larger than the portal's bound lists nothing and says "This organisation has too many cases to list here. Choose a narrower mandate."
-- A case opened under a mandate shows read-only: "You are viewing this case on behalf of {label}. It cannot be changed here." Nothing can be changed, added or withdrawn, and no documents are listed.
+- A case opened under a mandate shows read-only: "You are viewing this case on behalf of \{label\}. It cannot be changed here." Nothing can be changed, added or withdrawn, and no documents are listed.
 
 A case app opens its cases to mandates by declaring `mandateField` on the collection: the field that holds the party the case belongs to. A collection without it is never read through a mandate. Mandates are recorded on `portalMandate` by staff, or by a granted access request.
 

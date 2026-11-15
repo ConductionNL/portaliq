@@ -5,7 +5,7 @@
 
 <!--
 	"My details" on the site (identity-registered-details T05-T07), ported from
-	src/portal/components/RegisteredDetailsPage.jsx. What the base registrations
+	the React portal's RegisteredDetailsPage.jsx. What the base registrations
 	hold about the signed-in person: the BRP record for a resident, the KvK
 	record for a business user. Read when the screen opens, never stored. Each
 	empty state says why. The request links appear only when the portal bound a
@@ -209,7 +209,7 @@ export default {
 	 *
 	 * @return {Promise<void>} Resolves when read.
 	 *
-	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-their-registered-details-req-srp-038
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-their-registered-details-req-srp-038
 	 */
 	async mounted() {
 		if (this.initialDetails !== null) {

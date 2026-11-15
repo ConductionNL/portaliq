@@ -93,7 +93,7 @@ import { fetchSharedDossier } from '../lib/sharedDossier.js'
  * public right now, each with its link and note. Anyone with the link sees
  * it, signed in or not; it never shows who made the dossier.
  *
- * @spec openspec/changes/site-shared-dossier/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
+ * @spec openspec/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
  */
 export default {
 	name: 'SharedDossierPage',
@@ -105,6 +105,8 @@ export default {
 		t: { type: Function, required: true },
 		/** `fetch`, or a stand-in in a test. */
 		fetchImpl: { type: Function, default: null },
+		/** The Nextcloud instance root opencatalogi is reached under. */
+		instanceRoot: { type: String, default: '/index.php' },
 		/** The answer to start from, for a server render or a test. */
 		initialAnswer: { type: Object, default: null },
 	},
@@ -122,7 +124,7 @@ export default {
 		 * The dossier on screen, or an empty one before it is read.
 		 *
 		 * @return {object}
-		 * @spec openspec/changes/site-shared-dossier/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
+		 * @spec openspec/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
 		 */
 		dossier() {
 			return this.answer && this.answer.dossier
@@ -136,7 +138,7 @@ export default {
 		 * Read again when the link on screen changes.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/site-shared-dossier/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
+		 * @spec openspec/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
 		 */
 		token() {
 			this.load()
@@ -147,7 +149,7 @@ export default {
 	 * Read the dossier unless an answer was handed in.
 	 *
 	 * @return {void}
-	 * @spec openspec/changes/site-shared-dossier/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
+	 * @spec openspec/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
 	 */
 	mounted() {
 		if (this.answer === null) {
@@ -160,7 +162,7 @@ export default {
 		 * Read the shared dossier and tell the shell its title.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/site-shared-dossier/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
+		 * @spec openspec/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
 		 */
 		async load() {
 			this.answer = null
@@ -168,6 +170,7 @@ export default {
 			const answer = await fetchSharedDossier(
 				token,
 				this.fetchImpl || ((url, init) => window.fetch(url, init)),
+				this.instanceRoot,
 			)
 			if (token !== this.token) {
 				return

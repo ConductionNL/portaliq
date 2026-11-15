@@ -85,6 +85,51 @@ class AttachedActionResolverTest extends TestCase {
 	}//end testAttachesToTheNamedSchemaOnly()
 
 	/**
+	 * An attached action that runs in steps carries its steps, draft and
+	 * confirmation to the renderer (site-multi-step-forms REQ-SMF-020).
+	 *
+	 * @return void
+	 */
+	public function testTheListingCarriesTheStepFlow(): void {
+		$flow = [
+			'steps'        => [['id' => 'vraag', 'title' => 'Uw vraag', 'fields' => ['question']]],
+			'draft'        => ['retentionDays' => 30],
+			'confirmation' => ['title' => 'Ontvangen'],
+		];
+		$out    = (new AttachedActionResolver())->resolve(contributions: $this->contributions(action: $this->ask($flow)));
+		$listed = $out[0]['collections'][0]['attachedActions'][0];
+
+		self::assertSame($flow['steps'], $listed['steps']);
+		self::assertSame($flow['draft'], $listed['draft']);
+		self::assertSame($flow['confirmation'], $listed['confirmation']);
+		self::assertArrayNotHasKey('endpoint', $listed);
+	}//end testTheListingCarriesTheStepFlow()
+
+	/**
+	 * A choice field's options travel with the attached action, so the form
+	 * on the record asks it as choices rather than as free text
+	 * (endpoint-action-forms-keep-their-field-shape REQ-EAF-002).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/site-forms/spec.md#requirement-a-form-attached-to-a-record-asks-and-sends-what-its-action-declares-req-eaf-002
+	 */
+	public function testTheListingCarriesTheOptionsOfAChoiceField(): void {
+		$providers = [
+			'verzoekerType' => [
+				'type'    => 'static',
+				'options' => [['value' => 'burger', 'label' => 'Inwoner']],
+			],
+		];
+		$out    = (new AttachedActionResolver())->resolve(
+			contributions: $this->contributions(action: $this->ask(['optionsProviders' => $providers]))
+		);
+		$listed = $out[0]['collections'][0]['attachedActions'][0];
+
+		self::assertSame($providers, $listed['optionsProviders']);
+	}//end testTheListingCarriesTheOptionsOfAChoiceField()
+
+	/**
 	 * A provider cannot declare attached actions on its own collection.
 	 *
 	 * @return void
@@ -244,4 +289,21 @@ class AttachedActionResolverTest extends TestCase {
 
 		self::assertArrayNotHasKey('attachedActions', $out[0]['collections'][0]);
 	}//end testAMalformedCollectionAttachesNothing()
+
+	/**
+	 * An action without a string id, an attachTo that is not a map or names
+	 * no schema attaches nothing; an empty collection id attaches to every
+	 * collection on the schema.
+	 *
+	 * @return void
+	 */
+	public function testEveryOtherAttachRuleIsAsRecorded(): void {
+		foreach ([['id' => 7], ['attachTo' => 'opencatalogi'], ['attachTo' => ['app' => 'opencatalogi', 'schema' => '']], ['attachTo' => ['app' => 7, 'schema' => 'collection']]] as $bad) {
+			$out = (new AttachedActionResolver())->resolve(contributions: $this->contributions(action: $this->ask($bad)));
+			self::assertArrayNotHasKey('attachedActions', $out[0]['collections'][0], json_encode($bad));
+		}
+
+		$out = (new AttachedActionResolver())->resolve(contributions: $this->contributions(action: $this->ask(['attachTo' => ['app' => 'opencatalogi', 'schema' => 'collection', 'collection' => '']])));
+		self::assertSame(['askAboutDossier'], array_column($out[0]['collections'][0]['attachedActions'], 'id'));
+	}//end testEveryOtherAttachRuleIsAsRecorded()
 }//end class

@@ -143,11 +143,25 @@
 
 <script>
 import {
+	keptContactInvitation,
 	registrationOutcomeText,
 	solveChallenge,
 	wayInRefusalText,
 	waysInApi,
 } from '../lib/waysIn.js'
+
+/**
+ * The tab's sessionStorage, or null where the browser refuses it.
+ *
+ * @return {Storage|null}
+ */
+function sessionStore() {
+	try {
+		return globalThis.window?.sessionStorage || null
+	} catch {
+		return null
+	}
+}
 
 /**
  * The doors on the site's sign-in screen besides the sign-in buttons
@@ -156,6 +170,32 @@ import {
  *
  * @spec openspec/specs/portal-ways-in/spec.md#requirement-the-sign-in-screen-shows-only-the-doors-that-lead-somewhere-req-iwi-005
  */
+/**
+ * The proof of work a challenge asks for, or '' when it asks none.
+ *
+ * @param {{nonce?: string, difficulty?: number}} challenge The challenge.
+ * @return {Promise<string>} The solution.
+ */
+async function solutionOf(challenge) {
+	return challenge.difficulty
+		? solveChallenge(challenge.nonce, challenge.difficulty)
+		: ''
+}
+
+/**
+ * The honeypot to send: the field the challenge named with what the hidden
+ * input holds, or null when it named none.
+ *
+ * @param {{honeypotField?: string}} challenge The challenge.
+ * @param {string} trap The hidden input's value.
+ * @return {{field: string, value: string}|null} The honeypot.
+ */
+function honeypotOf(challenge, trap) {
+	return challenge.honeypotField
+		? { field: challenge.honeypotField, value: trap }
+		: null
+}
+
 export default {
 	name: 'WaysIn',
 
@@ -172,6 +212,8 @@ export default {
 
 	data() {
 		return {
+			// The secret of a contact invitation followed here, or ''.
+			contactInvitation: '',
 			registration: {
 				email: '',
 				name: '',
@@ -203,6 +245,25 @@ export default {
 		},
 	},
 
+	/**
+	 * A visitor who came from a contact invitation finds the address it was
+	 * sent to filled in (own-contacts-and-invitations T05).
+	 *
+	 * @return {Promise<void>}
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 */
+	async mounted() {
+		this.contactInvitation = keptContactInvitation(sessionStore())
+		if (!this.ways.register || this.contactInvitation === '') {
+			return
+		}
+		const email = await this.api.contactInvitationEmail(this.contactInvitation)
+		if (email !== '' && this.registration.email === '') {
+			this.registration.email = email
+		}
+	},
+
 	methods: {
 		/**
 		 * Solve the challenge and register; show the policy's outcome.
@@ -215,20 +276,13 @@ export default {
 			this.registration.busy = true
 			this.registration.outcome = null
 			const challenge = (await this.api.challenge('registration')) || {}
-			const solution = challenge.difficulty
-				? await solveChallenge(challenge.nonce, challenge.difficulty)
-				: ''
 			const answer = await this.api.registerAccount({
 				email: this.registration.email,
 				displayName: this.registration.name,
 				challenge,
-				solution,
-				honeypot: challenge.honeypotField
-					? {
-							field: challenge.honeypotField,
-							value: this.registration.trap,
-						}
-					: null,
+				solution: await solutionOf(challenge),
+				contactInvitation: this.contactInvitation,
+				honeypot: honeypotOf(challenge, this.registration.trap),
 			})
 			this.registration.busy = false
 			this.registration.outcome = answer.ok

@@ -12,6 +12,7 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { siteAddress } from './portal-nav.ts'
 
 const API_BASE = '/apps/portaliq/portal/api'
 
@@ -92,9 +93,7 @@ test('switching e-mail off for case changes survives a reload', async ({
 test('a record link keeps its target through the sign-in and leaves the address bar', async ({
 	page,
 }) => {
-	await page.goto(
-		'/apps/portaliq/portal?org=dev-org#open=portaliq/berichten/some-record',
-	)
+	await page.goto(`${siteAddress()}#open=portaliq/berichten/some-record`)
 	await expect(page).not.toHaveURL(/#open=/)
 	const kept = await page.evaluate(() =>
 		window.sessionStorage.getItem('portaliq.openRecord'),

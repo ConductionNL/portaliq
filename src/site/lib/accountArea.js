@@ -2,12 +2,12 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The site's signed-in shell in plain functions: the account menu in the
- * shape SiteMenu renders, the "logged in as" line, the breadcrumb of a
- * signed-in page and which route to open. Imports only shared code, so
+ * The site's signed-in shell in plain functions: the "logged in as" line,
+ * the breadcrumb of a signed-in page and which route to open. The resident's
+ * own menu is lib/residentMenu.js. Imports only shared code, so
  * tests/site-signed-in-shell.spec.mjs runs it as node.
  *
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 
 import {
@@ -19,59 +19,90 @@ import {
 } from '../../shared/portalNav.js'
 
 /**
- * The signed-in navigation as one SiteMenu menu.
- *
- * @param {Array<object>} nav The navigation (src/shared/portalNav.js).
- * @param {(key: string, vars?: object) => string} t The translator.
- * @param {number} unread The inbox's unread count.
- * @param {(route: string) => string} hrefFor A real address for a route.
- * @return {{title: string, items: Array<object>}} The menu.
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
- */
-export function accountMenu(nav, t, unread, hrefFor) {
-	return {
-		title: t('My overview'),
-		items: (nav || []).map((entry) => {
-			const link = routeForNav(entry)
-			const item = { name: entry.label, link, href: hrefFor(link) }
-			if (entry.special === 'inbox' && Number(unread) > 0) {
-				item.badge = String(unread)
-				item.badgeLabel = t('{count} unread', { count: unread })
-			}
-			return item
-		}),
-	}
-}
-
-/**
  * The "logged in as" line for a session.
+ *
+ * Names the person by the display name the session carries (the portal
+ * account's, from provisioning or the broker). The subject reference is an
+ * internal key and is never shown, and neither is a number (a BSN is no
+ * name): without a name the line is a plain "Logged in"
+ * (site-header-names-the-person, resident-sees-words-not-codes).
  *
  * @param {object|null} session The session.
  * @param {(key: string, vars?: object) => string} t The translator.
  * @return {string} The line, or '' without a session.
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-header-must-name-the-signed-in-person-never-their-reference
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-header-must-never-name-a-person-by-a-number
  */
 export function loggedInAs(session, t) {
 	if (!session) {
 		return ''
 	}
-	const who =
-		session.name || session.subjectRef || session.subject || session.sub || ''
-	return who ? t('Logged in as {subjectRef}', { subjectRef: who }) : t('Logged in')
+	const name = shownName(session)
+	return name ? t('Logged in as {name}', { name }) : t('Logged in')
 }
 
 /**
- * Where an account route should go instead, or '' to stay: the bare `/mijn`
- * and a page the navigation does not offer open the default entry, once the
- * navigation has loaded.
+ * The name the header may show for a session: '' for none, for the subject
+ * reference, and for a number (a BSN is no name).
+ *
+ * @param {object} session The session.
+ * @return {string} The name, or ''.
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-header-must-never-name-a-person-by-a-number
+ */
+function shownName(session) {
+	const name = String(session.displayName || session.name || '').trim()
+	return isAName(name, session) ? name : ''
+}
+
+/**
+ * Whether a value may stand as a name: not the subject reference, not a number.
+ *
+ * @param {string} name The value.
+ * @param {object} session The session.
+ * @return {boolean}
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-header-must-never-name-a-person-by-a-number
+ */
+function isAName(name, session) {
+	return name !== String(session.subjectRef || '') && !/^\d+$/.test(name)
+}
+
+/**
+ * The account pill's accessible name: "Ingelogd als {name}, naar {area}", or
+ * "Ingelogd, naar {area}" without a name.
+ *
+ * @param {object|null} session The session.
+ * @param {{t: (key: string, vars?: object) => string, area: string}} words The translator and the own area's name.
+ * @return {string} The name, or '' without a session.
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-header-must-name-the-signed-in-person-never-their-reference
+ */
+export function pillLabel(session, words) {
+	if (!session) {
+		return ''
+	}
+	const name = shownName(session)
+	const area = words.area
+	return name
+		? words.t('Logged in as {name}, to {area}', { name, area })
+		: words.t('Logged in, to {area}', { area })
+}
+
+/**
+ * Where an account route should go instead, or '' to stay: a page the
+ * navigation does not offer opens the default entry, once the navigation has
+ * loaded. The bare `/mijn` stays: it is the home.
  *
  * @param {Array<object>} nav The navigation.
  * @param {string} route The route on screen.
  * @return {string} The route to replace it with, or ''.
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export function accountRedirect(nav, route) {
 	if (!isAccountRoute(route) || !Array.isArray(nav) || nav.length === 0) {
+		return ''
+	}
+	// `/mijn` itself opens the resident's home, it no longer redirects
+	// (site-mijn-omgeving-components REQ-SMO-007, design D4).
+	if (route === ACCOUNT_ROUTE) {
 		return ''
 	}
 	if (navEntryForRoute(nav, route)) {
@@ -89,17 +120,23 @@ export function accountRedirect(nav, route) {
  * @param {(key: string) => string} t The translator.
  * @param {(route: string) => string} hrefFor A real address for a route.
  * @return {Array<{route: string, label: string, href: string}>} The crumbs.
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export function accountCrumbs(entry, t, hrefFor) {
 	const crumbs = [
 		{ route: '/', label: t('Home'), href: hrefFor('/') },
 		{
 			route: ACCOUNT_ROUTE,
-			label: t('My overview'),
+			label: t('My area'),
 			href: hrefFor(ACCOUNT_ROUTE),
 		},
 	]
+	// A record page under Mijn zaken passes through it
+	// (zuiddrecht-resident-pages-match-the-boards).
+	if (entry?.page?.record?.under === 'cases') {
+		const route = routeForNav({ special: 'cases' })
+		crumbs.push({ route, label: t('My cases'), href: hrefFor(route) })
+	}
 	if (entry) {
 		const route = routeForNav(entry)
 		crumbs.push({ route, label: entry.label, href: hrefFor(route) })

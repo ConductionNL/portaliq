@@ -3,10 +3,10 @@
 
 /**
  * The strings of slice c (forms and actions), nl and en. The keys are the
- * English source strings the React portal uses in src/portal/i18n, so a key
+ * English source strings the React portal used, now in src/shared/i18n, so a key
  * the shell's translator already knows reads the same here.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
  */
 export default {
 	nl: {
@@ -51,10 +51,63 @@ export default {
 			'Dit is nu niet beschikbaar. Probeer het later opnieuw.',
 		'Saved.': 'Opgeslagen.',
 		'Saving did not work.': 'Opslaan is niet gelukt.',
+		'Your request may still be processing. Check My cases in a few minutes before you send it again.':
+			'Uw verzoek wordt misschien nog verwerkt. Kijk over een paar minuten in Mijn zaken voordat u het opnieuw verstuurt.',
+		'Go to My cases': 'Naar Mijn zaken',
 		'{field} is required.': '{field} is verplicht.',
 		'Choose an option': 'Kies een optie',
 		'Not everything is filled in yet. Check the fields below.':
 			'Nog niet alles is ingevuld. Controleer de velden hieronder.',
+		'(optional)': '(niet verplicht)',
+		'A field without "optional" must be filled in.':
+			'Een veld zonder "niet verplicht" moet u invullen.',
+		'Something is still missing': 'Er ontbreekt nog iets',
+		'Fill this in. Then you can continue.': 'Vul dit aan. Daarna kunt u verder.',
+		'Error: ': 'Fout: ',
+		Day: 'Dag',
+		Month: 'Maand',
+		Year: 'Jaar',
+		'For example 1 3 2026': 'Bijvoorbeeld 1 3 2026',
+		'{field}: enter a real date, for example 1 3 2026.':
+			'{field}: vul een geldige datum in, bijvoorbeeld 1 3 2026.',
+		'{field}: enter a number, for example 8 or 7.5.':
+			'{field}: vul een getal in, bijvoorbeeld 8 of 7,5.',
+		'{field}: enter a whole number, for example 8.':
+			'{field}: vul een heel getal in, bijvoorbeeld 8.',
+		'{field} is not filled in correctly. Check it.':
+			'{field} is niet goed ingevuld. Kijk het nog eens na.',
+		'Not everything is filled in correctly. Check your answers.':
+			'Niet alles is goed ingevuld. Kijk uw antwoorden na.',
+		'Choose a file or photo': 'Bestand of foto kiezen',
+		'Remove {file}': '{file} verwijderen',
+		Today: 'Vandaag',
+		Tomorrow: 'Morgen',
+		'the whole day': 'de hele dag',
+		'Another day': 'Een andere dag',
+		'Step {n} of {m}: {title}': 'Stap {n} van {m}: {title}',
+		'Step {n} of {m}': 'Stap {n} van {m}',
+		Progress: 'Voortgang',
+		'Show all steps': 'Toon alle stappen',
+		'Hide the steps': 'Verberg de stappen',
+		Done: 'Klaar',
+		'Current step': 'Huidige stap',
+		'To do': 'Nog te doen',
+		'Previous step': 'Vorige stap',
+		'Next step': 'Volgende stap',
+		'Check and send': 'Controleren en versturen',
+		'Other questions': 'Overige vragen',
+		Change: 'Wijzigen',
+		'Change step {n}': 'Stap {n} wijzigen',
+		'Not answered': 'Niet ingevuld',
+		'Forgot your password?': 'Wachtwoord vergeten',
+		'Save and continue later': 'Opslaan en later verdergaan',
+		Provisional: 'Voorlopig',
+		'Not sent yet. It counts once you send it.':
+			'Nog niet verstuurd. Het telt pas als u het verstuurt.',
+		'Your answers are saved until {date}. You can continue later.':
+			'Uw antwoorden zijn bewaard tot {date}. U kunt later verdergaan.',
+		'Your answers could not be saved.':
+			'Uw antwoorden konden niet worden bewaard.',
 		'Propose a change': 'Wijziging voorstellen',
 		Note: 'Toelichting',
 		'Send proposal': 'Voorstel indienen',
@@ -107,10 +160,63 @@ export default {
 			'This is not available right now. Try again later.',
 		'Saved.': 'Saved.',
 		'Saving did not work.': 'Saving did not work.',
+		'Your request may still be processing. Check My cases in a few minutes before you send it again.':
+			'Your request may still be processing. Check My cases in a few minutes before you send it again.',
+		'Go to My cases': 'Go to My cases',
 		'{field} is required.': '{field} is required.',
 		'Choose an option': 'Choose an option',
 		'Not everything is filled in yet. Check the fields below.':
 			'Not everything is filled in yet. Check the fields below.',
+		'(optional)': '(optional)',
+		'A field without "optional" must be filled in.':
+			'A field without "optional" must be filled in.',
+		'Something is still missing': 'Something is still missing',
+		'Fill this in. Then you can continue.':
+			'Fill this in. Then you can continue.',
+		'Error: ': 'Error: ',
+		Day: 'Day',
+		Month: 'Month',
+		Year: 'Year',
+		'For example 1 3 2026': 'For example 1 3 2026',
+		'{field}: enter a real date, for example 1 3 2026.':
+			'{field}: enter a real date, for example 1 3 2026.',
+		'{field}: enter a number, for example 8 or 7.5.':
+			'{field}: enter a number, for example 8 or 7.5.',
+		'{field}: enter a whole number, for example 8.':
+			'{field}: enter a whole number, for example 8.',
+		'{field} is not filled in correctly. Check it.':
+			'{field} is not filled in correctly. Check it.',
+		'Not everything is filled in correctly. Check your answers.':
+			'Not everything is filled in correctly. Check your answers.',
+		'Choose a file or photo': 'Choose a file or photo',
+		'Remove {file}': 'Remove {file}',
+		Today: 'Today',
+		Tomorrow: 'Tomorrow',
+		'the whole day': 'the whole day',
+		'Another day': 'Another day',
+		'Step {n} of {m}: {title}': 'Step {n} of {m}: {title}',
+		'Step {n} of {m}': 'Step {n} of {m}',
+		Progress: 'Progress',
+		'Show all steps': 'Show all steps',
+		'Hide the steps': 'Hide the steps',
+		Done: 'Done',
+		'Current step': 'Current step',
+		'To do': 'To do',
+		'Previous step': 'Previous step',
+		'Next step': 'Next step',
+		'Check and send': 'Check and send',
+		'Other questions': 'Other questions',
+		Change: 'Change',
+		'Change step {n}': 'Change step {n}',
+		'Not answered': 'Not answered',
+		'Forgot your password?': 'Forgot your password?',
+		'Save and continue later': 'Save and continue later',
+		Provisional: 'Provisional',
+		'Not sent yet. It counts once you send it.':
+			'Not sent yet. It counts once you send it.',
+		'Your answers are saved until {date}. You can continue later.':
+			'Your answers are saved until {date}. You can continue later.',
+		'Your answers could not be saved.': 'Your answers could not be saved.',
 		'Propose a change': 'Propose a change',
 		Note: 'Note',
 		'Send proposal': 'Send proposal',

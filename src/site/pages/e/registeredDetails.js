@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Conduction B.V.
 //
 // "My details" on the site (identity-registered-details, ported from
-// src/portal/components/RegisteredDetailsPage.jsx). Imports nothing, so the
+// the React portal's RegisteredDetailsPage.jsx). Imports nothing, so the
 // node specs run it as a plain script.
 
 /**
@@ -11,7 +11,7 @@
  * @param {string} reason The reason the server gave.
  * @return {string} The sentence key.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-their-registered-details-req-srp-038
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-their-registered-details-req-srp-038
  */
 export function reasonText(reason) {
 	if (reason === 'no_registration_identifier') {
@@ -32,7 +32,7 @@ export function reasonText(reason) {
  * @param {object} address The mapped address.
  * @return {string[]} The two lines, each possibly ''.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-their-registered-details-req-srp-038
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-their-registered-details-req-srp-038
  */
 export function addressLines(address) {
 	const a = address || {}

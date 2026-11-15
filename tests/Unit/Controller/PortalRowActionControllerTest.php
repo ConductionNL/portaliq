@@ -6,6 +6,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Contribution\AttachedActionResolver;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Contribution\RequiredFieldsNormaliser;
 use OCA\Portaliq\Controller\PortalRowActionController;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalActionForwarder;
@@ -16,6 +17,10 @@ use OCP\Http\Client\IResponse;
 use OCP\IRequest;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Service\RequiredFieldsGuard;
+use OCA\Portaliq\Contribution\RowActionFiles;
+use OCA\Portaliq\Contribution\RowActionResolver;
+use OCA\Portaliq\Contribution\RowIdentifier;
 
 /**
  * The row-scoped endpoint action forward (contribution-pay-screen): a guardian
@@ -121,9 +126,11 @@ class PortalRowActionControllerTest extends TestCase {
 		?AuditTrailService $auditor = null,
 		?array $subject = self::SUBJECT,
 		array $params = ['collection' => 'salesInvoices'],
+		array $uploads = [],
 	): PortalRowActionController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('Bearer token');
+		$request->method('getUploadedFile')->willReturnCallback(static fn (string $key): mixed => ($uploads[$key] ?? []));
 		$request->method('getParam')->willReturnCallback(static fn (string $key, mixed $default = null) => ($params[$key] ?? $default));
 
 		$registry = $this->createMock(PortalContributionRegistry::class);
@@ -141,7 +148,11 @@ class PortalRowActionControllerTest extends TestCase {
 			($reader ?? $this->createMock(PortalObjectReader::class)),
 			($forwarder ?? $this->forwarderThatMustNotForward()),
 			($auditor ?? $this->createMock(AuditTrailService::class)),
-		);
+			new AttachedActionResolver(),
+			new RequiredFieldsGuard(),
+			new RowActionFiles(),
+			new RowActionResolver(),
+			new RowIdentifier());
 	}//end controller()
 
 	/**
@@ -208,6 +219,122 @@ class PortalRowActionControllerTest extends TestCase {
 	}//end testTheProvenRowIdIsStampedAndTheClientBodyIsIgnored()
 
 	/**
+	 * A row or attached action that names a required field refuses a body
+	 * that leaves it empty: 400 with the field, before the audit and before
+	 * the forward (site-multi-step-forms REQ-SMF-024). The action's flags
+	 * come from the real RequiredFieldsNormaliser.
+	 *
+	 * @return void
+	 */
+	public function testAnEmptyRequiredFieldIsRefusedBeforeTheForward(): void {
+		$action = (new RequiredFieldsNormaliser())->apply(
+			action: $this->pay(['fields' => ['reason', 'amount'], 'requiredFields' => ['reason']]),
+			whitelist: ['reason', 'amount'],
+			mandatory: []
+		);
+		$auditor = $this->createMock(AuditTrailService::class);
+		$auditor->expects($this->never())->method('record');
+
+		$result = $this->controller(
+			collection: $this->salesInvoices(),
+			action: $action,
+			reader: $this->readerReturning($this->invoice()),
+			auditor: $auditor,
+			params: ['collection' => 'salesInvoices', 'reason' => ' ', 'amount' => 10],
+		)->forward('shillinq', 'ARInvoice', self::INVOICE_ID, 'pay');
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $result->getStatus());
+		$this->assertSame(['error' => 'required_missing', 'errors' => ['reason' => '']], $result->getData());
+	}//end testAnEmptyRequiredFieldIsRefusedBeforeTheForward()
+
+	/**
+	 * A signing request row that declares one required input.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function signingRow(): array {
+		return $this->invoice() + ['signerInputs' => [['name' => 'iban', 'label' => 'Bank account', 'required' => true, 'type' => 'text']]];
+	}//end signingRow()
+
+	/**
+	 * The inputs the row declares are forwarded under `into`, and a name the
+	 * row does not declare is dropped.
+	 *
+	 * @spec openspec/changes/case-actions-row-inputs-and-conditions/tasks.md#t02
+	 *
+	 * @return void
+	 */
+	public function testRowInputUndeclaredNameIsDropped(): void {
+		$response = $this->createMock(IResponse::class);
+		$response->method('getStatusCode')->willReturn(200);
+		$forwarder = $this->createMock(PortalActionForwarder::class);
+		$forwarder->method('isForwardable')->willReturn(true);
+		$forwarder->expects($this->once())->method('forward')
+			->with($this->anything(), self::SUBJECT, ['invoiceId' => self::INVOICE_ID, 'fields' => ['iban' => 'NL91ABNA0417164300']])
+			->willReturn($response);
+		$forwarder->method('decodeBody')->willReturn(['message' => 'Signed.']);
+
+		$result = $this->controller(
+			collection: $this->salesInvoices(),
+			action: $this->pay(['rowInputs' => ['from' => 'signerInputs', 'into' => 'fields']]),
+			reader: $this->readerReturning($this->signingRow()),
+			forwarder: $forwarder,
+			params: ['collection' => 'salesInvoices', 'fields' => ['iban' => ' NL91ABNA0417164300 ', 'email' => 'x@example.org']],
+		)->forward('shillinq', 'ARInvoice', self::INVOICE_ID, 'pay');
+
+		$this->assertSame(Http::STATUS_OK, $result->getStatus());
+		$this->assertSame(['message' => 'Signed.'], $result->getData());
+	}//end testRowInputUndeclaredNameIsDropped()
+
+	/**
+	 * A required input left empty is a 422 that names it and forwards nothing.
+	 *
+	 * @spec openspec/changes/case-actions-row-inputs-and-conditions/tasks.md#t02
+	 *
+	 * @return void
+	 */
+	public function testRequiredRowInputEmptyIs422AndNotForwarded(): void {
+		$auditor = $this->createMock(AuditTrailService::class);
+		$auditor->expects($this->never())->method('record');
+
+		foreach ([[], ['iban' => '  '], 'junk'] as $sent) {
+			$reader = $this->readerReturning($this->signingRow());
+			$result = $this->controller(
+				collection: $this->salesInvoices(),
+				action: $this->pay(['rowInputs' => ['from' => 'signerInputs', 'into' => 'fields']]),
+				reader: $reader,
+				auditor: $auditor,
+				params: ['collection' => 'salesInvoices', 'fields' => $sent],
+			)->forward('shillinq', 'ARInvoice', self::INVOICE_ID, 'pay');
+
+			$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $result->getStatus());
+			$this->assertSame(['error' => 'invalid', 'errors' => ['iban' => 'required']], $result->getData());
+		}
+	}//end testRequiredRowInputEmptyIs422AndNotForwarded()
+
+	/**
+	 * A row where the action is not available answers 409 with the row's reason
+	 * and forwards nothing.
+	 *
+	 * @spec openspec/changes/case-actions-row-inputs-and-conditions/tasks.md#t02
+	 *
+	 * @return void
+	 */
+	public function testUnavailableRowIs409AndNotForwarded(): void {
+		$action = $this->pay(['availableWhen' => ['field' => 'withdrawable', 'equals' => true], 'unavailableReasonField' => 'blockedReason']);
+		$row    = $this->invoice() + ['withdrawable' => false, 'blockedReason' => 'The withdrawal period ended on 4 October 2026.'];
+
+		$result = $this->controller(
+			collection: $this->salesInvoices(),
+			action: $action,
+			reader: $this->readerReturning($row),
+		)->forward('shillinq', 'ARInvoice', self::INVOICE_ID, 'pay');
+
+		$this->assertSame(Http::STATUS_CONFLICT, $result->getStatus());
+		$this->assertSame(['error' => 'not_available', 'message' => 'The withdrawal period ended on 4 October 2026.'], $result->getData());
+	}//end testUnavailableRowIs409AndNotForwarded()
+
+	/**
 	 * A declared `fields` whitelist forwards only those params, and the stamp
 	 * still wins over a client value under the row field.
 	 *
@@ -237,6 +364,63 @@ class PortalRowActionControllerTest extends TestCase {
 		$this->assertSame(503, $result->getStatus());
 		$this->assertSame(['status' => 'deferred'], $result->getData());
 	}//end testAFieldsWhitelistIsForwardedAndTheStampWins()
+
+	/**
+	 * An action that declares `files` forwards the resident's uploads beside the fields (REQ-RAF-001).
+	 *
+	 * @return void
+	 */
+	public function testDeclaredFilesAreForwardedWithTheBody(): void {
+		$response = $this->createMock(IResponse::class);
+		$response->method('getStatusCode')->willReturn(200);
+
+		$action = (new \OCA\Portaliq\Contribution\RowActionInputs())->normaliseAction(action: $this->pay(['fields' => ['note'], 'files' => ['field' => 'attachments', 'max' => 2]]));
+		$forwarder = $this->createMock(PortalActionForwarder::class);
+		$forwarder->method('isForwardable')->willReturn(true);
+		$forwarder->expects($this->once())->method('forward')
+			->with(
+				$action,
+				self::SUBJECT,
+				['note' => 'zie bijlage', 'invoiceId' => self::INVOICE_ID],
+				'',
+				[['name' => 'scan.pdf', 'type' => 'application/pdf', 'tmp_name' => '/tmp/php1', 'size' => 10]]
+			)
+			->willReturn($response);
+		$forwarder->method('decodeBody')->willReturn(['message' => 'Ontvangen.']);
+
+		$result = $this->controller(
+			collection: $this->salesInvoices(),
+			action: $action,
+			reader: $this->readerReturning($this->invoice()),
+			forwarder: $forwarder,
+			params: ['collection' => 'salesInvoices', 'note' => 'zie bijlage'],
+			uploads: ['attachments' => ['name' => 'scan.pdf', 'type' => 'application/pdf', 'tmp_name' => '/tmp/php1', 'size' => 10, 'error' => UPLOAD_ERR_OK]],
+		)->forward('shillinq', 'ARInvoice', self::INVOICE_ID, 'pay');
+
+		$this->assertSame(Http::STATUS_OK, $result->getStatus());
+	}//end testDeclaredFilesAreForwardedWithTheBody()
+
+	/**
+	 * Too many files is 422 before the audit and the forward.
+	 *
+	 * @return void
+	 */
+	public function testTooManyFilesIs422AndNotForwarded(): void {
+		$action = (new \OCA\Portaliq\Contribution\RowActionInputs())->normaliseAction(action: $this->pay(['files' => ['field' => 'attachments', 'max' => 1]]));
+		$auditor = $this->createMock(AuditTrailService::class);
+		$auditor->expects($this->never())->method('record');
+
+		$result = $this->controller(
+			collection: $this->salesInvoices(),
+			action: $action,
+			reader: $this->readerReturning($this->invoice()),
+			auditor: $auditor,
+			uploads: ['attachments' => ['name' => ['a', 'b'], 'type' => ['t', 't'], 'tmp_name' => ['/tmp/a', '/tmp/b'], 'size' => [1, 1], 'error' => [0, 0]]],
+		)->forward('shillinq', 'ARInvoice', self::INVOICE_ID, 'pay');
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $result->getStatus());
+		$this->assertSame(['error' => 'too_many_files'], $result->getData());
+	}//end testTooManyFilesIs422AndNotForwarded()
 
 	/**
 	 * A row the guardian's scope does not read is one 404, and shillinq is
@@ -412,7 +596,11 @@ class PortalRowActionControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testATransportFailureIs502(): void {
-		$forwarder = $this->createMock(PortalActionForwarder::class);
+		// A partial mock: the real failureResponse() words the answer.
+		$forwarder = $this->getMockBuilder(PortalActionForwarder::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['isForwardable', 'forward'])
+			->getMock();
 		$forwarder->method('isForwardable')->willReturn(true);
 		$forwarder->expects($this->once())->method('forward')->willReturn(null);
 
@@ -474,7 +662,7 @@ class PortalRowActionControllerTest extends TestCase {
 		$session = $this->createMock(PortalSessionService::class);
 		$session->method('resolveFromBearer')->willReturn(self::SUBJECT);
 
-		return new PortalRowActionController($request, $registry, $session, $reader, $forwarder, $this->createMock(AuditTrailService::class));
+		return new PortalRowActionController($request, $registry, $session, $reader, $forwarder, $this->createMock(AuditTrailService::class), new AttachedActionResolver(), new RequiredFieldsGuard(), new RowActionFiles(), new RowActionResolver(), new RowIdentifier());
 	}//end dossierController()
 
 	/**
@@ -596,7 +784,7 @@ class PortalRowActionControllerTest extends TestCase {
 		$session = $this->createMock(PortalSessionService::class);
 		$session->method('resolveFromBearer')->willReturn(self::SUBJECT);
 
-		return new PortalRowActionController($request, $registry, $session, $reader, $forwarder, $this->createMock(AuditTrailService::class));
+		return new PortalRowActionController($request, $registry, $session, $reader, $forwarder, $this->createMock(AuditTrailService::class), new AttachedActionResolver(), new RequiredFieldsGuard(), new RowActionFiles(), new RowActionResolver(), new RowIdentifier());
 	}//end questionController()
 
 	/**

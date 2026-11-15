@@ -25,6 +25,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Controller\NewsController;
 use OCA\Portaliq\Service\NewsAudienceOptions;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -41,6 +42,7 @@ use RuntimeException;
  * @spec openspec/changes/news-and-newsletter-authoring/design.md#api-design
  */
 class NewsControllerTest extends TestCase {
+	use StaffActionDoubleTrait;
 
 	private const OS = 'OCA\\OpenRegister\\Service\\ObjectService';
 
@@ -73,16 +75,16 @@ class NewsControllerTest extends TestCase {
 		$userSession = $this->createMock(IUserSession::class);
 		$userSession->method('getUser')->willReturn(null);
 
-		$controller = new NewsController($this->createMock(IRequest::class), $userSession, $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class));
+		$controller = new NewsController($this->createMock(IRequest::class), $userSession, $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
 
 		$this->expectException(\OCP\AppFramework\OCS\OCSForbiddenException::class);
-		$controller->create('Title', 'Body', ['groupRefs' => ['groep-5a']], 'staff-1');
+		$controller->create('Title', 'Body', ['groupRefs' => ['groep-5a']]);
 	}//end testCreateRefusesAnUnauthenticatedCaller()
 
 	public function testCreateRejectsATargetWithNoDimension(): void {
-		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class));
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
 
-		$response = $controller->create('Title', 'Body', [], 'staff-1');
+		$response = $controller->create('Title', 'Body', []);
 
 		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
 	}//end testCreateRejectsATargetWithNoDimension()
@@ -103,12 +105,12 @@ class NewsControllerTest extends TestCase {
 			}//end saveObject()
 		};
 
-		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
-		$response = $controller->create('Title', 'Body', ['groupRefs' => ['groep-5a']], 'staff-1');
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
+		$response = $controller->create('Title', 'Body', ['groupRefs' => ['groep-5a']]);
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame('draft', $objectService->saved['status']);
-		$this->assertSame('staff-1', $objectService->saved['authorRef']);
+		$this->assertSame('staff-directie-1', $objectService->saved['authorRef']);
 		$this->assertSame('n1', $response->getData()['id']);
 	}//end testCreateSavesADraftWithAValidTarget()
 
@@ -119,7 +121,7 @@ class NewsControllerTest extends TestCase {
 			}//end find()
 		};
 
-		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
 		$response = $controller->publish('missing');
 
 		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
@@ -145,13 +147,59 @@ class NewsControllerTest extends TestCase {
 			}//end saveObject()
 		};
 
-		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
 		$response = $controller->publish('n1');
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame('published', $objectService->saved['status']);
 		$this->assertSame('X', $objectService->saved['title']);
 	}//end testPublishFlipsStatusAndPreservesOtherFields()
+
+	/**
+	 * Publishing stamps the moment on the item, from the server clock;
+	 * taking it back clears it, so a draft never shows a publish date.
+	 *
+	 * @spec openspec/changes/news-publish-date/specs/portaliq-cms/spec.md#requirement-a-news-item-carries-the-moment-it-was-published
+	 */
+	public function testPublishStampsTheMomentAndTakeBackClearsIt(): void {
+		$objectService = new class {
+			/**
+			 * @var array<string,mixed>
+			 */
+			public array $saved = [];
+
+			/**
+			 * @var array<string,mixed>
+			 */
+			public array $row = ['title' => 'X', 'status' => 'draft', 'publishedAt' => null];
+
+			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				return ['id' => $id] + $this->row;
+			}//end find()
+
+			/**
+			 * @param array<string,mixed> $object
+			 */
+			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$this->saved = $object;
+				$this->row = $object;
+				return $object;
+			}//end saveObject()
+		};
+
+		$clock = $this->createMock(ITimeFactory::class);
+		$clock->method('getTime')->willReturn(1791018000);
+
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION), null, $clock);
+
+		$controller->publish('n1');
+		$this->assertSame('published', $objectService->saved['status']);
+		$this->assertSame('2026-10-03T09:00:00+00:00', $objectService->saved['publishedAt']);
+
+		$controller->unpublish('n1');
+		$this->assertSame('draft', $objectService->saved['status']);
+		$this->assertNull($objectService->saved['publishedAt']);
+	}//end testPublishStampsTheMomentAndTakeBackClearsIt()
 
 	public function testUnpublishReturns404ForAMissingId(): void {
 		$objectService = new class {
@@ -160,7 +208,7 @@ class NewsControllerTest extends TestCase {
 			}//end find()
 		};
 
-		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
 		$response = $controller->unpublish('missing');
 
 		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
@@ -186,7 +234,7 @@ class NewsControllerTest extends TestCase {
 			}//end saveObject()
 		};
 
-		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
 		$response = $controller->unpublish('n1');
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
@@ -219,7 +267,7 @@ class NewsControllerTest extends TestCase {
 			}//end saveObject()
 		};
 
-		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class));
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
 
 		$this->assertSame(Http::STATUS_BAD_REQUEST, $controller->update('n1', 'New', 'New body', [])->getStatus());
 		$this->assertSame([], $objectService->saved);
@@ -235,6 +283,80 @@ class NewsControllerTest extends TestCase {
 	}//end testUpdateChangesTheTextAndAudienceOnly()
 
 	/**
+	 * Staff may put an item on one portal's public website; without a valid
+	 * portal slug the item stays off it (site-school-blocks).
+	 *
+	 * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-a-news-item-shows-on-a-portals-public-website-only-when-staff-put-it-there
+	 */
+	public function testCreatePutsAnItemOnOnePortalsWebsiteOnlyWithAPortal(): void {
+		$objectService = new class {
+			/**
+			 * @var array<string,mixed>
+			 */
+			public array $saved = [];
+
+			/**
+			 * @param array<string,mixed> $object
+			 */
+			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$this->saved = $object;
+				return $object;
+			}//end saveObject()
+		};
+
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
+
+		$controller->create('T', 'B', ['schoolRef' => 's'], [], true, 'wilgenboom', ' hele school ');
+		$this->assertTrue($objectService->saved['public']);
+		$this->assertSame('wilgenboom', $objectService->saved['portal']);
+		$this->assertSame('hele school', $objectService->saved['audienceLabel']);
+
+		$controller->create('T', 'B', ['schoolRef' => 's'], [], true, '../other');
+		$this->assertFalse($objectService->saved['public']);
+		$this->assertSame('', $objectService->saved['portal']);
+
+		$controller->create('T', 'B', ['schoolRef' => 's']);
+		$this->assertFalse($objectService->saved['public'], 'an item is not public unless staff say so');
+	}//end testCreatePutsAnItemOnOnePortalsWebsiteOnlyWithAPortal()
+
+	/**
+	 * A screen that does not send the website choice leaves it as it was, so
+	 * editing the text never takes an item off the website by accident.
+	 *
+	 * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-a-news-item-shows-on-a-portals-public-website-only-when-staff-put-it-there
+	 */
+	public function testUpdateWithoutTheWebsiteChoiceKeepsIt(): void {
+		$objectService = new class {
+			/**
+			 * @var array<string,mixed>
+			 */
+			public array $saved = [];
+
+			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				return ['id' => $id, 'title' => 'Old', 'body' => 'B', 'target' => ['schoolRef' => 's'], 'status' => 'published', 'public' => true, 'portal' => 'wilgenboom'];
+			}//end find()
+
+			/**
+			 * @param array<string,mixed> $object
+			 */
+			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$this->saved = $object;
+				return $object;
+			}//end saveObject()
+		};
+
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
+
+		$controller->update('n1', 'New', 'B', ['schoolRef' => 's']);
+		$this->assertTrue($objectService->saved['public']);
+		$this->assertSame('wilgenboom', $objectService->saved['portal']);
+
+		$controller->update('n1', 'New', 'B', ['schoolRef' => 's'], false);
+		$this->assertFalse($objectService->saved['public']);
+		$this->assertSame('', $objectService->saved['portal']);
+	}//end testUpdateWithoutTheWebsiteChoiceKeepsIt()
+
+	/**
 	 * Editing and the audience choices need a signed-in Nextcloud user, like
 	 * every other authoring endpoint.
 	 *
@@ -243,7 +365,7 @@ class NewsControllerTest extends TestCase {
 	public function testUpdateAndAudiencesRefuseAnUnauthenticatedCaller(): void {
 		$userSession = $this->createMock(IUserSession::class);
 		$userSession->method('getUser')->willReturn(null);
-		$controller = new NewsController($this->createMock(IRequest::class), $userSession, $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class));
+		$controller = new NewsController($this->createMock(IRequest::class), $userSession, $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
 
 		$refused = 0;
 		foreach ([fn () => $controller->update('n1', 'T', 'B', ['schoolRef' => 's']), fn () => $controller->audiences()] as $call) {
@@ -265,8 +387,79 @@ class NewsControllerTest extends TestCase {
 	public function testAudiencesListsTheSchoolAndGroupChoices(): void {
 		$options = $this->createMock(NewsAudienceOptions::class);
 		$options->method('options')->willReturn(['schools' => [], 'groups' => [['id' => 'g7', 'label' => 'Groep 7']]]);
-		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class), $options);
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION), $options);
 
 		$this->assertSame(['schools' => [], 'groups' => [['id' => 'g7', 'label' => 'Groep 7']]], $controller->audiences()->getData());
 	}//end testAudiencesListsTheSchoolAndGroupChoices()
+
+	/**
+	 * A signed-in user without portal.author-news is refused by every staff method,
+	 * before anything is read or written (#1094).
+	 *
+	 * @return void
+	 */
+	public function testEveryStaffMethodRefusesAUserWithoutTheAction(): void {
+		$container = $this->createMock(ContainerInterface::class);
+		$container->expects($this->never())->method('get');
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $container, $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION, false));
+
+		$refused = 0;
+		$calls = [
+			fn () => $controller->create('Title', 'Body', ['groupRefs' => ['groep-5a']]),
+			fn () => $controller->update('n1', 'T', 'B', ['schoolRef' => 's']),
+			fn () => $controller->audiences(),
+			fn () => $controller->publish('n1'),
+			fn () => $controller->unpublish('n1'),
+		];
+		foreach ($calls as $call) {
+			try {
+				$call();
+			} catch (\OCP\AppFramework\OCS\OCSForbiddenException $e) {
+				$refused++;
+			}
+		}
+
+		$this->assertSame(count($calls), $refused);
+	}//end testEveryStaffMethodRefusesAUserWithoutTheAction()
+
+	/**
+	 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/tasks.md#task-4
+	 */
+	public function testAnEventRefIsStoredWhenPlainAndKeptWhenNotSent(): void {
+		$objectService = new class {
+			/**
+			 * @var array<string,mixed>
+			 */
+			public array $saved = [];
+
+			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				return ['id' => $id, 'title' => 'Old', 'body' => 'B', 'target' => ['schoolRef' => 's'], 'status' => 'published', 'eventRef' => 'ev1'];
+			}//end find()
+
+			/**
+			 * @param array<string,mixed> $object
+			 */
+			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$this->saved = $object;
+				return array_merge($object, ['id' => 'n1']);
+			}//end saveObject()
+		};
+
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
+
+		$controller->create('T', 'B', ['schoolRef' => 's'], [], false, '', '', 'ev-1');
+		$this->assertSame('ev-1', $objectService->saved['eventRef']);
+
+		$controller->create('T', 'B', ['schoolRef' => 's'], [], false, '', '', '../etc/passwd');
+		$this->assertSame('', $objectService->saved['eventRef'], 'an id that is not plain is not stored');
+
+		$controller->update('n1', 'T', 'B', ['schoolRef' => 's']);
+		$this->assertSame('ev1', $objectService->saved['eventRef'], 'an update that sends no event keeps it');
+
+		$controller->update('n1', 'T', 'B', ['schoolRef' => 's'], null, '', '', 'ev-2');
+		$this->assertSame('ev-2', $objectService->saved['eventRef']);
+
+		$controller->update('n1', 'T', 'B', ['schoolRef' => 's'], null, '', '', '');
+		$this->assertSame('', $objectService->saved['eventRef'], 'an empty event clears it');
+	}//end testAnEventRefIsStoredWhenPlainAndKeptWhenNotSent()
 }//end class

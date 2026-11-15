@@ -13,7 +13,7 @@
 //   node --test tests/site-inbox-pages.spec.mjs
 
 import assert from 'node:assert/strict'
-import { existsSync, readFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
@@ -24,7 +24,6 @@ import {
 	markedRead,
 	recordRoute,
 	TASKS_ROUTE,
-	unreadAfterRead,
 } from '../src/site/pages/inbox/inbox.js'
 import { components, pages } from '../src/site/pages/inbox/index.js'
 import strings from '../src/site/pages/inbox/strings.js'
@@ -89,16 +88,13 @@ function memoryStorage() {
 }
 
 /**
- * The portal's own translation bundle, wherever the shell slice put it.
+ * The shared translation bundle.
  *
  * @param {string} locale `nl` or `en`.
  * @return {object} The bundle.
  */
 function portalBundle(locale) {
-	const shared = join(ROOT, 'src', 'shared', 'i18n', `${locale}.json`)
-	const file = existsSync(shared)
-		? shared
-		: join(ROOT, 'src', 'portal', 'i18n', `${locale}.json`)
+	const file = join(ROOT, 'src', 'shared', 'i18n', `${locale}.json`)
 	return JSON.parse(readFileSync(file, 'utf8'))
 }
 
@@ -156,7 +152,11 @@ test('every string says what the React portal says, in Dutch and English', () =>
 	for (const locale of ['nl', 'en']) {
 		const bundle = portalBundle(locale)
 		for (const [key, value] of Object.entries(strings[locale])) {
-			assert.equal(value, bundle[key], `${locale}: ${key}`)
+			// A string added after the React portal retired lives only in the
+			// folder's strings, and keeps the shared catalogue out of the entry.
+			if (key in bundle) {
+				assert.equal(value, bundle[key], `${locale}: ${key}`)
+			}
 		}
 	}
 	assert.deepEqual(Object.keys(strings.nl).sort(), Object.keys(strings.en).sort())
@@ -179,10 +179,6 @@ test('marking a message read flips that row only and drops the unread count by o
 		markedRead(MESSAGES, 'm1').map((m) => m.read),
 		[true, true],
 	)
-	assert.equal(unreadAfterRead(3), 2)
-	assert.equal(unreadAfterRead(0), 0)
-	assert.equal(unreadAfterRead(undefined), 0)
-
 	const calls = []
 	const api = {
 		async fetchInbox() {
@@ -208,9 +204,53 @@ test('marking a message read flips that row only and drops the unread count by o
 	await page.markRead(page.messages[0])
 	assert.deepEqual(calls, ['m1'])
 	assert.equal(page.messages[0].read, true)
-	assert.deepEqual(page.emitted, [['unread', 1], ['unread', 0]])
+	assert.deepEqual(page.emitted, [
+		['unread', 1],
+		['unread', 0],
+	])
 	await page.markRead(page.messages[1])
 	assert.deepEqual(calls, ['m1'], 'a read message is not sent again')
+})
+
+test('a page mounted again after a read counts from its rows, not from the sign-in count', async () => {
+	// The shell has not reloaded the contributions yet, so it still hands
+	// the page the sign-in count of 2, while the server already has m1 read.
+	const rows = [
+		{ ...MESSAGES[0], read: true },
+		{ ...MESSAGES[1], read: false },
+	]
+	const api = {
+		async fetchInbox() {
+			return rows
+		},
+		async markMessageRead() {
+			return { ok: true }
+		},
+	}
+	const page = instance(InboxPage, { api, t, contributions: { unreadCount: 2 } })
+	assert.equal(page.unread, 0, 'nothing loaded, nothing counted')
+	await page.load()
+	assert.deepEqual(page.emitted, [['unread', 1]])
+	await page.markRead(page.messages[1])
+	assert.deepEqual(page.emitted, [
+		['unread', 1],
+		['unread', 0],
+	])
+})
+
+test('an inbox the server did not answer leaves the shell its own count', async () => {
+	const page = instance(InboxPage, {
+		api: {
+			async fetchInbox() {
+				return null
+			},
+		},
+		t,
+		contributions: { unreadCount: 4 },
+	})
+	await page.load()
+	assert.deepEqual(page.messages, [])
+	assert.deepEqual(page.emitted, [], 'a failed read is not "0 unread"')
 })
 
 test('a refused mark-read changes nothing', async () => {
@@ -249,12 +289,58 @@ test('"Open" goes to the page that shows the record and keeps the record to pres
 	}
 })
 
+test('a plain click on "Open" stays in the site; a click for a new tab is left to the browser', () => {
+	const storage = memoryStorage()
+	globalThis.window = { sessionStorage: storage }
+	try {
+		const page = instance(InboxPage, { api: {}, t, nav: NAV })
+		for (const modifier of [
+			{ ctrlKey: true },
+			{ metaKey: true },
+			{ shiftKey: true },
+			{ button: 1 },
+		]) {
+			let prevented = false
+			page.onOpenClick(
+				{
+					...modifier,
+					preventDefault: () => {
+						prevented = true
+					},
+				},
+				MESSAGES[0].recordLink,
+			)
+			assert.equal(prevented, false, JSON.stringify(modifier))
+		}
+		assert.deepEqual(page.emitted, [])
+		assert.equal(storage.getItem(OPEN_STORAGE_KEY), null)
+
+		let prevented = false
+		page.onOpenClick(
+			{
+				button: 0,
+				preventDefault: () => {
+					prevented = true
+				},
+			},
+			MESSAGES[0].recordLink,
+		)
+		assert.equal(prevented, true)
+		assert.deepEqual(page.emitted, [['navigate', '/mijn/dossiq/cases']])
+		assert.equal(JSON.parse(storage.getItem(OPEN_STORAGE_KEY)).id, 'z-1')
+	} finally {
+		delete globalThis.window
+	}
+})
+
 test('an inbox row shows unread in text, its readiness fields, its delivery and its ways out', async () => {
 	const html = await renderComponent(
 		inState(InboxPage, { loading: false, messages: MESSAGES }),
 		{ api: {}, t, locale: 'en', nav: NAV },
 	)
-	assert.match(html, /<strong class="pq-inbox-row__unread">Unread<\/strong>/)
+	assert.match(html, /<strong class="pq-inbox-row__unread">New<\/strong>/)
+	// The date with the month in words, as the board draws it.
+	assert.doesNotMatch(html, /pq-inbox-row__date">\s*\d+\/\d+\/\d{4}/)
 	assert.equal(
 		(html.match(/pq-inbox-row__unread"/g) || []).length,
 		1,
@@ -264,11 +350,18 @@ test('an inbox row shows unread in text, its readiness fields, its delivery and 
 	assert.match(html, /<dt>Legal effect<\/dt><dd>Bezwaar mogelijk<\/dd>/)
 	assert.match(html, /<dt>Deadline<\/dt>/)
 	assert.match(html, /Also sent to MijnOverheid Berichtenbox\./)
+	// "Open" is a real link with the record's address, so it opens in a new
+	// tab and reads as a link to a screen reader; only where a page shows it.
 	assert.equal(
-		(html.match(/>Open<\/button>/g) || []).length,
+		(html.match(/data-testid="inbox-row-open"[^>]*>Open<\/a>/g) || []).length,
 		1,
 		'Open only where a page shows the record',
 	)
+	assert.match(
+		html,
+		/<a class="utrecht-button-link[^"]*" href="\/mijn\/dossiq\/cases" data-testid="inbox-row-open"/,
+	)
+	assert.doesNotMatch(html, />Open<\/button>/)
 	assert.match(html, />View task<\/button>/)
 	assert.match(
 		html,
@@ -290,7 +383,7 @@ test('an inbox row shows unread in text, its readiness fields, its delivery and 
 	)
 })
 
-test('the messages page opens the first thread and reloads it in the picked language', async () => {
+test('the messages page opens a thread when asked and reloads it in the picked language', async () => {
 	const calls = []
 	let saveOk = true
 	const api = {
@@ -323,6 +416,10 @@ test('the messages page opens the first thread and reloads it in the picked lang
 	})
 	await page.load()
 	assert.equal(page.language, 'ar')
+	// Every conversation opens on its own button, so a new one keeps its
+	// "Nieuw" until the resident opens it (site-messages-per-record).
+	assert.equal(page.activeId, null)
+	await page.choose('t1')
 	assert.equal(page.activeId, 't1')
 	assert.equal(page.isOwn(page.messages[0]), true)
 	assert.equal(page.isOwn(page.messages[1]), false)
@@ -347,11 +444,26 @@ test('the messages page opens the first thread and reloads it in the picked lang
 		}),
 		{ api, t, locale: 'en', session: { subjectRef: 'me' } },
 	)
+	assert.match(html, /<ul class="pq-messages__cards" aria-label="Conversations">/)
+	// Each conversation is a card with its own open button, the open one
+	// expanded with its reply form (site-messages-per-record; this page no
+	// longer draws the action rows of REQ-SMO-004).
 	assert.match(
 		html,
-		/<nav class="pq-messages__threads" aria-label="Conversations">/,
+		/<h3 class="utrecht-heading-4 pq-thread__title">Group conversation<\/h3>/,
 	)
-	assert.match(html, /aria-current="true">Group conversation/)
+	assert.match(html, /aria-expanded="true" data-testid="messages-open"/)
+	assert.match(html, /data-testid="messages-reply"/)
+
+	const none = await renderComponent(inState(MessagesPage, { threads: [] }), {
+		api,
+		t,
+		locale: 'nl',
+	})
+	assert.match(
+		none,
+		/data-testid="mijn-empty-state"><p class="utrecht-paragraph pq-empty-state__text">Nog geen gesprekken\.<\/p>/,
+	)
 	assert.match(html, /<strong class="pq-message__sender">You<\/strong>/)
 	assert.match(html, /<strong class="pq-message__sender">School<\/strong>/)
 })
@@ -414,4 +526,35 @@ test('the language picker has a visible label and a hint tied to the select', as
 		/<p id="pick-hint" class="utrecht-paragraph pq-language-picker__hint">Translated by AI\.<\/p>/,
 	)
 	assert.match(html, /role="alert">Oops<\/p>/)
+})
+
+test('a news item says when it was published, and nothing while it has no date', async () => {
+	const NewsItem = await loadSfc('src/site/components/inbox/NewsItem.vue')
+	const item = {
+		id: 'n1',
+		title: 'Studiedag',
+		body: 'Vrijdag dicht.',
+		publishedAt: '2026-10-03T09:00:00+00:00',
+	}
+	const nl = await renderComponent(NewsItem, {
+		item,
+		t: withStrings(null, 'nl'),
+		locale: 'nl',
+	})
+	assert.match(
+		nl,
+		/<p class="utrecht-paragraph pq-news__date"[^>]*>\s*Gepubliceerd op 3-10-2026\s*<\/p>/,
+	)
+	const en = await renderComponent(NewsItem, {
+		item,
+		t: withStrings(null, 'en'),
+		locale: 'en',
+	})
+	assert.match(en, /Published on 03\/10\/2026/)
+	const undated = await renderComponent(NewsItem, {
+		item: { id: 'n2', title: 'Kort', body: 'Tekst' },
+		t: withStrings(null, 'nl'),
+		locale: 'nl',
+	})
+	assert.doesNotMatch(undated, /pq-news__date/)
 })

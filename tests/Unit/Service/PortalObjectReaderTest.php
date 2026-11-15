@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Event\PortalClaimScopeEvent;
 use OCA\Portaliq\Service\PortalFieldProjector;
 use OCA\Portaliq\Service\PortalObjectReader;
 use PHPUnit\Framework\TestCase;
+use OCP\EventDispatcher\Event;
+use OCP\EventDispatcher\IEventDispatcher;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -38,6 +41,30 @@ use RuntimeException;
 class PortalObjectReaderTest extends TestCase {
 
 	private const OS = 'OCA\\OpenRegister\\Service\\ObjectService';
+
+	/**
+	 * Every claim check the reader dispatched.
+	 *
+	 * @var list<PortalClaimScopeEvent>
+	 */
+	private array $claimChecks = [];
+
+	/**
+	 * What the owning app answers a claim check; admits by default.
+	 *
+	 * @var \Closure(PortalClaimScopeEvent): void
+	 */
+	private \Closure $claimListener;
+
+	/**
+	 * Every claim is admitted unless a test says otherwise.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$this->claimListener = static function (PortalClaimScopeEvent $event): void {
+		};
+	}//end setUp()
 
 	public function testReturnsEmptyWhenOpenRegisterUnavailable(): void {
 		$container = $this->createMock(ContainerInterface::class);
@@ -109,6 +136,77 @@ class PortalObjectReaderTest extends TestCase {
 		$this->assertFalse($objectService->multitenancy);
 
 	}//end testFiltersOnScopeAndDropsForeignRows()
+
+	/**
+	 * anonymous-collection-reads-what-the-public-may: an anonymous collection
+	 * is read with OpenRegister's own rules ON, unscoped to the subject,
+	 * narrowed by its filter, without another tenant's rows, and projected.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/anonymous-collection-reads-what-the-public-may/specs/portal-contribution-contract/spec.md#requirement-an-anonymous-collection-shows-what-the-public-may-read
+	 */
+	public function testAPublicReadLetsOpenRegisterDecideAndNarrowsAndProjects(): void {
+		$objectService = new class {
+
+			/**
+			 * @var array<string,mixed>
+			 */
+			public array $received = [];
+
+			public string $register = '';
+
+			public string $schema = '';
+
+			public ?bool $rbac = null;
+
+			public ?bool $multitenancy = null;
+
+			public function setRegister(string $register): self {
+				$this->register = $register;
+				return $this;
+			}//end setRegister()
+
+			public function setSchema(string $schema): self {
+				$this->schema = $schema;
+				return $this;
+			}//end setSchema()
+
+			/**
+			 * @param array<string,mixed> $config
+			 *
+			 * @return array<int,array<string,mixed>>
+			 */
+			public function findAll(array $config, bool $_rbac = true, bool $_multitenancy = true): array {
+				$this->received = $config;
+				$this->rbac = $_rbac;
+				$this->multitenancy = $_multitenancy;
+				return [
+					['title' => 'Raadsvergadering', 'oriType' => 'Vergadering', 'secret' => 'x'],
+					['title' => 'Elders', 'oriType' => 'Vergadering', 'organisation' => 'org-2'],
+					['title' => 'Hier', 'oriType' => 'Vergadering', 'organisation' => 'org-1'],
+				];
+			}//end findAll()
+		};
+
+		$reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
+		$rows = $reader->readPublicCollection(
+			register: 'decidiq',
+			schema: 'publication-payload',
+			organisation: 'org-1',
+			limit: 200,
+			fields: ['title'],
+			filter: ['oriType' => 'Vergadering']
+		);
+
+		$this->assertTrue($objectService->rbac, 'OpenRegister decides what the caller may read');
+		$this->assertTrue($objectService->multitenancy);
+		$this->assertSame(['oriType' => 'Vergadering'], $objectService->received['filters'], 'no subject scope, only the narrowing filter');
+		$this->assertSame('publication-payload', $objectService->schema);
+		$this->assertSame(['Raadsvergadering', 'Hier'], array_column($rows, 'title'), "another tenant's row is dropped");
+		$this->assertArrayNotHasKey('secret', $rows[0], 'the whitelist shapes every row');
+
+	}//end testAPublicReadLetsOpenRegisterDecideAndNarrowsAndProjects()
 
 	public function testDeclaredFilterNarrowsTheReadAndScopeStillWins(): void {
 		$objectService = new class {
@@ -247,11 +345,176 @@ class PortalObjectReaderTest extends TestCase {
 
 	}//end testClaimScopedReadResolvesTheClaimServerSide()
 
+	/**
+	 * The claim check names the claim, its value and the account's organisation.
+	 *
+	 * @return void
+	 */
+	public function testTheClaimCheckNamesTheClaimAndTheAccountsOrganisation(): void {
+		$reader = $this->employerReader(objectService: $this->companyStore());
+		$this->readBookings(reader: $reader);
+
+		$this->assertCount(expectedCount: 1, haystack: $this->claimChecks);
+		$check = $this->claimChecks[0];
+		$this->assertSame(
+			expected: ['learniq', 'organisationRef', 'co-1', 'org-1'],
+			actual: [$check->getAppId(), $check->getClaimName(), $check->getValue(), $check->getOrganisation()]
+		);
+
+		// A session that names no tenant is checked against the account's own organisation.
+		$this->resolveCompany(reader: $reader, organisation: '');
+		$this->assertSame(expected: 'org-1', actual: $this->claimChecks[1]->getOrganisation());
+
+	}//end testTheClaimCheckNamesTheClaimAndTheAccountsOrganisation()
+
+	/**
+	 * A refused claim reads no rows, no object and no scope value, and the collection is never queried.
+	 *
+	 * @return void
+	 */
+	public function testAClaimItsAppRefusesReadsNothingAndNeverQueriesTheCollection(): void {
+		$this->claimListener = static function (PortalClaimScopeEvent $event): void {
+			$event->refuse();
+		};
+		$objectService = $this->companyStore();
+		$reader        = $this->employerReader(objectService: $objectService);
+
+		$rows   = $this->readBookings(reader: $reader);
+		$object = $reader->readObject(
+			register: 'learniq',
+			schema: 'booking',
+			scopeField: 'organisationRef',
+			subjectRef: 's1',
+			id: 'b-1',
+			organisation: 'org-1',
+			scopeClaim: 'organisationRef',
+			contributingApp: 'learniq',
+			audience: 'employer'
+		);
+		$value  = $this->resolveCompany(reader: $reader, organisation: 'org-1');
+
+		$this->assertSame(expected: [], actual: $rows);
+		$this->assertNull(actual: $object);
+		$this->assertNull(actual: $value);
+		$this->assertSame(expected: ['portalAccount', 'portalAccount', 'portalAccount'], actual: array_column($objectService->calls, 'schema'));
+
+	}//end testAClaimItsAppRefusesReadsNothingAndNeverQueriesTheCollection()
+
+	/**
+	 * Without an event dispatcher the claim cannot be checked, so it is refused.
+	 *
+	 * @return void
+	 */
+	public function testAClaimIsRefusedWhenItCannotBeChecked(): void {
+		$objectService = $this->companyStore();
+		$container     = $this->createMock(originalClassName: ContainerInterface::class);
+		$container->method('get')->willReturnCallback(
+			static function (string $id) use ($objectService): object {
+				if ($id === self::OS) {
+					return $objectService;
+				}
+
+				throw new RuntimeException(message: 'no service: ' . $id);
+			}
+		);
+		$reader = new PortalObjectReader(
+			container: $container,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			projector: $this->projector()
+		);
+
+		$this->assertSame(expected: [], actual: $this->readBookings(reader: $reader));
+		$this->assertNull(actual: $this->resolveCompany(reader: $reader, organisation: 'org-1'));
+
+	}//end testAClaimIsRefusedWhenItCannotBeChecked()
+
+	/**
+	 * An admitted claim reads its rows and resolves its value as before.
+	 *
+	 * @return void
+	 */
+	public function testAnAdmittedClaimStillReadsItsRows(): void {
+		$reader = $this->employerReader(objectService: $this->companyStore());
+
+		$this->assertSame(expected: ['b-1'], actual: array_column($this->readBookings(reader: $reader), 'id'));
+		$this->assertSame(expected: 'co-1', actual: $this->resolveCompany(reader: $reader, organisation: 'org-1'));
+
+	}//end testAnAdmittedClaimStillReadsItsRows()
+
+	/**
+	 * The reader over this object service, with the claim-check dispatcher.
+	 *
+	 * @param object $objectService The object service double.
+	 *
+	 * @return PortalObjectReader
+	 */
+	private function employerReader(object $objectService): PortalObjectReader {
+		return new PortalObjectReader(
+			container: $this->container(objectService: $objectService),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			projector: $this->projector()
+		);
+	}//end employerReader()
+
+	/**
+	 * The employer's bookings, scoped by learniq's organisationRef claim.
+	 *
+	 * @param PortalObjectReader $reader The reader.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function readBookings(PortalObjectReader $reader): array {
+		return $reader->readCollection(
+			register: 'learniq',
+			schema: 'booking',
+			scopeField: 'organisationRef',
+			subjectRef: 's1',
+			organisation: 'org-1',
+			scopeClaim: 'organisationRef',
+			contributingApp: 'learniq',
+			audience: 'employer'
+		);
+	}//end readBookings()
+
+	/**
+	 * The employer's company as the write path resolves it.
+	 *
+	 * @param PortalObjectReader $reader       The reader.
+	 * @param string             $organisation The session's organisation.
+	 *
+	 * @return string|null
+	 */
+	private function resolveCompany(PortalObjectReader $reader, string $organisation): ?string {
+		return $reader->resolveScopeValue(
+			scopeClaim: 'organisationRef',
+			contributingApp: 'learniq',
+			subject: ['subjectRef' => 's1', 'audience' => 'employer', 'organisation' => $organisation]
+		);
+	}//end resolveCompany()
+
+	/**
+	 * An employer account claiming company co-1, and one booking of that company.
+	 *
+	 * @return object
+	 */
+	private function companyStore(): object {
+		return $this->objectService(
+			returnsPerSchema: [
+				'portalAccount' => [
+					['subjectRef' => 's1', 'organisation' => 'org-1', 'audience' => 'employer', 'claims' => ['learniq' => ['organisationRef' => 'co-1']]],
+				],
+				'booking' => [
+					['id' => 'b-1', 'organisationRef' => 'co-1'],
+				],
+			]
+		);
+	}//end companyStore()
+
 	public function testDottedScopeClaimResolvesInTheExplicitNamespace(): void {
 		$objectService = $this->objectService(
 			[
 				'portalAccount' => [
-					['subjectRef' => 's1', 'claims' => ['otherapp' => ['contactId' => 'uuid-x']]],
+					['subjectRef' => 's1', 'organisation' => 'org-1', 'claims' => ['otherapp' => ['contactId' => 'uuid-x']]],
 				],
 				'crmDeal' => [
 					['contact' => 'uuid-x', 'title' => 'Cross-app'],
@@ -265,7 +528,7 @@ class PortalObjectReaderTest extends TestCase {
 			schema: 'crmDeal',
 			scopeField: 'contact',
 			subjectRef: 's1',
-			organisation: '',
+			organisation: 'org-1',
 			limit: 200,
 			scopeClaim: 'otherapp.contactId',
 			contributingApp: 'pipelinq',
@@ -1227,7 +1490,7 @@ class PortalObjectReaderTest extends TestCase {
 		$objectService = $this->objectService(
 			[
 				'portalAccount' => [
-					['subjectRef' => 's1', 'claims' => ['pipelinq' => ['linkedContactId' => 'uuid-c1']]],
+					['subjectRef' => 's1', 'organisation' => 'org-1', 'claims' => ['pipelinq' => ['linkedContactId' => 'uuid-c1']]],
 				],
 				'crmDeal' => [
 					['id' => 'd-1', 'contact' => 'uuid-c1', 'title' => 'Mine'],
@@ -1242,7 +1505,7 @@ class PortalObjectReaderTest extends TestCase {
 			scopeField: 'contact',
 			subjectRef: 's1',
 			id: 'd-1',
-			organisation: '',
+			organisation: 'org-1',
 			scopeClaim: 'linkedContactId',
 			contributingApp: 'pipelinq',
 			audience: 'supplier'
@@ -1423,6 +1686,75 @@ class PortalObjectReaderTest extends TestCase {
 	}//end testEmptyListScopeFieldIsDropped()
 
 	/**
+	 * operate-portals-per-organisation REQ-OPO-002: for a schema declared
+	 * organisation-scoped, a row without an organisation belongs to no tenant.
+	 *
+	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t04
+	 */
+	public function testRowWithoutOrganisationIsDropped(): void {
+		$objectService = $this->objectService(
+			[
+				'portalMessage' => [
+					['id' => 'm-1', 'subjectRef' => 's1', 'organisation' => 'org-a'],
+					['id' => 'm-2', 'subjectRef' => 's1'],
+					['id' => 'm-3', 'subjectRef' => 's1', 'organisation' => 'org-b'],
+				],
+			]
+		);
+		$reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
+
+		$ids = array_column($reader->readCollection('portaliq', 'portalMessage', 'subjectRef', 's1', 'org-a'), 'id');
+
+		$this->assertSame(['m-1'], $ids, 'neither the row without a tenant nor another tenant\'s row');
+
+	}//end testRowWithoutOrganisationIsDropped()
+
+	/**
+	 * A read that names no tenant is a system lookup (by subject reference or secret)
+	 * and is left as it was: the account lookup that runs before the tenant is
+	 * known must keep working.
+	 *
+	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t04
+	 */
+	public function testALookupThatNamesNoTenantIsLeftAsItWas(): void {
+		$objectService = $this->objectService(
+			[
+				'portalAccount' => [
+					['id' => 'a-1', 'subjectRef' => 's1'],
+				],
+			]
+		);
+		$reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
+
+		$this->assertSame(['a-1'], array_column($reader->readCollection('portaliq', 'portalAccount', 'subjectRef', 's1', ''), 'id'));
+		$this->assertNotNull($reader->readObject('portaliq', 'portalAccount', 'subjectRef', 's1', 'a-1', ''));
+		$this->assertSame([], $reader->readCollection('portaliq', 'portalAccount', 'subjectRef', 's1', 'org-a'), 'but with a tenant named, a row without one is dropped');
+
+	}//end testALookupThatNamesNoTenantIsLeftAsItWas()
+
+	/**
+	 * A subject-scoped schema keeps today\'s behaviour: the subject reference is
+	 * globally unique, so a row without an organisation still reads.
+	 *
+	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t04
+	 */
+	public function testSubjectScopedSchemaUnchanged(): void {
+		$objectService = $this->objectService(
+			[
+				'pushSubscription' => [
+					['id' => 'p-1', 'subjectRef' => 's1'],
+					['id' => 'p-2', 'subjectRef' => 's1', 'organisation' => 'org-b'],
+				],
+			]
+		);
+		$reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
+
+		$this->assertSame(['p-1'], array_column($reader->readCollection('portaliq', 'pushSubscription', 'subjectRef', 's1', 'org-a'), 'id'));
+		$this->assertSame(['p-1', 'p-2'], array_column($reader->readCollection('portaliq', 'pushSubscription', 'subjectRef', 's1', ''), 'id'), 'no tenant named, as before');
+
+	}//end testSubjectScopedSchemaUnchanged()
+
+	/**
 	 * UNCHANGED: a single-value scope field matches exactly as before, an
 	 * integer value still matches its decimal string, and a foreign value is
 	 * still dropped.
@@ -1431,8 +1763,8 @@ class PortalObjectReaderTest extends TestCase {
 		$objectService = $this->objectService(
 			[
 				'exampleDocument' => [
-					['id' => 'd-1', 'subjectRef' => 's1'],
-					['id' => 'd-2', 'subjectRef' => 's2'],
+					['id' => 'd-1', 'subjectRef' => 's1', 'organisation' => 'org-1'],
+					['id' => 'd-2', 'subjectRef' => 's2', 'organisation' => 'org-1'],
 				],
 				'counter' => [
 					['id' => 'c-1', 'ownerNumber' => 42],
@@ -1443,7 +1775,7 @@ class PortalObjectReaderTest extends TestCase {
 
 		$reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
 
-		$this->assertSame(['d-1'], array_column($reader->readCollection('portaliq', 'exampleDocument', 'subjectRef', 's1'), 'id'));
+		$this->assertSame(['d-1'], array_column($reader->readCollection('portaliq', 'exampleDocument', 'subjectRef', 's1', 'org-1'), 'id'));
 		$this->assertSame(['c-1'], array_column($reader->readCollection('portaliq', 'counter', 'ownerNumber', '42'), 'id'));
 
 	}//end testSingleValueScopeFieldStillMatches()
@@ -1503,6 +1835,166 @@ class PortalObjectReaderTest extends TestCase {
 		$this->assertNull($reader->readObject(register: 'learniq', schema: 'learner-profile', scopeField: 'guardianRefs', subjectRef: 'g-2', id: 'p-3'));
 
 	}//end testReadObjectMatchesAListScopeFieldByMembership()
+
+	/**
+	 * site-mijn-omgeving-components REQ-SMO-023: a join row outside `when`
+	 * grants nothing. The pupil's withdrawn enrolment in group 3B opens no
+	 * session of 3B; the active one in 4A still does (the positive control).
+	 *
+	 * @return void
+	 */
+	public function testAJoinRowOutsideWhenGrantsNothing(): void {
+		$rows = $this->readLiveJoin(
+			[
+				['learnerRef' => 'pupil-1', 'cohortId' => '3B', 'status' => 'withdrawn'],
+				['learnerRef' => 'pupil-1', 'cohortId' => '4A', 'status' => 'active'],
+			],
+			['when' => ['field' => 'status', 'in' => ['active']]]
+		);
+
+		$this->assertSame(['4A lesson'], array_column($rows, 'title'));
+	}//end testAJoinRowOutsideWhenGrantsNothing()
+
+	/**
+	 * An expired share grants nothing; an empty end date and a future one do.
+	 *
+	 * @return void
+	 */
+	public function testAnExpiredJoinRowGrantsNothing(): void {
+		$rows = $this->readLiveJoin(
+			[
+				['learnerRef' => 'pupil-1', 'cohortId' => '3B', 'expiresAt' => '2020-10-01'],
+				['learnerRef' => 'pupil-1', 'cohortId' => '4A', 'expiresAt' => ''],
+				['learnerRef' => 'pupil-1', 'cohortId' => '5C', 'expiresAt' => '2999-01-01T00:00:00+00:00'],
+			],
+			['validUntilField' => 'expiresAt']
+		);
+
+		$this->assertSame(['4A lesson', '5C lesson'], array_column($rows, 'title'));
+	}//end testAnExpiredJoinRowGrantsNothing()
+
+	/**
+	 * A malformed live-row member fails the whole via closed: zero rows and no
+	 * query at all, like any other invalid via.
+	 *
+	 * @return void
+	 */
+	public function testAMalformedLiveRowMemberFailsClosed(): void {
+		foreach ([
+			['when' => ['field' => 'status']],
+			['when' => ['field' => 'status', 'in' => []]],
+			['when' => ['field' => 'status', 'in' => ['active'], 'notIn' => ['withdrawn']]],
+			['when' => ['field' => '', 'in' => ['active']]],
+			['when' => ['field' => 'status', 'in' => [['nested']]]],
+			['validUntilField' => ''],
+			['validUntilField' => 7],
+		] as $extra) {
+			$objectService = $this->liveJoinObjectService([['learnerRef' => 'pupil-1', 'cohortId' => '4A', 'status' => 'active']]);
+			$rows = $this->liveJoinReader($objectService)->readCollection(
+				register: 'school',
+				schema: 'session',
+				scopeField: 'cohortId',
+				subjectRef: 'pupil-1',
+				via: $this->liveJoinVia($extra),
+				audience: 'student'
+			);
+
+			$this->assertSame([], $rows, 'malformed: ' . json_encode($extra));
+			$this->assertCount(0, $objectService->calls);
+		}
+	}//end testAMalformedLiveRowMemberFailsClosed()
+
+	/**
+	 * The single read honours the same rule: a session of a withdrawn
+	 * enrolment does not open by id.
+	 *
+	 * @return void
+	 */
+	public function testASingleReadThroughAWithdrawnJoinRowIsNull(): void {
+		$objectService = $this->liveJoinObjectService([['learnerRef' => 'pupil-1', 'cohortId' => '3B', 'status' => 'withdrawn']]);
+
+		$row = $this->liveJoinReader($objectService)->readObject(
+			register: 'school',
+			schema: 'session',
+			scopeField: 'cohortId',
+			subjectRef: 'pupil-1',
+			id: 's-3b',
+			via: $this->liveJoinVia(['when' => ['field' => 'status', 'in' => ['active']]]),
+			audience: 'student'
+		);
+
+		$this->assertNull($row);
+	}//end testASingleReadThroughAWithdrawnJoinRowIsNull()
+
+	/**
+	 * Read sessions through a reverse enrolment join with extra via members.
+	 *
+	 * @param array<int, array<string, mixed>> $enrolments The join rows.
+	 * @param array<string, mixed>             $extra      The live-row members.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function readLiveJoin(array $enrolments, array $extra): array {
+		return $this->liveJoinReader($this->liveJoinObjectService($enrolments))->readCollection(
+			register: 'school',
+			schema: 'session',
+			scopeField: 'cohortId',
+			subjectRef: 'pupil-1',
+			via: $this->liveJoinVia($extra),
+			audience: 'student'
+		);
+	}//end readLiveJoin()
+
+	/**
+	 * The fake object service for the live-join tests.
+	 *
+	 * @param array<int, array<string, mixed>> $enrolments The join rows.
+	 *
+	 * @return object
+	 */
+	private function liveJoinObjectService(array $enrolments): object {
+		return $this->objectService(
+			[
+				'enrolment' => $enrolments,
+				'session' => [
+					['uuid' => 's-3b', 'cohortId' => '3B', 'title' => '3B lesson'],
+					['uuid' => 's-4a', 'cohortId' => '4A', 'title' => '4A lesson'],
+					['uuid' => 's-5c', 'cohortId' => '5C', 'title' => '5C lesson'],
+				],
+			]
+		);
+	}//end liveJoinObjectService()
+
+	/**
+	 * The reader under test.
+	 *
+	 * @param object $objectService The fake object service.
+	 *
+	 * @return PortalObjectReader
+	 */
+	private function liveJoinReader(object $objectService): PortalObjectReader {
+		return new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
+	}//end liveJoinReader()
+
+	/**
+	 * A reverse join from the pupil's enrolments to sessions of the cohort.
+	 *
+	 * @param array<string, mixed> $extra The live-row members.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function liveJoinVia(array $extra): array {
+		return array_merge(
+			[
+				'register' => 'school',
+				'schema' => 'enrolment',
+				'scopeField' => 'learnerRef',
+				'targetField' => 'cohortId',
+				'match' => 'scopeField',
+			],
+			$extra
+		);
+	}//end liveJoinVia()
 
 	/**
 	 * An ObjectService stand-in serving canned rows per schema and recording
@@ -1575,12 +2067,72 @@ class PortalObjectReaderTest extends TestCase {
 
 	}//end objectService()
 
+	public function testAFailedOrReadIsLoggedAndContributesNothing(): void {
+		$objectService = new class {
+
+			public function setRegister(string $register): self {
+				return $this;
+			}//end setRegister()
+
+			public function setSchema(string $schema): self {
+				return $this;
+			}//end setSchema()
+
+			public function findAll(array $config, bool $_rbac = true, bool $_multitenancy = true): array {
+				throw new RuntimeException('index offline');
+			}//end findAll()
+		};
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('warning')
+			->with('Portaliq: OR read failed', ['schema' => 'exampleDocument', 'reason' => 'index offline']);
+
+		$reader = new PortalObjectReader($this->container($objectService), $logger, $this->projector());
+
+		$this->assertSame([], $reader->readCollection('portaliq', 'exampleDocument', 'subjectRef', 's1', 'org-1'));
+
+	}//end testAFailedOrReadIsLoggedAndContributesNothing()
+
+	public function testANonArrayOrAnswerContributesNothing(): void {
+		$objectService = new class {
+
+			public function setRegister(string $register): self {
+				return $this;
+			}//end setRegister()
+
+			public function setSchema(string $schema): self {
+				return $this;
+			}//end setSchema()
+
+			public function findAll(array $config, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				return 'not rows';
+			}//end findAll()
+		};
+
+		$reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
+
+		$this->assertSame([], $reader->readCollection('portaliq', 'exampleDocument', 'subjectRef', 's1', 'org-1'));
+
+	}//end testANonArrayOrAnswerContributesNothing()
+
 	private function container(object $objectService): ContainerInterface {
+		$dispatcher = $this->createMock(originalClassName: IEventDispatcher::class);
+		$dispatcher->method('dispatchTyped')->willReturnCallback(
+			function (Event $event): void {
+				if ($event instanceof PortalClaimScopeEvent === true) {
+					$this->claimChecks[] = $event;
+					($this->claimListener)($event);
+				}
+			}
+		);
 		$mock = $this->createMock(ContainerInterface::class);
 		$mock->method('get')->willReturnCallback(
-			function (string $id) use ($objectService) {
+			function (string $id) use ($objectService, $dispatcher) {
 				if ($id === self::OS) {
 					return $objectService;
+				}
+
+				if ($id === IEventDispatcher::class) {
+					return $dispatcher;
 				}
 
 				throw new RuntimeException('no service: ' . $id);

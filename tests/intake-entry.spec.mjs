@@ -84,10 +84,10 @@ test('the catalogue is read, never kept: each call asks the endpoint again', asy
 		},
 		{ status: 200, body: { topics: [] } },
 	])
-	const first = await fetchCatalogue(BASE, 'gemeente-x', fetchImpl)
+	const first = await fetchCatalogue({ base: BASE, portal: 'gemeente-x', fetchImpl })
 	assert.equal(first.length, 1)
 	assert.equal(first[0].entries[0].route, 'aanvragen/verhuizing')
-	const second = await fetchCatalogue(BASE, 'gemeente-x', fetchImpl)
+	const second = await fetchCatalogue({ base: BASE, portal: 'gemeente-x', fetchImpl })
 	assert.deepEqual(second, [])
 	assert.equal(calls.length, 2)
 })
@@ -107,7 +107,7 @@ test('an entry without a route is not offered, and a topic left empty is dropped
 			},
 		},
 	])
-	const topics = await fetchCatalogue(BASE, '', fetchImpl)
+	const topics = await fetchCatalogue({ base: BASE, portal: '', fetchImpl })
 	assert.deepEqual(
 		topics.map((t) => t.topic),
 		['Wonen'],
@@ -144,13 +144,7 @@ test('the form is loaded with the bearer, so a signed-in visitor gets their own 
 			},
 		},
 	])
-	const view = await loadForm(
-		BASE,
-		'aanvragen/verhuizing',
-		'gemeente-x',
-		'tok-1',
-		fetchImpl,
-	)
+	const view = await loadForm({ base: BASE, portal: 'gemeente-x', token: 'tok-1', fetchImpl }, 'aanvragen/verhuizing')
 	assert.equal(view.state, 'form')
 	assert.equal(calls[0].init.headers.Authorization, 'Bearer tok-1')
 	assert.deepEqual(initialValues(view.render.fields, view.render.prefill), {
@@ -171,7 +165,7 @@ test('an anonymous visitor sends no bearer and gets an empty applicant block', a
 			},
 		},
 	])
-	const view = await loadForm(BASE, 'aanvragen/verhuizing', '', '', fetchImpl)
+	const view = await loadForm({ base: BASE, portal: '', token: '', fetchImpl }, 'aanvragen/verhuizing')
 	assert.equal(calls[0].init.headers.Authorization, undefined)
 	assert.deepEqual(initialValues(view.render.fields, view.render.prefill), {
 		naam: '',
@@ -207,12 +201,12 @@ test('a form that needs a sign-in, an unknown route, an external form and no for
 			},
 		},
 	])
-	assert.equal((await loadForm(BASE, 'r', '', '', fetchImpl)).state, 'signIn')
-	assert.equal((await loadForm(BASE, 'r', '', '', fetchImpl)).state, 'notFound')
-	const external = await loadForm(BASE, 'r', '', '', fetchImpl)
+	assert.equal((await loadForm({ base: BASE, portal: '', token: '', fetchImpl }, 'r')).state, 'signIn')
+	assert.equal((await loadForm({ base: BASE, portal: '', token: '', fetchImpl }, 'r')).state, 'notFound')
+	const external = await loadForm({ base: BASE, portal: '', token: '', fetchImpl }, 'r')
 	assert.equal(external.state, 'external')
 	assert.equal(external.render.destination, 'formulieren.example.org')
-	assert.equal((await loadForm(BASE, 'r', '', '', fetchImpl)).state, 'noForm')
+	assert.equal((await loadForm({ base: BASE, portal: '', token: '', fetchImpl }, 'r')).state, 'noForm')
 })
 
 test('a valid submission answers with a reference, an invalid one with the field errors', async () => {
@@ -228,17 +222,13 @@ test('a valid submission answers with a reference, an invalid one with the field
 		{ status: 400, body: { errors: { postcode: 'Vul uw postcode in.' } } },
 		{ status: 503, body: { error: 'not_accepted' } },
 	])
-	const accepted = await submitIntake(
-		BASE,
-		'aanvragen/verhuizing',
-		{ postcode: '1234 AB' },
-		'gemeente-x',
-		'tok-1',
-		fetchImpl,
-	)
+	const accepted = await submitIntake({ base: BASE, portal: 'gemeente-x', token: 'tok-1', fetchImpl }, { route: 'aanvragen/verhuizing', answers: { postcode: '1234 AB' } })
 	assert.deepEqual(accepted, {
 		reference: 'AANVRAAG-7',
 		confirmationText: 'Bedankt.',
+		confirmation: null,
+		mailedTo: '',
+		moments: { receivedAt: '', termStartsAt: '', deadline: '' },
 		errors: {},
 	})
 	assert.equal(calls[0].init.method, 'POST')
@@ -249,21 +239,47 @@ test('a valid submission answers with a reference, an invalid one with the field
 	})
 	assert.equal(calls[0].init.headers.Authorization, 'Bearer tok-1')
 
-	const refused = await submitIntake(
-		BASE,
-		'aanvragen/verhuizing',
-		{},
-		'',
-		'',
-		fetchImpl,
-	)
+	const refused = await submitIntake({ base: BASE, portal: '', token: '', fetchImpl }, { route: 'aanvragen/verhuizing', answers: {} })
 	assert.equal(refused.reference, '')
 	assert.deepEqual(refused.errors, { postcode: 'Vul uw postcode in.' })
 
 	await assert.rejects(
-		submitIntake(BASE, 'aanvragen/verhuizing', {}, '', '', fetchImpl),
+		submitIntake({ base: BASE, portal: '', token: '', fetchImpl }, { route: 'aanvragen/verhuizing', answers: {} }),
 		/503/,
 	)
+})
+
+test('a submit creates the case: the moments come back, and a destination refusal lands on its field (decision 179)', async () => {
+	const { fetchImpl } = recorder([
+		{
+			status: 200,
+			body: {
+				reference: '2026-0042',
+				state: 'registered',
+				receivedAt: '2026-10-11T09:00:00+00:00',
+				termStartsAt: '2026-10-13T09:00:00+02:00',
+				deadline: '2026-11-24',
+			},
+		},
+		{
+			status: 422,
+			body: {
+				error: 'refused_by_destination',
+				errors: { postcode: 'Dit is geen postcode.', _form: 'Er ontbreekt een zaaktype.' },
+			},
+		},
+	])
+	const created = await submitIntake({ base: BASE, portal: '', token: '', fetchImpl }, { route: 'bezwaar', answers: { postcode: '1234 AB' } })
+	assert.equal(created.reference, '2026-0042')
+	assert.deepEqual(created.moments, {
+		receivedAt: '2026-10-11T09:00:00+00:00',
+		termStartsAt: '2026-10-13T09:00:00+02:00',
+		deadline: '2026-11-24',
+	})
+
+	const refused = await submitIntake({ base: BASE, portal: '', token: '', fetchImpl }, { route: 'bezwaar', answers: { postcode: 'x' } })
+	assert.equal(refused.reference, '')
+	assert.deepEqual(refused.errors, { postcode: 'Dit is geen postcode.', _form: 'Er ontbreekt een zaaktype.' })
 })
 
 test('the status of a reference is the real state, and a failed create names what to do', async () => {
@@ -279,10 +295,10 @@ test('the status of a reference is the real state, and a failed create names wha
 		},
 		{ status: 404, body: { error: 'reference_not_found' } },
 	])
-	const failed = await lookUpStatus(BASE, 'AANVRAAG-7', '', fetchImpl)
+	const failed = await lookUpStatus({ base: BASE, portal: '', fetchImpl }, 'AANVRAAG-7')
 	assert.equal(failed.state, 'failed')
-	assert.equal(await lookUpStatus(BASE, 'NOPE', '', fetchImpl), null)
-	assert.equal(await lookUpStatus(BASE, '   ', '', fetchImpl), null)
+	assert.equal(await lookUpStatus({ base: BASE, portal: '', fetchImpl }, 'NOPE'), null)
+	assert.equal(await lookUpStatus({ base: BASE, portal: '', fetchImpl }, '   '), null)
 
 	const view = statusView(failed)
 	assert.equal(view.tone, 'error')
@@ -300,6 +316,33 @@ test('a queued request never claims a case, a registered one does', () => {
 	})
 	assert.match(registered.sentence, /geregistreerd/)
 	assert.equal(statusView(null).tone, 'error')
+})
+
+test('a Woo request quotes its due date only when its term runs', () => {
+	const armed = statusView({
+		reference: 'AANVRAAG-1',
+		state: 'registered',
+		caseId: 'req-1',
+		externalReference: 'WOO-2026-1A2B3C',
+		dueAt: '2026-11-02T09:00:00+00:00',
+	})
+	assert.equal(armed.tone, 'success')
+	assert.match(armed.sentence, /WOO-2026-1A2B3C/)
+	assert.match(armed.sentence, /uiterlijk 2 november 2026/)
+	assert.doesNotMatch(armed.sentence, /—/)
+
+	// A term that did not start is a failed delivery: no date, and the
+	// citizen is told to get in touch.
+	const notArmed = statusView({ reference: 'AANVRAAG-1', state: 'failed', dueAt: '' })
+	assert.doesNotMatch(notArmed.sentence, /uiterlijk/)
+	assert.match(notArmed.sentence, /Neem contact met ons op/)
+
+	// A registered case without a due date reads as before.
+	const plain = statusView({ reference: 'A-1', state: 'registered', caseId: 'c-9', externalReference: '', dueAt: '' })
+	assert.doesNotMatch(plain.sentence, /uiterlijk/)
+	// A malformed date is never shown.
+	const garbled = statusView({ reference: 'A-1', state: 'registered', externalReference: 'WOO-1', dueAt: 'soon' })
+	assert.doesNotMatch(garbled.sentence, /uiterlijk/)
 })
 
 test('no user-facing sentence carries an em-dash', () => {
@@ -345,7 +388,7 @@ test('the public renderer mounts the three intake blocks and hands them the port
 	}
 	assert.match(
 		grid,
-		/widgetKey === 'intakeForm'\) \{\s*return \{ \.\.\.props, portal: this\.portal, routeParam: this\.routeParam \}/,
+		/widgetKey === 'intakeForm'\) \{\s*return \{\s*\.\.\.props,\s*portal: this\.portal,\s*routeParam: this\.routeParam,\s*portalHelp: this\.portalHelp,\s*\}/,
 	)
 	assert.match(
 		grid,
@@ -358,8 +401,14 @@ test('the public renderer mounts the three intake blocks and hands them the port
 	)
 	assert.match(
 		catalogue,
-		/intakeForm: \['portal', 'routeParam'\]/,
+		/intakeForm: \['portal', 'routeParam', 'portalHelp'\]/,
 		'the designer must not offer host-supplied props',
 	)
-	assert.match(catalogue, /intakeCatalogue: 'Aanvragen per onderwerp'/)
+	// The palette's names live in one module the editor shares
+	// (resident-sees-words-not-codes).
+	const labels = await readFile(
+		new URL('../src/lib/widgetLabels.js', import.meta.url),
+		'utf8',
+	)
+	assert.match(labels, /intakeCatalogue: 'Aanvragen per onderwerp'/)
 })

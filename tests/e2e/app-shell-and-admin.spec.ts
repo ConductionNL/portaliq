@@ -9,13 +9,12 @@
  *
  * WHY A SECOND SHAPE OF SPEC IN THIS SUITE
  * ----------------------------------------
- * Every pre-existing spec here drives the PUBLIC portal (`portaliq-portal.js`)
+ * Every pre-existing spec here drives the PUBLIC site (`portaliq-site.js`)
  * and authenticates itself through the debug-gated portal bearer edge. None of
  * them ever logs into Nextcloud, so nothing in this suite had ever rendered the
  * admin SPA or opened `/settings/admin/portaliq` — the `dashboard-page`,
  * `admin-ui`, `settings-management` and `observability` capabilities were
- * entirely unexercised end-to-end (hydra gate-19), and `src/views/
- * FeaturesRoadmap.vue` had no e2e reference at all (gate-26).
+ * entirely unexercised end-to-end (hydra gate-19).
  *
  * TWO IDENTITIES, TWO COOKIE JARS — THIS IS LOAD-BEARING
  * ------------------------------------------------------
@@ -288,10 +287,9 @@ test.describe('admin SPA + admin settings + operator contracts', () => {
 	// return the SAME SPA shell for a sub-path it knows nothing about, and the
 	// Vue router must then resolve that path client-side. `/features-roadmap`
 	// is a real manifest page (`src/manifest.json` → id `FeaturesRoadmap`,
-	// route `/features-roadmap`, surfaced from the nav's footer section), so
-	// this also gives `src/views/FeaturesRoadmap.vue` the e2e reference hydra
-	// gate-26 asks for — and it asks for it because a page nobody ever renders
-	// is a page nobody notices breaking.
+	// route `/features-roadmap`, surfaced from the nav's footer section, and
+	// rendered by the library's built-in `type: "roadmap"` page), so this also
+	// renders a page nobody would otherwise notice breaking.
 	//
 	// The URL assertion is the load-bearing half. If the catch-all were absent
 	// the server would 404; if the Vue router's history base were wrong the

@@ -21,7 +21,12 @@ import type { APIRequestContext, Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 import { resolveBaseURL } from './base-url.ts'
-import { openPortaliqDemoPage } from './portal-nav.ts'
+import {
+	openPortaliqDemoPage,
+	PORTAL_API,
+	seedSiteSession,
+	siteAddress,
+} from './portal-nav.ts'
 
 // CommonJS require, because this suite is compiled as CJS (no "type": "module"
 // in package.json) and `import.meta` is a syntax error there.
@@ -255,8 +260,9 @@ test.describe('site renderer — responsive', () => {
 })
 
 /**
- * Mint a low-trust supplier dev session and seed it into the SPA's token slot
- * before the app boots, as tests/e2e/portal-document-download.spec.ts does.
+ * Mint a low-trust supplier dev session and seed it into the site's token
+ * slot before the app boots, as tests/e2e/portal-document-download.spec.ts
+ * does.
  *
  * @param request The API request context.
  * @param page The Playwright page.
@@ -267,7 +273,7 @@ async function signInToThePortal(
 	page: Page,
 	subjectRef: string,
 ): Promise<void> {
-	const res = await request.post('/apps/portaliq/portal/api/session/dev-login', {
+	const res = await request.post(`${PORTAL_API}/session/dev-login`, {
 		data: { subjectRef, audience: 'supplier', organisation: 'e2e-org' },
 	})
 	expect(
@@ -276,9 +282,7 @@ async function signInToThePortal(
 	).toBeTruthy()
 	const token = (await res.json()).token as string
 	expect(token).toBeTruthy()
-	await page.addInitScript((t) => {
-		window.localStorage.setItem('portaliq_token', t)
-	}, token)
+	await seedSiteSession(page, token)
 }
 
 test.describe('signed-in portal — accessibility', () => {
@@ -290,7 +294,7 @@ test.describe('signed-in portal — accessibility', () => {
 		request,
 	}) => {
 		await signInToThePortal(request, page, `e2e-keyboard-${Date.now()}`)
-		await page.goto('/apps/portaliq/portal')
+		await page.goto(siteAddress())
 		await page.waitForLoadState('domcontentloaded')
 		await openPortaliqDemoPage(page)
 
@@ -302,10 +306,10 @@ test.describe('signed-in portal — accessibility', () => {
 		})
 
 		const row = page
-			.locator('tr.portaliq-row-clickable')
+			.getByTestId('collection-table-row')
 			.filter({ hasText: title })
 		await row.waitFor({ timeout: 20_000 })
-		const open = row.locator('button.portaliq-row-select')
+		const open = row.getByTestId('collection-table-select')
 
 		// A real button is in the tab order; the row itself never was.
 		expect(await open.evaluate((el) => el.tabIndex)).toBeGreaterThanOrEqual(0)
@@ -315,6 +319,51 @@ test.describe('signed-in portal — accessibility', () => {
 
 		// The open row is announced, and its detail renders.
 		await expect(row).toHaveAttribute('aria-current', 'true')
-		await expect(page.locator('.portaliq-fileupload')).toBeVisible()
+		await expect(page.getByTestId('detail-card-upload')).toBeVisible()
+	})
+})
+
+/**
+ * site-accessibility-statement REQ-SAS-002: every portal links its statement
+ * from the footer, the statement names the date of the measurement it rests
+ * on, and the statement page itself passes the same axe check.
+ *
+ * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+ */
+test.describe('site renderer — accessibility statement', () => {
+	test('the statement is linked from the footer and lists the measurement date', async ({
+		page,
+		request,
+	}) => {
+		const answer = await request.get(
+			`${BASE}/index.php/apps/portaliq/api/content/accessibility`,
+		)
+		expect(answer.ok()).toBeTruthy()
+		const { statement } = await answer.json()
+
+		await page.goto(SITE)
+		await expect(page.getByTestId('site-title')).toBeVisible()
+		const link = page
+			.getByTestId('site-subfooter-menu')
+			.locator('a[href$="/toegankelijkheid"]')
+		await expect(link).toHaveCount(1)
+		await link.click()
+
+		await expect(page.getByTestId('accessibility-statement')).toBeVisible()
+		await expect(
+			page.getByTestId('accessibility-statement-status'),
+		).toBeVisible()
+		if (statement.measurement) {
+			await expect(
+				page.getByTestId('accessibility-statement-evidence'),
+			).toBeVisible()
+		}
+		// Without an audit the status is never A or B.
+		if (statement.audit === null) {
+			expect(['C', null]).toContain(statement.status)
+		}
+
+		const violations = await seriousViolations(page)
+		expect(violations, describe(violations)).toEqual([])
 	})
 })

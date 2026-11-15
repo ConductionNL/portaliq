@@ -20,73 +20,112 @@
 	<footer class="ac-footer pq-site__footer" data-testid="site-footer">
 		<h2 class="sr-only">{{ landmarkLabel }}</h2>
 
-		<section class="pq-footer__band pq-footer__band--content">
+		<section
+			class="pq-footer__band pq-footer__band--content"
+			:class="{ 'pq-footer__band--designed': designed }">
 			<div class="container ac-footer__container">
-				<nav
-					v-for="menu in menus"
-					:key="menu.title"
-					class="ac-footer__links"
-					:aria-label="menu.title"
-					data-testid="site-footer-menu">
-					<h3 class="ac-footer__menu-title">{{ menu.title }}</h3>
-					<ul>
-						<li v-for="item in menu.items" :key="item.name">
-							<!-- The glyph is decorative: the link has its own text. -->
-							<a
-								class="ac-footer__link"
-								:href="item.link"
-								:target="
-									isExternal(item.link) ? '_blank' : undefined
-								"
-								:rel="
-									isExternal(item.link)
-										? 'noopener noreferrer'
-										: undefined
-								"
-								@click="onLink($event, item.link)">
-								<CnSiteIcon
-									v-if="isExternal(item.link)"
-									name="external-link"
-									:size="18" />
-								<span>{{ item.name }}</span>
-							</a>
-						</li>
-					</ul>
-				</nav>
-
-				<div class="ac-footer__logo">
-					<div class="con-logo-container footer" />
-					<span>
-						<span>{{ title }}</span>
-						<span v-if="tagline" data-testid="site-footer-tagline">
-							{{ tagline }}
+				<!-- The brand column first on a designed footer, else last, as
+				     it always was (site-chrome-follows-the-design). -->
+				<template v-for="column in columns" :key="column.key">
+					<div v-if="column.brand" class="ac-footer__logo">
+						<div class="con-logo-container footer" />
+						<span>
+							<span>{{ title }}</span>
+							<span v-if="tagline" data-testid="site-footer-tagline">
+								{{ tagline }}
+							</span>
 						</span>
-					</span>
-					<p
-						v-if="content.description"
-						class="pq-footer__description"
-						data-testid="site-footer-description">
-						{{ content.description }}
-					</p>
-					<!-- An icon link has no text of its own, so each carries its
-					     label for screen readers. -->
-					<ul
-						v-if="content.socials.length"
-						class="pq-footer__socials"
-						data-testid="site-footer-socials">
-						<li v-for="social in content.socials" :key="social.href">
-							<a
-								:href="social.href"
-								target="_blank"
-								rel="noopener noreferrer">
-								<CnSiteIcon
-									:name="social.icon || 'external-link'"
-									:size="18" />
-								<span class="sr-only">{{ social.label }}</span>
-							</a>
-						</li>
-					</ul>
-				</div>
+						<p
+							v-if="content.description"
+							class="pq-footer__description"
+							data-testid="site-footer-description">
+							{{ content.description }}
+						</p>
+						<!-- The brand column's button (site-chrome-follows-the-design). -->
+						<a
+							v-if="content.cta"
+							class="utrecht-button-link utrecht-button-link--html-a utrecht-button-link--secondary-action pq-footer__cta"
+							:href="addressFor(content.cta.href)"
+							data-testid="site-footer-cta"
+							@click="onLink($event, content.cta.href)">
+							{{ content.cta.label }}
+						</a>
+						<!-- An icon link has no text of its own, so each carries its
+						     label for screen readers. -->
+						<ul
+							v-if="content.socials.length"
+							class="pq-footer__socials"
+							data-testid="site-footer-socials">
+							<li v-for="social in content.socials" :key="social.href">
+								<a
+									:href="social.href"
+									target="_blank"
+									rel="noopener noreferrer">
+									<CnSiteIcon
+										:name="social.icon || 'external-link'"
+										:size="18" />
+									<span class="sr-only">{{ social.label }}</span>
+								</a>
+							</li>
+						</ul>
+					</div>
+
+					<!-- The contact column: plain lines, a line with a link as a
+					     link (site-chrome-follows-the-design). -->
+					<div
+						v-else-if="column.contact"
+						class="ac-footer__links pq-footer__contact"
+						data-testid="site-footer-contact">
+						<h3
+							v-if="content.contact.title"
+							class="ac-footer__menu-title">
+							{{ content.contact.title }}
+						</h3>
+						<!-- Only the address is the link: "E-mail: " stays text
+						     (board Voet, site-home-follows-the-school-boards). -->
+						<p v-for="line in content.contact.lines" :key="line.text">
+							{{ lineParts(line).before
+							}}<a
+								v-if="lineParts(line).linked"
+								:href="addressFor(line.href)"
+								@click="onLink($event, line.href)"
+								>{{ lineParts(line).linked }}</a
+							>
+						</p>
+					</div>
+					<nav
+						v-else
+						class="ac-footer__links"
+						:aria-label="column.menu.title"
+						data-testid="site-footer-menu">
+						<h3 class="ac-footer__menu-title">
+							{{ column.menu.title }}
+						</h3>
+						<ul>
+							<li v-for="item in column.menu.items" :key="item.name">
+								<!-- The glyph is decorative: the link has its own text. -->
+								<a
+									class="ac-footer__link"
+									:href="addressFor(item.link)"
+									:target="
+										isExternal(item.link) ? '_blank' : undefined
+									"
+									:rel="
+										isExternal(item.link)
+											? 'noopener noreferrer'
+											: undefined
+									"
+									@click="onLink($event, item.link)">
+									<CnSiteIcon
+										v-if="isExternal(item.link)"
+										name="external-link"
+										:size="18" />
+									<span>{{ item.name }}</span>
+								</a>
+							</li>
+						</ul>
+					</nav>
+				</template>
 			</div>
 		</section>
 
@@ -105,7 +144,7 @@
 					<ul class="ac-footer__sub-footer-horizontal">
 						<li v-for="item in legalLinks" :key="item.href">
 							<a
-								:href="item.href"
+								:href="addressFor(item.href)"
 								@click="onLink($event, item.href)"
 								>{{ item.label }}</a
 							>
@@ -135,7 +174,11 @@
 
 <script>
 import { CnSiteIcon } from '@conduction/nextcloud-vue/public'
-import { footerContentOf } from '../lib/shellData.js'
+import { contactLineParts } from '../lib/footerLine.js'
+import { footerContentOf, linkAddress } from '../lib/shellData.js'
+
+// The button links' classes need their stylesheet, or the browser draws its own blue link.
+import '@utrecht/button-link-css/dist/index.css'
 
 /**
  * The portal's footer block (`footerColumns`).
@@ -165,11 +208,25 @@ export default {
 		landmarkLabel: { type: String, default: 'Footer' },
 		/** The legal links' accessible name. */
 		legalLabel: { type: String, default: 'Juridische informatie' },
+		/** A site route to the address that opens it; a route as it is without one. */
+		addressOf: { type: Function, default: null },
 	},
 
 	emits: ['navigate'],
 
 	computed: {
+		/**
+		 * Whether the footer is a designed one: it carries a button or a
+		 * contact column (site-chrome-follows-the-design).
+		 *
+		 * @return {boolean}
+		 *
+		 * @spec openspec/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
+		 */
+		designed() {
+			return Boolean(this.content.cta || this.content.contact)
+		},
+
 		/**
 		 * The footer content in a fixed shape.
 		 *
@@ -180,9 +237,57 @@ export default {
 		content() {
 			return footerContentOf({ footer: this.footer })
 		},
+
+		/**
+		 * The columns in reading order. A footer with a button or a contact
+		 * column is a designed one: the brand column first, then contact, then
+		 * the menus. Any other footer keeps the menus first and the brand last.
+		 *
+		 * @return {Array<object>} `{key, brand?, contact?, menu?}` entries.
+		 *
+		 * @spec openspec/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
+		 */
+		columns() {
+			const menus = this.menus.map((menu) => ({
+				key: 'menu:' + menu.title,
+				menu,
+			}))
+			const brand = { key: 'brand', brand: true }
+			if (!this.content.cta && !this.content.contact) {
+				return [...menus, brand]
+			}
+			return [
+				brand,
+				...(this.content.contact ? [{ key: 'contact', contact: true }] : []),
+				...menus,
+			]
+		},
 	},
 
 	methods: {
+		/**
+		 * The href of a link: a site route in the site's own addressing, so it
+		 * opens where the site is served under the app path as well as on a
+		 * portal domain; anything else as it is.
+		 *
+		 * @param {string} link The authored link.
+		 * @return {string} The href.
+		 *
+		 * @spec openspec/specs/site-navigation/spec.md#requirement-a-menu-link-to-a-site-page-carries-the-sites-own-address
+		 */
+		addressFor(link) {
+			return linkAddress(link, this.addressOf)
+		},
+
+		/**
+		 * @param {{text: string, href?: string}} line A contact line.
+		 * @return {{before: string, linked: string}} Its plain words and its linked words.
+		 * @spec openspec/changes/site-home-follows-the-school-boards/specs/site-look/spec.md#requirement-only-the-address-of-a-footer-contact-line-is-a-link
+		 */
+		lineParts(line) {
+			return contactLineParts(line)
+		},
+
 		/**
 		 * Whether a link leaves this portal.
 		 *

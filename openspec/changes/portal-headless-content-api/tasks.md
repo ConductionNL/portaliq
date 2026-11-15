@@ -13,8 +13,8 @@
   - Every route declares its auth posture explicitly; public routes use the attribute form the fleet's public-endpoint sweep actually counts
   - An unpublished page is indistinguishable from a non-existent route — no existence oracle
   - A markdown body is returned as source, byte-identical; a grid body returns canonical `$defs.widgetEntry` shapes
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test
 
 ### Task 2: Response cache keyed by audience
 - **spec_ref**: `openspec/changes/portal-headless-content-api/specs/portal-headless-content-api/spec.md#requirement-responses-must-be-cached-with-the-audience-in-the-key`
@@ -24,8 +24,8 @@
   - The audience component is proven load-bearing: with it removed the separation test FAILS, and that failure is observed before the key is trusted — a cache that ignores audience is a data leak, not a slow path
   - Headers are stated ONCE per response: `private, no-store` for per-visitor, publicly cacheable for anonymous published content, with no contradictory second directive
   - Cache hits are measured, so a cache that never hits is distinguishable from no cache at all
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test
 
 ### Task 3: Event-driven invalidation
 - **spec_ref**: `openspec/changes/portal-headless-content-api/specs/portal-headless-content-api/spec.md#requirement-a-write-must-invalidate-the-affected-cache-entries`
@@ -35,8 +35,8 @@
   - A menu update invalidates the pages that render it
   - Invalidation is website-scoped; another site's entries are untouched
   - The listener does its work off the write path per ADR-078, or carries a reason-bearing inline annotation
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test
 
 ### Task 4: Throttling and headless conformance
 - **spec_ref**: `openspec/changes/portal-headless-content-api/specs/portal-headless-content-api/spec.md#requirement-the-anonymous-read-path-must-be-throttled`
@@ -46,5 +46,10 @@
   - The throttle is proven by two independent discriminators — an absent success is not evidence it fired
   - A conformance test enumerates the built-in portal's capabilities and fails when one is unreachable through the public API, naming it
   - The conformance test reaches into no Portaliq internal, or it is not testing headlessness
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [ ] Test — not run: the 429 and the live conformance walk need a running instance; the static half (every content route is PublicPage + AnonRateLimit, every URL the portal reads is routed) is `tests/Unit/Controller/HeadlessConformanceTest.php`
+
+## Build notes
+
+- The endpoints, cache, listener and throttle were already in place under the `portaliq-cms` spec; this change added the missing pieces: hit and miss counts (`CmsReader::cacheStats()`, exposed as `portaliq_content_cache_total` on the metrics route), the ADR-078 placement note on the invalidation listener, and tests that run the real read path with a working cache (`CmsContentCacheTest`) and read the routes (`HeadlessConformanceTest`).
+- The audience separation test was observed failing with the audience dropped from the key before it was trusted.

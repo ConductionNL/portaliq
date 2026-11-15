@@ -17,6 +17,7 @@ namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\PortalThemeResolver;
 use OCA\Portaliq\Service\Theme\PortalCustomThemeSets;
+use OCA\Portaliq\Service\Theme\PortalThemeParents;
 use OCA\Thematiq\Service\CustomTokenSetValidator;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -85,6 +86,8 @@ class PortalThemeResolverTest extends TestCase {
 			unlink($file);
 		}
 
+		@unlink($this->themeRoot . '/css/public-bridge.css');
+		@unlink($this->themeRoot . '/css/fonts.css');
 		@unlink($this->themeRoot . '/lib/Controller/FontController.php');
 		@rmdir($this->themeRoot . '/lib/Controller');
 		@rmdir($this->themeRoot . '/lib');
@@ -298,6 +301,62 @@ class PortalThemeResolverTest extends TestCase {
 
 
 	/**
+	 * site-links-the-theme-bridge: the theme app's bridge is offered when it
+	 * ships one. The positive control for the two refusals below.
+	 *
+	 * @return void
+	 */
+	public function testTheBridgeIsOfferedWhenTheThemeAppShipsIt(): void {
+		file_put_contents($this->themeRoot . '/css/public-bridge.css', ':root{--utrecht-document-color:var(--nldesign-color-text)}');
+
+		$this->assertSame('public-bridge', $this->resolver()->shippedStylesheets()['bridge']);
+	}//end testTheBridgeIsOfferedWhenTheThemeAppShipsIt()
+
+
+	/**
+	 * A theme app without the file gets no bridge link: Nextcloud answers a
+	 * missing app asset with 401, on every page load.
+	 *
+	 * @return void
+	 */
+	public function testNoBridgeWithoutTheFile(): void {
+		$this->assertNull($this->resolver()->shippedStylesheets()['bridge']);
+	}//end testNoBridgeWithoutTheFile()
+
+
+	/**
+	 * No theme app installed, no bridge, even when a file would exist.
+	 *
+	 * @return void
+	 */
+	public function testNoBridgeWithoutAThemeApp(): void {
+		file_put_contents($this->themeRoot . '/css/public-bridge.css', ':root{}');
+		$appManager = $this->createMock(IAppManager::class);
+		$appManager->method('isInstalled')->willReturn(false);
+		$appManager->method('getAppPath')->willReturn($this->themeRoot);
+
+		$resolver = new PortalThemeResolver(appManager: $appManager);
+
+		$this->assertSame(['bridge' => null, 'fonts' => null], $resolver->shippedStylesheets());
+	}//end testNoBridgeWithoutAThemeApp()
+
+
+	/**
+	 * site-links-the-theme-bridge REQ-STB-002: the bundled faces are offered
+	 * when the theme app ships `css/fonts.css`, and not when it does not.
+	 *
+	 * @return void
+	 */
+	public function testTheBundledFacesAreOfferedOnlyWhenShipped(): void {
+		$this->assertNull($this->resolver()->shippedStylesheets()['fonts']);
+
+		file_put_contents($this->themeRoot . '/css/fonts.css', "@font-face{font-family:'Source Sans 3'}");
+
+		$this->assertSame('fonts', $this->resolver()->shippedStylesheets()['fonts']);
+	}//end testTheBundledFacesAreOfferedOnlyWhenShipped()
+
+
+	/**
 	 * The theme app is mid-rename from `nldesign` to `thematiq`: the new id is
 	 * live on `development` while released builds still ship the old one. Both
 	 * must resolve, because `isInstalled()` on a name nothing answers to
@@ -495,7 +554,7 @@ class PortalThemeResolverTest extends TestCase {
 		$appManager->method('getAppPath')->willReturn($this->themeRoot);
 		$this->assertSame('thematiq.font.css', (new PortalThemeResolver(appManager: $appManager))->fontStylesheetRoute());
 
-		$template = (string)file_get_contents(__DIR__ . '/../../../templates/site.php');
+		$template = (string)file_get_contents(__DIR__ . '/../../../templates/parts/site-stylesheets.php');
 		$this->assertMatchesRegularExpression('/fontStylesheetRoute\(\);\s*if \(\$fontRoute !== null\) \{\s*\$stylesheets\[\] = \$url->linkToRoute\(\$fontRoute\);/', $template);
 	}//end testTheUploadedFontsStylesheetIsLinkedOnlyWhenTheThemeAppHasOne()
 
@@ -632,4 +691,128 @@ class PortalThemeResolverTest extends TestCase {
 	}//end testATraversalAttemptIsRefusedForTheLogo()
 
 
+	/**
+	 * site-chrome-follows-the-design: the light logo for the dark footer and
+	 * the emblem for a watermark resolve when the set ships them, and only
+	 * the two variants the site asks for.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
+	 */
+	public function testALogoVariantResolvesWhenTheSetShipsIt(): void {
+		mkdir($this->themeRoot . '/img/logos', 0o777, true);
+		file_put_contents($this->themeRoot . '/img/logos/vng.svg', '<svg/>');
+		file_put_contents($this->themeRoot . '/img/logos/vng-dark.svg', '<svg/>');
+		file_put_contents($this->themeRoot . '/img/logos/vng-emblem.svg', '<svg/>');
+		file_put_contents($this->themeRoot . '/img/logos/vng-secret.svg', '<svg/>');
+
+		$resolver = $this->resolver();
+		$this->assertSame('img/logos/vng-dark.svg', $resolver->logoFileFor(theme: 'vng', variant: 'dark'));
+		$this->assertSame('img/logos/vng-emblem.svg', $resolver->logoFileFor(theme: 'vng', variant: 'emblem'));
+		// The grey emblem only when the set ships that file too.
+		$this->assertNull($resolver->logoFileFor(theme: 'vng', variant: 'emblem-grey'));
+		file_put_contents($this->themeRoot . '/img/logos/vng-emblem-grey.svg', '<svg/>');
+		$this->assertSame('img/logos/vng-emblem-grey.svg', $resolver->logoFileFor(theme: 'vng', variant: 'emblem-grey'));
+		$this->assertNull($resolver->logoFileFor(theme: 'vng', variant: 'secret'));
+		$this->assertNull($resolver->logoFileFor(theme: 'vng', variant: '../vng'));
+
+	}//end testALogoVariantResolvesWhenTheSetShipsIt()
+
+
+	/**
+	 * A set without the variant file has none; a set that does not resolve
+	 * has none either.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
+	 */
+	public function testALogoVariantNeedsItsFileAndAResolvedSet(): void {
+		mkdir($this->themeRoot . '/img/logos', 0o777, true);
+		file_put_contents($this->themeRoot . '/img/logos/vng.svg', '<svg/>');
+		// orphan ships a dark logo but is not in the catalogue.
+		file_put_contents($this->themeRoot . '/img/logos/orphan-dark.svg', '<svg/>');
+
+		$resolver = $this->resolver();
+		$this->assertNull($resolver->logoFileFor(theme: 'vng', variant: 'dark'));
+		$this->assertNull($resolver->logoFileFor(theme: 'orphan', variant: 'dark'));
+
+	}//end testALogoVariantNeedsItsFileAndAResolvedSet()
+
+
+
+	/**
+	 * REQ-PTB-003: a child loads after its parent; the theme itself is not in the list.
+	 *
+	 * @return void
+	 */
+	public function testAParentIsLinkedBeforeItsChild(): void {
+		file_put_contents($this->themeRoot . '/css/tokens/lasuite.css', ':root{}');
+		file_put_contents($this->themeRoot . '/css/tokens/frankendesk.css', ':root{}');
+		file_put_contents(
+			$this->themeRoot . '/token-sets.json',
+			(string)json_encode([
+				['id' => 'lasuite'],
+				['id' => 'frankendesk', 'extends' => 'lasuite'],
+				['id' => 'vng'],
+			])
+		);
+
+		$this->assertSame(['tokens/lasuite'], (new PortalThemeParents($this->resolver()))->stylesheetsFor('frankendesk'));
+		$this->assertSame([], (new PortalThemeParents($this->resolver()))->stylesheetsFor('vng'));
+	}//end testAParentIsLinkedBeforeItsChild()
+
+
+	/**
+	 * REQ-PTB-003: two sets that extend each other link each once, and a long
+	 * chain stops after four hops.
+	 *
+	 * @return void
+	 */
+	public function testACycleLinksEachSetOnceAndAChainStopsAtFourHops(): void {
+		foreach (['a', 'b', 'c0', 'c1', 'c2', 'c3', 'c4', 'c5'] as $id) {
+			file_put_contents($this->themeRoot . '/css/tokens/' . $id . '.css', ':root{}');
+		}
+
+		file_put_contents(
+			$this->themeRoot . '/token-sets.json',
+			(string)json_encode([
+				['id' => 'a', 'extends' => 'b'],
+				['id' => 'b', 'extends' => 'a'],
+				['id' => 'c0', 'extends' => 'c1'],
+				['id' => 'c1', 'extends' => 'c2'],
+				['id' => 'c2', 'extends' => 'c3'],
+				['id' => 'c3', 'extends' => 'c4'],
+				['id' => 'c4', 'extends' => 'c5'],
+				['id' => 'c5'],
+			])
+		);
+
+		$this->assertSame(['tokens/b'], (new PortalThemeParents($this->resolver()))->stylesheetsFor('a'));
+		$this->assertSame(['tokens/c4', 'tokens/c3', 'tokens/c2', 'tokens/c1'], (new PortalThemeParents($this->resolver()))->stylesheetsFor('c0'));
+	}//end testACycleLinksEachSetOnceAndAChainStopsAtFourHops()
+
+
+	/**
+	 * A theme that is named and does not resolve is reported by name; one that
+	 * resolves, and a portal with no theme at all, are not
+	 * (portal-theme-application, an unresolvable theme is obvious).
+	 *
+	 * @spec openspec/changes/portal-theme-application/specs/portaliq-cms/spec.md#requirement-an-unresolvable-theme-must-be-obvious-not-silently-default
+	 *
+	 * @return void
+	 */
+	public function testAThemeThatDoesNotResolveIsReportedByName(): void {
+		$this->appManager->method('isInstalled')->willReturn(true);
+		$this->appManager->method('getAppPath')->willReturn($this->themeRoot);
+		$logger = $this->createMock(\Psr\Log\LoggerInterface::class);
+		$logger->expects($this->once())->method('warning')->with($this->stringContains('theme does not resolve'), ['theme' => 'no-such-municipality']);
+
+		$resolver = new PortalThemeResolver(appManager: $this->appManager, logger: $logger);
+
+		$this->assertNull($resolver->stylesheetFor(theme: 'no-such-municipality'));
+		$this->assertNotNull($resolver->stylesheetFor(theme: 'vng'), 'a theme that resolves says nothing');
+		$this->assertNull($resolver->stylesheetFor(theme: ''), 'a portal with no theme says nothing');
+	}//end testAThemeThatDoesNotResolveIsReportedByName()
 }//end class

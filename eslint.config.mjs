@@ -84,9 +84,8 @@ export default [
 		// therefore names a plugin that is not registered there, and eslint
 		// refuses to run at all. Measured: with `lint: "eslint src tests"` this
 		// took out ALL 12 files under tests/ while src/ was fine.
-		// `.jsx` belongs here too: the React portal under `src/portal` is written
-		// in `.jsx`, so without it every `@spec` tag gate-16 asks for on a portal
-		// component reports as an invalid tag name and eslint fails the build.
+		// `.jsx` stays listed: the retired React portal was written in it, and a
+		// `.jsx` file added again must get the same `@spec` tag rules.
 		files: ['**/*.js', '**/*.jsx', '**/*.mjs', '**/*.ts', '**/*.tsx', '**/*.vue'],
 		ignores: [
 			'**/*.test.*',
@@ -361,5 +360,14 @@ export default [
 		rules: {
 			'@stylistic/exp-list-style': 'off',
 		},
+	},
+
+	{
+		// Golden fixtures are recorded outputs, compared byte for byte by the
+		// golden specs. They hold PHP's 64-bit integer bounds as plain numbers,
+		// which `json/no-unsafe-values` rejects; editing them would change what
+		// the specs pin.
+		name: 'conduction/golden-fixtures',
+		ignores: ['tests/Fixtures/Golden/**'],
 	},
 ]

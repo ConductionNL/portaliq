@@ -1,0 +1,58 @@
+{
+    "array": {
+        "ActionReminderService": {
+            "id": "a0",
+            "title": "Plan"
+        },
+        "PlanEndReminderService": {
+            "id": "a0",
+            "title": "Plan"
+        }
+    },
+    "empty array": {
+        "ActionReminderService": [],
+        "PlanEndReminderService": []
+    },
+    "entity": {
+        "ActionReminderService": {
+            "id": "a1",
+            "title": "Formulier"
+        },
+        "PlanEndReminderService": {
+            "id": "a1",
+            "title": "Formulier"
+        }
+    },
+    "entity as object": {
+        "ActionReminderService": {
+            "id": "a2"
+        },
+        "PlanEndReminderService": {
+            "id": "a2"
+        }
+    },
+    "entity as text": {
+        "ActionReminderService": [
+            "tekst"
+        ],
+        "PlanEndReminderService": [
+            "tekst"
+        ]
+    },
+    "object without jsonSerialize": {
+        "ActionReminderService": [],
+        "PlanEndReminderService": []
+    },
+    "text": {
+        "ActionReminderService": [],
+        "PlanEndReminderService": []
+    },
+    "null": {
+        "ActionReminderService": [],
+        "PlanEndReminderService": []
+    },
+    "number": {
+        "ActionReminderService": [],
+        "PlanEndReminderService": []
+    }
+}

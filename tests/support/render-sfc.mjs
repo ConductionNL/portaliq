@@ -46,6 +46,9 @@ function compile(file, stubs, dir) {
 	})
 
 	code += `\n${template.code}\n__sfc__.ssrRender = ssrRender\nexport default __sfc__\n`
+	// A side-effect CSS import is dropped, as in mount-sfc.mjs: node cannot
+	// load it and no test reads it (the forms layer imports Utrecht CSS).
+	code = code.replace(/^import\s+['"][^'"]+\.css['"];?\s*$/gm, '')
 
 	code = code.replace(/from\s+['"]([^'"]+)['"]/g, (match, spec) => {
 		if (spec.endsWith('.vue') && spec.startsWith('.')) {

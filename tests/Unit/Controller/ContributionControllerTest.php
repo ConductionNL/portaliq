@@ -7,6 +7,9 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\ContributionController;
 use OCA\Portaliq\Service\AuditTrailService;
+use OCA\Portaliq\Service\CaseTypeVisibility;
+use OCA\Portaliq\Service\InstanceLoopback;
+use OCA\Portaliq\Service\InternalBaseUrl;
 use OCA\Portaliq\Service\NotificationDispatchService;
 use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalAuditHook;
@@ -15,11 +18,10 @@ use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalInboxReader;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\SubmissionReceiptService;
-use OCA\Portaliq\Service\CaseTypeVisibility;
-use OCA\Portaliq\Service\PortalResolver;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\StreamResponse;
 use OCP\Http\Client\IClient;
@@ -30,6 +32,17 @@ use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Portaliq\Service\CaseRowMarker;
+use OCA\Portaliq\Contribution\CreateActionMatcher;
+use OCA\Portaliq\Contribution\CreateBody;
+use OCA\Portaliq\Contribution\InboxMessageFields;
+use OCA\Portaliq\Contribution\PageChoice;
+use OCA\Portaliq\Service\RequestedPortal;
+use OCA\Portaliq\Service\RequiredFieldsGuard;
+use OCA\Portaliq\Contribution\RowIdentifier;
+use OCA\Portaliq\Contribution\ThemeChoice;
+use OCA\Portaliq\Service\VisibleFromGate;
+use OCA\Portaliq\Service\WriteRefusal;
 
 /**
  * Contract v2 controller tests: the fail-closed minTrust re-checks on the
@@ -107,9 +120,122 @@ class ContributionControllerTest extends TestCase {
 		// (portal-inbox-v2 T04) — the default inbox reader stub yields 0 —
 		// and the tasks announcement (portal-task-delivery): with no gateway
 		// wired (this fixture's default), the surface reads disabled.
-		$this->assertSame(($aggregate + ['unreadCount' => 0, 'tasks' => ['enabled' => false], 'cases' => ['enabled' => false, 'closedMarker' => false]]), $response->getData());
+		$this->assertSame(($aggregate + ['unreadCount' => 0, 'tasks' => ['enabled' => false], 'cases' => ['enabled' => false, 'closedMarker' => false], 'themes' => [], 'areaPages' => []]), $response->getData());
 
 	}//end testIndexReturnsTheRegistrysAggregateForAnAuthenticatedSubject()
+
+	/**
+	 * A portal's navigation choice hides and orders the pages of the portal that serves the request.
+	 *
+	 * @spec openspec/changes/operate-pages-per-portal-and-client/tasks.md#t02
+	 */
+	public function testPortalNavigationHidesAndOrdersPages(): void {
+		$aggregate = [
+			'audience' => 'client',
+			'organisation' => 'org-1',
+			'contributions' => [[
+				'app' => 'pipelinq',
+				'pages' => [['id' => 'quotes'], ['id' => 'invoices'], ['id' => 'cases']],
+				'collections' => [],
+			]],
+		];
+		$portals = $this->createMock(PortalResolver::class);
+		$portals->method('resolve')->willReturn([
+			'slug' => 'open-tilburg',
+			'navigation' => ['client' => [['page' => 'pipelinq:quotes', 'hidden' => true], ['page' => 'pipelinq:cases'], ['page' => 'pipelinq:invoices']]],
+		]);
+
+		$data = $this->controller(aggregate: $aggregate, portals: $portals)->index()->getData();
+
+		$this->assertSame(['cases', 'invoices'], array_column($data['contributions'][0]['pages'], 'id'));
+	}//end testPortalNavigationHidesAndOrdersPages()
+
+	/**
+	 * A resolver that answers only for the portal named `zuid`.
+	 *
+	 * @param array<string, mixed> $portal The portal it answers with.
+	 *
+	 * @return PortalResolver
+	 */
+	private function portalsOnlyForZuid(array $portal): PortalResolver {
+		$portals = $this->createMock(PortalResolver::class);
+		$portals->method('resolve')->willReturnCallback(
+			static fn (IRequest $request, ?string $portalSlug = null): ?array => ($portalSlug === 'zuid' ? $portal : null)
+		);
+
+		return $portals;
+	}//end portalsOnlyForZuid()
+
+	/**
+	 * The portal the site names in its header alone decides the navigation.
+	 *
+	 * @spec openspec/changes/operate-pages-per-portal-and-client/specs/portal-page-choice/spec.md#requirement-a-portal-shows-the-pages-its-administrator-chose-in-the-chosen-order-req-pgc-001
+	 */
+	public function testTheSiteHeaderNamesThePortalForTheNavigation(): void {
+		$aggregate = [
+			'audience' => 'client',
+			'contributions' => [['app' => 'pipelinq', 'pages' => [['id' => 'quotes'], ['id' => 'cases']], 'collections' => []]],
+		];
+		$portals   = $this->portalsOnlyForZuid(portal: ['slug' => 'zuid', 'navigation' => ['client' => [['page' => 'pipelinq:quotes', 'hidden' => true]]]]);
+
+		$data = $this->controller(aggregate: $aggregate, portals: $portals, portalHeader: 'zuid')->index()->getData();
+
+		$this->assertSame(expected: ['cases'], actual: array_column($data['contributions'][0]['pages'], 'id'));
+	}//end testTheSiteHeaderNamesThePortalForTheNavigation()
+
+	/**
+	 * The portal the site names in its header alone decides the themes.
+	 *
+	 * @spec openspec/changes/life-domain-theme-pages/tasks.md#t02
+	 */
+	public function testTheSiteHeaderNamesThePortalForTheThemes(): void {
+		$aggregate = [
+			'audience' => 'client',
+			'contributions' => [['app' => 'pipelinq', 'pages' => [], 'collections' => [['id' => 'c', 'theme' => 'wonen']]]],
+		];
+		$portals   = $this->portalsOnlyForZuid(portal: ['slug' => 'zuid', 'themes' => [['slug' => 'wonen', 'title' => 'Wonen']]]);
+
+		$data = $this->controller(aggregate: $aggregate, portals: $portals, portalHeader: 'zuid')->index()->getData();
+
+		$this->assertSame(expected: ['wonen'], actual: array_column($data['themes'], 'slug'));
+	}//end testTheSiteHeaderNamesThePortalForTheThemes()
+
+	/**
+	 * The portal the site names in its header alone decides the own-area pages.
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+	 */
+	public function testTheSiteHeaderNamesThePortalForTheAreaPages(): void {
+		$portals = $this->portalsOnlyForZuid(portal: ['slug' => 'zuid', 'contactsEnabled' => true]);
+
+		$data = $this->controller(aggregate: ['contributions' => []], portals: $portals, portalHeader: 'zuid')->index()->getData();
+
+		$this->assertSame(expected: ['contacts'], actual: array_column($data['areaPages'], 'special'));
+	}//end testTheSiteHeaderNamesThePortalForTheAreaPages()
+
+	/**
+	 * @spec openspec/changes/operate-pages-per-portal-and-client/tasks.md#t02
+	 */
+	public function testUnlistedPageKeepsItsPlaceAndNoChoiceAnswersAsToday(): void {
+		$aggregate = [
+			'audience' => 'client',
+			'organisation' => 'org-1',
+			'contributions' => [['app' => 'pipelinq', 'pages' => [['id' => 'quotes'], ['id' => 'documents']], 'collections' => []]],
+		];
+
+		$hidingOther = $this->createMock(PortalResolver::class);
+		$hidingOther->method('resolve')->willReturn(['slug' => 'p', 'navigation' => ['client' => [['page' => 'pipelinq:quotes', 'hidden' => true]]]]);
+		$this->assertSame(['documents'], array_column($this->controller(aggregate: $aggregate, portals: $hidingOther)->index()->getData()['contributions'][0]['pages'], 'id'));
+
+		$forOtherAudience = $this->createMock(PortalResolver::class);
+		$forOtherAudience->method('resolve')->willReturn(['slug' => 'p', 'navigation' => ['supplier' => [['page' => 'pipelinq:quotes', 'hidden' => true]]]]);
+		$this->assertSame(['quotes', 'documents'], array_column($this->controller(aggregate: $aggregate, portals: $forOtherAudience)->index()->getData()['contributions'][0]['pages'], 'id'), 'another audience\'s choice does not apply');
+
+		$noPortal = $this->createMock(PortalResolver::class);
+		$noPortal->method('resolve')->willReturn(null);
+		$this->assertSame(['quotes', 'documents'], array_column($this->controller(aggregate: $aggregate, portals: $noPortal)->index()->getData()['contributions'][0]['pages'], 'id'));
+		$this->assertSame(['quotes', 'documents'], array_column($this->controller(aggregate: $aggregate)->index()->getData()['contributions'][0]['pages'], 'id'));
+	}//end testUnlistedPageKeepsItsPlaceAndNoChoiceAnswersAsToday()
 
 	/**
 	 * cases-my-cases-page REQ-CMC-001: the contributions answer announces the
@@ -511,6 +637,62 @@ class ContributionControllerTest extends TestCase {
 
 	}//end testCollectionPassesV2ScopeParametersToReader()
 
+	/**
+	 * anonymous-collection-reads-what-the-public-may: decidiq's council
+	 * calendar is declared `anonymous`; it read "Geen items" because it was
+	 * scoped to the resident like their own records.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/anonymous-collection-reads-what-the-public-may/specs/portal-contribution-contract/spec.md#requirement-an-anonymous-collection-shows-what-the-public-may-read
+	 */
+	public function testAnAnonymousCollectionIsReadAsThePublicMayReadIt(): void {
+		$aggregate = $this->aggregate(
+			collections: [
+				['id' => 'publicCalendar', 'register' => 'decidiq', 'schema' => 'publication-payload', 'anonymous' => true, 'fields' => ['title'], 'filter' => ['oriType' => 'Vergadering']],
+			]
+		);
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->expects($this->never())->method('readCollection');
+		$reader->expects($this->once())->method('readPublicCollection')
+			->with('decidiq', 'publication-payload', 'org-1', 200, ['title'], ['oriType' => 'Vergadering'])
+			->willReturn([['title' => 'Raadsvergadering']]);
+
+		$response = $this->controller(aggregate: $aggregate, reader: $reader)->collection('decidiq', 'publication-payload');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame([['title' => 'Raadsvergadering']], $response->getData()['objects']);
+
+	}//end testAnAnonymousCollectionIsReadAsThePublicMayReadIt()
+
+	/**
+	 * A row whose `visibleFromField` lies ahead is not in the list and its
+	 * read by id is the shared 404 (site-school-blocks).
+	 *
+	 * @spec openspec/changes/site-school-blocks/specs/portal-contribution-contract/spec.md#requirement-a-collection-may-keep-a-row-back-until-its-moment-has-passed
+	 */
+	public function testARowBeforeItsVisibleFromMomentIsNotServed(): void {
+		$aggregate = $this->aggregate(
+			collections: [
+				['register' => 'r1', 'schema' => 'a', 'scopeField' => 'subjectRef', 'visibleFromField' => 'visibleFrom'],
+			]
+		);
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readCollection')->willReturn([
+			['id' => 'now', 'visibleFrom' => '2000-01-01T00:00:00Z'],
+			['id' => 'later', 'visibleFrom' => '2999-01-01T00:00:00Z'],
+		]);
+		$reader->method('readObject')->willReturn(['id' => 'later', 'visibleFrom' => '2999-01-01T00:00:00Z']);
+
+		$controller = $this->controller(aggregate: $aggregate, reader: $reader);
+		$rows = $controller->collection('r1', 'a')->getData();
+		$ids  = array_column(($rows['results'] ?? $rows['objects'] ?? $rows), 'id');
+
+		$this->assertContains('now', $ids);
+		$this->assertNotContains('later', $ids);
+		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->object('r1', 'a', 'later')->getStatus());
+	}//end testARowBeforeItsVisibleFromMomentIsNotServed()
+
 	public function testInboxCollectionFieldsReachTheReaderAndAbsentFieldsStayNull(): void {
 		$aggregate = $this->aggregate(
 			collections: [
@@ -771,6 +953,45 @@ class ContributionControllerTest extends TestCase {
 	}//end testCreateWithoutAnIdAndOneActionStillWorks()
 
 	/**
+	 * contact-page-question-form-and-not-found T02: after a stored create the
+	 * confirmation follow-on runs with the matched action and the stored values.
+	 *
+	 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t02
+	 */
+	public function testACreateHandsTheStoredValuesToTheConfirmationMail(): void {
+		$action = ['id' => 'ask', 'type' => 'create', 'register' => 'r1', 'schema' => 'ticket', 'fields' => ['title'], 'confirmationMail' => 'contact-confirmation'];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('createObject')->willReturn(['id' => 'new']);
+		$mailer = $this->createMock(\OCA\Portaliq\Service\Identity\ContactConfirmationMailer::class);
+		$mailer->expects($this->once())->method('afterCreate')->with(
+			$this->callback(static fn (array $subject): bool => ($subject['subjectRef'] ?? '') === self::SUBJECT['subjectRef']),
+			$this->callback(static fn (array $a): bool => ($a['confirmationMail'] ?? '') === 'contact-confirmation'),
+			$this->callback(static fn (array $data): bool => ($data['title'] ?? '') === 'X')
+		);
+
+		$response = $this->controller(aggregate: $this->aggregate(actions: [$action]), writer: $writer, confirmation: $mailer)->create('r1', 'ticket');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+	}//end testACreateHandsTheStoredValuesToTheConfirmationMail()
+
+	/**
+	 * A create that was not stored sends no confirmation.
+	 *
+	 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t02
+	 */
+	public function testAFailedCreateSendsNoConfirmation(): void {
+		$action = ['id' => 'ask', 'type' => 'create', 'register' => 'r1', 'schema' => 'ticket', 'fields' => ['title'], 'confirmationMail' => 'contact-confirmation'];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('createObject')->willReturn(null);
+		$mailer = $this->createMock(\OCA\Portaliq\Service\Identity\ContactConfirmationMailer::class);
+		$mailer->expects($this->never())->method('afterCreate');
+
+		$response = $this->controller(aggregate: $this->aggregate(actions: [$action]), writer: $writer, confirmation: $mailer)->create('r1', 'ticket');
+
+		$this->assertSame(Http::STATUS_BAD_GATEWAY, $response->getStatus());
+	}//end testAFailedCreateSendsNoConfirmation()
+
+	/**
 	 * Two create actions writing the same schema with different defaults.
 	 *
 	 * @return array<string, mixed>
@@ -856,6 +1077,36 @@ class ContributionControllerTest extends TestCase {
 		$this->assertSame(['title' => 'X'], $received['whitelistedData']);
 
 	}//end testSuccessfulCreateTriggersReceiptRecordWithWhitelistedMap()
+
+	/**
+	 * A successful create passes the matched action's declared `label` as the
+	 * title the proof log names the submission by.
+	 *
+	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
+	 */
+	public function testSuccessfulCreatePassesTheActionsLabelAsItsTitle(): void {
+		$aggregate = $this->aggregate(
+			actions: [
+				['id' => 'c1', 'type' => 'create', 'label' => 'Melding openbare ruimte', 'register' => 'r1', 'schema' => 'a', 'fields' => ['title']],
+			]
+		);
+
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('createObject')->willReturn(['id' => 'new']);
+
+		$title = null;
+		$receiptService = $this->createMock(SubmissionReceiptService::class);
+		$receiptService->expects($this->once())->method('record')->willReturnCallback(
+			function (string $subjectRef, string $organisation, string $appId, string $actionId, array $whitelistedData, string $audience = '', mixed $actionTitle = '') use (&$title) {
+				$title = $actionTitle;
+			}
+		);
+
+		$response = $this->controller(aggregate: $aggregate, writer: $writer, receiptService: $receiptService)->create('r1', 'a');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame('Melding openbare ruimte', $title);
+	}//end testSuccessfulCreatePassesTheActionsLabelAsItsTitle()
 
 	/**
 	 * WMEBV: a create that never reaches the domain write (403 IDOR, 403
@@ -1125,7 +1376,7 @@ class ContributionControllerTest extends TestCase {
 	public function testActionWithTypeCreateAndSuccessfulForwardTriggersReceiptRecord(): void {
 		$aggregate = $this->aggregate(
 			actions: [
-				['id' => 'submitAccreditation', 'type' => 'create', 'endpoint' => '/apps/demo/api/portal/accreditations', 'method' => 'POST', 'fields' => ['title']],
+				['id' => 'submitAccreditation', 'type' => 'create', 'endpoint' => '/apps/demo/api/portal/accreditations', 'method' => 'POST', 'label' => 'Grof afval laten ophalen', 'fields' => ['title']],
 			]
 		);
 
@@ -1142,8 +1393,8 @@ class ContributionControllerTest extends TestCase {
 		$received = [];
 		$receiptService = $this->createMock(SubmissionReceiptService::class);
 		$receiptService->expects($this->once())->method('record')->willReturnCallback(
-			function (string $subjectRef, string $organisation, string $appId, string $actionId, array $whitelistedData) use (&$received) {
-				$received = compact('subjectRef', 'organisation', 'appId', 'actionId', 'whitelistedData');
+			function (string $subjectRef, string $organisation, string $appId, string $actionId, array $whitelistedData, string $audience = '', mixed $actionTitle = '') use (&$received) {
+				$received = compact('subjectRef', 'organisation', 'appId', 'actionId', 'whitelistedData', 'actionTitle');
 			}
 		);
 
@@ -1156,6 +1407,7 @@ class ContributionControllerTest extends TestCase {
 		$this->assertSame('portaliq', $received['appId']);
 		$this->assertSame('submitAccreditation', $received['actionId']);
 		$this->assertSame(['title' => 'X'], $received['whitelistedData']);
+		$this->assertSame('Grof afval laten ophalen', $received['actionTitle']);
 
 	}//end testActionWithTypeCreateAndSuccessfulForwardTriggersReceiptRecord()
 
@@ -1241,6 +1493,34 @@ class ContributionControllerTest extends TestCase {
 		$this->assertSame(['error' => 'forward_failed'], $result->getData());
 
 	}//end testActionTransportFailureIs502ForwardFailed()
+
+	/**
+	 * A domain app that does not answer in time is 504 `forward_timeout`, not
+	 * 502: the app may still finish, and the page says so.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
+	 */
+	public function testActionThatTimesOutIs504ForwardTimeout(): void {
+		$aggregate = $this->aggregate(
+			actions: [
+				['id' => 'slow', 'endpoint' => '/apps/demo/api/x', 'method' => 'GET'],
+			]
+		);
+
+		$client = $this->createMock(IClient::class);
+		$client->method('get')->willThrowException(new RuntimeException('cURL error 28: Operation timed out after 30001 milliseconds with 0 bytes received'));
+
+		$clientService = $this->createMock(IClientService::class);
+		$clientService->method('newClient')->willReturn($client);
+
+		$controller = $this->controller(aggregate: $aggregate, clientService: $clientService);
+		$result = $controller->action('portaliq', 'slow');
+
+		$this->assertSame(Http::STATUS_GATEWAY_TIMEOUT, $result->getStatus());
+		$this->assertSame(['error' => 'forward_timeout'], $result->getData());
+	}//end testActionThatTimesOutIs504ForwardTimeout()
 
 	public function testUnauthenticatedActionIs401(): void {
 		$controller = $this->controller(aggregate: $this->aggregate(), subject: null);
@@ -1788,7 +2068,10 @@ class ContributionControllerTest extends TestCase {
 		$received = [];
 		$writer = $this->createMock(PortalObjectWriter::class);
 		$writer->method('updateObject')->willReturnCallback(
-			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array $data) use (&$received) {
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array|\Closure $data) use (&$received) {
+				if ($data instanceof \Closure) {
+					$data = $data([]);
+				}
 				$received = ['id' => $id, 'subjectRef' => $subjectRef, 'organisation' => $organisation, 'data' => $data];
 				return ['id' => $id, 'subject' => 'Hallo', 'read' => true];
 			}
@@ -1807,6 +2090,101 @@ class ContributionControllerTest extends TestCase {
 		$this->assertSame('org-1', $received['organisation']);
 
 	}//end testMarkReadSetsOnlyTheReadFieldOnTheSubjectsOwnMessage()
+
+	/**
+	 * portaliq#702: a collection that names its own read date gets the current
+	 * time in that one field, never `read`, never anything from the body.
+	 *
+	 * @spec openspec/changes/inbox-reads-each-apps-message-fields/specs/supplier-portal/spec.md#requirement-mark-read-writes-the-collections-own-read-field-req-imf-002
+	 */
+	/**
+	 * inbox-read-receipt-on-request T03: a second open keeps the first moment.
+	 *
+	 * @spec openspec/changes/inbox-read-receipt-on-request/tasks.md#t03
+	 */
+	public function testMarkReadKeepsTheFirstReadMoment(): void {
+		$aggregate = $this->aggregate(collections: [['id' => 'inbox', 'kind' => 'inbox', 'register' => 'portaliq', 'schema' => 'portalMessage']]);
+		$payloads = [];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('updateObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array|\Closure $data) use (&$payloads) {
+				$payloads[] = $data;
+				return ['id' => $id];
+			}
+		);
+
+		$this->controller(aggregate: $aggregate, writer: $writer)->markRead('portaliq', 'portalMessage', 'm-1');
+
+		$this->assertInstanceOf(\Closure::class, $payloads[0]);
+		$first = $payloads[0](['readReceiptRequested' => true]);
+		$this->assertSame(['read', 'readAt'], array_keys($first));
+		$this->assertSame(['read' => true], $payloads[0](['readReceiptRequested' => true, 'readAt' => '2026-10-08T09:14:00Z']));
+		$this->assertSame(['read' => true], $payloads[0](['readReceiptRequested' => false]));
+	}//end testMarkReadKeepsTheFirstReadMoment()
+
+	/**
+	 * T03: whatever the request body says, only the read fields are written;
+	 * the resident cannot withdraw the request or move the moment.
+	 *
+	 * @spec openspec/changes/inbox-read-receipt-on-request/tasks.md#t03
+	 */
+	public function testMarkReadNeverWritesTheReceiptRequest(): void {
+		$aggregate = $this->aggregate(collections: [['id' => 'inbox', 'kind' => 'inbox', 'register' => 'portaliq', 'schema' => 'portalMessage']]);
+		$payload = null;
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('updateObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array|\Closure $data) use (&$payload) {
+				$payload = $data;
+				return ['id' => $id];
+			}
+		);
+
+		$this->controller(aggregate: $aggregate, writer: $writer, params: ['readReceiptRequested' => false, 'readAt' => '1999-01-01', 'sendingRef' => 'x'])
+			->markRead('portaliq', 'portalMessage', 'm-1');
+
+		$written = $payload(['readReceiptRequested' => true, 'sendingRef' => 'brief-1']);
+		$this->assertSame(['read', 'readAt'], array_keys($written));
+		$this->assertNotSame('1999-01-01', $written['readAt']);
+	}//end testMarkReadNeverWritesTheReceiptRequest()
+
+	public function testMarkReadWritesTheDeclaredReadAtField(): void {
+		$aggregate = $this->aggregate(
+			collections: [
+				[
+					'id' => 'berichten',
+					'kind' => 'inbox',
+					'register' => 'dossiq',
+					'schema' => 'portaalBericht',
+					'scopeField' => 'recipientRef',
+					'messageFields' => ['body' => 'content', 'readAt' => 'readByRecipientAt'],
+				],
+			]
+		);
+
+		$received = [];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('updateObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array|\Closure $data) use (&$received) {
+				if ($data instanceof \Closure) {
+					$data = $data([]);
+				}
+				$received = ['scopeField' => $scopeField, 'data' => $data];
+				return ['id' => $id];
+			}
+		);
+
+		$before = time();
+		$response = $this->controller(aggregate: $aggregate, writer: $writer)->markRead('dossiq', 'portaalBericht', 'b-1');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['readByRecipientAt'], array_keys($received['data']));
+		$this->assertSame('recipientRef', $received['scopeField']);
+		$written = strtotime($received['data']['readByRecipientAt']);
+		$this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/', $received['data']['readByRecipientAt']);
+		$this->assertGreaterThanOrEqual($before, $written);
+		$this->assertLessThanOrEqual(time(), $written);
+
+	}//end testMarkReadWritesTheDeclaredReadAtField()
 
 	/**
 	 * A foreign-owned or non-existent message id: the writer's own ownership
@@ -1870,7 +2248,10 @@ class ContributionControllerTest extends TestCase {
 		$received = [];
 		$writer = $this->createMock(PortalObjectWriter::class);
 		$writer->expects($this->once())->method('updateObject')->willReturnCallback(
-			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array $data) use (&$received) {
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array|\Closure $data) use (&$received) {
+				if ($data instanceof \Closure) {
+					$data = $data([]);
+				}
 				$received = [$register, $schema, $scopeField, $subjectRef, $organisation, $id, $data];
 				return ['id' => $id, 'read' => true];
 			}
@@ -1902,6 +2283,84 @@ class ContributionControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->markRead('portaliq', 'portalAccount', 'a-1')->getStatus());
 		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->markRead('other', 'portalMessage', 'm-1')->getStatus());
 	}//end testMarkReadFallbackOpensNothingButPortaliqsOwnMessages()
+
+	/**
+	 * A resident deletes one of portaliq's own notices: the delete is scoped
+	 * on `subjectRef` with the bearer's own reference and tenant.
+	 *
+	 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+	 */
+	public function testDeleteMessageRemovesTheResidentsOwnNotice(): void {
+		$received = [];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->once())->method('deleteObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id) use (&$received): bool {
+				$received = [$register, $schema, $scopeField, $subjectRef, $organisation, $id];
+				return true;
+			}
+		);
+
+		$controller = $this->controller(aggregate: $this->aggregate(collections: []), writer: $writer, params: ['collection' => 'portalMessages']);
+		$response = $controller->deleteMessage('portaliq', 'portalMessage', 'm-1');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['deleted' => true], $response->getData());
+		$this->assertSame(['portaliq', 'portalMessage', 'subjectRef', 's1', 'org-1', 'm-1'], $received);
+	}//end testDeleteMessageRemovesTheResidentsOwnNotice()
+
+	/**
+	 * Another resident's message, or one that does not exist, is the same
+	 * 404; nothing is deleted. Without a bearer it is 401.
+	 *
+	 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+	 */
+	public function testDeleteMessageOfAnotherResidentIs404(): void {
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->once())->method('deleteObject')->willReturn(false);
+
+		$controller = $this->controller(aggregate: $this->aggregate(collections: []), writer: $writer, params: ['collection' => 'portalMessages']);
+		$response = $controller->deleteMessage('portaliq', 'portalMessage', 'not-mine');
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+		$this->assertSame(['error' => 'not_found'], $response->getData());
+
+		$anonymous = $this->controller(aggregate: $this->aggregate(), subject: null);
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $anonymous->deleteMessage('portaliq', 'portalMessage', 'm-1')->getStatus());
+	}//end testDeleteMessageOfAnotherResidentIs404()
+
+	/**
+	 * An app's inbox is the app's record: a resident deletes from it only
+	 * when the collection declares `deletable: true`. A collection that is
+	 * no inbox, or that asks more trust than the session has, stays 403.
+	 *
+	 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+	 */
+	public function testDeleteMessageFromAnAppsInboxNeedsItsConsent(): void {
+		$aggregate = $this->aggregate(
+			collections: [
+				['id' => 'berichten', 'kind' => 'inbox', 'register' => 'dossiq', 'schema' => 'portaalBericht', 'scopeField' => 'recipientRef'],
+				['id' => 'meldingen', 'kind' => 'inbox', 'register' => 'learniq', 'schema' => 'notice', 'scopeField' => 'guardianRef', 'deletable' => true],
+				['id' => 'strict', 'kind' => 'inbox', 'register' => 'learniq', 'schema' => 'secret', 'deletable' => true, 'minTrust' => 'high'],
+				['id' => 'docs', 'register' => 'portaliq', 'schema' => 'exampleDocument', 'deletable' => true],
+			]
+		);
+
+		$received = [];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->once())->method('deleteObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField) use (&$received): bool {
+				$received = [$register, $schema, $scopeField];
+				return true;
+			}
+		);
+
+		$controller = $this->controller(aggregate: $aggregate, writer: $writer);
+		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->deleteMessage('dossiq', 'portaalBericht', 'b-1')->getStatus());
+		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->deleteMessage('learniq', 'secret', 'x-1')->getStatus());
+		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->deleteMessage('portaliq', 'exampleDocument', 'd-1')->getStatus());
+		$this->assertSame(Http::STATUS_OK, $controller->deleteMessage('learniq', 'notice', 'n-1')->getStatus());
+		$this->assertSame(['learniq', 'notice', 'guardianRef'], $received);
+	}//end testDeleteMessageFromAnAppsInboxNeedsItsConsent()
 
 	public function testUploadRequiresTheCollectionToOptIntoFileUploads(): void {
 		// The collection does NOT declare filesUpload → 403, no read, no attach.
@@ -1949,7 +2408,7 @@ class ContributionControllerTest extends TestCase {
 		file_put_contents($tmp, 'evidence-bytes');
 
 		$request = $this->createMock(IRequest::class);
-		$request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token']]);
+		$request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token'], ['Idempotency-Key', '']]);
 		$request->method('getParam')->willReturn('');
 		$request->method('getUploadedFile')->willReturn(['name' => 'bewijs.pdf', 'tmp_name' => $tmp, 'error' => 0, 'size' => 14]);
 
@@ -1985,7 +2444,18 @@ class ContributionControllerTest extends TestCase {
 			$this->createMock(AuditTrailService::class),
 			$this->createMock(SubmissionReceiptService::class),
 			$this->createMock(NotificationDispatchService::class),
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(LoggerInterface::class),
+			new CaseRowMarker(),
+			new CreateActionMatcher(),
+			new CreateBody(),
+			new InboxMessageFields(),
+			new PageChoice(),
+			new RequestedPortal(),
+			new RequiredFieldsGuard(),
+			new RowIdentifier(),
+			new ThemeChoice(),
+			new VisibleFromGate(),
+			new WriteRefusal()
 		);
 
 		$response = $controller->uploadFile('portaliq', 'exampleDocument', 'd-1');
@@ -2237,7 +2707,7 @@ class ContributionControllerTest extends TestCase {
 	 */
 	private function controllerWithCollectionParam(array $aggregate, string $collectionId, PortalObjectReader $reader): ContributionController {
 		$request = $this->createMock(IRequest::class);
-		$request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token']]);
+		$request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token'], ['Idempotency-Key', '']]);
 		$request->method('getParam')->willReturnCallback(
 			fn (string $key, $default = null) => ($key === 'collection' ? $collectionId : $default)
 		);
@@ -2263,7 +2733,18 @@ class ContributionControllerTest extends TestCase {
 			$this->createMock(AuditTrailService::class),
 			$this->createMock(SubmissionReceiptService::class),
 			$this->createMock(NotificationDispatchService::class),
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(LoggerInterface::class),
+			new CaseRowMarker(),
+			new CreateActionMatcher(),
+			new CreateBody(),
+			new InboxMessageFields(),
+			new PageChoice(),
+			new RequestedPortal(),
+			new RequiredFieldsGuard(),
+			new RowIdentifier(),
+			new ThemeChoice(),
+			new VisibleFromGate(),
+			new WriteRefusal()
 		);
 
 	}//end controllerWithCollectionParam()
@@ -2328,9 +2809,12 @@ class ContributionControllerTest extends TestCase {
 		?PortalSchemaReader $schemaReader = null,
 		?CaseTypeVisibility $caseTypes = null,
 		array $params = [],
+		?PortalResolver $portals = null,
+		?\OCA\Portaliq\Service\Identity\ContactConfirmationMailer $confirmation = null,
+		string $portalHeader = '',
 	): ContributionController {
 		$request = $this->createMock(IRequest::class);
-		$request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token'], ['X-Portaliq-Portal', '']]);
+		$request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token'], ['X-Portaliq-Portal', $portalHeader], ['Idempotency-Key', '']]);
 		$request->method('getParam')->willReturnCallback(
 			function (string $key, $default = null) use ($params) {
 				$params = $params + [
@@ -2383,9 +2867,22 @@ class ContributionControllerTest extends TestCase {
 			($receiptService ?? $this->createMock(SubmissionReceiptService::class)),
 			($notificationDispatch ?? $this->createMock(NotificationDispatchService::class)),
 			$this->createMock(LoggerInterface::class),
+			new CaseRowMarker(),
+			new CreateActionMatcher(),
+			new CreateBody(),
+			new InboxMessageFields(),
+			new PageChoice(),
+			new RequestedPortal(),
+			new RequiredFieldsGuard(),
+			new RowIdentifier(),
+			new ThemeChoice(),
+			new VisibleFromGate(),
+			new WriteRefusal(),
 			null,
 			null,
-			$caseTypes
+			$caseTypes,
+			portals: $portals,
+			confirmation: $confirmation
 		);
 
 	}//end controller()
@@ -2521,8 +3018,12 @@ class ContributionControllerTest extends TestCase {
 
 		return new PortalActionForwarder(
 			$request,
-			($clientService ?? $this->createMock(IClientService::class)),
-			$urlGenerator,
+			new InstanceLoopback(
+				($clientService ?? $this->createMock(IClientService::class)),
+				$urlGenerator,
+				$this->createMock(InternalBaseUrl::class),
+				$this->createMock(LoggerInterface::class)
+			),
 			$session
 		);
 

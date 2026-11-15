@@ -7,7 +7,8 @@
 	The resident's notice choices at the top of the inbox
 	(inbox-notifications-and-preferences, REQ-NAP-008): per kind, e-mail and
 	push, each a checkbox with its own label. Collapsed by default. The push
-	column shows only when the account registered a device. When the
+	column shows only when the account registered a device and the server can
+	really deliver a push (`pushAvailable`). When the
 	organisation offers the government message box, one more choice lets the
 	resident switch letters to it off (inbox-berichtenbox-channel, REQ-MBC-005).
 -->
@@ -106,7 +107,7 @@ export const KINDS = [
 ]
 
 /**
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-notification-choices-must-be-settable-per-kind-req-srp-031
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-notification-choices-must-be-settable-per-kind-req-srp-031
  */
 export default {
 	name: 'NotificationSettings',
@@ -132,15 +133,15 @@ export default {
 	computed: {
 		/**
 		 * @return {Array<object>} The kinds.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-notification-choices-must-be-settable-per-kind-req-srp-031
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-notification-choices-must-be-settable-per-kind-req-srp-031
 		 */
 		kinds() {
 			return KINDS
 		},
 
 		/**
-		 * @return {Array<string>} The channels: push only with a registered device.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-notification-choices-must-be-settable-per-kind-req-srp-031
+		 * @return {Array<string>} The channels: push only when the server says it is available (a device and a delivering transport).
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-notification-choices-must-be-settable-per-kind-req-srp-031
 		 */
 		channels() {
 			return this.loaded?.pushAvailable ? ['email', 'push'] : ['email']
@@ -148,7 +149,7 @@ export default {
 
 		/**
 		 * @return {{label: string, enabled: boolean}|null} The message box choice, when offered.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-notification-choices-must-be-settable-per-kind-req-srp-031
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-notification-choices-must-be-settable-per-kind-req-srp-031
 		 */
 		messageBox() {
 			return messageBoxChoice(this.loaded)
@@ -170,7 +171,7 @@ export default {
 		/**
 		 * @param {string} channel The channel.
 		 * @return {string} Its label.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-notification-choices-must-be-settable-per-kind-req-srp-031
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-notification-choices-must-be-settable-per-kind-req-srp-031
 		 */
 		channelLabel(channel) {
 			return channel === 'email' ? this.t('E-mail') : this.t('Push')
@@ -180,7 +181,7 @@ export default {
 		 * @param {string} kind The kind.
 		 * @param {string} channel The channel.
 		 * @return {string} The checkbox id.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-notification-choices-must-be-settable-per-kind-req-srp-031
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-notification-choices-must-be-settable-per-kind-req-srp-031
 		 */
 		checkboxId(kind, channel) {
 			return `portaliq-notify-${kind}-${channel}`.replace(/\./g, '-')
@@ -190,7 +191,7 @@ export default {
 		 * @param {string} kind The kind.
 		 * @param {string} channel The channel.
 		 * @return {boolean} Whether it is on; a missing choice means on.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-notification-choices-must-be-settable-per-kind-req-srp-031
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-notification-choices-must-be-settable-per-kind-req-srp-031
 		 */
 		isOn(kind, channel) {
 			return this.choices[kind]?.[channel] !== false
@@ -201,7 +202,7 @@ export default {
 		 * @param {string} channel The channel.
 		 * @param {boolean} value On or off.
 		 * @return {void}
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-notification-choices-must-be-settable-per-kind-req-srp-031
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-notification-choices-must-be-settable-per-kind-req-srp-031
 		 */
 		set(kind, channel, value) {
 			this.status = ''
@@ -214,7 +215,7 @@ export default {
 		/**
 		 * @param {boolean} enabled On or off.
 		 * @return {void}
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-notification-choices-must-be-settable-per-kind-req-srp-031
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-notification-choices-must-be-settable-per-kind-req-srp-031
 		 */
 		setMessageBox(enabled) {
 			this.status = ''
@@ -225,7 +226,7 @@ export default {
 		 * Save the choices and say how it went.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-notification-choices-must-be-settable-per-kind-req-srp-031
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-notification-choices-must-be-settable-per-kind-req-srp-031
 		 */
 		async save() {
 			this.busy = true

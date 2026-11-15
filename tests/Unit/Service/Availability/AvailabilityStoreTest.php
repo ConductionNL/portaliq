@@ -75,6 +75,22 @@ class AvailabilityStoreTest extends TestCase {
 		$this->assertSame('o-2', $this->store($service)->openOutage(portal: 'p')['uuid']);
 	}//end testTheOpenOutageIsTheOneWithoutAnEnd()
 
+	public function testAnOpenOutageBehindAFullPageOfEndedOnesIsFound(): void {
+		$ended = [];
+		for ($i = 0; $i < 500; $i++) {
+			$ended[] = ['uuid' => 'o-ended-' . $i, 'portal' => 'p', 'startedAt' => '2026-09-01T10:00:00+00:00', 'endedAt' => '2026-09-01T10:10:00+00:00'];
+		}
+
+		$service = $this->objectService();
+		$service->method('findAll')->willReturnCallback(
+			static fn (array $config): array => ((int)($config['offset'] ?? 0) === 0)
+				? $ended
+				: [['uuid' => 'o-open', 'portal' => 'p', 'startedAt' => '2026-09-29T10:00:00+00:00']]
+		);
+
+		$this->assertSame('o-open', $this->store($service)->openOutage(portal: 'p')['uuid']);
+	}//end testAnOpenOutageBehindAFullPageOfEndedOnesIsFound()
+
 	/**
 	 * A double of OpenRegister's real ObjectService.
 	 *

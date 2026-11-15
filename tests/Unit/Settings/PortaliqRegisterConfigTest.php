@@ -315,30 +315,153 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.54.0 (portalMessage 0.6.0): the optional `ruleKey` of a message
 		// another app writes, so it is also sent by email
 		// (woo-journey-entry-points T07). Additive.
+		// 0.57.0 (portalPage 0.5.0): the wave 6 block keys.
+		// 0.56.1 (portalPage 0.4.1): `records` is one type, as OpenRegister's
+		// importer requires (EveryRegisterPropertyFitsTheImporterTest).
+		// 0.56.0 (portalPage 0.4.0): a page record may declare what the
+		// resolvers accept (site-mijn-omgeving-components, PortalPageSchemaTest).
 		// 0.55.0 (portalAccount 0.14.0): `activationTokenHash` and
 		// `activationExpiresAt`, the activation link of a self-registration
 		// (identity-ways-in-screens T03). Additive.
-		// 0.56.0 (portalCaseType 0.3.0, portalIntakeSubmission 0.2.0, portal
-		// 0.10.0): a case type's `portalFee`, a submission's
-		// `paymentIntentId` and a portal's `paymentHosts`
-		// (intake-pay-on-submit T02). Additive.
-		$this->assertSame('0.56.0', self::$register['info']['version']);
-		$this->assertSame('0.56.0', self::$register['components']['registers']['portaliq']['version']);
-		$schemas = self::$register['components']['schemas'];
-		$this->assertSame('0.3.0', $schemas['portalCaseType']['version']);
-		$this->assertSame(['amount', 'payApp', 'payAction'], $schemas['portalCaseType']['properties']['portalFee']['required']);
-		$this->assertSame('^\\d{1,7}(\\.\\d{1,2})?$', $schemas['portalCaseType']['properties']['portalFee']['properties']['amount']['pattern']);
-		$this->assertSame('0.2.0', $schemas['portalIntakeSubmission']['version']);
-		$this->assertSame('string', $schemas['portalIntakeSubmission']['properties']['paymentIntentId']['type']);
-		$this->assertSame('0.10.0', $schemas['portal']['version']);
-		$this->assertSame([], $schemas['portal']['properties']['paymentHosts']['default']);
-		$this->assertSame('0.14.0', self::$register['components']['schemas']['portalAccount']['version']);
+		// 0.58.0 (newsItem 0.3.0): `publishedAt`, the moment staff published
+		// the item, stamped by NewsController::publish and back-filled by the
+		// repair step BackfillNewsPublishedAt (news-publish-date). Additive.
+		// 0.59.0 (portalFormBinding 0.2.0, portalIntakeSubmission 0.2.0):
+		// `deliverTo` routes a Woo-request form to opencatalogi's intake, and
+		// a submission keeps the `externalReference` and `dueAt` that intake
+		// armed (woo-request-intake-through-opencatalogi). Additive.
+		// 0.5.0: `destination` replaces caseRegister/caseSchema/deliverTo (decision 179); those stay, deprecated.
+		// 0.6.0: `intro.enabled`, the form settings page's switch for the introduction (form-statements-intro-and-confirmation-mail T06). Additive.
+		// 0.7.0: `availability` (form-governance-availability-retention-and-routing REQ-FGV-001). Additive.
+		$this->assertSame('0.7.0', self::$register['components']['schemas']['portalFormBinding']['version']);
+		$this->assertSame('boolean', self::$register['components']['schemas']['portalFormBinding']['properties']['intro']['properties']['enabled']['type']);
+		$this->assertSame(['case', 'wooRequest'], self::$register['components']['schemas']['portalFormBinding']['properties']['deliverTo']['enum']);
+		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalIntakeSubmission']['version']);
+		$this->assertSame('date-time', self::$register['components']['schemas']['portalIntakeSubmission']['properties']['dueAt']['format']);
+		$this->assertSame('string', self::$register['components']['schemas']['portalIntakeSubmission']['properties']['externalReference']['type']);
+		// 0.60.0 (portalAccount 0.15.0): `claimTokenHash` and `claimExpiresAt`,
+		// the one-time secret of a waiting account's invitation, and
+		// `claimAttempts` with `claimAttemptsSince`, the wrong secrets an
+		// account offered (invitation-secret-joins-the-signed-in-account).
+		// Additive.
+		// 0.61.0 (portalAccount 0.16.0): `claimCodeHash`, the short code of an
+		// invitation letter (invitation-code-from-a-letter). Additive.
+		// 0.62.0 (portalAccount 0.17.0): the five `claim*` fields are readable
+		// and writable by administrators only (security review M4).
+		// 0.63.0 (newsItem 0.4.0): `public`, `portal` and `audienceLabel`, so
+		// staff can put an item on one portal's public website
+		// (site-school-blocks). Additive; an item from before is not public.
+		// 0.64.0 (portalPage 0.6.0): the school display keys, the greeting
+		// block and `visibleFromField` (site-school-blocks wave 2). Additive.
+		// 0.65.0 (portal 0.10.0): `headerSearch`, `accountLabel`, `footer.cta`,
+		// `footer.contact`, `authentication.modeLabels` and
+		// `authentication.signInPage` (site-chrome-follows-the-design). Additive.
+		// 0.66.0 (portal 0.11.0): `residentMenu.cardLabel`
+		// (resident-menu-badges-and-cards). Additive.
+		// 0.67.0 (portalPage 0.7.0): the timetable keys (calendar-timetable-display, #1212)
+		// 0.68.0 (messageThread 0.2.0): record, subject and contact copies (site-messages-per-record)
+		// 0.69.0 (portal 0.12.0): `residentMenu.groups` and `myCases.display`
+		// (zuiddrecht-resident-pages-match-the-boards). Additive.
+		// 0.70.0 (portal 0.13.0): `residentMenu.leaveOut` (resident-menu-leave-out). Additive.
+		// 0.74.0 (portal 0.16.0, form 0.2.0, page 0.7.0): help details and section help texts (help-texts-and-form-help). Additive.
+		// 0.82.0 (portalMailTemplate 0.1.0, portalMailLog 0.1.0 new): mail texts per portal and the send log (mail-templates-admin-screen). Additive.
+		// 0.90.0 (portal 0.22.0): `breadcrumb` (site-breadcrumb-follows-the-school-boards). Additive.
+		// 0.89.0 (portalTrafficDaily 0.7.0): zeroResultSearches and searchesWithoutCount (portal-traffic-zero-result-searches). Additive.
+		// 0.88.0 (portalPlan 0.1.0, portalPlanTemplate 0.1.0, portalAction 0.2.0, portal 0.21.0: plansEnabled): shared plans with a caseworker. Additive.
+		// 0.87.0 (portal 0.20.0): themes, the life domains a portal groups a resident's items by (life-domain-theme-pages). Additive.
+		// 0.86.0 (portalFormBinding 0.4.0, portalIntakeSubmission 0.6.0): cosign, staffMayFill and yiviAttributes on the binding; filledBy, applicant, cosign and verifiedEmails on the submission (resident-identity-in-forms). Additive.
+		// 0.85.0 (own-contacts-and-invitations: portalContact schema)
+		// 0.84.0 (own-contacts-and-invitations: portalContact schema)
+		// 0.83.0 (portalFaq 0.1.0, portalFinder 0.1.0 new): the FAQ and the product finder (public-faq-and-product-finder). Additive.
+		// 0.84.0 (sharedBlock 0.1.0 new): page blocks shared by the portals of one organisation (site-shared-page-blocks). Additive.
+		// 0.81.0 (portalCaseType 0.4.0, portalIntakeSubmission 0.5.0, portal 0.19.0): portalFee, paymentIntentId and paymentHosts (intake-pay-on-submit). Additive.
+		// 0.80.0 (portalIntakeSubmission 0.4.0): `computed` and `decisions` on the submission (form-flow-repeating-groups-calculations-and-decisions). Additive.
+		// 0.79.0 (portalMessage 0.7.0): readReceiptRequested, readAt and sendingRef (inbox-read-receipt-on-request). Additive.
+		// 0.77.0 (portalFormBinding 0.3.0, portalIntakeSubmission 0.3.0, portal 0.17.0): intro, statements, confirmation and confirmationMail on the binding, accepted statements on the submission, statement texts on the portal (form-statements-intro-and-confirmation-mail). Additive.
+		// 0.78.0 (portal 0.18.0): `assistant` and the `assistant_asked` traffic event (search-assistant-from-public-content). Additive.
+		// 0.76.0 (portalCase 0.2.0, portalCaseType 0.3.0): `plannedDecisionDate`, `legalDecisionDate` and `portalStatusActions`, `caseField` on a collection (case-page-tasks-decision-dates-and-next-step). Additive.
+		// 0.73.0 (menu 0.1.1): a sub-item that declares its own `items` is rejected (portal-cms-content-model). Tightens, loses no deployed shape.
+		// 0.72.0 (portal 0.15.0): `tokens` (portal-theme-blocks-and-contributed-pages). Additive.
+		// 0.71.0 (portal 0.14.0): `searchInsideDocuments` (portal-federated-search) and the
+		// `portalDraft` schema (site-multi-step-forms). Additive.
+		// 0.91.0 (portal 0.23.0, accessibilityMeasurement 0.1.0): `accessibilityAudit`, `accessibilityRegisterUrl`, `accessibilityPages` and the measurement schema (site-accessibility-statement). Additive.
+		// 0.92.0 (portalPage 0.8.0): an action's `summary` is the start tile's string, the answer sentence moves to `answerSummary`, plus `audiences` (decision 127, site-nlds-widget-palette D6). Tightens `summary`; MoveActionSummarySentence moves the stored object shape first. portalSession 0.4.0: read by admins only (security review S3).
+		// 0.93.0 (portal 0.24.0, portalAccount 0.18.0, portalEmailLink 0.1.0): the `email-link` sign-in mode, identity type `email`, the account's own `signInAddress` and the one-time link record (sign-in-with-an-email-link). Additive.
+		// 0.94.0 (portal 0.25.0): `domains[].certificateValidUntil`, `certificateCheckedAt` and `editors` (portal-domains-and-editors). Additive.
+		// 0.95.0 (portalFormBinding 0.5.0): `destination { register, schema, subjectField, paymentField, fields, fixed }` replaces `caseRegister`, `caseSchema` and `deliverTo`, which MoveBindingDestination moves (submit-creates-the-case-directly, decision 179). Additive; the old fields stay, deprecated, until the drain reports zero.
+		$this->assertSame('object', self::$register['components']['schemas']['portalFormBinding']['properties']['destination']['type']);
+		// 0.96.0 (form 0.3.0): a landing-page form's `destination { register, schema, fields, fixed }`; a submit creates that object directly (submit-creates-the-case-directly 3.2). Additive.
+		// 0.97.0 (register only): the register's authorization names only the staff group, and every schema's `authenticated` read is the staff group (close-portaliq-register-to-staff). OpenRegister writes a register's own fields only when its version is newer.
+		// 0.98.0: the portal schema declares `authentication.registration.businessGroup` and `businessAudience` (business-audience-group).
+		// 0.99.0 (media 0.2.0): `usedOn`, how many records of its portal use the item (media-usage-count). Additive.
+		// 0.100.0 (portal 0.27.0): `myCases.display` takes `folders`, the board folders (mijn-case-folder-card). Additive.
+		// 0.101.0 (form 0.4.0): a form field's `optionLabels`, the words shown per option (site-organisation-registration-form). Additive.
+		// 0.102.0 (portalPlan 0.2.0): a plan's `files`, each file with its series and version (shared-plans-with-a-caseworker T04). Additive.
+		// 0.103.0 (portalAction 0.3.0, portal: actionsEnabled): an action's `fileName`, `editedBy` and `editedAt`, and the portal's switch for Mijn acties (personal-action-list T02, T03, T05). Additive.
+		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portalAction']['properties']['editedBy']['type']);
+		// 0.104.0 (portalSubmission 0.3.0): a submission's `actionTitle`, the name the Submissions list shows (board PtInzendingen). Additive.
+		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portalSubmission']['properties']['actionTitle']['type']);
+		// 0.105.0 (portalPage 0.9.0): a rows block's `statusNoteAtField`, the moment its status was set, and a cta's `labelWhenEmpty` (guardian-pages-follow-the-wilgenboom-boards). Additive.
+		// 0.106.0 (guardianMessage 0.3.0): a message's `readAt`, when the other side first read it (message-read-time). Additive.
+		// 0.108.0 (portalPage 0.10.0): a cta's `messageTo`, the field naming whom the message form opens for (guardian-message-to-and-whole-day). Additive.
+		// 0.109.0 (portalFormBinding 0.6.0): `intro.enabled`, whether the form opens with its introduction (form-statements-intro-and-confirmation-mail T06). Additive.
+		// 0.110.0 (portal 0.29.0): a portal's `favicon` and `heroImage`, and a `logo` that may be a media reference (portal-identity-from-the-admin). Additive.
+		// 0.111.0 (portalFormBinding 0.7.0): a binding's `availability`, its active period, limit per period, maintenance window and successor (form-governance-availability-retention-and-routing REQ-FGV-001). Additive.
+		$this->assertSame(expected: ['total', 'month', 'year'], actual: self::$register['components']['schemas']['portalFormBinding']['properties']['availability']['properties']['limit']['properties']['per']['enum']);
+		// 0.112.0 (portal 0.30.0): a portal's `adminGroups`, the groups whose members look after that portal (operate-portals-per-organisation T10). Additive; moved past development's 0.111.0 at merge time.
+		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portal']['properties']['adminGroups']['items']['type']);
+		// The portal form offers a group picker for it (operate-portals-per-organisation T12).
+		$this->assertSame(expected: 'nextcloud-group', actual: self::$register['components']['schemas']['portal']['properties']['adminGroups']['items']['referenceType']);
+		// Only an instance administrator is offered the picker (x-admin-only, nextcloud-vue fieldsFromSchema); PortalAdminWriteGate still refuses anyone else.
+		$this->assertTrue(self::$register['components']['schemas']['portal']['properties']['adminGroups']['x-admin-only']);
+		// article 0.1.0, page 0.8.0: marketing articles move here from pipelinq, and a markdown page body may name one as `articleRef` (marketing-articles-from-pipelinq). Additive.
+		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['page']['properties']['body']['properties']['articleRef']['type']);
+		$this->assertSame(expected: '0.1.0', actual: self::$register['components']['schemas']['article']['version']);
+		// 0.113.0 (portalAccount 0.19.0): identity type `yivi`, a sign-in through the broker that shares only what a form asks (resident-identity-in-forms T05). Additive; moved past development's 0.112.0 at merge time.
+		// 0.114.0 (portal 0.31.0): a portal's `authentication.deskGroup`, the Nextcloud group whose members may fill a form in for a resident (resident-identity-in-forms T06). Additive; portal moved past development's 0.30.0.
+		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portal']['properties']['authentication']['properties']['deskGroup']['type']);
+		// 0.115.0 (portal 0.32.0): a portal's `organisationType` and `organisationTypeLabel` (portal-identity-from-the-admin REQ-PIA-003), with the marketing articles above. Additive; moved past development's 0.114.0 at merge time.
+		// 0.116.0 (portal 0.33.0): a portal's `organisationTypeSchemeId`, the scheme uuid the type picker filters on (portal-identity-from-the-admin REQ-PIA-003). Additive.
+		$this->assertSame(expected: 'uuid', actual: self::$register['components']['schemas']['portal']['properties']['organisationTypeSchemeId']['format']);
+		$this->assertSame(expected: '0.34.0', actual: self::$register['components']['schemas']['portal']['version']);
+		// 0.117.0 (portalPage 0.11.0): a collection's `messages` provider and the `messages` block with its `askAction` and `askLabel` (capability-rows-said-and-planned T07). Additive; moved past 0.116.0 (portal-identity-from-the-admin) at merge time.
+		$this->assertContains(needle: 'messages', haystack: self::$register['components']['schemas']['portalPage']['properties']['pages']['items']['properties']['blocks']['items']['properties']['type']['enum']);
+		// development's 0.115.0 (portal 0.32.0): `traffic.excludedPaths`, the pages the collector writes no visitor row for (intake-report-pages T07). Additive; moved past development's 0.114.0 and portal 0.31.0 at merge time.
+		$traffic = self::$register['components']['schemas']['portal']['properties']['traffic']['properties'];
+		$this->assertSame(expected: 'string', actual: $traffic['excludedPaths']['items']['type']);
+		// 0.118.0 (portal 0.34.0): development's 0.115.0 (`traffic.excludedPaths`, intake-report-pages T07) merged with this branch's 0.115.0-0.117.0 above. Additive; both sides kept.
+		$this->assertSame(expected: '0.118.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.118.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portalPage']['properties']['pages']['items']['properties']['blocks']['items']['properties']['messageTo']['type']);
+		$this->assertContains(needle: 'yivi', haystack: self::$register['components']['schemas']['portalAccount']['properties']['identityType']['enum']);
+		$this->assertSame(expected: 'date-time', actual: self::$register['components']['schemas']['guardianMessage']['properties']['readAt']['format']);
+		// 0.107.0 (portal 0.28.0): a portal's `caseTypeColumns`, how each case type's columns read in Mijn zaken (case-type-columns-in-my-cases). Additive.
+		$this->assertSame(expected: ['text', 'link', 'qr', 'date'], actual: self::$register['components']['schemas']['portal']['properties']['caseTypeColumns']['additionalProperties']['items']['properties']['render']['enum']);
+		$this->assertSame(expected: 'boolean', actual: self::$register['components']['schemas']['portal']['properties']['actionsEnabled']['type']);
+		$this->assertSame(expected: '0.2.0', actual: self::$register['components']['schemas']['media']['version']);
+		$this->assertSame(expected: 'integer', actual: self::$register['components']['schemas']['media']['properties']['usedOn']['type']);
+		$this->assertSame('0.4.0', self::$register['components']['schemas']['form']['version']);
+		$this->assertSame('object', self::$register['components']['schemas']['form']['properties']['destination']['type']);
+		$this->assertSame('0.11.0', self::$register['components']['schemas']['portalPage']['version']);
+		$this->assertSame(200, self::$register['components']['schemas']['portalPage']['properties']['actions']['items']['properties']['summary']['maxLength']);
+		$this->assertSame('object', self::$register['components']['schemas']['portalPage']['properties']['actions']['items']['properties']['answerSummary']['type']);
+		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimCodeHash']['type']);
+		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimTokenHash']['type']);
+		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['claimExpiresAt']['format']);
+		$this->assertSame('integer', self::$register['components']['schemas']['portalAccount']['properties']['claimAttempts']['type']);
+		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['claimAttemptsSince']['format']);
+		$this->assertSame('0.4.0', self::$register['components']['schemas']['newsItem']['version']);
+		$this->assertSame('boolean', self::$register['components']['schemas']['newsItem']['properties']['public']['type']);
+		$this->assertFalse(self::$register['components']['schemas']['newsItem']['properties']['public']['default']);
+		$this->assertSame('string', self::$register['components']['schemas']['newsItem']['properties']['portal']['type']);
+		$this->assertSame('date-time', self::$register['components']['schemas']['newsItem']['properties']['publishedAt']['format']);
+		$this->assertSame('0.19.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['activationExpiresAt']['format']);
-		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalMessage']['version']);
+		$this->assertSame('0.7.0', self::$register['components']['schemas']['portalMessage']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalMessage']['properties']['ruleKey']['type']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalOidcState']['version']);
 		$this->assertSame('boolean', self::$register['components']['schemas']['portalOidcState']['properties']['silent']['type']);
-		$this->assertSame('0.6.0', self::$register['components']['schemas']['page']['version']);
+		$this->assertSame('0.8.0', self::$register['components']['schemas']['page']['version']);
 		$this->assertSame(70, self::$register['components']['schemas']['page']['properties']['seoTitle']['maxLength']);
 		$this->assertSame(160, self::$register['components']['schemas']['page']['properties']['seoDescription']['maxLength']);
 		$this->assertSame('boolean', self::$register['components']['schemas']['page']['properties']['seoNoindex']['type']);
@@ -356,13 +479,12 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertArrayHasKey('translations', self::$register['components']['schemas']['newsletter']['properties']);
 		$this->assertSame('array', self::$register['components']['schemas']['newsletter']['properties']['translations']['type']);
 		$this->assertStringContainsString('title', self::$register['components']['schemas']['newsletter']['properties']['translations']['description']);
-		$this->assertSame('0.2.1', self::$register['components']['schemas']['newsItem']['version']);
 		$this->assertStringContainsString('title', self::$register['components']['schemas']['newsItem']['properties']['translations']['description']);
 		$this->assertArrayHasKey('translations', self::$register['components']['schemas']['newsItem']['properties']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalReporterContact']['version']);
-		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalCaseType']['version']);
+		$this->assertSame('0.4.0', self::$register['components']['schemas']['portalCaseType']['version']);
 		$this->assertArrayHasKey('handlerGroup', self::$register['components']['schemas']['portalCaseType']['properties']['portalReportDeclaration']['properties']);
-		$this->assertSame('0.2.0', self::$register['components']['schemas']['guardianMessage']['version']);
+		$this->assertSame('0.3.0', self::$register['components']['schemas']['guardianMessage']['version']);
 		$this->assertArrayHasKey('translations', self::$register['components']['schemas']['guardianMessage']['properties']);
 		$this->assertArrayHasKey('messageLanguage', self::$register['components']['schemas']['portalAccount']['properties']);
 		$this->assertSame('0.2.1', self::$register['components']['schemas']['activityOffer']['version']);
@@ -374,18 +496,27 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['admin'], self::$register['components']['schemas']['activityAttendance']['authorization']['read']);
 		$this->assertArrayNotHasKey('fee', self::$register['components']['schemas']['activityOffer']['properties'], 'D19: an activity holds no amount');
 		$this->assertArrayNotHasKey('amount', self::$register['components']['schemas']['activityOffer']['properties'], 'D19: an activity holds no amount');
-		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalCase']['version']);
-		$this->assertSame(['authenticated'], self::$register['components']['schemas']['portalCase']['authorization']['read']);
-		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalTrafficDaily']['version']);
+		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalCase']['version']);
+		$this->assertSame(['portaliq-medewerkers'], self::$register['components']['schemas']['portalCase']['authorization']['read']);
+		$this->assertSame('0.7.0', self::$register['components']['schemas']['portalTrafficDaily']['version']);
 		$this->assertSame('0.4.0', self::$register['components']['schemas']['portalTrafficEvent']['version']);
 		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalTrafficRecording']['version']);
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
-		$this->assertSame('0.6.0', self::$register['components']['schemas']['page']['version']);
-		$this->assertSame('0.10.0', self::$register['components']['schemas']['portal']['version']);
-		$this->assertSame('0.14.0', self::$register['components']['schemas']['portalAccount']['version']);
-		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalPage']['version']);
-		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalSession']['version']);
+		$this->assertSame('0.8.0', self::$register['components']['schemas']['page']['version']);
+		$this->assertSame('0.34.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('string', self::$register['components']['schemas']['portal']['properties']['authentication']['properties']['registration']['properties']['businessGroup']['type']);
+		$this->assertSame('string', self::$register['components']['schemas']['portal']['properties']['tokens']['additionalProperties']['type']);
+		$this->assertTrue(self::$register['components']['schemas']['portal']['properties']['searchInsideDocuments']['default']);
+		$this->assertSame(['admin'], self::$register['components']['schemas']['portalDraft']['authorization']['read']);
+		$this->assertContains('portalDraft', self::$register['components']['registers']['portaliq']['schemas']);
+		$this->assertSame('0.19.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$this->assertSame('0.11.0', self::$register['components']['schemas']['portalPage']['version']);
+		$this->assertSame('0.2.0', self::$register['components']['schemas']['messageThread']['version']);
+		$this->assertArrayHasKey('recordRef', self::$register['components']['schemas']['messageThread']['properties']);
+		$this->assertSame('0.4.0', self::$register['components']['schemas']['portalSession']['version']);
+		// Security review S3: session rows (subject, tenant, trust, jti) are read by admins only.
+		$this->assertSame(['admin'], self::$register['components']['schemas']['portalSession']['authorization']['read']);
 
 	}//end testRegisterJsonParsesAndVersionsAreBumped()
 
@@ -559,7 +690,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 
 		$account = $schemas['portalAccount'];
 		$this->assertSame(
-			['eherkenning', 'digid', 'eidas', 'generic', 'dev'],
+			['eherkenning', 'digid', 'eidas', 'yivi', 'generic', 'dev', 'email'],
 			$account['properties']['identityType']['enum']
 		);
 		// Union-merge caution (migration.md): the additive enum member must not
@@ -649,7 +780,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 	public function testTheMessageBoxRowsFitThePortalNotificationSchema(): void {
 		$schema = self::$register['components']['schemas']['portalNotification'];
 		$this->assertSame('0.3.0', $schema['version']);
-		$this->assertSame('0.14.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$this->assertSame('0.19.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$jsonSchema = json_decode((string)json_encode(['type' => 'object', 'required' => $schema['required'], 'properties' => $schema['properties']]), false);
 
 		$row = [
@@ -693,7 +824,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 	 */
 	public function testAMediaItemNamesItsPortalKindAndStatus(): void {
 		$schema = self::$register['components']['schemas']['media'];
-		$this->assertSame('0.1.0', $schema['version']);
+		$this->assertSame(expected: '0.2.0', actual: $schema['version']);
 		$this->assertContains('media', self::$register['components']['registers']['portaliq']['schemas']);
 		$jsonSchema = json_decode((string)json_encode(['type' => 'object', 'required' => $schema['required'], 'properties' => $schema['properties']]), false);
 
@@ -786,8 +917,42 @@ class PortaliqRegisterConfigTest extends TestCase {
 			'badges'      => [['label' => 'ISO 27001', 'href' => 'https://cert.example']],
 		]]));
 		$this->assertFalse($valid(['title' => 'Docs', 'footer' => ['socials' => 'https://social.example']]), 'socials is a list');
-		$this->assertSame(['description', 'colophon', 'socials', 'legalLinks', 'badges'], array_keys($schema['properties']['footer']['properties']));
+		$this->assertSame(['description', 'colophon', 'socials', 'legalLinks', 'badges', 'cta', 'contact'], array_keys($schema['properties']['footer']['properties']));
 	}//end testThePortalDeclaresItsFooter()
+
+	/**
+	 * site-chrome-follows-the-design: the keys the learniq lane writes for a
+	 * school portal validate against the real portal schema, and a wrong
+	 * shape does not.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
+	 */
+	public function testThePortalDeclaresItsChrome(): void {
+		$schema = self::$register['components']['schemas']['portal'];
+		$valid  = $this->portalValidator(schema: $schema);
+
+		$this->assertTrue($valid([
+			'title'          => 'Mijn Wilgenboom',
+			'headerSearch'   => ['label' => 'Zoeken op de website', 'route' => '/zoeken'],
+			'accountLabel'   => 'Mijn Wilgenboom',
+			'footer'         => [
+				'cta'     => ['label' => 'Contact en schooltijden', 'href' => '/contact'],
+				'contact' => ['title' => 'Contact', 'lines' => [['text' => 'Wilgenlaan 12, Zuiddrecht'], ['text' => 'E-mail', 'href' => 'mailto:info@example.org']]],
+			],
+			'authentication' => [
+				'modes'      => ['public', 'digid'],
+				'modeLabels' => ['digid' => ['title' => 'Ouder of verzorger', 'text' => 'Met de DigiD-app', 'button' => 'Inloggen met DigiD']],
+				'signInPage' => ['title' => 'Inloggen bij Mijn Wilgenboom', 'notice' => ['text' => 'Logt u voor het eerst in?'], 'panel' => ['title' => 'Alles over school', 'items' => [['title' => 'Afwezig melden']]]],
+			],
+		]));
+		$this->assertFalse($valid(['title' => 'X', 'headerSearch' => 'ja']), 'the search box is an object');
+		$this->assertFalse($valid(['title' => 'X', 'footer' => ['contact' => ['lines' => 'Wilgenlaan 12']]]), 'contact lines are a list');
+		// site-breadcrumb-follows-the-school-boards: the words of the last crumb.
+		$this->assertTrue($valid(['title' => 'X', 'breadcrumb' => 'page']));
+		$this->assertFalse($valid(['title' => 'X', 'breadcrumb' => 'title']), 'menu or page only');
+	}//end testThePortalDeclaresItsChrome()
 
 	/**
 	 * portal-theme-blocks-and-contributed-pages REQ-PTB-009: a portal fills
@@ -903,6 +1068,32 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['Repair/MovePortalAuditEntries.php'], $naming);
 	}//end testNothingInLibNamesTheOldProofRecordButTheMove()
 
+	/**
+	 * own-contacts T02: a contact row is written by the contact routes only.
+	 * No portal page declares a create or update action on `portalContact`,
+	 * because a generic action would let a resident set `approved` on their
+	 * own row and skip the other side's approval (REQ-ROC-002).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t02
+	 */
+	public function testNoPortalPageDeclaresAContactWrite(): void {
+		$pages = array_filter(
+			(array)self::$register['components']['objects'],
+			static fn (array $object): bool => (($object['@self']['schema'] ?? '') === 'portalPage')
+		);
+		$this->assertNotSame([], $pages, 'control: the seed pages are read');
+
+		foreach ($pages as $page) {
+			foreach ((array)($page['actions'] ?? []) as $action) {
+				$this->assertNotSame('portalContact', $action['schema'] ?? '', 'a contact row is written by the contact routes only');
+			}
+		}
+
+		$this->assertSame(['portaliq-medewerkers'], self::$register['components']['schemas']['portalContact']['authorization']['read']);
+	}//end testNoPortalPageDeclaresAContactWrite()
+
 	public function testExactlyThreeSchemasAreReadableByAnonymousVisitors(): void {
 		$schemas = self::$register['components']['schemas'];
 
@@ -971,7 +1162,8 @@ class PortaliqRegisterConfigTest extends TestCase {
 		);
 
 		$this->assertNotContains('public', $groups);
-		$this->assertContains('authenticated', $groups);
+		$this->assertNotContains('authenticated', $groups);
+		$this->assertContains('portaliq-medewerkers', $groups);
 
 		// The fields that make this decision non-negotiable. If either is ever
 		// removed from the schema, revisit the rule rather than the test.
@@ -1003,7 +1195,8 @@ class PortaliqRegisterConfigTest extends TestCase {
 
 		$this->assertNotNull($publicRule, 'page must carry a public read rule');
 		$this->assertSame(['status' => 'published'], $publicRule['match'] ?? null);
-		$this->assertContains('authenticated', $read, 'an editor must still read drafts');
+		$this->assertNotContains('authenticated', $read, 'a signed-in account outside the staff must not read drafts');
+		$this->assertContains('portaliq-medewerkers', $read, 'staff still read drafts; the editor groups are added by PageEditorService');
 	}//end testPageIsPublicOnlyWhilePublished()
 
 		// The x-openregister-mcp dialect that used to be asserted here is GONE from
@@ -1041,4 +1234,119 @@ class PortaliqRegisterConfigTest extends TestCase {
 
 	}//end testIdentityAndSessionSchemasCarryNoMcpDialect()
 
+	/**
+	 * Security review M4: the invitation fields are readable only by
+	 * administrators, through OpenRegister's property authorization. An
+	 * ordinary staff member (the schema's staff-group read) gets the account
+	 * without them.
+	 *
+	 * @return void
+	 */
+	public function testTheInvitationFieldsAreReadableByAdministratorsOnly(): void {
+		$account = self::$register['components']['schemas']['portalAccount'];
+		$this->assertSame(['portaliq-medewerkers'], $account['authorization']['read'], 'The object read the property rule narrows.');
+		foreach (['claimTokenHash', 'claimCodeHash', 'claimExpiresAt', 'claimAttempts', 'claimAttemptsSince'] as $field) {
+			$this->assertSame(['read' => ['admin'], 'update' => ['admin']], $account['properties'][$field]['authorization'] ?? null, $field);
+		}
+
+	}//end testTheInvitationFieldsAreReadableByAdministratorsOnly()
+
+	/**
+	 * search-assistant-from-public-content: the assistant is off unless the
+	 * portal says so, and the traffic event it counts is a known one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/search-assistant-from-public-content/tasks.md#t02
+	 */
+	public function testThePortalDeclaresTheAssistantOffByDefault(): void {
+		$assistant = self::$register['components']['schemas']['portal']['properties']['assistant'];
+
+		$this->assertSame('object', $assistant['type']);
+		$this->assertFalse($assistant['properties']['enabled']['default']);
+		$this->assertSame('array', $assistant['properties']['excludedRoutes']['type']);
+		$events = self::$register['components']['schemas']['portal']['properties']['traffic']['properties']['events']['items']['enum'] ?? [];
+		$this->assertContains('assistant_asked', $events);
+
+	}//end testThePortalDeclaresTheAssistantOffByDefault()
+
+	/**
+	 * portal-traffic-zero-result-searches: the daily record names the terms
+	 * that found nothing and the searches whose count is unknown.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md#requirement-the-roll-up-counts-searches-that-found-nothing-req-pzr-001
+	 */
+	public function testTheDailyRecordDeclaresZeroResultSearches(): void {
+		$daily = self::$register['components']['schemas']['portalTrafficDaily']['properties'];
+
+		$this->assertSame('array', $daily['zeroResultSearches']['type']);
+		$this->assertSame('string', $daily['zeroResultSearches']['items']['properties']['term']['type']);
+		$this->assertSame('integer', $daily['zeroResultSearches']['items']['properties']['count']['type']);
+		$this->assertSame('integer', $daily['searchesWithoutCount']['type']);
+
+	}//end testTheDailyRecordDeclaresZeroResultSearches()
+	/**
+	 * site-accessibility-statement REQ-SAS-001 and REQ-SAS-003: the run and
+	 * the portal's audit settings are declared.
+	 *
+	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+	 */
+	public function testTheMeasurementSchemaIsDeclared(): void {
+		$schemas = self::$register['components']['schemas'];
+		$this->assertContains('accessibilityMeasurement', self::$register['components']['registers']['portaliq']['schemas']);
+		$measurement = $schemas['accessibilityMeasurement'];
+		$this->assertSame(['admin'], $measurement['authorization']['read']);
+		foreach (['portal', 'measuredAt', 'measuredBy', 'axeVersion', 'tags', 'pages'] as $key) {
+			$this->assertContains($key, $measurement['required']);
+		}
+
+		$page = $measurement['properties']['pages']['items'];
+		$this->assertSame(['url', 'measured'], $page['required']);
+		$this->assertSame(['minor', 'moderate', 'serious', 'critical'], $page['properties']['violations']['items']['properties']['impact']['enum']);
+
+		$portal = $schemas['portal']['properties'];
+		$this->assertSame(['A', 'B', 'C', 'D'], $portal['accessibilityAudit']['properties']['result']['enum']);
+		$this->assertSame('string', $portal['accessibilityRegisterUrl']['type']);
+		$this->assertSame('array', $portal['accessibilityPages']['type']);
+
+	}//end testTheMeasurementSchemaIsDeclared()
+	/**
+	 * A portal declares its favicon and hero image as media references, and a logo may be one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
+	 */
+	public function testThePortalDeclaresFaviconAndHeroImage(): void {
+		$properties = self::$register['components']['schemas']['portal']['properties'];
+
+		foreach (['favicon', 'heroImage', 'logo'] as $field) {
+			$this->assertSame(expected: 'string', actual: $properties[$field]['type'], message: $field);
+			$this->assertStringContainsString(needle: 'media:<id>', haystack: $properties[$field]['description'], message: $field);
+			$this->assertStringStartsWith(prefix: 'media:', string: $properties[$field]['example'], message: $field);
+		}
+
+		$this->assertStringContainsString(needle: 'PNG, SVG or ICO', haystack: $properties['favicon']['description']);
+		$this->assertNotContains(needle: 'favicon', haystack: (self::$register['components']['schemas']['portal']['required'] ?? []));
+		$this->assertNotContains(needle: 'heroImage', haystack: (self::$register['components']['schemas']['portal']['required'] ?? []));
+	}//end testThePortalDeclaresFaviconAndHeroImage()
+
+	/**
+	 * REQ-PIA-003: the portal names its organisation type by a TOOI concept uri,
+	 * with the label stored beside it, and neither is required.
+	 *
+	 * @return void
+	 */
+	public function testThePortalDeclaresItsOrganisationType(): void {
+		$portal = self::$register['components']['schemas']['portal'];
+
+		$this->assertSame(expected: 'string', actual: $portal['properties']['organisationType']['type']);
+		$this->assertSame(expected: 'uri', actual: $portal['properties']['organisationType']['format']);
+		$this->assertStringContainsString(needle: 'TOOI', haystack: $portal['properties']['organisationType']['description']);
+		$this->assertSame(expected: 'string', actual: $portal['properties']['organisationTypeLabel']['type']);
+		$this->assertNotContains(needle: 'organisationType', haystack: ($portal['required'] ?? []));
+		$this->assertNotContains(needle: 'organisationTypeLabel', haystack: ($portal['required'] ?? []));
+	}//end testThePortalDeclaresItsOrganisationType()
 }//end class

@@ -26,21 +26,22 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Kernel\Contracts\PortalAccountLookupInterface;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 
 /**
  * Finds an existing portal account, three ways.
  *
- * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
-class PortalAccountLookup {
+class PortalAccountLookup implements PortalAccountLookupInterface {
 
 	/**
 	 * The OpenRegister register the `portalAccount` schema lives in.
@@ -70,10 +71,10 @@ class PortalAccountLookup {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Reads the account rows.
+	 * @param ScopedCollectionReaderInterface $reader Reads the account rows.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 	) {
 	}//end __construct()
 
@@ -126,7 +127,7 @@ class PortalAccountLookup {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function byIdentity(string $identityType, string $identityRef, string $organisation): ?array {
 		$rows = $this->reader->readCollection(
@@ -155,6 +156,59 @@ class PortalAccountLookup {
 	}//end byIdentity()
 
 	/**
+	 * The active account a citizen signs in to with this BSN, in any tenant, or null.
+	 *
+	 * A DigiD or eIDAS account carries the citizen's number as its identity
+	 * reference (see PortalFamilyMembers::bsnOf()). Pending, suspended, void
+	 * and removed accounts are not a mailbox the citizen reads.
+	 *
+	 * @param string $bsn The citizen's BSN.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/portal-account-presence/specs/portal-identity-space/spec.md#requirement-staff-can-ask-whether-a-citizen-has-a-portal-account
+	 */
+	public function activeByCitizenNumber(string $bsn): ?array {
+		$bsn = trim($bsn);
+		if ($bsn === '') {
+			return null;
+		}
+
+		$rows = $this->reader->readCollection(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: 'identityRef',
+			subjectRef: $bsn,
+			organisation: '',
+			limit: 5
+		);
+
+		foreach ($rows as $row) {
+			if ($this->isActiveCitizenRow(row: $row, bsn: $bsn) === true) {
+				return $row;
+			}
+		}
+
+		return null;
+	}//end activeByCitizenNumber()
+
+	/**
+	 * Whether a row is the active DigiD or eIDAS account of the citizen number.
+	 *
+	 * @param array<string, mixed> $row The account row.
+	 * @param string               $bsn The citizen number, trimmed.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/portal-account-presence/specs/portal-identity-space/spec.md#requirement-staff-can-ask-whether-a-citizen-has-a-portal-account
+	 */
+	private function isActiveCitizenRow(array $row, string $bsn): bool {
+		return ($row['identityRef'] ?? '') === $bsn
+			&& in_array(($row['identityType'] ?? ''), ['digid', 'eidas'], true) === true
+			&& ($row['status'] ?? self::STATUS_ACTIVE) === self::STATUS_ACTIVE;
+	}//end isActiveCitizenRow()
+
+	/**
 	 * The pending, email-only account for a verified address, or null.
 	 *
 	 * Only an account with no identity reference of its own is claimable this
@@ -167,18 +221,57 @@ class PortalAccountLookup {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function pendingByVerifiedEmail(string $email, string $organisation): ?array {
 		if ($email === '' || $organisation === '') {
 			return null;
 		}
 
+		return $this->claimablePending(email: $email, organisation: $organisation);
+	}//end pendingByVerifiedEmail()
+
+	/**
+	 * The first claimable pending account holding the address. An address is
+	 * one address whatever its case (security review L4): the store is asked
+	 * for it as written and in lower case, and every row is compared without
+	 * regard to case.
+	 *
+	 * @param string $email        The verified address.
+	 * @param string $organisation The tenant.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 */
+	private function claimablePending(string $email, string $organisation): array|null {
+		foreach (array_unique([$email, strtolower($email)]) as $asked) {
+			$row = $this->claimablePendingAsked(asked: $asked, email: $email, organisation: $organisation);
+			if ($row !== null) {
+				return $row;
+			}
+		}
+
+		return null;
+	}//end claimablePending()
+
+	/**
+	 * The first claimable pending account the store returns for one spelling of the address.
+	 *
+	 * @param string $asked        The spelling asked for.
+	 * @param string $email        The verified address.
+	 * @param string $organisation The tenant.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 */
+	private function claimablePendingAsked(string $asked, string $email, string $organisation): array|null {
 		$rows = $this->reader->readCollection(
 			register: self::REGISTER,
 			schema: self::SCHEMA,
 			scopeField: 'email',
-			subjectRef: $email,
+			subjectRef: $asked,
 			organisation: $organisation,
 			limit: 5,
 			filter: ['status' => self::STATUS_PENDING]
@@ -191,7 +284,7 @@ class PortalAccountLookup {
 		}
 
 		return null;
-	}//end pendingByVerifiedEmail()
+	}//end claimablePendingAsked()
 
 	/**
 	 * A row's identifier, wherever OpenRegister put it.
@@ -203,7 +296,7 @@ class PortalAccountLookup {
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function identifierOf(array $row): ?string {
 		$self = ($row['@self'] ?? null);
@@ -241,7 +334,8 @@ class PortalAccountLookup {
 	}//end matchesIdentity()
 
 	/**
-	 * Whether a row is a pending account a verified address may claim.
+	 * Whether a row is a pending account a verified address may claim. The
+	 * address is compared without regard to case.
 	 *
 	 * @param array<string, mixed> $row One row the reader returned.
 	 * @param string $email The address queried for.
@@ -250,7 +344,7 @@ class PortalAccountLookup {
 	 * @return bool
 	 */
 	private function isClaimablePendingRow(array $row, string $email, string $organisation): bool {
-		return (($row['email'] ?? '') === $email
+		return (strtolower((string)($row['email'] ?? '')) === strtolower($email)
 			&& ($row['organisation'] ?? '') === $organisation
 			&& ($row['status'] ?? '') === self::STATUS_PENDING
 			&& ($row['verifiedEmail'] ?? false) === true

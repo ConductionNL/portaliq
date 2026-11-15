@@ -54,17 +54,22 @@
  *   `{id, title, kind: decision|document, date, file: {register, schema, id,
  *   fileId}, mimeType?, size?}`; the file reference never leaves the server,
  *   and a download is looked up again in the method's answer; held to the
- *   timeline rule; cases-documents-on-the-case).
+ *   timeline rule; cases-documents-on-the-case), and `fieldConfigs`
+ *   (per-field `{label?, valueLabels?}`: how a field the detail card shows
+ *   reads, also when it is no column; a column's own wins).
  * - Actions: `fieldConfigs` (per-whitelisted-field `{label?, visible?, required?,
  *   disabled?, size?, placeholder?, help?}` — a config for a non-whitelisted field
  *   is dropped), `optionsProviders` (per-field `{type: static, options[]}` or
  *   `{type: collection, register, schema, labelField, valueField}` — a collection
  *   dropdown is populated through the SUBJECT-SCOPED collection endpoint, so it can
  *   only offer values the subject may already read), `submitLabel`, `successMessage`.
- * - Contributions: `pages` (`[{id, label?, icon?, blocks[]}]`) composing typed
+ * - Contributions: `pages` (`[{id, label?, icon?, group?, blocks[]}]`) composing typed
  *   blocks (`collection`/`action`/`detail`/`richText`/`cta`) whose references
  *   resolve within the SAME contribution; absent → one default page per listable
- *   collection is synthesised (v2 rendering preserved).
+ *   collection is synthesised (v2 rendering preserved). A page's `group` is a
+ *   short label in the reader's language; pages of any app with the same group
+ *   share one heading in the site's resident menu, and a page without one sits
+ *   under its app's name.
  *
  * portal-page-provisioning adds one further optional, duck-typed field, on
  * BOTH collections and actions:
@@ -77,6 +82,17 @@
  *   drops `anonymous` fail-closed when both are declared, so a malformed
  *   manifest can never widen access. A provider that never sets `anonymous`
  *   is byte-identical to today: every entry stays bearer-required.
+ *
+ * site-member-voting-record-and-confidential-papers adds two optional, duck-typed keys:
+ *
+ * - `publicRecords` (`[{id, label, group?, listProvider, recordProvider}]`) — record lists
+ *   read with no subject. Both providers name public methods on the provider (a plain
+ *   identifier, never a contract method). `listProvider()` returns `[{id, title, subtitle?,
+ *   image?}]`, `recordProvider(id)` returns `{title, subtitle?, summary[], columns[],
+ *   rows[], note?}` or null. Portaliq fetches a record only for an id the list holds.
+ * - `documents.opened` on a collection — a public method called before a paper streams,
+ *   with the object id, the document id and the session's subject (subjectRef, trust,
+ *   identityType, audience). Anything but `true` streams nothing (fail-closed, 503).
  *
  * @category Contribution
  * @package  OCA\Portaliq\Contribution

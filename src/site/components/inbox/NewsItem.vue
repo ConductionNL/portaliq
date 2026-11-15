@@ -21,6 +21,12 @@
 			:lang="titled ? item.translation.targetLanguage : undefined">
 			{{ titled ? item.translation.title : item.title }}
 		</component>
+		<p
+			v-if="publishedOn"
+			class="utrecht-paragraph pq-news__date"
+			data-testid="news-published-on">
+			{{ t('Published on {date}', { date: publishedOn }) }}
+		</p>
 		<TranslatedText
 			:id="`${idPrefix}-${itemKey}`"
 			:text="item.body || ''"
@@ -34,10 +40,11 @@
 
 <script>
 import TranslatedText from './TranslatedText.vue'
+import { formatDate } from '../../pages/inbox/inbox.js'
 import { hasTranslatedTitle } from '../../pages/inbox/translation.js'
 
 /**
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-school-news-req-srp-033
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-school-news-req-srp-033
  */
 export default {
 	name: 'NewsItem',
@@ -59,8 +66,16 @@ export default {
 
 	computed: {
 		/**
+		 * @return {string} The day the item was published, '' without one.
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-news-item-carries-the-moment-it-was-published
+		 */
+		publishedOn() {
+			return formatDate(this.item.publishedAt || '', this.locale)
+		},
+
+		/**
 		 * @return {boolean} Whether the translation carries the title.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-school-news-req-srp-033
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-school-news-req-srp-033
 		 */
 		titled() {
 			return hasTranslatedTitle(this.item.translation)
@@ -68,7 +83,7 @@ export default {
 
 		/**
 		 * @return {string} The item's id, title or a placeholder.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-school-news-req-srp-033
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-school-news-req-srp-033
 		 */
 		itemKey() {
 			return String(

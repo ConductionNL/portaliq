@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Conduction B.V.
 //
 // The asker's side of an access request on the site (identity-access-requests,
-// ported from src/portal/components/AccessRequestsPage.jsx). Imports nothing,
+// ported from the React portal's AccessRequestsPage.jsx). Imports nothing,
 // so the node specs run it as a plain script.
 
 /**
@@ -12,7 +12,7 @@
  * @param {{onBehalfOf: string, reason: string}} draft The form values.
  * @return {string} The problem, or ''.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-ask-for-access-to-cases-req-srp-039
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-ask-for-access-to-cases-req-srp-039
  */
 export function requestProblem(draft) {
 	if (String(draft?.onBehalfOf || '').trim() === '') {
@@ -30,7 +30,7 @@ export function requestProblem(draft) {
  * @param {Array<object>} requests The requests.
  * @return {Array<object>} A sorted copy.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-ask-for-access-to-cases-req-srp-039
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-ask-for-access-to-cases-req-srp-039
  */
 export function newestFirst(requests) {
 	const stamp = (request) => {
@@ -49,7 +49,7 @@ export function newestFirst(requests) {
  * @param {string} state The stored state.
  * @return {string} The label key.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-ask-for-access-to-cases-req-srp-039
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-ask-for-access-to-cases-req-srp-039
  */
 export function stateLabel(state) {
 	if (state === 'granted') {
@@ -67,7 +67,7 @@ export function stateLabel(state) {
  * @param {object} outcome The api answer `{ok, error}`.
  * @return {string} The sentence key.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-ask-for-access-to-cases-req-srp-039
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-ask-for-access-to-cases-req-srp-039
  */
 export function sendProblem(outcome) {
 	return outcome?.error === 'reason_required'

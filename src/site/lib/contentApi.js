@@ -50,35 +50,57 @@ export function runtimeConfig() {
 	// `/apps/portaliq/api/content/menus` — four 404s, an empty menu bar, and a
 	// page that still looked half-alive because the shell itself rendered fine.
 	//
-	// So ask each channel directly, in the order they can exist.
+	// So ask each channel directly, in the order they can exist; the third, a
+	// plain global, is for a genuinely external host that sets one.
+	return shellConfig() ?? initialStateConfig() ?? (window.PORTALIQ_SITE_CONFIG || {})
+}
 
-	// 1. The standalone shell's block. Present only when `templates/site.php`
-	//    rendered the whole document, so its presence IS the host signal.
-	const el = document.getElementById('portaliq-site-config')
-	if (el && el.textContent) {
-		try {
-			const parsed = JSON.parse(el.textContent)
-			if (parsed && typeof parsed === 'object') {
-				return parsed
-			}
-		} catch {
-			// A malformed block must not take the portal down — fall through.
-		}
+/**
+ * The standalone shell's block. Present only when `templates/site.php`
+ * rendered the whole document, so its presence IS the host signal. Outside a
+ * browser document (server rendering, a test) there is none.
+ *
+ * @return {object|null} The configuration, or null without a readable block.
+ */
+function shellConfig() {
+	const text = shellBlockText()
+	if (!text) {
+		return null
 	}
+	try {
+		const parsed = JSON.parse(text)
+		return parsed && typeof parsed === 'object' ? parsed : null
+	} catch {
+		// A malformed block must not take the portal down — fall through.
+		return null
+	}
+}
 
-	// 2. Nextcloud's initial-state channel, when some other route still renders
-	//    this bundle inside a Nextcloud layout.
+/**
+ * @return {string} The text of the shell's configuration block, or ''.
+ */
+function shellBlockText() {
+	const el =
+		typeof document === 'undefined'
+			? null
+			: document.getElementById('portaliq-site-config')
+	return (el && el.textContent) || ''
+}
+
+/**
+ * Nextcloud's initial-state channel, when some other route still renders
+ * this bundle inside a Nextcloud layout.
+ *
+ * @return {object|null} The configuration, or null without one.
+ */
+function initialStateConfig() {
 	try {
 		const state = loadState('portaliq', 'portalConfig', null)
-		if (state && typeof state === 'object') {
-			return state
-		}
+		return state && typeof state === 'object' ? state : null
 	} catch {
 		// No initial-state element at all: keep going.
+		return null
 	}
-
-	// 3. A plain global, for a genuinely external host that sets one.
-	return window.PORTALIQ_SITE_CONFIG || {}
 }
 
 /**
@@ -108,11 +130,19 @@ export function resolveApiBase() {
  * make "this site does not exist" render identically to "this site has no
  * content" — the caller could not tell a broken deployment from an empty one.
  *
+ * A `fresh` read goes to the server even when the browser holds a cached
+ * copy, and refreshes that copy (`cache: 'reload'`). The site asks for one
+ * after an editor published or left edit mode: a page is served
+ * `public, max-age=300` to a reader without a resident bearer, so an ordinary
+ * read answered from the cache with the page as it was before.
+ *
  * @param {string} path  Endpoint path, e.g. '/menus'.
  * @param {object} query Query parameters.
+ * @param {{fresh?: boolean}} [options] `fresh` to go past the browser cache.
  * @return {Promise<object>} The parsed body.
+ * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-the-site-must-show-what-an-editor-published-not-a-cached-copy-req-ssp-001
  */
-async function get(path, query = {}) {
+async function get(path, query = {}, options = {}) {
 	const url = new URL(resolveApiBase() + path, window.location.origin)
 	for (const [key, value] of Object.entries(query)) {
 		if (value !== undefined && value !== null && value !== '') {
@@ -129,7 +159,11 @@ async function get(path, query = {}) {
 		headers.Authorization = `Bearer ${token}`
 	}
 
-	const response = await fetch(url.toString(), { headers })
+	const init = { headers }
+	if (options.fresh === true) {
+		init.cache = 'reload'
+	}
+	const response = await fetch(url.toString(), init)
 
 	if (!response.ok) {
 		const error = new Error(`content api ${response.status} for ${path}`)
@@ -140,45 +174,74 @@ async function get(path, query = {}) {
 	return response.json()
 }
 
-/**
- * @param {string} [portal] Explicit portal slug.
- * @return {Promise<object>} The resolved portal's presentation record.
- */
-export const fetchSite = (portal) => get('/site', { portal })
+// THE LANGUAGE GOES ALONG ON EVERY CONTENT READ. `locale` is the visitor's
+// choice from the language switch (src/site/lib/languageNav.js). The content
+// API checks it against the portal's own `locales` and falls back to the
+// first one, so an empty or unknown value is safe to send; an empty one is
+// simply left off the address.
 
 /**
  * @param {string} [portal] Explicit portal slug.
- * @return {Promise<Array>} The portal's menus.
+ * @param {string} [locale] The language the visitor chose.
+ * @return {Promise<object>} The resolved portal's presentation record.
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
  */
-export async function fetchMenus(portal) {
-	const body = await get('/menus', { portal })
+export const fetchSite = (portal, locale) => get('/site', { portal, locale })
+
+/**
+ * @param {string} [portal] Explicit portal slug.
+ * @param {string} [locale] The language the visitor chose.
+ * @return {Promise<object>} The portal's accessibility statement (`{statement}`).
+ * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+ */
+export function fetchAccessibilityStatement(portal, locale) {
+	return get('/accessibility', { portal, locale }, { fresh: true })
+}
+
+/**
+ * @param {string} [portal] Explicit portal slug.
+ * @param {string} [locale] The language the visitor chose.
+ * @return {Promise<Array>} The portal's menus.
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
+ */
+export async function fetchMenus(portal, locale) {
+	const body = await get('/menus', { portal, locale })
 	return body.menus || []
 }
 
 /**
  * @param {string} [portal] Explicit portal slug.
+ * @param {string} [locale] The language the visitor chose.
  * @return {Promise<Array>} The portal's published page summaries.
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
  */
-export async function fetchPages(portal) {
-	const body = await get('/pages', { portal })
+export async function fetchPages(portal, locale) {
+	const body = await get('/pages', { portal, locale })
 	return body.pages || []
 }
 
 /**
  * @param {string} [portal] Explicit portal slug.
+ * @param {string} [locale] The language the visitor chose.
  * @return {Promise<Array>} The portal's glossary terms.
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
  */
-export async function fetchGlossary(portal) {
-	const body = await get('/glossary', { portal })
+export async function fetchGlossary(portal, locale) {
+	const body = await get('/glossary', { portal, locale })
 	return body.terms || []
 }
 
 /**
  * @param {string} route  The in-site route.
  * @param {string} [portal] Explicit portal slug.
+ * @param {{fresh?: boolean, locale?: string}} [options] `fresh` to go past the browser cache; `locale`, the language the visitor chose.
  * @return {Promise<object>} One published page by route.
+ * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-the-site-must-show-what-an-editor-published-not-a-cached-copy-req-ssp-001
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
  */
-export const fetchPage = (route, portal) => get('/page', { route, portal })
+export function fetchPage(route, portal, options = {}) {
+	return get('/page', { route, portal, locale: options.locale }, options)
+}
 
 /**
  * The leaf apps' contributed surfaces for this portal (ADR-046).

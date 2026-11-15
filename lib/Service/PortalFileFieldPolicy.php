@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
  */
 
 declare(strict_types=1);
@@ -34,26 +34,19 @@ namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
 use finfo;
-use OCA\Portaliq\Contribution\FileFieldConfigNormaliser;
+use OCA\Portaliq\Kernel\Contracts\FileFieldConfigNormaliserInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFileFieldPolicyInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IRequest;
 use Throwable;
+use OCA\Portaliq\Kernel\Support\UploadedFile;
 
 /**
  * Decides the checks of one upload into a declared file field.
  *
- * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
  */
-class PortalFileFieldPolicy {
-	/**
-	 * Refusal: the file is larger than the field allows (HTTP 413).
-	 */
-	public const ERROR_TOO_LARGE = 'file_too_large';
-
-	/**
-	 * Refusal: the file matches none of the field's `accept` entries (HTTP 415).
-	 */
-	public const ERROR_TYPE_REFUSED = 'file_type_refused';
+class PortalFileFieldPolicy implements PortalFileFieldPolicyInterface {
 
 	/**
 	 * How long after its creation a create action may still add files, in seconds.
@@ -64,6 +57,48 @@ class PortalFileFieldPolicy {
 	 * The most references one file field holds.
 	 */
 	public const MAX_FILES_PER_FIELD = 20;
+
+	/**
+	 * The detected types a file with one of these extensions may have. An
+	 * extension `accept` entry only passes a file whose bytes fit its name,
+	 * so an HTML page renamed to `.pdf` is refused.
+	 */
+	private const EXTENSION_TYPES = [
+		'pdf' => ['application/pdf'],
+		'png' => ['image/png'],
+		'jpg' => ['image/jpeg'],
+		'jpeg' => ['image/jpeg'],
+		'gif' => ['image/gif'],
+		'webp' => ['image/webp'],
+		'svg' => ['image/svg+xml'],
+		'html' => ['text/html'],
+		'htm' => ['text/html'],
+		'xml' => ['text/xml', 'application/xml'],
+	];
+
+	/**
+	 * Extensions of plain text. Their bytes may sniff as any text type, or
+	 * JSON (a note that starts with `#include` is `text/x-c`), as long as it
+	 * is not one of {@see self::ACTIVE_TYPES}.
+	 */
+	private const TEXT_EXTENSIONS = ['txt', 'csv'];
+
+	/**
+	 * Types a browser runs or renders as a page. A file of an extension not
+	 * in {@see self::EXTENSION_TYPES} or {@see self::TEXT_EXTENSIONS} passes
+	 * on its name unless its bytes are one of these, and a `type/*` entry
+	 * never admits them: only an entry that names the type does.
+	 */
+	private const ACTIVE_TYPES = [
+		'text/html',
+		'application/xhtml+xml',
+		'image/svg+xml',
+		'text/xml',
+		'application/xml',
+		'text/javascript',
+		'application/javascript',
+		'application/x-javascript',
+	];
 
 	/**
 	 * Constructor.
@@ -90,7 +125,7 @@ class PortalFileFieldPolicy {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
 	 */
 	public function fileConfig(array $action, string $field): ?array {
 		if (in_array(($action['type'] ?? ''), ['create', 'update'], true) === false
@@ -100,7 +135,7 @@ class PortalFileFieldPolicy {
 		}
 
 		$config = ($action['fieldConfigs'][$field] ?? null);
-		if (is_array($config) === false || ($config['type'] ?? null) !== FileFieldConfigNormaliser::TYPE_FILE) {
+		if (is_array($config) === false || ($config['type'] ?? null) !== FileFieldConfigNormaliserInterface::TYPE_FILE) {
 			return null;
 		}
 
@@ -120,7 +155,7 @@ class PortalFileFieldPolicy {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
 	 */
 	public function windowOpen(string $actionType, array $row): bool {
 		if ($actionType === 'update') {
@@ -148,7 +183,9 @@ class PortalFileFieldPolicy {
 	 * Size first, against `maxSizeMb` (default twenty). Then `accept`, which
 	 * matches like the browser attribute: an extension entry against the
 	 * lowercased file name, a MIME entry (with `type/*`) against the type
-	 * detected in the bytes. Any match passes; no `accept` accepts any file.
+	 * detected in the bytes. An extension entry also needs bytes that fit the
+	 * name ({@see self::contentFitsExtension()}). Any match passes; no
+	 * `accept` accepts any file.
 	 *
 	 * @param array<string, mixed> $config The file field's config.
 	 * @param string $fileName The sanitised file name.
@@ -156,11 +193,11 @@ class PortalFileFieldPolicy {
 	 *
 	 * @return string|null One of the ERROR_* constants, or null.
 	 *
-	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
 	 */
 	public function refusal(array $config, string $fileName, string $content): ?string {
-		$limitMb = ($config['maxSizeMb'] ?? FileFieldConfigNormaliser::DEFAULT_SIZE_MB);
-		$limitMb = max(1, min(FileFieldConfigNormaliser::MAX_SIZE_MB, (int)$limitMb));
+		$limitMb = ($config['maxSizeMb'] ?? FileFieldConfigNormaliserInterface::DEFAULT_SIZE_MB);
+		$limitMb = max(1, min(FileFieldConfigNormaliserInterface::MAX_SIZE_MB, (int)$limitMb));
 		if (strlen($content) > ($limitMb * 1024 * 1024)) {
 			return self::ERROR_TOO_LARGE;
 		}
@@ -198,7 +235,7 @@ class PortalFileFieldPolicy {
 	 *
 	 * @return array<int, string>|string|null
 	 *
-	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
 	 */
 	public function mergedValue(array $config, mixed $current, string $fileId, ?bool $arrayProperty): array|string|null {
 		if ($this->hasRoom(config: $config, current: $current, arrayProperty: $arrayProperty) === false) {
@@ -233,7 +270,7 @@ class PortalFileFieldPolicy {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
 	 */
 	public function hasRoom(array $config, mixed $current, ?bool $arrayProperty): bool {
 		$multiple = (($config['multiple'] ?? false) === true);
@@ -253,7 +290,7 @@ class PortalFileFieldPolicy {
 	 *
 	 * @return bool|null
 	 *
-	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
 	 */
 	public function isArrayProperty(string $schemaSlug, string $field): ?bool {
 		$schema = $this->schemaReader->readSchema(slug: $schemaSlug);
@@ -291,26 +328,10 @@ class PortalFileFieldPolicy {
 	 *
 	 * @return array{name: string, content: string}|null
 	 *
-	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
 	 */
 	public function readUpload(IRequest $request): ?array {
-		$uploaded = $request->getUploadedFile('file');
-		$tmpName = (string)($uploaded['tmp_name'] ?? '');
-		if ((int)($uploaded['error'] ?? 1) !== 0 || $tmpName === '' || is_readable($tmpName) === false) {
-			return null;
-		}
-
-		$content = file_get_contents($tmpName);
-		if ($content === false) {
-			return null;
-		}
-
-		$fileName = basename((string)($uploaded['name'] ?? 'upload'));
-		if ($fileName === '' || $fileName === '.' || $fileName === '..') {
-			$fileName = 'upload';
-		}
-
-		return ['name' => $fileName, 'content' => $content];
+		return (new UploadedFile())->read(uploaded: $request->getUploadedFile('file'));
 	}//end readUpload()
 
 	/**
@@ -324,13 +345,39 @@ class PortalFileFieldPolicy {
 	 */
 	private function accepts(string $entry, string $extension, string $mime): bool {
 		if (str_starts_with($entry, '.') === true) {
-			return $extension !== '' && $entry === '.' . $extension;
+			return $extension !== '' && $entry === '.' . $extension && $this->contentFitsExtension(extension: $extension, mime: $mime);
 		}
 
 		if (str_ends_with($entry, '/*') === true) {
-			return str_starts_with($mime, substr($entry, 0, -1));
+			// A wildcard never lets active content in (`image/*` would admit an
+			// SVG with a script in it); a field that wants it names the type.
+			return str_starts_with($mime, substr($entry, 0, -1)) && in_array($mime, self::ACTIVE_TYPES, true) === false;
 		}
 
 		return $entry === $mime;
 	}//end accepts()
+
+	/**
+	 * Whether the type detected in the bytes fits the file's extension: for
+	 * plain text any text type or JSON that is not active content, for a
+	 * known extension one of its own types, else any type a browser does not
+	 * run or render as a page.
+	 *
+	 * @param string $extension The lowercased file extension, without the dot.
+	 * @param string $mime The detected MIME type.
+	 *
+	 * @return bool
+	 */
+	private function contentFitsExtension(string $extension, string $mime): bool {
+		if (in_array($extension, self::TEXT_EXTENSIONS, true) === true) {
+			return (str_starts_with($mime, 'text/') === true || $mime === 'application/json')
+				&& in_array($mime, self::ACTIVE_TYPES, true) === false;
+		}
+
+		if (isset(self::EXTENSION_TYPES[$extension]) === true) {
+			return in_array($mime, self::EXTENSION_TYPES[$extension], true);
+		}
+
+		return in_array($mime, self::ACTIVE_TYPES, true) === false;
+	}//end contentFitsExtension()
 }//end class

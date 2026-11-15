@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service\Identity;
 
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
+use OCA\Portaliq\Service\Mail\MailSite;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalResolver;
@@ -77,6 +78,79 @@ class PortalIdentityMailerTest extends TestCase {
 
 	}//end testTheReferenceLinkIsMailedWithTheSecretInTheFragment()
 
+	/**
+	 * invitation-joins-an-unbound-account (second review M1): when an
+	 * account took on an invitation's audience, the invited address is told
+	 * when, and who to contact. The mail carries no secret and no link.
+	 *
+	 * @return void
+	 */
+	public function testTheInvitedAddressIsToldItsInvitationWasAccepted(): void {
+		$mailer = $this->mailer(byOrganisation: ['slug' => 'vaartveld', 'title' => 'Vaartveld College', 'locales' => ['nl']]);
+
+		$sent = $mailer->sendClaimNotice(email: 'ouder@example.org', organisation: 'vaartveld', moment: new \DateTimeImmutable('2026-10-09T10:00:00+00:00'));
+
+		$this->assertTrue($sent);
+		$this->assertSame(['ouder@example.org'], $this->mailed['to']);
+		$this->assertSame([], $this->mailed['buttons'], 'A notice has no link.');
+		$this->assertStringContainsString('Vaartveld College', $this->mailed['subject']);
+		$this->assertContains('Your invitation to the portal of Vaartveld College was accepted on 9 October 2026.', $this->mailed['texts']);
+		$this->assertContains('Was this not you? Then contact Vaartveld College.', $this->mailed['texts']);
+		$this->assertFalse($mailer->sendClaimNotice(email: 'not-an-address', organisation: 'vaartveld', moment: new \DateTimeImmutable()));
+		$this->assertSame(1, $this->mailed['sent']);
+
+	}//end testTheInvitedAddressIsToldItsInvitationWasAccepted()
+
+	/**
+	 * The e-mail link mail names the portal and the address, carries one link
+	 * to the portal's own site with the secret in the fragment, and the
+	 * ignore line (sign-in-with-an-email-link T13).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#13
+	 */
+	public function testTheEmailLinkNamesThePortalAndTheAddressAndHasOneLink(): void {
+		$mailer = $this->mailer();
+
+		$sent = $mailer->send(
+			template: PortalIdentityMailer::TEMPLATE_EMAIL_LINK,
+			email: 'tom@example.nl',
+			secret: 'secret-abc',
+			organisation: 'academie',
+			portal: ['slug' => 'academie', 'title' => 'Mijn academie', 'locales' => ['nl']],
+			details: ['address' => 'tom@example.nl']
+		);
+
+		$this->assertTrue($sent);
+		$this->assertSame(['https://portal.example.test/apps/portaliq/site?portal=academie#email-link=secret-abc'], $this->mailed['buttons']);
+		$this->assertStringContainsString('Mijn academie', $this->mailed['subject']);
+		$this->assertContains('This link was asked for tom@example.nl.', $this->mailed['texts']);
+		$this->assertStringContainsString('Did you not ask for this? Then you can ignore this mail.', implode(' ', $this->mailed['texts']));
+
+	}//end testTheEmailLinkNamesThePortalAndTheAddressAndHasOneLink()
+
+	/**
+	 * After each e-mail link sign-in the address is told, without a link; a
+	 * changed sign-in address tells the old one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#11
+	 */
+	public function testTheSignInAndTheAddressChangeAreToldWithoutALink(): void {
+		$mailer = $this->mailer(byOrganisation: ['slug' => 'academie', 'title' => 'Mijn academie', 'locales' => ['nl']]);
+
+		$this->assertTrue($mailer->sendSignedInNotice(email: 'tom@example.nl', organisation: 'academie', portal: null, moment: new \DateTimeImmutable('2026-10-09T10:00:00+00:00')));
+		$this->assertTrue($mailer->sendSignInAddressChanged(email: 'old@example.nl', organisation: 'academie', moment: new \DateTimeImmutable('2026-10-09T10:00:00+00:00')));
+
+		$this->assertSame(2, $this->mailed['sent']);
+		$this->assertSame(['old@example.nl'], $this->mailed['to'], 'The last mail goes to the old address.');
+		$this->assertSame([], $this->mailed['buttons'], 'A notice has no link.');
+		$this->assertContains('Was this not you? Then contact Mijn academie.', $this->mailed['texts']);
+
+	}//end testTheSignInAndTheAddressChangeAreToldWithoutALink()
+
 	public function testEachTemplateHasItsOwnFragment(): void {
 		$expected = [
 			PortalIdentityMailer::TEMPLATE_REFERENCE_LINK => '#reference=secret-abc',
@@ -84,6 +158,8 @@ class PortalIdentityMailerTest extends TestCase {
 			PortalIdentityMailer::TEMPLATE_EMAIL_CONFIRMATION => '#confirm-email=secret-abc',
 			// identity-ways-in-screens T01: the activation link of a self-registration.
 			PortalIdentityMailer::TEMPLATE_REGISTRATION_ACTIVATION => '#activate=secret-abc',
+			// invitation-secret-joins-the-signed-in-account: a waiting account's invitation.
+			PortalIdentityMailer::TEMPLATE_ACCOUNT_INVITATION => '#claim=secret-abc',
 		];
 
 		foreach ($expected as $template => $fragment) {
@@ -103,8 +179,8 @@ class PortalIdentityMailerTest extends TestCase {
 
 	/**
 	 * The three ways in open on the Vue site, where their screens are
-	 * (identity-ways-in-screens, portaliq#1021); the e-mail confirmation
-	 * stays on the portal screen that consumes it today.
+	 * (identity-ways-in-screens, portaliq#1021), and so does the e-mail
+	 * confirmation since the React portal retired (REQ-SRP-049).
 	 *
 	 * @spec openspec/specs/portal-ways-in/spec.md#requirement-every-way-in-sends-its-secret-by-mail-req-iwi-001
 	 */
@@ -113,7 +189,8 @@ class PortalIdentityMailerTest extends TestCase {
 			PortalIdentityMailer::TEMPLATE_REFERENCE_LINK => '/apps/portaliq/site?portal=gemeente-x#',
 			PortalIdentityMailer::TEMPLATE_INVITATION => '/apps/portaliq/site?portal=gemeente-x#',
 			PortalIdentityMailer::TEMPLATE_REGISTRATION_ACTIVATION => '/apps/portaliq/site?portal=gemeente-x#',
-			PortalIdentityMailer::TEMPLATE_EMAIL_CONFIRMATION => '/apps/portaliq/portal?portal=gemeente-x#',
+			PortalIdentityMailer::TEMPLATE_EMAIL_CONFIRMATION => '/apps/portaliq/site?portal=gemeente-x#',
+			PortalIdentityMailer::TEMPLATE_ACCOUNT_INVITATION => '/apps/portaliq/site?portal=gemeente-x#',
 		];
 
 		foreach ($expected as $template => $address) {
@@ -143,7 +220,7 @@ class PortalIdentityMailerTest extends TestCase {
 		$mailer->send(template: PortalIdentityMailer::TEMPLATE_EMAIL_CONFIRMATION, email: 'nieuw@example.org', secret: 'secret-abc', organisation: 'gemeente-x');
 
 		$this->assertSame(
-			['https://portal.example.test/apps/portaliq/portal?org=gemeente-x#confirm-email=secret-abc'],
+			['https://portal.example.test/apps/portaliq/site?org=gemeente-x#confirm-email=secret-abc'],
 			$this->mailed['buttons']
 		);
 		$this->assertStringContainsString('Organisatie X', $this->mailed['subject']);
@@ -227,6 +304,7 @@ class PortalIdentityMailerTest extends TestCase {
 			$this->mailed['languages'][] = (string)$lang;
 			$l10n = $this->createMock(IL10N::class);
 			$l10n->method('t')->willReturnCallback(static fn (string $text, $parameters = []): string => vsprintf($text, (array)$parameters));
+			$l10n->method('l')->willReturnCallback(static fn (string $type, $value): string => $value->format('j F Y'));
 			return $l10n;
 		});
 
@@ -269,8 +347,7 @@ class PortalIdentityMailerTest extends TestCase {
 			mailer: $imailer,
 			l10nFactory: $factory,
 			deepLinks: new PortalDeepLinkBuilder($urls),
-			portals: $portals,
-			organisations: $organisations,
+			site: new MailSite(portals: $portals, organisations: $organisations),
 			logger: $logger
 		);
 	}//end mailer()

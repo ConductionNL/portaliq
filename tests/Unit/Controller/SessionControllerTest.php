@@ -21,13 +21,16 @@ use OCP\IURLGenerator;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Service\Identity\ContactAddressValues;
+use OCA\Portaliq\Service\RequestedPortal;
+use OCA\Portaliq\Service\Signin\SiteReturnAddress;
 
 /**
  * portal-controller-http-test-coverage: the three HTTP-facing behaviours
  * `supplier-portal` T02 describes as DONE but never turned into a regression
  * test — `GET /portal/api/session` resolve (both branches), the dev-login
- * gate (open vs 404-closed, per `src/portal/App.jsx`'s own comment about the
- * production posture), and logout's real revocation
+ * gate (open vs 404-closed, the production posture the React portal's shell
+ * described), and logout's real revocation
  * (portal-auth-edge-session-hardening) rather than a static `{ok: true}`.
  *
  * @spec openspec/changes/portal-controller-http-test-coverage/tasks.md#2.1
@@ -121,12 +124,21 @@ class SessionControllerTest extends TestCase {
 
 	}//end testDevLoginReturns404WhenGateIsClosed()
 
-	public function testDevLoginMintsATokenWhenDebugModeIsOn(): void {
+	/**
+	 * Debug mode does not open the test sign-in: only its own switch does
+	 * (dev-login-only-when-switched-on).
+	 *
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-the-test-sign-in-opens-only-on-its-own-switch
+	 */
+	public function testDevLoginStaysClosedInDebugModeWithoutItsSwitch(): void {
 		$config = $this->createMock(IConfig::class);
 		$config->method('getSystemValueBool')->willReturn(true);
+		$config->method('getAppValue')->willReturnCallback(
+			static fn (string $app, string $key, mixed $default = ''): string => (string)$default
+		);
 
 		$session = $this->createMock(PortalSessionService::class);
-		$session->method('issueSession')->willReturn(['token' => 'signed.jwt.token', 'jti' => 'jti-1']);
+		$session->expects($this->never())->method('issueSession');
 
 		$response = $this->controller(session: $session, config: $config)->devLogin(
 			subjectRef: 'dev-supplier',
@@ -134,12 +146,10 @@ class SessionControllerTest extends TestCase {
 			organisation: 'dev-org'
 		);
 
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$data = $response->getData();
-		$this->assertSame('signed.jwt.token', $data['token']);
-		$this->assertSame('Bearer', $data['tokenType']);
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+		$this->assertTrue($response->isThrottled());
 
-	}//end testDevLoginMintsATokenWhenDebugModeIsOn()
+	}//end testDevLoginStaysClosedInDebugModeWithoutItsSwitch()
 
 	public function testDevLoginMintsATokenWhenTheAppFlagIsExplicitlyEnabled(): void {
 		$config = $this->createMock(IConfig::class);
@@ -159,7 +169,7 @@ class SessionControllerTest extends TestCase {
 		// portal-auth-edge-session-hardening: the edge fails closed rather
 		// than falling back to a system/shared secret.
 		$config = $this->createMock(IConfig::class);
-		$config->method('getSystemValueBool')->willReturn(true);
+		$config->method('getAppValue')->willReturn('yes');
 
 		$session = $this->createMock(PortalSessionService::class);
 		$session->method('issueSession')->willReturn(null);
@@ -353,6 +363,36 @@ class SessionControllerTest extends TestCase {
 		// (portal-broker-login-keeps-the-portal).
 		$this->assertSame('/portaliq.brokerSession.start?org=gemeente-x&provider=digid&portal=venray', $response->getRedirectURL());
 	}//end testOidcStartForwardsABrokerRoutedProvider()
+
+	/**
+	 * A sign-in started from a site that names its portal in the
+	 * X-Portaliq-Portal header is the sign-in of that portal, as every other
+	 * portal read is.
+	 *
+	 * @return void
+	 */
+	public function testOidcStartTakesThePortalTheSiteNamesInItsHeader(): void {
+		$loginConfig = $this->createMock(OrganisationLoginConfig::class);
+		$loginConfig->method('loginRouteFor')->willReturnMap([['gemeente-x', 'digid', 'broker']]);
+		$urls = $this->createMock(IURLGenerator::class);
+		$urls->method('linkToRoute')->willReturnCallback(
+			static fn (string $route, array $parameters = []): string => '/'.$route.'?'.http_build_query($parameters)
+		);
+		$portals = $this->createMock(PortalResolver::class);
+		$portals->method('resolve')->willReturnCallback(
+			static fn (IRequest $request, ?string $portalSlug = null): ?array => $portalSlug === 'venray' ? ['slug' => 'venray', 'organisation' => 'gemeente-x'] : null
+		);
+
+		$response = $this->controller(
+			session: $this->createMock(PortalSessionService::class),
+			urlGenerator: $urls,
+			portals: $portals,
+			loginConfig: $loginConfig,
+			portalHeader: 'venray'
+		)->oidcStart(provider: 'digid');
+
+		$this->assertSame('/portaliq.brokerSession.start?org=gemeente-x&provider=digid&portal=venray', $response->getRedirectURL());
+	}//end testOidcStartTakesThePortalTheSiteNamesInItsHeader()
 
 	public function testOidcStartRefusesBeforeResolvingAnySecretWhenThePolicyDeclines(): void {
 		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
@@ -682,6 +722,108 @@ class SessionControllerTest extends TestCase {
 
 	}//end testIndexAsksForAnEmailAddressWhenNoneIsInUse()
 
+	/**
+	 * site-header-names-the-person: the session carries the account's display
+	 * name, and never a value that is only the subject reference.
+	 *
+	 * @return void
+	 */
+	public function testIndexNamesThePersonNeverTheReference(): void {
+		$session = $this->createMock(PortalSessionService::class);
+		$session->method('resolveFromBearer')->willReturn(self::SUBJECT);
+		$cases = [
+			'a display name' => [['displayName' => ' Fatima Hulstkamp '], 'Fatima Hulstkamp'],
+			'no display name' => [['displayName' => ''], ''],
+			'the reference as a name' => [['displayName' => 's1'], ''],
+			'the BSN as a name' => [['displayName' => '999993653', 'identityRef' => '999993653'], ''],
+			'only digits as a name' => [['displayName' => ' 123456782 '], ''],
+			'no account' => [null, ''],
+		];
+		foreach ($cases as $label => [$account, $expected]) {
+			$accounts = $this->createMock(PortalAccountService::class);
+			$accounts->method('findBySubjectRef')->with('s1')->willReturn($account === null ? null : $account + ['subjectRef' => 's1']);
+
+			$data = $this->controller(session: $session, accounts: $accounts)->index()->getData();
+
+			$this->assertSame($expected, $data['displayName'], $label);
+		}
+
+	}//end testIndexNamesThePersonNeverTheReference()
+
+	/**
+	 * the-account-names-the-audience-and-the-company: the session names the
+	 * company from an app's `organisationName` claim, and nothing else.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/the-account-names-the-audience-and-the-company/specs/portal-identity-space/spec.md#requirement-the-session-names-the-company-the-person-acts-for
+	 */
+	public function testIndexNamesTheCompanyFromAClaim(): void {
+		$session = $this->createMock(PortalSessionService::class);
+		$session->method('resolveFromBearer')->willReturn(self::SUBJECT);
+		$cases = [
+			'a claim' => [['claims' => ['learniq' => ['organisationRef' => 'o-1', 'organisationName' => ' Jansen Installatietechniek BV ']]], 'Jansen Installatietechniek BV'],
+			'the first app with one' => [['claims' => ['other' => ['x' => 'y'], 'learniq' => ['organisationName' => 'Bakker Techniek BV']]], 'Bakker Techniek BV'],
+			'an empty claim' => [['claims' => ['learniq' => ['organisationName' => '  ']]], ''],
+			'not a string' => [['claims' => ['learniq' => ['organisationName' => ['a']]]], ''],
+			'no claims' => [['displayName' => 'Linda'], ''],
+			'no account' => [null, ''],
+		];
+		foreach ($cases as $label => [$account, $expected]) {
+			$accounts = $this->createMock(PortalAccountService::class);
+			$accounts->method('findBySubjectRef')->willReturn($account === null ? null : $account + ['subjectRef' => 's1']);
+
+			$data = $this->controller(session: $session, accounts: $accounts)->index()->getData();
+
+			$this->assertSame($expected, $data['organisationName'], $label);
+		}
+
+	}//end testIndexNamesTheCompanyFromAClaim()
+
+	/**
+	 * An OIDC sign-in for an account an app invited as `employer` keeps that
+	 * audience, whatever the claim map proposes.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/the-account-names-the-audience-and-the-company/specs/portal-identity-space/spec.md#requirement-an-existing-accounts-audience-wins-over-the-sign-in-routes
+	 */
+	public function testOidcCallbackKeepsTheAccountsOwnAudience(): void {
+		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
+		$orgConfig->method('isLoginProviderAllowed')->willReturn(true);
+		$orgConfig->method('resolveOidcConfig')->willReturn($this->oidcConfigFixture());
+		$oidc = $this->createMock(OidcClientService::class);
+		$oidc->method('discover')->willReturn($this->discoveryFixture());
+		$oidc->method('exchangeCode')->willReturn(['id_token' => 'x.y.z']);
+		$oidc->method('verifyIdToken')->willReturn(['sub' => 'kvk-1']);
+		$claimMapper = $this->createMock(OidcClaimMapperService::class);
+		$claimMapper->method('mapClaims')->willReturn($this->mappedFixture());
+		$claimMapper->method('mapLoaToTrust')->willReturn('substantial');
+		$stateStore = $this->createMock(OidcStateStoreService::class);
+		$stateStore->method('consume')->willReturn($this->pendingFixture());
+		$accounts = $this->createMock(PortalAccountService::class);
+		$accounts->method('findOrCreate')->willReturn(['subjectRef' => 'linda', 'isNew' => false, 'audience' => 'employer']);
+		$session = $this->createMock(PortalSessionService::class);
+		$session->expects($this->once())->method('issueSession')
+			->with('linda', 'employer', 'gemeente-x', 'substantial', ['employer:read'])
+			->willReturn(['token' => 't', 'jti' => 'j']);
+		$urlGenerator = $this->createMock(IURLGenerator::class);
+		$urlGenerator->method('getAbsoluteURL')->willReturnCallback(fn (string $url) => 'https://portal.example' . $url);
+
+		$response = $this->controller(
+			session: $session,
+			orgConfig: $orgConfig,
+			oidc: $oidc,
+			claimMapper: $claimMapper,
+			stateStore: $stateStore,
+			accounts: $accounts,
+			urlGenerator: $urlGenerator
+		)->oidcCallback(state: 's', code: 'c');
+
+		$this->assertSame(Http::STATUS_FOUND, $response->getStatus());
+
+	}//end testOidcCallbackKeepsTheAccountsOwnAudience()
+
 	public function testOidcCallbackMintsASessionAndRedirectsWithTheBearerInTheFragment(): void {
 		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
 		$orgConfig->method('isLoginProviderAllowed')->willReturn(true);
@@ -730,8 +872,114 @@ class SessionControllerTest extends TestCase {
 		$this->assertStringContainsString(rawurlencode('signed.bearer.jwt'), $redirectUrl);
 		// The FRAGMENT carries the token, never the query string.
 		$this->assertStringNotContainsString('?token=', $redirectUrl);
+		// REQ-SEE-003: the bearer is in the fragment only; no query parameter holds it.
+		parse_str((string)parse_url($redirectUrl, PHP_URL_QUERY), $query);
+		$this->assertArrayNotHasKey('token', $query);
 
 	}//end testOidcCallbackMintsASessionAndRedirectsWithTheBearerInTheFragment()
+
+	/**
+	 * A state row written for the OIDC route but carrying no PKCE verifier is
+	 * refused with the generic error, and no code is exchanged.
+	 */
+	public function testOidcCallbackRefusesAnOidcStateWithoutACodeVerifier(): void {
+		$stateStore = $this->createMock(OidcStateStoreService::class);
+		$stateStore->method('consume')->willReturn(['codeVerifier' => ''] + $this->pendingFixture());
+
+		$oidc = $this->createMock(OidcClientService::class);
+		$oidc->expects($this->never())->method('exchangeCode');
+
+		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
+		$orgConfig->expects($this->never())->method('resolveOidcConfig');
+
+		$response = $this->controller(
+			session: $this->createMock(PortalSessionService::class),
+			orgConfig: $orgConfig,
+			oidc: $oidc,
+			stateStore: $stateStore
+		)->oidcCallback(state: 's', code: 'c');
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+		$this->assertSame(['error' => 'oidc_failed'], $response->getData());
+
+	}//end testOidcCallbackRefusesAnOidcStateWithoutACodeVerifier()
+
+	/**
+	 * A callback without a code never consumes the state, so the row stays
+	 * for the broker's real answer.
+	 */
+	public function testOidcCallbackWithoutACodeLeavesTheStateUnconsumed(): void {
+		$stateStore = $this->createMock(OidcStateStoreService::class);
+		$stateStore->expects($this->never())->method('consume');
+
+		$response = $this->controller(
+			session: $this->createMock(PortalSessionService::class),
+			stateStore: $stateStore
+		)->oidcCallback(state: 's', code: '');
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+		$this->assertSame(['error' => 'oidc_failed'], $response->getData());
+
+	}//end testOidcCallbackWithoutACodeLeavesTheStateUnconsumed()
+
+	/**
+	 * The full hand-off: the code, verifier and redirect URI go to the token
+	 * endpoint, the ID token is verified against the stored nonce, the
+	 * verified e-mail address reaches the account, the session carries the
+	 * branch and the provider, and the login returns to the stored address.
+	 */
+	public function testOidcCallbackHandsEveryValueToTheRightStep(): void {
+		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
+		$orgConfig->expects($this->once())->method('resolveOidcConfig')
+			->with('gemeente-x', 'eherkenning')
+			->willReturn($this->oidcConfigFixture());
+
+		$oidc = $this->createMock(OidcClientService::class);
+		$oidc->expects($this->once())->method('discover')->with('https://broker.example')->willReturn($this->discoveryFixture());
+		$oidc->expects($this->once())->method('exchangeCode')
+			->with('https://broker.example/token', 'the-code', 'verifier-1', 'rp-client-1', 'super-secret-value', 'https://nc.example/callback')
+			->willReturn(['id_token' => 'x.y.z']);
+		$oidc->expects($this->once())->method('verifyIdToken')
+			->with('x.y.z', 'https://broker.example/jwks', 'https://broker.example', 'rp-client-1', 'nonce-1')
+			->willReturn(['sub' => 'abc', 'email' => 'a@example.org', 'email_verified' => 'true']);
+
+		$claimMapper = $this->createMock(OidcClaimMapperService::class);
+		$claimMapper->method('mapClaims')->willReturn($this->mappedFixture() + ['branch' => '000012345678']);
+		$claimMapper->method('mapLoaToTrust')->willReturn('substantial');
+
+		$stateStore = $this->createMock(OidcStateStoreService::class);
+		$stateStore->expects($this->once())->method('consume')->with('the-state')
+			->willReturn(['returnTo' => '/portal/site/school'] + $this->pendingFixture());
+
+		$accounts = $this->createMock(PortalAccountService::class);
+		$accounts->expects($this->once())->method('findOrCreate')
+			->with('eherkenning', 'kvk-1', 'gemeente-x', 'supplier', null, 'a@example.org')
+			->willReturn(['subjectRef' => 'sub-9', 'isNew' => false]);
+
+		$session = $this->createMock(PortalSessionService::class);
+		$session->expects($this->once())->method('issueSession')
+			->with('sub-9', 'supplier', 'gemeente-x', 'substantial', ['supplier:read'], '000012345678', 'eherkenning')
+			->willReturn(['token' => 'tok/en', 'jti' => 'j']);
+
+		$urlGenerator = $this->createMock(IURLGenerator::class);
+		$urlGenerator->method('linkToRouteAbsolute')->willReturn('https://nc.example/callback');
+		$urlGenerator->method('getAbsoluteURL')->willReturnCallback(fn (string $url) => 'https://portal.example' . $url);
+
+		$response = $this->controller(
+			session: $session,
+			orgConfig: $orgConfig,
+			oidc: $oidc,
+			claimMapper: $claimMapper,
+			stateStore: $stateStore,
+			accounts: $accounts,
+			urlGenerator: $urlGenerator
+		)->oidcCallback(state: 'the-state', code: 'the-code');
+
+		$this->assertInstanceOf(RedirectResponse::class, $response);
+		$this->assertSame(Http::STATUS_FOUND, $response->getStatus());
+		$this->assertSame('https://portal.example/portal/site/school#token=' . rawurlencode('tok/en'), $response->getRedirectURL());
+
+	}//end testOidcCallbackHandsEveryValueToTheRightStep()
 
 	/**
 	 * REQ-SIS-001: the session answer says when it ends.
@@ -811,7 +1059,8 @@ class SessionControllerTest extends TestCase {
 	 * @spec openspec/changes/portal-signin-on-its-own-address/tasks.md#T3
 	 */
 	public function testALoginStartedFromAPortalReturnsToIt(): void {
-		foreach (['wilgenboom' => '/apps/portaliq/portal?portal=wilgenboom', 'no-such-portal' => '/apps/portaliq/portal'] as $slug => $returnTo) {
+		// The site, never the retired React portal (site-reaches-portal-parity REQ-SRP-049).
+		foreach (['wilgenboom' => '/apps/portaliq/site?portal=wilgenboom', 'no-such-portal' => '/apps/portaliq/site'] as $slug => $returnTo) {
 			$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
 			$orgConfig->method('isLoginProviderAllowed')->willReturn(true);
 			$orgConfig->method('resolveOidcConfig')->willReturn($this->oidcConfigFixture());
@@ -823,7 +1072,9 @@ class SessionControllerTest extends TestCase {
 			$oidc->method('buildAuthorizationUrl')->willReturn('https://broker.example/authorize?state=state-1');
 
 			$urlGenerator = $this->createMock(IURLGenerator::class);
-			$urlGenerator->method('linkToRoute')->willReturn('/apps/portaliq/portal');
+			$urlGenerator->method('linkToRoute')->willReturnCallback(
+				static fn (string $name): string => $name === 'portaliq.portalPage.site' ? '/apps/portaliq/site' : '/apps/portaliq/portal'
+			);
 
 			$portals = $this->createMock(PortalResolver::class);
 			$portals->method('resolve')->willReturnCallback(
@@ -843,14 +1094,14 @@ class SessionControllerTest extends TestCase {
 
 	/**
 	 * A login started on the public site returns to the page it came from;
-	 * an address outside the site route falls back to the portal address.
+	 * an address outside the site route falls back to the portal's site address.
 	 *
 	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 	 */
 	public function testALoginStartedOnTheSiteReturnsToThatPage(): void {
 		$cases = [
 			'/apps/portaliq/site?portal=wilgenboom&route=/mijn' => '/apps/portaliq/site?portal=wilgenboom&route=/mijn',
-			'https://evil.example/apps/portaliq/site' => '/apps/portaliq/portal?portal=wilgenboom',
+			'https://evil.example/apps/portaliq/site' => '/apps/portaliq/site?portal=wilgenboom',
 		];
 		foreach ($cases as $returnTo => $stored) {
 			$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
@@ -951,14 +1202,16 @@ class SessionControllerTest extends TestCase {
 		$oidc->method('discover')->willReturn(['end_session_endpoint' => 'https://broker.example/logout'] + $this->discoveryFixture());
 
 		$urlGenerator = $this->createMock(IURLGenerator::class);
-		$urlGenerator->method('linkToRoute')->willReturn('/apps/portaliq/portal');
+		$urlGenerator->method('linkToRoute')->willReturnCallback(
+			static fn (string $name): string => $name === 'portaliq.portalPage.site' ? '/apps/portaliq/site' : '/apps/portaliq/portal'
+		);
 		$urlGenerator->method('getAbsoluteURL')->willReturnCallback(fn (string $url) => 'https://portal.example' . $url);
 
 		$data = $this->controller(session: $session, orgConfig: $orgConfig, oidc: $oidc, urlGenerator: $urlGenerator)->logout()->getData();
 
 		$this->assertTrue($data['ok']);
 		$this->assertSame(
-			'https://broker.example/logout?client_id=rp-client-1&post_logout_redirect_uri=' . rawurlencode('https://portal.example/apps/portaliq/portal'),
+			'https://broker.example/logout?client_id=rp-client-1&post_logout_redirect_uri=' . rawurlencode('https://portal.example/apps/portaliq/site'),
 			$data['logoutUrl']
 		);
 
@@ -1071,12 +1324,13 @@ class SessionControllerTest extends TestCase {
 		?IUserSession $userSession = null,
 		?PortalResolver $portals = null,
 		?OrganisationLoginConfig $loginConfig = null,
+		string $portalHeader = '',
 	): SessionController {
 		$request = $this->createMock(IRequest::class);
 		// Defaults to a bearer being PRESENT, which is what every pre-existing
 		// assertion here assumes. `''` models the anonymous visitor who offers
 		// no credential at all — a different case, and now a different answer.
-		$request->method('getHeader')->willReturnMap([['Authorization', $authorization]]);
+		$request->method('getHeader')->willReturnMap([['Authorization', $authorization], ['X-Portaliq-Portal', $portalHeader]]);
 
 		return new SessionController(
 			$request,
@@ -1090,6 +1344,9 @@ class SessionControllerTest extends TestCase {
 			($urlGenerator ?? $this->createMock(originalClassName: IURLGenerator::class)),
 			($userSession ?? $this->createMock(originalClassName: IUserSession::class)),
 			($portals ?? $this->createMock(originalClassName: PortalResolver::class)),
+			new ContactAddressValues(),
+			new RequestedPortal(),
+			new SiteReturnAddress(),
 			$loginConfig
 		);
 
@@ -1203,6 +1460,95 @@ class SessionControllerTest extends TestCase {
 		);
 
 	}//end testNextcloudSignInHandsTheTokenBackInTheFragment()
+
+	/**
+	 * An unknown portal is a 404 and an inactive account a 403; neither mints
+	 * a session.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
+	 */
+	public function testNextcloudSignInRefusesAnUnknownPortalAndAnInactiveAccount(): void {
+		$session = $this->createMock(originalClassName: PortalSessionService::class);
+		$session->expects($this->never())->method('issueSession');
+		$portals = $this->createMock(originalClassName: PortalResolver::class);
+		$portals->method('resolve')->willReturn(null);
+
+		$unknown = $this->controller(
+			session: $session,
+			userSession: $this->signedIn(uid: 'alice'),
+			portals: $portals
+		)->nextcloud(portal: 'nope');
+
+		$this->assertSame(expected: Http::STATUS_NOT_FOUND, actual: $unknown->getStatus());
+		$this->assertSame(expected: ['error' => 'portal_not_found'], actual: $unknown->getData());
+
+		$accounts = $this->createMock(originalClassName: PortalAccountService::class);
+		$accounts->method('findBySubjectRef')->willReturn(
+			['subjectRef' => 'alice', 'audience' => 'client', 'organisation' => 'org-1', 'status' => 'suspended']
+		);
+
+		$inactive = $this->controller(
+			session: $session,
+			accounts: $accounts,
+			userSession: $this->signedIn(uid: 'alice'),
+			portals: $this->portalOffering(mode: 'nextcloud')
+		)->nextcloud(portal: 'demo');
+
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $inactive->getStatus());
+		$this->assertSame(expected: ['error' => 'no_portal_account'], actual: $inactive->getData());
+
+	}//end testNextcloudSignInRefusesAnUnknownPortalAndAnInactiveAccount()
+
+	/**
+	 * Without a configured signing secret the sign-in is a 503; with one and
+	 * no return address it lands on the portal's own site page.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
+	 */
+	public function testNextcloudSignInWithoutASecretIs503AndWithoutReturnToLandsOnThePortal(): void {
+		$accounts = $this->createMock(originalClassName: PortalAccountService::class);
+		$accounts->method('findBySubjectRef')->willReturn(['subjectRef' => 'alice']);
+		$urlGenerator = $this->createMock(originalClassName: IURLGenerator::class);
+		$urlGenerator->method('getAbsoluteURL')->willReturnCallback(static fn (string $url): string => 'https://nc.example' . $url);
+
+		$unconfigured = $this->createMock(originalClassName: PortalSessionService::class);
+		$unconfigured->method('issueSession')->willReturn(null);
+		$refused = $this->controller(
+			session: $unconfigured,
+			accounts: $accounts,
+			userSession: $this->signedIn(uid: 'alice'),
+			portals: $this->portalOffering(mode: 'nextcloud')
+		)->nextcloud(portal: 'demo');
+
+		$this->assertSame(expected: Http::STATUS_SERVICE_UNAVAILABLE, actual: $refused->getStatus());
+		$this->assertSame(expected: ['error' => 'not_configured'], actual: $refused->getData());
+
+		$session = $this->createMock(originalClassName: PortalSessionService::class);
+		$session->expects($this->once())
+			->method('issueSession')
+			->with('alice', 'client', 'dev-org', 'low', ['client:read'])
+			->willReturn(['token' => 't']);
+		$response = $this->controller(
+			session: $session,
+			accounts: $accounts,
+			urlGenerator: $urlGenerator,
+			userSession: $this->signedIn(uid: 'alice'),
+			portals: $this->portalOffering(mode: 'nextcloud')
+		)->nextcloud(portal: 'demo');
+
+		$this->assertInstanceOf(expected: RedirectResponse::class, actual: $response);
+		$this->assertSame(expected: Http::STATUS_FOUND, actual: $response->getStatus());
+		$this->assertStringStartsWith('https://nc.example/apps/portaliq/site?portal=', $response->getRedirectURL());
+		$this->assertStringEndsWith('#token=t', $response->getRedirectURL());
+		// REQ-SEE-003: the bearer is in the fragment only; no query parameter holds it.
+		parse_str((string)parse_url($response->getRedirectURL(), PHP_URL_QUERY), $query);
+		$this->assertArrayNotHasKey('token', $query);
+
+	}//end testNextcloudSignInWithoutASecretIs503AndWithoutReturnToLandsOnThePortal()
 
 	/**
 	 * The Nextcloud sign-in route requires a Nextcloud session, not anonymity.

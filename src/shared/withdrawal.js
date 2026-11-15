@@ -27,39 +27,71 @@ export function withdrawalView(withdrawal, caseRow) {
 		return {
 			kind: 'withdrawn',
 			withdrawnAt: caseRow.withdrawnAt,
-			reason:
-				typeof caseRow.withdrawalReason === 'string'
-					? caseRow.withdrawalReason
-					: '',
+			reason: textOf(caseRow.withdrawalReason),
 		}
 	}
 	if (!withdrawal || withdrawal.declared !== true) {
 		return { kind: 'none' }
 	}
-	if (withdrawal.open === true) {
-		return {
-			kind: 'button',
-			confirmText:
-				typeof withdrawal.confirmText === 'string'
-					? withdrawal.confirmText
-					: '',
-		}
-	}
-	return {
-		kind: 'closed',
-		reason: typeof withdrawal.reason === 'string' ? withdrawal.reason : '',
-	}
+	return withdrawal.open === true
+		? { kind: 'button', confirmText: textOf(withdrawal.confirmText) }
+		: { kind: 'closed', reason: textOf(withdrawal.reason) }
 }
 
 /**
- * The case's answers, without the envelope, the files and the withdrawal fields.
+ * @param {unknown} value A sentence from the server or the case.
+ * @return {string} The sentence, or '' when it is no text.
+ */
+function textOf(value) {
+	return typeof value === 'string' ? value : ''
+}
+
+/**
+ * Whether the case is over: the server says so (`writableSet.ended`, a case
+ * withdrawn or marked closed by its collection), or the case carries its
+ * withdrawal. An ended case shows its state and nothing else: no sentence
+ * about a window that has closed, because the case type's sentences invite
+ * the resident to add to a case that is still running
+ * (citizen-case-ended-shows-only-its-state).
+ *
+ * @param {object|undefined} writableSet The server's writable set.
+ * @param {object} view What `withdrawalView()` answered.
+ * @return {boolean}
+ *
+ * @spec openspec/changes/archive/2026-10-07-citizen-case-ended-shows-only-its-state/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-case-that-has-ended-offers-nothing-and-explains-nothing
+ */
+export function caseHasEnded(writableSet, view) {
+	return writableSet?.ended === true || view?.kind === 'withdrawn'
+}
+
+/**
+ * The answers the case screen lists: the fields the writable set names, in
+ * its order, and nothing else (citizen-case-shows-only-its-fields).
+ *
+ * The case row also carries what the collection shows elsewhere on the page
+ * (a number, a status, a date). Those are not answers the resident gave, so
+ * they are never listed here as one, with a sentence saying they cannot be
+ * changed. The withdrawal fields are the withdrawn state, never an answer.
  *
  * @param {object} caseRow The case.
+ * @param {object} writableSet The server's writable set (`fields` keyed by name).
  * @return {string[]}
  */
-export function caseFieldNames(caseRow) {
-	return Object.keys(caseRow || {}).filter(
+export function caseFieldNames(caseRow, writableSet) {
+	const named = writableSet?.fields
+	if (!isRecord(caseRow) || !isRecord(named) || Array.isArray(named)) {
+		return []
+	}
+	return Object.keys(named).filter(
 		(key) =>
 			key !== '@self' && key !== '_files' && !WITHDRAWAL_FIELDS.includes(key),
 	)
+}
+
+/**
+ * @param {unknown} value A value.
+ * @return {boolean} Whether it is a non-null object.
+ */
+function isRecord(value) {
+	return Boolean(value) && typeof value === 'object'
 }

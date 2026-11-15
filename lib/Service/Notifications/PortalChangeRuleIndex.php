@@ -16,6 +16,11 @@
  *   `message.created` (REQ-NAP-004). A new record in it is a message to the
  *   resident at its scope field.
  *
+ * A change rule that names its recipients by a claim
+ * (claim-addressed-change-notices) carries `recipientField` and
+ * `recipientClaim`; its collection and declared message texts are kept beside
+ * the entry and read through details().
+ *
  * Collections name their register and schema by slug, while an OpenRegister
  * object carries numeric ids. The index maps the object's ids to slugs through
  * OpenRegister's own id-to-slug maps, and matches either form.
@@ -39,18 +44,22 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Notifications;
 
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Kernel\Contracts\PortalChangeRuleIndexInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use OCA\Portaliq\Service\NotificationDispatchService;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
+use OCA\Portaliq\Kernel\Contracts\NotificationRuleNormaliserInterface;
 
 /**
  * Looks up change rules and inbox collections by register and schema.
  *
  * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-declared-change-reaches-the-residents-inbox-req-nap-002
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- The total is the sum of small private steps; each method stays under the method thresholds.
  */
-class PortalChangeRuleIndex {
+class PortalChangeRuleIndex implements PortalChangeRuleIndexInterface {
 
 	/**
 	 * OpenRegister's register mapper, resolved by name so portaliq does not
@@ -82,16 +91,25 @@ class PortalChangeRuleIndex {
 	private ?array $slugs = null;
 
 	/**
+	 * Per change rule (`app|collection|ruleKey`): its collection and messages.
+	 *
+	 * @var array<string, array{collection: array<string, mixed>, messages: array<string, mixed>}>
+	 */
+	private array $details = [];
+
+	/**
 	 * Wire the index.
 	 *
-	 * @param PortalContributionRegistry $registry  Every app's contribution.
+	 * @param PortalContributionRegistryInterface $registry  Every app's contribution.
 	 * @param ContainerInterface         $container Resolves OpenRegister's mappers.
 	 * @param LoggerInterface            $logger    The logger.
+	 * @param NotificationRuleNormaliserInterface $notificationRuleNormaliser The NotificationRuleNormaliser helper.
 	 */
 	public function __construct(
-		private readonly PortalContributionRegistry $registry,
+		private readonly PortalContributionRegistryInterface $registry,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly NotificationRuleNormaliserInterface $notificationRuleNormaliser,
 	) {
 	}//end __construct()
 
@@ -101,13 +119,29 @@ class PortalChangeRuleIndex {
 	 * @param string $register The object's register id or slug.
 	 * @param string $schema   The object's schema id or slug.
 	 *
-	 * @return array<int, array<string, string>> Entries with app, ruleKey, collection, label, scopeField, field and titleField.
+	 * @return array<int, array<string, string>> Entries with app, ruleKey, collection, label, scopeField, field,
+	 *                                           titleField, recipientField and recipientClaim.
 	 *
 	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-declared-change-reaches-the-residents-inbox-req-nap-002
 	 */
 	public function changeRulesFor(string $register, string $schema): array {
 		return $this->matching(kind: 'change', register: $register, schema: $schema);
 	}//end changeRulesFor()
+
+	/**
+	 * A change rule's collection and the message texts it declares per value.
+	 *
+	 * @param array<string, string> $entry An entry changeRulesFor() returned.
+	 *
+	 * @return array{collection: array<string, mixed>, messages: array<string, mixed>}
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md
+	 */
+	public function details(array $entry): array {
+		$this->entries();
+
+		return ($this->details[$this->detailKey(entry: $entry)] ?? ['collection' => [], 'messages' => []]);
+	}//end details()
 
 	/**
 	 * The inbox collections a new record of this register and schema lands in.
@@ -277,6 +311,22 @@ class PortalChangeRuleIndex {
 			$notifications = [];
 		}
 
+		$collections = $this->collectionsById(contribution: $contribution);
+
+		return array_merge(
+			$this->changeEntries(app: $app, notifications: $notifications, collections: $collections),
+			$this->inboxEntries(app: $app, notifications: $notifications, collections: $collections)
+		);
+	}//end entriesOf()
+
+	/**
+	 * The contribution's collections by id.
+	 *
+	 * @param array<string, mixed> $contribution The normalised contribution.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function collectionsById(array $contribution): array {
 		$collections = [];
 		foreach ((array)($contribution['collections'] ?? []) as $collection) {
 			if (is_array($collection) === true && (string)($collection['id'] ?? '') !== '') {
@@ -284,11 +334,8 @@ class PortalChangeRuleIndex {
 			}
 		}
 
-		return array_merge(
-			$this->changeEntries(app: $app, notifications: $notifications, collections: $collections),
-			$this->inboxEntries(app: $app, notifications: $notifications, collections: $collections)
-		);
-	}//end entriesOf()
+		return $collections;
+	}//end collectionsById()
 
 	/**
 	 * The change rules of one contribution.
@@ -302,19 +349,62 @@ class PortalChangeRuleIndex {
 	private function changeEntries(string $app, array $notifications, array $collections): array {
 		$entries = [];
 		foreach ($notifications as $rule) {
-			if (is_array($rule) === false || isset($collections[(string)($rule['collection'] ?? '')]) === false) {
+			$collection = $this->ruleCollection(rule: $rule, collections: $collections);
+			if ($collection === null) {
 				continue;
 			}
 
-			$entries[] = $this->entry(kind: 'change', app: $app, collection: $collections[(string)$rule['collection']]) + [
+			$recipientClaim = (string)($rule['recipients']['claim'] ?? '');
+			$entry = $this->entry(kind: 'change', app: $app, collection: $collection) + [
 				'ruleKey' => (string)$rule['ruleKey'],
 				'field' => (string)($rule['on']['field'] ?? ''),
 				'titleField' => (string)($rule['titleField'] ?? ''),
+				'recipientField' => (string)($rule['recipients']['field'] ?? ''),
+				'recipientClaim' => $recipientClaim,
 			];
-		}
+			$this->details[$this->detailKey(entry: $entry)] = ['collection' => $collection, 'messages' => (array)($rule['messages'] ?? [])];
+			$entries[] = $entry;
+		}//end foreach
 
 		return $entries;
 	}//end changeEntries()
+
+	/**
+	 * The collection a change rule watches, or null when the rule is no
+	 * array, names no known collection, or has no recipient claim on a claim
+	 * or via collection.
+	 *
+	 * @param mixed                               $rule        The notification rule.
+	 * @param array<string, array<string, mixed>> $collections The collections by id.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function ruleCollection(mixed $rule, array $collections): array|null {
+		if (is_array($rule) === false || isset($collections[(string)($rule['collection'] ?? '')]) === false) {
+			return null;
+		}
+
+		$collection = $collections[(string)$rule['collection']];
+		$recipientClaim = (string)($rule['recipients']['claim'] ?? '');
+		if ($recipientClaim === '' && $this->notificationRuleNormaliser->scopedElsewhere(collection: $collection) === true) {
+			// The normaliser already drops this; a record of a claim or
+			// via collection does not say whose it is.
+			return null;
+		}
+
+		return $collection;
+	}//end ruleCollection()
+
+	/**
+	 * The key of a change rule's details.
+	 *
+	 * @param array<string, string> $entry The change rule entry.
+	 *
+	 * @return string
+	 */
+	private function detailKey(array $entry): string {
+		return implode('|', [($entry['app'] ?? ''), ($entry['collection'] ?? ''), ($entry['ruleKey'] ?? '')]);
+	}//end detailKey()
 
 	/**
 	 * The inbox collections of one contribution that declares `message.created`

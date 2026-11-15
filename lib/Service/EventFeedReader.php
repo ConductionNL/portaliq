@@ -22,29 +22,39 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/events-and-signups/design.md#architecture-overview
+ * @spec openspec/changes/archive/2026-09-28-events-and-signups/design.md#architecture-overview
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\EventFeedReaderInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
- * @spec openspec/changes/events-and-signups/design.md#architecture-overview
+ * @spec openspec/changes/archive/2026-09-28-events-and-signups/design.md#architecture-overview
  *
  * @SuppressWarnings(PHPMD.StaticAccess) -- NewsAudienceMatcher::matches() is
  * deliberately the ONE stateless match predicate every caller shares (see
  * the sibling news-and-newsletter-authoring change), so the two features'
  * audience rules can never fork.
  */
-class EventFeedReader {
+class EventFeedReader implements EventFeedReaderInterface {
+	use ObjectRowNormaliser;
+	use ObjectServiceLookup;
+	use PagedObjectReads;
+	use NormalisedRowReads;
+
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
 	private const REGISTER = 'portaliq';
+
+	/**
+	 * The warning logged when a read fails.
+	 */
+	private const READ_FAILED = 'Portaliq: event feed read failed';
 
 	/**
 	 * Constructor.
@@ -68,34 +78,84 @@ class EventFeedReader {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
 	 */
 	public function feedFor(string $subjectRef): array {
 		$audience = $this->audienceReader->resolveAudience(subjectRef: $subjectRef);
-		$rows = $this->findAll(schema: 'schoolEvent');
-		$rsvps = $this->findAll(schema: 'eventRsvp');
+		$rows = $this->findAll(schema: 'schoolEvent', filters: ['status' => 'published']);
+		$rsvps = $this->findAll(schema: 'eventRsvp', filters: ['guardianRef' => $subjectRef]);
+		// The learner herself sees the answer given for her, by whoever gave it.
+		$own = $this->findAll(schema: 'eventRsvp', filters: ['childRef' => $subjectRef]);
+		$run = new EventFeedRun(subjectRef: $subjectRef, rsvps: array_merge($rsvps, $own));
 
 		$matched = [];
 		foreach ($rows as $row) {
-			if (($row['status'] ?? '') !== 'published') {
-				continue;
+			if ($this->isListedEvent(row: $row, audience: $audience) === true) {
+				$matched[] = $this->withRsvpState(run: $run, row: $row);
 			}
-
-			$target = [];
-			if (is_array($row['target'] ?? null) === true) {
-				$target = $row['target'];
-			}
-
-			if (NewsAudienceMatcher::matches(target: $target, audience: $audience) === false) {
-				continue;
-			}
-
-			$row['myRsvp'] = $this->myRsvp(eventId: $this->rowId(row: $row), subjectRef: $subjectRef, rsvps: $rsvps);
-			$matched[] = $row;
 		}
 
 		return $matched;
 	}//end feedFor()
+
+	/**
+	 * Whether an event is published and reaches the audience.
+	 *
+	 * @param array<string, mixed> $row      The event.
+	 * @param array<string, mixed> $audience The guardian's resolved audience.
+	 *
+	 * @return bool
+	 */
+	private function isListedEvent(array $row, array $audience): bool {
+		return ($row['status'] ?? '') === 'published' && NewsAudienceMatcher::reaches(row: $row, audience: $audience) === true;
+	}//end isListedEvent()
+
+	/**
+	 * The event with the guardian's own RSVP, whether the caller may answer
+	 * for herself (with the answer given for her) and, when it asks for
+	 * seats, the seats taken.
+	 *
+	 * @param EventFeedRun         $run The feed.
+	 * @param array<string, mixed> $row The event.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withRsvpState(EventFeedRun $run, array $row): array {
+		$row['myRsvp'] = $this->myRsvp(eventId: $this->rowId(row: $row), subjectRef: $run->subjectRef, rsvps: $run->rsvps);
+		$row['mayAnswerSelf'] = EventRsvpEligibility::learnersMayAnswer(event: $row);
+		if ($row['mayAnswerSelf'] === true) {
+			// The site answers for her under her own reference.
+			$row['selfRef']   = $run->subjectRef;
+			$row['ownAnswer'] = $this->ownAnswer(eventId: $this->rowId(row: $row), subjectRef: $run->subjectRef, rsvps: $run->rsvps);
+		}
+
+		if (($row['askSeats'] ?? false) === true) {
+			$row['seatsTaken'] = EventRsvpService::seatsTaken(answers: $this->answersTo(run: $run, eventId: $this->rowId(row: $row)));
+		}
+
+		return $row;
+	}//end withRsvpState()
+
+	/**
+	 * Every RSVP to one event, read once per feed.
+	 *
+	 * @param EventFeedRun $run     The feed.
+	 * @param string       $eventId The event id.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function answersTo(EventFeedRun $run, string $eventId): array {
+		if ($run->everyRsvp === null) {
+			$run->everyRsvp = $this->findAll(schema: 'eventRsvp');
+		}
+
+		return array_values(
+			array_filter(
+				$run->everyRsvp,
+				fn (array $rsvp): bool => (string)($rsvp['eventRef'] ?? '') === $eventId
+			)
+		);
+	}//end answersTo()
 
 	/**
 	 * One `event` by id, scoped to the calling guardian's own audience.
@@ -106,7 +166,7 @@ class EventFeedReader {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/events-and-signups/design.md#api-design
+	 * @spec openspec/changes/archive/2026-09-28-events-and-signups/design.md#api-design
 	 */
 	public function readOwnEvent(string $subjectRef, string $id): ?array {
 		if ($id === '') {
@@ -114,31 +174,80 @@ class EventFeedReader {
 		}
 
 		$audience = $this->audienceReader->resolveAudience(subjectRef: $subjectRef);
-		$rows = $this->findAll(schema: 'schoolEvent');
+		$rows = $this->findAll(schema: 'schoolEvent', filters: ['status' => 'published']);
 
+		$row = $this->eventById(rows: $rows, id: $id);
+		if ($row === null || $this->isListedEvent(row: $row, audience: $audience) === false) {
+			return null;
+		}
+
+		return $row;
+	}//end readOwnEvent()
+
+	/**
+	 * The first event with the id, or null.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The events.
+	 * @param string                           $id   The event id.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function eventById(array $rows, string $id): ?array {
 		foreach ($rows as $row) {
-			if ($this->rowId(row: $row) !== $id) {
-				continue;
+			if ($this->rowId(row: $row) === $id) {
+				return $row;
 			}
-
-			if (($row['status'] ?? '') !== 'published') {
-				return null;
-			}
-
-			$target = [];
-			if (is_array($row['target'] ?? null) === true) {
-				$target = $row['target'];
-			}
-
-			if (NewsAudienceMatcher::matches(target: $target, audience: $audience) === false) {
-				return null;
-			}
-
-			return $row;
 		}
 
 		return null;
-	}//end readOwnEvent()
+	}//end eventById()
+
+	/**
+	 * Whether a child is one of the guardian's own children, so an RSVP or a
+	 * sign-up can only ever be made for the guardian's own child.
+	 *
+	 * @param string $subjectRef The guardian's own subjectRef.
+	 * @param string $childRef The child.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
+	 */
+	public function isOwnChild(string $subjectRef, string $childRef): bool {
+		if ($subjectRef === '' || $childRef === '') {
+			return false;
+		}
+
+		$audience = $this->audienceReader->resolveAudience(subjectRef: $subjectRef);
+		return in_array($childRef, $audience['childRefs'], true);
+	}//end isOwnChild()
+
+	/**
+	 * The answer given for the calling person herself, by whoever gave it,
+	 * or null.
+	 *
+	 * @param string                           $eventId    The event id.
+	 * @param string                           $subjectRef The calling person.
+	 * @param array<int, array<string, mixed>> $rsvps      The RSVPs given by or for them.
+	 *
+	 * @return array{response: string, seats: int|null}|null
+	 *
+	 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-pupil-may-answer-an-event-for-herself-with-the-number-of-seats
+	 */
+	private function ownAnswer(string $eventId, string $subjectRef, array $rsvps): ?array {
+		foreach ($rsvps as $rsvp) {
+			if ((string)($rsvp['eventRef'] ?? '') === $eventId && (string)($rsvp['childRef'] ?? '') === $subjectRef) {
+				$seats = null;
+				if (is_int($rsvp['seats'] ?? null) === true) {
+					$seats = $rsvp['seats'];
+				}
+
+				return ['response' => (string)($rsvp['response'] ?? ''), 'seats' => $seats];
+			}
+		}
+
+		return null;
+	}//end ownAnswer()
 
 	/**
 	 * The guardian's own RSVP response for one event, or null.
@@ -158,106 +267,4 @@ class EventFeedReader {
 
 		return null;
 	}//end myRsvp()
-
-	/**
-	 * Fetch every row of a schema in this app's register, unfiltered.
-	 *
-	 * @param string $schema The schema slug.
-	 *
-	 * @return array<int, array<string, mixed>>
-	 */
-	private function findAll(string $schema): array {
-		$objectService = $this->objectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		try {
-			$objectService->setRegister(register: self::REGISTER);
-			$objectService->setSchema(schema: $schema);
-			$rows = $objectService->findAll(config: ['filters' => [], 'limit' => 500, 'offset' => 0], _rbac: false, _multitenancy: false);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: event feed read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
-			return [];
-		}
-
-		if (is_array($rows) === false) {
-			return [];
-		}
-
-		$normalised = [];
-		foreach ($rows as $row) {
-			$row = $this->normalise(row: $row);
-			if ($row !== null) {
-				$normalised[] = $row;
-			}
-		}
-
-		return $normalised;
-	}//end findAll()
-
-	/**
-	 * The row's id/uuid, from a flat property or its `@self` envelope.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return string
-	 */
-	private function rowId(array $row): string {
-		if (isset($row['id']) === true) {
-			return (string)$row['id'];
-		}
-
-		if (isset($row['uuid']) === true) {
-			return (string)$row['uuid'];
-		}
-
-		$self = $row['@self'] ?? [];
-		if (is_array($self) === true) {
-			return (string)($self['id'] ?? $self['uuid'] ?? '');
-		}
-
-		return '';
-	}//end rowId()
-
-	/**
-	 * Normalise an OpenRegister row (array or object) to an associative array.
-	 *
-	 * @param mixed $row The row.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function normalise(mixed $row): ?array {
-		if (is_array($row) === true) {
-			return $row;
-		}
-
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			$data = $row->jsonSerialize();
-			if (is_array($data) === true) {
-				return $data;
-			}
-		}
-
-		return null;
-	}//end normalise()
-
-	/**
-	 * Resolve OpenRegister's ObjectService, or null when unavailable.
-	 *
-	 * @return object|null
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end objectService()
 }//end class

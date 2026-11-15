@@ -59,7 +59,21 @@ class NewsFeedReaderTest extends TestCase {
 			 * @return array<int, array<string, mixed>>
 			 */
 			public function findAll(array $config, bool $_rbac = true, bool $_multitenancy = true): array {
-				return ($this->schema === 'newsletter') ? $this->newsletterRows : $this->newsItemRows;
+				$rows = ($this->schema === 'newsletter') ? $this->newsletterRows : $this->newsItemRows;
+
+				// The store answers the filters as OpenRegister does: a row
+				// matches only when every filtered property equals the value.
+				$rows = array_values(array_filter($rows, static function (array $row) use ($config): bool {
+					foreach (($config['filters'] ?? []) as $key => $value) {
+						if (($row[$key] ?? null) !== $value) {
+							return false;
+						}
+					}
+
+					return true;
+				}));
+
+				return $rows;
 			}//end findAll()
 		};
 
@@ -210,6 +224,55 @@ class NewsFeedReaderTest extends TestCase {
 		$this->assertNotNull($item);
 		$this->assertSame('Mine', $item['title']);
 	}//end testReadOwnItemReturnsTheItemWhenInAudienceAndPublished()
+
+	/**
+	 * Storage order is oldest first, so a consumer that takes the first few
+	 * (the record page's news block) showed the oldest. The feed answers
+	 * newest first by publication moment, created when it was never
+	 * published through OpenRegister; an undated item sorts last.
+	 *
+	 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-news-block-must-show-the-subjects-latest-news
+	 */
+	public function testFeedIsNewestFirstWhateverTheStorageOrder(): void {
+		$audienceReader = $this->createMock(GuardianAudienceFixtureReader::class);
+		$audienceReader->method('resolveAudience')->willReturn(['schoolRef' => '', 'groupRefs' => ['groep-7'], 'childRefs' => [], 'photoConsent' => []]);
+
+		$target = ['groupRefs' => ['groep-7']];
+		$rows = [
+			['id' => 'undated', 'status' => 'published', 'target' => $target, 'title' => 'Undated'],
+			['id' => 'oldest', 'status' => 'published', 'target' => $target, 'title' => 'Oldest', '@self' => ['created' => '2026-09-01T08:00:00+00:00']],
+			['id' => 'middle', 'status' => 'published', 'target' => $target, 'title' => 'Middle', '@self' => ['created' => '2026-09-15T10:00:00+02:00']],
+			['id' => 'published', 'status' => 'published', 'target' => $target, 'title' => 'Published late', '@self' => ['created' => '2026-08-01T08:00:00+00:00', 'published' => '2026-09-20T08:00:00+00:00']],
+			['id' => 'newest', 'status' => 'published', 'target' => $target, 'title' => 'Newest', '@self' => ['created' => '2026-10-02T09:00:00+00:00']],
+		];
+
+		$reader = new NewsFeedReader($this->container($rows), $audienceReader, $this->passThroughGate(), $this->createMock(LoggerInterface::class));
+		$feed = $reader->feedFor('guardian-fatima');
+
+		$this->assertSame(['newest', 'published', 'middle', 'oldest', 'undated'], array_column($feed, 'id'));
+	}//end testFeedIsNewestFirstWhateverTheStorageOrder()
+
+	/**
+	 * A draft written long ago and published today is today's news: the
+	 * feed sorts on `publishedAt` first, ahead of OpenRegister's own dates.
+	 *
+	 * @spec openspec/changes/news-publish-date/specs/portaliq-cms/spec.md#requirement-a-news-item-carries-the-moment-it-was-published
+	 */
+	public function testFeedSortsOnThePublishMomentFirst(): void {
+		$audienceReader = $this->createMock(GuardianAudienceFixtureReader::class);
+		$audienceReader->method('resolveAudience')->willReturn(['schoolRef' => '', 'groupRefs' => ['groep-7'], 'childRefs' => [], 'photoConsent' => []]);
+
+		$target = ['groupRefs' => ['groep-7']];
+		$rows = [
+			['id' => 'recent', 'status' => 'published', 'target' => $target, 'title' => 'Written and published last week', 'publishedAt' => '2026-09-26T08:00:00+00:00', '@self' => ['created' => '2026-09-26T07:00:00+00:00']],
+			['id' => 'late', 'status' => 'published', 'target' => $target, 'title' => 'Old draft, published today', 'publishedAt' => '2026-10-03T09:00:00+00:00', '@self' => ['created' => '2026-08-01T08:00:00+00:00']],
+			['id' => 'unstamped', 'status' => 'published', 'target' => $target, 'title' => 'No publish moment', '@self' => ['created' => '2026-09-30T08:00:00+00:00']],
+		];
+
+		$reader = new NewsFeedReader($this->container($rows), $audienceReader, $this->passThroughGate(), $this->createMock(LoggerInterface::class));
+
+		$this->assertSame(['late', 'unstamped', 'recent'], array_column($reader->feedFor('guardian-fatima'), 'id'));
+	}//end testFeedSortsOnThePublishMomentFirst()
 
 	public function testArchiveReturnsOnlySentInAudienceNewslettersMostRecentFirst(): void {
 		$audienceReader = $this->createMock(GuardianAudienceFixtureReader::class);

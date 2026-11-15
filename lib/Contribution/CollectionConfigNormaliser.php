@@ -33,19 +33,17 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
-use OCA\Portaliq\Service\Branch\PortalBranchScope;
+use OCA\Portaliq\Kernel\Support\PortalBranchScope;
 
 /**
  * Validates and sanitises the v3 collection presentation config, fail-closed.
  *
  * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- one small normaliser per
+ * collection key, called in a row; the coupling is the list of keys, not logic.
  */
 class CollectionConfigNormaliser {
-	/**
-	 * Allowed column render kinds; anything else normalises to `text`.
-	 */
-	private const RENDER_KINDS = ['text', 'date', 'datetime', 'badge', 'currency', 'boolean', 'link'];
-
 	/**
 	 * Allowed detail layouts; anything else normalises to `card`.
 	 */
@@ -74,33 +72,98 @@ class CollectionConfigNormaliser {
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @spec openspec/specs/supplier-portal/spec.md#download-is-opt-in-per-collection-fail-closed
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-an-inbox-collection-names-its-own-message-fields-req-imf-001
+	 * @spec openspec/changes/archive/2026-10-30-collection-intro/tasks.md#t1
 	 */
 	public function normaliseCollections(array $collections): array {
 		$out = [];
 		foreach ($collections as $collection) {
-			if (is_array($collection) === false) {
-				continue;
+			if (is_array($collection) === true) {
+				$out[] = $this->normaliseCollection(collection: $collection);
 			}
-
-			$collection = $this->normaliseColumns(collection: $collection);
-			$collection = $this->normaliseDetail(collection: $collection);
-			$collection = (new TimelineProviderMethod())->normaliseTimeline(collection: $collection);
-			$collection = (new DocumentsProviderMethod())->normalise(collection: $collection);
-			$collection = $this->normaliseDefaults(collection: $collection);
-			$collection = $this->normaliseFileFlags(collection: $collection);
-			$collection = $this->normaliseKind(collection: $collection);
-			$collection = $this->normaliseClosedField(collection: $collection);
-			$collection = $this->normaliseGroupByField(collection: $collection);
-			$collection = (new PortalBranchScope())->normalise(collection: $collection);
-			$collection = (new MessageBoxConfigNormaliser())->normalise(collection: $collection);
-			$collection = (new RowActionResolver())->normaliseNoticeField(collection: $collection);
-			$collection = $this->values->normaliseAnonymousFlag(entry: $collection);
-
-			$out[] = $collection;
-		}//end foreach
+		}
 
 		return $out;
 	}//end normaliseCollections()
+
+	/**
+	 * Sanitise one collection, key group by key group.
+	 *
+	 * @param array<string, mixed> $collection The collection.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function normaliseCollection(array $collection): array {
+		$collection = $this->normaliseDisplay(collection: $collection);
+		$collection = $this->normaliseCaseKeys(collection: $collection);
+		$collection = $this->normaliseInboxKeys(collection: $collection);
+
+		return $this->values->normaliseAnonymousFlag(entry: $collection);
+	}//end normaliseCollection()
+
+	/**
+	 * What a collection shows and offers: columns, detail, field configs,
+	 * timeline, documents, defaults, file flags, kind and theme tags.
+	 *
+	 * @param array<string, mixed> $collection The collection.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function normaliseDisplay(array $collection): array {
+		$collection = (new CollectionColumnsNormaliser(values: $this->values))->normaliseColumns(collection: $collection);
+		$collection = $this->normaliseDetail(collection: $collection);
+		$collection = (new CollectionFieldConfigNormaliser())->normalise(collection: $collection);
+		$collection = (new TimelineProviderMethod())->normaliseTimeline(collection: $collection);
+		// The messages about one record, both ways (capability-rows-said-and-planned T07).
+		$collection = (new CaseMessagesProviderMethod())->normalise(collection: $collection);
+		$collection = (new DocumentsProviderMethod())->normalise(collection: $collection);
+		$collection = $this->normaliseDefaults(collection: $collection);
+		$collection = $this->normaliseFileFlags(collection: $collection);
+		$collection = $this->normaliseKind(collection: $collection);
+		// The life domain a collection belongs to, and a product's validity (life-domain-theme-pages).
+		return (new ThemeTagKeys())->collection(collection: $collection);
+	}//end normaliseDisplay()
+
+	/**
+	 * The keys of a cases collection and its rows: steps, message contacts,
+	 * the closed field, the case field, the status label, the intro and the
+	 * grouping.
+	 *
+	 * @param array<string, mixed> $collection The collection.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function normaliseCaseKeys(array $collection): array {
+		// Steps, answer date and whose turn, on a cases collection only
+		// (site-mijn-omgeving-components REQ-SMO-022).
+		$collection = (new StepsProviderMethod())->normalise(collection: $collection);
+		// Who a resident may write to about each row (site-messages-per-record).
+		$collection = (new MessageContactsKeys())->normalise(collection: $collection);
+		$collection = $this->normaliseClosedField(collection: $collection);
+		$collection = $this->normaliseOutcome(collection: $collection);
+		// The field holding the case a task belongs to (case-page-tasks-decision-dates-and-next-step).
+		$collection = (new CaseFieldKey())->normalise(collection: $collection);
+		$collection = (new CaseStatusLabelField())->normalise(collection: $collection);
+		$collection = (new CollectionIntroKey())->normalise(collection: $collection);
+
+		return $this->normaliseGroupByField(collection: $collection);
+	}//end normaliseCaseKeys()
+
+	/**
+	 * Where a collection's rows come from and go: the branch scope, the
+	 * message box, the inbox message fields and the notice field.
+	 *
+	 * @param array<string, mixed> $collection The collection.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function normaliseInboxKeys(array $collection): array {
+		$collection = (new PortalBranchScope())->normalise(collection: $collection);
+		$collection = (new MessageBoxConfigNormaliser())->normalise(collection: $collection);
+		$collection = (new InboxMessageFields())->normalise(collection: $collection);
+
+		return (new RowActionResolver())->normaliseNoticeField(collection: $collection);
+	}//end normaliseInboxKeys()
 
 	/**
 	 * Resolve each collection's `rowActions` (and the singular `rowAction`)
@@ -114,7 +177,7 @@ class CollectionConfigNormaliser {
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
-	 * @spec openspec/changes/contribution-pay-screen/specs/portal-contribution-contract/spec.md#requirement-server-enforced-status-transitions
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-server-enforced-status-transitions
 	 */
 	public function resolveRowActions(array $collections, array $actions): array {
 		return (new RowActionResolver())->resolve(collections: $collections, actions: $actions);
@@ -133,7 +196,7 @@ class CollectionConfigNormaliser {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	private function normaliseKind(array $collection): array {
 		if (array_key_exists('kind', $collection) === false) {
@@ -179,6 +242,80 @@ class CollectionConfigNormaliser {
 	}//end normaliseClosedField()
 
 	/**
+	 * Keep an `outcome` block's `labelField` and `descriptionField` only when
+	 * each names a field the collection projects.
+	 *
+	 * The outcome tells the case page which field holds the public result label
+	 * and which its explanation, the same `fields`-membership rule the closed
+	 * marker obeys: a field the row never carries would read as a blank outcome.
+	 * A field that is absent or does not name a projected field is dropped; when
+	 * neither survives, the whole `outcome` key goes.
+	 *
+	 * @param array<string, mixed> $collection The collection.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/case-outcome-on-the-case-page/specs/portal-contribution-contract/spec.md
+	 */
+	private function normaliseOutcome(array $collection): array {
+		if (array_key_exists('outcome', $collection) === false) {
+			return $collection;
+		}
+
+		$kept = $this->keptOutcome(outcome: $collection['outcome'], fields: ($collection['fields'] ?? null));
+		if ($kept === []) {
+			unset($collection['outcome']);
+			return $collection;
+		}
+
+		$collection['outcome'] = $kept;
+		return $collection;
+	}//end normaliseOutcome()
+
+	/**
+	 * The outcome's `labelField` and `descriptionField` that name a projected
+	 * field; none when the outcome is not a block.
+	 *
+	 * @param mixed $outcome The declared outcome.
+	 * @param mixed $fields  The collection's projected fields.
+	 *
+	 * @return array<string, string>
+	 *
+	 * @spec openspec/changes/case-outcome-on-the-case-page/specs/portal-contribution-contract/spec.md
+	 */
+	private function keptOutcome(mixed $outcome, mixed $fields): array {
+		if (is_array($outcome) === false) {
+			return [];
+		}
+
+		$kept = [];
+		foreach (['labelField', 'descriptionField'] as $key) {
+			$field = ($outcome[$key] ?? null);
+			if ($this->namesProjected(field: $field, fields: $fields) === true) {
+				$kept[$key] = $field;
+			}
+		}
+
+		return $kept;
+	}//end keptOutcome()
+
+	/**
+	 * Whether a value is a non-empty field name the collection projects, or
+	 * any one when it projects none.
+	 *
+	 * @param mixed $field  The declared field.
+	 * @param mixed $fields The collection's projected fields.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/case-outcome-on-the-case-page/specs/portal-contribution-contract/spec.md
+	 */
+	private function namesProjected(mixed $field, mixed $fields): bool {
+		return is_string($field) === true && $field !== ''
+			&& (is_array($fields) === false || in_array($field, $fields, true) === true);
+	}//end namesProjected()
+
+	/**
 	 * Keep `groupByField` only when it names a field the collection projects.
 	 *
 	 * The hint tells the portal to show the rows in groups, one per value of
@@ -192,7 +329,7 @@ class CollectionConfigNormaliser {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/collection-group-by-field/tasks.md#T2
+	 * @spec openspec/changes/archive/2026-10-07-collection-group-by-field/tasks.md#T2
 	 */
 	private function normaliseGroupByField(array $collection): array {
 		if (array_key_exists('groupByField', $collection) === false) {
@@ -214,8 +351,11 @@ class CollectionConfigNormaliser {
 	 *
 	 * `filesUpload` opts the collection into the scoped file-upload block and
 	 * `filesDownload` into the scoped file-download block
-	 * (portal-document-download). Only an explicit true enables either; a
-	 * malformed or absent value means false (fail-closed).
+	 * (portal-document-download); `exportPdf` offers the collection's list and records
+	 * as a PDF (cases-export-own-data-pdf); `deletable` lets a resident delete their
+	 * own messages from a `kind: inbox` collection (inbox-delete-own-messages).
+	 * Only an explicit true enables any of them; a malformed or absent value
+	 * means false (fail-closed).
 	 *
 	 * @param array<string, mixed> $collection The collection.
 	 *
@@ -224,7 +364,7 @@ class CollectionConfigNormaliser {
 	 * @spec openspec/specs/supplier-portal/spec.md#download-is-opt-in-per-collection-fail-closed
 	 */
 	private function normaliseFileFlags(array $collection): array {
-		foreach (['filesUpload', 'filesDownload'] as $flag) {
+		foreach (['filesUpload', 'filesDownload', 'deletable', 'exportPdf'] as $flag) {
 			if (array_key_exists($flag, $collection) === true) {
 				$collection[$flag] = ($collection[$flag] === true || $collection[$flag] === 'true');
 			}
@@ -232,61 +372,6 @@ class CollectionConfigNormaliser {
 
 		return $collection;
 	}//end normaliseFileFlags()
-
-	/**
-	 * Keep only well-formed `columns`; drop the key otherwise.
-	 *
-	 * @param array<string, mixed> $collection The collection.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function normaliseColumns(array $collection): array {
-		if (array_key_exists('columns', $collection) === false) {
-			return $collection;
-		}
-
-		if (is_array($collection['columns']) === false) {
-			unset($collection['columns']);
-			return $collection;
-		}
-
-		$columns = [];
-		foreach ($collection['columns'] as $column) {
-			$entry = $this->normaliseColumn(column: $column);
-			if ($entry !== null) {
-				$columns[] = $entry;
-			}
-		}
-
-		$collection['columns'] = $columns;
-		return $collection;
-	}//end normaliseColumns()
-
-	/**
-	 * Sanitise ONE column entry, or null when it carries no usable `field`.
-	 *
-	 * @param mixed $column The declared column.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function normaliseColumn(mixed $column): ?array {
-		if (is_array($column) === false) {
-			return null;
-		}
-
-		$field = ($column['field'] ?? '');
-		if (is_string($field) === false || $field === '') {
-			return null;
-		}
-
-		$entry = ['field' => $field];
-		if (isset($column['label']) === true && is_string($column['label']) === true) {
-			$entry['label'] = $column['label'];
-		}
-
-		$entry['render'] = $this->values->oneOf(value: ($column['render'] ?? null), allowed: self::RENDER_KINDS, default: 'text');
-		return $entry;
-	}//end normaliseColumn()
 
 	/**
 	 * Keep a well-formed `detail` (layout + string `fields`); drop otherwise.

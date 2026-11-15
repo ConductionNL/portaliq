@@ -27,6 +27,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\PortalRuntimeConfigResolverInterface;
+use OCA\Portaliq\Service\ExampleResident\ExampleResidentSignIn;
+use OCA\Portaliq\Service\ExampleResident\ExampleSetResidents;
 use OCA\Portaliq\Service\Identity\PortalWaysInResolver;
 use OCP\IConfig;
 use OCP\IRequest;
@@ -61,8 +64,7 @@ use OCP\IRequest;
  *
  * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-request-must-resolve-to-exactly-one-portal-or-to-none
  */
-class PortalRuntimeConfigResolver {
-
+class PortalRuntimeConfigResolver implements PortalRuntimeConfigResolverInterface {
 
 	/**
 	 * Constructor.
@@ -75,6 +77,8 @@ class PortalRuntimeConfigResolver {
 	 * @param IConfig|null                    $config         Tells whether the dev login is accepted.
 	 * @param PortalWaysInResolver|null       $waysIn         The doors besides the sign-in buttons
 	 *                                                        (identity-ways-in-screens T07).
+	 * @param ExampleSetResidents|null        $exampleResidents The installed example residents, for the
+	 *                                                          one-click demo sign-in (example-resident-demo-login).
 	 *
 	 * @return void
 	 */
@@ -84,9 +88,9 @@ class PortalRuntimeConfigResolver {
 		private readonly PortalThemeResolver $themeResolver,
 		private readonly ?IConfig $config=null,
 		private readonly ?PortalWaysInResolver $waysIn=null,
+		private readonly ?ExampleSetResidents $exampleResidents=null,
 	) {
 	}//end __construct()
-
 
 	/**
 	 * Which portal serves this request.
@@ -133,7 +137,6 @@ class PortalRuntimeConfigResolver {
 		}
 	}//end resolvePortal()
 
-
 	/**
 	 * The runtime config for a resolved portal (or for none).
 	 *
@@ -178,13 +181,57 @@ class PortalRuntimeConfigResolver {
 		// are offered (portal-signin-on-its-own-address). `signinOrganisation`
 		// is what the login buttons start with: the SPA's `organisationSlug`
 		// becomes the PORTAL's slug below, which is not an organisation.
+		$orgValue = $this->signinOrganisation(portal: $portal, orgValue: $orgValue);
+
+		$config['signinOrganisation'] = $orgValue;
+		$config['devLogin'] = $this->devLoginEnabled();
+		// One click on a demo per example resident, while the switch is on
+		// (demo-sign-in-beside-the-account); '' and none otherwise.
+		$config['exampleResident']  = '';
+		$config['exampleResidents'] = [];
+		$config = $this->withBrokers(config: $config, orgValue: $orgValue, locale: $locale);
+
+		// The doors besides the sign-in buttons (identity-ways-in-screens
+		// D3): closed unless a portal opens them.
+		$config['waysIn'] = ['register' => false, 'reference' => false, 'emailSignIn' => '', 'referenceCaseTypes' => [], 'emailLink' => false];
+		if ($portal === null) {
+			return $config;
+		}
+
+		return $this->forPortal(config: $config, portal: $portal);
+	}//end runtimeConfigFor()
+
+	/**
+	 * The organisation the login buttons start with: the `?org=` value, else the portal's own organisation.
+	 *
+	 * @param array|null $portal   The serving portal, or null.
+	 * @param string     $orgValue The `?org=` value.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+	 */
+	private function signinOrganisation(array|null $portal, string $orgValue): string {
 		$orgValue = trim($orgValue);
 		if ($orgValue === '' && $portal !== null && is_string(($portal['organisation'] ?? null)) === true) {
 			$orgValue = trim($portal['organisation']);
 		}
 
-		$config['signinOrganisation'] = $orgValue;
-		$config['devLogin'] = $this->devLoginEnabled();
+		return $orgValue;
+	}//end signinOrganisation()
+
+	/**
+	 * The config with the organisation's brokers, when it names one.
+	 *
+	 * @param array<string, mixed> $config   The SPA runtime config so far.
+	 * @param string               $orgValue The sign-in organisation, or ''.
+	 * @param string               $locale   The visitor's resolved locale.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+	 */
+	private function withBrokers(array $config, string $orgValue, string $locale): array {
 		if ($orgValue !== '') {
 			$resolved = $this->orgResolver->resolve(orgSlug: $orgValue, locale: $locale);
 			$config['oidcProviders'] = (array)($resolved['oidcProviders'] ?? []);
@@ -192,43 +239,66 @@ class PortalRuntimeConfigResolver {
 			$config['silentSignIn'] = (string)($resolved['silentSignIn'] ?? '');
 		}
 
-		// The doors besides the sign-in buttons (identity-ways-in-screens
-		// D3): closed unless a portal opens them.
-		$config['waysIn'] = ['register' => false, 'reference' => false, 'emailSignIn' => '', 'referenceCaseTypes' => []];
-		if ($portal === null) {
-			return $config;
-		}
+		return $config;
+	}//end withBrokers()
 
+	/**
+	 * The config with the serving portal's ways in, example residents and branding.
+	 *
+	 * @param array<string, mixed> $config The SPA runtime config so far.
+	 * @param array                $portal The serving portal.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+	 */
+	private function forPortal(array $config, array $portal): array {
 		if ($this->waysIn !== null) {
 			$config['waysIn'] = $this->waysIn->waysIn(portal: $portal, oidcProviders: (array)($config['oidcProviders'] ?? []));
 		}
 
-		return $this->applyPortalBranding(config: $config, portal: $portal);
-	}//end runtimeConfigFor()
+		// The cards sit beside the portal's own ways in and never replace one,
+		// so a resident who made their own account still signs in with it.
+		$residents = $this->exampleResidentSignIn();
+		$config['exampleResident']  = $residents->offered(portal: $portal);
+		$config['exampleResidents'] = $residents->offeredResidents(portal: $portal);
 
+		return $this->applyPortalBranding(config: $config, portal: $portal);
+	}//end forPortal()
+
+	/**
+	 * What the site may offer for this portal's example resident, read from
+	 * the switch and the install records (example-resident-demo-login).
+	 *
+	 * @return ExampleResidentSignIn
+	 *
+	 * @spec openspec/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+	 */
+	private function exampleResidentSignIn(): ExampleResidentSignIn {
+		return new ExampleResidentSignIn(
+			config: $this->config,
+			residents: $this->exampleResidents
+		);
+	}//end exampleResidentSignIn()
 
 	/**
 	 * Whether the server accepts the dev login, by the same rule as
-	 * SessionController::devLogin() (system `debug`, or app config
-	 * `dev_login_enabled` = `yes`). The SPA shows the button only then, so a
+	 * SessionController::devLogin(): only app config `dev_login_enabled` =
+	 * `yes`, never system `debug`. The SPA shows the button only then, so a
 	 * resident never sees a test button that answers 404.
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-signin-on-its-own-address/tasks.md#T2
+	 * @spec openspec/changes/archive/2026-10-07-portal-signin-on-its-own-address/tasks.md#T2
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-the-test-sign-in-opens-only-on-its-own-switch
 	 */
 	private function devLoginEnabled(): bool {
 		if ($this->config === null) {
 			return false;
 		}
 
-		if ($this->config->getSystemValueBool('debug', false) === true) {
-			return true;
-		}
-
 		return $this->config->getAppValue('portaliq', 'dev_login_enabled', 'no') === 'yes';
 	}//end devLoginEnabled()
-
 
 	/**
 	 * The thematiq token stylesheet for a resolved portal, or ''.
@@ -258,7 +328,6 @@ class PortalRuntimeConfigResolver {
 			return '';
 		}
 	}//end themeStylesheetFor()
-
 
 	/**
 	 * Overlay a resolved portal's presentation onto the neutral default.
@@ -316,7 +385,6 @@ class PortalRuntimeConfigResolver {
 		return $config;
 	}//end applyPortalBranding()
 
-
 	/**
 	 * The portal's declared frame ancestors, as CSP source expressions.
 	 *
@@ -366,7 +434,6 @@ class PortalRuntimeConfigResolver {
 		return array_values(array_unique($origins));
 	}//end frameAncestors()
 
-
 	/**
 	 * One frame ancestor rebuilt as `scheme://host[:port]`, or '' to drop it.
 	 *
@@ -392,7 +459,6 @@ class PortalRuntimeConfigResolver {
 
 		return $origin.':'.(int)$parts['port'];
 	}//end cspOrigin()
-
 
 	/**
 	 * Whether parsed URL parts describe an origin and nothing more.
@@ -427,7 +493,6 @@ class PortalRuntimeConfigResolver {
 		return in_array(($parts['path'] ?? ''), ['', '/'], true);
 	}//end isBareOrigin()
 
-
 	/**
 	 * The portal's logo URL, or '' when it is absent or not a safe URL.
 	 *
@@ -453,6 +518,5 @@ class PortalRuntimeConfigResolver {
 
 		return '';
 	}//end logoUrl()
-
 
 }//end class

@@ -19,13 +19,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-a-change-notice-is-written-in-the-portals-language-only-req-nap-010
+ * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-change-notice-is-written-in-the-portals-language-only-req-nap-010
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Notifications;
 
+use OCA\Portaliq\Kernel\Contracts\PortalNoticeLanguageInterface;
 use OCA\Portaliq\Service\PortalResolver;
 use OCP\IL10N;
 use OCP\L10N\IFactory;
@@ -34,9 +35,9 @@ use Throwable;
 /**
  * Picks the language of a notice to a resident.
  *
- * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-a-change-notice-is-written-in-the-portals-language-only-req-nap-010
+ * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-change-notice-is-written-in-the-portals-language-only-req-nap-010
  */
-class PortalNoticeLanguage {
+class PortalNoticeLanguage implements PortalNoticeLanguageInterface {
 
 	/**
 	 * The language of a notice when the portal names none.
@@ -64,11 +65,26 @@ class PortalNoticeLanguage {
 	 *
 	 * @return IL10N
 	 *
-	 * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-a-change-notice-is-written-in-the-portals-language-only-req-nap-010
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-change-notice-is-written-in-the-portals-language-only-req-nap-010
 	 */
 	public function forOrganisation(string $organisation): IL10N {
 		return $this->l10nFactory->get('portaliq', $this->language(organisation: $organisation));
 	}//end forOrganisation()
+
+	/**
+	 * The language code of the organisation's portal: its first locale, else
+	 * Dutch. A notice whose text the contributing app declares is picked in
+	 * this language (claim-addressed-change-notices).
+	 *
+	 * @param string $organisation The resident's organisation.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md
+	 */
+	public function languageFor(string $organisation): string {
+		return $this->language(organisation: $organisation);
+	}//end languageFor()
 
 	/**
 	 * The first locale of the organisation's portal, else Dutch.

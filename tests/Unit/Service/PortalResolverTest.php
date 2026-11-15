@@ -22,6 +22,7 @@ namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PublishedPortals;
 use PHPUnit\Framework\TestCase;
 use OCP\IRequest;
 use Psr\Container\ContainerInterface;
@@ -62,9 +63,8 @@ class PortalResolverTest extends TestCase {
 		parent::setUp();
 
 		$this->resolver = new PortalResolver(
-			$this->createMock(ContainerInterface::class),
-			$this->createMock(LoggerInterface::class),
-			$this->contextDouble()
+			new PublishedPortals($this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class), $this->contextDouble()),
+			$this->createMock(LoggerInterface::class)
 		);
 
 		$this->sites = [
@@ -200,7 +200,7 @@ class PortalResolverTest extends TestCase {
 	 *
 	 * @return PortalResolver The resolver, wired.
 	 */
-	private function resolverReturning(?array $rows): PortalResolver {
+	private function resolverReturning(?array $rows, ?LoggerInterface $logger = null): PortalResolver {
 		$container = $this->createMock(ContainerInterface::class);
 
 		if ($rows === null) {
@@ -268,9 +268,8 @@ class PortalResolverTest extends TestCase {
 		}
 
 		return new PortalResolver(
-			$container,
-			$this->createMock(LoggerInterface::class),
-			$this->contextDouble()
+			new PublishedPortals($container, $this->createMock(LoggerInterface::class), $this->contextDouble()),
+			($logger ?? $this->createMock(LoggerInterface::class))
 		);
 	}//end resolverReturning()
 
@@ -467,9 +466,8 @@ class PortalResolverTest extends TestCase {
 		);
 
 		$resolver = new PortalResolver(
-			$container,
-			$this->createMock(LoggerInterface::class),
-			$this->contextDouble()
+			new PublishedPortals($container, $this->createMock(LoggerInterface::class), $this->contextDouble()),
+			$this->createMock(LoggerInterface::class)
 		);
 
 		$this->assertSame([], $resolver->allPublishedPortals());
@@ -567,9 +565,8 @@ class PortalResolverTest extends TestCase {
 		$container->method('get')->willReturn($reader);
 
 		return new PortalResolver(
-			$container,
-			$this->createMock(LoggerInterface::class),
-			$this->contextDouble()
+			new PublishedPortals($container, $this->createMock(LoggerInterface::class), $this->contextDouble()),
+			$this->createMock(LoggerInterface::class)
 		);
 	}//end resolverOver()
 
@@ -617,6 +614,32 @@ class PortalResolverTest extends TestCase {
 
 		$this->assertNull($resolver->resolveByOrganisation('gemeente-x'));
 	}//end testAnOrganisationWithTwoPortalsResolvesToNothing()
+
+
+	/**
+	 * An ambiguous organisation is logged with the organisation as asked
+	 * (trimmed) and every matching portal's slug; one match logs nothing.
+	 *
+	 * @return void
+	 */
+	public function testAnAmbiguousOrganisationIsLoggedWithItsPortals(): void {
+		$rows   = [
+			['slug' => 'inwoners', 'organisation' => ' gemeente-x '],
+			['slug' => 'other', 'organisation' => 'gemeente-y'],
+			['organisation' => 'gemeente-x'],
+		];
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('info')->with(
+			'Portaliq: ?org= matched several published portals; refusing to guess a brand',
+			['organisation' => 'gemeente-x', 'portals' => ['inwoners', '']]
+		);
+
+		$this->assertNull($this->resolverReturning(rows: $rows, logger: $logger)->resolveByOrganisation(' gemeente-x '));
+
+		$quiet = $this->createMock(LoggerInterface::class);
+		$quiet->expects($this->never())->method('info');
+		$this->assertSame('other', $this->resolverReturning(rows: $rows, logger: $quiet)->resolveByOrganisation('gemeente-y')['slug']);
+	}//end testAnAmbiguousOrganisationIsLoggedWithItsPortals()
 
 
 	/**
@@ -685,4 +708,158 @@ class PortalResolverTest extends TestCase {
 	}//end testAnOrganisationLookupFailsClosed()
 
 
+
+	/**
+	 * A portal that declares only Dutch serves Dutch to a browser that asks for English.
+	 *
+	 * @return void
+	 */
+	public function testADutchOnlyPortalServesDutch(): void {
+		$this->assertSame(expected: 'nl', actual: $this->resolver->localeFor(portal: ['locales' => ['nl']], locale: 'en-US'));
+
+	}//end testADutchOnlyPortalServesDutch()
+
+
+	/**
+	 * A declared language is served as the browser asked for it, region included.
+	 *
+	 * @return void
+	 */
+	public function testADeclaredLanguageIsServedAsAsked(): void {
+		$this->assertSame(expected: 'en-US', actual: $this->resolver->localeFor(portal: ['locales' => ['nl', 'en']], locale: 'en-US'));
+		$this->assertSame(expected: 'nl', actual: $this->resolver->localeFor(portal: ['locales' => ['NL ', '']], locale: 'nl'));
+
+	}//end testADeclaredLanguageIsServedAsAsked()
+
+
+	/**
+	 * No portal, or no declared locales: the browser's language, as before.
+	 *
+	 * @return void
+	 */
+	public function testAnUndeclaredPortalServesWhatWasAsked(): void {
+		$this->assertSame(expected: 'en-US', actual: $this->resolver->localeFor(portal: null, locale: 'en-US'));
+		$this->assertSame(expected: 'de', actual: $this->resolver->localeFor(portal: ['locales' => []], locale: 'de'));
+		$this->assertSame(
+			expected: 'nl',
+			actual: $this->resolver->localeFor(portal: ['locales' => 'nl'], locale: 'de'),
+			message: 'one declared string counts as a list'
+		);
+
+	}//end testAnUndeclaredPortalServesWhatWasAsked()
+
+
+	/**
+	 * A verified host is served on its own domain entry, settings included.
+	 *
+	 * The POSITIVE half of the serving-domain rule: without it every refusal
+	 * below would also pass for a method that always answers null.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-at-the-root-of-a-portal-host/specs/portal-settings/spec.md#requirement-a-verified-domain-may-serve-the-site-at-its-root-req-srh-001
+	 */
+	public function testAVerifiedHostIsServedOnItsOwnDomainEntry(): void {
+		$domain = $this->resolverReturning($this->rootSites())->servingDomain($this->requestOn('Own.Venray.example:8443'));
+
+		$this->assertSame('own.venray.example', $domain['hostname']);
+		$this->assertSame('/mijn', $domain['landingRoute']);
+		$this->assertTrue($domain['servedAtRoot']);
+	}//end testAVerifiedHostIsServedOnItsOwnDomainEntry()
+
+
+	/**
+	 * An unknown host and an unverified domain have no serving domain, even
+	 * when the unverified entry declares root serving and a landing page.
+	 * Declaring is not proving.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-at-the-root-of-a-portal-host/specs/portal-settings/spec.md#requirement-a-host-that-resolves-no-portal-must-get-no-site-req-srh-003
+	 */
+	public function testAnUnknownOrUnverifiedHostHasNoServingDomain(): void {
+		$resolver = $this->resolverReturning($this->rootSites());
+
+		$this->assertNull($resolver->servingDomain($this->requestOn('nobody.example')));
+		$this->assertNull($resolver->servingDomain($this->requestOn('claimed.example')));
+		$this->assertNull($resolver->servingDomain($this->requestOn('')));
+		$this->assertNull($this->resolverReturning([])->servingDomain($this->requestOn('own.venray.example')));
+		$this->assertNull($this->resolverReturning(null)->servingDomain($this->requestOn('own.venray.example')));
+	}//end testAnUnknownOrUnverifiedHostHasNoServingDomain()
+
+
+	/**
+	 * A request that names ANOTHER portal by slug is served as that portal,
+	 * so the host's domain settings do not apply to it. Naming the host's own
+	 * portal keeps them.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-at-the-root-of-a-portal-host/specs/portal-settings/spec.md#requirement-a-host-that-resolves-no-portal-must-get-no-site-req-srh-003
+	 */
+	public function testANamedPortalOnAnotherPortalsHostGetsNoDomain(): void {
+		$resolver = $this->resolverReturning($this->rootSites());
+		$request  = $this->requestOn('own.venray.example');
+
+		$this->assertNull($resolver->servingDomain($request, 'open-tilburg'));
+		$this->assertNull($resolver->servingDomain($request, 'does-not-exist'));
+		$this->assertSame('own.venray.example', $resolver->servingDomain($request, 'open-venray')['hostname']);
+	}//end testANamedPortalOnAnotherPortalsHostGetsNoDomain()
+
+
+	/**
+	 * The host is the one Nextcloud resolved for the request. A header a
+	 * client can write is never asked.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-at-the-root-of-a-portal-host/specs/portal-settings/spec.md#requirement-a-host-that-resolves-no-portal-must-get-no-site-req-srh-003
+	 */
+	public function testAForgedHostHeaderSelectsNoDomainAndNoPortal(): void {
+		$request = $this->createMock(IRequest::class);
+		$request->method('getServerHost')->willReturn('cloud.example');
+		$request->expects($this->never())->method('getHeader');
+		$request->expects($this->never())->method('getInsecureServerHost');
+
+		$resolver = $this->resolverReturning($this->rootSites());
+
+		$this->assertNull($resolver->servingDomain($request));
+		$this->assertNull($resolver->resolve($request));
+	}//end testAForgedHostHeaderSelectsNoDomainAndNoPortal()
+
+
+	/**
+	 * A request whose resolved host is the given one.
+	 *
+	 * @param string $host The host Nextcloud resolved.
+	 *
+	 * @return IRequest
+	 */
+	private function requestOn(string $host): IRequest {
+		$request = $this->createMock(IRequest::class);
+		$request->method('getServerHost')->willReturn($host);
+
+		return $request;
+	}//end requestOn()
+
+
+	/**
+	 * Two portals: one on a plain verified domain, one with a verified domain
+	 * that serves the site at its root and opens on its own page, plus an
+	 * unverified domain that claims the same.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function rootSites(): array {
+		return [
+			['slug' => 'open-tilburg', 'domains' => [['hostname' => 'tilburg.example', 'verified' => true]]],
+			[
+				'slug'    => 'open-venray',
+				'domains' => [
+					['hostname' => 'own.venray.example', 'verified' => true, 'servedAtRoot' => true, 'landingRoute' => '/mijn'],
+					['hostname' => 'claimed.example', 'verified' => false, 'servedAtRoot' => true, 'landingRoute' => '/mijn'],
+				],
+			],
+		];
+	}//end rootSites()
 }//end class

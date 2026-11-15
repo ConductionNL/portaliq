@@ -283,6 +283,81 @@ test("each block resolves to what renders it, and another slice's block to its p
 	assert.deepEqual(timed, ['timedTask', 'citizenCase', 'cta', 'none'])
 })
 
+test('a case screen under a detail card on its collection waits quietly for a case', () => {
+	const contribution = {
+		collections: [{ id: 'mijnZaken' }, { id: 'verzoeken' }],
+	}
+	const [, detail, quiet, alone] = resolveBlocks(
+		{
+			blocks: [
+				{ type: 'collection', collection: 'mijnZaken' },
+				{ type: 'detail', collection: 'mijnZaken' },
+				{ type: 'citizenCase', collection: 'mijnZaken' },
+				{ type: 'citizenCase', collection: 'verzoeken' },
+			],
+		},
+		contribution,
+	)
+	assert.equal(detail.kind, 'detail')
+	// The card the quiet case screen leans on keeps its own line, so the
+	// page asks once and not zero times.
+	assert.equal(detail.quietWhenEmpty, undefined)
+	assert.equal(quiet.quietWhenEmpty, true)
+	// Without a detail card on its collection it still says "Select a case.".
+	assert.equal(alone.quietWhenEmpty, undefined)
+	const page = readFileSync(
+		join(ROOT, 'src', 'site', 'pages', 'collections', 'ContributionPage.vue'),
+		'utf8',
+	)
+	assert.match(page, /:quietWhenEmpty="item\.quietWhenEmpty === true"/)
+	const screen = readFileSync(
+		join(ROOT, 'src', 'site', 'components', 'e', 'CitizenCase.vue'),
+		'utf8',
+	)
+	assert.match(
+		screen,
+		/<p v-if="!quietWhenEmpty" class="utrecht-paragraph pq-empty">/,
+	)
+})
+
+test('a detail card under the table of its own collection waits quietly for a row', async () => {
+	// site-tables-read-in-their-declared-order: learniq's parentExcuseRequests
+	// page read "Kies een item." under the list of absences.
+	const contribution = {
+		collections: [{ id: 'absences' }, { id: 'children' }],
+	}
+	const [, under, alone] = resolveBlocks(
+		{
+			blocks: [
+				{ type: 'collection', collection: 'absences' },
+				{ type: 'detail', collection: 'absences' },
+				{ type: 'detail', collection: 'children' },
+			],
+		},
+		contribution,
+	)
+	assert.equal(under.quietWhenEmpty, true)
+	// No table of its collection on the page: the card still asks.
+	assert.equal(alone.quietWhenEmpty, undefined)
+
+	const page = readFileSync(
+		join(ROOT, 'src', 'site', 'pages', 'collections', 'ContributionPage.vue'),
+		'utf8',
+	)
+	assert.match(
+		page,
+		/<DetailCard[\s\S]*?:quietWhenEmpty="item\.quietWhenEmpty === true"/,
+	)
+
+	const card = 'src/site/components/collections/DetailCard.vue'
+	const collection = { id: 'absences', columns: [{ field: 'reason' }] }
+	const asks = await renderSfc(card, { collection, t })
+	assert.match(asks, /data-testid="detail-card-empty"/)
+	assert.match(asks, /Select an item\./)
+	const waits = await renderSfc(card, { collection, t, quietWhenEmpty: true })
+	assert.doesNotMatch(waits, /detail-card-empty|Select an item|pq-detail/)
+})
+
 test('only update and endpoint row actions reach the row buttons, never propose-change', () => {
 	const withActions = {
 		collections: [
@@ -432,8 +507,16 @@ test("the page renders learniq's parent collections with labels, as a guardian r
 		html,
 		/<h2[^>]*class="utrecht-heading-3">My child&#39;s report cards<\/h2>/,
 	)
-	assert.match(html, /<dt class="pq-detail__label">First name<\/dt>/)
-	assert.match(html, /<dd class="pq-detail__value">Vera<\/dd>/)
+	// The detail card's fields are a description list
+	// (site-mijn-omgeving-components REQ-SMO-005).
+	assert.match(
+		html,
+		/<dt class="utrecht-data-list__item-key pq-description-list__key">First name<\/dt>/,
+	)
+	assert.match(
+		html,
+		/<dd class="utrecht-data-list__item-value pq-description-list__value">Vera<\/dd>/,
+	)
 	assert.match(html, /<h3 class="utrecht-heading-3">Your children<\/h3>/)
 	assert.match(
 		html,

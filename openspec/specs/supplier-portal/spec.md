@@ -51,7 +51,7 @@ failure (OR error, missing OpenRegister, malformed row) it MUST fail closed to
 - **GIVEN** a subject, an opted-in collection, a row they own, and a file attached to that row
 - **WHEN** they request that file by `fileId`
 - **THEN** ownership + tenant + trust are re-verified first, then the file streams with `Content-Disposition: attachment` and a sanitised filename
-- @e2e exclude the e2e test for this scenario EXISTS but DOES NOT RUN: `tests/e2e/playwright.config.ts` carries a `grepInvert` on the title "a subject downloads a file on a row they own", because it fails against an OpenRegister product bug (`FileService::addFile()` has no `_rbac` parameter, so a portal subject cannot attach a file on an instance whose register folder has not already been materialised by an authenticated Nextcloud user) — ConductionNL/portaliq#29. A test a Playwright project never executes is not coverage, so anchoring this scenario to it would be a false green. Covered meanwhile by `ContributionControllerTest::testDownloadStreamsOwnedFileAndInvokesAuditHookOnSuccess`. Delete this exclusion and anchor the spec to the test when #29 closes and the `grepInvert` goes.
+- Covered end to end by `tests/e2e/portal-document-download.spec.ts` ("a subject downloads a file on a row they own", anchored with `@e2e`), which uploads to an owned row and downloads the same bytes back. The SPA saves through a Blob URL, so the `Content-Disposition` / sanitised-filename half is pinned by `ContributionControllerTest::testDownloadStreamsOwnedFileAndInvokesAuditHookOnSuccess`.
 
 #### Scenario: A file on a foreign-owned row is refused before it is resolved
 
@@ -546,19 +546,6 @@ gate collections and actions unchanged.
 - **THEN** the first session gets trust `high` and the second gets trust `low` (under-privilege on ambiguity) — never the reverse
 - @e2e exclude trust-mapping invariant — covered by PHPUnit; no UI surface
 
-### Requirement: Dev-login stays debug-gated at trust low
-
-`SessionController::devLogin()` MUST remain debug-gated and MUST issue trust
-`low`. It MUST NOT be reachable on a non-debug production instance, and the SPA
-MUST only surface it on a debug instance. It is unaffected by the OIDC edge.
-
-#### Scenario: Dev-login is unavailable in production
-
-- **GIVEN** a non-debug production instance
-- **WHEN** `POST /portal/api/session/dev-login` is called
-- **THEN** it is refused (debug-gated) and the SPA shows only the configured OIDC login buttons
-- @e2e exclude debug-gating posture — covered by PHPUnit / config assertion; no UI surface
-
 ### Requirement: An account's own channel opt-out gates dispatch
 
 `portalAccount` SHALL carry an optional `notificationChannels` object
@@ -616,14 +603,14 @@ any user input or confirmation.
 - **WHEN** the collection's objects are being fetched
 - **THEN** the loading state is exposed via an `aria-live="polite"` /
   `role="status"` region, not only visual `…` text
-- @e2e exclude a loading state lasts too briefly to catch reliably in a browser; pinned by tests/portal-live-regions.spec.mjs (every loading indicator is the Loading status region)
+- @e2e exclude a loading state lasts too briefly to catch reliably in a browser; pinned by tests/portal-live-regions.spec.mjs (every "Loading…" on the site sits in a status region)
 
 #### Scenario: Create-action input never uses a native prompt
 - **GIVEN** a subject clicks a `type: create` action button
 - **WHEN** the portal collects the action's declared fields
 - **THEN** it renders a labelled, keyboard-operable inline form, never
   `window.prompt()`
-- @e2e exclude a negative over the whole portal; pinned by tests/portal-live-regions.spec.mjs (no native prompt, alert or confirm anywhere in src/portal)
+- @e2e exclude a negative over the whole portal; pinned by tests/portal-live-regions.spec.mjs (no native prompt, alert or confirm anywhere in src/site or src/embed)
 
 ### Requirement: The signed-in portal MUST meet WCAG 2.2 AA
 
@@ -647,4 +634,157 @@ other message as a status.
 - **GIVEN** a resident who saves a change on their case
 - **WHEN** the portal says it was saved, or that it could not be
 - **THEN** the message sits in a status region, or an alert region for an error, so a screen reader reads it without the resident looking for it
-- @e2e exclude pinned by tests/portal-live-regions.spec.mjs over every portal component
+- @e2e exclude pinned by tests/portal-live-regions.spec.mjs over every site component
+
+### Requirement: An inbox collection names its own message fields (REQ-IMF-001)
+
+A `kind: inbox` collection MAY declare `messageFields`, a map from the inbox's fields (`subject`, `body`, `receivedAt`, `readAt`, `attachments`) to plain field names of that collection. Portaliq SHALL copy each named field onto the inbox row it serves, under the inbox's own name, before it sorts the inbox and counts unread messages. With `readAt` named, the row SHALL be read when that field holds a value. A malformed entry SHALL be dropped, and on a collection that is not an inbox the whole key SHALL be dropped.
+
+#### Scenario: A dossiq message shows its text and date
+- **GIVEN** an inbox collection declaring `messageFields: {body: content, receivedAt: sentAt, readAt: readByRecipientAt}`
+- **AND** a message with `content`, `sentAt` and no `readByRecipientAt`
+- **WHEN** the resident reads their inbox
+- **THEN** the row carries `body` and `receivedAt` from those fields, sorts by that date, and is unread
+
+#### Scenario: A malformed declaration is dropped
+- **GIVEN** a collection declaring `messageFields` with a value that is not a plain field name
+- **WHEN** portaliq normalises the contribution
+- **THEN** that entry is gone, and a collection that is not an inbox loses the whole key
+
+### Requirement: Mark-read writes the collection's own read field (REQ-IMF-002)
+
+When an inbox collection names `readAt`, mark-read SHALL write the current time into that field and no other field. When it does not, mark-read SHALL write `read: true` as before. Nothing from the request body SHALL be written.
+
+#### Scenario: A resident marks a dossiq message read
+- **GIVEN** an inbox collection naming `readAt: readByRecipientAt`
+- **WHEN** the resident marks one of their messages read
+- **THEN** only `readByRecipientAt` is written, with the current time, and the message reads as read on the next load
+
+### Requirement: Portaliq MUST authenticate suppliers via a separate bearer auth domain
+
+Portaliq SHALL authenticate a supplier through eHerkenning (EH3) and mint a
+bearer session carrying a server-derived `subjectRef`, `organisation`, and
+trust level; it SHALL NOT rely on a Nextcloud session, and SHALL NOT trust any
+client-supplied scope. Every `/portal/api/*` request SHALL be validated by a
+middleware that fails closed (401) and injects the server-derived
+`subjectRef`.
+
+Sessions SHALL be signed with a secret **dedicated to the portal auth edge**,
+generated on install and stored in app config; the edge SHALL NOT fall back to
+Nextcloud's shared instance secret. Every issued session SHALL be recorded
+server-side (a `portalSession` object) so it can be revoked before its natural
+expiry; `resolveFromBearer()` SHALL treat a revoked or unknown session id
+(`jti`) as invalid, exactly like a bad signature.
+
+#### Scenario: Supplier logs in with eHerkenning
+
+- **GIVEN** an unauthenticated visitor on the Portaliq shell for an Organisation
+- **WHEN** they complete the eHerkenning (EH3) flow brokered by OpenConnector
+- **THEN** Portaliq mints a bearer session with `subjectRef` + `organisation` +
+  trust level derived from the assertion, signed with the portal's own
+  dedicated secret, and records a `portalSession` object for it
+
+#### Scenario: Missing or invalid session fails closed
+
+- **GIVEN** a request to `/portal/api/*` with no bearer, an expired bearer, a
+  bearer below the required trust level, or a bearer whose signature is
+  invalid
+- **WHEN** the middleware evaluates it
+- **THEN** the request is rejected with 401 and no data is returned
+
+#### Scenario: The portal never mints or validates sessions without its own secret
+
+- **GIVEN** a fresh Portaliq install where the install-time repair step has
+  not yet run (or failed)
+- **WHEN** `issueSession()` or `resolveFromBearer()` is called
+- **THEN** the operation fails closed — no session is minted, no bearer is
+  accepted — rather than silently signing with Nextcloud's shared instance
+  secret
+
+#### Scenario: Logout revokes the session server-side
+
+- **GIVEN** an authenticated supplier with an active bearer session
+- **WHEN** they call `DELETE /portal/api/session` (logout)
+- **THEN** that session's `portalSession` record is marked revoked, and the
+  same bearer is rejected by `resolveFromBearer()` on any subsequent request,
+  even before its natural expiry
+
+#### Scenario: An admin revokes every session for a compromised organisation
+
+- **GIVEN** an admin suspects a supplier's device or Organisation is
+  compromised
+- **WHEN** they trigger "revoke all sessions" for that Organisation
+- **THEN** every active `portalSession` for that Organisation is marked
+  revoked and subsequently rejected by `resolveFromBearer()`, however many
+  session rows the Organisation holds
+- **AND** each revocation is audited as `admin-revoke` naming the admin
+
+#### Scenario: A revoke-all that cannot finish says so
+
+- **GIVEN** OpenRegister cannot be read, or a session cannot be marked revoked
+- **WHEN** the admin triggers "revoke all sessions"
+- **THEN** the answer is an error (503) with the number revoked so far, and
+  the admin screen shows that not every session was revoked
+
+### Requirement: The public site MUST render its own words through a locale-aware translation layer
+
+The site's own user-visible words SHALL come from an English-keyed bundle (`src/shared/i18n/en.json`, `nl.json`), never a hard-coded Dutch literal and never Dutch used as the key. `createTranslator(locale)` in `src/shared/i18n/index.js` binds `t(key, vars?)` to one locale. An unknown or unsupported locale SHALL fall back to the English bundle, and an unknown key SHALL render as its English source text, never as an empty string. The server resolves the locale from the portal's declared locales and the first `Accept-Language` tag (`SiteShell`), and `PortalOrganisationConfigService::normaliseLocale()` keeps it to `nl` or `en`.
+
+#### Scenario: A Dutch-speaking visitor sees Dutch
+- **GIVEN** the resolved locale is `nl`
+- **WHEN** the site renders its own words
+- **THEN** each comes from `nl.json`
+
+#### Scenario: An English-speaking visitor sees English
+- **GIVEN** the portal declares `en` and the visitor's first `Accept-Language` tag is `en`
+- **WHEN** the site renders the same words
+- **THEN** each comes from `en.json`
+
+#### Scenario: An unknown locale falls back to English, not to a blank string
+- **GIVEN** the locale is an unsupported value such as `fr`
+- **WHEN** the translator resolves its bundle
+- **THEN** it uses the English bundle, and no word renders empty
+
+### Requirement: A contribution MUST be able to declare an endpoint-forwarding action
+
+A `PortalContributionProvider` SHALL be able to declare an endpoint action `{id, label, endpoint, method?, minTrust?, fields?}` in addition to a create action. `endpoint` is an instance-local absolute path (it starts with `/`, carries no scheme and no protocol-relative `//`). The contributing app is the contribution's own `app` key, which is the `{appId}` segment of the forwarding route `POST /portal/api/actions/{appId}/{actionId}`, not a field on the action. Portaliq SHALL authorise an invocation the same way it authorises a create action: the action MUST appear in the subject's own aggregated contributions, its method MUST be allowed and its `minTrust` MUST be met. When the action declares `fields`, Portaliq SHALL rebuild the forwarded body server-side from only those fields; an action without `fields` relays the request body unchanged. Portaliq SHALL send a short-lived signed assertion (`X-Portal-Subject`, `use: "assertion"`) of the subject's server-derived `subjectRef` and `organisation` with the forward, and SHALL NOT forward any client-supplied `subjectRef` or `organisation`. The public site SHALL run the action through `src/site/lib/residentActions.js` (`postAction`, `forwardApi`) and show the answer of the contributing app, or follow its redirect.
+
+#### Scenario: A supplier invokes a declared endpoint action
+
+- **GIVEN** a contribution of app `procest` declares `{ id: "requestRenewal", label: "Verlenging aanvragen", endpoint: "/apps/procest/api/leverancier-portaal/renewals", method: "POST", fields: ["contractId", "note"] }` for the authenticated subject
+- **WHEN** the subject invokes `requestRenewal` with a `contractId`, a `note` and a smuggled `subjectRef`
+- **THEN** Portaliq forwards only `contractId` and `note`, with its own server-derived `subjectRef` and `organisation` in the signed assertion (never the client value), to the declared endpoint, and the domain app's own bearer-guarded logic decides whether to act on it
+- **AND** the site shows the domain app's answer in a status region, or follows its redirect
+
+#### Scenario: A subject cannot invoke an action outside their own contributions
+
+- **GIVEN** a subject whose aggregated contributions do not declare an action with that `{appId}` and `{actionId}`
+- **WHEN** they call `POST /portal/api/actions/{appId}/{actionId}` for that pair anyway
+- **THEN** the request is rejected with 403 and nothing is forwarded
+
+#### Scenario: The domain app is unreachable or refuses the forward
+
+- **GIVEN** an authorised endpoint action whose target cannot be reached
+- **WHEN** Portaliq forwards the invocation
+- **THEN** the caller receives a `502` with `{error: "forward_failed"}` and no transport detail
+- **AND** a non-2xx answer of a reachable app is relayed with its own status, so the site can show it
+
+### Requirement: The test sign-in opens only on its own switch
+
+`SessionController::devLogin()` MUST answer only when the app config
+`portaliq`/`dev_login_enabled` is `yes`, and MUST issue trust `low`. System
+`debug` MUST NOT open it. Every refusal MUST be a 404 marked for the bruteforce
+throttler. The site MUST offer the test sign-in button only while the switch is
+`yes`. It is unaffected by the OIDC edge.
+
+#### Scenario: Debug mode does not open it
+@e2e exclude PHPUnit: tests/Unit/Controller/SessionControllerTest.php and tests/Unit/Service/PortalRuntimeConfigResolverTest.php
+- **GIVEN** an instance with `debug` on and no `dev_login_enabled`
+- **WHEN** `POST /portal/api/session/dev-login` is called and the sign-in page is served
+- **THEN** the call answers 404 and the page offers no test sign-in
+
+#### Scenario: The switch opens it
+@e2e exclude PHPUnit: tests/Unit/Controller/SessionControllerTest.php
+- **GIVEN** `dev_login_enabled` is `yes`
+- **WHEN** `POST /portal/api/session/dev-login` is called
+- **THEN** a session at trust `low` is issued

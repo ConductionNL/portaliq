@@ -4,7 +4,7 @@
  *
  * The signed-in pages of slice d (site-reaches-portal-parity): the inbox,
  * "My tasks", the messages with school and the school news. Keys are the
- * sections of the React portal's navigation (`special` in src/portal/App.jsx),
+ * sections of the React portal's navigation (`special` in its App.jsx),
  * which is also how the site's page registry looks a section up. Every loader
  * is lazy, so a page downloads only when a resident opens it and the site's
  * entry bundle stays inside its budget.

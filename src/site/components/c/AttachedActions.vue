@@ -20,6 +20,32 @@
 			</button>
 		</template>
 
+		<div
+			v-else-if="inSteps"
+			class="pq-save__form"
+			data-testid="attached-action-steps">
+			<h3 class="utrecht-heading-3">
+				{{ open.label || open.id }}
+			</h3>
+			<SchemaForm
+				:action="open"
+				:api="api"
+				:t="t"
+				:send="sendOpen"
+				@submitted="afterSteps" />
+			<!-- Once sent, nothing is left to cancel: the form shows its
+			     confirmation and this closes it. -->
+			<button
+				type="button"
+				class="utrecht-button utrecht-button--subtle"
+				:data-testid="
+					sent ? 'attached-action-close' : 'attached-action-cancel'
+				"
+				@click="close">
+				{{ sent ? translate('Close') : translate('Cancel') }}
+			</button>
+		</div>
+
 		<form
 			v-else
 			class="pq-save__form"
@@ -29,6 +55,13 @@
 			<h3 class="utrecht-heading-3">
 				{{ open.label || open.id }}
 			</h3>
+			<ErrorSummary
+				ref="summary"
+				:entries="summary"
+				:idBase="`attached-${open.id}-summary`"
+				:heading="translate('Something is still missing')"
+				:intro="translate('Fill this in. Then you can continue.')"
+				:titlePrefix="translate('Error: ')" />
 			<SchemaField
 				v-for="field in fields"
 				:id="`attached-${open.id}-${field}`"
@@ -70,13 +103,23 @@
 </template>
 
 <script>
+import ErrorSummary from '../forms/ErrorSummary.vue'
 import SchemaField from './SchemaField.vue'
+import SchemaForm from './SchemaForm.vue'
 import {
 	attachedActionsOf,
 	fieldLabel,
 	runAttachedAction,
 } from '../../../shared/attachedActions.js'
-import { fieldConfig, fieldErrors, formFields, translatorOr } from './forms.js'
+import { summaryEntries } from '../forms/fields.js'
+import {
+	fieldConfig,
+	fieldErrors,
+	formFields,
+	forwardResult,
+	serverFieldErrors,
+	translatorOr,
+} from './forms.js'
 
 /**
  * Another app's actions on this record (the Vue port of AttachedActions.jsx):
@@ -86,12 +129,12 @@ import { fieldConfig, fieldErrors, formFields, translatorOr } from './forms.js'
  * the record's id through the row-action route with `actionApp`, so the
  * server proves the record is the resident's first.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-another-apps-actions-must-show-on-a-record-req-srp-028
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-another-apps-actions-must-show-on-a-record-req-srp-028
  */
 export default {
 	name: 'AttachedActions',
 
-	components: { SchemaField },
+	components: { ErrorSummary, SchemaField, SchemaForm },
 
 	inheritAttrs: false,
 
@@ -113,6 +156,7 @@ export default {
 			errors: {},
 			busy: false,
 			message: '',
+			sent: false,
 		}
 	},
 
@@ -121,12 +165,54 @@ export default {
 			return translatorOr(this.t)
 		},
 
+		/**
+		 * The actions that apply to the record on screen: an action with
+		 * `rowWhen` (pipelinq's reply, only on a question that waits for the
+		 * resident) shows only on the rows it names, as the portal did.
+		 *
+		 * @return {Array<object>} The actions.
+		 *
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-carry-its-rowwhen-to-the-renderer-req-ato-002
+		 */
 		actions() {
-			return attachedActionsOf(this.collection)
+			return this.row ? attachedActionsOf(this.collection, this.row) : []
 		},
 
 		fields() {
 			return this.open ? formFields(this.open) : []
+		},
+
+		/**
+		 * Whether the open action runs in steps, through the action form's step
+		 * flow (site-multi-step-forms REQ-SMF-020): dossiq's Woo request.
+		 *
+		 * @return {boolean} True with steps.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-create-or-endpoint-action-may-run-in-steps-with-a-review-a-draft-and-a-confirmation-req-smf-020
+		 */
+		inSteps() {
+			return (
+				this.open !== null
+				&& Array.isArray(this.open.steps)
+				&& this.open.steps.length > 0
+			)
+		},
+
+		/**
+		 * The error summary's lines, in field order.
+		 *
+		 * @return {Array<{field: string, target: string, message: string}>} The lines.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-failed-submit-must-show-an-error-summary-that-takes-focus-req-smf-002
+		 */
+		summary() {
+			return this.open
+				? summaryEntries(
+						this.fields,
+						this.errors,
+						(field) => `attached-${this.open.id}-${field}`,
+					)
+				: []
 		},
 	},
 
@@ -140,12 +226,91 @@ export default {
 		},
 
 		/**
+		 * Forward the stepped form's body for the record on screen, in the
+		 * result shape the action form reads.
+		 *
+		 * @param {object} body What the resident answered.
+		 * @param {{submissionKey?: string}} [options] The form's submission key (REQ-AFS-001).
+		 * @return {Promise<{ok: boolean, status: number, object: object, errors: object, invalid: object}>} The result.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-create-or-endpoint-action-may-run-in-steps-with-a-review-a-draft-and-a-confirmation-req-smf-020
+		 * @spec openspec/specs/site-forms/spec.md#requirement-a-refusal-of-a-form-attached-to-a-record-lands-on-its-field-req-eaf-003
+		 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
+		 */
+		async sendOpen(body, options = {}) {
+			const result = await runAttachedAction(this.api, {
+				collection: this.collection,
+				row: this.row,
+				action: this.open,
+				values: body,
+				options,
+			})
+			// The status and the app's per-field refusal (`errors`,
+			// `invalid`) go to the form as an endpoint form gets them
+			// (forwardResult), so a refused answer lands on its field instead
+			// of reading "Opslaan is niet gelukt".
+			return forwardResult({
+				ok: result.ok,
+				status: result.status,
+				body: result.body,
+			})
+		},
+
+		/**
+		 * After a stepped send: the action's own confirmation stays on screen;
+		 * without one the success line shows and the form closes.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-create-or-endpoint-action-may-run-in-steps-with-a-review-a-draft-and-a-confirmation-req-smf-020
+		 */
+		afterSteps() {
+			if (this.open && this.open.confirmation) {
+				this.sent = true
+				return
+			}
+			const success = this.open ? this.open.successMessage : ''
+			this.message =
+				typeof success === 'string' && success !== ''
+					? success
+					: this.translate('Done.')
+			this.open = null
+		},
+
+		/**
+		 * Close the stepped form: before the send it is cancelled, after it the
+		 * confirmation is put away.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/attached-form-confirmation-drops-cancel/specs/site-forms/spec.md#requirement-a-sent-stepped-form-offers-no-cancel
+		 */
+		close() {
+			this.open = null
+			this.sent = false
+		},
+
+		/**
+		 * Move focus to the error summary's heading.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-failed-submit-must-show-an-error-summary-that-takes-focus-req-smf-002
+		 */
+		focusSummary() {
+			if (this.$refs.summary) {
+				this.$refs.summary.focus()
+			}
+		},
+
+		/**
 		 * Open one action's fields.
 		 *
 		 * @param {object} entry The attached action.
 		 */
 		choose(entry) {
 			this.open = entry
+			this.sent = false
 			this.values = Object.fromEntries(
 				formFields(entry).map((field) => [field, '']),
 			)
@@ -158,22 +323,30 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-another-apps-actions-must-show-on-a-record-req-srp-028
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-another-apps-actions-must-show-on-a-record-req-srp-028
 		 */
 		async submit() {
 			this.errors = fieldErrors(this.open, this.values, {}, this.t)
 			if (Object.keys(this.errors).length > 0) {
+				this.$nextTick(() => this.focusSummary())
 				return
 			}
 			this.busy = true
-			const result = await runAttachedAction(
-				this.api,
-				this.collection,
-				this.row,
-				this.open,
-				this.values,
-			)
+			const result = await runAttachedAction(this.api, {
+				collection: this.collection,
+				row: this.row,
+				action: this.open,
+				values: this.values,
+			})
 			this.busy = false
+			// The server refuses an empty required field per field
+			// (REQ-SMF-024); those land in the summary like the form's own.
+			const refused = serverFieldErrors(this.open, result.body?.errors, this.t)
+			if (!result.ok && Object.keys(refused).length > 0) {
+				this.errors = refused
+				this.$nextTick(() => this.focusSummary())
+				return
+			}
 			const success = this.open.successMessage
 			this.message =
 				result.ok && typeof success === 'string' && success !== ''

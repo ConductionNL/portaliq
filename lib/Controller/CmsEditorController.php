@@ -27,10 +27,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\Service\CmsReader;
-use OCA\Portaliq\Service\PageEditorService;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Kernel\Contracts\CmsPublishValidatorInterface;
+use OCA\Portaliq\Kernel\Contracts\CmsReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PageEditorServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Service\Cms\CmsPublishValidator;
+use OCA\Portaliq\Service\Tenancy\PortalAdminScope;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\JSONResponse;
@@ -63,20 +67,24 @@ class CmsEditorController extends Controller {
 	 *
 	 * @param string            $appName    The app id.
 	 * @param IRequest          $request    The request.
-	 * @param PortalResolver    $resolver   Resolves the serving portal, exactly as the content API does.
-	 * @param CmsReader         $reader     Resolves a route to the page behind it.
-	 * @param PageEditorService $pageEditor Decides whether this caller may edit.
+	 * @param PortalResolverInterface    $resolver   Resolves the serving portal, exactly as the content API does.
+	 * @param CmsReaderInterface         $reader     Resolves a route to the page behind it.
+	 * @param PageEditorServiceInterface $pageEditor Decides whether this caller may edit.
 	 * @param IURLGenerator     $urls       Builds the links into the app.
+	 * @param CmsPublishValidatorInterface $publishValidator Finds what would render broken before publishing.
+	 * @param PortalAdminScope|null        $scope            The portal's own administrators, who edit that portal only.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly PortalResolver $resolver,
-		private readonly CmsReader $reader,
-		private readonly PageEditorService $pageEditor,
+		private readonly PortalResolverInterface $resolver,
+		private readonly CmsReaderInterface $reader,
+		private readonly PageEditorServiceInterface $pageEditor,
 		private readonly IURLGenerator $urls,
+		private readonly CmsPublishValidatorInterface $publishValidator = new CmsPublishValidator(),
+		private readonly ?PortalAdminScope $scope = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -91,17 +99,26 @@ class CmsEditorController extends Controller {
 	 * @return JSONResponse `{canEdit}` always; the page and its editor only for an editor.
 	 *
 	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t11
 	 */
 	#[NoAdminRequired]
 	#[NoCSRFRequired]
 	public function editingContext(?string $route = null, ?string $portal = null): JSONResponse {
 		// THE AUTHORIZATION GUARD, and it comes first for a reason: everything
 		// below reads content with RBAC bypassed, including unpublished pages.
-		if ($this->pageEditor->mayEdit() === false) {
+		// A portal's own administrators (operate-portals-per-organisation
+		// REQ-OPO-005) pass only for the portal that serves this request; the
+		// resolve is the public content API's own and reads nothing unpublished.
+		$editor = $this->pageEditor->mayEdit();
+		if ($editor === false && $this->scope === null) {
 			return $this->uncacheable(payload: ['canEdit' => false]);
 		}
 
 		$resolved = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
+		if ($editor === false && ($resolved === null || $this->scope->mayAdministerSlug(slug: (string)($resolved['slug'] ?? '')) === false)) {
+			return $this->uncacheable(payload: ['canEdit' => false]);
+		}
+
 		if ($resolved === null) {
 			// An editor on a host that resolves to no portal can still be sent
 			// to the page list — there is simply no page to name.
@@ -114,6 +131,40 @@ class CmsEditorController extends Controller {
 		return $this->uncacheable(payload: $this->context(pageId: $pageId));
 	}//end editingContext()
 
+
+	/**
+	 * What would render broken if this portal's content went out as it is:
+	 * a menu item pointing at no page, a portal with no front page, two pages
+	 * on one route (blocking), and a menu item pointing at a draft page (a
+	 * warning). Drafts are included, so an editor can check before publishing.
+	 *
+	 * @param string $portal The portal slug.
+	 *
+	 * @return JSONResponse `{ok, blocking[], warnings[]}`, 400 for a bad slug, 403 for a person who may not edit.
+	 *
+	 * @contract exclude the read-only check is covered by CmsPublishValidatorTest; the controller only adds the editor check and the header
+	 *
+	 * @spec openspec/changes/portal-cms-admin-ui/tasks.md#task-2
+	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t11
+	 */
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	public function publishCheck(string $portal = ''): JSONResponse {
+		if ($this->pageEditor->mayEdit() === false && $this->scope?->mayAdministerSlug(slug: $portal) !== true) {
+			return $this->uncacheable(payload: ['error' => 'forbidden'], status: Http::STATUS_FORBIDDEN);
+		}
+
+		if (preg_match('/^[a-z0-9][a-z0-9-]{0,62}$/', $portal) !== 1) {
+			return $this->uncacheable(payload: ['error' => 'invalid_portal'], status: Http::STATUS_BAD_REQUEST);
+		}
+
+		$found = $this->publishValidator->check(
+			pages: $this->reader->rowsForCheck(portal: $portal, schema: 'page'),
+			menus: $this->reader->rowsForCheck(portal: $portal, schema: 'menu')
+		);
+
+		return $this->uncacheable(payload: ['ok' => ($found['blocking'] === [])] + $found);
+	}//end publishCheck()
 
 	/**
 	 * The editor's context payload.
@@ -157,11 +208,12 @@ class CmsEditorController extends Controller {
 	 * an editing control, and the control's own links with it.
 	 *
 	 * @param array<string, mixed> $payload The response body.
+	 * @param int                  $status  The HTTP status.
 	 *
 	 * @return JSONResponse The response.
 	 */
-	private function uncacheable(array $payload): JSONResponse {
-		$response = new JSONResponse($payload);
+	private function uncacheable(array $payload, int $status = Http::STATUS_OK): JSONResponse {
+		$response = new JSONResponse($payload, $status);
 		$response->addHeader('Cache-Control', 'private, no-store');
 
 		return $response;

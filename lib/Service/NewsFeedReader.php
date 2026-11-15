@@ -24,26 +24,29 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/news-and-newsletter-authoring/design.md#architecture-overview
+ * @spec openspec/changes/archive/2026-10-09-news-and-newsletter-authoring/design.md#architecture-overview
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\NewsFeedReaderInterface;
 use OCA\Portaliq\Service\Messaging\GuardianMessageTranslator;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
- * @spec openspec/changes/news-and-newsletter-authoring/design.md#architecture-overview
+ * @spec openspec/changes/archive/2026-10-09-news-and-newsletter-authoring/design.md#architecture-overview
  *
  * @SuppressWarnings(PHPMD.StaticAccess) -- NewsAudienceMatcher::matches() is
  * deliberately the ONE stateless match predicate every caller shares (see
  * GuardianAudienceFixtureReader::guardiansMatching()), so the preflight count
  * and this read path can never disagree.
  */
-class NewsFeedReader {
+class NewsFeedReader implements NewsFeedReaderInterface {
+	use PublishedMoment;
+
 	/**
 	 * The OpenRegister read of news rows.
 	 *
@@ -89,9 +92,9 @@ class NewsFeedReader {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
-	 * @spec openspec/changes/news-item-translation/specs/guardian-message-translation/spec.md#requirement-a-news-item-keeps-its-ai-translations-next-to-the-original
-	 * @spec openspec/changes/news-title-and-newsletter-translation/specs/guardian-message-translation/spec.md#requirement-a-news-title-is-translated-with-its-body
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-a-news-item-keeps-its-ai-translations-next-to-the-original
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-a-news-title-is-translated-with-its-body
 	 */
 	public function feedFor(string $subjectRef, string $language = ''): array {
 		$audience = $this->audienceReader->resolveAudience(subjectRef: $subjectRef);
@@ -111,7 +114,7 @@ class NewsFeedReader {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/design.md#api-design
+	 * @spec openspec/changes/archive/2026-10-09-news-and-newsletter-authoring/design.md#api-design
 	 */
 	public function readOwnItem(string $subjectRef, string $id): ?array {
 		if ($id === '') {
@@ -145,9 +148,9 @@ class NewsFeedReader {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsletter-composes-existing-news-items-with-an-archive
-	 * @spec openspec/changes/news-title-and-newsletter-translation/specs/guardian-message-translation/spec.md#requirement-the-newsletter-archive-shows-its-items-as-the-news-page-does
-	 * @spec openspec/changes/newsletter-title-translation/specs/guardian-message-translation/spec.md#requirement-a-newsletter-keeps-its-title-translations-next-to-the-original
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsletter-composes-existing-news-items-with-an-archive
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-the-newsletter-archive-shows-its-items-as-the-news-page-does
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-a-newsletter-keeps-its-title-translations-next-to-the-original
 	 */
 	public function archiveFor(string $subjectRef, string $language = ''): array {
 		$audience = $this->audienceReader->resolveAudience(subjectRef: $subjectRef);
@@ -160,12 +163,7 @@ class NewsFeedReader {
 				continue;
 			}
 
-			$target = [];
-			if (is_array($row['target'] ?? null) === true) {
-				$target = $row['target'];
-			}
-
-			if (NewsAudienceMatcher::matches(target: $target, audience: $audience) === false) {
+			if (NewsAudienceMatcher::reaches(row: $row, audience: $audience) === false) {
 				continue;
 			}
 
@@ -222,6 +220,25 @@ class NewsFeedReader {
 	 * @return array<int, array<string, mixed>>
 	 */
 	private function withItems(array $newsletters, array $audience, array $reader, ?int &$budget): array {
+		$referenced = $this->referencedIds(newsletters: $newsletters);
+		$items      = $this->referencedItems(audience: $audience, referenced: $referenced);
+
+		$byId = [];
+		foreach ($this->translated(items: $items, subjectRef: $reader['subjectRef'], language: $reader['language'], budget: $budget) as $item) {
+			$byId[$this->rows->rowId(row: $item)] = $this->photoGate->apply(item: $item);
+		}
+
+		return $this->attachItems(newsletters: $newsletters, byId: $byId);
+	}//end withItems()
+
+	/**
+	 * The ids of every item the newsletters reference.
+	 *
+	 * @param array<int, array<string, mixed>> $newsletters The newsletters.
+	 *
+	 * @return array<string, true>
+	 */
+	private function referencedIds(array $newsletters): array {
 		$referenced = [];
 		foreach ($newsletters as $newsletter) {
 			foreach ((array)($newsletter['itemRefs'] ?? []) as $ref) {
@@ -229,6 +246,18 @@ class NewsFeedReader {
 			}
 		}
 
+		return $referenced;
+	}//end referencedIds()
+
+	/**
+	 * The items in the reader's audience that a newsletter references.
+	 *
+	 * @param array<string, mixed> $audience   The reader's audience.
+	 * @param array<string, true>  $referenced The referenced item ids.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function referencedItems(array $audience, array $referenced): array {
 		$items = [];
 		foreach ($this->itemsFor(audience: $audience) as $item) {
 			if (isset($referenced[$this->rows->rowId(row: $item)]) === true) {
@@ -236,11 +265,18 @@ class NewsFeedReader {
 			}
 		}
 
-		$byId = [];
-		foreach ($this->translated(items: $items, subjectRef: $reader['subjectRef'], language: $reader['language'], budget: $budget) as $item) {
-			$byId[$this->rows->rowId(row: $item)] = $this->photoGate->apply(item: $item);
-		}
+		return $items;
+	}//end referencedItems()
 
+	/**
+	 * Each newsletter with the items it references, in its order.
+	 *
+	 * @param array<int, array<string, mixed>>    $newsletters The newsletters.
+	 * @param array<string, array<string, mixed>> $byId        The readable items, by id.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function attachItems(array $newsletters, array $byId): array {
 		foreach ($newsletters as $index => $newsletter) {
 			$newsletters[$index]['items'] = [];
 			foreach ((array)($newsletter['itemRefs'] ?? []) as $ref) {
@@ -251,7 +287,7 @@ class NewsFeedReader {
 		}
 
 		return $newsletters;
-	}//end withItems()
+	}//end attachItems()
 
 	/**
 	 * The published news items in the reader's audience, as stored.
@@ -262,23 +298,38 @@ class NewsFeedReader {
 	 */
 	private function itemsFor(array $audience): array {
 		$matched = [];
-		foreach ($this->rows->findAll(schema: 'newsItem') as $row) {
+		foreach ($this->rows->findAll(schema: 'newsItem', filters: ['status' => 'published']) as $row) {
 			if (($row['status'] ?? '') !== 'published') {
 				continue;
 			}
 
-			$target = [];
-			if (is_array($row['target'] ?? null) === true) {
-				$target = $row['target'];
-			}
-
-			if (NewsAudienceMatcher::matches(target: $target, audience: $audience) === true) {
+			if (NewsAudienceMatcher::reaches(row: $row, audience: $audience) === true) {
 				$matched[] = $row;
 			}
 		}
 
-		return $matched;
+		return $this->newestFirst(items: $matched);
 	}//end itemsFor()
+
+	/**
+	 * The items newest first by their publication moment: the item's own
+	 * `publishedAt` (stamped when staff publish it), else OpenRegister's
+	 * `@self.published`, else `@self.created`. Storage order is oldest first, so without this a
+	 * consumer that shows the first few showed the oldest. An undated item
+	 * sorts last; equal moments keep storage order.
+	 *
+	 * @param array<int, array<string, mixed>> $items The matched rows.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-news-block-must-show-the-subjects-latest-news
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-news-item-carries-the-moment-it-was-published
+	 */
+	private function newestFirst(array $items): array {
+		usort($items, fn (array $left, array $right): int => $this->momentOf(row: $right) <=> $this->momentOf(row: $left));
+
+		return $items;
+	}//end newestFirst()
 
 	/**
 	 * The items in the reader's language, title and body in one entry. Runs on

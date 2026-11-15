@@ -59,7 +59,7 @@
 					data-testid="collection-table-row"
 					@click="selectable ? select(row) : undefined">
 					<td
-						v-for="(column, columnIndex) in columns"
+						v-for="(column, columnIndex) in rowColumns(row)"
 						:key="column.field"
 						class="utrecht-table__cell">
 						<button
@@ -79,13 +79,21 @@
 							:class="`pq-collection-table__badge--${badge(row, column)}`">
 							{{ cellText(row, column) }}
 						</span>
+						<QrValue
+							v-else-if="column.render === 'qr'"
+							:value="String(row[column.field] ?? '')"
+							:column="column"
+							compact
+							:open="openQr === qrKey(row, column)"
+							:locale="locale"
+							@toggle="toggleQr(row, column)" />
 						<a
 							v-else-if="
 								column.render === 'link' && href(row, column) !== ''
 							"
 							class="utrecht-link"
 							:href="href(row, column)">
-							{{ cellText(row, column) }}
+							{{ column.linkLabel || cellText(row, column) }}
 						</a>
 						<template v-else>
 							{{ cellText(row, column) }}
@@ -104,6 +112,15 @@
 							@click.stop="rowAction(action, row)">
 							{{ action.label || action.id }}
 						</button>
+						<!-- Where an action is not offered on this row, the reason the
+						     contribution gives (case-actions-row-inputs-and-conditions). -->
+						<span
+							v-for="reason in reasonsFor(row)"
+							:key="reason.id"
+							class="pq-collection-table__reason"
+							data-testid="collection-table-reason">
+							{{ reason.text }}
+						</span>
 					</td>
 				</tr>
 			</tbody>
@@ -112,10 +129,13 @@
 </template>
 
 <script>
+import QrValue from './QrValue.vue'
+import { unavailableReason } from '../../../shared/rowAction.js'
 import {
 	badgeModifier,
 	deriveColumns,
 	formatCell,
+	rowColumn,
 	rowIdOf,
 	safeHref,
 } from './cells.js'
@@ -133,10 +153,12 @@ import {
  * buttons show on the rows `offers` names, and are disabled on the row whose
  * action is running.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-collection-table-must-follow-the-declared-columns-req-srp-015
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-collection-table-must-follow-the-declared-columns-req-srp-015
  */
 export default {
 	name: 'CollectionTable',
+
+	components: { QrValue },
 
 	props: {
 		/** The collection: `id`, `kind`, `columns`. */
@@ -165,6 +187,10 @@ export default {
 
 	emits: ['select', 'rowAction'],
 
+	data() {
+		return { openQr: '' }
+	},
+
 	computed: {
 		rows() {
 			return Array.isArray(this.objects) ? this.objects : []
@@ -184,6 +210,17 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * The columns as this row reads them, with its case type's settings.
+		 *
+		 * @param {object} row The row.
+		 * @return {Array<object>}
+		 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-case-row-reads-with-its-case-types-columns
+		 */
+		rowColumns(row) {
+			return this.columns.map((column) => rowColumn(column, row))
+		},
+
 		keyOf(row, index) {
 			return rowIdOf(row) || `row-${index}`
 		},
@@ -200,10 +237,34 @@ export default {
 			)
 		},
 
+		/**
+		 * @param {object} row A row.
+		 * @param {object} column A `qr` column.
+		 * @return {string} The key of that cell, to open one code at a time.
+		 * @spec openspec/changes/link-field-qr-code/tasks.md#t6
+		 */
+		qrKey(row, column) {
+			return `${rowIdOf(row)}:${column.field}`
+		},
+
+		/**
+		 * Open this cell's code, or close it when it is the open one; opening one closes the other.
+		 *
+		 * @param {object} row A row.
+		 * @param {object} column A `qr` column.
+		 * @return {void}
+		 * @spec openspec/changes/link-field-qr-code/tasks.md#t6
+		 */
+		toggleQr(row, column) {
+			const key = this.qrKey(row, column)
+			this.openQr = this.openQr === key ? '' : key
+		},
+
 		cellText(row, column) {
 			return formatCell(row?.[column.field], column.render, {
 				locale: this.locale,
 				t: this.t,
+				valueLabels: column.valueLabels,
 			})
 		},
 
@@ -211,14 +272,42 @@ export default {
 			return badgeModifier(row?.[column.field])
 		},
 
+		/**
+		 * The link of a `link` cell: the column's own value, or the value of
+		 * `hrefField` when the column names one, so the text and the address
+		 * may come from two fields ("Groen dak", `/besluit/1`).
+		 *
+		 * @param {object} row A row.
+		 * @param {object} column A `link` column.
+		 * @return {string} A site path or an http(s) address, or ''.
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+		 */
 		href(row, column) {
-			return safeHref(row?.[column.field])
+			return safeHref(row?.[column.hrefField || column.field])
 		},
 
 		actionsFor(row) {
 			return this.actions.filter(
 				(action) => !this.offers || this.offers(action, row),
 			)
+		},
+
+		/**
+		 * @param {object} row A row.
+		 * @return {Array<{id: string, text: string}>} The reasons its actions are not offered.
+		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-can-be-offered-on-some-rows-only-req-rai-004
+		 */
+		reasonsFor(row) {
+			const out = []
+			for (const action of this.actions) {
+				if (this.offers && !this.offers(action, row)) {
+					const text = unavailableReason(action, row)
+					if (text !== '') {
+						out.push({ id: action.id, text })
+					}
+				}
+			}
+			return out
 		},
 
 		select(row) {

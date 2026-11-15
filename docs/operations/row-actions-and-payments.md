@@ -77,6 +77,22 @@ collection whose rows offer it.
 | `fields` | action | Optional. The request params the portal passes on. Without it, only the row id is sent. |
 | `noticeField` | collection | Optional. A row field whose text the portal shows on the card and in the confirm step. |
 
+### A condition on a `type: update` row action
+
+A `type: update` row action, such as a cancel, may declare the same `rowWhen`.
+The site then shows its button only on the rows whose `field` holds one of the
+values in `in`; without `rowWhen` it shows on every row.
+
+```php
+'rowWhen' => ['field' => 'lifecycle', 'in' => ['booked', 'acknowledged']],
+```
+
+For an update action the condition only hides the button. The portal does not
+refuse the update on it: your app's lifecycle and listeners keep deciding
+whether the transition is allowed, so refuse it there too. A key other than
+`field` and `in` is dropped, and a malformed condition is dropped whole, both
+with a warning in the Nextcloud log (`Portaliq: row condition dropped`).
+
 ### What your endpoint receives
 
 A `POST` to your `endpoint` with the signed `X-Portal-Subject` assertion and a

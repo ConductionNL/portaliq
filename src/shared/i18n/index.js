@@ -1,23 +1,29 @@
 // SPDX-License-Identifier: EUPL-1.2
 //
-// Minimal, framework-agnostic i18n for the PUBLIC portal SPA
+// Minimal, framework-agnostic i18n for the PUBLIC site
 // (portal-spa-i18n-locale-support). `@nextcloud/l10n`'s `loadTranslations()`
 // targets Nextcloud's own asset pipeline (bundle discovery via the app's
-// `l10n/` directory + `OC.getLanguage()`), which this standalone,
-// separately-built bundle (webpack.portal.js) does not go through — so this
+// `l10n/` directory + `OC.getLanguage()`), which the standalone,
+// separately-built site bundle does not go through — so this
 // app ships its own tiny JSON-bundle loader instead, using the SAME
 // English-source-key convention the rest of the company's frontends follow
 // (hydra ADR-004): every literal below is an English string, translations
 // live in `nl.json`.
+//
+// English ships as an empty bundle. `en.json` is the catalogue of source
+// strings and maps every key to itself, so a lookup in it returns exactly
+// what the key fallback in `t()` returns already. Bundling it put about
+// 28 KB of strings in the site entry that no visitor ever read differently.
+// tests/site-i18n-bundles.spec.mjs keeps it an identity catalogue, which is
+// what makes leaving it out of the bundle safe.
 
-import en from './en.json'
 import nl from './nl.json'
 
-const BUNDLES = { en, nl }
+const BUNDLES = { en: {}, nl }
 
 /**
  * Resolve the translation bundle for a locale, falling back to English for
- * an unknown/unsupported locale — never a runtime error, never a blank UI.
+ * an unknown/unsupported locale: never a runtime error, never a blank UI.
  *
  * @param {string} locale The resolved locale (e.g. 'nl', 'en').
  * @return {Record<string, string>}

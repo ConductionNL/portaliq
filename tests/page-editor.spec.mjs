@@ -506,3 +506,26 @@ test('a refusal is named as one', async () => {
 	assert.equal(editor.state.conflict, null)
 	assert.match(editor.state.error, /not allowed/)
 })
+
+// THE EDITOR NAMES A BLOCK BY ITS WIDGET'S NAME (resident-sees-words-not-codes).
+// The cell bar, the grid item's name and the inspector showed the raw key
+// ("markdown"); the palette already named it "Tekst".
+// @spec openspec/changes/resident-sees-words-not-codes/specs/portal-in-place-editing/spec.md#requirement-the-editor-names-a-block-by-its-widgets-name
+
+test('a widget reads by its name: the public label, the registry name, else the key in words', async () => {
+	const { widgetLabel } = await import('../src/lib/widgetLabels.js')
+	assert.equal(widgetLabel('markdown', {}), 'Tekst')
+	assert.equal(widgetLabel('publicationDetail', {}), 'Publicatiedetail')
+	assert.equal(widgetLabel('kpiCards', { kpiCards: { displayName: 'Kerncijfers' } }), 'Kerncijfers')
+	assert.equal(widgetLabel('myOwnWidget', {}), 'My Own Widget')
+})
+
+test('the editor shows the widget name, never the raw key, in the cell bar, the item name and the inspector', () => {
+	const source = readFileSync(join(ROOT, 'src', 'editor', 'PageGridEditor.vue'), 'utf8')
+	assert.doesNotMatch(source, /cell-key">\{\{\s*item\.widgetKey\s*\}\}/)
+	assert.doesNotMatch(source, /<code>\{\{ selected\.widgetKey \}\}<\/code>/)
+	assert.doesNotMatch(source, /key: item\.widgetKey/)
+	assert.match(source, /widgetLabel\(/)
+	const catalogue = readFileSync(join(ROOT, 'src', 'lib', 'pageWidgetCatalogue.js'), 'utf8')
+	assert.match(catalogue, /label: widgetLabel\(key, dashboardWidgetRegistry\)/)
+})

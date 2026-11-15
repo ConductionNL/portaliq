@@ -117,6 +117,38 @@ class PortalContributionProviderTest extends TestCase {
 	}//end testMultipleActiveForSameAudiencePicksFirstAndLogsWarning()
 
 	/**
+	 * A row on its own audience is served whole while another row holds the
+	 * base audience, and nothing is warned about.
+	 *
+	 * This is what the mijn omgeving e2e specs rely on since they started
+	 * seeding `<base>-live-<stamp>`: on a shared instance an earlier run's
+	 * row, or a sibling spec's, used to win the audience by row id and
+	 * replace the run's own pages, which read as "the menu dropped the page".
+	 *
+	 * @return void
+	 */
+	public function testARowOnItsOwnAudienceIsServedBesideOneOnTheBaseAudience(): void {
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->never())->method('warning');
+
+		$reader = $this->readerReturning(
+			[
+				['id' => 'a-shared', 'audience' => 'client', 'status' => 'active', 'label' => 'Leftover', 'collections' => [], 'actions' => [], 'pages' => [['id' => 'oud']]],
+				['id' => 'z-run', 'audience' => 'client-live-17', 'status' => 'active', 'label' => 'This run', 'collections' => [], 'actions' => [], 'pages' => [['id' => 'overzicht-17']]],
+			]
+		);
+
+		$provider = new PortalContributionProvider($reader, $this->randomStub(), $logger);
+
+		$this->assertSame(['client', 'client-live-17'], $provider->getAudiences(), 'the run\'s audience is one the provider serves');
+
+		$contribution = $provider->getContribution(['audience' => 'client-live-17']);
+		$this->assertSame('This run', $contribution['label']);
+		$this->assertSame([['id' => 'overzicht-17']], $contribution['pages'], 'and it is the run\'s own pages, not the leftover row\'s');
+
+	}//end testARowOnItsOwnAudienceIsServedBesideOneOnTheBaseAudience()
+
+	/**
 	 * An entry that does not declare its OWN `minTrust` inherits the
 	 * contribution-level default; an entry that DOES declare one is never
 	 * touched — the entry's own value always wins.
@@ -214,6 +246,37 @@ class PortalContributionProviderTest extends TestCase {
 
 		return $reader;
 	}//end readerReturning()
+
+	/**
+	 * submit-creates-the-case-directly 3.2: an active form submits into the
+	 * destination it names, with its tracking values as server values; a form
+	 * naming no destination is not submittable and is logged.
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/specs/landing-page-provisioning/spec.md#requirement-a-landing-pages-form-is-submittable-with-no-portal-session
+	 */
+	public function testALandingFormSubmitsIntoTheDestinationItNames(): void {
+		$forms = [
+			['id' => 'form-a', 'portal' => 'open-tilburg', 'pageRoute' => '/webinar', 'pageId' => 'p-1', 'sourceApp' => 'pipelinq', 'submitLabel' => 'Aanmelden', 'fields' => [['id' => 'email'], ['id' => 'name']], 'destination' => ['register' => 'pipelinq', 'schema' => 'lead', 'fixed' => ['source' => 'landing']]],
+			['id' => 'form-b', 'portal' => 'open-tilburg', 'fields' => [['id' => 'email']]],
+		];
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('warning')->with($this->stringContains('names no destination'), ['form' => 'form-b']);
+
+		$provider     = new PortalContributionProvider($this->readerReturning([], $forms), $this->randomStub(), $logger);
+		$contribution = $provider->getContribution(['audience' => 'anonymous']);
+
+		$this->assertCount(1, $contribution['actions']);
+		$action = $contribution['actions'][0];
+		$this->assertSame('submit-form-a', $action['id']);
+		$this->assertSame('portaliq', $action['register'], 'the address the public form posts to');
+		$this->assertSame('landingPageSubmission', $action['schema']);
+		$this->assertSame(['register' => 'pipelinq', 'schema' => 'lead', 'fixed' => ['source' => 'landing']], $action['destination']);
+		$this->assertSame('open-tilburg//webinar', $action['intakeScope']);
+		$this->assertSame(['email', 'name', 'utmFirstTouch', 'utmLastTouch', 'referrer'], $action['fields']);
+		$this->assertSame('form-a', $action['server']['formId']);
+		$this->assertSame('pipelinq', $action['server']['sourceApp']);
+		$this->assertArrayNotHasKey('defaults', $action);
+	}//end testALandingFormSubmitsIntoTheDestinationItNames()
 
 	/**
 	 * A deterministic ISecureRandom stub for constructing the provider.

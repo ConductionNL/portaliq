@@ -181,7 +181,7 @@ test('the inbox renders a translated row through the same notice', async () => {
 	)
 	assert.match(
 		source,
-		/<TranslatedText[\s\S]*:translation="message\.translation \|\| null"/,
+		/<TranslatedText[\s\S]*:translation="shownTranslation\(message\)"/,
 		'InboxPage passes the row translation through',
 	)
 })

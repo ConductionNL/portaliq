@@ -3,7 +3,7 @@
 //
 // What the embed frame says, in Dutch and English (site-reaches-portal-parity
 // REQ-SRP-047). The key is the English source string; the Dutch texts are the
-// React frame's own (src/portal/components/EmbeddedForm.jsx and
+// React frame's own (the React portal's EmbeddedForm.jsx and
 // src/shared/embedCopy.js). tests/embed-frame.spec.mjs checks the Dutch
 // refusals stay word for word what embedCopy.js says.
 //
@@ -67,7 +67,7 @@ export default STRINGS
  * @param {string} locale The page language, e.g. `nl` or `en-GB`.
  * @return {(key: string, vars?: object) => string} The translator.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-embed-frame-must-render-its-form-from-a-small-entry-req-srp-047
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-embed-frame-must-render-its-form-from-a-small-entry-req-srp-047
  */
 export function createEmbedTranslator(locale) {
 	const lang = String(locale || 'nl')
@@ -90,7 +90,7 @@ export function createEmbedTranslator(locale) {
  * @param {object} payload The boot payload from the frame route.
  * @return {string|null} The key, or null when there is a form to render.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-embed-frame-must-render-its-form-from-a-small-entry-req-srp-047
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-embed-frame-must-render-its-form-from-a-small-entry-req-srp-047
  */
 export function refusalKey(payload) {
 	const reason = payload?.refused

@@ -3,7 +3,7 @@
 // Copyright (C) 2026 Conduction B.V.
 //
 // attached-actions.spec.mjs: another app's action on a collection's detail in
-// the signed-in portal (woo-journey-entry-points, REQ-WJE-004).
+// the signed-in site (woo-journey-entry-points, REQ-WJE-004).
 //
 // Usage:
 //   node --test tests/attached-actions.spec.mjs
@@ -95,40 +95,37 @@ test('the forward names the action app', async () => {
 		register: 'opencatalogi',
 		schema: 'collection',
 	}
-	const result = await runAttachedAction(api, collection, { id: 'dos-1' }, ASK, {
+	const result = await runAttachedAction(api, { collection, row: { id: 'dos-1' }, action: ASK, values: {
 		question: 'Wanneer?',
-	})
+	} })
 	assert.deepEqual(calls[0], [
 		collection,
 		'dos-1',
 		'askAboutDossier',
 		{ question: 'Wanneer?', title: '' },
 		'pipelinq',
+		// No files; the plain form sends no submission key (REQ-AFS-001 is the stepped form's).
+		null,
+		{},
 	])
 	assert.equal(result.ok, true)
 	assert.equal(result.messageKey, 'Done.')
 
-	const refused = await runAttachedAction(
-		{ forwardRowAction: async () => ({ ok: false, status: 404, body: {} }) },
-		collection,
-		{ id: 'dos-1' },
-		ASK,
-		{},
-	)
+	const refused = await runAttachedAction({ forwardRowAction: async () => ({ ok: false, status: 404, body: {} }) }, { collection, row: { id: 'dos-1' }, action: ASK, values: {} })
 	assert.equal(refused.messageKey, 'This can no longer be done for this item.')
 })
 
-test('the api sends actionApp and the detail card renders the actions', () => {
+test('the api sends actionApp and the site fills the detail slot with the actions', () => {
 	const api = readFileSync(join(ROOT, 'src/shared/portalApi.js'), 'utf8')
 	assert.match(
 		api,
 		/actionApp\s*\?\s*`&actionApp=\$\{encodeURIComponent\(actionApp\)\}`\s*:\s*''/,
 	)
-	const page = readFileSync(
-		join(ROOT, 'src/portal/components/PageView.jsx'),
-		'utf8',
+	const sliceC = readFileSync(join(ROOT, 'src/site/pages/c/index.js'), 'utf8')
+	assert.match(
+		sliceC,
+		/registerBlockSlot\(\s*'attachedActions',\s*\(\) => import\('\.\.\/\.\.\/components\/c\/AttachedActions\.vue'\)/,
 	)
-	assert.match(page, /<AttachedActions\s/)
 })
 
 // The site's Vue port (site-reaches-portal-parity T13, REQ-SRP-028).
@@ -170,7 +167,9 @@ test('the site shows one button per attached action and forwards with actionApp'
 				(n) => n.tag === 'label' && n.props.for === question.props.id,
 			)[0],
 		),
-		'Uw vraag',
+		// An endpoint action has no schema, so no field is required and each
+		// reads "(niet verplicht)", here the untranslated source (REQ-SMF-023).
+		'Uw vraag (optional)',
 	)
 	await block.fire(question, 'input', { value: ' Wanneer? ' })
 	await block.fire(block.findAll((n) => n.tag === 'form')[0], 'submit')
@@ -180,12 +179,38 @@ test('the site shows one button per attached action and forwards with actionApp'
 		'askAboutDossier',
 		{ question: 'Wanneer?', title: '' },
 		'pipelinq',
+		// No files; the plain form sends no submission key (REQ-AFS-001 is the stepped form's).
+		null,
+		{},
 	])
 	assert.equal(block.textOf(block.find('attached-actions-status')), 'Done.')
 	assert.ok(
 		block.find('attached-action-askAboutDossier'),
 		'the buttons come back after sending',
 	)
+})
+
+// attach-to-own-collection T04 on the site: the record on screen decides, as
+// it did in the portal, so the reply shows only on a question that waits for
+// the resident.
+test('the site offers an attached action only on the records its rowWhen names', async () => {
+	const collection = { id: 'vragen', attachedActions: [REPLY] }
+	const waiting = await mountSfc('src/site/components/c/AttachedActions.vue', {
+		collection,
+		row: { id: 'q-1', status: 'awaiting_customer' },
+		api: {},
+	})
+	assert.ok(waiting.find('attached-action-replyToQuestion'))
+
+	for (const status of ['in_progress', 'converted']) {
+		const other = await mountSfc('src/site/components/c/AttachedActions.vue', {
+			collection,
+			row: { id: 'q-2', status },
+			api: {},
+		})
+		assert.ok(!other.find('attached-action-replyToQuestion'), status)
+		assert.equal(other.text(), '', `nothing renders on a ${status} question`)
+	}
 })
 
 test('the site renders nothing without attached actions or without a record', async () => {
@@ -203,10 +228,38 @@ test('the site renders nothing without attached actions or without a record', as
 	assert.equal(noRow.text(), '')
 })
 
-test('site: the detail card leaves a place for the attached actions (slice c fills it)', () => {
+test('site: the detail card leaves a place for the attached actions', () => {
 	const card = readFileSync(
 		join(ROOT, 'src/site/components/collections/DetailCard.vue'),
 		'utf8',
 	)
 	assert.match(card, /<SlotHost\s+name="attachedActions"/)
+})
+
+// endpoint-action-forms-keep-their-field-shape REQ-EAF-002/003.
+test('a field answered with several choices is forwarded as a list', () => {
+	const action = { fields: ['onderwerp', 'documentSoorten'] }
+	assert.deepEqual(
+		attachedBody(action, {
+			onderwerp: ' De brug ',
+			documentSoorten: ['besluiten', ' rapporten ', ''],
+		}),
+		{ onderwerp: 'De brug', documentSoorten: ['besluiten', 'rapporten'] },
+	)
+})
+
+test('the forward keeps the status, so a refusal is told from a failure', async () => {
+	const refused = await runAttachedAction({
+			forwardRowAction: async () => ({
+				ok: false,
+				status: 400,
+				body: {
+					errors: { periodeVan: 'Schrijf de datum als dag-maand-jaar.' },
+				},
+			}),
+		}, { collection: { id: 'mijnDossiers' }, row: { id: 'dos-1' }, action: ASK, values: {} })
+	assert.equal(refused.status, 400)
+	assert.deepEqual(refused.body.errors, {
+		periodeVan: 'Schrijf de datum als dag-maand-jaar.',
+	})
 })

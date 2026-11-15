@@ -24,27 +24,29 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+ * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
+
 /**
  * Finds the contributed action a citizen write runs under.
  *
- * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+ * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
 class CitizenWriteActionFinder {
 
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalContributionRegistry $registry What the subject's apps contribute.
+	 * @param PortalContributionRegistryInterface $registry What the subject's apps contribute.
 	 */
 	public function __construct(
-		private readonly PortalContributionRegistry $registry,
+		private readonly PortalContributionRegistryInterface $registry,
 	) {
 	}//end __construct()
 
@@ -55,38 +57,75 @@ class CitizenWriteActionFinder {
 	 * @param string $register The register the case lives in.
 	 * @param string $schema The schema the case lives in.
 	 *
-	 * @return array{action: array<string, mixed>, app: string, filesDownload: bool, documents: array{label: string, provider: string}|null}|null
+	 * @return array{action: array<string, mixed>, app: string, filesDownload: bool,
+	 *     documents: array{label: string, provider: string}|null, fields: mixed}|null
 	 *         Null when no contributed action admits a citizen write here.
 	 *         `filesDownload` says whether the same app opted a collection on
 	 *         this register and schema into downloads (portaliq#798);
 	 *         `documents` is the documents method a collection there declares
-	 *         (cases-documents-on-the-case), or null.
+	 *         (cases-documents-on-the-case), or null. `fields` is the
+	 *         `fields` whitelist a collection there declares, or null when
+	 *         none declares one (citizen-case-shows-only-its-fields).
+	 *         `closedField` is the closed marker a collection there
+	 *         declares, or ''.
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	public function forSubject(array $subject, string $register, string $schema): ?array {
 		$aggregate = $this->registry->aggregateFor($subject);
 		foreach (($aggregate['contributions'] ?? []) as $contribution) {
 			foreach (($contribution['actions'] ?? []) as $action) {
-				if (($action['type'] ?? '') !== 'update'
-					|| ($action['register'] ?? '') !== $register
-					|| ($action['schema'] ?? '') !== $schema
-					|| is_array(($action[CitizenWriteConfigNormaliser::KEY] ?? null)) === false
-				) {
+				if ($this->isOtherAction(action: $action, register: $register, schema: $schema) === true) {
 					continue;
 				}
 
-				return [
-					'action' => $action,
-					'app' => (string)($contribution['app'] ?? ''),
-					'filesDownload' => $this->filesDownload(contribution: $contribution, register: $register, schema: $schema),
-					'documents' => $this->documents(contribution: $contribution, register: $register, schema: $schema),
-				];
+				return $this->found(contribution: $contribution, action: $action, register: $register, schema: $schema);
 			}
 		}
 
 		return null;
 	}//end forSubject()
+
+	/**
+	 * Whether an action is not the citizen-write update of this register and schema.
+	 *
+	 * @param mixed  $action   The action.
+	 * @param string $register The register.
+	 * @param string $schema   The schema.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	private function isOtherAction(mixed $action, string $register, string $schema): bool {
+		return ($action['type'] ?? '') !== 'update'
+			|| ($action['register'] ?? '') !== $register
+			|| ($action['schema'] ?? '') !== $schema
+			|| is_array(($action[CitizenWriteConfigNormaliser::KEY] ?? null)) === false;
+	}//end isOtherAction()
+
+	/**
+	 * The found citizen-write action with what its contribution declares for the collection.
+	 *
+	 * @param mixed  $contribution The contribution.
+	 * @param mixed  $action       The action.
+	 * @param string $register     The register.
+	 * @param string $schema       The schema.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	private function found(mixed $contribution, mixed $action, string $register, string $schema): array {
+		return [
+			'action' => $action,
+			'app' => (string)($contribution['app'] ?? ''),
+			'filesDownload' => $this->filesDownload(contribution: $contribution, register: $register, schema: $schema),
+			'documents' => $this->documents(contribution: $contribution, register: $register, schema: $schema),
+			'fields' => $this->caseFields(contribution: $contribution, register: $register, schema: $schema),
+			'closedField' => $this->closedField(contribution: $contribution, register: $register, schema: $schema),
+		];
+	}//end found()
 
 	/**
 	 * Whether the contribution opts a collection on this register and schema
@@ -144,4 +183,68 @@ class CitizenWriteActionFinder {
 
 		return null;
 	}//end documents()
+
+	/**
+	 * The `fields` whitelist of the contribution's collection on this register
+	 * and schema, exactly as declared, or null when no collection there
+	 * declares one.
+	 *
+	 * The case screen shows a case the resident also reads in that collection,
+	 * so it shows no more of it than the collection does. A malformed
+	 * declaration is passed on as it is: the projector narrows it to the
+	 * identifiers, never widens it to the whole row.
+	 *
+	 * @param array<string, mixed> $contribution One app's contribution.
+	 * @param string               $register     The case's register.
+	 * @param string               $schema       The case's schema.
+	 *
+	 * @return mixed The raw `fields` declaration, or null.
+	 *
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	private function caseFields(array $contribution, string $register, string $schema): mixed {
+		foreach (($contribution['collections'] ?? []) as $collection) {
+			if (is_array($collection) === true
+				&& ($collection['register'] ?? '') === $register
+				&& ($collection['schema'] ?? '') === $schema
+				&& array_key_exists('fields', $collection) === true
+				&& $collection['fields'] !== null
+			) {
+				return $collection['fields'];
+			}
+		}
+
+		return null;
+	}//end caseFields()
+
+	/**
+	 * The closed marker of the contribution's case collection on this
+	 * register and schema, or '' when none declares one.
+	 *
+	 * "My cases" files a case under Closed by this field; the case screen
+	 * reads the same field, so a case listed as closed also shows as over.
+	 * The contribution is already normalised, so a marker the collection does
+	 * not project is gone by now.
+	 *
+	 * @param array<string, mixed> $contribution One app's contribution.
+	 * @param string               $register     The case's register.
+	 * @param string               $schema       The case's schema.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/archive/2026-10-07-citizen-case-ended-shows-only-its-state/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-case-that-has-ended-offers-nothing-and-explains-nothing
+	 */
+	private function closedField(array $contribution, string $register, string $schema): string {
+		foreach (($contribution['collections'] ?? []) as $collection) {
+			if (is_array($collection) === true
+				&& ($collection['register'] ?? '') === $register
+				&& ($collection['schema'] ?? '') === $schema
+				&& is_string(($collection['closedField'] ?? null)) === true
+			) {
+				return $collection['closedField'];
+			}
+		}
+
+		return '';
+	}//end closedField()
 }//end class

@@ -5,7 +5,7 @@
 
 <!--
 	"Acting for" for the site header (cases-my-cases-page REQ-CMC-004), ported
-	from src/portal/components/ActingForSwitcher.jsx. The person acts for
+	from the React portal's ActingForSwitcher.jsx. The person acts for
 	themself or under one of the mandates they hold; the choice applies to "My
 	cases" and every case screen for the rest of the session. Renders nothing
 	for a person who holds no mandate.
@@ -28,7 +28,8 @@
 				v-for="option in options"
 				:key="option.id"
 				:value="option.id"
-				:selected="option.id === current">
+				:selected="option.id === current"
+				:translate="option.id === 'self' ? null : 'no'">
 				{{ option.label }}
 			</option>
 		</select>
@@ -75,7 +76,7 @@ export default {
 		 * @param {string} id The mandate id, or `self`.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-act-for-someone-else-req-srp-041
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-act-for-someone-else-req-srp-041
 		 */
 		choose(id) {
 			chooseActingFor(id)

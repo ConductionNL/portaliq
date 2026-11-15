@@ -58,6 +58,8 @@ class PushSubscriptionControllerTest extends TestCase {
 			 */
 			public array $saved = [];
 
+			public ?string $uuid = null;
+
 			public function __construct(
 				private array $rows,
 			) {
@@ -72,7 +74,21 @@ class PushSubscriptionControllerTest extends TestCase {
 			}//end setSchema()
 
 			public function findAll(array $config, bool $_rbac = true, bool $_multitenancy = true): array {
-				return $this->rows;
+				$rows = $this->rows;
+
+				// The store answers the filters as OpenRegister does: a row
+				// matches only when every filtered property equals the value.
+				$rows = array_values(array_filter($rows, static function (array $row) use ($config): bool {
+					foreach (($config['filters'] ?? []) as $key => $value) {
+						if (($row[$key] ?? null) !== $value) {
+							return false;
+						}
+					}
+
+					return true;
+				}));
+
+				return $rows;
 			}//end findAll()
 
 			/**
@@ -80,6 +96,7 @@ class PushSubscriptionControllerTest extends TestCase {
 			 */
 			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
 				$this->saved = $object;
+				$this->uuid = $uuid;
 				return $object;
 			}//end saveObject()
 		};
@@ -94,12 +111,24 @@ class PushSubscriptionControllerTest extends TestCase {
 
 	public function testSubscribeSavesTheSubjectsOwnSubscription(): void {
 		$objectService = $this->fakeObjectService();
-		$response = $this->controller(['subjectRef' => 'guardian-1'], $objectService)->subscribe('https://push.example.org/x', ['p256dh' => 'k']);
+		$response = $this->controller(['subjectRef' => 'guardian-1'], $objectService)->subscribe('https://fcm.googleapis.com/fcm/send/abc', ['p256dh' => 'k']);
 
 		$this->assertSame(Http::STATUS_NO_CONTENT, $response->getStatus());
 		$this->assertSame('guardian-1', $objectService->saved['subjectRef']);
 		$this->assertTrue($objectService->saved['active']);
 	}//end testSubscribeSavesTheSubjectsOwnSubscription()
+
+	public function testSubscribeRefusesAnEndpointOutsideTheKnownPushServices(): void {
+		$objectService = $this->fakeObjectService();
+		$controller = $this->controller(['subjectRef' => 'guardian-1'], $objectService);
+
+		foreach (['', 'http://fcm.googleapis.com/fcm/send/abc', 'https://push.example.org/x', 'https://fcm.googleapis.com.evil.example/x', 'https://evilfcm.googleapis.com.example/x'] as $endpoint) {
+			$this->assertSame(Http::STATUS_BAD_REQUEST, $controller->subscribe($endpoint)->getStatus(), $endpoint);
+		}
+
+		$this->assertSame([], $objectService->saved);
+		$this->assertSame(Http::STATUS_NO_CONTENT, $controller->subscribe('https://web.push.apple.com/QGx')->getStatus());
+	}//end testSubscribeRefusesAnEndpointOutsideTheKnownPushServices()
 
 	public function testUnsubscribeIsSuccessfulEvenWhenNoSubscriptionExisted(): void {
 		$objectService = $this->fakeObjectService([]);
@@ -109,10 +138,14 @@ class PushSubscriptionControllerTest extends TestCase {
 	}//end testUnsubscribeIsSuccessfulEvenWhenNoSubscriptionExisted()
 
 	public function testUnsubscribeDeactivatesAnExistingSubscription(): void {
-		$objectService = $this->fakeObjectService([['id' => 'sub-1', 'subjectRef' => 'guardian-1', 'endpoint' => 'https://push.example.org/x']]);
+		$objectService = $this->fakeObjectService([
+			['id' => 'sub-other', 'subjectRef' => 'guardian-1', 'endpoint' => 'https://push.example.org/other'],
+			['id' => 'sub-1', 'subjectRef' => 'guardian-1', 'endpoint' => 'https://push.example.org/x'],
+		]);
 		$response = $this->controller(['subjectRef' => 'guardian-1'], $objectService)->unsubscribe('https://push.example.org/x');
 
 		$this->assertSame(Http::STATUS_NO_CONTENT, $response->getStatus());
 		$this->assertFalse($objectService->saved['active']);
+		$this->assertSame('sub-1', $objectService->uuid, 'the subscription of this endpoint is the one switched off');
 	}//end testUnsubscribeDeactivatesAnExistingSubscription()
 }//end class

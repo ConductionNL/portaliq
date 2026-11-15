@@ -6,7 +6,7 @@
 <!--
 	The confirmation before a resident withdraws their request
 	(case-actions-withdraw-screen REQ-WDS-002), ported from
-	src/portal/components/WithdrawCaseConfirm.jsx. A modal dialog: it says what
+	the React portal's WithdrawCaseConfirm.jsx. A modal dialog: it says what
 	withdrawing means, in the case app's words when it gives them, asks an
 	optional reason, and sends nothing until the resident presses "Withdraw
 	request". Focus moves to the heading when it opens; Escape and "Keep my
@@ -47,18 +47,18 @@
 				data-testid="case-withdraw-reason" />
 			<div class="pq-withdraw-confirm__buttons">
 				<button
-					type="submit"
-					class="utrecht-button utrecht-button--primary-action"
-					data-testid="case-withdraw-submit"
-					:disabled="busy">
-					{{ t('Withdraw request') }}
-				</button>
-				<button
 					type="button"
 					class="utrecht-button utrecht-button--secondary-action"
 					data-testid="case-withdraw-cancel"
 					@click="$emit('cancel')">
 					{{ t('Keep my request') }}
+				</button>
+				<button
+					type="submit"
+					class="utrecht-button utrecht-button--primary-action utrecht-button--danger"
+					data-testid="case-withdraw-submit"
+					:disabled="busy">
+					{{ t('Withdraw request') }}
 				</button>
 			</div>
 		</form>
@@ -66,6 +66,8 @@
 </template>
 
 <script>
+import { closeDialog, openDialog } from '../forms/draftDialog.js'
+
 export default {
 	name: 'WithdrawCaseConfirm',
 
@@ -89,25 +91,14 @@ export default {
 	 *
 	 * @return {void}
 	 *
-	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-citizen-must-be-able-to-withdraw-a-request-req-srp-043
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-citizen-must-be-able-to-withdraw-a-request-req-srp-043
 	 */
 	mounted() {
-		const dialog = this.$refs.dialog
-		if (typeof dialog?.showModal === 'function') {
-			dialog.showModal()
-		} else {
-			dialog?.setAttribute('open', '')
-		}
-		this.$refs.heading?.focus()
+		openDialog(this.$refs.dialog, this.$refs.heading)
 	},
 
 	beforeUnmount() {
-		if (
-			this.$refs.dialog?.open
-			&& typeof this.$refs.dialog.close === 'function'
-		) {
-			this.$refs.dialog.close()
-		}
+		closeDialog(this.$refs.dialog)
 	},
 
 	methods: {
@@ -116,7 +107,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-citizen-must-be-able-to-withdraw-a-request-req-srp-043
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-citizen-must-be-able-to-withdraw-a-request-req-srp-043
 		 */
 		submit() {
 			this.$emit('confirm', this.reason.trim())

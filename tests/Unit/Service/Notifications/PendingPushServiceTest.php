@@ -40,7 +40,7 @@ class PendingPushServiceTest extends TestCase {
 			}//end setSchema()
 
 			public function findAll(array $config, bool $_rbac = true, bool $_multitenancy = true): array {
-				return $this->rows;
+				return array_slice($this->rows, (int)($config['offset'] ?? 0), (int)($config['limit'] ?? count($this->rows)));
 			}//end findAll()
 
 			/**
@@ -102,4 +102,36 @@ class PendingPushServiceTest extends TestCase {
 
 		$this->assertSame(0, $delivered);
 	}//end testDeliverDueReturnsZeroWhenNothingIsDue()
+
+	public function testDeliverDueReachesADueRowBehindAFullPageOfDeliveredRows(): void {
+		$rows = [];
+		for ($i = 0; $i < 500; $i++) {
+			$rows[] = ['id' => 'done-' . $i, 'subjectRef' => 'guardian-0', 'title' => 'Old', 'body' => 'old', 'deliverAfter' => '2026-09-20T07:00:00+00:00', 'delivered' => true];
+		}
+
+		$rows[] = ['id' => 'p501', 'subjectRef' => 'guardian-1', 'title' => 'A', 'body' => 'a', 'deliverAfter' => '2026-09-26T07:00:00+00:00', 'delivered' => false];
+		$objectService = $this->fakeObjectService($rows);
+
+		$sender = $this->createMock(PushSenderInterface::class);
+		$sender->expects($this->once())->method('send')->with('guardian-1', 'A', 'a')->willReturn(true);
+
+		$service = new PendingPushService($this->container($objectService), $sender, $this->createMock(LoggerInterface::class));
+
+		$this->assertSame(1, $service->deliverDue(new DateTimeImmutable('2026-09-26 12:00')));
+	}//end testDeliverDueReachesADueRowBehindAFullPageOfDeliveredRows()
+
+	public function testAMalformedDeliverAfterIsSkippedAndTheRestStillDelivered(): void {
+		$rows = [
+			['id' => 'bad', 'subjectRef' => 'guardian-0', 'title' => 'X', 'body' => 'x', 'deliverAfter' => 'not a date', 'delivered' => false],
+			['id' => 'p1', 'subjectRef' => 'guardian-1', 'title' => 'A', 'body' => 'a', 'deliverAfter' => '2026-09-26T07:00:00+00:00', 'delivered' => false],
+		];
+		$objectService = $this->fakeObjectService($rows);
+
+		$sender = $this->createMock(PushSenderInterface::class);
+		$sender->expects($this->once())->method('send')->with('guardian-1', 'A', 'a')->willReturn(true);
+
+		$service = new PendingPushService($this->container($objectService), $sender, $this->createMock(LoggerInterface::class));
+
+		$this->assertSame(1, $service->deliverDue(new DateTimeImmutable('2026-09-26 12:00')));
+	}//end testAMalformedDeliverAfterIsSkippedAndTheRestStillDelivered()
 }//end class

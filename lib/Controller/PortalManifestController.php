@@ -25,28 +25,30 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/parent-pwa-installability/specs/parent-pwa-installability/spec.md
+ * @spec openspec/specs/parent-pwa-installability/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalRuntimeConfigResolverInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\DataDisplayResponse;
+use OCP\AppFramework\Http\EmptyContentSecurityPolicy;
 use OCP\IRequest;
 use OCP\IURLGenerator;
+use OCA\Portaliq\Kernel\Contracts\RequestedPortalInterface;
 
 /**
  * Serves the manifest and the service worker.
  *
- * @spec openspec/changes/parent-pwa-installability/specs/parent-pwa-installability/spec.md
+ * @spec openspec/specs/parent-pwa-installability/spec.md
  */
 class PortalManifestController extends Controller {
 
@@ -54,7 +56,7 @@ class PortalManifestController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalRuntimeConfigResolver $configResolver Resolves the serving
+	 * @param PortalRuntimeConfigResolverInterface $configResolver Resolves the serving
 	 *                                                    portal, the SAME way
 	 *                                                    PortalPageController
 	 *                                                    does, so the manifest
@@ -62,13 +64,15 @@ class PortalManifestController extends Controller {
 	 *                                                    actually being
 	 *                                                    installed.
 	 * @param IURLGenerator $urlGenerator Builds the icon and start_url links.
+	 * @param RequestedPortalInterface $requestedPortal The RequestedPortal helper.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalRuntimeConfigResolver $configResolver,
+		private readonly PortalRuntimeConfigResolverInterface $configResolver,
 		private readonly IURLGenerator $urlGenerator,
+		private readonly RequestedPortalInterface $requestedPortal,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -76,7 +80,7 @@ class PortalManifestController extends Controller {
 	 *
 	 * @return DataDisplayResponse
 	 *
-	 * @spec openspec/changes/parent-pwa-installability/specs/parent-pwa-installability/spec.md#requirement-the-portal-serves-a-web-app-manifest-naming-the-resolved-portal
+	 * @spec openspec/specs/parent-pwa-installability/spec.md#requirement-the-portal-serves-a-web-app-manifest-naming-the-resolved-portal
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -84,20 +88,52 @@ class PortalManifestController extends Controller {
 	#[AnonRateLimit(limit: 120, period: 60)]
 	public function manifest(): DataDisplayResponse {
 		$orgValue = (string)$this->request->getParam('org', '');
-		$portalSlug = (string)$this->request->getParam('portal', '');
+		$portalSlug = (string)$this->requestedPortal->slug(request: $this->request);
 
 		$portal = $this->configResolver->resolvePortal(request: $this->request, portalSlug: $portalSlug, orgValue: $orgValue);
 		$runtimeConfig = $this->configResolver->runtimeConfigFor(portal: $portal, orgValue: $orgValue, locale: 'nl');
 
+		$manifest = $this->manifestOf(
+			name: $this->appName(runtimeConfig: $runtimeConfig),
+			startUrl: $this->startUrl(orgValue: $orgValue, portalSlug: $portalSlug)
+		);
+
+		return new DataDisplayResponse(
+			(string)json_encode($manifest, JSON_UNESCAPED_SLASHES),
+			200,
+			['Content-Type' => 'application/manifest+json']
+		);
+	}//end manifest()
+
+	/**
+	 * The installed app's name: the portal's organisation, else Portaliq.
+	 *
+	 * @param array<string, mixed> $runtimeConfig The portal's runtime configuration.
+	 *
+	 * @return string
+	 */
+	private function appName(array $runtimeConfig): string {
 		$name = (string)($runtimeConfig['organisationName'] ?? '');
 		if ($name === '') {
-			$name = 'Portaliq';
+			return 'Portaliq';
 		}
 
-		$manifest = [
+		return $name;
+	}//end appName()
+
+	/**
+	 * The web app manifest for an app of this name that starts here.
+	 *
+	 * @param string $name     The app's name.
+	 * @param string $startUrl Where the installed app opens.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function manifestOf(string $name, string $startUrl): array {
+		return [
 			'name' => $name,
 			'short_name' => $this->shortName(name: $name),
-			'start_url' => $this->startUrl(orgValue: $orgValue, portalSlug: $portalSlug),
+			'start_url' => $startUrl,
 			// The installed app stays on the site: a link it follows out of
 			// `/site` opens in the browser instead of inside the app window.
 			'scope' => $this->urlGenerator->linkToRoute('portaliq.portalPage.site'),
@@ -106,35 +142,27 @@ class PortalManifestController extends Controller {
 			'theme_color' => '#ffffff',
 			'icons' => [
 				[
-					'src' => $this->urlGenerator->imagePath(appName: Application::APP_ID, file: 'app.svg'),
+					'src' => $this->urlGenerator->imagePath(appName: AppIdentity::APP_ID, file: 'app.svg'),
 					'sizes' => 'any',
 					'type' => 'image/svg+xml',
 				],
 			],
 		];
-
-		$response = new DataDisplayResponse(
-			(string)json_encode($manifest, JSON_UNESCAPED_SLASHES),
-			200,
-			['Content-Type' => 'application/manifest+json']
-		);
-
-		return $response;
-	}//end manifest()
+	}//end manifestOf()
 
 	/**
 	 * The service worker script, scoped to the whole app path.
 	 *
 	 * @return DataDisplayResponse
 	 *
-	 * @spec openspec/changes/parent-pwa-installability/specs/parent-pwa-installability/spec.md#requirement-the-service-worker-caches-the-app-shell-and-never-the-api
+	 * @spec openspec/specs/parent-pwa-installability/spec.md#requirement-the-service-worker-caches-the-app-shell-and-never-the-api
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[NoAdminRequired]
 	#[AnonRateLimit(limit: 120, period: 60)]
 	public function serviceWorker(): DataDisplayResponse {
-		$path = $this->serviceWorkerSourcePath();
+		$path = $this->serviceWorkerSourcePath(appRoot: dirname(__DIR__, 2));
 		$source = '';
 		if (is_readable($path) === true) {
 			$source = (string)file_get_contents($path);
@@ -146,29 +174,87 @@ class PortalManifestController extends Controller {
 			[
 				'Content-Type' => 'application/javascript',
 				// Widens the worker's control beyond its own serving path,
-				// so it can control /portal/... — see design.md D-3. This
-				// widens WHAT it may control, never the fetch handler's own
-				// cache-vs-network decision (design.md D-1).
-				'Service-Worker-Allowed' => $this->urlGenerator->linkTo(Application::APP_ID, ''),
+				// so it can control /site as well as /portal (design.md D-3).
+				// This widens WHAT it may control, never the fetch handler's
+				// own cache-vs-network decision (design.md D-1).
+				'Service-Worker-Allowed' => $this->serviceWorkerScope(),
 			]
 		);
+
+		// A worker's own fetch() follows the policy its script is served
+		// with. Nextcloud's empty default has no connect-src, so it falls
+		// back to default-src 'none' and every fetch of the worker failed:
+		// returning visitors got net::ERR_FAILED on /site. Same origin only,
+		// nothing wider; every other directive stays at the empty default.
+		$policy = new EmptyContentSecurityPolicy();
+		$policy->addAllowedConnectDomain("'self'");
+		$response->setContentSecurityPolicy($policy);
 
 		return $response;
 	}//end serviceWorker()
 
 	/**
-	 * The plain-JS source file's path on disk. Not a webpack entry — `/js/`
-	 * is entirely gitignored build output, so a hand-written service worker
+	 * The widest scope the worker may be registered with: the app's route
+	 * root, as the browser asked for the worker.
+	 *
+	 * The site registers the worker with scope `<route root>/`, worked out
+	 * from the worker's own address (src/site/lib/pwa.js). The header must
+	 * name the same path or the browser refuses the registration. It is
+	 * read off the request because only the request knows how the browser
+	 * reached the app: with or without `index.php`, under a web root, and
+	 * at `/apps/<id>/` whether the app is installed in `apps/` or in
+	 * `custom_apps/`. The app's web path (`linkTo`) is where its FILES are
+	 * served, `/custom_apps/<id>/` for an app installed there, and no route
+	 * lives under it, so the header named a path no page is on.
+	 *
+	 * @return string The scope, ending in a slash.
+	 *
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-service-worker-must-cache-the-site-shell-req-srp-045
+	 */
+	private function serviceWorkerScope(): string {
+		$suffix = 'portal/sw.js';
+		$path = parse_url($this->request->getRequestUri(), PHP_URL_PATH);
+		if (is_string($path) === false || str_ends_with($path, '/' . $suffix) === false) {
+			// Not reached through its own route (a test, an internal call):
+			// the route the URL generator builds is the same address.
+			$path = (string)parse_url(
+				$this->urlGenerator->linkToRoute(AppIdentity::APP_ID . '.portalManifest.serviceWorker'),
+				PHP_URL_PATH
+			);
+		}
+
+		if (str_ends_with($path, '/' . $suffix) === false) {
+			return '/apps/' . AppIdentity::APP_ID . '/';
+		}
+
+		return substr($path, 0, (strlen($path) - strlen($suffix)));
+	}//end serviceWorkerScope()
+
+	/**
+	 * The service worker's path on disk. Not a webpack entry — `/js/` is
+	 * entirely gitignored build output, so a hand-written service worker
 	 * cannot live there (design.md Trade-offs). It lives in `src/shared/`,
-	 * outside the React portal, so retiring `src/portal/` does not take the
-	 * site's worker with it (REQ-SRP-045).
+	 * where it moved from the retired React portal's sources (REQ-SRP-045).
+	 *
+	 * A release package carries no `src/` (the shared release workflow
+	 * excludes it), so the site build also copies the file, unchanged, to
+	 * `js/portaliq-site-sw.js` (webpack.site.js), and that copy is served when
+	 * the source is absent. The source wins when both exist, so a checkout
+	 * never serves a stale build.
+	 *
+	 * @param string $appRoot The app's directory on disk.
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-service-worker-must-cache-the-site-shell-req-srp-045
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-service-worker-must-cache-the-site-shell-req-srp-045
 	 */
-	private function serviceWorkerSourcePath(): string {
-		return dirname(__DIR__, 2) . '/src/shared/serviceWorker.js';
+	private function serviceWorkerSourcePath(string $appRoot): string {
+		$source = $appRoot . '/src/shared/serviceWorker.js';
+		if (is_readable($source) === true) {
+			return $source;
+		}
+
+		return $appRoot . '/js/portaliq-site-sw.js';
 	}//end serviceWorkerSourcePath()
 
 	/**
@@ -206,7 +292,7 @@ class PortalManifestController extends Controller {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-site-must-be-installable-req-srp-044
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-site-must-be-installable-req-srp-044
 	 */
 	private function startUrl(string $orgValue, string $portalSlug): string {
 		$params = [];

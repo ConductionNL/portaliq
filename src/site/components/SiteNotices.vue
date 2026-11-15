@@ -5,8 +5,8 @@
 
 <!--
 	Maintenance and warning notices above every page of the public site
-	(operate-maintenance-notice). The same decision as the signed-in portal's
-	PortalNotices.jsx, through the same helper. Deliberately not an alert role:
+	(operate-maintenance-notice), signed in and signed out, through the shared
+	helper the React portal used. Deliberately not an alert role:
 	a notice that is there on every page load must not interrupt a screen
 	reader each time.
 -->
@@ -53,7 +53,7 @@ import {
 	closeNotice,
 	sessionStore,
 	visibleNotices,
-} from '../../portal/lib/notices.js'
+} from '../../shared/notices.js'
 
 import '@utrecht/alert-css/dist/index.css'
 

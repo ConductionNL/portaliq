@@ -18,10 +18,28 @@ import {
 	formBody,
 	sentValue,
 	staticOptions,
+	withSingleOptions,
 } from '../src/site/components/c/forms.js'
 import { mountSfc } from './support/mount-sfc.mjs'
 
 const FORM = 'src/site/components/c/SchemaForm.vue'
+
+/**
+ * Type a date into a date group's Dag, Maand and Jaar boxes.
+ *
+ * @param {object} form The mounted form.
+ * @param {string} id The field's id (the Dag box's id).
+ * @param {string} day The day.
+ * @param {string} month The month.
+ * @param {string} year The year.
+ * @return {Promise<void>}
+ */
+async function fillDate(form, id, day, month, year) {
+	const box = (suffix) => form.findAll((n) => n.props.id === `${id}${suffix}`)[0]
+	await form.fire(box(''), 'input', { value: day })
+	await form.fire(box('-month'), 'input', { value: month })
+	await form.fire(box('-year'), 'input', { value: year })
+}
 
 /**
  * The guardian's absence report as learniq declares it, after portaliq's
@@ -81,7 +99,7 @@ function fakeApi(answers = {}) {
 		calls,
 		async fetchOptions(provider) {
 			calls.options.push(provider)
-			return [{ value: 'vera-1', label: 'Vera' }]
+			return answers.options || [{ value: 'vera-1', label: 'Vera' }]
 		},
 		async createObject(action, body) {
 			calls.created.push(body)
@@ -116,13 +134,26 @@ test('a date property is a date input and an enum a select, never a text box', a
 		inputs.map((n) => `${n.tag}:${n.props.type || ''}:${n.props.id}`),
 		[
 			'select::f-createExcuseRequest-learnerRef',
-			'input:date:f-createExcuseRequest-dateFrom',
+			'input:text:f-createExcuseRequest-dateFrom',
+			'input:text:f-createExcuseRequest-dateFrom-month',
+			'input:text:f-createExcuseRequest-dateFrom-year',
 			'textarea::f-createExcuseRequest-reason',
 			'select::f-createExcuseRequest-reasonKind',
 		],
 	)
 	const kind = form.find('schema-field-reasonKind')
-	assert.match(form.textOf(kind), /Kind of absence \*/)
+	assert.match(form.textOf(kind), /^Kind of absence Choose an option/)
+	assert.doesNotMatch(form.text(), /\*/, 'no asterisk on any label')
+	// The date is a fieldset whose legend is the question (REQ-SMF-003).
+	const date = form.find('schema-field-dateFrom')
+	assert.equal(date.tag, 'fieldset')
+	assert.equal(
+		form.textOf(date.children.find((n) => n.tag === 'legend')),
+		'First day absent',
+	)
+	const day = inputs.find((n) => n.props.id === 'f-createExcuseRequest-dateFrom')
+	assert.equal(day.props.inputmode, 'numeric')
+	assert.match(form.textOf(date), /Day Month Year/)
 	assert.match(form.textOf(kind), /Choose an option Illness Medical appointment/)
 })
 
@@ -140,7 +171,22 @@ test('every input has a label pointing at it, and a required one says so', async
 	const date = form.findAll(
 		(n) => n.props.id === 'f-createExcuseRequest-dateFrom',
 	)[0]
-	assert.equal(date.props.required, true)
+	// Required is aria-required, never the native attribute whose browser
+	// bubble would compete with the error summary (REQ-SMF-001).
+	assert.equal(date.props.required, undefined)
+	assert.equal(date.props['aria-required'], 'true')
+	const reason = form.findAll(
+		(n) => n.props.id === 'f-createExcuseRequest-reason',
+	)[0]
+	assert.equal(reason.props['aria-required'], undefined)
+	assert.equal(
+		form.textOf(labels.find((l) => l.props.for === reason.props.id)),
+		'Reason (optional)',
+	)
+	assert.equal(
+		form.textOf(form.find('schema-form-optional-note')),
+		'A field without "optional" must be filled in.',
+	)
 })
 
 test('a collection dropdown lists only what the subject-scoped api returned', async () => {
@@ -162,7 +208,21 @@ test('an empty required field gets an inline error and nothing is sent', async (
 	await form.fire(form.find('schema-form'), 'submit')
 
 	assert.equal(api.calls.created.length, 0)
-	assert.match(form.text(), /Not everything is filled in yet/)
+	// The error summary takes focus and links each error, in field order (REQ-SMF-002).
+	const heading = form.find('error-summary-heading')
+	assert.equal(form.textOf(heading), 'Something is still missing')
+	assert.ok(form.focused() === heading, 'the summary heading has focus')
+	const links = form.findAll((n) =>
+		String(n.props['data-testid'] || '').startsWith('error-summary-link-'),
+	)
+	assert.deepEqual(
+		links.map((a) => [a.props.href, form.textOf(a)]),
+		[
+			['#f-createExcuseRequest-dateFrom', 'First day absent is required.'],
+			['#f-createExcuseRequest-reasonKind', 'Kind of absence is required.'],
+		],
+	)
+	assert.ok(form.find('schema-form-error') === null, 'no second top alert')
 	assert.equal(
 		form.textOf(form.find('schema-field-error-dateFrom')),
 		'First day absent is required.',
@@ -177,8 +237,9 @@ test('an empty required field gets an inline error and nothing is sent', async (
 	)[0]
 	assert.equal(date.props['aria-invalid'], 'true')
 	assert.match(
-		date.props['aria-describedby'],
+		form.find('schema-field-dateFrom').props['aria-describedby'],
 		/f-createExcuseRequest-dateFrom-error/,
+		'the date fieldset is described by its error',
 	)
 })
 
@@ -189,7 +250,7 @@ test('a filled form sends only the whitelisted fields and shows the success mess
 	const field = (name) =>
 		form.findAll((n) => n.props.id === `f-createExcuseRequest-${name}`)[0]
 	await form.fire(field('learnerRef'), 'change', { value: 'vera-1' })
-	await form.fire(field('dateFrom'), 'input', { value: '2026-10-02' })
+	await fillDate(form, 'f-createExcuseRequest-dateFrom', '2', '10', '2026')
 	await form.fire(field('reasonKind'), 'change', { value: 'illness' })
 	await form.fire(form.find('schema-form'), 'submit')
 
@@ -210,7 +271,7 @@ test('a filled form sends only the whitelisted fields and shows the success mess
 })
 
 test('a refused save says so in words', async () => {
-	const api = fakeApi({ created: { ok: false, status: 400 } })
+	const api = fakeApi({ created: { ok: false, status: 502 } })
 	const action = { id: 'a', type: 'create', fields: ['title'], fieldConfigs: {} }
 	const form = await mountSfc(FORM, {
 		action,
@@ -245,6 +306,97 @@ test('the helpers: required checks, the body and a datetime value', () => {
 	assert.equal(sentValue('text', null), '')
 })
 
+test('a required select with one option starts on it, and can still be changed', async () => {
+	const api = fakeApi()
+	const form = await mountSfc(FORM, { action: absenceAction(), api })
+	await form.flush()
+	const child = () =>
+		form.findAll((n) => n.props.id === 'f-createExcuseRequest-learnerRef')[0]
+	assert.equal(child().props.value, 'vera-1', 'the only child is preselected')
+	assert.match(
+		form.textOf(form.find('schema-field-learnerRef')),
+		/Choose an option Vera/,
+		'the select stays a select with its placeholder',
+	)
+	const kind = form.findAll(
+		(n) => n.props.id === 'f-createExcuseRequest-reasonKind',
+	)[0]
+	assert.equal(kind.props.value, '', 'two options: nothing is chosen for you')
+
+	await form.fire(child(), 'change', { value: '' })
+	assert.equal(child().props.value, '', 'the resident can clear it')
+	await form.fire(child(), 'change', { value: 'vera-1' })
+
+	const field = (name) =>
+		form.findAll((n) => n.props.id === `f-createExcuseRequest-${name}`)[0]
+	await fillDate(form, 'f-createExcuseRequest-dateFrom', '2', '10', '2026')
+	await form.fire(field('reasonKind'), 'change', { value: 'illness' })
+	await form.fire(form.find('schema-form'), 'submit')
+	assert.equal(api.calls.created.length, 1)
+	assert.equal(api.calls.created[0].learnerRef, 'vera-1')
+	assert.equal(
+		child().props.value,
+		'vera-1',
+		'the next report starts on the child again',
+	)
+	assert.equal(field('dateFrom').props.value, '')
+})
+
+test('a guardian with two children picks one', async () => {
+	const api = fakeApi({
+		options: [
+			{ value: 'vera-1', label: 'Vera' },
+			{ value: 'sam-2', label: 'Sam' },
+		],
+	})
+	const form = await mountSfc(FORM, { action: absenceAction(), api })
+	await form.flush()
+	const child = form.findAll(
+		(n) => n.props.id === 'f-createExcuseRequest-learnerRef',
+	)[0]
+	assert.equal(child.props.value, '')
+})
+
+test('the single option helper: required selects only, never over a choice', () => {
+	const action = absenceAction()
+	const one = { learnerRef: [{ value: 'vera-1', label: 'Vera' }] }
+	assert.equal(
+		withSingleOptions(action, { learnerRef: '' }, one).learnerRef,
+		'vera-1',
+	)
+	assert.equal(
+		withSingleOptions(action, { learnerRef: 'other' }, one).learnerRef,
+		'other',
+		'a choice is kept',
+	)
+	const optional = {
+		...action,
+		fieldConfigs: { ...action.fieldConfigs, learnerRef: { label: 'Child' } },
+	}
+	assert.equal(withSingleOptions(optional, { learnerRef: '' }, one).learnerRef, '')
+	assert.equal(withSingleOptions(action, { learnerRef: '' }, {}).learnerRef, '')
+	assert.equal(
+		withSingleOptions(
+			action,
+			{ learnerRef: '' },
+			{ learnerRef: [{ value: '', label: 'None' }] },
+		).learnerRef,
+		'',
+	)
+	assert.equal(
+		withSingleOptions(
+			{
+				fields: ['up'],
+				fieldConfigs: { up: { type: 'file', required: true } },
+			},
+			{ up: '' },
+			{ up: [{ value: 'x', label: 'X' }] },
+		).up,
+		'',
+		'a file field is never filled',
+	)
+})
+
 test('the shell registry runs slice c, and every slice c string is in both shared bundles', async () => {
 	await import('../src/site/pages/registry.js')
 	const { blockSlotLoader } =
@@ -266,4 +418,45 @@ test('the shell registry runs slice c, and every slice c string is in both share
 			assert.doesNotMatch(text, /—/, 'no em-dash')
 		}
 	}
+})
+
+test('a send that times out says the request may still be processing, and a resend carries the same key', async () => {
+	const keys = []
+	const answers = [
+		{ ok: false, status: 504, object: { error: 'forward_timeout' } },
+		{ ok: true, status: 201, object: { caseId: 'c-1' } },
+		{ ok: true, status: 201, object: { caseId: 'c-2' } },
+	]
+	const action = {
+		id: 'startRequest',
+		type: 'endpoint',
+		fields: ['title'],
+		fieldConfigs: {},
+		successMessage: 'Received.',
+	}
+	const form = await mountSfc(FORM, {
+		action,
+		api: fakeApi(),
+		send: async (body, options) => {
+			keys.push(options && options.submissionKey)
+			return answers.shift()
+		},
+	})
+	await form.fire(form.find('schema-form'), 'submit')
+	assert.match(
+		form.textOf(form.find('schema-form-still-processing')),
+		/may still be processing/,
+	)
+	assert.equal(form.find('schema-form-error'), null, 'not "saving did not work"')
+
+	await form.fire(form.find('schema-form'), 'submit')
+	assert.equal(keys[0], keys[1], 'the resend is the same submission')
+	assert.match(keys[0], /^[A-Za-z0-9_-]{16,128}$/)
+
+	await form.fire(form.find('schema-form'), 'submit')
+	assert.notEqual(
+		keys[2],
+		keys[1],
+		'after a success the form starts a new submission',
+	)
 })

@@ -21,45 +21,56 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/push-notifications-quiet-hours/specs/guardian-push-notifications/spec.md#requirement-an-emergency-push-bypasses-quiet-hours-unconditionally
+ * @spec openspec/specs/guardian-push-notifications/spec.md#requirement-an-emergency-push-bypasses-quiet-hours-unconditionally
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\GuardianAudienceFixtureReader;
-use OCA\Portaliq\Service\Notifications\PushDeliveryService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\ActionAuthServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\GuardianAudienceFixtureReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PushDeliveryServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
+use Throwable;
 
 /**
- * @spec openspec/changes/push-notifications-quiet-hours/specs/guardian-push-notifications/spec.md#requirement-an-emergency-push-bypasses-quiet-hours-unconditionally
+ * @spec openspec/specs/guardian-push-notifications/spec.md#requirement-an-emergency-push-bypasses-quiet-hours-unconditionally
  */
 class EmergencyPushController extends Controller {
+	/**
+	 * The ADR-023 action a staff member needs to send a noodmelding.
+	 */
+	public const ACTION = 'portal.send-emergency-push';
+
 	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
 	 * @param IUserSession $userSession Resolves the calling staff member's Nextcloud user id.
-	 * @param GuardianAudienceFixtureReader $audienceReader Resolves guardians matching the target.
-	 * @param PushDeliveryService $delivery Delivers the emergency push, bypassing quiet hours.
+	 * @param GuardianAudienceFixtureReaderInterface $audienceReader Resolves guardians matching the target.
+	 * @param PushDeliveryServiceInterface $delivery Delivers the emergency push, bypassing quiet hours.
 	 * @param LoggerInterface $logger The logger.
+	 * @param ActionAuthServiceInterface $actionAuth Decides whether this staff user may send an emergency push (ADR-023).
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly IUserSession $userSession,
-		private readonly GuardianAudienceFixtureReader $audienceReader,
-		private readonly PushDeliveryService $delivery,
+		private readonly GuardianAudienceFixtureReaderInterface $audienceReader,
+		private readonly PushDeliveryServiceInterface $delivery,
 		private readonly LoggerInterface $logger,
+		private readonly ActionAuthServiceInterface $actionAuth,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -69,24 +80,88 @@ class EmergencyPushController extends Controller {
 	 * @param string $title The notification title.
 	 * @param string $body The notification body.
 	 *
-	 * @return JSONResponse `{recipientCount}`.
+	 * @return JSONResponse `{recipientCount, deliveredCount}`: whom the target
+	 *                      reaches, and how many of those a push really reached
+	 *                      (0 while only the interim logging transport is bound),
+	 *                      or 401 / 403 before anything is sent.
 	 *
-	 * @spec openspec/changes/push-notifications-quiet-hours/specs/guardian-push-notifications/spec.md#requirement-an-emergency-push-bypasses-quiet-hours-unconditionally
+	 * @spec openspec/specs/guardian-push-notifications/spec.md#requirement-an-emergency-push-bypasses-quiet-hours-unconditionally
 	 */
 	#[NoAdminRequired]
 	public function send(array $target, string $title, string $body): JSONResponse {
-		$staffRef = (string)($this->userSession->getUser()?->getUID() ?? '');
-		$recipients = $this->audienceReader->guardiansMatching(target: $target);
-
-		foreach ($recipients as $guardianRef) {
-			$this->delivery->deliver(subjectRef: $guardianRef, title: $title, body: $body, emergency: true);
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$this->logger->info('Portaliq: emergency push sent', [
-			'sentBy' => $staffRef,
-			'recipientCount' => count($recipients),
-		]);
+		if ($this->maySend(user: $user) === false) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
 
-		return new JSONResponse(['recipientCount' => count($recipients)]);
+		$message    = ['title' => $title, 'body' => $body];
+		$recipients = $this->audienceReader->guardiansMatching(target: $target);
+		$counts     = [
+			'recipientCount' => count($recipients),
+			'deliveredCount' => count(array_filter($recipients, fn (string $ref): bool => $this->deliverOne(message: $message, guardianRef: $ref))),
+		];
+
+		return $this->reported(counts: $counts, staffRef: $user->getUID());
 	}//end send()
+
+	/**
+	 * Whether this staff user may send an emergency push.
+	 *
+	 * @param IUser $user The signed-in user.
+	 *
+	 * @return bool
+	 */
+	private function maySend(IUser $user): bool {
+		try {
+			$this->actionAuth->requireAction(user: $user, action: self::ACTION);
+		} catch (OCSForbiddenException $exception) {
+			return false;
+		}
+
+		return true;
+	}//end maySend()
+
+	/**
+	 * Push to one guardian. One failing delivery must not stop the noodmelding
+	 * to the rest, so a throw is logged and counts as not delivered.
+	 *
+	 * @param array{title: string, body: string} $message     The notification title and body.
+	 * @param string                             $guardianRef The guardian.
+	 *
+	 * @return bool Whether the push reached them.
+	 */
+	private function deliverOne(array $message, string $guardianRef): bool {
+		try {
+			return $this->delivery->deliver(subjectRef: $guardianRef, title: $message['title'], body: $message['body'], emergency: true) === true;
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: emergency push delivery failed', ['reason' => $e->getMessage()]);
+			return false;
+		}
+	}//end deliverOne()
+
+	/**
+	 * Log how far the push reached and answer the counts.
+	 *
+	 * @param array{recipientCount: int, deliveredCount: int} $counts   Whom the target reaches, and how many a push reached.
+	 * @param string                                          $staffRef Who sent it.
+	 *
+	 * @return JSONResponse `{recipientCount, deliveredCount}`.
+	 */
+	private function reported(array $counts, string $staffRef): JSONResponse {
+		$context = ['sentBy' => $staffRef] + $counts;
+		$answer  = new JSONResponse($counts);
+		if ($counts['deliveredCount'] < $counts['recipientCount']) {
+			// Never "sent" for a push that did not arrive: with the interim
+			// logging transport nothing does.
+			$this->logger->warning('Portaliq: emergency push not delivered to every recipient', $context);
+			return $answer;
+		}
+
+		$this->logger->info('Portaliq: emergency push sent', $context);
+		return $answer;
+	}//end reported()
 }//end class

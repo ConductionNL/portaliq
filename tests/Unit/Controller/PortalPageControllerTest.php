@@ -5,24 +5,24 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\PortalPageController;
+use OCA\Portaliq\Service\Cms\AccessibilityFraming;
 use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalThemeResolver;
 use OCA\Portaliq\Service\Cms\SiteHead;
 use OCA\Portaliq\Service\CmsReader;
 use OCA\Portaliq\Service\PortalNoticeReader;
+use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\RedirectResponse;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;
 
 /**
- * portal-white-label-runtime-config: the shell renders through
- * TemplateResponse::RENDER_AS_BASE with the resolved runtime config passed
- * as a template param, and the CSP's frame-ancestors is built from the
- * resolved Organisation's allowed embed origins — 'none' when empty, NEVER
- * the previous hard-coded '*'. catchAll() renders through the same index()
- * path so every portal URL (not just `/portal`) carries the config.
+ * The site shell (`/site`) and the retired portal's address (`/portal`), which
+ * now answers with a redirect to the site keeping its query string
+ * (site-reaches-portal-parity REQ-SRP-048).
  *
  * @spec openspec/changes/portal-controller-http-test-coverage/tasks.md#3.1
  * @spec openspec/changes/portal-controller-http-test-coverage/tasks.md#3.2
@@ -31,227 +31,123 @@ use PHPUnit\Framework\TestCase;
  */
 class PortalPageControllerTest extends TestCase {
 
+	/** @var AccessibilityFraming|null The framing rule a test sets, or a mock that says no. */
+	private ?AccessibilityFraming $framing = null;
+
+
 	/**
-	 * BASE, not PUBLIC. `layout.public.php` emits a VISIBLE `<header
-	 * id="header">` carrying the Nextcloud logo and instance title, which on a
-	 * white-label portal is another product's brand sitting above the
-	 * municipality's own — the plainest contradiction of the very spec this
-	 * class cites. `layout.base.php` emits `#content` and nothing else, while
-	 * still shipping the CSS, scripts and initial state the shell boots from.
+	 * `/portal` answers 302 to the site with the same query string
+	 * (site-reaches-portal-parity REQ-SRP-048), so a bookmark, an installed
+	 * app or an old mail keeps naming the same portal.
 	 *
-	 * Asserted by NAME rather than "not public": RENDER_AS_BLANK would also
-	 * drop the header, and would do it by shipping no assets at all.
+	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-old-portal-links-must-land-on-the-site-req-srp-048
 	 */
-	public function testIndexRendersPortalTemplateAsBase(): void {
-		$controller = $this->controller(orgSlug: '');
-		$response = $controller->index();
+	public function testPortalRedirectsToTheSiteKeepingTheQueryString(): void {
+		$cases = [
+			'/index.php/apps/portaliq/portal?portal=wilgenboom' => '/index.php/apps/portaliq/site?portal=wilgenboom',
+			'/index.php/apps/portaliq/portal?org=gemeente-x&portal=demo' => '/index.php/apps/portaliq/site?org=gemeente-x&portal=demo',
+			'/index.php/apps/portaliq/portal' => '/index.php/apps/portaliq/site',
+			'/index.php/apps/portaliq/portal?' => '/index.php/apps/portaliq/site',
+		];
+		foreach ($cases as $uri => $location) {
+			$response = $this->controller(orgSlug: '', requestUri: $uri)->index();
 
-		$this->assertInstanceOf(TemplateResponse::class, $response);
-		$this->assertSame(TemplateResponse::RENDER_AS_BASE, $response->getRenderAs());
-
-	}//end testIndexRendersPortalTemplateAsBase()
-
-	public function testNoAllowedEmbedOriginsYieldsFrameAncestorsNone(): void {
-		$controller = $this->controller(orgSlug: '', resolved: ['allowedEmbedOrigins' => []]);
-		$response = $controller->index();
-
-		$policy = $response->getContentSecurityPolicy()->buildPolicy();
-		$this->assertStringContainsString("frame-ancestors 'none';", $policy);
-		$this->assertStringNotContainsString('frame-ancestors *;', $policy);
-
-	}//end testNoAllowedEmbedOriginsYieldsFrameAncestorsNone()
-
-	public function testConfiguredAllowedEmbedOriginsAreAppliedNeverWildcard(): void {
-		$controller = $this->controller(
-			orgSlug: 'gemeente-x',
-			resolved: ['allowedEmbedOrigins' => ['https://gemeente-x.example']]
-		);
-		$response = $controller->index();
-
-		$policy = $response->getContentSecurityPolicy()->buildPolicy();
-		$this->assertStringContainsString('frame-ancestors https://gemeente-x.example;', $policy);
-		$this->assertStringNotContainsString('frame-ancestors *;', $policy);
-		// The 'self' default (allowed BEFORE any tenant configuration is
-		// resolved) must not silently persist alongside a configured origin.
-		$this->assertStringNotContainsString("frame-ancestors 'self'", $policy);
-
-	}//end testConfiguredAllowedEmbedOriginsAreAppliedNeverWildcard()
-
-	public function testCatchAllDelegatesToIndexForDistinctPaths(): void {
-		$controller = $this->controller(orgSlug: '');
-
-		foreach (['contracts/123', 'invoices/456'] as $path) {
-			$response = $controller->catchAll($path);
-			$this->assertInstanceOf(TemplateResponse::class, $response);
-			// Every deep link renders through index(), so the chrome fix has to
-			// hold here too — a portal that is clean at `/portal` and branded
-			// at `/portal/invoices/456` is still branded to the visitor.
-			$this->assertSame(TemplateResponse::RENDER_AS_BASE, $response->getRenderAs());
+			$this->assertInstanceOf(RedirectResponse::class, $response);
+			$this->assertSame(Http::STATUS_FOUND, $response->getStatus(), $uri);
+			$this->assertSame($location, $response->getRedirectURL(), $uri);
 		}
 
-	}//end testCatchAllDelegatesToIndexForDistinctPaths()
-
-	public function testIndexPassesTheFirstAcceptLanguageTagToTheResolver(): void {
-		$received = null;
-		$resolver = $this->createMock(PortalRuntimeConfigResolver::class);
-		$resolver->method('runtimeConfigFor')->willReturnCallback(
-			function (?array $portal, string $orgValue, string $locale) use (&$received) {
-				$received = $locale;
-				return ['allowedEmbedOrigins' => []];
-			}
-		);
-
-		$request = $this->createMock(IRequest::class);
-		$request->method('getParam')->willReturnCallback(
-			fn (string $key, $default = null) => ($key === 'org' ? '' : $default)
-		);
-		$request->method('getHeader')->willReturnMap([['Accept-Language', 'en-US,en;q=0.9,nl;q=0.8']]);
-
-		// index() does not consult the portal/theme resolvers directly — the
-		// runtime-config resolver owns that now — so they are inert mocks here.
-		(new PortalPageController(
-			$request,
-			$resolver,
-			$this->createMock(IURLGenerator::class),
-			$this->createMock(PortalResolver::class),
-			$this->createMock(PortalThemeResolver::class),
-			new SiteHead($this->createMock(CmsReader::class)),
-			$this->createMock(PortalNoticeReader::class)
-		))->index();
-
-		$this->assertSame('en-US', $received);
-
-	}//end testIndexPassesTheFirstAcceptLanguageTagToTheResolver()
+	}//end testPortalRedirectsToTheSiteKeepingTheQueryString()
 
 
 	/**
-	 * `?portal=` and `?org=` both reach the resolver, unchanged.
+	 * A deep link under `/portal/...` lands on the site too, with its query.
+	 * The fragment is the browser's to keep: a `Location` without one inherits
+	 * the original, so no Location here may carry a `#`.
 	 *
-	 * The ORIGINAL bug in one assertion: `index()` read only `?org=` and
-	 * handed it to a service that looked up an OpenRegister Organisation, so
-	 * `?portal=demo` — the parameter `/site` has always used and the one
-	 * WOO-571's portal action builds — was silently dropped on the floor.
-	 *
-	 * @return void
+	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-old-portal-links-must-land-on-the-site-req-srp-048
 	 */
-	public function testIndexPassesBothTenantParametersToTheResolver(): void {
-		$seen = [];
-		$resolver = $this->createMock(PortalRuntimeConfigResolver::class);
-		$resolver->method('resolvePortal')->willReturnCallback(
-			function (IRequest $request, string $portalSlug, string $orgValue) use (&$seen) {
-				$seen = ['portal' => $portalSlug, 'org' => $orgValue];
-				return null;
-			}
-		);
-		$resolver->method('runtimeConfigFor')->willReturn(['allowedEmbedOrigins' => []]);
+	public function testPortalDeepLinksRedirectToTheSite(): void {
+		foreach (['contracts/123', 'invoices/456'] as $path) {
+			$response = $this->controller(
+				orgSlug: 'gemeente-x',
+				requestUri: '/index.php/apps/portaliq/portal/' . $path . '?org=gemeente-x'
+			)->catchAll($path);
 
-		$request = $this->createMock(IRequest::class);
-		$request->method('getParam')->willReturnCallback(
-			static function (string $key, $default = null) {
-				return match ($key) {
-					'portal' => 'demo',
-					'org' => 'dev-org',
-					default => $default,
-				};
-			}
-		);
-		$request->method('getHeader')->willReturn('');
+			$this->assertInstanceOf(RedirectResponse::class, $response);
+			$this->assertSame(Http::STATUS_FOUND, $response->getStatus());
+			$this->assertSame('/index.php/apps/portaliq/site?org=gemeente-x', $response->getRedirectURL());
+			$this->assertStringNotContainsString('#', $response->getRedirectURL());
+		}
 
-		(new PortalPageController(
-			$request,
-			$resolver,
-			$this->createMock(IURLGenerator::class),
-			$this->createMock(PortalResolver::class),
-			$this->createMock(PortalThemeResolver::class),
-			new SiteHead($this->createMock(CmsReader::class)),
-			$this->createMock(PortalNoticeReader::class)
-		))->index();
-
-		$this->assertSame(['portal' => 'demo', 'org' => 'dev-org'], $seen);
-
-	}//end testIndexPassesBothTenantParametersToTheResolver()
+	}//end testPortalDeepLinksRedirectToTheSite()
 
 
 	/**
-	 * The resolved portal's token stylesheet reaches the template.
+	 * `?org=` names the same portal on the site as it did on `/portal`: the
+	 * organisation's one published portal, whose slug the shell hands the
+	 * renderer, so every content call carries `?portal=` (REQ-SRP-048).
 	 *
-	 * Without this parameter the white-label fix is invisible: the runtime
-	 * config would name a theme that no stylesheet on the page declares, and
-	 * the shell would render its fallback colours under a correct-looking
-	 * `theme-<name>` class.
-	 *
-	 * @return void
+	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-old-portal-links-must-land-on-the-site-req-srp-048
 	 */
-	public function testIndexHandsTheTemplateTheResolvedThemeStylesheet(): void {
+	public function testSiteResolvesTheOrganisationParameterToItsPortal(): void {
 		$controller = $this->controller(
-			orgSlug: '',
-			portal: ['slug' => 'demo', 'theme' => 'opencatalogi'],
-			themeStylesheet: 'tokens/opencatalogi'
+			orgSlug: 'gemeente-x',
+			portal: ['slug' => 'wilgenboom', 'title' => 'De Wilgenboom'],
+			byOrganisation: ['gemeente-x' => ['slug' => 'wilgenboom', 'title' => 'De Wilgenboom']]
 		);
 
-		$params = $controller->index()->getParams();
+		$params = $controller->site()->getParams();
 
-		$this->assertSame('tokens/opencatalogi', $params['themeStylesheet']);
+		$this->assertSame('wilgenboom', $params['portalConfig']['portal']);
 
-	}//end testIndexHandsTheTemplateTheResolvedThemeStylesheet()
+	}//end testSiteResolvesTheOrganisationParameterToItsPortal()
 
 
 	/**
-	 * operate-maintenance-notice T03 (REQ-OMN-001): the signed-in portal's
-	 * runtime config carries the notices active on the portal surface, and
-	 * a request that resolves no portal carries none.
+	 * `?portal=` wins over `?org=`, and an organisation that names no portal
+	 * hands the renderer no slug: never the raw `?org=` value.
 	 *
-	 * @return void
-	 *
-	 * @spec openspec/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
+	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-old-portal-links-must-land-on-the-site-req-srp-048
 	 */
-	public function testRuntimeConfigCarriesActiveNotices(): void {
+	public function testSitePrefersThePortalParameterAndNeverEchoesAnUnknownOrganisation(): void {
+		$both = $this->controller(
+			orgSlug: 'gemeente-x',
+			portalParam: 'demo',
+			byOrganisation: ['gemeente-x' => ['slug' => 'wilgenboom']]
+		);
+		$this->assertSame('demo', $both->site()->getParams()['portalConfig']['portal']);
+
+		$unknown = $this->controller(orgSlug: '"><script>', byOrganisation: []);
+		$this->assertSame('', $unknown->site()->getParams()['portalConfig']['portal']);
+
+		$throws = $this->controller(orgSlug: 'gemeente-x', byOrganisationThrows: true);
+		$this->assertSame('', $throws->site()->getParams()['portalConfig']['portal']);
+
+	}//end testSitePrefersThePortalParameterAndNeverEchoesAnUnknownOrganisation()
+
+	/**
+	 * The notices for signed-in residents (surface `portal`), which `/portal`
+	 * carried in its runtime config, travel in the site shell now; a request
+	 * that resolves no portal carries none (REQ-SRP-010).
+	 *
+	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-notices-must-show-above-every-page-req-srp-010
+	 */
+	public function testSiteCarriesTheSignedInNotices(): void {
 		$notice  = ['id' => 'n-1', 'message' => 'Onderhoud', 'level' => 'info', 'linkLabel' => '', 'linkUrl' => '', 'endsAt' => '2026-10-04T02:00:00+00:00'];
 		$notices = $this->createMock(PortalNoticeReader::class);
 		$notices->expects($this->once())->method('active')->with('demo', 'portal')->willReturn([$notice]);
 
-		$params = $this->controller(orgSlug: '', portal: ['slug' => 'demo'], notices: $notices)->index()->getParams();
-		$this->assertSame([$notice], $params['runtimeConfig']['notices']);
+		$params = $this->controller(orgSlug: '', portal: ['slug' => 'demo'], notices: $notices)->site()->getParams();
+		$this->assertSame([$notice], $params['portalConfig']['portalNotices']);
 
 		$none = $this->createMock(PortalNoticeReader::class);
 		$none->expects($this->never())->method('active');
-		$params = $this->controller(orgSlug: '', notices: $none)->index()->getParams();
-		$this->assertSame([], $params['runtimeConfig']['notices']);
-	}//end testRuntimeConfigCarriesActiveNotices()
+		$params = $this->controller(orgSlug: '', notices: $none)->site()->getParams();
+		$this->assertSame([], $params['portalConfig']['portalNotices']);
 
+	}//end testSiteCarriesTheSignedInNotices()
 
-	/**
-	 * An unresolved request links NO token set at all.
-	 *
-	 * Fail-closed, and the alternative is the one failure this whole ticket is
-	 * about: a page that renders in some brand rather than in none.
-	 *
-	 * @return void
-	 */
-	public function testIndexLinksNoStylesheetWhenNothingResolves(): void {
-		$controller = $this->controller(orgSlug: '');
-
-		$this->assertSame('', $controller->index()->getParams()['themeStylesheet']);
-
-	}//end testIndexLinksNoStylesheetWhenNothingResolves()
-
-	/**
-	 * parent-pwa-installability: the manifest link carries the SAME org
-	 * reference this page itself resolved, built through the dedicated
-	 * `portaliq.portalManifest.manifest` route — not a hardcoded string, and not
-	 * the `?portal=` branch when only `?org=` was given.
-	 *
-	 * @return void
-	 */
-	public function testManifestUrlNamesTheSameOrgThePageResolved(): void {
-		$controller = $this->controller(orgSlug: 'gemeente-x');
-
-		$manifestUrl = $controller->index()->getParams()['manifestUrl'];
-
-		$this->assertStringContainsString('portaliq.portalManifest.manifest', $manifestUrl);
-		$this->assertStringContainsString('org=gemeente-x', $manifestUrl);
-
-	}//end testManifestUrlNamesTheSameOrgThePageResolved()
 
 	/**
 	 * The site shell carries no platform chrome AND no platform stylesheet.
@@ -272,6 +168,62 @@ class PortalPageControllerTest extends TestCase {
 	 * Asserted by NAME, because the three modes fail differently and only this
 	 * one means "we own the document".
 	 */
+	/**
+	 * The site is never framed, except by its own origin for a request the
+	 * accessibility measurement may make (site-accessibility-statement
+	 * REQ-SAS-001).
+	 *
+	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+	 */
+	public function testOnlyTheMeasurementMayFrameTheSiteAndOnlyFromItsOwnOrigin(): void {
+		$policy = $this->controller(orgSlug: '')->site()->getContentSecurityPolicy()->buildPolicy();
+		$this->assertStringContainsString("frame-ancestors 'none'", $policy);
+
+		$this->framing = $this->getMockBuilder(AccessibilityFraming::class)->disableOriginalConstructor()->onlyMethods(['allowsSelf'])->getMock();
+		$this->framing->method('allowsSelf')->willReturn(true);
+		$policy = $this->controller(orgSlug: '')->site()->getContentSecurityPolicy()->buildPolicy();
+		$this->assertStringContainsString("frame-ancestors 'self'", $policy);
+		$this->assertStringNotContainsString('frame-ancestors *', $policy);
+
+	}//end testOnlyTheMeasurementMayFrameTheSiteAndOnlyFromItsOwnOrigin()
+
+	/**
+	 * The notice a browser without JavaScript shows links to the plain version
+	 * of the same page: the route, the named portal, the search and the page
+	 * carried over, a slash left readable, and nothing it was not given
+	 * (site-honest-without-javascript REQ-SHJ-001).
+	 *
+	 * @spec openspec/changes/site-honest-without-javascript/specs/site-without-javascript/spec.md#requirement-every-site-page-says-so-when-javascript-is-off-req-shj-001
+	 */
+	public function testThePlainUrlCarriesTheRouteAndTheSearch(): void {
+		$search = $this->controller(orgSlug: '', route: '/zoeken', params: ['_search' => 'afval'])->site()->getParams();
+		$this->assertSame('/index.php/apps/portaliq/site/plain?route=/zoeken&_search=afval', $search['plainUrl']);
+
+		$all = $this->controller(orgSlug: '', route: '/zoeken', portalParam: 'demo', params: ['_search' => 'a&b c', '_page' => '2'])
+			->site()->getParams();
+		$this->assertSame('/index.php/apps/portaliq/site/plain?route=/zoeken&portal=demo&_search=a%26b%20c&_page=2', $all['plainUrl']);
+
+		$path = $this->controller(orgSlug: '', route: '/elders')->sitePath(path: 'afval/container')->getParams();
+		$this->assertSame('/index.php/apps/portaliq/site/plain?route=/afval/container', $path['plainUrl']);
+
+		$bare = $this->controller(orgSlug: '', params: ['_search' => ['x']])->site()->getParams();
+		$this->assertSame('/index.php/apps/portaliq/site/plain', $bare['plainUrl']);
+
+	}//end testThePlainUrlCarriesTheRouteAndTheSearch()
+
+
+	/**
+	 * The real framing rule with nobody allowed to measure.
+	 *
+	 * @return AccessibilityFraming
+	 */
+	private function noFraming(): AccessibilityFraming {
+		$framing = $this->getMockBuilder(AccessibilityFraming::class)->disableOriginalConstructor()->onlyMethods(['allowsSelf'])->getMock();
+		$framing->method('allowsSelf')->willReturn(false);
+
+		return $framing;
+	}//end noFraming()
+
 	public function testSiteRendersSiteTemplateAsBlank(): void {
 		$controller = $this->controller(orgSlug: '');
 		$response = $controller->site();
@@ -310,6 +262,50 @@ class PortalPageControllerTest extends TestCase {
 		$this->assertSame('themes/vng-tokens', $params['nldsStylesheet']);
 
 	}//end testSiteEmitsBothStylesheetsForAThemedPortal()
+
+
+	/**
+	 * REQ-PTB-002: a themed portal's token overrides reach the template as
+	 * filtered CSS; an unthemed portal gets none, whatever it declares.
+	 *
+	 * @return void
+	 */
+	public function testSiteCarriesTheFilteredTokenOverridesOfAThemedPortalOnly(): void {
+		$tokens = ['--nldesign-header-link-color' => '#f36c21', '--evil-x' => 'red', '--nldesign-bad' => 'url(x)'];
+
+		$themed = $this->controller(orgSlug: '', portal: ['theme' => 'vng', 'tokens' => $tokens], themeStylesheet: 'themes/vng');
+		$this->assertSame(':root{--nldesign-header-link-color:#f36c21}', $themed->site()->getParams()['themeTokenCss']);
+
+		$unthemed = $this->controller(orgSlug: '', portal: ['theme' => 'vng', 'tokens' => $tokens], themeStylesheet: null);
+		$this->assertSame('', $unthemed->site()->getParams()['themeTokenCss']);
+	}//end testSiteCarriesTheFilteredTokenOverridesOfAThemedPortalOnly()
+
+
+	/**
+	 * site-links-the-theme-bridge: a themed portal gets the bridge, an
+	 * unthemed one does not, although the theme app ships it in both cases.
+	 * The bridge carries fallbacks; linked without a set it would restyle a
+	 * page that must render unstyled.
+	 *
+	 * @return void
+	 */
+	public function testTheBridgeTravelsOnlyWithAResolvedSet(): void {
+		$themed = $this->controller(
+			orgSlug: '',
+			portal: ['theme' => 'denhaag'],
+			themeStylesheet: 'tokens/denhaag'
+		);
+		// No logo file in this fixture, so no light logo or emblem either
+		// (site-chrome-follows-the-design).
+		$this->assertSame(['bridge' => 'public-bridge', 'fonts' => 'fonts', 'logoInverse' => '', 'emblem' => '', 'emblemGrey' => ''], $themed->site()->getParams()['themeAppSheets']);
+
+		$unthemed = $this->controller(
+			orgSlug: '',
+			portal: ['theme' => 'nosuchset'],
+			themeStylesheet: null
+		);
+		$this->assertSame(['bridge' => '', 'fonts' => '', 'logoInverse' => '', 'emblem' => '', 'emblemGrey' => ''], $unthemed->site()->getParams()['themeAppSheets']);
+	}//end testTheBridgeTravelsOnlyWithAResolvedSet()
 
 	/**
 	 * A THROWING portal resolver yields an UNSTYLED page, not somebody else's brand.
@@ -375,7 +371,7 @@ class PortalPageControllerTest extends TestCase {
 		$signin = $controller->site()->getParams()['portalConfig']['signin'];
 
 		$this->assertSame(
-			expected: ['devLogin' => true, 'silentSignIn' => 'digid', 'signinOrganisation' => 'school-org', 'audience' => 'client', 'waysIn' => []],
+			expected: ['devLogin' => true, 'silentSignIn' => 'digid', 'signinOrganisation' => 'school-org', 'audience' => 'client', 'waysIn' => [], 'exampleResident' => '', 'exampleResidents' => []],
 			actual: $signin
 		);
 
@@ -477,6 +473,28 @@ class PortalPageControllerTest extends TestCase {
 
 	}//end testSiteAlwaysPassesANonEmptyLocale()
 
+
+	/**
+	 * site-matches-the-zuiddrecht-boards: the document language follows the
+	 * portal. A portal that declares only `nl` serves `nl` to a browser that
+	 * asks for English; a portal that declares `en` as well serves the English
+	 * the browser asked for; a portal that declares nothing serves what the
+	 * browser asked for, as before.
+	 *
+	 * @return void
+	 */
+	public function testSiteLocaleFollowsThePortalsDeclaredLocales(): void {
+		$dutchOnly = $this->controller(orgSlug: '', portal: ['slug' => 'zuiddrecht', 'locales' => ['nl']], acceptLanguage: 'en-US,en;q=0.9');
+		$this->assertSame(expected: 'nl', actual: $dutchOnly->site()->getParams()['locale']);
+
+		$both = $this->controller(orgSlug: '', portal: ['slug' => 'zuiddrecht', 'locales' => ['nl', 'en']], acceptLanguage: 'en-US,en;q=0.9');
+		$this->assertSame(expected: 'en-US', actual: $both->site()->getParams()['locale']);
+
+		$undeclared = $this->controller(orgSlug: '', portal: ['slug' => 'open-tilburg'], acceptLanguage: 'en-US,en;q=0.9');
+		$this->assertSame(expected: 'en-US', actual: $undeclared->site()->getParams()['locale']);
+
+	}//end testSiteLocaleFollowsThePortalsDeclaredLocales()
+
 	/**
 	 * site-page-seo-history-and-media REQ-SPH-002: the served head carries the
 	 * page's search title, description and robots, without JavaScript.
@@ -527,6 +545,15 @@ class PortalPageControllerTest extends TestCase {
 	 * @param string|null $themeStylesheet     What `stylesheetFor()` returns.
 	 * @param string|null $nldsStylesheet      What `nldsStylesheetFor()` returns.
 	 * @param bool        $portalResolverThrows Whether the portal resolver throws.
+	 * @param string|null $logoFile            What `logoFileFor()` returns.
+	 * @param string|null $themeAppId          What `themeAppId()` returns.
+	 * @param array|null  $page                The page the CMS reader answers.
+	 * @param string      $route               The `route` request param.
+	 * @param string      $requestUri          The request URI, with its query.
+	 * @param string      $portalParam         The `portal` request param.
+	 * @param array|null  $byOrganisation      Organisation to the portal it resolves to.
+	 * @param bool        $byOrganisationThrows Whether that lookup throws.
+	 * @param PortalNoticeReader|null $notices The notice reader.
 	 *
 	 * @return PortalPageController The controller under test.
 	 */
@@ -541,17 +568,27 @@ class PortalPageControllerTest extends TestCase {
 		?string $themeAppId = 'thematiq',
 		?array $page = null,
 		string $route = '',
-		?PortalNoticeReader $notices = null
+		string $requestUri = '/index.php/apps/portaliq/portal',
+		string $portalParam = '',
+		?array $byOrganisation = null,
+		bool $byOrganisationThrows = false,
+		?PortalNoticeReader $notices = null,
+		string $acceptLanguage = '',
+		array $params = []
 	): PortalPageController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParam')->willReturnCallback(
 			fn (string $key, $default = null) => match ($key) {
 				'org' => $orgSlug,
+				'portal' => ($portalParam !== '' ? $portalParam : $default),
 				'route' => ($route !== '' ? $route : $default),
-				default => $default,
+				default => ($params[$key] ?? $default),
 			}
 		);
-		$request->method('getHeader')->willReturn('');
+		$request->method('getHeader')->willReturnCallback(
+			fn (string $name) => ($name === 'Accept-Language' ? $acceptLanguage : '')
+		);
+		$request->method('getRequestUri')->willReturn($requestUri);
 
 		$default = [
 			'organisationName' => 'Portaliq',
@@ -594,9 +631,11 @@ class PortalPageControllerTest extends TestCase {
 		// (still answers a `/api/content/site`-shaped path for that route).
 		$urlGenerator->method('linkToRoute')
 			->willReturnCallback(
-				static fn (string $name, array $params = []): string => ($name === 'portaliq.content.site')
-					? '/index.php/apps/portaliq/api/content/site'
-					: ('/index.php/apps/portaliq/route/' . $name . '?' . http_build_query($params))
+				static fn (string $name, array $params = []): string => match ($name) {
+					'portaliq.content.site' => '/index.php/apps/portaliq/api/content/site',
+					'portaliq.portalPage.site' => '/index.php/apps/portaliq/site',
+					default => ('/index.php/apps/portaliq/route/' . $name . '?' . http_build_query($params)),
+				}
 			);
 
 		$urlGenerator->method('linkToRouteAbsolute')
@@ -610,6 +649,11 @@ class PortalPageControllerTest extends TestCase {
 		// parameters above let a single test opt into the resolved path or the
 		// throwing one, which is what the callers below exercise.
 		$portalResolver = $this->createMock(PortalResolver::class);
+		// The rule itself is PortalResolverTest's; here only the wiring: the
+		// controller hands the resolved portal and the visitor's language over.
+		$portalResolver->method('localeFor')->willReturnCallback(
+			fn (?array $portal, string $locale) => (($portal['locales'] ?? []) === ['nl'] ? 'nl' : $locale)
+		);
 		if ($portalResolverThrows === true) {
 			$portalResolver->method('resolve')
 				->willThrowException(new \RuntimeException('unknown host'));
@@ -617,9 +661,19 @@ class PortalPageControllerTest extends TestCase {
 			$portalResolver->method('resolve')->willReturn($portal);
 		}
 
+		if ($byOrganisationThrows === true) {
+			$portalResolver->method('resolveByOrganisation')
+				->willThrowException(new \RuntimeException('register down'));
+		} else {
+			$portalResolver->method('resolveByOrganisation')->willReturnCallback(
+				static fn (string $organisation): ?array => (($byOrganisation ?? [])[$organisation] ?? null)
+			);
+		}
+
 		$themeResolver = $this->createMock(PortalThemeResolver::class);
 		$themeResolver->method('stylesheetFor')->willReturn($themeStylesheet);
 		$themeResolver->method('nldsStylesheetFor')->willReturn($nldsStylesheet);
+		$themeResolver->method('shippedStylesheets')->willReturn(['bridge' => 'public-bridge', 'fonts' => 'fonts']);
 		$themeResolver->method('logoFileFor')->willReturn($logoFile);
 		// The id the theme app is installed under on this instance. The app is
 		// mid-rename (`nldesign` -> `thematiq`), so the controller asks rather
@@ -639,7 +693,8 @@ class PortalPageControllerTest extends TestCase {
 			$portalResolver,
 			$themeResolver,
 			new SiteHead($reader),
-			($notices ?? $this->createMock(PortalNoticeReader::class))
+			($notices ?? $this->createMock(PortalNoticeReader::class)),
+			($this->framing ?? $this->noFraming())
 		);
 	}//end controller()
 

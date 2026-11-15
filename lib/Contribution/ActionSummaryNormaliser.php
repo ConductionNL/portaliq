@@ -1,0 +1,231 @@
+<?php
+
+/**
+ * Portaliq Action Summary Normaliser (action-summary-sentence)
+ *
+ * A create or endpoint action with fields MAY declare `answerSummary`: one
+ * sentence the form shows above its send button and again on its
+ * confirmation, built from the resident's own answers ("Sami is vandaag de
+ * hele dag ziek."). Until decision 127 (9 Oct 2026) this object lived under
+ * `summary`; that key is now the start tile's plain sentence
+ * (StartTileNormaliser), and an object still declared there is read as
+ * `answerSummary` by FormStepsNormaliser.
+ *
+ *     "answerSummary": {
+ *       "label": "U meldt",
+ *       "template": "{learner} is {when} {reason}.",
+ *       "phrases": { "when": { "today": "vandaag de hele dag" } }
+ *     }
+ *
+ * The template MAY name only the action's own fields: a placeholder for any
+ * other name drops the whole summary, because a sentence with a hole in it
+ * says something the resident did not answer. `phrases` maps a stored answer
+ * to the words the sentence uses, per field of the action. Everything is
+ * text; nothing here is markup.
+ *
+ * @category Contribution
+ * @package  OCA\Portaliq\Contribution
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/changes/action-summary-sentence/specs/portal-contribution-contract/spec.md#requirement-an-action-may-sum-up-the-answers-in-one-sentence
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Portaliq\Contribution;
+
+/**
+ * Keeps a well-formed `summary` on an action.
+ *
+ * @spec openspec/changes/action-summary-sentence/specs/portal-contribution-contract/spec.md#requirement-an-action-may-sum-up-the-answers-in-one-sentence
+ */
+class ActionSummaryNormaliser {
+	/**
+	 * The longest template.
+	 */
+	private const MAX_TEMPLATE = 300;
+
+	/**
+	 * The longest label or phrase.
+	 */
+	private const MAX_TEXT = 120;
+
+	/**
+	 * The clean summary, or null to drop it.
+	 *
+	 * @param mixed              $summary   The declared summary.
+	 * @param array<int, string> $whitelist The action's fields.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/action-summary-sentence/specs/portal-contribution-contract/spec.md#requirement-an-action-may-sum-up-the-answers-in-one-sentence
+	 */
+	public function summary(mixed $summary, array $whitelist): ?array {
+		$parts = $this->templateAndFields(summary: $summary, whitelist: $whitelist);
+		if ($parts === null) {
+			return null;
+		}
+
+		[$template, $named] = $parts;
+
+		$out     = ['template' => trim($template)] + $this->labelOf(summary: $summary);
+		$phrases = $this->phrases(declared: ($summary['phrases'] ?? null), fields: $named);
+		if ($phrases !== []) {
+			$out['phrases'] = $phrases;
+		}
+
+		return $out;
+	}//end summary()
+
+	/**
+	 * The summary's template and the fields it names, or null when the
+	 * summary, its template or a named field is unusable.
+	 *
+	 * @param mixed              $summary   The declared summary.
+	 * @param array<int, string> $whitelist The action's fields.
+	 *
+	 * @return array{0: string, 1: array<int, string>}|null
+	 *
+	 * @spec openspec/changes/action-summary-sentence/specs/portal-contribution-contract/spec.md#requirement-an-action-may-sum-up-the-answers-in-one-sentence
+	 */
+	private function templateAndFields(mixed $summary, array $whitelist): array|null {
+		if (is_array($summary) === false) {
+			return null;
+		}
+
+		$template = $this->template(value: ($summary['template'] ?? null));
+		if ($template === null) {
+			return null;
+		}
+
+		$named = $this->namedFields(template: $template, whitelist: $whitelist);
+		if ($named === null) {
+			return null;
+		}
+
+		return [$template, $named];
+	}//end templateAndFields()
+
+	/**
+	 * The declared template when it is a non-blank string of at most
+	 * MAX_TEMPLATE characters, untrimmed; else null.
+	 *
+	 * @param mixed $value The declared template.
+	 *
+	 * @return string|null
+	 */
+	private function template(mixed $value): ?string {
+		if (is_string($value) === false || trim($value) === '' || mb_strlen($value) > self::MAX_TEMPLATE) {
+			return null;
+		}
+
+		return $value;
+	}//end template()
+
+	/**
+	 * The fields a template names, each once; null when it names none or one
+	 * the action does not have.
+	 *
+	 * @param string             $template  The template.
+	 * @param array<int, string> $whitelist The action's fields.
+	 *
+	 * @return array<int, string>|null
+	 */
+	private function namedFields(string $template, array $whitelist): ?array {
+		preg_match_all('/\{([A-Za-z][A-Za-z0-9_]*)\}/', $template, $matches);
+		$named = array_unique($matches[1]);
+		if ($named === [] || array_diff($named, $whitelist) !== []) {
+			return null;
+		}
+
+		return $named;
+	}//end namedFields()
+
+	/**
+	 * The summary's label as `['label' => …]`, or nothing when it is not a
+	 * short text.
+	 *
+	 * @param array<string, mixed> $summary The declared summary.
+	 *
+	 * @return array<string, string>
+	 */
+	private function labelOf(array $summary): array {
+		$label = $this->text(value: ($summary['label'] ?? null));
+		if ($label === '') {
+			return [];
+		}
+
+		return ['label' => $label];
+	}//end labelOf()
+
+	/**
+	 * The phrases for the fields the template names: `{field: {answer: words}}`.
+	 *
+	 * @param mixed              $declared The declared phrases.
+	 * @param array<int, string> $fields   The fields the template names.
+	 *
+	 * @return array<string, array<string, string>>
+	 */
+	private function phrases(mixed $declared, array $fields): array {
+		if (is_array($declared) === false) {
+			return [];
+		}
+
+		$out = [];
+		foreach ($fields as $field) {
+			$phrases = $this->fieldPhrases(map: ($declared[$field] ?? null));
+			if ($phrases !== []) {
+				$out[$field] = $phrases;
+			}
+		}
+
+		return $out;
+	}//end phrases()
+
+	/**
+	 * One field's phrases that are short texts: `{answer: words}`; none when
+	 * the field declares no map.
+	 *
+	 * @param mixed $map The declared phrases of the field.
+	 *
+	 * @return array<string, string>
+	 */
+	private function fieldPhrases(mixed $map): array {
+		if (is_array($map) === false) {
+			return [];
+		}
+
+		$out = [];
+		foreach ($map as $answer => $words) {
+			$text = $this->text(value: $words);
+			if ($text !== '') {
+				$out[(string)$answer] = $text;
+			}
+		}
+
+		return $out;
+	}//end fieldPhrases()
+
+	/**
+	 * A trimmed text of at most MAX_TEXT characters, else ''.
+	 *
+	 * @param mixed $value The value.
+	 *
+	 * @return string
+	 */
+	private function text(mixed $value): string {
+		if (is_string($value) === false || mb_strlen(trim($value)) > self::MAX_TEXT) {
+			return '';
+		}
+
+		return trim($value);
+	}//end text()
+}//end class

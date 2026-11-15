@@ -19,8 +19,9 @@ requirement to the commits it came from.
 
 ### Requirement: Every surface the site paints MUST read a theme token (REQ-PTB-001)
 
-The site SHALL link thematiq's public bridge, then the portal's token set and
-its ancestors, then its own `css/site-theme.css`, in that order. Every colour a
+The site SHALL link its own `css/site-theme.css` after the vendored sheets, then
+thematiq's public bridge, then the portal's token set and its ancestors, in that
+order (the bridge link is REQ-STB-001 of `site-links-the-theme-bridge`). Every colour a
 portaliq stylesheet declares SHALL be a `var()` whose last fallback is another
 token or a CSS keyword (`inherit`, `currentColor`, `transparent`), never a
 colour literal. A band that paints its own background SHALL also name the token

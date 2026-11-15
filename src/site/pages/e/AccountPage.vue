@@ -5,10 +5,12 @@
 
 <!--
 	"My account" on the site (identity-profile-page T07, T10), ported from
-	src/portal/components/AccountPage.jsx. The signed-in person's own name,
+	the React portal's AccountPage.jsx. The signed-in person's own name,
 	e-mail addresses and phone numbers with the preferred one of each kind
 	marked, how the organisation contacts them, and removing the account. After
-	a removal the page emits `removed`: the shell listens and signs out.
+	a removal the page emits `removed`: the shell listens and signs out. The
+	code from an invitation letter is typed here too; when it is right the page
+	emits `claimed`; the shell shows the sentence and reads the account again.
 -->
 <template>
 	<p
@@ -31,6 +33,13 @@
 		<h1 id="pq-account-title" class="utrecht-heading-2">
 			{{ t('My account') }}
 		</h1>
+		<p class="utrecht-paragraph pq-account__lead">
+			{{
+				t(
+					'How you are signed in, how we reach you and what we let you know about.',
+				)
+			}}
+		</p>
 		<p v-if="notice" class="utrecht-paragraph pq-e-notice" role="status">
 			{{ notice }}
 		</p>
@@ -39,9 +48,11 @@
 		</p>
 
 		<form class="pq-account__name" @submit.prevent="saveName">
-			<label for="pq-account-name" class="utrecht-form-label">{{
-				t('Name')
-			}}</label>
+			<label
+				for="pq-account-name"
+				class="utrecht-form-label pq-account__name-label"
+				>{{ t('Name') }}</label
+			>
 			<input
 				id="pq-account-name"
 				v-model="name"
@@ -59,45 +70,55 @@
 		<AddressList kind="email" :entries="emails" :t="t" :act="act" />
 		<AddressList kind="phone" :entries="phones" :t="t" :act="act" />
 
-		<fieldset class="utrecht-form-fieldset pq-account__channel">
-			<legend class="utrecht-form-fieldset__legend">
-				{{ t('How should we contact you?') }}
-			</legend>
-			<label
-				v-for="option in channels"
-				:key="option.value"
-				class="utrecht-form-label pq-account__radio">
-				<input
-					type="radio"
-					class="utrecht-radio-button"
-					name="pq-contact-channel"
-					:value="option.value"
-					:checked="channel === option.value"
-					@change="chooseChannel(option.value)" />
-				{{ t(option.label) }}
-			</label>
-		</fieldset>
+		<section
+			class="pq-account__preferences"
+			aria-labelledby="pq-account-preferences">
+			<h2 id="pq-account-preferences" class="utrecht-heading-3">
+				{{ t('Contact preferences') }}
+			</h2>
+			<fieldset class="utrecht-form-fieldset pq-account__channel">
+				<legend class="utrecht-form-fieldset__legend pq-account__legend">
+					{{ t('How should we contact you?') }}
+				</legend>
+				<label
+					v-for="option in channels"
+					:key="option.value"
+					class="utrecht-form-label utrecht-form-label--radio-button pq-account__radio"
+					:data-testid="`account-channel-${option.value}`">
+					<input
+						type="radio"
+						class="utrecht-radio-button utrecht-radio-button--html-input"
+						name="pq-contact-channel"
+						:value="option.value"
+						:checked="channel === option.value"
+						@change="chooseChannel(option.value)" />
+					{{ t(option.label) }}
+				</label>
+			</fieldset>
+		</section>
+
+		<InvitationCodeForm :api="api" :t="t" @claimed="$emit('claimed')" />
 
 		<section class="pq-account__remove" aria-labelledby="pq-account-remove">
-			<h3 id="pq-account-remove" class="utrecht-heading-3">
+			<h2 id="pq-account-remove" class="utrecht-heading-4">
 				{{ t('Remove my account') }}
-			</h3>
+			</h2>
+			<p class="utrecht-paragraph">
+				{{
+					t(
+						'Your portal account is removed. Your cases stay with the organisation.',
+					)
+				}}
+			</p>
 			<button
 				v-if="!confirmRemove"
 				type="button"
-				class="utrecht-button utrecht-button--secondary-action"
+				class="utrecht-button utrecht-button--secondary-action pq-account__danger"
 				data-testid="account-remove"
 				@click="confirmRemove = true">
 				{{ t('Remove my account') }}
 			</button>
 			<div v-else role="group" aria-labelledby="pq-account-remove">
-				<p class="utrecht-paragraph">
-					{{
-						t(
-							'Your portal account is removed. Your cases stay with the organisation.',
-						)
-					}}
-				</p>
 				<div class="pq-e-buttons">
 					<button
 						type="button"
@@ -120,20 +141,23 @@
 
 <script>
 import AddressList from '../../components/e/AddressList.vue'
+import InvitationCodeForm from '../../components/e/InvitationCodeForm.vue'
 import { refusalText } from '../../../shared/account.js'
+
+import '@utrecht/radio-button-css/dist/index.css'
 
 /** The contact channels, as English source keys. */
 const CHANNELS = [
-	{ value: 'portal', label: 'Only through the portal' },
 	{ value: 'email', label: 'By e-mail' },
 	{ value: 'phone', label: 'By phone' },
 	{ value: 'post', label: 'By post' },
+	{ value: 'portal', label: 'Only through the portal' },
 ]
 
 export default {
 	name: 'AccountPage',
 
-	components: { AddressList },
+	components: { AddressList, InvitationCodeForm },
 
 	props: {
 		/** The session as `/portal/api/session` returns it. */
@@ -152,7 +176,7 @@ export default {
 		initialConfirmRemove: { type: Boolean, default: false },
 	},
 
-	emits: ['removed'],
+	emits: ['removed', 'claimed'],
 
 	data() {
 		return {
@@ -197,7 +221,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when read.
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
 		 */
 		async reload() {
 			const answer = await this.api.getDetails()
@@ -212,7 +236,7 @@ export default {
 		 * @param {string} done The notice on success.
 		 * @return {Promise<boolean>} Whether it worked.
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
 		 */
 		async run(pending, done) {
 			this.notice = ''
@@ -235,7 +259,7 @@ export default {
 		 * @param {string} value The address.
 		 * @return {Promise<boolean>} Whether it worked.
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
 		 */
 		act(action, kind, value) {
 			if (action === 'prefer') {
@@ -265,7 +289,7 @@ export default {
 		 *
 		 * @return {Promise<boolean>} Whether it worked.
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
 		 */
 		saveName() {
 			return this.run(
@@ -280,7 +304,7 @@ export default {
 		 * @param {string} value The channel.
 		 * @return {Promise<boolean>} Whether it worked.
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
 		 */
 		chooseChannel(value) {
 			return this.run(
@@ -294,7 +318,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when answered.
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
 		 */
 		async removeAccount() {
 			const answer = await this.api.removeOwnAccount()
@@ -313,6 +337,13 @@ export default {
 	margin-block-start: var(--utrecht-space-block-md, 1rem);
 }
 
+.pq-account__lead {
+	color: var(--nldesign-color-text-muted, inherit);
+	margin-block-start: var(--utrecht-space-block-xs, 0.5rem);
+}
+
+/* The name: its label on a line of its own, the field and its button
+   beside each other under it. */
 .pq-account__name {
 	display: flex;
 	flex-wrap: wrap;
@@ -320,8 +351,53 @@ export default {
 	gap: var(--utrecht-space-inline-sm, 0.5rem);
 }
 
+.pq-account__name-label {
+	flex-basis: 100%;
+}
+
+.pq-account__name .utrecht-textbox {
+	flex: 0 1 24rem;
+}
+
+.pq-account__legend {
+	font-weight: var(--utrecht-typography-weight-scale-bold, 600);
+	margin-block-end: var(--utrecht-space-block-xs, 0.5rem);
+}
+
+/* A radio's words in the body weight, with room to tap (WCAG 2.5.8). */
 .pq-account__radio {
-	display: block;
+	align-items: center;
+	display: flex;
+	font-weight: normal;
+	gap: var(--utrecht-space-inline-sm, 0.5rem);
+	min-block-size: 2rem;
+}
+
+/* Removing the account closes the page under a rule, its button in the
+   error colour so it is never taken for an ordinary save. */
+.pq-account__remove {
+	border-block-start: 1px solid var(--nldesign-color-border, #d3d8df);
+	padding-block-start: var(--utrecht-space-block-lg, 1.5rem);
+}
+
+.pq-account__remove .utrecht-heading-4 {
+	margin-block: 0 var(--utrecht-space-block-xs, 0.5rem);
+}
+
+.pq-account__danger {
+	--_utrecht-button-appearance-border-color: var(
+		--nldesign-color-accent-text,
+		var(--nldesign-color-error, #a30000)
+	);
+	--_utrecht-button-appearance-color: var(
+		--nldesign-color-accent-text,
+		var(--nldesign-color-error, #a30000)
+	);
+	border-color: var(
+		--nldesign-color-accent-text,
+		var(--nldesign-color-error, #a30000)
+	);
+	color: var(--nldesign-color-accent-text, var(--nldesign-color-error, #a30000));
 }
 
 .pq-e-buttons {

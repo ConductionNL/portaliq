@@ -28,9 +28,9 @@ import {
 } from '../src/shared/portalNav.js'
 import {
 	accountCrumbs,
-	accountMenu,
 	accountRedirect,
 	loggedInAs,
+	pillLabel,
 } from '../src/site/lib/accountArea.js'
 import { signInRoutes } from '../src/site/lib/authApi.js'
 import {
@@ -84,10 +84,10 @@ test('the navigation leads with my cases, keeps the inbox and account last, and 
 
 test('the shell sections follow what the answers announce', () => {
 	assert.deepEqual(shellSections({ session: null, contributions: null, threads: null, news: null }), {
-		tasks: false, messages: false, news: false, access: false, cases: false,
+		tasks: false, messages: false, news: false, access: false, cases: false, pages: [], themes: [], stepUp: [],
 	})
 	assert.deepEqual(shellSections({ session: {}, contributions: CONTRIBUTIONS, threads: [{ id: 't' }], news: [{ id: 'n' }] }), {
-		tasks: true, messages: true, news: true, access: true, cases: true,
+		tasks: true, messages: true, news: true, access: true, cases: true, pages: [], themes: [], stepUp: [],
 	})
 	// Without any page or section there is no inbox either.
 	assert.deepEqual(buildNav([], identity, {}), [])
@@ -107,9 +107,10 @@ test('every entry has its own in-site route under /mijn, and the route finds it 
 	assert.equal(navEntryForRoute(nav, '/zoeken'), null)
 })
 
-test('a bare /mijn or a page not offered opens the default page; an offered page stays', () => {
+test('a page not offered opens the default page; an offered page and the bare /mijn (the home) stay', () => {
 	const nav = buildNav(CONTRIBUTIONS.contributions, identity, { cases: true })
-	assert.equal(accountRedirect(nav, '/mijn'), '/mijn/cases')
+	// site-mijn-omgeving-components REQ-SMO-007: /mijn is the home now.
+	assert.equal(accountRedirect(nav, '/mijn'), '')
 	assert.equal(accountRedirect(nav, '/mijn/other/page'), '/mijn/cases')
 	assert.equal(accountRedirect(nav, '/mijn/learniq/children'), '')
 	assert.equal(accountRedirect(nav, '/zoeken'), '')
@@ -143,43 +144,54 @@ test('the page registry resolves the entry key, then the section, then any contr
 	assert.throws(() => registerSitePage('news', null), TypeError)
 })
 
-test('the account menu is SiteMenu-shaped, carries real addresses and the unread count on the inbox', () => {
+test('the breadcrumb of a signed-in page leads home, then to the own area', () => {
 	const nav = buildNav(CONTRIBUTIONS.contributions, identity, { cases: true })
-	const href = (route) => `/apps/portaliq/site?portal=wilgenboom&route=${encodeURIComponent(route)}`
-	const menu = accountMenu(nav, identity, 3, href)
-	assert.equal(menu.title, 'My overview')
-	assert.equal(menu.items[1].name, 'My children')
-	assert.equal(menu.items[1].link, '/mijn/learniq/children')
-	assert.equal(menu.items[1].href, href('/mijn/learniq/children'))
-	const inbox = menu.items.find((item) => item.link === '/mijn/inbox')
-	assert.equal(inbox.badge, '3')
-	assert.equal(inbox.badgeLabel, '3 unread')
-	assert.equal(accountMenu(nav, identity, 0, href).items.find((item) => item.link === '/mijn/inbox').badge, undefined)
-
-	assert.deepEqual(accountCrumbs(nav[1], identity, (route) => route).map((crumb) => crumb.label), ['Home', 'My overview', 'My children'])
+	assert.deepEqual(accountCrumbs(nav[1], identity, (route) => route).map((crumb) => crumb.label), ['Home', 'My area', 'My children'])
 	assert.equal(accountCrumbs(null, identity, (route) => route).length, 2)
 })
 
 test('the header says who is signed in, in the site language', () => {
 	const nl = createTranslator('nl')
-	assert.equal(loggedInAs({ subjectRef: '99930md1' }, nl), 'Ingelogd als 99930md1')
-	assert.equal(loggedInAs({ subjectRef: '99930md1' }, createTranslator('en')), 'Logged in as 99930md1')
+	const fatima = { subjectRef: '99930md1id6bp47', displayName: 'Fatima Hulstkamp' }
+	assert.equal(loggedInAs(fatima, nl), 'Ingelogd als Fatima Hulstkamp')
+	assert.equal(loggedInAs(fatima, createTranslator('en')), 'Logged in as Fatima Hulstkamp')
+	// The reference is never shown, not even when no name is known
+	// (site-header-names-the-person).
+	assert.equal(loggedInAs({ subjectRef: '99930md1id6bp47' }, nl), 'Ingelogd')
+	assert.equal(loggedInAs({ subjectRef: 's1', sub: 's1', subject: 's1' }, nl), 'Ingelogd')
+	assert.equal(loggedInAs({ subjectRef: 's1', displayName: '  ' }, nl), 'Ingelogd')
+	assert.equal(loggedInAs({ subjectRef: 's1', displayName: 's1' }, nl), 'Ingelogd')
+	// A number is never a name: a BSN shown as the display name reads as
+	// "Ingelogd" (resident-sees-words-not-codes).
+	assert.equal(loggedInAs({ subjectRef: 's1', displayName: '999993653' }, nl), 'Ingelogd')
+	assert.equal(loggedInAs({ subjectRef: 's1', name: ' 123456782 ' }, nl), 'Ingelogd')
 	assert.equal(loggedInAs({}, nl), 'Ingelogd')
 	assert.equal(loggedInAs(null, nl), '')
+})
+
+test('the account pill reads "Ingelogd als {name}, naar {own area}", and without a name "Ingelogd, naar {own area}"', () => {
+	const nl = createTranslator('nl')
+	const words = { t: nl, area: 'Mijn Zuiddrecht' }
+	assert.equal(
+		pillLabel({ subjectRef: 's1', displayName: 'Sanne de Vries' }, words),
+		'Ingelogd als Sanne de Vries, naar Mijn Zuiddrecht',
+	)
+	assert.equal(pillLabel({ subjectRef: 's1', displayName: '999993653' }, words), 'Ingelogd, naar Mijn Zuiddrecht')
+	assert.equal(pillLabel(null, words), '')
 })
 
 test('the sign-in routes are labelled in the site language and keep the portal and the page to return to', () => {
 	globalThis.window = { location: { pathname: '/apps/portaliq/site', search: '?portal=wilgenboom&route=%2Fmijn' } }
 	try {
 		const site = { slug: 'wilgenboom', authentication: { modes: ['public', 'digid'] } }
-		const [digid] = signInRoutes(site, '/apps/portaliq/portal/api', createTranslator('en'))
+		const [digid] = signInRoutes(site, { authBase: '/apps/portaliq/portal/api', t: createTranslator('en') })
 		assert.equal(digid.label, 'Log in with DigiD')
 		assert.match(digid.href, /provider=digid/)
 		assert.match(digid.href, /portal=wilgenboom/)
 		assert.match(digid.href, /returnTo=%2Fapps%2Fportaliq%2Fsite%3Fportal%3Dwilgenboom%26route%3D%252Fmijn/)
-		assert.equal(signInRoutes(site, '/x', createTranslator('nl'))[0].label, 'Inloggen met DigiD')
+		assert.equal(signInRoutes(site, { authBase: '/x', t: createTranslator('nl') })[0].label, 'Inloggen met DigiD')
 		// Without a translator the labels stay the Dutch the site always showed.
-		assert.equal(signInRoutes(site, '/x')[0].label, 'Inloggen met DigiD')
+		assert.equal(signInRoutes(site, { authBase: '/x' })[0].label, 'Inloggen met DigiD')
 	} finally {
 		delete globalThis.window
 	}

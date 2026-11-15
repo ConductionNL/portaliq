@@ -6,12 +6,14 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\PortalTimelineController;
+use OCA\Portaliq\Service\MandatedCaseReader;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PortalTimelineReader;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Contribution\StepsProviderMethod;
 
 /**
  * portaliq#723: a case's history reaches the portal only after the subject
@@ -33,6 +35,7 @@ class PortalTimelineControllerTest extends TestCase {
 		'minTrust' => 'low',
 		'fields' => ['identifier', 'title'],
 		'timeline' => ['label' => 'Wat er is gebeurd', 'provider' => 'caseTimeline'],
+		'messages' => ['label' => 'Berichten', 'provider' => 'caseMessages'],
 	];
 
 	private const ENTRIES = [['id' => 'e1', 'message' => 'In behandeling', 'occurredAt' => '2026-09-20T10:00:00+00:00']];
@@ -127,18 +130,185 @@ class PortalTimelineControllerTest extends TestCase {
 	}//end testATimelineThatCouldNotBeReadIsA502NotAnEmptyHistory()
 
 	/**
+	 * The messages about the owner's case, both ways, newest first, held to
+	 * the case page's shape (capability-rows-said-and-planned T07).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/capability-rows-said-and-planned/tasks.md#t07
+	 */
+	public function testTheMessagesOfTheOwnersCaseAreServedNewestFirst(): void {
+		$controller = $this->controller();
+		$this->doubles['timelines']->expects($this->once())
+			->method('entries')
+			->with($this->equalTo('dossiq'), $this->equalTo('caseMessages'), $this->equalTo('case-1'))
+			->willReturn(
+				[
+					['id' => 'm1', 'subject' => 'Vraag', 'body' => 'Wanneer hoor ik iets?', 'receivedAt' => '2026-11-01T09:00:00+00:00', 'direction' => 'citizen_to_handler', 'senderName' => 'J. Jansen', 'read' => true],
+					['id' => 'm2', 'subject' => 'Antwoord', 'body' => 'Volgende week.', 'receivedAt' => '2026-11-03T10:00:00+00:00', 'direction' => 'handler_to_citizen', 'senderName' => 'Gemeente', 'read' => false],
+				]
+			);
+
+		$response = $controller->messages(register: 'dossiq', schema: 'case', id: 'case-1');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$data = $response->getData();
+		$this->assertSame('Berichten', $data['label']);
+		$this->assertSame(['m2', 'm1'], array_column($data['messages'], 'id'));
+		$this->assertSame([false, true], array_column($data['messages'], 'fromResident'));
+
+	}//end testTheMessagesOfTheOwnersCaseAreServedNewestFirst()
+
+	/**
+	 * A foreign case is one 404 and the messages provider is never asked; a
+	 * collection without `messages` has none; a failed read is a 502.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/capability-rows-said-and-planned/tasks.md#t07
+	 */
+	public function testTheMessagesOfAForeignCaseAreNeverAskedAndAFailedReadIsA502(): void {
+		$controller = $this->controller(owned: null);
+		$this->doubles['timelines']->expects($this->never())->method('entries');
+		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->messages(register: 'dossiq', schema: 'case', id: 'someone-elses')->getStatus());
+
+		$collection = self::COLLECTION;
+		unset($collection['messages']);
+		$controller = $this->controller(collection: $collection);
+		$this->doubles['reader']->expects($this->never())->method('readObject');
+		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->messages(register: 'dossiq', schema: 'case', id: 'case-1')->getStatus());
+
+		$controller = $this->controller();
+		$this->doubles['timelines']->method('entries')->willReturn(null);
+		$response = $controller->messages(register: 'dossiq', schema: 'case', id: 'case-1');
+		$this->assertSame(Http::STATUS_BAD_GATEWAY, $response->getStatus());
+		$this->assertSame(['error' => 'messages_unavailable'], $response->getData());
+
+	}//end testTheMessagesOfAForeignCaseAreNeverAskedAndAFailedReadIsA502()
+
+	public function testNoSessionGetsNoMessages(): void {
+		$controller = $this->controller(subject: null);
+		$this->doubles['timelines']->expects($this->never())->method('entries');
+
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->messages(register: 'dossiq', schema: 'case', id: 'case-1')->getStatus());
+
+	}//end testNoSessionGetsNoMessages()
+
+	/**
+	 * Where a case stands (site-mijn-omgeving-components REQ-SMO-022): the
+	 * steps provider's answer under its label, an entry with a bad state or
+	 * no label dropped, the rest in the order given.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cases-collection-may-supply-steps-an-answer-date-and-whose-turn-it-is-req-smo-022
+	 */
+	public function testTheStepsOfTheOwnersCaseAreServedAndABadStateLosesItsEntry(): void {
+		$collection = self::COLLECTION + ['steps' => ['label' => 'Waar staat uw aanvraag?', 'provider' => 'caseSteps']];
+		$controller = $this->controller(collection: $collection);
+		$this->doubles['timelines']->expects($this->once())
+			->method('entries')
+			->with($this->equalTo('dossiq'), $this->equalTo('caseSteps'), $this->equalTo('case-1'))
+			->willReturn(
+				[
+					['label' => 'Ontvangen', 'state' => 'done', 'date' => '2026-10-02', 'secret' => 'x'],
+					['label' => 'In behandeling', 'state' => 'current', 'description' => 'Wij zoeken de documenten.'],
+					['label' => 'Geweigerd', 'state' => 'rejected'],
+					['state' => 'todo'],
+					'not a step',
+					['label' => 'Besluit', 'state' => 'todo'],
+				]
+			);
+
+		$response = $controller->steps(register: 'dossiq', schema: 'case', id: 'case-1');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(
+			[
+				'label' => 'Waar staat uw aanvraag?',
+				'steps' => [
+					['label' => 'Ontvangen', 'state' => 'done', 'date' => '2026-10-02'],
+					['label' => 'In behandeling', 'state' => 'current', 'description' => 'Wij zoeken de documenten.'],
+					['label' => 'Besluit', 'state' => 'todo'],
+				],
+			],
+			$response->getData()
+		);
+	}//end testTheStepsOfTheOwnersCaseAreServedAndABadStateLosesItsEntry()
+
+	/**
+	 * Steps that could not be read are a 502, and a collection without a
+	 * steps provider has none: its provider is never asked.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cases-collection-may-supply-steps-an-answer-date-and-whose-turn-it-is-req-smo-022
+	 */
+	public function testStepsThatCouldNotBeReadAreA502AndNoProviderIsA404(): void {
+		$collection = self::COLLECTION + ['steps' => ['label' => '', 'provider' => 'caseSteps']];
+		$failing = $this->controller(collection: $collection);
+		$this->doubles['timelines']->method('entries')->willReturn(null);
+		$this->assertSame(Http::STATUS_BAD_GATEWAY, $failing->steps(register: 'dossiq', schema: 'case', id: 'case-1')->getStatus());
+
+		$none = $this->controller();
+		$this->doubles['timelines']->expects($this->never())->method('entries');
+		$this->assertSame(Http::STATUS_NOT_FOUND, $none->steps(register: 'dossiq', schema: 'case', id: 'case-1')->getStatus());
+	}//end testStepsThatCouldNotBeReadAreA502AndNoProviderIsA404()
+
+	/**
+	 * mandated-case-opens-on-its-record-page: Linda reads where her father's
+	 * case stands under her mandate; the same reader that lists it on "My
+	 * cases" proves it, and without a mandate it stays one 404.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/mandated-case-opens-on-its-record-page/specs/portal-my-cases/spec.md#requirement-a-case-read-under-a-mandate-opens-on-its-record-page
+	 */
+	public function testACaseSeenUnderAMandateIsProvenByTheMandatedReader(): void {
+		$collection = self::COLLECTION + ['steps' => ['label' => '', 'provider' => 'caseSteps']];
+
+		$mandated = $this->getMockBuilder(MandatedCaseReader::class)->disableOriginalConstructor()->onlyMethods(['read'])->getMock();
+		$mandated->expects($this->once())->method('read')
+			->with(self::SUBJECT, 'm-henk', 'dossiq', 'case', 'case-9')
+			->willReturn(['id' => 'case-9']);
+		$controller = $this->controller(collection: $collection, owned: null, mandate: 'm-henk', mandatedCases: $mandated);
+		$this->doubles['timelines']->method('entries')->willReturn([['label' => 'Ontvangen', 'state' => 'done']]);
+		$this->assertSame(Http::STATUS_OK, $controller->steps(register: 'dossiq', schema: 'case', id: 'case-9')->getStatus());
+
+		$refused = $this->getMockBuilder(MandatedCaseReader::class)->disableOriginalConstructor()->onlyMethods(['read'])->getMock();
+		$refused->method('read')->willReturn(null);
+		$foreign = $this->controller(collection: $collection, owned: null, mandate: 'm-other', mandatedCases: $refused);
+		$this->doubles['timelines']->expects($this->never())->method('entries');
+		$this->assertSame(Http::STATUS_NOT_FOUND, $foreign->steps(register: 'dossiq', schema: 'case', id: 'case-9')->getStatus());
+	}//end testACaseSeenUnderAMandateIsProvenByTheMandatedReader()
+
+	/**
 	 * The controller over doubles.
 	 *
 	 * @param array<string, mixed>|null $subject The subject behind the bearer.
 	 * @param array<string, mixed> $collection The collection the subject may read.
 	 * @param array<string, mixed>|null $owned What the scoped read finds.
+	 * @param string $mandate The `mandate` the request names.
+	 * @param MandatedCaseReader|null $mandatedCases Reads a case under a mandate.
 	 *
 	 * @return PortalTimelineController
 	 */
-	private function controller(?array $subject = self::SUBJECT, array $collection = self::COLLECTION, ?array $owned = ['id' => 'case-1']): PortalTimelineController {
+	private function controller(
+		?array $subject = self::SUBJECT,
+		array $collection = self::COLLECTION,
+		?array $owned = ['id' => 'case-1'],
+		string $mandate = '',
+		?MandatedCaseReader $mandatedCases = null
+	): PortalTimelineController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('Bearer token');
-		$request->method('getParam')->willReturnCallback(static fn (string $key, mixed $default = null): mixed => ($key === 'collection' ? 'mijnZaken' : $default));
+		$request->method('getParam')->willReturnCallback(
+			static fn (string $key, mixed $default = null): mixed => match ($key) {
+				'collection' => 'mijnZaken',
+				'mandate' => $mandate,
+				default => $default,
+			}
+		);
 
 		$registry = $this->getMockBuilder(PortalContributionRegistry::class)->disableOriginalConstructor()->onlyMethods(['aggregateFor'])->getMock();
 		$registry->method('aggregateFor')->willReturn(['contributions' => [['app' => 'dossiq', 'collections' => [$collection]]]]);
@@ -153,7 +323,7 @@ class PortalTimelineControllerTest extends TestCase {
 
 		$this->doubles = ['reader' => $reader, 'timelines' => $timelines];
 
-		return new PortalTimelineController($request, $registry, $session, $reader, $timelines);
+		return new PortalTimelineController($request, $registry, $session, $reader, $timelines, new StepsProviderMethod(), null, $mandatedCases);
 
 	}//end controller()
 

@@ -67,7 +67,7 @@ import { proposalStart, proposedChanges, translatorOr } from './forms.js'
  * and sends only the fields that changed. The server checks the same list
  * again and refuses a proposal with nothing changed.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-propose-a-change-req-srp-024
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-propose-a-change-req-srp-024
  */
 export default {
 	name: 'ProposeChangeForm',
@@ -112,7 +112,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-propose-a-change-req-srp-024
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-propose-a-change-req-srp-024
 		 */
 		async submit() {
 			this.error = ''

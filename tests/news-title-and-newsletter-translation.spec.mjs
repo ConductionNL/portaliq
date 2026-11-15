@@ -12,7 +12,7 @@
 //   node --test tests/news-title-and-newsletter-translation.spec.mjs
 
 import assert from 'node:assert/strict'
-import { existsSync, readFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
@@ -131,13 +131,7 @@ test('an empty archive renders nothing', async () => {
 })
 
 test('the News page reads the archive through the API and reloads it with the language', () => {
-	const shared = join(ROOT, 'src', 'shared', 'portalApi.js')
-	const api = readFileSync(
-		existsSync(shared)
-			? shared
-			: join(ROOT, 'src', 'portal', 'lib', 'portalApi.js'),
-		'utf8',
-	)
+	const api = readFileSync(join(ROOT, 'src', 'shared', 'portalApi.js'), 'utf8')
 	assert.match(
 		api,
 		/async fetchNewsletterArchive\(\)[\s\S]*\/api\/newsletters\/archive/,

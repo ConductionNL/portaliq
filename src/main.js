@@ -39,7 +39,9 @@ import {
 	registerIcons,
 	registerLeafIntegrations,
 	registerTranslations,
+	useObjectStore,
 } from '@conduction/nextcloud-vue'
+import { loadState } from '@nextcloud/initial-state'
 import {
 	loadTranslations,
 	translatePlural as n,
@@ -54,6 +56,8 @@ import enTranslations from '../l10n/en.json'
 import customComponents from './customComponents.js'
 import appIcons from './icons.js'
 import { registerProposalQueueLeaf } from './integrations/registerProposalQueueLeaf.js'
+import { normaliseAccess, routeAllowed, withAccess } from './lib/adminAccess.js'
+import { recordListFetches } from './lib/listRefresh.js'
 import bundledManifest from './manifest.json'
 import pinia from './pinia.js'
 // v2 five-kind registry — the replacement for customComponents.
@@ -119,7 +123,23 @@ try {
 // short-circuits for the 'en' locale (it assumes the key IS the English text),
 // but this template uses slugged keys like 'app-availability.title', so we must
 // register en.json explicitly to get readable strings instead of raw slugs.
-register('portaliq', enTranslations.translations)
+//
+// Only keys the user's locale file (l10n/<locale>.js, loaded before this
+// bundle) did not already translate are added. `register()` merges over the
+// registry, so registering the whole English file used to overwrite every
+// Dutch string with its English source for any t('portaliq', ...) call.
+const alreadyTranslated =
+	(typeof window !== 'undefined'
+		&& window._oc_l10n_registry_translations?.portaliq)
+	|| {}
+register(
+	'portaliq',
+	Object.fromEntries(
+		Object.entries(enTranslations.translations).filter(
+			([key]) => !(key in alreadyTranslated),
+		),
+	),
+)
 
 // Fire-and-forget translation load. Some Nextcloud installs (including
 // standard dev containers) only allow the JS/CSS allowlist through
@@ -209,6 +229,17 @@ const router = createRouter({
 	routes: routesFromManifest(bundledManifest),
 })
 
+// Which pages this user's role may use (admin-menu-follows-roles). The menu
+// hides the rest through its `visibleIf` predicates on `access.*`, and the
+// guard below sends a typed address for such a page to the dashboard.
+const access = normaliseAccess(loadState('portaliq', 'access', null))
+const manifest = withAccess(bundledManifest, access)
+router.beforeEach((to) =>
+	routeAllowed(manifest, String(to.name || ''), access)
+		? true
+		: { name: 'Dashboard' },
+)
+
 tryLoadTranslations()
 
 // Pass shallow copies of the registry maps to App.vue. The lib exports
@@ -224,7 +255,7 @@ const customComponentsProp = { ...customComponents }
 const registryProp = { ...registry }
 
 const app = createApp(App, {
-	manifest: bundledManifest,
+	manifest,
 	customComponents: customComponentsProp,
 	pageTypes: pageTypesProp,
 	registry: registryProp,
@@ -235,5 +266,8 @@ const app = createApp(App, {
 // gone from the Vue 3 bootstrap entirely.
 app.mixin({ methods: { t, n } })
 app.use(pinia)
+// Remember what each list last fetched, so a handler can refresh its list in
+// place on the same page (news-list-keeps-its-page).
+recordListFetches(useObjectStore(pinia))
 app.use(router)
 app.mount('#content')

@@ -16,6 +16,7 @@
  */
 
 import { expect, test } from '@playwright/test'
+import { siteAddress } from './portal-nav.ts'
 
 const ADMIN = Buffer.from('admin:admin').toString('base64')
 const HEADERS = { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true' }
@@ -83,8 +84,25 @@ test.describe('signin-integriq-broker-login', () => {
 	test('A failed login lands on the login screen with one sentence', async ({
 		page,
 	}) => {
-		await page.goto('/apps/portaliq/portal#signin=failed')
-		await expect(page.getByRole('alert')).toContainText(
+		// The site says it in its header, beside the sign-in routes, and the
+		// header offers those only on a portal that declares a mode other
+		// than `public` (BrandHeader.vue). The seeded portals are all public,
+		// so the portal record this page reads offers DigiD as well; the
+		// fragment handling and the sentence are the site's own.
+		await page.route(
+			(url) => url.pathname.endsWith('/api/content/site'),
+			async (route) => {
+				const response = await route.fetch()
+				const body = await response.json()
+				body.authentication = {
+					...(body.authentication || {}),
+					modes: ['public', 'digid'],
+				}
+				await route.fulfill({ response, json: body })
+			},
+		)
+		await page.goto(`${siteAddress('/')}#signin=failed`)
+		await expect(page.getByTestId('site-signin-failed')).toContainText(
 			'Inloggen is niet gelukt',
 		)
 		expect(page.url()).not.toContain('#signin=failed')

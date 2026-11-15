@@ -25,31 +25,28 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Kernel\Contracts\PortalFormBindingResolverInterface;
 use OCA\Portaliq\Service\CaseTypeVisibility;
 use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Kernel\Contracts\FormStepsNormaliserInterface;
 
 /**
  * Resolves a form binding against the published form, at render time.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md
  */
-class PortalFormBindingResolver {
+class PortalFormBindingResolver implements PortalFormBindingResolverInterface {
 	/**
 	 * A binding whose form is rendered by the portal itself.
 	 */
 	public const KIND_HOSTED = 'hosted';
-
-	/**
-	 * A binding naming a start form on another host.
-	 */
-	public const KIND_EXTERNAL = 'external';
 
 	/**
 	 * The register the binding lives in.
@@ -74,24 +71,38 @@ class PortalFormBindingResolver {
 	private const DEFAULT_FORM_SCHEMA = 'registrationForm';
 
 	/**
+	 * Reads the fields of a published form.
+	 *
+	 * @var PortalFormFields
+	 */
+	private readonly PortalFormFields $fields;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param PortalObjectReader $reader Reads the binding and the form.
+	 * @param FormStepsNormaliserInterface $formStepsNormaliser The FormStepsNormaliser helper.
 	 * @param CaseTypeVisibility|null $caseTypes The case types a portal hides
 	 *                                           (operate-show-per-case-type).
 	 *                                           Absent hides nothing.
 	 * @param VisibleWhenLocal $visibleWhen Which field conditions the portal
 	 *                                      can check on submit.
-	 * @param PortalIntakeFee|null $fees The fee a case type declares
-	 *                                   (intake-pay-on-submit). Absent charges
-	 *                                   nothing.
+	 * @param PortalReferenceLists|null $lists Fills a field's `options.referenceList`. Absent
+	 *                                         leaves such a field with no options, which
+	 *                                         closes it.
+	 * @param PortalFormCalculator $calculator Knows which `calculate` operations the server can repeat.
+	 * @param PortalFee|null $fees Reads the fee a case type declares. Absent means no form carries one.
 	 */
 	public function __construct(
 		private readonly PortalObjectReader $reader,
+		private readonly FormStepsNormaliserInterface $formStepsNormaliser,
 		private readonly ?CaseTypeVisibility $caseTypes = null,
 		private readonly VisibleWhenLocal $visibleWhen = new VisibleWhenLocal(),
-		private readonly ?PortalIntakeFee $fees = null,
+		?PortalReferenceLists $lists = null,
+		private readonly PortalFormCalculator $calculator = new PortalFormCalculator(),
+		private readonly ?PortalFee $fees = null,
 	) {
+		$this->fields = new PortalFormFields(lists: $lists);
 	}//end __construct()
 
 	/**
@@ -102,7 +113,7 @@ class PortalFormBindingResolver {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	public function bindingFor(string $portal, string $route): ?array {
 		if ($portal === '' || $route === '') {
@@ -119,8 +130,23 @@ class PortalFormBindingResolver {
 			filter: ['portal' => $portal]
 		);
 
+		return $this->publishedBindingIn(rows: $rows, portal: $portal, route: $route);
+	}//end bindingFor()
+
+	/**
+	 * The first published binding of a portal route among the rows read.
+	 *
+	 * @param array<int, mixed> $rows   The rows the reader returned.
+	 * @param string            $portal The portal slug.
+	 * @param string            $route  The in-portal route.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 */
+	private function publishedBindingIn(array $rows, string $portal, string $route): array|null {
 		foreach ($rows as $row) {
-			if (is_array($row) === false || ($row['route'] ?? '') !== $route || ($row['portal'] ?? '') !== $portal) {
+			if ($this->isOtherBinding(row: $row, portal: $portal, route: $route) === true) {
 				continue;
 			}
 
@@ -133,7 +159,22 @@ class PortalFormBindingResolver {
 		}
 
 		return null;
-	}//end bindingFor()
+	}//end publishedBindingIn()
+
+	/**
+	 * Whether a row read is not a binding of this portal route.
+	 *
+	 * @param mixed  $row    One row the reader returned.
+	 * @param string $portal The portal slug.
+	 * @param string $route  The in-portal route.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 */
+	private function isOtherBinding(mixed $row, string $portal, string $route): bool {
+		return is_array($row) === false || ($row['route'] ?? '') !== $route || ($row['portal'] ?? '') !== $portal;
+	}//end isOtherBinding()
 
 	/**
 	 * The case types a portal has published a binding for.
@@ -148,7 +189,7 @@ class PortalFormBindingResolver {
 	 * @return array<int, array{0: string, 1: string, 2: string}> One
 	 *         `[register, schema, typeId]` triple per published binding.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function declaredCaseTypes(string $portal): array {
 		$declared = [];
@@ -175,7 +216,7 @@ class PortalFormBindingResolver {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	public function publishedBindings(string $portal): array {
 		if ($portal === '') {
@@ -192,6 +233,20 @@ class PortalFormBindingResolver {
 			filter: ['portal' => $portal]
 		);
 
+		return $this->publishedOf(rows: $rows, portal: $portal);
+	}//end publishedBindings()
+
+	/**
+	 * The published bindings of a portal among the rows read.
+	 *
+	 * @param array<int, mixed> $rows   The rows the reader returned.
+	 * @param string            $portal The portal slug.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 */
+	private function publishedOf(array $rows, string $portal): array {
 		$published = [];
 		foreach ($rows as $row) {
 			if (is_array($row) === false || ($row['portal'] ?? '') !== $portal) {
@@ -207,7 +262,36 @@ class PortalFormBindingResolver {
 		}
 
 		return $published;
-	}//end publishedBindings()
+	}//end publishedOf()
+
+	/**
+	 * Every published binding, of every portal.
+	 *
+	 * For the one caller that asks about the whole instance: a destination
+	 * schema is about to change and its forms must be found, whichever
+	 * portal shows them. Never reached from a visitor's request.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-form-binding-names-its-destination-and-is-valid-against-it-req-pifo-007
+	 */
+	public function allPublishedBindings(): array {
+		$rows = $this->reader->readCollection(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: 'status',
+			subjectRef: 'published',
+			organisation: '',
+			limit: 500
+		);
+
+		return array_values(
+			array_filter(
+				$rows,
+				static fn ($row): bool => is_array($row) === true && (string)($row['status'] ?? 'draft') === 'published'
+			)
+		);
+	}//end allPublishedBindings()
 
 	/**
 	 * Whether a case type is inside the scope a portal declared.
@@ -225,7 +309,7 @@ class PortalFormBindingResolver {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function caseTypeIsInPortalScope(string $portal, string $register, string $schema, string $typeId): bool {
 		if ($register === '' || $schema === '' || $typeId === '') {
@@ -245,75 +329,144 @@ class PortalFormBindingResolver {
 	 *         settings) or `resolvesToNoForm` true with the reason the admin
 	 *         surface prints.
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 * @spec openspec/changes/intake-conditional-questions-and-drafts/specs/portal-intake-form/spec.md#requirement-a-condition-the-portal-cannot-check-refuses-the-form-req-icq-003
-	 * @spec openspec/changes/intake-pay-on-submit/specs/portal-intake-payment/spec.md#requirement-the-fee-comes-from-the-case-type-req-ips-001
+	 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
 	 */
 	public function render(array $binding): array {
-		$settings = [
-			'addressLookup' => (($binding['addressLookup'] ?? false) === true),
-			'prefillFromEarlierCases' => (($binding['prefillFromEarlierCases'] ?? false) === true),
-			'challenge' => (($binding['challenge'] ?? false) === true),
-			'confirmationText' => (string)($binding['confirmationText'] ?? ''),
-		];
+		$settings = $this->renderSettings(binding: $binding);
 
 		if ($this->caseTypes?->hidesBinding(binding: $binding) === true) {
 			// The portal does not show this case type, so its form does not
 			// open (operate-show-per-case-type REQ-OSC-002).
-			return [
-				'kind' => (string)($binding['intakeKind'] ?? self::KIND_HOSTED),
-				'resolvesToNoForm' => true,
-				'reason' => 'hiddenCaseType',
-				'fields' => [],
-				'settings' => $settings,
-			];
+			return $this->noForm(kind: (string)($binding['intakeKind'] ?? self::KIND_HOSTED), reason: 'hiddenCaseType', settings: $settings);
 		}
 
 		if ((string)($binding['intakeKind'] ?? self::KIND_HOSTED) === self::KIND_EXTERNAL) {
-			$url = (string)($binding['externalUrl'] ?? '');
-
-			// The destination is named before the visitor leaves, and nothing
-			// is fetched from it: an external form is linked to, never proxied.
-			return [
-				'kind' => self::KIND_EXTERNAL,
-				'resolvesToNoForm' => ($url === ''),
-				'externalUrl' => $url,
-				'destination' => $this->hostOf(url: $url),
-				'settings' => $settings,
-			];
+			return $this->externalRender(binding: $binding, settings: $settings);
 		}
 
+		return $this->hostedRender(binding: $binding, settings: $settings);
+	}//end render()
+
+	/**
+	 * The intake settings a binding declares, as render() carries them.
+	 *
+	 * @param array<string, mixed> $binding The binding.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 */
+	private function renderSettings(array $binding): array {
+		return [
+			'addressLookup' => (($binding['addressLookup'] ?? false) === true),
+			'prefillFromEarlierCases' => (($binding['prefillFromEarlierCases'] ?? false) === true),
+			'challenge' => (($binding['challenge'] ?? false) === true),
+			// The form shows "Voor medewerkers" (resident-identity-in-forms T06).
+			'staffMayFill' => (($binding['staffMayFill'] ?? false) === true),
+			'confirmationText' => (string)($binding['confirmationText'] ?? ''),
+			// The introduction, the statements asked, the confirmation page and
+			// mail (form-statements-intro-and-confirmation-mail). Carried as the
+			// binding declares them; the controller adds the portal's wording.
+			'intro' => $this->shownIntro(intro: ($binding['intro'] ?? null)),
+			'statementsDeclared' => $this->arrayOrNull(value: ($binding['statements'] ?? null)),
+			'confirmation' => $this->arrayOrNull(value: ($binding['confirmation'] ?? null)),
+			'confirmationMail' => ((($binding['confirmationMail']['enabled'] ?? false)) === true),
+		];
+	}//end renderSettings()
+
+	/**
+	 * The render of a binding whose form lives elsewhere.
+	 *
+	 * @param array<string, mixed> $binding  The binding.
+	 * @param array<string, mixed> $settings The intake settings.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 */
+	private function externalRender(array $binding, array $settings): array {
+		$url = (string)($binding['externalUrl'] ?? '');
+
+		// The destination is named before the visitor leaves, and nothing
+		// is fetched from it: an external form is linked to, never proxied.
+		return [
+			'kind' => self::KIND_EXTERNAL,
+			'resolvesToNoForm' => ($url === ''),
+			'externalUrl' => $url,
+			'destination' => $this->hostOf(url: $url),
+			'settings' => $settings,
+		];
+	}//end externalRender()
+
+	/**
+	 * The render of a binding whose form the portal renders itself.
+	 *
+	 * @param array<string, mixed> $binding  The binding.
+	 * @param array<string, mixed> $settings The intake settings.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 */
+	private function hostedRender(array $binding, array $settings): array {
 		$form = $this->publishedForm(binding: $binding);
 		if ($form === null) {
-			return [
-				'kind' => self::KIND_HOSTED,
-				'resolvesToNoForm' => true,
-				'reason' => 'no_published_form_for_audience',
-				'fields' => [],
-				'settings' => $settings,
-			];
+			return $this->noForm(kind: self::KIND_HOSTED, reason: 'no_published_form_for_audience', settings: $settings);
 		}
 
-		$fields = $this->fieldsOf(form: $form);
+		$fields  = $this->fields->fieldsOf(form: $form);
+		$refusal = $this->refusalOf(fields: $fields);
+		if ($refusal !== null) {
+			return $this->noForm(kind: self::KIND_HOSTED, reason: $refusal, settings: $settings);
+		}
+
+		return $this->hostedPayload(binding: $binding, form: $form, fields: $fields, settings: $settings);
+	}//end hostedRender()
+
+	/**
+	 * Why the server cannot stand behind a form's fields, or null when it can.
+	 *
+	 * @param array<int, array<string, mixed>> $fields The form's fields.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/changes/intake-conditional-questions-and-drafts/specs/portal-intake-form/spec.md#requirement-a-condition-the-portal-cannot-check-refuses-the-form-req-icq-003
+	 */
+	private function refusalOf(array $fields): string|null {
 		if ($this->visibleWhen->decidesEveryField(fields: $fields) === false) {
 			// The server could not repeat on submit what the screen decided,
 			// so the form is refused rather than half checked (REQ-ICQ-003).
-			return [
-				'kind' => self::KIND_HOSTED,
-				'resolvesToNoForm' => true,
-				'reason' => 'unsupportedCondition',
-				'fields' => [],
-				'settings' => $settings,
-			];
+			return 'unsupportedCondition';
 		}
 
-		$confirmation = (string)($form['confirmationText'] ?? '');
-		if ($confirmation !== '') {
-			// The confirmation the citizen reads is the form's own words when
-			// the form carries them; the binding's text is the fallback.
-			$settings['confirmationText'] = $confirmation;
+		if ($this->calculator->knowsEveryOperation(fields: $fields) === false) {
+			// The server could not work the value out again on submit, so the
+			// form does not open (form-flow-repeating-groups-calculations-and-decisions REQ-FFL-002).
+			return 'unsupportedCalculation';
 		}
+
+		return null;
+	}//end refusalOf()
+
+	/**
+	 * The render payload of a hosted form that opens.
+	 *
+	 * @param array<string, mixed>             $binding  The binding.
+	 * @param array<string, mixed>             $form     The published form.
+	 * @param array<int, array<string, mixed>> $fields   The form's fields.
+	 * @param array<string, mixed>             $settings The intake settings.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
+	 */
+	private function hostedPayload(array $binding, array $form, array $fields, array $settings): array {
+		$fee = $this->fees?->forBinding(binding: $binding);
+
+		$settings = $this->withFormConfirmation(settings: $settings, form: $form);
 
 		return [
 			'kind' => self::KIND_HOSTED,
@@ -321,15 +474,75 @@ class PortalFormBindingResolver {
 			'formId' => (string)($form['uuid'] ?? $form['id'] ?? ''),
 			'formName' => (string)($form['name'] ?? ''),
 			'fields' => $fields,
+			// The form's own steps (site-multi-step-forms REQ-SMF-010), kept
+			// only where they name fields the form has; [] renders one page.
+			'steps' => $this->stepsOf(form: $form, fields: $fields),
 			'settings' => $settings,
+			// What the request costs, from the case type and nowhere else
+			// (intake-pay-on-submit REQ-IPS-001). Null for a free request.
+			'fee' => $fee,
 			// The sign-in level the maker chose for this form (buildiq#935).
 			// Carried as declared; requiredTrust() decides what it means.
 			'minTrust' => ($form['minTrust'] ?? null),
-			// The fee the case type declares, without the action that takes
-			// it (intake-pay-on-submit REQ-IPS-001); null when it is free.
-			'fee' => $this->fees?->publicFeeFor(binding: $binding),
 		];
-	}//end render()
+	}//end hostedPayload()
+
+	/**
+	 * The settings with the form's own confirmation text, when it has one.
+	 *
+	 * @param array<string, mixed> $settings The intake settings.
+	 * @param array<string, mixed> $form     The published form.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 */
+	private function withFormConfirmation(array $settings, array $form): array {
+		$confirmation = (string)($form['confirmationText'] ?? '');
+		if ($confirmation !== '') {
+			// The confirmation the citizen reads is the form's own words when
+			// the form carries them; the binding's text is the fallback.
+			$settings['confirmationText'] = $confirmation;
+		}
+
+		return $settings;
+	}//end withFormConfirmation()
+
+	/**
+	 * The form's steps, kept only where they name fields the form has.
+	 *
+	 * @param array<string, mixed>             $form   The published form.
+	 * @param array<int, array<string, mixed>> $fields The form's fields.
+	 *
+	 * @return array<int, mixed>
+	 *
+	 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
+	 */
+	private function stepsOf(array $form, array $fields): array {
+		return $this->formStepsNormaliser->steps(
+			steps: ($form['steps'] ?? null),
+			known: array_map(static fn (array $field): string => (string)$field['name'], $fields)
+		);
+	}//end stepsOf()
+
+	/**
+	 * The render of a binding that resolves to no form.
+	 *
+	 * @param string               $kind     The binding's intake kind.
+	 * @param string               $reason   Why, as the admin surface prints it.
+	 * @param array<string, mixed> $settings The intake settings.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function noForm(string $kind, string $reason, array $settings): array {
+		return [
+			'kind' => $kind,
+			'resolvesToNoForm' => true,
+			'reason' => $reason,
+			'fields' => [],
+			'settings' => $settings,
+		];
+	}//end noForm()
 
 	/**
 	 * The sign-in level a submission of this form needs, or null for none.
@@ -358,7 +571,7 @@ class PortalFormBindingResolver {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	public function publishedForm(array $binding): ?array {
 		$typeId = (string)($binding['typeId'] ?? '');
@@ -367,15 +580,22 @@ class PortalFormBindingResolver {
 			return null;
 		}
 
-		$rows = $this->reader->readCollection(
-			register: (string)($binding['formRegister'] ?? self::DEFAULT_FORM_REGISTER),
-			schema: (string)($binding['formSchema'] ?? self::DEFAULT_FORM_SCHEMA),
-			scopeField: 'caseType',
-			subjectRef: $typeId,
-			organisation: '',
-			limit: 20,
-			filter: ['audience' => $audience]
-		);
+		return $this->matchingForm(binding: $binding, typeId: $typeId, audience: $audience);
+	}//end publishedForm()
+
+	/**
+	 * The published form of a case type and audience that answers the binding.
+	 *
+	 * @param array<string, mixed> $binding  The binding being resolved.
+	 * @param string               $typeId   The case type the binding names.
+	 * @param string               $audience The audience the binding names.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 */
+	private function matchingForm(array $binding, string $typeId, string $audience): array|null {
+		$rows = $this->formRows(binding: $binding, typeId: $typeId, audience: $audience);
 
 		foreach ($rows as $row) {
 			if (is_array($row) === true && $this->formAnswersTheBinding(row: $row, binding: $binding, typeId: $typeId, audience: $audience) === true) {
@@ -384,7 +604,30 @@ class PortalFormBindingResolver {
 		}
 
 		return null;
-	}//end publishedForm()
+	}//end matchingForm()
+
+	/**
+	 * The form rows of a case type and audience, from the binding's form store.
+	 *
+	 * @param array<string, mixed> $binding  The binding being resolved.
+	 * @param string               $typeId   The case type the binding names.
+	 * @param string               $audience The audience the binding names.
+	 *
+	 * @return array<int, mixed>
+	 *
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 */
+	private function formRows(array $binding, string $typeId, string $audience): array {
+		return $this->reader->readCollection(
+			register: (string)($binding['formRegister'] ?? self::DEFAULT_FORM_REGISTER),
+			schema: (string)($binding['formSchema'] ?? self::DEFAULT_FORM_SCHEMA),
+			scopeField: 'caseType',
+			subjectRef: $typeId,
+			organisation: '',
+			limit: 20,
+			filter: ['audience' => $audience]
+		);
+	}//end formRows()
 
 	/**
 	 * Whether one form row is the published form this binding asked for.
@@ -400,7 +643,7 @@ class PortalFormBindingResolver {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	private function formAnswersTheBinding(array $row, array $binding, string $typeId, string $audience): bool {
 		if (($row['caseType'] ?? '') !== $typeId || ($row['audience'] ?? '') !== $audience) {
@@ -417,46 +660,39 @@ class PortalFormBindingResolver {
 	}//end formAnswersTheBinding()
 
 	/**
-	 * The form's fields, in the order the form declares, with its presets.
+	 * The introduction the form opens with, or null when it opens at step 1:
+	 * an `intro` an administrator switched off (`enabled` false) is kept on
+	 * the binding but not shown. Absent `enabled` reads as on.
 	 *
-	 * @param array<string, mixed> $form The published form.
+	 * @param mixed $intro The binding's `intro`.
 	 *
-	 * @return array<int, array<string, mixed>>
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t06
 	 */
-	private function fieldsOf(array $form): array {
-		$fields = ($form['fields'] ?? []);
-		if (is_array($fields) === false) {
-			return [];
+	private function shownIntro(mixed $intro): ?array {
+		$intro = $this->arrayOrNull(value: $intro);
+		if ($intro === null || ($intro['enabled'] ?? true) === false) {
+			return null;
 		}
 
-		$presets = (array)($form['presets'] ?? []);
-		$out = [];
-		foreach ($fields as $field) {
-			if (is_array($field) === false) {
-				continue;
-			}
+		return $intro;
+	}//end shownIntro()
 
-			$name = (string)($field['name'] ?? '');
-			if ($name === '') {
-				continue;
-			}
-
-			if (array_key_exists($name, $presets) === true) {
-				$field['preset'] = $presets[$name];
-			}
-
-			$out[] = $field;
+	/**
+	 * A value when it is an array, otherwise null.
+	 *
+	 * @param mixed $value The value.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function arrayOrNull(mixed $value): ?array {
+		if (is_array($value) === true) {
+			return $value;
 		}
 
-		usort(
-			$out,
-			static function (array $first, array $second): int {
-				return ((int)($first['order'] ?? 0) <=> (int)($second['order'] ?? 0));
-			}
-		);
-
-		return $out;
-	}//end fieldsOf()
+		return null;
+	}//end arrayOrNull()
 
 	/**
 	 * The host a URL names, for the card the visitor reads before leaving.

@@ -11,7 +11,7 @@
 //   node --test tests/news-item-translation.spec.mjs
 
 import assert from 'node:assert/strict'
-import { existsSync, readFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
@@ -39,18 +39,12 @@ const ITEM = {
 }
 
 /**
- * The shared portal API's source, wherever the shell slice put it.
+ * The shared portal API's source.
  *
  * @return {string} The source.
  */
 function portalApiSource() {
-	const shared = join(ROOT, 'src', 'shared', 'portalApi.js')
-	return readFileSync(
-		existsSync(shared)
-			? shared
-			: join(ROOT, 'src', 'portal', 'lib', 'portalApi.js'),
-		'utf8',
-	)
+	return readFileSync(join(ROOT, 'src', 'shared', 'portalApi.js'), 'utf8')
 }
 
 test('a translated news item shows the translation, the AI notice naming Dutch, and the original one button away', async () => {
@@ -139,9 +133,15 @@ test('newsItem declares translations and the register moved', () => {
 		),
 	)
 	const newsItem = register.components.schemas.newsItem
+	// The version is pinned so a register change has to be deliberate, and
+	// the list is widened WITH the change that moves it. #1166 bumped the
+	// schema to 0.3.0 for `publishedAt` and left this list behind, which
+	// turned `validate` and `check:specs` red on development itself and so on
+	// every open pull request.
 	assert.ok(
-		['0.2.0', '0.2.1'].includes(newsItem.version),
-		`newsItem ${newsItem.version}`,
+		['0.2.0', '0.2.1', '0.3.0', '0.4.0'].includes(newsItem.version),
+		`newsItem ${newsItem.version} is not a version this test knows; widen the list`
+			+ ' in the same change that moves the schema',
 	)
 	assert.equal(newsItem.properties.translations.type, 'array')
 	assert.equal(

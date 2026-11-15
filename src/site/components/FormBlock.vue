@@ -8,31 +8,71 @@
 		class="pq-form"
 		data-testid="site-form"
 		:data-portaliq-form="formId || 'form'"
+		novalidate
 		@submit.prevent="submit">
+		<!-- "Hulp nodig?": the portal's help details, the form's own over them. -->
+		<FormHelp
+			v-if="offersHelp"
+			:portalHelp="portalHelp"
+			:formHelp="formHelp"
+			:title="title" />
 		<p v-if="!fields.length" class="utrecht-paragraph pq-form__empty">
 			{{ emptyLabel }}
 		</p>
 
 		<template v-else>
-			<div v-for="field in fields" :key="field.id" class="pq-form__field">
-				<label :for="fieldElementId(field)" class="utrecht-form-label">
-					{{ field.label }}
-					<span v-if="field.required" aria-hidden="true">*</span>
-				</label>
+			<p
+				v-if="explainOptional"
+				class="utrecht-paragraph pq-form__note"
+				data-testid="form-optional-note">
+				{{ text.optionalNote }}
+			</p>
+
+			<ErrorSummary
+				ref="summary"
+				:entries="summary"
+				:idBase="`pq-form-${formId || 'x'}-summary`"
+				:heading="text.summaryHeading"
+				:intro="text.summaryIntro"
+				:titlePrefix="text.titlePrefix" />
+
+			<FieldShell
+				v-for="field in fields"
+				:id="fieldElementId(field)"
+				:key="field.id"
+				v-slot="{ describedBy }"
+				class="pq-form__field"
+				:label="field.label"
+				:required="!!field.required"
+				:optionalLabel="text.optional"
+				:help="field.type === 'date' ? text.dateHint : ''"
+				:error="errors[field.id] || ''"
+				:group="field.type === 'date'"
+				:errorTestid="`form-field-error-${field.id}`">
+				<DateInputGroup
+					v-if="field.type === 'date'"
+					:id="fieldElementId(field)"
+					v-model="values[field.id]"
+					:required="!!field.required"
+					:invalid="!!errors[field.id]"
+					:testid="`form-field-${field.id}`" />
 
 				<select
-					v-if="field.type === 'select'"
+					v-else-if="field.type === 'select'"
 					:id="fieldElementId(field)"
 					v-model="values[field.id]"
 					class="utrecht-select"
-					:required="!!field.required"
+					:aria-required="field.required ? 'true' : undefined"
+					:aria-invalid="errors[field.id] ? 'true' : undefined"
+					:aria-labelledby="`${fieldElementId(field)}-label`"
+					:aria-describedby="describedBy"
 					:data-testid="`form-field-${field.id}`">
 					<option value="" disabled>{{ selectPlaceholder }}</option>
 					<option
 						v-for="option in field.options || []"
 						:key="option"
 						:value="option">
-						{{ option }}
+						{{ optionLabel(field, option) }}
 					</option>
 				</select>
 
@@ -41,7 +81,10 @@
 					:id="fieldElementId(field)"
 					v-model="values[field.id]"
 					class="utrecht-textarea"
-					:required="!!field.required"
+					:aria-required="field.required ? 'true' : undefined"
+					:aria-invalid="errors[field.id] ? 'true' : undefined"
+					:aria-labelledby="`${fieldElementId(field)}-label`"
+					:aria-describedby="describedBy"
 					:data-testid="`form-field-${field.id}`" />
 
 				<input
@@ -50,9 +93,12 @@
 					v-model="values[field.id]"
 					class="utrecht-textbox"
 					:type="inputType(field)"
-					:required="!!field.required"
+					:aria-required="field.required ? 'true' : undefined"
+					:aria-invalid="errors[field.id] ? 'true' : undefined"
+					:aria-labelledby="`${fieldElementId(field)}-label`"
+					:aria-describedby="describedBy"
 					:data-testid="`form-field-${field.id}`" />
-			</div>
+			</FieldShell>
 
 			<p v-if="consentText" class="utrecht-paragraph pq-form__consent">
 				{{ consentText }}
@@ -85,6 +131,10 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
+import DateInputGroup from './forms/DateInputGroup.vue'
+import ErrorSummary from './forms/ErrorSummary.vue'
+import FieldShell from './forms/FieldShell.vue'
 import {
 	capturedReferrer,
 	captureLanding,
@@ -92,6 +142,43 @@ import {
 	lastTouch,
 } from '../lib/campaignTracking.js'
 import { submitLandingPageForm } from '../lib/formSubmission.js'
+import { hasHelp, mergeHelp } from '../lib/help.js'
+import {
+	DUTCH,
+	explainsOptional,
+	optionLabel,
+	plainFieldErrors,
+	summaryEntries,
+} from './forms/fields.js'
+
+/**
+ * The plain checks for the declared fields.
+ *
+ * @param {Array<object>} fields The declared form fields.
+ * @return {Array<object>} One rule per field: name, label, required, date.
+ */
+function fieldRules(fields) {
+	return fields.map((field) => ({
+		name: field.id,
+		label: field.label,
+		required: !!field.required,
+		date: field.type === 'date',
+	}))
+}
+
+/**
+ * The campaign attribution this visitor arrived with on the portal.
+ *
+ * @param {string} portal The portal slug.
+ * @return {{utmFirstTouch: object|null, utmLastTouch: object|null, referrer: string}} The tracking.
+ */
+function campaignOf(portal) {
+	return {
+		utmFirstTouch: firstTouch(portal),
+		utmLastTouch: lastTouch(portal),
+		referrer: capturedReferrer(portal),
+	}
+}
 
 /**
  * Renders a landing page's bound lead-capture form and submits it through
@@ -116,7 +203,32 @@ import { submitLandingPageForm } from '../lib/formSubmission.js'
 export default {
 	name: 'FormBlock',
 
+	components: {
+		DateInputGroup,
+		ErrorSummary,
+		FieldShell,
+		FormHelp: defineAsyncComponent(() => import('./FormHelp.vue')),
+	},
+
 	props: {
+		/** The portal's help details; "Hulp nodig?" shows when there are any. */
+		portalHelp: {
+			type: Object,
+			default: null,
+		},
+
+		/** The form's own help details; each key overrides the portal's. */
+		formHelp: {
+			type: Object,
+			default: null,
+		},
+
+		/** The form's title, named in the help e-mail and the phone note. */
+		title: {
+			type: String,
+			default: '',
+		},
+
 		/** The bound form's own id. Not sent as a value (the anonymous action's server-stamped `defaults` are the source of truth for `formId`), but it names the form's create action (`?actionId=submit-{formId}`), and it is what the traffic client reports form analytics under, through `data-portaliq-form` (portal-traffic-outcomes). */
 		formId: {
 			type: String,
@@ -175,9 +287,58 @@ export default {
 	data() {
 		return {
 			values: {},
+			errors: {},
 			submitting: false,
 			status: null,
 		}
+	},
+
+	computed: {
+		/**
+		 * @return {boolean} Whether the portal or the form has help details to offer.
+		 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
+		 */
+		offersHelp() {
+			return hasHelp(mergeHelp(this.portalHelp, this.formHelp))
+		},
+
+		/**
+		 * The layer's Dutch words.
+		 *
+		 * @return {object} The words.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-site-form-must-mark-the-fields-that-are-not-required-req-smf-001
+		 */
+		text() {
+			return DUTCH
+		},
+
+		/**
+		 * Whether the form explains "(niet verplicht)": only when it mixes
+		 * required and optional fields.
+		 *
+		 * @return {boolean} True to show the sentence.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-site-form-must-mark-the-fields-that-are-not-required-req-smf-001
+		 */
+		explainOptional() {
+			return explainsOptional(this.fields.map((field) => !!field.required))
+		},
+
+		/**
+		 * The error summary's lines, in field order.
+		 *
+		 * @return {Array<{field: string, target: string, message: string}>} The lines.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-failed-submit-must-show-an-error-summary-that-takes-focus-req-smf-002
+		 */
+		summary() {
+			return summaryEntries(
+				this.fields.map((field) => field.id),
+				this.errors,
+				(id) => this.fieldElementId({ id }),
+			)
+		},
 	},
 
 	created() {
@@ -194,6 +355,8 @@ export default {
 		fieldElementId(field) {
 			return `pq-form-field-${this.formId || 'x'}-${field.id}`
 		},
+
+		optionLabel,
 
 		/**
 		 * @param {object} field One declared form field.
@@ -215,22 +378,24 @@ export default {
 		 * @return {Promise<void>}
 		 *
 		 * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-a-landing-pages-form-is-submittable-with-no-portal-session
-		 * @spec openspec/changes/create-names-its-action/tasks.md#T3
+		 * @spec openspec/changes/archive/2026-10-07-create-names-its-action/tasks.md#T3
 		 */
 		async submit() {
-			this.submitting = true
 			this.status = null
+			this.errors = plainFieldErrors(fieldRules(this.fields), this.values)
+			if (Object.keys(this.errors).length > 0) {
+				this.$nextTick(() => {
+					if (this.$refs.summary) {
+						this.$refs.summary.focus()
+					}
+				})
+				return
+			}
+
+			this.submitting = true
 
 			try {
-				await submitLandingPageForm(
-					this.values,
-					{
-						utmFirstTouch: firstTouch(this.portal),
-						utmLastTouch: lastTouch(this.portal),
-						referrer: capturedReferrer(this.portal),
-					},
-					this.formId,
-				)
+				await submitLandingPageForm(this.values, campaignOf(this.portal), this.formId)
 				this.status = 'success'
 				this.values = {}
 			} catch {
@@ -244,6 +409,10 @@ export default {
 </script>
 
 <style scoped>
+.pq-form__note {
+	margin-block-end: var(--utrecht-space-block-md, 1rem);
+}
+
 .pq-form__field + .pq-form__field {
 	margin-block-start: var(--utrecht-space-block-md, 1rem);
 }

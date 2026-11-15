@@ -19,7 +19,10 @@ export default {
 		'Allowed file types: {types}.': 'Toegestane bestandstypen: {types}.',
 		'Also send letters to {label}': 'Brieven ook naar {label} sturen',
 		'Also sent to {label}.': 'Ook verstuurd naar {label}.',
+		'Also sent to {label}, on {date} at {time}.':
+			'Ook verstuurd naar {label}, op {date} om {time}.',
 		'As written': 'Zoals geschreven',
+		Attachments: 'Bijlagen',
 		'Back to tests': 'Terug naar toetsen',
 		'Back to the list': 'Terug naar de lijst',
 		'Changes on your cases': 'Wijzigingen in uw zaken',
@@ -43,6 +46,7 @@ export default {
 		'Legal effect': 'Rechtsgevolg',
 		'Loading…': 'Laden…',
 		'Mark as read': 'Markeren als gelezen',
+		'Read receipt requested': 'Leesbevestiging gevraagd',
 		'Maximum file size: {size} MB.': 'Maximale bestandsgrootte: {size} MB.',
 		Messages: 'Berichten',
 		'Messages from school are translated by AI into this language. You can always see the original text.':
@@ -51,6 +55,7 @@ export default {
 		'Move up': 'Omhoog',
 		'My tasks': 'Mijn taken',
 		Nature: 'Aard',
+		New: 'Nieuw',
 		'New messages': 'Nieuwe berichten',
 		News: 'Nieuws',
 		'News from school is translated by AI into your language. You can always see the original text.':
@@ -59,7 +64,22 @@ export default {
 		Next: 'Volgende',
 		'No conversations yet.': 'Nog geen gesprekken.',
 		'No messages.': 'Geen berichten.',
+		Delete: 'Verwijderen',
+		Select: 'Selecteren',
+		'Select all': 'Alles selecteren',
+		'Delete selected ({count})': 'Geselecteerde verwijderen ({count})',
+		'Delete this message? You cannot undo this.':
+			'Dit bericht verwijderen? Dit kunt u niet ongedaan maken.',
+		'Delete {count} messages? You cannot undo this.':
+			'{count} berichten verwijderen? Dit kunt u niet ongedaan maken.',
+		'Yes, delete': 'Ja, verwijderen',
+		Cancel: 'Annuleren',
+		'The message is deleted.': 'Het bericht is verwijderd.',
+		'{count} messages are deleted.': '{count} berichten zijn verwijderd.',
+		'Not every message could be deleted. Please try again.':
+			'Niet elk bericht kon worden verwijderd. Probeer het opnieuw.',
 		'No news yet.': 'Nog geen nieuws.',
+		'Published on {date}': 'Gepubliceerd op {date}',
 		'No open tasks.': 'U heeft geen open taken.',
 		'No tests are open for you right now.':
 			'Er staan nu geen toetsen voor je open.',
@@ -87,6 +107,7 @@ export default {
 		'Submit task': 'Taak indienen',
 		Task: 'Taak',
 		'Tests you can take': 'Toetsen die je kunt maken',
+		'The download did not work.': 'Downloaden is niet gelukt.',
 		'The tasks are not available right now. Please try again later.':
 			'De taken zijn nu niet beschikbaar. Probeer het later opnieuw.',
 		'The upload was refused. Check the file rules above.':
@@ -100,6 +121,10 @@ export default {
 		'This task does not exist or is not yours.':
 			'Deze taak bestaat niet of is niet van u.',
 		'This task is already closed.': 'Deze taak is al afgerond.',
+		'This task has its own form. Open the task again to fill it in.':
+			'Deze taak heeft een eigen formulier. Open de taak opnieuw om het in te vullen.',
+		'The form for this task is not available to you right now.':
+			'Het formulier voor deze taak is nu niet voor u beschikbaar.',
 		'This test could not be started.': 'Deze toets kon niet worden gestart.',
 		'Time is up. Your test has been handed in.':
 			'De tijd is om. Je toets is ingeleverd.',
@@ -111,6 +136,8 @@ export default {
 		Unread: 'Ongelezen',
 		'View result': 'Resultaat bekijken',
 		'View task': 'Bekijk taak',
+		'View the link': 'Bekijk de link',
+		'View the publication': 'Bekijk de publicatie',
 		'Yes, hand in': 'Ja, inleveren',
 		You: 'U',
 		'You can add at most {count} file(s).':
@@ -128,6 +155,11 @@ export default {
 			'Uw taak is ingediend. Dank u wel.',
 		'Your teacher marks this question.': 'Je docent kijkt deze vraag na.',
 		'Your test is handed in.': 'Je toets is ingeleverd.',
+		'About: {value}': 'Over: {value}',
+		All: 'Alles',
+		'Unread ({count})': 'Ongelezen ({count})',
+		'Mark all as read': 'Alles als gelezen markeren',
+		'Filter messages': 'Berichten filteren',
 	},
 	en: {
 		'A file is required for this task.': 'A file is required for this task.',
@@ -138,7 +170,10 @@ export default {
 		'Allowed file types: {types}.': 'Allowed file types: {types}.',
 		'Also send letters to {label}': 'Also send letters to {label}',
 		'Also sent to {label}.': 'Also sent to {label}.',
+		'Also sent to {label}, on {date} at {time}.':
+			'Also sent to {label}, on {date} at {time}.',
 		'As written': 'As written',
+		Attachments: 'Attachments',
 		'Back to tests': 'Back to tests',
 		'Back to the list': 'Back to the list',
 		'Changes on your cases': 'Changes on your cases',
@@ -162,6 +197,7 @@ export default {
 		'Legal effect': 'Legal effect',
 		'Loading…': 'Loading…',
 		'Mark as read': 'Mark as read',
+		'Read receipt requested': 'Read receipt requested',
 		'Maximum file size: {size} MB.': 'Maximum file size: {size} MB.',
 		Messages: 'Messages',
 		'Messages from school are translated by AI into this language. You can always see the original text.':
@@ -170,6 +206,7 @@ export default {
 		'Move up': 'Move up',
 		'My tasks': 'My tasks',
 		Nature: 'Nature',
+		New: 'New',
 		'New messages': 'New messages',
 		News: 'News',
 		'News from school is translated by AI into your language. You can always see the original text.':
@@ -178,7 +215,22 @@ export default {
 		Next: 'Next',
 		'No conversations yet.': 'No conversations yet.',
 		'No messages.': 'No messages.',
+		Delete: 'Delete',
+		Select: 'Select',
+		'Select all': 'Select all',
+		'Delete selected ({count})': 'Delete selected ({count})',
+		'Delete this message? You cannot undo this.':
+			'Delete this message? You cannot undo this.',
+		'Delete {count} messages? You cannot undo this.':
+			'Delete {count} messages? You cannot undo this.',
+		'Yes, delete': 'Yes, delete',
+		Cancel: 'Cancel',
+		'The message is deleted.': 'The message is deleted.',
+		'{count} messages are deleted.': '{count} messages are deleted.',
+		'Not every message could be deleted. Please try again.':
+			'Not every message could be deleted. Please try again.',
 		'No news yet.': 'No news yet.',
+		'Published on {date}': 'Published on {date}',
 		'No open tasks.': 'No open tasks.',
 		'No tests are open for you right now.':
 			'No tests are open for you right now.',
@@ -206,6 +258,7 @@ export default {
 		'Submit task': 'Submit task',
 		Task: 'Task',
 		'Tests you can take': 'Tests you can take',
+		'The download did not work.': 'The download did not work.',
 		'The tasks are not available right now. Please try again later.':
 			'The tasks are not available right now. Please try again later.',
 		'The upload was refused. Check the file rules above.':
@@ -219,6 +272,10 @@ export default {
 		'This task does not exist or is not yours.':
 			'This task does not exist or is not yours.',
 		'This task is already closed.': 'This task is already closed.',
+		'This task has its own form. Open the task again to fill it in.':
+			'This task has its own form. Open the task again to fill it in.',
+		'The form for this task is not available to you right now.':
+			'The form for this task is not available to you right now.',
 		'This test could not be started.': 'This test could not be started.',
 		'Time is up. Your test has been handed in.':
 			'Time is up. Your test has been handed in.',
@@ -230,6 +287,8 @@ export default {
 		Unread: 'Unread',
 		'View result': 'View result',
 		'View task': 'View task',
+		'View the link': 'View the link',
+		'View the publication': 'View the publication',
 		'Yes, hand in': 'Yes, hand in',
 		You: 'You',
 		'You can add at most {count} file(s).':
@@ -247,5 +306,10 @@ export default {
 			'Your task has been submitted. Thank you.',
 		'Your teacher marks this question.': 'Your teacher marks this question.',
 		'Your test is handed in.': 'Your test is handed in.',
+		'About: {value}': 'About: {value}',
+		All: 'All',
+		'Unread ({count})': 'Unread ({count})',
+		'Mark all as read': 'Mark all as read',
+		'Filter messages': 'Filter messages',
 	},
 }

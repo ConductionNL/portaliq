@@ -1,0 +1,83 @@
+// SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+// SPDX-License-Identifier: EUPL-1.2
+//
+// Whose cases Mijn zaken lists, as "Wissel naar" in the acting-for bar
+// chooses it (board huisstijl/NamensBalk): everyone the resident acts for,
+// themself, or one party a mandate names. No Vue, so
+// tests/my-cases-parties.spec.mjs runs it as node.
+//
+// @spec openspec/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
+
+import { ACTING_FOR_SELF, caseTarget } from '../../../shared/myCases.js'
+import { EVERYONE } from '../../components/mijn/actingForChoice.js'
+
+export { EVERYONE }
+
+/**
+ * The mandate ids to read for a choice: every one for everyone, else the one chosen.
+ *
+ * @param {string} choice The choice.
+ * @param {Array<{id: string}>} mandates The mandates held.
+ * @return {Array<string>} The ids, `self` for the resident's own cases.
+ * @spec openspec/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
+ */
+export function readsFor(choice, mandates) {
+	if (choice !== EVERYONE) {
+		return [choice || ACTING_FOR_SELF]
+	}
+	const held = (Array.isArray(mandates) ? mandates : [])
+		.filter((mandate) => mandate && mandate.id)
+		.map((mandate) => String(mandate.id))
+	return [ACTING_FOR_SELF, ...held]
+}
+
+/**
+ * Several "My cases" answers as one: a failed first answer stands for the
+ * whole, a later failed one is left out, and a case read twice stands once.
+ *
+ * @param {Array<object|null>} answers The answers, the resident's own first.
+ * @return {object|null} The answer.
+ * @spec openspec/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
+ */
+export function mergedAnswer(answers) {
+	const first = answers[0] ?? null
+	if (!first || first.ok === false) {
+		return first
+	}
+	const seen = new Set()
+	const cases = []
+	for (const row of answeredCases(answers)) {
+		const key = caseKey(row)
+		if (!seen.has(key)) {
+			seen.add(key)
+			cases.push(row)
+		}
+	}
+	return { ...first, cases }
+}
+
+/**
+ * The cases of every answer that did not fail, in order.
+ *
+ * @param {Array<object|null>} answers The answers.
+ * @return {Array<object>} The case rows.
+ */
+function answeredCases(answers) {
+	return answers
+		.filter((answer) => answer && answer.ok !== false)
+		.flatMap((answer) => (Array.isArray(answer.cases) ? answer.cases : []))
+}
+
+/**
+ * What makes a case the same case across answers: its app, collection and
+ * id, else the whole row.
+ *
+ * @param {object} row The case row.
+ * @return {string} The key.
+ */
+function caseKey(row) {
+	const target = caseTarget(row)
+	return target
+		? `${target.app}:${target.collection}:${target.id}`
+		: JSON.stringify(row)
+}

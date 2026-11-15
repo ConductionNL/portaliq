@@ -21,6 +21,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\CaseTypeReader;
+use OCA\Portaliq\Service\ExampleResident\ExampleSetResidents;
 use OCA\Portaliq\Service\Identity\PortalReferenceLinkService;
 use OCA\Portaliq\Service\Identity\PortalRegistrationPolicyService;
 use OCA\Portaliq\Service\Identity\PortalWaysInResolver;
@@ -469,6 +470,89 @@ class PortalRuntimeConfigResolverTest extends TestCase {
 
 
 	/**
+	 * The one-click demo sign-in is offered only while the switch is on,
+	 * for the installed resident of this portal (example-resident-demo-login).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+	 */
+	public function testTheOneClickSignInIsOfferedOnlyWithTheSwitch(): void {
+		$zuiddrecht = ['slug' => 'zuiddrecht', 'organisation' => ''];
+		$off        = $this->demoResolver(switch: 'no');
+		$on         = $this->demoResolver(switch: 'yes');
+
+		// Off: nothing, even in debug mode.
+		$this->assertSame(expected: '', actual: $off->runtimeConfigFor(portal: $zuiddrecht, orgValue: '', locale: 'nl')['exampleResident']);
+		// On: this portal's resident; another portal, or none, gets nothing.
+		$this->assertSame(expected: 'zuiddrecht', actual: $on->runtimeConfigFor(portal: $zuiddrecht, orgValue: '', locale: 'nl')['exampleResident']);
+		$this->assertSame(expected: '', actual: $on->runtimeConfigFor(portal: ['slug' => 'other'], orgValue: '', locale: 'nl')['exampleResident']);
+		$this->assertSame(expected: '', actual: $on->runtimeConfigFor(portal: null, orgValue: '', locale: 'nl')['exampleResident']);
+	}//end testTheOneClickSignInIsOfferedOnlyWithTheSwitch()
+
+
+	/**
+	 * The cards the site may draw: per resident its key, name and card, never
+	 * an account id; none while the switch is off or on another portal.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/demo-sign-in-beside-the-account/specs/example-resident/spec.md#requirement-a-demo-may-sign-in-each-example-resident-with-one-click
+	 */
+	public function testTheResidentsCardsAreOfferedOnlyWithTheSwitch(): void {
+		$zuiddrecht = ['slug' => 'zuiddrecht', 'organisation' => ''];
+		$off        = $this->demoResolver(switch: 'no');
+		$on         = $this->demoResolver(switch: 'yes');
+
+		$this->assertSame(
+			expected: [['set' => 'zuiddrecht', 'key' => 'sanne', 'name' => 'Sanne de Vries', 'card' => []]],
+			actual: $on->runtimeConfigFor(portal: $zuiddrecht, orgValue: '', locale: 'nl')['exampleResidents']
+		);
+		$this->assertSame(expected: [], actual: $off->runtimeConfigFor(portal: $zuiddrecht, orgValue: '', locale: 'nl')['exampleResidents']);
+		$this->assertSame(expected: [], actual: $on->runtimeConfigFor(portal: ['slug' => 'other'], orgValue: '', locale: 'nl')['exampleResidents']);
+		$this->assertArrayNotHasKey(key: 'exampleResidentWayIn', array: $off->runtimeConfigFor(portal: $zuiddrecht, orgValue: '', locale: 'nl'));
+	}//end testTheResidentsCardsAreOfferedOnlyWithTheSwitch()
+
+
+	/**
+	 * A resolver on a debug instance with the example resident `zuiddrecht`
+	 * installed as `sanne.devries`, and the switch as given.
+	 *
+	 * @param string $switch The app config `example_resident_demo_login`.
+	 *
+	 * @return PortalRuntimeConfigResolver
+	 */
+	private function demoResolver(string $switch): PortalRuntimeConfigResolver {
+		$config = $this->createMock(originalClassName: IConfig::class);
+		$config->method('getSystemValueBool')->willReturn(true);
+		$config->method('getAppValue')->willReturnCallback(
+			static function (string $app, string $key, mixed $default = '') use ($switch): string {
+				if ($key === 'example_resident_demo_login') {
+					return $switch;
+				}
+
+				return (string)$default;
+			}
+		);
+		$residents = $this->createMock(originalClassName: ExampleSetResidents::class);
+		$residents->method('available')->willReturn(true);
+		$residents->method('residentsOf')->willReturnCallback(
+			static fn (string $portal): array => (
+				$portal === 'zuiddrecht' ? [['set' => 'zuiddrecht', 'key' => 'sanne', 'uid' => 'sanne.devries', 'name' => 'Sanne de Vries', 'card' => []]] : []
+			)
+		);
+
+		return new PortalRuntimeConfigResolver(
+			portalResolver: $this->createMock(originalClassName: PortalResolver::class),
+			orgResolver: $this->orgResolverDouble(),
+			themeResolver: $this->createMock(originalClassName: PortalThemeResolver::class),
+			config: $config,
+			waysIn: null,
+			exampleResidents: $residents
+		);
+	}//end demoResolver()
+
+	/**
 	 * The dev login is only offered where the server accepts it.
 	 *
 	 * @return void
@@ -478,6 +562,18 @@ class PortalRuntimeConfigResolverTest extends TestCase {
 	public function testTheDevLoginIsOfferedOnlyWhereItIsEnabled(): void {
 		$closed = $this->resolver()->runtimeConfigFor(portal: null, orgValue: '', locale: 'nl');
 		$this->assertFalse($closed['devLogin']);
+
+		// Debug mode alone does not offer it (dev-login-only-when-switched-on).
+		$debug = $this->createMock(IConfig::class);
+		$debug->method('getSystemValueBool')->willReturn(true);
+		$debug->method('getAppValue')->willReturnCallback(static fn (string $app, string $key, mixed $default = ''): string => (string)$default);
+		$debugOnly = new PortalRuntimeConfigResolver(
+			$this->createMock(PortalResolver::class),
+			$this->orgResolverDouble(),
+			$this->createMock(PortalThemeResolver::class),
+			$debug
+		);
+		$this->assertFalse($debugOnly->runtimeConfigFor(portal: null, orgValue: '', locale: 'nl')['devLogin']);
 
 		$config = $this->createMock(IConfig::class);
 		$config->method('getSystemValueBool')->willReturn(false);
@@ -552,7 +648,7 @@ class PortalRuntimeConfigResolverTest extends TestCase {
 		$config = $this->waysInResolver(providers: [['provider' => 'generic', 'label' => 'E-mail']])
 			->runtimeConfigFor(portal: null, orgValue: 'gemeente-x', locale: 'nl');
 
-		$this->assertSame(['register' => false, 'reference' => false, 'emailSignIn' => '', 'referenceCaseTypes' => []], $config['waysIn']);
+		$this->assertSame(['register' => false, 'reference' => false, 'emailSignIn' => '', 'referenceCaseTypes' => [], 'emailLink' => false], $config['waysIn']);
 	}//end testNoPortalNoDoors()
 
 

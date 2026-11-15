@@ -44,6 +44,8 @@ namespace OCA\Portaliq\Service\Identity;
  * The address rules of one account.
  *
  * @spec openspec/changes/archive/2026-09-30-identity-profile-page/specs/portal-profile/spec.md#requirement-you-keep-several-addresses-one-of-each-kind-preferred-req-ipp-003
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class ContactAddressBook {
 	/**
@@ -69,12 +71,22 @@ class ContactAddressBook {
 	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T03
 	 */
 	public function entries(array $account): array {
+		return $this->withLegacyEmail(entries: $this->storedEntries(account: $account), email: (string)($account['email'] ?? ''));
+	}//end entries()
+
+	/**
+	 * The account's stored addresses that are usable.
+	 *
+	 * @param array<string, mixed> $account The account row.
+	 *
+	 * @return array<int, array{kind: string, value: string, confirmed: bool, preferred: bool}>
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T03
+	 */
+	private function storedEntries(array $account): array {
 		$entries = [];
 		foreach ((array)($account['contactAddresses'] ?? []) as $entry) {
-			if (is_array($entry) === false
-				|| in_array(($entry['kind'] ?? ''), self::KINDS, true) === false
-				|| (string)($entry['value'] ?? '') === ''
-			) {
+			if ($this->isUsableEntry(entry: $entry) === false) {
 				continue;
 			}
 
@@ -86,7 +98,41 @@ class ContactAddressBook {
 			];
 		}
 
-		$email = (string)($account['email'] ?? '');
+		return $entries;
+	}//end storedEntries()
+
+	/**
+	 * Whether a stored entry is an address of a known kind with a value.
+	 *
+	 * @param mixed $entry The stored entry.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T03
+	 */
+	private function isUsableEntry(mixed $entry): bool {
+		if (is_array($entry) === false
+			|| in_array(($entry['kind'] ?? ''), self::KINDS, true) === false
+			|| (string)($entry['value'] ?? '') === ''
+		) {
+			return false;
+		}
+
+		return true;
+	}//end isUsableEntry()
+
+	/**
+	 * The entries with the account's `email` as a confirmed, preferred address
+	 * when the list does not hold it yet.
+	 *
+	 * @param array<int, array<string, mixed>> $entries The stored addresses.
+	 * @param string                           $email   The account's `email`.
+	 *
+	 * @return array<int, array{kind: string, value: string, confirmed: bool, preferred: bool}>
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T03
+	 */
+	private function withLegacyEmail(array $entries, string $email): array {
 		if ($email !== '' && $this->find(entries: $entries, kind: 'email', value: $email) === null) {
 			$entries = $this->withPreferred(
 				entries: array_merge($entries, [['kind' => 'email', 'value' => $email, 'confirmed' => true, 'preferred' => false]]),
@@ -96,7 +142,7 @@ class ContactAddressBook {
 		}
 
 		return $entries;
-	}//end entries()
+	}//end withLegacyEmail()
 
 	/**
 	 * Add an address.

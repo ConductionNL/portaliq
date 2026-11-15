@@ -40,6 +40,8 @@ use OCP\IL10N;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Service\Identity\MandateParties;
+use OCA\Portaliq\Contribution\TimelineProviderMethod;
 
 /**
  * The probes here are deliberately taken with the LEAST privileged principal
@@ -56,9 +58,26 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Portaliq\Event\PortalClientWriteEvent
  * @uses   \OCA\Portaliq\Event\PortalClientWithdrawalEvent
  * @uses   \OCA\Portaliq\Service\CitizenWritableSetResolver
+ * @uses   \OCA\Portaliq\Contribution\CaseFieldDisplayHints
  * @uses   \OCA\Portaliq\Service\CitizenWriteRecorder
  * @uses   \OCA\Portaliq\Service\CitizenWriteThrottle
  * @uses   \OCA\Portaliq\Service\PortalSessionService
+ * @uses   \OCA\Portaliq\Contribution\TimelineProviderMethod
+ * @uses   \OCA\Portaliq\Service\Identity\MandateParties
+ * @uses   \OCA\Portaliq\Service\Branch\BranchNumber
+ * @uses   \OCA\Portaliq\Kernel\Support\PortalBranchScope
+ * @uses   \OCA\Portaliq\Service\CitizenCaseDocuments
+ * @uses   \OCA\Portaliq\Service\PortalCaseDocumentReader
+ * @uses   \OCA\Portaliq\Service\MandatedCaseReader
+ * @uses   \OCA\Portaliq\Service\CitizenCaseProjection
+ * @uses   \OCA\Portaliq\Service\PortalFieldProjector
+ * @uses   \OCA\Portaliq\Service\CaseRowMarker
+ * @uses   \OCA\Portaliq\Service\CaseStatusView
+ * @uses   \OCA\Portaliq\Controller\CaseWithdrawal
+ * @uses   \OCA\Portaliq\Controller\CaseWriteRun
+ * @uses   \OCA\Portaliq\Service\DocumentEntryExtras
+ * @uses   \OCA\Portaliq\Kernel\Support\UploadedFile
+ * @uses   \OCA\Portaliq\Kernel\Support\SessionTrust
  *
  * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
  */
@@ -143,8 +162,24 @@ class CitizenCaseControllerTest extends TestCase {
 	 */
 	private array $attached = [];
 
+	/**
+	 * How the fake writer answers: 'ok' saves, 'throw' fails, 'none' finds no case.
+	 *
+	 * @var string
+	 */
+	private string $writerAnswer = 'ok';
+
+	/**
+	 * Whether the fake file writer fails to attach.
+	 *
+	 * @var bool
+	 */
+	private bool $attachFails = false;
+
 	protected function setUp(): void {
 		parent::setUp();
+		$this->writerAnswer = 'ok';
+		$this->attachFails = false;
 		$this->writes = [];
 		$this->events = [];
 		$this->readScopes = [];
@@ -236,6 +271,47 @@ class CitizenCaseControllerTest extends TestCase {
 		$this->assertSame(self::CASE_ID, $event->getCaseId());
 		$this->assertSame(['omschrijving'], $event->getFields());
 	}//end testACorrectionLandsWithTheIdentityRecorded()
+
+	/**
+	 * A write made under a mandate carries the mandate's label, so the case app
+	 * can say on whose behalf in words (write-record-names-the-mandate).
+	 */
+	public function testAWriteUnderAMandateRecordsTheMandatesLabel(): void {
+		$controller = $this->controller(
+			fields: ['omschrijving' => 'dakkapel aan de achterzijde'],
+			params: ['actingFor' => 'kvk-subsidiary', 'mandate' => 'mandate-1'],
+			actingMandate: ['id' => 'mandate-1', 'label' => 'Kramer voor Slagerij Van der Berg'],
+		);
+
+		$response = $controller->amend('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$mandate = $this->writes[0]['data']['portalWrites'][0]['mandate'];
+		$this->assertSame('kvk-subsidiary', $mandate['actingFor']);
+		$this->assertSame('Kramer voor Slagerij Van der Berg', $mandate['actingForLabel']);
+	}//end testAWriteUnderAMandateRecordsTheMandatesLabel()
+
+	/**
+	 * A request may name an entity but never grant itself one: an entity the
+	 * held mandate does not reach, or a mandate the identity does not hold,
+	 * leaves the write recorded as the citizen's own.
+	 */
+	public function testAWriteNamingAnEntityItCannotReachIsRecordedAsTheirOwn(): void {
+		$outside = $this->controller(
+			fields: ['omschrijving' => 'x'],
+			params: ['actingFor' => 'kvk-elsewhere', 'mandate' => 'mandate-1'],
+			actingMandate: ['id' => 'mandate-1', 'label' => 'Kramer voor Slagerij Van der Berg'],
+		);
+		$this->assertSame(Http::STATUS_OK, $outside->amend('zaken', 'zaak', self::CASE_ID)->getStatus());
+		$this->assertArrayNotHasKey('actingFor', $this->writes[0]['data']['portalWrites'][0]['mandate']);
+
+		$unheld = $this->controller(
+			fields: ['omschrijving' => 'x'],
+			params: ['actingFor' => 'kvk-subsidiary', 'mandate' => 'mandate-9'],
+		);
+		$this->assertSame(Http::STATUS_OK, $unheld->amend('zaken', 'zaak', self::CASE_ID)->getStatus());
+		$this->assertArrayNotHasKey('actingFor', $this->writes[1]['data']['portalWrites'][0]['mandate']);
+	}//end testAWriteNamingAnEntityItCannotReachIsRecordedAsTheirOwn()
 
 	/**
 	 * The same write, with the window closed: refused with a status and the
@@ -356,6 +432,78 @@ class CitizenCaseControllerTest extends TestCase {
 	}//end testAClosedDocumentWindowRefusesTheUpload()
 
 	/**
+	 * A request without a file is a 400 and a file the case app does not
+	 * take is a 502; neither raises an event.
+	 */
+	public function testAMissingOrRefusedUploadIsRefusedWithoutAnEvent(): void {
+		$missing = $this->controller()->addDocument('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $missing->getStatus());
+		$this->assertSame(['message' => 'There is no file to add.', 'error' => 'no-file'], $missing->getData());
+
+		$this->attachFails = true;
+		$refused = $this->controller(upload: ['name' => 'aanvulling.pdf', 'content' => '%PDF'])->addDocument('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_BAD_GATEWAY, $refused->getStatus());
+		$this->assertSame(['message' => 'The document could not be added. Please try again.', 'error' => 'document-not-added'], $refused->getData());
+		$this->assertSame([], $this->events);
+	}//end testAMissingOrRefusedUploadIsRefusedWithoutAnEvent()
+
+	/**
+	 * An added document answers with what was attached and raises one write
+	 * event naming the file.
+	 */
+	public function testAnAddedDocumentIsAnnouncedByName(): void {
+		$response = $this->controller(upload: ['name' => 'aanvulling.pdf', 'content' => '%PDF'])->addDocument('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['document' => ['id' => 1, 'name' => 'aanvulling.pdf', 'size' => 4]], $response->getData());
+		$this->assertCount(1, $this->events);
+		$this->assertInstanceOf(PortalClientWriteEvent::class, $this->events[0]);
+		$this->assertSame(['aanvulling.pdf'], $this->events[0]->getFields());
+	}//end testAnAddedDocumentIsAnnouncedByName()
+
+	/**
+	 * An amendment the store fails to save is a 500, one it finds no case for
+	 * a 403; neither raises an event. An empty amendment is a 400.
+	 */
+	public function testAnAmendmentThatIsNotSavedIsRefusedWithoutAnEvent(): void {
+		$this->writerAnswer = 'throw';
+		$failed = $this->controller(fields: ['omschrijving' => 'x'])->amend('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $failed->getStatus());
+		$this->assertSame(['message' => 'The change could not be saved. Please try again.', 'error' => 'amendment-not-saved'], $failed->getData());
+
+		$this->writerAnswer = 'none';
+		$foreign = $this->controller(fields: ['omschrijving' => 'x'])->amend('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $foreign->getStatus());
+		$this->assertSame(['message' => 'This case is not yours.', 'error' => 'case-not-yours'], $foreign->getData());
+		$this->assertSame([], $this->events);
+
+		$this->writerAnswer = 'ok';
+		$empty = $this->controller(fields: [])->amend('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $empty->getStatus());
+		$this->assertSame('nothing-to-change', $empty->getData()['error']);
+	}//end testAnAmendmentThatIsNotSavedIsRefusedWithoutAnEvent()
+
+	/**
+	 * The amendment writes the accepted fields first and the record after
+	 * them, and answers with the case.
+	 */
+	public function testAnAmendmentWritesTheFieldsThenTheRecord(): void {
+		$response = $this->controller(fields: ['toelichting' => 'nieuw', 'omschrijving' => 'ander'])->amend('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['toelichting', 'omschrijving', 'portalWrites'], array_keys($this->writes[0]['data']));
+		$record = $this->writes[0]['data']['portalWrites'][0];
+		$this->assertSame(['toelichting' => ['from' => 'aan de achterzijde', 'to' => 'nieuw'], 'omschrijving' => ['from' => 'een dakkapel', 'to' => 'ander']], $record['changes']);
+		$this->assertSame(['case'], array_keys($response->getData()));
+		$this->assertSame(['toelichting', 'omschrijving'], $this->events[0]->getFields());
+	}//end testAnAmendmentWritesTheFieldsThenTheRecord()
+
+	/**
 	 * A contribution that declares no citizen write surface refuses all three
 	 * acts, whatever else its update action permits.
 	 */
@@ -384,6 +532,41 @@ class CitizenCaseControllerTest extends TestCase {
 		$this->assertSame('too-many-writes', $response->getData()['error']);
 		$this->assertSame([], $this->writes);
 	}//end testPastTheThrottleTheWriteIsRefused()
+
+	/**
+	 * Past the throttle a withdrawal and an added document are refused with
+	 * 429 `too-many-writes` and the sentence, and neither the case writer nor
+	 * the file writer is called (REQ-CWL-001).
+	 *
+	 * @spec openspec/changes/citizen-case-write-limit/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-residents-writes-on-her-own-case-are-limited-per-case-and-per-identity-req-cwl-001
+	 */
+	public function testPastTheThrottleAWithdrawalAndADocumentAreRefused(): void {
+		$refusal = [
+			'message' => 'You have made a lot of changes in a short time. Please try again later.',
+			'error' => 'too-many-writes',
+		];
+
+		$withdrawal = $this->controller(
+			caseType: $this->caseType(withdrawal: $this->withdrawalDeclaration()),
+			throttleOpen: false,
+			params: ['reason' => 'Verhuisd.']
+		)->withdraw('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_TOO_MANY_REQUESTS, $withdrawal->getStatus());
+		$this->assertSame($refusal, $withdrawal->getData());
+
+		$document = $this->controller(
+			upload: ['name' => 'aanvulling.pdf', 'content' => '%PDF'],
+			throttleOpen: false
+		)->addDocument('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_TOO_MANY_REQUESTS, $document->getStatus());
+		$this->assertSame($refusal, $document->getData());
+
+		$this->assertSame([], $this->writes);
+		$this->assertSame([], $this->attached);
+		$this->assertSame([], $this->events);
+	}//end testPastTheThrottleAWithdrawalAndADocumentAreRefused()
 
 	/**
 	 * The citizen reads the label the case app supplied, unchanged, and the
@@ -541,6 +724,10 @@ class CitizenCaseControllerTest extends TestCase {
 				'toelichting' => 'aan de achterzijde',
 				'status' => 'ontvangen',
 				'zaaktype' => 'type-1',
+				// What the case app keeps for its staff and never declares.
+				'assignee' => 'behandelaar-7',
+				'qualityScore' => 0.9997,
+				'@self' => ['id' => self::CASE_ID, 'owner' => 'admin', 'organisation' => 'org-uuid'],
 			],
 			self::OTHER_CASE_ID => [
 				'id' => self::OTHER_CASE_ID,
@@ -583,6 +770,7 @@ class CitizenCaseControllerTest extends TestCase {
 		array $taggedFiles = [],
 		array $published = [],
 		?MandatedCaseReader $mandatedCases = null,
+		?array $actingMandate = null,
 	): CitizenCaseController {
 		$action = ($action ?? $this->action());
 		$cases = $this->cases();
@@ -636,7 +824,14 @@ class CitizenCaseControllerTest extends TestCase {
 				string $id,
 				array $data,
 			) use ($cases) {
+				if ($this->writerAnswer === 'throw') {
+					throw new \RuntimeException('store down');
+				}
+
 				$this->writes[] = ['id' => $id, 'data' => $data];
+				if ($this->writerAnswer === 'none') {
+					return null;
+				}
 
 				return array_merge(($cases[$id] ?? []), $data);
 			}
@@ -658,6 +853,10 @@ class CitizenCaseControllerTest extends TestCase {
 		$fileWriter = $this->createMock(PortalFileWriter::class);
 		$fileWriter->method('attachFile')->willReturnCallback(
 			function (string $register, string $schema, string $id, string $fileName, string $content = '', array $tags = []) {
+				if ($this->attachFails === true) {
+					return null;
+				}
+
 				$this->attached[] = $fileName;
 				$this->attachedTags[] = $tags;
 
@@ -690,11 +889,12 @@ class CitizenCaseControllerTest extends TestCase {
 			new CitizenWriteRecorder($this->createMock(AuditTrailService::class), $dispatcher),
 			$this->throttle(open: $throttleOpen),
 			new CitizenDocumentUpload(),
-			$this->mandateService(),
-			$this->treeResolver(),
+			$this->mandateService(mandate: $actingMandate),
+			$this->treeResolver(entities: ($actingMandate === null ? [] : ['kvk-subsidiary'])),
 			$l10n,
 			$this->createMock(LoggerInterface::class),
 			$this->documents(fileReader: $fileReader, published: $published),
+			new MandateParties(),
 			$mandatedCases
 		);
 	}//end controller()
@@ -740,7 +940,7 @@ class CitizenCaseControllerTest extends TestCase {
 
 		return new CitizenCaseDocuments(
 			files: $fileReader,
-			published: new PortalCaseDocumentReader(locator: $locator, logger: $this->createMock(LoggerInterface::class)),
+			published: new PortalCaseDocumentReader(locator: $locator, logger: $this->createMock(LoggerInterface::class), timelineProviderMethod: new TimelineProviderMethod()),
 			audit: $audit
 		);
 	}//end documents()
@@ -807,13 +1007,22 @@ class CitizenCaseControllerTest extends TestCase {
 	 *
 	 * @return \OCA\Portaliq\Service\Identity\PortalMandateService
 	 */
-	private function mandateService(): \OCA\Portaliq\Service\Identity\PortalMandateService {
+	private function mandateService(?array $mandate = null): \OCA\Portaliq\Service\Identity\PortalMandateService {
 		$mandates = $this->getMockBuilder(\OCA\Portaliq\Service\Identity\PortalMandateService::class)
 			->disableOriginalConstructor()
-			->onlyMethods(['mandatesFor', 'activeMandate'])
+			->onlyMethods(['mandatesFor', 'activeMandate', 'describe', 'reachOf'])
 			->getMock();
-		$mandates->method('mandatesFor')->willReturn([]);
-		$mandates->method('activeMandate')->willReturn(null);
+		$mandates->method('mandatesFor')->willReturn($mandate === null ? [] : [$mandate]);
+		$mandates->method('activeMandate')->willReturn($mandate);
+		$mandates->method('describe')->willReturn(
+			[
+				'id'         => 'mandate-1',
+				'label'      => (string)($mandate['label'] ?? ''),
+				'onBehalfOf' => 'kvk-parent',
+				'organisation' => 'kvk-parent',
+			]
+		);
+		$mandates->method('reachOf')->willReturn('entity');
 
 		return $mandates;
 	}//end mandateService()
@@ -823,12 +1032,12 @@ class CitizenCaseControllerTest extends TestCase {
 	 *
 	 * @return \OCA\Portaliq\Service\Identity\PortalPartyTreeResolver
 	 */
-	private function treeResolver(): \OCA\Portaliq\Service\Identity\PortalPartyTreeResolver {
+	private function treeResolver(array $entities = []): \OCA\Portaliq\Service\Identity\PortalPartyTreeResolver {
 		$tree = $this->getMockBuilder(\OCA\Portaliq\Service\Identity\PortalPartyTreeResolver::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['entitiesFor'])
 			->getMock();
-		$tree->method('entitiesFor')->willReturn(['entities' => [], 'refused' => false, 'bound' => []]);
+		$tree->method('entitiesFor')->willReturn(['entities' => $entities, 'refused' => false, 'bound' => []]);
 
 		return $tree;
 	}//end treeResolver()
@@ -881,6 +1090,45 @@ class CitizenCaseControllerTest extends TestCase {
 		)));
 
 	}//end testAWithdrawalRaisesItsOwnEventOnceWithTheReason()
+
+	/**
+	 * A withdrawal the store fails to save is a 500, one it finds no case for
+	 * a 403; neither raises an event.
+	 */
+	public function testAWithdrawalThatIsNotSavedIsRefusedWithoutAnEvent(): void {
+		$this->writerAnswer = 'throw';
+		$failed = $this->controller(caseType: $this->caseType(withdrawal: $this->withdrawalDeclaration()))->withdraw('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $failed->getStatus());
+		$this->assertSame(['message' => 'The request could not be withdrawn. Please try again.', 'error' => 'withdrawal-not-saved'], $failed->getData());
+
+		$this->writerAnswer = 'none';
+		$foreign = $this->controller(caseType: $this->caseType(withdrawal: $this->withdrawalDeclaration()))->withdraw('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $foreign->getStatus());
+		$this->assertSame(['message' => 'This case is not yours.', 'error' => 'case-not-yours'], $foreign->getData());
+		$this->assertSame([], $this->events);
+	}//end testAWithdrawalThatIsNotSavedIsRefusedWithoutAnEvent()
+
+	/**
+	 * The withdrawal writes the status, the moment and the reason, then the
+	 * record of the change, and answers with the case and its withdrawal.
+	 */
+	public function testAWithdrawalWritesItsFieldsThenTheRecord(): void {
+		$response = $this->controller(
+			caseType: $this->caseType(withdrawal: $this->withdrawalDeclaration()),
+			params: ['reason' => '  Verhuisd.  ']
+		)->withdraw('zaken', 'zaak', self::CASE_ID);
+
+		$data = $this->writes[0]['data'];
+		$this->assertSame(['status', 'withdrawnAt', 'withdrawalReason', 'portalWrites'], array_keys($data));
+		$this->assertSame('Verhuisd.', $data['withdrawalReason']);
+		$this->assertSame($data['withdrawnAt'], $data['portalWrites'][0]['at']);
+		$record = $data['portalWrites'][0];
+		$this->assertSame('withdrawal', $record['act']);
+		$this->assertSame(['status' => ['from' => 'ontvangen', 'to' => 'ingetrokken'], 'reason' => ['from' => null, 'to' => 'Verhuisd.']], $record['changes']);
+		$this->assertSame(['case', 'withdrawal'], array_keys($response->getData()));
+	}//end testAWithdrawalWritesItsFieldsThenTheRecord()
 
 	public function testACaseTypeThatDeclaresNoWithdrawalAcceptsNone(): void {
 		$controller = $this->controller(caseType: $this->caseType());
@@ -1125,4 +1373,141 @@ class CitizenCaseControllerTest extends TestCase {
 
 		$this->assertSame([['portal:from-applicant']], $this->attachedTags);
 	}//end testAnUploadIsTaggedAsTheResidents()
+
+	/**
+	 * The collection the resident reads their cases in, declaring what they
+	 * may see of one.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private const DECLARING_FIELDS = [['id' => 'mijn-zaken', 'register' => 'zaken', 'schema' => 'zaak', 'fields' => ['title', 'status']]];
+
+	/**
+	 * The case screen receives the fields the collection declares and the
+	 * ones the screen itself works with, never a field the case app keeps for
+	 * its staff (citizen-case-shows-only-its-fields).
+	 *
+	 * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	public function testTheCaseScreenReceivesOnlyTheDeclaredFields(): void {
+		$data = $this->controller(collections: self::DECLARING_FIELDS)->show('zaken', 'zaak', self::CASE_ID)->getData();
+
+		$this->assertSame(['id', '@self', 'omschrijving', 'status', 'toelichting'], $this->sortedKeys($data['case']));
+		$this->assertSame(['id' => self::CASE_ID], $data['case']['@self']);
+		// The full row still decides the writable set on the server.
+		$this->assertSame(['omschrijving', 'toelichting'], $data['writableSet']['writable']);
+	}//end testTheCaseScreenReceivesOnlyTheDeclaredFields()
+
+	/**
+	 * The case screen reads the closed marker of the case's own collection,
+	 * the one "My cases" files it under Closed by: a closed case offers no
+	 * change, no document and no withdrawal, and refuses an amendment.
+	 *
+	 * @spec openspec/changes/citizen-case-ended-shows-only-its-state/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-case-that-has-ended-offers-nothing-and-explains-nothing
+	 */
+	public function testACaseItsCollectionMarksClosedHasEnded(): void {
+		$closing = [['id' => 'mijn-zaken', 'register' => 'zaken', 'schema' => 'zaak', 'kind' => 'cases', 'closedField' => 'status']];
+		$caseType = $this->caseType(withdrawal: $this->withdrawalDeclaration());
+
+		$data = $this->controller(caseType: $caseType, collections: $closing)->show('zaken', 'zaak', self::CASE_ID)->getData();
+		$this->assertTrue($data['writableSet']['ended']);
+		$this->assertSame([], $data['writableSet']['writable']);
+		$this->assertFalse($data['writableSet']['documents']['open']);
+		$this->assertFalse($data['withdrawal']['open']);
+
+		$open = $this->controller(caseType: $caseType)->show('zaken', 'zaak', self::CASE_ID)->getData();
+		$this->assertFalse($open['writableSet']['ended']);
+		$this->assertTrue($open['withdrawal']['open']);
+
+		$amend = $this->controller(caseType: $caseType, fields: ['omschrijving' => 'een bedrijfspand'], collections: $closing)
+			->amend('zaken', 'zaak', self::CASE_ID);
+		$this->assertSame(Http::STATUS_CONFLICT, $amend->getStatus());
+		$this->assertSame([], $this->writes);
+	}//end testACaseItsCollectionMarksClosedHasEnded()
+
+	/**
+	 * The withdrawn case that comes back is projected the same way, and still
+	 * carries the withdrawal the screen shows.
+	 *
+	 * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	public function testAWithdrawnCaseComesBackWithoutTheStaffFields(): void {
+		$data = $this->controller(
+			caseType: $this->caseType(withdrawal: $this->withdrawalDeclaration()),
+			params: ['reason' => 'Niet meer nodig.'],
+			collections: self::DECLARING_FIELDS
+		)->withdraw('zaken', 'zaak', self::CASE_ID)->getData();
+
+		$this->assertSame(
+			['id', '@self', 'omschrijving', 'status', 'toelichting', 'withdrawalReason', 'withdrawnAt'],
+			$this->sortedKeys($data['case'])
+		);
+		$this->assertSame('ingetrokken', $data['case']['status']);
+		// The record of who wrote it stays on the case, not in the browser.
+		$this->assertArrayNotHasKey('portalWrites', $data['case']);
+		$this->assertArrayHasKey('portalWrites', $this->writes[0]['data']);
+	}//end testAWithdrawnCaseComesBackWithoutTheStaffFields()
+
+	/**
+	 * An amended case comes back projected too.
+	 *
+	 * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	public function testAnAmendedCaseComesBackWithoutTheStaffFields(): void {
+		$data = $this->controller(
+			fields: ['omschrijving' => 'een bedrijfspand'],
+			collections: self::DECLARING_FIELDS
+		)->amend('zaken', 'zaak', self::CASE_ID)->getData();
+
+		$this->assertSame('een bedrijfspand', $data['case']['omschrijving']);
+		$this->assertArrayNotHasKey('assignee', $data['case']);
+		$this->assertArrayNotHasKey('qualityScore', $data['case']);
+		$this->assertArrayNotHasKey('portalWrites', $data['case']);
+	}//end testAnAmendedCaseComesBackWithoutTheStaffFields()
+
+	/**
+	 * A malformed declaration narrows to the identifiers, not to the screen's
+	 * own fields and never to the whole row.
+	 *
+	 * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	public function testAMalformedDeclarationShowsOnlyTheIdentifiers(): void {
+		$data = $this->controller(
+			collections: [['id' => 'mijn-zaken', 'register' => 'zaken', 'schema' => 'zaak', 'fields' => 'title']]
+		)->show('zaken', 'zaak', self::CASE_ID)->getData();
+
+		$this->assertSame(['id', '@self'], $this->sortedKeys($data['case']));
+	}//end testAMalformedDeclarationShowsOnlyTheIdentifiers()
+
+	/**
+	 * Only a collection on the case's own register and schema counts: fields
+	 * declared over another schema do not open or close anything here.
+	 *
+	 * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	public function testFieldsDeclaredOnAnotherSchemaDoNotApply(): void {
+		$data = $this->controller(
+			collections: [['id' => 'facturen', 'register' => 'zaken', 'schema' => 'factuur', 'fields' => ['bedrag']]]
+		)->show('zaken', 'zaak', self::CASE_ID)->getData();
+
+		// No declaration on this schema: the row passes whole, as its list does.
+		$this->assertArrayHasKey('assignee', $data['case']);
+	}//end testFieldsDeclaredOnAnotherSchemaDoNotApply()
+
+	/**
+	 * The keys of a row, `id` and `@self` first, the rest sorted.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return array<int, string>
+	 */
+	private function sortedKeys(array $row): array {
+		$keys = array_values(array_diff(array_keys($row), ['id', '@self']));
+		sort($keys);
+
+		return array_merge(
+			array_values(array_intersect(['id', '@self'], array_keys($row))),
+			$keys
+		);
+	}//end sortedKeys()
 }//end class

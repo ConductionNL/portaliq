@@ -427,14 +427,14 @@ if [ "$DEV_CODE" != "200" ] || ! grep -q '"token"' "$DEV_BODY"; then
 	exit 1
 fi
 
-# ── 6. Warm the SPA, and GATE on the portal bundle serving as JavaScript ─────
+# ── 6. Warm the site, and GATE on the site bundle serving as JavaScript ──────
 # The shared workflow serves Nextcloud with `php -S 0.0.0.0:8080`. It sets
 # PHP_CLI_SERVER_WORKERS=8, but the first hit still pays a cold opcache and the
 # first parse of a multi-megabyte webpack bundle; warming it here puts that
 # cost in the environment-preparation step rather than inside an assertion
 # timeout that would then have to keep drifting upward.
 for path in \
-	"/index.php/apps/portaliq/portal" \
+	"/index.php/apps/portaliq/site" \
 	"/index.php/apps/portaliq/portal/api/session" \
 	"/index.php/apps/openregister/api/registers?_limit=2000"
 do
@@ -443,14 +443,14 @@ do
 	echo "[ci-seed] warm ${path} -> ${code}"
 done
 
-# Pull the portal bundle once so it is in the page cache — and then GATE on it.
+# Pull the site bundle once so it is in the page cache — and then GATE on it.
 #
-# Portaliq ships TWO bundles from two webpack configs: `portaliq-main.js` (the
-# internal Vue admin SPA, webpack.config.js) and `portaliq-portal.js` (the
-# public React portal, webpack.portal.js). EVERY e2e spec drives the PORTAL, so
-# the portal bundle is the one that matters here. `npm run build` builds both;
-# `npm run build:admin` alone deletes the portal bundle (see the
-# `output.clean` note in webpack.config.js).
+# Portaliq ships its own bundles from separate webpack configs: `portaliq-main.js`
+# (the internal Vue admin SPA, webpack.config.js) and `portaliq-site.js` (the
+# public site, webpack.site.js), which also holds the resident's signed-in
+# area since the React portal retired. EVERY resident-facing e2e spec drives
+# the SITE, so the site bundle is the one that matters here. `npm run build`
+# builds them all; `npm run build:admin` alone does not.
 #
 # Do NOT hardcode the URL. Nextcloud serves an app's assets from whichever apps
 # directory it was installed into — `/apps/portaliq/js/…` on the CI runner,
@@ -459,16 +459,16 @@ done
 # error page, served through index.php. A status-code check therefore reports
 # success while fetching a 40 KB HTML page instead of a multi-MB bundle.
 #
-# Read the real src out of the rendered portal page instead, and verify the
+# Read the real src out of the rendered site page instead, and verify the
 # response is actually JavaScript.
-PORTAL_HTML="$(mktemp)"
-curl -sS "${BASE}/index.php/apps/portaliq/portal" -o "$PORTAL_HTML" || true
+SITE_HTML="$(mktemp)"
+curl -sS "${BASE}/index.php/apps/portaliq/site" -o "$SITE_HTML" || true
 
 # `|| true` is load-bearing: grep exits 1 when it matches nothing, and under
 # `set -euo pipefail` that aborts the script right here — so the case the gate
 # below exists to explain (no bundle) would die with a bare non-zero exit and
 # none of the diagnosis.
-BUNDLE_SRC="$(grep -oE 'src="[^"]*portaliq-portal[^"]*"' "$PORTAL_HTML" \
+BUNDLE_SRC="$(grep -oE 'src="[^"]*portaliq-site\.js[^"]*"' "$SITE_HTML" \
 	| head -1 | sed 's/^src="//; s/"$//' || true)"
 
 if [ -n "$BUNDLE_SRC" ]; then
@@ -477,30 +477,30 @@ if [ -n "$BUNDLE_SRC" ]; then
 		"${BASE}${BUNDLE_SRC}" || echo '000 - 0')"
 	echo "[ci-seed] warm bundle ${BUNDLE_SRC} -> ${BUNDLE_INFO}"
 else
-	echo "[ci-seed] could not locate the portal bundle src in the rendered portal page."
+	echo "[ci-seed] could not locate the site bundle src in the rendered site page."
 	BUNDLE_INFO=""
 fi
 
 # On CI this is a GATE, not a warm-up.
 #
 # The single most likely way this job "succeeds" dishonestly is by passing
-# without ever loading the SPA — and the environment hides it well: when the
+# without ever loading the site — and the environment hides it well: when the
 # bundle is absent, Nextcloud does not 404. It serves its HTML error page with
 # HTTP 200 and Content-Type text/html, so a build producing nothing looks, to
 # every status-code check in the pipeline, exactly like success.
 #
 # Note that this gate reads the SERVED response, not the file on disk, and it
 # is placed at the very end so that a run which reaches the specs has provably
-# been able to fetch real JavaScript for the portal.
+# been able to fetch real JavaScript for the site.
 if [ "${GITHUB_ACTIONS:-}" = "true" ] || [ "${CI:-}" = "true" ]; then
 	case "$BUNDLE_INFO" in
 		*javascript*)
-			echo "[ci-seed] portal bundle verified as JavaScript."
+			echo "[ci-seed] site bundle verified as JavaScript."
 			;;
 		*)
-			echo "::error::The Portaliq PORTAL bundle did not serve as JavaScript (got: ${BUNDLE_INFO:-<not found>})."
-			echo "::error::The React portal cannot mount, so every spec would fail on a selector timeout with a misleading cause."
-			echo "::error::Check the 'Build app frontend' step — 'npm run build' must run build:portal as well as build:admin,"
+			echo "::error::The Portaliq SITE bundle did not serve as JavaScript (got: ${BUNDLE_INFO:-<not found>})."
+			echo "::error::The site cannot mount, so every spec would fail on a selector timeout with a misleading cause."
+			echo "::error::Check the 'Build app frontend' step — 'npm run build' must run build:site as well as build:admin,"
 			echo "::error::and a missing bundle returns HTTP 200 text/html, not 404."
 			exit 1
 			;;

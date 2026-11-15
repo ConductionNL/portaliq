@@ -39,12 +39,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Kernel\Contracts\PortalBindingPreviewInterface;
+
 /**
  * Describes one binding's current resolution for an administrator.
  *
  * @spec openspec/specs/portal-intake-form/spec.md#requirement-a-portal-page-binds-to-a-published-form-not-to-a-field-list-req-pifo-001
  */
-class PortalBindingPreview {
+class PortalBindingPreview implements PortalBindingPreviewInterface {
 
 	/**
 	 * The binding resolves to a published form an audience can reach.
@@ -106,11 +108,30 @@ class PortalBindingPreview {
 	public const REASON_UNSUPPORTED_CONDITION = 'unsupported_condition';
 
 	/**
+	 * The sentence for each reason that names no form.
+	 *
+	 * @var array<string, string>
+	 */
+	private const MESSAGES = [
+		self::REASON_HIDDEN_CASE_TYPE => 'This entry opens no form: this portal does not show its case type. '
+			."Show it again under Case types on the portal's page.",
+		self::REASON_UNSUPPORTED_CONDITION => 'This form uses a condition the portal cannot check. Change it to a condition on another answer.',
+		self::REASON_EXTERNAL_WITHOUT_ADDRESS => 'This entry is set to send people to another website, but no address is filled in, '
+			.'so nobody can start it.',
+		self::REASON_NO_FORM => 'This entry opens no form today. No published form matches its type and audience, so a '
+			.'citizen who reaches it sees nothing to fill in.',
+	];
+
+	/**
 	 * Wire the preview.
 	 *
 	 * @param PortalFormBindingResolver $resolver The resolution the render uses.
+	 * @param DestinationIntake|null    $intake   Checks the binding against its destination.
 	 */
-	public function __construct(private readonly PortalFormBindingResolver $resolver) {
+	public function __construct(
+		private readonly PortalFormBindingResolver $resolver,
+		private readonly ?DestinationIntake $intake = null,
+	) {
 	}//end __construct()
 
 	/**
@@ -129,47 +150,80 @@ class PortalBindingPreview {
 	 */
 	public function describe(array $binding): array {
 		$render = $this->resolver->render(binding: $binding);
-		$external = ((string)($render['kind'] ?? '') === PortalFormBindingResolver::KIND_EXTERNAL);
-		$resolvesToNone = (($render['resolvesToNoForm'] ?? false) === true);
-
-		if ($resolvesToNone === false && $external === true) {
-			return [
-				'state' => self::EXTERNAL,
-				'formName' => null,
-				'reason' => null,
-				'askedFor' => null,
-				'destination' => (string)($render['destination'] ?? ''),
-				'message' => sprintf(
-					'This entry sends people to %s. Nothing is filled in here, so nothing arrives here either.',
-					(string)($render['destination'] ?? 'another website')
-				),
-			];
+		if (($render['resolvesToNoForm'] ?? false) === true) {
+			return $this->resolvesToNone(binding: $binding, render: $render);
 		}
 
-		if ($resolvesToNone === false) {
-			return [
-				'state' => self::RESOLVED,
-				'formName' => (string)($render['formName'] ?? ''),
-				'reason' => null,
-				'askedFor' => null,
-				'destination' => null,
-				'message' => sprintf(
-					'This entry opens "%s" today.',
-					(string)($render['formName'] ?? '')
-				),
-			];
+		if ((string)($render['kind'] ?? '') === PortalFormBindingResolver::KIND_EXTERNAL) {
+			return $this->external(render: $render);
 		}
 
-		// 🔴 NO NAME IS INVENTED HERE. Not the configured formName, not a last
-		// known value: a stale name tells an administrator the binding works.
-		// The reason travels as a code as well as a sentence, so the admin
-		// screen can say it in the administrator's own language.
+		return $this->resolved(binding: $binding, render: $render);
+	}//end describe()
+
+	/**
+	 * The preview of an entry that sends people to another website.
+	 *
+	 * @param array<string, mixed> $render The resolution.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function external(array $render): array {
+		return [
+			'state' => self::EXTERNAL,
+			'formName' => null,
+			'reason' => null,
+			'askedFor' => null,
+			'destination' => (string)($render['destination'] ?? ''),
+			'message' => sprintf(
+				'This entry sends people to %s. Nothing is filled in here, so nothing arrives here either.',
+				(string)($render['destination'] ?? 'another website')
+			),
+		];
+	}//end external()
+
+	/**
+	 * The preview of an entry that opens a published form, with what stops it being published.
+	 *
+	 * @param array<string, mixed> $binding The binding as configured.
+	 * @param array<string, mixed> $render  The resolution.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function resolved(array $binding, array $render): array {
+		return [
+			'findings' => $this->findings(binding: $binding, render: $render),
+			'state' => self::RESOLVED,
+			'formName' => (string)($render['formName'] ?? ''),
+			'reason' => null,
+			'askedFor' => null,
+			'destination' => null,
+			'message' => sprintf(
+				'This entry opens "%s" today.',
+				(string)($render['formName'] ?? '')
+			),
+		];
+	}//end resolved()
+
+	/**
+	 * The preview of an entry that opens nothing, with the reason as a code and as a sentence.
+	 *
+	 * 🔴 NO NAME IS INVENTED HERE. Not the configured formName, not a last
+	 * known value: a stale name tells an administrator the binding works.
+	 * The reason travels as a code as well as a sentence, so the admin
+	 * screen can say it in the administrator's own language.
+	 *
+	 * @param array<string, mixed> $binding The binding as configured.
+	 * @param array<string, mixed> $render  The resolution.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function resolvesToNone(array $binding, array $render): array {
 		$askedFor = trim((string)($binding['formName'] ?? ''));
-		$reason = $this->reasonCodeFor(render: $render, askedFor: $askedFor);
+		$reason   = $this->reasonCodeFor(render: $render, askedFor: $askedFor);
 		if ($askedFor === '') {
 			$askedFor = null;
 		}
-
 
 		return [
 			'state' => self::RESOLVES_TO_NONE,
@@ -177,9 +231,28 @@ class PortalBindingPreview {
 			'reason' => $reason,
 			'askedFor' => $askedFor,
 			'destination' => null,
-			'message' => $this->reasonFor(render: $render, binding: $binding),
+			'message' => $this->messageFor(reason: $reason, askedFor: ($askedFor ?? '')),
 		];
-	}//end describe()
+	}//end resolvesToNone()
+
+	/**
+	 * What stops the binding from being published, from the same check the
+	 * save runs (REQ-PIFO-007). Empty when it may be published.
+	 *
+	 * @param array<string, mixed> $binding The binding.
+	 * @param array<string, mixed> $render  The resolution.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-form-binding-names-its-destination-and-is-valid-against-it-req-pifo-007
+	 */
+	private function findings(array $binding, array $render): array {
+		if ($this->intake === null) {
+			return [];
+		}
+
+		return $this->intake->check(binding: $binding, render: $render);
+	}//end findings()
 
 	/**
 	 * Why the binding resolves to nothing, as a code the admin screen translates.
@@ -215,38 +288,22 @@ class PortalBindingPreview {
 	 * Each sentence names the next step, because "no form found" sends somebody
 	 * to a colleague and one of these sends them to the right screen.
 	 *
-	 * @param array<string, mixed> $render  The resolution.
-	 * @param array<string, mixed> $binding The binding as configured.
+	 * @param string $reason   One of the REASON_ constants.
+	 * @param string $askedFor The form name the binding asks for, or ''.
 	 *
 	 * @return string The message.
 	 */
-	private function reasonFor(array $render, array $binding): string {
-		if ((string)($render['reason'] ?? '') === 'hiddenCaseType') {
-			return 'This entry opens no form: this portal does not show its case type. '
-				."Show it again under Case types on the portal's page.";
-		}
-
-		if ((string)($render['reason'] ?? '') === 'unsupportedCondition') {
-			return 'This form uses a condition the portal cannot check. Change it to a condition on another answer.';
-		}
-
-		if ((string)($render['kind'] ?? '') === PortalFormBindingResolver::KIND_EXTERNAL) {
-			return 'This entry is set to send people to another website, but no address is filled in, '
-				.'so nobody can start it.';
-		}
-
-		$named = trim((string)($binding['formName'] ?? ''));
-		if ($named !== '') {
+	private function messageFor(string $reason, string $askedFor): string {
+		if ($reason === self::REASON_NAMED_FORM_NOT_PUBLISHED) {
 			return sprintf(
 				'This entry opens no form today. It asks for "%s", and no form of that name is published '
 				.'to this audience. Publish it, or point the entry at a form that is.',
-				$named
+				$askedFor
 			);
 		}
 
-		return 'This entry opens no form today. No published form matches its type and audience, so a '
-			.'citizen who reaches it sees nothing to fill in.';
-	}//end reasonFor()
+		return self::MESSAGES[$reason];
+	}//end messageFor()
 
 	/**
 	 * Whether an administrator should be warned about this binding.

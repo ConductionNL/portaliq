@@ -9,7 +9,9 @@ use OCA\Portaliq\Service\Notifications\NotificationChannels;
 use OCA\Portaliq\Service\Notifications\PushDeliveryService;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IConfig;
@@ -77,6 +79,21 @@ class NotificationDispatchJobTest extends TestCase {
 		return $factory;
 	}//end l10nFactory()
 
+	/**
+	 * Portaliq's notice language over the stub translations, for an
+	 * organisation whose portal names the given locale first (or none).
+	 *
+	 * @param string|null $portalLocale The portal's first locale, or null for no portal.
+	 *
+	 * @return PortalNoticeLanguage
+	 */
+	private function language(?string $portalLocale = null): PortalNoticeLanguage {
+		$portals = $this->createMock(PortalResolver::class);
+		$portals->method('resolveByOrganisation')->willReturn($portalLocale === null ? null : ['locales' => [$portalLocale]]);
+
+		return new PortalNoticeLanguage($this->l10nFactory(), $portals);
+	}//end language()
+
 	private function timeFactory(): ITimeFactory {
 		$time = $this->createMock(ITimeFactory::class);
 		$time->method('getTime')->willReturn(1700000000);
@@ -103,8 +120,14 @@ class NotificationDispatchJobTest extends TestCase {
 		$urlGenerator = $this->createMock(IURLGenerator::class);
 		$urlGenerator->method('linkToRoute')->willReturnCallback(
 			static function (string $route, array $arguments = []): string {
-				$path = '/index.php/apps/portaliq/portal';
-				if ($route !== 'portaliq.portalPage.index' || $arguments === []) {
+				// Only the site's route answers the site's path: a link built
+				// from any other route would show up in the asserted body.
+				if ($route !== 'portaliq.portalPage.site') {
+					return '/index.php/apps/portaliq/' . $route;
+				}
+
+				$path = '/index.php/apps/portaliq/site';
+				if ($arguments === []) {
 					return $path;
 				}
 
@@ -234,7 +257,7 @@ class NotificationDispatchJobTest extends TestCase {
 			$this->writer(created: $created, updated: $updated),
 			$this->orgConfig(),
 			$this->mailer(captured: $captured, outcome: true),
-			$this->l10nFactory(),
+			$this->language(),
 			$this->deepLinks(),
 			$this->config(),
 			$this->createMock(LoggerInterface::class)
@@ -247,7 +270,7 @@ class NotificationDispatchJobTest extends TestCase {
 		$this->assertSame(['supplier@example.org'], $captured['to']);
 		$this->assertStringContainsString('Test Org', $captured['subject']);
 		$this->assertStringContainsString('Test Org', $captured['body']);
-		$this->assertStringContainsString('https://cloud.example/index.php/apps/portaliq/portal?org=org-1', $captured['body']);
+		$this->assertStringContainsString('https://cloud.example/index.php/apps/portaliq/site?org=org-1', $captured['body']);
 		$this->assertStringNotContainsString('message.created', $captured['subject'] . $captured['body']);
 		// The CONTRIBUTING app, the rule key and the case content must not be
 		// named — that is what "content-free" protects. A ban on words in the
@@ -258,16 +281,18 @@ class NotificationDispatchJobTest extends TestCase {
 		// the deep link (review of WOO-570 / #498).
 		$this->assertNotSame([], $this->translated);
 		foreach ($this->translated as [$locale, $key, $parameters]) {
-			$this->assertContains($locale, ['nl', 'en']);
+			$this->assertSame('nl', $locale);
 			$this->assertContains(
 				$parameters,
-				[['Test Org'], ['Test Org', 'https://cloud.example/index.php/apps/portaliq/portal?org=org-1']],
+				[['Test Org'], ['Test Org', 'https://cloud.example/index.php/apps/portaliq/site?org=org-1']],
 				'translation "' . $key . '" received a parameter that is neither the organisation name nor the deep link'
 			);
 		}
-		// Bilingual (NL first, EN second), mirroring SubmissionReceiptService.
-		$this->assertStringContainsString('[nl] ', $captured['body']);
-		$this->assertStringContainsString('[en] ', $captured['body']);
+		// One language, the portal's: Dutch when the portal names none.
+		$this->assertStringStartsWith('[nl] ', $captured['subject']);
+		$this->assertStringStartsWith('[nl] ', $captured['body']);
+		$this->assertStringNotContainsString('[en] ', $captured['subject'] . $captured['body']);
+		$this->assertStringNotContainsString(' / ', $captured['subject']);
 
 		$this->assertCount(1, $created);
 		$this->assertSame('portalNotification', $created[0]['schema']);
@@ -283,6 +308,37 @@ class NotificationDispatchJobTest extends TestCase {
 
 	}//end testSendsAContentFreeEmailAndLogsASentAttempt()
 
+	/**
+	 * The e-mail is written once, in the language of the resident's portal.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-a-notification-mail-and-a-task-notice-are-written-in-the-portals-language-only
+	 */
+	public function testTheEmailIsInThePortalsLanguageOnly(): void {
+		$created = [];
+		$updated = [];
+		$captured = [];
+		$job = new NotificationDispatchJob(
+			$this->timeFactory(),
+			$this->reader(account: ['@self' => ['id' => 'account-1'], 'email' => 'supplier@example.org']),
+			$this->writer(created: $created, updated: $updated),
+			$this->orgConfig(),
+			$this->mailer(captured: $captured, outcome: true),
+			$this->language(portalLocale: 'en'),
+			$this->deepLinks(),
+			$this->config(),
+			$this->createMock(LoggerInterface::class)
+		);
+
+		$this->invokeRun($job, self::ARGUMENT);
+
+		$this->assertSame('[en] You have a new message in the portal of Test Org', $captured['subject']);
+		$this->assertStringStartsWith('[en] ', $captured['body']);
+		$this->assertStringNotContainsString('[nl] ', $captured['subject'] . $captured['body']);
+		$this->assertSame(['en'], array_values(array_unique(array_column($this->translated, 0))));
+	}//end testTheEmailIsInThePortalsLanguageOnly()
+
 	public function testNoAccountFoundSkipsSilentlyWithoutSendingOrLogging(): void {
 		$created = [];
 		$updated = [];
@@ -294,7 +350,7 @@ class NotificationDispatchJobTest extends TestCase {
 			$this->writer(created: $created, updated: $updated),
 			$this->orgConfig(),
 			$this->mailer(captured: $captured, outcome: true),
-			$this->l10nFactory(),
+			$this->language(),
 			$this->deepLinks(),
 			$this->config(),
 			$this->createMock(LoggerInterface::class)
@@ -328,7 +384,7 @@ class NotificationDispatchJobTest extends TestCase {
 			$this->writer(created: $created, updated: $updated),
 			$this->orgConfig(),
 			$this->mailer(captured: $captured, outcome: true),
-			$this->l10nFactory(),
+			$this->language(),
 			$this->deepLinks(),
 			$this->config(),
 			$this->createMock(LoggerInterface::class)
@@ -364,7 +420,7 @@ class NotificationDispatchJobTest extends TestCase {
 			$this->writer(created: $created, updated: $updated),
 			$this->orgConfig(),
 			$this->mailer(captured: $captured, outcome: true),
-			$this->l10nFactory(),
+			$this->language(),
 			$this->deepLinks(),
 			$this->config(),
 			$this->createMock(LoggerInterface::class)
@@ -391,7 +447,7 @@ class NotificationDispatchJobTest extends TestCase {
 			$this->writer(created: $created, updated: $updated),
 			$this->orgConfig(),
 			$this->mailer(captured: $captured, outcome: true),
-			$this->l10nFactory(),
+			$this->language(),
 			$this->deepLinks(),
 			$this->config(),
 			$this->createMock(LoggerInterface::class)
@@ -422,7 +478,7 @@ class NotificationDispatchJobTest extends TestCase {
 			$this->writer(created: $created, updated: $updated),
 			$this->orgConfig(),
 			$this->mailer(captured: $captured, outcome: false),
-			$this->l10nFactory(),
+			$this->language(),
 			$this->deepLinks(),
 			$this->config(threshold: 5),
 			$this->createMock(LoggerInterface::class)
@@ -453,7 +509,7 @@ class NotificationDispatchJobTest extends TestCase {
 			$this->writer(created: $created, updated: $updated),
 			$this->orgConfig(),
 			$this->mailer(captured: $captured, outcome: false),
-			$this->l10nFactory(),
+			$this->language(),
 			$this->deepLinks(),
 			$this->config(threshold: 3),
 			$this->createMock(LoggerInterface::class)
@@ -484,7 +540,7 @@ class NotificationDispatchJobTest extends TestCase {
 			$this->writer(created: $created, updated: $updated),
 			$this->orgConfig(),
 			$this->mailer(captured: $captured, outcome: true),
-			$this->l10nFactory(),
+			$this->language(),
 			$this->deepLinks(),
 			$this->config(),
 			$this->createMock(LoggerInterface::class)
@@ -509,7 +565,7 @@ class NotificationDispatchJobTest extends TestCase {
 			$this->writer(created: $created, updated: $updated),
 			$this->orgConfig(),
 			$this->mailer(captured: $captured, outcome: true),
-			$this->l10nFactory(),
+			$this->language(),
 			$this->deepLinks(),
 			$this->config(),
 			$this->createMock(LoggerInterface::class)
@@ -538,7 +594,7 @@ class NotificationDispatchJobTest extends TestCase {
 			$this->writer(created: $created, updated: $updated),
 			$this->orgConfig(),
 			$this->mailer(captured: $captured, outcome: true),
-			$this->l10nFactory(),
+			$this->language(),
 			$this->deepLinks(),
 			$this->config(),
 			$this->createMock(LoggerInterface::class)
@@ -557,12 +613,14 @@ class NotificationDispatchJobTest extends TestCase {
 	 * @param array<string, mixed>             $captured      Captured mail.
 	 * @param array<int, array<string, mixed>> $pushes        Captured pushes.
 	 * @param array<int, array<string, mixed>> $subscriptions The account's push subscriptions.
+	 * @param bool                             $canDeliver    Whether the bound transport reaches a device.
 	 *
 	 * @return NotificationDispatchJob
 	 */
-	private function jobWithPush(array $account, array &$created, array &$captured, array &$pushes, array $subscriptions = []): NotificationDispatchJob {
+	private function jobWithPush(array $account, array &$created, array &$captured, array &$pushes, array $subscriptions = [], bool $canDeliver = true): NotificationDispatchJob {
 		$updated = [];
 		$push = $this->createMock(PushDeliveryService::class);
+		$push->method('canDeliver')->willReturn($canDeliver);
 		$push->method('deliver')->willReturnCallback(
 			function (string $subjectRef, string $title, string $body) use (&$pushes): bool {
 				$pushes[] = compact('subjectRef', 'title', 'body');
@@ -576,13 +634,44 @@ class NotificationDispatchJobTest extends TestCase {
 			$this->writer(created: $created, updated: $updated),
 			$this->orgConfig(),
 			$this->mailer(captured: $captured, outcome: true),
-			$this->l10nFactory(),
+			$this->language(),
 			$this->deepLinks(),
 			$this->config(),
 			$this->createMock(LoggerInterface::class),
 			new NotificationChannels(push: $push, reader: $this->reader(account: $account, subscriptions: $subscriptions))
 		);
 	}//end jobWithPush()
+
+	/**
+	 * A withdrawn (void) account is treated as a missing one: no push, no
+	 * e-mail and no portalNotification row, also with a device and an address.
+	 *
+	 * @return void
+	 */
+	public function testAWithdrawnAccountGetsNoPushAndNoMail(): void {
+		$created = [];
+		$captured = [];
+		$pushes = [];
+		$account = [
+			'@self' => ['id' => 'account-void'],
+			'email' => 'r@example.org',
+			'status' => 'void',
+			'notificationPreferences' => ['message.created' => ['email' => true, 'push' => true]],
+		];
+		$job = $this->jobWithPush(
+			account: $account,
+			created: $created,
+			captured: $captured,
+			pushes: $pushes,
+			subscriptions: [['endpoint' => 'https://push.example/1']]
+		);
+
+		$this->invokeRun(job: $job, argument: self::ARGUMENT);
+
+		$this->assertArrayNotHasKey(key: 'to', array: $captured);
+		$this->assertSame(expected: [], actual: $pushes);
+		$this->assertSame(expected: [], actual: $created);
+	}//end testAWithdrawnAccountGetsNoPushAndNoMail()
 
 	/**
 	 * A change rule's e-mail names the collection label and links to the
@@ -681,4 +770,29 @@ class NotificationDispatchJobTest extends TestCase {
 
 		$this->assertArrayNotHasKey('to', $captured);
 	}//end testGlobalEmailOptOutStillWins()
+
+	/**
+	 * While the bound push transport cannot reach a device (the interim
+	 * logging sender), no push is attempted and none is recorded as sent;
+	 * e-mail still goes out.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-resident-chooses-per-kind-and-per-channel-req-nap-007
+	 */
+	public function testNoPushIsRecordedWhileTheTransportCannotDeliver(): void {
+		$created = [];
+		$captured = [];
+		$pushes = [];
+		$account = ['@self' => ['id' => 'account-1'], 'email' => 'r@example.org', 'notificationPreferences' => ['message.created' => ['push' => true]]];
+		$job = $this->jobWithPush(account: $account, created: $created, captured: $captured, pushes: $pushes, subscriptions: [['endpoint' => 'https://push.example/1']], canDeliver: false);
+
+		$this->invokeRun($job, self::ARGUMENT);
+
+		$this->assertSame([], $pushes);
+		$this->assertSame(['r@example.org'], $captured['to']);
+		foreach ($created as $row) {
+			$this->assertNotSame('push', $row['data']['channel'] ?? null);
+		}
+	}//end testNoPushIsRecordedWhileTheTransportCannotDeliver()
 }//end class

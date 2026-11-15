@@ -12,7 +12,8 @@
   @spec openspec/specs/portal-access-requests/spec.md#requirement-staff-answer-the-requests-of-their-organisation-req-iar-002
 -->
 <template>
-	<NcDialog
+	<CnDialog
+		:look="look"
 		:name="t('portaliq', 'Refuse this request')"
 		size="normal"
 		data-testid="refuse-access-request"
@@ -37,51 +38,34 @@
 				{{ t('portaliq', 'Refuse') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
-import { translate as t } from '@nextcloud/l10n'
-import { NcButton, NcDialog, NcTextArea } from '@nextcloud/vue'
+import { CnDialog } from '@conduction/nextcloud-vue'
+import { NcButton, NcTextArea } from '@nextcloud/vue'
+import { reasonDialog } from './reasonDialog.js'
 
 export default {
 	name: 'RefuseAccessRequestDialog',
 
 	components: {
 		NcButton,
-		NcDialog,
+		CnDialog,
 		NcTextArea,
+	},
+
+	props: {
+		/** The look to draw in; a spawned dialog gets the app's (src/lib/dialogLook.js). */
+		look: {
+			type: String,
+			default: undefined,
+		},
 	},
 
 	emits: ['close'],
 
-	data() {
-		return {
-			reason: '',
-			missing: false,
-		}
-	},
-
-	methods: {
-		t,
-
-		/**
-		 * Close with the reason, or say that one is needed.
-		 *
-		 * @return {void}
-		 *
-		 * @spec openspec/specs/portal-access-requests/spec.md#requirement-staff-answer-the-requests-of-their-organisation-req-iar-002
-		 */
-		confirm() {
-			const reason = this.reason.trim()
-			if (reason === '') {
-				this.missing = true
-				return
-			}
-
-			this.$emit('close', reason)
-		},
-	},
+	...reasonDialog,
 }
 </script>
 

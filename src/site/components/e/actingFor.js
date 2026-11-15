@@ -11,6 +11,8 @@
 
 import { reactive } from 'vue'
 import {
+	ACTING_FOR_KEY,
+	ACTING_FOR_SELF,
 	actingForHeld,
 	keepActingFor,
 	readActingFor,
@@ -37,7 +39,25 @@ function sessionStore() {
 export const actingFor = reactive({
 	id: readActingFor(sessionStore()),
 	mandates: [],
+	// Whether a party was chosen this session; without a choice Mijn zaken
+	// lists everyone (resident-pages-live-round-3 REQ-RR3-002).
+	chosen: hasChosenActingFor(sessionStore()),
 })
+
+/**
+ * Whether the session keeps a choice of whom to act for.
+ *
+ * @param {Storage|null} store sessionStorage.
+ * @return {boolean}
+ * @spec openspec/changes/resident-pages-live-round-3/specs/portal-my-cases/spec.md#requirement-everyone-is-the-default-and-reads-every-active-mandate-req-rr3-002
+ */
+export function hasChosenActingFor(store) {
+	try {
+		return Boolean(store?.getItem(ACTING_FOR_KEY))
+	} catch {
+		return false
+	}
+}
 
 /**
  * Act for yourself or under a mandate, for the rest of the session.
@@ -46,11 +66,29 @@ export const actingFor = reactive({
  * @param {object} [store] The store to keep it in (test seam).
  * @return {void}
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-act-for-someone-else-req-srp-041
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-act-for-someone-else-req-srp-041
  */
 export function chooseActingFor(id, store = sessionStore()) {
 	keepActingFor(store, id)
 	actingFor.id = id
+	actingFor.chosen = true
+}
+
+/**
+ * Forget the party chosen on Mijn zaken, so it opens on everyone again; the
+ * mandate acted under stays for this page's life.
+ *
+ * @param {object} [store] The store the choice is kept in (test seam).
+ * @return {void}
+ * @spec openspec/changes/resident-pages-live-round-3/specs/portal-my-cases/spec.md#requirement-everyone-is-the-default-and-reads-every-active-mandate-req-rr3-002
+ */
+export function forgetChosenParty(store = sessionStore()) {
+	try {
+		store?.removeItem(ACTING_FOR_KEY)
+	} catch {
+		// Without storage nothing was kept.
+	}
+	actingFor.chosen = false
 }
 
 /**
@@ -60,7 +98,7 @@ export function chooseActingFor(id, store = sessionStore()) {
  * @param {object|null} answer The `fetchMyCases` answer.
  * @return {void}
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-act-for-someone-else-req-srp-041
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-act-for-someone-else-req-srp-041
  */
 export function learnMandates(answer) {
 	if (!answer || !answer.ok) {
@@ -68,4 +106,25 @@ export function learnMandates(answer) {
 	}
 	actingFor.mandates = Array.isArray(answer.mandates) ? answer.mandates : []
 	actingFor.id = actingForHeld(actingFor.id, answer.mandates)
+}
+
+/**
+ * Forget the choice and the mandates held, at sign-out: on a shared device
+ * the next resident starts as themselves and sees none of the previous
+ * resident's mandate labels.
+ *
+ * @param {object} [store] The store the choice is kept in (test seam).
+ * @return {void}
+ *
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-act-for-someone-else-req-srp-041
+ */
+export function forgetActingFor(store = sessionStore()) {
+	try {
+		store?.removeItem(ACTING_FOR_KEY)
+	} catch {
+		// Without storage nothing was kept.
+	}
+	actingFor.id = ACTING_FOR_SELF
+	actingFor.mandates = []
+	actingFor.chosen = false
 }

@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-form-analytics-must-never-carry-a-value
+ * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-form-analytics-must-never-carry-a-value
  */
 
 declare(strict_types=1);
@@ -32,8 +32,8 @@ use OCA\Portaliq\Service\TrafficConfigResolver;
  * which is the contract's rule for dimensions applied to these. Both
  * STRIP, never refuse: the event is still a real start, field or view.
  *
- * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-form-analytics-must-never-carry-a-value
- * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
+ * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-form-analytics-must-never-carry-a-value
+ * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
  */
 class TrafficOutcomeParams {
 
@@ -58,11 +58,16 @@ class TrafficOutcomeParams {
 	 *
 	 * @return array<string, string|int|float|bool> The params that survive.
 	 *
-	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-form-analytics-must-never-carry-a-value
-	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-custom-dimensions-must-be-declared-before-they-are-stored
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
+	 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-form-analytics-must-never-carry-a-value
+	 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-custom-dimensions-must-be-declared-before-they-are-stored
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
 	 */
 	public function filter(string $name, array $params, array $config): array {
+		// A use is counted, never its text (search-assistant-from-public-content).
+		if (in_array($name, TrafficConfigResolver::TEXTLESS_EVENTS, true) === true) {
+			return [];
+		}
+
 		$declared = $this->declared(config: $config);
 		$formEvent = in_array($name, TrafficConfigResolver::FORM_EVENTS, true);
 		$heatEvent = in_array($name, TrafficConfigResolver::HEAT_EVENTS, true);
@@ -89,21 +94,59 @@ class TrafficOutcomeParams {
 	 */
 	private function kept(string $key, string|int|float|bool $value, array $rules): string|int|float|bool|null {
 		if (str_starts_with($key, TrafficConfigResolver::CUSTOM_DIMENSION_PREFIX) === true) {
-			if (isset($rules['declared'][$key]) === true) {
-				return $value;
-			}
-
-			return null;
+			return $this->keptIfDeclared(key: $key, value: $value, rules: $rules);
 		}
 
 		if (in_array($key, TrafficConfigResolver::EXPERIMENT_PARAMS, true) === true) {
-			if ($rules['tagged'] === true) {
-				return $value;
-			}
-
-			return null;
+			return $this->keptIfTagged(value: $value, rules: $rules);
 		}
 
+		return $this->keptEventParam(key: $key, value: $value, rules: $rules);
+	}
+
+	/**
+	 * A custom dimension's value when the dimension is declared, else null.
+	 *
+	 * @param string                $key   The param key.
+	 * @param string|int|float|bool $value The bounded value.
+	 * @param array<string, mixed>  $rules The keep rules.
+	 *
+	 * @return string|int|float|bool|null
+	 */
+	private function keptIfDeclared(string $key, string|int|float|bool $value, array $rules): string|int|float|bool|null {
+		if (isset($rules['declared'][$key]) === true) {
+			return $value;
+		}
+
+		return null;
+	}
+
+	/**
+	 * An experiment param's value when the page is tagged, else null.
+	 *
+	 * @param string|int|float|bool $value The bounded value.
+	 * @param array<string, mixed>  $rules The keep rules.
+	 *
+	 * @return string|int|float|bool|null
+	 */
+	private function keptIfTagged(string|int|float|bool $value, array $rules): string|int|float|bool|null {
+		if ($rules['tagged'] === true) {
+			return $value;
+		}
+
+		return null;
+	}
+
+	/**
+	 * Any other param's value, narrowed for a form event and bucketed for a heat event.
+	 *
+	 * @param string                $key   The param key.
+	 * @param string|int|float|bool $value The bounded value.
+	 * @param array<string, mixed>  $rules The keep rules.
+	 *
+	 * @return string|int|float|bool|null
+	 */
+	private function keptEventParam(string $key, string|int|float|bool $value, array $rules): string|int|float|bool|null {
 		if ($rules['form'] === true && in_array($key, TrafficConfigResolver::FORM_EVENT_PARAMS, true) === false) {
 			return null;
 		}

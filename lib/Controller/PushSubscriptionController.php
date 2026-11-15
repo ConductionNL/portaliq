@@ -20,16 +20,19 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/push-notifications-quiet-hours/design.md#api-design
+ * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#api-design
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
+use OCA\Portaliq\Service\ObjectRowNormaliser;
+use OCA\Portaliq\Service\ObjectServiceLookup;
+use OCA\Portaliq\Service\PagedObjectReads;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -42,9 +45,13 @@ use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * @spec openspec/changes/push-notifications-quiet-hours/design.md#api-design
+ * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#api-design
  */
 class PushSubscriptionController extends Controller implements PortalProtected {
+	use ObjectRowNormaliser;
+	use ObjectServiceLookup;
+	use PagedObjectReads;
+
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
 	private const REGISTER = 'portaliq';
@@ -52,20 +59,33 @@ class PushSubscriptionController extends Controller implements PortalProtected {
 	private const SCHEMA = 'pushSubscription';
 
 	/**
+	 * The browsers' push services an endpoint may point at (a host is one of
+	 * these or a sub-domain of one). Once a real Web Push sender replaces the
+	 * logging one, the server calls the stored endpoint, so it must never be
+	 * an address the caller chose freely.
+	 */
+	private const PUSH_SERVICE_HOSTS = [
+		'fcm.googleapis.com',
+		'updates.push.services.mozilla.com',
+		'push.apple.com',
+		'notify.windows.com',
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
+	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
 	 * @param ContainerInterface $container For resolving OpenRegister services.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
+		private readonly PortalSessionServiceInterface $session,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -75,9 +95,11 @@ class PushSubscriptionController extends Controller implements PortalProtected {
 	 * @param array<string, mixed> $keys `{p256dh, auth}`.
 	 * @param string $deviceRef Optional device reference.
 	 *
-	 * @return JSONResponse 204 on success, 401 without a resolved subject.
+	 * @return JSONResponse 204 on success, 400 for an endpoint that is not an
+	 *                      https address of a known push service, 401 without
+	 *                      a resolved subject.
 	 *
-	 * @spec openspec/changes/push-notifications-quiet-hours/design.md#api-design
+	 * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#api-design
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -88,7 +110,7 @@ class PushSubscriptionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'unauthorized'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		if ($endpoint === '') {
+		if ($this->isPushServiceEndpoint(endpoint: $endpoint) === false) {
 			return new JSONResponse(['error' => 'invalid_request'], Http::STATUS_BAD_REQUEST);
 		}
 
@@ -133,7 +155,7 @@ class PushSubscriptionController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse 204 on success (including "was not subscribed"), 401 without a resolved subject.
 	 *
-	 * @spec openspec/changes/push-notifications-quiet-hours/design.md#api-design
+	 * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#api-design
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -175,6 +197,29 @@ class PushSubscriptionController extends Controller implements PortalProtected {
 	}//end unsubscribe()
 
 	/**
+	 * Whether an endpoint is an https address on one of the browsers' push
+	 * services.
+	 *
+	 * @param string $endpoint The push endpoint URL.
+	 *
+	 * @return bool
+	 */
+	private function isPushServiceEndpoint(string $endpoint): bool {
+		if (strtolower((string)parse_url($endpoint, PHP_URL_SCHEME)) !== 'https') {
+			return false;
+		}
+
+		$host = strtolower((string)parse_url($endpoint, PHP_URL_HOST));
+		foreach (self::PUSH_SERVICE_HOSTS as $service) {
+			if ($host === $service || str_ends_with($host, '.' . $service) === true) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end isPushServiceEndpoint()
+
+	/**
 	 * The id of an existing subscription for this subject+endpoint, if any.
 	 *
 	 * @param object $objectService OpenRegister's ObjectService.
@@ -184,33 +229,75 @@ class PushSubscriptionController extends Controller implements PortalProtected {
 	 * @return string|null
 	 */
 	private function findExistingId(object $objectService, string $subjectRef, string $endpoint): ?string {
+		$rows = $this->subscriptionRows(objectService: $objectService, subjectRef: $subjectRef, endpoint: $endpoint);
+		if (is_array($rows) === false) {
+			return null;
+		}
+
+		return $this->matchingId(rows: $rows, subjectRef: $subjectRef, endpoint: $endpoint);
+	}//end findExistingId()
+
+	/**
+	 * The subscription rows filtered on subject and endpoint, or null when the lookup failed.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $subjectRef    The subject's own subjectRef.
+	 * @param string $endpoint      The push endpoint URL.
+	 *
+	 * @return array<int, mixed>|null
+	 */
+	private function subscriptionRows(object $objectService, string $subjectRef, string $endpoint): array|null {
 		try {
-			$objectService->setRegister(register: self::REGISTER);
-			$objectService->setSchema(schema: self::SCHEMA);
-			$rows = $objectService->findAll(config: ['filters' => [], 'limit' => 500, 'offset' => 0], _rbac: false, _multitenancy: false);
+			$rows = $this->readEveryPage(
+				objectService: $objectService,
+				register: self::REGISTER,
+				schema: self::SCHEMA,
+				filters: ['subjectRef' => $subjectRef, 'endpoint' => $endpoint]
+			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: push subscription lookup failed', ['reason' => $e->getMessage()]);
 			return null;
 		}
 
-		if (is_array($rows) === false) {
-			return null;
-		}
+		return $rows;
+	}//end subscriptionRows()
 
+	/**
+	 * The id of the first row that really is this subject's subscription for this endpoint.
+	 *
+	 * @param array<mixed> $rows       The filtered rows.
+	 * @param string       $subjectRef The subject's own subjectRef.
+	 * @param string       $endpoint   The push endpoint URL.
+	 *
+	 * @return string|null
+	 */
+	private function matchingId(array $rows, string $subjectRef, string $endpoint): string|null {
 		foreach ($rows as $row) {
 			$normalised = $this->normalise(row: $row);
 			if ($normalised === null) {
 				continue;
 			}
 
-			$matches = (string)($normalised['subjectRef'] ?? '') === $subjectRef && (string)($normalised['endpoint'] ?? '') === $endpoint;
-			if ($matches === true) {
+			if ($this->isSubscriptionOf(row: $normalised, subjectRef: $subjectRef, endpoint: $endpoint) === true) {
 				return $this->rowId(row: $normalised);
 			}
 		}
 
 		return null;
-	}//end findExistingId()
+	}//end matchingId()
+
+	/**
+	 * Whether the row is the subject's subscription for the endpoint.
+	 *
+	 * @param array<string, mixed> $row        The normalised row.
+	 * @param string               $subjectRef The subject's own subjectRef.
+	 * @param string               $endpoint   The push endpoint URL.
+	 *
+	 * @return bool
+	 */
+	private function isSubscriptionOf(array $row, string $subjectRef, string $endpoint): bool {
+		return (string)($row['subjectRef'] ?? '') === $subjectRef && (string)($row['endpoint'] ?? '') === $endpoint;
+	}//end isSubscriptionOf()
 
 	/**
 	 * The row's id/uuid, from a flat property or its `@self` envelope.
@@ -233,28 +320,6 @@ class PushSubscriptionController extends Controller implements PortalProtected {
 	}//end rowId()
 
 	/**
-	 * Normalise an OpenRegister row (array or object) to an associative array.
-	 *
-	 * @param mixed $row The row.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function normalise(mixed $row): ?array {
-		if (is_array($row) === true) {
-			return $row;
-		}
-
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			$data = $row->jsonSerialize();
-			if (is_array($data) === true) {
-				return $data;
-			}
-		}
-
-		return null;
-	}//end normalise()
-
-	/**
 	 * Resolve the subject from the bearer (fail-closed).
 	 *
 	 * @return array<string, mixed>|null
@@ -262,23 +327,4 @@ class PushSubscriptionController extends Controller implements PortalProtected {
 	private function subject(): ?array {
 		return $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
 	}//end subject()
-
-	/**
-	 * Resolve OpenRegister's ObjectService, or null when unavailable.
-	 *
-	 * @return object|null
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end objectService()
 }//end class

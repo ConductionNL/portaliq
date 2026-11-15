@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/push-notifications-quiet-hours/design.md#messaging-leaf-interface-naming-convention-reused-from-guardian-direct-messages
+ * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#messaging-leaf-interface-naming-convention-reused-from-guardian-direct-messages
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Notifications;
 
 /**
- * @spec openspec/changes/push-notifications-quiet-hours/design.md#messaging-leaf-interface-naming-convention-reused-from-guardian-direct-messages
+ * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#messaging-leaf-interface-naming-convention-reused-from-guardian-direct-messages
  */
 interface PushSenderInterface {
 	/**
@@ -44,7 +44,18 @@ interface PushSenderInterface {
 	 *
 	 * @return bool True on success.
 	 *
-	 * @spec openspec/changes/push-notifications-quiet-hours/design.md#messaging-leaf-interface-naming-convention-reused-from-guardian-direct-messages
+	 * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#messaging-leaf-interface-naming-convention-reused-from-guardian-direct-messages
 	 */
 	public function send(string $subjectRef, string $title, string $body): bool;
+
+	/**
+	 * Whether this transport really puts a push on a device. A transport that
+	 * only stands in for one answers false, so no channel offers push and no
+	 * push is ever recorded as sent while nothing can arrive.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-resident-chooses-per-kind-and-per-channel-req-nap-007
+	 */
+	public function delivers(): bool;
 }//end interface

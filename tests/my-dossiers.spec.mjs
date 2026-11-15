@@ -117,22 +117,60 @@ test('answer link', async () => {
 			body: { link: 'https://gemeente.example/shared/abc' },
 		}),
 	}
-	const outcome = await runRowAction(api, {}, { id: 'dos-1' }, { id: 'share' })
+	const outcome = await runRowAction(api, { collection: {}, row: { id: 'dos-1' }, action: { id: 'share' } })
 	assert.equal(outcome.link, 'https://gemeente.example/shared/abc')
 })
 
-test('the detail card renders the item list and the confirm shows the link', () => {
-	const page = readFileSync(
-		join(ROOT, 'src/portal/components/PageView.jsx'),
-		'utf8',
+// opencatalogi's shareDossier answers an absolute link on the instance itself,
+// which on a dev or intranet instance is plain http. It is this site's own
+// origin, so it is instance-local; a foreign http link still is not.
+test('answer link on the site\'s own origin', async () => {
+	const own = 'http://localhost:8080'
+	const shared = `${own}/index.php/apps/portaliq/site?route=/gedeeld-dossier/tok-1`
+	assert.equal(answerLink({ ok: true, body: { link: shared } }, own), shared)
+	assert.equal(
+		answerLink({ ok: true, body: { link: 'http://evil.example/x' } }, own),
+		'',
 	)
-	assert.match(page, /<ItemList\s/)
-	assert.match(page, /withoutRemoveAction\(collection,/)
-	const confirm = readFileSync(
-		join(ROOT, 'src/portal/components/RowActionConfirm.jsx'),
-		'utf8',
+	assert.equal(
+		answerLink({ ok: true, body: { link: 'http://localhost:8081/x' } }, own),
+		'',
+		'another port is another origin',
 	)
-	assert.match(confirm, /data-testid="rowaction-link"/)
+	assert.equal(
+		answerLink({ ok: true, body: { link: shared } }, ''),
+		'',
+		'without a known origin an http link is refused',
+	)
+	assert.equal(
+		answerLink(
+			{ ok: true, body: { link: 'https://gemeente.example/s/1' } },
+			own,
+		),
+		'https://gemeente.example/s/1',
+	)
+
+	const previous = globalThis.location
+	globalThis.location = { origin: own }
+	try {
+		const api = {
+			forwardRowAction: async () => ({
+				ok: true,
+				status: 200,
+				body: { link: shared },
+			}),
+		}
+		const step = await mountSfc('src/site/modals/c/RowActionConfirm.vue', {
+			action: { id: 'share', label: 'Delen' },
+			collection: { id: 'mijnDossiers' },
+			row: { id: 'dos-1' },
+			api,
+		})
+		await step.fire(step.find('rowaction-continue'), 'click')
+		assert.equal(step.find('rowaction-link').props.value, shared)
+	} finally {
+		globalThis.location = previous
+	}
 })
 
 test('the site confirm step shows the link the action answered', async () => {
@@ -156,9 +194,8 @@ test('the site confirm step shows the link the action answered', async () => {
 	)
 })
 
-// The same promises, held by the site's Vue pages (site-reaches-portal-parity
-// slice b, REQ-SRP-017, REQ-SRP-020). The React half above goes when /portal
-// retires.
+// The site's Vue pages (site-reaches-portal-parity slice b, REQ-SRP-017,
+// REQ-SRP-020).
 
 const { loadSfc, renderSfc } = await import('./support/render-sfc.mjs')
 const VUE_ITEMS = 'src/site/components/collections/ItemList.vue'

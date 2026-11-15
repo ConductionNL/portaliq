@@ -7,7 +7,7 @@
 // because the site bundle is at its size budget. Nothing here is imported
 // eagerly except this file, so it keeps its own imports dynamic too.
 //
-// @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md
+// @spec openspec/specs/site-portal-parity/spec.md
 
 /**
  * The props every page component takes (slice contract, rule 2).
@@ -30,10 +30,11 @@
  * Extra props and events, beyond SitePageProps, that the shell may wire:
  *
  * - `__cases__` (MyCasesPage): `closedMarker` (boolean, contributions
- *   `cases.closedMarker`), `canOpen(target)` and `openCase(target, row)` where
- *   `target` is `{app, collection, id}` (the shell resolves it with `navKeyFor`
- *   from src/portal/lib/openRecord.js and opens the app's page with the row
- *   selected). Without `canOpen` a case is listed but not openable. Emits
+ *   `cases.closedMarker`), `canOpen(target)`, `openCase(target, row)` and
+ *   `caseRoute(target)` where `target` is `{app, collection, id}` (the shell
+ *   resolves it with `navKeyFor` from src/shared/openRecord.js and opens the
+ *   app's page with the row selected; `caseRoute` gives the case title a real
+ *   address). Without `canOpen` a case is listed but not openable. Emits
  *   `loaded(answer)`. The mandate in effect comes from the acting-for store
  *   (src/site/components/e/actingFor.js), which the header switcher writes.
  * - `__account__` (AccountPage): emits `removed` after the account is removed;
@@ -43,15 +44,37 @@
  */
 
 /**
- * The pages of slice e, by the React portal's own section keys (src/portal/App.jsx).
+ * The pages of slice e, by the React portal's own section keys (its App.jsx).
  *
  * @type {Record<string, () => Promise<object>>}
  */
 export const pages = {
-	__cases__: () => import('./MyCasesPage.vue'),
-	__access__: () => import('./AccessRequestsPage.vue'),
-	__details__: () => import('./RegisteredDetailsPage.vue'),
-	__account__: () => import('./AccountPage.vue'),
+	__cases__: translated(() => import('./MyCasesPage.vue')),
+	__access__: translated(() => import('./AccessRequestsPage.vue')),
+	__details__: translated(() => import('./RegisteredDetailsPage.vue')),
+	__account__: translated(() => import('./AccountPage.vue')),
+	__contacts__: translated(() => import('./ContactsPage.vue')),
+	__theme__: translated(() => import('./ThemePage.vue')),
+	__plans__: translated(() => import('./PlansPage.vue')),
+	__actions__: translated(() => import('./ActionsPage.vue')),
+}
+
+/**
+ * A page loader whose page speaks the page's language: its `t` falls back
+ * to this folder's strings (./translate.js), loaded with the page.
+ *
+ * @param {() => Promise<object>} load The page's own loader.
+ * @return {() => Promise<{default: object}>} The loader of the wrapped page.
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-account-pages-speak-the-pages-language
+ */
+function translated(load) {
+	return async () => {
+		const [module, { withAccountStrings }] = await Promise.all([
+			load(),
+			import('./translate.js'),
+		])
+		return { default: withAccountStrings(module.default || module) }
+	}
 }
 
 /**
@@ -68,7 +91,7 @@ export const pages = {
  * @param {History|object} [options.history] The window history.
  * @return {Promise<{role: string, text: string}|null>} The outcome, or null.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
  */
 export async function confirmEmailFromLink({
 	api,
@@ -97,7 +120,7 @@ export async function confirmEmailFromLink({
  * @param {Storage|null} [store] sessionStorage, or null.
  * @return {Promise<boolean>} Whether to show it.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
  */
 export async function contactPromptWanted(session, store = defaultStore()) {
 	if (!session || session.contactPrompt !== true) {

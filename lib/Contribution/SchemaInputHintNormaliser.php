@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
  */
 
 declare(strict_types=1);
@@ -32,9 +32,10 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Contribution;
 
 /**
- * Adds `input` hints and enum options from the action's schema.
+ * Adds `input` hints, value types and enum options from the action's schema.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
+ * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-form-must-send-each-value-in-the-type-its-field-declares
  */
 class SchemaInputHintNormaliser {
 	/**
@@ -61,6 +62,12 @@ class SchemaInputHintNormaliser {
 	];
 
 	/**
+	 * The JSON-schema types the site sends as something other than a string
+	 * (site-action-forms): their `valueType`.
+	 */
+	private const VALUE_TYPES = ['integer', 'number', 'boolean'];
+
+	/**
 	 * Add the schema's hints to an action's field configs and options.
 	 *
 	 * @param array<string, mixed>      $action     The action, after its field configs and providers were normalised.
@@ -69,7 +76,7 @@ class SchemaInputHintNormaliser {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
 	 */
 	public function apply(array $action, array $whitelist, ?array $definition): array {
 		$properties = ($definition['properties'] ?? null);
@@ -79,16 +86,32 @@ class SchemaInputHintNormaliser {
 
 		foreach ($whitelist as $field) {
 			$property = ($properties[$field] ?? null);
-			if (is_array($property) === false || $this->isFileField(action: $action, field: $field) === true) {
-				continue;
+			if (is_array($property) === true) {
+				$action = $this->withHints(action: $action, hint: new SchemaFieldProperty(field: $field, property: $property));
 			}
-
-			$action = $this->withInput(action: $action, field: $field, property: $property);
-			$action = $this->withEnumOptions(action: $action, field: $field, property: $property);
 		}
 
 		return $action;
 	}//end apply()
+
+	/**
+	 * Add one field's input, value type and enum options, unless the manifest
+	 * declared it a file field.
+	 *
+	 * @param array<string, mixed> $action The action.
+	 * @param SchemaFieldProperty  $hint   The field and its schema property.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withHints(array $action, SchemaFieldProperty $hint): array {
+		if ($this->isFileField(action: $action, field: $hint->field) === true) {
+			return $action;
+		}
+
+		$action = $this->withInput(action: $action, hint: $hint);
+		$action = $this->withValueType(action: $action, hint: $hint);
+		return $this->withEnumOptions(action: $action, hint: $hint);
+	}//end withHints()
 
 	/**
 	 * Whether the manifest declared the field a file field.
@@ -105,49 +128,106 @@ class SchemaInputHintNormaliser {
 	/**
 	 * Set the field's `input` hint from its format or type.
 	 *
-	 * @param array<string, mixed> $action   The action.
-	 * @param string               $field    The field.
-	 * @param array<string, mixed> $property The schema property.
+	 * @param array<string, mixed> $action The action.
+	 * @param SchemaFieldProperty  $hint   The field and its schema property.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function withInput(array $action, string $field, array $property): array {
-		$format = ($property['format'] ?? null);
-		$type   = ($property['type'] ?? null);
-		$input  = null;
-		if (is_string($format) === true && isset(self::FORMAT_INPUTS[$format]) === true) {
-			$input = self::FORMAT_INPUTS[$format];
-		} else if (is_string($type) === true && isset(self::TYPE_INPUTS[$type]) === true) {
-			$input = self::TYPE_INPUTS[$type];
-		}
-
+	private function withInput(array $action, SchemaFieldProperty $hint): array {
+		$input = $this->inputFor(property: $hint->property);
 		if ($input === null) {
 			return $action;
 		}
 
+		return $this->withConfig(action: $action, change: [$hint->field => ['input' => $input]]);
+	}//end withInput()
+
+	/**
+	 * The `input` hint of a property's format, else of its type, else none.
+	 *
+	 * @param array<string, mixed> $property The schema property.
+	 *
+	 * @return string|null
+	 */
+	private function inputFor(array $property): ?string {
+		$byFormat = $this->inputOf(inputs: self::FORMAT_INPUTS, key: ($property['format'] ?? null));
+
+		return ($byFormat ?? $this->inputOf(inputs: self::TYPE_INPUTS, key: ($property['type'] ?? null)));
+	}//end inputFor()
+
+	/**
+	 * The input hint a string key maps to, or null.
+	 *
+	 * @param array<string, string> $inputs The hints per key.
+	 * @param mixed                 $key    The declared format or type.
+	 *
+	 * @return string|null
+	 */
+	private function inputOf(array $inputs, mixed $key): ?string {
+		if (is_string($key) === false) {
+			return null;
+		}
+
+		return ($inputs[$key] ?? null);
+	}//end inputOf()
+
+	/**
+	 * Merge keys into one field's config; a field without one starts at medium size.
+	 *
+	 * @param array<string, mixed>                $action The action.
+	 * @param array<string, array<string, mixed>> $change The field and the keys to merge in.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withConfig(array $action, array $change): array {
 		$configs = $this->configs(action: $action);
-		$configs[$field] = array_merge(($configs[$field] ?? ['size' => 'medium']), ['input' => $input]);
+		foreach ($change as $field => $keys) {
+			$configs[$field] = array_merge(($configs[$field] ?? ['size' => 'medium']), $keys);
+		}
+
 		$action['fieldConfigs'] = $configs;
 		return $action;
-	}//end withInput()
+	}//end withConfig()
+
+	/**
+	 * Set the field's `valueType` from its schema type, so the site sends an
+	 * integer, a number or a boolean as one and not as a string. A string
+	 * field gets none: the site sends text by default.
+	 *
+	 * @param array<string, mixed> $action The action.
+	 * @param SchemaFieldProperty  $hint   The field and its schema property.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-form-must-send-each-value-in-the-type-its-field-declares
+	 */
+	private function withValueType(array $action, SchemaFieldProperty $hint): array {
+		$type = ($hint->property['type'] ?? null);
+		if (is_string($type) === false || in_array($type, self::VALUE_TYPES, true) === false) {
+			return $action;
+		}
+
+		return $this->withConfig(action: $action, change: [$hint->field => ['valueType' => $type]]);
+	}//end withValueType()
 
 	/**
 	 * Offer the property's enum as static options, unless the manifest already
 	 * gave the field an options provider.
 	 *
-	 * @param array<string, mixed> $action   The action.
-	 * @param string               $field    The field.
-	 * @param array<string, mixed> $property The schema property.
+	 * @param array<string, mixed> $action The action.
+	 * @param SchemaFieldProperty  $hint   The field and its schema property.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function withEnumOptions(array $action, string $field, array $property): array {
+	private function withEnumOptions(array $action, SchemaFieldProperty $hint): array {
+		$field     = $hint->field;
 		$providers = $action['optionsProviders'] ?? [];
 		if (is_array($providers) === false || isset($providers[$field]) === true) {
 			return $action;
 		}
 
-		$options = $this->enumOptions(property: $property);
+		$labels  = (new ValueLabelsNormaliser())->normalise(value: ($action['fieldConfigs'][$field][ValueLabelsNormaliser::KEY] ?? null));
+		$options = $this->enumOptions(property: $hint->property, labels: $labels);
 		if ($options === []) {
 			return $action;
 		}
@@ -159,30 +239,76 @@ class SchemaInputHintNormaliser {
 
 	/**
 	 * The options of a property: its `oneOf` `const` and `title` pairs when it
-	 * labels its values that way, else its `enum` with a readable label.
+	 * labels its values that way, else its `enum` with a readable label. A
+	 * label the app declared in the field's `valueLabels` wins over both, so an
+	 * app can put the options in the reader's language; the value submitted
+	 * stays the raw one.
 	 *
-	 * @param array<string, mixed> $property The schema property.
+	 * @param array<string, mixed>  $property The schema property.
+	 * @param array<string, string> $labels   The field's declared value labels.
 	 *
 	 * @return array<int, array{value: string, label: string}>
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-column-and-a-form-field-may-declare-how-their-values-read
 	 */
-	private function enumOptions(array $property): array {
-		$options = [];
-		foreach ($this->listOf(value: ($property['oneOf'] ?? null)) as $entry) {
-			if (is_array($entry) === true && $this->isScalar(value: ($entry['const'] ?? null)) === true && is_string($entry['title'] ?? null) === true) {
-				$options[] = ['value' => (string) $entry['const'], 'label' => $entry['title']];
-			}
-		}
-
+	private function enumOptions(array $property, array $labels=[]): array {
+		$options = $this->oneOfOptions(property: $property, labels: $labels);
 		if ($options === []) {
-			foreach ($this->listOf(value: ($property['enum'] ?? null)) as $value) {
-				if ($this->isScalar(value: $value) === true) {
-					$options[] = ['value' => (string) $value, 'label' => $this->readable(value: (string) $value)];
-				}
-			}
+			$options = $this->enumValueOptions(property: $property, labels: $labels);
 		}
 
 		return array_slice($options, 0, self::MAX_OPTIONS);
 	}//end enumOptions()
+
+	/**
+	 * The `oneOf` `const` and `title` pairs, a declared label winning over the title.
+	 *
+	 * @param array<string, mixed>  $property The schema property.
+	 * @param array<string, string> $labels   The field's declared value labels.
+	 *
+	 * @return array<int, array{value: string, label: string}>
+	 */
+	private function oneOfOptions(array $property, array $labels): array {
+		$options = [];
+		foreach ($this->listOf(value: ($property['oneOf'] ?? null)) as $entry) {
+			if ($this->isLabelledValue(entry: $entry) === true) {
+				$value     = (string) $entry['const'];
+				$options[] = ['value' => $value, 'label' => ($labels[$value] ?? $entry['title'])];
+			}
+		}
+
+		return $options;
+	}//end oneOfOptions()
+
+	/**
+	 * Whether a `oneOf` entry pairs an option value with a text title.
+	 *
+	 * @param mixed $entry The entry.
+	 *
+	 * @return bool
+	 */
+	private function isLabelledValue(mixed $entry): bool {
+		return is_array($entry) === true && $this->isScalar(value: ($entry['const'] ?? null)) === true && is_string($entry['title'] ?? null) === true;
+	}//end isLabelledValue()
+
+	/**
+	 * The `enum` values, each with its declared label or a readable one.
+	 *
+	 * @param array<string, mixed>  $property The schema property.
+	 * @param array<string, string> $labels   The field's declared value labels.
+	 *
+	 * @return array<int, array{value: string, label: string}>
+	 */
+	private function enumValueOptions(array $property, array $labels): array {
+		$options = [];
+		foreach ($this->listOf(value: ($property['enum'] ?? null)) as $value) {
+			if ($this->isScalar(value: $value) === true) {
+				$options[] = ['value' => (string) $value, 'label' => ($labels[(string) $value] ?? $this->readable(value: (string) $value))];
+			}
+		}
+
+		return $options;
+	}//end enumValueOptions()
 
 	/**
 	 * Whether a value can be an option's value.

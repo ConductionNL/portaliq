@@ -1,0 +1,193 @@
+<?php
+
+/**
+ * Portaliq Case Type Names (site-mijn-omgeving-components)
+ *
+ * "Mijn zaken" names each case's type: the name a `cases` collection's
+ * `caseTypeSource` gives it, the same name PortalCaseTypeCatalogue shows an
+ * administrator. The types of one source are read once and kept for the rest
+ * of the request, so a list of a hundred cases costs one read per source.
+ *
+ * A type that does not resolve gets no name, never its id.
+ *
+ * @category Service
+ * @package  OCA\Portaliq\Service
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/specs/portal-my-cases/spec.md#requirement-my-cases-must-name-each-cases-type-req-smo-030
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Portaliq\Service;
+
+use OCA\Portaliq\Kernel\Contracts\CaseTypeNamesInterface;
+
+/**
+ * Stamps `_caseTypeName` on a case row from its collection's case type source.
+ *
+ * @spec openspec/specs/portal-my-cases/spec.md#requirement-my-cases-must-name-each-cases-type-req-smo-030
+ */
+class CaseTypeNames implements CaseTypeNamesInterface {
+	use CaseTypeLabel;
+
+	/**
+	 * The fields a case type's name is read from when the source names none,
+	 * the same as PortalCaseTypeCatalogue.
+	 */
+	private const LABEL_FIELDS = ['title', 'name', 'label', 'omschrijving'];
+
+	/**
+	 * The names read so far, by `register/schema/labelField`, then type id.
+	 *
+	 * @var array<string, array<string, string>>
+	 */
+	private array $names = [];
+
+	/**
+	 * Constructor.
+	 *
+	 * @param CaseTypeReader $reader Reads a source's case types.
+	 */
+	public function __construct(
+		private readonly CaseTypeReader $reader,
+	) {
+	}//end __construct()
+
+	/**
+	 * The row with `_caseTypeName` when its type resolves; unchanged otherwise.
+	 *
+	 * @param array<string, mixed> $row        The case row.
+	 * @param array<string, mixed> $collection The `cases` collection it came from.
+	 * @param string               $typeId     The row's case type id.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/portal-my-cases/spec.md#requirement-my-cases-must-name-each-cases-type-req-smo-030
+	 */
+	public function stamp(array $row, array $collection, string $typeId): array {
+		if ($typeId === '') {
+			return $row;
+		}
+
+		$name = ($this->namesFor(collection: $collection)[$typeId] ?? '');
+		if ($name !== '') {
+			$row['_caseTypeName'] = $name;
+		}
+
+		return $row;
+	}//end stamp()
+
+	/**
+	 * The rows of one `cases` collection, each with `_caseTypeName` when its
+	 * type resolves. The type id is read from the collection's
+	 * `caseTypeField` (default `caseType`): a plain id, or a reference
+	 * carrying `id` or `uuid`. Any other kind of collection is left alone.
+	 *
+	 * @param array<int, mixed>    $rows       The collection's rows.
+	 * @param array<string, mixed> $collection The collection.
+	 *
+	 * @return array<int, mixed>
+	 *
+	 * @spec openspec/specs/portal-my-cases/spec.md#requirement-my-cases-must-name-each-cases-type-req-smo-030
+	 */
+	public function stampRows(array $rows, array $collection): array {
+		if (($collection['kind'] ?? null) !== 'cases' || is_array($collection['caseTypeSource'] ?? null) === false) {
+			return $rows;
+		}
+
+		$field = (string)($collection['caseTypeField'] ?? 'caseType');
+		foreach ($rows as $index => $row) {
+			if (is_array($row) === false) {
+				continue;
+			}
+
+			$value = ($row[$field] ?? '');
+			if (is_array($value) === true) {
+				$value = ($value['id'] ?? $value['uuid'] ?? '');
+			}
+
+			if (is_scalar($value) === true) {
+				$rows[$index] = $this->stamp(row: $row, collection: $collection, typeId: (string)$value);
+			}
+		}
+
+		return $rows;
+	}//end stampRows()
+
+	/**
+	 * The names of a collection's case types, by id; [] without a source.
+	 *
+	 * @param array<string, mixed> $collection The `cases` collection.
+	 *
+	 * @return array<string, string>
+	 */
+	private function namesFor(array $collection): array {
+		$source = $this->sourceOf(collection: $collection);
+		if ($source === null) {
+			return [];
+		}
+
+		$key = implode('/', $source);
+		if (isset($this->names[$key]) === false) {
+			$this->names[$key] = $this->readNames(source: $source);
+		}
+
+		return $this->names[$key];
+	}//end namesFor()
+
+	/**
+	 * The register, schema and label field a collection's case types come
+	 * from, or null without a register or a schema.
+	 *
+	 * @param array<string, mixed> $collection The `cases` collection.
+	 *
+	 * @return array{register: string, schema: string, labelField: string}|null
+	 */
+	private function sourceOf(array $collection): ?array {
+		$source = ($collection['caseTypeSource'] ?? null);
+		if (is_array($source) === false) {
+			return null;
+		}
+
+		$read = [
+			'register' => (string)($source['register'] ?? ''),
+			'schema' => (string)($source['schema'] ?? ''),
+			'labelField' => (string)($source['labelField'] ?? ''),
+		];
+		if ($read['register'] === '' || $read['schema'] === '') {
+			return null;
+		}
+
+		return $read;
+	}//end sourceOf()
+
+	/**
+	 * The names of the source's case types by id, each with an id and a
+	 * label.
+	 *
+	 * @param array{register: string, schema: string, labelField: string} $source The case type source.
+	 *
+	 * @return array<string, string>
+	 */
+	private function readNames(array $source): array {
+		$names = [];
+		foreach ($this->reader->listCaseTypes(register: $source['register'], schema: $source['schema']) as $type) {
+			$typeId = (string)($type['id'] ?? $type['uuid'] ?? ($type['@self']['id'] ?? ''));
+			$label  = $this->labelOf(type: $type, labelField: $source['labelField']);
+			if ($typeId !== '' && $label !== '') {
+				$names[$typeId] = $label;
+			}
+		}
+
+		return $names;
+	}//end readNames()
+}//end class

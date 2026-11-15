@@ -19,6 +19,7 @@ import {
 	isMeasured,
 	lastDays,
 	rollupOf,
+	searchLinkOf,
 	segmentsOf,
 	summarise,
 	verdict,
@@ -608,5 +609,43 @@ describe('experiments and heatmaps (portal-traffic-experiments)', () => {
 		])
 		assert.deepEqual(summarise([], ['2026-09-01']).heatmaps, [])
 		assert.deepEqual(summarise([], ['2026-09-01']).experiments, [])
+	})
+})
+
+describe('searches that found nothing (portal-traffic-zero-result-searches)', () => {
+	const day = (date, extra) => ({ date, pageViews: 1, sessions: 1, visitors: 1, ...extra })
+
+	it('zero result terms are summed over the period', () => {
+		const summary = summarise(
+			[
+				day('2026-09-03', { zeroResultSearches: [{ term: 'parkeren', count: 2 }], searchesWithoutCount: 1 }),
+				day('2026-09-04', {
+					zeroResultSearches: [{ term: 'parkeren', count: 1 }, { term: 'zwemmen', count: 5 }],
+					searchesWithoutCount: 2,
+				}),
+			],
+			['2026-09-03', '2026-09-04'],
+		)
+		assert.deepEqual(summary.zeroResultSearches, [
+			{ term: 'zwemmen', count: 5 },
+			{ term: 'parkeren', count: 3 },
+		])
+		assert.equal(summary.searchesWithoutCount, 3)
+		assert.deepEqual(summarise([day('2026-09-03', {})], ['2026-09-03']).zeroResultSearches, [])
+	})
+
+	it('the link opens the public search with the term', () => {
+		const generate = (path) => `/index.php${path}`
+		assert.equal(
+			searchLinkOf({ slug: 'open-tilburg' }, 'groot afval', generate),
+			'/index.php/apps/portaliq/site?route=%2Fzoeken&portal=open-tilburg&_search=groot%20afval',
+		)
+		assert.equal(
+			searchLinkOf({ slug: 'p', headerSearch: { route: '/vind' } }, 'a&b', generate),
+			'/index.php/apps/portaliq/site?route=%2Fvind&portal=p&_search=a%26b',
+		)
+		assert.equal(searchLinkOf({ slug: 'p', headerSearch: { route: '//evil' } }, 'x', generate).includes('route=%2Fzoeken'), true)
+		assert.equal(searchLinkOf(null, 'x', generate), '')
+		assert.equal(searchLinkOf({ slug: 'p' }, '', generate), '')
 	})
 })

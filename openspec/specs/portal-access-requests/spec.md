@@ -17,13 +17,13 @@ refused.
 
 #### Scenario: A bookkeeper asks for a client's cases
 - **GIVEN** a business user signed in to the portal with no mandate for company 87654321
-- **WHEN** they choose "Ask for access to cases", enter 87654321 and a reason, and send it
-- **THEN** their request list shows it as pending
+- **WHEN** they choose "Toegang aanvragen", enter 87654321 and a reason, and send it
+- **THEN** their request list shows it with the badge "Wacht op antwoord"
 
 #### Scenario: A refusal shows its reason
-- **GIVEN** a request the organisation refused with the reason "No authorisation from the company"
+- **GIVEN** a request the organisation refused with the reason "Geen machtiging van het bedrijf."
 - **WHEN** the asker opens their request list
-- **THEN** they see the request as refused, with that reason
+- **THEN** they see the badge "Afgewezen" and "Reden: Geen machtiging van het bedrijf."
 
 ### Requirement: Staff answer the requests of their organisation (REQ-IAR-002)
 
@@ -48,14 +48,13 @@ found.
 
 ### Requirement: A granted request opens the cases (REQ-IAR-003)
 
-Granting a request SHALL record an active mandate for the asker on behalf of
-the named party, so the party's cases appear on the asker's "My cases". A grant
-SHALL NOT read as granted when the mandate could not be recorded.
+Granting a request SHALL record an active mandate for the asker on behalf of the named party, so the party's cases appear on the asker's "My cases". The mandate SHALL be labelled with the party as the asker named it. A grant SHALL NOT read as granted when the mandate could not be recorded.
 
 #### Scenario: After a grant the cases appear
 
-@e2e exclude the portal has no "My cases" page yet (cases-my-cases-page); the mandate the grant writes is covered by PHPUnit PortalAccessRequestServiceTest::testAGrantRecordsTheMandateThatOpensTheCases and testAGrantWhoseMandateFailsLeavesTheRequestPending
+@e2e exclude covered by PHPUnit PortalAccessRequestServiceTest::testAGrantRecordsTheMandateThatOpensTheCases and testAGrantWhoseMandateFailsLeavesTheRequestPending
 
 - **GIVEN** a pending request from a bookkeeper for company 87654321
 - **WHEN** a clerk grants it
-- **THEN** the bookkeeper's "My cases" lists the cases of 87654321, labelled "Granted on request"
+- **THEN** the bookkeeper's "My cases" lists the cases of 87654321, labelled "87654321"
+- **AND** the bar on "Mijn zaken" reads "U regelt nu zaken voor 87654321" once they choose it under "Wissel naar"

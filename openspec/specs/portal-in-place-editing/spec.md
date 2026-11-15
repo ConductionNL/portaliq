@@ -111,3 +111,48 @@ OpenRegister refuses a menu write by anyone else.
 - **WHEN** they are applied
 - **THEN** the `menu` schema's create, update and delete rules name `redactie`, and its read rules are unchanged
 - @e2e exclude proven by tests/Unit/Service/PageEditorServiceTest.php
+
+### Requirement: The editor names a block by its widget's name
+
+The page editor MUST name a placed block by its widget's name, the same name the palette shows: the public block's label ("Tekst (markdown)"), else the name the shared dashboard registry gives it, else its key written as words. This holds for the block's bar on the page, its accessible name and the inspector. The raw key ("markdown") MUST NOT be shown where a name exists.
+
+#### Scenario: A text block on the page
+- GIVEN an editor places a `markdown` block
+- WHEN the page is in edit mode
+- THEN the block's bar and the inspector read "Tekst (markdown)"
+- @e2e exclude pinned by `tests/page-editor.spec.mjs` ("a widget reads by its name", "the editor shows the widget name, never the raw key")
+
+### Requirement: The editor's notices must read at AA contrast
+
+The editor's success, error, warning and info notices, and the buttons drawn in those colours, MUST reach a WCAG AA contrast of at least 4.5:1 for their text, using CSS variables only. Each status colour is a light tint mixed from its `-text` colour and the page background.
+
+#### Scenario: "Gepubliceerd." after publishing
+- GIVEN an editor publishes a page
+- WHEN the "Gepubliceerd." notice shows
+- THEN its text and its edge reach at least 4.5:1 against its background
+- @e2e exclude pinned by `tests/site-edit-mode.spec.mjs` ("the editor notices and the delete button read at AA contrast, from tokens only")
+
+### Requirement: The site MUST show what an editor published, not a cached copy (REQ-SSP-001)
+
+After an editor publishes a page in place, or leaves edit mode, the site SHALL
+read the page from the server past the browser cache and show that version.
+The content API SHALL NOT answer a signed-in Nextcloud user with a publicly
+cacheable response, and SHALL keep answering an anonymous visitor with one.
+
+#### Scenario: An editor publishes and leaves edit mode
+- **GIVEN** an editor on the published page `/over-ons`, which their browser read before
+- **WHEN** the editor changes it in place, publishes and leaves edit mode
+- **THEN** the site shows the published version at once, not the copy the browser cached
+- test: `tests/site-edit-mode.spec.mjs` ("a fresh page read goes past the browser cache, an ordinary one does not", "the editor tells the site it published, and the site re-reads the page fresh")
+
+#### Scenario: A signed-in reader gets no cacheable page
+- **GIVEN** a signed-in Nextcloud user and no resident bearer
+- **WHEN** they read a page from `/api/content/page`
+- **THEN** the answer is `Cache-Control: private, no-store`
+- test: PHPUnit `tests/Unit/Controller/ContentControllerTest.php` ("testAPageReadBySignedInNextcloudUserIsNeverCached")
+
+#### Scenario: An anonymous visitor's page stays cacheable
+- **GIVEN** no Nextcloud session and no resident bearer
+- **WHEN** a visitor reads a page from `/api/content/page`
+- **THEN** the answer is `Cache-Control: public, max-age=300, must-revalidate`
+- test: PHPUnit `tests/Unit/Controller/ContentControllerTest.php` ("testAPageReadByAnonymousVisitorStaysCacheable")

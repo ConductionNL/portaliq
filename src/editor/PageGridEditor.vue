@@ -20,6 +20,22 @@
 -->
 <template>
 	<div class="page-grid-editor">
+		<!--
+			A REPORTING PAGE IS NOT COUNTED. A visitor row on it records that
+			somebody opened the form, so a page with a report widget belongs in
+			the portal's `traffic.excludedPaths` before it is published.
+		-->
+		<NcNoteCard
+			v-if="reportCounted"
+			type="warning"
+			data-testid="editor-report-counted">
+			{{
+				t(
+					'portaliq',
+					'This page is not excluded from visitor statistics. Add it before you publish.',
+				)
+			}}
+		</NcNoteCard>
 		<div
 			v-if="state.kind === 'markdown'"
 			class="page-grid-editor__markdown"
@@ -39,7 +55,39 @@
 		</div>
 
 		<div v-else class="page-grid-editor__panes">
-			<section class="page-grid-editor__canvas" data-testid="designer-canvas">
+			<!--
+				THE PALETTE SITS IN THIS ROW, beside the canvas, which is why
+				the editor mounts it and no host does. A palette that covers the
+				grid cannot be dragged onto it: see WidgetPalettePanel.vue for
+				what the modal version cost. A host that mounts it itself can
+				put it back over the page, and both hosts did.
+
+				The host still owns whether it is open, through
+				`v-model:paletteOpen`, because the host owns the button and has
+				to say so with `aria-expanded`. This component holds no state of
+				its own.
+			-->
+			<WidgetPalettePanel
+				:open="paletteOpen"
+				:publicOnly="publicOnly"
+				@update:open="$emit('update:paletteOpen', $event)"
+				@choose="editor.addWidget" />
+
+			<!--
+				A DROP TARGET AROUND THE GRID, not on each cell: the fleet's
+				grid owns what is inside it, and an empty page has no cell to
+				drop on at all. The cell comes from the pointer against the
+				canvas rectangle (`cellFromDrop`), so a drop near the right
+				edge places in the last columns and a drop on an empty canvas
+				places in the first (site-nlds-widget-palette REQ-SNW-002).
+			-->
+			<section
+				class="page-grid-editor__canvas"
+				:class="{ 'page-grid-editor__canvas--dropping': dropping }"
+				data-testid="designer-canvas"
+				@dragover="onDragOver"
+				@dragleave="onDragLeave"
+				@drop="onDrop">
 				<CnDashboardGrid
 					v-if="state.widgets.length"
 					:layout="state.widgets"
@@ -71,7 +119,7 @@
 							:aria-pressed="item.id === state.selectedId"
 							:aria-label="
 								t('portaliq', 'Select the {key} widget', {
-									key: item.widgetKey,
+									key: labelOf(item.widgetKey),
 								})
 							"
 							:data-testid="`designer-widget-${item.id}`"
@@ -80,9 +128,17 @@
 							@keydown.enter.prevent="editor.select(item.id)"
 							@keydown.space.prevent="editor.select(item.id)">
 							<header class="page-grid-editor__cell-bar">
-								<span class="page-grid-editor__cell-key">{{
-									item.widgetKey
-								}}</span>
+								<span class="page-grid-editor__cell-name">
+									<span class="page-grid-editor__cell-key">{{
+										labelOf(item.widgetKey)
+									}}</span>
+									<span
+										v-if="widthLineOf(item)"
+										class="page-grid-editor__cell-width"
+										:data-testid="`designer-width-${item.id}`"
+										>{{ widthLineOf(item) }}</span
+									>
+								</span>
 								<NcButton
 									variant="tertiary"
 									:aria-label="t('portaliq', 'Remove this widget')"
@@ -145,7 +201,7 @@
 
 				<template v-else>
 					<p class="page-grid-editor__hint">
-						<code>{{ selected.widgetKey }}</code>
+						{{ labelOf(selected.widgetKey) }}
 					</p>
 
 					<!-- The shared form, as every dashboard configures this widget. -->
@@ -162,7 +218,13 @@
 							v-for="field in fields"
 							:key="field.name"
 							class="page-grid-editor__field">
-							<label :for="`field-${field.name}`">{{
+							<!-- A text block's markdown gets the toolbar, so an editor needs no markdown. -->
+							<MarkdownField
+								v-if="field.kind === 'markdown'"
+								:id="`field-${field.name}`"
+								:modelValue="fieldValue(field)"
+								@update:modelValue="onFieldInput(field, $event)" />
+							<label v-else :for="`field-${field.name}`">{{
 								field.label
 							}}</label>
 							<textarea
@@ -173,6 +235,45 @@
 								:data-testid="`designer-field-${field.name}`"
 								:value="fieldValue(field)"
 								@input="onFieldInput(field, $event.target.value)" />
+							<select
+								v-else-if="
+									field.kind === 'block' && blocks.length > 0
+								"
+								:id="`field-${field.name}`"
+								class="page-grid-editor__input"
+								:data-testid="`designer-field-${field.name}`"
+								:value="fieldValue(field)"
+								@change="onFieldInput(field, $event.target.value)">
+								<option value="">
+									{{ t('portaliq', 'Choose a shared block') }}
+								</option>
+								<option
+									v-for="block in blocks"
+									:key="block.id"
+									:value="block.id">
+									{{ block.title }}
+								</option>
+							</select>
+							<select
+								v-else-if="
+									field.kind === 'recordList'
+									&& recordLists.length > 0
+								"
+								:id="`field-${field.name}`"
+								class="page-grid-editor__input"
+								:data-testid="`designer-field-${field.name}`"
+								:value="recordListValue()"
+								@change="onRecordListInput($event.target.value)">
+								<option value="">
+									{{ t('portaliq', 'Choose a list') }}
+								</option>
+								<option
+									v-for="recordList in recordLists"
+									:key="`${recordList.app}/${recordList.id}`"
+									:value="`${recordList.app}/${recordList.id}`">
+									{{ recordList.label }} ({{ recordList.app }})
+								</option>
+							</select>
 							<input
 								v-else-if="field.kind === 'boolean'"
 								:id="`field-${field.name}`"
@@ -183,7 +284,7 @@
 									editor.setProp(field.name, $event.target.checked)
 								" />
 							<input
-								v-else
+								v-else-if="field.kind !== 'markdown'"
 								:id="`field-${field.name}`"
 								class="page-grid-editor__input"
 								:type="field.kind === 'number' ? 'number' : 'text'"
@@ -219,12 +320,19 @@
 import { CnDashboardGrid, dashboardWidgetRegistry } from '@conduction/nextcloud-vue'
 import { translate } from '@nextcloud/l10n'
 import { NcButton, NcNoteCard } from '@nextcloud/vue'
+import MarkdownField from './MarkdownField.vue'
+import WidgetPalettePanel from './WidgetPalettePanel.vue'
 import {
 	fieldsFor,
 	isPublicWidget,
 	previewComponentFor,
 } from '../lib/pageWidgetCatalogue.js'
+import { widgetLabel, widgetWidthLine } from '../lib/widgetLabels.js'
 import { historyIntent } from './editHistory.js'
+import { cellFromDrop } from './geometry.js'
+import { PALETTE_DRAG_TYPE } from './paletteDrag.js'
+import { recordListChoice } from './recordLists.js'
+import { reportPageIsCounted } from './reportExclusion.js'
 import {
 	formWidgetFor,
 	inspectorModeFor,
@@ -235,7 +343,13 @@ import {
 export default {
 	name: 'PageGridEditor',
 
-	components: { CnDashboardGrid, NcButton, NcNoteCard },
+	components: {
+		CnDashboardGrid,
+		MarkdownField,
+		NcButton,
+		NcNoteCard,
+		WidgetPalettePanel,
+	},
 
 	props: {
 		/** The controller from createPageEditor(). */
@@ -243,11 +357,97 @@ export default {
 			type: Object,
 			required: true,
 		},
+
+		/**
+		 * Whether the widget palette is open.
+		 *
+		 * The host owns it, because the host owns the button that toggles it
+		 * and has to say so with `aria-expanded`. The editor owns only WHERE
+		 * the palette is drawn, which is the part that went wrong.
+		 */
+		paletteOpen: {
+			type: Boolean,
+			default: false,
+		},
+
+		/**
+		 * Offer only widgets the public renderer mounts. The portal edit mode
+		 * sets it: on the portal a widget that renders as an empty place is
+		 * never what the editor meant to add.
+		 */
+		publicOnly: {
+			type: Boolean,
+			default: false,
+		},
+
+		/**
+		 * Lists the published shared blocks an author can place:
+		 * `() => Promise<Array<{id, title}>>`. Without it the shared block
+		 * field is a text input for the block's id.
+		 *
+		 * @type {(() => Promise<Array<{id: string, title: string}>>)|null}
+		 */
+		loadBlocks: {
+			type: Function,
+			default: null,
+		},
+
+		/**
+		 * Lists the public record lists the installed apps contribute:
+		 * `() => Promise<Array<{app, id, label}>>`. Without it the list field
+		 * is a text input for the list's id.
+		 *
+		 * @type {(() => Promise<Array<{app: string, id: string, label: string}>>)|null}
+		 */
+		loadRecordLists: {
+			type: Function,
+			default: null,
+		},
+
+		/**
+		 * The portal's `traffic.excludedPaths`, or null when the host could not
+		 * read them. With a list, a report widget on a page outside it shows
+		 * a warning; without one, nothing is said.
+		 *
+		 * @type {Array<string>|null}
+		 */
+		excludedPaths: {
+			type: Array,
+			default: null,
+		},
 	},
+
+	emits: ['update:paletteOpen'],
 
 	data() {
 		return {
 			jsonError: '',
+
+			/**
+			 * Whether a palette drag is over the canvas right now, so the drop
+			 * target can say so. A drop target an author cannot see is a drop
+			 * they have to guess at.
+			 *
+			 * @type {boolean}
+			 */
+			dropping: false,
+
+			/**
+			 * The shared blocks an author can place, as `{id, title}`; empty
+			 * until read, and when the host cannot list them (the field is then
+			 * a plain text input for the block's id).
+			 *
+			 * @type {Array<{id: string, title: string}>}
+			 */
+			blocks: [],
+
+			/**
+			 * The public record lists an author can place, as `{app, id, label}`;
+			 * empty until read, and when the host cannot list them.
+			 *
+			 * @type {Array<{app: string, id: string, label: string}>}
+			 */
+			recordLists: [],
 		}
 	},
 
@@ -259,6 +459,24 @@ export default {
 		 */
 		state() {
 			return this.editor.state
+		},
+
+		/**
+		 * Whether a report widget sits on a page visitor statistics still count.
+		 *
+		 * @return {boolean} True when the warning shows.
+		 *
+		 * @spec openspec/changes/intake-report-pages/specs/report-pages/spec.md#requirement-report-pages-stay-out-of-visitor-statistics-req-irp-003
+		 */
+		reportCounted() {
+			return (
+				this.state.kind !== 'markdown'
+				&& reportPageIsCounted(
+					this.state.widgets,
+					this.state.page?.route,
+					this.excludedPaths,
+				)
+			)
 		},
 
 		/**
@@ -335,8 +553,27 @@ export default {
 		},
 	},
 
-	mounted() {
+	/**
+	 * Listen for keys, and list the shared blocks an author can place.
+	 *
+	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t05
+	 */
+	async mounted() {
 		window.addEventListener('keydown', this.onKeydown)
+		if (this.loadBlocks) {
+			try {
+				this.blocks = await this.loadBlocks()
+			} catch {
+				this.blocks = []
+			}
+		}
+		if (this.loadRecordLists) {
+			try {
+				this.recordLists = await this.loadRecordLists()
+			} catch {
+				this.recordLists = []
+			}
+		}
 	},
 
 	beforeUnmount() {
@@ -344,6 +581,83 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * Accept a palette drag over the canvas, and nothing else.
+		 *
+		 * The default has to be prevented for a drop to happen at all; it is
+		 * prevented only for the palette's own media type, so dragging a file
+		 * or a selection onto the canvas keeps the browser's behaviour.
+		 *
+		 * @param {DragEvent} event The drag.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-drag-a-widget-from-the-palette-onto-the-grid-req-snw-002
+		 */
+		onDragOver(event) {
+			if (!event?.dataTransfer?.types?.includes(PALETTE_DRAG_TYPE)) {
+				return
+			}
+
+			event.preventDefault()
+			event.dataTransfer.dropEffect = 'copy'
+			this.dropping = true
+		},
+
+		/**
+		 * Stop saying the canvas is a drop target once the drag leaves it.
+		 *
+		 * `dragleave` fires for every child the pointer crosses, so a plain
+		 * handler flickers the highlight off and on while the drag is still
+		 * inside. It is only a leave when the drag went somewhere the canvas
+		 * does not contain.
+		 *
+		 * @param {DragEvent} event The drag.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-drag-a-widget-from-the-palette-onto-the-grid-req-snw-002
+		 */
+		onDragLeave(event) {
+			const canvas = event?.currentTarget
+			const to = event?.relatedTarget
+			if (to && canvas?.contains?.(to)) {
+				return
+			}
+			this.dropping = false
+		},
+
+		/**
+		 * Place the dragged widget where it was dropped.
+		 *
+		 * @param {DragEvent} event The drop.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-drag-a-widget-from-the-palette-onto-the-grid-req-snw-002
+		 */
+		onDrop(event) {
+			this.dropping = false
+			const key = event?.dataTransfer?.getData?.(PALETTE_DRAG_TYPE) || ''
+			if (key === '') {
+				return
+			}
+
+			event.preventDefault()
+			const rect = event.currentTarget?.getBoundingClientRect?.() || {
+				left: 0,
+				top: 0,
+				width: 0,
+			}
+			this.editor.addWidgetAt(
+				key,
+				cellFromDrop({
+					x: event.clientX,
+					y: event.clientY,
+					left: rect.left,
+					top: rect.top,
+					width: rect.width,
+				}),
+			)
+		},
+
 		/**
 		 * Translate. Imported rather than taken from the page's globals, so the
 		 * editor works the same in the admin app and on the portal.
@@ -379,6 +693,29 @@ export default {
 		},
 
 		/**
+		 * The name an author reads for a widget key ("Tekst",
+		 * never "markdown").
+		 *
+		 * @param {string} key The widget key.
+		 * @return {string} The name.
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-the-editor-names-a-block-by-its-widgets-name
+		 */
+		labelOf(key) {
+			return widgetLabel(key, dashboardWidgetRegistry)
+		},
+
+		/**
+		 * The width line under a block's name ("8 kolommen").
+		 *
+		 * @param {object} item The placement.
+		 * @return {string} The line.
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-editor-toolbar-and-block-cards-read-as-the-board
+		 */
+		widthLineOf(item) {
+			return widgetWidthLine(item?.gridWidth)
+		},
+
+		/**
 		 * The grid item's accessible name.
 		 *
 		 * @param {object} item The placement.
@@ -386,7 +723,9 @@ export default {
 		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
 		 */
 		itemLabel(item) {
-			return this.t('portaliq', 'Widget {key}', { key: item.widgetKey })
+			return this.t('portaliq', 'Widget {key}', {
+				key: this.labelOf(item.widgetKey),
+			})
 		},
 
 		/**
@@ -447,6 +786,31 @@ export default {
 				return value === undefined ? '' : JSON.stringify(value, null, 2)
 			}
 			return value === undefined ? '' : String(value)
+		},
+
+		/**
+		 * The chosen record list as `app/list`, '' when none is chosen.
+		 *
+		 * @return {string} The select's value.
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+		 */
+		recordListValue() {
+			const props = this.selected?.props || {}
+			return props.app && props.list ? `${props.app}/${props.list}` : ''
+		},
+
+		/**
+		 * Choose a record list: it sets both the app and the list, so the two
+		 * can never point at different contributions.
+		 *
+		 * @param {string} value The option's `app/list`, or ''.
+		 * @return {void}
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+		 */
+		onRecordListInput(value) {
+			const { app, list } = recordListChoice(this.recordLists, value)
+			this.editor.setProp('app', app)
+			this.editor.setProp('list', list)
 		},
 
 		/**
@@ -526,9 +890,24 @@ export default {
 	align-items: flex-start;
 }
 
+/*
+ * A HEIGHT AN EMPTY PAGE CAN BE DROPPED ON. Without a minimum the canvas of a
+ * page with no widgets is one line of hint text tall, so there is barely
+ * anything under the pointer to drop onto, and the drop lands on whatever sits
+ * below the editor instead. The grid's own rows take over as soon as there is
+ * one widget.
+ */
 .page-grid-editor__canvas {
 	flex: 1 1 auto;
 	min-width: 0;
+	min-height: 240px;
+	border-radius: var(--border-radius);
+}
+
+/* The drop target says it is one, for the length of the drag only. */
+.page-grid-editor__canvas--dropping {
+	outline: 2px dashed var(--color-primary-element);
+	outline-offset: 4px;
 }
 
 .page-grid-editor__inspector {
@@ -567,10 +946,24 @@ export default {
 	background: var(--color-background-hover);
 }
 
+/* A block card is named as the board names it: the block's name in the
+   main ink, its width in a muted line under it (PtPagina "Hero" over
+   "12 kolommen"). */
+.page-grid-editor__cell-name {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
 .page-grid-editor__cell-key {
-	font-family: monospace;
-	font-size: 0.85em;
+	color: var(--color-main-text);
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.page-grid-editor__cell-width {
 	color: var(--color-text-maxcontrast);
+	font-size: 12px;
 }
 
 .page-grid-editor__cell-body {

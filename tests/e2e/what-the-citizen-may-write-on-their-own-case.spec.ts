@@ -45,18 +45,23 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import {
+	accountLink,
+	PORTAL_API,
+	seedSiteSession,
+	siteAddress,
+} from './portal-nav.ts'
 
 // The notice this suite asserts on -- "opgeslagen", "geen stukken meer aan" --
 // is a TRANSLATED string, not seeded data like the case type's public label.
-// The portal picks its language from the first `Accept-Language` tag
-// (PortalPageController::resolveLocale), and Playwright's default context
-// sends en-US, so without this the citizen sees "Your change has been saved."
-// and the assertion fails on a page that is otherwise entirely correct. A
-// Dutch citizen's browser sends nl-NL; so does this suite.
+// The site speaks the serving portal's language (the seeded open-tilburg
+// portal lists `nl` first) and falls back to the document's; a Dutch
+// citizen's browser sends nl-NL, so does this suite, so neither source can
+// turn the notice into "Your change has been saved." on a page that is
+// otherwise entirely correct.
 test.use({ locale: 'nl-NL' })
 
-const PORTAL_PATH = '/apps/portaliq/portal'
-const API_BASE = '/apps/portaliq/portal/api'
+const API_BASE = PORTAL_API
 const OR_OBJECTS_BASE = '/apps/openregister/api/objects'
 
 const CLOSED_REASON = 'De aanvraag is in behandeling genomen.'
@@ -193,22 +198,18 @@ async function loginAsCitizen(
 	const token = body.token as string
 	expect(token).toBeTruthy()
 
-	await page.addInitScript((t) => {
-		window.localStorage.setItem('portaliq_token', t)
-	}, token)
+	await seedSiteSession(page, token)
 }
 
 /**
- * Open the portal on the citizen's case: the page loads, the case row is
- * clicked, and the citizen case block renders it.
+ * Open the site on the citizen's case: the seeded "Mijn zaken" page loads
+ * (not the shell's own "Mijn zaken" section), the case row is clicked, and
+ * the citizen case block renders it.
  */
 async function openTheCase(page: Page, reference: string): Promise<void> {
-	await page.goto(PORTAL_PATH)
+	await page.goto(siteAddress())
 	await page.waitForLoadState('domcontentloaded')
-	await page
-		.getByRole('button', { name: /Mijn zaken/ })
-		.first()
-		.click()
+	await accountLink(page, 'portaliq/mijn-zaken').first().click()
 	await page.getByText(reference).first().click()
 	await expect(page.getByTestId('citizen-case')).toBeVisible()
 }

@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Conduction B.V.
 //
 // The strings of slice f's site parts, in Dutch and English. Keys and texts
-// are the React portal's own (src/portal/i18n/*.json): the key is the English
+// are the React portal's own (now src/shared/i18n/*.json): the key is the English
 // source string. tests/install-banner.spec.mjs checks every key InstallBanner
 // uses is here, in both languages, and matches the shared bundle.
 
