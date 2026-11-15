@@ -290,6 +290,15 @@
 							:t="t"
 							@loaded="onSharedDossierLoaded" />
 
+						<!-- The co-signer's page of a form that needs a second signature
+				     (resident-identity-in-forms REQ-RIF-003). -->
+						<CosignPage
+							v-else-if="cosignRoute"
+							:token="cosignToken"
+							:authBase="guestAuthBase"
+							:portal="site.slug || portalSlug"
+							:t="t" />
+
 						<!-- Every portal's accessibility statement, generated from its
 				     latest measurement (site-accessibility-statement). -->
 						<AccessibilityStatementPage
@@ -572,6 +581,7 @@ import {
 	fetchSite,
 	resolveApiBase,
 } from './lib/contentApi.js'
+import { isCosignRoute } from './lib/cosign.js'
 import { crumbLabel, signInCrumbs } from './lib/crumbWords.js'
 import { editorBaseFrom, fetchEditingContext } from './lib/editorApi.js'
 import { asideOf } from './lib/gridPlacement.js'
@@ -648,6 +658,9 @@ const SiteNotices = defineAsyncComponent(
 const AccessibilityStatementPage = defineAsyncComponent(
 	() => import('./components/AccessibilityStatementPage.vue'),
 )
+const CosignPage = defineAsyncComponent(
+	() => import('./components/CosignPage.vue'),
+)
 const SharedDossierPage = defineAsyncComponent(
 	() => import('./components/SharedDossierPage.vue'),
 )
@@ -688,6 +701,7 @@ export default {
 		MarkdownBlock,
 		NotFoundPage,
 		SharedDossierPage,
+		CosignPage,
 		AccessibilityStatementPage,
 		SiteEditButton,
 		SiteNotices,
@@ -1180,6 +1194,7 @@ export default {
 				this.guestLink
 				|| this.wayInLink
 				|| this.sharedDossierRoute
+				|| this.cosignRoute
 				|| this.statementRoute,
 			)
 		},
@@ -1382,6 +1397,22 @@ export default {
 		 */
 		sharedDossierRoute() {
 			return isSharedDossierRoute(this.route)
+		},
+
+		/**
+		 * @return {boolean} Whether the co-sign page is on screen.
+		 *
+		 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+		 */
+		cosignRoute() {
+			return isCosignRoute(this.route)
+		},
+
+		/**
+		 * @return {string} The co-signer's bearer once a session is known, else ''.
+		 */
+		cosignToken() {
+			return this.session ? adoptSessionToken() || '' : ''
 		},
 
 		/**
@@ -2419,6 +2450,13 @@ export default {
 			// A shared dossier link renders from opencatalogi's answer, not
 			// from a CMS page, so it opens on every portal without one.
 			if (isSharedDossierRoute(route)) {
+				this.openSharedDossierRoute()
+				return true
+			}
+
+			// The co-sign page works from the code and the co-signer's own
+			// sign-in, so it opens on every portal without a CMS page.
+			if (isCosignRoute(route)) {
 				this.openSharedDossierRoute()
 				return true
 			}
