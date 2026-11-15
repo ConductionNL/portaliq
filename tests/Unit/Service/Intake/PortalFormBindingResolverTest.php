@@ -4,9 +4,15 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Intake;
 
+use OCA\Portaliq\Service\CaseTypeVisibility;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
+use OCA\Portaliq\Service\Intake\PortalReferenceLists;
+use OCA\Portaliq\Service\Intake\VisibleWhenLocal;
+use OCA\Portaliq\Service\Intake\PortalFormTrustLevel;
+use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Tests\Unit\Service\Identity\PortalIdentityStoreTrait;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Contribution\FormStepsNormaliser;
 
 /**
  * portal-intake-form-as-an-object REQ-PIFO-001 and REQ-PIFO-002: a page binds
@@ -51,6 +57,87 @@ class PortalFormBindingResolverTest extends TestCase {
 
 	}//end testTheFieldsComeInTheFormsOwnOrder()
 
+	/**
+	 * The form's steps travel with the render, with a review step last
+	 * (site-multi-step-forms REQ-SMF-010).
+	 *
+	 * @return void
+	 */
+	public function testStepsTravelWithTheForm(): void {
+		$this->seedForm(
+			audience: 'client',
+			fields: [['name' => 'onderwerp', 'order' => 1], ['name' => 'periodeVan', 'order' => 2]],
+			extra: [
+				'steps' => [
+					['id' => 'vraag', 'title' => 'Uw vraag', 'fields' => ['onderwerp']],
+					['id' => 'periode', 'title' => 'Periode en documenten', 'description' => 'Welke periode?', 'fields' => ['periodeVan']],
+					['id' => 'controle', 'title' => 'Controleren en versturen', 'review' => true],
+				],
+			]
+		);
+
+		$render = $this->resolver()->render(binding: $this->binding());
+
+		$this->assertSame(
+			[
+				['id' => 'vraag', 'title' => 'Uw vraag', 'fields' => ['onderwerp']],
+				['id' => 'periode', 'title' => 'Periode en documenten', 'fields' => ['periodeVan'], 'description' => 'Welke periode?'],
+				['id' => 'controle', 'title' => 'Controleren en versturen', 'fields' => [], 'review' => true],
+			],
+			$render['steps']
+		);
+	}//end testStepsTravelWithTheForm()
+
+	/**
+	 * A step naming a field the form does not have is dropped; its known
+	 * fields go to the last step.
+	 *
+	 * @return void
+	 */
+	public function testAStepNamingAnUnknownFieldIsDropped(): void {
+		$this->seedForm(
+			audience: 'client',
+			fields: [['name' => 'onderwerp', 'order' => 1], ['name' => 'naam', 'order' => 2]],
+			extra: [
+				'steps' => [
+					['id' => 'vraag', 'title' => 'Uw vraag', 'fields' => ['onderwerp']],
+					['id' => 'betalen', 'title' => 'Betalen', 'fields' => ['naam', 'iban']],
+				],
+			]
+		);
+
+		$steps = $this->resolver()->render(binding: $this->binding())['steps'];
+
+		$this->assertSame(['vraag', 'more'], array_column($steps, 'id'));
+		$this->assertSame(['naam'], $steps[1]['fields']);
+	}//end testAStepNamingAnUnknownFieldIsDropped()
+
+	/**
+	 * A field in no step goes in a last step of its own, before the review;
+	 * a form without steps renders as one page.
+	 *
+	 * @return void
+	 */
+	public function testLooseFieldsGetALastStep(): void {
+		$formId = $this->seedForm(
+			audience: 'client',
+			fields: [['name' => 'onderwerp', 'order' => 1], ['name' => 'toelichting', 'order' => 2]],
+			extra: [
+				'steps' => [
+					['id' => 'vraag', 'title' => 'Uw vraag', 'fields' => ['onderwerp']],
+					['id' => 'controle', 'title' => 'Controleren', 'review' => true],
+				],
+			]
+		);
+
+		$steps = $this->resolver()->render(binding: $this->binding())['steps'];
+		$this->assertSame(['vraag', 'more', 'controle'], array_column($steps, 'id'));
+		$this->assertSame(['toelichting'], $steps[1]['fields']);
+
+		unset($this->rows[$formId]['steps']);
+		$this->assertSame([], $this->resolver()->render(binding: $this->binding())['steps']);
+	}//end testLooseFieldsGetALastStep()
+
 	public function testAnEditedFormReachesThePortalWithNoPortalChange(): void {
 		$formId = $this->seedForm(audience: 'client', fields: [['name' => 'postcode', 'order' => 1]]);
 		$resolver = $this->resolver();
@@ -73,6 +160,106 @@ class PortalFormBindingResolverTest extends TestCase {
 
 	}//end testAPresetIsCarriedOntoItsField()
 
+	/**
+	 * data-lookups-and-checks-in-forms T03: a field naming a reference list
+	 * gets the list's items as options; an empty or missing list closes it.
+	 *
+	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t03
+	 */
+	public function testAReferenceListFillsTheFieldsOptionsAndAnEmptyOneClosesIt(): void {
+		$this->seedForm(audience: 'client', fields: [
+			['name' => 'woning', 'order' => 1, 'options' => ['referenceList' => 'woningtypen']],
+			['name' => 'leeg', 'order' => 2, 'options' => ['referenceList' => 'bestaatniet']],
+			['name' => 'vast', 'order' => 3, 'options' => ['a', 'b']],
+		]);
+		$lists = $this->createMock(PortalReferenceLists::class);
+		$lists->method('items')->willReturnCallback(
+			static fn (string $list): array => $list === 'woningtypen' ? [['value' => 'flat', 'label' => 'Flat'], ['value' => 'huis', 'label' => 'Huis']] : []
+		);
+
+		$fields = (new PortalFormBindingResolver($this->fakeReader(), new FormStepsNormaliser(), null, new VisibleWhenLocal(), $lists))->render(binding: $this->binding())['fields'];
+
+		$this->assertSame([['value' => 'flat', 'label' => 'Flat'], ['value' => 'huis', 'label' => 'Huis']], $fields[0]['options']);
+		$this->assertArrayNotHasKey('referenceListEmpty', $fields[0]);
+		$this->assertSame([], $fields[1]['options']);
+		$this->assertTrue($fields[1]['referenceListEmpty']);
+		$this->assertSame(['a', 'b'], $fields[2]['options'], 'a plain list is left as it is');
+
+		$none = (new PortalFormBindingResolver($this->fakeReader(), new FormStepsNormaliser()))->render(binding: $this->binding())['fields'];
+		$this->assertTrue($none[0]['referenceListEmpty'], 'without a reader the field is closed, not open');
+	}//end testAReferenceListFillsTheFieldsOptionsAndAnEmptyOneClosesIt()
+
+	/**
+	 * intake-pay-on-submit T03: the render carries the case type's fee, and a
+	 * fee makes the form need a session at substantial.
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t03
+	 */
+	public function testFeeRequiresSession(): void {
+		$this->seedForm(audience: 'client', fields: [['name' => 'kenteken', 'order' => 1]]);
+		$reader = $this->createMock(\OCA\Portaliq\Service\CaseTypeReader::class);
+		$reader->method('readCaseType')->willReturn(['portalFee' => ['amount' => '38.50', 'currency' => 'EUR', 'payAction' => 'create-payment']]);
+		$resolver = new PortalFormBindingResolver($this->fakeReader(), new FormStepsNormaliser(), null, new VisibleWhenLocal(), null, new \OCA\Portaliq\Service\Intake\PortalFormCalculator(), new \OCA\Portaliq\Service\Intake\PortalFee($reader));
+
+		$render = $resolver->render(binding: $this->binding());
+
+		$this->assertSame(expected: '38.50', actual: $render['fee']['amount']);
+		$this->assertSame('substantial', $resolver->requiredTrust(site: ['slug' => 'gemeente-x'], binding: $this->binding(), render: $render));
+
+		$free = $this->resolver()->render(binding: $this->binding());
+		$this->assertNull($free['fee']);
+		$this->assertNull($this->resolver()->requiredTrust(site: ['slug' => 'gemeente-x'], binding: $this->binding(), render: $free));
+	}//end testFeeRequiresSession()
+
+	public function testTheFormsSignInLevelIsCarriedToTheRender(): void {
+		// portaliq#725: buildiq writes the per-form sign-in level on the
+		// registration form (buildiq#935); the render must carry it or no
+		// caller can enforce it.
+		$this->seedForm(audience: 'client', fields: [['name' => 'postcode', 'order' => 1]], extra: ['minTrust' => 'substantial']);
+		$resolver = $this->resolver();
+
+		$render = $resolver->render(binding: $this->binding());
+
+		$this->assertSame('substantial', $render['minTrust']);
+		$this->assertSame('substantial', $resolver->requiredTrust(site: ['slug' => 'gemeente-x'], binding: $this->binding(), render: $render));
+
+	}//end testTheFormsSignInLevelIsCarriedToTheRender()
+
+	public function testTheStrictestOfPortalBindingAndFormWins(): void {
+		$resolver = $this->resolver();
+		$identified = ['authentication' => ['requiresIdentifiedIntake' => true]];
+
+		$this->assertNull($resolver->requiredTrust(site: [], binding: [], render: []));
+		$this->assertSame('low', $resolver->requiredTrust(site: [], binding: ['minTrust' => 'low'], render: ['minTrust' => 0]));
+		$this->assertSame('low', $resolver->requiredTrust(site: $identified, binding: [], render: []));
+		$this->assertSame('high', $resolver->requiredTrust(site: $identified, binding: ['minTrust' => 'substantial'], render: ['minTrust' => 'high']));
+		$this->assertSame('substantial', $resolver->requiredTrust(site: [], binding: ['minTrust' => 'substantial'], render: []));
+		// A typo never widens access: it wins over every known level.
+		$this->assertSame(PortalFormTrustLevel::UNRECOGNISED, $resolver->requiredTrust(site: [], binding: ['minTrust' => 'high'], render: ['minTrust' => 'digid']));
+
+	}//end testTheStrictestOfPortalBindingAndFormWins()
+
+	public function testADeclaredLowNeedsASignedInSession(): void {
+		// portaliq#731: `low` is DigiD basis, the lowest signed-in level, the
+		// same `low` a portalPage entry and requiresIdentifiedIntake mean. It
+		// never means anonymous, on the form or on the binding.
+		$resolver = $this->resolver();
+
+		$this->assertSame('low', $resolver->requiredTrust(site: [], binding: [], render: ['minTrust' => 'low']));
+		$this->assertSame('low', $resolver->requiredTrust(site: [], binding: ['minTrust' => 'low'], render: []));
+
+	}//end testADeclaredLowNeedsASignedInSession()
+
+	public function testOnlyAbsenceZeroAndAnonymousMeanAnonymous(): void {
+		$resolver = $this->resolver();
+
+		$this->assertNull($resolver->requiredTrust(site: [], binding: [], render: []));
+		$this->assertNull($resolver->requiredTrust(site: [], binding: [], render: ['minTrust' => 0]));
+		$this->assertNull($resolver->requiredTrust(site: [], binding: [], render: ['minTrust' => '0']));
+		$this->assertNull($resolver->requiredTrust(site: [], binding: ['minTrust' => 'anonymous'], render: ['minTrust' => '']));
+
+	}//end testOnlyAbsenceZeroAndAnonymousMeanAnonymous()
+
 	public function testTheConfirmationTextIsTheFormsOwn(): void {
 		$this->seedForm(audience: 'client', fields: [['name' => 'postcode', 'order' => 1]], extra: ['confirmationText' => 'Bedankt, u hoort van ons.']);
 		$resolver = $this->resolver();
@@ -82,6 +269,31 @@ class PortalFormBindingResolverTest extends TestCase {
 		$this->assertSame('Bedankt, u hoort van ons.', $render['settings']['confirmationText']);
 
 	}//end testTheConfirmationTextIsTheFormsOwn()
+
+	/**
+	 * form-statements-intro-and-confirmation-mail T06: an introduction is
+	 * shown unless the form settings page switched it off; switched off, its
+	 * text stays on the binding and the form opens at step 1.
+	 *
+	 * @return void
+	 */
+	public function testAnIntroductionSwitchedOffOpensTheFormAtStepOne(): void {
+		$this->seedForm(audience: 'client', fields: [['name' => 'postcode', 'order' => 1]]);
+		$resolver = $this->resolver();
+		$intro    = ['lead' => 'Voordat u begint.', 'blocks' => [['title' => 'Wat heeft u nodig?']]];
+
+		$shown = $resolver->render(binding: $this->binding(['intro' => $intro]));
+		$this->assertSame($intro, $shown['settings']['intro']);
+
+		$switchedOn = $resolver->render(binding: $this->binding(['intro' => ['enabled' => true] + $intro]));
+		$this->assertSame(['enabled' => true] + $intro, $switchedOn['settings']['intro']);
+
+		$switchedOff = $resolver->render(binding: $this->binding(['intro' => ['enabled' => false] + $intro]));
+		$this->assertNull($switchedOff['settings']['intro']);
+
+		$this->assertNull($resolver->render(binding: $this->binding([]))['settings']['intro']);
+		$this->assertNull($resolver->render(binding: $this->binding(['intro' => 'Voordat u begint.']))['settings']['intro']);
+	}//end testAnIntroductionSwitchedOffOpensTheFormAtStepOne()
 
 	public function testABindingThatResolvesToNoFormSaysSoAndRendersNoFields(): void {
 		$this->seedForm(audience: 'supplier', fields: [['name' => 'kvk', 'order' => 1]]);
@@ -174,6 +386,23 @@ class PortalFormBindingResolverTest extends TestCase {
 	}//end testAPortalDeclaresOnlyTheCaseTypesItPublishedABindingFor()
 
 	/**
+	 * The whole instance's published bindings, for a destination schema that
+	 * is about to change: every portal's, and no draft.
+	 *
+	 * @return void
+	 */
+	public function testEveryPortalsPublishedBindingsAreListedAndNoDraft(): void {
+		$this->seedRow('portalFormBinding', $this->binding());
+		$this->seedRow('portalFormBinding', $this->binding(['portal' => 'gemeente-y', 'route' => 'aanvragen/kap']));
+		$this->seedRow('portalFormBinding', $this->binding(['route' => 'aanvragen/concept', 'status' => 'draft']));
+
+		$all = $this->resolver()->allPublishedBindings();
+
+		$this->assertSame(['gemeente-x', 'gemeente-y'], array_column($all, 'portal'));
+		$this->assertSame(['published', 'published'], array_column($all, 'status'));
+	}//end testEveryPortalsPublishedBindingsAreListedAndNoDraft()
+
+	/**
 	 * gate-7. The predicate the anonymous route refuses on: another portal's
 	 * case type, a draft one, and a partly-right triple are all outside.
 	 *
@@ -202,6 +431,112 @@ class PortalFormBindingResolverTest extends TestCase {
 		$this->assertFalse($resolver->caseTypeIsInPortalScope(portal: '', register: 'dossiq', schema: 'zaaktype', typeId: 'verhuizing'));
 
 	}//end testOnlyTheExactDeclaredTripleIsInScope()
+
+	/**
+	 * operate-show-per-case-type REQ-OSC-002: a binding for a case type its
+	 * portal hides resolves to no form, and says why; the same binding on a
+	 * portal that shows the type still renders.
+	 *
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 */
+	public function testHiddenCaseTypeResolvesToNoForm(): void {
+		$this->seedForm(audience: 'client', fields: [['name' => 'postcode', 'order' => 1]]);
+		$this->seedRow('portalFormBinding', $this->binding());
+		$this->seedRow('portalFormBinding', $this->binding(['route' => 'aanvragen/kap', 'typeId' => 'kapvergunning']));
+		$resolver = $this->hidingResolver();
+
+		$render = $resolver->render(binding: $this->binding());
+		$this->assertTrue($render['resolvesToNoForm']);
+		$this->assertSame('hiddenCaseType', $render['reason']);
+		$this->assertSame([], $render['fields']);
+
+		$shown = $resolver->render(binding: $this->binding(['portal' => 'gemeente-y']));
+		$this->assertFalse($shown['resolvesToNoForm']);
+
+		$this->assertSame(['aanvragen/verhuizing', 'aanvragen/kap'], array_column($resolver->publishedBindings(portal: 'gemeente-x'), 'route'));
+	}//end testHiddenCaseTypeResolvesToNoForm()
+
+	/**
+	 * intake-conditional-questions-and-drafts REQ-ICQ-003: a form with a
+	 * condition the portal cannot replay on submit (an endpoint, a source, the
+	 * clock) opens no form, with the reason the preview names; a condition on
+	 * another answer is fine.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/intake-conditional-questions-and-drafts/specs/portal-intake-form/spec.md#requirement-a-condition-the-portal-cannot-check-refuses-the-form-req-icq-003
+	 */
+	public function testNonLocalConditionResolvesToNoForm(): void {
+		$local = ['name' => 'partnerName', 'order' => 2, 'visibleWhen' => ['field' => 'together', 'op' => 'eq', 'value' => 'Yes']];
+		foreach ([
+			['endpoint' => '/apps/dossiq/api/eligibility', 'field' => 'ok', 'value' => true],
+			['source' => ['register' => 'dossiq', 'schema' => 'case'], 'field' => '@total', 'op' => 'gt', 'value' => 0],
+			['all' => [['field' => 'together', 'value' => 'Yes'], ['field' => 'movedOn', 'op' => 'lt', 'value' => '@today']]],
+		] as $condition) {
+			$this->setUp();
+			$this->seedForm(audience: 'client', fields: [
+				['name' => 'together', 'order' => 1],
+				$local,
+				['name' => 'extra', 'order' => 3, 'visibleWhen' => $condition],
+			]);
+
+			$render = $this->resolver()->render(binding: $this->binding());
+
+			$this->assertTrue($render['resolvesToNoForm'], json_encode($condition));
+			$this->assertSame('unsupportedCondition', $render['reason']);
+			$this->assertSame([], $render['fields']);
+		}
+
+		$this->setUp();
+		$this->seedForm(audience: 'client', fields: [['name' => 'together', 'order' => 1], $local]);
+		$render = $this->resolver()->render(binding: $this->binding());
+		$this->assertFalse($render['resolvesToNoForm']);
+		$this->assertSame($local['visibleWhen'], $render['fields'][1]['visibleWhen']);
+	}//end testNonLocalConditionResolvesToNoForm()
+
+	/**
+	 * form-flow-repeating-groups-calculations-and-decisions REQ-FFL-002: a form
+	 * with a calculation the server cannot repeat opens no form.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+	 */
+	public function testAnUnknownCalculationResolvesToNoForm(): void {
+		$this->seedForm(audience: 'client', fields: [
+			['name' => 'start', 'order' => 1],
+			['name' => 'end', 'order' => 2, 'calculate' => ['op' => 'power', 'args' => ['start', 2]]],
+		]);
+
+		$render = $this->resolver()->render(binding: $this->binding());
+
+		$this->assertTrue($render['resolvesToNoForm']);
+		$this->assertSame('unsupportedCalculation', $render['reason']);
+		$this->assertSame([], $render['fields']);
+
+		$this->setUp();
+		$this->seedForm(audience: 'client', fields: [
+			['name' => 'start', 'order' => 1],
+			['name' => 'end', 'order' => 2, 'calculate' => ['op' => 'addDays', 'args' => ['start', 365]]],
+		]);
+		$this->assertFalse($this->resolver()->render(binding: $this->binding())['resolvesToNoForm']);
+
+	}//end testAnUnknownCalculationResolvesToNoForm()
+
+	/**
+	 * A resolver whose portal gemeente-x hides the case type verhuizing.
+	 *
+	 * @return PortalFormBindingResolver
+	 */
+	private function hidingResolver(): PortalFormBindingResolver {
+		$portals = $this->createMock(PortalResolver::class);
+		$portals->method('allPublishedPortals')->willReturn([
+			['slug' => 'gemeente-x', 'hiddenCaseTypes' => [['typeId' => 'verhuizing']]],
+			['slug' => 'gemeente-y'],
+		]);
+
+		return new PortalFormBindingResolver($this->fakeReader(), new FormStepsNormaliser(), new CaseTypeVisibility($portals));
+	}//end hidingResolver()
 
 	/**
 	 * A binding for the client form of one case type.
@@ -250,7 +585,7 @@ class PortalFormBindingResolverTest extends TestCase {
 	 * @return PortalFormBindingResolver
 	 */
 	private function resolver(): PortalFormBindingResolver {
-		return new PortalFormBindingResolver($this->fakeReader());
+		return new PortalFormBindingResolver($this->fakeReader(), new FormStepsNormaliser());
 	}//end resolver()
 
 }//end class

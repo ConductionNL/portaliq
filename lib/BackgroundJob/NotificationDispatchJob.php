@@ -45,15 +45,16 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\BackgroundJob;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\PortalDeepLinkBuilder;
-use OCA\Portaliq\Service\PortalObjectReader;
-use OCA\Portaliq\Service\PortalObjectWriter;
-use OCA\Portaliq\Service\PortalOrganisationConfigService;
+use OCA\Portaliq\Kernel\Contracts\NotificationChannelsInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalDeepLinkBuilderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalNoticeLanguageInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectWriterInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalOrganisationConfigServiceInterface;
+use OCA\Portaliq\Service\Notifications\NotificationChannels;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\QueuedJob;
 use OCP\IConfig;
-use OCP\L10N\IFactory;
 use OCP\Mail\IMailer;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -81,14 +82,37 @@ class NotificationDispatchJob extends QueuedJob {
 	private const ACCOUNT_SCHEMA = 'portalAccount';
 
 	/**
+	 * The status of a withdrawn account (PortalAccountService::STATUS_VOID).
+	 */
+	private const STATUS_VOID = 'void';
+
+	/**
 	 * The append-only per-attempt notification log schema.
 	 */
 	private const NOTIFICATION_SCHEMA = 'portalNotification';
 
 	/**
-	 * The only channel implemented — future-proofed field, single value today.
+	 * This app's id, for its own configuration.
+	 *
+	 * @var string
 	 */
-	private const CHANNEL_EMAIL = 'email';
+	private const APP_ID = 'portaliq';
+
+	/**
+	 * A change rule's subject line, `%1$s` the organisation.
+	 *
+	 * @var string
+	 */
+	private const CHANGE_SUBJECT_KEY = 'Something changed in the portal of %1$s';
+
+	/**
+	 * A change rule's body: `%1$s` the collection label, `%2$s` the
+	 * organisation, `%3$s` the link to the record. No field value, ever
+	 * (REQ-NAP-006).
+	 *
+	 * @var string
+	 */
+	private const CHANGE_BODY_KEY = 'Something changed on your %1$s in the portal of %2$s. Sign in to see it: %3$s';
 
 	/**
 	 * App-config key for the configurable consecutive-failure threshold.
@@ -116,27 +140,28 @@ class NotificationDispatchJob extends QueuedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory $time Testable clock (Job base class).
-	 * @param PortalObjectReader $reader Resolves the subject's own portalAccount.
-	 * @param PortalObjectWriter $writer Writes the portalNotification log + the
+	 * @param ScopedCollectionReaderInterface $reader Resolves the subject's own portalAccount.
+	 * @param PortalObjectWriterInterface $writer Writes the portalNotification log + the
 	 *                                   needsAlternativeContact flag.
-	 * @param PortalOrganisationConfigService $orgConfig Resolves the tenant's display name.
+	 * @param PortalOrganisationConfigServiceInterface $orgConfig Resolves the tenant's display name.
 	 * @param IMailer $mailer Sends the privacy-minimal email.
-	 * @param IFactory $l10nFactory Resolves NL/EN translators, independent
-	 *                              of any session locale.
-	 * @param PortalDeepLinkBuilder $deepLinks Builds the portal deep link from the route table (WOO-570).
+	 * @param PortalNoticeLanguageInterface $language The translations in the language of the resident's portal.
+	 * @param PortalDeepLinkBuilderInterface $deepLinks Builds the portal deep link from the route table (WOO-570).
 	 * @param IConfig $config Reads the configurable failure threshold.
 	 * @param LoggerInterface $logger The logger.
+	 * @param NotificationChannelsInterface|null $channels The resident's per-kind choices and the push.
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly PortalObjectReader $reader,
-		private readonly PortalObjectWriter $writer,
-		private readonly PortalOrganisationConfigService $orgConfig,
+		private readonly ScopedCollectionReaderInterface $reader,
+		private readonly PortalObjectWriterInterface $writer,
+		private readonly PortalOrganisationConfigServiceInterface $orgConfig,
 		private readonly IMailer $mailer,
-		private readonly IFactory $l10nFactory,
-		private readonly PortalDeepLinkBuilder $deepLinks,
+		private readonly PortalNoticeLanguageInterface $language,
+		private readonly PortalDeepLinkBuilderInterface $deepLinks,
 		private readonly IConfig $config,
 		private readonly LoggerInterface $logger,
+		private readonly ?NotificationChannelsInterface $channels = null,
 	) {
 		parent::__construct(time: $time);
 	}//end __construct()
@@ -162,103 +187,189 @@ class NotificationDispatchJob extends QueuedJob {
 
 	/**
 	 * The actual dispatch pipeline, isolated so run() can wrap it in one
-	 * fail-safe try/catch.
+	 * fail-safe try/catch: the fail-closed guards (missing argument, no
+	 * account), then the dispatch on the channels the subject wants.
 	 *
 	 * @param mixed $argument The job argument.
 	 *
 	 * @return void
-	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) -- the complexity is a
-	 * sequence of fail-closed guard clauses (missing argument, no account,
-	 * no id) each returning early, plus the sent/failed branch — the SAME
-	 * fail-closed-guard rationale ContributionController's class docblock
-	 * documents; collapsing them would trade auditability for a score.
-	 * @SuppressWarnings(PHPMD.NPathComplexity)
 	 */
 	private function doRun(mixed $argument): void {
-		if (is_array($argument) === false) {
-			$this->logger->warning('Portaliq: NotificationDispatchJob invalid argument — not an array');
+		$run = $this->runFrom(argument: $argument);
+		if ($run === null) {
 			return;
 		}
 
-		$subjectRef = (string)($argument['subjectRef'] ?? '');
-		$organisation = (string)($argument['organisation'] ?? '');
-		$ruleKey = (string)($argument['ruleKey'] ?? '');
-
-		if ($subjectRef === '' || $ruleKey === '') {
-			$this->logger->warning('Portaliq: NotificationDispatchJob missing required argument keys');
-			return;
-		}
-
-		$account = $this->findAccount(subjectRef: $subjectRef, organisation: $organisation);
+		$account = $this->findAccount(subjectRef: $run->subjectRef, organisation: $run->organisation);
 		if ($account === null) {
 			// No account resolvable — nothing to notify and nothing owned to
 			// log against; a normal state when the account has since been
 			// removed, never an error.
-			$this->logger->debug('Portaliq: NotificationDispatchJob found no portalAccount — skipping', ['subjectRef' => $subjectRef]);
+			$this->logger->debug('Portaliq: NotificationDispatchJob found no portalAccount — skipping', ['subjectRef' => $run->subjectRef]);
 			return;
 		}
 
-		$accountId = $this->rowId(row: $account);
+		$run->account = $account;
+		$this->dispatch(run: $run);
+	}//end doRun()
+
+	/**
+	 * The run for a valid job argument, or null (logged) for an argument that
+	 * is not an array or lacks the subject or the rule key.
+	 *
+	 * @param mixed $argument The job argument.
+	 *
+	 * @return NotificationDispatchRun|null
+	 */
+	private function runFrom(mixed $argument): ?NotificationDispatchRun {
+		if (is_array($argument) === false) {
+			$this->logger->warning('Portaliq: NotificationDispatchJob invalid argument — not an array');
+			return null;
+		}
+
+		$run = new NotificationDispatchRun(
+			argument: $argument,
+			subjectRef: (string)($argument['subjectRef'] ?? ''),
+			organisation: (string)($argument['organisation'] ?? ''),
+			ruleKey: (string)($argument['ruleKey'] ?? ''),
+			appId: (string)($argument['appId'] ?? ''),
+			channels: ($this->channels ?? new NotificationChannels())
+		);
+		if ($run->subjectRef === '' || $run->ruleKey === '') {
+			$this->logger->warning('Portaliq: NotificationDispatchJob missing required argument keys');
+			return null;
+		}
+
+		return $run;
+	}//end runFrom()
+
+	/**
+	 * Send on each channel the subject wants, once the account has an id.
+	 *
+	 * @param NotificationDispatchRun $run The dispatch, its account found.
+	 *
+	 * @return void
+	 */
+	private function dispatch(NotificationDispatchRun $run): void {
+		$this->chooseChannels(run: $run);
+		$accountId = $this->rowId(row: $run->account);
 		if ($accountId === null) {
 			return;
 		}
 
-		$email = (string)($account['email'] ?? '');
-		$previousStreak = $this->previousFailureStreak(accountId: $accountId, organisation: $organisation, ruleKey: $ruleKey);
+		$run->accountId = $accountId;
+		if ($run->wantsPush === true) {
+			$this->sendPush(run: $run);
+		}
+
+		if ($run->wantsEmail === true) {
+			$this->emailAndRecord(run: $run);
+		}
+	}//end dispatch()
+
+	/**
+	 * Read the record a change rule is about and the channels the subject
+	 * wants for its kind.
+	 *
+	 * @param NotificationDispatchRun $run The dispatch, its account found.
+	 *
+	 * @return void
+	 */
+	private function chooseChannels(NotificationDispatchRun $run): void {
+		$run->record = $run->channels->record(argument: $run->argument);
+		$kind        = $run->channels->kindOf(record: $run->record);
+
+		// A channel the subject switched off is neither a missing declaration
+		// nor a delivery failure: nothing is sent and nothing is logged for it,
+		// never the "no email address" shape (which counts toward
+		// needsAlternativeContact). The account-wide e-mail opt-out
+		// (notification-preferences-per-role) still wins over a kind's choice.
+		$run->wantsEmail = $run->channels->wants(account: $run->account, kind: $kind, channel: NotificationChannelsInterface::CHANNEL_EMAIL);
+		$run->wantsPush  = $run->channels->wants(account: $run->account, kind: $kind, channel: NotificationChannelsInterface::CHANNEL_PUSH);
+	}//end chooseChannels()
+
+	/**
+	 * Send the e-mail, log the attempt, and keep the needsAlternativeContact
+	 * flag in step with the failure streak.
+	 *
+	 * @param NotificationDispatchRun $run The dispatch, its account id read.
+	 *
+	 * @return void
+	 */
+	private function emailAndRecord(NotificationDispatchRun $run): void {
+		$email          = (string)($run->account['email'] ?? '');
+		$previousStreak = $this->previousFailureStreak(run: $run);
 
 		$sent = false;
 		if ($email !== '' && $this->mailer->validateMailAddress($email) === true) {
-			$sent = $this->sendEmail(email: $email, organisation: $organisation);
+			$sent = $this->sendEmail(run: $run, email: $email);
 		}
 
-		$status = 'failed';
-		$attempts = ($previousStreak + 1);
-		if ($sent === true) {
-			$status = 'sent';
-			$attempts = 0;
-		}
+		$outcome = $run->emailOutcome(sent: $sent, previousStreak: $previousStreak);
+		$this->recordAttempt(run: $run, outcome: $outcome);
+		$this->keepFallbackFlag(run: $run, outcome: $outcome);
+	}//end emailAndRecord()
 
-		$this->recordAttempt(
-			accountId: $accountId,
-			organisation: $organisation,
-			ruleKey: $ruleKey,
-			appId: (string)($argument['appId'] ?? ''),
-			subjectRef: $subjectRef,
-			status: $status,
-			attempts: $attempts
-		);
-
+	/**
+	 * Flag the account after the threshold of consecutive failures, and
+	 * clear the flag after a send that went through.
+	 *
+	 * @param NotificationDispatchRun $run     The dispatch.
+	 * @param NotificationOutcome     $outcome How the e-mail attempt ended.
+	 *
+	 * @return void
+	 */
+	private function keepFallbackFlag(NotificationDispatchRun $run, NotificationOutcome $outcome): void {
 		$threshold = $this->failureThreshold();
-		if ($sent === false && $attempts >= $threshold) {
-			$this->flagNeedsAlternativeContact(subjectRef: $subjectRef, organisation: $organisation, accountId: $accountId, flag: true);
-		} elseif ($sent === true && ($account['needsAlternativeContact'] ?? false) === true) {
+		if ($outcome->isSent() === false && $outcome->attempts >= $threshold) {
+			$this->flagNeedsAlternativeContact(run: $run, flag: true);
+		} elseif ($outcome->isSent() === true && ($run->account['needsAlternativeContact'] ?? false) === true) {
 			// A working notification just went through — the fallback signal
 			// is no longer current; clear it so an operator's backlog reflects
 			// reality.
-			$this->flagNeedsAlternativeContact(subjectRef: $subjectRef, organisation: $organisation, accountId: $accountId, flag: false);
+			$this->flagNeedsAlternativeContact(run: $run, flag: false);
 		}
-	}//end doRun()
+	}//end keepFallbackFlag()
 
 	/**
-	 * Send the privacy-minimal, bilingual (NL first, EN second) email.
+	 * Send the push when the resident registered a device, and log it with
+	 * channel `push`. A push that did not arrive is not an address problem, so
+	 * it never counts toward needsAlternativeContact.
 	 *
-	 * @param string $email The validated recipient address.
-	 * @param string $organisation The subject's tenant (resolves the display name).
+	 * @param NotificationDispatchRun $run The dispatch, its account id read.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-resident-chooses-per-kind-and-per-channel-req-nap-007
+	 */
+	private function sendPush(NotificationDispatchRun $run): void {
+		$run->organisationName = $this->organisationName(organisation: $run->organisation);
+		$title         = $this->subjectLine(run: $run);
+		$run->deepLink = $this->deepLinks->forNotice(organisation: $run->organisation, record: $run->record);
+		$status        = $run->channels->push(subjectRef: $run->subjectRef, title: $title, body: $this->bodyText(run: $run));
+		if ($status === null) {
+			return;
+		}
+
+		$this->recordAttempt(run: $run, outcome: new NotificationOutcome(status: $status, attempts: 0, channel: NotificationChannelsInterface::CHANNEL_PUSH));
+	}//end sendPush()
+
+	/**
+	 * Send the privacy-minimal email, in the portal's language.
+	 *
+	 * @param NotificationDispatchRun $run   The dispatch.
+	 * @param string                  $email The validated recipient address.
 	 *
 	 * @return bool True on a successful send (no failed-recipients reported).
 	 */
-	private function sendEmail(string $email, string $organisation): bool {
-		$organisationName = (string)($this->orgConfig->resolve(orgSlug: $organisation)['organisationName'] ?? 'Portaliq');
-		$deepLink = $this->deepLink(organisation: $organisation);
+	private function sendEmail(NotificationDispatchRun $run, string $email): bool {
+		$run->organisationName = $this->organisationName(organisation: $run->organisation);
+		// The deep link into the site, resolved from the route table (WOO-570);
+		// for a change rule it opens that record (REQ-NAP-005).
+		$run->deepLink         = $this->deepLinks->forNotice(organisation: $run->organisation, record: $run->record);
 
 		try {
-			$message = $this->mailer->createMessage();
-			$message->setSubject($this->subjectLine(organisationName: $organisationName));
-			$message->setPlainBody($this->bodyText(organisationName: $organisationName, deepLink: $deepLink));
-			$message->setTo([$email]);
-
-			$failedRecipients = $this->mailer->send($message);
+			$failedRecipients = $this->sendNotice(run: $run, email: $email);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: notification email send failed', ['reason' => $e->getMessage()]);
 			return false;
@@ -273,54 +384,70 @@ class NotificationDispatchJob extends QueuedJob {
 	}//end sendEmail()
 
 	/**
-	 * The bilingual (NL first, EN second) B1-level subject line. Privacy-minimal
+	 * Write the notification message to one address and send it.
+	 *
+	 * @param NotificationDispatchRun $run   The dispatch, its words resolved.
+	 * @param string                  $email The recipient.
+	 *
+	 * @return array<int, string> The recipients the mail server refused.
+	 */
+	private function sendNotice(NotificationDispatchRun $run, string $email): array {
+		$message = $this->mailer->createMessage();
+		$message->setSubject($this->subjectLine(run: $run));
+		$message->setPlainBody($this->bodyText(run: $run));
+		$message->setTo([$email]);
+
+		return $this->mailer->send($message);
+	}//end sendNotice()
+
+	/**
+	 * The B1-level subject line, in the portal's language. Privacy-minimal
 	 * by construction: the ONLY variable is the organisation display name.
 	 *
-	 * @param string $organisationName The tenant's display name.
+	 * @param NotificationDispatchRun $run The dispatch: its tenant's portal picks the language.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-a-notification-mail-and-a-task-notice-are-written-in-the-portals-language-only
 	 */
-	private function subjectLine(string $organisationName): string {
-		$nlText = $this->l10nFactory->get('portaliq', 'nl')->t(self::SUBJECT_KEY, [$organisationName]);
-		$enText = $this->l10nFactory->get('portaliq', 'en')->t(self::SUBJECT_KEY, [$organisationName]);
+	private function subjectLine(NotificationDispatchRun $run): string {
+		$key = [self::SUBJECT_KEY, self::CHANGE_SUBJECT_KEY][(int)($run->record !== [])];
 
-		return $nlText . ' / ' . $enText;
+		return $this->language->forOrganisation(organisation: $run->organisation)->t($key, [$run->organisationName]);
 	}//end subjectLine()
 
 	/**
-	 * The bilingual (NL first, EN second) B1-level body text. Privacy-minimal
+	 * The B1-level body text, in the portal's language. Privacy-minimal
 	 * by construction: the ONLY variables are the organisation display name and
 	 * the deep link — never the message subject, body, case identifiers, or any
-	 * data beyond the recipient address (design.md).
+	 * data beyond the recipient address (design.md). Of a change rule's record
+	 * only its collection label reaches the text (REQ-NAP-006).
 	 *
-	 * @param string $organisationName The tenant's display name.
-	 * @param string $deepLink The deep link into the authenticated portal.
+	 * @param NotificationDispatchRun $run The dispatch, its name and deep link resolved.
 	 *
 	 * @return string
 	 */
-	private function bodyText(string $organisationName, string $deepLink): string {
-		$nlText = $this->l10nFactory->get('portaliq', 'nl')->t(self::BODY_KEY, [$organisationName, $deepLink]);
-		$enText = $this->l10nFactory->get('portaliq', 'en')->t(self::BODY_KEY, [$organisationName, $deepLink]);
+	private function bodyText(NotificationDispatchRun $run): string {
+		$key        = self::BODY_KEY;
+		$parameters = [$run->organisationName, $run->deepLink];
+		if ($run->record !== []) {
+			$key        = self::CHANGE_BODY_KEY;
+			$parameters = [(string)($run->record['label'] ?? ''), $run->organisationName, $run->deepLink];
+		}
 
-		return $nlText . "\n\n" . $enText;
+		return $this->language->forOrganisation(organisation: $run->organisation)->t($key, $parameters);
 	}//end bodyText()
 
 	/**
-	 * Build the deep link into the portal (the `portalPage#index` route with
-	 * `?org=<slug>`, landing at the authenticated inbox after login) — content is
-	 * only ever shown behind the portal auth edge (design.md). Resolved from the
-	 * route table by PortalDeepLinkBuilder: the former `getAbsoluteURL('/portal')`
-	 * pointed at a path no deployment serves (WOO-570).
+	 * The tenant's display name.
 	 *
 	 * @param string $organisation The tenant slug.
 	 *
 	 * @return string
-	 *
-	 * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
 	 */
-	private function deepLink(string $organisation): string {
-		return $this->deepLinks->forOrganisation(organisation: $organisation);
-	}//end deepLink()
+	private function organisationName(string $organisation): string {
+		return (string)($this->orgConfig->resolve(orgSlug: $organisation)['organisationName'] ?? 'Portaliq');
+	}//end organisationName()
 
 	/**
 	 * Resolve the subject's OWN portalAccount, scoped exactly like every other
@@ -343,7 +470,13 @@ class NotificationDispatchJob extends QueuedJob {
 			limit: 2
 		);
 
-		return ($rows[0] ?? null);
+		$account = ($rows[0] ?? null);
+		if (($account['status'] ?? '') === self::STATUS_VOID) {
+			$this->logger->info('Portaliq: NotificationDispatchJob skips a withdrawn portalAccount', ['account' => (string)$this->rowId(row: $account)]);
+			return null;
+		}
+
+		return $account;
 	}//end findAccount()
 
 	/**
@@ -353,93 +486,71 @@ class NotificationDispatchJob extends QueuedJob {
 	 * recent row was itself a success). Read-only — this row is never mutated,
 	 * a new one is always appended.
 	 *
-	 * @param string $accountId The account's id/uuid.
-	 * @param string $organisation The tenant (may be empty).
-	 * @param string $ruleKey The rule key to match.
+	 * @param NotificationDispatchRun $run The dispatch, its account id read.
 	 *
 	 * @return int
 	 */
-	private function previousFailureStreak(string $accountId, string $organisation, string $ruleKey): int {
+	private function previousFailureStreak(NotificationDispatchRun $run): int {
 		$rows = $this->reader->readCollection(
 			register: self::REGISTER,
 			schema: self::NOTIFICATION_SCHEMA,
 			scopeField: 'accountRef',
-			subjectRef: $accountId,
-			organisation: $organisation,
+			subjectRef: $run->accountId,
+			organisation: $run->organisation,
 			limit: 50
 		);
 
-		$matching = [];
-		foreach ($rows as $row) {
-			if ((string)($row['ruleKey'] ?? '') === $ruleKey) {
-				$matching[] = $row;
-			}
-		}
-
-		if (count($matching) === 0) {
-			return 0;
-		}
-
-		usort(
-			$matching,
-			static fn (array $a, array $b): int => strcmp((string)($b['lastAttemptAt'] ?? ''), (string)($a['lastAttemptAt'] ?? ''))
-		);
-
-		$latest = $matching[0];
-		if ((string)($latest['status'] ?? '') === 'sent') {
-			return 0;
-		}
-
-		return (int)($latest['attempts'] ?? 0);
+		return $run->failureStreakIn(rows: $rows);
 	}//end previousFailureStreak()
 
 	/**
 	 * Append a new `portalNotification` row for this attempt (never updated in
 	 * place — an honest per-attempt log, mirroring the WMEBV burden-of-proof
-	 * append-only convention `portalSubmission` already uses).
+	 * append-only convention `portalSubmission` already uses). The row is
+	 * stamped with the account as `accountRef`; the subject is named in the
+	 * warning only (audit trail, not the scope field).
 	 *
-	 * @param string $accountId The account's id/uuid (stamped as `accountRef`).
-	 * @param string $organisation The tenant (may be empty).
-	 * @param string $ruleKey The matched rule key.
-	 * @param string $appId The contributing app.
-	 * @param string $subjectRef The subject (audit-trail only; not the scope field).
-	 * @param string $status `sent` or `failed`.
-	 * @param int $attempts The consecutive-failure counter as of this attempt.
+	 * @param NotificationDispatchRun $run     The dispatch, its account id read.
+	 * @param NotificationOutcome     $outcome How the attempt ended.
 	 *
 	 * @return void
 	 */
-	private function recordAttempt(
-		string $accountId,
-		string $organisation,
-		string $ruleKey,
-		string $appId,
-		string $subjectRef,
-		string $status,
-		int $attempts,
-	): void {
+	private function recordAttempt(NotificationDispatchRun $run, NotificationOutcome $outcome): void {
 		$created = $this->writer->createObject(
 			register: self::REGISTER,
 			schema: self::NOTIFICATION_SCHEMA,
 			scopeField: 'accountRef',
-			subjectRef: $accountId,
-			organisation: $organisation,
-			data: [
-				'ruleKey' => $ruleKey,
-				'appId' => $appId,
-				'channel' => self::CHANNEL_EMAIL,
-				'status' => $status,
-				'attempts' => $attempts,
-				'lastAttemptAt' => gmdate('c'),
-			]
+			subjectRef: $run->accountId,
+			organisation: $run->organisation,
+			data: $this->attemptRow(run: $run, outcome: $outcome)
 		);
 
 		if ($created === null) {
 			$this->logger->warning(
 				'Portaliq: portalNotification log write failed — the dispatch attempt itself already ran',
-				['subjectRef' => $subjectRef, 'ruleKey' => $ruleKey, 'status' => $status]
+				['subjectRef' => $run->subjectRef, 'ruleKey' => $run->ruleKey, 'status' => $outcome->status]
 			);
 		}
 	}//end recordAttempt()
+
+	/**
+	 * The `portalNotification` row of one attempt.
+	 *
+	 * @param NotificationDispatchRun $run     The dispatch.
+	 * @param NotificationOutcome     $outcome How the attempt ended.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function attemptRow(NotificationDispatchRun $run, NotificationOutcome $outcome): array {
+		return [
+			'ruleKey' => $run->ruleKey,
+			'appId' => $run->appId,
+			'channel' => $outcome->channel,
+			'status' => $outcome->status,
+			'attempts' => $outcome->attempts,
+			'lastAttemptAt' => gmdate('c'),
+		];
+	}//end attemptRow()
 
 	/**
 	 * Read the configurable consecutive-failure threshold, or the small
@@ -449,7 +560,7 @@ class NotificationDispatchJob extends QueuedJob {
 	 * @return int
 	 */
 	private function failureThreshold(): int {
-		$raw = (int)$this->config->getAppValue(Application::APP_ID, self::THRESHOLD_CONFIG_KEY, (string)self::DEFAULT_THRESHOLD);
+		$raw = (int)$this->config->getAppValue(self::APP_ID, self::THRESHOLD_CONFIG_KEY, (string)self::DEFAULT_THRESHOLD);
 		if ($raw < 1) {
 			return self::DEFAULT_THRESHOLD;
 		}
@@ -463,28 +574,26 @@ class NotificationDispatchJob extends QueuedJob {
 	 * writer (scopeField `subjectRef` === the subject this account belongs to)
 	 * before anything is written.
 	 *
-	 * @param string $subjectRef The account's own subject reference.
-	 * @param string $organisation The tenant (may be empty).
-	 * @param string $accountId The account's id/uuid.
-	 * @param bool $flag True to set, false to clear.
+	 * @param NotificationDispatchRun $run  The dispatch, its account id read.
+	 * @param bool                    $flag True to set, false to clear.
 	 *
 	 * @return void
 	 */
-	private function flagNeedsAlternativeContact(string $subjectRef, string $organisation, string $accountId, bool $flag): void {
+	private function flagNeedsAlternativeContact(NotificationDispatchRun $run, bool $flag): void {
 		$updated = $this->writer->updateObject(
 			register: self::REGISTER,
 			schema: self::ACCOUNT_SCHEMA,
 			scopeField: 'subjectRef',
-			subjectRef: $subjectRef,
-			organisation: $organisation,
-			id: $accountId,
+			subjectRef: $run->subjectRef,
+			organisation: $run->organisation,
+			id: $run->accountId,
 			data: ['needsAlternativeContact' => $flag]
 		);
 
 		if ($updated === null) {
 			$this->logger->warning(
 				'Portaliq: failed to update portalAccount.needsAlternativeContact',
-				['subjectRef' => $subjectRef, 'flag' => $flag]
+				['subjectRef' => $run->subjectRef, 'flag' => $flag]
 			);
 		}
 	}//end flagNeedsAlternativeContact()

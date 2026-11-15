@@ -24,7 +24,7 @@ import {
 	EMBED_REFUSALS,
 	labelFor,
 	refusalSentence,
-} from '../src/portal/embedCopy.js'
+} from '../src/shared/embedCopy.js'
 
 test('a payload carrying a form produces no refusal', () => {
 	assert.equal(refusalSentence({ fields: [{ name: 'postcode' }] }), null)

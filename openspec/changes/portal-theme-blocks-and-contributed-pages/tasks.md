@@ -24,20 +24,20 @@ that touches the shell ends with `node tests/shell-snapshot.mjs compare <dir>`.
   - GIVEN both demo portals WHEN computed styles of header, cards, footer and headings are compared with the baseline THEN nothing differs
   - GIVEN `npm run build:site` WHEN it finishes THEN the entrypoint is reported and stays under 400 KiB
 - Reference: 076bd6e
-- [ ] Implement
-- [ ] Test
+- [ ] Implement — not run: needs the shell baseline capture (`tests/shell-snapshot.mjs` lives on the unmerged reference branch) and a browser to compare computed styles
+- [ ] Test — not run: needs a browser
 
 ### Task 2: Link the theme layers and add a token-only site stylesheet
 
 - **spec_ref**: `openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-every-surface-the-site-paints-must-read-a-theme-token-req-ptb-001`
 - **files**: `templates/site.php`, `css/site-theme.css`, `src/site/App.vue`, `.stylelintrc*`
 - **acceptance_criteria**:
-  - GIVEN a portal on a resolvable theme WHEN the site renders THEN the link order is bridge, set chain, vendored sheets, `site-theme.css`
+  - GIVEN a portal on a resolvable theme WHEN the site renders THEN the link order is vendored sheets, `site-theme.css`, bridge, set chain (the bridge link and its order are built by `site-links-the-theme-bridge`, REQ-STB-001; this task keeps the set chain and the token-only `site-theme.css`)
   - GIVEN a rendered portal WHEN only `--utrecht-document-background-color` changes THEN all painted surfaces change, including `.pq-site`'s scoped style
   - GIVEN `css/site-theme.css` WHEN stylelint runs THEN `color-no-hex` and `color-named: never` pass
 - Reference: 03fdd5f, 93a0ecd, 46d7e9f, fd37778
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [ ] Test — partly: `css/site-theme.css` holds no hex or named colour and stylelint now enforces it (`stylelint.config.js` override, `npm run stylelint`); the computed-style scenario (only `--utrecht-document-background-color` changes) is not run: needs a browser
 
 ### Task 3: Portal token overrides and theme inheritance
 
@@ -48,8 +48,8 @@ that touches the shell ends with `node tests/shell-snapshot.mjs compare <dir>`.
   - GIVEN a child set, its parent and a two-set cycle WHEN the chain resolves THEN the parent is first and the cycle yields each set once
   - GIVEN `portal.tokens` WHEN the register is imported THEN the schema declares it with a description
 - Reference: c06adac, 46d7e9f
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test (`PortalTokenCssTest`, `PortalThemeResolverTest::testAParentIsLinkedBeforeItsChild`, `::testACycleLinksEachSetOnceAndAChainStopsAtFourHops`, `PortalPageControllerTest::testSiteCarriesTheFilteredTokenOverridesOfAThemedPortalOnly`, `PortaliqRegisterConfigTest`; `lib/Service/PortalTokenCss.php`, `parentStylesheetsFor()`, `templates/site.php`; register 0.72.0)
 
 ### Task 4: The header block
 
@@ -60,8 +60,8 @@ that touches the shell ends with `node tests/shell-snapshot.mjs compare <dir>`.
   - GIVEN `headerVariant: "single"` WHEN rendered THEN one "Home" link exists; GIVEN `"x"` THEN `double` renders
   - GIVEN #559's sign-in states on `development` WHEN the header moves into the block THEN every state still renders
 - Reference: 7974e5a, 045b168, fd37778, a485fad
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test
 
 ### Task 5: The footer block
 
@@ -72,8 +72,8 @@ that touches the shell ends with `node tests/shell-snapshot.mjs compare <dir>`.
   - GIVEN footer entries without a label or href WHEN served THEN they are absent
   - GIVEN no colophon WHEN rendered THEN the legal bar shows the portal title
 - Reference: 34cde3e, 423d7df, fd37778
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test
 
 ### Task 6: The hero block and grid runs
 
@@ -84,8 +84,8 @@ that touches the shell ends with `node tests/shell-snapshot.mjs compare <dir>`.
   - GIVEN `HeroBlock` registered under `hero` WHEN `siteBlockIsBand('hero')` is asked THEN it answers true
   - GIVEN a band splitting the grid WHEN placed THEN the run below starts at its own first row; the grid test fails without `rowOffset`
 - Reference: eed4c3b, 498dede, 4d7140a, 46d7e9f
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test
 
 ### Task 7: Regions in the contract and the renderer
 
@@ -96,8 +96,8 @@ that touches the shell ends with `node tests/shell-snapshot.mjs compare <dir>`.
   - GIVEN a page that fills `hero` WHEN rendered THEN exactly one hero and one `h1` appear
   - GIVEN `CmsReader` WHEN it shapes a page THEN `draftBody` is still never projected
 - Reference: a5657c6, 7974e5a, 79fdb2c
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test
 
 ### Task 8: The designer keeps the regions it does not edit
 
@@ -106,8 +106,13 @@ that touches the shell ends with `node tests/shell-snapshot.mjs compare <dir>`.
 - **acceptance_criteria**:
   - GIVEN a page with a hero, three `main` widgets and `clearedRegions: ["aside"]` WHEN a `main` widget is moved and saved as draft, then published THEN the hero and `clearedRegions` are unchanged in `draftBody` and in `body`
   - GIVEN the designer grid WHEN it loads THEN only `main` widgets are shown
-- [ ] Implement
-- [ ] Test
+- Built in `src/editor/pageBody.js` (`readBody`, `bodyFor`), the editor core that
+  `PageLayoutDesigner.vue` and the portal edit mode (portal-in-place-editing)
+  share, so both keep the regions. Proven by `tests/page-editor-regions.spec.mjs`
+  (`npm run check:page-editor-regions`). The Playwright spec is still owed
+  before sync.
+- [x] Implement
+- [x] Test
 
 ### Task 9: The contributed page route
 
@@ -118,8 +123,8 @@ that touches the shell ends with `node tests/shell-snapshot.mjs compare <dir>`.
   - GIVEN an entry without a page WHEN rendered THEN it is plain text
   - GIVEN an unknown page WHEN opened THEN the 404 state renders
 - Reference: 547fb33
-- [ ] Implement
-- [ ] Test
+- [ ] Implement — not run in this batch: left for a later pass
+- [ ] Test — not run in this batch
 
 ### Task 10: Contributed actions, anonymous ownership and the AA check
 
@@ -130,8 +135,8 @@ that touches the shell ends with `node tests/shell-snapshot.mjs compare <dir>`.
   - GIVEN a browser with an admin Nextcloud cookie WHEN it submits the same form THEN `_owner` is not `admin`; the OpenRegister version guard is tested both ways
   - GIVEN `npm run check:surfaces` WHEN it runs on both demo portals at 1440px and 390px THEN it self-tests, then reports zero contrast failures, one `h1` per page, no skipped level and no overflow
 - Reference: 4200fd7, a485fad, f1b4294, 9901229
-- [ ] Implement
-- [ ] Test
+- [ ] Implement — not run in this batch: left for a later pass
+- [ ] Test — not run in this batch
 
 ## Verification
 

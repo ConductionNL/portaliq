@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
  */
 
 declare(strict_types=1);
@@ -33,7 +33,7 @@ namespace OCA\Portaliq\Service\Traffic;
  * communications officer already expects: a session is engaged when it
  * lasted ten seconds or more, viewed more than one page, or scrolled.
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
  */
 class TrafficRollup {
 
@@ -82,32 +82,17 @@ class TrafficRollup {
 	 *
 	 * @return array<string, mixed> The `portalTrafficDaily` fields.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-visitors-must-be-counted-honestly-in-each-mode
-	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-script-errors-must-be-reported-without-the-stack-or-the-query-string
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-visitors-must-be-counted-honestly-in-each-mode
+	 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-script-errors-must-be-reported-without-the-stack-or-the-query-string
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
+	 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-each-daily-page-row-must-carry-its-sessions-visitors-sources-and-outbound-links
+	 * @spec openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md#requirement-the-roll-up-counts-searches-that-found-nothing-req-pzr-001
 	 */
 	public function build(string $portal, string $date, array $sessions, string $aggregatedAt, array $options = []): array {
 		$totals = $this->totals(sessions: $sessions);
-		$pages = $this->journeys->pages(sessions: $sessions);
-		// NULL, NOT ZERO, in cookieless mode (Ruben, decision 2). A hash
-		// that does not survive the day cannot say whether it was here
-		// yesterday, and a zero would read as "nobody came back". The same
-		// for accounts on a portal that does not link them.
-		$newVisitors = null;
-		$returningVisitors = null;
-		$accounts = null;
-		if (($options['persistClientId'] ?? false) === true) {
-			$newVisitors = $totals['newVisitors'];
-			$returningVisitors = $totals['returningVisitors'];
-		}
-
-		if (($options['accountLinking'] ?? false) === true) {
-			$accounts = $totals['accounts'];
-		}
-
-		$goalDefinitions = $this->definitions(options: $options, key: 'goals');
+		$day    = ['sessions' => $sessions, 'totals' => $totals, 'options' => $options];
 
 		return [
 			'portal' => $portal,
@@ -115,18 +100,58 @@ class TrafficRollup {
 			// All sessions. The aggregation overwrites this with the
 			// segment's id when it builds a segment's record.
 			'segment' => '',
+		]
+			+ $this->visits(day: $day)
+			+ $this->sessionSources(sessions: $sessions)
+			+ $this->eventSources(sessions: $sessions)
+			+ $this->outcomes(day: $day)
+			+ ['aggregatedAt' => $aggregatedAt, 'lastEventAt' => $totals['lastEventAt']];
+	}
+
+	/**
+	 * The day's visits: views, sessions, visitors, engagement and the pages
+	 * with their transitions.
+	 *
+	 * @param array{sessions: array<int, array<string, mixed>>, totals: array<string, mixed>, options: array<string, mixed>} $day The day.
+	 *
+	 * @return array<string, mixed> The visit fields, in record order.
+	 *
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-visitors-must-be-counted-honestly-in-each-mode
+	 */
+	private function visits(array $day): array {
+		$totals        = $day['totals'];
+		$sessions      = count($day['sessions']);
+		$pages         = $this->journeys->pages(sessions: $day['sessions'], engaged: $totals['engagedBy']);
+		$visitorCounts = $this->visitorCounts(totals: $totals, options: $day['options']);
+
+		return [
 			'pageViews' => $totals['pageViews'],
-			'sessions' => count($sessions),
+			'sessions' => $sessions,
 			'visitors' => $totals['visitors'],
-			'newVisitors' => $newVisitors,
-			'returningVisitors' => $returningVisitors,
-			'accounts' => $accounts,
+			'newVisitors' => $visitorCounts['new'],
+			'returningVisitors' => $visitorCounts['returning'],
+			'accounts' => $visitorCounts['accounts'],
 			'engagedSessions' => $totals['engaged'],
-			'avgEngagementSeconds' => $this->mean(sum: $totals['seconds'], count: count($sessions)),
-			'bounceRate' => $this->bounceRate(engaged: $totals['engaged'], sessions: count($sessions)),
+			'avgEngagementSeconds' => $this->mean(sum: $totals['seconds'], count: $sessions),
+			'bounceRate' => $this->bounceRate(engaged: $totals['engaged'], sessions: $sessions),
 			'events' => $totals['events'],
 			'pages' => $pages['pages'],
 			'transitions' => $pages['transitions'],
+		];
+	}
+
+	/**
+	 * Where the sessions came from and on what: referrers, campaigns,
+	 * devices, browsers, systems, languages and regions, once per session.
+	 *
+	 * @param array<int, array<string, mixed>> $sessions The day's sessions.
+	 *
+	 * @return array<string, mixed> The source fields, in record order.
+	 *
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+	 */
+	private function sessionSources(array $sessions): array {
+		return [
 			'referrers' => $this->dimensions->perSession(
 				sessions: $sessions,
 				keys: ['referrerHost', 'channel'],
@@ -144,7 +169,28 @@ class TrafficRollup {
 			'os' => $this->dimensions->perSessionMap(sessions: $sessions, key: 'os'),
 			'languages' => $this->dimensions->perSessionMap(sessions: $sessions, key: 'language'),
 			'regions' => $this->dimensions->perSessionMap(sessions: $sessions, key: 'region'),
+		];
+	}
+
+	/**
+	 * What the sessions did, counted per event: searches, the searches that
+	 * found nothing, downloads and outbound links.
+	 *
+	 * @param array<int, array<string, mixed>> $sessions The day's sessions.
+	 *
+	 * @return array<string, mixed> The event fields, in record order.
+	 *
+	 * @spec openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md#requirement-the-roll-up-counts-searches-that-found-nothing-req-pzr-001
+	 */
+	private function eventSources(array $sessions): array {
+		$zeroResults = $this->dimensions->zeroResults(sessions: $sessions);
+
+		return [
 			'searches' => $this->dimensions->perEvent(sessions: $sessions, name: 'search', keys: ['searchTerm', 'params.search_term'], label: 'term'),
+			// What the public searched for and did not find
+			// (portal-traffic-zero-result-searches).
+			'zeroResultSearches' => $zeroResults['rows'],
+			'searchesWithoutCount' => $zeroResults['withoutCount'],
 			'downloads' => $this->dimensions->perEvent(
 				sessions: $sessions,
 				name: 'file_download',
@@ -152,6 +198,27 @@ class TrafficRollup {
 				label: 'file'
 			),
 			'outbound' => $this->dimensions->perEvent(sessions: $sessions, name: 'outbound_click', keys: ['linkUrl', 'params.link_url'], label: 'url'),
+		];
+	}
+
+	/**
+	 * The day's outcomes against the portal's definitions: goals, funnels,
+	 * forms, not-found pages, script errors, experiments, heatmaps and
+	 * custom dimensions, and the mail opens and clicks.
+	 *
+	 * @param array{sessions: array<int, array<string, mixed>>, totals: array<string, mixed>, options: array<string, mixed>} $day The day.
+	 *
+	 * @return array<string, mixed> The outcome fields, in record order.
+	 *
+	 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
+	 */
+	private function outcomes(array $day): array {
+		$sessions        = $day['sessions'];
+		$options         = $day['options'];
+		$goalDefinitions = $this->definitions(options: $options, key: 'goals');
+
+		return [
 			'goals' => $this->goals->rows(goals: $goalDefinitions, sessions: $sessions),
 			'conversionRate' => $this->goals->conversionRate(goals: $goalDefinitions, sessions: $sessions),
 			'funnels' => $this->funnels->rows(funnels: $this->definitions(options: $options, key: 'funnels'), sessions: $sessions),
@@ -180,12 +247,37 @@ class TrafficRollup {
 			// on null.
 			'customDimensions' => $this->customDimensions(sessions: $sessions, options: $options),
 			'emails' => [
-				'opens' => (int)($totals['events']['email_open'] ?? 0),
-				'clicks' => (int)($totals['events']['email_click'] ?? 0),
+				'opens' => (int)($day['totals']['events']['email_open'] ?? 0),
+				'clicks' => (int)($day['totals']['events']['email_click'] ?? 0),
 			],
-			'aggregatedAt' => $aggregatedAt,
-			'lastEventAt' => $totals['lastEventAt'],
 		];
+	}
+
+	/**
+	 * The new, returning and linked-account counts the portal's mode allows.
+	 *
+	 * NULL, NOT ZERO, in cookieless mode (Ruben, decision 2). A hash
+	 * that does not survive the day cannot say whether it was here
+	 * yesterday, and a zero would read as "nobody came back". The same
+	 * for accounts on a portal that does not link them.
+	 *
+	 * @param array<string, mixed> $totals  The session totals.
+	 * @param array<string, mixed> $options The options.
+	 *
+	 * @return array{new: int|null, returning: int|null, accounts: int|null}
+	 */
+	private function visitorCounts(array $totals, array $options): array {
+		$counts = ['new' => null, 'returning' => null, 'accounts' => null];
+		if (($options['persistClientId'] ?? false) === true) {
+			$counts['new']       = $totals['newVisitors'];
+			$counts['returning'] = $totals['returningVisitors'];
+		}
+
+		if (($options['accountLinking'] ?? false) === true) {
+			$counts['accounts'] = $totals['accounts'];
+		}
+
+		return $counts;
 	}
 
 	/**
@@ -243,61 +335,102 @@ class TrafficRollup {
 	}
 
 	/**
-	 * The session-level totals in one pass.
+	 * The session-level totals.
 	 *
 	 * @param array<int, array<string, mixed>> $sessions The sessions.
 	 *
-	 * @return array<string, mixed> pageViews, visitors, newVisitors, returningVisitors, accounts, engaged, seconds, events, lastEventAt.
+	 * @return array<string, mixed> pageViews, visitors, newVisitors, returningVisitors, accounts, engaged, engagedBy
+	 *                              (per session key, whether it was engaged), seconds, events, lastEventAt.
 	 */
 	private function totals(array $sessions): array {
+		$engagement = $this->engagement(sessions: $sessions);
+		$events     = $this->eventTotals(sessions: $sessions);
+
+		return ['pageViews' => $engagement['pageViews']] + $this->visitorTotals(sessions: $sessions) + [
+			'accounts' => $events['accounts'],
+			'engaged' => $engagement['engaged'],
+			'engagedBy' => $engagement['engagedBy'],
+			'seconds' => $engagement['seconds'],
+			'events' => $events['events'],
+			'lastEventAt' => $events['lastEventAt'],
+		];
+	}
+
+	/**
+	 * The distinct visitors, and how many said they were new or returning.
+	 * A visitor that said new in any session counts as new.
+	 *
+	 * @param array<int|string, array<string, mixed>> $sessions The sessions.
+	 *
+	 * @return array{visitors: int, newVisitors: int, returningVisitors: int} The counts.
+	 */
+	private function visitorTotals(array $sessions): array {
 		$visitors = [];
 		$types = [];
-		$accounts = [];
-		$events = [];
-		$pageViews = 0;
-		$engaged = 0;
-		$seconds = 0.0;
-		$last = '';
 		foreach ($sessions as $session) {
 			$visitors[$session['visitor']] = true;
 			$type = $this->visitorType(session: $session);
 			if ($type !== '' && ($types[$session['visitor']] ?? '') !== 'new') {
 				$types[$session['visitor']] = $type;
 			}
+		}
 
-			$views = 0;
-			$scrolled = false;
+		return [
+			'visitors' => count($visitors),
+			'newVisitors' => count(array_filter($types, static fn (string $t): bool => $t === 'new')),
+			'returningVisitors' => count(array_filter($types, static fn (string $t): bool => $t === 'returning')),
+		];
+	}
+
+	/**
+	 * The events per name (sorted by name), the distinct accounts and the last event.
+	 *
+	 * @param array<int|string, array<string, mixed>> $sessions The sessions.
+	 *
+	 * @return array{accounts: int, events: array<string, int>, lastEventAt: string} The totals.
+	 */
+	private function eventTotals(array $sessions): array {
+		$events = [];
+		$accounts = [];
+		$last = '';
+		foreach ($sessions as $session) {
 			foreach ($session['events'] as $event) {
 				$name = (string)($event['name'] ?? '');
 				$events[$name] = ($events[$name] ?? 0) + 1;
-				$views += (int)($name === 'page_view');
-				$scrolled = $scrolled || ($name === 'scroll');
 				$last = max($last, (string)($event['occurredAt'] ?? ''));
 				$userRef = trim((string)($event['userRef'] ?? ''));
 				if ($userRef !== '') {
 					$accounts[$userRef] = true;
 				}
 			}
-
-			$duration = $this->duration(session: $session);
-			$seconds += $duration;
-			$pageViews += $views;
-			$engaged += (int)($views > 1 || $scrolled === true || $duration >= self::ENGAGED_SECONDS);
 		}
 
 		ksort($events);
 
-		return [
-			'pageViews' => $pageViews,
-			'visitors' => count($visitors),
-			'newVisitors' => count(array_filter($types, static fn (string $t): bool => $t === 'new')),
-			'returningVisitors' => count(array_filter($types, static fn (string $t): bool => $t === 'returning')),
-			'accounts' => count($accounts),
-			'engaged' => $engaged,
-			'seconds' => $seconds,
-			'events' => $events,
-			'lastEventAt' => $last,
-		];
+		return ['accounts' => count($accounts), 'events' => $events, 'lastEventAt' => $last];
+	}
+
+	/**
+	 * The page views, seconds and engaged sessions. A session is engaged
+	 * with more than one view, a scroll, or a stay of ENGAGED_SECONDS.
+	 *
+	 * @param array<int|string, array<string, mixed>> $sessions The sessions.
+	 *
+	 * @return array{pageViews: int, engaged: int, engagedBy: array<int|string, bool>, seconds: float} The totals.
+	 */
+	private function engagement(array $sessions): array {
+		$out = ['pageViews' => 0, 'engaged' => 0, 'engagedBy' => [], 'seconds' => 0.0];
+		foreach ($sessions as $key => $session) {
+			$names = array_map(static fn ($event): string => (string)($event['name'] ?? ''), $session['events']);
+			$views = count(array_keys($names, 'page_view', true));
+			$duration = $this->duration(session: $session);
+			$out['seconds'] += $duration;
+			$out['pageViews'] += $views;
+			$out['engagedBy'][$key] = ($views > 1 || in_array('scroll', $names, true) === true || $duration >= self::ENGAGED_SECONDS);
+			$out['engaged'] += (int)$out['engagedBy'][$key];
+		}
+
+		return $out;
 	}
 
 	/**

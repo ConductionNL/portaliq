@@ -1,0 +1,15 @@
+{
+	"id": "p-1",
+	"title": "Open Tilburg",
+	"slug": "open-tilburg",
+	"status": "published",
+	"organisation": "gemeente-x",
+	"authentication": {
+		"modes": ["public", "oidc"],
+		"minTrust": "low",
+		"registration": {
+			"policy": "approval",
+			"allowedDomains": ["gemeente-x.nl"]
+		}
+	}
+}

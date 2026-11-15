@@ -37,10 +37,10 @@
  * @spec openspec/changes/supplier-portal/tasks.md#T02
  * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T1
  * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T7
- * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.1
- * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.3
- * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#2.1
- * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#2.2
+ * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.1
+ * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.3
+ * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#2.1
+ * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#2.2
  */
 
 declare(strict_types=1);
@@ -49,7 +49,11 @@ namespace OCA\Portaliq\Service;
 
 use DateInterval;
 use DateTimeImmutable;
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
+use OCA\Portaliq\Service\Branch\BranchNumber;
+use OCA\Portaliq\Kernel\Support\SessionTrust;
+use OCP\IAppConfig;
 use OCP\IConfig;
 use OCP\Security\ISecureRandom;
 use Psr\Log\LoggerInterface;
@@ -67,33 +71,27 @@ use Throwable;
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)   -- one dependency per
  * distinct responsibility (signing secret, id generation, OR read/write,
  * audit recording) — see ContributionController's identical rationale.
+ * @SuppressWarnings(PHPMD.ExcessiveClassLength)     -- see the complexity
+ * rationale: the length is the lifecycle's guard chains.
+ * @SuppressWarnings(PHPMD.TooManyPublicMethods)     -- one method per step of
+ * a session's life, including revoking one session as an admin.
+ * @SuppressWarnings(PHPMD.TooManyMethods)          -- The total is the sum of small private steps; each method stays under the method thresholds.
  */
-class PortalSessionService {
+class PortalSessionService implements PortalSessionServiceInterface {
 	/**
 	 * The bearer scheme prefix, case-sensitive per RFC 6750.
 	 */
 	private const BEARER_PREFIX = 'Bearer ';
 
 	/**
-	 * The eIDAS-aligned trust vocabulary, ordered ascending (contract v2, A3).
-	 * Any subject trust outside this map normalises to `low`; any entry
-	 * `minTrust` outside it is unsatisfiable (fail-closed both ways).
-	 */
-	private const TRUST_ORDER = [
-		'low' => 1,
-		'substantial' => 2,
-		'high' => 3,
-	];
-
-	/**
 	 * The OpenRegister register the `portalSession` schema lives in.
 	 */
-	private const SESSION_REGISTER = 'portaliq';
+	public const SESSION_REGISTER = 'portaliq';
 
 	/**
 	 * The OpenRegister schema recording issued sessions for revocation.
 	 */
-	private const SESSION_SCHEMA = 'portalSession';
+	public const SESSION_SCHEMA = 'portalSession';
 
 	/**
 	 * The app config key for the absolute maximum session lifetime override
@@ -106,6 +104,39 @@ class PortalSessionService {
 	 * Default absolute maximum session lifetime: 8 hours.
 	 */
 	private const DEFAULT_MAX_LIFETIME = 28800;
+
+	/**
+	 * The app config key for the idle window (seconds): a bearer lives this
+	 * long after it was minted, and only activity refreshes it
+	 * (signin-session-idle-warning-and-sso D1).
+	 */
+	private const IDLE_TIMEOUT_CONFIG_KEY = 'session_idle_timeout';
+
+	/**
+	 * The app flag that lets a test instance open the idle warning on request
+	 * (idle-warning-preview). Off unless set to `yes`.
+	 */
+	private const IDLE_PREVIEW_CONFIG_KEY = 'session_idle_preview_enabled';
+
+	/**
+	 * Default idle window: 15 minutes.
+	 */
+	private const DEFAULT_IDLE_TIMEOUT = 900;
+
+	/**
+	 * The shortest idle window an administrator can set: 5 minutes.
+	 */
+	private const MIN_IDLE_TIMEOUT = 300;
+
+	/**
+	 * The longest idle window an administrator can set: 1 hour.
+	 */
+	private const MAX_IDLE_TIMEOUT = 3600;
+
+	/**
+	 * The subject prefix of a reference session: `reference:<hash of the link id>`.
+	 */
+	private const REFERENCE_SUBJECT_PREFIX = 'reference:';
 
 	/**
 	 * The token minter/validator, built from the configured signing secret, or
@@ -136,9 +167,10 @@ class PortalSessionService {
 	 * @param PortalObjectReader $reader Looks up sessions by jti / organisation.
 	 * @param AuditTrailService $auditor Records login/logout/refresh session events
 	 *                                   (portal-session-hardening-v2).
+	 * @param IAppConfig $appConfig Holds the signing secret, flagged sensitive.
 	 *
-	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.1
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.1
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T01
 	 */
 	public function __construct(
 		private readonly IConfig $config,
@@ -147,9 +179,17 @@ class PortalSessionService {
 		private readonly PortalObjectWriter $writer,
 		private readonly PortalObjectReader $reader,
 		private readonly AuditTrailService $auditor,
+		IAppConfig $appConfig,
 	) {
-		$secret = (string)$config->getAppValue(Application::APP_ID, 'jwt_signing_secret', '');
-		$this->jwt = self::buildJwtService(secret: $secret);
+		// The secret is a sensitive app value (security review S4): read it
+		// through IAppConfig, which decrypts it, never through IConfig.
+		$secret = $appConfig->getValueString(AppIdentity::APP_ID, 'jwt_signing_secret', '');
+		$jwt = null;
+		if ($secret !== '') {
+			$jwt = self::buildJwtService(secret: $secret);
+		}
+
+		$this->jwt = $jwt;
 	}//end __construct()
 
 	/**
@@ -177,19 +217,15 @@ class PortalSessionService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.4
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.4
 	 */
 	public function isConfigured(): bool {
 		return $this->jwt !== null;
 	}//end isConfigured()
 
 	/**
-	 * Normalise a subject trust value to the eIDAS-aligned vocabulary.
-	 *
-	 * Any value outside `low|substantial|high` — including empty, legacy `dev`
-	 * or `EH3` — normalises to `low` (fail-closed; ADR-005). This is the single
-	 * normalisation point used by the session edge, the registry, and the
-	 * contribution controller.
+	 * Normalise a subject trust value; kept for the callers not yet moved to
+	 * {@see SessionTrust::normaliseTrust()}.
 	 *
 	 * @param mixed $trust The raw trust value (session claim or config).
 	 *
@@ -198,23 +234,14 @@ class PortalSessionService {
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T1
 	 */
 	public static function normaliseTrust(mixed $trust): string {
-		if (is_string($trust) === true && isset(self::TRUST_ORDER[$trust]) === true) {
-			return $trust;
-		}
-
-		return 'low';
+		return SessionTrust::normaliseTrust(trust: $trust);
 	}//end normaliseTrust()
 
 	/**
-	 * Whether a subject trust level satisfies an entry's `minTrust`.
+	 * Whether a subject trust level satisfies an entry's `minTrust`; kept for
+	 * the callers not yet moved to {@see SessionTrust::trustSatisfies()}.
 	 *
-	 * Ordering is `low < substantial < high`. A missing `minTrust` (null or
-	 * empty string) defaults to `low`; an unrecognised `minTrust` value makes
-	 * the entry unsatisfiable for EVERY subject — a typo must never widen
-	 * access (fail-closed; ADR-005). The subject side is normalised first, so
-	 * unknown subject trust is compared as `low`.
-	 *
-	 * @param mixed $subjectTrust The subject's trust value (normalised here).
+	 * @param mixed $subjectTrust The subject's trust value (normalised there).
 	 * @param mixed $minTrust The entry's declared minimum, or null/'' when absent.
 	 *
 	 * @return bool True when the subject meets the threshold.
@@ -222,16 +249,7 @@ class PortalSessionService {
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T1
 	 */
 	public static function trustSatisfies(mixed $subjectTrust, mixed $minTrust): bool {
-		if ($minTrust === null || $minTrust === '') {
-			$minTrust = 'low';
-		}
-
-		if (is_string($minTrust) === false || isset(self::TRUST_ORDER[$minTrust]) === false) {
-			// Unrecognised minTrust → unsatisfiable for everyone.
-			return false;
-		}
-
-		return self::TRUST_ORDER[self::normaliseTrust(trust: $subjectTrust)] >= self::TRUST_ORDER[$minTrust];
+		return SessionTrust::trustSatisfies(subjectTrust: $subjectTrust, minTrust: $minTrust);
 	}//end trustSatisfies()
 
 	/**
@@ -246,15 +264,21 @@ class PortalSessionService {
 	 * @param string $organisation Tenant the session is scoped to.
 	 * @param string $trust Assurance level (e.g. "EH3").
 	 * @param array<int, string> $roles Roles carried in the session.
+	 * @param string $branch The vestigingsnummer the login was restricted to, or ''.
+	 * @param string $provider The OIDC provider the login came through, or '' (dev-login, Nextcloud mode, integriq route).
+	 * @param string $kvk The KVK number of the company an eHerkenning login signs in for, or ''.
+	 * @param array<string, string> $attributes The attributes a Yivi login disclosed, or [].
 	 *
-	 * @return array{token: string, jti: string}|null The minted bearer token +
-	 *                                                its id, or null when the
-	 *                                                edge is not yet configured.
+	 * @return array{token: string, jti: string, expiresAt: int, hardExpiresAt: int, idleTimeout: int}|null The minted
+	 *         bearer token, its id and the session's times, or null when the edge is not yet configured.
 	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
+	 * @spec openspec/changes/archive/2026-09-30-signin-eherkenning-branch/tasks.md#T02
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
-	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.3
-	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#2.1
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.3
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#2.1
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T09
+	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#11
 	 */
 	public function issueSession(
 		string $subjectRef,
@@ -262,17 +286,39 @@ class PortalSessionService {
 		string $organisation,
 		string $trust = '',
 		array $roles = [],
+		string $branch = '',
+		string $provider = '',
+		string $kvk = '',
+		array $attributes = [],
 	): ?array {
+		// A branch from the login restricts the session to it
+		// (signin-eherkenning-branch D1); a malformed one is never signed.
+		$branchNumber = (new BranchNumber())->normalise(value: $branch);
 		$issued = $this->mintSession(
 			subjectRef: $subjectRef,
 			audience: $audience,
 			organisation: $organisation,
 			trust: $trust,
 			roles: $roles,
-			authTime: null
+			authTime: null,
+			context: [
+				'number' => $branchNumber,
+				'restricted' => ($branchNumber !== ''),
+				'provider' => $provider,
+				'kvk' => $kvk,
+				'attributes' => $attributes,
+			]
 		);
 		if ($issued === null) {
 			return null;
+		}
+
+		// The way in rides with the login entry, so an e-mail link sign-in
+		// is an audit entry with the account, the method and the moment
+		// (sign-in-with-an-email-link REQ-IWI-012).
+		$detail = [];
+		if ($provider !== '') {
+			$detail = ['method' => $provider];
 		}
 
 		$this->auditor->record(
@@ -282,7 +328,8 @@ class PortalSessionService {
 			register: self::SESSION_REGISTER,
 			schema: self::SESSION_SCHEMA,
 			id: $issued['jti'],
-			jti: $issued['jti']
+			jti: $issued['jti'],
+			detail: $detail
 		);
 
 		return $issued;
@@ -305,13 +352,17 @@ class PortalSessionService {
 	 * @param int|null $authTime The ORIGIN login's unix timestamp to carry
 	 *                           forward unchanged (a refresh rotation); null
 	 *                           mints a fresh origin (a genuine new login).
+	 * @param array{number?: string, restricted?: bool, provider?: string, kvk?: string, attributes?: array<string,string>} $context The branch in effect
+	 *                                                                             (signin-eherkenning-branch) and the
+	 *                                                                             OIDC provider (signin-session-idle-
+	 *                                                                             warning-and-sso).
 	 *
-	 * @return array{token: string, jti: string}|null The minted bearer token +
-	 *                                                its id, or null when the
-	 *                                                edge is not yet configured.
+	 * @return array{token: string, jti: string, expiresAt: int, hardExpiresAt: int, idleTimeout: int}|null The minted
+	 *         bearer token, its id and the session's times, or null when the edge is not yet configured.
 	 *
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T01
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T01
 	 */
 	private function mintSession(
 		string $subjectRef,
@@ -320,6 +371,7 @@ class PortalSessionService {
 		string $trust,
 		array $roles,
 		?int $authTime,
+		array $context = [],
 	): ?array {
 		if ($this->jwt === null) {
 			$this->logger->warning('Portaliq: session issuance refused — no dedicated jwt_signing_secret configured');
@@ -329,6 +381,9 @@ class PortalSessionService {
 		$jti = $this->random->generate(32, (ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS));
 		$now = new DateTimeImmutable();
 		$originAuthTime = ($authTime ?? $now->getTimestamp());
+		// The bearer lives one idle window (signin-session-idle-warning-and-sso
+		// D1): a bearer nobody refreshes expires on the server.
+		$idleTimeout = $this->idleTimeoutSeconds();
 
 		$token = $this->jwt->createSession(
 			subjectRef: $subjectRef,
@@ -337,8 +392,11 @@ class PortalSessionService {
 			jti: $jti,
 			trust: $trust,
 			roles: $roles,
-			authTime: $originAuthTime
+			ttl: $idleTimeout,
+			authTime: $originAuthTime,
+			context: $context
 		);
+		$expiresAt = (int)($this->jwt->validate($token)['exp'] ?? 0);
 
 		$this->writer->createObject(
 			register: self::SESSION_REGISTER,
@@ -353,14 +411,71 @@ class PortalSessionService {
 				'jti' => $jti,
 				'trustLevel' => $trust,
 				'issuedAt' => $now->format(DATE_ATOM),
-				'expiresAt' => $now->add(new DateInterval('PT' . PortalJwtService::DEFAULT_TTL . 'S'))->format(DATE_ATOM),
+				'expiresAt' => (new DateTimeImmutable('@' . $expiresAt))->format(DATE_ATOM),
 				'revoked' => false,
 				'authTime' => (new DateTimeImmutable('@' . $originAuthTime))->format(DATE_ATOM),
 			]
 		);
 
-		return ['token' => $token, 'jti' => $jti];
+		return [
+			'token' => $token,
+			'jti' => $jti,
+			'expiresAt' => $expiresAt,
+			'hardExpiresAt' => ($originAuthTime + $this->maxLifetimeSeconds()),
+			'idleTimeout' => $idleTimeout,
+		];
 	}//end mintSession()
+
+	/**
+	 * Whether this instance may open the idle warning on request: app flag
+	 * `session_idle_preview_enabled` set to `yes`, for a test instance only.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/archive/2026-10-30-idle-warning-preview/tasks.md#T01
+	 */
+	private function idlePreviewEnabled(): bool {
+		return $this->config->getAppValue(AppIdentity::APP_ID, self::IDLE_PREVIEW_CONFIG_KEY, 'no') === 'yes';
+	}//end idlePreviewEnabled()
+
+	/**
+	 * The idle window in seconds: config `session_idle_timeout`, default 900,
+	 * clamped to 300 through 3600. A value that is not a positive number falls
+	 * back to the default rather than to a clamp.
+	 *
+	 * @return int
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T01
+	 */
+	private function idleTimeoutSeconds(): int {
+		$configured = (int)$this->config->getAppValue(AppIdentity::APP_ID, self::IDLE_TIMEOUT_CONFIG_KEY, (string)self::DEFAULT_IDLE_TIMEOUT);
+		if ($configured <= 0) {
+			return self::DEFAULT_IDLE_TIMEOUT;
+		}
+
+		return max(self::MIN_IDLE_TIMEOUT, min(self::MAX_IDLE_TIMEOUT, $configured));
+	}//end idleTimeoutSeconds()
+
+	/**
+	 * When a resolved session ends: its bearer's expiry, the absolute cap
+	 * measured from the origin login, and the idle window. The portal SPAs
+	 * schedule their refresh and the warning from these.
+	 *
+	 * @param array<string, mixed> $subject A subject from resolveFromBearer().
+	 *
+	 * @return array{expiresAt: int, hardExpiresAt: int, idleTimeout: int, idlePreview: bool}
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-10-30-idle-warning-preview/tasks.md#T01
+	 */
+	public function sessionTimes(array $subject): array {
+		return [
+			'expiresAt' => (int)($subject['expiresAt'] ?? 0),
+			'hardExpiresAt' => ((int)($subject['authTime'] ?? 0) + $this->maxLifetimeSeconds()),
+			'idleTimeout' => $this->idleTimeoutSeconds(),
+			'idlePreview' => $this->idlePreviewEnabled(),
+		];
+	}//end sessionTimes()
 
 	/**
 	 * The absolute maximum session lifetime in seconds — config `session_max_lifetime`
@@ -369,10 +484,10 @@ class PortalSessionService {
 	 *
 	 * @return int
 	 *
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T01
 	 */
 	private function maxLifetimeSeconds(): int {
-		$configured = (int)$this->config->getAppValue(Application::APP_ID, self::MAX_LIFETIME_CONFIG_KEY, (string)self::DEFAULT_MAX_LIFETIME);
+		$configured = (int)$this->config->getAppValue(AppIdentity::APP_ID, self::MAX_LIFETIME_CONFIG_KEY, (string)self::DEFAULT_MAX_LIFETIME);
 		if ($configured <= 0) {
 			return self::DEFAULT_MAX_LIFETIME;
 		}
@@ -396,32 +511,70 @@ class PortalSessionService {
 	 *                                   expired, or revoked.
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
-	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.3
-	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#2.2
-	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#2.3
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.3
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#2.2
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#2.3
 	 */
 	public function resolveFromBearer(?string $authorizationHeader): ?array {
-		if ($this->jwt === null) {
+		if ($this->jwt === null || $this->hasBearer(authorizationHeader: $authorizationHeader) === false) {
 			return null;
 		}
 
-		if ($authorizationHeader === null || str_starts_with($authorizationHeader, self::BEARER_PREFIX) === false) {
+		$claims = $this->sessionClaimsOf(jwt: $this->jwt, token: substr($authorizationHeader, strlen(self::BEARER_PREFIX)));
+		if ($claims === null) {
 			return null;
 		}
 
-		$token = substr($authorizationHeader, strlen(self::BEARER_PREFIX));
+		return (new SessionClaims())->subject(claims: $claims, trust: SessionTrust::normaliseTrust(trust: ($claims['trust'] ?? '')));
+	}//end resolveFromBearer()
+
+	/**
+	 * Whether the header carries a bearer.
+	 *
+	 * @param string|null $authorizationHeader The raw Authorization header value.
+	 *
+	 * @return bool
+	 *
+	 * @phpstan-assert-if-true string $authorizationHeader
+	 */
+	private function hasBearer(?string $authorizationHeader): bool {
+		return $authorizationHeader !== null && str_starts_with($authorizationHeader, self::BEARER_PREFIX) === true;
+	}//end hasBearer()
+
+	/**
+	 * The claims of a bearer token when it validates as a live portal
+	 * session, else null.
+	 *
+	 * @param PortalJwtService $jwt   The configured signer.
+	 * @param string           $token The bearer token.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function sessionClaimsOf(PortalJwtService $jwt, string $token): ?array {
 		if ($token === '') {
 			return null;
 		}
 
 		try {
-			$claims = $this->jwt->validate($token);
+			$claims = $jwt->validate($token);
 		} catch (Throwable $e) {
 			// Fail closed — never leak why. Debug-level only.
 			$this->logger->debug('Portaliq: bearer rejected', ['reason' => $e->getMessage()]);
 			return null;
 		}
 
+		return $this->activeSessionClaims(claims: $claims);
+	}//end sessionClaimsOf()
+
+	/**
+	 * The claims when they are a portal session whose `jti` is still live,
+	 * else null.
+	 *
+	 * @param array<string, mixed> $claims The validated token claims.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function activeSessionClaims(array $claims): ?array {
 		// Token-confusion guard (contract v2, A6): a subject assertion — or any
 		// future special-use token — is NOT a portal session. A relayed or
 		// leaked X-Portal-Subject assertion can never be replayed as a bearer.
@@ -430,25 +583,145 @@ class PortalSessionService {
 			return null;
 		}
 
-		$jti = (string)($claims['jti'] ?? '');
-		if ($this->isJtiActive(jti: $jti) === false) {
+		if ($this->isJtiActive(jti: (string)($claims['jti'] ?? '')) === false) {
 			$this->logger->debug('Portaliq: bearer rejected', ['reason' => 'revoked or unknown jti']);
 			return null;
 		}
 
-		return [
-			'subjectRef' => (string)($claims['sub'] ?? ''),
-			'audience' => (string)($claims['audience'] ?? ''),
-			'organisation' => (string)($claims['organisation'] ?? ''),
-			'trust' => self::normaliseTrust(trust: ($claims['trust'] ?? '')),
-			'roles' => (array)($claims['roles'] ?? []),
-			'jti' => $jti,
-			// The ORIGIN login's timestamp (portal-session-hardening-v2) — 0
-			// for a token minted before this claim existed, which refreshSession()
-			// treats as "cannot establish an origin" and refuses (fail-closed).
-			'authTime' => (int)($claims['authTime'] ?? 0),
-		];
-	}//end resolveFromBearer()
+		return $claims;
+	}//end activeSessionClaims()
+
+	/**
+	 * Mint the short, read-only session a redeemed reference link opens
+	 * (identity-ways-in-screens D2). It carries `use: reference`, so
+	 * `resolveFromBearer()` refuses it like any special-use token and no
+	 * route that takes a portal session accepts it; only the reference read
+	 * does, through `resolveReferenceFromBearer()`. It is recorded for
+	 * revocation and never refreshed.
+	 *
+	 * @param string $linkId The spent link's id; the subject is its hash.
+	 * @param string $caseReference The case number the session may read.
+	 * @param string $organisation The tenant.
+	 * @param string $register The case collection's register.
+	 * @param string $schema The case collection's schema.
+	 *
+	 * @return array{token: string, jti: string, expiresAt: string}|null Null
+	 *         when the auth edge is not configured or a field is empty.
+	 *
+	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/design.md
+	 */
+	public function issueReferenceSession(string $linkId, string $caseReference, string $organisation, string $register, string $schema): ?array {
+		if ($this->jwt === null || in_array('', [$linkId, $caseReference, $organisation, $register, $schema], true) === true) {
+			return null;
+		}
+
+		$subjectRef = self::REFERENCE_SUBJECT_PREFIX . hash('sha256', $linkId);
+		$jti = $this->random->generate(32, (ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS));
+		$now = new DateTimeImmutable();
+		$expiresAt = $now->add(new DateInterval('PT' . PortalJwtService::REFERENCE_TTL . 'S'));
+
+		$token = $this->jwt->createReferenceSession(
+			subjectRef: $subjectRef,
+			organisation: $organisation,
+			caseReference: $caseReference,
+			register: $register,
+			schema: $schema,
+			jti: $jti
+		);
+
+		$this->writer->createObject(
+			register: self::SESSION_REGISTER,
+			schema: self::SESSION_SCHEMA,
+			scopeField: '',
+			subjectRef: $subjectRef,
+			organisation: $organisation,
+			data: [
+				'subjectRef' => $subjectRef,
+				'audience' => 'client',
+				'organisation' => $organisation,
+				'jti' => $jti,
+				'trustLevel' => 'low',
+				'issuedAt' => $now->format(DATE_ATOM),
+				'expiresAt' => $expiresAt->format(DATE_ATOM),
+				'revoked' => false,
+				'authTime' => $now->format(DATE_ATOM),
+			]
+		);
+
+		$this->auditor->record(
+			verb: 'login',
+			subjectRef: $subjectRef,
+			organisation: $organisation,
+			register: self::SESSION_REGISTER,
+			schema: self::SESSION_SCHEMA,
+			id: $jti,
+			jti: $jti
+		);
+
+		return ['token' => $token, 'jti' => $jti, 'expiresAt' => $expiresAt->format(DATE_ATOM)];
+	}//end issueReferenceSession()
+
+	/**
+	 * Resolve a reference session, and only a reference session. FAILS CLOSED.
+	 *
+	 * @param string|null $authorizationHeader The raw Authorization header value.
+	 *
+	 * @return array{subjectRef: string, organisation: string, caseReference: string, register: string, schema: string, jti: string}|null
+	 *
+	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/design.md
+	 */
+	public function resolveReferenceFromBearer(?string $authorizationHeader): ?array {
+		if ($this->jwt === null || $this->hasBearer(authorizationHeader: $authorizationHeader) === false) {
+			return null;
+		}
+
+		return $this->referenceOfToken(jwt: $this->jwt, token: substr($authorizationHeader, strlen(self::BEARER_PREFIX)));
+	}//end resolveReferenceFromBearer()
+
+	/**
+	 * The reference a bearer token carries when it validates as a live
+	 * reference session, else null.
+	 *
+	 * @param PortalJwtService $jwt   The configured signer.
+	 * @param string           $token The bearer token.
+	 *
+	 * @return array{subjectRef: string, organisation: string, caseReference: string, register: string, schema: string, jti: string}|null
+	 */
+	private function referenceOfToken(PortalJwtService $jwt, string $token): ?array {
+		try {
+			$claims = $jwt->validate($token);
+		} catch (Throwable $e) {
+			$this->logger->debug('Portaliq: reference bearer rejected', ['reason' => $e->getMessage()]);
+			return null;
+		}
+
+		if (($claims['use'] ?? '') !== PortalJwtService::USE_REFERENCE) {
+			return null;
+		}
+
+		return $this->liveReference(claims: $claims);
+	}//end referenceOfToken()
+
+	/**
+	 * The reference of a reference session's claims when its `jti` is live
+	 * and every field is present, else null.
+	 *
+	 * @param array<string, mixed> $claims The reference session's claims.
+	 *
+	 * @return array{subjectRef: string, organisation: string, caseReference: string, register: string, schema: string, jti: string}|null
+	 */
+	private function liveReference(array $claims): ?array {
+		if ($this->isJtiActive(jti: (string)($claims['jti'] ?? '')) === false) {
+			return null;
+		}
+
+		$reference = (new SessionClaims())->reference(claims: $claims);
+		if (in_array('', $reference, true) === true) {
+			return null;
+		}
+
+		return $reference;
+	}//end liveReference()
 
 	/**
 	 * Rotate a valid, unexpired, not-yet-revoked bearer into a NEW session with
@@ -459,53 +732,227 @@ class PortalSessionService {
 	 * expired bearer, malformed bearer, or past the absolute cap — all
 	 * indistinguishable to the caller, exactly like `resolveFromBearer()`.
 	 *
+	 * With an audience (read from the account, never the request), the new
+	 * session carries it instead (invitation-joins-an-unbound-account); the
+	 * session's own audience and `supplier` are refused.
+	 *
 	 * @param string|null $authorizationHeader The raw Authorization header value.
+	 * @param string      $audience            The audience the account holds now, or '' to keep the session's.
 	 *
-	 * @return array{token: string, jti: string}|null The NEW bearer token + its
-	 *                                                id, or null on any rejection.
+	 * @return array{token: string, jti: string, expiresAt: int, hardExpiresAt: int, idleTimeout: int}|null The NEW
+	 *         bearer token, its id and when the rotated session ends, or null on any rejection.
 	 *
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T02
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T02
 	 * @spec openspec/specs/supplier-portal/spec.md#session-refresh-rotates-the-token-within-an-absolute-cap
 	 */
-	public function refreshSession(?string $authorizationHeader): ?array {
+	public function refreshSession(?string $authorizationHeader, string $audience = ''): ?array {
 		// Resolving the bearer already fails closed on: unconfigured secret,
 		// absent/malformed/forged bearer, expired bearer, and revoked/unknown
 		// jti — refresh inherits every one of those rejections for free.
 		$subject = $this->resolveFromBearer(authorizationHeader: $authorizationHeader);
-		if ($subject === null) {
+		if ($subject === null || ($audience !== '' && in_array($audience, ['supplier', (string)($subject['audience'] ?? '')], true) === true)) {
 			return null;
 		}
 
+		// A new audience brings that audience's role, never the old one's.
+		if ($audience !== '') {
+			$subject['audience'] = $audience;
+			$subject['roles']    = [$audience . ':read'];
+		}
+
+		// A refresh carries the branch and its restriction unchanged: it
+		// can never widen a branch login to the whole company.
+		return $this->rotate(
+			subject: $subject,
+			context: [
+				'number' => (string)($subject['branch'] ?? ''),
+				'restricted' => (($subject['branchRestricted'] ?? false) === true),
+				'provider' => (string)($subject['provider'] ?? ''),
+				'kvk' => (string)($subject['kvk'] ?? ''),
+				// The disclosed Yivi attributes stay with the session chain,
+				// as they were disclosed (resident-identity-in-forms T05).
+				'attributes' => (array)($subject['attributes'] ?? []),
+			]
+		);
+	}//end refreshSession()
+
+	/**
+	 * Re-issue a whole-company session for one branch, or for the whole
+	 * company again with '' (signin-eherkenning-branch T05, REQ-SEB-003).
+	 *
+	 * Rotates like a refresh, within the same absolute cap. Refused (null)
+	 * for a session the login restricted to a branch, for a malformed branch
+	 * number and on every rejection refresh has. Whether the branch belongs
+	 * to the company is the caller's check (SessionBranchController).
+	 *
+	 * @param string|null $authorizationHeader The raw Authorization header value.
+	 * @param string      $branch              A 12-digit branch number, or '' for the whole company.
+	 *
+	 * @return array{token: string, jti: string, expiresAt: int, hardExpiresAt: int, idleTimeout: int}|null
+	 *
+	 * @spec openspec/specs/portal-branch-scope/spec.md#requirement-a-whole-company-user-can-narrow-to-a-branch-req-seb-003
+	 */
+	public function rebranchSession(?string $authorizationHeader, string $branch): ?array {
+		$subject = $this->resolveFromBearer(authorizationHeader: $authorizationHeader);
+		if ($subject === null || ($subject['branchRestricted'] ?? false) === true) {
+			return null;
+		}
+
+		$number = (new BranchNumber())->normalise(value: $branch);
+		if ($branch !== '' && $number === '') {
+			return null;
+		}
+
+		return $this->rotate(
+			subject: $subject,
+			context: [
+				'number' => $number,
+				'restricted' => false,
+				'provider' => (string)($subject['provider'] ?? ''),
+				'kvk' => (string)($subject['kvk'] ?? ''),
+				'attributes' => (array)($subject['attributes'] ?? []),
+			]
+		);
+	}//end rebranchSession()
+
+	/**
+	 * Rotate a resolved session: mint a new bearer with the given context,
+	 * revoke the old one quietly and record one `refresh`.
+	 *
+	 * @param array<string, mixed>                                          $subject The resolved subject.
+	 * @param array{number?: string, restricted?: bool, provider?: string, kvk?: string, attributes?: array<string,string>} $context The new context.
+	 *
+	 * @return array{token: string, jti: string, expiresAt: int, hardExpiresAt: int, idleTimeout: int}|null
+	 */
+	private function rotate(array $subject, array $context): ?array {
+		if ($this->rotatable(subject: $subject) === false) {
+			return null;
+		}
+
+		$issued = $this->mintFor(subject: $subject, context: $context);
+		if ($issued === null) {
+			return null;
+		}
+
+		if ($this->revokedWhileRotating(subject: $subject, issued: $issued) === true) {
+			return null;
+		}
+
+		$this->recordRotation(subject: $subject, issued: $issued);
+
+		return $issued;
+	}//end rotate()
+
+	/**
+	 * Whether a resolved session may rotate: it carries a jti and an origin
+	 * timestamp, and is not past the absolute session lifetime.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 *
+	 * @return bool True when the session may rotate.
+	 */
+	private function rotatable(array $subject): bool {
 		$oldJti = (string)($subject['jti'] ?? '');
 		$authTime = (int)($subject['authTime'] ?? 0);
 		if ($oldJti === '' || $authTime <= 0) {
 			// No origin timestamp to measure the cap from (a pre-upgrade token,
 			// or a malformed claim) — fail closed rather than assume "fresh".
-			return null;
+			return false;
 		}
 
+		return $this->withinLifetime(authTime: $authTime, oldJti: $oldJti);
+	}//end rotatable()
+
+	/**
+	 * Whether the origin login is still within the absolute session lifetime.
+	 *
+	 * @param int    $authTime The origin login's unix timestamp.
+	 * @param string $oldJti   The rotating session's token id.
+	 *
+	 * @return bool True when within the lifetime.
+	 */
+	private function withinLifetime(int $authTime, string $oldJti): bool {
 		if ((time() - $authTime) >= $this->maxLifetimeSeconds()) {
 			$this->logger->debug('Portaliq: refresh refused — past the absolute session lifetime', ['jti' => $oldJti]);
-			return null;
+			return false;
 		}
 
-		$issued = $this->mintSession(
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			audience: (string)($subject['audience'] ?? ''),
-			organisation: (string)($subject['organisation'] ?? ''),
+		return true;
+	}//end withinLifetime()
+
+	/**
+	 * Mint the rotated bearer for a resolved subject, carrying its origin login forward.
+	 *
+	 * @param array<string, mixed>                                          $subject The resolved subject.
+	 * @param array{number?: string, restricted?: bool, provider?: string, kvk?: string} $context The new bearer's context.
+	 *
+	 * @return array{token: string, jti: string, expiresAt: int, hardExpiresAt: int, idleTimeout: int}|null
+	 */
+	private function mintFor(array $subject, array $context): array|null {
+		$identity = $this->identityOf(subject: $subject);
+
+		return $this->mintSession(
+			subjectRef: $identity['subjectRef'],
+			audience: $identity['audience'],
+			organisation: $identity['organisation'],
 			trust: (string)($subject['trust'] ?? ''),
 			roles: (array)($subject['roles'] ?? []),
-			authTime: $authTime
+			authTime: (int)($subject['authTime'] ?? 0),
+			context: $context
 		);
-		if ($issued === null) {
-			return null;
+	}//end mintFor()
+
+	/**
+	 * The subject reference, audience and organisation of a resolved subject.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 *
+	 * @return array{subjectRef: string, audience: string, organisation: string}
+	 */
+	private function identityOf(array $subject): array {
+		return [
+			'subjectRef' => (string)($subject['subjectRef'] ?? ''),
+			'audience' => (string)($subject['audience'] ?? ''),
+			'organisation' => (string)($subject['organisation'] ?? ''),
+		];
+	}//end identityOf()
+
+	/**
+	 * Whether the old session was revoked between the resolve and the mint.
+	 * A revoke-all (or a logout) can land there: the new bearer must not
+	 * outlive it (security review S1), so it is revoked again at once.
+	 *
+	 * @param array<string, mixed>                                           $subject The resolved subject.
+	 * @param array{token: string, jti: string, expiresAt: int, hardExpiresAt: int, idleTimeout: int} $issued  The minted bearer.
+	 *
+	 * @return bool True when the rotation must be refused.
+	 */
+	private function revokedWhileRotating(array $subject, array $issued): bool {
+		$oldJti = (string)($subject['jti'] ?? '');
+		if ($this->isJtiActive(jti: $oldJti) === false) {
+			$this->revokeQuietly(jti: $issued['jti']);
+			$this->logger->info('Portaliq: refresh refused, the session was revoked while it rotated', ['jti' => $oldJti]);
+			return true;
 		}
 
-		// Rotate: the OLD bearer stops validating from here on. A quiet
-		// revoke (no separate `logout` audit entry) — the visible event for
-		// this rotation is `refresh`, recorded once, below.
-		$this->revokeQuietly(jti: $oldJti);
+		return false;
+	}//end revokedWhileRotating()
 
+	/**
+	 * Record one `refresh`, then revoke the old bearer quietly; a failed
+	 * revoke never signs the person out.
+	 *
+	 * @param array<string, mixed>                                           $subject The resolved subject.
+	 * @param array{token: string, jti: string, expiresAt: int, hardExpiresAt: int, idleTimeout: int} $issued  The minted bearer.
+	 *
+	 * @return void
+	 */
+	private function recordRotation(array $subject, array $issued): void {
+		$oldJti = (string)($subject['jti'] ?? '');
+
+		// `refresh` is recorded before the old bearer is revoked.
 		$this->auditor->record(
 			verb: 'refresh',
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
@@ -516,8 +963,13 @@ class PortalSessionService {
 			jti: $oldJti
 		);
 
-		return $issued;
-	}//end refreshSession()
+		// A quiet revoke; a failed one never signs the person out.
+		try {
+			$this->revokeQuietly(jti: $oldJti);
+		} catch (Throwable $exception) {
+			$this->logger->warning('Portaliq: the old bearer was not revoked after a rotation', ['exception' => get_class($exception)]);
+		}
+	}//end recordRotation()
 
 	/**
 	 * Whether a `jti` has a corresponding, not-revoked `portalSession` row.
@@ -528,8 +980,8 @@ class PortalSessionService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#2.2
-	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#2.3
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#2.2
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#2.3
 	 */
 	private function isJtiActive(string $jti): bool {
 		if ($jti === '') {
@@ -541,7 +993,7 @@ class PortalSessionService {
 			return false;
 		}
 
-		return ($row['revoked'] ?? false) !== true;
+		return $this->revoker()->isRevoked(row: $row) === false;
 	}//end isJtiActive()
 
 	/**
@@ -577,8 +1029,8 @@ class PortalSessionService {
 	 *
 	 * @return bool True when a matching session was found and marked revoked.
 	 *
-	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#3.1
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#3.1
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T09
 	 */
 	public function revoke(string $jti): bool {
 		$row = $this->revokeQuietly(jti: $jti);
@@ -600,6 +1052,38 @@ class PortalSessionService {
 	}//end revoke()
 
 	/**
+	 * Revoke one session on an administrator's word, found by its `jti`.
+	 * Recorded as `admin-revoke` naming the admin, so the history tells a
+	 * staff revocation from the resident's own logout.
+	 *
+	 * @param string $jti   The session's token id.
+	 * @param string $admin The Nextcloud user id of the acting admin.
+	 *
+	 * @return bool True when a live session was found and marked revoked.
+	 *
+	 * @spec openspec/changes/staff-revoke-one-session/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
+	 */
+	public function revokeByAdmin(string $jti, string $admin): bool {
+		$row = $this->revokeQuietly(jti: $jti);
+		if ($row === null) {
+			return false;
+		}
+
+		$this->auditor->record(
+			verb: 'admin-revoke',
+			subjectRef: (string)($row['subjectRef'] ?? ''),
+			organisation: (string)($row['organisation'] ?? ''),
+			register: self::SESSION_REGISTER,
+			schema: self::SESSION_SCHEMA,
+			id: $jti,
+			jti: $jti,
+			detail: ['admin' => $admin]
+		);
+
+		return true;
+	}//end revokeByAdmin()
+
+	/**
 	 * Mark a session revoked WITHOUT recording any audit event — the shared
 	 * primitive behind `revoke()` (records `logout`) and `refreshSession()`'s
 	 * old-jti rotation (recorded once, as `refresh`, not also as a `logout`).
@@ -618,8 +1102,8 @@ class PortalSessionService {
 	 *                                   when the jti is empty, unknown, or
 	 *                                   the OR write failed.
 	 *
-	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#3.1
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#3.1
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T02
 	 */
 	private function revokeQuietly(string $jti): ?array {
 		if ($jti === '') {
@@ -627,11 +1111,25 @@ class PortalSessionService {
 		}
 
 		$row = $this->findSessionByJti(jti: $jti);
-		$uuid = $this->rowId(row: $row);
+		$uuid = $this->revoker()->rowId(row: $row);
 		if ($row === null || $uuid === null) {
 			return null;
 		}
 
+		return $this->revokedRow(row: $row, uuid: $uuid);
+	}//end revokeQuietly()
+
+	/**
+	 * Mark a located session row revoked; the row, or null when the OR write failed.
+	 *
+	 * @param array<string, mixed> $row  The located `portalSession` row.
+	 * @param string               $uuid The row's id.
+	 *
+	 * @return array<string, mixed>|null The revoked row, or null.
+	 *
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#3.1
+	 */
+	private function revokedRow(array $row, string $uuid): array|null {
 		$updated = $this->writer->updateObject(
 			register: self::SESSION_REGISTER,
 			schema: self::SESSION_SCHEMA,
@@ -647,102 +1145,47 @@ class PortalSessionService {
 		}
 
 		return $row;
-	}//end revokeQuietly()
+	}//end revokedRow()
 
 	/**
 	 * Revoke every active `portalSession` for an organisation (admin incident
-	 * response — e.g. a supplier reports device theft). Already-revoked rows
-	 * are left untouched; unreachable OpenRegister yields zero revocations
-	 * (fail-closed reporting, never a partial silent success).
+	 * response, e.g. a supplier reports device theft).
+	 *
+	 * Reads only the rows not yet revoked, page by page until OpenRegister
+	 * runs out, BEFORE revoking any (revoking while paging would shift the
+	 * pages under the offset), so a live session past the first page is
+	 * never missed (security review B1). An unreachable OpenRegister or a
+	 * failed write makes the result `complete: false`, so the admin never
+	 * reads "0 revoked" for "did not run" (S5). Every revocation is audited
+	 * as `admin-revoke` naming the admin, plus one entry for the call (S6).
 	 *
 	 * @param string $organisation The tenant to revoke every session for.
+	 * @param string $admin The Nextcloud user id of the acting admin.
+	 * @param string $subjectRef One account only (sign-in-with-an-email-link), or ''.
 	 *
-	 * @return int The number of sessions revoked.
+	 * @return array{revoked: int, failed: int, complete: bool}
 	 *
-	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#3.2
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#3.2
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T09
+	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#12
 	 */
-	public function revokeAllForOrganisation(string $organisation): int {
-		if ($organisation === '') {
-			return 0;
-		}
-
-		$rows = $this->reader->readCollection(
-			register: self::SESSION_REGISTER,
-			schema: self::SESSION_SCHEMA,
-			scopeField: 'organisation',
-			subjectRef: $organisation,
-			organisation: $organisation,
-			limit: 500
-		);
-
-		$revoked = 0;
-		foreach ($rows as $row) {
-			if (($row['revoked'] ?? false) === true) {
-				continue;
-			}
-
-			$uuid = $this->rowId(row: $row);
-			if ($uuid === null) {
-				continue;
-			}
-
-			$updated = $this->writer->updateObject(
-				register: self::SESSION_REGISTER,
-				schema: self::SESSION_SCHEMA,
-				scopeField: '',
-				subjectRef: '',
-				organisation: '',
-				id: $uuid,
-				data: ['revoked' => true]
-			);
-
-			if ($updated !== null) {
-				$revoked++;
-				$this->auditor->record(
-					verb: 'logout',
-					subjectRef: (string)($row['subjectRef'] ?? ''),
-					organisation: $organisation,
-					register: self::SESSION_REGISTER,
-					schema: self::SESSION_SCHEMA,
-					id: (string)($row['jti'] ?? ''),
-					jti: (string)($row['jti'] ?? '')
-				);
-			}
-		}//end foreach
-
-		return $revoked;
+	public function revokeAllForOrganisation(string $organisation, string $admin, string $subjectRef = ''): array {
+		return $this->revoker()->revokeAll(organisation: $organisation, admin: $admin, subjectRef: $subjectRef);
 	}//end revokeAllForOrganisation()
 
 	/**
-	 * Extract a row's identifier (`id`/`uuid`, flat or in `@self`), or null.
+	 * The revoker over this service's OpenRegister and audit collaborators.
 	 *
-	 * @param array<string, mixed>|null $row The normalised row.
-	 *
-	 * @return string|null
+	 * @return PortalSessionRevoker
 	 */
-	private function rowId(?array $row): ?string {
-		if ($row === null) {
-			return null;
-		}
-
-		$self = ($row['@self'] ?? null);
-		$selfUuid = null;
-		$selfId = null;
-		if (is_array($self) === true) {
-			$selfUuid = ($self['uuid'] ?? null);
-			$selfId = ($self['id'] ?? null);
-		}
-
-		$candidates = [($row['uuid'] ?? null), ($row['id'] ?? null), $selfUuid, $selfId];
-		foreach ($candidates as $candidate) {
-			if ((is_string($candidate) === true || is_int($candidate) === true) && (string)$candidate !== '') {
-				return (string)$candidate;
-			}
-		}
-
-		return null;
-	}//end rowId()
+	private function revoker(): PortalSessionRevoker {
+		return new PortalSessionRevoker(
+			reader: $this->reader,
+			writer: $this->writer,
+			auditor: $this->auditor,
+			logger: $this->logger
+		);
+	}//end revoker()
 
 	/**
 	 * Mint a short-lived `X-Portal-Subject` assertion for a resolved subject.
@@ -754,6 +1197,8 @@ class PortalSessionService {
 	 * can never come back as a portal session (contract v2, A6).
 	 *
 	 * @param array<string, mixed> $subject The resolved subject (from resolveFromBearer).
+	 * @param string $scopeClaim The action's declared scope claim, or ''.
+	 * @param string $scopeValue The server-resolved value of that claim, or ''.
 	 *
 	 * @return string Compact assertion JWT (TTL ~60s).
 	 *
@@ -764,7 +1209,7 @@ class PortalSessionService {
 	 *
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T7
 	 */
-	public function issueAssertion(array $subject): string {
+	public function issueAssertion(array $subject, string $scopeClaim = '', string $scopeValue = ''): string {
 		if ($this->jwt === null) {
 			throw new RuntimeException('Portaliq: cannot issue an assertion — no dedicated jwt_signing_secret configured');
 		}
@@ -773,8 +1218,11 @@ class PortalSessionService {
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
 			audience: (string)($subject['audience'] ?? ''),
 			organisation: (string)($subject['organisation'] ?? ''),
-			trust: self::normaliseTrust(trust: ($subject['trust'] ?? '')),
-			jti: (string)($subject['jti'] ?? '')
+			trust: SessionTrust::normaliseTrust(trust: ($subject['trust'] ?? '')),
+			jti: (string)($subject['jti'] ?? ''),
+			scopeClaim: $scopeClaim,
+			scopeValue: $scopeValue,
+			branch: (string)($subject['branch'] ?? '')
 		);
 	}//end issueAssertion()
 }//end class

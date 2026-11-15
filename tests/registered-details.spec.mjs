@@ -1,0 +1,267 @@
+#!/usr/bin/env node
+// SPDX-License-Identifier: EUPL-1.2
+// Copyright (C) 2026 Conduction B.V.
+//
+// registered-details.spec.mjs: the "My details" section
+// (identity-registered-details T05, T06, T07). A resident sees the BRP
+// record, a business user the KvK record, and each empty state says why.
+// The request links render only when the portal bound a form.
+//
+// Usage:
+//   node --test tests/registered-details.spec.mjs
+
+import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { test } from 'node:test'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+import { createPortalApi } from '../src/shared/portalApi.js'
+import { buildNav, defaultNavKey } from '../src/shared/portalNav.js'
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
+
+const BASE = '/apps/portaliq/portal/api'
+const nl = JSON.parse(
+	readFileSync(join(ROOT, 'src', 'shared', 'i18n', 'nl.json'), 'utf8'),
+)
+const en = JSON.parse(
+	readFileSync(join(ROOT, 'src', 'shared', 'i18n', 'en.json'), 'utf8'),
+)
+
+/**
+ * An identity translator with {name} substitution.
+ *
+ * @param {string} key The English source key.
+ * @param {object} vars The substitutions.
+ * @return {string} The text.
+ */
+function t(key, vars = {}) {
+	return key.replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? ''))
+}
+
+/**
+ * Stub the browser: a stored bearer and a recording fetch.
+ *
+ * @param {Array<{status: number, body: object}>} answers The answers, in order.
+ * @return {Array<object>} The recorded calls.
+ */
+function stubBrowser(answers) {
+	const calls = []
+	const queue = [...answers]
+	globalThis.window = {
+		localStorage: { getItem: () => 'token-1', setItem() {}, removeItem() {} },
+	}
+	globalThis.fetch = async (url, init = {}) => {
+		calls.push({ url: String(url), init })
+		const next = queue.shift() || { status: 200, body: {} }
+		return {
+			ok: next.status >= 200 && next.status < 300,
+			status: next.status,
+			json: async () => next.body,
+		}
+	}
+	return calls
+}
+
+const PERSON = {
+	available: true,
+	kind: 'person',
+	person: {
+		name: 'Jan de Vries',
+		birthDate: '1980-04-12',
+		address: {
+			street: 'Dorpsstraat',
+			number: '12A',
+			postcode: '1234AB',
+			city: 'Utrecht',
+		},
+		residentsAtAddress: null,
+	},
+	links: {
+		correction: '/apps/portaliq/site?portal=p&route=%2Fcorrectie',
+		addressInvestigation: null,
+	},
+}
+
+const COMPANY = {
+	available: true,
+	kind: 'company',
+	company: {
+		tradeName: 'Bakkerij de Korenschoof',
+		kvkNumber: '12345678',
+		legalForm: 'Besloten Vennootschap',
+		branches: [
+			{
+				number: '000012345678',
+				name: 'Bakkerij de Korenschoof',
+				address: 'Marktplein 1, 3511AB Utrecht',
+				main: true,
+			},
+			{
+				number: '000087654321',
+				name: 'Korenschoof Zuid',
+				address: 'Laan 40, 3521CD Utrecht',
+				main: false,
+			},
+		],
+	},
+	links: { correction: null, addressInvestigation: null },
+}
+
+test('the section is read with the bearer and names no identifier, and a failure reads as unavailable', async () => {
+	const calls = stubBrowser([
+		{ status: 200, body: PERSON },
+		{ status: 401, body: { authenticated: false } },
+	])
+	const api = createPortalApi({ apiBase: BASE })
+
+	assert.deepEqual(await api.fetchRegisteredDetails(), PERSON)
+	assert.equal(calls[0].url, `${BASE}/identity/registered-details`)
+	assert.equal(calls[0].init.headers.Authorization, 'Bearer token-1')
+	assert.deepEqual(await api.fetchRegisteredDetails(), {
+		available: false,
+		reason: 'source_unavailable',
+	})
+})
+
+test('site: the shell offers "My details" once signed in', () => {
+	const registry = readFileSync(
+		join(ROOT, 'src', 'site', 'pages', 'registry.js'),
+		'utf8',
+	)
+	assert.match(registry, /details: accountPages\.__details__/)
+	// The shared navigation offers it once signed in, and never as the first page.
+	const nav = buildNav([{ app: 'a', pages: [{ id: 'p' }] }], (key) => key, {
+		access: true,
+	})
+	assert.ok(
+		nav.some(
+			(entry) => entry.special === 'details' && entry.label === 'My details',
+		),
+	)
+	assert.equal(defaultNavKey(nav), 'a:p')
+	assert.ok('My details' in nl)
+	assert.ok('My details' in en)
+	for (const text of Object.values(nl)) {
+		assert.doesNotMatch(text, /—/, 'no em-dashes')
+	}
+})
+
+// The Vue port on the site (site-reaches-portal-parity T19, REQ-SRP-038).
+
+const { renderSfc, loadSfc } = await import('./support/render-sfc.mjs')
+const site = await import(
+	pathToFileURL(join(ROOT, 'src', 'site', 'pages', 'e', 'registeredDetails.js'))
+		.href
+)
+const SITE_PAGE = 'src/site/pages/e/RegisteredDetailsPage.vue'
+
+test('site: a resident sees name, date of birth and address, and the count says it is not available', async () => {
+	const html = await renderSfc(SITE_PAGE, {
+		api: {},
+		t,
+		locale: 'en',
+		initialDetails: PERSON,
+	})
+	assert.match(html, /Jan de Vries/)
+	assert.match(html, /April 12, 1980|12 April 1980/)
+	assert.match(html, /Dorpsstraat 12A/)
+	assert.match(html, /1234AB Utrecht/)
+	assert.match(html, /The number of residents at this address is not available\./)
+	assert.match(html, /Personal Records Database \(BRP\)/)
+	assert.doesNotMatch(html, /999993653/)
+	const withCount = await renderSfc(SITE_PAGE, {
+		api: {},
+		t,
+		initialDetails: {
+			...PERSON,
+			person: { ...PERSON.person, residentsAtAddress: 3 },
+		},
+	})
+	assert.match(withCount, /3 people are registered at this address\./)
+})
+
+test('site: a bound correction form is a link, and an unbound one is not there', async () => {
+	const html = await renderSfc(SITE_PAGE, { api: {}, t, initialDetails: PERSON })
+	assert.match(
+		html,
+		/href="\/apps\/portaliq\/site\?portal=p&amp;route=%2Fcorrectie"/,
+	)
+	assert.match(html, /Report an error in these details/)
+	assert.doesNotMatch(html, /Something wrong at this address\?/)
+	const other = await renderSfc(SITE_PAGE, {
+		api: {},
+		t,
+		initialDetails: {
+			...PERSON,
+			links: { correction: null, addressInvestigation: '/adres' },
+		},
+	})
+	assert.doesNotMatch(other, /Report an error in these details/)
+	assert.match(other, /href="\/adres"[^>]*>Something wrong at this address\?/)
+})
+
+test('site: a business user sees the company with every branch', async () => {
+	const html = await renderSfc(SITE_PAGE, { api: {}, t, initialDetails: COMPANY })
+	assert.match(html, /Chamber of Commerce \(KvK\)/)
+	assert.match(html, /Bakkerij de Korenschoof/)
+	assert.doesNotMatch(html, /Report an error in these details/)
+	assert.match(html, /12345678/)
+	assert.match(html, /Besloten Vennootschap/)
+	assert.match(html, /Korenschoof Zuid/)
+	assert.match(html, /Laan 40, 3521CD Utrecht/)
+	assert.match(html, /Main branch/)
+	assert.match(html, /Branch number 000087654321/)
+	const none = await renderSfc(SITE_PAGE, {
+		api: {},
+		t,
+		initialDetails: {
+			...COMPANY,
+			company: { ...COMPANY.company, branches: [] },
+		},
+	})
+	assert.match(none, /The KvK lists no branches for this company\./)
+})
+
+test('site: each empty state says why, and the screen reads the details when it opens', async () => {
+	assert.equal(
+		site.reasonText('source_unavailable'),
+		'Your registered details cannot be shown right now.',
+	)
+	assert.equal(
+		site.reasonText('no_registration_identifier'),
+		'The portal cannot show registered details for this way of signing in.',
+	)
+	assert.equal(
+		site.reasonText('not_found'),
+		'No registered details were found for you.',
+	)
+	assert.equal(
+		site.reasonText('no_account'),
+		'There is no portal account for this sign-in.',
+	)
+	assert.equal(
+		site.reasonText('something-new'),
+		'Your registered details cannot be shown right now.',
+	)
+	const html = await renderSfc(SITE_PAGE, {
+		api: {},
+		t,
+		initialDetails: { available: false, reason: 'source_unavailable' },
+	})
+	assert.match(
+		html,
+		/role="status"[^>]*>Your registered details cannot be shown right now\./,
+	)
+	assert.doesNotMatch(html, /Date of birth/)
+
+	const page = await loadSfc(SITE_PAGE)
+	const vm = {
+		initialDetails: null,
+		live: true,
+		details: null,
+		api: { fetchRegisteredDetails: async () => PERSON },
+	}
+	await page.mounted.call(vm)
+	assert.deepEqual(vm.details, PERSON)
+})

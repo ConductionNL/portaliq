@@ -1,0 +1,266 @@
+/**
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * The plain logic of "My tasks" (portal-task-delivery): a task's frozen upload
+ * rules, the check of the chosen files against them, and the plain-language
+ * text for each refusal the proxy names. The server checks everything again;
+ * this check only lets the resident see a refusal before the upload. The same
+ * rules as the React portal's TasksPage.jsx, without a framework.
+ */
+
+/** The field an action opened from a task receives the task uuid in, unless it names its own `taskField`. */
+export const TASK_FIELD = 'taskId'
+
+/** Bytes in one megabyte, as the rules count it. */
+const MB = 1024 * 1024
+
+/**
+ * The frozen upload rules of a task, normalised.
+ *
+ * @param {object} task The task row.
+ * @return {{required: boolean, maxFiles: number, maxSizeBytes: number, acceptedTypes: Array<string>}}
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+ */
+export function uploadRules(task) {
+	const upload = task?.metadata?.upload || {}
+	return {
+		required: upload.required === true,
+		maxFiles: Number(upload.maxFiles) > 0 ? Number(upload.maxFiles) : 1,
+		maxSizeBytes:
+			Number(upload.maxSizeBytes) > 0 ? Number(upload.maxSizeBytes) : 0,
+		acceptedTypes: Array.isArray(upload.acceptedTypes)
+			? upload.acceptedTypes.map(String)
+			: [],
+	}
+}
+
+/**
+ * The size limit in whole megabytes.
+ *
+ * @param {number} bytes The limit in bytes.
+ * @return {number} Megabytes.
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+ */
+export function sizeInMb(bytes) {
+	return Math.round(bytes / MB)
+}
+
+/**
+ * Whether one file matches an accepted type: an exact media type, a `type/*`
+ * wildcard, or an extension (`pdf` or `.pdf`), as the server matches.
+ *
+ * @param {{name: string, type: string}} file The chosen file.
+ * @param {Array<string>} accepted The accepted entries.
+ * @return {boolean}
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+ */
+export function typeAccepted(file, accepted) {
+	if (!accepted || accepted.length === 0) {
+		return true
+	}
+	const type = String(file?.type || '').toLowerCase()
+	const extension = String(file?.name || '')
+		.split('.')
+		.pop()
+		.toLowerCase()
+	return accepted.some((entry) => {
+		const wanted = String(entry).toLowerCase()
+		if (wanted.endsWith('/*')) {
+			return type.startsWith(wanted.slice(0, -1))
+		}
+		if (wanted.includes('/')) {
+			return type === wanted
+		}
+		return extension === wanted.replace(/^\./, '')
+	})
+}
+
+/**
+ * The file input's `accept` value, or undefined when any type goes.
+ *
+ * @param {Array<string>} accepted The accepted entries.
+ * @return {string|undefined} The value.
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+ */
+export function acceptAttribute(accepted) {
+	if (!accepted || accepted.length === 0) {
+		return undefined
+	}
+	return accepted
+		.map((entry) =>
+			entry.includes('/') ? entry : `.${entry.replace(/^\./, '')}`,
+		)
+		.join(',')
+}
+
+/**
+ * The first rule the chosen files break, as a sentence, or null.
+ *
+ * @param {object} task The task row.
+ * @param {Array<{name: string, type: string, size: number}>} chosen The chosen files.
+ * @param {(key: string, vars?: object) => string} t The translator.
+ * @return {string|null} The message.
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+ */
+export function validateFiles(task, chosen, t) {
+	const check = { rules: uploadRules(task), t }
+	const files = chosen || []
+	return countProblem(check, files) ?? filesProblem(check, files)
+}
+
+/**
+ * @param {{rules: object, t: (key: string, vars?: object) => string}} check The task's upload rules and the translator.
+ * @param {Array<object>} files The chosen files.
+ * @return {string|null} The message when a file is missing or there are too many.
+ */
+function countProblem(check, files) {
+	const { rules, t } = check
+	if (rules.required && files.length === 0) {
+		return t('A file is required for this task.')
+	}
+	if (files.length > rules.maxFiles) {
+		return t('You can add at most {count} file(s).', { count: rules.maxFiles })
+	}
+	return null
+}
+
+/**
+ * @param {{rules: object, t: (key: string, vars?: object) => string}} check The task's upload rules and the translator.
+ * @param {Array<object>} files The chosen files.
+ * @return {string|null} The first rule a file breaks, as a sentence.
+ */
+function filesProblem(check, files) {
+	for (const file of files) {
+		const problem = fileProblem(check, file)
+		if (problem !== null) {
+			return problem
+		}
+	}
+	return null
+}
+
+/**
+ * @param {{rules: object, t: (key: string, vars?: object) => string}} check The task's upload rules and the translator.
+ * @param {{name: string, type: string, size: number}} file One chosen file.
+ * @return {string|null} The rule it breaks, as a sentence: its size first, then its type.
+ */
+function fileProblem(check, file) {
+	const { rules, t } = check
+	if (rules.maxSizeBytes > 0 && file.size > rules.maxSizeBytes) {
+		return t('This file is too large. The limit is {size} MB.', {
+			size: sizeInMb(rules.maxSizeBytes),
+		})
+	}
+	if (!typeAccepted(file, rules.acceptedTypes)) {
+		return t('This file type is not accepted. Allowed: {types}.', {
+			types: rules.acceptedTypes.join(', '),
+		})
+	}
+	return null
+}
+
+/**
+ * The plain-language key for a refusal code from the task proxy.
+ *
+ * @param {string} code The refusal code.
+ * @return {string} The message key.
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+ */
+export function refusalKey(code) {
+	if (code === 'no-such-task') {
+		return 'This task does not exist or is not yours.'
+	}
+	if (code === 'task-closed') {
+		return 'This task is already closed.'
+	}
+	if (code === 'upload-constraint') {
+		return 'The upload was refused. Check the file rules above.'
+	}
+	if (code === 'complete-via-app') {
+		return 'This task has its own form. Open the task again to fill it in.'
+	}
+	return 'The tasks are not available right now. Please try again later.'
+}
+
+/**
+ * The app action a task names as the one that completes it
+ * (`metadata.completeVia` = `{app, action}`), looked up in the subject's own
+ * contributions aggregate. OpenRegister refuses a direct completion of such a
+ * task, so the page opens this action instead of the upload form.
+ *
+ * @param {object} task The task row.
+ * @param {object|null} aggregate The contributions aggregate (`contributions[]` of `{app, actions[]}`).
+ * @return {{named: boolean, app: string, action: object|null, taskField: string}}
+ *   `named` when the task names an action at all; `action` only when this
+ *   subject's aggregate holds it as an endpoint action, else null.
+ * @spec openspec/changes/a-task-opens-the-app-action-that-completes-it/specs/site-portal-parity/spec.md#requirement-a-task-that-names-its-app-action-must-open-that-action
+ */
+export function completeViaAction(task, aggregate) {
+	const via = task?.metadata?.completeVia
+	const app = trimmedName(via?.app)
+	const id = trimmedName(via?.action)
+	if (app === '' || id === '') {
+		return { named: false, app: '', action: null, taskField: TASK_FIELD }
+	}
+	const action = completingAction(aggregate, { app, id })
+	return { named: true, app, action, taskField: taskFieldOf(action) }
+}
+
+/**
+ * @param {unknown} value A name from the task's `completeVia`.
+ * @return {string} The name trimmed, or '' when it is no text.
+ */
+function trimmedName(value) {
+	return typeof value === 'string' ? value.trim() : ''
+}
+
+/**
+ * The endpoint action of the named app with the named id, from the subject's
+ * own contributions.
+ *
+ * @param {object|null} aggregate The contributions aggregate.
+ * @param {{app: string, id: string}} via The app and the action's id.
+ * @return {object|null} The action, or null.
+ */
+function completingAction(aggregate, via) {
+	const contribution = (aggregate?.contributions || []).find(
+		(c) => c && c.app === via.app,
+	)
+	return (
+		(contribution?.actions || []).find((a) => isCompletingAction(a, via.id))
+		|| null
+	)
+}
+
+/**
+ * @param {object|null} action An action of the contribution.
+ * @param {string} id The id the task names.
+ * @return {boolean} Whether it is that action, and one that calls an endpoint.
+ */
+function isCompletingAction(action, id) {
+	return Boolean(action) && action.id === id && callsEndpoint(action)
+}
+
+/**
+ * @param {object} action An action of the contribution.
+ * @return {boolean} Whether it is no create or update, and names an endpoint.
+ */
+function callsEndpoint(action) {
+	return (
+		action.type !== 'create'
+		&& action.type !== 'update'
+		&& typeof action.endpoint === 'string'
+		&& action.endpoint !== ''
+	)
+}
+
+/**
+ * @param {object|null} action The completing action.
+ * @return {string} The field it reads the task id from.
+ */
+function taskFieldOf(action) {
+	return typeof action?.taskField === 'string' && action.taskField !== ''
+		? action.taskField
+		: TASK_FIELD
+}

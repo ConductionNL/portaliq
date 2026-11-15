@@ -45,6 +45,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\PortalFileReaderInterface;
 use OCP\AppFramework\Http\StreamResponse;
 use OCP\Files\File;
 use Psr\Container\ContainerInterface;
@@ -56,7 +57,9 @@ use Throwable;
  *
  * @spec openspec/specs/supplier-portal/spec.md#scoped-file-download-re-verifies-ownership-before-serving-a-byte
  */
-class PortalFileReader {
+class PortalFileReader implements PortalFileReaderInterface {
+	use ObjectFileLookup;
+
 	/**
 	 * OpenRegister's file service.
 	 */
@@ -67,6 +70,11 @@ class PortalFileReader {
 	 * ObjectEntity so the file service can locate its folder (see listFiles()).
 	 */
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
+
+	/**
+	 * Logged when the owned object cannot be resolved.
+	 */
+	private const ENTITY_LOOKUP_WARNING = 'Portaliq: object resolve for file read failed';
 
 	/**
 	 * Constructor.
@@ -84,6 +92,12 @@ class PortalFileReader {
 	 * List the files attached to an object the subject already owns, as safe
 	 * metadata only (id/name/size — the raw stored path is never included).
 	 *
+	 * This is EVERY file in the object's folder, including what staff added and
+	 * never released. It is for the server's own use (finding a free name for an
+	 * upload) and for a collection that opted into `filesDownload` on an object
+	 * the subject wrote; a screen that shows a resident the organisation's
+	 * files uses listReleasedFiles() instead (portaliq#798).
+	 *
 	 * The caller MUST have re-verified ownership through the scoped reader
 	 * before calling this. Degrades to an empty list on any OR error or when
 	 * OpenRegister is unavailable — a listing failure never surfaces as an
@@ -98,6 +112,85 @@ class PortalFileReader {
 	 * @spec openspec/specs/supplier-portal/spec.md#identical-404-discipline-no-existence-oracle
 	 */
 	public function listFiles(string $register, string $schema, string $id): array {
+		return $this->listing(register: $register, schema: $schema, id: $id, sharedFilesOnly: false);
+	}//end listFiles()
+
+	/**
+	 * List only the files the organisation released on an object the subject
+	 * already owns: the ones OpenRegister holds a share for, which is what
+	 * publishing a file creates. An internal note or advice in the same folder
+	 * is never listed (portaliq#798).
+	 *
+	 * The filter is OpenRegister's own (`FileService::getFiles(sharedFilesOnly:
+	 * true)`), so the portal keeps no second publication rule of its own. The
+	 * caller MUST have re-verified ownership before calling this, and degrades
+	 * the same way listFiles() does.
+	 *
+	 * @param string $register The register slug/id.
+	 * @param string $schema The schema slug/id.
+	 * @param string $id The owned object's id (ownership already verified).
+	 *
+	 * @return array<int, array<string, mixed>> The released files' safe metadata.
+	 *
+	 * @spec openspec/specs/citizen-case-documents/spec.md
+	 */
+	public function listReleasedFiles(string $register, string $schema, string $id): array {
+		return $this->listing(register: $register, schema: $schema, id: $id, sharedFilesOnly: true);
+	}//end listReleasedFiles()
+
+	/**
+	 * List only the files carrying a tag on an object the subject already
+	 * owns: the resident's own uploads (PortalFileWriter::TAG_FROM_APPLICANT),
+	 * never what staff put in the same folder (cases-documents-on-the-case,
+	 * REQ-CDC-004). Tags are OpenRegister's (`FileService::getFileTags()`).
+	 * The caller MUST have re-verified ownership before calling this.
+	 *
+	 * @param string $register The register slug/id.
+	 * @param string $schema The schema slug/id.
+	 * @param string $id The owned object's id (ownership already verified).
+	 * @param string $tag The tag a file must carry.
+	 *
+	 * @return array<int, array<string, mixed>> The tagged files' safe metadata.
+	 *
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-residents-own-uploads-stay-visible-and-nothing-else-from-the-folder-req-cdc-004
+	 */
+	public function listTaggedFiles(string $register, string $schema, string $id, string $tag): array {
+		$fileService = $this->fileService();
+		if ($fileService === null) {
+			return [];
+		}
+
+		$tagged = [];
+		foreach ($this->listFiles(register: $register, schema: $schema, id: $id) as $file) {
+			try {
+				$tags = $fileService->getFileTags((string)($file['id'] ?? ''));
+			} catch (Throwable $e) {
+				continue;
+			}
+
+			if (is_array($tags) === true && in_array($tag, $tags, true) === true) {
+				$tagged[] = $file;
+			}
+		}
+
+		return $tagged;
+	}//end listTaggedFiles()
+
+	/**
+	 * The listing both public readers share.
+	 *
+	 * @param string $register The register slug/id.
+	 * @param string $schema The schema slug/id.
+	 * @param string $id The owned object's id (ownership already verified).
+	 * @param bool $sharedFilesOnly Handed to OpenRegister unchanged.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- mirrors OpenRegister's own
+	 * getFiles(sharedFilesOnly) toggle, which it hands on as it is; the two
+	 * public methods above are the named entry points.
+	 */
+	private function listing(string $register, string $schema, string $id, bool $sharedFilesOnly): array {
 		$fileService = $this->fileService();
 		if ($fileService === null) {
 			return [];
@@ -108,8 +201,21 @@ class PortalFileReader {
 			return [];
 		}
 
+		return $this->listedFiles(fileService: $fileService, entity: $entity, sharedFilesOnly: $sharedFilesOnly);
+	}//end listing()
+
+	/**
+	 * The entity's files from OpenRegister, normalised; [] when the list fails.
+	 *
+	 * @param object $fileService     OpenRegister's file service.
+	 * @param object $entity          The owned object's entity.
+	 * @param bool   $sharedFilesOnly Handed to OpenRegister unchanged.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function listedFiles(object $fileService, object $entity, bool $sharedFilesOnly): array {
 		try {
-			$files = $fileService->getFiles(object: $entity);
+			$files = $fileService->getFiles(object: $entity, sharedFilesOnly: $sharedFilesOnly);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: OR file list failed', ['reason' => $e->getMessage()]);
 			return [];
@@ -125,7 +231,7 @@ class PortalFileReader {
 		}
 
 		return $out;
-	}//end listFiles()
+	}//end listedFiles()
 
 	/**
 	 * Stream a file attached to an object the subject already owns.
@@ -160,6 +266,21 @@ class PortalFileReader {
 			return null;
 		}
 
+		return $this->streamOf(fileService: $fileService, entity: $entity, fileId: $fileId);
+	}//end streamFile()
+
+	/**
+	 * The stream of one of the entity's files, or null when it is not a file or cannot be resolved.
+	 *
+	 * @param object $fileService OpenRegister's file service.
+	 * @param object $entity      The owned object's entity.
+	 * @param string $fileId      The requested file's id.
+	 *
+	 * @return StreamResponse|null
+	 *
+	 * @spec openspec/specs/supplier-portal/spec.md#scoped-file-download-re-verifies-ownership-before-serving-a-byte
+	 */
+	private function streamOf(object $fileService, object $entity, string $fileId): StreamResponse|null {
 		try {
 			$file = $fileService->getFile(object: $entity, file: $fileId);
 			if ($file instanceof File === false) {
@@ -171,91 +292,5 @@ class PortalFileReader {
 			$this->logger->warning('Portaliq: OR file resolve failed', ['reason' => $e->getMessage()]);
 			return null;
 		}
-	}//end streamFile()
-
-	/**
-	 * Shape an OpenRegister file Node down to safe metadata for the client —
-	 * the raw stored path is never included.
-	 *
-	 * @param mixed $file The OpenRegister file Node (or array).
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function normalise(mixed $file): array {
-		$name = null;
-		$size = null;
-		$id = null;
-		if (is_object($file) === true) {
-			if (method_exists($file, 'getName') === true) {
-				$name = (string)$file->getName();
-			}
-
-			if (method_exists($file, 'getSize') === true) {
-				$size = $file->getSize();
-			}
-
-			if (method_exists($file, 'getId') === true) {
-				$id = $file->getId();
-			}
-		}
-
-		return ['id' => $id, 'name' => $name, 'size' => $size];
-	}//end normalise()
-
-	/**
-	 * Resolve OpenRegister's FileService, or null when unavailable.
-	 *
-	 * @return object|null
-	 */
-	private function fileService(): ?object {
-		try {
-			$service = $this->container->get(self::FILE_SERVICE);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end fileService()
-
-	/**
-	 * Resolve an object UUID to a full OpenRegister ObjectEntity via the object
-	 * service. The file service's folder resolution takes its entity-input
-	 * branch only when handed an ObjectEntity; a bare string id leaves it unable
-	 * to resolve the register, so `getFiles()`/`getFile()` return nothing.
-	 * RBAC/tenant off — the caller re-verified ownership already.
-	 *
-	 * @param string $register The register slug/id.
-	 * @param string $schema The schema slug/id.
-	 * @param string $id The owned object's UUID.
-	 *
-	 * @return object|null The ObjectEntity, or null on any resolution failure.
-	 */
-	private function resolveObjectEntity(string $register, string $schema, string $id): ?object {
-		try {
-			$objectService = $this->container->get(self::OBJECT_SERVICE);
-			if (is_object($objectService) === false) {
-				return null;
-			}
-
-			$entity = $objectService->find(
-				id: $id,
-				register: $register,
-				schema: $schema,
-				_rbac: false,
-				_multitenancy: false
-			);
-			if (is_object($entity) === true) {
-				return $entity;
-			}
-
-			return null;
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: object resolve for file read failed', ['reason' => $e->getMessage()]);
-			return null;
-		}//end try
-	}//end resolveObjectEntity()
+	}//end streamOf()
 }//end class

@@ -79,6 +79,7 @@ A token set shared through OpenRegister MUST pass `CustomTokenSetValidator` befo
 - **WHEN** a token set shared through OpenRegister is adopted by a portal
 - **THEN** it passes `CustomTokenSetValidator` first
 - **AND** a set that fails is refused with a visible reason
+- @e2e exclude pinned by PortalCustomThemeSetsTest::testAHostileDeclarationIsRefusedByName and PortalThemeChoiceTest::testCustomSetsAreOfferedAndAHostileOneIsRefusedVisibly
 
 ### Requirement: Portaliq MUST NOT ship design tokens or a theming mechanism
 
@@ -96,28 +97,42 @@ once already, with ZERO tokens in common between the halves.
      They record decisions built and measured on branch feat/portal-nextcloud-signin,
      which never merged. The requirements above are unchanged in substance. -->
 
-### Requirement: A shared theme MUST be copied into the portal, not linked
+### Requirement: A shared theme MUST be a copy on this instance, not a link to its source
 
-Adopting a shared token set MUST copy its accepted declarations into the
-portal's own record. A portal MUST keep rendering what it adopted when the
-source instance changes or withdraws the set.
+A token set shared from another instance MUST reach a portal as the theme
+app's own custom set on this instance: the theme app's shareable config type
+imports it as one, and the portal lists it with every other custom set. A
+portal MUST keep rendering what it adopted when the source instance changes or
+withdraws the set. Only a deletion on this instance ends it, and the portal's
+House style widget then says so.
 
 #### Scenario: The source withdraws the set
 
-- **GIVEN** a portal that adopted a set shared from another instance
+- **GIVEN** a portal wearing a set the theme app imported from another instance
 - **WHEN** that instance withdraws the set
 - **THEN** the portal renders exactly as before
-- **AND** an administrator can see that the source is gone
+- @e2e exclude Needs two instances sharing through OpenRegister; the copy is the theme app's custom set file, which the source cannot reach
 
-A link would let another instance change or remove what a live government
-portal looks like, at a moment nobody at that portal chose. Decided and built
-on the branch in 19fbcd6 (`PortalSharedTheme::adopt()`).
+#### Scenario: The set is deleted on this instance
+
+- **GIVEN** a portal wearing a custom set
+- **WHEN** an administrator deletes the set in the theme app
+- **THEN** the portal shows without a house style
+- **AND** its House style widget says the theme app no longer offers the set
+- @e2e exclude pinned by PortalThemeChoiceTest::testATypedThemeTheAppDoesNotOfferIsNamedAsNotResolving
+
+A link to the source would let another instance change or remove what a live
+government portal looks like, at a moment nobody at that portal chose. The
+branch design (19fbcd6, `PortalSharedTheme::adopt()`) copied the bundle into
+the portal record; built 2026-09-29 the copy is the theme app's own, so a set
+is made, edited, shared and checked in one place.
 
 #### Scenario: The validator is unavailable
 
-- **GIVEN** a shared set and no reachable `CustomTokenSetValidator`
-- **WHEN** a portal tries to adopt the set
-- **THEN** nothing is adopted and the refusal says why
+- **GIVEN** a custom set and no reachable `CustomTokenSetValidator`
+- **WHEN** a portal would link the set
+- **THEN** nothing is linked and the House style widget lists the set with the reason
+- @e2e exclude pinned by PortalCustomThemeSetsTest::testWithoutTheValidatorNothingIsLinked
 
 ### Requirement: A contrast verdict MUST say when nothing was measured
 
@@ -135,20 +150,34 @@ pairs compared (09e6ffe). A pass and an absent measurement looked identical.
 
 ### Requirement: The theme catalogue MUST be a choice, and never public
 
-The admin settings MUST list the adoptable token sets with their ids and
-verdicts, so `portal.theme` is picked rather than typed. The catalogue endpoint
-MUST require a signed-in user and MUST NOT be a public page.
+The portal's own page MUST list the adoptable token sets with their names and
+verdicts, so `portal.theme` is picked rather than typed. The list is served by
+`GET /api/portals/{slug}/theme` and saved by `PUT` on the same route; both
+MUST be admin-only and MUST NOT be a public page. A set the resolver would not
+render MUST be refused on save, and a set whose verdict has findings MUST be
+saved only after the administrator confirms, with the findings shown.
+
+Design fixed while building (2026-09-29): the picker is a widget on the
+portal's page rather than a section in the admin settings, next to the other
+per-portal choices (case types), and its route names the portal. The earlier
+`GET /api/themes` in admin settings was the unmerged branch's shape (09e6ffe).
 
 #### Scenario: An administrator picks a theme
 
-- **GIVEN** an administrator on the portaliq admin settings
-- **WHEN** they open the theme choice for a portal
-- **THEN** every adoptable set is listed by id with its verdict
+- **GIVEN** an administrator on a portal's page
+- **WHEN** they open the House style widget
+- **THEN** every adoptable set is listed with its verdict: Readable, Hard to read, or Not checked
+
+#### Scenario: A hard-to-read set asks before it saves
+
+- **GIVEN** a set whose text token fails AA on the page or footer surface
+- **WHEN** the administrator saves it
+- **THEN** the save is refused with the failing tokens and their ratios, and "Use it anyway" saves it
 
 #### Scenario: An anonymous caller asks for the catalogue
 
-- **GIVEN** no session
-- **WHEN** `GET /api/themes` is called
+- **GIVEN** no session, or a signed-in user who is not an administrator
+- **WHEN** `GET /api/portals/{slug}/theme` is called
 - **THEN** the response is refused
 
 The catalogue includes admin-uploaded custom sets. thematiq's own

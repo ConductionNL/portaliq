@@ -192,6 +192,45 @@ class ReportWithoutAnAccountTest extends TestCase {
 
 	}//end testTheTermsComeFromTheDeclarationAndNeverFromAConstant()
 
+	public function testAnEmptyCodeOpensNothingAndIsThrottledOnlyWithAnAddress(): void {
+		$this->intake()->accept(portal: 'gemeente-x', caseType: 'misstandmelding', report: ['body' => 'Melding.']);
+		$threads = $this->threads();
+
+		$this->assertNull($threads->openByCode(code: '', address: '203.0.113.9'));
+		$this->assertSame(['203.0.113.9'], $this->attempts);
+
+		$this->assertNull($threads->openByCode(code: ''));
+		$this->assertSame(['203.0.113.9'], $this->attempts);
+
+	}//end testAnEmptyCodeOpensNothingAndIsThrottledOnlyWithAnAddress()
+
+	public function testAMessageWithoutAReportABodyOrAKnownAuthorIsNotWritten(): void {
+		$this->intake()->accept(portal: 'gemeente-x', caseType: 'misstandmelding', report: ['body' => 'Melding.']);
+		$reportId = $this->storedRows('portalReport')[0]['uuid'];
+		$threads = $this->threads();
+
+		$this->assertFalse($threads->write(reportId: '', author: 'handler', body: 'Tekst.'));
+		$this->assertFalse($threads->write(reportId: $reportId, author: 'handler', body: "  \n "));
+		$this->assertFalse($threads->write(reportId: $reportId, author: 'custodian', body: 'Tekst.'));
+		$this->assertSame([], $this->storedRows('portalReportMessage'));
+		$this->assertSame([], $threads->allMessages(reportId: ''));
+
+		$this->assertTrue($threads->write(reportId: $reportId, author: 'handler', body: '  Tekst.  '));
+		$this->assertSame('Tekst.', $this->storedRows('portalReportMessage')[0]['body']);
+
+	}//end testAMessageWithoutAReportABodyOrAKnownAuthorIsNotWritten()
+
+	public function testAnUnreadableReceiptDateOrAZeroDayTermYieldsNoTerm(): void {
+		$terms = new ReportTermsService();
+		$declared = [ReportTermsService::DECLARATION => ['acknowledgementDays' => 0, 'feedbackDays' => 90]];
+
+		$this->assertSame([], $terms->forReport(caseType: $declared, report: ['receivedAt' => 'geen datum']));
+
+		$rendered = $terms->forReport(caseType: $declared, report: ['receivedAt' => '2026-09-01T09:00:00+00:00'], now: new DateTimeImmutable('2026-09-05T09:00:00+00:00'));
+		$this->assertSame(['feedback'], array_column($rendered, 'term'));
+
+	}//end testAnUnreadableReceiptDateOrAZeroDayTermYieldsNoTerm()
+
 	public function testARevealRequestWithoutAMotivationIsRefusedAndNothingIsWritten(): void {
 		$reveals = $this->reveals();
 
@@ -251,6 +290,57 @@ class ReportWithoutAnAccountTest extends TestCase {
 
 	}//end testARefusalIsRecordedAndRevealsNothing()
 
+	public function testARequestThatIsNoLongerPendingIsRefusedBeforeTheCustodianCheck(): void {
+		[$reveals, $request, $report, $declaration] = $this->pendingRequest();
+		$request['state'] = 'allowed';
+
+		$outcome = $reveals->decide(request: $request, report: $report, custodian: $this->user('admin', inGroup: false), caseType: $declaration, allow: true);
+
+		$this->assertSame(['error' => 'not_pending'], $outcome);
+		$this->assertSame('pending', $this->storedRows('portalRevealRequest')[0]['state']);
+		$this->assertSame([], $this->events);
+
+	}//end testARequestThatIsNoLongerPendingIsRefusedBeforeTheCustodianCheck()
+
+	public function testTheEventCarriesTheRequestAndTheMomentOnTheRecord(): void {
+		[$reveals, $request, $report, $declaration] = $this->pendingRequest();
+
+		$reveals->decide(request: $request, report: $report, custodian: $this->user('vertrouwenspersoon-lena'), caseType: $declaration, allow: true);
+
+		$closed = $this->storedRows('portalRevealRequest')[0];
+		$this->assertSame('', $closed['decisionReason']);
+		$this->assertSame((string)$report['uuid'], $this->events[0]->getReportId());
+		$this->assertSame('handler-anna', $this->events[0]->getRequestedBy());
+		$this->assertSame('Er is een tweede melding over dezelfde afdeling.', $this->events[0]->getMotivation());
+		$this->assertSame($closed['decidedAt'], $this->events[0]->getOccurredAt());
+
+	}//end testTheEventCarriesTheRequestAndTheMomentOnTheRecord()
+
+	public function testARequestWithoutAnIdIsNotWrittenButTheRevealIsStillAnnounced(): void {
+		[$reveals, $request, $report, $declaration] = $this->pendingRequest();
+		unset($request['uuid']);
+
+		$outcome = $reveals->decide(request: $request, report: $report, custodian: $this->user('vertrouwenspersoon-lena'), caseType: $declaration, allow: true);
+
+		$this->assertSame('allowed', $outcome['state']);
+		$this->assertSame(['name' => 'Sanne Bakker', 'email' => 'sanne@example.org'], $outcome['contact']);
+		$this->assertSame('pending', $this->storedRows('portalRevealRequest')[0]['state']);
+		$this->assertCount(1, $this->events);
+
+	}//end testARequestWithoutAnIdIsNotWrittenButTheRevealIsStillAnnounced()
+
+	public function testAReportWithoutAContactRevealsNothingAndSaysSo(): void {
+		[$reveals, $request, $report, $declaration] = $this->pendingRequest();
+		$report['contactRef'] = '';
+
+		$outcome = $reveals->decide(request: $request, report: $report, custodian: $this->user('vertrouwenspersoon-lena'), caseType: $declaration, allow: true);
+
+		$this->assertSame(['state' => 'allowed', 'contact' => []], $outcome);
+		$this->assertSame([], $this->storedRows('portalRevealRequest')[0]['revealedFields']);
+		$this->assertSame([], $this->events[0]->getRevealedFields());
+
+	}//end testAReportWithoutAContactRevealsNothingAndSaysSo()
+
 	public function testACaseTypeThatNamedNoCustodianHasNobodyWhoMayReveal(): void {
 		[$reveals, $request, $report] = $this->pendingRequest();
 
@@ -259,6 +349,24 @@ class ReportWithoutAnAccountTest extends TestCase {
 		$this->assertSame('not_custodian', $outcome['error']);
 
 	}//end testACaseTypeThatNamedNoCustodianHasNobodyWhoMayReveal()
+
+	public function testOnlyTheDeclaredGroupsMayHandleAReport(): void {
+		$reveals = $this->reveals();
+		$both = [ReportTermsService::DECLARATION => ['custodianGroup' => 'vertrouwenspersonen', 'handlerGroup' => 'meldpunt']];
+		$custodianOnly = [ReportTermsService::DECLARATION => ['custodianGroup' => 'vertrouwenspersonen']];
+
+		// A member of the handler group handles; so does the custodian.
+		$this->assertTrue($reveals->mayHandle(user: $this->user('handler-anna'), caseType: $both));
+		$this->assertTrue($reveals->mayHandle(user: $this->user('vertrouwenspersoon-lena'), caseType: $both));
+		// Without a handler group only the custodian group may.
+		$this->assertFalse($reveals->mayHandle(user: $this->user('handler-anna'), caseType: $custodianOnly));
+		$this->assertTrue($reveals->mayHandle(user: $this->user('vertrouwenspersoon-lena'), caseType: $custodianOnly));
+		// Signed in, or an administrator, in neither group: no.
+		$this->assertFalse($reveals->mayHandle(user: $this->user('admin', inGroup: false), caseType: $both));
+		// No declaration at all: nobody.
+		$this->assertFalse($reveals->mayHandle(user: $this->user('handler-anna'), caseType: []));
+
+	}//end testOnlyTheDeclaredGroupsMayHandleAReport()
 
 	/**
 	 * A report with contact details, and a pending motivated request on it.
@@ -328,7 +436,8 @@ class ReportWithoutAnAccountTest extends TestCase {
 		$groups = $this->createMock(IGroupManager::class);
 		$groups->method('isInGroup')->willReturnCallback(
 			static function (string $uid, string $group): bool {
-				return ($group === 'vertrouwenspersonen' && $uid === 'vertrouwenspersoon-lena');
+				return ($group === 'vertrouwenspersonen' && $uid === 'vertrouwenspersoon-lena')
+					|| ($group === 'meldpunt' && $uid === 'handler-anna');
 			}
 		);
 

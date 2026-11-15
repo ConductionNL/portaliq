@@ -175,3 +175,24 @@ Documents go through the file surface the case app already declares. Portaliq
 adds no second upload path, and a citizen can add a document but never replace
 or remove one: a name that collides with a document already on the case is
 given a suffix.
+
+## The documents on the case
+
+The case screen lists three kinds of document, each under its own heading:
+
+- **Decision** ("Besluit"): what the case app marks `kind: decision`, newest first, with its date.
+- **Documents** ("Documenten"): the other documents the case app published.
+- **Sent by you** ("Door u gestuurd"): what the resident added through the portal. An upload is tagged `portal:from-applicant` when it is sent; a file in the case folder without that tag is never listed.
+
+The case app decides what it publishes by declaring a method on its case collection:
+
+```json
+{"id": "mijnZaken", "documents": {"label": "Stukken", "provider": "caseDocuments"}}
+```
+
+`caseDocuments($caseId)` returns entries `{id, title, kind, date, file: {register, schema, id, fileId}, mimeType, size}`. The `file` reference stays on the server: the screen gets the id, title, kind and date, and opens a document through `GET /portal/api/citizen/cases/{register}/{schema}/{id}/documents/{documentId}`, which asks the method again and streams only an entry it returned for this case. Every download is audited.
+
+A case app that declares no method keeps what the case screen showed before: the files the organisation released on the case in OpenRegister, where the collection opted into `filesDownload`. A case with nothing to show says "There are no documents on this case yet."
+
+Files a resident sent before this tagging existed carry no tag and are no longer listed to them; the handler still sees them on the case.
+

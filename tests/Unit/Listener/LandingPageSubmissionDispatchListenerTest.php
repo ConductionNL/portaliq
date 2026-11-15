@@ -73,6 +73,10 @@ class LandingPageSubmissionDispatchListenerTest extends TestCase {
 	}//end entity()
 
 	public function testDispatchesTheConsumersOwnEventWhenItExists(): void {
+		if (class_exists(ObjectCreatedEvent::class) === false) {
+			$this->markTestSkipped('OpenRegister is not installed in this environment.');
+		}
+
 		$captured = null;
 		$this->dispatcher->expects($this->once())->method('dispatchTyped')->with(
 			$this->callback(
@@ -111,6 +115,10 @@ class LandingPageSubmissionDispatchListenerTest extends TestCase {
 	}//end testDispatchesTheConsumersOwnEventWhenItExists()
 
 	public function testNeverThrowsWhenTheConsumersEventClassDoesNotExistYet(): void {
+		if (class_exists(ObjectCreatedEvent::class) === false) {
+			$this->markTestSkipped('OpenRegister is not installed in this environment.');
+		}
+
 		$this->dispatcher->expects($this->never())->method('dispatchTyped');
 
 		$this->listener->handle(
@@ -126,12 +134,20 @@ class LandingPageSubmissionDispatchListenerTest extends TestCase {
 	}//end testNeverThrowsWhenTheConsumersEventClassDoesNotExistYet()
 
 	public function testASubmissionWithNoSourceAppIsNeverDispatched(): void {
+		if (class_exists(ObjectCreatedEvent::class) === false) {
+			$this->markTestSkipped('OpenRegister is not installed in this environment.');
+		}
+
 		$this->dispatcher->expects($this->never())->method('dispatchTyped');
 
 		$this->listener->handle(new ObjectCreatedEvent($this->entity(['formId' => 'form-1'])));
 	}//end testASubmissionWithNoSourceAppIsNeverDispatched()
 
 	public function testAWriteToAnUnrelatedSchemaIsIgnored(): void {
+		if (class_exists(ObjectCreatedEvent::class) === false) {
+			$this->markTestSkipped('OpenRegister is not installed in this environment.');
+		}
+
 		$this->dispatcher->expects($this->never())->method('dispatchTyped');
 
 		$this->listener->handle(

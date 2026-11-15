@@ -126,6 +126,87 @@ class PortalInvitationServiceTest extends TestCase {
 
 	}//end testAnInvitationIsAcceptedOnlyOnce()
 
+	/**
+	 * identity-staff-account-screens T02 (REQ-ISA-002): a withdrawn
+	 * invitation admits nobody, and one that was accepted cannot be withdrawn.
+	 *
+	 * @return void
+	 */
+	public function testAWithdrawnInvitationAdmitsNobody(): void {
+		$service = $this->service();
+		$invited = $service->invite(email: 'ans@example.org', organisation: 'gemeente-x', audience: 'client', invitedBy: 'clerk-anna');
+		$id = $this->storedRows('portalInvitation')[0]['uuid'];
+
+		$this->assertSame('not_found', $service->revoke(id: $id, organisation: 'gemeente-y'), 'another organisation cannot withdraw it');
+		$this->assertSame('', $service->revoke(id: $id, organisation: 'gemeente-x'));
+		$this->assertSame('', $service->revoke(id: $id, organisation: 'gemeente-x'), 'withdrawing twice changes nothing');
+
+		$this->assertSame('revoked', $this->storedRows('portalInvitation')[0]['state']);
+		$this->assertNull($service->accept(token: $invited['token']));
+		$this->assertSame('revoked', $service->sentBy(invitedBy: 'clerk-anna', organisation: 'gemeente-x')[0]['state']);
+
+	}//end testAWithdrawnInvitationAdmitsNobody()
+
+	/**
+	 * An accepted invitation stays accepted.
+	 *
+	 * @return void
+	 */
+	public function testAnAcceptedInvitationCannotBeWithdrawn(): void {
+		$service = $this->service();
+		$invited = $service->invite(email: 'ans@example.org', organisation: 'gemeente-x', audience: 'client', invitedBy: 'clerk-anna');
+		$this->assertNotNull($service->accept(token: $invited['token']));
+		$id = $this->storedRows('portalInvitation')[0]['uuid'];
+
+		$this->assertSame('already_accepted', $service->revoke(id: $id, organisation: 'gemeente-x'));
+		$this->assertSame('accepted', $this->storedRows('portalInvitation')[0]['state']);
+
+	}//end testAnAcceptedInvitationCannotBeWithdrawn()
+
+	/**
+	 * Sending an invitation again replaces its secret: the old link admits
+	 * nobody, the new one does, and the window starts again.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/staff-resend-an-invitation/specs/portal-account-administration/spec.md#requirement-staff-send-an-invitation-again-req-isa-011
+	 */
+	public function testResendingReplacesTheSecretAndRestartsTheWindow(): void {
+		$service = $this->service();
+		$first = $service->invite(email: 'ans@example.org', organisation: 'gemeente-x', audience: 'client', invitedBy: 'clerk-anna', ttl: 'P1D');
+		$id = $this->storedRows(schema: 'portalInvitation')[0]['uuid'];
+
+		$again = $service->resend(id: $id, organisation: 'gemeente-x');
+
+		$this->assertSame(expected: 'ans@example.org', actual: $again['email']);
+		$this->assertNotSame(expected: $first['token'], actual: $again['token']);
+		$this->assertNull(actual: $service->open(token: $first['token']));
+		$this->assertNotNull(actual: $service->open(token: $again['token']));
+		$this->assertGreaterThan(expected: strtotime(datetime: $first['expiresAt']), actual: strtotime(datetime: $again['expiresAt']));
+		$this->assertSame(expected: hash(algo: 'sha256', data: $again['token']), actual: $this->storedRows(schema: 'portalInvitation')[0]['tokenHash']);
+	}//end testResendingReplacesTheSecretAndRestartsTheWindow()
+
+	/**
+	 * An accepted or withdrawn invitation is not sent again, and another
+	 * organisation cannot find it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/staff-resend-an-invitation/specs/portal-account-administration/spec.md#requirement-staff-send-an-invitation-again-req-isa-011
+	 */
+	public function testOnlyAnOpenInvitationIsSentAgain(): void {
+		$service = $this->service();
+		$accepted = $service->invite(email: 'ans@example.org', organisation: 'gemeente-x', audience: 'client', invitedBy: 'clerk-anna');
+		$service->accept(token: $accepted['token']);
+		$service->invite(email: 'bram@example.org', organisation: 'gemeente-x', audience: 'client', invitedBy: 'clerk-anna');
+		[$acceptedId, $withdrawnId] = array_column(array: $this->storedRows(schema: 'portalInvitation'), column_key: 'uuid');
+		$service->revoke(id: $withdrawnId, organisation: 'gemeente-x');
+
+		$this->assertSame(expected: ['error' => 'already_accepted'], actual: $service->resend(id: $acceptedId, organisation: 'gemeente-x'));
+		$this->assertSame(expected: ['error' => 'withdrawn'], actual: $service->resend(id: $withdrawnId, organisation: 'gemeente-x'));
+		$this->assertSame(expected: ['error' => 'not_found'], actual: $service->resend(id: $withdrawnId, organisation: 'gemeente-y'));
+	}//end testOnlyAnOpenInvitationIsSentAgain()
+
 	public function testAnUnknownSecretMatchesNothing(): void {
 		$service = $this->service();
 		$service->invite(email: 'ans@example.org', organisation: 'gemeente-x', audience: 'client', invitedBy: 'clerk-anna');

@@ -156,6 +156,162 @@ class PortalJwtServiceTest extends TestCase {
 
 	}//end testAssertionWireFormatIsPinnedForReceiverVerifiers()
 
+
+	/**
+	 * #804, case-actions-sign-a-document D3: an action that declares a
+	 * `scopeClaim` puts its server-resolved value inside the signed assertion
+	 * as exactly ONE extra claim, named after the claim (the part after the
+	 * app prefix). Filinq's signing receiver reads `signerEmail` from here and
+	 * refuses every act without it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
+	 */
+	public function testAssertionWithScopeClaimHasExactlyTenClaims(): void {
+		$jwt = new PortalJwtService(self::SECRET);
+		foreach (['signerEmail', 'filinq.signerEmail'] as $declared) {
+			$assertion = $jwt->createAssertion(
+				subjectRef: 's1',
+				audience: 'signer',
+				organisation: 'org-1',
+				trust: 'substantial',
+				jti: 'session-jti-1',
+				scopeClaim: $declared,
+				scopeValue: 'signer@example.org'
+			);
+
+			$claims = json_decode($this->b64UrlDecode(explode('.', $assertion)[1]), true);
+			$this->assertSame(
+				['sub', 'audience', 'organisation', 'trust', 'jti', 'use', 'iat', 'exp', 'iss', 'signerEmail'],
+				array_keys($claims),
+				$declared
+			);
+			$this->assertSame('signer@example.org', $claims['signerEmail']);
+		}
+
+	}//end testAssertionWithScopeClaimHasExactlyTenClaims()
+
+
+	/**
+	 * A scope claim can never overwrite a frozen claim, and an empty value or
+	 * a malformed name adds nothing: the assertion keeps its nine claims.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
+	 */
+	public function testAReservedOrEmptyScopeClaimLeavesTheNineClaims(): void {
+		$jwt = new PortalJwtService(self::SECRET);
+		foreach ([['sub', 'someone-else'], ['filinq.iss', 'evil'], ['signerEmail', ''], ['', 'x'], ['bad name', 'x']] as [$declared, $value]) {
+			$assertion = $jwt->createAssertion(
+				subjectRef: 's1',
+				audience: 'signer',
+				organisation: 'org-1',
+				trust: 'low',
+				jti: 'session-jti-1',
+				scopeClaim: $declared,
+				scopeValue: $value
+			);
+
+			$claims = json_decode($this->b64UrlDecode(explode('.', $assertion)[1]), true);
+			$this->assertSame(['sub', 'audience', 'organisation', 'trust', 'jti', 'use', 'iat', 'exp', 'iss'], array_keys($claims), $declared);
+			$this->assertSame('s1', $claims['sub']);
+			$this->assertSame('portaliq', $claims['iss']);
+		}
+
+	}//end testAReservedOrEmptyScopeClaimLeavesTheNineClaims()
+
+	/**
+	 * Decision 173 (Q-dossiq-L2-5): a session acting for a company branch puts
+	 * that branch on the assertion as ONE optional `branch` claim, after the
+	 * nine frozen ones and before a declared scope claim. A session without a
+	 * branch keeps exactly the nine (the pin above).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
+	 */
+	public function testABranchSessionAddsExactlyTheOptionalBranchClaim(): void {
+		$jwt = new PortalJwtService(self::SECRET);
+		$assertion = $jwt->createAssertion(
+			subjectRef: 's1',
+			audience: 'business',
+			organisation: 'org-1',
+			trust: 'substantial',
+			jti: 'session-jti-1',
+			branch: '000012345678'
+		);
+
+		$claims = json_decode($this->b64UrlDecode(explode('.', $assertion)[1]), true);
+		$this->assertSame(
+			['sub', 'audience', 'organisation', 'trust', 'jti', 'use', 'iat', 'exp', 'iss', 'branch'],
+			array_keys($claims)
+		);
+		$this->assertSame('000012345678', $claims['branch']);
+
+		// With a scope claim too: the nine, then branch, then the scope claim.
+		$assertion = $jwt->createAssertion(
+			subjectRef: 's1',
+			audience: 'business',
+			organisation: 'org-1',
+			trust: 'substantial',
+			jti: 'session-jti-1',
+			scopeClaim: 'signerEmail',
+			scopeValue: 'signer@example.org',
+			branch: '000012345678'
+		);
+		$claims = json_decode($this->b64UrlDecode(explode('.', $assertion)[1]), true);
+		$this->assertSame(
+			['sub', 'audience', 'organisation', 'trust', 'jti', 'use', 'iat', 'exp', 'iss', 'branch', 'signerEmail'],
+			array_keys($claims)
+		);
+
+	}//end testABranchSessionAddsExactlyTheOptionalBranchClaim()
+
+
+	/**
+	 * An empty branch adds nothing, and an action can never declare `branch`
+	 * as its scope claim: only the session's own branch may fill it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
+	 */
+	public function testAnEmptyBranchAddsNothingAndBranchIsNoScopeClaim(): void {
+		$jwt = new PortalJwtService(self::SECRET);
+		$assertion = $jwt->createAssertion(
+			subjectRef: 's1',
+			audience: 'business',
+			organisation: 'org-1',
+			trust: 'low',
+			jti: 'session-jti-1',
+			branch: ''
+		);
+		$claims = json_decode($this->b64UrlDecode(explode('.', $assertion)[1]), true);
+		$this->assertSame(
+			['sub', 'audience', 'organisation', 'trust', 'jti', 'use', 'iat', 'exp', 'iss'],
+			array_keys($claims)
+		);
+
+		foreach (['branch', 'dossiq.branch'] as $declared) {
+			$this->assertNull(PortalJwtService::scopeClaimName(scopeClaim: $declared), $declared);
+			$this->assertTrue(PortalJwtService::isReservedScopeClaim(scopeClaim: $declared), $declared);
+			$assertion = $jwt->createAssertion(
+				subjectRef: 's1',
+				audience: 'business',
+				organisation: 'org-1',
+				trust: 'low',
+				jti: 'session-jti-1',
+				scopeClaim: $declared,
+				scopeValue: 'forged-branch'
+			);
+			$claims = json_decode($this->b64UrlDecode(explode('.', $assertion)[1]), true);
+			$this->assertArrayNotHasKey('branch', $claims, $declared);
+		}
+
+	}//end testAnEmptyBranchAddsNothingAndBranchIsNoScopeClaim()
+
 	/**
 	 * Base64-url decode (test-local twin of the service's private helper, so
 	 * the pin decodes the wire bytes independently of the implementation).

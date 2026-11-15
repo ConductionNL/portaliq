@@ -21,29 +21,49 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Kernel\Contracts\PortalFormValidatorInterface;
 use OCP\IL10N;
 
 /**
  * Per-field validation of a submission against its form.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md
  */
-class PortalFormValidator {
+class PortalFormValidator implements PortalFormValidatorInterface {
+	/**
+	 * The largest signature image accepted, in bytes.
+	 *
+	 * @var int
+	 */
+	public const MAX_SIGNATURE_BYTES = 200000;
+
+	/**
+	 * The checks of a single answer against its field.
+	 *
+	 * @var PortalFieldChecks
+	 */
+	private readonly PortalFieldChecks $checks;
+
 	/**
 	 * Constructor.
 	 *
-	 * @param IL10N $l10n The sentences a refusal is given with.
+	 * @param IL10N            $l10n        The sentences a refusal is given with.
+	 * @param VisibleWhenLocal $visibleWhen Whether a field's condition shows it.
+	 * @param DutchFormats     $formats     The Dutch format checks a field may name.
 	 */
 	public function __construct(
 		private readonly IL10N $l10n,
+		private readonly VisibleWhenLocal $visibleWhen=new VisibleWhenLocal(),
+		DutchFormats $formats=new DutchFormats(),
 	) {
+		$this->checks = new PortalFieldChecks(l10n: $l10n, formats: $formats);
 	}//end __construct()
 
 	/**
@@ -53,44 +73,266 @@ class PortalFormValidator {
 	 * @param array<string, mixed> $answers What the citizen submitted.
 	 *
 	 * @return array{valid: bool, errors: array<string, string>, answers: array<string, mixed>}
-	 *         `answers` carries only the fields the form declares, so nothing a
-	 *         client invented reaches a create.
+	 *         `answers` carries only the fields the form declares and shows,
+	 *         so nothing a client invented, and no answer to a question the
+	 *         resident was not shown, reaches a create.
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 * @spec openspec/changes/intake-conditional-questions-and-drafts/specs/portal-intake-form/spec.md#requirement-the-server-skips-a-hidden-field-req-icq-002
 	 */
 	public function validate(array $fields, array $answers): array {
-		$errors = [];
-		$accepted = [];
+		// What a condition reads: every answer, less each field found hidden.
+		// Taken in declared order, so a question that hangs on a hidden one
+		// hides too, while a condition on a later field reads its answer, as
+		// the screen's form data holds every answer at once.
+		$run = new FormValidationRun(answers: $answers);
 		foreach ($fields as $field) {
-			if (is_array($field) === false) {
-				continue;
-			}
+			$this->check(field: $field, run: $run);
+		}
 
-			$name = (string)($field['name'] ?? '');
-			if ($name === '') {
-				continue;
-			}
-
-			$value = ($answers[$name] ?? null);
-			if ($this->wasAnswered(value: $value) === false) {
-				if (($field['required'] ?? false) === true) {
-					$errors[$name] = $this->l10n->t('This answer is required.');
-				}
-
-				continue;
-			}
-
-			$error = $this->checkValue(field: $field, value: $value);
-			if ($error !== null) {
-				$errors[$name] = $error;
-				continue;
-			}
-
-			$accepted[$name] = $value;
-		}//end foreach
-
-		return ['valid' => ($errors === []), 'errors' => $errors, 'answers' => $accepted];
+		return ['valid' => ($run->errors === []), 'errors' => $run->errors, 'answers' => $run->accepted];
 	}//end validate()
+
+	/**
+	 * Check one declared field: skip it when hidden or computed, else check it as a group or a single answer.
+	 *
+	 * @param mixed             $field The declared field.
+	 * @param FormValidationRun $run   The pass so far.
+	 *
+	 * @return void
+	 */
+	private function check(mixed $field, FormValidationRun $run): void {
+		$name = $this->nameOf(field: $field);
+		if ($name === '') {
+			return;
+		}
+
+		if ($this->isHiddenOrComputed(field: $field, shown: $run->shown) === true) {
+			// Not shown, so neither required nor accepted (REQ-ICQ-002); a
+			// calculated or decided field is the server's to fill, never
+			// the browser's (REQ-FFL-002).
+			unset($run->shown[$name]);
+			return;
+		}
+
+		if ((string)($field['type'] ?? '') === 'group') {
+			$this->checkGroup(field: $field, run: $run);
+			return;
+		}
+
+		$this->checkSingle(field: $field, run: $run);
+	}//end check()
+
+	/**
+	 * A declared field's name, or '' when it is no field.
+	 *
+	 * @param mixed $field The declared field.
+	 *
+	 * @return string
+	 */
+	private function nameOf(mixed $field): string {
+		if (is_array($field) === false) {
+			return '';
+		}
+
+		return (string)($field['name'] ?? '');
+	}//end nameOf()
+
+	/**
+	 * Check a repeating group: its errors, and its items when it has any.
+	 *
+	 * @param array<string, mixed> $field The declared group.
+	 * @param FormValidationRun    $run   The pass so far.
+	 *
+	 * @return void
+	 */
+	private function checkGroup(array $field, FormValidationRun $run): void {
+		$name        = $this->nameOf(field: $field);
+		$group       = $this->group(field: $field, name: $name, value: ($run->answers[$name] ?? null));
+		$run->errors = array_merge($run->errors, $group['errors']);
+		if ($group['items'] !== null) {
+			$run->accepted[$name] = $group['items'];
+		}
+	}//end checkGroup()
+
+	/**
+	 * Check a single answer: its error, or its value when it is kept.
+	 *
+	 * @param array<string, mixed> $field The declared field.
+	 * @param FormValidationRun    $run   The pass so far.
+	 *
+	 * @return void
+	 */
+	private function checkSingle(array $field, FormValidationRun $run): void {
+		$name   = $this->nameOf(field: $field);
+		$single = $this->single(field: $field, value: ($run->answers[$name] ?? null));
+		if ($single['error'] !== null) {
+			$run->errors[$name] = $single['error'];
+			return;
+		}
+
+		if ($single['kept'] === true) {
+			$run->accepted[$name] = $single['value'];
+		}
+	}//end checkSingle()
+
+	/**
+	 * Whether a field is not shown by its condition, or is one the server fills.
+	 *
+	 * A calculated or decided field is the server's to fill, never the
+	 * browser's (form-flow-repeating-groups-calculations-and-decisions REQ-FFL-002).
+	 *
+	 * @param array<string, mixed> $field The field.
+	 * @param array<string, mixed> $shown The answers a condition reads.
+	 *
+	 * @return bool
+	 */
+	private function isHiddenOrComputed(array $field, array $shown): bool {
+		if ($this->visibleWhen->isVisible(condition: ($field['visibleWhen'] ?? null), answers: $shown) === false) {
+			return true;
+		}
+
+		return isset($field['calculate']) === true || ($field['computed'] ?? false) === true;
+	}//end isHiddenOrComputed()
+
+	/**
+	 * Validate a plain field's answer.
+	 *
+	 * @param array<string, mixed> $field The field.
+	 * @param mixed                $value What the browser sent for it.
+	 *
+	 * @return array{error: string|null, kept: bool, value: mixed} The refusal, or whether the answer is kept and its stored value.
+	 */
+	private function single(array $field, mixed $value): array {
+		if ($this->wasAnswered(value: $value) === false) {
+			$error = null;
+			if (($field['required'] ?? false) === true) {
+				$error = $this->l10n->t('This answer is required.');
+			}
+
+			return ['error' => $error, 'kept' => false, 'value' => null];
+		}
+
+		$error = $this->checks->checkValue(field: $field, value: $value);
+		if ($error !== null) {
+			return ['error' => $error, 'kept' => false, 'value' => null];
+		}
+
+		return ['error' => null, 'kept' => true, 'value' => $this->checks->stored(field: $field, value: $value)];
+	}//end single()
+
+	/**
+	 * Validate a repeating group: a list whose count fits `repeat.min` and
+	 * `repeat.max` and whose items each fit the group's sub-fields.
+	 *
+	 * An item error is keyed `name[index].field` (the first item is 0), so the
+	 * summary can name the item and the field.
+	 *
+	 * @param array<string, mixed> $field The group's declaration.
+	 * @param string $name The group's name.
+	 * @param mixed $value What the browser sent for it.
+	 *
+	 * @return array{errors: array<string, string>, items: array<int, array<string, mixed>>|null}
+	 *         The errors, and the accepted items, or null when none are kept.
+	 *
+	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t01
+	 */
+	private function group(array $field, string $name, mixed $value): array {
+		$repeat = (array)($field['repeat'] ?? []);
+		$min    = $this->groupMin(field: $field, repeat: $repeat);
+
+		$max    = (int)($repeat['max'] ?? 0);
+		$items  = [];
+		if (is_array($value) === true && array_is_list($value) === true) {
+			$items = $value;
+		} elseif ($this->wasAnswered(value: $value) === true) {
+			return ['errors' => [$name => $this->l10n->t('This answer must be a list.')], 'items' => null];
+		}
+
+		$refusal = $this->groupCountRefusal(name: $name, given: count($items), min: $min, max: $max);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		return $this->groupItems(field: $field, name: $name, items: $items);
+	}//end group()
+
+	/**
+	 * The fewest items a group takes: `repeat.min`, and at least one when the
+	 * group is required.
+	 *
+	 * @param array<string, mixed> $field  The group's declaration.
+	 * @param array<string, mixed> $repeat The group's `repeat`.
+	 *
+	 * @return int
+	 *
+	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t01
+	 */
+	private function groupMin(array $field, array $repeat): int {
+		$min = (int)($repeat['min'] ?? 0);
+		if (($field['required'] ?? false) === true) {
+			$min = max($min, 1);
+		}
+
+		return $min;
+	}//end groupMin()
+
+	/**
+	 * The refusal of a group with too few or too many items, or null.
+	 *
+	 * @param string $name  The group's name.
+	 * @param int    $given How many items were sent.
+	 * @param int    $min   The fewest items it takes.
+	 * @param int    $max   The most items it takes, 0 for no limit.
+	 *
+	 * @return array{errors: array<string, string>, items: null}|null
+	 *
+	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t01
+	 */
+	private function groupCountRefusal(string $name, int $given, int $min, int $max): array|null {
+		if ($given < $min) {
+			return ['errors' => [$name => $this->l10n->t('Add at least %s.', [(string)$min])], 'items' => null];
+		}
+
+		if ($max > 0 && $given > $max) {
+			return ['errors' => [$name => $this->l10n->t('You can add at most %s.', [(string)$max])], 'items' => null];
+		}
+
+		return null;
+	}//end groupCountRefusal()
+
+	/**
+	 * Validate the items of a repeating group against its sub-fields.
+	 *
+	 * @param array<string, mixed> $field The group's declaration.
+	 * @param string               $name  The group's name.
+	 * @param array<int, mixed>    $items The items the browser sent.
+	 *
+	 * @return array{errors: array<string, string>, items: array<int, array<string, mixed>>|null}
+	 */
+	private function groupItems(array $field, string $name, array $items): array {
+		$errors   = [];
+		$accepted = [];
+		foreach ($items as $index => $item) {
+			if (is_array($item) === false) {
+				$errors[$name.'['.$index.']'] = $this->l10n->t('This answer is required.');
+				continue;
+			}
+
+			$checked = $this->validate(fields: (array)($field['fields'] ?? []), answers: $item);
+			foreach ($checked['errors'] as $key => $message) {
+				$errors[$name.'['.$index.'].'.$key] = $message;
+			}
+
+			$accepted[] = $checked['answers'];
+		}
+
+		if ($accepted === []) {
+			return ['errors' => $errors, 'items' => null];
+		}
+
+		return ['errors' => $errors, 'items' => $accepted];
+	}//end groupItems()
 
 	/**
 	 * Whether the visitor answered this field at all.
@@ -114,116 +356,4 @@ class PortalFormValidator {
 		return (trim((string)$value) !== '');
 	}//end wasAnswered()
 
-	/**
-	 * The error one value carries, or null when it is fine.
-	 *
-	 * One rule per helper, asked in declaration order, so the visitor reads
-	 * the first thing wrong with their answer rather than the last.
-	 *
-	 * @param array<string, mixed> $field The field's declaration.
-	 * @param mixed $value The submitted value.
-	 *
-	 * @return string|null
-	 */
-	private function checkValue(array $field, mixed $value): ?string {
-		$error = $this->typeError(type: (string)($field['type'] ?? 'string'), value: $value);
-		if ($error !== null) {
-			return $error;
-		}
-
-		$error = $this->patternError(field: $field, value: $value);
-		if ($error !== null) {
-			return $error;
-		}
-
-		$error = $this->optionsError(field: $field, value: $value);
-		if ($error !== null) {
-			return $error;
-		}
-
-		return $this->lengthError(field: $field, value: $value);
-	}//end checkValue()
-
-	/**
-	 * Whether the value is of the type the field declares.
-	 *
-	 * @param string $type The declared type.
-	 * @param mixed $value The submitted value.
-	 *
-	 * @return string|null
-	 */
-	private function typeError(string $type, mixed $value): ?string {
-		if ($type === 'number' && is_numeric($value) === false) {
-			return $this->l10n->t('This answer must be a number.');
-		}
-
-		if ($type === 'email' && filter_var((string)$value, FILTER_VALIDATE_EMAIL) === false) {
-			return $this->l10n->t('This does not look like an email address.');
-		}
-
-		return null;
-	}//end typeError()
-
-	/**
-	 * Whether the value matches the pattern the field declares.
-	 *
-	 * @param array<string, mixed> $field The field's declaration.
-	 * @param mixed $value The submitted value.
-	 *
-	 * @return string|null
-	 */
-	private function patternError(array $field, mixed $value): ?string {
-		$pattern = (string)($field['pattern'] ?? '');
-		if ($pattern === '' || is_string($value) === false) {
-			return null;
-		}
-
-		if (preg_match('/' . str_replace('/', '\\/', $pattern) . '/', $value) !== 1) {
-			return $this->l10n->t('This answer is not in the expected format.');
-		}
-
-		return null;
-	}//end patternError()
-
-	/**
-	 * Whether the value is one of the options the field offers.
-	 *
-	 * @param array<string, mixed> $field The field's declaration.
-	 * @param mixed $value The submitted value.
-	 *
-	 * @return string|null
-	 */
-	private function optionsError(array $field, mixed $value): ?string {
-		$options = ($field['options'] ?? null);
-		if (is_array($options) === false || $options === []) {
-			return null;
-		}
-
-		if (in_array($value, $options, true) === false) {
-			return $this->l10n->t('Choose one of the options offered.');
-		}
-
-		return null;
-	}//end optionsError()
-
-	/**
-	 * Whether the value fits the length the field allows.
-	 *
-	 * @param array<string, mixed> $field The field's declaration.
-	 * @param mixed $value The submitted value.
-	 *
-	 * @return string|null
-	 */
-	private function lengthError(array $field, mixed $value): ?string {
-		$maxLength = (int)($field['maxLength'] ?? 0);
-		if ($maxLength <= 0 || is_string($value) === false) {
-			return null;
-		}
-
-		if (mb_strlen($value) > $maxLength) {
-			return $this->l10n->t('This answer is too long.');
-		}
-
-		return null;
-	}//end lengthError()
 }//end class

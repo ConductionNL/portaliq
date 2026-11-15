@@ -19,7 +19,13 @@ use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\CaseTypeReader;
 use OCA\Portaliq\Service\CitizenWritableSetResolver;
 use OCA\Portaliq\Service\CitizenWriteRecorder;
+use OCA\Portaliq\Service\CitizenCaseDocuments;
 use OCA\Portaliq\Service\CitizenWriteThrottle;
+use OCA\Portaliq\Service\MandatedCaseReader;
+use OCA\Portaliq\Contribution\PortalProviderLocator;
+use OCA\Portaliq\Service\PortalAuditHook;
+use OCA\Portaliq\Service\PortalCaseDocumentReader;
+use OCP\AppFramework\Http\StreamResponse;
 use OCA\Portaliq\Service\PortalFileReader;
 use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalObjectReader;
@@ -34,6 +40,8 @@ use OCP\IL10N;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Service\Identity\MandateParties;
+use OCA\Portaliq\Contribution\TimelineProviderMethod;
 
 /**
  * The probes here are deliberately taken with the LEAST privileged principal
@@ -50,9 +58,26 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Portaliq\Event\PortalClientWriteEvent
  * @uses   \OCA\Portaliq\Event\PortalClientWithdrawalEvent
  * @uses   \OCA\Portaliq\Service\CitizenWritableSetResolver
+ * @uses   \OCA\Portaliq\Contribution\CaseFieldDisplayHints
  * @uses   \OCA\Portaliq\Service\CitizenWriteRecorder
  * @uses   \OCA\Portaliq\Service\CitizenWriteThrottle
  * @uses   \OCA\Portaliq\Service\PortalSessionService
+ * @uses   \OCA\Portaliq\Contribution\TimelineProviderMethod
+ * @uses   \OCA\Portaliq\Service\Identity\MandateParties
+ * @uses   \OCA\Portaliq\Service\Branch\BranchNumber
+ * @uses   \OCA\Portaliq\Kernel\Support\PortalBranchScope
+ * @uses   \OCA\Portaliq\Service\CitizenCaseDocuments
+ * @uses   \OCA\Portaliq\Service\PortalCaseDocumentReader
+ * @uses   \OCA\Portaliq\Service\MandatedCaseReader
+ * @uses   \OCA\Portaliq\Service\CitizenCaseProjection
+ * @uses   \OCA\Portaliq\Service\PortalFieldProjector
+ * @uses   \OCA\Portaliq\Service\CaseRowMarker
+ * @uses   \OCA\Portaliq\Service\CaseStatusView
+ * @uses   \OCA\Portaliq\Controller\CaseWithdrawal
+ * @uses   \OCA\Portaliq\Controller\CaseWriteRun
+ * @uses   \OCA\Portaliq\Service\DocumentEntryExtras
+ * @uses   \OCA\Portaliq\Kernel\Support\UploadedFile
+ * @uses   \OCA\Portaliq\Kernel\Support\SessionTrust
  *
  * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
  */
@@ -68,6 +93,45 @@ class CitizenCaseControllerTest extends TestCase {
 	private const OTHER_CASE_ID = 'zaak-2';
 
 	private const CASE_ID = 'zaak-1';
+
+	/**
+	 * What the case app publishes on zaak-1: a decision and a letter, with
+	 * the file references only the server may see.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private const PUBLISHED = [
+		['id' => 'brief-1', 'title' => 'Ontvangstbevestiging', 'kind' => 'document', 'date' => '2026-08-01', 'file' => ['register' => 'zaken', 'schema' => 'document', 'id' => 'doc-obj-1', 'fileId' => '71']],
+		['id' => 'besluit-1', 'title' => 'Besluit op uw aanvraag', 'kind' => 'decision', 'date' => '2026-09-01', 'file' => ['register' => 'zaken', 'schema' => 'document', 'id' => 'doc-obj-2', 'fileId' => '72'], 'mimeType' => 'application/pdf', 'size' => 2048],
+	];
+
+	/**
+	 * The case collection, declaring the documents method.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private const WITH_DOCUMENTS = [['id' => 'mijn-zaken', 'register' => 'zaken', 'schema' => 'zaak', 'documents' => ['label' => 'Stukken', 'provider' => 'caseDocuments']]];
+
+	/**
+	 * Files streamed: [register, schema, id, fileId].
+	 *
+	 * @var array<int, array<int, string>>
+	 */
+	private array $streamed = [];
+
+	/**
+	 * Downloads audited: [subjectRef, register, schema, id].
+	 *
+	 * @var array<int, array<int, string>>
+	 */
+	private array $downloads = [];
+
+	/**
+	 * The tags each attached file got.
+	 *
+	 * @var array<int, array<int, string>>
+	 */
+	private array $attachedTags = [];
 
 	/**
 	 * Calls the fake writer recorded, so a refusal can be shown to have
@@ -98,8 +162,24 @@ class CitizenCaseControllerTest extends TestCase {
 	 */
 	private array $attached = [];
 
+	/**
+	 * How the fake writer answers: 'ok' saves, 'throw' fails, 'none' finds no case.
+	 *
+	 * @var string
+	 */
+	private string $writerAnswer = 'ok';
+
+	/**
+	 * Whether the fake file writer fails to attach.
+	 *
+	 * @var bool
+	 */
+	private bool $attachFails = false;
+
 	protected function setUp(): void {
 		parent::setUp();
+		$this->writerAnswer = 'ok';
+		$this->attachFails = false;
 		$this->writes = [];
 		$this->events = [];
 		$this->readScopes = [];
@@ -118,6 +198,49 @@ class CitizenCaseControllerTest extends TestCase {
 		$this->assertSame([], $this->writes);
 		$this->assertSame([], $this->events);
 	}//end testWithoutASessionEveryActIsRefusedAndNothingIsWritten()
+
+	/**
+	 * cases-my-cases-page REQ-CMC-004: a case listed under a mandate opens on
+	 * the case screen under that mandate, read-only, naming the mandate. The
+	 * same case without the mandate, and any write under it, stays "not
+	 * yours", and nothing is written.
+	 *
+	 * @spec openspec/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
+	 */
+	public function testACaseListedUnderAMandateOpensReadOnlyUnderIt(): void {
+		$company = ['id' => 'zaak-9', 'omschrijving' => 'een bedrijfspand', 'status' => 'ontvangen', '_mandate' => ['id' => 'mandate-1', 'label' => 'Bakkerij Jansen BV']];
+		$mandated = $this->getMockBuilder(MandatedCaseReader::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['read'])
+			->getMock();
+		$mandated->method('read')->willReturnCallback(
+			static fn (array $subject, string $mandateId, string $register, string $schema, string $id): ?array => (
+				$mandateId === 'mandate-1' && $register === 'zaken' && $schema === 'zaak' && $id === 'zaak-9' ? $company : null
+			)
+		);
+
+		$under = $this->controller(params: ['mandate' => 'mandate-1'], mandatedCases: $mandated);
+		$response = $under->show('zaken', 'zaak', 'zaak-9');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$data = $response->getData();
+		$this->assertSame('een bedrijfspand', $data['case']['omschrijving']);
+		$this->assertSame('Bakkerij Jansen BV', $data['mandate']['label']);
+		$this->assertFalse($data['writableSet']['window']['open']);
+		$this->assertFalse($data['writableSet']['documents']['open']);
+		$this->assertSame('You are viewing this case on behalf of %s. It cannot be changed here.', $data['writableSet']['window']['reason']);
+		$this->assertFalse($data['withdrawal']['declared']);
+		$this->assertSame([], $data['documents']);
+
+		// Without naming the mandate, the company's case is not theirs.
+		$own = $this->controller(mandatedCases: $mandated);
+		$this->assertSame('case-not-yours', $own->show('zaken', 'zaak', 'zaak-9')->getData()['error']);
+
+		// A write under the mandate is refused the same way, and writes nothing.
+		$write = $this->controller(fields: ['omschrijving' => 'iets anders'], params: ['mandate' => 'mandate-1'], mandatedCases: $mandated);
+		$this->assertSame('case-not-yours', $write->amend('zaken', 'zaak', 'zaak-9')->getData()['error']);
+		$this->assertSame([], $this->writes);
+	}//end testACaseListedUnderAMandateOpensReadOnlyUnderIt()
 
 	/**
 	 * A correction lands without a phone call: the case carries the new answer
@@ -148,6 +271,47 @@ class CitizenCaseControllerTest extends TestCase {
 		$this->assertSame(self::CASE_ID, $event->getCaseId());
 		$this->assertSame(['omschrijving'], $event->getFields());
 	}//end testACorrectionLandsWithTheIdentityRecorded()
+
+	/**
+	 * A write made under a mandate carries the mandate's label, so the case app
+	 * can say on whose behalf in words (write-record-names-the-mandate).
+	 */
+	public function testAWriteUnderAMandateRecordsTheMandatesLabel(): void {
+		$controller = $this->controller(
+			fields: ['omschrijving' => 'dakkapel aan de achterzijde'],
+			params: ['actingFor' => 'kvk-subsidiary', 'mandate' => 'mandate-1'],
+			actingMandate: ['id' => 'mandate-1', 'label' => 'Kramer voor Slagerij Van der Berg'],
+		);
+
+		$response = $controller->amend('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$mandate = $this->writes[0]['data']['portalWrites'][0]['mandate'];
+		$this->assertSame('kvk-subsidiary', $mandate['actingFor']);
+		$this->assertSame('Kramer voor Slagerij Van der Berg', $mandate['actingForLabel']);
+	}//end testAWriteUnderAMandateRecordsTheMandatesLabel()
+
+	/**
+	 * A request may name an entity but never grant itself one: an entity the
+	 * held mandate does not reach, or a mandate the identity does not hold,
+	 * leaves the write recorded as the citizen's own.
+	 */
+	public function testAWriteNamingAnEntityItCannotReachIsRecordedAsTheirOwn(): void {
+		$outside = $this->controller(
+			fields: ['omschrijving' => 'x'],
+			params: ['actingFor' => 'kvk-elsewhere', 'mandate' => 'mandate-1'],
+			actingMandate: ['id' => 'mandate-1', 'label' => 'Kramer voor Slagerij Van der Berg'],
+		);
+		$this->assertSame(Http::STATUS_OK, $outside->amend('zaken', 'zaak', self::CASE_ID)->getStatus());
+		$this->assertArrayNotHasKey('actingFor', $this->writes[0]['data']['portalWrites'][0]['mandate']);
+
+		$unheld = $this->controller(
+			fields: ['omschrijving' => 'x'],
+			params: ['actingFor' => 'kvk-subsidiary', 'mandate' => 'mandate-9'],
+		);
+		$this->assertSame(Http::STATUS_OK, $unheld->amend('zaken', 'zaak', self::CASE_ID)->getStatus());
+		$this->assertArrayNotHasKey('actingFor', $this->writes[1]['data']['portalWrites'][0]['mandate']);
+	}//end testAWriteNamingAnEntityItCannotReachIsRecordedAsTheirOwn()
 
 	/**
 	 * The same write, with the window closed: refused with a status and the
@@ -268,6 +432,78 @@ class CitizenCaseControllerTest extends TestCase {
 	}//end testAClosedDocumentWindowRefusesTheUpload()
 
 	/**
+	 * A request without a file is a 400 and a file the case app does not
+	 * take is a 502; neither raises an event.
+	 */
+	public function testAMissingOrRefusedUploadIsRefusedWithoutAnEvent(): void {
+		$missing = $this->controller()->addDocument('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $missing->getStatus());
+		$this->assertSame(['message' => 'There is no file to add.', 'error' => 'no-file'], $missing->getData());
+
+		$this->attachFails = true;
+		$refused = $this->controller(upload: ['name' => 'aanvulling.pdf', 'content' => '%PDF'])->addDocument('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_BAD_GATEWAY, $refused->getStatus());
+		$this->assertSame(['message' => 'The document could not be added. Please try again.', 'error' => 'document-not-added'], $refused->getData());
+		$this->assertSame([], $this->events);
+	}//end testAMissingOrRefusedUploadIsRefusedWithoutAnEvent()
+
+	/**
+	 * An added document answers with what was attached and raises one write
+	 * event naming the file.
+	 */
+	public function testAnAddedDocumentIsAnnouncedByName(): void {
+		$response = $this->controller(upload: ['name' => 'aanvulling.pdf', 'content' => '%PDF'])->addDocument('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['document' => ['id' => 1, 'name' => 'aanvulling.pdf', 'size' => 4]], $response->getData());
+		$this->assertCount(1, $this->events);
+		$this->assertInstanceOf(PortalClientWriteEvent::class, $this->events[0]);
+		$this->assertSame(['aanvulling.pdf'], $this->events[0]->getFields());
+	}//end testAnAddedDocumentIsAnnouncedByName()
+
+	/**
+	 * An amendment the store fails to save is a 500, one it finds no case for
+	 * a 403; neither raises an event. An empty amendment is a 400.
+	 */
+	public function testAnAmendmentThatIsNotSavedIsRefusedWithoutAnEvent(): void {
+		$this->writerAnswer = 'throw';
+		$failed = $this->controller(fields: ['omschrijving' => 'x'])->amend('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $failed->getStatus());
+		$this->assertSame(['message' => 'The change could not be saved. Please try again.', 'error' => 'amendment-not-saved'], $failed->getData());
+
+		$this->writerAnswer = 'none';
+		$foreign = $this->controller(fields: ['omschrijving' => 'x'])->amend('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $foreign->getStatus());
+		$this->assertSame(['message' => 'This case is not yours.', 'error' => 'case-not-yours'], $foreign->getData());
+		$this->assertSame([], $this->events);
+
+		$this->writerAnswer = 'ok';
+		$empty = $this->controller(fields: [])->amend('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $empty->getStatus());
+		$this->assertSame('nothing-to-change', $empty->getData()['error']);
+	}//end testAnAmendmentThatIsNotSavedIsRefusedWithoutAnEvent()
+
+	/**
+	 * The amendment writes the accepted fields first and the record after
+	 * them, and answers with the case.
+	 */
+	public function testAnAmendmentWritesTheFieldsThenTheRecord(): void {
+		$response = $this->controller(fields: ['toelichting' => 'nieuw', 'omschrijving' => 'ander'])->amend('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['toelichting', 'omschrijving', 'portalWrites'], array_keys($this->writes[0]['data']));
+		$record = $this->writes[0]['data']['portalWrites'][0];
+		$this->assertSame(['toelichting' => ['from' => 'aan de achterzijde', 'to' => 'nieuw'], 'omschrijving' => ['from' => 'een dakkapel', 'to' => 'ander']], $record['changes']);
+		$this->assertSame(['case'], array_keys($response->getData()));
+		$this->assertSame(['toelichting', 'omschrijving'], $this->events[0]->getFields());
+	}//end testAnAmendmentWritesTheFieldsThenTheRecord()
+
+	/**
 	 * A contribution that declares no citizen write surface refuses all three
 	 * acts, whatever else its update action permits.
 	 */
@@ -298,6 +534,41 @@ class CitizenCaseControllerTest extends TestCase {
 	}//end testPastTheThrottleTheWriteIsRefused()
 
 	/**
+	 * Past the throttle a withdrawal and an added document are refused with
+	 * 429 `too-many-writes` and the sentence, and neither the case writer nor
+	 * the file writer is called (REQ-CWL-001).
+	 *
+	 * @spec openspec/changes/citizen-case-write-limit/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-residents-writes-on-her-own-case-are-limited-per-case-and-per-identity-req-cwl-001
+	 */
+	public function testPastTheThrottleAWithdrawalAndADocumentAreRefused(): void {
+		$refusal = [
+			'message' => 'You have made a lot of changes in a short time. Please try again later.',
+			'error' => 'too-many-writes',
+		];
+
+		$withdrawal = $this->controller(
+			caseType: $this->caseType(withdrawal: $this->withdrawalDeclaration()),
+			throttleOpen: false,
+			params: ['reason' => 'Verhuisd.']
+		)->withdraw('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_TOO_MANY_REQUESTS, $withdrawal->getStatus());
+		$this->assertSame($refusal, $withdrawal->getData());
+
+		$document = $this->controller(
+			upload: ['name' => 'aanvulling.pdf', 'content' => '%PDF'],
+			throttleOpen: false
+		)->addDocument('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_TOO_MANY_REQUESTS, $document->getStatus());
+		$this->assertSame($refusal, $document->getData());
+
+		$this->assertSame([], $this->writes);
+		$this->assertSame([], $this->attached);
+		$this->assertSame([], $this->events);
+	}//end testPastTheThrottleAWithdrawalAndADocumentAreRefused()
+
+	/**
 	 * The citizen reads the label the case app supplied, unchanged, and the
 	 * portal invents nothing when there is none.
 	 */
@@ -326,6 +597,56 @@ class CitizenCaseControllerTest extends TestCase {
 		$this->assertTrue($set['window']['open']);
 		$this->assertSame([], $this->writes);
 	}//end testTheCitizenSeesTheWritableSetBeforeTouchingAnything()
+
+	/**
+	 * A case whose collection never opted into downloads lists no file at all,
+	 * even when the case folder holds one: the folder also holds what staff
+	 * added and never released (portaliq#798).
+	 */
+	public function testTheCaseScreenListsNoFileWhenTheCollectionDidNotOptIn(): void {
+		$controller = $this->controller(
+			existingFiles: [['id' => 8, 'name' => 'intern-advies.pdf', 'size' => 512]],
+			collections: [['id' => 'mijn-zaken', 'register' => 'zaken', 'schema' => 'zaak']]
+		);
+
+		$response = $controller->show('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame([], $response->getData()['documents']);
+	}//end testTheCaseScreenListsNoFileWhenTheCollectionDidNotOptIn()
+
+	/**
+	 * Where the case collection opts into downloads, the screen lists only the
+	 * files the organisation released, never an internal note beside them.
+	 */
+	public function testTheCaseScreenListsOnlyReleasedFilesWhenTheCollectionOptsIn(): void {
+		$released = ['id' => 7, 'name' => 'besluit.pdf', 'size' => 2048];
+		$controller = $this->controller(
+			existingFiles: [$released, ['id' => 8, 'name' => 'intern-advies.pdf', 'size' => 512]],
+			collections: [['id' => 'mijn-zaken', 'register' => 'zaken', 'schema' => 'zaak', 'filesDownload' => true]],
+			releasedFiles: [$released]
+		);
+
+		$response = $controller->show('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame([['id' => 'released:7', 'title' => 'besluit.pdf', 'kind' => 'document', 'date' => '', 'size' => 2048]], $response->getData()['documents']);
+	}//end testTheCaseScreenListsOnlyReleasedFilesWhenTheCollectionOptsIn()
+
+	/**
+	 * An opt-in counts only on the case's own register and schema: a
+	 * collection of the same app over another schema opens nothing here.
+	 */
+	public function testAnOptInOnAnotherSchemaOpensNothingOnTheCase(): void {
+		$controller = $this->controller(
+			existingFiles: [['id' => 8, 'name' => 'intern-advies.pdf', 'size' => 512]],
+			collections: [['id' => 'facturen', 'register' => 'zaken', 'schema' => 'factuur', 'filesDownload' => true]]
+		);
+
+		$response = $controller->show('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame([], $response->getData()['documents']);
+	}//end testAnOptInOnAnotherSchemaOpensNothingOnTheCase()
 
 	/**
 	 * The case type dossiq would declare.
@@ -403,6 +724,10 @@ class CitizenCaseControllerTest extends TestCase {
 				'toelichting' => 'aan de achterzijde',
 				'status' => 'ontvangen',
 				'zaaktype' => 'type-1',
+				// What the case app keeps for its staff and never declares.
+				'assignee' => 'behandelaar-7',
+				'qualityScore' => 0.9997,
+				'@self' => ['id' => self::CASE_ID, 'owner' => 'admin', 'organisation' => 'org-uuid'],
 			],
 			self::OTHER_CASE_ID => [
 				'id' => self::OTHER_CASE_ID,
@@ -426,6 +751,10 @@ class CitizenCaseControllerTest extends TestCase {
 	 * @param array{name: string, content: string}|null $upload The multipart upload.
 	 * @param array<int, array<string, mixed>> $existingFiles Documents already on the case.
 	 * @param bool $throttleOpen Whether the throttle lets the write through.
+	 * @param array<string, mixed> $params Other request parameters.
+	 * @param array<int, array<string, mixed>> $collections The contribution's collections.
+	 * @param array<int, array<string, mixed>>|null $releasedFiles What the released
+	 *        listing answers; null means the same as $existingFiles.
 	 */
 	private function controller(
 		array|null $subject = self::SUBJECT,
@@ -436,6 +765,12 @@ class CitizenCaseControllerTest extends TestCase {
 		array $existingFiles = [],
 		bool $throttleOpen = true,
 		array $params = [],
+		array $collections = [],
+		?array $releasedFiles = null,
+		array $taggedFiles = [],
+		array $published = [],
+		?MandatedCaseReader $mandatedCases = null,
+		?array $actingMandate = null,
 	): CitizenCaseController {
 		$action = ($action ?? $this->action());
 		$cases = $this->cases();
@@ -462,7 +797,7 @@ class CitizenCaseControllerTest extends TestCase {
 
 		$registry = $this->createMock(PortalContributionRegistry::class);
 		$registry->method('aggregateFor')->willReturn([
-			'contributions' => [['app' => 'dossiq', 'actions' => [$action]]],
+			'contributions' => [['app' => 'dossiq', 'actions' => [$action], 'collections' => $collections]],
 		]);
 
 		$reader = $this->createMock(PortalObjectReader::class);
@@ -489,7 +824,14 @@ class CitizenCaseControllerTest extends TestCase {
 				string $id,
 				array $data,
 			) use ($cases) {
+				if ($this->writerAnswer === 'throw') {
+					throw new \RuntimeException('store down');
+				}
+
 				$this->writes[] = ['id' => $id, 'data' => $data];
+				if ($this->writerAnswer === 'none') {
+					return null;
+				}
 
 				return array_merge(($cases[$id] ?? []), $data);
 			}
@@ -497,11 +839,26 @@ class CitizenCaseControllerTest extends TestCase {
 
 		$fileReader = $this->createMock(PortalFileReader::class);
 		$fileReader->method('listFiles')->willReturn($existingFiles);
+		$fileReader->method('listReleasedFiles')->willReturn($releasedFiles ?? $existingFiles);
+		$fileReader->method('listTaggedFiles')->willReturnCallback(
+			static fn (string $register, string $schema, string $id, string $tag): array => ($tag === 'portal:from-applicant' ? $taggedFiles : [])
+		);
+		$fileReader->method('streamFile')->willReturnCallback(
+			function (string $register, string $schema, string $id, string $fileId): ?StreamResponse {
+				$this->streamed[] = [$register, $schema, $id, $fileId];
+				return $this->createMock(StreamResponse::class);
+			}
+		);
 
 		$fileWriter = $this->createMock(PortalFileWriter::class);
 		$fileWriter->method('attachFile')->willReturnCallback(
-			function (string $register, string $schema, string $id, string $fileName) {
+			function (string $register, string $schema, string $id, string $fileName, string $content = '', array $tags = []) {
+				if ($this->attachFails === true) {
+					return null;
+				}
+
 				$this->attached[] = $fileName;
+				$this->attachedTags[] = $tags;
 
 				return ['id' => 1, 'name' => $fileName, 'size' => 4];
 			}
@@ -532,12 +889,61 @@ class CitizenCaseControllerTest extends TestCase {
 			new CitizenWriteRecorder($this->createMock(AuditTrailService::class), $dispatcher),
 			$this->throttle(open: $throttleOpen),
 			new CitizenDocumentUpload(),
-			$this->mandateService(),
-			$this->treeResolver(),
+			$this->mandateService(mandate: $actingMandate),
+			$this->treeResolver(entities: ($actingMandate === null ? [] : ['kvk-subsidiary'])),
 			$l10n,
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(LoggerInterface::class),
+			$this->documents(fileReader: $fileReader, published: $published),
+			new MandateParties(),
+			$mandatedCases
 		);
 	}//end controller()
+
+	/**
+	 * The REAL documents service over the file reader double, a case app
+	 * provider whose `caseDocuments` answers `$published` for this case, and an
+	 * audit hook that records each download.
+	 *
+	 * @param PortalFileReader                 $fileReader The file reader double.
+	 * @param array<int, array<string, mixed>> $published  What the case app publishes.
+	 *
+	 * @return CitizenCaseDocuments
+	 */
+	private function documents(PortalFileReader $fileReader, array $published): CitizenCaseDocuments {
+		$provider = new class ($published) {
+			/**
+			 * @param array<int, array<string, mixed>> $published The documents.
+			 */
+			public function __construct(private array $published) {
+			}
+
+			/**
+			 * The documents on one case.
+			 *
+			 * @param string $caseId The case.
+			 *
+			 * @return array<int, array<string, mixed>>
+			 */
+			public function caseDocuments(string $caseId): array {
+				return ($caseId === 'zaak-1' ? $this->published : []);
+			}
+		};
+		$locator = $this->createMock(PortalProviderLocator::class);
+		$locator->method('locate')->willReturn($provider);
+
+		$audit = $this->createMock(PortalAuditHook::class);
+		$audit->method('download')->willReturnCallback(
+			function (string $subjectRef, string $organisation, string $register, string $schema, string $id): void {
+				$this->downloads[] = [$subjectRef, $register, $schema, $id];
+			}
+		);
+
+		return new CitizenCaseDocuments(
+			files: $fileReader,
+			published: new PortalCaseDocumentReader(locator: $locator, logger: $this->createMock(LoggerInterface::class), timelineProviderMethod: new TimelineProviderMethod()),
+			audit: $audit
+		);
+	}//end documents()
 
 	/**
 	 * A real readable upload on disk, so the controller's own multipart read
@@ -601,13 +1007,22 @@ class CitizenCaseControllerTest extends TestCase {
 	 *
 	 * @return \OCA\Portaliq\Service\Identity\PortalMandateService
 	 */
-	private function mandateService(): \OCA\Portaliq\Service\Identity\PortalMandateService {
+	private function mandateService(?array $mandate = null): \OCA\Portaliq\Service\Identity\PortalMandateService {
 		$mandates = $this->getMockBuilder(\OCA\Portaliq\Service\Identity\PortalMandateService::class)
 			->disableOriginalConstructor()
-			->onlyMethods(['mandatesFor', 'activeMandate'])
+			->onlyMethods(['mandatesFor', 'activeMandate', 'describe', 'reachOf'])
 			->getMock();
-		$mandates->method('mandatesFor')->willReturn([]);
-		$mandates->method('activeMandate')->willReturn(null);
+		$mandates->method('mandatesFor')->willReturn($mandate === null ? [] : [$mandate]);
+		$mandates->method('activeMandate')->willReturn($mandate);
+		$mandates->method('describe')->willReturn(
+			[
+				'id'         => 'mandate-1',
+				'label'      => (string)($mandate['label'] ?? ''),
+				'onBehalfOf' => 'kvk-parent',
+				'organisation' => 'kvk-parent',
+			]
+		);
+		$mandates->method('reachOf')->willReturn('entity');
 
 		return $mandates;
 	}//end mandateService()
@@ -617,12 +1032,12 @@ class CitizenCaseControllerTest extends TestCase {
 	 *
 	 * @return \OCA\Portaliq\Service\Identity\PortalPartyTreeResolver
 	 */
-	private function treeResolver(): \OCA\Portaliq\Service\Identity\PortalPartyTreeResolver {
+	private function treeResolver(array $entities = []): \OCA\Portaliq\Service\Identity\PortalPartyTreeResolver {
 		$tree = $this->getMockBuilder(\OCA\Portaliq\Service\Identity\PortalPartyTreeResolver::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['entitiesFor'])
 			->getMock();
-		$tree->method('entitiesFor')->willReturn(['entities' => [], 'refused' => false, 'bound' => []]);
+		$tree->method('entitiesFor')->willReturn(['entities' => $entities, 'refused' => false, 'bound' => []]);
 
 		return $tree;
 	}//end treeResolver()
@@ -675,6 +1090,45 @@ class CitizenCaseControllerTest extends TestCase {
 		)));
 
 	}//end testAWithdrawalRaisesItsOwnEventOnceWithTheReason()
+
+	/**
+	 * A withdrawal the store fails to save is a 500, one it finds no case for
+	 * a 403; neither raises an event.
+	 */
+	public function testAWithdrawalThatIsNotSavedIsRefusedWithoutAnEvent(): void {
+		$this->writerAnswer = 'throw';
+		$failed = $this->controller(caseType: $this->caseType(withdrawal: $this->withdrawalDeclaration()))->withdraw('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $failed->getStatus());
+		$this->assertSame(['message' => 'The request could not be withdrawn. Please try again.', 'error' => 'withdrawal-not-saved'], $failed->getData());
+
+		$this->writerAnswer = 'none';
+		$foreign = $this->controller(caseType: $this->caseType(withdrawal: $this->withdrawalDeclaration()))->withdraw('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $foreign->getStatus());
+		$this->assertSame(['message' => 'This case is not yours.', 'error' => 'case-not-yours'], $foreign->getData());
+		$this->assertSame([], $this->events);
+	}//end testAWithdrawalThatIsNotSavedIsRefusedWithoutAnEvent()
+
+	/**
+	 * The withdrawal writes the status, the moment and the reason, then the
+	 * record of the change, and answers with the case and its withdrawal.
+	 */
+	public function testAWithdrawalWritesItsFieldsThenTheRecord(): void {
+		$response = $this->controller(
+			caseType: $this->caseType(withdrawal: $this->withdrawalDeclaration()),
+			params: ['reason' => '  Verhuisd.  ']
+		)->withdraw('zaken', 'zaak', self::CASE_ID);
+
+		$data = $this->writes[0]['data'];
+		$this->assertSame(['status', 'withdrawnAt', 'withdrawalReason', 'portalWrites'], array_keys($data));
+		$this->assertSame('Verhuisd.', $data['withdrawalReason']);
+		$this->assertSame($data['withdrawnAt'], $data['portalWrites'][0]['at']);
+		$record = $data['portalWrites'][0];
+		$this->assertSame('withdrawal', $record['act']);
+		$this->assertSame(['status' => ['from' => 'ontvangen', 'to' => 'ingetrokken'], 'reason' => ['from' => null, 'to' => 'Verhuisd.']], $record['changes']);
+		$this->assertSame(['case', 'withdrawal'], array_keys($response->getData()));
+	}//end testAWithdrawalWritesItsFieldsThenTheRecord()
 
 	public function testACaseTypeThatDeclaresNoWithdrawalAcceptsNone(): void {
 		$controller = $this->controller(caseType: $this->caseType());
@@ -759,4 +1213,301 @@ class CitizenCaseControllerTest extends TestCase {
 			'confirmText' => 'Als u intrekt, stopt de behandeling.',
 		];
 	}//end withdrawalDeclaration()
+
+	/**
+	 * The case app's documents reach the screen without their file
+	 * reference; a decision comes first (cases-documents-on-the-case,
+	 * REQ-CDC-001, REQ-CDC-003).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-case-app-declares-which-documents-a-resident-may-see-req-cdc-001
+	 */
+	public function testShowNeverReturnsAFileReference(): void {
+		$response = $this->controller(collections: self::WITH_DOCUMENTS, published: self::PUBLISHED)->show('zaken', 'zaak', self::CASE_ID);
+
+		$documents = $response->getData()['documents'];
+		$this->assertSame(
+			[
+				['id' => 'besluit-1', 'title' => 'Besluit op uw aanvraag', 'kind' => 'decision', 'date' => '2026-09-01', 'mimeType' => 'application/pdf', 'size' => 2048],
+				['id' => 'brief-1', 'title' => 'Ontvangstbevestiging', 'kind' => 'document', 'date' => '2026-08-01'],
+			],
+			$documents
+		);
+		$json = (string)json_encode($response->getData());
+		$this->assertStringNotContainsString('doc-obj-', $json);
+		$this->assertStringNotContainsString('fileId', $json);
+		$this->assertSame('Stukken', $response->getData()['documentsLabel']);
+	}//end testShowNeverReturnsAFileReference()
+
+	/**
+	 * The resident's own uploads are listed under "Sent by you", and a file in
+	 * the case folder without the tag is not (REQ-CDC-004).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-residents-own-uploads-stay-visible-and-nothing-else-from-the-folder-req-cdc-004
+	 */
+	public function testShowListsTaggedUploadsOnly(): void {
+		$upload = ['id' => 5, 'name' => 'bewijs.pdf', 'size' => 100];
+		$response = $this->controller(
+			existingFiles: [$upload, ['id' => 8, 'name' => 'intern-advies.pdf', 'size' => 512]],
+			collections: self::WITH_DOCUMENTS,
+			taggedFiles: [$upload],
+			published: self::PUBLISHED
+		)->show('zaken', 'zaak', self::CASE_ID);
+
+		$documents = $response->getData()['documents'];
+		$this->assertSame(['id' => 'upload:5', 'title' => 'bewijs.pdf', 'kind' => 'yours', 'date' => '', 'size' => 100], end($documents));
+		$this->assertStringNotContainsString('intern-advies', (string)json_encode($documents));
+	}//end testShowListsTaggedUploadsOnly()
+
+	/**
+	 * Without a documents method the resident sees only their own uploads
+	 * (REQ-CDC-005 empty state otherwise).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-a-case-with-nothing-published-says-so-req-cdc-005
+	 */
+	public function testShowWithoutProviderListsOnlyUploads(): void {
+		$upload = ['id' => 5, 'name' => 'bewijs.pdf', 'size' => 100];
+		$response = $this->controller(
+			existingFiles: [$upload, ['id' => 8, 'name' => 'intern-advies.pdf', 'size' => 512]],
+			collections: [['id' => 'mijn-zaken', 'register' => 'zaken', 'schema' => 'zaak']],
+			taggedFiles: [$upload],
+			published: self::PUBLISHED
+		)->show('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame([['id' => 'upload:5', 'title' => 'bewijs.pdf', 'kind' => 'yours', 'date' => '', 'size' => 100]], $response->getData()['documents']);
+	}//end testShowWithoutProviderListsOnlyUploads()
+
+	/**
+	 * A published document streams from where the app said it lives
+	 * (REQ-CDC-002).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
+	 */
+	public function testStreamsAPublishedDocument(): void {
+		$response = $this->controller(collections: self::WITH_DOCUMENTS, published: self::PUBLISHED)->document('zaken', 'zaak', self::CASE_ID, 'besluit-1');
+
+		$this->assertInstanceOf(StreamResponse::class, $response);
+		$this->assertSame([['zaken', 'document', 'doc-obj-2', '72']], $this->streamed);
+	}//end testStreamsAPublishedDocument()
+
+	/**
+	 * Another resident's case answers 404 and streams nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
+	 */
+	public function testForeignCaseIs404(): void {
+		$response = $this->controller(collections: self::WITH_DOCUMENTS, published: self::PUBLISHED)->document('zaken', 'zaak', self::OTHER_CASE_ID, 'besluit-1');
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+		$this->assertSame([], $this->streamed);
+	}//end testForeignCaseIs404()
+
+	/**
+	 * An id the app did not publish on this case answers the same 404.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
+	 */
+	public function testUnlistedIdIs404(): void {
+		$controller = $this->controller(collections: self::WITH_DOCUMENTS, published: self::PUBLISHED);
+		foreach (['besluit-9', '72', 'released:72', ''] as $guess) {
+			$this->assertSame(Http::STATUS_NOT_FOUND, $controller->document('zaken', 'zaak', self::CASE_ID, $guess)->getStatus(), $guess);
+		}
+
+		$this->assertSame([], $this->streamed);
+	}//end testUnlistedIdIs404()
+
+	/**
+	 * A download is audited with the case it was made from.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
+	 */
+	public function testDownloadIsAudited(): void {
+		$this->controller(collections: self::WITH_DOCUMENTS, published: self::PUBLISHED)->document('zaken', 'zaak', self::CASE_ID, 'besluit-1');
+
+		$this->assertSame([['bsn-hash-1', 'zaken', 'zaak', self::CASE_ID]], $this->downloads);
+	}//end testDownloadIsAudited()
+
+	/**
+	 * `upload:<fileId>` streams a tagged upload from the case folder, and
+	 * nothing for a file in the folder without the tag (REQ-CDC-004).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-residents-own-uploads-stay-visible-and-nothing-else-from-the-folder-req-cdc-004
+	 */
+	public function testUntaggedFolderFileIs404(): void {
+		$upload = ['id' => 5, 'name' => 'bewijs.pdf', 'size' => 100];
+		$controller = $this->controller(
+			existingFiles: [$upload, ['id' => 8, 'name' => 'intern-advies.pdf', 'size' => 512]],
+			taggedFiles: [$upload]
+		);
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->document('zaken', 'zaak', self::CASE_ID, 'upload:8')->getStatus());
+		$this->assertSame([], $this->streamed);
+		$this->assertInstanceOf(StreamResponse::class, $controller->document('zaken', 'zaak', self::CASE_ID, 'upload:5'));
+		$this->assertSame([['zaken', 'zaak', self::CASE_ID, '5']], $this->streamed);
+	}//end testUntaggedFolderFileIs404()
+
+	/**
+	 * An upload through the portal carries the resident's tag.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-residents-own-uploads-stay-visible-and-nothing-else-from-the-folder-req-cdc-004
+	 */
+	public function testAnUploadIsTaggedAsTheResidents(): void {
+		$this->controller(upload: ['name' => 'bewijs.pdf', 'content' => 'data'])->addDocument('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame([['portal:from-applicant']], $this->attachedTags);
+	}//end testAnUploadIsTaggedAsTheResidents()
+
+	/**
+	 * The collection the resident reads their cases in, declaring what they
+	 * may see of one.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private const DECLARING_FIELDS = [['id' => 'mijn-zaken', 'register' => 'zaken', 'schema' => 'zaak', 'fields' => ['title', 'status']]];
+
+	/**
+	 * The case screen receives the fields the collection declares and the
+	 * ones the screen itself works with, never a field the case app keeps for
+	 * its staff (citizen-case-shows-only-its-fields).
+	 *
+	 * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	public function testTheCaseScreenReceivesOnlyTheDeclaredFields(): void {
+		$data = $this->controller(collections: self::DECLARING_FIELDS)->show('zaken', 'zaak', self::CASE_ID)->getData();
+
+		$this->assertSame(['id', '@self', 'omschrijving', 'status', 'toelichting'], $this->sortedKeys($data['case']));
+		$this->assertSame(['id' => self::CASE_ID], $data['case']['@self']);
+		// The full row still decides the writable set on the server.
+		$this->assertSame(['omschrijving', 'toelichting'], $data['writableSet']['writable']);
+	}//end testTheCaseScreenReceivesOnlyTheDeclaredFields()
+
+	/**
+	 * The case screen reads the closed marker of the case's own collection,
+	 * the one "My cases" files it under Closed by: a closed case offers no
+	 * change, no document and no withdrawal, and refuses an amendment.
+	 *
+	 * @spec openspec/changes/citizen-case-ended-shows-only-its-state/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-case-that-has-ended-offers-nothing-and-explains-nothing
+	 */
+	public function testACaseItsCollectionMarksClosedHasEnded(): void {
+		$closing = [['id' => 'mijn-zaken', 'register' => 'zaken', 'schema' => 'zaak', 'kind' => 'cases', 'closedField' => 'status']];
+		$caseType = $this->caseType(withdrawal: $this->withdrawalDeclaration());
+
+		$data = $this->controller(caseType: $caseType, collections: $closing)->show('zaken', 'zaak', self::CASE_ID)->getData();
+		$this->assertTrue($data['writableSet']['ended']);
+		$this->assertSame([], $data['writableSet']['writable']);
+		$this->assertFalse($data['writableSet']['documents']['open']);
+		$this->assertFalse($data['withdrawal']['open']);
+
+		$open = $this->controller(caseType: $caseType)->show('zaken', 'zaak', self::CASE_ID)->getData();
+		$this->assertFalse($open['writableSet']['ended']);
+		$this->assertTrue($open['withdrawal']['open']);
+
+		$amend = $this->controller(caseType: $caseType, fields: ['omschrijving' => 'een bedrijfspand'], collections: $closing)
+			->amend('zaken', 'zaak', self::CASE_ID);
+		$this->assertSame(Http::STATUS_CONFLICT, $amend->getStatus());
+		$this->assertSame([], $this->writes);
+	}//end testACaseItsCollectionMarksClosedHasEnded()
+
+	/**
+	 * The withdrawn case that comes back is projected the same way, and still
+	 * carries the withdrawal the screen shows.
+	 *
+	 * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	public function testAWithdrawnCaseComesBackWithoutTheStaffFields(): void {
+		$data = $this->controller(
+			caseType: $this->caseType(withdrawal: $this->withdrawalDeclaration()),
+			params: ['reason' => 'Niet meer nodig.'],
+			collections: self::DECLARING_FIELDS
+		)->withdraw('zaken', 'zaak', self::CASE_ID)->getData();
+
+		$this->assertSame(
+			['id', '@self', 'omschrijving', 'status', 'toelichting', 'withdrawalReason', 'withdrawnAt'],
+			$this->sortedKeys($data['case'])
+		);
+		$this->assertSame('ingetrokken', $data['case']['status']);
+		// The record of who wrote it stays on the case, not in the browser.
+		$this->assertArrayNotHasKey('portalWrites', $data['case']);
+		$this->assertArrayHasKey('portalWrites', $this->writes[0]['data']);
+	}//end testAWithdrawnCaseComesBackWithoutTheStaffFields()
+
+	/**
+	 * An amended case comes back projected too.
+	 *
+	 * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	public function testAnAmendedCaseComesBackWithoutTheStaffFields(): void {
+		$data = $this->controller(
+			fields: ['omschrijving' => 'een bedrijfspand'],
+			collections: self::DECLARING_FIELDS
+		)->amend('zaken', 'zaak', self::CASE_ID)->getData();
+
+		$this->assertSame('een bedrijfspand', $data['case']['omschrijving']);
+		$this->assertArrayNotHasKey('assignee', $data['case']);
+		$this->assertArrayNotHasKey('qualityScore', $data['case']);
+		$this->assertArrayNotHasKey('portalWrites', $data['case']);
+	}//end testAnAmendedCaseComesBackWithoutTheStaffFields()
+
+	/**
+	 * A malformed declaration narrows to the identifiers, not to the screen's
+	 * own fields and never to the whole row.
+	 *
+	 * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	public function testAMalformedDeclarationShowsOnlyTheIdentifiers(): void {
+		$data = $this->controller(
+			collections: [['id' => 'mijn-zaken', 'register' => 'zaken', 'schema' => 'zaak', 'fields' => 'title']]
+		)->show('zaken', 'zaak', self::CASE_ID)->getData();
+
+		$this->assertSame(['id', '@self'], $this->sortedKeys($data['case']));
+	}//end testAMalformedDeclarationShowsOnlyTheIdentifiers()
+
+	/**
+	 * Only a collection on the case's own register and schema counts: fields
+	 * declared over another schema do not open or close anything here.
+	 *
+	 * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	public function testFieldsDeclaredOnAnotherSchemaDoNotApply(): void {
+		$data = $this->controller(
+			collections: [['id' => 'facturen', 'register' => 'zaken', 'schema' => 'factuur', 'fields' => ['bedrag']]]
+		)->show('zaken', 'zaak', self::CASE_ID)->getData();
+
+		// No declaration on this schema: the row passes whole, as its list does.
+		$this->assertArrayHasKey('assignee', $data['case']);
+	}//end testFieldsDeclaredOnAnotherSchemaDoNotApply()
+
+	/**
+	 * The keys of a row, `id` and `@self` first, the rest sorted.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return array<int, string>
+	 */
+	private function sortedKeys(array $row): array {
+		$keys = array_values(array_diff(array_keys($row), ['id', '@self']));
+		sort($keys);
+
+		return array_merge(
+			array_values(array_intersect(['id', '@self'], array_keys($row))),
+			$keys
+		);
+	}//end sortedKeys()
 }//end class

@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
 
 declare(strict_types=1);
@@ -29,16 +29,17 @@ namespace OCA\Portaliq\Service\Identity;
 
 use DateInterval;
 use DateTimeImmutable;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Kernel\Contracts\PortalReferenceLinkServiceInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCP\Security\ISecureRandom;
 
 /**
  * Issues and redeems the one-time reference link.
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
-class PortalReferenceLinkService {
+class PortalReferenceLinkService implements PortalReferenceLinkServiceInterface {
 	/**
 	 * The identity kind this route belongs to.
 	 */
@@ -67,12 +68,12 @@ class PortalReferenceLinkService {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Looks the link up by hash.
+	 * @param ScopedCollectionReaderInterface $reader Looks the link up by hash.
 	 * @param PortalObjectWriter $writer Records and spends the link.
 	 * @param ISecureRandom $random Mints the one-time secret.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly ISecureRandom $random,
 	) {
@@ -89,7 +90,7 @@ class PortalReferenceLinkService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function admitsReference(array $caseType): bool {
 		$kinds = ($caseType['portalIdentityKind'] ?? []);
@@ -107,18 +108,50 @@ class PortalReferenceLinkService {
 	 * @param string $caseReference The case number.
 	 * @param string $email The address the link is sent to.
 	 * @param string $organisation The tenant.
+	 * @param string $caseRegister The register of the case collection the
+	 *                             link opens (identity-ways-in-screens D2).
+	 * @param string $caseSchema The schema of that collection.
 	 *
 	 * @return array{token: string, expiresAt: string}|null Null when the case
 	 *         type does not admit the reference route, or the call is empty.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/design.md
+	 *
+	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- each field is stored
+	 * on the link row; the reference session reads the case through them.
 	 */
-	public function issue(array $caseType, string $caseReference, string $email, string $organisation): ?array {
-		if ($this->admitsReference(caseType: $caseType) === false) {
-			return null;
-		}
+	public function issue(
+		array $caseType,
+		string $caseReference,
+		string $email,
+		string $organisation,
+		string $caseRegister = '',
+		string $caseSchema = '',
+	): ?array {
+		$request = new ReferenceLinkRequest(
+			caseType: $caseType,
+			caseReference: $caseReference,
+			email: $email,
+			organisation: $organisation,
+			caseRegister: $caseRegister,
+			caseSchema: $caseSchema
+		);
+		return $this->issueLink(request: $request);
+	}//end issue()
 
-		if ($caseReference === '' || $email === '' || $organisation === '') {
+	/**
+	 * Issue a one-time link for a case, or refuse.
+	 *
+	 * @param ReferenceLinkRequest $request The case, the address and the tenant.
+	 *
+	 * @return array{token: string, expiresAt: string}|null Null when the case
+	 *         type does not admit the reference route, or the call is empty.
+	 *
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
+	 */
+	public function issueLink(ReferenceLinkRequest $request): ?array {
+		if ($this->refuses(request: $request) === true) {
 			return null;
 		}
 
@@ -127,31 +160,60 @@ class PortalReferenceLinkService {
 			return null;
 		}
 
-		$now = new DateTimeImmutable();
+		$now    = new DateTimeImmutable();
 		$expiry = $now->add(new DateInterval(self::TTL));
+		$sent   = ['tokenHash' => hash('sha256', $token), 'issuedAt' => $now->format(DATE_ATOM), 'expiresAt' => $expiry->format(DATE_ATOM)];
+		if ($this->storeLink(request: $request, sent: $sent) === false) {
+			return null;
+		}
 
-		$created = $this->writer->createObject(
+		return ['token' => $token, 'expiresAt' => $sent['expiresAt']];
+	}//end issueLink()
+
+	/**
+	 * Whether a link request is refused: the case type does not admit the
+	 * reference route, or the case, the address or the tenant is missing.
+	 *
+	 * @param ReferenceLinkRequest $request The case, the address and the tenant.
+	 *
+	 * @return bool
+	 */
+	private function refuses(ReferenceLinkRequest $request): bool {
+		if ($this->admitsReference(caseType: $request->caseType) === false) {
+			return true;
+		}
+
+		return $request->caseReference === '' || $request->email === '' || $request->organisation === '';
+	}//end refuses()
+
+	/**
+	 * Write the link row.
+	 *
+	 * @param ReferenceLinkRequest $request The case, the address and the tenant.
+	 * @param array{tokenHash: string, issuedAt: string, expiresAt: string} $sent The secret's hash and the link's moments.
+	 *
+	 * @return bool Whether the row was written.
+	 */
+	private function storeLink(ReferenceLinkRequest $request, array $sent): bool {
+		return $this->writer->createObject(
 			register: self::REGISTER,
 			schema: self::SCHEMA,
 			scopeField: '',
 			subjectRef: '',
-			organisation: $organisation,
+			organisation: $request->organisation,
 			data: [
-				'caseReference' => $caseReference,
-				'email' => $email,
-				'organisation' => $organisation,
-				'tokenHash' => hash('sha256', $token),
+				'caseReference' => $request->caseReference,
+				'caseRegister' => $request->caseRegister,
+				'caseSchema' => $request->caseSchema,
+				'email' => $request->email,
+				'organisation' => $request->organisation,
+				'tokenHash' => $sent['tokenHash'],
 				'state' => 'sent',
-				'issuedAt' => $now->format(DATE_ATOM),
-				'expiresAt' => $expiry->format(DATE_ATOM),
+				'issuedAt' => $sent['issuedAt'],
+				'expiresAt' => $sent['expiresAt'],
 			]
-		);
-		if ($created === null) {
-			return null;
-		}
-
-		return ['token' => $token, 'expiresAt' => $expiry->format(DATE_ATOM)];
-	}//end issue()
+		) !== null;
+	}//end storeLink()
 
 	/**
 	 * Follow a link once.
@@ -159,25 +221,62 @@ class PortalReferenceLinkService {
 	 * @param string $token The secret from the mail.
 	 * @param DateTimeImmutable|null $now The moment to judge expiry against.
 	 *
-	 * @return array{caseReference: string, organisation: string}|null Null when
-	 *         the link admits nobody: unknown, already used or expired.
+	 * @return array{caseReference: string, organisation: string, register: string, schema: string, linkId: string}|null
+	 *         Null when the link admits nobody: unknown, already used or
+	 *         expired. `linkId` is for the session the link opens, never for
+	 *         the answer.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/design.md
+	 *
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function redeem(string $token, ?DateTimeImmutable $now = null): ?array {
-		if ($token === '') {
-			return null;
-		}
-
 		$moment = ($now ?? new DateTimeImmutable());
-		$row = $this->liveRowFor(hash: hash('sha256', $token), moment: $moment);
+		$row = $this->liveRowForToken(token: $token, moment: $moment);
 		if ($row === null) {
 			return null;
 		}
 
-		$id = $this->identifierOf(row: $row);
+		$id = $this->spentRowId(row: $row, moment: $moment);
 		if ($id === '') {
 			return null;
+		}
+
+		return $this->redeemed(row: $row, id: $id);
+	}//end redeem()
+
+	/**
+	 * The unspent, unexpired link behind a token, or null for an empty token.
+	 *
+	 * @param string            $token  The secret from the mail.
+	 * @param DateTimeImmutable $moment The moment to judge expiry against.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
+	 */
+	private function liveRowForToken(string $token, DateTimeImmutable $moment): array|null {
+		if ($token === '') {
+			return null;
+		}
+
+		return $this->liveRowFor(hash: hash('sha256', $token), moment: $moment);
+	}//end liveRowForToken()
+
+	/**
+	 * Spend the link: the row's id once the `used` write landed, else ''.
+	 *
+	 * @param array<string, mixed> $row    The live link row.
+	 * @param DateTimeImmutable    $moment The moment of use.
+	 *
+	 * @return string The link's id, or '' when it admits nobody.
+	 *
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
+	 */
+	private function spentRowId(array $row, DateTimeImmutable $moment): string {
+		$id = TokenRows::identifierOf(row: $row);
+		if ($id === '') {
+			return '';
 		}
 
 		$spent = $this->writer->updateObject(
@@ -192,14 +291,43 @@ class PortalReferenceLinkService {
 		if ($spent === null) {
 			// The link is spent by the write, so a write that did not land
 			// admits nobody: otherwise the same link would work twice.
-			return null;
+			return '';
 		}
 
+		return $id;
+	}//end spentRowId()
+
+	/**
+	 * The answer to a followed link.
+	 *
+	 * @param array<string, mixed> $row The spent link row.
+	 * @param string               $id  The link's id.
+	 *
+	 * @return array{caseReference: string, organisation: string, register: string, schema: string, linkId: string}
+	 *
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
+	 */
+	private function redeemed(array $row, string $id): array {
 		return [
 			'caseReference' => (string)($row['caseReference'] ?? ''),
 			'organisation' => (string)($row['organisation'] ?? ''),
+			'register' => (string)($row['caseRegister'] ?? ''),
+			'schema' => (string)($row['caseSchema'] ?? ''),
+			'linkId' => $id,
 		];
-	}//end redeem()
+	}//end redeemed()
+
+	/**
+	 * The expiry a link issued now would carry. The answer to a request that
+	 * issues nothing carries it too, so the two answers cannot be told apart.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/design.md
+	 */
+	public function nominalExpiry(): string {
+		return (new DateTimeImmutable())->add(new DateInterval(self::TTL))->format(DATE_ATOM);
+	}//end nominalExpiry()
 
 	/**
 	 * The unspent, unexpired link behind a token hash, or null.
@@ -213,7 +341,7 @@ class PortalReferenceLinkService {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	private function liveRowFor(string $hash, DateTimeImmutable $moment): ?array {
 		$rows = $this->reader->readCollection(
@@ -225,14 +353,7 @@ class PortalReferenceLinkService {
 			limit: 5
 		);
 
-		$row = null;
-		foreach ($rows as $candidate) {
-			if (is_array($candidate) === true && hash_equals((string)($candidate['tokenHash'] ?? ''), $hash) === true) {
-				$row = $candidate;
-				break;
-			}
-		}
-
+		$row = TokenRows::matching(rows: $rows, hash: $hash);
 		if ($row === null || (string)($row['state'] ?? '') !== 'sent') {
 			return null;
 		}
@@ -244,22 +365,4 @@ class PortalReferenceLinkService {
 
 		return $row;
 	}//end liveRowFor()
-
-	/**
-	 * The stored identifier of a row, wherever OpenRegister put it.
-	 *
-	 * @param array<string, mixed> $row The link row.
-	 *
-	 * @return string The identifier, or '' when the row carries none.
-	 */
-	private function identifierOf(array $row): string {
-		$id = (string)($row['uuid'] ?? $row['id'] ?? '');
-		if ($id !== '') {
-			return $id;
-		}
-
-		$self = (array)($row['@self'] ?? []);
-
-		return (string)($self['uuid'] ?? $self['id'] ?? '');
-	}//end identifierOf()
 }//end class

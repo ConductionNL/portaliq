@@ -1,5 +1,7 @@
 # Proposal: supplier-portal
 
+> Retargeted 2026-10-01 (`site-reaches-portal-parity`): new frontend work in this change lands in the Vue site `src/site/`, not in the React portal `src/portal/`, which is being retired.
+
 ## Summary
 
 Build the **supplier portal** as Portaliq's first slice and reference

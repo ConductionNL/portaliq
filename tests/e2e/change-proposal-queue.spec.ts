@@ -12,8 +12,15 @@
  *   - a citizen proposes a new value on a listed property (REQ-CPQ-002)
  *   - a property the contribution does not list is refused (REQ-CPQ-002)
  *   - a handler accepts a proposal and the record carries the value (REQ-CPQ-003)
- *   - the queue on a record lists the proposal with its diff (REQ-CPQ-004,
- *     the data half; the widget itself is the leaf work named in tasks.md)
+ *   - the queue on a record lists the proposal with its diff (REQ-CPQ-004)
+ *   - a colleague proposes through the portaliq-change-proposals data leaf,
+ *     as themselves, and a reviewer reads the queue there (REQ-CPQ-004)
+ *   - portaliq's bundle registers the portaliq-change-proposal-queue render
+ *     leaf with its mount pair (REQ-CPQ-004)
+ *
+ * The review widget on a host's case page is not driven here: no app places
+ * it yet (dossiq, named in the proposal). Its behaviour is pinned by
+ * tests/proposal-queue-leaf.spec.mjs over the same module the widget runs.
  *
  * NOT anchored here, covered by PHPUnit and named so anyone can check:
  *   - the snapshot and the allow-list:
@@ -29,7 +36,7 @@
  *
  *     NEXTCLOUD_URL=http://localhost:8080 npx playwright test change-proposal-queue
  *
- * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+ * @spec openspec/specs/change-proposal-queue/spec.md
  */
 
 import type { APIRequestContext } from '@playwright/test'
@@ -196,6 +203,83 @@ test.describe('change-proposal-queue', () => {
 			},
 		)
 		expect((await after.json()).toelichting).toBe('Nieuwe toelichting')
+	})
+
+	test('a colleague proposes through the data leaf and a reviewer reads the queue there', async ({
+		request,
+	}) => {
+		const stamp = Date.now()
+		const caseId = await seed(request, 'portalCase', {
+			subjectRef: `subject-${stamp}`,
+			organisation: ORGANISATION,
+			reference: `ZAAK-${stamp}`,
+			status: 'ontvangen',
+			toelichting: 'Oude toelichting',
+		})
+		const leaf = `${OR_OBJECTS_BASE}/portaliq/portalCase/${caseId}/integrations/portaliq-change-proposals`
+		const headers = {
+			Authorization: `Basic ${ADMIN}`,
+			'OCS-APIRequest': 'true',
+			requesttoken: 'x',
+		}
+
+		// REQ-CPQ-004: OpenRegister routes the leaf to portaliq's provider,
+		// which records the proposal as the signed-in user, never as the body.
+		const created = await request.post(leaf, {
+			headers,
+			data: {
+				changes: [
+					{ property: 'toelichting', proposedValue: 'Van een collega' },
+				],
+				proposable: ['toelichting'],
+				proposedBy: 'somebody-else',
+			},
+		})
+		expect(
+			created.ok(),
+			'the data leaf records a colleague proposal',
+		).toBeTruthy()
+		expect((await created.json()).proposedBy).toBe('admin')
+
+		const listed = await request.get(leaf, { headers })
+		expect(listed.ok()).toBeTruthy()
+		const items = ((await listed.json()).items ?? []) as Array<
+			Record<string, unknown>
+		>
+		expect(items.some((row) => row.channel === 'staff')).toBeTruthy()
+	})
+
+	test('portaliq registers the review surface on its own pages', async ({
+		page,
+	}) => {
+		await page.goto('/login')
+		await page.fill('#user', 'admin')
+		await page.fill('#password', 'admin')
+		await page.click('button[type=submit]')
+		await page.goto('/apps/portaliq/')
+
+		// REQ-CPQ-004: the render half is in the registry under the id the
+		// server half declares, with the mount pair a Vue 2 host needs.
+		const leaf = await page.waitForFunction(() => {
+			const registry = (
+				window as unknown as {
+					OCA?: {
+						OpenRegister?: {
+							integrations?: { get?: (id: string) => unknown }
+						}
+					}
+				}
+			).OCA?.OpenRegister?.integrations
+			const entry = registry?.get?.('portaliq-change-proposal-queue') as
+				{ renderMode?: string; mount?: unknown } | undefined
+			return entry
+				? { renderMode: entry.renderMode, mount: typeof entry.mount }
+				: null
+		})
+		expect(await leaf.jsonValue()).toEqual({
+			renderMode: 'mount',
+			mount: 'function',
+		})
 	})
 
 	test('a caller with no session proposes nothing and decides nothing', async ({

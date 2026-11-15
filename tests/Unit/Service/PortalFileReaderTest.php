@@ -81,7 +81,7 @@ class PortalFileReaderTest extends TestCase {
 
 	public function testListFilesReturnsEmptyArrayWhenOpenRegisterThrows(): void {
 		$fileService = new class {
-			public function getFiles(object $object): array {
+			public function getFiles(object $object, ?bool $sharedFilesOnly = false): array {
 				throw new RuntimeException('OR error');
 			}//end getFiles()
 		};
@@ -99,7 +99,7 @@ class PortalFileReaderTest extends TestCase {
 	 */
 	public function testListFilesReturnsEmptyArrayWhenObjectDoesNotResolve(): void {
 		$fileService = new class {
-			public function getFiles(object $object): array {
+			public function getFiles(object $object, ?bool $sharedFilesOnly = false): array {
 				throw new RuntimeException('must not be called');
 			}//end getFiles()
 		};
@@ -140,7 +140,7 @@ class PortalFileReaderTest extends TestCase {
 			) {
 			}//end __construct()
 
-			public function getFiles(object $object): array {
+			public function getFiles(object $object, ?bool $sharedFilesOnly = false): array {
 				return [$this->node];
 			}//end getFiles()
 		};
@@ -230,4 +230,123 @@ class PortalFileReaderTest extends TestCase {
 		$this->assertSame($expected, $reader->streamFile(self::REGISTER, self::SCHEMA, 'd-1', '42'));
 
 	}//end testStreamFileDelegatesToOpenRegistersStreamFileOnSuccess()
+
+	/**
+	 * The released listing asks OpenRegister for the object's shared files
+	 * only, so a file the organisation never published stays off the list.
+	 * The filter is OpenRegister's own (`getFiles(sharedFilesOnly: true)`),
+	 * not a second rule kept here (portaliq#798).
+	 */
+	public function testTheReleasedListingAsksOpenRegisterForSharedFilesOnly(): void {
+		$released = new class {
+			public function getId(): int {
+				return 7;
+			}//end getId()
+
+			public function getName(): string {
+				return 'besluit.pdf';
+			}//end getName()
+
+			public function getSize(): int {
+				return 2048;
+			}//end getSize()
+		};
+		$internal = new class {
+			public function getId(): int {
+				return 8;
+			}//end getId()
+
+			public function getName(): string {
+				return 'intern-advies.pdf';
+			}//end getName()
+
+			public function getSize(): int {
+				return 512;
+			}//end getSize()
+		};
+
+		$fileService = new class($released, $internal) {
+			/**
+			 * The sharedFilesOnly flag each call was made with.
+			 *
+			 * @var array<int, bool|null>
+			 */
+			public array $asked = [];
+
+			public function __construct(
+				private readonly object $released,
+				private readonly object $internal,
+			) {
+			}//end __construct()
+
+			public function getFiles(object $object, ?bool $sharedFilesOnly = false): array {
+				$this->asked[] = $sharedFilesOnly;
+				if ($sharedFilesOnly === true) {
+					return [$this->released];
+				}
+
+				return [$this->released, $this->internal];
+			}//end getFiles()
+		};
+
+		$container = $this->containerFor($fileService, new stdClass());
+		$reader = new PortalFileReader($container, $this->createMock(LoggerInterface::class));
+
+		$this->assertSame(
+			[['id' => 7, 'name' => 'besluit.pdf', 'size' => 2048]],
+			$reader->listReleasedFiles(register: self::REGISTER, schema: self::SCHEMA, id: 'd-1')
+		);
+		$this->assertSame([true], $fileService->asked);
+
+		// The default listing is unchanged: the upload path still needs every
+		// name in the folder to avoid overwriting one.
+		$this->assertCount(2, $reader->listFiles(register: self::REGISTER, schema: self::SCHEMA, id: 'd-1'));
+		$this->assertSame([true, false], $fileService->asked);
+	}//end testTheReleasedListingAsksOpenRegisterForSharedFilesOnly()
+	/**
+	 * Only the files carrying the tag are listed: a resident's own uploads,
+	 * never a staff note in the same folder (cases-documents-on-the-case,
+	 * REQ-CDC-004). Tags come from OpenRegister's FileService::getFileTags().
+	 *
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-residents-own-uploads-stay-visible-and-nothing-else-from-the-folder-req-cdc-004
+	 */
+	public function testTheTaggedListingKeepsOnlyTaggedFiles(): void {
+		$node = static fn (int $id, string $name): object => new class ($id, $name) {
+			public function __construct(private int $id, private string $name) {
+			}//end __construct()
+
+			public function getId(): int {
+				return $this->id;
+			}//end getId()
+
+			public function getName(): string {
+				return $this->name;
+			}//end getName()
+
+			public function getSize(): int {
+				return 10;
+			}//end getSize()
+		};
+		$fileService = new class ([$node(1, 'bewijs.pdf'), $node(2, 'intern-advies.pdf')]) {
+			public function __construct(private array $files) {
+			}//end __construct()
+
+			public function getFiles(object $object, ?bool $sharedFilesOnly = false): array {
+				return $this->files;
+			}//end getFiles()
+
+			public function getFileTags(string $fileId): array {
+				return ($fileId === '1' ? ['portal:from-applicant', 'other'] : ['intern']);
+			}//end getFileTags()
+		};
+
+		$reader = new PortalFileReader($this->containerFor($fileService, new stdClass()), $this->createMock(LoggerInterface::class));
+
+		$this->assertSame(
+			[['id' => 1, 'name' => 'bewijs.pdf', 'size' => 10]],
+			$reader->listTaggedFiles(register: self::REGISTER, schema: self::SCHEMA, id: 'd-1', tag: 'portal:from-applicant')
+		);
+
+	}//end testTheTaggedListingKeepsOnlyTaggedFiles()
+
 }//end class

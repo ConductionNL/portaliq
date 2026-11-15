@@ -3,8 +3,10 @@
 
 <!--
   TrafficOverview — the portal, period and segment selectors, the Export
-  button and the four headline numbers (portal-traffic-analytics,
-  portal-traffic-visitors-and-geo, portal-traffic-reporting).
+  button and the notes (portal-traffic-analytics,
+  portal-traffic-visitors-and-geo, portal-traffic-reporting). The four
+  headline numbers are KPI cards of their own since portal-traffic-kpi-cards
+  (TrafficKpi).
 
   The selectors live here and drive every other Traffic widget through
   the shared report store. The warning card lists which sensitive
@@ -13,8 +15,8 @@
   flagged, not footnoted. A roll-up portal says how many portals it sums,
   so a reader knows the visitors are a sum, not a distinct count.
 
-  @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-traffic-page-must-show-what-was-measured-and-say-when-it-was-not
-  @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+  @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-traffic-page-must-show-what-was-measured-and-say-when-it-was-not
+  @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
 -->
 <template>
 	<div class="traffic-overview" data-testid="traffic-overview">
@@ -112,40 +114,10 @@
 		</NcNoteCard>
 
 		<TrafficEmptyState :state="emptyState" />
-
-		<div v-if="emptyState === ''" class="traffic-overview__tiles">
-			<CnStatsBlock
-				:title="t('portaliq', 'Page views')"
-				:count="summary.totals.pageViews"
-				:countLabel="rangeLabel"
-				:loading="loading"
-				variant="primary"
-				data-testid="traffic-tile-page-views" />
-			<CnStatsBlock
-				:title="t('portaliq', 'Sessions')"
-				:count="summary.totals.sessions"
-				:countLabel="rangeLabel"
-				:loading="loading"
-				data-testid="traffic-tile-sessions" />
-			<CnStatsBlock
-				:title="t('portaliq', 'Visitors')"
-				:count="summary.totals.visitors"
-				:countLabel="rangeLabel"
-				:loading="loading"
-				data-testid="traffic-tile-visitors" />
-			<CnStatsBlock
-				:title="t('portaliq', 'Engaged sessions')"
-				:count="summary.totals.engagedSessions"
-				:countLabel="rangeLabel"
-				:loading="loading"
-				variant="success"
-				data-testid="traffic-tile-engaged" />
-		</div>
 	</div>
 </template>
 
 <script>
-import { CnStatsBlock } from '@conduction/nextcloud-vue'
 import {
 	NcButton,
 	NcDateTimePickerNative,
@@ -162,7 +134,6 @@ export default {
 	name: 'TrafficOverview',
 
 	components: {
-		CnStatsBlock,
 		Download,
 		NcButton,
 		NcDateTimePickerNative,
@@ -177,7 +148,7 @@ export default {
 		/**
 		 * The portals as select options, measured ones marked.
 		 *
-		 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-traffic-page-must-show-what-was-measured-and-say-when-it-was-not
+		 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-traffic-page-must-show-what-was-measured-and-say-when-it-was-not
 		 * @return {Array<{id: string, label: string}>} The options.
 		 */
 		options() {
@@ -195,7 +166,7 @@ export default {
 		/**
 		 * The selected option, or null.
 		 *
-		 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-traffic-page-must-show-what-was-measured-and-say-when-it-was-not
+		 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-traffic-page-must-show-what-was-measured-and-say-when-it-was-not
 		 * @return {object|null} The option.
 		 */
 		selected() {
@@ -205,7 +176,7 @@ export default {
 		/**
 		 * The range presets plus the custom entry, as select options.
 		 *
-		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
+		 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
 		 * @return {Array<{id: string, label: string}>} The options.
 		 */
 		rangeOptions() {
@@ -225,7 +196,7 @@ export default {
 		/**
 		 * The selected range option.
 		 *
-		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
+		 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
 		 * @return {object|null} The option.
 		 */
 		selectedRange() {
@@ -238,7 +209,7 @@ export default {
 		/**
 		 * The custom start as a Date for the picker, or null.
 		 *
-		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
+		 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
 		 * @return {Date|null} The date.
 		 */
 		customFrom() {
@@ -248,7 +219,7 @@ export default {
 		/**
 		 * The custom end as a Date for the picker, or null.
 		 *
-		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
+		 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
 		 * @return {Date|null} The date.
 		 */
 		customTo() {
@@ -258,7 +229,7 @@ export default {
 		/**
 		 * "All visits" plus the portal's segments, as select options.
 		 *
-		 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+		 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
 		 * @return {Array<{id: string, label: string}>} The options.
 		 */
 		segmentOptions() {
@@ -270,7 +241,7 @@ export default {
 		/**
 		 * The selected segment option.
 		 *
-		 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+		 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
 		 * @return {object|null} The option.
 		 */
 		selectedSegment() {
@@ -283,7 +254,7 @@ export default {
 		/**
 		 * The portals a roll-up portal sums, or [].
 		 *
-		 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-roll-up-portal-must-sum-its-members-and-never-count-its-own
+		 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-roll-up-portal-must-sum-its-members-and-never-count-its-own
 		 * @return {Array<string>} The member slugs.
 		 */
 		members() {
@@ -293,7 +264,7 @@ export default {
 		/**
 		 * The sensitive switches the selected portal has on.
 		 *
-		 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-sensitive-measurement-must-be-off-by-default-and-warned-in-the-admin-ui
+		 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-sensitive-measurement-must-be-off-by-default-and-warned-in-the-admin-ui
 		 * @return {Array<string>} Switch names.
 		 */
 		warned() {
@@ -301,15 +272,43 @@ export default {
 		},
 	},
 
+	/**
+	 * Take the portal from the URL, then load the report.
+	 *
+	 * @spec openspec/specs/portal-traffic-kpi-cards/spec.md#requirement-the-traffic-page-must-show-its-four-headline-numbers-as-kpi-cards
+	 * @return {void}
+	 */
 	mounted() {
+		this.selectFromQuery()
 		this.report.load()
 	},
 
 	methods: {
 		/**
+		 * Select the portal named in `?portal=`, as the KPI cards on a
+		 * portal's page link here. An unknown slug is left to `load()`,
+		 * which falls back to the first measured portal.
+		 *
+		 * @spec openspec/specs/portal-traffic-kpi-cards/spec.md#requirement-the-traffic-page-must-show-its-four-headline-numbers-as-kpi-cards
+		 * @return {void}
+		 */
+		selectFromQuery() {
+			const slug = this.$route && this.$route.query && this.$route.query.portal
+			if (
+				typeof slug !== 'string'
+				|| slug === ''
+				|| slug === this.report.portalSlug
+			) {
+				return
+			}
+			this.report.portalSlug = slug
+			this.report.segment = ''
+		},
+
+		/**
 		 * Switch the page to another portal.
 		 *
-		 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-traffic-page-must-show-what-was-measured-and-say-when-it-was-not
+		 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-traffic-page-must-show-what-was-measured-and-say-when-it-was-not
 		 * @param {object|null} option The chosen option.
 		 * @return {void}
 		 */
@@ -322,7 +321,7 @@ export default {
 		/**
 		 * Switch the page to a segment, or back to all visits.
 		 *
-		 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+		 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
 		 * @param {object|null} option The chosen option.
 		 * @return {void}
 		 */
@@ -335,7 +334,7 @@ export default {
 		/**
 		 * Choose a range preset, or open the custom pickers.
 		 *
-		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
+		 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
 		 * @param {object|null} option The chosen option.
 		 * @return {void}
 		 */
@@ -348,7 +347,7 @@ export default {
 		/**
 		 * One end of the custom range changed.
 		 *
-		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
+		 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
 		 * @param {string}    end   'from' or 'to'.
 		 * @param {Date|null} value The picked date.
 		 * @return {void}
@@ -363,7 +362,7 @@ export default {
 		/**
 		 * A YYYY-MM-DD string as a local Date, or null.
 		 *
-		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
+		 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
 		 * @param {string} day The day.
 		 * @return {Date|null} The date.
 		 */
@@ -378,7 +377,7 @@ export default {
 		/**
 		 * A picked Date as YYYY-MM-DD in local time, or ''.
 		 *
-		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
+		 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
 		 * @param {Date|null} value The date.
 		 * @return {string} The day.
 		 */
@@ -399,7 +398,7 @@ export default {
 		/**
 		 * The human wording of a sensitive switch.
 		 *
-		 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-sensitive-measurement-must-be-off-by-default-and-warned-in-the-admin-ui
+		 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-sensitive-measurement-must-be-off-by-default-and-warned-in-the-admin-ui
 		 * @param {string} key The switch.
 		 * @return {string} The label.
 		 */
@@ -429,7 +428,7 @@ export default {
 		 * The session recording warning, with how many recordings exist
 		 * and how long they are kept (portal-traffic-experiments).
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
 		 * @return {string} The label.
 		 */
 		recordingLabel() {
@@ -479,12 +478,6 @@ export default {
 .traffic-overview__toolbar > * {
 	min-width: 200px;
 	max-width: 320px;
-}
-
-.traffic-overview__tiles {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-	gap: 12px;
 }
 
 .traffic-overview__switches {

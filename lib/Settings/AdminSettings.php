@@ -24,8 +24,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Settings;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\Settings\ISettings;
@@ -40,18 +40,18 @@ use OCP\Settings\ISettings;
  * https://docs.nextcloud.com/server/latest/developer_manual/app_development/settings.html
  * for usage guidance. For most apps, ISettings is the correct choice.
  *
- * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.4
+ * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.4
  */
 class AdminSettings implements ISettings {
 	/**
 	 * Constructor.
 	 *
 	 * @param IAppManager $appManager The app manager.
-	 * @param PortalSessionService $session Reports the signing-secret state.
+	 * @param PortalSessionServiceInterface $session Reports the signing-secret state.
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
-		private readonly PortalSessionService $session,
+		private readonly PortalSessionServiceInterface $session,
 	) {
 	}//end __construct()
 
@@ -65,13 +65,13 @@ class AdminSettings implements ISettings {
 	 *
 	 * @return TemplateResponse
 	 *
-	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.4
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.4
 	 */
 	public function getForm(): TemplateResponse {
-		$version = $this->appManager->getAppVersion(appId: Application::APP_ID);
+		$version = $this->appManager->getAppVersion(appId: AppIdentity::APP_ID);
 
 		return new TemplateResponse(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			'settings/admin',
 			[
 				'version' => $version,
@@ -89,7 +89,7 @@ class AdminSettings implements ISettings {
 	 *
 	 * @return string The settings section ID.
 	 *
-	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.4
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.4
 	 */
 	public function getSection(): string {
 		return 'portaliq';
@@ -100,7 +100,7 @@ class AdminSettings implements ISettings {
 	 *
 	 * @return int The ordering priority within the section.
 	 *
-	 * @spec openspec/changes/portal-auth-edge-session-hardening/tasks.md#1.4
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.4
 	 */
 	public function getPriority(): int {
 		return 10;

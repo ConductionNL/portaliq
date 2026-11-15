@@ -1,0 +1,31 @@
+{
+    "array": {
+        "id": "a1",
+        "label": "One"
+    },
+    "empty array": null,
+    "serialises array": {
+        "id": "b2",
+        "label": "b2"
+    },
+    "serialises empty": null,
+    "serialises text": null,
+    "serialises null": null,
+    "serialises obj": null,
+    "plain object": null,
+    "string": null,
+    "null": null,
+    "int": null,
+    "titled row": {
+        "id": "g1",
+        "label": "Groep 1"
+    },
+    "serialised row": {
+        "id": "g2",
+        "label": "Groep 2"
+    },
+    "self id row": {
+        "id": "g3",
+        "label": "g3"
+    }
+}

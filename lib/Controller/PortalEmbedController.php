@@ -32,13 +32,13 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\Intake\PortalEmbedGuard;
-use OCA\Portaliq\Service\Intake\PortalEmbedThrottle;
-use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
-use OCA\Portaliq\Service\Intake\PortalFormValidator;
-use OCA\Portaliq\Service\Intake\PortalIntakeQueue;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\DestinationIntakeInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalEmbedGuardInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalEmbedThrottleInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFormBindingResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFormValidatorInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -49,6 +49,7 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\IRequest;
 use OCP\IURLGenerator;
+use OCA\Portaliq\Kernel\DestinationRefusal;
 
 /**
  * Serves the framed form and takes its submissions.
@@ -57,7 +58,7 @@ use OCP\IURLGenerator;
  *
  * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- one dependency per step:
  * resolve the portal, the binding, the origin guard, the throttle, the
- * validator and the queue.
+ * validator and the destination submit.
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)  -- see above.
  */
 class PortalEmbedController extends Controller {
@@ -66,25 +67,25 @@ class PortalEmbedController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalResolver $portals Resolves the portal being framed.
-	 * @param PortalFormBindingResolver $bindings Resolves the binding.
-	 * @param PortalEmbedGuard $guard Decides who may frame this form.
-	 * @param PortalEmbedThrottle $throttle Counts frame traffic per origin.
-	 * @param PortalFormValidator $validator Validates a submission.
-	 * @param PortalIntakeQueue $queue Records and acknowledges submissions.
+	 * @param PortalResolverInterface $portals Resolves the portal being framed.
+	 * @param PortalFormBindingResolverInterface $bindings Resolves the binding.
+	 * @param PortalEmbedGuardInterface $guard Decides who may frame this form.
+	 * @param PortalEmbedThrottleInterface $throttle Counts frame traffic per origin.
+	 * @param PortalFormValidatorInterface $validator Validates a submission.
+	 * @param DestinationIntakeInterface $intake Submits into the binding's destination (decision 179).
 	 * @param IURLGenerator $urls Builds the follow link.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalResolver $portals,
-		private readonly PortalFormBindingResolver $bindings,
-		private readonly PortalEmbedGuard $guard,
-		private readonly PortalEmbedThrottle $throttle,
-		private readonly PortalFormValidator $validator,
-		private readonly PortalIntakeQueue $queue,
+		private readonly PortalResolverInterface $portals,
+		private readonly PortalFormBindingResolverInterface $bindings,
+		private readonly PortalEmbedGuardInterface $guard,
+		private readonly PortalEmbedThrottleInterface $throttle,
+		private readonly PortalFormValidatorInterface $validator,
+		private readonly DestinationIntakeInterface $intake,
 		private readonly IURLGenerator $urls,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -102,15 +103,50 @@ class PortalEmbedController extends Controller {
 	#[AnonRateLimit(limit: 120, period: 60)]
 	public function frame(string $route): TemplateResponse {
 		$site = $this->portals->resolve(request: $this->request);
+		$binding = $this->frameBinding(site: $site, route: $route);
+		if ($binding === null) {
+			return $this->refusal(binding: [], reason: 'form_not_found');
+		}
+
+		$render = $this->frameRender(binding: $binding, site: $site, route: $route);
+		if ($render instanceof TemplateResponse) {
+			return $render;
+		}
+
+		return $this->framed(binding: $binding, payload: $this->framePayload(route: $route, render: $render));
+	}//end frame()
+
+	/**
+	 * The binding of the portal's form page, or null without a portal or binding.
+	 *
+	 * @param array<string, mixed>|null $site  The resolved portal.
+	 * @param string                    $route The in-portal route of the form page.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/embedded-intake-form/specs/embedded-intake-form/spec.md
+	 */
+	private function frameBinding(array|null $site, string $route): array|null {
 		$binding = null;
 		if ($site !== null) {
 			$binding = $this->bindings->bindingFor(portal: (string)($site['slug'] ?? ''), route: $route);
 		}
 
-		if ($binding === null) {
-			return $this->refusal(binding: [], reason: 'form_not_found');
-		}
+		return $binding;
+	}//end frameBinding()
 
+	/**
+	 * What the binding renders to, or the refusal the frame shows instead.
+	 *
+	 * @param array<string, mixed>      $binding The binding.
+	 * @param array<string, mixed>|null $site    The resolved portal.
+	 * @param string                    $route   The in-portal route of the form page.
+	 *
+	 * @return TemplateResponse|array<string, mixed>
+	 *
+	 * @spec openspec/changes/embedded-intake-form/specs/embedded-intake-form/spec.md
+	 */
+	private function frameRender(array $binding, array|null $site, string $route): TemplateResponse|array {
 		// The origin list is checked BEFORE the form is resolved. A disallowed
 		// origin therefore causes no schema read and consults no contribution
 		// provider: it gets a message and nothing else.
@@ -123,44 +159,102 @@ class PortalEmbedController extends Controller {
 			return $this->refusal(binding: $binding, reason: 'form_not_published');
 		}
 
-		if (($site['authentication']['requiresIdentifiedIntake'] ?? false) === true) {
-			// An identified intake is not something a frame can do: it would
-			// mean a login inside somebody else's page. The visitor is offered
-			// the portal's own page instead, and the frame renders no field.
-			return $this->refusal(
-				binding: $binding,
-				reason: 'identified_intake',
-				extra: ['portalUrl' => $this->urls->linkToRouteAbsolute('portaliq.portalPage.site') . '?route=' . rawurlencode($route)]
-			);
+		if ($this->bindings->requiredTrust(site: (array)$site, binding: $binding, render: $render) !== null) {
+			return $this->identifiedRefusal(binding: $binding, route: $route);
 		}
 
-		return $this->framed(
+		return $render;
+	}//end frameRender()
+
+	/**
+	 * The refusal for a form that needs a sign-in, pointing at the portal's own page.
+	 *
+	 * @param array<string, mixed> $binding The binding.
+	 * @param string               $route   The in-portal route of the form page.
+	 *
+	 * @return TemplateResponse
+	 *
+	 * @spec openspec/changes/embedded-intake-form/specs/embedded-intake-form/spec.md
+	 */
+	private function identifiedRefusal(array $binding, string $route): TemplateResponse {
+		// An identified intake is not something a frame can do: it would
+		// mean a login inside somebody else's page. That holds for a
+		// portal that requires it for every form and for one form that
+		// requires DigiD or eHerkenning (portaliq#725). The visitor is
+		// offered the portal's own page instead, and the frame renders no
+		// field.
+		return $this->refusal(
 			binding: $binding,
-			payload: [
-				'route' => $route,
-				'fields' => (array)($render['fields'] ?? []),
-				'settings' => (array)($render['settings'] ?? []),
-				// No prefill, ever: the frame reads no session, so there is
-				// nobody to prefill from.
-				'prefill' => [],
-			]
+			reason: 'identified_intake',
+			extra: ['portalUrl' => $this->urls->linkToRouteAbsolute('portaliq.portalPage.site') . '?route=' . rawurlencode($route)]
 		);
-	}//end frame()
+	}//end identifiedRefusal()
+
+	/**
+	 * The frame's payload: the route, the form's fields and settings, no prefill.
+	 *
+	 * @param string               $route  The in-portal route of the form page.
+	 * @param array<string, mixed> $render What the binding renders to.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/embedded-intake-form/specs/embedded-intake-form/spec.md
+	 */
+	private function framePayload(string $route, array $render): array {
+		return [
+			'route' => $route,
+			'fields' => (array)($render['fields'] ?? []),
+			'settings' => (array)($render['settings'] ?? []),
+			// No prefill, ever: the frame reads no session, so there is
+			// nobody to prefill from.
+			'prefill' => [],
+		];
+	}//end framePayload()
 
 	/**
 	 * A submission from the frame.
 	 *
 	 * @param string $route The form page submitted.
 	 * @param array<string, mixed> $answers What the visitor answered.
+	 * @param string $_hp The honeypot: a field the frame keeps hidden and empty.
 	 *
 	 * @return JSONResponse The reference and its follow link, or a refusal.
 	 *
 	 * @spec openspec/changes/embedded-intake-form/specs/embedded-intake-form/spec.md
+	 * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#2.2
+	 *
+	 * @SuppressWarnings(PHPMD.CamelCaseParameterName) -- `_hp` is the honeypot's
+	 * name on the wire, the one OpenRegister's own form submit reads too.
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 30, period: 60)]
-	public function submit(string $route, array $answers = []): JSONResponse {
+	public function submit(string $route, array $answers = [], string $_hp = ''): JSONResponse {
+		$found = $this->submitBinding(route: $route);
+		if ($found instanceof JSONResponse) {
+			return $found;
+		}
+
+		$origin = (string)$this->request->getHeader('Origin');
+		$refusal = $this->gateRefusal(binding: $found['binding'], origin: $origin, honeypot: $_hp);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		return $this->validatedSend(site: $found['site'], binding: $found['binding'], answers: $answers, origin: $origin);
+	}//end submit()
+
+	/**
+	 * The portal and the binding of its form page, or the 404.
+	 *
+	 * @param string $route The form page submitted.
+	 *
+	 * @return JSONResponse|array{site: array<string, mixed>, binding: array<string, mixed>}
+	 *
+	 * @spec openspec/changes/embedded-intake-form/specs/embedded-intake-form/spec.md
+	 * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#2.2
+	 */
+	private function submitBinding(string $route): JSONResponse|array {
 		$site = $this->portals->resolve(request: $this->request);
 		if ($site === null) {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
@@ -171,43 +265,121 @@ class PortalEmbedController extends Controller {
 			return new JSONResponse(['error' => 'form_not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$origin = (string)$this->request->getHeader('Origin');
+		return ['site' => $site, 'binding' => $binding];
+	}//end submitBinding()
+
+	/**
+	 * The refusal of a disallowed origin or too many requests, the bot's 202
+	 * for a filled honeypot, or null to go on.
+	 *
+	 * @param array<string, mixed> $binding  The binding.
+	 * @param string               $origin   The framing origin.
+	 * @param string               $honeypot The honeypot field.
+	 *
+	 * @return JSONResponse|null
+	 *
+	 * @spec openspec/changes/embedded-intake-form/specs/embedded-intake-form/spec.md
+	 * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#2.2
+	 */
+	private function gateRefusal(array $binding, string $origin, string $honeypot): JSONResponse|null {
 		if ($this->guard->allows(binding: $binding, origin: $origin) === false) {
 			return new JSONResponse(['error' => 'origin_not_allowed'], Http::STATUS_FORBIDDEN);
+		}
+
+		// The honeypot first: it costs nothing, and a filled one is a bot. It
+		// gets the same 202 a person would see, and nothing is sent anywhere.
+		if (trim($honeypot) !== '') {
+			return new JSONResponse(['state' => 'accepted'], Http::STATUS_ACCEPTED);
 		}
 
 		if ($this->throttle->allow(origin: $origin, address: (string)$this->request->getRemoteAddress()) === false) {
 			return new JSONResponse(['error' => 'too_many_requests'], Http::STATUS_TOO_MANY_REQUESTS);
 		}
 
+		return null;
+	}//end gateRefusal()
+
+	/**
+	 * Validate the answers and send them, unless the form needs a sign-in.
+	 *
+	 * @param array<string, mixed> $site    The portal.
+	 * @param array<string, mixed> $binding The binding.
+	 * @param array<string, mixed> $answers What the visitor answered.
+	 * @param string               $origin  The framing origin.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/embedded-intake-form/specs/embedded-intake-form/spec.md
+	 * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#2.2
+	 */
+	private function validatedSend(array $site, array $binding, array $answers, string $origin): JSONResponse {
 		$render = $this->bindings->render(binding: $binding);
+		if ($this->bindings->requiredTrust(site: $site, binding: $binding, render: $render) !== null) {
+			// The frame refuses a form that needs a sign-in, and so must its
+			// submit: the refusal may not depend on the frame being used,
+			// because anybody can POST here directly with an allowed Origin
+			// (portaliq#725). This route reads no session, so no submission
+			// to such a form is ever accepted here.
+			return new JSONResponse(['error' => 'identified_intake'], Http::STATUS_FORBIDDEN);
+		}
+
 		$validated = $this->validator->validate(fields: (array)($render['fields'] ?? []), answers: $answers);
 		if ($validated['valid'] === false) {
 			return new JSONResponse(['errors' => $validated['errors']], Http::STATUS_BAD_REQUEST);
 		}
 
-		$accepted = $this->queue->accept(
-			portal: (string)($site['slug'] ?? ''),
-			route: $route,
-			answers: $validated['answers'],
-			// Nothing here reads a bearer: a submission from the frame is
-			// anonymous even when the visitor is signed in elsewhere.
-			subjectRef: '',
-			origin: $origin
+		return $this->send(site: $site, binding: $binding, render: $render, answers: $validated['answers'], origin: $origin);
+	}//end validatedSend()
+
+	/**
+	 * Submit the frame's validated answers into the binding's destination.
+	 *
+	 * @param array<string, mixed> $site    The portal.
+	 * @param array<string, mixed> $binding The binding.
+	 * @param array<string, mixed> $render  What the binding renders to.
+	 * @param array<string, mixed> $answers The answers the portal's checks accepted.
+	 * @param string               $origin  The framing origin.
+	 *
+	 * @return JSONResponse The reference, its moments and follow link, or the refusal.
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#2.2
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) -- DestinationIntake::refusal is the one
+	 * refusal shape the intake and the embed submit share.
+	 */
+	private function send(array $site, array $binding, array $render, array $answers, string $origin): JSONResponse {
+		// Nothing here reads a bearer: a submission from the frame is
+		// anonymous even when the visitor is signed in elsewhere.
+		$submitted = $this->intake->submit(
+			binding: $binding,
+			render: $render,
+			answers: $answers,
+			server: ['portal' => (string)($site['slug'] ?? ''), 'origin' => $origin],
+			idempotencyKey: (string)$this->request->getHeader('Idempotency-Key')
 		);
-		if ($accepted === null) {
-			return new JSONResponse(['error' => 'not_accepted'], Http::STATUS_SERVICE_UNAVAILABLE);
+		if ($submitted['ok'] === false) {
+			$refusal = DestinationRefusal::of(submitted: $submitted);
+			return new JSONResponse($refusal['body'], $refusal['status']);
 		}
 
-		return new JSONResponse([
-			'reference' => $accepted['reference'],
-			'state' => $accepted['state'],
-			'confirmationText' => (string)($render['settings']['confirmationText'] ?? ''),
-			// Something to come back with, on the portal's own page rather
-			// than inside the frame.
-			'followUrl' => $this->urls->linkToRouteAbsolute('portaliq.portalPage.site') . '?reference=' . rawurlencode($accepted['reference']),
-		]);
-	}//end submit()
+		$answer    = $submitted['answer'];
+		$reference = (string)($answer['reference'] ?? '');
+
+		return new JSONResponse(
+			array_merge(
+				(array)($answer['confirmation'] ?? []),
+				[
+					'reference' => $reference,
+					'receivedAt' => (string)($answer['receivedAt'] ?? ''),
+					'state' => 'registered',
+					'confirmationText' => (string)($render['settings']['confirmationText'] ?? ''),
+					// Something to come back with, on the portal's own page
+					// rather than inside the frame.
+					'followUrl' => $this->urls->linkToRouteAbsolute('portaliq.portalPage.site') . '?reference=' . rawurlencode($reference),
+				]
+			)
+		);
+	}//end send()
 
 	/**
 	 * The frame, with this form's own `frame-ancestors`.
@@ -219,9 +391,9 @@ class PortalEmbedController extends Controller {
 	 */
 	private function framed(array $binding, array $payload): TemplateResponse {
 		$response = new TemplateResponse(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			'embed',
-			['embed' => $payload, 'minHeight' => PortalEmbedGuard::MINIMUM_HEIGHT],
+			['embed' => $payload, 'minHeight' => PortalEmbedGuardInterface::MINIMUM_HEIGHT],
 			TemplateResponse::RENDER_AS_BLANK
 		);
 

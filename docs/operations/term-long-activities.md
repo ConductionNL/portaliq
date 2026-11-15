@@ -1,0 +1,92 @@
+---
+title: Term-long activities
+sidebar_label: Activities
+---
+
+# Term-long activities
+
+A chess club every Monday. Swimming lessons for group 5. Three mornings in the
+woods. Each runs for a term, has a limited number of places, and needs enough
+supervisors. Portaliq keeps them as activities: parents sign their child up in
+the portal, and the school sees who has a place and who is waiting.
+
+## What staff set
+
+| Field | What it does |
+| --- | --- |
+| `title`, `kind`, `description`, `location` | What parents see. `kind` is club, sport, culture, trip, course or other. |
+| `target` | Who may sign up: a school, groups, or specific children. |
+| `termStart`, `termEnd`, `signupDeadline` | When it runs, and until when parents can sign up. |
+| `capacity` | The most children with a place. |
+| `supervisorRefs`, `childrenPerSupervisor` | Who supervises, and how many children one supervisor may take. |
+| `waitlistEnabled` | When full, new sign-ups wait instead of being refused. |
+| `sessions` | The meetings. Attendance is marked per session. |
+| `paymentRequested` | A contribution is asked per place. Staff raise it through shillinq, which holds the amount; portaliq stores only the reference per place. |
+
+| `consentRequired`, `consentStatement` | Parents must agree to this text before their child can be signed up. |
+| `photosTaken` | Photos are taken, so the roster shows who has photo consent. |
+
+The number of places is the lower of `capacity` and supervisors times
+`childrenPerSupervisor`. An activity without enough supervisors for one child
+does not open.
+
+## Staff endpoints (Nextcloud session)
+
+| Method | Path | Does |
+| --- | --- | --- |
+| POST | `/apps/portaliq/api/activities` | Create a draft |
+| PUT | `/apps/portaliq/api/activities/{id}/open` | Open for sign-ups (422 `no_places` without supervision) |
+| PUT | `/apps/portaliq/api/activities/{id}/close` | Stop new sign-ups |
+| PUT | `/apps/portaliq/api/activities/{id}/supervisors` | Change supervisors; new places go to the waiting list |
+| GET | `/apps/portaliq/api/activities/{id}/roster` | Places, children with a place, the waiting list in order |
+| PUT | `/apps/portaliq/api/activities/{id}/attendance` | Mark a child present, absent or excused for a session |
+| POST | `/apps/portaliq/api/activities/{id}/contributions` | Bill every confirmed place that has no payment request yet (see below) |
+
+## Guardian endpoints (portal session)
+
+| Method | Path | Does |
+| --- | --- | --- |
+| GET | `/apps/portaliq/api/activities/feed` | Activities in reach, with places left and your own children's sign-ups |
+| POST | `/apps/portaliq/api/activities/{id}/signup` | Sign up one of your children: a place, a spot on the waiting list, or `activity_full` |
+| POST | `/apps/portaliq/api/activities/{id}/withdraw` | Withdraw; a freed place goes to the child who waited longest |
+
+## Asking a contribution for a place
+
+When an activity has `paymentRequested`, staff bill its confirmed places from
+portaliq. Send the amount, whether it is voluntary, and the school's shillinq
+administration:
+
+```json
+{ "amount": 25.0, "voluntary": true, "administrationId": "adm-school-1", "dueDate": "2026-11-01" }
+```
+
+Portaliq sends one invoice per place to shillinq: the activity is what is
+charged, the child is who it is for, and the guardian who signed up pays. Each
+place gets the payment request's reference; the amount stays in shillinq. The
+guardian pays from their contributions in the portal.
+
+- Run it again after the waiting list moves: only places without a reference
+  are billed, and nobody is billed twice.
+- A guardian whose portal account has no name or email is reported as
+  `no_contact_details`. Fix the account and run it again.
+- You need shillinq's `payment.request` action (`paymentActionGroups`).
+  Without shillinq the answer is 503 `shillinq_unavailable`.
+
+## Permission slips and photo consent
+
+When an activity needs consent, the portal shows the consent text and sends it
+back with the sign-up as `acceptedStatement`. The server compares it with the
+current text; an older or missing text answers 422 `consent_required`. The
+sign-up keeps the text as agreed, who agreed and when. An activity that needs
+consent cannot open without a text (422 `no_consent_statement`).
+
+Where photos are taken, the roster marks each child with `photoConsent`, read
+from the photo consent on file. No consent on file reads as no. To withdraw
+consent, withdraw the sign-up.
+
+A guardian can only sign up their own children, for an activity in their
+audience. Anything else answers 404, the same as an activity that does not
+exist.
+
+Next: create a draft with two supervisors, open it, and sign up a child from
+the portal as a test guardian.

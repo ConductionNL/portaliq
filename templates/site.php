@@ -35,42 +35,9 @@
 
 declare(strict_types=1);
 
-use OCA\Portaliq\Service\PortalThemeResolver;
-
 /** @var array $_ */
 /** @var \OCP\IURLGenerator $urlGenerator */
 $appId = 'portaliq';
-
-// Cache-buster from the FILE'S OWN MTIME, not the app version.
-//
-// Nextcloud's `?v=` is keyed on the app version, which does not move when you
-// rebuild a bundle — so a rebuilt asset keeps its URL and browsers keep the
-// old bytes until someone hard-reloads. Measured here: the served bundle
-// carried the fix, the disk carried the fix, and the page still ran the
-// previous build. Keying on mtime means every rebuild is a new URL and the
-// question never arises.
-$appManager = \OCP\Server::get(\OCP\App\IAppManager::class);
-$url = \OCP\Server::get(\OCP\IURLGenerator::class);
-$appRoot = $appManager->getAppPath($appId);
-
-// Which id the theme app is installed under here — it is mid-rename from
-// `nldesign` to `thematiq`, and both spellings are in the field. Null when no
-// theme app is installed at all, which is a normal deployment: the portal then
-// renders unthemed rather than linking assets into an app that is not there.
-$themeApp = \OCP\Server::get(PortalThemeResolver::class)->themeAppId();
-
-$asset = static function (string $app, string $path) use ($url, $appManager): string {
-    $href = $url->linkTo($app, $path);
-    try {
-        $file = $appManager->getAppPath($app) . '/' . $path;
-        $stamp = is_file($file) ? (string)filemtime($file) : '0';
-    } catch (\Throwable) {
-        // An app we cannot locate still gets a URL — just an unversioned one.
-        $stamp = '0';
-    }
-
-    return $href . '?v=' . urlencode($stamp);
-};
 
 // NOTE ON THE SCRIPT TAG (see the bottom of this file): Nextcloud's CSP is
 // `script-src-elem 'strict-dynamic' 'nonce-…'` and it applies to this response
@@ -86,171 +53,64 @@ $asset = static function (string $app, string $path) use ($url, $appManager): st
 // that first returned a 500, "Could not resolve … ContentSecurityPolicyNonceManager".
 
 $portalConfig = ($_['portalConfig'] ?? []);
-$themeStylesheet = (string)($_['themeStylesheet'] ?? '');
-$nldsStylesheet = (string)($_['nldsStylesheet'] ?? '');
 $locale = (string)($_['locale'] ?? 'nl');
-
-// STYLESHEET ORDER IS LOAD-BEARING, AND THE TOKENS GO LAST.
-//
-// They used to go first, on the reasoning that "the component CSS resolves
-// against the serving portal's values". That reasoning does not hold for custom
-// properties: `var()` is resolved where it is USED, not where it is declared, so
-// a token declared after the rule that reads it still applies. What order DOES
-// decide is which declaration of the same custom property wins.
-//
-// And the component CSS declares its own. Measured: `nlds-app.css` sets
-// `--conduction-primary-top-nav-background-color: #fff` on `:root`, so with the
-// token file first the navigation bar rendered WHITE instead of rgb(0, 120, 200)
-// — the design system overriding the theme with its own fallback.
-//
-// This did not surface earlier only because the theme file then in use scoped
-// its tokens to `.vng-theme`, a class on the renderer's root DIV. A custom
-// property is inherited from the NEAREST ancestor that declares it, so the div
-// beat `html` whatever the stylesheet order was. Moving the tokens into
-// nldesign — where a shipped set must be one flat `:root` block, because a
-// shared applier rewrites that selector to scope it — removed that proximity
-// advantage and exposed the ordering for what it always was.
-$stylesheets = [];
-$tokenStylesheets = [];
-if ($themeStylesheet !== '' && $themeApp !== null) {
-    $tokenStylesheets[] = $asset($themeApp, 'css/' . $themeStylesheet . '.css');
-}
-
-if ($nldsStylesheet !== '') {
-    $tokenStylesheets[] = $asset($appId, 'css/' . $nldsStylesheet . '.css');
-}
-
-// THE LOGO URL HAS TO BE ABSOLUTE, and the reason is a CSS resolution rule
-// that only bites once a token crosses an app boundary.
-//
-// Token sets declare `--nldesign-logo-url: url('../../img/logos/x.svg')`,
-// which is correct relative to the token file. But the rule that CONSUMES it
-// lives in this app's `nlds-app.css`, and the browser resolves a relative
-// `url()` inside a custom property against the stylesheet doing the consuming.
-// Measured: the header requested
-//   /custom_apps/portaliq/img/logos/opencatalogi.svg
-// — this app's directory, where no such file exists — and the portal rendered
-// with NO logo at all while every token involved held exactly the right value.
-//
-// So the app that knows where the theme app lives resolves it, once, here.
-$themeLogoUrl = (string)($_['themeLogoUrl'] ?? '');
-
-// NO DARK LAYER IS LINKED HERE, AND THAT IS A MEASURED DECISION.
-//
-// The theme app generates `css/tokens/dark/{set}.css` and linking it is one
-// line. Both versions of that file were rendered and measured on this page:
-//
-//   the artefact as generated before  0 of 1,152,000 pixels changed. It rewrites
-//                                     `--nldesign-color-*`, and this page is
-//                                     painted from `--utrecht-*`. A dark mode
-//                                     that changes nothing reads as a working one.
-//   the artefact after the theme app  53% of pixels changed and 10 of 11 text
-//   was fixed to darken those too     nodes fell below 4.5:1 — #e5e5e5 headings
-//                                     left on the white bands, ratio 1.26.
-//
-// The reason is upstream of the theme app: this site has no token-driven
-// surface layer. Its bands paint their own backgrounds and the page itself is
-// unpainted (the white is the browser canvas — no rule sets it). Darkening the
-// text tokens while the surfaces stay light is strictly worse than having no
-// dark mode, and this is a public government portal.
-//
-// So dark mode waits for the surfaces to read their tokens. Painting `body`
-// from `--utrecht-document-*` was tried and verified harmless (0 pixels changed
-// in light mode) but insufficient on its own — the inner bands stayed white.
-foreach (['nlds/nlds-components', 'nlds/nlds-vendor-a', 'nlds/nlds-vendor-b', 'nlds/nlds-app', 'nlds/nlds-controls'] as $sheet) {
-    $stylesheets[] = $asset($appId, 'css/' . $sheet . '.css');
-}
-
-// LAST, AND THE POSITION IS THE WHOLE MECHANISM.
-//
-// The vendored sheets above were captured from the reference application,
-// where they are served from that site's ROOT, so their `@font-face` urls are
-// root-relative (`/static/fonts/…`). A root-relative url resolves against the
-// ORIGIN, not the stylesheet, so from `/apps/portaliq/css/nlds/` they ask
-// Nextcloud for a path this app does not own — measured: four requests, four
-// 404s, `document.fonts` reporting `Roboto 400/500/700 error`, and the whole
-// portal quietly drawn in Arial.
-//
-// `nlds-fonts.css` re-declares the same families and weights with urls
-// relative to itself. Same family + weight + style means the LAST declaration
-// wins, so this link must stay after the vendored ones.
-$stylesheets[] = $asset($appId, 'css/nlds/nlds-fonts.css');
-
-// THE LICENSED FACES ARE LINKED ONLY WHEN THEY EXIST, AND THE CHECK IS THE FIX.
-//
-// `css/fonts/licensed/` is a gitignored drop-in slot, so on every deployment
-// without a Monotype licence — which is every deployment this repository ships
-// to — it is empty. The slot used to be declared inside `nlds-fonts.css`,
-// which is linked unconditionally, so the browser requested a file that was
-// not there. Nextcloud answers a missing app asset with **401**, not 404, so
-// an anonymous visitor to a public government portal collected a red
-// `401 (Unauthorized)` on every single page load; the failure then fell back
-// to the vendored root-relative Avenir face and logged a `404` as well.
-// Measured in the CI trace for e2e S24, which exists to catch precisely this.
-//
-// A sheet linked only when its resources are on disk cannot fail that way at
-// all. `nlds-fonts.css` keeps a neutralised Avenir face that ends in a shipped
-// Roboto file, so the unlicensed rendering is unchanged and silent; this sheet
-// comes after it, so a licensed deployment still gets the real face.
-if (is_file($appRoot . '/css/fonts/licensed/avenir-lt-55-roman.woff2') === true) {
-    $stylesheets[] = $asset($appId, 'css/nlds/nlds-fonts-licensed.css');
-}
-
-// The token layer, last, so a theme's value beats the component CSS's own
-// `:root` fallback for the same custom property.
-foreach ($tokenStylesheets as $href) {
-    $stylesheets[] = $href;
-}
-
-// The tab icon. A portal's declared logo wins; otherwise the theme app's own
-// favicon, which every NLDS theme ships.
-// The theme app ships a per-brand logo under `img/logos/<theme>.svg`; the
-// reference application serves an SVG favicon the same way. `img/favicon.ico`
-// does NOT exist there — linking it would have traded a 404 on
-// /favicon.ico for a 404 on a path of our own invention, which is not a fix.
-$favicon = (string)($portalConfig['logo'] ?? '');
-if ($favicon === '' && $themeStylesheet !== '' && $themeApp !== null) {
-    $themeName = basename($themeStylesheet);
-    try {
-        $logo = $appManager->getAppPath($themeApp)
-            . '/img/logos/' . $themeName . '.svg';
-        if (is_file($logo) === true) {
-            $favicon = $asset($themeApp, 'img/logos/' . $themeName . '.svg');
-        }
-    } catch (\Throwable) {
-        // No theme app: fall through to this app's own mark.
-    }
-}
-
-if ($favicon === '') {
-    $favicon = $asset($appId, 'img/app.svg');
-}
 
 ?><!DOCTYPE html>
 <html lang="<?php p($locale); ?>">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?php p($portalConfig['title'] ?? 'Portaal'); ?></title>
     <?php
-    // FAVICON. Without one the browser requests /favicon.ico against the
-    // ORIGIN, which on a Nextcloud host is not this app's to answer — measured,
-    // a 404 on every page load and a blank tab icon. The portal's own logo when
-    // it has one, otherwise the theme app's, so a tab is identifiable either
-    // way.
+    // The serving portal's own name, resolved server-side by
+    // PortalPageController::site(). `?? ` alone was not enough: the controller
+    // always passes the key and answers '' for every unresolved request, so a
+    // null-coalesce would have rendered an EMPTY title rather than the
+    // fallback. Checked for emptiness instead, which covers both "no portal
+    // resolved" and "a portal with a blank title".
     ?>
-    <link rel="icon" href="<?php p($favicon); ?>">
-    <?php foreach ($stylesheets as $href) { ?>
-    <link rel="stylesheet" href="<?php p($href); ?>">
+    <?php
+    // THE HEAD OF THE PAGE ASKED FOR (site-page-seo-history-and-media), from
+    // SiteHead: the same anonymous read the content API makes, so a draft or
+    // a missing route lends nothing and gets `noindex`. The title prefers the
+    // page's search title; with no head at all the portal's name stands, then
+    // the neutral fallback.
+    $head = (array)($head ?? []);
+    $plainUrl = (string)($plainUrl ?? '');
+    $headTitle = (string)($head['title'] ?? '');
+    if ($headTitle === '') {
+        $headTitle = (($portalConfig['title'] ?? '') !== '' ? (string)$portalConfig['title'] : 'Portaal');
+    }
+    ?>
+    <title><?php p($headTitle); ?></title>
+    <?php if (($head['description'] ?? '') !== '') { ?>
+    <meta name="description" content="<?php p($head['description']); ?>">
+    <meta property="og:description" content="<?php p($head['description']); ?>">
     <?php } ?>
-    <?php if ($themeLogoUrl !== '') { ?>
-    <!--
-        Emitted AFTER the token stylesheets so it wins, and inline because the
-        value is only knowable at request time — see the note where
-        $themeLogoUrl is resolved.
-    -->
-    <style>:root{--nldesign-logo-url:url("<?php p($themeLogoUrl); ?>")}</style>
+    <meta name="robots" content="<?php p(($head['robots'] ?? '') !== '' ? $head['robots'] : 'noindex'); ?>">
+    <meta property="og:title" content="<?php p($headTitle); ?>">
+    <?php if ((string)($_['creator'] ?? '') !== '') { ?>
+    <meta name="DCTERMS.creator" content="<?php p((string)$_['creator']); ?>">
     <?php } ?>
+    <meta property="og:type" content="website">
+    <?php if (($head['canonical'] ?? '') !== '') { ?>
+    <link rel="canonical" href="<?php p($head['canonical']); ?>">
+    <meta property="og:url" content="<?php p($head['canonical']); ?>">
+    <?php } ?>
+    <?php if (($head['ogImage'] ?? '') !== '') { ?>
+    <meta property="og:image" content="<?php p($head['ogImage']); ?>">
+    <?php } ?>
+    <?php include __DIR__ . '/parts/site-stylesheets.php'; ?>
+    <?php
+    // THE WEB APP MANIFEST (site-reaches-portal-parity REQ-SRP-044), for the
+    // portal named in the address, so an installed app opens on this site with
+    // the same portal. Without a `?portal=` the manifest resolves the portal by
+    // host, the same way this page does.
+    $manifestParams = [];
+    if ((string)($portalConfig['portal'] ?? '') !== '') {
+        $manifestParams['portal'] = (string)$portalConfig['portal'];
+    }
+    ?>
+    <link rel="manifest" href="<?php p($url->linkToRoute('portaliq.portalManifest.manifest', $manifestParams)); ?>">
 </head>
 <body>
     <!--
@@ -278,6 +138,22 @@ if ($favicon === '') {
            class="utrecht-skip-link utrecht-skip-link--visible-on-focus pq-site__skip"
            href="#pq-main">Direct naar de inhoud</a>
     </p>
+
+    <!--
+        WITHOUT JAVASCRIPT THE BUNDLE NEVER RENDERS `#pq-main`, so the skip link
+        above would point nowhere and the page would be empty. This block is the
+        main landmark for that visitor: it says why the page is empty and links
+        to the plain version of the same page, which the server renders
+        (site-honest-without-javascript REQ-SHJ-001). A browser running
+        JavaScript does not render `<noscript>` content, so there is still one
+        `#pq-main` on the page then.
+    -->
+    <noscript>
+        <main id="pq-main" class="pq-site__noscript" tabindex="-1">
+            <p><?php p($l->t('This site uses JavaScript for its interactive parts, and JavaScript is off in your browser.')); ?></p>
+            <p><a href="<?php p($plainUrl); ?>"><?php p($l->t('Open the plain version of this page')); ?></a></p>
+        </main>
+    </noscript>
 
     <!--
         DATA, NOT CODE. `type="application/json"` is not executed, so this

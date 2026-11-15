@@ -34,6 +34,32 @@ class PortalAccountServiceTest extends TestCase {
 
 	}//end testANewIdentityMintsAFreshSubjectRefWhenNoOverrideIsGiven()
 
+	/**
+	 * A new account's row, field by field and in order, and the answer.
+	 */
+	public function testANewAccountRowHasItsFieldsInOrder(): void {
+		$written = [];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->once())->method('createObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data) use (&$written) {
+				$written = [$register, $schema, $scopeField, $subjectRef, $organisation, $data];
+				return $data;
+			}
+		);
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readCollection')->willReturn([]);
+		$random = $this->createMock(ISecureRandom::class);
+		$random->method('generate')->willReturn('minted-1');
+
+		$account = (new PortalAccountService($reader, $writer, $random))->findOrCreate(identityType: 'digid', identityRef: 'bsn-1', organisation: 'gemeente-x', audience: 'client');
+
+		$this->assertSame(['subjectRef' => 'minted-1', 'isNew' => true, 'audience' => 'client'], $account);
+		$this->assertSame(['portaliq', 'portalAccount', '', '', 'gemeente-x'], array_slice($written, 0, 5));
+		$this->assertSame(['audience', 'identityType', 'identityRef', 'subjectRef', 'organisation', 'status', 'lastLoginAt'], array_keys($written[5]));
+		$this->assertSame(['client', 'digid', 'bsn-1', 'minted-1', 'gemeente-x', 'active'], array_slice(array_values($written[5]), 0, 6));
+
+	}//end testANewAccountRowHasItsFieldsInOrder()
+
 	public function testANewIdentityUsesAValidatedClaimOverrideWhenGiven(): void {
 		[$service] = $this->serviceWithStore();
 
@@ -54,6 +80,38 @@ class PortalAccountServiceTest extends TestCase {
 		$this->assertFalse($second['isNew']);
 
 	}//end testAReturningIdentityReusesItsOwnExistingSubjectRefRegardlessOfAnyOverride()
+
+	/**
+	 * An account an app invited as `employer` stays an employer when the
+	 * person signs in through eHerkenning, whose preset proposes `supplier`.
+	 *
+	 * @spec openspec/changes/the-account-names-the-audience-and-the-company/specs/portal-identity-space/spec.md#requirement-an-existing-accounts-audience-wins-over-the-sign-in-routes
+	 */
+	public function testAReturningIdentityKeepsItsOwnAudience(): void {
+		[$service] = $this->serviceWithStore();
+
+		$first  = $service->findOrCreate(identityType: 'eherkenning', identityRef: 'kvk-7', organisation: 'gemeente-x', audience: 'employer');
+		$second = $service->findOrCreate(identityType: 'eherkenning', identityRef: 'kvk-7', organisation: 'gemeente-x', audience: 'supplier');
+
+		$this->assertSame('employer', $first['audience']);
+		$this->assertSame('employer', $second['audience']);
+		$this->assertSame($first['subjectRef'], $second['subjectRef']);
+
+	}//end testAReturningIdentityKeepsItsOwnAudience()
+
+	/**
+	 * A new account takes the audience the sign-in route proposes.
+	 *
+	 * @spec openspec/changes/the-account-names-the-audience-and-the-company/specs/portal-identity-space/spec.md#requirement-an-existing-accounts-audience-wins-over-the-sign-in-routes
+	 */
+	public function testANewIdentityTakesTheProposedAudience(): void {
+		[$service] = $this->serviceWithStore();
+
+		$account = $service->findOrCreate(identityType: 'eherkenning', identityRef: 'kvk-8', organisation: 'gemeente-x', audience: 'supplier');
+
+		$this->assertSame('supplier', $account['audience']);
+
+	}//end testANewIdentityTakesTheProposedAudience()
 
 	public function testDifferentOrganisationsGetDistinctAccountsForTheSameIdentityRef(): void {
 		[$service] = $this->serviceWithStore();

@@ -48,3 +48,11 @@ See the workspace-level `.claude/docs/` for:
 ## Standards
 
 This app follows all [Conduction app standards](../.claude/openspec/architecture/).
+
+### The React portal is retired
+
+The React portal that lived in `src/portal/` and answered at `/portal` is gone (change `site-reaches-portal-parity`, 2 October 2026). The Vue site in `src/site/` does everything it did.
+
+- `/portal` and `/portal/{path}` redirect to `/site` with the same query string. Never link to `/portal` from new code: link to the `portalPage.site` route.
+- New signed-in screens and portal features go into `src/site/`. Framework-free logic shared by the site and the embed frame lives in `src/shared/`.
+- The `/portal/api/*` endpoints, `/portal/manifest.webmanifest`, `/portal/sw.js` and `/portal/embed` stay at their addresses.

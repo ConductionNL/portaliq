@@ -152,6 +152,92 @@ class PortalContributionRegistryTest extends TestCase {
 
 	}//end testProviderExercisingTheV2VocabularyIsFilteredByTrust()
 
+	/**
+	 * A start tile's audiences are bounded by what the provider serves, in
+	 * both aggregates, and the served list itself never leaves the registry.
+	 *
+	 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-contribution-contract/spec.md#requirement-an-action-may-offer-itself-as-a-start-tile-with-a-summary-and-its-audiences-req-snw-020
+	 */
+	public function testAStartTileKeepsOnlyAudiencesTheProviderServes(): void {
+		$provider = new class {
+
+			public function getAudiences(): array {
+				return ['citizen', 'business'];
+			}
+
+			public function getContribution(array $subject): array {
+				return [
+					'actions' => [
+						[
+							'id'        => 'createBezwaar',
+							'endpoint'  => '/apps/portaliq/api/health',
+							'method'    => 'POST',
+							'anonymous' => true,
+							'summary'   => 'Bent u het niet eens met een besluit? Maak binnen zes weken bezwaar.',
+							'audiences' => ['citizen', 'alien'],
+						],
+					],
+				];
+			}
+		};
+
+		$registry = new PortalContributionRegistry(
+			$this->appManager(['portaliq']),
+			$this->anyContainer($provider),
+			$this->createMock(LoggerInterface::class)
+		);
+
+		$signedIn = $registry->aggregateFor(['audience' => 'citizen', 'organisation' => 'org-1', 'trust' => 'high'])['contributions'][0];
+		$this->assertSame(['citizen'], $signedIn['actions'][0]['audiences']);
+		$this->assertArrayNotHasKey('servedAudiences', $signedIn);
+
+		$anonymous = $registry->aggregateAnonymous()['contributions'][0];
+		$this->assertSame(['citizen'], $anonymous['actions'][0]['audiences']);
+		$this->assertArrayNotHasKey('servedAudiences', $anonymous);
+	}//end testAStartTileKeepsOnlyAudiencesTheProviderServes()
+
+	/**
+	 * The public start tiles read every audience the provider serves, keep
+	 * the audiences it serves, and drop an unknown one.
+	 *
+	 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-contribution-contract/spec.md#requirement-an-action-may-offer-itself-as-a-start-tile-with-a-summary-and-its-audiences-req-snw-020
+	 */
+	public function testStartTilesListEveryActionWithASummaryOnAPage(): void {
+		$provider = new class {
+
+			public function getAudiences(): array {
+				return ['citizen', 'business'];
+			}
+
+			public function getContribution(array $subject): array {
+				return [
+					'actions' => [
+						[
+							'id'        => 'createBezwaar',
+							'label'     => 'Bezwaar maken',
+							'endpoint'  => '/apps/portaliq/api/health',
+							'method'    => 'POST',
+							'summary'   => 'Maak binnen zes weken bezwaar.',
+							'audiences' => [$subject['audience'], 'alien'],
+						],
+					],
+					'pages'   => [['id' => 'bezwaar', 'label' => 'Bezwaar', 'blocks' => [['type' => 'action', 'action' => 'createBezwaar']]]],
+				];
+			}
+		};
+
+		$registry = new PortalContributionRegistry(
+			$this->appManager(['portaliq']),
+			$this->anyContainer($provider),
+			$this->createMock(LoggerInterface::class)
+		);
+
+		$this->assertSame(
+			[['label' => 'Bezwaar maken', 'summary' => 'Maak binnen zes weken bezwaar.', 'audiences' => ['citizen', 'business'], 'route' => '/mijn/portaliq/bezwaar']],
+			$registry->startTiles()
+		);
+	}//end testStartTilesListEveryActionWithASummaryOnAPage()
+
 	public function testMinTrustFiltersCollectionsAndActionsFailClosed(): void {
 		$provider = new class {
 
@@ -194,6 +280,103 @@ class PortalContributionRegistryTest extends TestCase {
 		$this->assertSame(['lowAction', 'highAction'], array_column($high['contributions'][0]['actions'], 'id'));
 
 	}//end testMinTrustFiltersCollectionsAndActionsFailClosed()
+
+	/**
+	 * site-member-voting-record-and-confidential-papers REQ-SCR-001: both
+	 * aggregates carry the declared record lists with id, label, group and app,
+	 * an anonymous one even when the contribution has no anonymous collection,
+	 * and never a provider name. An entry naming a contract method is dropped.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t1
+	 */
+	public function testBothAggregatesCarryPublicRecordsWithoutProviderNames(): void {
+		$provider = new class {
+
+			public function getAudiences(): array {
+				return ['citizen'];
+			}
+
+			public function getContribution(array $subject): array {
+				return [
+					'label' => 'Raad',
+					'collections' => [],
+					'actions' => [],
+					'publicRecords' => [
+						['id' => 'memberVotingRecords', 'label' => 'Raadsleden', 'listProvider' => 'publicMembers', 'recordProvider' => 'publicVotingRecord'],
+						['id' => 'bad', 'label' => 'Slecht', 'listProvider' => 'publicMembers', 'recordProvider' => 'getContribution'],
+					],
+				];
+			}
+
+			public function publicMembers(): array {
+				return [];
+			}
+
+			public function publicVotingRecord(string $id): array {
+				return [];
+			}
+		};
+
+		$registry = new PortalContributionRegistry(
+			$this->appManager(['portaliq']),
+			$this->anyContainer($provider),
+			$this->createMock(LoggerInterface::class)
+		);
+
+		$anonymous = $registry->aggregateAnonymous();
+		$subject   = $registry->aggregateFor(['audience' => 'citizen', 'organisation' => '']);
+		foreach ([$anonymous['contributions'][0], $subject['contributions'][0]] as $contribution) {
+			$this->assertSame([['id' => 'memberVotingRecords', 'label' => 'Raadsleden', 'group' => '', 'app' => 'portaliq']], $contribution['publicRecords']);
+			$this->assertStringNotContainsString('publicMembers', json_encode($contribution));
+		}
+
+	}//end testBothAggregatesCarryPublicRecordsWithoutProviderNames()
+
+	/**
+	 * site-member-voting-record-and-confidential-papers REQ-SCR-004: a
+	 * collection dropped for trust alone is named under `stepUp` with its label
+	 * and the trust it needs, and nothing else. One the session already reaches,
+	 * and one with a minTrust nobody can meet, are not.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t6
+	 */
+	public function testACollectionDroppedForTrustIsNamedUnderStepUp(): void {
+		$provider = new class {
+
+			public function getAudiences(): array {
+				return ['citizen'];
+			}
+
+			public function getContribution(array $subject): array {
+				return [
+					'label' => 'Raad',
+					'collections' => [
+						['id' => 'confidentialAgendaItems', 'label' => 'Vertrouwelijke stukken', 'register' => 'decidiq', 'schema' => 'agendaItem', 'minTrust' => 'substantial', 'scopeClaim' => 'x'],
+						['id' => 'open', 'label' => 'Open', 'register' => 'decidiq', 'schema' => 'open', 'scopeClaim' => 'x'],
+						['id' => 'typo', 'label' => 'Typo', 'register' => 'decidiq', 'schema' => 'typo', 'minTrust' => 'sustantial', 'scopeClaim' => 'x'],
+					],
+					'actions' => [],
+				];
+			}
+		};
+		$registry = new PortalContributionRegistry(
+			$this->appManager(['portaliq']),
+			$this->anyContainer($provider),
+			$this->createMock(LoggerInterface::class)
+		);
+
+		$low  = $registry->aggregateFor(['audience' => 'citizen', 'trust' => 'low']);
+		$high = $registry->aggregateFor(['audience' => 'citizen', 'trust' => 'substantial']);
+
+		$this->assertSame([['app' => 'portaliq', 'collection' => 'confidentialAgendaItems', 'label' => 'Vertrouwelijke stukken', 'minTrust' => 'substantial']], $low['stepUp']);
+		$this->assertSame([], $high['stepUp']);
+		$this->assertSame(['open'], array_column($low['contributions'][0]['collections'], 'id'), 'the collection itself stays absent');
+
+	}//end testACollectionDroppedForTrustIsNamedUnderStepUp()
 
 	/**
 	 * portal-page-provisioning (task 6.2): `aggregateAnonymous()` keeps only
@@ -408,6 +591,96 @@ class PortalContributionRegistryTest extends TestCase {
 		$this->assertSame('portaliq', $result['contributions'][0]['app']);
 
 	}//end testProviderStillResolvesWhenTheAppDeclaresNoNamespace()
+
+	/**
+	 * The aggregate resolves attached actions (woo-journey-entry-points D3):
+	 * an action with `attachTo` lands on the collection it names.
+	 *
+	 * @spec openspec/changes/woo-journey-entry-points/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
+	 */
+	public function testTheAggregateResolvesAttachedActions(): void {
+		$provider = new class {
+
+			public function getAudiences(): array {
+				return ['client'];
+			}
+
+			public function getContribution(array $subject): array {
+				return [
+					'collections' => [['id' => 'dossiers', 'register' => 'portaliq', 'schema' => 'collection', 'scopeField' => 'owner']],
+					'actions' => [[
+						'id' => 'ask',
+						'label' => 'Stel een vraag',
+						'endpoint' => '/apps/portaliq/api/health',
+						'method' => 'POST',
+						'rowField' => 'collectionId',
+						'attachTo' => ['app' => 'portaliq', 'schema' => 'collection'],
+					]],
+				];
+			}
+		};
+
+		$registry = new PortalContributionRegistry(
+			$this->appManager(['portaliq']),
+			$this->anyContainer($provider),
+			$this->createMock(LoggerInterface::class)
+		);
+
+		$result = $registry->aggregateFor(['audience' => 'client', 'organisation' => 'org-1', 'trust' => 'low']);
+		$this->assertSame(
+			[['app' => 'portaliq', 'id' => 'ask', 'label' => 'Stel een vraag']],
+			$result['contributions'][0]['collections'][0]['attachedActions'] ?? null
+		);
+	}//end testTheAggregateResolvesAttachedActions()
+
+	/**
+	 * A malformed row condition is dropped from the aggregate, and logged with
+	 * the app (update-row-action-condition REQ-URC-002).
+	 *
+	 * @spec openspec/changes/update-row-action-condition/specs/portal-contribution-contract/spec.md#requirement-a-malformed-row-condition-must-be-dropped-with-a-warning-req-urc-002
+	 */
+	public function testAMalformedRowConditionIsDroppedFromTheAggregate(): void {
+		$provider = new class {
+
+			public function getAudiences(): array {
+				return ['parent'];
+			}
+
+			public function getContribution(array $subject): array {
+				return [
+					'collections' => [['id' => 'times', 'register' => 'portaliq', 'schema' => 'collection', 'scopeField' => 'owner', 'rowActions' => ['cancel', 'withdraw']]],
+					'actions' => [
+						[
+							'id' => 'cancel',
+							'type' => 'update',
+							'schema' => 'collection',
+							'fields' => ['lifecycle'],
+							'set' => ['lifecycle' => 'cancelled'],
+							'rowWhen' => ['field' => 'lifecycle', 'in' => []],
+						],
+						[
+							'id' => 'withdraw',
+							'type' => 'update',
+							'schema' => 'collection',
+							'fields' => ['lifecycle'],
+							'set' => ['lifecycle' => 'withdrawn'],
+							'rowWhen' => ['field' => 'lifecycle', 'in' => ['booked']],
+						],
+					],
+				];
+			}
+		};
+
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('warning')
+			->with('Portaliq: row condition dropped', $this->callback(static fn (array $context): bool => $context['app'] === 'portaliq'));
+
+		$registry = new PortalContributionRegistry($this->appManager(['portaliq']), $this->anyContainer($provider), $logger);
+
+		$actions = $registry->aggregateFor(['audience' => 'parent', 'organisation' => 'org-1', 'trust' => 'low'])['contributions'][0]['actions'];
+		$this->assertArrayNotHasKey('rowWhen', $actions[0]);
+		$this->assertSame(['field' => 'lifecycle', 'in' => ['booked']], $actions[1]['rowWhen']);
+	}//end testAMalformedRowConditionIsDroppedFromTheAggregate()
 
 	/**
 	 * @param array<int, string>    $installed  App ids `getInstalledApps()` reports.

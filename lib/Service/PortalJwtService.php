@@ -35,14 +35,17 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use InvalidArgumentException;
+use OCA\Portaliq\Kernel\Contracts\PortalJwtServiceInterface;
 use RuntimeException;
+use OCA\Portaliq\Kernel\ScopeClaims;
+use OCA\Portaliq\Service\Signin\YiviAttributes;
 
 /**
  * HMAC-based JWT minting + validation for Portaliq's audience-agnostic auth edge.
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T02
  */
-class PortalJwtService {
+class PortalJwtService implements PortalJwtServiceInterface {
 	/**
 	 * HMAC algorithm — HS256.
 	 */
@@ -70,6 +73,32 @@ class PortalJwtService {
 	 * carrying it are REJECTED by PortalSessionService::resolveFromBearer().
 	 */
 	public const USE_ASSERTION = 'assertion';
+
+	/**
+	 * The nine frozen assertion claims. A declared scope claim may never take
+	 * one of these names (case-actions-sign-a-document D3).
+	 *
+	 * @var string[]
+	 */
+	public const RESERVED_ASSERTION_CLAIMS = ScopeClaims::RESERVED_ASSERTION_CLAIMS;
+
+	/**
+	 * The optional assertion claim that names the company branch the session
+	 * acts for (decision 173). Only the session fills it, so a declared scope
+	 * claim may not take this name either.
+	 */
+	public const BRANCH_ASSERTION_CLAIM = ScopeClaims::BRANCH_ASSERTION_CLAIM;
+
+	/**
+	 * The `use` claim value marking a reference session (identity-ways-in-screens
+	 * D2). `resolveFromBearer()` refuses it like every special-use token.
+	 */
+	public const USE_REFERENCE = 'reference';
+
+	/**
+	 * A reference session's lifetime in seconds: thirty minutes, never refreshed.
+	 */
+	public const REFERENCE_TTL = 1800;
 
 	/**
 	 * Token issuer claim.
@@ -107,11 +136,16 @@ class PortalJwtService {
 	 *                           so the absolute session lifetime can be enforced from
 	 *                           the true origin, not the most recent mint. Defaults to
 	 *                           `$iat` (a fresh login) when not supplied.
+	 * @param array{number?: string, restricted?: bool, provider?: string, kvk?: string} $context The login's context: the branch in
+	 *                                                                             effect, whether the login restricted
+	 *                                                                             the session to it, and the OIDC
+	 *                                                                             provider the session came through.
 	 *
 	 * @return string Compact JWT string.
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
 	 */
 	public function createSession(
 		string $subjectRef,
@@ -122,11 +156,11 @@ class PortalJwtService {
 		array $roles = [],
 		?int $ttl = null,
 		?int $authTime = null,
+		array $context = [],
 	): string {
 		$iat = time();
 		$exp = ($iat + ($ttl ?? self::DEFAULT_TTL));
 
-		$header = ['alg' => self::ALG, 'typ' => 'JWT'];
 		$claims = [
 			'sub' => $subjectRef,
 			'audience' => $audience,
@@ -143,11 +177,93 @@ class PortalJwtService {
 			'authTime' => ($authTime ?? $iat),
 		];
 
-		$hPart = $this->b64UrlEncode(bytes: (string)json_encode($header, JSON_UNESCAPED_SLASHES));
-		$cPart = $this->b64UrlEncode(bytes: (string)json_encode($claims, JSON_UNESCAPED_SLASHES));
-		$sig = $this->b64UrlEncode(bytes: $this->signRaw(input: $hPart . '.' . $cPart));
-		return $hPart . '.' . $cPart . '.' . $sig;
+		return $this->signed(
+			claims: array_replace(
+				$claims,
+				$this->branchClaims(context: $context),
+				$this->providerClaim(context: $context),
+				$this->kvkClaim(context: $context),
+				$this->attributesClaim(context: $context)
+			)
+		);
 	}//end createSession()
+
+	/**
+	 * Change signin-eherkenning-branch: the branch in effect, and whether the
+	 * login restricted the session to it. Signed only when set, so a session
+	 * without a branch carries exactly the claims it did before.
+	 *
+	 * @param array{number?: string, restricted?: bool, provider?: string, kvk?: string} $context The login's context.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function branchClaims(array $context): array {
+		if ((string)($context['number'] ?? '') === '') {
+			return [];
+		}
+
+		return [
+			'branch' => (string)$context['number'],
+			'branchRestricted' => (($context['restricted'] ?? false) === true),
+		];
+	}//end branchClaims()
+
+	/**
+	 * Change signin-session-idle-warning-and-sso D6: the OIDC provider the
+	 * session came through, so signing out can reach that broker. Signed only
+	 * when set: dev-login and the Nextcloud mode carry none.
+	 *
+	 * @param array{number?: string, restricted?: bool, provider?: string, kvk?: string} $context The login's context.
+	 *
+	 * @return array<string, string>
+	 */
+	private function providerClaim(array $context): array {
+		if ((string)($context['provider'] ?? '') === '') {
+			return [];
+		}
+
+		return ['provider' => (string)$context['provider']];
+	}//end providerClaim()
+
+	/**
+	 * Change site-mandates-the-represented-manage D8: the KVK number of the
+	 * company the session signs in for. Signed only when it is eight digits,
+	 * so a session without a company carries exactly the claims it did before.
+	 *
+	 * @param array<string, mixed> $context The login's context.
+	 *
+	 * @return array<string, string>
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/tasks.md#t0
+	 */
+	private function kvkClaim(array $context): array {
+		$kvk = (string)($context['kvk'] ?? '');
+		if (preg_match('/^\d{8}$/D', $kvk) !== 1) {
+			return [];
+		}
+
+		return ['kvk' => $kvk];
+	}//end kvkClaim()
+
+	/**
+	 * Change resident-identity-in-forms T05: the attributes a resident
+	 * disclosed in Yivi, so a form can prefill from them. Signed only when
+	 * set: every other way in carries none.
+	 *
+	 * @param array{attributes?: array<string, string>} $context The login's context.
+	 *
+	 * @return array<string, array<string, string>>
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#T05
+	 */
+	private function attributesClaim(array $context): array {
+		$attributes = (new YiviAttributes())->disclosed(claim: ($context['attributes'] ?? null));
+		if ($attributes === []) {
+			return [];
+		}
+
+		return ['attributes' => $attributes];
+	}//end attributesClaim()
 
 	/**
 	 * Mint a short-lived `X-Portal-Subject` assertion (contract v2, A6).
@@ -163,10 +279,14 @@ class PortalJwtService {
 	 * @param string $trust Normalised trust level (`low|substantial|high`).
 	 * @param string $jti The originating SESSION's token id.
 	 * @param int|null $ttl Override the assertion TTL (seconds).
+	 * @param string $scopeClaim The action's declared scope claim (`app.claimName` or `claimName`), or ''.
+	 * @param string $scopeValue The server-resolved value of that claim, or ''.
+	 * @param string $branch The branch the originating session acts for, or '' (decision 173).
 	 *
 	 * @return string Compact JWT string.
 	 *
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T7
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
 	 */
 	public function createAssertion(
 		string $subjectRef,
@@ -175,11 +295,13 @@ class PortalJwtService {
 		string $trust,
 		string $jti,
 		?int $ttl = null,
+		string $scopeClaim = '',
+		string $scopeValue = '',
+		string $branch = '',
 	): string {
 		$iat = time();
 		$exp = ($iat + ($ttl ?? self::ASSERTION_TTL));
 
-		$header = ['alg' => self::ALG, 'typ' => 'JWT'];
 		$claims = [
 			'sub' => $subjectRef,
 			'audience' => $audience,
@@ -192,11 +314,149 @@ class PortalJwtService {
 			'iss' => self::ISSUER,
 		];
 
-		$hPart = $this->b64UrlEncode(bytes: (string)json_encode($header, JSON_UNESCAPED_SLASHES));
-		$cPart = $this->b64UrlEncode(bytes: (string)json_encode($claims, JSON_UNESCAPED_SLASHES));
-		$sig = $this->b64UrlEncode(bytes: $this->signRaw(input: $hPart . '.' . $cPart));
-		return $hPart . '.' . $cPart . '.' . $sig;
+		// Decision 173: the one optional claim, present only for a branch session.
+		if ($branch !== '') {
+			$claims[self::BRANCH_ASSERTION_CLAIM] = $branch;
+		}
+
+		return $this->signed(claims: array_replace($claims, $this->scopeClaim(scopeClaim: $scopeClaim, scopeValue: $scopeValue)));
 	}//end createAssertion()
+
+	/**
+	 * The action's declared scope claim with its server-resolved value, when
+	 * the name may be added and the value is set; none otherwise.
+	 *
+	 * @param string $scopeClaim The action's declared scope claim, or ''.
+	 * @param string $scopeValue The server-resolved value of that claim, or ''.
+	 *
+	 * @return array<string, string>
+	 */
+	private function scopeClaim(string $scopeClaim, string $scopeValue): array {
+		$claimName = self::scopeClaimName(scopeClaim: $scopeClaim);
+		if ($claimName === null || $scopeValue === '') {
+			return [];
+		}
+
+		return [$claimName => $scopeValue];
+	}//end scopeClaim()
+
+	/**
+	 * The compact HS256 JWT of a claim set.
+	 *
+	 * @param array<string, mixed> $claims The claims.
+	 *
+	 * @return string Compact JWT string.
+	 */
+	private function signed(array $claims): string {
+		$header = ['alg' => self::ALG, 'typ' => 'JWT'];
+		$hPart  = $this->b64UrlEncode(bytes: (string)json_encode($header, JSON_UNESCAPED_SLASHES));
+		$cPart  = $this->b64UrlEncode(bytes: (string)json_encode($claims, JSON_UNESCAPED_SLASHES));
+		$sig    = $this->b64UrlEncode(bytes: $this->signRaw(input: $hPart . '.' . $cPart));
+		return $hPart . '.' . $cPart . '.' . $sig;
+	}//end signed()
+
+	/**
+	 * The assertion claim name a declared scope claim maps to.
+	 *
+	 * The part after the first `.` (the app prefix) is the name. It is null
+	 * when the name is malformed or is one of the nine frozen claims, so a
+	 * scope claim can never overwrite `sub`, `iss` or any other of them.
+	 *
+	 * @param string $scopeClaim The declared scope claim.
+	 *
+	 * @return string|null The claim name, or null when none may be added.
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
+	 */
+	public static function scopeClaimName(string $scopeClaim): ?string {
+		$name = self::bareClaimName(scopeClaim: $scopeClaim);
+		if (preg_match('/^[a-z][a-zA-Z0-9_]*$/', $name) !== 1) {
+			return null;
+		}
+
+		if (self::isReservedScopeClaim(scopeClaim: $name) === true) {
+			return null;
+		}
+
+		return $name;
+	}//end scopeClaimName()
+
+	/**
+	 * Whether a declared scope claim names one of the nine frozen assertion
+	 * claims (case-actions-sign-a-document T03) or the optional `branch`
+	 * claim only the session fills (decision 173). Anything that is not a
+	 * non-empty string is not a declared claim and so not reserved.
+	 *
+	 * @param mixed $scopeClaim The declared `scopeClaim` value.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/archive/2026-09-28-case-actions-sign-a-document/tasks.md#T03
+	 */
+	public static function isReservedScopeClaim(mixed $scopeClaim): bool {
+		return ScopeClaims::isReserved(scopeClaim: $scopeClaim);
+	}//end isReservedScopeClaim()
+
+	/**
+	 * A scope claim without its app prefix: the part after the first `.`.
+	 *
+	 * @param string $scopeClaim The declared scope claim.
+	 *
+	 * @return string
+	 */
+	private static function bareClaimName(string $scopeClaim): string {
+		$dot = strpos($scopeClaim, '.');
+		if ($dot === false) {
+			return $scopeClaim;
+		}
+
+		return substr($scopeClaim, ($dot + 1));
+	}//end bareClaimName()
+
+	/**
+	 * Mint a reference session: read-only access to one case, for thirty
+	 * minutes (identity-ways-in-screens D2). It carries `use: reference`, so
+	 * the portal session resolver refuses it on every other route.
+	 *
+	 * @param string $subjectRef `reference:<hash of the link id>`.
+	 * @param string $organisation The tenant.
+	 * @param string $caseReference The case number it may read.
+	 * @param string $register The case collection's register.
+	 * @param string $schema The case collection's schema.
+	 * @param string $jti Unique token id (for revocation).
+	 *
+	 * @return string Compact JWT string.
+	 *
+	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/design.md
+	 */
+	public function createReferenceSession(
+		string $subjectRef,
+		string $organisation,
+		string $caseReference,
+		string $register,
+		string $schema,
+		string $jti,
+	): string {
+		$iat = time();
+
+		$claims = [
+			'sub' => $subjectRef,
+			'audience' => 'client',
+			'organisation' => $organisation,
+			'trust' => 'low',
+			'roles' => [],
+			'jti' => $jti,
+			'use' => self::USE_REFERENCE,
+			'caseReference' => $caseReference,
+			'register' => $register,
+			'schema' => $schema,
+			'iat' => $iat,
+			'exp' => ($iat + self::REFERENCE_TTL),
+			'iss' => self::ISSUER,
+		];
+
+		return $this->signed(claims: $claims);
+	}//end createReferenceSession()
 
 	/**
 	 * Validate a JWT and return its claims.
@@ -218,16 +478,50 @@ class PortalJwtService {
 
 		[$hPart, $cPart, $sPart] = $parts;
 
-		$expected = $this->b64UrlEncode(bytes: $this->signRaw(input: $hPart . '.' . $cPart));
-		if (hash_equals($expected, $sPart) === false) {
-			throw new RuntimeException('Invalid portal JWT signature');
-		}
+		$this->assertSigned(header: $hPart, claims: $cPart, signature: $sPart);
 
 		$claims = json_decode($this->b64UrlDecode(encoded: $cPart), true);
 		if (is_array($claims) === false) {
 			throw new RuntimeException('Malformed portal JWT claims');
 		}
 
+		$this->assertCurrent(claims: $claims);
+
+		return $claims;
+	}//end validate()
+
+	/**
+	 * Throw unless the signature is this service's over the header and claims.
+	 *
+	 * @param string $header    The encoded header.
+	 * @param string $claims    The encoded claims.
+	 * @param string $signature The encoded signature.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When the signature does not match.
+	 *
+	 * @spec openspec/changes/supplier-portal/tasks.md#T02
+	 */
+	private function assertSigned(string $header, string $claims, string $signature): void {
+		$expected = $this->b64UrlEncode(bytes: $this->signRaw(input: $header . '.' . $claims));
+		if (hash_equals($expected, $signature) === false) {
+			throw new RuntimeException('Invalid portal JWT signature');
+		}
+	}//end assertSigned()
+
+	/**
+	 * Throw unless the claims name this issuer and have not expired.
+	 *
+	 * @param array<string, mixed> $claims The decoded claims.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When the issuer is wrong or the token expired.
+	 *
+	 * @spec openspec/changes/supplier-portal/tasks.md#T02
+	 */
+	private function assertCurrent(array $claims): void {
 		if (($claims['iss'] ?? '') !== self::ISSUER) {
 			throw new RuntimeException('Unexpected portal JWT issuer');
 		}
@@ -235,9 +529,7 @@ class PortalJwtService {
 		if (isset($claims['exp']) === true && (int)$claims['exp'] < time()) {
 			throw new RuntimeException('Expired portal JWT');
 		}
-
-		return $claims;
-	}//end validate()
+	}//end assertCurrent()
 
 	/**
 	 * Raw HMAC of the signing input.

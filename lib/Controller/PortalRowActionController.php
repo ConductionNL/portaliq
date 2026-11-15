@@ -1,0 +1,541 @@
+<?php
+
+/**
+ * Portaliq Portal Row Action Controller (contribution-pay-screen)
+ *
+ * Runs an endpoint action for ONE row the subject owns: a guardian pays one
+ * school contribution, a signer signs one document. The browser names the row
+ * only in the path. The portal reads that row under the collection's own scope
+ * first, and the id that reaches the leaf app is the id of the row it read.
+ *
+ * The order is the design. The collection must be the subject's and must offer
+ * the action on its rows; trust and the endpoint are re-checked; the row must
+ * be read under the subject's scope; the row must match the action's
+ * `rowWhen`. Only then is a body built, from the action's `fields` whitelist
+ * and the server's own stamps, and forwarded. A raw client body is never
+ * relayed on this route.
+ *
+ * @category Controller
+ * @package  OCA\Portaliq\Controller
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Portaliq\Controller;
+
+use OCA\Portaliq\Auth\PortalProtected;
+use OCA\Portaliq\Contribution\ActionScopeResolver;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\AuditTrailServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalActionForwarderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
+use OCA\Portaliq\Kernel\Support\SessionTrust;
+use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
+use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
+use OCP\AppFramework\Http\Attribute\PublicPage;
+use OCP\AppFramework\Http\JSONResponse;
+use OCP\IRequest;
+use OCA\Portaliq\Kernel\Contracts\AttachedActionResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\RequiredFieldsGuardInterface;
+use OCA\Portaliq\Kernel\Contracts\RowActionFilesInterface;
+use OCA\Portaliq\Kernel\Contracts\RowActionResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\RowIdentifierInterface;
+
+/**
+ * Serves the row-scoped endpoint action forward.
+ *
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
+ *
+ * @SuppressWarnings(PHPMD.StaticAccess) -- SessionTrust::trustSatisfies,
+ * the one trust ordering every portal gate shares.
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- one collaborator per step
+ * of the forward (who, which row action, whose row, send, record) plus the
+ * framework attributes every portal endpoint carries.
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
+ */
+class PortalRowActionController extends Controller implements PortalProtected {
+	/**
+	 * Constructor.
+	 *
+	 * @param IRequest $request The request.
+	 * @param PortalContributionRegistryInterface $registry The subject's contributions.
+	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
+	 * @param PortalObjectReaderInterface $reader The scoped single-object read.
+	 * @param PortalActionForwarderInterface $forwarder The signed server-to-server forward.
+	 * @param AuditTrailServiceInterface $auditor Records the forward.
+	 * @param AttachedActionResolverInterface $attachedActionResolver The AttachedActionResolver helper.
+	 * @param RequiredFieldsGuardInterface $requiredFieldsGuard The RequiredFieldsGuard helper.
+	 * @param RowActionFilesInterface $rowActionFiles The RowActionFiles helper.
+	 * @param RowActionResolverInterface $rowActionResolver The RowActionResolver helper.
+	 * @param RowIdentifierInterface $rowIdentifier The RowIdentifier helper.
+	 */
+	public function __construct(
+		IRequest $request,
+		private readonly PortalContributionRegistryInterface $registry,
+		private readonly PortalSessionServiceInterface $session,
+		private readonly PortalObjectReaderInterface $reader,
+		private readonly PortalActionForwarderInterface $forwarder,
+		private readonly AuditTrailServiceInterface $auditor,
+		private readonly AttachedActionResolverInterface $attachedActionResolver,
+		private readonly RequiredFieldsGuardInterface $requiredFieldsGuard,
+		private readonly RowActionFilesInterface $rowActionFiles,
+		private readonly RowActionResolverInterface $rowActionResolver,
+		private readonly RowIdentifierInterface $rowIdentifier,
+	) {
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
+	}//end __construct()
+
+	/**
+	 * Forward an endpoint row action for one row the subject owns.
+	 *
+	 * `?collection=` picks one of several collections on the same schema, as
+	 * on the object read. The leaf app's status and JSON body are relayed.
+	 *
+	 * Rate limit: a human clicks this, and a payment start creates real work
+	 * at a provider per call, so it matches shillinq's own pay receiver.
+	 *
+	 * @param string $register The register of the collection.
+	 * @param string $schema The schema of the collection.
+	 * @param string $id The row id (never trusted; read under the subject's scope first).
+	 * @param string $actionId The endpoint row action.
+	 *
+	 * @return JSONResponse The relayed answer, or 401 / 403 / 404 / 409 / 502.
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-must-be-offered-only-on-the-rows-its-rowwhen-names
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-be-able-to-name-one-collection-and-its-own-app-req-ato-001
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 20, period: 60)]
+	public function forward(string $register, string $schema, string $id, string $actionId): JSONResponse {
+		$subject = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
+		if ($subject === null) {
+			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$match = $this->authorisedRowAction(subject: $subject, register: $register, schema: $schema, actionId: $actionId);
+		if ($match === null) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		$row = $this->ownedRow(match: $match, subject: $subject, target: ['register' => $register, 'schema' => $schema, 'id' => $id]);
+		if ($row === null) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$run = new RowForwardRun(subject: $subject, authorised: $match);
+		$run->row         = $row;
+		$run->requestedId = $id;
+		$run->actionId    = $actionId;
+		return $this->forwardProvenRow(run: $run);
+	}//end forward()
+
+	/**
+	 * Forward the action for a row the subject's scope proved: refused when
+	 * the row does not offer it, then the whitelisted body with the row's
+	 * declared inputs, then the action's files.
+	 *
+	 * @param RowForwardRun $run The forward, with its proven row.
+	 *
+	 * @return JSONResponse The relayed answer, or 403 / 409 / 422 / 502.
+	 */
+	private function forwardProvenRow(RowForwardRun $run): JSONResponse {
+		$refusal = $this->notOffered(run: $run);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		$run->rowId = $this->rowIdentifier->idFor(row: $run->row, fallback: $run->requestedId);
+		$body       = $this->forwardBody(run: $run);
+		if ($body === null) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		$body = $this->withRowInputs(run: $run, body: $body);
+		if ($body instanceof JSONResponse) {
+			return $body;
+		}
+
+		return $this->relayWithFiles(run: $run, body: $body);
+	}//end forwardProvenRow()
+
+	/**
+	 * Add the files the action lets the resident add, checked before the
+	 * audit and the forward (row-action-carries-files REQ-RAF-001), and relay.
+	 *
+	 * @param RowForwardRun                                          $run  The forward, with its proven row.
+	 * @param array{body: array<string, mixed>, scopeValue: string} $body The forward body and assertion scope value.
+	 *
+	 * @return JSONResponse The relayed answer, or 422 / 502.
+	 */
+	private function relayWithFiles(RowForwardRun $run, array $body): JSONResponse {
+		$files = $this->rowActionFiles->collect(action: $run->authorised['action'], request: $this->request);
+		if ($files['error'] !== null) {
+			return new JSONResponse(['error' => $files['error']], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+
+		$body['files'] = $files['files'];
+
+		return $this->relay(run: $run, body: $body);
+	}//end relayWithFiles()
+
+	/**
+	 * Refuse a body without the action's required fields, audit the forward and
+	 * relay the leaf app's answer.
+	 *
+	 * @param RowForwardRun                                          $run  The forward, with its proven row id and the action id.
+	 * @param array{body: array<string, mixed>, scopeValue: string} $body The forward body and assertion scope value.
+	 *
+	 * @return JSONResponse The relayed answer, or 422 / 502.
+	 */
+	private function relay(RowForwardRun $run, array $body): JSONResponse {
+		// The action's required fields (REQ-SMF-024): refused before the audit
+		// and the forward.
+		$missing = $this->requiredFieldsGuard->refusal(action: $run->authorised['action'], body: $body['body']);
+		if ($missing !== null) {
+			return $missing;
+		}
+
+		$this->recordForward(run: $run);
+
+		$response = $this->forwarder->forward(
+			action: $run->authorised['action'],
+			subject: $run->subject,
+			whitelisted: $body['body'],
+			scopeValue: $body['scopeValue'],
+			files: ($body['files'] ?? [])
+		);
+		if ($response === null) {
+			// Transport failure: 502, or 504 when the app did not answer in
+			// time (action-forward-survives-a-slow-answer).
+			return $this->forwarder->failureResponse();
+		}
+
+		return new JSONResponse($this->forwarder->decodeBody(response: $response), $response->getStatusCode());
+	}//end relay()
+
+	/**
+	 * Audit the forward. Recorded once the forward is authorised, whatever the
+	 * leaf app then answers: the audited fact is that the subject invoked it
+	 * (as ContributionController::action()).
+	 *
+	 * @param RowForwardRun $run The forward, with its proven row id and the action id.
+	 *
+	 * @return void
+	 */
+	private function recordForward(RowForwardRun $run): void {
+		$subject = $run->subject;
+		$this->auditor->record(
+			verb: 'forward',
+			subjectRef: (string)($subject['subjectRef'] ?? ''),
+			organisation: (string)($subject['organisation'] ?? ''),
+			register: $run->authorised['app'],
+			schema: $run->actionId,
+			id: $run->rowId,
+			jti: (string)($subject['jti'] ?? '')
+		);
+	}//end recordForward()
+
+	/**
+	 * The refusal when the row does not offer the action: not among the rows
+	 * its `rowWhen` names, or not available by its `availableWhen`.
+	 *
+	 * Offered only on the rows its `availableWhen` names; the button's
+	 * absence is a convenience, this is the rule
+	 * (case-actions-row-inputs-and-conditions REQ-RAI-004).
+	 *
+	 * @param RowForwardRun $run The forward, with its proven row.
+	 *
+	 * @return JSONResponse|null The 409, or null when the row offers the action.
+	 */
+	private function notOffered(RowForwardRun $run): ?JSONResponse {
+		if ($this->rowActionResolver->rowMatches(action: $run->authorised['action'], row: $run->row) === false) {
+			return new JSONResponse(['error' => 'not_offered'], Http::STATUS_CONFLICT);
+		}
+
+		$availability = $run->inputs->availability(action: $run->authorised['action'], row: $run->row);
+		if ($availability['available'] === false) {
+			return new JSONResponse(['error' => 'not_available', 'message' => $availability['reason']], Http::STATUS_CONFLICT);
+		}
+
+		return null;
+	}//end notOffered()
+
+	/**
+	 * Add the inputs this row declares to the forward body, for exactly the
+	 * names it declares (REQ-RAI-002): a name it does not declare is dropped
+	 * here, and a required one left empty is a 422 that forwards nothing.
+	 *
+	 * @param RowForwardRun        $run  The forward, with its proven row.
+	 * @param array<string, mixed> $body The forward body and scope value.
+	 *
+	 * @return array<string, mixed>|JSONResponse The body, or the 422.
+	 */
+	private function withRowInputs(RowForwardRun $run, array $body): array|JSONResponse {
+		$into = ($run->authorised['action']['rowInputs']['into'] ?? null);
+		if (is_string($into) === false) {
+			return $body;
+		}
+
+		$collected = $run->inputs->collect(action: $run->authorised['action'], row: $run->row, submitted: $this->request->getParam($into));
+		if ($collected['errors'] !== []) {
+			return new JSONResponse(['error' => 'invalid', 'errors' => $collected['errors']], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+
+		$body['body'][$into] = $collected['values'];
+
+		return $body;
+	}//end withRowInputs()
+
+	/**
+	 * The subject's collection on this register and schema that offers the
+	 * action on its rows, with the action and its app, or null (403).
+	 *
+	 * The action must be an endpoint row action of the SAME contribution, the
+	 * subject's trust must meet both the collection's and the action's
+	 * minTrust, and the endpoint must be instance-local.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param string $register The requested register.
+	 * @param string $schema The requested schema.
+	 * @param string $actionId The requested action.
+	 *
+	 * @return array{collection: array<string, mixed>, action: array<string, mixed>, app: string, rowApp?: string}|null
+	 */
+	private function authorisedRowAction(array $subject, string $register, string $schema, string $actionId): ?array {
+		$contributions = ($this->registry->aggregateFor($subject)['contributions'] ?? []);
+		$match = $this->firstRequested(contributions: $contributions, register: $register, schema: $schema);
+		if ($match === null) {
+			return null;
+		}
+
+		[$contribution, $collection] = $match;
+
+		// An action attached to this collection (woo-journey-entry-points
+		// D3): `?actionApp=` names its app. That may be the collection's
+		// own app, for an action it attaches to one of its own
+		// collections (attach-to-own-collection); the lookup then still
+		// requires the attachment, never a row action of the same id.
+		$actionApp = (string)$this->request->getParam('actionApp', '');
+		if ($actionApp !== '') {
+			$target = ['collection' => $collection, 'app' => (string)($contribution['app'] ?? '')];
+			return $this->attachedMatch(contributions: $contributions, subject: $subject, target: $target, actionApp: $actionApp, actionId: $actionId);
+		}
+
+		return $this->ownRowAction(contribution: $contribution, collection: $collection, subject: $subject, actionId: $actionId);
+	}//end authorisedRowAction()
+
+	/**
+	 * The first collection on this register and schema, with its contribution; `?collection=` picks another.
+	 *
+	 * @param array<int, array<string, mixed>> $contributions The subject's contributions.
+	 * @param string                           $register      The requested register.
+	 * @param string                           $schema        The requested schema.
+	 *
+	 * @return array{0: array<string, mixed>, 1: array<string, mixed>}|null The contribution and the collection.
+	 */
+	private function firstRequested(array $contributions, string $register, string $schema): array|null {
+		$collectionId = (string)$this->request->getParam('collection', '');
+		foreach ($contributions as $contribution) {
+			foreach (($contribution['collections'] ?? []) as $collection) {
+				if ($this->isRequested(collection: $collection, requested: [$register, $schema, $collectionId]) === true) {
+					return [$contribution, $collection];
+				}
+			}
+		}
+
+		return null;
+	}//end firstRequested()
+
+	/**
+	 * The collection's own row action, when the subject's trust and the endpoint hold.
+	 *
+	 * @param array<string, mixed> $contribution The contribution holding the collection.
+	 * @param array<string, mixed> $collection   The requested collection.
+	 * @param array<string, mixed> $subject      The resolved subject.
+	 * @param string               $actionId     The requested action.
+	 *
+	 * @return array{collection: array<string, mixed>, action: array<string, mixed>, app: string}|null
+	 */
+	private function ownRowAction(array $contribution, array $collection, array $subject, string $actionId): array|null {
+		// The first collection on this register and schema decides, as
+		// on the object read; `?collection=` picks another.
+		$action = $this->offeredAction(contribution: $contribution, collection: $collection, actionId: $actionId);
+		if ($action === null || $this->trustAndEndpointHold(subject: $subject, collection: $collection, action: $action) === false) {
+			return null;
+		}
+
+		return ['collection' => $collection, 'action' => $action, 'app' => (string)($contribution['app'] ?? '')];
+	}//end ownRowAction()
+
+	/**
+	 * Whether a collection is the one the route names: its register and
+	 * schema, and its id when `?collection=` gives one.
+	 *
+	 * @param array<string, mixed>                $collection The collection.
+	 * @param array{0: string, 1: string, 2: string} $requested Register, schema, collection id or ''.
+	 *
+	 * @return bool
+	 */
+	private function isRequested(array $collection, array $requested): bool {
+		[$register, $schema, $collectionId] = $requested;
+
+		return ($collection['register'] ?? '') === $register
+			&& ($collection['schema'] ?? '') === $schema
+			&& ($collectionId === '' || ($collection['id'] ?? '') === $collectionId);
+	}//end isRequested()
+
+	/**
+	 * The match for an action another app attaches to this collection, or null.
+	 *
+	 * The row is still read through THIS collection's scope (`rowApp`); the
+	 * action is forwarded to its own app (`app`).
+	 *
+	 * @param array<int, array<string, mixed>> $contributions The subject's aggregate.
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param array{collection: array<string, mixed>, app: string} $target The target collection and its app.
+	 * @param string $actionApp The app of the action.
+	 * @param string $actionId The action id.
+	 *
+	 * @return array{collection: array<string, mixed>, action: array<string, mixed>, app: string, rowApp: string}|null
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
+	 */
+	private function attachedMatch(array $contributions, array $subject, array $target, string $actionApp, string $actionId): ?array {
+		$collection = $target['collection'];
+		$collectionApp = $target['app'];
+		$action = $this->attachedActionResolver->attachedAction(
+			contributions: $contributions,
+			collectionApp: $collectionApp,
+			collection: $collection,
+			actionApp: $actionApp,
+			actionId: $actionId
+		);
+		if ($action === null || $this->trustAndEndpointHold(subject: $subject, collection: $collection, action: $action) === false) {
+			return null;
+		}
+
+		return ['collection' => $collection, 'action' => $action, 'app' => $actionApp, 'rowApp' => $collectionApp];
+	}//end attachedMatch()
+
+	/**
+	 * The endpoint row action a collection offers under this id, or null.
+	 *
+	 * @param array<string, mixed> $contribution The contribution holding the collection.
+	 * @param array<string, mixed> $collection The normalised collection.
+	 * @param string $actionId The requested action.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function offeredAction(array $contribution, array $collection, string $actionId): ?array {
+		if (in_array($actionId, (array)($collection['rowActions'] ?? []), true) === false) {
+			return null;
+		}
+
+		$resolver = $this->rowActionResolver;
+		foreach (($contribution['actions'] ?? []) as $action) {
+			if (is_array($action) === true && ($action['id'] ?? '') === $actionId && $resolver->isEndpointRowAction(action: $action) === true) {
+				return $action;
+			}
+		}
+
+		return null;
+	}//end offeredAction()
+
+	/**
+	 * Whether the subject's trust meets the collection and the action, and the
+	 * endpoint is safe to call.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param array<string, mixed> $collection The collection.
+	 * @param array<string, mixed> $action The action.
+	 *
+	 * @return bool
+	 */
+	private function trustAndEndpointHold(array $subject, array $collection, array $action): bool {
+		$trust = ($subject['trust'] ?? '');
+
+		return SessionTrust::trustSatisfies($trust, ($collection['minTrust'] ?? null)) === true
+			&& SessionTrust::trustSatisfies($trust, ($action['minTrust'] ?? null)) === true
+			&& $this->forwarder->isForwardable(action: $action) === true;
+	}//end trustAndEndpointHold()
+
+	/**
+	 * The row when the subject's collection scope reads it, else null (one
+	 * 404 for a foreign and a missing row alike).
+	 *
+	 * @param array{collection: array<string, mixed>, action: array<string, mixed>, app: string, rowApp?: string} $match The authorised row action.
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param array{register: string, schema: string, id: string} $target The route parameters.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function ownedRow(array $match, array $subject, array $target): ?array {
+		$collection = $match['collection'];
+
+		return $this->reader->readObject(
+			register: $target['register'],
+			schema: $target['schema'],
+			scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
+			subjectRef: (string)($subject['subjectRef'] ?? ''),
+			id: $target['id'],
+			organisation: (string)($subject['organisation'] ?? ''),
+			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
+			contributingApp: ($match['rowApp'] ?? $match['app']),
+			via: ($collection['via'] ?? null),
+			audience: (string)($subject['audience'] ?? ''),
+			fields: ($collection['fields'] ?? null)
+		);
+	}//end ownedRow()
+
+	/**
+	 * The forwarded body: the action's `fields` whitelist of the request
+	 * params, then the proven row id under `rowField`, then the resolved scope
+	 * under a declared `subjectField`, with the declared `scopeClaim`'s value
+	 * for the assertion. Null when either does not resolve.
+	 *
+	 * @param RowForwardRun $run The forward, with its proven row id.
+	 *
+	 * @return array{body: array<string, mixed>|null, scopeValue: string}|null The body and assertion scope value, or null (403).
+	 */
+	private function forwardBody(RowForwardRun $run): ?array {
+		$action = $run->authorised['action'];
+		$body = [];
+		foreach ((array)($action['fields'] ?? []) as $field) {
+			if (is_string($field) === false) {
+				continue;
+			}
+
+			$value = $this->request->getParam($field);
+			if ($value !== null) {
+				$body[$field] = $value;
+			}
+		}
+
+		$body[(string)$action['rowField']] = $run->rowId;
+
+		// A declared `subjectField` is stamped from the subject's scope and a
+		// declared `scopeClaim` rides in the signed assertion (the way
+		// filinq's `sign` receives its `signerEmail`); either one that does
+		// not resolve stops the forward.
+		return (new ActionScopeResolver(reader: $this->reader))
+			->prepare(action: $action, subject: $run->subject, appId: $run->authorised['app'], body: $body);
+	}//end forwardBody()
+}//end class

@@ -36,7 +36,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Contracts\PortalAccountLookupInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
+use OCA\Portaliq\Kernel\Support\SessionTrust;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -47,12 +49,14 @@ use Throwable;
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T04
  *
- * @SuppressWarnings(PHPMD.StaticAccess) -- PortalSessionService's trust
+ * @SuppressWarnings(PHPMD.StaticAccess) -- SessionTrust's trust
  * helpers are deliberately THE single normalisation/comparison point
  * (contract-v2 design decision); calling them statically keeps one source of
  * truth on every path.
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the registry wires the locator, the
+ * normalisers and the hidden-page and anonymous collaborators; the coupling is the list.
  */
-class PortalContributionRegistry {
+class PortalContributionRegistry implements PortalContributionRegistryInterface {
 	/**
 	 * Locates each app's provider class. Built here from the injected
 	 * dependencies when not supplied, so the constructor signature every
@@ -61,6 +65,20 @@ class PortalContributionRegistry {
 	 * @var PortalProviderLocator
 	 */
 	private readonly PortalProviderLocator $locator;
+
+	/**
+	 * Reads the pages hidden for a subject's account.
+	 *
+	 * @var HiddenPagesReader
+	 */
+	private readonly HiddenPagesReader $hidden;
+
+	/**
+	 * Builds the anonymous-reachable contribution of a provider.
+	 *
+	 * @var AnonymousContributions
+	 */
+	private readonly AnonymousContributions $anonymous;
 
 	/**
 	 * Constructor.
@@ -77,6 +95,7 @@ class PortalContributionRegistry {
 	 * @param LoggerInterface $logger The logger.
 	 * @param PortalManifestNormaliser $normaliser The fail-closed v3 UI-config sanitiser.
 	 * @param PortalProviderLocator|null $locator Provider lookup; built from the above when null.
+	 * @param PortalAccountLookupInterface|null $accounts Reads the account's hidden pages; none hides nothing.
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
@@ -84,8 +103,11 @@ class PortalContributionRegistry {
 		private readonly LoggerInterface $logger,
 		private readonly PortalManifestNormaliser $normaliser = new PortalManifestNormaliser(),
 		?PortalProviderLocator $locator = null,
+		private readonly ?PortalAccountLookupInterface $accounts = null,
 	) {
-		$this->locator = ($locator ?? new PortalProviderLocator($appManager, $container, $logger));
+		$this->locator   = ($locator ?? new PortalProviderLocator($appManager, $container, $logger));
+		$this->hidden    = new HiddenPagesReader(accounts: $accounts, logger: $logger);
+		$this->anonymous = new AnonymousContributions(locator: $this->locator, normaliser: $this->normaliser, logger: $this->logger);
 	}//end __construct()
 
 	/**
@@ -98,60 +120,159 @@ class PortalContributionRegistry {
 	 * @return array<string, mixed> `{ audience, organisation, contributions[] }`.
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T04
+	 * @spec openspec/changes/update-row-action-condition/specs/portal-contribution-contract/spec.md#requirement-a-malformed-row-condition-must-be-dropped-with-a-warning-req-urc-002
 	 */
 	public function aggregateFor(array $subject): array {
-		$audience = (string)($subject['audience'] ?? '');
-		$trust = PortalSessionService::normaliseTrust(trust: ($subject['trust'] ?? ''));
-		$contributions = [];
-
+		$run = new AggregateRun(subject: $subject, trust: SessionTrust::normaliseTrust(trust: ($subject['trust'] ?? '')));
 		foreach ($this->appManager->getInstalledApps() as $appId) {
-			$provider = $this->resolveProvider(appId: (string)$appId);
-			// The method_exists checks narrow for static analysis; duck typing
-			// means a contributing app does NOT need to implement (and thus
-			// hard-depend on) Portaliq's interface — only the two methods.
-			if ($provider === null || method_exists($provider, 'getContribution') === false) {
-				continue;
-			}
+			$this->collectContribution(run: $run, appId: (string)$appId);
+		}
 
-			if ($this->servesAudience(provider: $provider, audience: $audience) === false) {
-				continue;
-			}
+		// Actions that attach to another app's collection (woo-journey-entry-
+		// points D3) resolve across contributions, so only once all are in.
+		$contributions = (new AttachedActionResolver())->resolve(contributions: $run->contributions);
 
-			try {
-				$contribution = $provider->getContribution($subject);
-			} catch (Throwable $e) {
-				$this->logger->error('Portaliq: contribution provider failed', ['app' => $appId, 'reason' => $e->getMessage()]);
-				continue;
-			}
-
-			if (is_array($contribution) === false) {
-				continue;
-			}
-
-			$contribution['app'] = $appId;
-			$filtered = $this->filterByTrust(contribution: $contribution, trust: $trust);
-
-			// Sanitise the v3 UI-configuration vocabulary AFTER trust filtering,
-			// so a surviving page can never reference a trust-dropped entry. The
-			// normaliser is fail-closed and never throws; guard anyway so a
-			// provider config bug degrades to the un-normalised (but trust-
-			// filtered) manifest rather than a 500.
-			try {
-				$filtered = $this->normaliser->normalise(contribution: $filtered);
-			} catch (Throwable $e) {
-				$this->logger->error('Portaliq: manifest normalisation failed', ['app' => $appId, 'reason' => $e->getMessage()]);
-			}
-
-			$contributions[] = $filtered;
-		}//end foreach
-
-		return [
-			'audience' => $audience,
+		$aggregate = [
+			'audience' => $run->audience,
 			'organisation' => (string)($subject['organisation'] ?? ''),
 			'contributions' => $contributions,
+			'stepUp' => $run->stepUp,
 		];
+
+		// The pages a clerk hid for this account, and the collections only
+		// those pages showed (operate-pages-per-portal-and-client REQ-PGC-002).
+		return (new PageChoice())->withoutHidden(aggregate: $aggregate, hidden: $this->hidden->forSubject(subject: $subject));
 	}//end aggregateFor()
 
+	/**
+	 * Add one installed app's contribution to the aggregate, when the app
+	 * provides one for the subject's audience.
+	 *
+	 * @param AggregateRun $run   The aggregate.
+	 * @param string       $appId The installed app.
+	 *
+	 * @return void
+	 */
+	private function collectContribution(AggregateRun $run, string $appId): void {
+		$run->appId    = $appId;
+		$run->provider = $this->contributingProvider(run: $run);
+		if ($run->provider === null) {
+			return;
+		}
+
+		$contribution = $this->providedContribution(run: $run, provider: $run->provider);
+		if ($contribution === null) {
+			return;
+		}
+
+		$run->contributions[] = $this->withNormalisedRules(run: $run, contribution: $this->normalisedManifest(run: $run, contribution: $contribution));
+	}//end collectContribution()
+
+	/**
+	 * The app's provider when it contributes and serves the subject's
+	 * audience, else null.
+	 *
+	 * @param AggregateRun $run The aggregate, at the app being read.
+	 *
+	 * @return object|null
+	 */
+	private function contributingProvider(AggregateRun $run): ?object {
+		$provider = $this->resolveProvider(appId: $run->appId);
+		// The method_exists checks narrow for static analysis; duck typing
+		// means a contributing app does NOT need to implement (and thus
+		// hard-depend on) Portaliq's interface — only the two methods.
+		if ($provider === null || method_exists($provider, 'getContribution') === false) {
+			return null;
+		}
+
+		if ((new ProviderAudiences())->serves(provider: $provider, audience: $run->audience) === false) {
+			return null;
+		}
+
+		return $provider;
+	}//end contributingProvider()
+
+	/**
+	 * The provider's contribution for the subject, stamped with its app and
+	 * its public records, or null when the provider fails or gives none.
+	 *
+	 * @param AggregateRun $run      The aggregate, at the app being read.
+	 * @param object       $provider The app's provider.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function providedContribution(AggregateRun $run, object $provider): ?array {
+		try {
+			$contribution = $this->locator->contributionOf(provider: $provider, subject: $run->subject);
+		} catch (Throwable $e) {
+			$this->logger->error('Portaliq: contribution provider failed', ['app' => $run->appId, 'reason' => $e->getMessage()]);
+			return null;
+		}
+
+		if (is_array($contribution) === false) {
+			return null;
+		}
+
+		$contribution['app'] = $run->appId;
+		return (new PublicRecordsNormaliser())->attach(contribution: $contribution, provider: $provider, appId: $run->appId);
+	}//end providedContribution()
+
+	/**
+	 * The contribution filtered to the subject's trust, with the step-up
+	 * hints for what was dropped recorded, and its v3 UI-configuration
+	 * vocabulary sanitised.
+	 *
+	 * Sanitised AFTER trust filtering, so a surviving page can never
+	 * reference a trust-dropped entry. The normaliser is fail-closed and
+	 * never throws; guarded anyway so a provider config bug degrades to the
+	 * un-normalised (but trust-filtered) manifest rather than a 500.
+	 *
+	 * @param AggregateRun         $run          The aggregate, at the app being read.
+	 * @param array<string, mixed> $contribution The provided contribution.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function normalisedManifest(AggregateRun $run, array $contribution): array {
+		$run->stepUp = array_merge($run->stepUp, $this->droppedForTrust(contribution: $contribution, trust: $run->trust, appId: $run->appId));
+		$filtered    = $this->filterByTrust(contribution: $contribution, trust: $run->trust);
+
+		// The audiences the provider serves bound a start tile's
+		// `audiences` (site-nlds-widget-palette D6); input only.
+		$filtered['servedAudiences'] = (new ProviderAudiences())->served(provider: $run->provider);
+		try {
+			$filtered = $this->normaliser->normalise(contribution: $filtered);
+		} catch (Throwable $e) {
+			$this->logger->error('Portaliq: manifest normalisation failed', ['app' => $run->appId, 'reason' => $e->getMessage()]);
+		}
+
+		unset($filtered['servedAudiences']);
+		return $filtered;
+	}//end normalisedManifest()
+
+	/**
+	 * The contribution with its row conditions and notification rules
+	 * normalised: an unknown operator or a malformed condition or rule is
+	 * dropped and logged with the app that declared it
+	 * (update-row-action-condition).
+	 *
+	 * @param AggregateRun         $run          The aggregate, at the app being read.
+	 * @param array<string, mixed> $contribution The sanitised contribution.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withNormalisedRules(AggregateRun $run, array $contribution): array {
+		$contribution = (new RowWhenNormaliser())->normaliseContribution(
+			contribution: $contribution,
+			appId: $run->appId,
+			logger: $this->logger
+		);
+
+		return (new NotificationRuleNormaliser())->normaliseContribution(
+			contribution: $contribution,
+			appId: $run->appId,
+			logger: $this->logger
+		);
+	}//end withNormalisedRules()
 
 	/**
 	 * Aggregate the ANONYMOUS-reachable surface across every installed
@@ -159,7 +280,7 @@ class PortalContributionRegistry {
 	 * (portal-page-provisioning). Enumerates every installed app's provider
 	 * exactly as `aggregateFor()` does, but for EACH audience the provider
 	 * declares (duck-typed `getAudiences()`/`getAudience()`, same as
-	 * `servesAudience()`) — there is no single subject audience to filter
+	 * `ProviderAudiences::serves()`) — there is no single subject audience to filter
 	 * by, so every audience the provider serves is consulted. Only
 	 * `collections`/`actions` entries explicitly flagged `anonymous: true`
 	 * survive into the returned contribution — every other entry in the same
@@ -191,10 +312,11 @@ class PortalContributionRegistry {
 				continue;
 			}
 
-			foreach ($this->providerAudiences(provider: $provider) as $audience) {
+			$served = (new ProviderAudiences())->served(provider: $provider);
+			foreach ($served as $audience) {
 				$contributions = array_merge(
 					$contributions,
-					$this->anonymousContributionsFor(provider: $provider, appId: (string)$appId, audience: $audience)
+					$this->anonymous->forAudience(provider: $provider, appId: (string)$appId, audience: $audience, served: $served)
 				);
 			}
 		}//end foreach
@@ -203,170 +325,83 @@ class PortalContributionRegistry {
 	}//end aggregateAnonymous()
 
 	/**
-	 * Resolve one provider/audience pair's anonymous-only contribution, or
-	 * an empty list when the provider errors, returns nothing, or has no
-	 * anonymous entries for that audience.
+	 * The public start tiles of the serving portal (site-nlds-widget-palette
+	 * D6): every action that declares a `summary` and that a page offers,
+	 * read for each audience every provider serves. A tile carries label,
+	 * summary, audiences and route only (StartTileCollector), so the public
+	 * list never names a field, an endpoint or any data.
 	 *
-	 * @param object $provider The resolved provider.
-	 * @param string $appId The app id (for logging + the `app` tag).
-	 * @param string $audience The audience to consult the provider for.
+	 * @return array<int, array{label: string, summary: string, audiences: array<int, string>, route: string}>
 	 *
-	 * @return array<int, array<string, mixed>> Zero or one contribution.
-	 *
-	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
+	 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-contribution-contract/spec.md#requirement-an-action-may-offer-itself-as-a-start-tile-with-a-summary-and-its-audiences-req-snw-020
 	 */
-	private function anonymousContributionsFor(object $provider, string $appId, string $audience): array {
-		try {
-			$contribution = $provider->getContribution(['audience' => $audience]);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Portaliq: contribution provider failed (anonymous aggregation)',
-				['app' => $appId, 'audience' => $audience, 'reason' => $e->getMessage()]
-			);
-			return [];
-		}
-
-		if (is_array($contribution) === false) {
-			return [];
-		}
-
-		$contribution['app'] = $appId;
-		$anonymousOnly = $this->keepAnonymousOnly(contribution: $contribution);
-		if ($this->hasAnonymousEntries(contribution: $anonymousOnly) === false) {
-			return [];
-		}
-
-		try {
-			$anonymousOnly = $this->normaliser->normalise(contribution: $anonymousOnly);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Portaliq: manifest normalisation failed (anonymous aggregation)',
-				['app' => $appId, 'audience' => $audience, 'reason' => $e->getMessage()]
-			);
-		}
-
-		// The normaliser may have dropped `anonymous` from an entry that ALSO
-		// declared a non-low minTrust (fail-closed mutual exclusion) — filter
-		// again so no flag-stripped entry can survive into an aggregate an
-		// anonymous caller consumes.
-		$anonymousOnly = $this->keepAnonymousOnly(contribution: $anonymousOnly);
-		if ($this->hasAnonymousEntries(contribution: $anonymousOnly) === false) {
-			return [];
-		}
-
-		return [$anonymousOnly];
-	}//end anonymousContributionsFor()
-
-	/**
-	 * Drop every collection/action entry that is not explicitly flagged
-	 * `anonymous: true`.
-	 *
-	 * @param array<string, mixed> $contribution One provider's raw (or
-	 *                                           already-normalised)
-	 *                                           contribution.
-	 *
-	 * @return array<string, mixed> The anonymous-only contribution.
-	 *
-	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
-	 */
-	private function keepAnonymousOnly(array $contribution): array {
-		foreach (['collections', 'actions'] as $section) {
-			if (is_array(($contribution[$section] ?? null)) === false) {
-				$contribution[$section] = [];
+	public function startTiles(): array {
+		$tiles = new StartTileCollector();
+		foreach ($this->appManager->getInstalledApps() as $appId) {
+			$provider = $this->resolveProvider(appId: (string)$appId);
+			if ($provider === null || method_exists($provider, 'getContribution') === false) {
 				continue;
 			}
 
-			$kept = [];
-			foreach ($contribution[$section] as $entry) {
-				if (is_array($entry) === false) {
-					continue;
-				}
+			$this->addStartTiles(tiles: $tiles, provider: $provider, appId: (string)$appId);
+		}
 
-				if (($entry['anonymous'] ?? false) !== true) {
-					continue;
-				}
+		return $tiles->all();
+	}//end startTiles()
 
-				$kept[] = $entry;
+	/**
+	 * Add the start tiles of one provider, one contribution per audience it serves.
+	 *
+	 * @param StartTileCollector $tiles    The tiles so far.
+	 * @param object             $provider The app's contribution provider.
+	 * @param string             $appId    The app.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-contribution-contract/spec.md#requirement-an-action-may-offer-itself-as-a-start-tile-with-a-summary-and-its-audiences-req-snw-020
+	 */
+	private function addStartTiles(StartTileCollector $tiles, object $provider, string $appId): void {
+		$served = (new ProviderAudiences())->served(provider: $provider);
+		foreach ($served as $audience) {
+			$contribution = $this->servedContribution(provider: $provider, audience: $audience, served: $served, appId: $appId);
+			if ($contribution === null) {
+				continue;
 			}
 
-			$contribution[$section] = $kept;
-		}//end foreach
+			$contribution['app'] = $appId;
+			$tiles->add(contribution: $contribution);
+		}
+	}//end addStartTiles()
+
+	/**
+	 * The provider's normalised contribution for one audience, or null when
+	 * it gives none or fails (logged).
+	 *
+	 * @param object             $provider The app's contribution provider.
+	 * @param mixed              $audience The audience.
+	 * @param array<int, string> $served   Every audience the provider serves.
+	 * @param string             $appId    The app.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-contribution-contract/spec.md#requirement-an-action-may-offer-itself-as-a-start-tile-with-a-summary-and-its-audiences-req-snw-020
+	 */
+	private function servedContribution(object $provider, mixed $audience, array $served, string $appId): array|null {
+		try {
+			$contribution = $this->locator->contributionOf(provider: $provider, subject: ['audience' => $audience]);
+			if (is_array($contribution) === false) {
+				return null;
+			}
+
+			$contribution['servedAudiences'] = $served;
+			$contribution = $this->normaliser->normalise(contribution: $contribution);
+		} catch (Throwable $e) {
+			$this->logger->error('Portaliq: contribution provider failed (start tiles)', ['app' => $appId, 'reason' => $e->getMessage()]);
+			return null;
+		}
 
 		return $contribution;
-	}//end keepAnonymousOnly()
-
-	/**
-	 * Whether an (already anonymous-filtered) contribution carries at least
-	 * one surviving collection or action.
-	 *
-	 * @param array<string, mixed> $contribution The anonymous-filtered contribution.
-	 *
-	 * @return bool
-	 */
-	private function hasAnonymousEntries(array $contribution): bool {
-		return count(($contribution['collections'] ?? [])) > 0 || count(($contribution['actions'] ?? [])) > 0;
-	}//end hasAnonymousEntries()
-
-	/**
-	 * The full set of audiences a provider serves (contract v2, A2 duck
-	 * typing — same preference order as `servesAudience()`): `getAudiences()`
-	 * when present, else the single `getAudience()` value, else none.
-	 *
-	 * @param object $provider The resolved provider.
-	 *
-	 * @return array<int, string>
-	 */
-	private function providerAudiences(object $provider): array {
-		if (method_exists($provider, 'getAudiences') === true) {
-			$audiences = $provider->getAudiences();
-			if (is_array($audiences) === false) {
-				return [];
-			}
-
-			return array_values(array_filter($audiences, static fn ($a) => is_string($a) === true && $a !== ''));
-		}
-
-		if (method_exists($provider, 'getAudience') === true) {
-			$audience = $provider->getAudience();
-			if (is_string($audience) === true && $audience !== '') {
-				return [$audience];
-			}
-		}
-
-		return [];
-	}//end providerAudiences()
-
-	/**
-	 * Whether a provider serves the subject's audience (contract v2, A2).
-	 *
-	 * Prefers the duck-typed `getAudiences(): array` when present (multi-
-	 * audience providers); falls back to the v1 `getAudience(): string`. A
-	 * provider exposing neither serves nobody (fail-closed). The audience
-	 * vocabulary is an open string set — no enum is enforced here.
-	 *
-	 * @param object $provider The resolved provider.
-	 * @param string $audience The subject's audience.
-	 *
-	 * @return bool
-	 *
-	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T2
-	 */
-	private function servesAudience(object $provider, string $audience): bool {
-		if (method_exists($provider, 'getAudiences') === true) {
-			$audiences = $provider->getAudiences();
-			if (is_array($audiences) === false) {
-				return false;
-			}
-
-			return in_array($audience, $audiences, true);
-		}
-
-		if (method_exists($provider, 'getAudience') === true) {
-			return $provider->getAudience() === $audience;
-		}
-
-		return false;
-	}//end servesAudience()
+	}//end servedContribution()
 
 	/**
 	 * Drop every collection and action whose `minTrust` the subject does not
@@ -396,7 +431,7 @@ class PortalContributionRegistry {
 					continue;
 				}
 
-				if (PortalSessionService::trustSatisfies($trust, ($entry['minTrust'] ?? null)) === false) {
+				if (SessionTrust::trustSatisfies($trust, ($entry['minTrust'] ?? null)) === false) {
 					continue;
 				}
 
@@ -408,6 +443,29 @@ class PortalContributionRegistry {
 
 		return $contribution;
 	}//end filterByTrust()
+
+	/**
+	 * Every audience an installed app's provider serves.
+	 *
+	 * The change-rule index asks each of these for its contributions without
+	 * a signed-in subject: an OpenRegister save can come from a handler or a
+	 * job, and the question is whether any app wants a resident told.
+	 *
+	 * @return array<int, string>
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-declared-change-reaches-the-residents-inbox-req-nap-002
+	 */
+	public function servedAudiences(): array {
+		$audiences = [];
+		foreach ($this->appManager->getInstalledApps() as $appId) {
+			$provider = $this->resolveProvider(appId: (string)$appId);
+			if ($provider !== null) {
+				$audiences = array_merge($audiences, (new ProviderAudiences())->served(provider: $provider));
+			}
+		}
+
+		return array_values(array_unique($audiences));
+	}//end servedAudiences()
 
 	/**
 	 * Resolve one app's contribution provider, or null when it ships none.
@@ -422,4 +480,41 @@ class PortalContributionRegistry {
 	private function resolveProvider(string $appId): ?object {
 		return $this->locator->locate(appId: $appId);
 	}//end resolveProvider()
+
+	/**
+	 * The collections this subject's trust drops, as `stepUp` entries: app,
+	 * collection id, label and the trust they need, and never a row or a count
+	 * (site-member-voting-record-and-confidential-papers REQ-SCR-004).
+	 *
+	 * @param array<string, mixed> $contribution One app's contribution.
+	 * @param string $trust The subject's normalised trust.
+	 * @param string $appId The app id.
+	 *
+	 * @return array<int, array<string, string>> The entries.
+	 *
+	 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t6
+	 */
+	private function droppedForTrust(array $contribution, string $trust, string $appId): array {
+		$dropped = [];
+		foreach ((array)($contribution['collections'] ?? []) as $collection) {
+			if (is_array($collection) === false || SessionTrust::trustSatisfies($trust, ($collection['minTrust'] ?? null)) === true) {
+				continue;
+			}
+
+			$needs = $collection['minTrust'] ?? null;
+			if (is_string($needs) === false || SessionTrust::normaliseTrust(trust: $needs) !== $needs) {
+				// An unrecognised level is unsatisfiable for everyone: no login would help, so it is no step-up.
+				continue;
+			}
+
+			$label = $collection['label'] ?? '';
+			if (is_string($label) === false) {
+				$label = '';
+			}
+
+			$dropped[] = ['app' => $appId, 'collection' => (string)($collection['id'] ?? ''), 'label' => $label, 'minTrust' => $needs];
+		}
+
+		return $dropped;
+	}//end droppedForTrust()
 }//end class

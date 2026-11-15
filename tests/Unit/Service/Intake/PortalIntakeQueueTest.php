@@ -36,6 +36,24 @@ class PortalIntakeQueueTest extends TestCase {
 
 	}//end testASubmissionIsAcknowledgedWithAReferenceAndNoCase()
 
+	/**
+	 * form-statements-intro-and-confirmation-mail T03: the accepted statements
+	 * are stored on the submission with their text version and time.
+	 *
+	 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t03
+	 */
+	public function testAcceptedStatementsAreStoredOnTheSubmission(): void {
+		$queue = $this->queue();
+		$statements = [['key' => 'truth', 'textVersion' => '2', 'acceptedAt' => '2026-10-08T10:00:00+00:00']];
+
+		$queue->accept(portal: 'gemeente-x', route: 'woo', answers: [], statements: $statements);
+		$queue->accept(portal: 'gemeente-x', route: 'woo', answers: []);
+
+		$rows = $this->storedRows('portalIntakeSubmission');
+		$this->assertSame($statements, $rows[0]['statements']);
+		$this->assertArrayNotHasKey('statements', $rows[1]);
+	}//end testAcceptedStatementsAreStoredOnTheSubmission()
+
 	public function testTheReferencePageSaysQueuedUntilTheCaseExists(): void {
 		$queue = $this->queue();
 		$accepted = $queue->accept(portal: 'gemeente-x', route: 'aanvragen/verhuizing', answers: []);
@@ -72,6 +90,45 @@ class PortalIntakeQueueTest extends TestCase {
 
 	}//end testAFailedCreateIsVisibleNotSilent()
 
+	/**
+	 * A Woo request registered with its term answers the minted reference and
+	 * the due date; one that failed answers neither.
+	 *
+	 * @spec openspec/changes/woo-request-intake-through-opencatalogi/specs/portal-intake-form/spec.md#requirement-a-woo-request-form-is-delivered-to-opencatalogis-intake
+	 */
+	public function testARegisteredWooRequestNamesItsReferenceAndDueDate(): void {
+		$queue = $this->queue();
+		$accepted = $queue->accept(portal: 'gemeente-x', route: 'woo-verzoek', answers: []);
+		$queue->markRegistered(
+			submission: $this->storedRows('portalIntakeSubmission')[0],
+			caseId: 'req-1',
+			externalReference: 'WOO-2026-1A2B3C',
+			dueAt: '2026-11-02T09:00:00+00:00'
+		);
+
+		$status = $queue->status(reference: $accepted['reference'], portal: 'gemeente-x');
+
+		$this->assertSame('registered', $status['state']);
+		$this->assertSame('WOO-2026-1A2B3C', $status['externalReference']);
+		$this->assertSame('2026-11-02T09:00:00+00:00', $status['dueAt']);
+
+	}//end testARegisteredWooRequestNamesItsReferenceAndDueDate()
+
+	/**
+	 * A case without a term never writes an empty date-time.
+	 *
+	 * @spec openspec/changes/woo-request-intake-through-opencatalogi/specs/portal-intake-form/spec.md#requirement-a-woo-request-form-is-delivered-to-opencatalogis-intake
+	 */
+	public function testACaseWithoutATermWritesNoDueDate(): void {
+		$queue = $this->queue();
+		$accepted = $queue->accept(portal: 'gemeente-x', route: 'aanvragen/verhuizing', answers: []);
+		$queue->markRegistered(submission: $this->storedRows('portalIntakeSubmission')[0], caseId: 'zaak-1');
+
+		$this->assertArrayNotHasKey('dueAt', $this->storedRows('portalIntakeSubmission')[0]);
+		$this->assertSame('', $queue->status(reference: $accepted['reference'], portal: 'gemeente-x')['dueAt']);
+
+	}//end testACaseWithoutATermWritesNoDueDate()
+
 	public function testAReferenceIsNeverReadableFromAnotherPortal(): void {
 		$queue = $this->queue();
 		$accepted = $queue->accept(portal: 'gemeente-x', route: 'aanvragen/verhuizing', answers: []);
@@ -94,6 +151,26 @@ class PortalIntakeQueueTest extends TestCase {
 
 	}//end testOnlyQueuedSubmissionsAreHandedToTheJob()
 
+	/**
+	 * submit-creates-the-case-directly 4.1: the drain takes queued and failed
+	 * entries, never registered ones.
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#4.1
+	 */
+	public function testTheDrainTakesQueuedAndFailedEntries(): void {
+		$queue = $this->queue();
+		foreach ([1, 2, 3] as $n) {
+			$queue->accept(portal: 'gemeente-x', route: 'aanvragen/verhuizing', answers: ['n' => $n]);
+		}
+
+		$queue->markRegistered(submission: $this->storedRows('portalIntakeSubmission')[0], caseId: 'zaak-1');
+		$queue->markFailed(submission: $this->storedRows('portalIntakeSubmission')[1], reason: 'refused');
+
+		$pending = $queue->pending();
+
+		$this->assertEqualsCanonicalizing(['queued', 'failed'], array_column($pending, 'state'));
+	}//end testTheDrainTakesQueuedAndFailedEntries()
+
 	public function testASubmissionThatCouldNotBeRecordedIsNotAcknowledged(): void {
 		$writer = $this->getMockBuilder(\OCA\Portaliq\Service\PortalObjectWriter::class)
 			->disableOriginalConstructor()
@@ -105,6 +182,57 @@ class PortalIntakeQueueTest extends TestCase {
 		$this->assertNull($queue->accept(portal: 'gemeente-x', route: 'aanvragen/verhuizing', answers: []));
 
 	}//end testASubmissionThatCouldNotBeRecordedIsNotAcknowledged()
+
+	/**
+	 * The exact row a submission writes: every extra it carries, the computed
+	 * names re-indexed, and nothing for the extras it does not carry.
+	 *
+	 * @return void
+	 */
+	public function testTheRecordedRowCarriesEachExtraOnlyWhenGiven(): void {
+		$queue = $this->queue();
+
+		$accepted = $queue->accept(
+			portal: 'gemeente-x',
+			route: 'woo',
+			answers: ['a' => 1],
+			subjectRef: 'subject-1',
+			origin: 'https://example.org',
+			statements: [['key' => 'truth']],
+			computed: [3 => 'fee', 7 => 'total'],
+			decisions: ['step-1' => 'yes'],
+			verifiedEmails: [['address' => 'a@example.org', 'at' => 'now']]
+		);
+		$queue->accept(portal: 'gemeente-x', route: 'kort', answers: []);
+
+		$this->assertSame(['reference' => 'AANVRAAG-SECRET-1', 'state' => 'queued'], $accepted);
+		[$full, $bare] = $this->storedRows('portalIntakeSubmission');
+		$this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T/', $full['submittedAt']);
+		unset($full['submittedAt'], $full['uuid'], $full['_schema'], $bare['submittedAt'], $bare['uuid'], $bare['_schema']);
+		$this->assertSame(
+			[
+				'reference' => 'AANVRAAG-SECRET-1',
+				'portal' => 'gemeente-x',
+				'route' => 'woo',
+				'subjectRef' => 'subject-1',
+				'origin' => 'https://example.org',
+				'answers' => ['a' => 1],
+				'state' => 'queued',
+				'statements' => [['key' => 'truth']],
+				'computed' => ['fee', 'total'],
+				'decisions' => ['step-1' => 'yes'],
+				'verifiedEmails' => [['address' => 'a@example.org', 'at' => 'now']],
+			],
+			$full
+		);
+		$this->assertSame(
+			['reference' => 'AANVRAAG-SECRET-2', 'portal' => 'gemeente-x', 'route' => 'kort', 'subjectRef' => '', 'origin' => '', 'answers' => [], 'state' => 'queued'],
+			$bare
+		);
+		$this->assertNull($queue->accept(portal: '', route: 'woo', answers: []));
+		$this->assertCount(2, $this->storedRows('portalIntakeSubmission'));
+
+	}//end testTheRecordedRowCarriesEachExtraOnlyWhenGiven()
 
 	/**
 	 * The queue over the fake store.

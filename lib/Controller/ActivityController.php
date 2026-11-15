@@ -1,0 +1,325 @@
+<?php
+
+/**
+ * Activity Controller (staff)
+ *
+ * Staff create, open and close term-long activities, change their
+ * supervisors, read the roster and mark attendance
+ * (extracurricular-activity-offer). Requires a Nextcloud session, the same
+ * posture as `EventController` and `NewsController`.
+ *
+ * @category Controller
+ * @package  OCA\Portaliq\Controller
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/contract.md
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Portaliq\Controller;
+
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\ActionAuthServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\ActivityAttendanceServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\ActivityContributionServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\ActivityDraftInterface;
+use OCA\Portaliq\Kernel\Contracts\ActivityPlacesInterface;
+use OCA\Portaliq\Kernel\Contracts\ActivityRosterInterface;
+use OCA\Portaliq\Kernel\Contracts\ActivitySignupServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\ActivityStoreInterface;
+use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
+use OCP\AppFramework\Http\JSONResponse;
+use OCP\IRequest;
+use OCP\IUserSession;
+
+/**
+ * Staff authoring, roster, attendance and contribution raise for activities.
+ *
+ * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/contract.md
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-raise-the-contribution-for-an-activitys-confirmed-places-and-portaliq-must-write-the-reference
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- one small service per
+ * staff task on an activity (draft, places, sign-ups, roster, attendance,
+ * contribution raise) plus the framework types every controller carries;
+ * one facade over them would hide which task each endpoint runs.
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the tenth dependency is
+ * ActionAuthService, the ADR-023 check every staff method runs first
+ * (portal.manage-activity); the other nine are the services above.
+ */
+class ActivityController extends Controller {
+	use StaffActionGuard;
+
+	/**
+	 * The ADR-023 action every staff method is gated by (author, open, close, staff and roster an activity).
+	 */
+	public const ACTION = 'portal.manage-activity';
+
+	/**
+	 * HTTP status per attendance refusal.
+	 */
+	private const ATTENDANCE_STATUS = [
+		ActivityAttendanceServiceInterface::REASON_NOT_FOUND => Http::STATUS_NOT_FOUND,
+		ActivityAttendanceServiceInterface::REASON_UNKNOWN_SESSION => Http::STATUS_UNPROCESSABLE_ENTITY,
+		ActivityAttendanceServiceInterface::REASON_NOT_CONFIRMED => Http::STATUS_UNPROCESSABLE_ENTITY,
+		ActivityAttendanceServiceInterface::REASON_INVALID_STATUS => Http::STATUS_UNPROCESSABLE_ENTITY,
+		ActivityAttendanceServiceInterface::REASON_UNAVAILABLE => Http::STATUS_BAD_GATEWAY,
+	];
+
+	/**
+	 * HTTP status per contribution raise refusal (activity-offer-contract-fix).
+	 */
+	private const CONTRIBUTION_STATUS = [
+		ActivityContributionServiceInterface::REASON_NOT_FOUND => Http::STATUS_NOT_FOUND,
+		ActivityContributionServiceInterface::REASON_NOT_REQUESTED => Http::STATUS_UNPROCESSABLE_ENTITY,
+		ActivityContributionServiceInterface::REASON_UNAVAILABLE => Http::STATUS_BAD_GATEWAY,
+		ActivityContributionServiceInterface::ERROR_INVALID => Http::STATUS_BAD_REQUEST,
+		ActivityContributionServiceInterface::ERROR_FORBIDDEN => Http::STATUS_FORBIDDEN,
+		ActivityContributionServiceInterface::ERROR_SHILLINQ_UNAVAILABLE => Http::STATUS_SERVICE_UNAVAILABLE,
+		ActivityContributionServiceInterface::ERROR_FAILED => Http::STATUS_BAD_GATEWAY,
+	];
+
+	/**
+	 * Constructor.
+	 *
+	 * @param IRequest $request The request.
+	 * @param IUserSession $userSession Confirms a Nextcloud user reached this endpoint.
+	 * @param ActivityStoreInterface $store The activity rows.
+	 * @param ActivityPlacesInterface $places The places arithmetic.
+	 * @param ActivitySignupServiceInterface $signups Supervisors and promotion.
+	 * @param ActivityAttendanceServiceInterface $attendance Attendance marks.
+	 * @param ActivityDraftInterface $drafts Validates and sanitises a new activity.
+	 * @param ActivityRosterInterface $rosters The staff roster.
+	 * @param ActivityContributionServiceInterface $contributions Raises the contribution per confirmed
+	 *                                                   place through shillinq (activity-offer-contract-fix).
+	 * @param ActionAuthServiceInterface $actionAuth Decides whether this staff user may manage activities (ADR-023).
+	 */
+	public function __construct(
+		IRequest $request,
+		private readonly IUserSession $userSession,
+		private readonly ActivityStoreInterface $store,
+		private readonly ActivityPlacesInterface $places,
+		private readonly ActivitySignupServiceInterface $signups,
+		private readonly ActivityAttendanceServiceInterface $attendance,
+		private readonly ActivityDraftInterface $drafts,
+		private readonly ActivityRosterInterface $rosters,
+		private readonly ActivityContributionServiceInterface $contributions,
+		private readonly ActionAuthServiceInterface $actionAuth,
+	) {
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
+	}//end __construct()
+
+	/**
+	 * Create a draft activity. The optional fields (`termEnd`,
+	 * `signupDeadline`, `sessions`, `supervisorRefs`, `childrenPerSupervisor`,
+	 * `waitlistEnabled`, `paymentRequested`, `description`, `location`) are read
+	 * from the request body.
+	 *
+	 * @param string $title The title.
+	 * @param string $kind One of club, sport, culture, trip, course, other.
+	 * @param array<string, mixed> $target The target (schoolRef/groupRefs/childRefs).
+	 * @param string $termStart The first day of the term.
+	 * @param int $capacity The most children with a place.
+	 *
+	 * @return JSONResponse The draft, or 400 / 502.
+	 *
+	 * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-term-long-activity-must-be-offered-with-places-set-by-capacity-and-supervision
+	 */
+	#[NoAdminRequired]
+	public function create(string $title, string $kind, array $target, string $termStart, int $capacity): JSONResponse {
+		$author = $this->requireAuthenticatedStaff();
+
+		$activity = $this->drafts->build(
+			required: ['title' => $title, 'kind' => $kind, 'target' => $target, 'termStart' => $termStart, 'capacity' => $capacity],
+			params: $this->request->getParams(),
+			author: $author
+		);
+		if ($activity === null) {
+			return new JSONResponse(['error' => 'invalid_activity'], Http::STATUS_BAD_REQUEST);
+		}
+
+		$saved = $this->store->save(schema: ActivityStoreInterface::OFFER, data: $activity);
+		if ($saved === null) {
+			return new JSONResponse(['error' => 'write_failed'], Http::STATUS_BAD_GATEWAY);
+		}
+
+		return new JSONResponse($saved);
+	}//end create()
+
+	/**
+	 * Open an activity for sign-ups; refused when it has no place.
+	 *
+	 * @param string $id The activity id or slug.
+	 *
+	 * @return JSONResponse The activity, or 404 / 422 `no_places` / 422 `no_consent_statement` / 502.
+	 *
+	 * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-term-long-activity-must-be-offered-with-places-set-by-capacity-and-supervision
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-an-activity-must-be-able-to-require-a-guardians-consent-recorded-on-the-sign-up
+	 */
+	#[NoAdminRequired]
+	public function open(string $id): JSONResponse {
+		$this->requireAuthenticatedStaff();
+
+		$activity = $this->store->lookup(schema: ActivityStoreInterface::OFFER, id: $id);
+		if ($activity === null) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		if ($this->places->placesFor(activity: $activity) < 1) {
+			return new JSONResponse(['error' => 'no_places'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+
+		// A permission slip with no text cannot be agreed to (activity-parental-consent).
+		if (($activity['consentRequired'] ?? false) === true && trim((string)($activity['consentStatement'] ?? '')) === '') {
+			return new JSONResponse(['error' => 'no_consent_statement'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+
+		return $this->saveStatus(activity: $activity, status: 'open');
+	}//end open()
+
+	/**
+	 * Close an activity: it stays visible and takes no new sign-ups.
+	 *
+	 * @param string $id The activity id or slug.
+	 *
+	 * @return JSONResponse The activity, or 404 / 502.
+	 *
+	 * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-term-long-activity-must-be-offered-with-places-set-by-capacity-and-supervision
+	 */
+	#[NoAdminRequired]
+	public function close(string $id): JSONResponse {
+		$this->requireAuthenticatedStaff();
+
+		$activity = $this->store->lookup(schema: ActivityStoreInterface::OFFER, id: $id);
+		if ($activity === null) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		return $this->saveStatus(activity: $activity, status: 'closed');
+	}//end close()
+
+	/**
+	 * Replace the supervisors; more places promote from the waiting list.
+	 *
+	 * @param string $id The activity id or slug.
+	 * @param array<int, mixed> $supervisorRefs The new supervisor references.
+	 *
+	 * @return JSONResponse `{activity, promoted}`, or 404.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
+	 */
+	#[NoAdminRequired]
+	public function supervisors(string $id, array $supervisorRefs = []): JSONResponse {
+		$this->requireAuthenticatedStaff();
+
+		$result = $this->signups->setSupervisors(activityId: $id, supervisorRefs: $supervisorRefs);
+		if ($result === null) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		return new JSONResponse($result);
+	}//end supervisors()
+
+	/**
+	 * The roster: places, who holds one, and the waiting list in order.
+	 *
+	 * @param string $id The activity id or slug.
+	 *
+	 * @return JSONResponse `{places, confirmed, waitlist}`, or 404.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
+	 */
+	#[NoAdminRequired]
+	public function roster(string $id): JSONResponse {
+		$this->requireAuthenticatedStaff();
+
+		$roster = $this->rosters->roster(activityId: $id);
+		if ($roster === null) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		return new JSONResponse($roster);
+	}//end roster()
+
+	/**
+	 * Mark one child for one session.
+	 *
+	 * @param string $id The activity id or slug.
+	 * @param string $sessionId The session id.
+	 * @param string $childRef The child.
+	 * @param string $status One of present, absent, excused.
+	 *
+	 * @return JSONResponse The attendance row, or 404 / 422 / 502.
+	 *
+	 * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-mark-attendance-per-session
+	 */
+	#[NoAdminRequired]
+	public function attendance(string $id, string $sessionId, string $childRef, string $status): JSONResponse {
+		$staff = $this->requireAuthenticatedStaff();
+
+		$result = $this->attendance->mark(activityId: $id, sessionId: $sessionId, childRef: $childRef, status: $status, markedByRef: $staff);
+		if (isset($result['error']) === true) {
+			return new JSONResponse(['error' => $result['error']], self::ATTENDANCE_STATUS[$result['error']]);
+		}
+
+		return new JSONResponse($result['attendance'] ?? []);
+	}//end attendance()
+
+	/**
+	 * Raise the activity's contribution for every confirmed place that has no
+	 * payment request yet, and write each returned reference into its sign-up.
+	 * The body carries `amount`, `voluntary` and `administrationId`, and may
+	 * carry `description`, `invoiceDate`, `dueDate`, `revenueAccount`,
+	 * `language` and `currency`. Portaliq keeps none of it; shillinq holds the
+	 * amount and checks its own `payment.request` action for this user.
+	 *
+	 * @param string $id The activity id or slug.
+	 *
+	 * @return JSONResponse `{raised, skipped, failed, results}`, or 400 / 403 / 404 / 422 / 502 / 503.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-raise-the-contribution-for-an-activitys-confirmed-places-and-portaliq-must-write-the-reference
+	 */
+	#[NoAdminRequired]
+	public function contributions(string $id): JSONResponse {
+		$this->requireAuthenticatedStaff();
+
+		$result = $this->contributions->raise(activityId: $id, params: $this->request->getParams());
+		if (isset($result['error']) === true) {
+			return new JSONResponse(['error' => $result['error']], (self::CONTRIBUTION_STATUS[$result['error']] ?? Http::STATUS_BAD_GATEWAY));
+		}
+
+		return new JSONResponse($result);
+	}//end contributions()
+
+	/**
+	 * Save a new status on an activity.
+	 *
+	 * @param array<string, mixed> $activity The activity row.
+	 * @param string $status The new status.
+	 *
+	 * @return JSONResponse The saved activity, or 502.
+	 */
+	private function saveStatus(array $activity, string $status): JSONResponse {
+		$saved = $this->store->save(
+			schema: ActivityStoreInterface::OFFER,
+			data: array_merge($activity, ['status' => $status]),
+			id: $this->store->idOf(row: $activity)
+		);
+		if ($saved === null) {
+			return new JSONResponse(['error' => 'write_failed'], Http::STATUS_BAD_GATEWAY);
+		}
+
+		return new JSONResponse($saved);
+	}//end saveStatus()
+}//end class

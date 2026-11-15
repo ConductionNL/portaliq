@@ -11,7 +11,7 @@
  *
  * Under-privilege on ambiguity (ADR-005, design.md): an unmapped or missing
  * LoA maps to `low`, never higher — the final safety net is
- * {@see PortalSessionService::normaliseTrust()} itself, so even a malformed
+ * {@see SessionTrust::normaliseTrust()} itself, so even a malformed
  * `loaMap` VALUE in the org's own config cannot mint a session above `low`.
  * `subjectRef` is either the literal keyword `derive` (the caller — {@see
  * PortalAccountService} — mints/reuses a stable server-side reference) or a
@@ -30,19 +30,23 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T05
+ * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T05
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\OidcClaimMapperServiceInterface;
+use OCA\Portaliq\Service\Branch\BranchNumber;
+use OCA\Portaliq\Kernel\Support\SessionTrust;
+
 /**
  * Provider presets + claim/LoA mapping for the OIDC broker login edge.
  *
- * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T05
+ * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T05
  */
-class OidcClaimMapperService {
+class OidcClaimMapperService implements OidcClaimMapperServiceInterface {
 	/**
 	 * The special `subjectRef` claim-map keyword: PortalAccountService derives
 	 * (mints once, reuses thereafter) the subjectRef server-side rather than
@@ -62,7 +66,7 @@ class OidcClaimMapperService {
 	 * override outside this set is a misconfiguration and must fail closed,
 	 * never silently widen to an arbitrary string.
 	 */
-	private const VALID_IDENTITY_TYPES = ['eherkenning', 'digid', 'eidas', 'generic', 'dev'];
+	private const VALID_IDENTITY_TYPES = ['eherkenning', 'digid', 'eidas', 'yivi', 'generic', 'dev'];
 
 	/**
 	 * Broker-agnostic provider presets (design.md). `generic` has no natural
@@ -93,6 +97,16 @@ class OidcClaimMapperService {
 			'audience' => 'client',
 			'loaClaim' => 'acr',
 		],
+		// Yivi through the broker (resident-identity-in-forms T05): the
+		// subject is the pseudonym the broker states, and the disclosed
+		// attributes ride on the envelope, not on the account.
+		'yivi' => [
+			'identityType' => 'yivi',
+			'label' => 'Yivi',
+			'scopes' => ['openid'],
+			'audience' => 'client',
+			'loaClaim' => 'acr',
+		],
 		'generic' => [
 			'identityType' => 'generic',
 			'label' => 'Inloggen',
@@ -119,7 +133,9 @@ class OidcClaimMapperService {
 	 * @return array<string, mixed>|null The merged config, or null when the
 	 *                                   provider is unknown.
 	 *
-	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T05
+	 * @spec openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md#requirement-an-eherkenning-sign-in-is-a-business-sign-in-req-see-001
+	 * @spec openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md#requirement-an-eidas-sign-in-is-a-visitor-from-another-eu-country-req-see-002
 	 */
 	public function applyPreset(string $provider, array $rawConfig): ?array {
 		$preset = (self::PRESETS[$provider] ?? null);
@@ -132,36 +148,77 @@ class OidcClaimMapperService {
 			return null;
 		}
 
+		return ['provider' => $provider] + self::clientPart(preset: $preset, rawConfig: $rawConfig)
+			+ ['identityType' => $identityType] + self::claimPart(preset: $preset, rawConfig: $rawConfig);
+	}//end applyPreset()
+
+	/**
+	 * The client half of a merged config: label, issuer, credentials and scopes.
+	 *
+	 * @param array<string, mixed> $preset    The provider preset.
+	 * @param array<string, mixed> $rawConfig The org's raw override.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private static function clientPart(array $preset, array $rawConfig): array {
 		$scopes = ($rawConfig['scopes'] ?? null);
 		if (is_array($scopes) === false || $scopes === []) {
 			$scopes = $preset['scopes'];
 		}
 
-		$claimMap = ($rawConfig['claimMap'] ?? []);
-		if (is_array($claimMap) === false) {
-			$claimMap = [];
-		}
-
-		$loaMap = ($rawConfig['loaMap'] ?? []);
-		if (is_array($loaMap) === false) {
-			$loaMap = [];
-		}
-
 		return [
-			'provider' => $provider,
 			'label' => (string)($rawConfig['label'] ?? $preset['label']),
 			'issuer' => (string)($rawConfig['issuer'] ?? ''),
 			'clientId' => (string)($rawConfig['clientId'] ?? ''),
 			'clientSecret' => (string)($rawConfig['clientSecret'] ?? ''),
 			'scopes' => array_values($scopes),
-			'identityType' => $identityType,
+		];
+	}//end clientPart()
+
+	/**
+	 * The claim half of a merged config: which claims carry the identity,
+	 * subject, audience, level of assurance and branch.
+	 *
+	 * @param array<string, mixed> $preset    The provider preset.
+	 * @param array<string, mixed> $rawConfig The org's raw override.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private static function claimPart(array $preset, array $rawConfig): array {
+		$claimMap = self::arrayOrEmpty(value: ($rawConfig['claimMap'] ?? []));
+
+		return [
 			'identityRefClaim' => (string)($claimMap['identityRef'] ?? 'sub'),
 			'subjectRefMap' => (string)($claimMap['subjectRef'] ?? self::SUBJECT_REF_DERIVE),
 			'audienceMap' => (string)($claimMap['audience'] ?? $preset['audience']),
 			'loaClaim' => (string)($rawConfig['loaClaim'] ?? $preset['loaClaim']),
-			'loaMap' => $loaMap,
+			'loaMap' => self::arrayOrEmpty(value: ($rawConfig['loaMap'] ?? [])),
+			// Change signin-eherkenning-branch: the claim that carries the
+			// vestigingsnummer. No preset names one, because brokers name it
+			// differently; an organisation sets it in its claimMap.
+			'branchClaim' => (string)($claimMap['branch'] ?? ''),
+			// Change site-mandates-the-represented-manage D8: the claim that
+			// carries the KVK number of the company the person signs in for,
+			// beside the per-person `identityRef`. No preset names one: which
+			// claim a broker uses is configured, never guessed.
+			'kvkClaim' => (string)($claimMap['kvk'] ?? ''),
 		];
-	}//end applyPreset()
+	}//end claimPart()
+
+	/**
+	 * A value when it is an array, else an empty one.
+	 *
+	 * @param mixed $value The value.
+	 *
+	 * @return array<mixed>
+	 */
+	private static function arrayOrEmpty(mixed $value): array {
+		if (is_array($value) === false) {
+			return [];
+		}
+
+		return $value;
+	}//end arrayOrEmpty()
 
 	/**
 	 * Resolve the fixed `identityType` for a provider: the preset's own value,
@@ -200,9 +257,9 @@ class OidcClaimMapperService {
 	 * @param array<string, mixed> $claims The validated ID token claim set.
 	 * @param array<string, mixed> $config The merged provider config (from `applyPreset()`).
 	 *
-	 * @return array{identityType: string, identityRef: string, subjectRef: string|null, audience: string}|null
+	 * @return array{identityType: string, identityRef: string, subjectRef: string|null, audience: string, branch: string}|null
 	 *
-	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T05
 	 * @spec openspec/specs/supplier-portal/spec.md#the-subject-reference-is-server-derived-never-client-supplied
 	 */
 	public function mapClaims(array $claims, array $config): ?array {
@@ -217,11 +274,43 @@ class OidcClaimMapperService {
 			return null;
 		}
 
+		return $this->mappedWith(identityRef: $identityRef, subjectRef: $subjectRef, claims: $claims, config: $config);
+	}//end mapClaims()
+
+	/**
+	 * The mapped identity once the identity and subject references resolved, or null without an audience.
+	 *
+	 * @param string               $identityRef The identity reference claim's value.
+	 * @param string               $subjectRef  The resolved subjectRef mapping, or the `derive` keyword.
+	 * @param array<string, mixed> $claims      The validated ID token claim set.
+	 * @param array<string, mixed> $config      The merged provider config.
+	 *
+	 * @return array{identityType: string, identityRef: string, subjectRef: string|null, audience: string, branch: string}|null
+	 */
+	private function mappedWith(string $identityRef, string $subjectRef, array $claims, array $config): array|null {
 		$audience = $this->resolveFixedOrClaim(mapping: (string)($config['audienceMap'] ?? ''), claims: $claims);
 		if ($audience === null || $audience === '') {
 			return null;
 		}
 
+		return [
+			'identityType' => (string)$config['identityType'],
+			'identityRef' => $identityRef,
+			'subjectRef' => $this->resolvedSubjectRef(subjectRef: $subjectRef),
+			'audience' => $audience,
+			'branch' => $this->branchOf(claims: $claims, config: $config),
+			'kvk' => $this->kvkOf(claims: $claims, config: $config),
+		];
+	}//end mappedWith()
+
+	/**
+	 * The subjectRef to store: null to derive or reuse one server-side, else the validated claim value.
+	 *
+	 * @param string $subjectRef The resolved subjectRef mapping, or the `derive` keyword.
+	 *
+	 * @return string|null
+	 */
+	private function resolvedSubjectRef(string $subjectRef): string|null {
 		// Null = "derive/reuse server-side"; a non-null string is a
 		// validated-claim value, still never a request parameter.
 		$resolvedSubjectRef = null;
@@ -229,13 +318,55 @@ class OidcClaimMapperService {
 			$resolvedSubjectRef = $subjectRef;
 		}
 
-		return [
-			'identityType' => (string)$config['identityType'],
-			'identityRef' => $identityRef,
-			'subjectRef' => $resolvedSubjectRef,
-			'audience' => $audience,
-		];
-	}//end mapClaims()
+		return $resolvedSubjectRef;
+	}//end resolvedSubjectRef()
+
+	/**
+	 * The KVK number of the company the person signs in for: the configured
+	 * claim's value when it is exactly eight digits, else '' (no company).
+	 *
+	 * @param array<string, mixed> $claims The validated ID-token claims.
+	 * @param array<string, mixed> $config The provider config.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/tasks.md#t0
+	 */
+	private function kvkOf(array $claims, array $config): string {
+		$claim = (string)($config['kvkClaim'] ?? '');
+		if ($claim === '') {
+			return '';
+		}
+
+		$value = ($claims[$claim] ?? null);
+		if ((is_string($value) === false && is_int($value) === false) || preg_match('/^\d{8}$/D', trim((string)$value)) !== 1) {
+			return '';
+		}
+
+		return trim((string)$value);
+	}//end kvkOf()
+
+	/**
+	 * The branch (vestigingsnummer) the login was restricted to, or '' when
+	 * the organisation maps no branch claim, the broker sent none, or the
+	 * value is not twelve digits. A bad value never refuses the login: it
+	 * gives a whole-company session, the same as a login without a branch.
+	 *
+	 * @param array<string, mixed> $claims The validated ID token claim set.
+	 * @param array<string, mixed> $config The merged provider config.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-eherkenning-branch/tasks.md#T01
+	 */
+	private function branchOf(array $claims, array $config): string {
+		$claim = (string)($config['branchClaim'] ?? '');
+		if ($claim === '') {
+			return '';
+		}
+
+		return (new BranchNumber())->normalise(value: ($claims[$claim] ?? null));
+	}//end branchOf()
 
 	/**
 	 * Map the broker's LoA (an `acr`-style claim, per-org configurable via
@@ -248,11 +379,11 @@ class OidcClaimMapperService {
 	 *
 	 * @return string One of `low`, `substantial`, `high`.
 	 *
-	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T05
 	 * @spec openspec/specs/supplier-portal/spec.md#broker-loa-maps-to-portal-trust-under-privileging-on-ambiguity
 	 *
 	 * @SuppressWarnings(PHPMD.StaticAccess) -- deliberate reuse of the ONE
-	 * canonical trust-normalisation point (PortalSessionService's own
+	 * canonical trust-normalisation point (SessionTrust's own
 	 * docblock: "the single normalisation point used by the session edge,
 	 * the registry, and the contribution controller") — duplicating it here
 	 * would risk the trust vocabulary drifting between call sites.
@@ -268,7 +399,7 @@ class OidcClaimMapperService {
 
 		$mapped = ($loaMap[$loaValue] ?? 'low');
 
-		return PortalSessionService::normaliseTrust(trust: $mapped);
+		return SessionTrust::normaliseTrust(trust: $mapped);
 	}//end mapLoaToTrust()
 
 	/**
@@ -339,7 +470,7 @@ class OidcClaimMapperService {
 	 *
 	 * @return array<string, string> provider => label.
 	 *
-	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T05
 	 */
 	public function providerLabels(): array {
 		$labels = [];

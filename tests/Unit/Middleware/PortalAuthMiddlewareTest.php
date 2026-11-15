@@ -5,12 +5,18 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Middleware;
 
 use OCA\Portaliq\Auth\PortalProtected;
+use OCA\Portaliq\Auth\PortalReadOnlySessionException;
 use OCA\Portaliq\Auth\PortalUnauthorizedException;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Controller\PortalAccountSelfController;
+use OCA\Portaliq\Controller\PortalIdentityController;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
+use OCA\Portaliq\Service\PortalRateLimit;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\AppFramework\OCS\OCSForbiddenException;
+use OCP\IL10N;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -56,6 +62,65 @@ class PortalAuthMiddlewareTest extends TestCase {
 
 	}//end testProtectedControllerWithSessionPasses()
 
+	/**
+	 * portaliq#795. The way in is anonymous by design: a visitor with no
+	 * session asks for a reference link, follows it, registers or accepts an
+	 * invitation. PortalIdentityController carried the bearer marker, so this
+	 * gate answered 401 before any of it ran, and no reference link could be
+	 * asked for, let alone mailed.
+	 *
+	 * @return void
+	 */
+	public function testTheAnonymousWayInIsNotBehindTheBearerGate(): void {
+		$mw = $this->middleware($this->session(null), $this->registry([]));
+		$controller = (new \ReflectionClass(PortalIdentityController::class))->newInstanceWithoutConstructor();
+
+		foreach (['challenge', 'requestReferenceLink', 'redeemReferenceLink', 'register', 'acceptInvitation'] as $method) {
+			$mw->beforeController($controller, $method);
+		}
+
+		$this->assertNotInstanceOf(PortalProtected::class, $controller);
+
+	}//end testTheAnonymousWayInIsNotBehindTheBearerGate()
+
+	/**
+	 * The other half of the split: what a bearer does to their OWN account
+	 * stays behind the gate.
+	 *
+	 * @return void
+	 */
+	public function testTheBearersOwnAccountStaysBehindTheBearerGate(): void {
+		$mw = $this->middleware($this->session(null), $this->registry([]));
+		$controller = (new \ReflectionClass(PortalAccountSelfController::class))->newInstanceWithoutConstructor();
+
+		$this->expectException(PortalUnauthorizedException::class);
+		$mw->beforeController($controller, 'updateDetails');
+
+	}//end testTheBearersOwnAccountStaysBehindTheBearerGate()
+
+	/**
+	 * portaliq#796, identity-ways-in-screens D2: a reference session reads
+	 * its one case and nothing else. Every protected route, an amend among
+	 * them, refuses it with a 403 before the controller runs.
+	 *
+	 * @return void
+	 */
+	public function testAReferenceSessionIsRefusedOnEveryProtectedRoute(): void {
+		$session = $this->createMock(PortalSessionService::class);
+		$session->method('resolveFromBearer')->willReturn(null);
+		$session->method('resolveReferenceFromBearer')->willReturn(['caseReference' => 'Z-2026-0042']);
+		$mw = $this->middleware($session, $this->registry([]));
+
+		try {
+			$mw->beforeController($this->protectedController(), 'update');
+			$this->fail('a reference session reached a protected route');
+		} catch (PortalReadOnlySessionException $refused) {
+			$response = $mw->afterException($this->protectedController(), 'update', $refused);
+			$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		}
+
+	}//end testAReferenceSessionIsRefusedOnEveryProtectedRoute()
+
 	public function testAfterExceptionConvertsAuthFailureTo401(): void {
 		$mw = $this->middleware($this->session(null), $this->registry([]));
 		$response = $mw->afterException($this->protectedController(), 'index', new PortalUnauthorizedException());
@@ -64,6 +129,50 @@ class PortalAuthMiddlewareTest extends TestCase {
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
 
 	}//end testAfterExceptionConvertsAuthFailureTo401()
+
+	/**
+	 * A staff controller that refuses an action (ActionAuthService::requireAction()
+	 * throws OCSForbiddenException) answers 403, not the 500 a plain Controller
+	 * would otherwise produce; the controller needs no PortalProtected marker.
+	 */
+	/**
+	 * A collection read without a session counts per IP and answers 429 over
+	 * the limit; any other method keeps its plain 401 (portal-subject-rate-limit).
+	 *
+	 * @spec openspec/changes/portal-subject-rate-limit/specs/portal-contribution-contract/spec.md#requirement-a-signed-in-portal-session-must-be-rate-limited-per-subject
+	 */
+	public function testAnUnauthenticatedCollectionReadOverTheLimitAnswers429(): void {
+		$limit = $this->createMock(PortalRateLimit::class);
+		$limit->expects($this->once())->method('refusal')->with('collection', null)
+			->willReturn(new JSONResponse(['error' => 'rate_limited'], Http::STATUS_TOO_MANY_REQUESTS));
+		$request = $this->createMock(IRequest::class);
+		$l10n    = $this->createMock(IL10N::class);
+		$mw      = new PortalAuthMiddleware($request, $this->session(null), $this->registry([]), $l10n, $limit);
+
+		$collection = $mw->afterException($this->protectedController(), 'collection', new PortalUnauthorizedException());
+		$index      = $mw->afterException($this->protectedController(), 'index', new PortalUnauthorizedException());
+
+		$this->assertSame(429, $collection->getStatus());
+		$this->assertSame(401, $index->getStatus());
+	}//end testAnUnauthenticatedCollectionReadOverTheLimitAnswers429()
+
+	public function testAfterExceptionConvertsARefusedActionTo403(): void {
+		$mw = $this->middleware($this->session(null), $this->registry([]));
+		$staffController = new class {
+		};
+		$response = $mw->afterException($staffController, 'audiences', new OCSForbiddenException('not allowed'));
+
+		$this->assertInstanceOf(JSONResponse::class, $response);
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame(
+			[
+				'message' => 'You are not allowed to do this. Ask an administrator for access.',
+				'error' => 'forbidden',
+			],
+			$response->getData()
+		);
+
+	}//end testAfterExceptionConvertsARefusedActionTo403()
 
 	public function testAfterExceptionRethrowsOtherErrors(): void {
 		$mw = $this->middleware($this->session(null), $this->registry([]));
@@ -126,6 +235,35 @@ class PortalAuthMiddlewareTest extends TestCase {
 		$this->assertTrue(true);
 
 	}//end testNoBearerCreateToAnonymousDeclaredRoutePassesThrough()
+
+	/**
+	 * Only a `type: create` action with `anonymous` exactly true and the
+	 * request's exact register and schema lets a no-bearer create through,
+	 * wherever in the aggregate it is; a missing route parameter never does.
+	 */
+	public function testEveryAnonymousCreateMatchIsAsRecorded(): void {
+		$open  = ['id' => 'openIntake', 'type' => 'create', 'register' => 'openbuild', 'schema' => 'melding', 'anonymous' => true];
+		$cases = [
+			'a match after junk'   => [[['actions' => 'none'], ['actions' => [['type' => 'create'], $open]]], ['register' => 'openbuild', 'schema' => 'melding'], true],
+			'anonymous not true'   => [[['actions' => [['anonymous' => 'yes'] + $open]]], ['register' => 'openbuild', 'schema' => 'melding'], false],
+			'another register'     => [[['actions' => [$open]]], ['register' => 'other', 'schema' => 'melding'], false],
+			'no schema parameter'  => [[['actions' => [['schema' => ''] + $open]]], ['register' => 'openbuild'], false],
+			'no register parameter' => [[['actions' => [['register' => ''] + $open]]], ['schema' => 'melding'], false],
+		];
+
+		$passed = [];
+		foreach ($cases as $name => [$contributions, $params, $expected]) {
+			$mw = $this->middleware($this->session(null), $this->registry(['contributions' => $contributions]), $params);
+			try {
+				$mw->beforeController($this->protectedController(), 'create');
+				$passed[$name] = true;
+			} catch (PortalUnauthorizedException $e) {
+				$passed[$name] = false;
+			}
+
+			$this->assertSame($expected, $passed[$name], $name);
+		}
+	}//end testEveryAnonymousCreateMatchIsAsRecorded()
 
 	/**
 	 * A `type: update` action flagged `anonymous: true` is NOT part of the
@@ -213,7 +351,9 @@ class PortalAuthMiddlewareTest extends TestCase {
 		$request->method('getParam')->willReturnCallback(
 			static fn (string $key, $default = null) => ($params[$key] ?? $default)
 		);
-		return new PortalAuthMiddleware($request, $session, $registry);
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnArgument(0);
+		return new PortalAuthMiddleware($request, $session, $registry, $l10n);
 	}//end middleware()
 
 	private function session(?array $subject): PortalSessionService {

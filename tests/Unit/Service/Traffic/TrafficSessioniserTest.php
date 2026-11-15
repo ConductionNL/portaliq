@@ -141,6 +141,49 @@ class TrafficSessioniserTest extends TestCase {
 
 
 	/**
+	 * Task 1.4: within a client-kept session a sequence number is used once.
+	 * A client that resets its counter, or a beacon delivered twice, does not
+	 * add a second step to the journey; the first event in order stays and the
+	 * session says how many it set aside.
+	 *
+	 * @return void
+	 */
+	public function testARepeatedSequenceWithinAnExplicitSessionIsSetAside(): void {
+		$sessions = (new TrafficSessioniser())->sessions(
+			events: [
+				$this->event('2026-09-04T10:00:01.000Z', 0, '/a', 'h1', 'sess-1'),
+				$this->event('2026-09-04T10:00:02.000Z', 1, '/b', 'h1', 'sess-1'),
+				$this->event('2026-09-04T10:00:03.000Z', 0, '/reset', 'h1', 'sess-1'),
+				$this->event('2026-09-04T10:00:02.000Z', 1, '/b', 'h1', 'sess-1'),
+			],
+			timeoutMinutes: 30
+		);
+
+		$this->assertCount(1, $sessions);
+		$this->assertSame(['/a', '/b'], $this->paths($sessions[0]));
+		$this->assertSame(2, $sessions[0]['repeats']);
+	}//end testARepeatedSequenceWithinAnExplicitSessionIsSetAside()
+
+	/**
+	 * A cookieless client legitimately starts at 0 on every page load, so the
+	 * same rule must not touch it.
+	 *
+	 * @return void
+	 */
+	public function testACookielessRepeatedSequenceIsNotSetAside(): void {
+		$sessions = (new TrafficSessioniser())->sessions(
+			events: [
+				$this->event('2026-09-04T10:00:01.000Z', 0, '/a'),
+				$this->event('2026-09-04T10:00:05.000Z', 0, '/b'),
+			],
+			timeoutMinutes: 30
+		);
+
+		$this->assertSame(['/a', '/b'], $this->paths($sessions[0]));
+		$this->assertSame(0, $sessions[0]['repeats']);
+	}//end testACookielessRepeatedSequenceIsNotSetAside()
+
+	/**
 	 * A cookieless client restarts its sequence on every page load, so two
 	 * page loads both carrying sequence 0 and 1 must NOT interleave: the
 	 * clock orders across loads, the sequence within one.

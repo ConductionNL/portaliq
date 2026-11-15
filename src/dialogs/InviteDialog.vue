@@ -1,0 +1,200 @@
+<!-- SPDX-License-Identifier: EUPL-1.2 -->
+<!-- Copyright (C) 2026 Conduction B.V. -->
+
+<!--
+  InviteDialog: a clerk invites an e-mail address into the portal.
+
+  Its own file per ADR-004's modal-isolation rule. Spawned by the "Invite
+  someone" header action (src/lib/staffAccountActions.js). Portaliq mails the
+  link to the address; the clerk only reads that it was sent and until when.
+  A refusal is shown here. It closes with the success sentence, or with null
+  when cancelled.
+
+  @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-invite-an-address-and-portaliq-mails-it-req-isa-001
+-->
+<template>
+	<CnDialog
+		:look="look"
+		:name="t('portaliq', 'Invite someone')"
+		:eyebrow="t('portaliq', 'Invitations')"
+		size="normal"
+		data-testid="invite-someone"
+		@closing="$emit('close', null)">
+		<NcTextField
+			v-model="fields.email"
+			type="email"
+			:label="t('portaliq', 'E-mail address')"
+			:helperText="
+				t(
+					'portaliq',
+					'The invitation with a one-time code goes to this address.',
+				)
+			"
+			data-testid="invite-someone-email" />
+		<NcTextField
+			v-model="fields.organisation"
+			:label="t('portaliq', 'Organisation (optional)')"
+			:helperText="
+				t('portaliq', 'Leave empty for a resident who comes for themselves.')
+			"
+			data-testid="invite-someone-organisation" />
+		<div class="invite__select">
+			<NcSelect
+				v-model="audience"
+				:options="audiences"
+				:inputLabel="t('portaliq', 'Audience')"
+				:clearable="false"
+				:taggable="true"
+				data-testid="invite-someone-audience" />
+			<p class="invite__help">
+				{{ t('portaliq', 'For example client or supplier.') }}
+			</p>
+		</div>
+		<NcNoteCard type="info" class="invite__note">
+			{{
+				t(
+					'portaliq',
+					'The invitation is valid for 14 days. You see it afterwards under Invitations, where you can withdraw it as long as it is not accepted.',
+				)
+			}}
+		</NcNoteCard>
+		<p
+			v-if="refusal"
+			class="invite__refusal"
+			role="alert"
+			data-testid="invite-someone-refusal">
+			{{ refusal }}
+		</p>
+
+		<template #actions>
+			<NcButton @click="$emit('close', null)">
+				{{ t('portaliq', 'Cancel') }}
+			</NcButton>
+			<NcButton
+				variant="primary"
+				:disabled="busy"
+				data-testid="invite-someone-confirm"
+				@click="confirm">
+				<template #icon>
+					<EmailFastOutline :size="20" />
+				</template>
+				{{ t('portaliq', 'Send invitation') }}
+			</NcButton>
+		</template>
+	</CnDialog>
+</template>
+
+<script>
+import { CnDialog } from '@conduction/nextcloud-vue'
+import { translate as t } from '@nextcloud/l10n'
+import { NcButton, NcNoteCard, NcSelect, NcTextField } from '@nextcloud/vue'
+import EmailFastOutline from 'vue-material-design-icons/EmailFastOutline.vue'
+import {
+	audienceOption,
+	audienceOptions,
+	audienceValue,
+} from '../lib/audienceOptions.js'
+import { closeOrRefuse } from './submitDialog.js'
+
+export default {
+	name: 'InviteDialog',
+
+	components: {
+		NcButton,
+		CnDialog,
+		EmailFastOutline,
+		NcNoteCard,
+		NcSelect,
+		NcTextField,
+	},
+
+	props: {
+		/** The look to draw in; a spawned dialog gets the app's (src/lib/dialogLook.js). */
+		look: {
+			type: String,
+			default: undefined,
+		},
+
+		/** Posts the fields; answers `{ok, message}`. */
+		submit: {
+			type: Function,
+			required: true,
+		},
+	},
+
+	emits: ['close'],
+
+	data() {
+		return {
+			fields: { email: '', organisation: '', audience: 'client' },
+			refusal: '',
+			busy: false,
+		}
+	},
+
+	computed: {
+		/** The audience as a select option. */
+		audience: {
+			get() {
+				return audienceOption(this.fields.audience)
+			},
+
+			set(option) {
+				this.fields.audience = audienceValue(option)
+			},
+		},
+
+		/** The audiences to pick from. */
+		audiences() {
+			return audienceOptions()
+		},
+	},
+
+	methods: {
+		t,
+
+		/**
+		 * Submit, then close on success or show the refusal.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-invite-an-address-and-portaliq-mails-it-req-isa-001
+		 */
+		async confirm() {
+			this.busy = true
+			this.refusal = ''
+			const outcome = await this.submit({ ...this.fields })
+			closeOrRefuse(this, outcome)
+		},
+	},
+}
+</script>
+
+<style scoped>
+.invite__help {
+	margin: 4px 0 0;
+	color: var(--color-text-maxcontrast);
+	font-size: 13px;
+	line-height: 1.3;
+}
+
+/* The board draws help lines on the font's own line. */
+.cn-dialog-board .invite__help {
+	line-height: normal;
+}
+
+/* The board draws the select across the dialog with its help line right
+   under it; NcSelect is inline at its own width with a 4px bottom margin. */
+.cn-dialog-board .invite__select :deep(.v-select.select) {
+	width: 100%;
+	margin-bottom: 0;
+}
+
+.invite__note {
+	margin-top: 16px;
+}
+
+.invite__refusal {
+	margin-top: 8px;
+	color: var(--color-error-text);
+}
+</style>

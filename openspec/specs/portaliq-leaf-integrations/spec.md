@@ -14,8 +14,9 @@ portal account. This capability owns which leaves are adopted, how an adoption i
 declared, and the one rule that governs all of them: a leaf is a Nextcloud surface for
 a Nextcloud user, and a portal visitor is neither (ADR-046).
 
-Portaliq provides no leaf of its own to other apps, so nothing here needs a `leaves`
-webpack entry or a `RegisterLeafProvidersEvent` listener. It is a consumer.
+This capability covers portaliq as a consumer. The leaves portaliq provides to other
+apps (the change-proposal queue, with its `leaves` webpack entry and its
+`RegisterLeafProvidersEvent` listener) are specified in `change-proposal-queue`.
 
 ## Requirements
 
@@ -25,7 +26,7 @@ Every integration leaf consumed by portaliq SHALL render exclusively on internal
 served to authenticated Nextcloud users (the `DashboardController` surface). No visitor-reachable
 surface — the `#[PublicPage]` portal-edge controllers (`ContributionController`,
 `ContentController`, `PortalPageController`, `SessionController`, `TrafficController`,
-`WooController`), any route under `/portal/`, or any payload they serve — SHALL render, reference,
+`BundledSiteController`), any route under `/portal/`, or any payload they serve — SHALL render, reference,
 or link an integration leaf or a leaf-created Nextcloud artifact. Anything visitor-facing SHALL be
 mediated by the portal edge reading OpenRegister objects; a portal bearer session
 (`PortalSessionService`) SHALL never grant access to a Nextcloud app surface.

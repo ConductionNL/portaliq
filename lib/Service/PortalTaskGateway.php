@@ -25,15 +25,15 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
+ * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\PortalTaskGatewayInterface;
 use OCP\App\IAppManager;
-use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
 use OCP\IURLGenerator;
 use Psr\Log\LoggerInterface;
@@ -43,9 +43,9 @@ use Throwable;
 /**
  * Forwards portal task reads and completions to openregister, assertion-signed.
  *
- * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
+ * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
  */
-class PortalTaskGateway {
+class PortalTaskGateway implements PortalTaskGatewayInterface {
 	/**
 	 * The seam's routes on the co-installed openregister, BY NAME. The URL is
 	 * built from the route table (`linkToRoute()` + `getAbsoluteURL()`), never
@@ -64,7 +64,7 @@ class PortalTaskGateway {
 	 * The seam route that raises a task. Used server to server, as the handler
 	 * who asked, never from a browser.
 	 *
-	 * @spec openspec/changes/partner-tasks-in-the-portal/specs/partner-tasks-in-the-portal/spec.md
+	 * @spec openspec/specs/partner-tasks-in-the-portal/spec.md
 	 */
 	private const ROUTE_CREATE = 'openregister.portalTask.create';
 
@@ -77,14 +77,14 @@ class PortalTaskGateway {
 	/**
 	 * Constructor.
 	 *
-	 * @param IClientService $clientService HTTP client for the server-to-server forward.
-	 * @param IURLGenerator $urlGenerator Resolves the instance-local seam URL.
+	 * @param InstanceLoopback $loopback Sends the server-to-server forward to this instance.
+	 * @param IURLGenerator $urlGenerator Resolves the instance-local seam path.
 	 * @param PortalSessionService $session Mints the signed `X-Portal-Subject` assertion.
 	 * @param IAppManager $appManager Answers whether openregister is installed at all.
 	 * @param LoggerInterface $logger Where transport failures are reported.
 	 */
 	public function __construct(
-		private readonly IClientService $clientService,
+		private readonly InstanceLoopback $loopback,
 		private readonly IURLGenerator $urlGenerator,
 		private readonly PortalSessionService $session,
 		private readonly IAppManager $appManager,
@@ -106,7 +106,7 @@ class PortalTaskGateway {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
 	 */
 	public function isAvailable(): bool {
 		if ($this->appManager->isInstalled('openregister') === false || $this->session->isConfigured() === false) {
@@ -133,15 +133,12 @@ class PortalTaskGateway {
 	 * @return array{status: int, body: array<string, mixed>}|null The relayed
 	 *         answer, or null on transport failure / an unmintable assertion.
 	 *
-	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
 	 */
 	public function listTasks(array $subject, int $limit = 25, int $offset = 0): ?array {
-		return $this->forward(
-			subject: $subject,
-			method: 'GET',
-			route: self::ROUTE_INDEX,
-			parameters: ['limit' => max(1, $limit), 'offset' => max(0, $offset)]
-		);
+		$call = new SeamCall(method: 'GET', route: self::ROUTE_INDEX);
+		$call->parameters = ['limit' => max(1, $limit), 'offset' => max(0, $offset)];
+		return $this->forward(subject: $subject, call: $call);
 	}//end listTasks()
 
 	/**
@@ -153,10 +150,12 @@ class PortalTaskGateway {
 	 * @return array{status: int, body: array<string, mixed>}|null The relayed
 	 *         answer, or null on transport failure / an unmintable assertion.
 	 *
-	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
 	 */
 	public function getTask(array $subject, string $uuid): ?array {
-		return $this->forward(subject: $subject, method: 'GET', route: self::ROUTE_SHOW, parameters: ['uuid' => $uuid]);
+		$call = new SeamCall(method: 'GET', route: self::ROUTE_SHOW);
+		$call->parameters = ['uuid' => $uuid];
+		return $this->forward(subject: $subject, call: $call);
 	}//end getTask()
 
 	/**
@@ -175,7 +174,7 @@ class PortalTaskGateway {
 	 * @return array{status: int, body: array<string, mixed>}|null The relayed
 	 *         answer, or null on transport failure / an unmintable assertion.
 	 *
-	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
 	 */
 	public function completeTask(
 		array $subject,
@@ -185,37 +184,75 @@ class PortalTaskGateway {
 		string $outcome = '',
 		array $files = [],
 	): ?array {
-		$multipart = [
+		$call = new SeamCall(method: 'POST', route: self::ROUTE_COMPLETE);
+		$call->parameters = ['uuid' => $uuid];
+		$call->multipart  = array_merge(
+			$this->answerParts(subject: $subject, answers: $answers),
+			$this->noteParts(comment: $comment, outcome: $outcome),
+			$this->fileParts(files: $files)
+		);
+		return $this->forward(subject: $subject, call: $call);
+	}//end completeTask()
+
+	/**
+	 * The answers and the account that gave them.
+	 *
+	 * Which account answered, said explicitly as well as carried by the
+	 * assertion: a partner task's answer has to name the party that gave it,
+	 * and a header nobody stores is not a record
+	 * (partner-tasks-in-the-portal REQ-PTP-003).
+	 *
+	 * @param array<string, mixed> $subject The resolved bearer subject.
+	 * @param array<string, mixed> $answers The submitted answer fields.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function answerParts(array $subject, array $answers): array {
+		return [
 			['name' => 'answers', 'contents' => (string)json_encode($answers)],
-			// Which account answered, said explicitly as well as carried by
-			// the assertion: a partner task's answer has to name the party
-			// that gave it, and a header nobody stores is not a record
-			// (partner-tasks-in-the-portal REQ-PTP-003).
 			['name' => 'completedBy', 'contents' => (string)($subject['subjectRef'] ?? '')],
 		];
+	}//end answerParts()
+
+	/**
+	 * The comment and the outcome, each only when given.
+	 *
+	 * @param string|null $comment The resident's comment, when any.
+	 * @param string      $outcome The outcome to record ('' = the seam's default).
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function noteParts(?string $comment, string $outcome): array {
+		$parts = [];
 		if ($comment !== null && $comment !== '') {
-			$multipart[] = ['name' => 'comment', 'contents' => $comment];
+			$parts[] = ['name' => 'comment', 'contents' => $comment];
 		}
 
 		if ($outcome !== '') {
-			$multipart[] = ['name' => 'outcome', 'contents' => $outcome];
+			$parts[] = ['name' => 'outcome', 'contents' => $outcome];
 		}
 
+		return $parts;
+	}//end noteParts()
+
+	/**
+	 * One file part per readable upload.
+	 *
+	 * @param array<int, array<string, mixed>> $files The uploads.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function fileParts(array $files): array {
+		$parts = [];
 		foreach ($files as $file) {
 			$part = $this->filePart(file: $file);
 			if ($part !== null) {
-				$multipart[] = $part;
+				$parts[] = $part;
 			}
 		}
 
-		return $this->forward(
-			subject: $subject,
-			method: 'POST',
-			route: self::ROUTE_COMPLETE,
-			parameters: ['uuid' => $uuid],
-			multipart: $multipart
-		);
-	}//end completeTask()
+		return $parts;
+	}//end fileParts()
 
 	/**
 	 * Raise a portal task, server to server, as the handler who asked for it.
@@ -234,7 +271,7 @@ class PortalTaskGateway {
 	 * @return array{status: int, body: array<string, mixed>}|null The relayed
 	 *         answer, or null on transport failure.
 	 *
-	 * @spec openspec/changes/partner-tasks-in-the-portal/specs/partner-tasks-in-the-portal/spec.md
+	 * @spec openspec/specs/partner-tasks-in-the-portal/spec.md
 	 */
 	public function createTask(array $handler, string $subjectRef, array $task): ?array {
 		if ($subjectRef === '') {
@@ -246,13 +283,9 @@ class PortalTaskGateway {
 			['name' => 'task', 'contents' => (string)json_encode($task)],
 		];
 
-		return $this->forward(
-			subject: $handler,
-			method: 'POST',
-			route: self::ROUTE_CREATE,
-			parameters: [],
-			multipart: $multipart
-		);
+		$call = new SeamCall(method: 'POST', route: self::ROUTE_CREATE);
+		$call->multipart = $multipart;
+		return $this->forward(subject: $handler, call: $call);
 	}//end createTask()
 
 	/**
@@ -291,20 +324,37 @@ class PortalTaskGateway {
 	 * mapping); only transport-level failure degrades to null.
 	 *
 	 * @param array<string, mixed> $subject The resolved bearer subject.
-	 * @param string $method GET or POST.
-	 * @param string $route The seam route NAME (one of the ROUTE_* constants).
-	 * @param array<string, int|string> $parameters Route parameters; anything the
-	 *                                             route does not consume becomes
-	 *                                             the query string.
-	 * @param array<int, array<string, mixed>>|null $multipart Multipart parts for a POST, when any.
+	 * @param SeamCall             $call    The seam call.
 	 *
 	 * @return array{status: int, body: array<string, mixed>}|null
 	 *
-	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
 	 */
-	private function forward(array $subject, string $method, string $route, array $parameters = [], ?array $multipart = null): ?array {
+	private function forward(array $subject, SeamCall $call): ?array {
+		$assertion = $this->assertionFor(subject: $subject);
+		if ($assertion === null) {
+			return null;
+		}
+
+		$url = $this->routedUrl(call: $call);
+		if ($url === null) {
+			return null;
+		}
+
+		$call->url = $url;
+		return $this->answerOf(call: $call, options: $this->forwardOptions(assertion: $assertion, call: $call));
+	}//end forward()
+
+	/**
+	 * A fresh portal-subject assertion, or null when none can be minted.
+	 *
+	 * @param array<string, mixed> $subject The resolved bearer subject.
+	 *
+	 * @return string|null
+	 */
+	private function assertionFor(array $subject): ?string {
 		try {
-			$assertion = $this->session->issueAssertion($subject);
+			return $this->session->issueAssertion($subject);
 		} catch (RuntimeException $unconfigured) {
 			// No dedicated signing secret: the seam refuses everything anyway.
 			// isAvailable() already keeps the surface hidden; log for the
@@ -313,18 +363,37 @@ class PortalTaskGateway {
 
 			return null;
 		}
+	}//end assertionFor()
 
+	/**
+	 * The seam route's path, or null when the route table does not know the
+	 * seam (openregister absent or too old): same posture as a transport
+	 * failure — the caller answers unavailable, nothing is thrown at the
+	 * resident.
+	 *
+	 * @param SeamCall $call The seam call.
+	 *
+	 * @return string|null
+	 */
+	private function routedUrl(SeamCall $call): ?string {
 		try {
-			$url = $this->seamUrl(route: $route, parameters: $parameters);
+			return $this->seamUrl(route: $call->route, parameters: $call->parameters);
 		} catch (Throwable $unroutable) {
-			// The route table does not know the seam (openregister absent or
-			// too old): same posture as a transport failure — the caller
-			// answers unavailable, nothing is thrown at the resident.
-			$this->logger->warning('[PortalTaskGateway] Cannot resolve the seam route ' . $route . ': ' . $unroutable->getMessage());
+			$this->logger->warning('[PortalTaskGateway] Cannot resolve the seam route ' . $call->route . ': ' . $unroutable->getMessage());
 
 			return null;
 		}
+	}//end routedUrl()
 
+	/**
+	 * The client options of a forward: the assertion as the only credential.
+	 *
+	 * @param string   $assertion The portal-subject assertion.
+	 * @param SeamCall $call      The seam call.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function forwardOptions(string $assertion, SeamCall $call): array {
 		$options = [
 			'headers' => ['X-Portal-Subject' => $assertion, 'Accept' => 'application/json'],
 			'timeout' => self::FORWARD_TIMEOUT,
@@ -335,18 +404,42 @@ class PortalTaskGateway {
 			// legitimately targets our own (possibly private) address.
 			'nextcloud' => ['allow_local_address' => true],
 		];
-		if ($multipart !== null) {
-			$options['multipart'] = $multipart;
+		if ($call->multipart !== null) {
+			$options['multipart'] = $call->multipart;
 		}
 
+		return $options;
+	}//end forwardOptions()
+
+	/**
+	 * The seam's answer, relayed whatever its status; null on a transport
+	 * failure.
+	 *
+	 * @param SeamCall             $call    The seam call, with its path.
+	 * @param array<string, mixed> $options The client options.
+	 *
+	 * @return array{status: int, body: array<string, mixed>}|null
+	 */
+	private function answerOf(SeamCall $call, array $options): ?array {
 		try {
-			$response = $this->send(method: $method, url: $url, options: $options);
+			$response = $this->send(method: $call->method, url: $call->url, options: $options);
 		} catch (Throwable $failure) {
 			$this->logger->warning('[PortalTaskGateway] Task forward failed in transport: ' . $failure->getMessage());
 
 			return null;
 		}
 
+		return ['status' => (int)$response->getStatusCode(), 'body' => $this->decodedBody(response: $response)];
+	}//end answerOf()
+
+	/**
+	 * The answer's JSON body, or an empty one.
+	 *
+	 * @param IResponse $response The seam's answer.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function decodedBody(IResponse $response): array {
 		$body = $response->getBody();
 		$decoded = null;
 		if (is_string($body) === true && $body !== '') {
@@ -357,11 +450,12 @@ class PortalTaskGateway {
 			$decoded = [];
 		}
 
-		return ['status' => (int)$response->getStatusCode(), 'body' => $decoded];
-	}//end forward()
+		return $decoded;
+	}//end decodedBody()
 
 	/**
-	 * The absolute, instance-local URL of one seam route.
+	 * The instance-local path of one seam route; InstanceLoopback turns it
+	 * into the address that answers.
 	 *
 	 * `linkToRoute()` consults the route table, so the result carries
 	 * `index.php` exactly when this instance needs it (no `htaccess.RewriteBase`)
@@ -382,7 +476,7 @@ class PortalTaskGateway {
 	 *   never the seam. The empty path is turned into the exception so that
 	 *   `forward()` degrades to null instead of calling the wrong URL.
 	 *
-	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
 	 */
 	private function seamUrl(string $route, array $parameters): string {
 		$path = $this->urlGenerator->linkToRoute($route, $parameters);
@@ -390,24 +484,25 @@ class PortalTaskGateway {
 			throw new RuntimeException('The route table does not know ' . $route . ' (is openregister installed and current?)');
 		}
 
-		return $this->urlGenerator->getAbsoluteURL($path);
+		return $path;
 	}//end seamUrl()
 
 	/**
 	 * Perform the HTTP call for one forward.
 	 *
+	 * Goes through InstanceLoopback, so a public address the server cannot
+	 * reach from inside (port mapping, reverse proxy, split DNS) falls back
+	 * to the loopback instead of failing every task call with cURL error 7.
+	 *
 	 * @param string $method GET or POST.
-	 * @param string $url The absolute seam URL (route-resolved, see seamUrl()).
+	 * @param string $url The instance-local seam path (route-resolved, see seamUrl()).
 	 * @param array<string, mixed> $options The prepared client options.
 	 *
 	 * @return IResponse
+	 *
+	 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-every-call-to-this-instance-goes-through-one-loopback-service
 	 */
 	private function send(string $method, string $url, array $options): IResponse {
-		$client = $this->clientService->newClient();
-		if ($method === 'POST') {
-			return $client->post($url, $options);
-		}
-
-		return $client->get($url, $options);
+		return $this->loopback->request(method: $method, path: $url, options: $options);
 	}//end send()
 }//end class

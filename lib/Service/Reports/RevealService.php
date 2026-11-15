@@ -26,7 +26,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+ * @spec openspec/specs/report-without-an-account/spec.md
  */
 
 declare(strict_types=1);
@@ -35,8 +35,9 @@ namespace OCA\Portaliq\Service\Reports;
 
 use DateTimeImmutable;
 use OCA\Portaliq\Event\PortalReportRevealedEvent;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Kernel\Contracts\RevealServiceInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IGroupManager;
 use OCP\IUser;
@@ -44,9 +45,9 @@ use OCP\IUser;
 /**
  * Requests, refusals and reveals of a reporter's identity.
  *
- * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+ * @spec openspec/specs/report-without-an-account/spec.md
  */
-class RevealService {
+class RevealService implements RevealServiceInterface {
 	/**
 	 * The register the request lives in.
 	 */
@@ -65,13 +66,13 @@ class RevealService {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Reads the request and the contact.
+	 * @param ScopedCollectionReaderInterface $reader Reads the request and the contact.
 	 * @param PortalObjectWriter $writer Records the request and its answer.
 	 * @param IGroupManager $groupManager Decides who is a custodian.
 	 * @param IEventDispatcher $dispatcher Raises the reveal event.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly IGroupManager $groupManager,
 		private readonly IEventDispatcher $dispatcher,
@@ -88,7 +89,7 @@ class RevealService {
 	 * @return array<string, mixed>|null The recorded request, or null when it
 	 *         carries no motivation and is therefore refused outright.
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 */
 	public function request(string $reportId, string $requestedBy, string $motivation): ?array {
 		if ($reportId === '' || $requestedBy === '' || trim($motivation) === '') {
@@ -119,7 +120,7 @@ class RevealService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 */
 	public function isCustodian(IUser $user, array $caseType): bool {
 		$declaration = ($caseType[ReportTermsService::DECLARATION] ?? null);
@@ -137,6 +138,39 @@ class RevealService {
 	}//end isCustodian()
 
 	/**
+	 * Whether this user may handle this case type's reports: read one, write
+	 * on its thread and ask for a reveal. A member of the declared
+	 * `handlerGroup` may, and so may a custodian. When no handler group is
+	 * declared only the custodian group may. Being signed in, or being an
+	 * instance administrator, is not enough (intake-report-pages D5,
+	 * portaliq#799).
+	 *
+	 * @param IUser $user The user.
+	 * @param array<string, mixed> $caseType The case type carrying the declaration.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/intake-report-pages/specs/report-pages/spec.md
+	 */
+	public function mayHandle(IUser $user, array $caseType): bool {
+		if ($this->isCustodian(user: $user, caseType: $caseType) === true) {
+			return true;
+		}
+
+		$declaration = ($caseType[ReportTermsService::DECLARATION] ?? null);
+		if (is_array($declaration) === false) {
+			return false;
+		}
+
+		$group = (string)($declaration['handlerGroup'] ?? '');
+		if ($group === '') {
+			return false;
+		}
+
+		return $this->groupManager->isInGroup($user->getUID(), $group);
+	}//end mayHandle()
+
+	/**
 	 * Answer a request: allow it and show what the reporter gave, or refuse it.
 	 *
 	 * @param array<string, mixed> $request The pending request.
@@ -148,47 +182,90 @@ class RevealService {
 	 *
 	 * @return array{state: string, contact?: array<string, mixed>}|array{error: string}
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- each parameter is part
 	 * of the record this decision writes.
 	 */
 	public function decide(array $request, array $report, IUser $custodian, array $caseType, bool $allow, string $reason = ''): array {
-		if ((string)($request['state'] ?? '') !== 'pending') {
-			return ['error' => 'not_pending'];
-		}
+		return $this->decideRequest(
+			decision: new RevealDecision(request: $request, report: $report, custodian: $custodian, caseType: $caseType, allow: $allow, reason: $reason)
+		);
+	}//end decide()
 
-		if ($this->isCustodian(user: $custodian, caseType: $caseType) === false) {
-			// Refused before anything is read: an administrator who is not the
-			// custodian learns nothing, not even whether there was anything
-			// to learn.
-			return ['error' => 'not_custodian'];
+	/**
+	 * Answer a request: allow it and show what the reporter gave, or refuse it.
+	 *
+	 * @param RevealDecision $decision The request, the report, who answers and how.
+	 *
+	 * @return array{state: string, contact?: array<string, mixed>}|array{error: string}
+	 *
+	 * @spec openspec/specs/report-without-an-account/spec.md
+	 */
+	public function decideRequest(RevealDecision $decision): array {
+		$refusal = $this->refusal(decision: $decision);
+		if ($refusal !== null) {
+			return ['error' => $refusal];
 		}
 
 		$occurredAt = (new DateTimeImmutable())->format(DATE_ATOM);
-		if ($allow === false) {
-			$this->close(request: $request, state: 'refused', custodian: $custodian->getUID(), reason: $reason, fields: [], occurredAt: $occurredAt);
+		if ($decision->allow === false) {
+			$this->close(decision: $decision, outcome: new RevealOutcome(state: 'refused', fields: [], occurredAt: $occurredAt));
 			return ['state' => 'refused'];
 		}
 
-		$contact = $this->contactFor(report: $report);
-		$fields = array_keys($contact);
+		$contact = $this->contactFor(report: $decision->report);
+		$outcome = new RevealOutcome(state: 'allowed', fields: array_keys($contact), occurredAt: $occurredAt);
 
-		$this->close(request: $request, state: 'allowed', custodian: $custodian->getUID(), reason: $reason, fields: $fields, occurredAt: $occurredAt);
+		$this->close(decision: $decision, outcome: $outcome);
+		$this->announceReveal(decision: $decision, outcome: $outcome);
 
+		return ['state' => 'allowed', 'contact' => $contact];
+	}//end decideRequest()
+
+	/**
+	 * Why a decision may not be taken at all, or null when it may.
+	 *
+	 * @param RevealDecision $decision The request, the report, who answers and how.
+	 *
+	 * @return string|null `not_pending` or `not_custodian`.
+	 */
+	private function refusal(RevealDecision $decision): ?string {
+		if ((string)($decision->request['state'] ?? '') !== 'pending') {
+			return 'not_pending';
+		}
+
+		if ($this->isCustodian(user: $decision->custodian, caseType: $decision->caseType) === false) {
+			// Refused before anything is read: an administrator who is not the
+			// custodian learns nothing, not even whether there was anything
+			// to learn.
+			return 'not_custodian';
+		}
+
+		return null;
+	}//end refusal()
+
+	/**
+	 * Raise the reveal event for an allowed request.
+	 *
+	 * @param RevealDecision $decision The request, the report, who answers and how.
+	 * @param RevealOutcome  $outcome  The fields shown and when.
+	 *
+	 * @return void
+	 */
+	private function announceReveal(RevealDecision $decision, RevealOutcome $outcome): void {
+		$request = $decision->request;
 		$this->dispatcher->dispatchTyped(
 			new PortalReportRevealedEvent(
 				reportId: (string)($request['reportRef'] ?? ''),
 				requestedBy: (string)($request['requestedBy'] ?? ''),
-				custodian: $custodian->getUID(),
+				custodian: $decision->custodian->getUID(),
 				motivation: (string)($request['motivation'] ?? ''),
-				revealedFields: $fields,
-				occurredAt: $occurredAt
+				revealedFields: $outcome->fields,
+				occurredAt: $outcome->occurredAt
 			)
 		);
-
-		return ['state' => 'allowed', 'contact' => $contact];
-	}//end decide()
+	}//end announceReveal()
 
 	/**
 	 * What the reporter gave, read only on an allowed reveal.
@@ -203,50 +280,65 @@ class RevealService {
 			return [];
 		}
 
-		$rows = $this->reader->readCollection(
-			register: self::REGISTER,
-			schema: self::CONTACT_SCHEMA,
-			scopeField: 'reportRef',
-			subjectRef: $this->idOf(row: $report),
-			organisation: '',
-			limit: 5
-		);
-
+		$rows = $this->contactRows(report: $report);
 		foreach ($rows as $row) {
 			if (is_array($row) === false) {
 				continue;
 			}
 
-			$contact = [];
-			foreach (['name', 'email', 'phone'] as $field) {
-				$value = (string)($row[$field] ?? '');
-				if ($value !== '') {
-					$contact[$field] = $value;
-				}
-			}
-
-			return $contact;
+			return $this->givenFields(row: $row);
 		}
 
 		return [];
 	}//end contactFor()
 
 	/**
+	 * The contact rows written for the report.
+	 *
+	 * @param array<string, mixed> $report The report.
+	 *
+	 * @return array<int|string, mixed>
+	 */
+	private function contactRows(array $report): array {
+		return $this->reader->readCollection(
+			register: self::REGISTER,
+			schema: self::CONTACT_SCHEMA,
+			scopeField: 'reportRef',
+			subjectRef: ReportRowId::of(row: $report),
+			organisation: '',
+			limit: 5
+		);
+	}//end contactRows()
+
+	/**
+	 * The name, e-mail and phone the reporter filled in.
+	 *
+	 * @param array<string, mixed> $row The contact row.
+	 *
+	 * @return array<string, string>
+	 */
+	private function givenFields(array $row): array {
+		$contact = [];
+		foreach (['name', 'email', 'phone'] as $field) {
+			$value = (string)($row[$field] ?? '');
+			if ($value !== '') {
+				$contact[$field] = $value;
+			}
+		}
+
+		return $contact;
+	}//end givenFields()
+
+	/**
 	 * Write the custodian's answer onto the request.
 	 *
-	 * @param array<string, mixed> $request The request row.
-	 * @param string $state `allowed` or `refused`.
-	 * @param string $custodian Who answered.
-	 * @param string $reason What they said.
-	 * @param array<int, string> $fields Which fields were shown.
-	 * @param string $occurredAt When, ISO 8601.
+	 * @param RevealDecision $decision The request, who answered and what they said.
+	 * @param RevealOutcome  $outcome  Allowed or refused, the fields shown and when.
 	 *
 	 * @return void
-	 *
-	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- see decide().
 	 */
-	private function close(array $request, string $state, string $custodian, string $reason, array $fields, string $occurredAt): void {
-		$id = $this->idOf(row: $request);
+	private function close(RevealDecision $decision, RevealOutcome $outcome): void {
+		$id = ReportRowId::of(row: $decision->request);
 		if ($id === '') {
 			return;
 		}
@@ -259,32 +351,13 @@ class RevealService {
 			organisation: '',
 			id: $id,
 			data: [
-				'state' => $state,
-				'decidedBy' => $custodian,
-				'decidedAt' => $occurredAt,
-				'decisionReason' => $reason,
+				'state' => $outcome->state,
+				'decidedBy' => $decision->custodian->getUID(),
+				'decidedAt' => $outcome->occurredAt,
+				'decisionReason' => $decision->reason,
 				// The names of what was shown, never the values.
-				'revealedFields' => $fields,
+				'revealedFields' => $outcome->fields,
 			]
 		);
 	}//end close()
-
-	/**
-	 * A row's own identifier.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return string
-	 */
-	private function idOf(array $row): string {
-		$self = (array)($row['@self'] ?? []);
-		$candidates = [($row['uuid'] ?? null), ($row['id'] ?? null), ($self['uuid'] ?? null), ($self['id'] ?? null)];
-		foreach ($candidates as $candidate) {
-			if ((is_string($candidate) === true || is_int($candidate) === true) && (string)$candidate !== '') {
-				return (string)$candidate;
-			}
-		}
-
-		return '';
-	}//end idOf()
 }//end class

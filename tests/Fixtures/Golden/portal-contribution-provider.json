@@ -1,0 +1,906 @@
+{
+    "no audience": {
+        "calls": [],
+        "contribution": null
+    },
+    "empty audience": {
+        "calls": [],
+        "contribution": null
+    },
+    "no page for the audience": {
+        "calls": [
+            [
+                "read",
+                "portaliq",
+                "portalPage",
+                "",
+                "",
+                "",
+                200,
+                "",
+                "",
+                null,
+                "",
+                null,
+                {
+                    "status": "active"
+                }
+            ]
+        ],
+        "contribution": null
+    },
+    "one page": {
+        "calls": [
+            [
+                "read",
+                "portaliq",
+                "portalPage",
+                "",
+                "",
+                "",
+                200,
+                "",
+                "",
+                null,
+                "",
+                null,
+                {
+                    "status": "active"
+                }
+            ]
+        ],
+        "contribution": {
+            "label": "Mijn omgeving",
+            "collections": [
+                {
+                    "id": "cases",
+                    "minTrust": "substantial"
+                },
+                {
+                    "id": "docs",
+                    "minTrust": "high"
+                },
+                "loose"
+            ],
+            "actions": [
+                {
+                    "id": "act",
+                    "minTrust": "substantial"
+                }
+            ],
+            "pages": [
+                {
+                    "route": "/mijn"
+                }
+            ],
+            "notifications": [
+                "message.created",
+                "status.changed"
+            ]
+        }
+    },
+    "two pages, lowest id wins": {
+        "calls": [
+            [
+                "read",
+                "portaliq",
+                "portalPage",
+                "",
+                "",
+                "",
+                200,
+                "",
+                "",
+                null,
+                "",
+                null,
+                {
+                    "status": "active"
+                }
+            ],
+            [
+                "log.warning",
+                "Portaliq: multiple active portalPage objects for one audience — picking the first, not merging",
+                {
+                    "audience": "resident",
+                    "count": 2
+                }
+            ]
+        ],
+        "contribution": {
+            "label": "Eerste",
+            "collections": [
+                {
+                    "id": "cases",
+                    "minTrust": "substantial"
+                },
+                {
+                    "id": "docs",
+                    "minTrust": "high"
+                },
+                "loose"
+            ],
+            "actions": [
+                {
+                    "id": "act",
+                    "minTrust": "substantial"
+                }
+            ],
+            "pages": [
+                {
+                    "route": "/mijn"
+                }
+            ],
+            "notifications": [
+                "message.created",
+                "status.changed"
+            ]
+        }
+    },
+    "page without trust or notifications": {
+        "calls": [
+            [
+                "read",
+                "portaliq",
+                "portalPage",
+                "",
+                "",
+                "",
+                200,
+                "",
+                "",
+                null,
+                "",
+                null,
+                {
+                    "status": "active"
+                }
+            ]
+        ],
+        "contribution": {
+            "label": "",
+            "collections": [
+                "x"
+            ],
+            "actions": [],
+            "pages": []
+        }
+    },
+    "page with non-string trust": {
+        "calls": [
+            [
+                "read",
+                "portaliq",
+                "portalPage",
+                "",
+                "",
+                "",
+                200,
+                "",
+                "",
+                null,
+                "",
+                null,
+                {
+                    "status": "active"
+                }
+            ]
+        ],
+        "contribution": {
+            "label": "Mijn omgeving",
+            "collections": [
+                {
+                    "id": "cases"
+                },
+                {
+                    "id": "docs",
+                    "minTrust": "high"
+                },
+                "loose"
+            ],
+            "actions": [
+                {
+                    "id": "act"
+                }
+            ],
+            "pages": [
+                {
+                    "route": "/mijn"
+                }
+            ]
+        }
+    },
+    "resident never gets forms": {
+        "calls": [
+            [
+                "read",
+                "portaliq",
+                "portalPage",
+                "",
+                "",
+                "",
+                200,
+                "",
+                "",
+                null,
+                "",
+                null,
+                {
+                    "status": "active"
+                }
+            ]
+        ],
+        "contribution": null
+    },
+    "anonymous without forms or page": {
+        "calls": [
+            [
+                "read",
+                "portaliq",
+                "portalPage",
+                "",
+                "",
+                "",
+                200,
+                "",
+                "",
+                null,
+                "",
+                null,
+                {
+                    "status": "active"
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "form",
+                "",
+                "",
+                "",
+                200,
+                "",
+                "",
+                null,
+                "",
+                null,
+                {
+                    "status": "active"
+                }
+            ]
+        ],
+        "contribution": null
+    },
+    "anonymous with forms only": {
+        "calls": [
+            [
+                "read",
+                "portaliq",
+                "portalPage",
+                "",
+                "",
+                "",
+                200,
+                "",
+                "",
+                null,
+                "",
+                null,
+                {
+                    "status": "active"
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "form",
+                "",
+                "",
+                "",
+                200,
+                "",
+                "",
+                null,
+                "",
+                null,
+                {
+                    "status": "active"
+                }
+            ],
+            [
+                "random",
+                32,
+                "abcdefghijklmnopqrstuvwxyz0123456789"
+            ],
+            [
+                "random",
+                32,
+                "abcdefghijklmnopqrstuvwxyz0123456789"
+            ]
+        ],
+        "contribution": {
+            "label": "",
+            "collections": [],
+            "actions": [
+                {
+                    "id": "submit-f-1",
+                    "type": "create",
+                    "anonymous": true,
+                    "register": "portaliq",
+                    "schema": "landingPageSubmission",
+                    "label": "Aanmelden",
+                    "fields": [
+                        "name",
+                        "email",
+                        "utmFirstTouch",
+                        "utmLastTouch",
+                        "referrer"
+                    ],
+                    "destination": {
+                        "register": "stackiq",
+                        "schema": "organization",
+                        "fixed": {
+                            "status": "pending"
+                        }
+                    },
+                    "intakeScope": "zuiddrecht/aanmelden",
+                    "server": {
+                        "formId": "f-1",
+                        "pageId": "pg-1",
+                        "pageRoute": "aanmelden",
+                        "portal": "zuiddrecht",
+                        "sourceApp": "stackiq",
+                        "externalReference": "org-registration",
+                        "campaign": {
+                            "utm": "spring"
+                        },
+                        "submittedAt": "<atom>",
+                        "nonce": "nonce-1"
+                    }
+                },
+                {
+                    "id": "submit-f-2",
+                    "type": "create",
+                    "anonymous": true,
+                    "register": "portaliq",
+                    "schema": "landingPageSubmission",
+                    "label": "Submit",
+                    "fields": [
+                        "q",
+                        "utmFirstTouch",
+                        "utmLastTouch",
+                        "referrer"
+                    ],
+                    "destination": {
+                        "register": "r",
+                        "schema": "s"
+                    },
+                    "intakeScope": "/",
+                    "server": {
+                        "formId": "f-2",
+                        "pageId": "",
+                        "pageRoute": "",
+                        "portal": "",
+                        "sourceApp": "",
+                        "externalReference": "",
+                        "campaign": [],
+                        "submittedAt": "<atom>",
+                        "nonce": "nonce-2"
+                    }
+                }
+            ],
+            "pages": []
+        }
+    },
+    "anonymous with page and forms": {
+        "calls": [
+            [
+                "read",
+                "portaliq",
+                "portalPage",
+                "",
+                "",
+                "",
+                200,
+                "",
+                "",
+                null,
+                "",
+                null,
+                {
+                    "status": "active"
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "form",
+                "",
+                "",
+                "",
+                200,
+                "",
+                "",
+                null,
+                "",
+                null,
+                {
+                    "status": "active"
+                }
+            ],
+            [
+                "random",
+                32,
+                "abcdefghijklmnopqrstuvwxyz0123456789"
+            ]
+        ],
+        "contribution": {
+            "label": "Mijn omgeving",
+            "collections": [
+                {
+                    "id": "cases",
+                    "minTrust": "substantial"
+                },
+                {
+                    "id": "docs",
+                    "minTrust": "high"
+                },
+                "loose"
+            ],
+            "actions": [
+                {
+                    "id": "act",
+                    "minTrust": "substantial"
+                },
+                {
+                    "id": "submit-f-2",
+                    "type": "create",
+                    "anonymous": true,
+                    "register": "portaliq",
+                    "schema": "landingPageSubmission",
+                    "label": "Submit",
+                    "fields": [
+                        "q",
+                        "utmFirstTouch",
+                        "utmLastTouch",
+                        "referrer"
+                    ],
+                    "destination": {
+                        "register": "r",
+                        "schema": "s"
+                    },
+                    "intakeScope": "/",
+                    "server": {
+                        "formId": "f-2",
+                        "pageId": "",
+                        "pageRoute": "",
+                        "portal": "",
+                        "sourceApp": "",
+                        "externalReference": "",
+                        "campaign": [],
+                        "submittedAt": "<atom>",
+                        "nonce": "nonce-1"
+                    }
+                }
+            ],
+            "pages": [
+                {
+                    "route": "/mijn"
+                }
+            ],
+            "notifications": [
+                "message.created",
+                "status.changed"
+            ]
+        }
+    },
+    "anonymous page, no usable form": {
+        "calls": [
+            [
+                "read",
+                "portaliq",
+                "portalPage",
+                "",
+                "",
+                "",
+                200,
+                "",
+                "",
+                null,
+                "",
+                null,
+                {
+                    "status": "active"
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "form",
+                "",
+                "",
+                "",
+                200,
+                "",
+                "",
+                null,
+                "",
+                null,
+                {
+                    "status": "active"
+                }
+            ]
+        ],
+        "contribution": {
+            "label": "Mijn omgeving",
+            "collections": [
+                {
+                    "id": "cases",
+                    "minTrust": "substantial"
+                },
+                {
+                    "id": "docs",
+                    "minTrust": "high"
+                },
+                "loose"
+            ],
+            "actions": [
+                {
+                    "id": "act",
+                    "minTrust": "substantial"
+                }
+            ],
+            "pages": [
+                {
+                    "route": "/mijn"
+                }
+            ],
+            "notifications": [
+                "message.created",
+                "status.changed"
+            ]
+        }
+    },
+    "form ids from self": {
+        "calls": [
+            [
+                "read",
+                "portaliq",
+                "portalPage",
+                "",
+                "",
+                "",
+                200,
+                "",
+                "",
+                null,
+                "",
+                null,
+                {
+                    "status": "active"
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "form",
+                "",
+                "",
+                "",
+                200,
+                "",
+                "",
+                null,
+                "",
+                null,
+                {
+                    "status": "active"
+                }
+            ],
+            [
+                "random",
+                32,
+                "abcdefghijklmnopqrstuvwxyz0123456789"
+            ],
+            [
+                "random",
+                32,
+                "abcdefghijklmnopqrstuvwxyz0123456789"
+            ],
+            [
+                "random",
+                32,
+                "abcdefghijklmnopqrstuvwxyz0123456789"
+            ]
+        ],
+        "contribution": {
+            "label": "",
+            "collections": [],
+            "actions": [
+                {
+                    "id": "submit-self-u",
+                    "type": "create",
+                    "anonymous": true,
+                    "register": "portaliq",
+                    "schema": "landingPageSubmission",
+                    "label": "Submit",
+                    "fields": [
+                        "q",
+                        "utmFirstTouch",
+                        "utmLastTouch",
+                        "referrer"
+                    ],
+                    "destination": {
+                        "register": "r",
+                        "schema": "s"
+                    },
+                    "intakeScope": "/",
+                    "server": {
+                        "formId": "self-u",
+                        "pageId": "",
+                        "pageRoute": "",
+                        "portal": "",
+                        "sourceApp": "",
+                        "externalReference": "",
+                        "campaign": [],
+                        "submittedAt": "<atom>",
+                        "nonce": "nonce-1"
+                    }
+                },
+                {
+                    "id": "submit-12",
+                    "type": "create",
+                    "anonymous": true,
+                    "register": "portaliq",
+                    "schema": "landingPageSubmission",
+                    "label": "Submit",
+                    "fields": [
+                        "q",
+                        "utmFirstTouch",
+                        "utmLastTouch",
+                        "referrer"
+                    ],
+                    "destination": {
+                        "register": "r",
+                        "schema": "s"
+                    },
+                    "intakeScope": "/",
+                    "server": {
+                        "formId": "12",
+                        "pageId": "",
+                        "pageRoute": "",
+                        "portal": "",
+                        "sourceApp": "",
+                        "externalReference": "",
+                        "campaign": [],
+                        "submittedAt": "<atom>",
+                        "nonce": "nonce-2"
+                    }
+                },
+                {
+                    "id": "submit-0",
+                    "type": "create",
+                    "anonymous": true,
+                    "register": "portaliq",
+                    "schema": "landingPageSubmission",
+                    "label": "Submit",
+                    "fields": [
+                        "q",
+                        "utmFirstTouch",
+                        "utmLastTouch",
+                        "referrer"
+                    ],
+                    "destination": {
+                        "register": "r",
+                        "schema": "s"
+                    },
+                    "intakeScope": "/",
+                    "server": {
+                        "formId": "0",
+                        "pageId": "",
+                        "pageRoute": "",
+                        "portal": "",
+                        "sourceApp": "",
+                        "externalReference": "",
+                        "campaign": [],
+                        "submittedAt": "<atom>",
+                        "nonce": "nonce-3"
+                    }
+                }
+            ],
+            "pages": []
+        }
+    },
+    "form without fields skipped": {
+        "calls": [
+            [
+                "read",
+                "portaliq",
+                "portalPage",
+                "",
+                "",
+                "",
+                200,
+                "",
+                "",
+                null,
+                "",
+                null,
+                {
+                    "status": "active"
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "form",
+                "",
+                "",
+                "",
+                200,
+                "",
+                "",
+                null,
+                "",
+                null,
+                {
+                    "status": "active"
+                }
+            ]
+        ],
+        "contribution": null
+    },
+    "form without destination": {
+        "calls": [
+            [
+                "read",
+                "portaliq",
+                "portalPage",
+                "",
+                "",
+                "",
+                200,
+                "",
+                "",
+                null,
+                "",
+                null,
+                {
+                    "status": "active"
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "form",
+                "",
+                "",
+                "",
+                200,
+                "",
+                "",
+                null,
+                "",
+                null,
+                {
+                    "status": "active"
+                }
+            ],
+            [
+                "log.warning",
+                "Portaliq: a landing-page form names no destination and cannot be submitted",
+                {
+                    "form": "f-2"
+                }
+            ],
+            [
+                "log.warning",
+                "Portaliq: a landing-page form names no destination and cannot be submitted",
+                {
+                    "form": "f-2"
+                }
+            ],
+            [
+                "log.warning",
+                "Portaliq: a landing-page form names no destination and cannot be submitted",
+                {
+                    "form": "f-2"
+                }
+            ],
+            [
+                "random",
+                32,
+                "abcdefghijklmnopqrstuvwxyz0123456789"
+            ]
+        ],
+        "contribution": {
+            "label": "",
+            "collections": [],
+            "actions": [
+                {
+                    "id": "submit-f-1",
+                    "type": "create",
+                    "anonymous": true,
+                    "register": "portaliq",
+                    "schema": "landingPageSubmission",
+                    "label": "Aanmelden",
+                    "fields": [
+                        "name",
+                        "email",
+                        "utmFirstTouch",
+                        "utmLastTouch",
+                        "referrer"
+                    ],
+                    "destination": {
+                        "register": "stackiq",
+                        "schema": "organization",
+                        "fixed": {
+                            "status": "pending"
+                        }
+                    },
+                    "intakeScope": "zuiddrecht/aanmelden",
+                    "server": {
+                        "formId": "f-1",
+                        "pageId": "pg-1",
+                        "pageRoute": "aanmelden",
+                        "portal": "zuiddrecht",
+                        "sourceApp": "stackiq",
+                        "externalReference": "org-registration",
+                        "campaign": {
+                            "utm": "spring"
+                        },
+                        "submittedAt": "<atom>",
+                        "nonce": "nonce-1"
+                    }
+                }
+            ],
+            "pages": []
+        }
+    },
+    "form destination not an array": {
+        "calls": [
+            [
+                "read",
+                "portaliq",
+                "portalPage",
+                "",
+                "",
+                "",
+                200,
+                "",
+                "",
+                null,
+                "",
+                null,
+                {
+                    "status": "active"
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "form",
+                "",
+                "",
+                "",
+                200,
+                "",
+                "",
+                null,
+                "",
+                null,
+                {
+                    "status": "active"
+                }
+            ],
+            [
+                "log.warning",
+                "Portaliq: a landing-page form names no destination and cannot be submitted",
+                {
+                    "form": "f-2"
+                }
+            ]
+        ],
+        "contribution": null
+    }
+}

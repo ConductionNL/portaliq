@@ -38,26 +38,21 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\AppInfo;
 
-use OCA\OpenRegister\Event\ObjectCreatedEvent;
-use OCA\OpenRegister\Event\ObjectDeletedEvent;
-use OCA\OpenRegister\Event\ObjectUpdatedEvent;
-use OCA\Portaliq\Event\LandingPageRequestedEvent;
-use OCA\Portaliq\Event\PortalAccountClaimRequestedEvent;
-use OCA\Portaliq\Event\PortalAccountProvisionRequestedEvent;
-use OCA\Portaliq\Listener\CmsCacheInvalidationListener;
-use OCA\Portaliq\Listener\LandingPageRequestedEventListener;
-use OCA\Portaliq\Listener\LandingPageSubmissionDispatchListener;
-use OCA\Portaliq\Listener\PortalAccountClaimListener;
-use OCA\Portaliq\Listener\PortalAccountProvisionListener;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Middleware\ApiContractMiddleware;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
 use OCA\Portaliq\Middleware\PublicApiCorsMiddleware;
 use OCA\Portaliq\Notification\Notifier;
-use OCA\Portaliq\Service\Traffic\Geo\MmdbGeoResolver;
-use OCA\Portaliq\Service\Traffic\GeoResolverInterface;
+use OCA\Portaliq\Service\HostRootRedirect;
+use OCA\Portaliq\Service\ServiceRegistrar;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
+use OCP\IRequest;
+use OCA\Portaliq\Listener\ListenerRegistrar;
+use OCA\Portaliq\Contribution\ContributionContractRegistrar;
+use OCA\Portaliq\Listener\FormDependentsRegistrar;
 
 /**
  * Main application class for the Portaliq Nextcloud app.
@@ -72,7 +67,7 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
  * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-a-contributing-app-requests-a-landing-page-via-a-typed-event
  */
 class Application extends App implements IBootstrap {
-	public const APP_ID = 'portaliq';
+	public const APP_ID = AppIdentity::APP_ID;
 
 	/**
 	 * Constructor for the Application class.
@@ -95,6 +90,10 @@ class Application extends App implements IBootstrap {
 	 * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-a-contributing-app-requests-a-landing-page-via-a-typed-event
 	 */
 	public function register(IRegistrationContext $context): void {
+		// The API contract (version header, deprecation of unversioned paths,
+		// problem details). Registered first: Nextcloud runs afterController in
+		// reverse order, so it sees the final response of every other middleware.
+		$context->registerMiddleware(class: ApiContractMiddleware::class);
 		// The app's own composer dependencies (portal-traffic-visitors-and-geo
 		// added the first runtime one: maxmind-db/reader). Nextcloud loads
 		// an app's classes under OCA\ by convention and nothing else; the
@@ -132,52 +131,49 @@ class Application extends App implements IBootstrap {
 		// PortalContributionRegistry — so no per-provider registration is needed
 		// here; the DI container constructs each app's provider by reflection.
 
-		// Drop cached public content when a CMS object is written (ADR-086 §9).
-		// The read cache holds NEGATIVE results too, so without this a route
-		// keeps 404ing for the rest of the TTL after its page is created — the
-		// editor sees a broken site and is right.
-		foreach ([ObjectCreatedEvent::class, ObjectUpdatedEvent::class, ObjectDeletedEvent::class] as $event) {
-			$context->registerEventListener($event, CmsCacheInvalidationListener::class);
-		}
+		(new ListenerRegistrar())->register(context: $context);
 
-		// Landing-page-provisioning (ADR-041, contribution-landing-page-action):
-		// a same-instance cross-app command letting a contributing app ask
-		// Portaliq to provision a draft landing page + form, and the fail-safe
-		// relay of a visitor's submission back to that app.
-		$context->registerEventListener(LandingPageRequestedEvent::class, LandingPageRequestedEventListener::class);
-		$context->registerEventListener(ObjectCreatedEvent::class, LandingPageSubmissionDispatchListener::class);
-
-		// The identity space (portal-identity-space, ADR-041): an app asks for
-		// a portal account before its owner has ever logged in, and links its
-		// own record to that account. Both answer in the event's result slot,
-		// because another app never calls into portaliq's controllers.
-		$context->registerEventListener(PortalAccountProvisionRequestedEvent::class, PortalAccountProvisionListener::class);
-		$context->registerEventListener(PortalAccountClaimRequestedEvent::class, PortalAccountClaimListener::class);
-
-		// Traffic analytics (portal-traffic-visitors-and-geo): where a
-		// visitor's address turns into a region. The offline MMDB lookup is
-		// bound here and the ingest path did not change from phase 0, which
-		// bound the resolver that answered nothing. NullGeoResolver stays
-		// for the tests and for an instance that wants no geography at all
-		// (the settings provider `none` makes this resolver answer null too).
-		$context->registerServiceAlias(GeoResolverInterface::class, MmdbGeoResolver::class);
+		(new ServiceRegistrar())->register(context: $context);
 
 		// Traffic reports and alerts (portal-traffic-reporting) reach a
 		// user as an in-app notification beside the mail; this renders it.
 		$context->registerNotifierService(Notifier::class);
+
+		// The store plane (ADR-080, ADR-114 Decision 4). The manifest's
+		// `type: "store"` page calls /api/store/items; appinfo/routes.php declares
+		// the engine's two store routes, and they resolve to
+		// Controller\StoreController — a class this app does NOT ship.
+		// StorePlaneRegistrar binds that name to OpenRegister's
+		// GenericStoreController: the one AppHost binding this app takes, since
+		// it wires everything else by hand (WOO-559). Without it the SPA
+		// catch-all answered the store page's JSON call with HTML 200.
+		(new StorePlaneRegistrar())->register($context);
+
+		// OpenRegister asks which published forms write into a schema that
+		// is about to change (decision 179). Portaliq answers for its form
+		// bindings.
+		(new FormDependentsRegistrar())->register($context);
+		(new ContributionContractRegistrar())->register(context: $context);
+
 	}//end register()
 
 	/**
 	 * Boot the application.
 	 *
+	 * Core boots every app before it matches the route, and answers the bare
+	 * address of the instance (`/`) itself when no route matches. So the bare
+	 * address of a portal's verified domain is sent to the site here, and
+	 * every other request is left to core (portal-host-root-redirect).
+	 *
 	 * @param IBootContext $context The boot context
 	 *
 	 * @return void
 	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-	 *
 	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
+	 * @spec openspec/changes/portal-host-root-redirect/specs/portal-settings/spec.md#requirement-the-bare-address-of-a-portal-host-must-lead-to-its-site-req-hrr-001
 	 */
 	public function boot(IBootContext $context): void {
+		$container = $context->getAppContainer();
+		$container->get(HostRootRedirect::class)->handle(request: $container->get(IRequest::class));
 	}//end boot()
 }//end class

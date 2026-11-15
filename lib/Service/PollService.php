@@ -1,0 +1,511 @@
+<?php
+
+/**
+ * Portaliq Poll Service
+ *
+ * A staff member asks a question, addressed to one audience within one
+ * organisation. Every portal subject of that audience answers once, and may
+ * change their answer while the poll is open. Portaliq owns the whole
+ * thing: no per-group targeting yet (parent-polls proposal.md Motivation —
+ * that needs a `via`-style join to group membership this app does not have
+ * for its own schemas today).
+ *
+ * @category Service
+ * @package  OCA\Portaliq\Service
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/specs/parent-polls/spec.md
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Portaliq\Service;
+
+use DateTimeImmutable;
+use Exception;
+use OCA\Portaliq\Kernel\Contracts\PollServiceInterface;
+
+/**
+ * Creates polls, lists a subject's own, and records a subject's answer.
+ *
+ * @spec openspec/specs/parent-polls/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- The total is the sum of small private steps; each method stays under the method thresholds.
+ */
+class PollService implements PollServiceInterface {
+	/**
+	 * The register both schemas live in.
+	 */
+	private const REGISTER = 'portaliq';
+
+	/**
+	 * The poll schema.
+	 */
+	private const POLL_SCHEMA = 'portalPoll';
+
+	/**
+	 * The response schema.
+	 */
+	private const RESPONSE_SCHEMA = 'portalPollResponse';
+
+	/**
+	 * Constructor.
+	 *
+	 * @param ScopedCollectionReaderInterface $reader Reads polls and responses.
+	 * @param PortalObjectWriter $writer Writes polls and responses.
+	 */
+	public function __construct(
+		private readonly ScopedCollectionReaderInterface $reader,
+		private readonly PortalObjectWriter $writer,
+	) {
+	}//end __construct()
+
+	/**
+	 * Create a poll as the calling staff member.
+	 *
+	 * @param string $question What is being asked.
+	 * @param array<int, array<string, string>> $options Each `{id, label}`.
+	 * @param string $audience Which portal audience this poll addresses.
+	 * @param string $organisation The tenant this poll is addressed within.
+	 * @param string $closesAt ISO 8601, or '' for no close date.
+	 * @param string $createdBy The calling staff member's Nextcloud uid.
+	 *
+	 * @return array{poll: array<string, mixed>}|array{error: string}
+	 *
+	 * @spec openspec/specs/parent-polls/spec.md#requirement-a-poll-is-created-by-staff-addressed-to-one-audience-and-organisation
+	 */
+	public function create(
+		string $question,
+		array $options,
+		string $audience,
+		string $organisation,
+		string $closesAt = '',
+		string $createdBy = '',
+	): array {
+		if ($this->isIncompletePoll(question: $question, audience: $audience, organisation: $organisation, createdBy: $createdBy) === true) {
+			return ['error' => 'refused'];
+		}
+
+		$validOptions = $this->validOptions(options: $options);
+		if (count($validOptions) < 2) {
+			return ['error' => 'needs_two_options'];
+		}
+
+		return $this->stored(
+			organisation: $organisation,
+			data: [
+				'question' => $question,
+				'options' => $validOptions,
+				'audience' => $audience,
+				'organisation' => $organisation,
+				'closesAt' => $closesAt,
+				'createdBy' => $createdBy,
+				'createdAt' => (new DateTimeImmutable())->format(DATE_ATOM),
+			]
+		);
+	}//end create()
+
+	/**
+	 * Whether a poll misses its question, audience, organisation or creator.
+	 *
+	 * @param string $question     The question.
+	 * @param string $audience     The audience.
+	 * @param string $organisation The organisation.
+	 * @param string $createdBy    The creator.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/parent-polls/spec.md#requirement-a-poll-is-created-by-staff-addressed-to-one-audience-and-organisation
+	 */
+	private function isIncompletePoll(string $question, string $audience, string $organisation, string $createdBy): bool {
+		return $question === '' || $audience === '' || $organisation === '' || $createdBy === '';
+	}//end isIncompletePoll()
+
+	/**
+	 * Write a new poll within its organisation.
+	 *
+	 * @param string               $organisation The tenant the poll is addressed within.
+	 * @param array<string, mixed> $data         The poll.
+	 *
+	 * @return array{poll: array<string, mixed>}|array{error: string}
+	 */
+	private function stored(string $organisation, array $data): array {
+		$created = $this->writer->createObject(
+			register: self::REGISTER,
+			schema: self::POLL_SCHEMA,
+			scopeField: '',
+			subjectRef: '',
+			organisation: $organisation,
+			data: $data
+		);
+		if ($created === null) {
+			return ['error' => 'not_created'];
+		}
+
+		return ['poll' => $created];
+	}//end stored()
+
+	/**
+	 * Every poll for the subject's own audience and organisation, each
+	 * carrying only the subject's own response.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/specs/parent-polls/spec.md#requirement-a-portal-subject-sees-only-polls-for-their-own-audience-and-organisation
+	 */
+	public function forSubject(array $subject): array {
+		if ($this->hasAudience(subject: $subject) === false) {
+			return [];
+		}
+
+		$polls     = $this->forSubjectRaw(subject: $subject);
+		$responses = $this->responsesBySubject(subjectRef: (string)($subject['subjectRef'] ?? ''));
+
+		$out = [];
+		foreach ($polls as $poll) {
+			if (is_array($poll) === false) {
+				continue;
+			}
+
+			$pollId = (string)($poll['uuid'] ?? $poll['id'] ?? '');
+			$poll['myResponse'] = ($responses[$pollId] ?? null);
+			$out[] = $poll;
+		}
+
+		return $out;
+	}//end forSubject()
+
+	/**
+	 * Record the subject's answer, creating their first response or
+	 * updating their existing one — never a second row for the same
+	 * (poll, subject) pair.
+	 *
+	 * @param string $pollId The poll.
+	 * @param string $optionId The chosen option.
+	 * @param array<string, mixed> $subject The resolved subject.
+	 *
+	 * @return array{responded: true}|array{error: string}
+	 *
+	 * @spec openspec/specs/parent-polls/spec.md#requirement-a-subject-may-answer-once-and-change-their-answer-while-the-poll-is-open
+	 */
+	public function respond(string $pollId, string $optionId, array $subject): array {
+		$subjectRef = (string)($subject['subjectRef'] ?? '');
+		if ($this->isIncompleteResponse(pollId: $pollId, optionId: $optionId, subjectRef: $subjectRef) === true) {
+			return ['error' => 'refused'];
+		}
+
+		$refusal = $this->pollRefusal(poll: $this->pollForSubject(pollId: $pollId, subject: $subject), optionId: $optionId);
+		if ($refusal !== null) {
+			return ['error' => $refusal];
+		}
+
+		$existing = $this->existingResponse(pollId: $pollId, subjectRef: $subjectRef);
+		$data = $this->responseData(pollId: $pollId, subjectRef: $subjectRef, optionId: $optionId);
+
+		$written = $this->createOrUpdateResponse(existing: $existing, subjectRef: $subjectRef, data: $data);
+		if ($written === null) {
+			return ['error' => 'not_recorded'];
+		}
+
+		return ['responded' => true];
+	}//end respond()
+
+	/**
+	 * Whether a response misses its poll, option or subject.
+	 *
+	 * @param string $pollId     The poll.
+	 * @param string $optionId   The option.
+	 * @param string $subjectRef The subject.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/parent-polls/spec.md#requirement-a-subject-may-answer-once-and-change-their-answer-while-the-poll-is-open
+	 */
+	private function isIncompleteResponse(string $pollId, string $optionId, string $subjectRef): bool {
+		return $pollId === '' || $optionId === '' || $subjectRef === '';
+	}//end isIncompleteResponse()
+
+	/**
+	 * Why the poll cannot take this answer: not found, closed or an unknown option; null when it can.
+	 *
+	 * @param array<string, mixed>|null $poll     The subject's poll, or null.
+	 * @param string                    $optionId The option.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/specs/parent-polls/spec.md#requirement-a-subject-may-answer-once-and-change-their-answer-while-the-poll-is-open
+	 */
+	private function pollRefusal(array|null $poll, string $optionId): string|null {
+		if ($poll === null) {
+			return 'not_found';
+		}
+
+		if ($this->isClosed(poll: $poll) === true) {
+			return 'closed';
+		}
+
+		if ($this->declaresOption(poll: $poll, optionId: $optionId) === false) {
+			return 'unknown_option';
+		}
+
+		return null;
+	}//end pollRefusal()
+
+	/**
+	 * The stored response.
+	 *
+	 * @param string $pollId     The poll.
+	 * @param string $subjectRef The subject.
+	 * @param string $optionId   The option.
+	 *
+	 * @return array<string, string>
+	 *
+	 * @spec openspec/specs/parent-polls/spec.md#requirement-a-subject-may-answer-once-and-change-their-answer-while-the-poll-is-open
+	 */
+	private function responseData(string $pollId, string $subjectRef, string $optionId): array {
+		return [
+			'pollId' => $pollId,
+			'subjectRef' => $subjectRef,
+			'optionId' => $optionId,
+			'respondedAt' => (new DateTimeImmutable())->format(DATE_ATOM),
+		];
+	}//end responseData()
+
+	/**
+	 * Write the response: create the subject's first one, or update their
+	 * existing row in place — never a second row for the same pair.
+	 *
+	 * @param array<string, mixed>|null $existing The subject's prior response, if any.
+	 * @param string $subjectRef The subject's own reference.
+	 * @param array<string, mixed> $data The response fields.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function createOrUpdateResponse(?array $existing, string $subjectRef, array $data): ?array {
+		if ($existing === null) {
+			return $this->writer->createObject(
+				register: self::REGISTER,
+				schema: self::RESPONSE_SCHEMA,
+				scopeField: '',
+				subjectRef: '',
+				organisation: '',
+				data: $data
+			);
+		}
+
+		return $this->writer->updateObject(
+			register: self::REGISTER,
+			schema: self::RESPONSE_SCHEMA,
+			scopeField: 'subjectRef',
+			subjectRef: $subjectRef,
+			organisation: '',
+			id: $this->rowId(row: $existing),
+			data: $data
+		);
+	}//end createOrUpdateResponse()
+
+	/**
+	 * Only the option entries that are genuinely `{id, label}` strings.
+	 *
+	 * @param array<int, mixed> $options The submitted options.
+	 *
+	 * @return array<int, array{id: string, label: string}>
+	 */
+	private function validOptions(array $options): array {
+		$out = [];
+		foreach ($options as $option) {
+			if (is_array($option) === false) {
+				continue;
+			}
+
+			$id = (string)($option['id'] ?? '');
+			$label = (string)($option['label'] ?? '');
+			if ($id !== '' && $label !== '') {
+				$out[] = ['id' => $id, 'label' => $label];
+			}
+		}
+
+		return $out;
+	}//end validOptions()
+
+	/**
+	 * The poll, re-read scoped to the subject's own audience and
+	 * organisation — the SAME check `forSubject()` applies to a list,
+	 * applied here to one id, so `respond()` can never be pointed at a poll
+	 * outside the subject's own audience/organisation by id.
+	 *
+	 * @param string $pollId The poll id.
+	 * @param array<string, mixed> $subject The resolved subject.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function pollForSubject(string $pollId, array $subject): ?array {
+		foreach ($this->forSubjectRaw(subject: $subject) as $poll) {
+			if ((string)($poll['uuid'] ?? $poll['id'] ?? '') === $pollId) {
+				return $poll;
+			}
+		}
+
+		return null;
+	}//end pollForSubject()
+
+	/**
+	 * The subject's own polls, without the `myResponse` annotation —
+	 * `forSubject()`'s own read, factored out so `pollForSubject()` does not
+	 * pay for a response lookup it does not need.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function forSubjectRaw(array $subject): array {
+		if ($this->hasAudience(subject: $subject) === false) {
+			return [];
+		}
+
+		return $this->reader->readCollection(
+			register: self::REGISTER,
+			schema: self::POLL_SCHEMA,
+			scopeField: '',
+			subjectRef: '',
+			organisation: (string)$subject['organisation'],
+			limit: 200,
+			filter: ['audience' => (string)$subject['audience']]
+		);
+	}//end forSubjectRaw()
+
+	/**
+	 * Whether the subject names both the audience and the organisation its
+	 * polls are read for.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 *
+	 * @return bool
+	 */
+	private function hasAudience(array $subject): bool {
+		return (string)($subject['audience'] ?? '') !== '' && (string)($subject['organisation'] ?? '') !== '';
+	}//end hasAudience()
+
+	/**
+	 * Whether a poll's `closesAt` is in the past.
+	 *
+	 * @param array<string, mixed> $poll The poll.
+	 *
+	 * @return bool
+	 */
+	private function isClosed(array $poll): bool {
+		$closesAt = (string)($poll['closesAt'] ?? '');
+		if ($closesAt === '') {
+			return false;
+		}
+
+		try {
+			$parsed = new DateTimeImmutable($closesAt);
+		} catch (Exception $e) {
+			// An unparsable closesAt is treated as no close date, matching
+			// the empty-string case above — never a fatal error on bad data.
+			return false;
+		}
+
+		return $parsed < new DateTimeImmutable();
+	}//end isClosed()
+
+	/**
+	 * Whether a poll declares the given option id.
+	 *
+	 * @param array<string, mixed> $poll The poll.
+	 * @param string $optionId The option to check.
+	 *
+	 * @return bool
+	 */
+	private function declaresOption(array $poll, string $optionId): bool {
+		foreach ((array)($poll['options'] ?? []) as $option) {
+			if (is_array($option) === true && (string)($option['id'] ?? '') === $optionId) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end declaresOption()
+
+	/**
+	 * The subject's own existing response to one poll, or null.
+	 *
+	 * @param string $pollId The poll.
+	 * @param string $subjectRef The subject's own reference.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function existingResponse(string $pollId, string $subjectRef): ?array {
+		$rows = $this->reader->readCollection(
+			register: self::REGISTER,
+			schema: self::RESPONSE_SCHEMA,
+			scopeField: 'subjectRef',
+			subjectRef: $subjectRef,
+			organisation: '',
+			limit: 1,
+			filter: ['pollId' => $pollId]
+		);
+
+		return ($rows[0] ?? null);
+	}//end existingResponse()
+
+	/**
+	 * Every one of the subject's own responses, keyed by pollId, for the
+	 * `myResponse` annotation on a list of polls.
+	 *
+	 * @param string $subjectRef The subject's own reference.
+	 *
+	 * @return array<string, string>
+	 */
+	private function responsesBySubject(string $subjectRef): array {
+		if ($subjectRef === '') {
+			return [];
+		}
+
+		$rows = $this->reader->readCollection(
+			register: self::REGISTER,
+			schema: self::RESPONSE_SCHEMA,
+			scopeField: 'subjectRef',
+			subjectRef: $subjectRef,
+			organisation: '',
+			limit: 200
+		);
+
+		$byPoll = [];
+		foreach ($rows as $row) {
+			if (is_array($row) === true) {
+				$byPoll[(string)($row['pollId'] ?? '')] = (string)($row['optionId'] ?? '');
+			}
+		}
+
+		return $byPoll;
+	}//end responsesBySubject()
+
+	/**
+	 * The row's own id, however it is carried.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return string
+	 */
+	private function rowId(array $row): string {
+		$id = (string)($row['uuid'] ?? $row['id'] ?? '');
+		if ($id !== '') {
+			return $id;
+		}
+
+		$self = (array)($row['@self'] ?? []);
+		return (string)($self['uuid'] ?? $self['id'] ?? '');
+	}//end rowId()
+}//end class

@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/contribution-manifest-v3/tasks.md#T1
+ * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
  * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-and-elevated-trust-must-not-combine-on-one-entry
  */
 
@@ -33,7 +33,7 @@ namespace OCA\Portaliq\Contribution;
 /**
  * Shared value-level primitives for the v3 manifest normalisers.
  *
- * @spec openspec/changes/contribution-manifest-v3/tasks.md#T1
+ * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
  */
 class ManifestValueNormaliser {
 	/**
@@ -82,7 +82,7 @@ class ManifestValueNormaliser {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/contribution-manifest-v3/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
 	 */
 	public function oneOf(mixed $value, array $allowed, string $default): string {
 		if (is_string($value) === true && in_array($value, $allowed, true) === true) {
@@ -99,7 +99,7 @@ class ManifestValueNormaliser {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/contribution-manifest-v3/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
 	 */
 	public function isStringKeyedScalarMap(mixed $value): bool {
 		if (is_array($value) === false || $value === []) {

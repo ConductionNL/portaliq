@@ -1,0 +1,272 @@
+<?php
+
+/**
+ * Event Signup Service
+ *
+ * Guardian sign-up for a volunteer/material role on an event
+ * (activiteitenplanner/ouderhulp — findings 9.8). Enforces the role's
+ * `capacity` SERVER-SIDE, re-counting current sign-ups immediately before
+ * accepting a new one — a disabled button is not a security boundary.
+ * Best-effort, not a database-level lock (see design.md Risk 2): a
+ * double-booked slot under true concurrent sign-ups is a staff-visible data
+ * quality issue, not a security failure.
+ *
+ * @category Service
+ * @package  OCA\Portaliq\Service
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-sign-up-role-enforces-its-capacity-server-side
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Portaliq\Service;
+
+use OCA\Portaliq\Kernel\Contracts\EventSignupServiceInterface;
+use Psr\Container\ContainerInterface;
+use Psr\Log\LoggerInterface;
+use Throwable;
+
+/**
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-sign-up-role-enforces-its-capacity-server-side
+ */
+class EventSignupService implements EventSignupServiceInterface {
+	use ObjectRowNormaliser;
+	use ObjectServiceLookup;
+	use PagedObjectReads;
+
+	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
+
+	private const REGISTER = 'portaliq';
+
+	private const SCHEMA = 'eventSignup';
+
+	/**
+	 * Constructor.
+	 *
+	 * @param ContainerInterface $container For resolving OpenRegister services.
+	 * @param EventFeedReader $feedReader Re-verifies the event is in the guardian's own audience.
+	 * @param LoggerInterface $logger The logger.
+	 */
+	public function __construct(
+		private readonly ContainerInterface $container,
+		private readonly EventFeedReader $feedReader,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
+
+	/**
+	 * Attempt a sign-up. Returns null on success; a reason string on refusal
+	 * — the event/role not being reachable by this guardian, or a child that
+	 * is not the guardian's own, is {@see self::REASON_ROLE_NOT_FOUND} (the controller maps that to 404,
+	 * no existence oracle), a full role is {@see self::REASON_ROLE_FULL}
+	 * (422). Nothing is written on ANY refusal path.
+	 *
+	 * @param string $subjectRef The guardian's own subjectRef.
+	 * @param string $eventId The event id.
+	 * @param string $roleId The signup role id.
+	 * @param string $childRef The child the sign-up is for (may be empty for an adult-only role).
+	 * @param string $note An optional note (e.g. "brings cups").
+	 *
+	 * @return string|null The refusal reason, or null on success.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-sign-up-role-enforces-its-capacity-server-side
+	 */
+	public function attemptSignup(string $subjectRef, string $eventId, string $roleId, string $childRef = '', string $note = ''): ?string {
+		$role = $this->reachableRole(subjectRef: $subjectRef, eventId: $eventId, roleId: $roleId, childRef: $childRef);
+		if ($role === null) {
+			return self::REASON_ROLE_NOT_FOUND;
+		}
+
+		$objectService = $this->objectService();
+		if ($objectService === null) {
+			return self::REASON_ROLE_NOT_FOUND;
+		}
+
+		$currentCount = $this->countSignups(objectService: $objectService, eventId: $eventId, roleId: $roleId);
+		$capacity = (int)($role['capacity'] ?? 0);
+		if ($currentCount >= $capacity) {
+			return self::REASON_ROLE_FULL;
+		}
+
+		$signup = [
+			'eventRef' => $eventId,
+			'roleId' => $roleId,
+			'guardianRef' => $subjectRef,
+			'childRef' => $childRef,
+			'note' => $note,
+			'signedUpAt' => gmdate('c'),
+		];
+
+		return $this->saveSignup(objectService: $objectService, signup: $signup);
+	}//end attemptSignup()
+
+	/**
+	 * Save one sign-up; a failed save is logged and refused as not found.
+	 *
+	 * @param object               $objectService OpenRegister's ObjectService.
+	 * @param array<string, mixed> $signup        The sign-up row.
+	 *
+	 * @return string|null The refusal reason, or null on success.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-sign-up-role-enforces-its-capacity-server-side
+	 */
+	private function saveSignup(object $objectService, array $signup): string|null {
+		try {
+			$objectService->saveObject(
+				object: $signup,
+				register: self::REGISTER,
+				schema: self::SCHEMA,
+				_rbac: false,
+				_multitenancy: false
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: event signup save failed', ['reason' => $e->getMessage()]);
+			return self::REASON_ROLE_NOT_FOUND;
+		}
+
+		return null;
+	}//end saveSignup()
+
+	/**
+	 * The role this guardian may sign up for, or null: an event in their own
+	 * audience that declares the role, and — for a sign-up that names a child —
+	 * their own child. An adult-only role carries no child.
+	 *
+	 * @param string $subjectRef The guardian's own subjectRef.
+	 * @param string $eventId The event id.
+	 * @param string $roleId The signup role id.
+	 * @param string $childRef The child, or '' for an adult-only role.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function reachableRole(string $subjectRef, string $eventId, string $roleId, string $childRef): ?array {
+		if ($subjectRef === '' || $eventId === '' || $roleId === '') {
+			return null;
+		}
+
+		$event = $this->feedReader->readOwnEvent(subjectRef: $subjectRef, id: $eventId);
+		if ($event === null) {
+			return null;
+		}
+
+		if ($childRef !== '' && $this->feedReader->isOwnChild(subjectRef: $subjectRef, childRef: $childRef) === false) {
+			return null;
+		}
+
+		return $this->findRole(event: $event, roleId: $roleId);
+	}//end reachableRole()
+
+	/**
+	 * Find a declared role on an event by id.
+	 *
+	 * @param array<string, mixed> $event The event row.
+	 * @param string $roleId The role id.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function findRole(array $event, string $roleId): ?array {
+		$roles = $event['signupRoles'] ?? [];
+		if (is_array($roles) === false) {
+			return null;
+		}
+
+		return $this->roleWithId(roles: $roles, roleId: $roleId);
+	}//end findRole()
+
+	/**
+	 * The first declared role with this id.
+	 *
+	 * @param array<int|string, mixed> $roles  The event's declared roles.
+	 * @param string                   $roleId The role id.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function roleWithId(array $roles, string $roleId): ?array {
+		foreach ($roles as $role) {
+			if (is_array($role) === true && (string)($role['id'] ?? '') === $roleId) {
+				return $role;
+			}
+		}
+
+		return null;
+	}//end roleWithId()
+
+	/**
+	 * Count existing sign-ups for one role on one event, immediately before
+	 * accepting a new one.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $eventId The event id.
+	 * @param string $roleId The role id.
+	 *
+	 * @return int
+	 */
+	private function countSignups(object $objectService, string $eventId, string $roleId): int {
+		// A count that cannot be read fails closed to "no room" rather than
+		// allowing an unbounded signup when the count itself cannot be trusted.
+		$rows = $this->signupRows(objectService: $objectService, eventId: $eventId, roleId: $roleId);
+		if (is_array($rows) === false) {
+			return PHP_INT_MAX;
+		}
+
+		return $this->matchingSignups(rows: $rows, eventId: $eventId, roleId: $roleId);
+	}//end countSignups()
+
+	/**
+	 * Every stored sign-up for one role on one event, or null when the read
+	 * fails.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $eventId       The event id.
+	 * @param string $roleId        The role id.
+	 *
+	 * @return mixed The rows, or null.
+	 */
+	private function signupRows(object $objectService, string $eventId, string $roleId): mixed {
+		try {
+			return $this->readEveryPage(
+				objectService: $objectService,
+				register: self::REGISTER,
+				schema: self::SCHEMA,
+				filters: ['eventRef' => $eventId, 'roleId' => $roleId]
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: event signup count failed', ['reason' => $e->getMessage()]);
+			return null;
+		}
+	}//end signupRows()
+
+	/**
+	 * How many rows are sign-ups for exactly this role on this event.
+	 *
+	 * @param array<int|string, mixed> $rows    The rows read.
+	 * @param string                   $eventId The event id.
+	 * @param string                   $roleId  The role id.
+	 *
+	 * @return int
+	 */
+	private function matchingSignups(array $rows, string $eventId, string $roleId): int {
+		$count = 0;
+		foreach ($rows as $row) {
+			$normalised = $this->normalise(row: $row);
+			if ($normalised === null) {
+				continue;
+			}
+
+			if ((string)($normalised['eventRef'] ?? '') === $eventId && (string)($normalised['roleId'] ?? '') === $roleId) {
+				$count++;
+			}
+		}
+
+		return $count;
+	}//end matchingSignups()
+}//end class

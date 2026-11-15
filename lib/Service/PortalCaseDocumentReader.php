@@ -1,0 +1,252 @@
+<?php
+
+/**
+ * Portaliq Portal Case Document Reader
+ *
+ * Reads the documents a case app published on one of a resident's cases. The
+ * app names a method on its own provider in the collection's
+ * `documents.provider` (dossiq: `caseDocuments`), and this calls it with the
+ * case id. The app decides what is published; portaliq keeps only well-formed
+ * entries and adds nothing (cases-documents-on-the-case, REQ-CDC-001).
+ *
+ * An entry is `{id, title, kind, date, file: {register, schema, id, fileId},
+ * mimeType?, size?}`, plus the site's extras `meta`, `isNew`, `status` and
+ * `statusTone` (DocumentEntryExtras). The `file` reference is for the server only: the caller
+ * strips it before anything reaches the browser.
+ *
+ * Calling it proves nothing about who may see the case. The caller does that
+ * first, through the same scoped read as the case itself.
+ *
+ * @category Service
+ * @package  OCA\Portaliq\Service
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-case-app-declares-which-documents-a-resident-may-see-req-cdc-001
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Portaliq\Service;
+
+use OCA\Portaliq\Kernel\Contracts\PortalProviderLocatorInterface;
+use Psr\Log\LoggerInterface;
+use Throwable;
+use OCA\Portaliq\Kernel\Contracts\TimelineProviderMethodInterface;
+
+/**
+ * Calls a case app's declared documents method.
+ *
+ * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-case-app-declares-which-documents-a-resident-may-see-req-cdc-001
+ */
+class PortalCaseDocumentReader {
+	/**
+	 * Constructor.
+	 *
+	 * @param PortalProviderLocatorInterface $locator Finds the app's provider.
+	 * @param LoggerInterface       $logger  Records a provider that failed or answered badly.
+	 * @param TimelineProviderMethodInterface $timelineProviderMethod The TimelineProviderMethod helper.
+	 */
+	public function __construct(
+		private readonly PortalProviderLocatorInterface $locator,
+		private readonly LoggerInterface $logger,
+		private readonly TimelineProviderMethodInterface $timelineProviderMethod,
+	) {
+	}//end __construct()
+
+	/**
+	 * The well-formed entries the app's provider returns for one case.
+	 *
+	 * @param string $appId  The contributing app.
+	 * @param string $method The declared `documents.provider`.
+	 * @param string $caseId The case id, already proven to be the resident's.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-case-app-declares-which-documents-a-resident-may-see-req-cdc-001
+	 */
+	public function entries(string $appId, string $method, string $caseId): array {
+		$answer = $this->answerOf(appId: $appId, method: $method, caseId: $caseId);
+		if ($answer === null) {
+			return [];
+		}
+
+		return $this->keptEntries(answer: $answer, appId: $appId, method: $method);
+	}//end entries()
+
+	/**
+	 * What the app's provider answers for the case, or null when it has no such method, fails or answers no list.
+	 *
+	 * @param string $appId  The contributing app.
+	 * @param string $method The declared `documents.provider`.
+	 * @param string $caseId The case id.
+	 *
+	 * @return array<mixed>|null
+	 */
+	private function answerOf(string $appId, string $method, string $caseId): array|null {
+		$provider = $this->locator->locate(appId: $appId);
+		if ($provider === null || $this->timelineProviderMethod->callableOn(provider: $provider, method: $method) === false) {
+			return null;
+		}
+
+		$answer = $this->called(provider: $provider, method: $method, caseId: $caseId, appId: $appId);
+		if (is_array($answer) === false) {
+			return null;
+		}
+
+		return $answer;
+	}//end answerOf()
+
+	/**
+	 * Call the provider's documents method for the case; null, logged, when it throws.
+	 *
+	 * @param object $provider The app's provider.
+	 * @param string $method   The declared `documents.provider`.
+	 * @param string $caseId   The case id.
+	 * @param string $appId    The contributing app, for the log.
+	 *
+	 * @return mixed
+	 */
+	private function called(object $provider, string $method, string $caseId, string $appId): mixed {
+		try {
+			$answer = $provider->{$method}($caseId);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: documents provider failed', ['app' => $appId, 'method' => $method, 'reason' => $e->getMessage()]);
+			return null;
+		}
+
+		return $answer;
+	}//end called()
+
+	/**
+	 * The well-formed entries of the answer; each one dropped is logged.
+	 *
+	 * @param array<mixed> $answer The provider's answer.
+	 * @param string       $appId  The contributing app.
+	 * @param string       $method The declared `documents.provider`.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function keptEntries(array $answer, string $appId, string $method): array {
+		$entries = [];
+		foreach ($answer as $entry) {
+			$kept = $this->wellFormed(entry: $entry);
+			if ($kept === null) {
+				$this->logger->info('Portaliq: documents provider returned an entry without id, title or file', ['app' => $appId, 'method' => $method]);
+				continue;
+			}
+
+			$entries[] = $kept;
+		}
+
+		return $entries;
+	}//end keptEntries()
+
+	/**
+	 * The entry in portaliq's shape, or null when it lacks an id, a title or a
+	 * complete file reference.
+	 *
+	 * @param mixed $entry One entry as the provider returned it.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function wellFormed(mixed $entry): ?array {
+		if (is_array($entry) === false || $this->text(value: ($entry['id'] ?? null)) === '' || $this->text(value: ($entry['title'] ?? null)) === '') {
+			return null;
+		}
+
+		$file = $this->file(value: ($entry['file'] ?? null));
+		if ($file === null) {
+			return null;
+		}
+
+		return [
+			'id' => $this->text(value: $entry['id']),
+			'title' => $this->text(value: $entry['title']),
+			'kind' => $this->kindOf(entry: $entry),
+			'date' => $this->text(value: ($entry['date'] ?? null)),
+			'file' => $file,
+		] + $this->fileFacts(entry: $entry) + (new DocumentEntryExtras())->extrasOf(entry: $entry);
+	}//end wellFormed()
+
+	/**
+	 * The entry's kind: anything but a decision is a document.
+	 *
+	 * @param array<string, mixed> $entry The entry as the provider returned it.
+	 *
+	 * @return string
+	 */
+	private function kindOf(array $entry): string {
+		if (($entry['kind'] ?? null) === 'decision') {
+			return 'decision';
+		}
+
+		return 'document';
+	}//end kindOf()
+
+	/**
+	 * The file's type and size, each only when the provider gives it as a
+	 * string and an integer.
+	 *
+	 * @param array<string, mixed> $entry The entry as the provider returned it.
+	 *
+	 * @return array{mimeType?: string, size?: int}
+	 */
+	private function fileFacts(array $entry): array {
+		$facts = [];
+		if (is_string(($entry['mimeType'] ?? null)) === true) {
+			$facts['mimeType'] = $entry['mimeType'];
+		}
+
+		if (is_int(($entry['size'] ?? null)) === true) {
+			$facts['size'] = $entry['size'];
+		}
+
+		return $facts;
+	}//end fileFacts()
+
+	/**
+	 * A complete file reference, or null.
+	 *
+	 * @param mixed $value The entry's `file`.
+	 *
+	 * @return array{register: string, schema: string, id: string, fileId: string}|null
+	 */
+	private function file(mixed $value): ?array {
+		if (is_array($value) === false) {
+			return null;
+		}
+
+		$file = [];
+		foreach (['register', 'schema', 'id', 'fileId'] as $key) {
+			$file[$key] = $this->text(value: ($value[$key] ?? null));
+			if ($file[$key] === '') {
+				return null;
+			}
+		}
+
+		return $file;
+	}//end file()
+
+	/**
+	 * A string or integer as text, or ''.
+	 *
+	 * @param mixed $value The value.
+	 *
+	 * @return string
+	 */
+	private function text(mixed $value): string {
+		if (is_string($value) === true || is_int($value) === true) {
+			return (string)$value;
+		}
+
+		return '';
+	}//end text()
+}//end class

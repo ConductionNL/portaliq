@@ -33,6 +33,34 @@ class PortalCaseAccessGuardTest extends TestCase {
 
 	}//end setUp()
 
+	/**
+	 * change-proposal-queue REQ-CPQ-002: proposing needs read on the record,
+	 * not the review action. The read runs as the user, RBAC on.
+	 *
+	 * @return void
+	 */
+	public function testReadingNeedsTheRecordButNoAction(): void {
+		$guard = $this->guard(allowed: false, rows: [['id' => 'zaak-1']]);
+
+		$this->assertTrue($guard->mayRead(register: 'dossiq', schema: 'zaak', id: 'zaak-1'));
+		$this->assertTrue($this->readFlags['_rbac']);
+
+	}//end testReadingNeedsTheRecordButNoAction()
+
+	/**
+	 * A record the user cannot see is not readable, and an empty tuple
+	 * reads nothing.
+	 *
+	 * @return void
+	 */
+	public function testARecordTheUserCannotSeeIsNotReadable(): void {
+		$guard = $this->guard(allowed: true, rows: []);
+
+		$this->assertFalse($guard->mayRead(register: 'dossiq', schema: 'zaak', id: 'zaak-1'));
+		$this->assertFalse($guard->mayRead(register: 'dossiq', schema: 'zaak', id: ''));
+
+	}//end testARecordTheUserCannotSeeIsNotReadable()
+
 	public function testAUserWithoutTheActionIsRefusedWithoutAnyRead(): void {
 		$guard = $this->guard(allowed: false, rows: [['id' => 'zaak-1']]);
 

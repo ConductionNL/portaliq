@@ -5,9 +5,14 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\NotificationDispatchService;
+use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\SubmissionReceiptService;
+use DateTimeInterface;
+use DateTimeZone;
 use OCP\AppFramework\Utility\ITimeFactory;
+use OCP\IDateTimeZone;
 use OCP\IL10N;
 use OCP\L10N\IFactory;
 use PHPUnit\Framework\TestCase;
@@ -53,6 +58,21 @@ class SubmissionReceiptServiceTest extends TestCase {
 		return $factory;
 	}//end l10nFactory()
 
+	/**
+	 * Portaliq's notice language over the stub translations, for an
+	 * organisation whose portal names the given locale first (or none).
+	 *
+	 * @param string|null $portalLocale The portal's first locale, or null for no portal.
+	 *
+	 * @return PortalNoticeLanguage
+	 */
+	private function language(?string $portalLocale = null): PortalNoticeLanguage {
+		$portals = $this->createMock(PortalResolver::class);
+		$portals->method('resolveByOrganisation')->willReturn($portalLocale === null ? null : ['locales' => [$portalLocale]]);
+
+		return new PortalNoticeLanguage($this->l10nFactory(), $portals);
+	}//end language()
+
 	private function timeFactory(int $time = 1700000000): ITimeFactory {
 		$timeFactory = $this->createMock(ITimeFactory::class);
 		$timeFactory->method('getTime')->willReturn($time);
@@ -70,7 +90,7 @@ class SubmissionReceiptServiceTest extends TestCase {
 			}
 		);
 
-		$service = new SubmissionReceiptService($writer, $this->l10nFactory(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
+		$service = new SubmissionReceiptService($writer, $this->language(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
 		$service->record('s1', 'org-1', 'portaliq', 'createExample', ['title' => 'Voorbeeld']);
 
 		$this->assertCount(2, $writes);
@@ -86,12 +106,12 @@ class SubmissionReceiptServiceTest extends TestCase {
 		$this->assertNotEmpty($message['data']['referenceId']);
 		$this->assertNotEmpty($message['data']['subject']);
 		$this->assertNotEmpty($message['data']['body']);
-		// Bilingual: both an NL and an EN rendering of the body are present
-		// (and of the subject line), each carrying the SAME reference id.
-		$this->assertStringContainsString('[nl] ', $message['data']['body']);
-		$this->assertStringContainsString('[en] ', $message['data']['body']);
-		$this->assertStringContainsString('[nl] ', $message['data']['subject']);
-		$this->assertStringContainsString('[en] ', $message['data']['subject']);
+		// One language, the portal's (Dutch when the portal names none): no
+		// second rendering joined with " / ".
+		$this->assertStringStartsWith('[nl] ', $message['data']['body']);
+		$this->assertStringStartsWith('[nl] ', $message['data']['subject']);
+		$this->assertStringNotContainsString('[en] ', $message['data']['subject'] . $message['data']['body']);
+		$this->assertStringNotContainsString(' / ', $message['data']['subject']);
 		$this->assertStringContainsString($message['data']['referenceId'], $message['data']['body']);
 
 		$submission = $writes[1];
@@ -113,6 +133,135 @@ class SubmissionReceiptServiceTest extends TestCase {
 	 * rule key, the contributing appId, and a subject carrying subjectRef +
 	 * organisation + the passed-through audience.
 	 */
+	/**
+	 * The receipt names the moment in words of the portal's language, in the
+	 * instance's time zone and to the minute; the stored moment stays ISO.
+	 *
+	 * @spec openspec/changes/receipt-date-reads-in-the-portals-language/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-names-the-moment-in-words-of-the-portals-language
+	 */
+	public function testTheReceiptNamesTheMomentInTheReadersWords(): void {
+		$widths = [];
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnCallback(static fn (string $text, $parameters = []) => vsprintf($text, $parameters));
+		$l10n->method('l')->willReturnCallback(
+			static function (string $type, $data, array $options = []) use (&$widths) {
+				$widths[] = $type . ':' . ($options['width'] ?? '');
+				return $data instanceof DateTimeInterface ? $data->format('j-n-Y H:i e') : false;
+			}
+		);
+		$factory = $this->createMock(IFactory::class);
+		$factory->method('get')->willReturn($l10n);
+		$portals = $this->createMock(PortalResolver::class);
+		$zone = $this->createMock(IDateTimeZone::class);
+		$zone->method('getTimeZone')->willReturn(new DateTimeZone('Europe/Amsterdam'));
+
+		$writes = [];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('createObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data) use (&$writes) {
+				$writes[] = $data;
+				return (['@self' => ['id' => $schema . '-id']] + $data);
+			}
+		);
+
+		$service = new SubmissionReceiptService($writer, new PortalNoticeLanguage($factory, $portals), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class), $zone);
+		$service->record('s1', 'org-1', 'pipelinq', 'askQuestion', ['title' => 'Afval']);
+
+		$receipt = $writes[0];
+		$this->assertStringContainsString('We received your submission on 14-11-2023 23:13 Europe/Amsterdam (reference', $receipt['body']);
+		$this->assertStringNotContainsString('2023-11-14T', $receipt['body']);
+		$this->assertSame(['datetime:long|short'], $widths);
+		$this->assertSame('2023-11-14T22:13:20+00:00', $receipt['receivedAt']);
+	}//end testTheReceiptNamesTheMomentInTheReadersWords()
+
+	/**
+	 * A moment the language cannot write, or one it fails on, is named as stored.
+	 *
+	 * @spec openspec/changes/receipt-date-reads-in-the-portals-language/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-names-the-moment-in-words-of-the-portals-language
+	 */
+	public function testAMomentTheLanguageCannotWriteIsNamedAsStored(): void {
+		foreach ([static fn () => false, static fn () => throw new RuntimeException('no calendar data')] as $answer) {
+			$l10n = $this->createMock(IL10N::class);
+			$l10n->method('t')->willReturnCallback(static fn (string $text, $parameters = []) => vsprintf($text, $parameters));
+			$l10n->method('l')->willReturnCallback($answer);
+			$factory = $this->createMock(IFactory::class);
+			$factory->method('get')->willReturn($l10n);
+
+			$writes = [];
+			$writer = $this->createMock(PortalObjectWriter::class);
+			$writer->method('createObject')->willReturnCallback(
+				function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data) use (&$writes) {
+					$writes[] = $data;
+					return (['@self' => ['id' => $schema . '-id']] + $data);
+				}
+			);
+
+			$service = new SubmissionReceiptService($writer, new PortalNoticeLanguage($factory, $this->createMock(PortalResolver::class)), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
+			$service->record('s1', 'org-1', 'pipelinq', 'askQuestion', ['title' => 'Afval']);
+
+			$this->assertStringContainsString('We received your submission on 2023-11-14T22:13:20+00:00 (reference', $writes[0]['body']);
+		}
+	}//end testAMomentTheLanguageCannotWriteIsNamedAsStored()
+
+	/**
+	 * The receipt is written once, in the language of the resident's portal.
+	 *
+	 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-a-notification-mail-and-a-task-notice-are-written-in-the-portals-language-only
+	 */
+	public function testTheReceiptIsInThePortalsLanguageOnly(): void {
+		$writes = [];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('createObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data) use (&$writes) {
+				$writes[] = $data;
+				return (['@self' => ['id' => $schema . '-id']] + $data);
+			}
+		);
+
+		$service = new SubmissionReceiptService($writer, $this->language(portalLocale: 'en'), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
+		$service->record('s1', 'org-1', 'portaliq', 'createExample', ['title' => 'Voorbeeld']);
+
+		$receipt = $writes[0];
+		$this->assertSame('[en] Confirmation of receipt, reference ' . $receipt['referenceId'], $receipt['subject']);
+		$this->assertStringStartsWith('[en] We received your submission', $receipt['body']);
+		$this->assertStringNotContainsString('[nl] ', $receipt['subject'] . $receipt['body']);
+	}//end testTheReceiptIsInThePortalsLanguageOnly()
+
+	/**
+	 * WOO-569: a task completion is acknowledged through the SAME receipt
+	 * path as a create action. Run the real service for `task.complete` and
+	 * pin what lands: a receipt message with a reference id and the copy, and
+	 * a proof log linked to that reference — the two records the controller
+	 * tests only see as mocked calls.
+	 */
+	public function testATaskCompletionYieldsAReceiptAndALinkedProofLog(): void {
+		$writes = [];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('createObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data) use (&$writes) {
+				$writes[] = compact('schema', 'subjectRef', 'data');
+				return (['@self' => ['id' => $schema . '-id']] + $data);
+			}
+		);
+		$copy = ['taskUuid' => 't-1', 'title' => 'Stuur uw bewijsstuk', 'outcome' => 'submitted', 'comment' => 'klaar', 'answers' => ['veld' => 'waarde'], 'files' => ['bewijs.pdf']];
+
+		$service = new SubmissionReceiptService($writer, $this->language(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
+		$service->record('s1', 'org-1', 'portaliq', 'task.complete', $copy, 'client');
+
+		$this->assertCount(2, $writes);
+		[$message, $submission] = $writes;
+		$this->assertSame('portalMessage', $message['schema']);
+		$this->assertSame('s1', $message['subjectRef']);
+		$this->assertSame($copy, $message['data']['dataCopy']);
+		$this->assertMatchesRegularExpression('/^WMEBV-/', (string)$message['data']['referenceId']);
+		$this->assertStringContainsString($message['data']['referenceId'], $message['data']['body']);
+		$this->assertSame('portalSubmission', $submission['schema']);
+		$this->assertSame('task.complete', $submission['data']['actionId']);
+		$this->assertSame($copy, $submission['data']['payloadCopy']);
+		$this->assertSame('delivered', $submission['data']['deliveryStatus']);
+		$this->assertSame($message['data']['referenceId'], $submission['data']['receiptMessageRef']);
+	}//end testATaskCompletionYieldsAReceiptAndALinkedProofLog()
+
 	public function testSuccessfulMessageWriteFiresTheMessageCreatedDispatchTrigger(): void {
 		$writer = $this->createMock(PortalObjectWriter::class);
 		$writer->method('createObject')->willReturnCallback(
@@ -127,7 +276,7 @@ class SubmissionReceiptServiceTest extends TestCase {
 			}
 		);
 
-		$service = new SubmissionReceiptService($writer, $this->l10nFactory(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $notificationDispatch);
+		$service = new SubmissionReceiptService($writer, $this->language(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $notificationDispatch);
 		$service->record('s1', 'org-1', 'portaliq', 'createExample', ['title' => 'Voorbeeld'], 'supplier');
 
 		$this->assertSame(NotificationDispatchService::RULE_MESSAGE_CREATED, $received['ruleKey']);
@@ -157,7 +306,7 @@ class SubmissionReceiptServiceTest extends TestCase {
 		$notificationDispatch = $this->createMock(NotificationDispatchService::class);
 		$notificationDispatch->expects($this->never())->method('dispatch');
 
-		$service = new SubmissionReceiptService($writer, $this->l10nFactory(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $notificationDispatch);
+		$service = new SubmissionReceiptService($writer, $this->language(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $notificationDispatch);
 		$service->record('s1', 'org-1', 'portaliq', 'createExample', ['title' => 'X']);
 
 	}//end testFailedMessageWriteNeverFiresTheDispatchTrigger()
@@ -176,7 +325,7 @@ class SubmissionReceiptServiceTest extends TestCase {
 			}
 		);
 
-		$service = new SubmissionReceiptService($writer, $this->l10nFactory(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
+		$service = new SubmissionReceiptService($writer, $this->language(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
 
 		// Must not throw.
 		$service->record('s1', 'org-1', 'portaliq', 'createExample', ['title' => 'X']);
@@ -207,7 +356,7 @@ class SubmissionReceiptServiceTest extends TestCase {
 			}
 		);
 
-		$service = new SubmissionReceiptService($writer, $this->l10nFactory(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
+		$service = new SubmissionReceiptService($writer, $this->language(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
 		$service->record('s1', 'org-1', 'portaliq', 'createExample', ['title' => 'X']);
 
 		$submissionWrites = array_values(array_filter($captured, static fn ($c) => $c['schema'] === 'portalSubmission'));
@@ -241,7 +390,7 @@ class SubmissionReceiptServiceTest extends TestCase {
 			}
 		);
 
-		$service = new SubmissionReceiptService($writer, $this->l10nFactory(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
+		$service = new SubmissionReceiptService($writer, $this->language(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
 
 		// Must not throw — the domain create already succeeded; a WMEBV
 		// side-effect exception must never surface to the caller.
@@ -256,11 +405,343 @@ class SubmissionReceiptServiceTest extends TestCase {
 		$writer = $this->createMock(PortalObjectWriter::class);
 		$writer->method('createObject')->willThrowException(new RuntimeException('OR is entirely down'));
 
-		$service = new SubmissionReceiptService($writer, $this->l10nFactory(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
+		$service = new SubmissionReceiptService($writer, $this->language(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
 
 		// Even when EVERY write throws, record() must never propagate.
 		$service->record('s1', 'org-1', 'portaliq', 'createExample', ['title' => 'X']);
 		$this->addToAssertionCount(1);
 
 	}//end testAFallbackWriteThatAlsoThrowsIsSwallowed()
+
+	/**
+	 * The proof-log writes a recording writer captured, by schema.
+	 *
+	 * @param array<int, array{schema: string, data: array<string, mixed>}> $writes The captured writes.
+	 *
+	 * @return array<int, array<string, mixed>> The data of each portalSubmission write.
+	 */
+	private function submissionData(array $writes): array {
+		return array_values(array_map(static fn (array $w): array => $w['data'], array_filter($writes, static fn (array $w): bool => $w['schema'] === 'portalSubmission')));
+	}//end submissionData()
+
+	/**
+	 * A writer that records every write and answers each one.
+	 *
+	 * @param array<int, array{schema: string, data: array<string, mixed>}> $writes Receives the writes.
+	 * @param bool $failFirstSubmission Whether the first portalSubmission write answers null.
+	 *
+	 * @return PortalObjectWriter
+	 */
+	private function recordingWriter(array &$writes, bool $failFirstSubmission = false): PortalObjectWriter {
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('createObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data) use (&$writes, $failFirstSubmission) {
+				$writes[] = ['schema' => $schema, 'data' => $data];
+				if ($failFirstSubmission === true && $schema === 'portalSubmission' && count($this->submissionData($writes)) === 1) {
+					return null;
+				}
+
+				return ['id' => $schema . '-id'];
+			}
+		);
+
+		return $writer;
+	}//end recordingWriter()
+
+	/**
+	 * The proof log names the action by the title the resident read; the
+	 * receipt message itself does not carry it.
+	 *
+	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
+	 */
+	public function testTheProofLogNamesTheActionByItsTitle(): void {
+		$writes = [];
+		$service = new SubmissionReceiptService($this->recordingWriter($writes), $this->language(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
+		$service->record('s1', 'org-1', 'dossiq', 'meldingOpenbareRuimte', ['title' => 'X'], actionTitle: 'Melding openbare ruimte');
+
+		$submissions = $this->submissionData($writes);
+		$this->assertCount(1, $submissions);
+		$this->assertSame('meldingOpenbareRuimte', $submissions[0]['actionId']);
+		$this->assertSame('Melding openbare ruimte', $submissions[0]['actionTitle']);
+		$this->assertArrayNotHasKey('actionTitle', $writes[0]['data']);
+	}//end testTheProofLogNamesTheActionByItsTitle()
+
+	/**
+	 * A blank title, a title that is no string, and no title at all write no
+	 * `actionTitle` key, so the list falls back to the action id.
+	 *
+	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
+	 */
+	public function testABlankTitleIsNotWritten(): void {
+		foreach (['   ', ['nl' => 'Melding'], null] as $title) {
+			$writes = [];
+			$service = new SubmissionReceiptService($this->recordingWriter($writes), $this->language(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
+			$service->record('s1', 'org-1', 'dossiq', 'meldingOpenbareRuimte', [], actionTitle: $title);
+
+			$this->assertArrayNotHasKey('actionTitle', $this->submissionData($writes)[0]);
+		}
+
+		$writes = [];
+		$service = new SubmissionReceiptService($this->recordingWriter($writes), $this->language(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
+		$service->record('s1', 'org-1', 'dossiq', 'meldingOpenbareRuimte', []);
+		$this->assertArrayNotHasKey('actionTitle', $this->submissionData($writes)[0]);
+	}//end testABlankTitleIsNotWritten()
+
+	/**
+	 * A title is trimmed and kept to 200 characters.
+	 *
+	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
+	 */
+	public function testATitleIsTrimmedAndKeptShort(): void {
+		$writes = [];
+		$service = new SubmissionReceiptService($this->recordingWriter($writes), $this->language(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
+		$service->record('s1', 'org-1', 'dossiq', 'lang', [], actionTitle: '  ' . str_repeat('é', 250) . '  ');
+
+		$this->assertSame(str_repeat('é', 200), $this->submissionData($writes)[0]['actionTitle']);
+	}//end testATitleIsTrimmedAndKeptShort()
+
+	/**
+	 * The minimal fallback record keeps the title, so the failed row is named
+	 * in the list too.
+	 *
+	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
+	 */
+	public function testTheFallbackRecordKeepsTheTitle(): void {
+		$writes = [];
+		$service = new SubmissionReceiptService($this->recordingWriter($writes, failFirstSubmission: true), $this->language(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
+		$service->record('s1', 'org-1', 'dossiq', 'grofAfval', ['title' => 'X'], actionTitle: 'Grof afval laten ophalen');
+
+		$submissions = $this->submissionData($writes);
+		$this->assertCount(2, $submissions);
+		$this->assertSame('failed', $submissions[1]['deliveryStatus']);
+		$this->assertSame('Grof afval laten ophalen', $submissions[1]['actionTitle']);
+	}//end testTheFallbackRecordKeepsTheTitle()
+
+	/**
+	 * A service with every collaborator stubbed.
+	 *
+	 * `taskCompletionCopy()` is a pure mapping -- it reads no service state --
+	 * so nothing here has to behave, it only has to exist.
+	 */
+	private function mappingService(): SubmissionReceiptService {
+		return new SubmissionReceiptService(
+			$this->createMock(PortalObjectWriter::class),
+			$this->language(),
+			$this->timeFactory(),
+			$this->createMock(LoggerInterface::class),
+			$this->createMock(NotificationDispatchService::class)
+		);
+	}//end mappingService()
+
+
+	/**
+	 * THE RECEIPT DESCRIBES WHAT THE AUTHORITY RECORDED, NOT WHAT WAS SENT.
+	 *
+	 * The security-relevant half of the completion copy. PHP drops an
+	 * oversized or partial upload with an empty `tmp_name`, the gateway then
+	 * forwards nothing for it, and the request still names it. The seam's
+	 * `evidence` list is what PortalTaskService::storeFiles() actually wrote
+	 * to the case, so it wins. A receipt naming a file the authority never
+	 * received is a false art. 2:10 statement.
+	 *
+	 * @return void
+	 */
+	public function testTheCopyNamesTheFilesTheSeamRecordedNotTheOnesTheRequestClaimed(): void {
+		$copy = $this->mappingService()->taskCompletionCopy(
+			'task-1',
+			['evidence' => [['name' => 'arrived.pdf']]],
+			[],
+			null,
+			'completed',
+			[['name' => 'claimed-but-dropped.pdf'], ['name' => 'also-dropped.pdf']]
+		);
+
+		$this->assertSame(['arrived.pdf'], $copy['files']);
+	}//end testTheCopyNamesTheFilesTheSeamRecordedNotTheOnesTheRequestClaimed()
+
+
+	/**
+	 * An empty `evidence` list means the authority recorded NOTHING.
+	 *
+	 * The single most dangerous case, and the one an `empty()` or `?:` test
+	 * would get wrong: the key is present and empty, so the fallback must NOT
+	 * fire. Every upload was dropped, and the receipt has to say so.
+	 *
+	 * @return void
+	 */
+	public function testAnEmptyEvidenceListIsAnAnswerAndNotAFallbackTrigger(): void {
+		$copy = $this->mappingService()->taskCompletionCopy(
+			'task-1',
+			['evidence' => []],
+			[],
+			null,
+			'completed',
+			[['name' => 'claimed-but-dropped.pdf']]
+		);
+
+		$this->assertSame([], $copy['files']);
+	}//end testAnEmptyEvidenceListIsAnAnswerAndNotAFallbackTrigger()
+
+
+	/**
+	 * A seam row predating `evidence` falls back to the relayed uploads.
+	 *
+	 * The compatibility half, and the anti-widening partner of the two above:
+	 * without it, "the seam wins" could be implemented as "the files are
+	 * always empty" and both assertions above would still pass.
+	 *
+	 * @return void
+	 */
+	public function testASeamRowWithoutEvidenceFallsBackToTheRelayedUploads(): void {
+		$copy = $this->mappingService()->taskCompletionCopy(
+			'task-1',
+			['responses' => []],
+			[],
+			null,
+			'completed',
+			[['name' => 'relayed.pdf']]
+		);
+
+		$this->assertSame(['relayed.pdf'], $copy['files']);
+	}//end testASeamRowWithoutEvidenceFallsBackToTheRelayedUploads()
+
+
+	/**
+	 * A nameless or non-array upload entry still yields a usable label.
+	 *
+	 * @return void
+	 */
+	public function testAnUnnamedUploadIsLabelledRatherThanDropped(): void {
+		$copy = $this->mappingService()->taskCompletionCopy(
+			'task-1',
+			['evidence' => [['size' => 12], 'not-an-array', ['name' => 'named.pdf']]],
+			[],
+			null,
+			'completed',
+			[]
+		);
+
+		$this->assertSame(['upload', 'upload', 'named.pdf'], $copy['files']);
+	}//end testAnUnnamedUploadIsLabelledRatherThanDropped()
+
+
+	/**
+	 * The stored answers and outcome win over the submitted ones.
+	 *
+	 * @return void
+	 */
+	public function testTheCopyPrefersTheAnswersAndOutcomeTheSeamStored(): void {
+		$copy = $this->mappingService()->taskCompletionCopy(
+			'task-1',
+			[
+				'responses'    => ['q1' => 'as-stored'],
+				'outcome'      => 'rejected',
+				'displayTitle' => 'Wat de bewoner zag',
+				'title'        => 'raw title',
+			],
+			['q1' => 'as-submitted'],
+			'een opmerking',
+			'completed',
+			[]
+		);
+
+		$this->assertSame(['q1' => 'as-stored'], $copy['answers']);
+		$this->assertSame('rejected', $copy['outcome']);
+		$this->assertSame('Wat de bewoner zag', $copy['title']);
+		$this->assertSame('een opmerking', $copy['comment']);
+		$this->assertSame('task-1', $copy['taskUuid']);
+	}//end testTheCopyPrefersTheAnswersAndOutcomeTheSeamStored()
+
+
+	/**
+	 * Every fallback fires when the seam row carries none of those keys.
+	 *
+	 * Covers the other side of all four branches at once: `responses` absent,
+	 * `outcome` present but EMPTY (not merely missing -- the code tests for
+	 * the empty string), `displayTitle` absent so the raw title is used, and
+	 * a null comment becoming ''.
+	 *
+	 * @return void
+	 */
+	public function testTheSubmittedValuesAreUsedWhenTheSeamRecordedNone(): void {
+		$copy = $this->mappingService()->taskCompletionCopy(
+			'task-1',
+			['outcome' => '', 'title' => 'raw title'],
+			['q1' => 'as-submitted'],
+			null,
+			'completed',
+			[]
+		);
+
+		$this->assertSame(['q1' => 'as-submitted'], $copy['answers']);
+		$this->assertSame('completed', $copy['outcome']);
+		$this->assertSame('raw title', $copy['title']);
+		$this->assertSame('', $copy['comment']);
+	}//end testTheSubmittedValuesAreUsedWhenTheSeamRecordedNone()
+
+
+	/**
+	 * A `responses` value that is not an array is not a stored answer map.
+	 *
+	 * @return void
+	 */
+	public function testANonArrayResponsesValueFallsBackToTheSubmittedAnswers(): void {
+		$copy = $this->mappingService()->taskCompletionCopy(
+			'task-1',
+			['responses' => 'nonsense'],
+			['q1' => 'as-submitted'],
+			null,
+			'completed',
+			[]
+		);
+
+		$this->assertSame(['q1' => 'as-submitted'], $copy['answers']);
+	}//end testANonArrayResponsesValueFallsBackToTheSubmittedAnswers()
+
+
+	/**
+	 * A seam row with no title at all yields an empty title, never a notice.
+	 *
+	 * @return void
+	 */
+	public function testATitlelessSeamRowYieldsAnEmptyTitle(): void {
+		$copy = $this->mappingService()->taskCompletionCopy('task-1', [], [], null, 'completed', []);
+
+		$this->assertSame('', $copy['title']);
+		$this->assertSame([], $copy['files']);
+		$this->assertSame([], $copy['answers']);
+	}//end testATitlelessSeamRowYieldsAnEmptyTitle()
+
+
+	/**
+	 * The copy is a WHITELIST: exactly these seven keys, never more.
+	 *
+	 * The receipt and the proof log are shown to the subject and kept as
+	 * evidence, so an extra key leaking from the seam row -- an internal
+	 * reference, another party's data -- would be a disclosure. Asserting the
+	 * exact key set is what makes that a test failure rather than a surprise.
+	 *
+	 * @return void
+	 */
+	public function testTheCopyIsAWhitelistAndLeaksNothingElseFromTheSeamRow(): void {
+		$copy = $this->mappingService()->taskCompletionCopy(
+			'task-1',
+			[
+				'evidence'        => [],
+				'internalCaseRef' => 'ZAAK-2026-0001',
+				'assignee'        => 'ambtenaar@example.gov',
+				'notes'           => 'internal only',
+			],
+			[],
+			null,
+			'completed',
+			[]
+		);
+
+		$this->assertSame(
+			['taskUuid', 'title', 'outcome', 'comment', 'answers', 'files'],
+			array_keys($copy)
+		);
+	}//end testTheCopyIsAWhitelistAndLeaksNothingElseFromTheSeamRow()
+
 }//end class

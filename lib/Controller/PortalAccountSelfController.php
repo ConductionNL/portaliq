@@ -26,18 +26,20 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
-use OCA\Portaliq\Service\Identity\PortalAccessRequestService;
-use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalAccessRequestServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalIdentityMailerInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalOrganisationConfigServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSelfServiceServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -49,7 +51,7 @@ use OCP\IRequest;
 /**
  * The bearer's own account.
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
 class PortalAccountSelfController extends Controller implements PortalProtected {
 
@@ -57,17 +59,21 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param PortalSelfServiceService $selfService The account's own details.
-	 * @param PortalAccessRequestService $accessRequests Asking for access.
+	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
+	 * @param PortalSelfServiceServiceInterface $selfService The account's own details.
+	 * @param PortalAccessRequestServiceInterface $accessRequests Asking for access.
+	 * @param PortalIdentityMailerInterface $mailer Mails the confirmation to the new address.
+	 * @param PortalOrganisationConfigServiceInterface|null $orgConfig Whether the organisation offers the message box.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
-		private readonly PortalSelfServiceService $selfService,
-		private readonly PortalAccessRequestService $accessRequests,
+		private readonly PortalSessionServiceInterface $session,
+		private readonly PortalSelfServiceServiceInterface $selfService,
+		private readonly PortalAccessRequestServiceInterface $accessRequests,
+		private readonly PortalIdentityMailerInterface $mailer,
+		private readonly ?PortalOrganisationConfigServiceInterface $orgConfig = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -75,49 +81,218 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 	 *
 	 * @param string $displayName A new name, or ''.
 	 * @param string $email A new address, or ''.
+	 * @param bool|null $emailNotifications The account's own opt-in/opt-out
+	 *                                      for the email channel, or null
+	 *                                      to leave it unchanged
+	 *                                      (notification-preferences-per-role).
+	 * @param string|null $messageLanguage The language school messages are
+	 *                                     shown in, '' for as written, or
+	 *                                     null to leave it
+	 *                                     (translated-message-notice).
 	 *
-	 * @return JSONResponse Whether the change landed, and whether a
-	 *                      confirmation is now waiting.
+	 * @return JSONResponse Whether the change landed, whether a
+	 *                      confirmation is now waiting, and whether its
+	 *                      mail left.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T01
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-an-accounts-own-channel-opt-out-gates-dispatch
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 20, period: 60)]
-	public function updateDetails(string $displayName = '', string $email = ''): JSONResponse {
+	public function updateDetails(
+		string $displayName = '',
+		string $email = '',
+		?bool $emailNotifications = null,
+		?string $messageLanguage = null,
+	): JSONResponse {
 		$subject = $this->subject();
 		if ($subject === null) {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$updated = $this->selfService->updateDetails(
+		$change = new DetailsChange(
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
+			organisation: (string)($subject['organisation'] ?? ''),
 			displayName: $displayName,
-			email: $email
+			email: $email,
+			emailNotifications: $emailNotifications,
+			messageLanguage: $messageLanguage
+		);
+
+		return $this->applyDetails(change: $change);
+	}//end updateDetails()
+
+	/**
+	 * Apply a change to the resident's own details and answer how it landed.
+	 *
+	 * @param DetailsChange $change The change.
+	 *
+	 * @return JSONResponse
+	 */
+	private function applyDetails(DetailsChange $change): JSONResponse {
+		$updated = $this->selfService->updateDetails(
+			subjectRef: $change->subjectRef,
+			displayName: $change->displayName,
+			email: $change->email,
+			emailNotifications: $change->emailNotifications,
+			messageLanguage: $change->messageLanguage
 		);
 		if ($updated === null) {
 			return new JSONResponse(['error' => 'refused'], Http::STATUS_BAD_REQUEST);
 		}
 
-		// The confirmation secret goes to the NEW address by mail; the answer
-		// only says one is waiting, so the old session cannot read it.
-		return new JSONResponse(['updated' => true, 'confirmationPending' => ($updated['confirmationToken'] !== '')]);
-	}//end updateDetails()
+		$token = (string)($updated['confirmationToken'] ?? '');
+		if ($token === '') {
+			return new JSONResponse(['updated' => true, 'confirmationPending' => false]);
+		}
+
+		return $this->confirmationAnswer(change: $change, token: $token);
+	}//end applyDetails()
+
+	/**
+	 * Mail the confirmation secret of a new address and say it is waiting.
+	 *
+	 * The confirmation secret goes to the NEW address by mail; the answer
+	 * only says one is waiting and whether the mail left, so the old session
+	 * cannot read it. A mail that did not leave can be asked for again by
+	 * saving the address once more.
+	 *
+	 * @param DetailsChange $change The change that asked for a new address.
+	 * @param string        $token  The confirmation secret.
+	 *
+	 * @return JSONResponse
+	 */
+	private function confirmationAnswer(DetailsChange $change, string $token): JSONResponse {
+		$sent = $this->mailer->send(
+			template: PortalIdentityMailerInterface::TEMPLATE_EMAIL_CONFIRMATION,
+			email: $change->email,
+			secret: $token,
+			organisation: $change->organisation
+		);
+
+		return new JSONResponse(['updated' => true, 'confirmationPending' => true, 'confirmationSent' => $sent]);
+	}//end confirmationAnswer()
+
+	/**
+	 * The bearer's own notification choices (REQ-NAP-007, REQ-NAP-008).
+	 *
+	 * @return JSONResponse `{preferences, pushAvailable, messageBox}`, 401 without a session, 404 without an account.
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-resident-chooses-per-kind-and-per-channel-req-nap-007
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
+	public function notificationPreferences(): JSONResponse {
+		$subject = $this->subject();
+		if ($subject === null) {
+			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$preferences = $this->selfService->notificationPreferences(subjectRef: (string)($subject['subjectRef'] ?? ''));
+		if ($preferences === null) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		return new JSONResponse($preferences + ['messageBox' => $this->messageBoxOffer(subject: $subject)]);
+	}//end notificationPreferences()
+
+	/**
+	 * Change the bearer's own notification choices. The account is the
+	 * session's, never one the body names.
+	 *
+	 * @param array<string, mixed> $preferences Kind to `{email, push}` booleans.
+	 *
+	 * @return JSONResponse The saved choices, 401 without a session, 400 when refused.
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-resident-chooses-per-kind-and-per-channel-req-nap-007
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 20, period: 60)]
+	public function updateNotificationPreferences(array $preferences = []): JSONResponse {
+		$subject = $this->subject();
+		if ($subject === null) {
+			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$saved = $this->selfService->updateNotificationPreferences(subjectRef: (string)($subject['subjectRef'] ?? ''), asked: $preferences);
+		if ($saved === null) {
+			return new JSONResponse(['error' => 'refused'], Http::STATUS_BAD_REQUEST);
+		}
+
+		return new JSONResponse($saved + ['messageBox' => $this->messageBoxOffer(subject: $subject)]);
+	}//end updateNotificationPreferences()
+
+	/**
+	 * The government message box the caller's organisation offers, as the
+	 * label residents read, or null (inbox-berichtenbox-channel, REQ-MBC-001).
+	 * The integriq source it sends over stays on the server.
+	 *
+	 * @param array<string, mixed> $subject The caller.
+	 *
+	 * @return array{label: string}|null
+	 *
+	 * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-the-organisation-turns-the-channel-on-req-mbc-001
+	 */
+	private function messageBoxOffer(array $subject): ?array {
+		$offer = $this->orgConfig?->messageBox(orgSlug: (string)($subject['organisation'] ?? ''));
+		if ($offer === null) {
+			return null;
+		}
+
+		return ['label' => $offer['label']];
+	}//end messageBoxOffer()
+
+	/**
+	 * The bearer's own details: name, address, email channel and message
+	 * language. Never another account's; the subject comes from the bearer.
+	 *
+	 * @return JSONResponse The details, 401 without a subject, 404 without an account.
+	 *
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
+	public function details(): JSONResponse {
+		$subject = $this->subject();
+		if ($subject === null) {
+			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$details = $this->selfService->details(subjectRef: (string)($subject['subjectRef'] ?? ''));
+		if ($details === null) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		return new JSONResponse($details);
+	}//end details()
 
 	/**
 	 * Confirm a new address through its link.
+	 *
+	 * The bearer is optional here: without one the address is confirmed and
+	 * nothing more happens.
 	 *
 	 * @param string $token The secret from the confirmation mail.
 	 *
 	 * @return JSONResponse Whether the address is now in use.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 20, period: 60)]
 	public function confirmEmail(string $token): JSONResponse {
-		$confirmed = $this->selfService->confirmEmail(token: $token);
+		// The link itself needs no session. A session, when the page has
+		// one, decides whether a waiting account may join: only the account
+		// holder's own (security review H1).
+		$confirmed = $this->selfService->confirmEmail(token: $token, session: $this->subject());
 		if ($confirmed === null) {
 			return new JSONResponse(['error' => 'link_not_valid'], Http::STATUS_FORBIDDEN);
 		}
@@ -130,7 +305,7 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 	 *
 	 * @return JSONResponse Whether the account is gone.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -157,7 +332,7 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 	 *
 	 * @return JSONResponse The recorded request, or a refusal.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -186,7 +361,7 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 	 *
 	 * @return JSONResponse The asker's own requests.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

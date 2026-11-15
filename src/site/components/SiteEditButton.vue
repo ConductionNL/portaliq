@@ -32,6 +32,7 @@
 			@keydown="onMenuKey">
 			<li v-for="(action, index) in actions" :key="action.key" role="none">
 				<a
+					v-if="action.href"
 					:ref="setItemRef"
 					class="pq-edit__item"
 					role="menuitem"
@@ -41,6 +42,18 @@
 					@click="open = false">
 					{{ action.label }}
 				</a>
+				<!-- Editing in place is an action on this page, not a link. -->
+				<button
+					v-else
+					:ref="setItemRef"
+					type="button"
+					class="pq-edit__item"
+					role="menuitem"
+					:data-testid="`site-edit-${action.key}`"
+					:tabindex="index === activeIndex ? 0 : -1"
+					@click="runAction(action)">
+					{{ action.label }}
+				</button>
 			</li>
 		</ul>
 
@@ -81,6 +94,20 @@
 </template>
 
 <script>
+/** The keys the open menu takes over, each with what it does. */
+const MENU_KEYS = Object.freeze({
+	Escape: (menu) => menu.close(),
+	ArrowDown: (menu) => menu.move(1),
+	ArrowUp: (menu) => menu.move(-1),
+})
+
+/** The entries that open the app, each where the context carries its address. */
+const LINK_ACTIONS = Object.freeze([
+	{ key: 'designer', label: 'In de beheeromgeving openen', field: 'designerUrl' },
+	{ key: 'pages', label: 'Alle pagina’s', field: 'pagesUrl' },
+	{ key: 'new', label: 'Nieuwe pagina', field: 'newPageUrl' },
+])
+
 /**
  * The site's editing entry point.
  *
@@ -107,6 +134,8 @@ export default {
 		},
 	},
 
+	emits: ['edit'],
+
 	data() {
 		return {
 			open: false,
@@ -131,34 +160,19 @@ export default {
 		 * @return {Array<object>} The actions.
 		 *
 		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
 		 */
 		actions() {
-			const actions = []
-			if (this.context?.designerUrl) {
-				actions.push({
-					key: 'page',
-					label: 'Deze pagina bewerken',
-					href: this.context.designerUrl,
-				})
-			}
-
-			if (this.context?.pagesUrl) {
-				actions.push({
-					key: 'pages',
-					label: 'Alle pagina’s',
-					href: this.context.pagesUrl,
-				})
-			}
-
-			if (this.context?.newPageUrl) {
-				actions.push({
-					key: 'new',
-					label: 'Nieuwe pagina',
-					href: this.context.newPageUrl,
-				})
-			}
-
-			return actions
+			const context = this.context || {}
+			// In place, on this page (portal-in-place-editing). The site
+			// loads the editor only when this is chosen.
+			const inPlace = context.pageId
+				? [{ key: 'page', label: 'Deze pagina bewerken', emit: 'edit' }]
+				: []
+			const links = LINK_ACTIONS.filter((link) => context[link.field]).map(
+				(link) => ({ key: link.key, label: link.label, href: context[link.field] }),
+			)
+			return [...inPlace, ...links]
 		},
 	},
 
@@ -186,6 +200,19 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * Run an action that is not a link: close the menu and tell the site.
+		 *
+		 * @param {object} action The action.
+		 * @return {void}
+		 *
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
+		 */
+		runAction(action) {
+			this.open = false
+			this.$emit(action.emit, this.context?.pageId)
+		},
+
 		/**
 		 * Collect a menu item's element for keyboard navigation.
 		 *
@@ -264,21 +291,9 @@ export default {
 		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
 		 */
 		onMenuKey(event) {
-			if (event.key === 'Escape') {
+			if (Object.hasOwn(MENU_KEYS, event.key)) {
 				event.preventDefault()
-				this.close()
-				return
-			}
-
-			if (event.key === 'ArrowDown') {
-				event.preventDefault()
-				this.move(1)
-				return
-			}
-
-			if (event.key === 'ArrowUp') {
-				event.preventDefault()
-				this.move(-1)
+				MENU_KEYS[event.key](this)
 				return
 			}
 
@@ -399,6 +414,12 @@ export default {
 
 .pq-edit__item {
 	display: block;
+	width: 100%;
+	border: 0;
+	background: none;
+	font: inherit;
+	text-align: start;
+	cursor: pointer;
 	padding: 0.625rem 0.75rem;
 	border-radius: 0.25rem;
 	color: inherit;

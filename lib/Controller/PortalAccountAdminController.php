@@ -20,53 +20,61 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\ActionAuthService;
-use OCA\Portaliq\Service\Identity\PortalInvitationService;
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\ActionAuthServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalAccountServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalIdentityMailerInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalInvitationServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\SignInAddressChangeInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
+use OCA\Portaliq\Kernel\StaffAction;
 
 /**
  * Provisioning and withdrawal of portal accounts by staff.
  *
- * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 class PortalAccountAdminController extends Controller {
 	/**
 	 * The ADR-023 action both methods are gated by.
 	 */
-	public const ACTION_PROVISION = 'portal.provision';
+	public const ACTION_PROVISION = StaffAction::PROVISION;
 
 	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalAccountService $accounts Provisions and withdraws accounts.
-	 * @param ActionAuthService $actionAuth Decides whether this clerk may.
+	 * @param PortalAccountServiceInterface $accounts Provisions and withdraws accounts.
+	 * @param ActionAuthServiceInterface $actionAuth Decides whether this clerk may.
 	 * @param IUserSession $userSession The staff user making the request.
-	 * @param PortalInvitationService $invitations Invitations into the portal.
+	 * @param PortalInvitationServiceInterface $invitations Invitations into the portal.
+	 * @param PortalIdentityMailerInterface $mailer Mails the invitation to its address.
+	 * @param SignInAddressChangeInterface|null $signInAddresses Changes an e-mail account's sign-in address (sign-in-with-an-email-link H2).
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalAccountService $accounts,
-		private readonly ActionAuthService $actionAuth,
+		private readonly PortalAccountServiceInterface $accounts,
+		private readonly ActionAuthServiceInterface $actionAuth,
 		private readonly IUserSession $userSession,
-		private readonly PortalInvitationService $invitations,
+		private readonly PortalInvitationServiceInterface $invitations,
+		private readonly PortalIdentityMailerInterface $mailer,
+		private readonly ?SignInAddressChangeInterface $signInAddresses = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -82,7 +90,7 @@ class PortalAccountAdminController extends Controller {
 	 *
 	 * @return JSONResponse The account, or a refusal.
 	 *
-	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- one parameter per
 	 * declared field of the account being provisioned.
@@ -101,15 +109,9 @@ class PortalAccountAdminController extends Controller {
 		bool $verifiedEmail = false,
 		string $displayName = '',
 	): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		try {
-			$this->actionAuth->requireAction(user: $user, action: self::ACTION_PROVISION);
-		} catch (OCSForbiddenException $exception) {
-			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		$user = $this->provisioningClerk();
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		$account = $this->accounts->provision(
@@ -137,19 +139,13 @@ class PortalAccountAdminController extends Controller {
 	 *
 	 * @return JSONResponse The outcome, or a refusal.
 	 *
-	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	#[NoAdminRequired]
 	public function void(string $subjectRef, string $reason = ''): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		try {
-			$this->actionAuth->requireAction(user: $user, action: self::ACTION_PROVISION);
-		} catch (OCSForbiddenException $exception) {
-			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		$user = $this->provisioningClerk();
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		if ($reason === '') {
@@ -161,7 +157,7 @@ class PortalAccountAdminController extends Controller {
 			return new JSONResponse(['error' => 'not_pending'], Http::STATUS_BAD_REQUEST);
 		}
 
-		return new JSONResponse(['status' => PortalAccountService::STATUS_VOID]);
+		return new JSONResponse(['status' => PortalAccountServiceInterface::STATUS_VOID]);
 	}//end void()
 
 	/**
@@ -171,21 +167,17 @@ class PortalAccountAdminController extends Controller {
 	 * @param string $organisation The tenant inviting.
 	 * @param string $audience The audience the account will carry.
 	 *
-	 * @return JSONResponse The invitation's secret, for the mail, or a refusal.
+	 * @return JSONResponse That it was sent and until when, or a refusal.
+	 *                      Never the secret: that is in the mail only.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-invite-an-address-and-portaliq-mails-it-req-isa-001
 	 */
 	#[NoAdminRequired]
 	public function invite(string $email, string $organisation, string $audience = 'client'): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		try {
-			$this->actionAuth->requireAction(user: $user, action: self::ACTION_PROVISION);
-		} catch (OCSForbiddenException $exception) {
-			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		$user = $this->provisioningClerk();
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		$invited = $this->invitations->invite(
@@ -198,7 +190,22 @@ class PortalAccountAdminController extends Controller {
 			return new JSONResponse(['error' => 'refused'], Http::STATUS_BAD_REQUEST);
 		}
 
-		return new JSONResponse($invited);
+		// A secret shown to a clerk is a secret a clerk could use, and the
+		// mail is what proves the address. So it goes to the invited address
+		// and the answer carries only the state and the expiry.
+		$sent = $this->mailer->send(
+			template: PortalIdentityMailerInterface::TEMPLATE_INVITATION,
+			email: $email,
+			secret: (string)$invited['token'],
+			organisation: $organisation
+		);
+		if ($sent === false) {
+			// Nobody holds the secret now, so this invitation admits nobody
+			// and runs out on its own. The clerk sends a new one.
+			return new JSONResponse(['error' => 'mail_not_sent'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
+		return new JSONResponse(['state' => 'sent', 'expiresAt' => $invited['expiresAt']]);
 	}//end invite()
 
 	/**
@@ -208,10 +215,176 @@ class PortalAccountAdminController extends Controller {
 	 *
 	 * @return JSONResponse The sender's own invitations.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	#[NoAdminRequired]
 	public function invitations(string $organisation = ''): JSONResponse {
+		$user = $this->provisioningClerk();
+		if ($user instanceof JSONResponse) {
+			return $user;
+		}
+
+		// The sender sees their own invitations, never another clerk's: the
+		// list is scoped on the session's uid, not on a parameter.
+		return new JSONResponse(['invitations' => $this->invitations->sentBy(invitedBy: $user->getUID(), organisation: $organisation)]);
+	}//end invitations()
+
+	/**
+	 * Withdraw an invitation that was not accepted.
+	 *
+	 * @param string $id The invitation's id.
+	 * @param string $organisation The tenant the clerk works for.
+	 *
+	 * @return JSONResponse `{state: revoked}`, or a refusal.
+	 *
+	 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-see-and-withdraw-invitations-req-isa-002
+	 */
+	#[NoAdminRequired]
+	public function revokeInvitation(string $id, string $organisation = ''): JSONResponse {
+		$user = $this->provisioningClerk();
+		if ($user instanceof JSONResponse) {
+			return $user;
+		}
+
+		$outcome = $this->invitations->revoke(id: $id, organisation: $organisation);
+		if ($outcome !== '') {
+			return new JSONResponse(['error' => $outcome], Http::STATUS_BAD_REQUEST);
+		}
+
+		return new JSONResponse(['state' => 'revoked']);
+	}//end revokeInvitation()
+
+	/**
+	 * Send an invitation that was not accepted again, with a new link.
+	 *
+	 * @param string $id The invitation's id.
+	 * @param string $organisation The tenant the clerk works for.
+	 *
+	 * @return JSONResponse `{state: sent, expiresAt}`, or a refusal. Never the
+	 *                      secret: that is in the mail only.
+	 *
+	 * @spec openspec/changes/staff-resend-an-invitation/specs/portal-account-administration/spec.md#requirement-staff-send-an-invitation-again-req-isa-011
+	 */
+	#[NoAdminRequired]
+	public function resendInvitation(string $id, string $organisation = ''): JSONResponse {
+		$user = $this->provisioningClerk();
+		if ($user instanceof JSONResponse) {
+			return $user;
+		}
+
+		$resent = $this->invitations->resend(id: $id, organisation: $organisation);
+		if (isset($resent['error']) === true) {
+			return new JSONResponse(['error' => $resent['error']], Http::STATUS_BAD_REQUEST);
+		}
+
+		$sent = $this->mailer->send(
+			template: PortalIdentityMailerInterface::TEMPLATE_INVITATION,
+			email: (string)$resent['email'],
+			secret: (string)$resent['token'],
+			organisation: $organisation
+		);
+		if ($sent === false) {
+			// The old link was replaced and the new one did not leave, so
+			// nobody holds a working secret. The clerk sends it again.
+			return new JSONResponse(['error' => 'mail_not_sent'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
+		return new JSONResponse(['state' => 'sent', 'expiresAt' => $resent['expiresAt']]);
+	}//end resendInvitation()
+
+	/**
+	 * Approve a self-registration that waits for a decision.
+	 *
+	 * @param string $subjectRef The account.
+	 *
+	 * @return JSONResponse `{status: active}`, or `not_pending`.
+	 *
+	 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-set-the-registration-policy-and-approve-registrations-req-isa-004
+	 */
+	#[NoAdminRequired]
+	public function approve(string $subjectRef): JSONResponse {
+		$user = $this->provisioningClerk();
+		if ($user instanceof JSONResponse) {
+			return $user;
+		}
+
+		if ($this->accounts->approvePending(subjectRef: $subjectRef) === false) {
+			return new JSONResponse(['error' => 'not_pending'], Http::STATUS_BAD_REQUEST);
+		}
+
+		return new JSONResponse(['status' => PortalAccountServiceInterface::STATUS_ACTIVE]);
+	}//end approve()
+
+	/**
+	 * Refuse a self-registration, with the reason on the row.
+	 *
+	 * @param string $subjectRef The account.
+	 * @param string $reason Why it is refused.
+	 *
+	 * @return JSONResponse `{status: void}`, or a refusal.
+	 *
+	 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-set-the-registration-policy-and-approve-registrations-req-isa-004
+	 */
+	#[NoAdminRequired]
+	public function refuse(string $subjectRef, string $reason = ''): JSONResponse {
+		$user = $this->provisioningClerk();
+		if ($user instanceof JSONResponse) {
+			return $user;
+		}
+
+		if ($reason === '') {
+			return new JSONResponse(['error' => 'reason_required'], Http::STATUS_BAD_REQUEST);
+		}
+
+		if ($this->accounts->voidPending(subjectRef: $subjectRef, reason: $reason, voidedBy: $user->getUID()) === false) {
+			return new JSONResponse(['error' => 'not_pending'], Http::STATUS_BAD_REQUEST);
+		}
+
+		return new JSONResponse(['status' => PortalAccountServiceInterface::STATUS_VOID]);
+	}//end refuse()
+
+	/**
+	 * Staff change the sign-in address of an `email` account (security review
+	 * H2). The unspent links are voided and the old address is told.
+	 *
+	 * @param string $subjectRef The account.
+	 * @param string $address    The new sign-in address.
+	 *
+	 * @return JSONResponse `{signInAddress}` or a refusal.
+	 *
+	 * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-an-e-mail-link-session-is-a-fresh-low-session-that-cannot-raise-itself-req-iwi-011
+	 */
+	#[NoAdminRequired]
+	public function signInAddress(string $subjectRef, string $address = ''): JSONResponse {
+		$user = $this->provisioningClerk();
+		if ($user instanceof JSONResponse) {
+			return $user;
+		}
+
+		$account = $this->accounts->findBySubjectRef(subjectRef: $subjectRef);
+		if ($account === null || $this->signInAddresses === null) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$outcome = $this->signInAddresses->change(account: $account, newAddress: $address, byStaff: true);
+		if ($outcome === SignInAddressChangeInterface::FAILED) {
+			return new JSONResponse(['error' => 'save_failed'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
+		if ($outcome !== SignInAddressChangeInterface::CHANGED) {
+			return new JSONResponse(['error' => 'refused'], Http::STATUS_BAD_REQUEST);
+		}
+
+		return new JSONResponse(['signInAddress' => strtolower(trim($address))]);
+	}//end signInAddress()
+
+	/**
+	 * The signed-in user, once the provision action is confirmed for them.
+	 *
+	 * @return IUser|JSONResponse The user, or 401 without a session and 403
+	 *                            without the action.
+	 */
+	private function provisioningClerk(): IUser|JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
@@ -223,8 +396,6 @@ class PortalAccountAdminController extends Controller {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		// The sender sees their own invitations, never another clerk's: the
-		// list is scoped on the session's uid, not on a parameter.
-		return new JSONResponse(['invitations' => $this->invitations->sentBy(invitedBy: $user->getUID(), organisation: $organisation)]);
-	}//end invitations()
+		return $user;
+	}//end provisioningClerk()
 }//end class

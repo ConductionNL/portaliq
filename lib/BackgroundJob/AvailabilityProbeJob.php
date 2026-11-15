@@ -1,0 +1,179 @@
+<?php
+
+/**
+ * Portaliq availability probe job
+ *
+ * Checks every published portal every five minutes and keeps its
+ * availability per day and its outages for thirteen months.
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * @category BackgroundJob
+ * @package  OCA\Portaliq\BackgroundJob
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Portaliq\BackgroundJob;
+
+use DateTimeImmutable;
+use DateTimeZone;
+use OCA\Portaliq\Kernel\Contracts\AvailabilityProbeInterface;
+use OCA\Portaliq\Kernel\Contracts\AvailabilityRollupInterface;
+use OCA\Portaliq\Kernel\Contracts\AvailabilityStoreInterface;
+use OCA\Portaliq\Kernel\Contracts\PublishedPortalsInterface;
+use OCP\AppFramework\Utility\ITimeFactory;
+use OCP\BackgroundJob\TimedJob;
+use Psr\Log\LoggerInterface;
+use Throwable;
+
+/**
+ * Every five minutes: check each published portal, fold the check (and any
+ * intervals missed since the last one) into its records, then remove what
+ * is older than thirteen months.
+ *
+ * @spec openspec/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
+ */
+class AvailabilityProbeJob extends TimedJob {
+	/**
+	 * How long records are kept.
+	 */
+	private const RETENTION = '-13 months';
+
+	/**
+	 * Constructor.
+	 *
+	 * @param ITimeFactory $time Testable clock (job base class).
+	 * @param PublishedPortalsInterface $portals Lists the published portals.
+	 * @param AvailabilityProbeInterface $probe Checks one portal.
+	 * @param AvailabilityStoreInterface $store Keeps the records.
+	 * @param AvailabilityRollupInterface $rollup Folds a check into the records.
+	 * @param LoggerInterface $logger The logger.
+	 */
+	public function __construct(
+		ITimeFactory $time,
+		private readonly PublishedPortalsInterface $portals,
+		private readonly AvailabilityProbeInterface $probe,
+		private readonly AvailabilityStoreInterface $store,
+		private readonly AvailabilityRollupInterface $rollup,
+		private readonly LoggerInterface $logger,
+	) {
+		parent::__construct(time: $time);
+		$this->setInterval(seconds: AvailabilityRollupInterface::INTERVAL);
+		$this->setAllowParallelRuns(allow: false);
+	}//end __construct()
+
+	/**
+	 * Check every published portal, then purge.
+	 *
+	 * @param mixed $argument Unused.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
+	 * @spec openspec/specs/portal-availability/spec.md#requirement-thirteen-months-are-kept-and-no-more-req-oar-003
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- the base class dictates
+	 * the signature; this job takes no argument.
+	 */
+	protected function run($argument): void {
+		$now = (new DateTimeImmutable($this->time->getDateTime()->format(DATE_ATOM)))->setTimezone(new DateTimeZone('UTC'));
+
+		foreach ($this->portals->allPublishedPortals() as $portal) {
+			$slug = (string)($portal['slug'] ?? '');
+			if ($slug === '') {
+				continue;
+			}
+
+			try {
+				$this->checkOne(slug: $slug, now: $now);
+			} catch (Throwable $failure) {
+				// One portal's failure to record is never another's.
+				$this->logger->warning('[AvailabilityProbeJob] Could not record a check: ' . $failure->getMessage(), ['portal' => $slug]);
+			}
+		}
+
+		$this->store->purgeBefore(cutoff: $now->modify(self::RETENTION)->format('Y-m-d'));
+	}//end run()
+
+	/**
+	 * Check one portal and store what changed.
+	 *
+	 * @param string $slug The portal slug.
+	 * @param DateTimeImmutable $now This run.
+	 *
+	 * @return void
+	 */
+	private function checkOne(string $slug, DateTimeImmutable $now): void {
+		$check = $this->probe->check(slug: $slug);
+
+		$days = $this->recentDays(slug: $slug, now: $now);
+
+		$result = $this->rollup->record(
+			portal: $slug,
+			checkedAt: $now,
+			status: $check['status'],
+			cause: $check['cause'],
+			days: $days,
+			openOutage: $this->store->openOutage(portal: $slug)
+		);
+
+		$this->saveChanges(result: $result, days: $days);
+	}//end checkOne()
+
+	/**
+	 * The stored days the rollup continues from: the last two, or the whole
+	 * kept window when there was no check in them.
+	 *
+	 * @param string            $slug The portal slug.
+	 * @param DateTimeImmutable $now  This run.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function recentDays(string $slug, DateTimeImmutable $now): array {
+		$today = $now->format('Y-m-d');
+		$days = $this->store->dailyBetween(portal: $slug, from: $now->modify('-1 day')->format('Y-m-d'), until: $today);
+		if ($this->rollup->lastCheckAt(days: $days) === null) {
+			// No check in the last two days: read the whole kept window, so
+			// an instance that was off for longer still counts its gap.
+			$days = $this->store->dailyBetween(portal: $slug, from: $now->modify(self::RETENTION)->format('Y-m-d'), until: $today);
+		}
+
+		return $days;
+	}//end recentDays()
+
+	/**
+	 * Store the days that changed and the outages closed or still open.
+	 *
+	 * @param array<string, mixed>                $result What the rollup recorded.
+	 * @param array<string, array<string, mixed>> $days   The days it started from.
+	 *
+	 * @return void
+	 */
+	private function saveChanges(array $result, array $days): void {
+		foreach ($result['days'] as $date => $day) {
+			if (($days[$date] ?? null) !== $day) {
+				$this->store->save(schema: AvailabilityStoreInterface::DAILY_SCHEMA, row: $day);
+			}
+		}
+
+		foreach ($result['closed'] as $outage) {
+			$this->store->save(schema: AvailabilityStoreInterface::OUTAGE_SCHEMA, row: $outage);
+		}
+
+		if ($result['open'] !== null) {
+			$this->store->save(schema: AvailabilityStoreInterface::OUTAGE_SCHEMA, row: $result['open']);
+		}
+	}//end saveChanges()
+}//end class

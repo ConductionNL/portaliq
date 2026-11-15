@@ -1,0 +1,414 @@
+#!/usr/bin/env node
+// SPDX-License-Identifier: EUPL-1.2
+// Copyright (C) 2026 Conduction B.V.
+//
+// intake-entry.spec.mjs: the public site reaches the intake endpoints
+// (portal-intake-form-as-an-object T09). The catalogue block lists what the
+// published catalogue says today and links each entry to the form page, the
+// form block renders the bound form with the signed-in visitor's own details
+// and submits it for a reference, and the status block reads the real state
+// behind a reference, a failed create included.
+//
+// Usage:
+//   node --test tests/intake-entry.spec.mjs
+
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
+import {
+	bindingRouteFrom,
+	fetchCatalogue,
+	formRouteFor,
+	initialValues,
+	intakeUrl,
+	loadForm,
+	lookUpStatus,
+	statusView,
+	submitIntake,
+} from '../src/site/lib/intakeApi.js'
+
+const BASE = '/apps/portaliq/portal/api'
+
+/**
+ * A fetch double that records each call and answers from a queue.
+ *
+ * @param {Array<{status: number, body: object}>} answers The answers, in order.
+ * @return {{fetchImpl: Function, calls: Array<object>}}
+ */
+function recorder(answers) {
+	const calls = []
+	const queue = [...answers]
+	const fetchImpl = async (url, init = {}) => {
+		calls.push({ url: String(url), init })
+		const next = queue.shift() || { status: 200, body: {} }
+		return {
+			ok: next.status >= 200 && next.status < 300,
+			status: next.status,
+			json: async () => next.body,
+		}
+	}
+	return { fetchImpl, calls }
+}
+
+test('every intake url names the portal slug when the site has one', () => {
+	assert.equal(
+		intakeUrl(BASE, '/intake/catalogue', { portal: 'gemeente-x' }),
+		'/apps/portaliq/portal/api/intake/catalogue?portal=gemeente-x',
+	)
+	assert.equal(
+		intakeUrl(BASE, '/intake/form', {
+			route: 'aanvragen/verhuizing',
+			portal: '',
+		}),
+		'/apps/portaliq/portal/api/intake/form?route=aanvragen%2Fverhuizing',
+	)
+})
+
+test('the catalogue is read, never kept: each call asks the endpoint again', async () => {
+	const { fetchImpl, calls } = recorder([
+		{
+			status: 200,
+			body: {
+				topics: [
+					{
+						topic: 'Wonen',
+						entries: [
+							{
+								title: 'Verhuizing doorgeven',
+								route: 'aanvragen/verhuizing',
+								summary: '',
+							},
+						],
+					},
+				],
+			},
+		},
+		{ status: 200, body: { topics: [] } },
+	])
+	const first = await fetchCatalogue({ base: BASE, portal: 'gemeente-x', fetchImpl })
+	assert.equal(first.length, 1)
+	assert.equal(first[0].entries[0].route, 'aanvragen/verhuizing')
+	const second = await fetchCatalogue({ base: BASE, portal: 'gemeente-x', fetchImpl })
+	assert.deepEqual(second, [])
+	assert.equal(calls.length, 2)
+})
+
+test('an entry without a route is not offered, and a topic left empty is dropped', async () => {
+	const { fetchImpl } = recorder([
+		{
+			status: 200,
+			body: {
+				topics: [
+					{ topic: 'Afval', entries: [{ title: 'Kapot', route: '' }] },
+					{
+						topic: 'Wonen',
+						entries: [{ title: 'Verhuizing', route: 'a/b' }],
+					},
+				],
+			},
+		},
+	])
+	const topics = await fetchCatalogue({ base: BASE, portal: '', fetchImpl })
+	assert.deepEqual(
+		topics.map((t) => t.topic),
+		['Wonen'],
+	)
+})
+
+test('an entry opens the form page with the binding route as one segment', () => {
+	assert.equal(
+		formRouteFor('/aanvragen/formulier', 'aanvragen/verhuizing'),
+		'/aanvragen/formulier/aanvragen%2Fverhuizing',
+	)
+	assert.equal(
+		bindingRouteFrom('aanvragen%2Fverhuizing', ''),
+		'aanvragen/verhuizing',
+	)
+	// A form placed on its own page names its route; the URL cannot move it.
+	assert.equal(
+		bindingRouteFrom('aanvragen%2Fander', 'aanvragen/vast'),
+		'aanvragen/vast',
+	)
+	assert.equal(bindingRouteFrom('%E0%A4%A', ''), '')
+})
+
+test('the form is loaded with the bearer, so a signed-in visitor gets their own details', async () => {
+	const { fetchImpl, calls } = recorder([
+		{
+			status: 200,
+			body: {
+				kind: 'hosted',
+				resolvesToNoForm: false,
+				fields: [{ name: 'naam', label: 'Naam', required: true }],
+				prefill: { naam: 'J. Jansen' },
+				settings: {},
+			},
+		},
+	])
+	const view = await loadForm({ base: BASE, portal: 'gemeente-x', token: 'tok-1', fetchImpl }, 'aanvragen/verhuizing')
+	assert.equal(view.state, 'form')
+	assert.equal(calls[0].init.headers.Authorization, 'Bearer tok-1')
+	assert.deepEqual(initialValues(view.render.fields, view.render.prefill), {
+		naam: 'J. Jansen',
+	})
+})
+
+test('an anonymous visitor sends no bearer and gets an empty applicant block', async () => {
+	const { fetchImpl, calls } = recorder([
+		{
+			status: 200,
+			body: {
+				kind: 'hosted',
+				resolvesToNoForm: false,
+				fields: [{ name: 'naam' }, { name: 'soort', preset: 'huur' }],
+				prefill: {},
+				settings: {},
+			},
+		},
+	])
+	const view = await loadForm({ base: BASE, portal: '', token: '', fetchImpl }, 'aanvragen/verhuizing')
+	assert.equal(calls[0].init.headers.Authorization, undefined)
+	assert.deepEqual(initialValues(view.render.fields, view.render.prefill), {
+		naam: '',
+		soort: 'huur',
+	})
+})
+
+test('a form that needs a sign-in, an unknown route, an external form and no form each say so', async () => {
+	const { fetchImpl } = recorder([
+		{
+			status: 401,
+			body: { error: 'sign_in_required', minTrust: 'substantial' },
+		},
+		{ status: 404, body: { error: 'form_not_found' } },
+		{
+			status: 200,
+			body: {
+				kind: 'external',
+				resolvesToNoForm: false,
+				externalUrl: 'https://formulieren.example.org/x',
+				destination: 'formulieren.example.org',
+				settings: {},
+			},
+		},
+		{
+			status: 200,
+			body: {
+				kind: 'hosted',
+				resolvesToNoForm: true,
+				reason: 'no_published_form_for_audience',
+				fields: [],
+				settings: {},
+			},
+		},
+	])
+	assert.equal((await loadForm({ base: BASE, portal: '', token: '', fetchImpl }, 'r')).state, 'signIn')
+	assert.equal((await loadForm({ base: BASE, portal: '', token: '', fetchImpl }, 'r')).state, 'notFound')
+	const external = await loadForm({ base: BASE, portal: '', token: '', fetchImpl }, 'r')
+	assert.equal(external.state, 'external')
+	assert.equal(external.render.destination, 'formulieren.example.org')
+	assert.equal((await loadForm({ base: BASE, portal: '', token: '', fetchImpl }, 'r')).state, 'noForm')
+})
+
+test('a valid submission answers with a reference, an invalid one with the field errors', async () => {
+	const { fetchImpl, calls } = recorder([
+		{
+			status: 200,
+			body: {
+				reference: 'AANVRAAG-7',
+				state: 'queued',
+				confirmationText: 'Bedankt.',
+			},
+		},
+		{ status: 400, body: { errors: { postcode: 'Vul uw postcode in.' } } },
+		{ status: 503, body: { error: 'not_accepted' } },
+	])
+	const accepted = await submitIntake({ base: BASE, portal: 'gemeente-x', token: 'tok-1', fetchImpl }, { route: 'aanvragen/verhuizing', answers: { postcode: '1234 AB' } })
+	assert.deepEqual(accepted, {
+		reference: 'AANVRAAG-7',
+		confirmationText: 'Bedankt.',
+		confirmation: null,
+		mailedTo: '',
+		moments: { receivedAt: '', termStartsAt: '', deadline: '' },
+		errors: {},
+	})
+	assert.equal(calls[0].init.method, 'POST')
+	assert.deepEqual(JSON.parse(calls[0].init.body), {
+		route: 'aanvragen/verhuizing',
+		answers: { postcode: '1234 AB' },
+		portal: 'gemeente-x',
+	})
+	assert.equal(calls[0].init.headers.Authorization, 'Bearer tok-1')
+
+	const refused = await submitIntake({ base: BASE, portal: '', token: '', fetchImpl }, { route: 'aanvragen/verhuizing', answers: {} })
+	assert.equal(refused.reference, '')
+	assert.deepEqual(refused.errors, { postcode: 'Vul uw postcode in.' })
+
+	await assert.rejects(
+		submitIntake({ base: BASE, portal: '', token: '', fetchImpl }, { route: 'aanvragen/verhuizing', answers: {} }),
+		/503/,
+	)
+})
+
+test('a submit creates the case: the moments come back, and a destination refusal lands on its field (decision 179)', async () => {
+	const { fetchImpl } = recorder([
+		{
+			status: 200,
+			body: {
+				reference: '2026-0042',
+				state: 'registered',
+				receivedAt: '2026-10-11T09:00:00+00:00',
+				termStartsAt: '2026-10-13T09:00:00+02:00',
+				deadline: '2026-11-24',
+			},
+		},
+		{
+			status: 422,
+			body: {
+				error: 'refused_by_destination',
+				errors: { postcode: 'Dit is geen postcode.', _form: 'Er ontbreekt een zaaktype.' },
+			},
+		},
+	])
+	const created = await submitIntake({ base: BASE, portal: '', token: '', fetchImpl }, { route: 'bezwaar', answers: { postcode: '1234 AB' } })
+	assert.equal(created.reference, '2026-0042')
+	assert.deepEqual(created.moments, {
+		receivedAt: '2026-10-11T09:00:00+00:00',
+		termStartsAt: '2026-10-13T09:00:00+02:00',
+		deadline: '2026-11-24',
+	})
+
+	const refused = await submitIntake({ base: BASE, portal: '', token: '', fetchImpl }, { route: 'bezwaar', answers: { postcode: 'x' } })
+	assert.equal(refused.reference, '')
+	assert.deepEqual(refused.errors, { postcode: 'Dit is geen postcode.', _form: 'Er ontbreekt een zaaktype.' })
+})
+
+test('the status of a reference is the real state, and a failed create names what to do', async () => {
+	const { fetchImpl } = recorder([
+		{
+			status: 200,
+			body: {
+				reference: 'AANVRAAG-7',
+				state: 'failed',
+				caseId: '',
+				failureReason: 'case app down',
+			},
+		},
+		{ status: 404, body: { error: 'reference_not_found' } },
+	])
+	const failed = await lookUpStatus({ base: BASE, portal: '', fetchImpl }, 'AANVRAAG-7')
+	assert.equal(failed.state, 'failed')
+	assert.equal(await lookUpStatus({ base: BASE, portal: '', fetchImpl }, 'NOPE'), null)
+	assert.equal(await lookUpStatus({ base: BASE, portal: '', fetchImpl }, '   '), null)
+
+	const view = statusView(failed)
+	assert.equal(view.tone, 'error')
+	assert.match(view.sentence, /nog niet geregistreerd/)
+	assert.match(view.sentence, /AANVRAAG-7/)
+})
+
+test('a queued request never claims a case, a registered one does', () => {
+	const queued = statusView({ reference: 'A-1', state: 'queued', caseId: '' })
+	assert.doesNotMatch(queued.sentence, /zaak/)
+	const registered = statusView({
+		reference: 'A-1',
+		state: 'registered',
+		caseId: 'c-9',
+	})
+	assert.match(registered.sentence, /geregistreerd/)
+	assert.equal(statusView(null).tone, 'error')
+})
+
+test('a Woo request quotes its due date only when its term runs', () => {
+	const armed = statusView({
+		reference: 'AANVRAAG-1',
+		state: 'registered',
+		caseId: 'req-1',
+		externalReference: 'WOO-2026-1A2B3C',
+		dueAt: '2026-11-02T09:00:00+00:00',
+	})
+	assert.equal(armed.tone, 'success')
+	assert.match(armed.sentence, /WOO-2026-1A2B3C/)
+	assert.match(armed.sentence, /uiterlijk 2 november 2026/)
+	assert.doesNotMatch(armed.sentence, /—/)
+
+	// A term that did not start is a failed delivery: no date, and the
+	// citizen is told to get in touch.
+	const notArmed = statusView({ reference: 'AANVRAAG-1', state: 'failed', dueAt: '' })
+	assert.doesNotMatch(notArmed.sentence, /uiterlijk/)
+	assert.match(notArmed.sentence, /Neem contact met ons op/)
+
+	// A registered case without a due date reads as before.
+	const plain = statusView({ reference: 'A-1', state: 'registered', caseId: 'c-9', externalReference: '', dueAt: '' })
+	assert.doesNotMatch(plain.sentence, /uiterlijk/)
+	// A malformed date is never shown.
+	const garbled = statusView({ reference: 'A-1', state: 'registered', externalReference: 'WOO-1', dueAt: 'soon' })
+	assert.doesNotMatch(garbled.sentence, /uiterlijk/)
+})
+
+test('no user-facing sentence carries an em-dash', () => {
+	const sentences = [
+		statusView({ reference: 'A', state: 'queued' }).sentence,
+		statusView({ reference: 'A', state: 'registered', caseId: 'c' }).sentence,
+		statusView({ reference: 'A', state: 'failed' }).sentence,
+		statusView(null).sentence,
+	]
+	for (const sentence of sentences) {
+		assert.doesNotMatch(sentence, /—/)
+	}
+})
+
+// The wiring, read from the caller. The endpoints and the helpers above were
+// both correct for weeks with nothing calling them; these assertions fail if
+// the public renderer or the page designer stops offering the three blocks.
+test('the public renderer mounts the three intake blocks and hands them the portal', async () => {
+	const { readFile } = await import('node:fs/promises')
+	const grid = await readFile(
+		new URL('../src/site/components/WidgetGrid.vue', import.meta.url),
+		'utf8',
+	)
+	const allowList = grid.slice(
+		grid.indexOf('const PUBLIC_WIDGETS = {'),
+		grid.indexOf('...siteBlockRegistry'),
+	)
+	for (const [key, component] of [
+		['intakeCatalogue', 'IntakeCatalogueBlock'],
+		['intakeForm', 'IntakeFormBlock'],
+		['intakeStatus', 'IntakeStatusBlock'],
+	]) {
+		assert.match(
+			allowList,
+			new RegExp(`\\b${key}: ${component},`),
+			`${key} must be on the public allow-list`,
+		)
+		assert.match(
+			grid,
+			new RegExp(`import\\('\\./${component}\\.vue'\\)`),
+			`${component} must be loaded`,
+		)
+	}
+	assert.match(
+		grid,
+		/widgetKey === 'intakeForm'\) \{\s*return \{\s*\.\.\.props,\s*portal: this\.portal,\s*routeParam: this\.routeParam,\s*portalHelp: this\.portalHelp,\s*\}/,
+	)
+	assert.match(
+		grid,
+		/widgetKey === 'intakeCatalogue'\s*\|\|\s*widget\.widgetKey === 'intakeStatus'\s*\)\s*\{\s*return \{ \.\.\.props, portal: this\.portal \}/,
+	)
+
+	const catalogue = await readFile(
+		new URL('../src/lib/pageWidgetCatalogue.js', import.meta.url),
+		'utf8',
+	)
+	assert.match(
+		catalogue,
+		/intakeForm: \['portal', 'routeParam', 'portalHelp'\]/,
+		'the designer must not offer host-supplied props',
+	)
+	// The palette's names live in one module the editor shares
+	// (resident-sees-words-not-codes).
+	const labels = await readFile(
+		new URL('../src/lib/widgetLabels.js', import.meta.url),
+		'utf8',
+	)
+	assert.match(labels, /intakeCatalogue: 'Aanvragen per onderwerp'/)
+})

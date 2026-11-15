@@ -32,36 +32,79 @@ function resolvePortalApiRoot() {
 }
 
 /**
- * Submit a landing-page form's values through the anonymous create
- * endpoint. A non-2xx is thrown as an Error carrying `.status`, mirroring
- * `contentApi.js`'s `get()` convention.
+ * The id of the anonymous create action a bound form submits through.
  *
- * @param {object} values The visitor's field values, keyed by the form's own field ids.
- * @param {object} [tracking] `{utmFirstTouch, utmLastTouch, referrer}` captured client-side.
- * @return {Promise<object>} The created `landingPageSubmission` object.
+ * @param {string} formId The bound form's id.
+ * @return {string} `submit-{formId}`, or '' without a form id.
  *
- * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-a-landing-pages-form-is-submittable-with-no-portal-session
+ * @spec openspec/changes/archive/2026-10-07-create-names-its-action/tasks.md#T3
  */
-export async function submitLandingPageForm(values, tracking = {}) {
+export function landingPageActionId(formId) {
+	return typeof formId === 'string' && formId !== '' ? `submit-${formId}` : ''
+}
+
+/**
+ * The anonymous create address of a landing-page form.
+ *
+ * @param {string} formId The bound form's id, which names its create action.
+ * @return {string} The address, with the action id when there is one.
+ */
+function submissionUrl(formId) {
 	const url = new URL(
 		`${resolvePortalApiRoot()}/portal/api/collections/${REGISTER}/${SUBMISSION_SCHEMA}`,
 		window.location.origin,
 	)
+	const actionId = landingPageActionId(formId)
+	if (actionId !== '') {
+		url.searchParams.set('actionId', actionId)
+	}
+	return url.toString()
+}
 
-	// Only captured parameters travel: a touch of nulls fails the store's
-	// validation of the nested strings, and the form could not be sent by
-	// anyone who arrived without a campaign link.
-	const body = {
+/**
+ * The submitted body: the values with only the captured campaign parameters.
+ *
+ * A touch of nulls fails the store's validation of the nested strings, and
+ * the form could not be sent by anyone who arrived without a campaign link.
+ *
+ * @param {object} values The visitor's field values.
+ * @param {object} tracking `{utmFirstTouch, utmLastTouch, referrer}`.
+ * @return {object} The body.
+ */
+function submissionBody(values, tracking) {
+	return {
 		...values,
 		utmFirstTouch: compactTouch(tracking.utmFirstTouch),
 		utmLastTouch: compactTouch(tracking.utmLastTouch),
 		referrer: tracking.referrer || '',
 	}
+}
 
-	const response = await fetch(url.toString(), {
+/**
+ * Submit a landing-page form's values through the anonymous create
+ * endpoint. A non-2xx is thrown as an Error carrying `.status`, mirroring
+ * `contentApi.js`'s `get()` convention.
+ *
+ * Every active form is its own anonymous create action at the address
+ * `portaliq/landingPageSubmission` (`submit-{formId}`, PortalContributionProvider), so
+ * the submission names its form's action: without it the server filed every
+ * form's answers under the first form's whitelist and `formId`. The address is
+ * only an address: the server creates the object the form's destination names
+ * (a lead), in this request, and stores nothing in between (decision 179).
+ *
+ * @param {object} values The visitor's field values, keyed by the form's own field ids.
+ * @param {object} [tracking] `{utmFirstTouch, utmLastTouch, referrer}` captured client-side.
+ * @param {string} [formId] The bound form's id, which names its create action.
+ * @return {Promise<object>} The destination's answer: `reference`, `id`, `receivedAt`.
+ *
+ * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-a-landing-pages-form-is-submittable-with-no-portal-session
+ * @spec openspec/changes/archive/2026-10-07-create-names-its-action/tasks.md#T3
+ */
+export async function submitLandingPageForm(values, tracking = {}, formId = '') {
+	const response = await fetch(submissionUrl(formId), {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-		body: JSON.stringify(body),
+		body: JSON.stringify(submissionBody(values, tracking)),
 	})
 
 	if (!response.ok) {

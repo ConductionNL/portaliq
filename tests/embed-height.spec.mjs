@@ -26,7 +26,7 @@ import {
 	heightToReport,
 	measureDocument,
 	startHeightReporting,
-} from '../src/portal/embedHeight.js'
+} from '../src/shared/embedHeight.js'
 
 test('an unmeasurable document reports the floor rather than nothing', () => {
 	assert.equal(heightToReport(undefined), EMBED_MINIMUM_HEIGHT)

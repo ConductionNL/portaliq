@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
 
 declare(strict_types=1);
@@ -32,6 +32,7 @@ namespace OCA\Portaliq\Service\Identity;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\PortalInvitationServiceInterface;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
@@ -40,9 +41,14 @@ use OCP\Security\ISecureRandom;
 /**
  * Issues, tracks and redeems portal invitations.
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- issue, resend, withdraw
+ * and redeem each check the invitation's state before they act.
+ *
+ * @SuppressWarnings(PHPMD.TooManyMethods) The total is the sum of small private steps; each method stays under the method thresholds.
  */
-class PortalInvitationService {
+class PortalInvitationService implements PortalInvitationServiceInterface {
 	/**
 	 * The register the invitation lives in.
 	 */
@@ -52,6 +58,13 @@ class PortalInvitationService {
 	 * The schema recording an invitation.
 	 */
 	private const SCHEMA = 'portalInvitation';
+
+	/**
+	 * The states an invitation keeps whatever the moment.
+	 *
+	 * @var array<int, string>
+	 */
+	private const FINAL_STATES = ['accepted', 'revoked', 'expired'];
 
 	/**
 	 * How long an invitation admits anybody, by default.
@@ -85,10 +98,25 @@ class PortalInvitationService {
 	 *
 	 * @return array{token: string, expiresAt: string}|null Null when refused.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function invite(string $email, string $organisation, string $audience, string $invitedBy, string $ttl = ''): ?array {
-		if ($email === '' || $organisation === '' || $invitedBy === '') {
+		return $this->inviteAddress(
+			invitation: new AddressInvitation(email: $email, organisation: $organisation, audience: $audience, invitedBy: $invitedBy, ttl: $ttl)
+		);
+	}//end invite()
+
+	/**
+	 * Invite an address, and hand the caller the secret to mail.
+	 *
+	 * @param AddressInvitation $invitation The address, the tenant, the audience, the clerk and the window.
+	 *
+	 * @return array{token: string, expiresAt: string}|null Null when refused.
+	 *
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
+	 */
+	public function inviteAddress(AddressInvitation $invitation): ?array {
+		if ($this->isAddressable(invitation: $invitation) === false) {
 			return null;
 		}
 
@@ -97,6 +125,47 @@ class PortalInvitationService {
 			return null;
 		}
 
+		return $this->storedSecret(invitation: $invitation, token: $token);
+	}//end inviteAddress()
+
+	/**
+	 * Whether an invitation names an address, a tenant and the clerk who sends it.
+	 *
+	 * @param AddressInvitation $invitation The invitation.
+	 *
+	 * @return bool
+	 */
+	private function isAddressable(AddressInvitation $invitation): bool {
+		return $invitation->email !== '' && $invitation->organisation !== '' && $invitation->invitedBy !== '';
+	}//end isAddressable()
+
+	/**
+	 * Store the invitation under the secret's hash and hand back the secret,
+	 * or null when it was not stored.
+	 *
+	 * @param AddressInvitation $invitation The invitation.
+	 * @param string            $token      The secret to mail.
+	 *
+	 * @return array{token: string, expiresAt: string}|null
+	 */
+	private function storedSecret(AddressInvitation $invitation, string $token): ?array {
+		$sent = $this->sentMoments(ttl: $invitation->ttl) + ['tokenHash' => hash('sha256', $token)];
+		if ($this->storeInvitation(invitation: $invitation, sent: $sent) === false) {
+			return null;
+		}
+
+		return ['token' => $token, 'expiresAt' => $sent['expiresAt']];
+	}//end storedSecret()
+
+	/**
+	 * When an invitation is sent and until when it lives: now, plus the given
+	 * ISO 8601 duration or the default week.
+	 *
+	 * @param string $ttl An ISO 8601 duration, or '' for the default week.
+	 *
+	 * @return array{sentAt: string, expiresAt: string}
+	 */
+	private function sentMoments(string $ttl): array {
 		$now = new DateTimeImmutable();
 
 		$window = self::DEFAULT_TTL;
@@ -104,36 +173,41 @@ class PortalInvitationService {
 			$window = $ttl;
 		}
 
-		$expiry = $now->add(new DateInterval($window));
+		return ['sentAt' => $now->format(DATE_ATOM), 'expiresAt' => $now->add(new DateInterval($window))->format(DATE_ATOM)];
+	}//end sentMoments()
 
+	/**
+	 * Write the invitation row; an invitation without an audience is for a client.
+	 *
+	 * @param AddressInvitation $invitation The address, the tenant, the audience and the clerk.
+	 * @param array{sentAt: string, expiresAt: string, tokenHash: string} $sent The moments and the secret's hash.
+	 *
+	 * @return bool Whether the row was written.
+	 */
+	private function storeInvitation(AddressInvitation $invitation, array $sent): bool {
 		$forAudience = 'client';
-		if ($audience !== '') {
-			$forAudience = $audience;
+		if ($invitation->audience !== '') {
+			$forAudience = $invitation->audience;
 		}
 
-		$created = $this->writer->createObject(
+		return $this->writer->createObject(
 			register: self::REGISTER,
 			schema: self::SCHEMA,
 			scopeField: '',
 			subjectRef: '',
-			organisation: $organisation,
+			organisation: $invitation->organisation,
 			data: [
-				'email' => $email,
-				'organisation' => $organisation,
+				'email' => $invitation->email,
+				'organisation' => $invitation->organisation,
 				'audience' => $forAudience,
-				'tokenHash' => hash('sha256', $token),
+				'tokenHash' => $sent['tokenHash'],
 				'state' => 'sent',
-				'invitedBy' => $invitedBy,
-				'sentAt' => $now->format(DATE_ATOM),
-				'expiresAt' => $expiry->format(DATE_ATOM),
+				'invitedBy' => $invitation->invitedBy,
+				'sentAt' => $sent['sentAt'],
+				'expiresAt' => $sent['expiresAt'],
 			]
-		);
-		if ($created === null) {
-			return null;
-		}
-
-		return ['token' => $token, 'expiresAt' => $expiry->format(DATE_ATOM)];
-	}//end invite()
+		) !== null;
+	}//end storeInvitation()
 
 	/**
 	 * The invitations one sender has sent, with their state.
@@ -144,14 +218,51 @@ class PortalInvitationService {
 	 *
 	 * @return array<int, array<string, mixed>> The invitations, state first.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function sentBy(string $invitedBy, string $organisation, ?DateTimeImmutable $now = null): array {
 		if ($invitedBy === '') {
 			return [];
 		}
 
-		$rows = $this->reader->readCollection(
+		$rows   = $this->sentRows(invitedBy: $invitedBy, organisation: $organisation);
+		$moment = ($now ?? new DateTimeImmutable());
+
+		return $this->sentLines(rows: $rows, invitedBy: $invitedBy, moment: $moment);
+	}//end sentBy()
+
+	/**
+	 * The sender's own invitations among the rows, as the sender sees them.
+	 *
+	 * @param array<int|string, mixed> $rows      The invitation rows.
+	 * @param string                   $invitedBy The sender.
+	 * @param DateTimeImmutable        $moment    The moment to judge expiry against.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function sentLines(array $rows, string $invitedBy, DateTimeImmutable $moment): array {
+		$out = [];
+		foreach ($rows as $row) {
+			if (is_array($row) === false || ($row['invitedBy'] ?? '') !== $invitedBy) {
+				continue;
+			}
+
+			$out[] = $this->sentLine(row: $row, moment: $moment);
+		}
+
+		return $out;
+	}//end sentLines()
+
+	/**
+	 * The invitation rows scoped to one sender.
+	 *
+	 * @param string $invitedBy    The sender.
+	 * @param string $organisation The tenant.
+	 *
+	 * @return array<int|string, mixed>
+	 */
+	private function sentRows(string $invitedBy, string $organisation): array {
+		return $this->reader->readCollection(
 			register: self::REGISTER,
 			schema: self::SCHEMA,
 			scopeField: 'invitedBy',
@@ -159,27 +270,27 @@ class PortalInvitationService {
 			organisation: $organisation,
 			limit: 200
 		);
+	}//end sentRows()
 
-		$moment = ($now ?? new DateTimeImmutable());
-		$out = [];
-		foreach ($rows as $row) {
-			if (is_array($row) === false || ($row['invitedBy'] ?? '') !== $invitedBy) {
-				continue;
-			}
-
-			$out[] = [
-				'email' => (string)($row['email'] ?? ''),
-				// The state the sender sees is the state as of now: an
-				// invitation nobody has touched since it lapsed still says
-				// sent on the row, and saying that back would be a lie.
-				'state' => $this->stateAsOf(row: $row, now: $moment),
-				'sentAt' => (string)($row['sentAt'] ?? ''),
-				'expiresAt' => (string)($row['expiresAt'] ?? ''),
-			];
-		}
-
-		return $out;
-	}//end sentBy()
+	/**
+	 * One sent invitation as the sender sees it.
+	 *
+	 * @param array<string, mixed> $row    The invitation row.
+	 * @param DateTimeImmutable    $moment The moment to judge expiry against.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function sentLine(array $row, DateTimeImmutable $moment): array {
+		return [
+			'email' => (string)($row['email'] ?? ''),
+			// The state the sender sees is the state as of now: an
+			// invitation nobody has touched since it lapsed still says
+			// sent on the row, and saying that back would be a lie.
+			'state' => $this->stateAsOf(row: $row, now: $moment),
+			'sentAt' => (string)($row['sentAt'] ?? ''),
+			'expiresAt' => (string)($row['expiresAt'] ?? ''),
+		];
+	}//end sentLine()
 
 	/**
 	 * Follow an invitation: mark it opened, or refuse it.
@@ -190,7 +301,7 @@ class PortalInvitationService {
 	 * @return array{state: string, email: string}|null Null when no invitation
 	 *         matches; otherwise the state, which may be `expired`.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function open(string $token, ?DateTimeImmutable $now = null): ?array {
 		$row = $this->findByToken(token: $token);
@@ -218,9 +329,33 @@ class PortalInvitationService {
 	 * @return array{subjectRef: string}|null Null when the invitation admits
 	 *         nobody: unknown, expired, revoked or already accepted.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function accept(string $token, ?DateTimeImmutable $now = null): ?array {
+		$row = $this->acceptable(token: $token, now: $now);
+		if ($row === null) {
+			return null;
+		}
+
+		$account = $this->provisionFor(row: $row);
+		if ($account === null) {
+			return null;
+		}
+
+		$this->markState(row: $row, state: 'accepted', extra: ['subjectRef' => $account['subjectRef']]);
+
+		return ['subjectRef' => $account['subjectRef']];
+	}//end accept()
+
+	/**
+	 * The invitation a token names when it still admits someone: sent or opened, not lapsed.
+	 *
+	 * @param string                 $token The secret from the mail.
+	 * @param DateTimeImmutable|null $now   The moment to judge expiry against.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function acceptable(string $token, DateTimeImmutable|null $now): array|null {
 		$row = $this->findByToken(token: $token);
 		if ($row === null) {
 			return null;
@@ -231,21 +366,226 @@ class PortalInvitationService {
 			return null;
 		}
 
-		$account = $this->accounts->provision(
+		return $row;
+	}//end acceptable()
+
+	/**
+	 * Provision the account for the invited address.
+	 *
+	 * @param array<string, mixed> $row The invitation row.
+	 *
+	 * @return array{subjectRef: string, isNew: bool, status: string}|null
+	 */
+	private function provisionFor(array $row): array|null {
+		return $this->accounts->provision(
 			audience: (string)($row['audience'] ?? 'client'),
 			organisation: (string)($row['organisation'] ?? ''),
 			email: (string)($row['email'] ?? ''),
 			verifiedEmail: true,
 			provisionedBy: (string)($row['invitedBy'] ?? '')
 		);
-		if ($account === null) {
+	}//end provisionFor()
+
+	/**
+	 * Withdraw an invitation that was not accepted (REQ-ISA-002). The link in
+	 * the mail admits nobody afterwards. Withdrawing one twice changes
+	 * nothing.
+	 *
+	 * @param string $id The invitation's id.
+	 * @param string $organisation The tenant the clerk works for.
+	 *
+	 * @return string '' when it is withdrawn, else `not_found` or `already_accepted`.
+	 *
+	 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-see-and-withdraw-invitations-req-isa-002
+	 */
+	public function revoke(string $id, string $organisation): string {
+		$row = $this->findById(id: $id, organisation: $organisation);
+		if ($row === null) {
+			return 'not_found';
+		}
+
+		$state = (string)($row['state'] ?? 'sent');
+		if ($state === 'accepted') {
+			return 'already_accepted';
+		}
+
+		if ($state !== 'revoked') {
+			$this->markState(row: $row, state: 'revoked');
+		}
+
+		return '';
+	}//end revoke()
+
+	/**
+	 * Send an invitation that was not accepted again (REQ-ISA-011): a new
+	 * secret replaces the old one, so the earlier link admits nobody, and the
+	 * window starts again. A withdrawn or accepted invitation is not resent.
+	 *
+	 * @param string $id The invitation's id.
+	 * @param string $organisation The tenant the clerk works for.
+	 * @param string $ttl An ISO 8601 duration, or '' for the default week.
+	 *
+	 * @return array{token?: string, email?: string, expiresAt?: string, error?: string}
+	 *         The new secret to mail with its address and expiry, or an `error`
+	 *         of `not_found`, `already_accepted`, `withdrawn` or `not_saved`.
+	 *
+	 * @spec openspec/changes/staff-resend-an-invitation/specs/portal-account-administration/spec.md#requirement-staff-send-an-invitation-again-req-isa-011
+	 */
+	public function resend(string $id, string $organisation, string $ttl = ''): array {
+		$row = $this->findById(id: $id, organisation: $organisation);
+		if ($row === null) {
+			return ['error' => 'not_found'];
+		}
+
+		$refusal = $this->resendRefusal(row: $row);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		return $this->reissue(row: $row, ttl: $ttl);
+	}//end resend()
+
+	/**
+	 * Why an invitation is not sent again: it was accepted or withdrawn.
+	 *
+	 * @param array<string, mixed> $row The invitation row.
+	 *
+	 * @return array{error: string}|null
+	 */
+	private function resendRefusal(array $row): array|null {
+		$state = (string)($row['state'] ?? 'sent');
+		if ($state === 'accepted') {
+			return ['error' => 'already_accepted'];
+		}
+
+		if ($state === 'revoked') {
+			return ['error' => 'withdrawn'];
+		}
+
+		return null;
+	}//end resendRefusal()
+
+	/**
+	 * Mint a new secret for the invitation and save it with a fresh window.
+	 *
+	 * @param array<string, mixed> $row The invitation row.
+	 * @param string               $ttl An ISO 8601 duration, or '' for the default week.
+	 *
+	 * @return array{token?: string, email?: string, expiresAt?: string, error?: string}
+	 */
+	private function reissue(array $row, string $ttl): array {
+		$token = $this->random->generate(48, (ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS));
+		$email = (string)($row['email'] ?? '');
+		if ($token === '' || $email === '') {
+			return ['error' => 'not_saved'];
+		}
+
+		return $this->saveReissued(row: $row, token: $token, email: $email, ttl: $ttl);
+	}//end reissue()
+
+	/**
+	 * Save the new secret and window on the invitation.
+	 *
+	 * @param array<string, mixed> $row   The invitation row.
+	 * @param string               $token The new secret.
+	 * @param string               $email The invited address.
+	 * @param string               $ttl   An ISO 8601 duration, or '' for the default week.
+	 *
+	 * @return array{token?: string, email?: string, expiresAt?: string, error?: string}
+	 */
+	private function saveReissued(array $row, string $token, string $email, string $ttl): array {
+		$window = self::DEFAULT_TTL;
+		if ($ttl !== '') {
+			$window = $ttl;
+		}
+
+		$now    = new DateTimeImmutable();
+		$expiry = $now->add(new DateInterval($window));
+		$saved  = $this->restamp(row: $row, token: $token, now: $now, expiry: $expiry);
+		if ($saved === false) {
+			return ['error' => 'not_saved'];
+		}
+
+		return ['token' => $token, 'email' => $email, 'expiresAt' => $expiry->format(DATE_ATOM)];
+	}//end saveReissued()
+
+	/**
+	 * Mark the invitation sent again with its new secret and window.
+	 *
+	 * @param array<string, mixed> $row    The invitation row.
+	 * @param string               $token  The new secret.
+	 * @param DateTimeImmutable    $now    When it is sent.
+	 * @param DateTimeImmutable    $expiry When it lapses.
+	 *
+	 * @return bool Whether the row was written.
+	 */
+	private function restamp(array $row, string $token, DateTimeImmutable $now, DateTimeImmutable $expiry): bool {
+		return $this->markState(
+			row: $row,
+			state: 'sent',
+			extra: [
+				'tokenHash' => hash('sha256', $token),
+				'sentAt' => $now->format(DATE_ATOM),
+				'expiresAt' => $expiry->format(DATE_ATOM),
+			]
+		);
+	}//end restamp()
+
+	/**
+	 * The invitation with this id in this organisation, or null.
+	 *
+	 * @param string $id The invitation's id.
+	 * @param string $organisation The tenant.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function findById(string $id, string $organisation): ?array {
+		if ($id === '' || $organisation === '') {
 			return null;
 		}
 
-		$this->markState(row: $row, state: 'accepted', extra: ['subjectRef' => $account['subjectRef']]);
+		$rows = $this->reader->readCollection(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: 'organisation',
+			subjectRef: $organisation,
+			organisation: $organisation,
+			limit: 500
+		);
 
-		return ['subjectRef' => $account['subjectRef']];
-	}//end accept()
+		return $this->rowWithId(rows: $rows, id: $id);
+	}//end findById()
+
+	/**
+	 * The first row that carries the id as its uuid, its id or its `@self` id.
+	 *
+	 * @param array<int|string, mixed> $rows The rows.
+	 * @param string                   $id   The invitation's id.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function rowWithId(array $rows, string $id): ?array {
+		foreach ($rows as $row) {
+			if (is_array($row) === true && in_array($id, $this->idsOf(row: $row), true) === true) {
+				return $row;
+			}
+		}
+
+		return null;
+	}//end rowWithId()
+
+	/**
+	 * The ids a row answers to: its uuid, its id and its `@self` id.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return array<int, string>
+	 */
+	private function idsOf(array $row): array {
+		$self = (array)($row['@self'] ?? []);
+
+		return [(string)($row['uuid'] ?? ''), (string)($row['id'] ?? ''), (string)($self['id'] ?? '')];
+	}//end idsOf()
 
 	/**
 	 * The invitation carrying this secret's hash, or null.
@@ -269,13 +609,7 @@ class PortalInvitationService {
 			limit: 5
 		);
 
-		foreach ($rows as $row) {
-			if (is_array($row) === true && hash_equals((string)($row['tokenHash'] ?? ''), $hash) === true) {
-				return $row;
-			}
-		}
-
-		return null;
+		return TokenRows::matching(rows: $rows, hash: $hash);
 	}//end findByToken()
 
 	/**
@@ -288,22 +622,34 @@ class PortalInvitationService {
 	 */
 	private function stateAsOf(array $row, DateTimeImmutable $now): string {
 		$state = (string)($row['state'] ?? 'sent');
-		if ($state === 'accepted' || $state === 'revoked' || $state === 'expired') {
+		if (in_array($state, self::FINAL_STATES, true) === true) {
 			return $state;
 		}
 
-		$expiresAt = (string)($row['expiresAt'] ?? '');
-		if ($expiresAt === '') {
-			return $state;
-		}
-
-		$expiry = date_create_immutable($expiresAt);
-		if ($expiry === false || $expiry <= $now) {
+		if ($this->hasLapsed(expiresAt: (string)($row['expiresAt'] ?? ''), now: $now) === true) {
 			return 'expired';
 		}
 
 		return $state;
 	}//end stateAsOf()
+
+	/**
+	 * Whether an expiry moment has come, or does not parse; never without one.
+	 *
+	 * @param string            $expiresAt The stored expiry, or ''.
+	 * @param DateTimeImmutable $now       The moment.
+	 *
+	 * @return bool
+	 */
+	private function hasLapsed(string $expiresAt, DateTimeImmutable $now): bool {
+		if ($expiresAt === '') {
+			return false;
+		}
+
+		$expiry = date_create_immutable($expiresAt);
+
+		return $expiry === false || $expiry <= $now;
+	}//end hasLapsed()
 
 	/**
 	 * Write a new state on the invitation row.
@@ -312,9 +658,9 @@ class PortalInvitationService {
 	 * @param string $state The new state.
 	 * @param array<string, mixed> $extra Anything else to stamp.
 	 *
-	 * @return void
+	 * @return bool Whether the row was written.
 	 */
-	private function markState(array $row, string $state, array $extra = []): void {
+	private function markState(array $row, string $state, array $extra = []): bool {
 		$id = (string)($row['uuid'] ?? $row['id'] ?? '');
 		if ($id === '') {
 			$self = (array)($row['@self'] ?? []);
@@ -322,10 +668,10 @@ class PortalInvitationService {
 		}
 
 		if ($id === '') {
-			return;
+			return false;
 		}
 
-		$this->writer->updateObject(
+		$updated = $this->writer->updateObject(
 			register: self::REGISTER,
 			schema: self::SCHEMA,
 			scopeField: '',
@@ -334,5 +680,7 @@ class PortalInvitationService {
 			id: $id,
 			data: array_merge(['state' => $state], $extra)
 		);
+
+		return $updated !== null;
 	}//end markState()
 }//end class

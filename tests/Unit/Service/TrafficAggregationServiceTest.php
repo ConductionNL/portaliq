@@ -27,6 +27,7 @@ use OCA\Portaliq\Service\Traffic\TrafficRollupSum;
 use OCA\Portaliq\Service\Traffic\TrafficSegments;
 use OCA\Portaliq\Service\Traffic\TrafficSessioniser;
 use OCA\Portaliq\Service\TrafficAggregationService;
+use OCA\Portaliq\Service\TrafficBackfillService;
 use OCA\Portaliq\Service\TrafficConfigResolver;
 use OCA\Portaliq\Tests\Unit\Service\Traffic\FakeAppConfig;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -87,6 +88,14 @@ class TrafficAggregationServiceTest extends TestCase {
 	 * @var array<int, array<string, mixed>>|null
 	 */
 	private ?array $portals = null;
+
+	/**
+	 * The resolver, store and clock doubles of the last service(), so the
+	 * back-fill service can share them.
+	 *
+	 * @var array<string, mixed>
+	 */
+	private array $doubles = [];
 
 	/**
 	 * The frozen clock: 2026-09-04 23:30:00 UTC.
@@ -192,6 +201,8 @@ class TrafficAggregationServiceTest extends TestCase {
 			}
 		);
 
+		$this->doubles = ['portals' => $portals, 'store' => $store, 'clock' => $clock];
+
 		return new TrafficAggregationService(
 			$portals,
 			new TrafficConfigResolver(),
@@ -206,6 +217,26 @@ class TrafficAggregationServiceTest extends TestCase {
 			$recordings
 		);
 	}//end service()
+
+
+	/**
+	 * The back-fill service (portal-page-traffic) over the same doubles
+	 * and a fresh aggregation service.
+	 *
+	 * @return TrafficBackfillService The service.
+	 */
+	private function backfillService(): TrafficBackfillService {
+		$aggregation = $this->service();
+
+		return new TrafficBackfillService(
+			$this->doubles['portals'],
+			new TrafficConfigResolver(),
+			$this->doubles['store'],
+			$aggregation,
+			$this->config->mock($this),
+			$this->doubles['clock']
+		);
+	}//end backfillService()
 
 
 	/**
@@ -406,4 +437,157 @@ class TrafficAggregationServiceTest extends TestCase {
 			$this->assertNotSame('/never', $record['pages'][0]['path'] ?? '');
 		}
 	}//end testARollUpPortalSumsItsMembersAndNeverCountsItself()
+
+
+	/**
+	 * The back-fill (portal-page-traffic): a stored day written before the
+	 * per-page counts, whose raw events are all still retained, is rebuilt
+	 * once and gains them; the next run does not back-fill again.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
+	 */
+	public function testARetainedDayGainsThePerPageCountsOnce(): void {
+		$this->daily['old'] = [
+			'portal' => 'open-tilburg',
+			'date' => '2026-08-20',
+			'segment' => '',
+			'pageViews' => 2,
+			'events' => ['page_view' => 2],
+			'pages' => [['path' => '/', 'views' => 2, 'entrances' => 2, 'exits' => 2, 'avgEngagementSeconds' => 0.0]],
+		];
+		$this->events = [
+			$this->event('open-tilburg', '2026-08-20T10:00:00.000Z', '/', receivedAt: '2026-08-20T10:00:01.000Z'),
+			$this->event('open-tilburg', '2026-08-20T11:00:00.000Z', '/', receivedAt: '2026-08-20T11:00:01.000Z', visitor: 'h2'),
+		];
+		$backfill = $this->backfillService();
+
+		$first = $backfill->runOnce();
+		$second = $backfill->runOnce();
+
+		$this->assertSame(1, $first);
+		$this->assertSame(0, $second);
+		$this->assertSame('page-traffic-1', $this->config->values['portaliq/traffic_backfilled']);
+		$page = $this->daily['old']['pages'][0];
+		$this->assertSame('/', $page['path']);
+		$this->assertSame(2, $page['sessions']);
+		$this->assertSame(2, $page['visitors']);
+		$this->assertSame(0, $page['engagedSessions']);
+	}//end testARetainedDayGainsThePerPageCountsOnce()
+
+
+	/**
+	 * A day whose raw events were partly purged keeps its complete record:
+	 * the back-fill never trades 100 page views for 40.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
+	 */
+	public function testAPartlyPurgedDayKeepsItsOldRecord(): void {
+		$stored = [
+			'portal' => 'open-tilburg',
+			'date' => '2026-06-07',
+			'segment' => '',
+			'pageViews' => 100,
+			'events' => ['page_view' => 100],
+			'pages' => [['path' => '/', 'views' => 100, 'entrances' => 60, 'exits' => 60, 'avgEngagementSeconds' => 3.0]],
+		];
+		$this->daily['edge'] = $stored;
+		for ($i = 0; $i < 40; $i++) {
+			$this->events[] = $this->event('open-tilburg', sprintf('2026-06-07T10:%02d:00.000Z', $i), '/', receivedAt: '2026-06-07T12:00:00.000Z', visitor: 'h' . $i);
+		}
+
+		$result = $this->backfillService()->backfill();
+
+		$this->assertSame($stored, $this->daily['edge']);
+		$this->assertSame(0, $result['days']);
+		$this->assertSame(2, $result['portals'], 'both ordinary portals are walked');
+		$this->assertSame(1, $this->backfillService()->backfill(only: 'open-venray')['portals'], 'one portal on request');
+	}//end testAPartlyPurgedDayKeepsItsOldRecord()
+
+	/**
+	 * Through the job: the stored daily record, not the method's return, names the terms that found nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md#requirement-the-roll-up-counts-searches-that-found-nothing-req-pzr-001
+	 */
+	public function testTheDailyJobStoresZeroResultSearches(): void {
+		$empty = ['name' => 'search', 'pagePath' => '/zoeken', 'searchTerm' => 'parkeren', 'params' => ['results' => 0], 'sequence' => 1];
+		$found = ['name' => 'search', 'pagePath' => '/zoeken', 'searchTerm' => 'afval', 'params' => ['results' => 5], 'sequence' => 2];
+		$unknown = ['name' => 'search', 'pagePath' => '/zoeken', 'searchTerm' => 'bouwen', 'sequence' => 3];
+		$this->events = [
+			$this->event('open-tilburg', '2026-09-04T10:00:00.000Z', '/'),
+			$empty + $this->event('open-tilburg', '2026-09-04T10:00:05.000Z', '/zoeken'),
+			$found + $this->event('open-tilburg', '2026-09-04T10:00:09.000Z', '/zoeken'),
+			$unknown + $this->event('open-tilburg', '2026-09-04T10:00:12.000Z', '/zoeken'),
+		];
+
+		$this->service()->run();
+
+		$stored = $this->rollupsFor('open-tilburg')['2026-09-04'];
+		$this->assertSame([['term' => 'parkeren', 'count' => 1]], $stored['zeroResultSearches']);
+		$this->assertSame(1, $stored['searchesWithoutCount']);
+	}//end testTheDailyJobStoresZeroResultSearches()
+
+	/**
+	 * Which portals a run and a back-fill walk, pinned against a recorded
+	 * answer: blank slugs are skipped, a roll-up portal is summed after its
+	 * members, and a back-fill for one portal re-sums only the roll-ups
+	 * that hold it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-roll-up-portal-must-sum-its-members-and-never-count-its-own
+	 */
+	public function testTheWalkedPortalsMatchTheGolden(): void {
+		$golden = __DIR__ . '/../../Fixtures/Golden/traffic-portal-walk.json';
+		$actual = [];
+		$asks   = [
+			'run' => null,
+			'backfill all' => null,
+			'backfill tilburg' => 'open-tilburg',
+			'backfill venray' => 'open-venray',
+			'backfill rollup' => 'regio',
+			'backfill unknown' => 'zzz',
+		];
+		foreach ($asks as $name => $only) {
+			$this->setUp();
+			$this->portals = [
+				['slug' => '', 'status' => 'published', 'traffic' => ['enabled' => true]],
+				['slug' => '  ', 'status' => 'published', 'traffic' => ['enabled' => true]],
+				['status' => 'published'],
+				['slug' => 'regio', 'status' => 'published', 'traffic' => ['enabled' => true, 'rollupOf' => ['open-tilburg', 'quiet']]],
+				['slug' => ' open-tilburg ', 'status' => 'published', 'traffic' => ['enabled' => true, 'retentionDays' => 2]],
+				['slug' => 'open-venray', 'status' => 'published', 'traffic' => ['enabled' => false, 'retentionDays' => 1]],
+				['slug' => 'heel', 'status' => 'published', 'traffic' => ['enabled' => true, 'rollupOf' => ['open-venray']]],
+				['slug' => 'open-venray', 'status' => 'published', 'traffic' => ['enabled' => true, 'retentionDays' => 1]],
+			];
+			$this->events = [
+				$this->event(portal: 'open-tilburg', occurredAt: '2026-09-04T10:00:00.000Z', path: '/'),
+				$this->event(portal: 'open-tilburg', occurredAt: '2026-09-03T10:00:00.000Z', path: '/a', receivedAt: '2026-09-03T10:00:01.000Z'),
+				$this->event(portal: 'open-venray', occurredAt: '2026-09-04T11:00:00.000Z', path: '/', visitor: 'h2'),
+			];
+			if ($only === null && $name === 'run') {
+				$result = $this->service()->run();
+			} else {
+				$result = $this->backfillService()->backfill(only: $only);
+			}
+
+			$days = [];
+			foreach ($this->daily as $uuid => $record) {
+				$days[] = $uuid . ' ' . $record['portal'] . ' ' . $record['date'] . ' ' . ($record['segment'] ?? '') . ' ' . ($record['pageViews'] ?? '-');
+			}
+
+			$actual[$name] = ['result' => $result, 'days' => $days, 'watermarks' => $this->config->values];
+		}
+
+		if (getenv('GOLDEN_RECORD') === '1') {
+			file_put_contents($golden, json_encode($actual, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
+		}
+
+		$this->assertSame(expected: json_decode((string)file_get_contents($golden), true), actual: json_decode((string)json_encode($actual), true));
+	}//end testTheWalkedPortalsMatchTheGolden()
 }//end class

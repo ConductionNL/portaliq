@@ -1,0 +1,123 @@
+<?php
+
+/**
+ * The theme picker behind the portal's Theme widget.
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * @category Controller
+ * @package  OCA\Portaliq\Controller
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Portaliq\Controller;
+
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalThemeChoiceInterface;
+use OCA\Portaliq\Service\Tenancy\PortalAdminScope;
+use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
+use OCP\AppFramework\Http\JSONResponse;
+use OCP\IRequest;
+
+/**
+ * Lists the sets a portal can wear and saves the one chosen.
+ */
+class PortalThemeController extends Controller {
+
+	/**
+	 * Constructor.
+	 *
+	 * @param IRequest          $request The request.
+	 * @param PortalThemeChoiceInterface $choice  The sets and the choice.
+	 * @param PortalAdminScope  $scope   Who may administer which portal.
+	 */
+	public function __construct(
+		IRequest $request,
+		private readonly PortalThemeChoiceInterface $choice,
+		private readonly PortalAdminScope $scope,
+	) {
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
+	}//end __construct()
+
+	/**
+	 * The portal's theme and every set it can adopt, with contrast verdicts.
+	 *
+	 * @param string $slug The portal slug.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @auth portal-admin A portal's house style is its administrators' choice:
+	 *       an instance administrator, or a member of the portal's own
+	 *       `adminGroups`; any other caller gets the unknown-portal 404
+	 *       (PortalAdminScope).
+	 *
+	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t11
+	 *
+	 * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
+	 */
+	#[NoAdminRequired]
+	public function index(string $slug): JSONResponse {
+		$portal = $this->choice->portalBySlug(slug: $slug);
+		if ($portal === null || $this->scope->mayAdminister(portal: $portal) === false) {
+			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		return new JSONResponse($this->choice->listFor(portal: $portal));
+	}//end index()
+
+	/**
+	 * Save the portal's theme.
+	 *
+	 * The administrator's confirmation of a set that fails contrast arrives
+	 * as the `acceptFindings` body field and selects the confirming save.
+	 *
+	 * @param string $slug  The portal slug.
+	 * @param string $theme The set id.
+	 *
+	 * @return JSONResponse The list as stored; 404 for an unknown portal; 422
+	 *                      for a set that does not resolve, or one that fails
+	 *                      contrast without confirmation; 502 when the write failed.
+	 *
+	 * @auth portal-admin A portal's house style is its administrators' choice:
+	 *       an instance administrator, or a member of the portal's own
+	 *       `adminGroups`; any other caller gets the unknown-portal 404
+	 *       (PortalAdminScope).
+	 *
+	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t11
+	 *
+	 * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
+	 */
+	#[NoAdminRequired]
+	public function update(string $slug, string $theme = ''): JSONResponse {
+		$portal = $this->choice->portalBySlug(slug: $slug);
+		if ($portal === null || $this->scope->mayAdminister(portal: $portal) === false) {
+			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$result = $this->choice->choose(portal: $portal, theme: $theme);
+		if (filter_var($this->request->getParam('acceptFindings', false), FILTER_VALIDATE_BOOLEAN) === true) {
+			$result = $this->choice->chooseConfirmingFindings(portal: $portal, theme: $theme);
+		}
+		if (($result['error'] ?? null) === 'save_failed') {
+			return new JSONResponse($result, Http::STATUS_BAD_GATEWAY);
+		}
+
+		if (isset($result['error']) === true) {
+			return new JSONResponse($result, Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+
+		return new JSONResponse($this->choice->listFor(portal: $result['portal']));
+	}//end update()
+}//end class
