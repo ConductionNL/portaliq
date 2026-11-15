@@ -51,6 +51,9 @@ use OCP\IRequest;
  * stream. No refusal carries more than its status.
  *
  * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t4
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the count includes the route attributes
+ *   (NoAdminRequired, NoCSRFRequired, ...) a controller declares.
  */
 class PortalCollectionDocumentsController extends Controller implements PortalProtected {
 

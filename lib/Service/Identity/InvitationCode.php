@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use OCP\Security\ISecureRandom;
+use SensitiveParameter;
 
 /**
  * Mints, shows and normalises an invitation code.
@@ -98,7 +99,7 @@ class InvitationCode {
 	 *
 	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
-	public function normalise(#[\SensitiveParameter] string $typed): string {
+	public function normalise(#[SensitiveParameter] string $typed): string {
 		$plain = strtoupper((string)preg_replace('/[\s\-]+/', '', $typed));
 		if ($this->isCode(value: $plain) === false) {
 			return '';
@@ -122,7 +123,7 @@ class InvitationCode {
 	 *
 	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
-	public function keyedHash(#[\SensitiveParameter] string $code, #[\SensitiveParameter] string $instanceSecret): string {
+	public function keyedHash(#[SensitiveParameter] string $code, #[SensitiveParameter] string $instanceSecret): string {
 		if ($code === '' || $instanceSecret === '') {
 			return '';
 		}
