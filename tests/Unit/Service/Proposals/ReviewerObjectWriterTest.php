@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service\Proposals;
 
 use OCA\Portaliq\Service\Proposals\ReviewerObjectWriter;
+use OCA\Portaliq\Tests\Doubles\SaveCallArgs;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -56,6 +57,7 @@ class ReviewerObjectWriterTest extends TestCase {
 			}
 
 			public function saveObject(...$args): mixed {
+				$args = SaveCallArgs::named(args: $args);
 				$this->saved[] = $args;
 				return $this->answer;
 			}
@@ -95,6 +97,7 @@ class ReviewerObjectWriterTest extends TestCase {
 	public function testARefusalIsLoggedAndFalse(): void {
 		$service = new class {
 			public function saveObject(...$args): mixed {
+				$args = SaveCallArgs::named(args: $args);
 				throw new RuntimeException('not allowed');
 			}
 		};

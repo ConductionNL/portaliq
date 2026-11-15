@@ -14,8 +14,10 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service\Notifications;
 
 use DateTimeImmutable;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\Service\Notifications\PendingPushService;
 use OCA\Portaliq\Service\Notifications\PushSenderInterface;
+use OCA\Portaliq\Tests\Doubles\SaveCallArgs;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -83,7 +85,8 @@ class PendingPushServiceFailuresTest extends TestCase {
 			/**
 			 * @param array<string,mixed> $object
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ?ObjectSaveOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				['register' => $register, 'schema' => $schema, 'uuid' => $uuid] = SaveCallArgs::named(args: [$object, $options, $_rbac, $_multitenancy]);
 				if ($this->saveFails === true) {
 					throw new RuntimeException('database is read-only');
 				}

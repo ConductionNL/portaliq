@@ -11,6 +11,7 @@ namespace OCA\Portaliq\Tests\Unit\Service\Availability;
 
 use OCA\Portaliq\Service\Availability\AvailabilityStore;
 use OCA\Portaliq\Service\PortalRegisterContext;
+use OCA\Portaliq\Tests\Doubles\SaveCallArgs;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -93,6 +94,7 @@ class AvailabilityStoreRecordsTest extends TestCase {
 			}
 
 			public function saveObject(...$args): void {
+				$args = SaveCallArgs::named(args: $args);
 				$this->saved[] = $args;
 			}
 
@@ -188,6 +190,7 @@ class AvailabilityStoreRecordsTest extends TestCase {
 	public function testAFailedSaveIsLoggedAndFalse(): void {
 		$service = new class {
 			public function saveObject(...$args): void {
+				$args = SaveCallArgs::named(args: $args);
 				throw new RuntimeException('invalid');
 			}
 		};

@@ -9,7 +9,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\ExampleResident;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\Service\ExampleResident\ExampleResidentStore;
+use OCA\Portaliq\Tests\Doubles\SaveCallArgs;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -70,7 +72,8 @@ class ExampleResidentStoreTest extends TestCase {
 				return $this->row;
 			}
 
-			public function saveObject(array $object, string $register, string $schema, string $uuid, bool $_rbac, bool $_multitenancy): array {
+			public function saveObject(array $object, ?ObjectSaveOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				['register' => $register, 'schema' => $schema, 'uuid' => $uuid] = SaveCallArgs::named(args: [$object, $options, $_rbac, $_multitenancy]);
 				if ($this->fails !== null) {
 					throw $this->fails;
 				}

@@ -11,6 +11,7 @@ namespace OCA\Portaliq\Tests\Unit\Service\Articles;
 
 use JsonSerializable;
 use OCA\Portaliq\Service\Articles\ArticleStore;
+use OCA\Portaliq\Tests\Doubles\SaveCallArgs;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -91,6 +92,7 @@ class ArticleStoreTest extends TestCase {
 			 * @return mixed
 			 */
 			public function saveObject(mixed ...$args): mixed {
+				$args = SaveCallArgs::named(args: $args);
 				return $this->answer('saveObject', $args);
 			}
 

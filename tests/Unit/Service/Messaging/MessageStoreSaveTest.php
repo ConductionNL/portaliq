@@ -20,7 +20,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Messaging;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\Service\Messaging\MessageStore;
+use OCA\Portaliq\Tests\Doubles\SaveCallArgs;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -72,7 +74,8 @@ class MessageStoreSaveTest extends TestCase {
 			public function __construct(private mixed $answer) {
 			}
 
-			public function saveObject(array $object, string $register, string $schema, ?string $uuid, bool $_rbac, bool $_multitenancy): mixed {
+			public function saveObject(array $object, ?ObjectSaveOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				['register' => $register, 'schema' => $schema, 'uuid' => $uuid] = SaveCallArgs::named(args: [$object, $options, $_rbac, $_multitenancy]);
 				$this->saves[] = ['object' => $object, 'register' => $register, 'schema' => $schema, 'uuid' => $uuid, '_rbac' => $_rbac, '_multitenancy' => $_multitenancy];
 				if ($this->answer instanceof \Throwable) {
 					throw $this->answer;

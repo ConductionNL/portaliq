@@ -22,8 +22,10 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Plans;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\Service\Plans\PlanEndReminderService;
 use OCA\Portaliq\Service\Plans\PlanRules;
+use OCA\Portaliq\Tests\Doubles\SaveCallArgs;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -109,7 +111,8 @@ class PlanEndReminderServiceFailureTest extends TestCase {
 				return $answer;
 			}
 
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ?ObjectSaveOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				['register' => $register, 'schema' => $schema, 'uuid' => $uuid] = SaveCallArgs::named(args: [$object, $options, $_rbac, $_multitenancy]);
 				if ($this->failWrites === true) {
 					throw new RuntimeException('store is read-only');
 				}

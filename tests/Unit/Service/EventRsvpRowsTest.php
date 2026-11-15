@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\Service\EventFeedReader;
 use OCA\Portaliq\Service\EventRsvpService;
+use OCA\Portaliq\Tests\Doubles\SaveCallArgs;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -50,7 +52,8 @@ class EventRsvpRowsTest extends TestCase {
 				return $this->rows;
 			}
 
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ?ObjectSaveOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				['register' => $register, 'schema' => $schema, 'uuid' => $uuid] = SaveCallArgs::named(args: [$object, $options, $_rbac, $_multitenancy]);
 				$this->saved[] = [$object, $uuid];
 				return $object;
 			}

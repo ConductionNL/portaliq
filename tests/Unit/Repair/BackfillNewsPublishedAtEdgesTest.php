@@ -11,6 +11,7 @@ namespace OCA\Portaliq\Tests\Unit\Repair;
 
 use OCA\Portaliq\Repair\BackfillNewsPublishedAt;
 use OCA\Portaliq\Service\PortalRegisterContext;
+use OCA\Portaliq\Tests\Doubles\SaveCallArgs;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -68,6 +69,7 @@ class BackfillNewsPublishedAtEdgesTest extends TestCase {
 			 * @return array<string, mixed>
 			 */
 			public function saveObject(mixed ...$args): array {
+				$args = SaveCallArgs::named(args: $args);
 				if ($args['uuid'] === 'n-locked') {
 					throw new RuntimeException('object is locked');
 				}

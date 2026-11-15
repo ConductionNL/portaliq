@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use DateTimeZone;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\Service\Notifications\QuietHoursPolicy;
+use OCA\Portaliq\Tests\Doubles\SaveCallArgs;
 use OCP\IConfig;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -211,7 +212,8 @@ class QuietHoursPolicyTest extends TestCase {
 				throw new RuntimeException('down');
 			}//end findAll()
 
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ?ObjectSaveOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				['register' => $register, 'schema' => $schema, 'uuid' => $uuid] = SaveCallArgs::named(args: [$object, $options, $_rbac, $_multitenancy]);
 				return $object;
 			}//end saveObject()
 		};

@@ -18,10 +18,12 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Traffic;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCA\Portaliq\Service\PublishedPortals;
 use OCA\Portaliq\Service\Traffic\TrafficServerToken;
 use OCA\Portaliq\Service\TrafficConfigResolver;
+use OCA\Portaliq\Tests\Doubles\SaveCallArgs;
 use OCP\Security\ISecureRandom;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -144,7 +146,8 @@ class TrafficServerTokenStoreFailuresTest extends TestCase {
 			 *
 			 * @return array
 			 */
-			public function saveObject(array $object, string $register, string $schema, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ?ObjectSaveOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				['register' => $register, 'schema' => $schema, 'uuid' => $uuid] = SaveCallArgs::named(args: [$object, $options, $_rbac, $_multitenancy]);
 				if ($this->throws === true) {
 					throw new RuntimeException('database gone');
 				}

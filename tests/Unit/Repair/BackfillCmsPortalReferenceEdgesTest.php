@@ -11,6 +11,7 @@ namespace OCA\Portaliq\Tests\Unit\Repair;
 
 use OCA\Portaliq\Repair\BackfillCmsPortalReference;
 use OCA\Portaliq\Service\PortalRegisterContext;
+use OCA\Portaliq\Tests\Doubles\SaveCallArgs;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -123,6 +124,7 @@ class BackfillCmsPortalReferenceEdgesTest extends TestCase {
 			 * @return array<string, mixed>
 			 */
 			public function saveObject(mixed ...$args): array {
+				$args = SaveCallArgs::named(args: $args);
 				if (in_array($args['uuid'], $this->test->failingSaves, true) === true) {
 					throw new RuntimeException('save refused');
 				}
