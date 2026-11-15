@@ -23,20 +23,20 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
- * @spec openspec/changes/guardian-self-service-profile/specs/change-proposal-queue/spec.md#requirement-a-proposer-can-list-their-own-proposals-req-cpq-005
+ * @spec openspec/specs/change-proposal-queue/spec.md
+ * @spec openspec/specs/change-proposal-queue/spec.md#requirement-a-proposer-can-list-their-own-proposals-req-cpq-005
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Proposals;
 
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 
 /**
  * Scoped reads over the `changeProposal` collection.
  *
- * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+ * @spec openspec/specs/change-proposal-queue/spec.md
  */
 class ProposalQueueReader {
 	/**
@@ -52,10 +52,10 @@ class ProposalQueueReader {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Reads the `changeProposal` collection.
+	 * @param ScopedCollectionReaderInterface $reader Reads the `changeProposal` collection.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 	) {
 	}//end __construct()
 
@@ -67,7 +67,7 @@ class ProposalQueueReader {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function forSubject(array $subject, string $state): array {
 		$filter = ['subjectSchema' => (string)($subject['schema'] ?? '')];
@@ -90,7 +90,7 @@ class ProposalQueueReader {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/guardian-self-service-profile/specs/change-proposal-queue/spec.md#requirement-a-proposer-can-list-their-own-proposals-req-cpq-005
+	 * @spec openspec/specs/change-proposal-queue/spec.md#requirement-a-proposer-can-list-their-own-proposals-req-cpq-005
 	 */
 	public function mine(string $proposedBy): array {
 		return $this->scopedRead(scopeField: 'proposedBy', scopeValue: $proposedBy);

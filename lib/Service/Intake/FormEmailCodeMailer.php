@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\Mail\MailTemplateRenderer;
 use OCP\IL10N;
 use OCP\L10N\IFactory;
@@ -99,7 +99,7 @@ class FormEmailCodeMailer {
 			return (count($this->mailer->send($message)) === 0);
 		} catch (Throwable $failure) {
 			// The exception's own message is left out: a transport error may quote the recipient.
-			$this->logger->warning('Portaliq: form e-mail code not sent', ['exception' => get_class($failure), 'app' => Application::APP_ID]);
+			$this->logger->warning('Portaliq: form e-mail code not sent', ['exception' => get_class($failure), 'app' => AppIdentity::APP_ID]);
 
 			return false;
 		}
@@ -119,6 +119,6 @@ class FormEmailCodeMailer {
 			$language = $locales[0];
 		}
 
-		return $this->l10nFactory->get(Application::APP_ID, $language);
+		return $this->l10nFactory->get(AppIdentity::APP_ID, $language);
 	}//end l10nFor()
 }//end class

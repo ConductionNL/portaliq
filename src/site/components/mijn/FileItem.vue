@@ -6,7 +6,7 @@
 <!--
 	One document as a Den Haag file item: ONE control named after the
 	document that downloads it, then a line with who added it, when, its type
-	and its size ("Van de gemeente, 2 oktober 2026. PDF, 84 kB"). The
+	and its size ("Van het waterschap, 2 oktober 2026. PDF, 84 kB"). The
 	download goes through the portal api, so the control is a button; the
 	icon is decorative.
 -->
@@ -56,7 +56,7 @@
 import DataBadge from './DataBadge.vue'
 
 /**
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
  */
 export default {
 	name: 'FileItem',

@@ -13,7 +13,7 @@
 //
 // Imports nothing, so tests/site-shared-dossier.spec.mjs runs it as node.
 //
-// @spec openspec/changes/site-shared-dossier/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
+// @spec openspec/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
 
 /** The in-site route prefix of a shared dossier. */
 export const SHARED_DOSSIER_ROUTE = '/gedeeld-dossier'
@@ -32,7 +32,7 @@ const TOKEN = /^[0-9a-f-]{36}\.[0-9a-f]{48}$/
  *
  * @param {string} route The in-site route.
  * @return {boolean}
- * @spec openspec/changes/site-shared-dossier/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
+ * @spec openspec/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
  */
 export function isSharedDossierRoute(route) {
 	const value = String(route || '')
@@ -48,7 +48,7 @@ export function isSharedDossierRoute(route) {
  *
  * @param {string} route The in-site route.
  * @return {string}
- * @spec openspec/changes/site-shared-dossier/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
+ * @spec openspec/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
  */
 export function sharedDossierToken(route) {
 	if (!isSharedDossierRoute(route)) {
@@ -80,7 +80,7 @@ function safeHref(value) {
  *
  * @param {object} body The answer of the shared read.
  * @return {{title: string, description: string, items: Array<{id: string, title: string, href: string, note: string}>}}
- * @spec openspec/changes/site-shared-dossier/specs/site-shared-dossier/spec.md#requirement-the-page-must-show-only-what-the-share-answers-req-ssd-002
+ * @spec openspec/specs/site-shared-dossier/spec.md#requirement-the-page-must-show-only-what-the-share-answers-req-ssd-002
  */
 export function sharedDossierView(body) {
 	const source = body && typeof body === 'object' ? body : {}
@@ -110,7 +110,7 @@ export function sharedDossierView(body) {
  * @param {(url: string, init: object) => Promise<object>} fetchImpl `fetch`, or a stand-in in a test.
  * @param {string} [root] The instance root, '/index.php' when not known.
  * @return {Promise<{status: 'ok', dossier: object}|{status: 'notFound'}|{status: 'error'}>}
- * @spec openspec/changes/site-shared-dossier/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
+ * @spec openspec/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
  */
 export async function fetchSharedDossier(token, fetchImpl, root = '/index.php') {
 	if (!TOKEN.test(String(token || ''))) {

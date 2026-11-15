@@ -32,6 +32,7 @@ use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http\StreamResponse;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Service\RequestedPortal;
 
 /**
  * 401 without a session, the outcomes as statuses, only the allowed fields
@@ -48,19 +49,25 @@ class PortalPlansControllerTest extends TestCase {
 	 * @param PortalPlanService $plans The plan rules.
 	 * @param array<string, mixed> $params What the request carries.
 	 * @param PortalPdfExport|null $pdf The renderer.
+	 * @param PlanFiles|null $files The plan files.
+	 * @param string $portalHeader The portal the site names in its header.
+	 * @param PortalResolver|null $portals The portal resolver.
 	 *
 	 * @return PortalPlansController
 	 */
-	private function controller(?array $subject, PortalPlanService $plans, array $params=[], ?PortalPdfExport $pdf=null, ?PlanFiles $files=null): PortalPlansController {
+	private function controller(?array $subject, PortalPlanService $plans, array $params=[], ?PortalPdfExport $pdf=null, ?PlanFiles $files=null, string $portalHeader='', ?PortalResolver $portals=null): PortalPlansController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParams')->willReturn($params);
+		$request->method('getHeader')->willReturnCallback(static fn (string $name): string => ($name === 'X-Portaliq-Portal' ? $portalHeader : ''));
 		$request->method('getUploadedFile')->willReturn(['name' => 'Budgetplan.pdf', 'tmp_name' => '/tmp/x', 'error' => 0]);
 		$session = $this->createMock(PortalSessionService::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
-		$portals = $this->createMock(PortalResolver::class);
-		$portals->method('resolve')->willReturn(['slug' => 'zuid']);
+		if ($portals === null) {
+			$portals = $this->createMock(PortalResolver::class);
+			$portals->method('resolve')->willReturn(['slug' => 'zuid']);
+		}
 
-		return new PortalPlansController($request, $session, $plans, $portals, $pdf, $files);
+		return new PortalPlansController($request, $session, $plans, $portals, new RequestedPortal(), $pdf, $files);
 	}//end controller()
 
 	/**
@@ -82,6 +89,26 @@ class PortalPlansControllerTest extends TestCase {
 			$this->assertSame(401, $response->getStatus());
 		}
 	}//end testWithoutASessionNothingIsAsked()
+
+	/**
+	 * The portal the site names in its header alone decides the templates offered.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t03
+	 */
+	public function testTheSiteHeaderNamesThePortalForTheTemplates(): void {
+		$portals = $this->createMock(PortalResolver::class);
+		$portals->method('resolve')->willReturnCallback(
+			static fn (IRequest $request, ?string $portalSlug = null): ?array => ($portalSlug === 'zuid' ? ['slug' => 'zuid'] : null)
+		);
+		$plans = $this->createMock(PortalPlanService::class);
+		$plans->expects($this->once())->method('templates')->with('zuid')->willReturn([]);
+
+		$response = $this->controller(subject: ['subjectRef' => 'mark'], plans: $plans, portalHeader: 'zuid', portals: $portals)->templates();
+
+		$this->assertSame(expected: 200, actual: $response->getStatus());
+	}//end testTheSiteHeaderNamesThePortalForTheTemplates()
 
 	/**
 	 * Outcomes become statuses, and an unknown plan reads the same as someone else's.

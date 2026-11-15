@@ -84,6 +84,34 @@ class PortalThemeContrastTest extends TestCase {
 	}//end testWithoutTheThemeAppNothingIsEvaluated()
 
 	/**
+	 * A contrast service that throws makes nothing trustworthy: the whole
+	 * verdict is unevaluated, not a partial pass, and the surface is logged.
+	 *
+	 * @return void
+	 */
+	public function testAServiceThatFailsLeavesTheThemeUnevaluated(): void {
+		$service = new class {
+			public function evaluate(array $candidates, string $background): array {
+				throw new RuntimeException('parser crashed');
+			}
+		};
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturn($service);
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('warning')
+			->with('[portaliq] theme contrast evaluation failed', ['surface' => 'page', 'reason' => 'parser crashed']);
+
+		$verdict = (new PortalThemeContrast($container, $logger))->evaluate(tokens: [
+			'--nldesign-color-background' => '#ffffff',
+			'--nldesign-color-text' => '#1a1a1a',
+			'--nldesign-color-footer-background' => '#000000',
+			'--nldesign-footer-legal-color' => '#ffffff',
+		]);
+
+		$this->assertSame(['evaluated' => false, 'measured' => 0, 'passes' => false, 'findings' => []], $verdict);
+	}//end testAServiceThatFailsLeavesTheThemeUnevaluated()
+
+	/**
 	 * The contrast check with the theme app's service, or without one.
 	 *
 	 * @param object|null $service The service the container answers.

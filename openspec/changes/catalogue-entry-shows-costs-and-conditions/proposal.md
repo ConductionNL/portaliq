@@ -10,7 +10,7 @@ A resident browsing what she can request wants to know, before she starts, what 
 
 ## What changes
 
-- **The fee shows on the entry.** The catalogue read adds the fee of the entry's binding, read on the server from the case type, never from the browser. The block shows it as "Kosten: € 45,00". An entry whose case type declares no fee shows no cost line.
+- **The fee shows on the entry.** The catalogue read adds the fee of the entry's binding, read on the server from the case type, never from the browser. The block shows it as "Kosten: € 38,50". An entry whose case type declares no fee shows no cost line.
 - **Conditions show when the publication carries them.** A publication may carry `conditions`, a list of short lines. The block lists them under the summary. Anything else in that field is ignored.
 
 ## Rows covered

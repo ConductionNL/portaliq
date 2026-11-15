@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/guardian-direct-messages/design.md#messaging-leaf-interface
+ * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#messaging-leaf-interface
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Messaging;
 
 /**
- * @spec openspec/changes/guardian-direct-messages/design.md#messaging-leaf-interface
+ * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#messaging-leaf-interface
  */
 interface GuardianMessagingLeafInterface {
 	/**
@@ -48,7 +48,7 @@ interface GuardianMessagingLeafInterface {
 	 *
 	 * @return string|null The new thread id, or null on refusal.
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/specs/guardian-direct-messaging/spec.md#requirement-a-guardian-may-start-a-direct-thread-with-a-teacher-who-teaches-their-childs-group
+	 * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-a-guardian-may-start-a-direct-thread-with-a-teacher-who-teaches-their-childs-group
 	 */
 	public function createThread(string $kind, array $participantRefs, ?string $groupRef, string $createdBy): ?string;
 
@@ -63,7 +63,7 @@ interface GuardianMessagingLeafInterface {
 	 *
 	 * @return bool True on success.
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/specs/guardian-direct-messaging/spec.md#requirement-every-readpostmark-read-re-verifies-participation-server-side
+	 * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-every-readpostmark-read-re-verifies-participation-server-side
 	 */
 	public function postMessage(string $threadId, string $senderRef, bool $senderIsStaff, string $body): bool;
 
@@ -75,7 +75,7 @@ interface GuardianMessagingLeafInterface {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/design.md#api-design
+	 * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#api-design
 	 */
 	public function listThreads(string $subjectRef, bool $isStaff): array;
 
@@ -90,7 +90,7 @@ interface GuardianMessagingLeafInterface {
 	 *
 	 * @return array<int, array<string, mixed>>|null
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/specs/guardian-direct-messaging/spec.md#requirement-every-readpostmark-read-re-verifies-participation-server-side
+	 * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-every-readpostmark-read-re-verifies-participation-server-side
 	 */
 	public function listMessages(string $threadId, string $subjectRef, bool $isStaff): ?array;
 
@@ -104,7 +104,7 @@ interface GuardianMessagingLeafInterface {
 	 *
 	 * @return bool True on success; false for a non-participant/non-existent thread.
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/specs/guardian-direct-messaging/spec.md#requirement-a-message-tracks-who-has-read-it
+	 * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-a-message-tracks-who-has-read-it
 	 */
 	public function markThreadRead(string $threadId, string $subjectRef, bool $isStaff): bool;
 

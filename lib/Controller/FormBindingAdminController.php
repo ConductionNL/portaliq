@@ -31,9 +31,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\Intake\PortalBindingPreview;
-use OCA\Portaliq\Service\Intake\PortalEmbedSnippetDescription;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalBindingPreviewInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalEmbedSnippetDescriptionInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -51,17 +51,17 @@ class FormBindingAdminController extends Controller {
 	 * Wire the controller.
 	 *
 	 * @param IRequest             $request The request.
-	 * @param PortalBindingPreview $preview What a binding resolves to today.
-	 * @param PortalEmbedSnippetDescription $embed The code a website puts on a page to show a form.
+	 * @param PortalBindingPreviewInterface $preview What a binding resolves to today.
+	 * @param PortalEmbedSnippetDescriptionInterface $embed The code a website puts on a page to show a form.
 	 * @param IURLGenerator $urls Builds the address of the embed frame.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalBindingPreview $preview,
-		private readonly PortalEmbedSnippetDescription $embed,
+		private readonly PortalBindingPreviewInterface $preview,
+		private readonly PortalEmbedSnippetDescriptionInterface $embed,
 		private readonly IURLGenerator $urls,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

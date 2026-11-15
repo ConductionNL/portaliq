@@ -252,7 +252,7 @@ test('site: "My account" shows the name, both kinds of address with the preferre
 	assert.match(html, /a@example\.nl/)
 	assert.match(html, /c@example\.nl/)
 	assert.match(html, /Waiting for confirmation/)
-	assert.match(html, /\+31612345678/)
+	assert.match(html, /06 12 34 56 78/, 'the stored E.164 number reads the Dutch way')
 	assert.equal(
 		(html.match(/pq-address__pill--preferred[^>]*>\s*Preferred\s*</g) || [])
 			.length,

@@ -195,6 +195,73 @@ class PortalSessionServiceTest extends TestCase {
 
 	}//end testRealSessionBearerStillResolves()
 
+	/**
+	 * Every header that does not carry a valid session bearer resolves to no
+	 * subject: absent, empty, another scheme, an empty bearer, garbage and a
+	 * session token whose signature was tampered with.
+	 */
+	public function testAMalformedOrForgedBearerResolvesToNoSubject(): void {
+		$service = $this->service();
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1', trust: 'high');
+
+		$this->assertNotNull($service->resolveFromBearer('Bearer ' . $issued['token']));
+		$this->assertNull($service->resolveFromBearer(null));
+		$this->assertNull($service->resolveFromBearer(''));
+		$this->assertNull($service->resolveFromBearer('Basic ' . $issued['token']));
+		$this->assertNull($service->resolveFromBearer('bearer ' . $issued['token']));
+		$this->assertNull($service->resolveFromBearer('Bearer '));
+		$this->assertNull($service->resolveFromBearer('Bearer not-a-jwt'));
+		$this->assertNull($service->resolveFromBearer('Bearer ' . $issued['token'] . 'x'));
+
+	}//end testAMalformedOrForgedBearerResolvesToNoSubject()
+
+	/**
+	 * The company's KVK number is signed on the session and survives a
+	 * refresh; a session without one, or with a malformed one, carries none.
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/tasks.md#t0
+	 */
+	public function testTheCompanyKvkRidesOnTheSessionAndItsRefresh(): void {
+		$service = $this->service();
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1', trust: 'substantial', roles: ['supplier:read'], provider: 'eherkenning', kvk: '87654321');
+
+		$subject = $service->resolveFromBearer('Bearer ' . $issued['token']);
+		$this->assertSame('87654321', $subject['kvk']);
+
+		$refreshed = $service->refreshSession('Bearer ' . $issued['token']);
+		$this->assertSame('87654321', $service->resolveFromBearer('Bearer ' . $refreshed['token'])['kvk']);
+
+		$none = $service->issueSession(subjectRef: 's2', audience: 'supplier', organisation: 'org-1', kvk: '1234');
+		$this->assertSame('', $service->resolveFromBearer('Bearer ' . $none['token'])['kvk']);
+	}//end testTheCompanyKvkRidesOnTheSessionAndItsRefresh()
+
+	/**
+	 * The resolved subject has exactly these fields, in this order.
+	 */
+	public function testAResolvedSubjectHasItsFieldsInOrder(): void {
+		$service = $this->service();
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1', trust: 'substantial', roles: ['supplier:read'], branch: '000012345678', provider: 'eherkenning');
+
+		$subject = $service->resolveFromBearer('Bearer ' . $issued['token']);
+
+		$this->assertSame(
+			['subjectRef', 'audience', 'organisation', 'trust', 'roles', 'jti', 'authTime', 'branch', 'branchRestricted', 'provider', 'expiresAt', 'kvk', 'attributes'],
+			array_keys($subject)
+		);
+		$this->assertSame('s1', $subject['subjectRef']);
+		$this->assertSame('supplier', $subject['audience']);
+		$this->assertSame('org-1', $subject['organisation']);
+		$this->assertSame('substantial', $subject['trust']);
+		$this->assertSame(['supplier:read'], $subject['roles']);
+		$this->assertSame($issued['jti'], $subject['jti']);
+		$this->assertGreaterThan(0, $subject['authTime']);
+		$this->assertSame('000012345678', $subject['branch']);
+		$this->assertTrue($subject['branchRestricted']);
+		$this->assertSame('eherkenning', $subject['provider']);
+		$this->assertGreaterThan($subject['authTime'], $subject['expiresAt']);
+
+	}//end testAResolvedSubjectHasItsFieldsInOrder()
+
 	public function testNoDedicatedSecretRefusesIssuanceAndResolution(): void {
 		// Empty app config → NEVER falls back to a system/instance secret
 		// (portal-auth-edge-session-hardening) — the edge fails closed.
@@ -382,6 +449,37 @@ class PortalSessionServiceTest extends TestCase {
 		$this->assertFalse(PortalSessionService::trustSatisfies($subject['trust'], 'substantial'));
 
 	}//end testAnEmailLinkSessionStaysLowThroughARefresh()
+
+	/**
+	 * A Yivi session carries its disclosed attributes, filtered, through a
+	 * refresh and a branch change; a session without any carries none.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#T05
+	 */
+	public function testDisclosedAttributesStayWithTheSessionChain(): void {
+		$service = $this->service();
+		$issued = $service->issueSession(
+			subjectRef: 'yivi:p1',
+			audience: 'client',
+			organisation: 'org-1',
+			trust: 'low',
+			roles: ['client:read'],
+			attributes: ['pbdf.gemeente.personalData.fullname' => 'Sanne de Vries', 'bsn' => '123456789']
+		);
+
+		$subject = $service->resolveFromBearer('Bearer ' . $issued['token']);
+		$this->assertSame(['pbdf.gemeente.personalData.fullname' => 'Sanne de Vries'], $subject['attributes']);
+
+		$refreshed = $service->refreshSession('Bearer ' . $issued['token']);
+		$this->assertSame(['pbdf.gemeente.personalData.fullname' => 'Sanne de Vries'], $service->resolveFromBearer('Bearer ' . $refreshed['token'])['attributes']);
+
+		$rebranched = $service->rebranchSession('Bearer ' . $refreshed['token'], '');
+		$this->assertSame(['pbdf.gemeente.personalData.fullname' => 'Sanne de Vries'], $service->resolveFromBearer('Bearer ' . $rebranched['token'])['attributes']);
+
+		$plain = $service->issueSession(subjectRef: 's2', audience: 'client', organisation: 'org-1', trust: 'substantial');
+		$this->assertSame([], $service->resolveFromBearer('Bearer ' . $plain['token'])['attributes']);
+
+	}//end testDisclosedAttributesStayWithTheSessionChain()
 
 	/**
 	 * Review B1: an organisation with more than one page of session rows,

@@ -58,20 +58,7 @@ class PortalTokenCss {
 			return '';
 		}
 
-		$declarations = [];
-		foreach ($tokens as $name => $value) {
-			if (is_string($name) === false || is_string($value) === false || $this->nameIsAllowed(name: $name) === false) {
-				continue;
-			}
-
-			$value = trim($value);
-			if ($this->valueIsAllowed(value: $value) === false) {
-				continue;
-			}
-
-			$declarations[] = $name . ':' . $value;
-		}
-
+		$declarations = $this->declarations(tokens: $tokens);
 		if ($declarations === []) {
 			return '';
 		}
@@ -80,14 +67,54 @@ class PortalTokenCss {
 	}//end css()
 
 	/**
+	 * The allowed tokens as `name:value` declarations, in their declared order.
+	 *
+	 * @param array<mixed> $tokens The portal's tokens.
+	 *
+	 * @return array<int, string>
+	 */
+	private function declarations(array $tokens): array {
+		$declarations = [];
+		foreach ($tokens as $name => $value) {
+			$declaration = $this->declaration(name: $name, value: $value);
+			if ($declaration !== null) {
+				$declarations[] = $declaration;
+			}
+		}
+
+		return $declarations;
+	}//end declarations()
+
+	/**
+	 * One `name:value` declaration, or null when the name or the value is not allowed.
+	 *
+	 * @param mixed $name  The token name.
+	 * @param mixed $value The token value.
+	 *
+	 * @return string|null
+	 */
+	private function declaration(mixed $name, mixed $value): ?string {
+		if (is_string($value) === false || $this->nameIsAllowed(name: $name) === false) {
+			return null;
+		}
+
+		$value = trim($value);
+		if ($this->valueIsAllowed(value: $value) === false) {
+			return null;
+		}
+
+		return $name . ':' . $value;
+	}//end declaration()
+
+	/**
 	 * Whether a token name is a custom property of a themed family.
 	 *
-	 * @param string $name The name.
+	 * @param mixed $name The name.
 	 *
 	 * @return bool
 	 */
-	private function nameIsAllowed(string $name): bool {
-		if (preg_match('/^--(' . implode('|', self::FAMILIES) . ')-[a-z0-9-]+$/', $name) !== 1) {
+	private function nameIsAllowed(mixed $name): bool {
+		if (is_string($name) === false || preg_match('/^--(' . implode('|', self::FAMILIES) . ')-[a-z0-9-]+$/', $name) !== 1) {
 			return false;
 		}
 
@@ -106,13 +133,24 @@ class PortalTokenCss {
 			return false;
 		}
 
+		return $this->holdsForbidden(value: $value) === false;
+	}//end valueIsAllowed()
+
+	/**
+	 * Whether a value holds one of the forbidden strings, in any case.
+	 *
+	 * @param string $value The value.
+	 *
+	 * @return bool
+	 */
+	private function holdsForbidden(string $value): bool {
 		$lower = strtolower($value);
 		foreach (self::FORBIDDEN as $needle) {
 			if (str_contains($lower, $needle) === true) {
-				return false;
+				return true;
 			}
 		}
 
-		return true;
-	}//end valueIsAllowed()
+		return false;
+	}//end holdsForbidden()
 }//end class

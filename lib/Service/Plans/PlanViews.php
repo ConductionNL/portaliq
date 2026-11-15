@@ -192,6 +192,9 @@ class PlanViews {
 		}
 
 		$account = $this->accounts->bySubjectRef(subjectRef: $ref);
+		if (($account['status'] ?? '') === PortalAccountLookup::STATUS_VOID) {
+			$account = null;
+		}
 
 		return (string)($account['displayName'] ?? '');
 	}//end nameOf()

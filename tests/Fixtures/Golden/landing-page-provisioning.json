@@ -1,0 +1,2111 @@
+{
+    "empty portal": {
+        "log": [],
+        "pageId": null,
+        "formId": null,
+        "url": null,
+        "error": "unknown_portal",
+        "handled": true
+    },
+    "unknown portal": {
+        "log": [
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ]
+        ],
+        "pageId": null,
+        "formId": null,
+        "url": null,
+        "error": "unknown_portal",
+        "handled": true
+    },
+    "route taken any case": {
+        "log": [
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "page",
+                "",
+                "",
+                500,
+                {
+                    "portal": "zuid"
+                }
+            ]
+        ],
+        "pageId": null,
+        "formId": null,
+        "url": null,
+        "error": "duplicate_route",
+        "handled": true
+    },
+    "route taken in other portal": {
+        "log": [
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "page",
+                "",
+                "",
+                500,
+                {
+                    "portal": "zuid"
+                }
+            ],
+            [
+                "write",
+                "portaliq",
+                "form",
+                {
+                    "portal": "zuid",
+                    "pageRoute": "/Actie",
+                    "sourceApp": "pipelinq",
+                    "externalReference": "ext-1",
+                    "campaign": {
+                        "source": "mail"
+                    },
+                    "fields": [
+                        {
+                            "id": "naam",
+                            "label": "Naam",
+                            "type": "text"
+                        }
+                    ],
+                    "submitLabel": "Verstuur",
+                    "consentText": "Akkoord",
+                    "status": "active"
+                }
+            ],
+            [
+                "write",
+                "portaliq",
+                "page",
+                {
+                    "title": "Actie",
+                    "route": "/Actie",
+                    "status": "draft",
+                    "locale": "nl",
+                    "summary": "Kort",
+                    "heroImage": "img-1",
+                    "portal": "zuid",
+                    "body": {
+                        "type": "grid",
+                        "widgets": [
+                            {
+                                "id": "hero",
+                                "widgetKey": "hero",
+                                "gridX": 0,
+                                "gridY": 0,
+                                "gridWidth": 12,
+                                "gridHeight": 3,
+                                "props": {
+                                    "summary": "Kort"
+                                }
+                            },
+                            {
+                                "id": "article",
+                                "widgetKey": "markdown",
+                                "gridX": 0,
+                                "gridY": 3,
+                                "gridWidth": 12,
+                                "gridHeight": 6,
+                                "props": {
+                                    "markdown": "Lang verhaal",
+                                    "links": [
+                                        {
+                                            "href": "/a"
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "id": "form",
+                                "widgetKey": "form",
+                                "gridX": 0,
+                                "gridY": 9,
+                                "gridWidth": 12,
+                                "gridHeight": 6,
+                                "props": {
+                                    "formId": "form-1",
+                                    "fields": [
+                                        {
+                                            "id": "naam",
+                                            "label": "Naam",
+                                            "type": "text"
+                                        }
+                                    ],
+                                    "submitLabel": "Verstuur",
+                                    "consentText": "Akkoord"
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ]
+        ],
+        "pageId": "page-1",
+        "formId": "form-1",
+        "url": "https://b.example/Actie",
+        "error": null,
+        "handled": true
+    },
+    "article without summary": {
+        "log": [
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "page",
+                "",
+                "",
+                500,
+                {
+                    "portal": "zuid"
+                }
+            ]
+        ],
+        "pageId": null,
+        "formId": null,
+        "url": null,
+        "error": "invalid_article",
+        "handled": true
+    },
+    "article without body": {
+        "log": [
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "page",
+                "",
+                "",
+                500,
+                {
+                    "portal": "zuid"
+                }
+            ]
+        ],
+        "pageId": null,
+        "formId": null,
+        "url": null,
+        "error": "invalid_article",
+        "handled": true
+    },
+    "form without fields": {
+        "log": [
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "page",
+                "",
+                "",
+                500,
+                {
+                    "portal": "zuid"
+                }
+            ]
+        ],
+        "pageId": null,
+        "formId": null,
+        "url": null,
+        "error": "invalid_form",
+        "handled": true
+    },
+    "form field not an array": {
+        "log": [
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "page",
+                "",
+                "",
+                500,
+                {
+                    "portal": "zuid"
+                }
+            ]
+        ],
+        "pageId": null,
+        "formId": null,
+        "url": null,
+        "error": "invalid_form",
+        "handled": true
+    },
+    "form field without type": {
+        "log": [
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "page",
+                "",
+                "",
+                500,
+                {
+                    "portal": "zuid"
+                }
+            ]
+        ],
+        "pageId": null,
+        "formId": null,
+        "url": null,
+        "error": "invalid_form",
+        "handled": true
+    },
+    "form without submit label": {
+        "log": [
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "page",
+                "",
+                "",
+                500,
+                {
+                    "portal": "zuid"
+                }
+            ]
+        ],
+        "pageId": null,
+        "formId": null,
+        "url": null,
+        "error": "invalid_form",
+        "handled": true
+    },
+    "form write fails": {
+        "log": [
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "page",
+                "",
+                "",
+                500,
+                {
+                    "portal": "zuid"
+                }
+            ],
+            [
+                "write",
+                "portaliq",
+                "form",
+                {
+                    "portal": "zuid",
+                    "pageRoute": "/Actie",
+                    "sourceApp": "pipelinq",
+                    "externalReference": "ext-1",
+                    "campaign": {
+                        "source": "mail"
+                    },
+                    "fields": [
+                        {
+                            "id": "naam",
+                            "label": "Naam",
+                            "type": "text"
+                        }
+                    ],
+                    "submitLabel": "Verstuur",
+                    "consentText": "Akkoord",
+                    "status": "active"
+                }
+            ]
+        ],
+        "pageId": null,
+        "formId": null,
+        "url": null,
+        "error": "write_failed",
+        "handled": true
+    },
+    "form write without id": {
+        "log": [
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "page",
+                "",
+                "",
+                500,
+                {
+                    "portal": "zuid"
+                }
+            ],
+            [
+                "write",
+                "portaliq",
+                "form",
+                {
+                    "portal": "zuid",
+                    "pageRoute": "/Actie",
+                    "sourceApp": "pipelinq",
+                    "externalReference": "ext-1",
+                    "campaign": {
+                        "source": "mail"
+                    },
+                    "fields": [
+                        {
+                            "id": "naam",
+                            "label": "Naam",
+                            "type": "text"
+                        }
+                    ],
+                    "submitLabel": "Verstuur",
+                    "consentText": "Akkoord",
+                    "status": "active"
+                }
+            ]
+        ],
+        "pageId": null,
+        "formId": null,
+        "url": null,
+        "error": "write_failed",
+        "handled": true
+    },
+    "form id flat int": {
+        "log": [
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "page",
+                "",
+                "",
+                500,
+                {
+                    "portal": "zuid"
+                }
+            ],
+            [
+                "write",
+                "portaliq",
+                "form",
+                {
+                    "portal": "zuid",
+                    "pageRoute": "/Actie",
+                    "sourceApp": "pipelinq",
+                    "externalReference": "ext-1",
+                    "campaign": {
+                        "source": "mail"
+                    },
+                    "fields": [
+                        {
+                            "id": "naam",
+                            "label": "Naam",
+                            "type": "text"
+                        }
+                    ],
+                    "submitLabel": "Verstuur",
+                    "consentText": "Akkoord",
+                    "status": "active"
+                }
+            ],
+            [
+                "write",
+                "portaliq",
+                "page",
+                {
+                    "title": "Actie",
+                    "route": "/Actie",
+                    "status": "draft",
+                    "locale": "nl",
+                    "summary": "Kort",
+                    "heroImage": "img-1",
+                    "portal": "zuid",
+                    "body": {
+                        "type": "grid",
+                        "widgets": [
+                            {
+                                "id": "hero",
+                                "widgetKey": "hero",
+                                "gridX": 0,
+                                "gridY": 0,
+                                "gridWidth": 12,
+                                "gridHeight": 3,
+                                "props": {
+                                    "summary": "Kort"
+                                }
+                            },
+                            {
+                                "id": "article",
+                                "widgetKey": "markdown",
+                                "gridX": 0,
+                                "gridY": 3,
+                                "gridWidth": 12,
+                                "gridHeight": 6,
+                                "props": {
+                                    "markdown": "Lang verhaal",
+                                    "links": [
+                                        {
+                                            "href": "/a"
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "id": "form",
+                                "widgetKey": "form",
+                                "gridX": 0,
+                                "gridY": 9,
+                                "gridWidth": 12,
+                                "gridHeight": 6,
+                                "props": {
+                                    "formId": "42",
+                                    "fields": [
+                                        {
+                                            "id": "naam",
+                                            "label": "Naam",
+                                            "type": "text"
+                                        }
+                                    ],
+                                    "submitLabel": "Verstuur",
+                                    "consentText": "Akkoord"
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ]
+        ],
+        "pageId": "page-1",
+        "formId": "42",
+        "url": "https://b.example/Actie",
+        "error": null,
+        "handled": true
+    },
+    "form uuid only": {
+        "log": [
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "page",
+                "",
+                "",
+                500,
+                {
+                    "portal": "zuid"
+                }
+            ],
+            [
+                "write",
+                "portaliq",
+                "form",
+                {
+                    "portal": "zuid",
+                    "pageRoute": "/Actie",
+                    "sourceApp": "pipelinq",
+                    "externalReference": "ext-1",
+                    "campaign": {
+                        "source": "mail"
+                    },
+                    "fields": [
+                        {
+                            "id": "naam",
+                            "label": "Naam",
+                            "type": "text"
+                        }
+                    ],
+                    "submitLabel": "Verstuur",
+                    "consentText": "Akkoord",
+                    "status": "active"
+                }
+            ],
+            [
+                "write",
+                "portaliq",
+                "page",
+                {
+                    "title": "Actie",
+                    "route": "/Actie",
+                    "status": "draft",
+                    "locale": "nl",
+                    "summary": "Kort",
+                    "heroImage": "img-1",
+                    "portal": "zuid",
+                    "body": {
+                        "type": "grid",
+                        "widgets": [
+                            {
+                                "id": "hero",
+                                "widgetKey": "hero",
+                                "gridX": 0,
+                                "gridY": 0,
+                                "gridWidth": 12,
+                                "gridHeight": 3,
+                                "props": {
+                                    "summary": "Kort"
+                                }
+                            },
+                            {
+                                "id": "article",
+                                "widgetKey": "markdown",
+                                "gridX": 0,
+                                "gridY": 3,
+                                "gridWidth": 12,
+                                "gridHeight": 6,
+                                "props": {
+                                    "markdown": "Lang verhaal",
+                                    "links": [
+                                        {
+                                            "href": "/a"
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "id": "form",
+                                "widgetKey": "form",
+                                "gridX": 0,
+                                "gridY": 9,
+                                "gridWidth": 12,
+                                "gridHeight": 6,
+                                "props": {
+                                    "formId": "u-9",
+                                    "fields": [
+                                        {
+                                            "id": "naam",
+                                            "label": "Naam",
+                                            "type": "text"
+                                        }
+                                    ],
+                                    "submitLabel": "Verstuur",
+                                    "consentText": "Akkoord"
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ]
+        ],
+        "pageId": "page-1",
+        "formId": "u-9",
+        "url": "https://b.example/Actie",
+        "error": null,
+        "handled": true
+    },
+    "page write fails": {
+        "log": [
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "page",
+                "",
+                "",
+                500,
+                {
+                    "portal": "zuid"
+                }
+            ],
+            [
+                "write",
+                "portaliq",
+                "form",
+                {
+                    "portal": "zuid",
+                    "pageRoute": "/Actie",
+                    "sourceApp": "pipelinq",
+                    "externalReference": "ext-1",
+                    "campaign": {
+                        "source": "mail"
+                    },
+                    "fields": [
+                        {
+                            "id": "naam",
+                            "label": "Naam",
+                            "type": "text"
+                        }
+                    ],
+                    "submitLabel": "Verstuur",
+                    "consentText": "Akkoord",
+                    "status": "active"
+                }
+            ],
+            [
+                "write",
+                "portaliq",
+                "page",
+                {
+                    "title": "Actie",
+                    "route": "/Actie",
+                    "status": "draft",
+                    "locale": "nl",
+                    "summary": "Kort",
+                    "heroImage": "img-1",
+                    "portal": "zuid",
+                    "body": {
+                        "type": "grid",
+                        "widgets": [
+                            {
+                                "id": "hero",
+                                "widgetKey": "hero",
+                                "gridX": 0,
+                                "gridY": 0,
+                                "gridWidth": 12,
+                                "gridHeight": 3,
+                                "props": {
+                                    "summary": "Kort"
+                                }
+                            },
+                            {
+                                "id": "article",
+                                "widgetKey": "markdown",
+                                "gridX": 0,
+                                "gridY": 3,
+                                "gridWidth": 12,
+                                "gridHeight": 6,
+                                "props": {
+                                    "markdown": "Lang verhaal",
+                                    "links": [
+                                        {
+                                            "href": "/a"
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "id": "form",
+                                "widgetKey": "form",
+                                "gridX": 0,
+                                "gridY": 9,
+                                "gridWidth": 12,
+                                "gridHeight": 6,
+                                "props": {
+                                    "formId": "form-1",
+                                    "fields": [
+                                        {
+                                            "id": "naam",
+                                            "label": "Naam",
+                                            "type": "text"
+                                        }
+                                    ],
+                                    "submitLabel": "Verstuur",
+                                    "consentText": "Akkoord"
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            [
+                "log.warning",
+                "Portaliq: landing page write failed after its form was created",
+                {
+                    "formId": "form-1",
+                    "portal": "zuid",
+                    "route": "/Actie"
+                }
+            ]
+        ],
+        "pageId": null,
+        "formId": null,
+        "url": null,
+        "error": "write_failed",
+        "handled": true
+    },
+    "page uuid in self": {
+        "log": [
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "page",
+                "",
+                "",
+                500,
+                {
+                    "portal": "zuid"
+                }
+            ],
+            [
+                "write",
+                "portaliq",
+                "form",
+                {
+                    "portal": "zuid",
+                    "pageRoute": "/Actie",
+                    "sourceApp": "pipelinq",
+                    "externalReference": "ext-1",
+                    "campaign": {
+                        "source": "mail"
+                    },
+                    "fields": [
+                        {
+                            "id": "naam",
+                            "label": "Naam",
+                            "type": "text"
+                        }
+                    ],
+                    "submitLabel": "Verstuur",
+                    "consentText": "Akkoord",
+                    "status": "active"
+                }
+            ],
+            [
+                "write",
+                "portaliq",
+                "page",
+                {
+                    "title": "Actie",
+                    "route": "/Actie",
+                    "status": "draft",
+                    "locale": "nl",
+                    "summary": "Kort",
+                    "heroImage": "img-1",
+                    "portal": "zuid",
+                    "body": {
+                        "type": "grid",
+                        "widgets": [
+                            {
+                                "id": "hero",
+                                "widgetKey": "hero",
+                                "gridX": 0,
+                                "gridY": 0,
+                                "gridWidth": 12,
+                                "gridHeight": 3,
+                                "props": {
+                                    "summary": "Kort"
+                                }
+                            },
+                            {
+                                "id": "article",
+                                "widgetKey": "markdown",
+                                "gridX": 0,
+                                "gridY": 3,
+                                "gridWidth": 12,
+                                "gridHeight": 6,
+                                "props": {
+                                    "markdown": "Lang verhaal",
+                                    "links": [
+                                        {
+                                            "href": "/a"
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "id": "form",
+                                "widgetKey": "form",
+                                "gridX": 0,
+                                "gridY": 9,
+                                "gridWidth": 12,
+                                "gridHeight": 6,
+                                "props": {
+                                    "formId": "form-1",
+                                    "fields": [
+                                        {
+                                            "id": "naam",
+                                            "label": "Naam",
+                                            "type": "text"
+                                        }
+                                    ],
+                                    "submitLabel": "Verstuur",
+                                    "consentText": "Akkoord"
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ]
+        ],
+        "pageId": "pu-1",
+        "formId": "form-1",
+        "url": "https://b.example/Actie",
+        "error": null,
+        "handled": true
+    },
+    "everything lands": {
+        "log": [
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "page",
+                "",
+                "",
+                500,
+                {
+                    "portal": "zuid"
+                }
+            ],
+            [
+                "write",
+                "portaliq",
+                "form",
+                {
+                    "portal": "zuid",
+                    "pageRoute": "/Actie",
+                    "sourceApp": "pipelinq",
+                    "externalReference": "ext-1",
+                    "campaign": {
+                        "source": "mail"
+                    },
+                    "fields": [
+                        {
+                            "id": "naam",
+                            "label": "Naam",
+                            "type": "text"
+                        }
+                    ],
+                    "submitLabel": "Verstuur",
+                    "consentText": "Akkoord",
+                    "status": "active"
+                }
+            ],
+            [
+                "write",
+                "portaliq",
+                "page",
+                {
+                    "title": "Actie",
+                    "route": "/Actie",
+                    "status": "draft",
+                    "locale": "nl",
+                    "summary": "Kort",
+                    "heroImage": "img-1",
+                    "portal": "zuid",
+                    "body": {
+                        "type": "grid",
+                        "widgets": [
+                            {
+                                "id": "hero",
+                                "widgetKey": "hero",
+                                "gridX": 0,
+                                "gridY": 0,
+                                "gridWidth": 12,
+                                "gridHeight": 3,
+                                "props": {
+                                    "summary": "Kort"
+                                }
+                            },
+                            {
+                                "id": "article",
+                                "widgetKey": "markdown",
+                                "gridX": 0,
+                                "gridY": 3,
+                                "gridWidth": 12,
+                                "gridHeight": 6,
+                                "props": {
+                                    "markdown": "Lang verhaal",
+                                    "links": [
+                                        {
+                                            "href": "/a"
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "id": "form",
+                                "widgetKey": "form",
+                                "gridX": 0,
+                                "gridY": 9,
+                                "gridWidth": 12,
+                                "gridHeight": 6,
+                                "props": {
+                                    "formId": "form-1",
+                                    "fields": [
+                                        {
+                                            "id": "naam",
+                                            "label": "Naam",
+                                            "type": "text"
+                                        }
+                                    ],
+                                    "submitLabel": "Verstuur",
+                                    "consentText": "Akkoord"
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ]
+        ],
+        "pageId": "page-1",
+        "formId": "form-1",
+        "url": "https://b.example/Actie",
+        "error": null,
+        "handled": true
+    },
+    "destination carried": {
+        "log": [
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "page",
+                "",
+                "",
+                500,
+                {
+                    "portal": "zuid"
+                }
+            ],
+            [
+                "write",
+                "portaliq",
+                "form",
+                {
+                    "portal": "zuid",
+                    "pageRoute": "/Actie",
+                    "sourceApp": "pipelinq",
+                    "externalReference": "ext-1",
+                    "campaign": {
+                        "source": "mail"
+                    },
+                    "fields": [
+                        {
+                            "id": "naam",
+                            "label": "Naam",
+                            "type": "text"
+                        }
+                    ],
+                    "submitLabel": "Verstuur",
+                    "consentText": "Akkoord",
+                    "status": "active",
+                    "destination": {
+                        "register": "dossiq",
+                        "schema": "lead",
+                        "fields": {
+                            "0": "naam",
+                            "2": "mail"
+                        },
+                        "fixed": {
+                            "bron": "web"
+                        }
+                    }
+                }
+            ],
+            [
+                "write",
+                "portaliq",
+                "page",
+                {
+                    "title": "Actie",
+                    "route": "/Actie",
+                    "status": "draft",
+                    "locale": "nl",
+                    "summary": "Kort",
+                    "heroImage": "img-1",
+                    "portal": "zuid",
+                    "body": {
+                        "type": "grid",
+                        "widgets": [
+                            {
+                                "id": "hero",
+                                "widgetKey": "hero",
+                                "gridX": 0,
+                                "gridY": 0,
+                                "gridWidth": 12,
+                                "gridHeight": 3,
+                                "props": {
+                                    "summary": "Kort"
+                                }
+                            },
+                            {
+                                "id": "article",
+                                "widgetKey": "markdown",
+                                "gridX": 0,
+                                "gridY": 3,
+                                "gridWidth": 12,
+                                "gridHeight": 6,
+                                "props": {
+                                    "markdown": "Lang verhaal",
+                                    "links": [
+                                        {
+                                            "href": "/a"
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "id": "form",
+                                "widgetKey": "form",
+                                "gridX": 0,
+                                "gridY": 9,
+                                "gridWidth": 12,
+                                "gridHeight": 6,
+                                "props": {
+                                    "formId": "form-1",
+                                    "fields": [
+                                        {
+                                            "id": "naam",
+                                            "label": "Naam",
+                                            "type": "text"
+                                        }
+                                    ],
+                                    "submitLabel": "Verstuur",
+                                    "consentText": "Akkoord"
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ]
+        ],
+        "pageId": "page-1",
+        "formId": "form-1",
+        "url": "https://b.example/Actie",
+        "error": null,
+        "handled": true
+    },
+    "destination without schema": {
+        "log": [
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "page",
+                "",
+                "",
+                500,
+                {
+                    "portal": "zuid"
+                }
+            ],
+            [
+                "write",
+                "portaliq",
+                "form",
+                {
+                    "portal": "zuid",
+                    "pageRoute": "/Actie",
+                    "sourceApp": "pipelinq",
+                    "externalReference": "ext-1",
+                    "campaign": {
+                        "source": "mail"
+                    },
+                    "fields": [
+                        {
+                            "id": "naam",
+                            "label": "Naam",
+                            "type": "text"
+                        }
+                    ],
+                    "submitLabel": "Verstuur",
+                    "consentText": "Akkoord",
+                    "status": "active"
+                }
+            ],
+            [
+                "write",
+                "portaliq",
+                "page",
+                {
+                    "title": "Actie",
+                    "route": "/Actie",
+                    "status": "draft",
+                    "locale": "nl",
+                    "summary": "Kort",
+                    "heroImage": "img-1",
+                    "portal": "zuid",
+                    "body": {
+                        "type": "grid",
+                        "widgets": [
+                            {
+                                "id": "hero",
+                                "widgetKey": "hero",
+                                "gridX": 0,
+                                "gridY": 0,
+                                "gridWidth": 12,
+                                "gridHeight": 3,
+                                "props": {
+                                    "summary": "Kort"
+                                }
+                            },
+                            {
+                                "id": "article",
+                                "widgetKey": "markdown",
+                                "gridX": 0,
+                                "gridY": 3,
+                                "gridWidth": 12,
+                                "gridHeight": 6,
+                                "props": {
+                                    "markdown": "Lang verhaal",
+                                    "links": [
+                                        {
+                                            "href": "/a"
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "id": "form",
+                                "widgetKey": "form",
+                                "gridX": 0,
+                                "gridY": 9,
+                                "gridWidth": 12,
+                                "gridHeight": 6,
+                                "props": {
+                                    "formId": "form-1",
+                                    "fields": [
+                                        {
+                                            "id": "naam",
+                                            "label": "Naam",
+                                            "type": "text"
+                                        }
+                                    ],
+                                    "submitLabel": "Verstuur",
+                                    "consentText": "Akkoord"
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ]
+        ],
+        "pageId": "page-1",
+        "formId": "form-1",
+        "url": "https://b.example/Actie",
+        "error": null,
+        "handled": true
+    },
+    "first domain unverified": {
+        "log": [
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "page",
+                "",
+                "",
+                500,
+                {
+                    "portal": "zuid"
+                }
+            ],
+            [
+                "write",
+                "portaliq",
+                "form",
+                {
+                    "portal": "zuid",
+                    "pageRoute": "/Actie",
+                    "sourceApp": "pipelinq",
+                    "externalReference": "ext-1",
+                    "campaign": {
+                        "source": "mail"
+                    },
+                    "fields": [
+                        {
+                            "id": "naam",
+                            "label": "Naam",
+                            "type": "text"
+                        }
+                    ],
+                    "submitLabel": "Verstuur",
+                    "consentText": "Akkoord",
+                    "status": "active"
+                }
+            ],
+            [
+                "write",
+                "portaliq",
+                "page",
+                {
+                    "title": "Actie",
+                    "route": "/Actie",
+                    "status": "draft",
+                    "locale": "nl",
+                    "summary": "Kort",
+                    "heroImage": "img-1",
+                    "portal": "zuid",
+                    "body": {
+                        "type": "grid",
+                        "widgets": [
+                            {
+                                "id": "hero",
+                                "widgetKey": "hero",
+                                "gridX": 0,
+                                "gridY": 0,
+                                "gridWidth": 12,
+                                "gridHeight": 3,
+                                "props": {
+                                    "summary": "Kort"
+                                }
+                            },
+                            {
+                                "id": "article",
+                                "widgetKey": "markdown",
+                                "gridX": 0,
+                                "gridY": 3,
+                                "gridWidth": 12,
+                                "gridHeight": 6,
+                                "props": {
+                                    "markdown": "Lang verhaal",
+                                    "links": [
+                                        {
+                                            "href": "/a"
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "id": "form",
+                                "widgetKey": "form",
+                                "gridX": 0,
+                                "gridY": 9,
+                                "gridWidth": 12,
+                                "gridHeight": 6,
+                                "props": {
+                                    "formId": "form-1",
+                                    "fields": [
+                                        {
+                                            "id": "naam",
+                                            "label": "Naam",
+                                            "type": "text"
+                                        }
+                                    ],
+                                    "submitLabel": "Verstuur",
+                                    "consentText": "Akkoord"
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ]
+        ],
+        "pageId": "page-1",
+        "formId": "form-1",
+        "url": "https://a.example/Actie",
+        "error": null,
+        "handled": true
+    },
+    "first domain not an array": {
+        "log": [
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "page",
+                "",
+                "",
+                500,
+                {
+                    "portal": "zuid"
+                }
+            ],
+            [
+                "write",
+                "portaliq",
+                "form",
+                {
+                    "portal": "zuid",
+                    "pageRoute": "/Actie",
+                    "sourceApp": "pipelinq",
+                    "externalReference": "ext-1",
+                    "campaign": {
+                        "source": "mail"
+                    },
+                    "fields": [
+                        {
+                            "id": "naam",
+                            "label": "Naam",
+                            "type": "text"
+                        }
+                    ],
+                    "submitLabel": "Verstuur",
+                    "consentText": "Akkoord",
+                    "status": "active"
+                }
+            ],
+            [
+                "write",
+                "portaliq",
+                "page",
+                {
+                    "title": "Actie",
+                    "route": "/Actie",
+                    "status": "draft",
+                    "locale": "nl",
+                    "summary": "Kort",
+                    "heroImage": "img-1",
+                    "portal": "zuid",
+                    "body": {
+                        "type": "grid",
+                        "widgets": [
+                            {
+                                "id": "hero",
+                                "widgetKey": "hero",
+                                "gridX": 0,
+                                "gridY": 0,
+                                "gridWidth": 12,
+                                "gridHeight": 3,
+                                "props": {
+                                    "summary": "Kort"
+                                }
+                            },
+                            {
+                                "id": "article",
+                                "widgetKey": "markdown",
+                                "gridX": 0,
+                                "gridY": 3,
+                                "gridWidth": 12,
+                                "gridHeight": 6,
+                                "props": {
+                                    "markdown": "Lang verhaal",
+                                    "links": [
+                                        {
+                                            "href": "/a"
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "id": "form",
+                                "widgetKey": "form",
+                                "gridX": 0,
+                                "gridY": 9,
+                                "gridWidth": 12,
+                                "gridHeight": 6,
+                                "props": {
+                                    "formId": "form-1",
+                                    "fields": [
+                                        {
+                                            "id": "naam",
+                                            "label": "Naam",
+                                            "type": "text"
+                                        }
+                                    ],
+                                    "submitLabel": "Verstuur",
+                                    "consentText": "Akkoord"
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ]
+        ],
+        "pageId": "page-1",
+        "formId": "form-1",
+        "url": null,
+        "error": null,
+        "handled": true
+    },
+    "no domains": {
+        "log": [
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "page",
+                "",
+                "",
+                500,
+                {
+                    "portal": "zuid"
+                }
+            ],
+            [
+                "write",
+                "portaliq",
+                "form",
+                {
+                    "portal": "zuid",
+                    "pageRoute": "/Actie",
+                    "sourceApp": "pipelinq",
+                    "externalReference": "ext-1",
+                    "campaign": {
+                        "source": "mail"
+                    },
+                    "fields": [
+                        {
+                            "id": "naam",
+                            "label": "Naam",
+                            "type": "text"
+                        }
+                    ],
+                    "submitLabel": "Verstuur",
+                    "consentText": "Akkoord",
+                    "status": "active"
+                }
+            ],
+            [
+                "write",
+                "portaliq",
+                "page",
+                {
+                    "title": "Actie",
+                    "route": "/Actie",
+                    "status": "draft",
+                    "locale": "nl",
+                    "summary": "Kort",
+                    "heroImage": "img-1",
+                    "portal": "zuid",
+                    "body": {
+                        "type": "grid",
+                        "widgets": [
+                            {
+                                "id": "hero",
+                                "widgetKey": "hero",
+                                "gridX": 0,
+                                "gridY": 0,
+                                "gridWidth": 12,
+                                "gridHeight": 3,
+                                "props": {
+                                    "summary": "Kort"
+                                }
+                            },
+                            {
+                                "id": "article",
+                                "widgetKey": "markdown",
+                                "gridX": 0,
+                                "gridY": 3,
+                                "gridWidth": 12,
+                                "gridHeight": 6,
+                                "props": {
+                                    "markdown": "Lang verhaal",
+                                    "links": [
+                                        {
+                                            "href": "/a"
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "id": "form",
+                                "widgetKey": "form",
+                                "gridX": 0,
+                                "gridY": 9,
+                                "gridWidth": 12,
+                                "gridHeight": 6,
+                                "props": {
+                                    "formId": "form-1",
+                                    "fields": [
+                                        {
+                                            "id": "naam",
+                                            "label": "Naam",
+                                            "type": "text"
+                                        }
+                                    ],
+                                    "submitLabel": "Verstuur",
+                                    "consentText": "Akkoord"
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ]
+        ],
+        "pageId": "page-1",
+        "formId": "form-1",
+        "url": null,
+        "error": null,
+        "handled": true
+    },
+    "verified without hostname": {
+        "log": [
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "page",
+                "",
+                "",
+                500,
+                {
+                    "portal": "zuid"
+                }
+            ],
+            [
+                "write",
+                "portaliq",
+                "form",
+                {
+                    "portal": "zuid",
+                    "pageRoute": "/Actie",
+                    "sourceApp": "pipelinq",
+                    "externalReference": "ext-1",
+                    "campaign": {
+                        "source": "mail"
+                    },
+                    "fields": [
+                        {
+                            "id": "naam",
+                            "label": "Naam",
+                            "type": "text"
+                        }
+                    ],
+                    "submitLabel": "Verstuur",
+                    "consentText": "Akkoord",
+                    "status": "active"
+                }
+            ],
+            [
+                "write",
+                "portaliq",
+                "page",
+                {
+                    "title": "Actie",
+                    "route": "/Actie",
+                    "status": "draft",
+                    "locale": "nl",
+                    "summary": "Kort",
+                    "heroImage": "img-1",
+                    "portal": "zuid",
+                    "body": {
+                        "type": "grid",
+                        "widgets": [
+                            {
+                                "id": "hero",
+                                "widgetKey": "hero",
+                                "gridX": 0,
+                                "gridY": 0,
+                                "gridWidth": 12,
+                                "gridHeight": 3,
+                                "props": {
+                                    "summary": "Kort"
+                                }
+                            },
+                            {
+                                "id": "article",
+                                "widgetKey": "markdown",
+                                "gridX": 0,
+                                "gridY": 3,
+                                "gridWidth": 12,
+                                "gridHeight": 6,
+                                "props": {
+                                    "markdown": "Lang verhaal",
+                                    "links": [
+                                        {
+                                            "href": "/a"
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "id": "form",
+                                "widgetKey": "form",
+                                "gridX": 0,
+                                "gridY": 9,
+                                "gridWidth": 12,
+                                "gridHeight": 6,
+                                "props": {
+                                    "formId": "form-1",
+                                    "fields": [
+                                        {
+                                            "id": "naam",
+                                            "label": "Naam",
+                                            "type": "text"
+                                        }
+                                    ],
+                                    "submitLabel": "Verstuur",
+                                    "consentText": "Akkoord"
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ]
+        ],
+        "pageId": "page-1",
+        "formId": "form-1",
+        "url": null,
+        "error": null,
+        "handled": true
+    },
+    "minimal article and form": {
+        "log": [
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "page",
+                "",
+                "",
+                500,
+                {
+                    "portal": "zuid"
+                }
+            ],
+            [
+                "write",
+                "portaliq",
+                "form",
+                {
+                    "portal": "zuid",
+                    "pageRoute": "/Actie",
+                    "sourceApp": "pipelinq",
+                    "externalReference": "",
+                    "campaign": [],
+                    "fields": [
+                        {
+                            "id": "naam",
+                            "label": "Naam",
+                            "type": "text"
+                        }
+                    ],
+                    "submitLabel": "Go",
+                    "consentText": "",
+                    "status": "active"
+                }
+            ],
+            [
+                "write",
+                "portaliq",
+                "page",
+                {
+                    "title": "Actie",
+                    "route": "/Actie",
+                    "status": "draft",
+                    "locale": "nl",
+                    "summary": "s",
+                    "heroImage": null,
+                    "portal": "zuid",
+                    "body": {
+                        "type": "grid",
+                        "widgets": [
+                            {
+                                "id": "hero",
+                                "widgetKey": "hero",
+                                "gridX": 0,
+                                "gridY": 0,
+                                "gridWidth": 12,
+                                "gridHeight": 3,
+                                "props": {
+                                    "summary": "s"
+                                }
+                            },
+                            {
+                                "id": "article",
+                                "widgetKey": "markdown",
+                                "gridX": 0,
+                                "gridY": 3,
+                                "gridWidth": 12,
+                                "gridHeight": 6,
+                                "props": {
+                                    "markdown": "b",
+                                    "links": []
+                                }
+                            },
+                            {
+                                "id": "form",
+                                "widgetKey": "form",
+                                "gridX": 0,
+                                "gridY": 9,
+                                "gridWidth": 12,
+                                "gridHeight": 6,
+                                "props": {
+                                    "formId": "form-1",
+                                    "fields": [
+                                        {
+                                            "id": "naam",
+                                            "label": "Naam",
+                                            "type": "text"
+                                        }
+                                    ],
+                                    "submitLabel": "Go",
+                                    "consentText": ""
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            [
+                "read",
+                "portaliq",
+                "portal",
+                "",
+                "",
+                1,
+                {
+                    "slug": "zuid",
+                    "status": "published"
+                }
+            ]
+        ],
+        "pageId": "page-1",
+        "formId": "form-1",
+        "url": "https://b.example/Actie",
+        "error": null,
+        "handled": true
+    }
+}

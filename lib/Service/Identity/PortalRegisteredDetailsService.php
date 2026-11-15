@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Kernel\Contracts\PortalRegisteredDetailsServiceInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -38,8 +38,10 @@ use Throwable;
 
  *
  * @spec openspec/changes/identity-registered-details/specs/registered-details/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
-class PortalRegisteredDetailsService {
+class PortalRegisteredDetailsService implements PortalRegisteredDetailsServiceInterface {
 
 	/**
 	 * OpenRegister's person lookup (integration-brp-haalcentraal).
@@ -59,12 +61,12 @@ class PortalRegisteredDetailsService {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalAccountService $accounts  Finds the caller's account.
+	 * @param PortalAccountLookup  $accounts  Finds the caller's account.
 	 * @param ContainerInterface   $container Resolves OpenRegister's providers when installed.
 	 * @param LoggerInterface      $logger    Names the cause of an unavailable source.
 	 */
 	public function __construct(
-		private readonly PortalAccountService $accounts,
+		private readonly PortalAccountLookup $accounts,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 	) {
@@ -85,7 +87,7 @@ class PortalRegisteredDetailsService {
 	public function forSubject(string $subjectRef): array {
 		$account = null;
 		if ($subjectRef !== '') {
-			$account = $this->accounts->findBySubjectRef(subjectRef: $subjectRef);
+			$account = $this->accounts->bySubjectRef(subjectRef: $subjectRef);
 		}
 
 		if ($account === null || ($account['status'] ?? '') === 'removed') {
@@ -106,6 +108,44 @@ class PortalRegisteredDetailsService {
 	}//end forSubject()
 
 	/**
+	 * The person record the BRP holds for one BSN, for an employee filling a
+	 * form in for a resident (resident-identity-in-forms REQ-RIF-005).
+	 *
+	 * @param string $bsn The BSN the employee entered.
+	 *
+	 * @return array<string, mixed> As forSubject(): `{available: true, kind: person, person}`
+	 *                              or `{available: false, reason}`.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#T06
+	 */
+	public function forBsn(string $bsn): array {
+		if (self::isBsn(value: $bsn) === false) {
+			return self::refusal(reason: 'no_registration_identifier');
+		}
+
+		return $this->person(bsn: $bsn);
+	}//end forBsn()
+
+	/**
+	 * The company record the KvK holds for one KvK number, for an employee
+	 * filling a form in for a company (resident-identity-in-forms REQ-RIF-005).
+	 *
+	 * @param string $kvkNumber The 8-digit KvK number the employee entered.
+	 *
+	 * @return array<string, mixed> As forSubject(): `{available: true, kind: company, company}`
+	 *                              or `{available: false, reason}`.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#T06
+	 */
+	public function forKvkNumber(string $kvkNumber): array {
+		if (preg_match('/^\d{8}$/', $kvkNumber) !== 1) {
+			return self::refusal(reason: 'no_registration_identifier');
+		}
+
+		return $this->company(kvkNumber: $kvkNumber);
+	}//end forKvkNumber()
+
+	/**
 	 * The branches the KvK holds for one company, for the branch choice of
 	 * signin-eherkenning-branch.
 	 *
@@ -120,7 +160,7 @@ class PortalRegisteredDetailsService {
 	 * @spec openspec/changes/identity-registered-details/specs/registered-details/spec.md#requirement-a-business-user-sees-their-companys-kvk-record-req-ird-002
 	 */
 	public function companyBranches(string $kvkNumber): ?array {
-		if (preg_match('/^\d{8}$/', $kvkNumber) !== 1) {
+		if (preg_match('/^\d{8}$/D', $kvkNumber) !== 1) {
 			return null;
 		}
 
@@ -163,7 +203,7 @@ class PortalRegisteredDetailsService {
 			return 'person';
 		}
 
-		if ($identityType === 'eherkenning' && preg_match('/^\d{8}$/', $reference) === 1) {
+		if ($identityType === 'eherkenning' && preg_match('/^\d{8}$/D', $reference) === 1) {
 			return 'company';
 		}
 
@@ -188,8 +228,98 @@ class PortalRegisteredDetailsService {
 			return self::refusal(reason: 'not_found');
 		}
 
-		return ['available' => true, 'kind' => 'person', 'person' => (new RegisteredDetailsShape())->person(raw: $first)];
+		$person = (new RegisteredDetailsShape())->person(raw: $first);
+		$person['residentsAtAddress'] = $this->residentsAt(raw: $first);
+
+		return ['available' => true, 'kind' => 'person', 'person' => $person];
 	}//end person()
+
+	/**
+	 * How many people the BRP registers at the person's address object, or
+	 * null when OpenRegister cannot say: no address object on the record, a
+	 * provider without the count, the count not enabled on the source, or the
+	 * source down. Only the number is kept; the address object id never
+	 * leaves this method and is never logged.
+	 *
+	 * @param array<string, mixed> $raw The HaalCentraal person.
+	 *
+	 * @return int|null
+	 *
+	 * @spec openspec/changes/identity-registered-details/tasks.md#t07
+	 */
+	private function residentsAt(array $raw): ?int {
+		$identifier = $this->addressObjectOf(raw: $raw);
+		if ($identifier === null) {
+			return null;
+		}
+
+		[$answer, $cause] = $this->residentCount(identifier: $identifier);
+		$total = $this->totalOf(answer: $answer);
+		if ($total === null) {
+			$this->logger->info(
+				'Portaliq: the count of residents at an address is not available',
+				['provider' => 'BrpPersonProvider', 'cause' => $cause]
+			);
+		}
+
+		return $total;
+	}//end residentsAt()
+
+	/**
+	 * The person's address object id when it is one: sixteen digits.
+	 *
+	 * @param array<string, mixed> $raw The HaalCentraal person.
+	 *
+	 * @return string|null
+	 */
+	private function addressObjectOf(array $raw): string|null {
+		$place      = (array)($raw['verblijfplaats'] ?? []);
+		$identifier = ($place['adresseerbaarObjectIdentificatie'] ?? (((array)($place['verblijfadres'] ?? []))['adresseerbaarObjectIdentificatie'] ?? ''));
+		if (is_string($identifier) === false || preg_match('/^\d{16}$/', $identifier) !== 1) {
+			return null;
+		}
+
+		return $identifier;
+	}//end addressObjectOf()
+
+	/**
+	 * Ask the person provider how many people live at the address object.
+	 *
+	 * @param string $identifier The address object id.
+	 *
+	 * @return array{0: array<mixed>, 1: string} The provider's answer and the cause it gives.
+	 */
+	private function residentCount(string $identifier): array {
+		$cause  = 'provider_missing';
+		$answer = [];
+		try {
+			$provider = $this->container->get(self::PERSON_PROVIDER);
+			if (is_object($provider) === true && method_exists($provider, 'countResidentsAtAddressObject') === true) {
+				$answer = (array)$provider->countResidentsAtAddressObject($identifier);
+				$cause  = (string)($answer['cause'] ?? 'unavailable');
+			}
+		} catch (Throwable $failure) {
+			$answer = [];
+			$cause  = 'provider_missing';
+		}
+
+		return [$answer, $cause];
+	}//end residentCount()
+
+	/**
+	 * The count in the provider's answer, or null when it gives none.
+	 *
+	 * @param array<mixed> $answer The provider's answer.
+	 *
+	 * @return int|null
+	 */
+	private function totalOf(array $answer): int|null {
+		if (($answer['unavailable'] ?? false) !== true && is_int($answer['total'] ?? null) === true && $answer['total'] >= 0) {
+			return $answer['total'];
+		}
+
+		return null;
+	}//end totalOf()
 
 	/**
 	 * The company record for one KvK number.
@@ -230,6 +360,28 @@ class PortalRegisteredDetailsService {
 	 * @return array<string, mixed>|null
 	 */
 	private function lookup(string $class, string $method, string $identifier): ?array {
+		[$answer, $cause] = $this->called(class: $class, method: $method, identifier: $identifier);
+		if ($answer !== null && ($answer['unavailable'] ?? false) !== true) {
+			return $answer;
+		}
+
+		$this->logger->warning(
+			'Portaliq: registered details cannot be read',
+			['provider' => substr($class, (int)strrpos($class, '\\') + 1), 'cause' => $cause]
+		);
+		return null;
+	}//end lookup()
+
+	/**
+	 * Call the provider's lookup method.
+	 *
+	 * @param string $class      The provider class.
+	 * @param string $method     The lookup method.
+	 * @param string $identifier The BSN or KvK number.
+	 *
+	 * @return array{0: array<mixed>|null, 1: string} The provider's answer, or null when it is missing, and the cause.
+	 */
+	private function called(string $class, string $method, string $identifier): array {
 		$cause  = 'provider_missing';
 		$answer = null;
 		try {
@@ -243,16 +395,8 @@ class PortalRegisteredDetailsService {
 			$cause  = 'provider_missing';
 		}
 
-		if ($answer !== null && ($answer['unavailable'] ?? false) !== true) {
-			return $answer;
-		}
-
-		$this->logger->warning(
-			'Portaliq: registered details cannot be read',
-			['provider' => substr($class, (int)strrpos($class, '\\') + 1), 'cause' => $cause]
-		);
-		return null;
-	}//end lookup()
+		return [$answer, $cause];
+	}//end called()
 
 	/**
 	 * Whether a value is a BSN: nine digits passing the eleven test, the same

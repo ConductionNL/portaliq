@@ -230,4 +230,25 @@ class ActionAuthServiceTest extends TestCase {
 
 	}//end testGetAllowedGroupsDefaultsToAdmin()
 
+
+	/**
+	 * The stored matrix keeps only string actions with a list of groups,
+	 * each list without empty, non-string or repeated groups; a stored value
+	 * that is not a map, or not JSON at all, is an empty matrix.
+	 *
+	 * @return void
+	 */
+	public function testTheStoredMatrixIsReadAsRecorded(): void {
+		$this->appConfig->method('getValueString')->willReturnOnConsecutiveCalls(
+			'{"portal.a":["staff","",3,"staff","editors"],"portal.b":"staff","7":["x"],"portal.c":[]}',
+			'"staff"',
+			'{not json',
+			'null'
+		);
+
+		$this->assertSame(['portal.a' => ['staff', 'editors'], 'portal.c' => []], $this->service->getMatrix());
+		$this->assertSame([], $this->service->getMatrix());
+		$this->assertSame([], $this->service->getMatrix());
+		$this->assertSame([], $this->service->getMatrix());
+	}//end testTheStoredMatrixIsReadAsRecorded()
 }//end class

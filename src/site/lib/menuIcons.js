@@ -9,7 +9,7 @@
 //
 // Loaded on demand by ResidentMenu.vue, so the site's entry does not carry it.
 //
-// @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-menu-must-show-icons-and-counts-in-groups-req-smo-006
+// @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-resident-menu-must-show-icons-and-counts-in-groups-req-smo-006
 
 /** SVG path data (24 by 24 viewBox), by icon name. */
 export default {

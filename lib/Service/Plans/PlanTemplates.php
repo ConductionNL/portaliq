@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Plans;
 
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 
 /**
  * Reads the published plan templates of a portal.
@@ -35,11 +35,11 @@ class PlanTemplates {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader The scoped reader.
+	 * @param ScopedCollectionReaderInterface $reader The scoped reader.
 	 * @param PlanRules          $rules  The plan rules, for the row id.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PlanRules $rules = new PlanRules(),
 	) {
 	}//end __construct()

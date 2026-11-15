@@ -68,38 +68,103 @@ class PlanRules {
 	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t03
 	 */
 	public function expand(array $template, string $today): array {
+		$actions = [];
+		foreach ($this->declaredActions(template: $template) as $action) {
+			if (count($actions) >= self::MAX_TEMPLATE_ACTIONS) {
+				break;
+			}
+
+			$planned = $this->plannedAction(action: $action, today: $today);
+			if ($planned !== null) {
+				$actions[] = $planned;
+			}
+		}
+
+		return ['endDate' => $this->addDays(day: $today, days: $this->durationOf(template: $template)), 'actions' => $actions];
+	}//end expand()
+
+	/**
+	 * A template's duration in days; 56 when it declares less than one day.
+	 *
+	 * @param array<string, mixed> $template The template row.
+	 *
+	 * @return int
+	 */
+	private function durationOf(array $template): int {
 		$duration = (int)($template['durationDays'] ?? 56);
 		if ($duration < 1) {
-			$duration = 56;
+			return 56;
 		}
 
-		$actions = [];
-		$declared = $template['actions'] ?? [];
+		return $duration;
+	}//end durationOf()
+
+	/**
+	 * A template's declared actions, or none when it declares no list.
+	 *
+	 * @param array<string, mixed> $template The template row.
+	 *
+	 * @return array<mixed>
+	 */
+	private function declaredActions(array $template): array {
+		$declared = ($template['actions'] ?? []);
 		if (is_array($declared) === false) {
-			$declared = [];
+			return [];
 		}
 
-		foreach ($declared as $action) {
-			$title = '';
-			if (is_array($action) === true && is_string($action['title'] ?? null) === true) {
-				$title = trim($action['title']);
-			}
+		return $declared;
+	}//end declaredActions()
 
-			if ($title === '' || count($actions) >= self::MAX_TEMPLATE_ACTIONS) {
-				continue;
-			}
-
-			$kind = 'once';
-			if (($action['kind'] ?? '') === 'recurring') {
-				$kind = 'recurring';
-			}
-
-			$offset    = max(0, (int)($action['offsetDays'] ?? 0));
-			$actions[] = ['title' => mb_substr($title, 0, 200), 'kind' => $kind, 'endDate' => $this->addDays(day: $today, days: $offset)];
+	/**
+	 * One declared action with its end date, or null when it has no title.
+	 *
+	 * @param mixed  $action The declared action.
+	 * @param string $today  The start day, `Y-m-d`.
+	 *
+	 * @return array{title: string, kind: string, endDate: string}|null
+	 */
+	private function plannedAction(mixed $action, string $today): ?array {
+		$title = $this->titleOf(action: $action);
+		if ($title === '') {
+			return null;
 		}
 
-		return ['endDate' => $this->addDays(day: $today, days: $duration), 'actions' => $actions];
-	}//end expand()
+		return [
+			'title' => mb_substr($title, 0, 200),
+			'kind' => $this->kindOf(action: $action),
+			'endDate' => $this->addDays(day: $today, days: max(0, (int)($action['offsetDays'] ?? 0))),
+		];
+	}//end plannedAction()
+
+	/**
+	 * A declared action's title, trimmed; '' when it has none.
+	 *
+	 * @param mixed $action The declared action.
+	 *
+	 * @return string
+	 */
+	private function titleOf(mixed $action): string {
+		if (is_array($action) === true && is_string($action['title'] ?? null) === true) {
+			return trim($action['title']);
+		}
+
+		return '';
+	}//end titleOf()
+
+	/**
+	 * `recurring` when the action says so, else `once`.
+	 *
+	 * @param array<string, mixed> $action The declared action.
+	 *
+	 * @return string
+	 */
+	private function kindOf(array $action): string {
+		if (($action['kind'] ?? '') === 'recurring') {
+			return 'recurring';
+		}
+
+		return 'once';
+	}//end kindOf()
 
 	/**
 	 * A day some days later.

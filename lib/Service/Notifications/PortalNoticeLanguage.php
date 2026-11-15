@@ -19,13 +19,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-a-change-notice-is-written-in-the-portals-language-only-req-nap-010
+ * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-change-notice-is-written-in-the-portals-language-only-req-nap-010
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Notifications;
 
+use OCA\Portaliq\Kernel\Contracts\PortalNoticeLanguageInterface;
 use OCA\Portaliq\Service\PortalResolver;
 use OCP\IL10N;
 use OCP\L10N\IFactory;
@@ -34,9 +35,9 @@ use Throwable;
 /**
  * Picks the language of a notice to a resident.
  *
- * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-a-change-notice-is-written-in-the-portals-language-only-req-nap-010
+ * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-change-notice-is-written-in-the-portals-language-only-req-nap-010
  */
-class PortalNoticeLanguage {
+class PortalNoticeLanguage implements PortalNoticeLanguageInterface {
 
 	/**
 	 * The language of a notice when the portal names none.
@@ -64,7 +65,7 @@ class PortalNoticeLanguage {
 	 *
 	 * @return IL10N
 	 *
-	 * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-a-change-notice-is-written-in-the-portals-language-only-req-nap-010
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-change-notice-is-written-in-the-portals-language-only-req-nap-010
 	 */
 	public function forOrganisation(string $organisation): IL10N {
 		return $this->l10nFactory->get('portaliq', $this->language(organisation: $organisation));
@@ -79,7 +80,7 @@ class PortalNoticeLanguage {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md
 	 */
 	public function languageFor(string $organisation): string {
 		return $this->language(organisation: $organisation);

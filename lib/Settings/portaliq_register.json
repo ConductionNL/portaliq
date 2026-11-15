@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.103.0"
+        "version": "0.118.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.103.0",
+                "version": "0.118.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -84,7 +84,8 @@
                     "portalFaq",
                     "portalFinder",
                     "sharedBlock",
-                    "accessibilityMeasurement"
+                    "accessibilityMeasurement",
+                    "article"
                 ],
                 "authorization": {
                     "read": [
@@ -752,6 +753,105 @@
                 "status": "present",
                 "markedByRef": "staff-leerkracht-5a",
                 "markedAt": "2026-10-05T16:20:00+02:00"
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "article",
+                    "slug": "article-openregister-3-0-is-uit"
+                },
+                "title": "OpenRegister 3.0 is uit",
+                "slug": "openregister-3-0-is-uit",
+                "summary": "Schema's met een levenscyclus, berekende velden en zoekopdrachten die binnen een seconde klaar zijn. Dit is wat er verandert en wat je moet doen.",
+                "body": "## Wat er nieuw is\n\nOpenRegister 3.0 brengt drie dingen die je meteen merkt.\n\n- **Schema's met een levenscyclus.** Je legt in het schema vast welke statusovergangen mogen, en de applicatie hoeft die regel niet nog een keer te schrijven.\n- **Berekende velden.** Een veld dat uit andere objecten volgt wordt aan de serverkant bijgehouden, dus een overzicht hoeft niet meer te rekenen.\n- **Snellere zoekopdrachten.** Een register met een miljoen objecten filtert nu binnen een seconde.\n\n## Wat je moet doen\n\nWerk je registers bij via de beheerpagina. Bestaande objecten blijven staan; alleen de schema's krijgen een nieuwe versie.\n\n## Vragen\n\nLoop je ergens tegenaan, stel je vraag in de community of neem contact met ons op.",
+                "heroImage": "app:pipelinq/marketing/openregister-3-0.svg",
+                "links": [
+                    {
+                        "label": "Release notes",
+                        "url": "https://github.com/ConductionNL/openregister/releases"
+                    },
+                    {
+                        "label": "Documentatie",
+                        "url": "https://openregister.conduction.nl"
+                    }
+                ],
+                "tags": [
+                    "release",
+                    "openregister",
+                    "product"
+                ],
+                "language": "nl",
+                "status": "published",
+                "author": "admin",
+                "publishedAt": "2026-08-04T09:00:00+00:00",
+                "portalPageRef": "https://conduction.nl/nieuws/openregister-3-0-is-uit",
+                "agentAuthored": false,
+                "agentAuthoredBy": "",
+                "createdAt": "2026-07-28T13:40:00+00:00",
+                "updatedAt": "2026-08-04T09:00:00+00:00"
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "article",
+                    "slug": "article-rotterdam-koppelt-in-zes-weken"
+                },
+                "title": "Gemeente Rotterdam koppelt haar zaaksysteem in zes weken",
+                "slug": "rotterdam-koppelt-in-zes-weken",
+                "summary": "Beginnen bij de gegevens in plaats van bij de koppeling. Hoe Rotterdam van eerste gesprek naar productie ging zonder een migratie van een jaar.",
+                "body": "Gemeente Rotterdam wilde haar zaaksysteem koppelen aan de landelijke voorzieningen zonder een jaar aan een migratie kwijt te zijn. Dat is gelukt in zes weken.\n\n## De aanpak\n\nWe zijn begonnen bij de gegevens, niet bij de koppeling. Eerst is in kaart gebracht welke objecten de gemeente echt bijhoudt, daarna is per object bepaald wie eigenaar is. Pas toen dat vaststond is de eerste koppeling gelegd.\n\n## Het resultaat\n\n- Zes weken van eerste gesprek tot productie.\n- Geen enkele handmatige overzetting van gegevens.\n- Het team van de gemeente beheert de koppelingen nu zelf.\n\n## In de woorden van de gemeente\n\n\"We dachten dat we een nieuw systeem nodig hadden. We hadden een beter beeld van onze eigen gegevens nodig.\"\n",
+                "heroImage": "app:pipelinq/marketing/rotterdam-stadhuis.svg",
+                "links": [
+                    {
+                        "label": "Common Ground",
+                        "url": "https://commonground.nl"
+                    }
+                ],
+                "tags": [
+                    "klantverhaal",
+                    "gemeente",
+                    "zaakgericht werken"
+                ],
+                "language": "nl",
+                "status": "published",
+                "author": "admin",
+                "publishedAt": "2026-08-21T07:30:00+00:00",
+                "portalPageRef": "",
+                "agentAuthored": false,
+                "agentAuthoredBy": "",
+                "createdAt": "2026-08-14T15:05:00+00:00",
+                "updatedAt": "2026-08-21T07:30:00+00:00"
+            },
+            {
+                "@self": {
+                    "register": "portaliq",
+                    "schema": "article",
+                    "slug": "article-common-ground-meetup-november"
+                },
+                "title": "Kom langs op de Common Ground meetup in november",
+                "slug": "common-ground-meetup-november",
+                "summary": "Drie korte verhalen uit de praktijk en daarna ruimte om door te praten. Den Haag, november, gratis toegang.",
+                "body": "We organiseren in november weer een Common Ground meetup, deze keer in Den Haag.\n\n## Waar het over gaat\n\nDrie korte verhalen uit de praktijk, en daarna ruimte om door te praten. Onderwerpen dit keer:\n\n- Registers delen tussen gemeenten zonder een centrale kopie.\n- Wat er misging bij een koppeling, en wat we ervan geleerd hebben.\n- Open source afspraken maken die ook na de aanbesteding standhouden.\n\n## Praktisch\n\nDe inloop is vanaf 15.30 uur, we beginnen om 16.00 uur en sluiten af met eten. Deelname is gratis.\n\n## Aanmelden\n\nLaat weten dat je komt, dan houden we een plek vrij.",
+                "heroImage": "app:pipelinq/marketing/meetup-den-haag.svg",
+                "links": [
+                    {
+                        "label": "Programma",
+                        "url": "https://conduction.nl/agenda"
+                    }
+                ],
+                "tags": [
+                    "evenement",
+                    "community",
+                    "common ground"
+                ],
+                "language": "nl",
+                "status": "review",
+                "author": "admin",
+                "portalPageRef": "",
+                "agentAuthored": true,
+                "agentAuthoredBy": "hermiq:marketing-editor",
+                "createdAt": "2026-09-01T10:12:00+00:00",
+                "updatedAt": "2026-09-02T08:47:00+00:00"
             }
         ],
         "schemas": {
@@ -766,7 +866,7 @@
                     ]
                 },
                 "icon": "AccountKey",
-                "version": "0.18.0",
+                "version": "0.19.0",
                 "configuration": {
                     "linkedTypes": [
                         "calendar"
@@ -790,11 +890,12 @@
                     "identityType": {
                         "title": "Identity type",
                         "type": "string",
-                        "description": "The external identity provider that authenticated this account. `generic` is a broker-agnostic OIDC provider preset (portal-oidc-broker-login) for a broker that is none of digid/eherkenning/eidas.",
+                        "description": "The external identity provider that authenticated this account. `generic` is a broker-agnostic OIDC provider preset (portal-oidc-broker-login) for a broker that is none of digid/eherkenning/eidas. `yivi` signs in through the broker and shares only the attributes a form asks for.",
                         "enum": [
                             "eherkenning",
                             "digid",
                             "eidas",
+                            "yivi",
                             "generic",
                             "dev",
                             "email"
@@ -1424,7 +1525,7 @@
                     ]
                 },
                 "icon": "FileCheckOutline",
-                "version": "0.2.0",
+                "version": "0.3.0",
                 "configuration": {
                     "linkedTypes": [
                         "forms"
@@ -1465,6 +1566,12 @@
                         "type": "string",
                         "description": "The declared action id that was submitted.",
                         "example": "createExample"
+                    },
+                    "actionTitle": {
+                        "title": "Action title",
+                        "type": "string",
+                        "description": "The submitted action's name as the resident read it. Empty on a row written without one; the list then shows the action id.",
+                        "example": "Melding openbare ruimte"
                     },
                     "payloadCopy": {
                         "title": "Payload copy",
@@ -1735,7 +1842,7 @@
                     ]
                 },
                 "icon": "WebBox",
-                "version": "0.8.0",
+                "version": "0.11.0",
                 "title": "Portal Page",
                 "description": "A data-provisioned portal contribution (ADR-046, portal-page-provisioning). Mirrors the IPortalContributionProvider manifest shape 1:1 so Portaliq's built-in provider can read this object and hand it to the same PortalManifestNormaliser every PHP provider's output passes through. Owned by the app that provisions the page; never publicly readable — the built-in provider is the only reader, server-side.",
                 "type": "object",
@@ -1994,6 +2101,11 @@
                                     "title": "Documents",
                                     "type": "object",
                                     "description": "The label and the provider method that lists a case's documents."
+                                },
+                                "messages": {
+                                    "title": "Messages",
+                                    "type": "object",
+                                    "description": "The label and the provider method that lists the messages about a record, both ways."
                                 },
                                 "itemList": {
                                     "title": "Item list",
@@ -2301,6 +2413,7 @@
                                                     "steps",
                                                     "documents",
                                                     "timeline",
+                                                    "messages",
                                                     "greeting"
                                                 ]
                                             },
@@ -2427,10 +2540,31 @@
                                                 "type": "string",
                                                 "description": "On a call to action: an address inside the portal, starting with one slash."
                                             },
+                                            "askAction": {
+                                                "title": "Ask action",
+                                                "type": "string",
+                                                "description": "For type=messages: references actions[].id, the create action that asks a question about the open record."
+                                            },
+                                            "askLabel": {
+                                                "title": "Ask label",
+                                                "type": "string",
+                                                "description": "For type=messages: the label of the ask button."
+                                            },
                                             "withRecord": {
                                                 "title": "With the open record",
                                                 "type": "boolean",
                                                 "description": "On a call to action: open the page or form for the open record."
+                                            },
+                                            "labelWhenEmpty": {
+                                                "title": "Label when a field is empty",
+                                                "type": "string",
+                                                "description": "On a call to action: the label shown when a field the label names is empty on the open record."
+                                            },
+                                            "messageTo": {
+                                                "title": "Message to",
+                                                "type": "string",
+                                                "pattern": "^[A-Za-z0-9_]{1,64}$",
+                                                "description": "On a call to action to the messages page: the field of the open record that holds the staff member the message form opens for."
                                             },
                                             "display": {
                                                 "title": "Display",
@@ -2486,6 +2620,11 @@
                                                 "title": "statusNoteField",
                                                 "type": "string",
                                                 "description": "On rows: the line under the status pill."
+                                            },
+                                            "statusNoteAtField": {
+                                                "title": "statusNoteAtField",
+                                                "type": "string",
+                                                "description": "On rows: the moment the status was set, added to the line under the status pill (\"Meester Daan, 1 oktober 8:20 uur\")."
                                             },
                                             "noteField": {
                                                 "title": "noteField",
@@ -2628,7 +2767,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.27.0",
+                "version": "0.34.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -3226,8 +3365,39 @@
                     "logo": {
                         "title": "Logo",
                         "type": "string",
-                        "description": "URL or object reference for the site logo shown in the portal header.",
-                        "example": "/apps/portaliq/logo/open-tilburg.svg"
+                        "description": "The site logo shown in the portal header: an item of this portal's media library as media:<id>, or an address. Also the tab icon when the portal has no favicon.",
+                        "example": "media:2f6c0a4e-logo"
+                    },
+                    "favicon": {
+                        "title": "Favicon",
+                        "type": "string",
+                        "description": "The tab icon of the site: an item of this portal's media library as media:<id>. A PNG, SVG or ICO. Empty uses the logo, then the theme's icon.",
+                        "example": "media:9b1d3c77-favicon"
+                    },
+                    "heroImage": {
+                        "title": "Hero image",
+                        "type": "string",
+                        "description": "The image the home page hero shows when its block sets no image of its own: an item of this portal's media library as media:<id>.",
+                        "example": "media:4e8a1f20-stadhuis"
+                    },
+                    "organisationType": {
+                        "title": "Organisation type",
+                        "type": "string",
+                        "format": "uri",
+                        "description": "The kind of organisation that runs the portal: a concept uri of the TOOI organisation type scheme in OpenRegister's concept register. Empty: the site says \"de organisatie\".",
+                        "example": "https://identifier.overheid.nl/tooi/def/ont/Waterschap"
+                    },
+                    "organisationTypeLabel": {
+                        "title": "Organisation type label",
+                        "type": "string",
+                        "description": "The Dutch label of the organisation type, stored beside it on save from the concept register (\"waterschap\"); the site names the organisation's kind with it.",
+                        "example": "waterschap"
+                    },
+                    "organisationTypeSchemeId": {
+                        "title": "Organisation type scheme",
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "The uuid of the TOOI organisation type scheme in the concept register, stored on every save while the scheme is installed. The details form's type picker lists the concepts of this scheme; it is the instance's own uuid, never chosen by hand."
                     },
                     "headerVariant": {
                         "title": "Header shape",
@@ -3393,6 +3563,7 @@
                                         "digid",
                                         "eherkenning",
                                         "eidas",
+                                        "yivi",
                                         "email-link"
                                     ]
                                 },
@@ -3416,6 +3587,13 @@
                                 "type": "boolean",
                                 "description": "Whether every form on this portal needs a signed-in visitor. An embedded form is then not shown and not accepted: the visitor is sent to the portal's own page to sign in.",
                                 "example": false
+                            },
+                            "deskGroup": {
+                                "title": "Desk group",
+                                "type": "string",
+                                "description": "The Nextcloud group whose members may fill a form in for a resident or a company, on forms that allow it (staffMayFill). Empty means no employee can.",
+                                "maxLength": 64,
+                                "example": "balie"
                             },
                             "oidc": {
                                 "title": "OIDC configuration",
@@ -3764,6 +3942,18 @@
                                 "description": "How long raw events are kept before they are deleted. Daily aggregates outlive them. There is no unbounded option.",
                                 "default": 90,
                                 "example": 90
+                            },
+                            "excludedPaths": {
+                                "title": "Excluded paths",
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "description": "Pages the collector writes no visitor row for: each path and everything below it. Put every page that takes or shows a report of wrongdoing here, so nothing records that somebody opened the form.",
+                                "default": [],
+                                "example": [
+                                    "/meldpunt"
+                                ]
                             },
                             "regionGranularity": {
                                 "title": "Region granularity",
@@ -4438,6 +4628,56 @@
                             }
                         }
                     },
+                    "caseTypeColumns": {
+                        "title": "Columns per case type",
+                        "type": "object",
+                        "widget": "json",
+                        "description": "How the columns of each case type read in Mijn zaken in this portal, keyed by case type id: per column the `field`, its `render` (text, link, qr or date) and, for a link or QR code, `linkLabel`, the words shown with it. A case type without an entry reads as its case app declares.",
+                        "additionalProperties": {
+                            "type": "array",
+                            "maxItems": 30,
+                            "items": {
+                                "type": "object",
+                                "required": [
+                                    "field",
+                                    "render"
+                                ],
+                                "properties": {
+                                    "field": {
+                                        "title": "Field",
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 64
+                                    },
+                                    "render": {
+                                        "title": "Render",
+                                        "type": "string",
+                                        "enum": [
+                                            "text",
+                                            "link",
+                                            "qr",
+                                            "date"
+                                        ]
+                                    },
+                                    "linkLabel": {
+                                        "title": "Link text",
+                                        "type": "string",
+                                        "maxLength": 60
+                                    }
+                                }
+                            }
+                        },
+                        "default": {},
+                        "example": {
+                            "parkeervergunning": [
+                                {
+                                    "field": "permitProof",
+                                    "render": "qr",
+                                    "linkLabel": "Toevoegen aan wallet"
+                                }
+                            ]
+                        }
+                    },
                     "hiddenCaseTypes": {
                         "title": "Hidden case types",
                         "type": "array",
@@ -4742,6 +4982,19 @@
                             "/contact"
                         ]
                     },
+                    "adminGroups": {
+                        "title": "Administrators",
+                        "type": "array",
+                        "x-admin-only": true,
+                        "description": "The Nextcloud groups whose members look after this portal: its settings, domains, theme, sign-in, pages, menus and notices. Only an instance administrator changes this list.",
+                        "items": {
+                            "type": "string",
+                            "referenceType": "nextcloud-group",
+                            "description": "A Nextcloud group id.",
+                            "example": "zeist-beheer"
+                        },
+                        "example": []
+                    },
                     "editors": {
                         "title": "Editors",
                         "type": "array",
@@ -4948,7 +5201,7 @@
             "page": {
                 "slug": "page",
                 "icon": "FileDocument",
-                "version": "0.7.0",
+                "version": "0.8.0",
                 "title": "Page",
                 "authorization": {
                     "read": [
@@ -5094,6 +5347,12 @@
                                 "type": "string",
                                 "description": "Markdown SOURCE for a markdown body. Served as source, never converted to HTML by the API — a consumer that renders markdown itself needs no parsing step, and no fidelity is lost to a round-trip.",
                                 "example": "## Over ons\n\nWij zijn ..."
+                            },
+                            "articleRef": {
+                                "title": "Article",
+                                "type": "string",
+                                "description": "An article this markdown page shows in place: its id or slug. The site renders the article's title, hero image and body, so the page carries no copy of the text. A published or archived article shows; a draft does not.",
+                                "example": "openregister-3-0-is-uit"
                             },
                             "widgets": {
                                 "title": "Widgets",
@@ -8465,7 +8724,7 @@
                     ]
                 },
                 "icon": "FormSelect",
-                "version": "0.5.0",
+                "version": "0.7.0",
                 "title": "Portal Form Binding",
                 "description": "What a portal form page is bound to (portal-intake-form-as-an-object REQ-PIFO-001): a case type tuple, an audience, an optional form name, and the intake settings. The page keeps no field list of its own; the fields, their order and their presets come from the published form at render time, so a form edited in buildiq reaches the portal with no portal change.",
                 "type": "object",
@@ -8530,6 +8789,85 @@
                         "type": "string",
                         "description": "The schema the published form leaf lives in.",
                         "example": "registrationForm"
+                    },
+                    "availability": {
+                        "title": "Availability",
+                        "type": "object",
+                        "description": "When the form takes submissions (form-governance-availability-retention-and-routing REQ-FGV-001): the active period, a limit per period, a maintenance window and the form that replaced it. Outside it the page shows the matching situation instead of the form and a submit is refused; a saved draft stays.",
+                        "properties": {
+                            "activeFrom": {
+                                "title": "Active from",
+                                "type": "string",
+                                "format": "date",
+                                "description": "The first day the form opens, inclusive.",
+                                "example": "2026-01-01"
+                            },
+                            "activeUntil": {
+                                "title": "Active until",
+                                "type": "string",
+                                "format": "date",
+                                "description": "The last day the form is open, inclusive; null for no end date.",
+                                "example": "2026-12-31"
+                            },
+                            "limit": {
+                                "title": "Limit",
+                                "type": "object",
+                                "description": "At most `count` submissions per `per`: the whole period (`total`), the calendar month or the calendar year.",
+                                "properties": {
+                                    "count": {
+                                        "title": "Count",
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "example": 500
+                                    },
+                                    "per": {
+                                        "title": "Per",
+                                        "type": "string",
+                                        "enum": [
+                                            "total",
+                                            "month",
+                                            "year"
+                                        ],
+                                        "example": "month"
+                                    }
+                                }
+                            },
+                            "reopensOn": {
+                                "title": "Reopens on",
+                                "type": "string",
+                                "format": "date",
+                                "description": "The day the form takes submissions again once the limit is reached, shown to the resident.",
+                                "example": "2027-01-05"
+                            },
+                            "maintenance": {
+                                "title": "Maintenance",
+                                "type": "object",
+                                "description": "A window, in local time, in which the form is not available, with its own text.",
+                                "properties": {
+                                    "from": {
+                                        "title": "From",
+                                        "type": "string",
+                                        "example": "2026-10-09T18:00"
+                                    },
+                                    "until": {
+                                        "title": "Until",
+                                        "type": "string",
+                                        "example": "2026-10-09T22:00"
+                                    },
+                                    "text": {
+                                        "title": "Text",
+                                        "type": "string",
+                                        "example": ""
+                                    }
+                                }
+                            },
+                            "replacedBy": {
+                                "title": "Replaced by",
+                                "type": "string",
+                                "description": "The route of the form on this portal that replaced this one.",
+                                "example": "/aanvragen/woo-verzoek-2027"
+                            }
+                        }
                     },
                     "destination": {
                         "title": "Destination",
@@ -8644,8 +8982,13 @@
                     "intro": {
                         "title": "Introduction page",
                         "type": "object",
-                        "description": "The page a form opens with, before step 1: what you need, how long it takes and what happens next. Absent means the form opens at step 1.",
+                        "description": "The page a form opens with, before step 1: what you need, how long it takes and what happens next. Absent, or `enabled` false, means the form opens at step 1.",
                         "properties": {
+                            "enabled": {
+                                "title": "Show the introduction",
+                                "type": "boolean",
+                                "description": "Whether the form opens with its introduction page. Absent reads as true; false opens the form at step 1 and keeps the introduction's text for later."
+                            },
                             "lead": {
                                 "title": "Lead",
                                 "type": "string",
@@ -10813,7 +11156,7 @@
             "guardianMessage": {
                 "slug": "guardianMessage",
                 "icon": "Email",
-                "version": "0.2.0",
+                "version": "0.3.0",
                 "title": "Message",
                 "authorization": {
                     "read": [
@@ -10863,6 +11206,13 @@
                             "type": "string"
                         },
                         "example": []
+                    },
+                    "readAt": {
+                        "title": "Read at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "The moment a participant other than the sender first opened the message. Written once; the sender's reader shows it as \"Gelezen door ... op ...\".",
+                        "example": "2026-10-05T10:12:00+00:00"
                     },
                     "translations": {
                         "title": "Translations",
@@ -12078,6 +12428,213 @@
                             }
                         }
                     }
+                }
+            },
+            "article": {
+                "slug": "article",
+                "icon": "NewspaperVariantOutline",
+                "version": "0.1.0",
+                "title": "Article",
+                "authorization": {
+                    "read": [
+                        "portaliq-medewerkers"
+                    ],
+                    "create": [],
+                    "update": [],
+                    "delete": [],
+                    "export": [
+                        "portaliq-medewerkers"
+                    ]
+                },
+                "description": "A marketing article the organisation owns, written once in markdown and reused by a newsletter, a social post and a page (marketing-articles-from-pipelinq). It belongs to the organisation and to no single portal. Its body is markdown and never HTML, so each channel renders it its own way. The declared lifecycle owns which status changes are legal; ArticleService owns what the grammar cannot say: the author stamp, slug derivation and uniqueness, the first-publish stamp, and that a client never sets the agent mark (ADR-088). Where an article is used is not a property: it is asked at read time through ArticleUsagesRequestedEvent. Writes go through ArticleController, gated by the portal.write-articles action.",
+                "type": "object",
+                "x-schema-org": "schema:Article",
+                "x-openregister-lifecycle": {
+                    "field": "status",
+                    "initial": "draft",
+                    "transitions": {
+                        "submitForReview": {
+                            "from": [
+                                "draft"
+                            ],
+                            "to": "review",
+                            "description": "Hand the draft to a colleague to read. An agent-authored draft always passes through here, because rule 4 of the marketing architecture says an agent proposes and a person disposes."
+                        },
+                        "returnToDraft": {
+                            "from": [
+                                "review"
+                            ],
+                            "to": "draft",
+                            "description": "The reviewer wants changes. The article goes back to its author with nothing published."
+                        },
+                        "publish": {
+                            "from": [
+                                "draft",
+                                "review"
+                            ],
+                            "to": "published",
+                            "description": "Make the article available to a mailing, a post and a page. ArticleService stamps publishedAt on the first publish and never moves it afterwards."
+                        },
+                        "archive": {
+                            "from": [
+                                "draft",
+                                "review",
+                                "published"
+                            ],
+                            "to": "archived",
+                            "description": "Take the article out of use. It stays readable and every reference to it stays intact, because a mailing already sent still names it."
+                        },
+                        "restore": {
+                            "from": [
+                                "archived"
+                            ],
+                            "to": "draft",
+                            "description": "Bring an archived article back as a draft. It is rewritten and published afresh rather than reappearing as it was."
+                        }
+                    }
+                },
+                "required": [
+                    "title"
+                ],
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "description": "Headline of the article, shown on the card, on the detail page and in an embedded newsletter block.",
+                        "maxLength": 255,
+                        "minLength": 1,
+                        "title": "Title"
+                    },
+                    "slug": {
+                        "type": "string",
+                        "description": "URL-safe identifier, unique within the register. It is what a public page and a link both address, so it is derived from the title once and then left alone.",
+                        "maxLength": 255,
+                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                        "title": "Slug"
+                    },
+                    "summary": {
+                        "type": "string",
+                        "description": "One or two sentences describing the article, used on the card and in an embedded newsletter block.",
+                        "maxLength": 1000,
+                        "title": "Summary"
+                    },
+                    "body": {
+                        "type": "string",
+                        "description": "The article itself, written in markdown. Stored as markdown so a mailing, a social post and a portal page can each render it their own way.",
+                        "title": "Body"
+                    },
+                    "heroImage": {
+                        "type": "string",
+                        "description": "The image shown above the article: a path in Nextcloud Files, an absolute URL to one hosted elsewhere, or an image the app ships, written app:<app>/<file> (a file in that app's img/ folder, as the seed articles use).",
+                        "maxLength": 2048,
+                        "title": "Hero Image"
+                    },
+                    "links": {
+                        "type": "array",
+                        "description": "Further reading offered with the article, each a label and a destination.",
+                        "title": "Links",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "label": {
+                                    "type": "string",
+                                    "description": "Text of the link as the reader sees it.",
+                                    "title": "Label"
+                                },
+                                "url": {
+                                    "type": "string",
+                                    "description": "Destination of the link.",
+                                    "title": "URL"
+                                }
+                            }
+                        }
+                    },
+                    "tags": {
+                        "type": "array",
+                        "description": "Free-form subject tags used to group articles and to suggest related ones.",
+                        "title": "Tags",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "language": {
+                        "type": "string",
+                        "default": "nl",
+                        "description": "Language the article is written in, as a two-letter code such as nl or en.",
+                        "maxLength": 8,
+                        "title": "Language"
+                    },
+                    "organisation": {
+                        "title": "Organisation",
+                        "type": "string",
+                        "maxLength": 255,
+                        "description": "The organisation that owns the article. An article belongs to the organisation and to no single portal.",
+                        "example": "gemeente-voorbeeld"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "draft",
+                            "review",
+                            "published",
+                            "archived"
+                        ],
+                        "default": "draft",
+                        "description": "Where the article stands. Only a published article may be embedded in a mailing or a post.",
+                        "title": "Status"
+                    },
+                    "author": {
+                        "type": "string",
+                        "format": "user",
+                        "description": "Nextcloud user id of the person who owns the article. Stamped from the session and never taken from the request body.",
+                        "title": "Author"
+                    },
+                    "publishedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Moment the article was first published (UTC). Set once and never moved by a later publish.",
+                        "title": "Published At"
+                    },
+                    "portalPageRef": {
+                        "type": "string",
+                        "description": "Reference to the public page that carries this article, filled in by hand until the portal contribution contract writes it. When empty, an embedded newsletter block renders no read-more link rather than a link that goes nowhere.",
+                        "maxLength": 2048,
+                        "title": "Portal Page Ref"
+                    },
+                    "agentAuthored": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether an agent drafted or changed this article. Applied by the write path itself and ignored when it arrives in a request body, because a mark a client can set is not a mark (ADR-088).",
+                        "title": "Agent Authored"
+                    },
+                    "agentAuthoredBy": {
+                        "type": "string",
+                        "description": "Identity of the agent that drafted or changed the article, so the record can be followed back to the run that produced it. Empty on an article a person wrote.",
+                        "maxLength": 255,
+                        "title": "Agent Authored By"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Creation timestamp (UTC).",
+                        "title": "Created At"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Last update timestamp (UTC).",
+                        "title": "Updated At"
+                    },
+                    "legacyRef": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "title": "Legacy reference",
+                        "description": "Where a moved article came from, such as pipelinq:<uuid>. Unique when set, so a second run of the move finds the article it already wrote instead of making a copy."
+                    }
+                },
+                "configuration": {
+                    "objectNameField": "title",
+                    "objectDescriptionField": "summary",
+                    "objectImageField": "heroImage"
                 }
             }
         }

@@ -68,6 +68,13 @@ class PortalActionServiceTest extends TestCase {
 	 */
 	private array $attached = [];
 
+	/**
+	 * The subject references whose account is withdrawn (void).
+	 *
+	 * @var array<int, string>
+	 */
+	private array $void = [];
+
 	private static function scoped(mixed $stored, string $value): bool {
 		if (is_array($stored) === true) {
 			return in_array($value, $stored, true);
@@ -140,7 +147,7 @@ class PortalActionServiceTest extends TestCase {
 			static fn (string $owner): array => ($owner === 'sanne') ? [['id' => 'c-mark', 'ref' => 'mark', 'displayName' => 'Mark Jansen']] : []
 		);
 		$accounts = $this->createMock(PortalAccountLookup::class);
-		$accounts->method('bySubjectRef')->willReturnCallback(static fn (string $ref): array => ['displayName' => ['sanne' => 'Sanne de Vries', 'mark' => 'Mark Jansen', 'eva' => 'Eva'][$ref] ?? $ref]);
+		$accounts->method('bySubjectRef')->willReturnCallback(fn (string $ref): array => ['displayName' => ['sanne' => 'Sanne de Vries', 'mark' => 'Mark Jansen', 'eva' => 'Eva'][$ref] ?? $ref] + (in_array($ref, $this->void, true) ? ['status' => 'void'] : []));
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnCallback(static fn (string $text): string => $text);
 		$plans = new PortalPlanService($reader, $writer, $contacts, $accounts, $l10n);
@@ -215,6 +222,20 @@ class PortalActionServiceTest extends TestCase {
 		$this->assertSame('owner', $list['actions'][0]['role']);
 		$this->assertSame(['sanne', 'mark'], array_column($list['assignees'], 'ref'));
 		$this->assertSame('sanne', $this->rows['portalAction'][$made['id']]['editedBy']);
+	}
+
+	/**
+	 * A withdrawn (void) account names nobody: not as assignee, not in the list of people.
+	 */
+	public function testAWithdrawnAccountNamesNobody(): void {
+		[$actions] = $this->services();
+		$actions->create($this->as('sanne'), ['title' => 'Aanvraag schuldhulpverlening indienen', 'assignee' => 'mark']);
+		$this->void = ['mark'];
+
+		$list = $actions->overview($this->as('sanne'));
+		$this->assertSame(['sanne' => 'Sanne de Vries', 'mark' => ''], array_column($list['assignees'], 'displayName', 'ref'));
+		$this->assertSame('', $list['actions'][0]['assigneeName']);
+		$this->assertStringNotContainsString('Mark Jansen', (string)json_encode($list));
 	}
 
 	/**

@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ use DateTimeZone;
  * threshold is crossed; `below` and `changeAbove` need the period to be
  * over before they can say anything, so they watch the last complete one.
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
  */
 class TrafficReportPeriods {
 
@@ -49,7 +49,7 @@ class TrafficReportPeriods {
 	 *
 	 * @return array{key: string, from: string, to: string, previousFrom: string, previousTo: string} The period.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
 	 */
 	public function reportPeriod(string $cadence, DateTimeImmutable $now): array {
 		$today = $this->day(now: $now);
@@ -70,7 +70,7 @@ class TrafficReportPeriods {
 	 *
 	 * @return array{key: string, from: string, to: string, previousFrom: string, previousTo: string} The period.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-an-alert-must-fire-once-per-period
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-alert-must-fire-once-per-period
 	 */
 	public function alertPeriod(string $period, string $comparison, DateTimeImmutable $now): array {
 		$today = $this->day(now: $now);

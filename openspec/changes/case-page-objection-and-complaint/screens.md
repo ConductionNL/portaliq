@@ -1,4 +1,4 @@
 # Screens
 
-- Zaak https://identity.conduction.nl/screens/board?id=portaliq/Zaak
-- ZaakIntrekken https://identity.conduction.nl/screens/board?id=portaliq/ZaakIntrekken
+- portaliq/Zaak uw zaak https://identity.conduction.nl/screens/board?id=portaliq/Zaak
+- portaliq/ZaakIntrekken aanvraag intrekken https://identity.conduction.nl/screens/board?id=portaliq/ZaakIntrekken

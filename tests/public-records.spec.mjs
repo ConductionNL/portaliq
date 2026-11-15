@@ -68,9 +68,7 @@ test('the routes are anonymous and found from the content API base', async () =>
 	const send = fetcher(200, { entries: ENTRIES })
 	assert.deepEqual(
 		await fetchRecordList(
-			'/api/content',
-			'decidiq',
-			'memberVotingRecords',
+			{ apiBase: '/api/content', app: 'decidiq', list: 'memberVotingRecords' },
 			send,
 		),
 		ENTRIES,
@@ -85,15 +83,15 @@ test('the routes are anonymous and found from the content API base', async () =>
 
 test('a record that is gone is null, not an error; a server error throws', async () => {
 	assert.equal(
-		await fetchRecord('/api/content', 'decidiq', 'l', 'x', fetcher(404, {})),
+		await fetchRecord({ apiBase: '/api/content', app: 'decidiq', list: 'l', id: 'x' }, fetcher(404, {})),
 		null,
 	)
 	assert.equal(
-		await fetchRecordList('/api/content', 'decidiq', 'l', fetcher(404, {})),
+		await fetchRecordList({ apiBase: '/api/content', app: 'decidiq', list: 'l' }, fetcher(404, {})),
 		null,
 	)
 	await assert.rejects(
-		fetchRecord('/api/content', 'decidiq', 'l', 'x', fetcher(500, {})),
+		fetchRecord({ apiBase: '/api/content', app: 'decidiq', list: 'l', id: 'x' }, fetcher(500, {})),
 	)
 })
 

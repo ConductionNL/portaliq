@@ -84,6 +84,7 @@ class ActivityContributionServiceTest extends TestCase {
 			'guardian-anna' => ['subjectRef' => 'guardian-anna', 'displayName' => 'Anna de Vries', 'email' => 'anna@example.nl'],
 			'guardian-piet' => ['subjectRef' => 'guardian-piet', 'displayName' => 'Piet Bakker', 'email' => '', 'verifiedEmail' => 'piet@example.nl'],
 			'guardian-noor' => ['subjectRef' => 'guardian-noor', 'displayName' => 'Noor Yilmaz', 'email' => ''],
+			'guardian-void' => ['subjectRef' => 'guardian-void', 'displayName' => 'Vera Withdrawn', 'email' => 'vera@example.nl', 'status' => 'void'],
 		];
 		$lookup = $this->createMock(PortalAccountLookup::class);
 		$lookup->method('bySubjectRef')->willReturnCallback(static fn (string $ref) => ($accounts[$ref] ?? null));
@@ -232,6 +233,28 @@ class ActivityContributionServiceTest extends TestCase {
 		$this->assertSame('no customer', $result['results'][2]['reason']);
 		$this->assertSame([], $store->saves);
 	}//end testAGuardianWithoutContactDetailsIsReportedAndNotSent()
+
+	/**
+	 * A guardian whose account was withdrawn (void) is no debtor: the name and
+	 * address on that account are never sent.
+	 *
+	 * @return void
+	 */
+	public function testAWithdrawnGuardianAccountIsNoDebtor(): void {
+		$store = $this->store(
+			[
+				$this->signup('s1', 'child-withdrawn', 'guardian-void'),
+				$this->signup('s2', 'child-devries-lars', 'guardian-anna'),
+			]
+		);
+		$raiser = $this->raiser(static fn (array $payload): array => ['results' => [['index' => 0, 'status' => 'raised', 'reference' => 'r-1']]]);
+
+		$result = $this->service($store, $raiser)->raise('activity-schaakclub-najaar', self::CHARGE);
+
+		$this->assertSame(['guardian-anna'], array_map(static fn (array $r): string => $r['debtor']['portalSubjectRef'], $this->payloads[0]['recipients']));
+		$this->assertStringNotContainsString('vera@example.nl', (string)json_encode($this->payloads));
+		$this->assertSame(['signupId' => 's1', 'childRef' => 'child-withdrawn', 'status' => 'failed', 'reason' => 'no_contact_details'], $result['results'][0]);
+	}//end testAWithdrawnGuardianAccountIsNoDebtor()
 
 	/**
 	 * Refusals before any call: unknown activity, no contribution asked, an

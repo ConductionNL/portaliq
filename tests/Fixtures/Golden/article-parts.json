@@ -1,0 +1,11 @@
+{
+	"plain": [{"kind":"markdown","source":"Een alinea.\n\nNog een alinea."}],
+	"facts": [{"kind":"markdown","source":"Intro."},{"kind":"facts","items":[{"term":"Wanneer","value":"woensdag 14 oktober"},{"term":"Waar","value":"Aula"},{"term":"Voor wie","value":"ouders"}]},{"kind":"markdown","source":"Slot."}],
+	"mixed-list": [{"kind":"markdown","source":"- **Wanneer:** woensdag\n- gewoon punt"}],
+	"facts-first-and-last": [{"kind":"facts","items":[{"term":"Prijs","value":"gratis"}]},{"kind":"facts","items":[{"term":"Duur","value":"1 uur"}]}],
+	"blank-blocks": [{"kind":"markdown","source":"Tekst\n\nMeer"}],
+	"two-markdown-around-facts": [{"kind":"markdown","source":"A\n\nB"},{"kind":"facts","items":[{"term":"X","value":"y"}]},{"kind":"markdown","source":"C\n\nD"}],
+	"empty": [],
+	"null": [],
+	"undefined": []
+}

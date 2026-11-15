@@ -18,6 +18,7 @@ use OCA\Portaliq\Controller\CmsDomainController;
 use OCA\Portaliq\Service\Cms\PortalDomainVerifier;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\Tenancy\PortalAdminScope;
 use OCP\AppFramework\Http;
 use OCP\IL10N;
 use OCP\IRequest;
@@ -112,7 +113,9 @@ class PortalDomainVerifierTest extends TestCase {
 		$row   = self::portal([['hostname' => 'portal.example.com', 'verificationToken' => 'tok']]);
 		$l10n       = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnCallback(static fn (string $text, array $parameters=[]): string => vsprintf($text, $parameters));
-		$controller = new CmsDomainController('portaliq', $this->createMock(IRequest::class), $this->verifier([], $row, $saved), $l10n);
+		$scope = $this->createMock(PortalAdminScope::class);
+		$scope->method('mayAdministerSlug')->willReturn(true);
+		$controller = new CmsDomainController('portaliq', $this->createMock(IRequest::class), $this->verifier([], $row, $saved), $l10n, $scope);
 
 		$this->assertSame('_portaliq-verify.portal.example.com', $controller->records('open-tilburg')->getData()['domains'][0]['name']);
 		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->records('nergens-x')->getStatus());
@@ -151,6 +154,15 @@ class PortalDomainVerifierTest extends TestCase {
 
 		$this->assertSame('pending', $verifier->verify('open-tilburg', 'portal.example.com'));
 		$this->assertSame([], $saved);
+	}
+
+	public function testOnlyGloballyRoutableAddressesAreContacted(): void {
+		$global = new \ReflectionMethod(PortalDomainVerifier::class, 'isGlobalAddress');
+		foreach (['100.64.0.1', '198.18.0.1', '192.0.2.1', '198.51.100.1', '203.0.113.5', '192.0.0.8', '10.0.0.1', '127.0.0.1', '169.254.169.254', '0.0.0.0'] as $address) {
+			$this->assertFalse($global->invoke(null, $address), $address);
+		}
+
+		$this->assertTrue($global->invoke(null, '8.8.8.8'));
 	}
 
 	public function testThePrivateHostIsNeverContacted(): void {
