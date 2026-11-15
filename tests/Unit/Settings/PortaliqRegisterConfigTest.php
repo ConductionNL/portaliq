@@ -434,8 +434,15 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertContains(needle: 'awaiting-cosign', haystack: self::$register['components']['schemas']['portalIntakeSubmission']['properties']['state']['enum']);
 		// 0.118.0 (portal 0.34.0): development's 0.115.0 (`traffic.excludedPaths`, intake-report-pages T07) merged with this branch's 0.115.0-0.117.0 above. Additive; both sides kept.
 		// 0.119.0: this branch's 0.116.0 (submission states `awaiting-cosign` and `not-cosigned`, resident-identity-in-forms T04) merged past development's 0.118.0. Additive.
-		$this->assertSame(expected: '0.119.0', actual: self::$register['info']['version']);
-		$this->assertSame(expected: '0.119.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		// 0.120.0 (menu 0.2.0, glossaryTerm 0.2.0): `locale`, so a menu and a
+		// glossary term can be translated like a page (#703). Additive; a row
+		// without it is served in every language.
+		$this->assertSame(expected: '0.120.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.120.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		foreach (['menu', 'glossaryTerm'] as $translatable) {
+			$this->assertSame(expected: '0.2.0', actual: self::$register['components']['schemas'][$translatable]['version']);
+			$this->assertSame(expected: 'string', actual: self::$register['components']['schemas'][$translatable]['properties']['locale']['type']);
+		}
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portalPage']['properties']['pages']['items']['properties']['blocks']['items']['properties']['messageTo']['type']);
 		$this->assertContains(needle: 'yivi', haystack: self::$register['components']['schemas']['portalAccount']['properties']['identityType']['enum']);
 		$this->assertSame(expected: 'date-time', actual: self::$register['components']['schemas']['guardianMessage']['properties']['readAt']['format']);
