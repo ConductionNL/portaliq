@@ -21,7 +21,7 @@ const COLLECTION = { id: 'statements', label: 'Afschriften', register: 'budgetiq
 
 test('the button shows only for a collection that opted in, and only with an api', async () => {
 	const api = { downloadPdf: async () => ({ ok: true }) }
-	assert.match(await renderSfc(BUTTON, { collection: COLLECTION, api, locale: 'nl' }), /Download als pdf/)
+	assert.match(await renderSfc(BUTTON, { collection: COLLECTION, api, locale: 'nl' }), /Downloaden als pdf/)
 	assert.doesNotMatch(await renderSfc(BUTTON, { collection: { ...COLLECTION, exportPdf: false }, api, locale: 'nl' }), /pdf-download/)
 	assert.doesNotMatch(await renderSfc(BUTTON, { collection: { ...COLLECTION, exportPdf: 'true' }, api, locale: 'nl' }), /pdf-download/)
 	assert.doesNotMatch(await renderSfc(BUTTON, { collection: COLLECTION, api: null, locale: 'nl' }), /pdf-download/)

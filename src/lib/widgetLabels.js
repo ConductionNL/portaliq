@@ -32,6 +32,8 @@ const PUBLIC_LABELS = {
 	contactForm: 'Vraagformulier',
 	assistant: 'Vraag het de assistent',
 	publicRecords: 'Openbare overzichten',
+	report: 'Misstand melden',
+	reportThread: 'Uw melding met meldcode',
 	sharedBlock: 'Gedeeld blok',
 	// The NL Design System blocks, named as the boards name them (PtPagina).
 	nlAccordion: 'Uitklapblokken',
@@ -92,7 +94,7 @@ const PUBLIC_LABELS = {
  *
  * @param {string} name The name.
  * @return {string} The label.
- * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-in-place-editing/spec.md#requirement-the-editor-names-a-block-by-its-widgets-name
+ * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-the-editor-names-a-block-by-its-widgets-name
  */
 export function humanise(name) {
 	const spaced = String(name)
@@ -111,7 +113,7 @@ export function humanise(name) {
  * @param {string} key The widget key.
  * @param {Record<string, {displayName?: string}>} registry The dashboard widget registry.
  * @return {string} The name.
- * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-in-place-editing/spec.md#requirement-the-editor-names-a-block-by-its-widgets-name
+ * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-the-editor-names-a-block-by-its-widgets-name
  */
 export function widgetLabel(key, registry) {
 	if (Object.hasOwn(PUBLIC_LABELS, key)) {

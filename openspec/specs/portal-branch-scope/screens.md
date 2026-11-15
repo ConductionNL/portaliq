@@ -1,3 +1,3 @@
 # Screens
 
-- MijnZaken https://identity.conduction.nl/screens/board?id=portaliq/MijnZaken
+- portaliq/MijnZaken mijn zaken https://identity.conduction.nl/screens/board?id=portaliq/MijnZaken

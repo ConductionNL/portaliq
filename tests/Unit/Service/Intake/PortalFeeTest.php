@@ -26,10 +26,11 @@ class PortalFeeTest extends TestCase {
 	}//end fee()
 
 	public function testTheDeclaredFeeIsReadFromTheCaseType(): void {
-		$fee = $this->fee(['portalFee' => ['amount' => '45', 'currency' => 'eur', 'description' => ' Parkeren ', 'payAction' => 'create-payment']]);
+		$declared = ['amount' => '38.5', 'currency' => 'eur', 'description' => ' Parkeren ', 'payAction' => 'create-payment'];
+		$fee      = $this->fee(caseType: ['portalFee' => $declared]);
 
 		$this->assertSame(
-			['amount' => '45.00', 'currency' => 'EUR', 'description' => 'Parkeren', 'payAction' => 'create-payment'],
+			['amount' => '38.50', 'currency' => 'EUR', 'description' => 'Parkeren', 'payAction' => 'create-payment'],
 			$fee->forBinding(['typeRegister' => 'dossiq', 'typeSchema' => 'zaaktype', 'typeId' => 't1'])
 		);
 	}//end testTheDeclaredFeeIsReadFromTheCaseType()
@@ -38,7 +39,7 @@ class PortalFeeTest extends TestCase {
 		$binding = ['typeRegister' => 'dossiq', 'typeSchema' => 'zaaktype', 'typeId' => 't1'];
 		$bad = [
 			null,
-			'45.00',
+			'38.50',
 			['amount' => '0', 'currency' => 'EUR', 'payAction' => 'x'],
 			['amount' => '-5', 'currency' => 'EUR', 'payAction' => 'x'],
 			['amount' => '12,50', 'currency' => 'EUR', 'payAction' => 'x'],
@@ -56,9 +57,9 @@ class PortalFeeTest extends TestCase {
 	public function testAFeeMakesTheFormNeedASessionAtSubstantial(): void {
 		$level = new PortalFormTrustLevel();
 
-		$this->assertSame('substantial', $level->required([], [], ['fee' => ['amount' => '45.00']]));
+		$this->assertSame(expected: 'substantial', actual: $level->required([], [], ['fee' => ['amount' => '38.50']]));
 		$this->assertNull($level->required([], [], ['fee' => null]));
-		$this->assertSame('high', $level->required([], ['minTrust' => 'high'], ['fee' => ['amount' => '45.00']]));
+		$this->assertSame(expected: 'high', actual: $level->required([], ['minTrust' => 'high'], ['fee' => ['amount' => '38.50']]));
 	}//end testAFeeMakesTheFormNeedASessionAtSubstantial()
 
 	public function testACheckoutIsFollowedOnlyOnADeclaredHttpsHost(): void {

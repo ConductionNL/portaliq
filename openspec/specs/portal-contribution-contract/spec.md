@@ -490,7 +490,7 @@ An action field MAY declare an `optionsProvider`: `static` (`options[]`) or
 `collection` (`{register,schema,labelField,valueField}`, populated by the portal
 through the SUBJECT-SCOPED `/portal/api/collections/{register}/{schema}` endpoint,
 so it can only offer values the subject may already read). Any other shape, or a
-provider for a non-whitelisted field, is dropped fail-closed.
+provider for a non-whitelisted field, MUST be dropped fail-closed.
 
 #### Scenario: A collection dropdown is scoped to the subject
 

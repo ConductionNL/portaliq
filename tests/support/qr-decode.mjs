@@ -7,7 +7,7 @@
 // every block by its syndromes (a different route than the encoder's
 // division) and parses byte mode.
 
-import { BLOCKS_M, dataPositions, formatBits, masked } from '../../src/site/lib/qr.js'
+import { BLOCKS_M, dataPositions, formatBits, masked } from '@conduction/nextcloud-vue/src/utils/qr.js'
 
 const EXP = new Uint8Array(512)
 const LOG = new Uint8Array(256)

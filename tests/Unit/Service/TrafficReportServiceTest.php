@@ -105,14 +105,15 @@ class TrafficReportServiceTest extends TestCase {
 	/**
 	 * The service over one portal with the given traffic block.
 	 *
-	 * @param array<string, mixed> $traffic The portal's traffic block.
-	 * @param int                  $now     The clock.
+	 * @param array<string, mixed>                  $traffic   The portal's traffic block.
+	 * @param int                                   $now       The clock.
+	 * @param array<int, array<string, mixed>>|null $published The published portals, when not the one seeded portal.
 	 *
 	 * @return TrafficReportService The service.
 	 */
-	private function service(array $traffic, int $now = self::NOW): TrafficReportService {
+	private function service(array $traffic, int $now = self::NOW, ?array $published = null): TrafficReportService {
 		$portals = $this->createMock(PortalResolver::class);
-		$portals->method('allPublishedPortals')->willReturn([
+		$portals->method('allPublishedPortals')->willReturn($published ?? [
 			['slug' => 'open-tilburg', 'title' => 'Open Tilburg', 'status' => 'published', 'traffic' => ['enabled' => true] + $traffic],
 		]);
 
@@ -288,4 +289,44 @@ class TrafficReportServiceTest extends TestCase {
 		$this->assertSame([], $this->sent);
 		$this->assertSame([], $this->config->values);
 	}//end testUnusableDefinitionsAreIgnored()
+
+	/**
+	 * A portal without a slug, or with only spaces, sends nothing; a slug
+	 * with spaces around it is trimmed, and every report and alert of every
+	 * other portal is judged, in the order the portals are published.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
+	 */
+	public function testPortalsWithoutASlugSendNothing(): void {
+		$this->daily = [
+			$this->day(date: '2026-09-07', pageViews: 4),
+			$this->day(date: '2026-09-08', pageViews: 10),
+			$this->day(date: '2026-09-09', pageViews: 5),
+		];
+		$traffic     = [
+			'enabled' => true,
+			'reports' => [['id' => 'd', 'name' => 'Daily', 'cadence' => 'daily', 'recipients' => ['admin']]],
+			'alerts' => [
+				['id' => 'a', 'name' => 'Busy', 'metric' => 'pageViews', 'comparison' => 'above', 'threshold' => 1, 'period' => 'day', 'recipients' => ['admin']],
+			],
+		];
+		$published   = [
+			['slug' => '', 'status' => 'published', 'traffic' => $traffic],
+			['slug' => '   ', 'status' => 'published', 'traffic' => $traffic],
+			['status' => 'published', 'traffic' => $traffic],
+			['slug' => ' open-tilburg ', 'title' => 'Open Tilburg', 'status' => 'published', 'traffic' => $traffic],
+			['slug' => 'quiet', 'status' => 'published', 'traffic' => ['enabled' => true]],
+		];
+
+		$result = $this->service(traffic: [], published: $published)->run();
+
+		$this->assertSame(expected: ['reports' => 1, 'alerts' => 1], actual: $result);
+		$this->assertSame(
+			expected: [['report', ' open-tilburg ', 'd'], ['alert', ' open-tilburg ', 'a']],
+			actual: array_map(static fn (array $sent): array => array_slice($sent, 0, 3), $this->sent)
+		);
+		$this->assertSame(expected: '2026-09-08', actual: $this->config->values['portaliq/traffic_report_open-tilburg_d'] ?? null);
+	}//end testPortalsWithoutASlugSendNothing()
 }//end class

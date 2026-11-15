@@ -47,13 +47,39 @@ class ExampleSiteProof {
 	 */
 	public function lostPaths(mixed $declared, mixed $stored, string $path = ''): array {
 		if (is_array($declared) === false) {
-			if ($this->sameValue(declared: $declared, stored: $stored) === true) {
-				return [];
-			}
-
-			return [$path];
+			return $this->lostValue(declared: $declared, stored: $stored, path: $path);
 		}
 
+		return $this->lostIn(declared: $declared, stored: $stored, path: $path);
+	}//end lostPaths()
+
+	/**
+	 * The path when the stored scalar is not the declared one.
+	 *
+	 * @param mixed  $declared The declared scalar.
+	 * @param mixed  $stored   What the instance holds at the same place.
+	 * @param string $path     The path, dot-separated.
+	 *
+	 * @return array<int, string>
+	 */
+	private function lostValue(mixed $declared, mixed $stored, string $path): array {
+		if ($this->sameValue(declared: $declared, stored: $stored) === true) {
+			return [];
+		}
+
+		return [$path];
+	}//end lostValue()
+
+	/**
+	 * Every path under a declared list or object the stored value does not hold.
+	 *
+	 * @param array<mixed> $declared The declared list or object.
+	 * @param mixed        $stored   What the instance holds at the same place.
+	 * @param string       $path     The path so far, dot-separated.
+	 *
+	 * @return array<int, string>
+	 */
+	private function lostIn(array $declared, mixed $stored, string $path): array {
 		$lost = [];
 		foreach ($declared as $key => $value) {
 			$here = ltrim($path . '.' . $key, '.');
@@ -68,7 +94,7 @@ class ExampleSiteProof {
 		}
 
 		return $lost;
-	}//end lostPaths()
+	}//end lostIn()
 
 	/**
 	 * Whether a stored scalar is the declared one.

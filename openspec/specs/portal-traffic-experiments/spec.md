@@ -1,11 +1,14 @@
 # portal-traffic-experiments Specification
 
 ## Purpose
-TBD - created by archiving change portal-traffic-experiments. Update Purpose after archive.
+
+A portal can run page experiments, heatmaps and session recordings on its own traffic. This spec fixes how a variant is assigned and judged per session, when a winner may be named, and the hard limits on heatmaps and recordings: off by default, consented, and never holding text or a typed value.
 
 ## Requirements
 
 ### Requirement: A page experiment MUST be evaluated per session against its goal
+
+A page experiment MUST be evaluated per session against its goal.
 
 A portal names experiments in `traffic.experiments[]`, each `{ id, name,
 status, page, variants: [{ id, name, weight, pageRoute | changes: [{
@@ -50,6 +53,8 @@ sessions, conversions, rate }], winner, confidence }]`.
 
 ### Requirement: A winner MUST only be named with enough sessions and a significant difference
 
+A winner MUST only be named with enough sessions and a significant difference.
+
 The two best variants are compared with a two-proportion z-test on the
 pooled proportion. A winner is named only when every variant has at
 least thirty sessions and the two-sided confidence is at least 0.95;
@@ -66,6 +71,8 @@ sessions per variant.
 @e2e exclude covered by TrafficExperimentsTest and traffic-summary.spec.mjs on the same tables
 
 ### Requirement: Heatmaps MUST be off by default and hold positions, never content
+
+Heatmaps MUST be off by default and hold positions, never content.
 
 `heat_click` and `heat_scroll` exist only under `sensitive.heatmaps`: with
 the switch off the collector refuses them as `sensitive-off` whatever the
@@ -90,6 +97,8 @@ screenshot, and reads "off for this portal" with the switch off.
 - **AND** the Heatmap widget draws the page
 
 ### Requirement: Session recording MUST be off by default, consented and bounded
+
+Session recording MUST be off by default, consented and bounded.
 
 With `sensitive.sessionRecording` on, the client loads a separate recorder
 script from `/api/traffic-recorder.js` and only then: never on a portal of
@@ -127,6 +136,8 @@ how long they are kept.
 
 ### Requirement: A session recording MUST never hold text or a typed value
 
+A session recording MUST never hold text or a typed value.
+
 The recorder writes a text node as its length and an input as the length
 of its value, drops scripts, writes images and frames as boxes and keeps
 attributes from a short layout list only. The collector walks every chunk
@@ -142,3 +153,43 @@ no `allow-scripts`.
 - **THEN** the stored chunk holds the text's length, the value's length and the image's box, and none of the three strings
 
 @e2e exclude covered by TrafficRecordingMaskTest and TrafficRecordingServiceTest; the e2e scenario above asserts the absence of the page heading in a real recording
+
+### Requirement: Sensitive measurement MUST be off by default and warned in the admin UI
+
+Sensitive measurement MUST be off by default and warned in the admin UI.
+
+Four switches change what a portal knows about a person rather than how much traffic it counts: `persistClientId`, `accountLinking`, `heatmaps` and `sessionRecording`. Each is off until an operator sets it to literally `true`, and each shows its warning where it is switched.
+
+#### Scenario: A switch is off unless literally true
+@e2e exclude Server: the resolved measurement configuration is unit-tested; nothing renders
+- **WHEN** a portal record carries `sensitive.persistClientId: "true"` or `1`
+- **THEN** the resolved configuration treats it as off
+
+#### Scenario: A switched dimension follows its switch
+@e2e exclude covered by TrafficConfigResolverTest::testSwitchedDimensionsFollowTheirSwitch; nothing renders
+- **WHEN** a portal lists `userRef` among its dimensions without `accountLinking`, or `region` with `regionGranularity: none`
+- **THEN** the dimension is not stored
+
+#### Scenario: The warning is shown where the switch is
+@e2e exclude Static: drawn on the boards PtPortalInstellingen and PtVerkeer
+- **WHEN** an editor opens a portal's traffic settings
+- **THEN** each sensitive switch shows the consequence of turning it on, under "Gevoelige metingen"
+- **AND** the Traffic page of a portal with any of them on shows "Deze portal meet meer dan verkeer" above the figures, naming the switches that are on
+
+### Requirement: Measurement MUST honour the portal's consent posture
+
+Measurement MUST honour the portal's consent posture.
+
+A portal declares whether measurement runs before consent, and which events are
+permitted without it.
+
+#### Scenario: Consent has not been given
+@e2e exclude covered by TrafficConfigResolverTest::testConsentGatesEverythingNotExplicitlyExempted and TrafficIngestServiceTest::testOnlyTheBooleanTrueIsConsent; the visitor reads the posture on the board Cookieverklaring
+- **WHEN** a portal requires consent and the visitor has not given it
+- **THEN** only events on the pre-consent list are accepted
+- **AND** no client id is persisted in the visitor's browser
+
+#### Scenario: Consent is withdrawn
+@e2e exclude the client forgets its identity on `consent(false)` (src/traffic/client.js); pinned by tests/traffic-client.spec.mjs "discards the client id and starts no new session after consent(false)"
+- **WHEN** a visitor withdraws consent
+- **THEN** the client id is discarded and a new session is not started

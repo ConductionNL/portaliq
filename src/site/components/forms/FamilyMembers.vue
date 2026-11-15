@@ -145,8 +145,7 @@ export default {
 		 */
 		async load() {
 			const people = await fetchFamily(
-				this.base,
-				adoptSessionToken() || '',
+				{ base: this.base, token: adoptSessionToken() || '' },
 				this.sameAddressOnly,
 			)
 			this.people = people || []

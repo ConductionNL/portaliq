@@ -1,3 +1,3 @@
 # Screens
 
-- PtInloggenDemo https://identity.conduction.nl/screens/board?id=portaliq/PtInloggenDemo
+- portaliq/PtInloggenDemo inloggen op de demo https://identity.conduction.nl/screens/board?id=portaliq/PtInloggenDemo

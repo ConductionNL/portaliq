@@ -90,4 +90,33 @@ class ZuiddrechtLindelaanMailLinksTest extends TestCase {
 
 		$this->assertSame(expected: ['lindelaan-mail-aanvulling' => 'het Woo-postvak'], actual: $named);
 	}//end testTheMailboxLinkNamesTheWooMailbox()
+
+	/**
+	 * The two mails DqZaakEmail draws with a time are from this week (the row
+	 * shows the time only for a mail of the last seven days), and Sanne's
+	 * addition is the same moment as the contact moment that logs it.
+	 *
+	 * @return void
+	 */
+	public function testTheCaseMailsAreFromThisWeek(): void {
+		$dates = array_map(static fn (array $link): string => $link['mailDate'], $this->links());
+		$this->assertSame(
+			expected: [
+				'lindelaan-mail-aanvulling'        => '{{datetime:-2 09:15}}',
+				'lindelaan-mail-vraag-mobiliteit'  => '{{datetime:-3 11:02}}',
+				'lindelaan-mail-planning-aannemer' => '2026-03-12T10:40:00+01:00',
+			],
+			actual: $dates
+		);
+
+		$set     = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/example-sets/zuiddrecht.json'), true);
+		$logged  = array_filter(
+			($set['objects'] ?? []),
+			static fn (array $object): bool => ($object['key'] ?? '') === 'woo-fietspad-aanvulling'
+		);
+		$moments = array_column($logged, 'data');
+		$this->assertCount(expectedCount: 1, haystack: $moments);
+		$this->assertSame(expected: $dates['lindelaan-mail-aanvulling'], actual: $moments[0]['startTime']);
+		$this->assertSame(expected: '{{datetime:-2 09:17}}', actual: $moments[0]['endTime']);
+	}//end testTheCaseMailsAreFromThisWeek()
 }//end class

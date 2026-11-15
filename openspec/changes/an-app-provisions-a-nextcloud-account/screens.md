@@ -1,3 +1,3 @@
 # Screens
 
-- Inloggen https://identity.conduction.nl/screens/board?id=warmtepompacademie/Inloggen
+- warmtepompacademie/Inloggen inloggen https://identity.conduction.nl/screens/board?id=warmtepompacademie/Inloggen

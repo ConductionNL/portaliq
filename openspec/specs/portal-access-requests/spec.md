@@ -17,13 +17,13 @@ refused.
 
 #### Scenario: A bookkeeper asks for a client's cases
 - **GIVEN** a business user signed in to the portal with no mandate for company 87654321
-- **WHEN** they choose "Ask for access to cases", enter 87654321 and a reason, and send it
-- **THEN** their request list shows it as pending
+- **WHEN** they choose "Toegang aanvragen", enter 87654321 and a reason, and send it
+- **THEN** their request list shows it with the badge "Wacht op antwoord"
 
 #### Scenario: A refusal shows its reason
-- **GIVEN** a request the organisation refused with the reason "No authorisation from the company"
+- **GIVEN** a request the organisation refused with the reason "Geen machtiging van het bedrijf."
 - **WHEN** the asker opens their request list
-- **THEN** they see the request as refused, with that reason
+- **THEN** they see the badge "Afgewezen" and "Reden: Geen machtiging van het bedrijf."
 
 ### Requirement: Staff answer the requests of their organisation (REQ-IAR-002)
 
@@ -57,4 +57,4 @@ Granting a request SHALL record an active mandate for the asker on behalf of the
 - **GIVEN** a pending request from a bookkeeper for company 87654321
 - **WHEN** a clerk grants it
 - **THEN** the bookkeeper's "My cases" lists the cases of 87654321, labelled "87654321"
-- **AND** acting for it reads "U regelt nu zaken voor 87654321"
+- **AND** the bar on "Mijn zaken" reads "U regelt nu zaken voor 87654321" once they choose it under "Wissel naar"

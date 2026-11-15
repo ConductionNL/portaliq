@@ -149,6 +149,7 @@ test('a new item is created through the authoring route as the signed-in author'
 				title: 'Studiedag',
 				body: 'Vrij',
 				target: { schoolRef: 's1' },
+				eventRef: '',
 				authorRef: 'po-leerkracht-09',
 			},
 		},
@@ -174,6 +175,7 @@ test('a change goes to the item, without touching its author', async () => {
 		title: 'T',
 		body: 'B',
 		target: { groupRefs: ['g7'] },
+		eventRef: '',
 	})
 })
 

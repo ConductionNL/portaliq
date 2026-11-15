@@ -10,7 +10,7 @@ use OCA\Portaliq\Service\Identity\NextcloudAccountProvisioner;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PublishedPortals;
 use OCP\IUserManager;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -76,7 +76,7 @@ class NextcloudAccountProvisionerTest extends TestCase {
 		$users = $this->createMock(IUserManager::class);
 		$users->method('userExists')->willReturn($userExists);
 
-		$portals = $this->createMock(PortalResolver::class);
+		$portals = $this->createMock(PublishedPortals::class);
 		$portals->method('allPublishedPortals')->willReturn([$portal]);
 
 		$provisioner = new NextcloudAccountProvisioner($reader, $this->writer, $users, $portals);

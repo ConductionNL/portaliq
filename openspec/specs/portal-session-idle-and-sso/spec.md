@@ -55,7 +55,7 @@ Two minutes before the bearer expires, or at 40 percent of the window when the w
 #### Scenario: The login screen says why
 - **GIVEN** a resident who ignored the warning
 - **WHEN** the window passes
-- **THEN** the login screen shows "You were signed out because you were inactive."
+- **THEN** the login screen shows "U bent uitgelogd omdat u een tijd niets deed." (board Inloggen)
 
 ### Requirement: The absolute cap is stated, not extended (REQ-SIS-004)
 

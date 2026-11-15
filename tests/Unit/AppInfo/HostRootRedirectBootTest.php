@@ -25,6 +25,7 @@ use OCA\Portaliq\Service\HostRootRedirect;
 use OCA\Portaliq\Service\HostRootRedirectSend;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PublishedPortals;
 use OCA\Portaliq\Service\SiteAddressing;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\IAppContainer;
@@ -278,7 +279,7 @@ class HostRootRedirectBootTest extends TestCase {
 		$orContainer->method('get')->willReturn($objects);
 		$context = $this->createMock(PortalRegisterContext::class);
 		$context->method('apply')->willReturn(true);
-		$resolver = new PortalResolver($orContainer, $this->createMock(LoggerInterface::class), $context);
+		$resolver = new PortalResolver(new PublishedPortals($orContainer, $this->createMock(LoggerInterface::class), $context), $this->createMock(LoggerInterface::class));
 
 		$urlGenerator = $this->createMock(IURLGenerator::class);
 		$urlGenerator->method('linkToRoute')->willReturnCallback(

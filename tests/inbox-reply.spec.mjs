@@ -82,8 +82,11 @@ function fakeApi({ failUpload = [] } = {}) {
 
 test('the reply is sent without its files, then each file goes into the new reply', async () => {
 	const api = fakeApi()
-	const result = await sendReply(api, MESSAGE, REPLY, { subject: 'Re: Besluit', content: 'Dank u.' }, {
-		attachments: [{ name: 'foto.jpg' }, { name: 'brief.pdf' }],
+	const result = await sendReply(api, {
+		message: MESSAGE,
+		reply: REPLY,
+		values: { subject: 'Re: Besluit', content: 'Dank u.' },
+		filesByField: { attachments: [{ name: 'foto.jpg' }, { name: 'brief.pdf' }] },
 	})
 
 	assert.deepEqual(result, { ok: true, errors: {}, failed: [] })
@@ -93,7 +96,12 @@ test('the reply is sent without its files, then each file goes into the new repl
 
 test('a file that fails after the text arrived is named, and the reply stays', async () => {
 	const api = fakeApi({ failUpload: ['brief.pdf'] })
-	const result = await sendReply(api, MESSAGE, REPLY, { subject: 'x', content: 'y' }, { attachments: [{ name: 'foto.jpg' }, { name: 'brief.pdf' }] })
+	const result = await sendReply(api, {
+		message: MESSAGE,
+		reply: REPLY,
+		values: { subject: 'x', content: 'y' },
+		filesByField: { attachments: [{ name: 'foto.jpg' }, { name: 'brief.pdf' }] },
+	})
 
 	assert.equal(result.ok, true)
 	assert.deepEqual(result.failed, ['brief.pdf'])
@@ -106,7 +114,12 @@ test('a refused reply uploads nothing and returns the server\'s errors', async (
 	const api = fakeApi()
 	api.replyToMessage = async () => ({ ok: false, status: 400, object: null, error: '', errors: { content: 'Dit veld is verplicht.' } })
 
-	const result = await sendReply(api, MESSAGE, REPLY, { subject: 'x', content: '' }, { attachments: [{ name: 'a.pdf' }] })
+	const result = await sendReply(api, {
+		message: MESSAGE,
+		reply: REPLY,
+		values: { subject: 'x', content: '' },
+		filesByField: { attachments: [{ name: 'a.pdf' }] },
+	})
 
 	assert.equal(result.ok, false)
 	assert.deepEqual(result.errors, { content: 'Dit veld is verplicht.' })
