@@ -9,7 +9,7 @@
  * Pure functions, so the shell and a test derive the same groups from the
  * same answers without mounting anything.
  *
- * @spec openspec/changes/site-navigation-block/specs/portaliq-cms/spec.md#requirement-a-menu-block-must-show-the-portals-navigation-in-groups
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-menu-block-must-show-the-portals-navigation-in-groups
  */
 
 /** The menu block's widget key. */
@@ -33,7 +33,7 @@ const MENU_REGIONS = ['aside', 'main']
  * @param {Array<object>} input.residentGroups `{key, title, items}` groups from residentMenuGroups, or [] signed out.
  * @param {Array<object>} input.menus The header menus (position 0).
  * @return {Array<{id: string, title: string, items: Array<object>}>} The groups.
- * @spec openspec/changes/site-navigation-block/specs/portaliq-cms/spec.md#requirement-a-menu-block-must-show-the-portals-navigation-in-groups
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-menu-block-must-show-the-portals-navigation-in-groups
  */
 export function navigationGroups({ residentGroups, menus }) {
 	const groups = (residentGroups || []).map((group) => ({
@@ -74,7 +74,7 @@ function menuItem(item) {
  *
  * @param {object} regions The resolved regions (regions.js).
  * @return {boolean} True when a menu block is placed.
- * @spec openspec/changes/site-navigation-block/specs/portaliq-cms/spec.md#requirement-a-page-with-a-menu-block-must-leave-the-header-menu-out
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-with-a-menu-block-must-leave-the-header-menu-out
  */
 export function hasNavigationBlock(regions) {
 	return MENU_REGIONS.some((region) =>
@@ -90,7 +90,7 @@ export function hasNavigationBlock(regions) {
  *
  * @param {object} regions The resolved regions.
  * @return {boolean} True when the side region carries a menu block.
- * @spec openspec/changes/site-navigation-block/specs/portaliq-cms/spec.md#requirement-a-page-with-a-menu-block-must-leave-the-header-menu-out
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-with-a-menu-block-must-leave-the-header-menu-out
  */
 export function sideMenuOf(regions) {
 	return ((regions && regions.aside) || []).some(

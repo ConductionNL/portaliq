@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Intake;
 
+use OCA\OpenRegister\Service\Object\DiscardDraftRequest;
 use DateTimeImmutable;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\Intake\ActionDraft;
@@ -14,6 +15,7 @@ use OCA\Portaliq\Tests\Unit\Service\Intake\Fakes\FormSubmitFake;
 use OCA\Portaliq\Tests\Unit\Service\Intake\Fakes\PortalOwnerDraft;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Contribution\CreateBody;
 
 /**
  * submit-creates-the-case-directly 5.1/5.2: a create action's draft is the
@@ -29,6 +31,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Portaliq\Contribution\ActionScopeResolver
  * @uses \OCA\Portaliq\Contribution\CreateBody
  * @uses \OCA\Portaliq\Service\PortalSessionService
+ * @uses \OCA\Portaliq\Kernel\Support\SessionTrust
  *
  * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
  */
@@ -65,14 +68,15 @@ class ActionDraftTest extends TestCase {
 		$this->discard = new class {
 			public array $asked = [];
 
-			public function discard(array $destination, string $draftId, object $owner): bool {
+			public function discard(DiscardDraftRequest $request): bool {
+				[$destination, $draftId, $owner] = [$request->destination, $request->draftId, $request->owner];
 				$this->asked[] = $draftId;
 				return true;
 			}
 		};
 		$submit = new PortalOwnerDraft($this->fake->container(['OCA\\OpenRegister\\Service\\Object\\DraftDiscard' => $this->discard]), $this->createMock(LoggerInterface::class), new DestinationSubmit($this->fake->container(['OCA\\OpenRegister\\Service\\Object\\DraftDiscard' => $this->discard]), $this->createMock(LoggerInterface::class)));
 
-		return new ActionDraft(registry: $registry, reader: $reader, writer: $writer, drafts: $submit);
+		return new ActionDraft(registry: $registry, reader: $reader, writer: $writer, drafts: $submit, createBody: new CreateBody());
 	}//end drafts()
 
 	public function testOnlyTheSubjectsOwnCreateActionInThatAppHoldsADraft(): void {

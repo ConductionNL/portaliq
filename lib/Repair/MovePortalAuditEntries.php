@@ -32,10 +32,10 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Repair;
 
 use DateTime;
-use OCA\OpenRegister\Service\Object\ObjectDeletion;
-use OCA\OpenRegister\Service\Object\ObjectFindTarget;
-use OCA\Portaliq\Service\AuditTrailService;
-use OCA\Portaliq\Service\PortalRegisterContext;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\Portaliq\Kernel\Contracts\AuditTrailServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalRegisterContextInterface;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Container\ContainerInterface;
@@ -79,14 +79,14 @@ class MovePortalAuditEntries implements IRepairStep {
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container Resolves OpenRegister's object service, which may be absent.
-	 * @param PortalRegisterContext $context Points the object service at the old schema.
-	 * @param AuditTrailService $trail Writes the rows into OpenRegister's audit trail.
+	 * @param PortalRegisterContextInterface $context Points the object service at the old schema.
+	 * @param AuditTrailServiceInterface $trail Writes the rows into OpenRegister's audit trail.
 	 * @param LoggerInterface $logger Names a record that could not be moved.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
-		private readonly PortalRegisterContext $context,
-		private readonly AuditTrailService $trail,
+		private readonly PortalRegisterContextInterface $context,
+		private readonly AuditTrailServiceInterface $trail,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -184,8 +184,19 @@ class MovePortalAuditEntries implements IRepairStep {
 			return [];
 		}
 
+		return $this->rowsAsArrays(rows: (array)$rows);
+	}//end page()
+
+	/**
+	 * The rows as arrays; an object row is serialised, anything else left out.
+	 *
+	 * @param array $rows The rows as read.
+	 *
+	 * @return list<array<string, mixed>>
+	 */
+	private function rowsAsArrays(array $rows): array {
 		$out = [];
-		foreach ((array)$rows as $row) {
+		foreach ($rows as $row) {
 			if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
 				$row = $row->jsonSerialize();
 			}
@@ -196,7 +207,7 @@ class MovePortalAuditEntries implements IRepairStep {
 		}
 
 		return $out;
-	}//end page()
+	}//end rowsAsArrays()
 
 	/**
 	 * OpenRegister's object service.

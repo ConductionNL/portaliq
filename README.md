@@ -45,6 +45,12 @@ portal-contribution registry. Employees stay internal.
 
 > **Canonical root configs** — `phpcs.xml`, `phpmd.xml`, `psalm.xml`, `phpstan.neon`, and `phpstan-bootstrap.php` in this repo are the fleet canonical. All Conduction PHP apps are expected to mirror these files byte-for-byte; per-app deviations belong in baselines (`phpstan-baseline.neon`, `psalm-baseline.xml`) not in the canonical files. Submit changes here and they propagate to the fleet via the template-sync flow — do **not** diverge per-app.
 
+## Test coverage
+
+<!-- coverage:start -->
+Measured test coverage: 90.1% of statements (PHP 90.1% of 35,717 statements), at commit `cf14bd3c8` on 2026-11-13. The JavaScript frontend is not in this figure, because it has no coverage measurement yet. The figures come from [`coverage-summary.json`](coverage-summary.json); refresh them with `composer coverage:publish`.
+<!-- coverage:end -->
+
 ## Screenshots
 
 Screenshots are captured automatically from the tutorial flows, not pasted in by hand. The journeydoc scaffold (hydra ADR-030) ships two tutorial stories under [`docs/tutorials/`](docs/tutorials/) — a user "first launch" walkthrough (the Dashboard) and an admin "manage settings" walkthrough (Admin Settings) — and a Playwright `docs-capture` project that turns each documented step into a PNG under `docs/static/screenshots/tutorials/`.
@@ -613,6 +619,29 @@ cd portaliq
 npm install && npm run build
 php occ app:enable portaliq
 ```
+
+### Try it with Docker
+
+The repository builds an evaluation image: the official Nextcloud image with portaliq and OpenRegister installed and enabled. It is meant for trying the app out and for test environments. For production, install the app from the Nextcloud App Store.
+
+```bash
+docker compose -f docker-compose.yml up -d --build
+```
+
+Open http://localhost:8080/apps/portaliq/ and sign in as `admin` with password `admin`. The first start takes a minute or two. Set `NEXTCLOUD_ADMIN_PASSWORD` and `APP_PORT` to change the password and the port; `docker-compose.yml` lists every setting. `docker compose -f docker-compose.yml down -v` removes the stack and its data.
+
+Released versions are published as `ghcr.io/conductionnl/portaliq`, so leaving out `--build` uses the published image.
+
+### Run it on Kubernetes
+
+`charts/portaliq` wraps the official [Nextcloud Helm chart](https://github.com/nextcloud/helm) and runs the same image with PostgreSQL:
+
+```bash
+helm dependency build charts/portaliq
+helm install portaliq charts/portaliq --set nextcloud.nextcloud.host=portaliq.example.org
+```
+
+Change the passwords in `charts/portaliq/values.yaml` before you install it anywhere that matters.
 
 ## Development
 

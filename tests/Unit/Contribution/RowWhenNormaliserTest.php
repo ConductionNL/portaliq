@@ -113,6 +113,49 @@ class RowWhenNormaliserTest extends TestCase {
 	}//end testLeavesAMalformedConditionOnAnEndpointActionToTheResolver()
 
 	/**
+	 * Every dropped part is named in order: an unknown operator on any
+	 * action, then a malformed update condition, with `?` for an action
+	 * without an id; junk and actions without a condition pass untouched.
+	 *
+	 * @return void
+	 */
+	public function testEveryDroppedPartIsNamedInOrder(): void {
+		$result = (new RowWhenNormaliser())->normalise(
+			actions: [
+				'junk',
+				['id' => 'plain', 'type' => 'update'],
+				['type' => 'update', 'rowWhen' => ['field' => 'status', 'in' => ['open'], 'before' => 1, 0 => 'x']],
+				['id' => 'bad', 'type' => 'update', 'rowWhen' => ['field' => 'status', 'nope' => true]],
+				['id' => 'endpoint', 'type' => 'endpoint-forward', 'rowWhen' => ['zzz' => 1]],
+				['id' => 'scalar', 'type' => 'update', 'rowWhen' => 'status'],
+			]
+		);
+
+		self::assertSame(
+			[
+				'action "?": unknown rowWhen operator "before"',
+				'action "?": unknown rowWhen operator "0"',
+				'action "bad": unknown rowWhen operator "nope"',
+				'action "bad": rowWhen needs a field name and a non-empty list of values',
+				'action "endpoint": unknown rowWhen operator "zzz"',
+				'action "scalar": rowWhen needs a field name and a non-empty list of values',
+			],
+			$result['dropped']
+		);
+		self::assertSame(
+			[
+				'junk',
+				['id' => 'plain', 'type' => 'update'],
+				['type' => 'update', 'rowWhen' => ['field' => 'status', 'in' => ['open']]],
+				['id' => 'bad', 'type' => 'update'],
+				['id' => 'endpoint', 'type' => 'endpoint-forward', 'rowWhen' => []],
+				['id' => 'scalar', 'type' => 'update'],
+			],
+			$result['actions']
+		);
+	}//end testEveryDroppedPartIsNamedInOrder()
+
+	/**
 	 * A contribution's dropped parts are logged with the app that declared them.
 	 *
 	 * @return void

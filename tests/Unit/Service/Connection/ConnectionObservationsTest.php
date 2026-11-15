@@ -190,6 +190,33 @@ class ConnectionObservationsTest extends TestCase {
 	}//end testABrokerIsNamedByHostOnly()
 
 	/**
+	 * A broker that answered discovery without the endpoints is told apart
+	 * from one that did not answer.
+	 *
+	 * @return void
+	 */
+	public function testADiscoveryAnswerWithoutEndpointsSaysSo(): void {
+		$this->assertSame(
+			expected: ['error', 'The broker at idp.gemeente.example answered discovery without the endpoints a login needs.'],
+			actual: (new ConnectionObservations())->oidcDiscoveryFailed(issuer: 'https://idp.gemeente.example/realms/portal', answered: true)
+		);
+	}//end testADiscoveryAnswerWithoutEndpointsSaysSo()
+
+	/**
+	 * An installed database that cannot be opened is an error that names the
+	 * command to run, and no file path.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableDatabaseIsAnErrorNamingTheFix(): void {
+		[$status, $message] = (new ConnectionObservations())->geoUnreadable();
+
+		$this->assertSame(expected: 'error', actual: $status);
+		$this->assertStringContainsString(needle: 'occ portaliq:traffic:geo-refresh', haystack: $message);
+		$this->assertStringNotContainsString(needle: '/', haystack: str_replace('occ portaliq:traffic:geo-refresh', '', $message));
+	}//end testAnUnreadableDatabaseIsAnErrorNamingTheFix()
+
+	/**
 	 * Each code exchange answer maps to its status, and an answer about one login reports nothing.
 	 *
 	 * @return void
@@ -233,4 +260,66 @@ class ConnectionObservationsTest extends TestCase {
 			);
 		}
 	}//end testEachExchangeAnswerMapsToItsStatus()
+
+	/**
+	 * Every geography setting and installed database reads exactly as recorded.
+	 *
+	 * @return void
+	 */
+	public function testEveryGeographyStateIsAsRecorded(): void {
+		$observations = new ConnectionObservations();
+		$present      = static fn (array $meta = []): array => ['present' => true, 'metadata' => $meta];
+		$cases        = [
+			[['provider' => 'none'], $present(), null],
+			[[], $present(), null],
+			[['provider' => 'maxmind'], $present(), ['unconfigured', 'MaxMind needs an account id and a licence key before a database can be fetched.']],
+			[['provider' => 'maxmind', 'maxmindAccountId' => '1'], $present(), ['unconfigured', 'MaxMind needs an account id and a licence key before a database can be fetched.']],
+			[['provider' => 'maxmind', 'maxmindAccountId' => '1', 'maxmindLicenseKeySet' => 1], $present(), ['unconfigured', 'MaxMind needs an account id and a licence key before a database can be fetched.']],
+			[['provider' => 'maxmind', 'maxmindAccountId' => '1', 'maxmindLicenseKeySet' => true], $present(), ['configured', 'A MaxMind database is installed.']],
+			[['provider' => 'maxmind', 'maxmindLicenseKeySet' => true], ['present' => false], ['unconfigured', 'MaxMind needs an account id and a licence key before a database can be fetched.']],
+			[['provider' => 'dbip'], ['present' => 1], ['unconfigured', 'No database is installed yet. Run occ portaliq:traffic:geo-refresh to fetch one now.']],
+			[['provider' => 'dbip'], [], ['unconfigured', 'No database is installed yet. Run occ portaliq:traffic:geo-refresh to fetch one now.']],
+			[['provider' => 'dbip'], $present(['provider' => 'maxmind', 'fetchedAt' => '2026-01-01']), ['limited', 'Regions still come from the MaxMind database. Run occ portaliq:traffic:geo-refresh to fetch DB-IP Lite.']],
+			[['provider' => 'dbip'], $present(['provider' => 'other']), ['limited', 'Regions still come from the other database. Run occ portaliq:traffic:geo-refresh to fetch DB-IP Lite.']],
+			[['provider' => 'dbip'], $present(['provider' => 'dbip', 'fetchedAt' => '2026-01-01']), ['configured', 'A DB-IP Lite database is installed, fetched 2026-01-01.']],
+			[['provider' => 'maxmind', 'maxmindAccountId' => '1', 'maxmindLicenseKeySet' => true], $present(['fetchedAt' => '2026-02-02']), ['configured', 'A MaxMind database is installed, fetched 2026-02-02.']],
+			[['provider' => 'dbip'], ['present' => true, 'metadata' => 'x'], ['configured', 'A DB-IP Lite database is installed.']],
+		];
+		foreach ($cases as $index => [$settings, $status, $expected]) {
+			$this->assertSame($expected, $observations->geoSettings(settings: $settings, status: $status), 'case ' . $index);
+		}
+	}//end testEveryGeographyStateIsAsRecorded()
+
+	/**
+	 * Every answer to the code exchange reads exactly as recorded.
+	 *
+	 * @return void
+	 */
+	public function testEveryCodeExchangeIsAsRecorded(): void {
+		$observations = new ConnectionObservations();
+		$cases        = [
+			['https://broker.example/token', null, '', false, ['error', 'The broker at broker.example did not answer the last code exchange.']],
+			['https://broker.example/token', 200, '', true, ['configured', 'The broker at broker.example answered the last code exchange.']],
+			['https://broker.example/token', 204, '', false, ['error', 'The broker at broker.example answered the last code exchange without an ID token.']],
+			['https://broker.example/token', 299, 'invalid_client', true, ['configured', 'The broker at broker.example answered the last code exchange.']],
+			['https://broker.example/token', 300, '', true, null],
+			['https://broker.example/token', 401, '', true, ['error', 'The broker at broker.example refused this portal\'s client credentials (HTTP 401).']],
+			['https://broker.example/token', 403, '', true, ['error', 'The broker at broker.example refused this portal\'s client credentials (HTTP 403).']],
+			['https://broker.example/token', 400, 'invalid_client', true, ['error', 'The broker at broker.example refused this portal\'s client credentials (HTTP 400).']],
+			['https://broker.example/token', 400, 'unauthorized_client', true, ['error', 'The broker at broker.example refused this portal\'s client credentials (HTTP 400).']],
+			['https://broker.example/token', 400, 'invalid_grant', true, null],
+			['https://broker.example/token', 500, '', true, ['error', 'The broker at broker.example answered HTTP 500 on the last code exchange.']],
+			['https://broker.example/token', 503, 'invalid_client', true, ['error', 'The broker at broker.example refused this portal\'s client credentials (HTTP 503).']],
+			['not a url', 502, '', true, ['error', 'The broker answered HTTP 502 on the last code exchange.']],
+			['https://broker.example/token', 199, '', true, null],
+			['https://broker.example/token', 499, '', true, null],
+		];
+		foreach ($cases as $index => [$endpoint, $status, $error, $token, $expected]) {
+			$this->assertSame(
+				$expected,
+				$observations->oidcExchange(tokenEndpoint: $endpoint, httpStatus: $status, oauthError: $error, hasToken: $token),
+				'case ' . $index
+			);
+		}
+	}//end testEveryCodeExchangeIsAsRecorded()
 }//end class

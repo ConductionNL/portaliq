@@ -32,6 +32,32 @@ export function editorBaseFrom(apiBase) {
 }
 
 /**
+ * The probe's address for a route.
+ *
+ * @param {string} editorBase The probe base.
+ * @param {{route: string, portalSlug: string}} asked The route, and the portal slug when not resolving by host.
+ * @return {string} The address.
+ */
+function contextUrl(editorBase, asked) {
+	const url = new URL(`${editorBase}/editing-context`, window.location.origin)
+	url.searchParams.set('route', asked.route || '/')
+	if (asked.portalSlug) {
+		url.searchParams.set('portal', asked.portalSlug)
+	}
+	return url.toString()
+}
+
+/**
+ * The probe's answer when it offers editing, else null.
+ *
+ * @param {object|null} body The parsed answer.
+ * @return {object|null} The context, only for a literal `canEdit: true`.
+ */
+function editableContext(body) {
+	return body && body.canEdit === true ? body : null
+}
+
+/**
  * The editing context for a route, or null when there is none.
  *
  * EVERY failure resolves to null, including the 401 an anonymous visitor gets:
@@ -48,26 +74,11 @@ export function editorBaseFrom(apiBase) {
  */
 export async function fetchEditingContext(editorBase, route, portalSlug = '') {
 	try {
-		const url = new URL(`${editorBase}/editing-context`, window.location.origin)
-		url.searchParams.set('route', route || '/')
-		if (portalSlug) {
-			url.searchParams.set('portal', portalSlug)
-		}
-
-		const response = await fetch(url.toString(), {
+		const response = await fetch(contextUrl(editorBase, { route, portalSlug }), {
 			headers: { Accept: 'application/json' },
 			credentials: 'include',
 		})
-		if (!response.ok) {
-			return null
-		}
-
-		const body = await response.json()
-		if (!body || body.canEdit !== true) {
-			return null
-		}
-
-		return body
+		return response.ok ? editableContext(await response.json()) : null
 	} catch {
 		return null
 	}

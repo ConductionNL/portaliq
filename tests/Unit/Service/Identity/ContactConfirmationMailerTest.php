@@ -6,7 +6,9 @@ namespace OCA\Portaliq\Tests\Unit\Service\Identity;
 
 use OCA\Portaliq\Service\Identity\ContactConfirmationMailer;
 use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Service\Mail\MailLog;
 use OCA\Portaliq\Service\Mail\MailSite;
+use OCA\Portaliq\Service\Mail\MailTemplateRenderer;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalResolver;
@@ -123,7 +125,78 @@ class ContactConfirmationMailerTest extends TestCase {
 		$this->assertStringNotContainsString('smtp down', implode(' ', $this->logged));
 	}//end testAFailingMailServerNeverBreaksTheCreate()
 
-	private function mailer(?array $account = ['email' => 'anna@example.nl'], ?\Throwable $failWith = null): ContactConfirmationMailer {
+	/**
+	 * Without a subject field, or with a value that has no label, the
+	 * mail names no subject or the value as stored.
+	 *
+	 * @return void
+	 */
+	public function testTheSubjectIsTheStoredValueWithoutALabelAndLeftOutWithoutAField(): void {
+		$this->mailer()->afterCreate($this->subject(), $this->action(), ['onderwerp' => 'parkeren']);
+		$this->assertContains('Your question about parkeren has reached Gemeente X. You find it back under My questions.', $this->mailed['texts']);
+
+		$this->setUp();
+		$action = $this->action();
+		unset($action['topicField']);
+		$this->mailer()->afterCreate($this->subject(), $action, ['onderwerp' => 'afval']);
+		$this->assertContains('Your question has reached Gemeente X. You find it back under My questions.', $this->mailed['texts']);
+
+		$this->setUp();
+		$this->mailer()->afterCreate($this->subject(), $this->action(), ['onderwerp' => ['afval']]);
+		$this->assertContains('Your question has reached Gemeente X. You find it back under My questions.', $this->mailed['texts']);
+	}//end testTheSubjectIsTheStoredValueWithoutALabelAndLeftOutWithoutAField()
+
+	/**
+	 * mail-templates-admin-screen: a portal's own text replaces the default,
+	 * with the portal's name and the subject as its variables.
+	 *
+	 * @return void
+	 */
+	public function testAPortalsOwnTextReplacesTheDefault(): void {
+		$renderer = $this->createMock(MailTemplateRenderer::class);
+		$renderer->expects($this->once())
+			->method('render')
+			->with(
+				'gemeente-x',
+				'contact-confirmation',
+				['portal' => 'Gemeente X', 'topic' => 'Afval'],
+				'We have received your question',
+				'Your question about Afval has reached Gemeente X. You find it back under My questions.'
+			)
+			->willReturn(['subject' => 'Vraag ontvangen', 'body' => 'Eigen tekst', 'overridden' => true]);
+
+		$this->assertTrue($this->mailer(renderer: $renderer)->afterCreate($this->subject(), $this->action(), ['onderwerp' => 'afval']));
+		$this->assertSame('Vraag ontvangen', $this->mailed['subject']);
+		$this->assertContains('Eigen tekst', $this->mailed['texts']);
+	}//end testAPortalsOwnTextReplacesTheDefault()
+
+	/**
+	 * Each send is logged against the portal as delivered, or failed when
+	 * the mail server names a failed recipient.
+	 *
+	 * @return void
+	 */
+	public function testEachSendIsLoggedAsDeliveredOrFailed(): void {
+		$records = [];
+		$log = $this->createMock(MailLog::class);
+		$log->method('record')->willReturnCallback(static function (...$arguments) use (&$records): bool {
+			$records[] = array_slice(array_values($arguments), 0, 4);
+			return true;
+		});
+
+		$this->assertTrue($this->mailer(mailLog: $log)->afterCreate($this->subject(), $this->action(), ['onderwerp' => 'afval']));
+		$this->assertFalse($this->mailer(mailLog: $log, failedRecipients: ['anna@example.nl'])->afterCreate($this->subject(), $this->action(), ['onderwerp' => 'afval']));
+
+		$this->assertSame(
+			[
+				['gemeente-x', 'contact-confirmation', 'anna@example.nl', 'delivered'],
+				['gemeente-x', 'contact-confirmation', 'anna@example.nl', 'failed'],
+			],
+			$records
+		);
+	}//end testEachSendIsLoggedAsDeliveredOrFailed()
+
+	private function mailer(?array $account = ['email' => 'anna@example.nl'], ?\Throwable $failWith = null, ?MailTemplateRenderer $renderer = null, ?MailLog $mailLog = null, array $failedRecipients = []): ContactConfirmationMailer {
 		$template = $this->createMock(IEMailTemplate::class);
 		$template->method('setSubject')->willReturnCallback(function (string $subject): void {
 			$this->mailed['subject'] = $subject;
@@ -150,13 +223,13 @@ class ContactConfirmationMailerTest extends TestCase {
 		$imailer->method('validateMailAddress')->willReturnCallback(static fn (string $email): bool => filter_var($email, FILTER_VALIDATE_EMAIL) !== false);
 		$imailer->method('createEMailTemplate')->willReturn($template);
 		$imailer->method('createMessage')->willReturn($message);
-		$imailer->method('send')->willReturnCallback(function () use ($failWith): array {
+		$imailer->method('send')->willReturnCallback(function () use ($failWith, $failedRecipients): array {
 			if ($failWith !== null) {
 				throw $failWith;
 			}
 
 			$this->mailed['sent']++;
-			return [];
+			return $failedRecipients;
 		});
 
 		$factory = $this->createMock(IFactory::class);
@@ -214,7 +287,9 @@ class ContactConfirmationMailerTest extends TestCase {
 			deepLinks: new PortalDeepLinkBuilder($urls),
 			site: new MailSite(portals: $portals, organisations: $organisations),
 			accounts: $accounts,
-			logger: $logger
+			logger: $logger,
+			renderer: $renderer,
+			mailLog: $mailLog
 		);
 	}//end mailer()
 

@@ -18,8 +18,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Traffic;
 
-use OCA\OpenRegister\Service\Object\ObjectDeletion;
 use JsonSerializable;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCA\Portaliq\Service\Traffic\TrafficEventStore;
 use OCA\Portaliq\Service\Traffic\TrafficRecordingStore;

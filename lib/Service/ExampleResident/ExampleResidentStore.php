@@ -29,8 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\ExampleResident;
 
-use OCA\OpenRegister\Service\Object\ObjectDeletion;
-use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\Portaliq\Service\ObjectRowNormaliser;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\RowIdOf;
@@ -125,12 +125,7 @@ class ExampleResidentStore {
 				return $plain;
 			}
 
-			foreach ($rows as $row) {
-				$row = $this->normalise(row: $row);
-				if ($row !== null) {
-					$plain[] = $row;
-				}
-			}
+			array_push($plain, ...$this->plainRows(rows: $rows));
 
 			if (count($rows) < self::PAGE_SIZE) {
 				break;
@@ -139,6 +134,25 @@ class ExampleResidentStore {
 
 		return $plain;
 	}//end find()
+
+	/**
+	 * The rows that normalise to arrays, normalised.
+	 *
+	 * @param array<int|string, mixed> $rows The rows as read.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function plainRows(array $rows): array {
+		$plain = [];
+		foreach ($rows as $row) {
+			$row = $this->normalise(row: $row);
+			if ($row !== null) {
+				$plain[] = $row;
+			}
+		}
+
+		return $plain;
+	}//end plainRows()
 
 	/**
 	 * One row by its id, or null when it is not there.

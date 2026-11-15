@@ -27,9 +27,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\CaseTypeColumns\CaseTypeColumnSettings;
-use OCA\Portaliq\Service\PortalCaseTypeCatalogue;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\CaseTypeColumnSettingsInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalCaseTypeCatalogueInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -45,15 +45,15 @@ class PortalCaseTypesController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalCaseTypeCatalogue $catalogue The portal's case types.
-	 * @param CaseTypeColumnSettings $columns How each case type's columns read.
+	 * @param PortalCaseTypeCatalogueInterface $catalogue The portal's case types.
+	 * @param CaseTypeColumnSettingsInterface $columns How each case type's columns read.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalCaseTypeCatalogue $catalogue,
-		private readonly CaseTypeColumnSettings $columns,
+		private readonly PortalCaseTypeCatalogueInterface $catalogue,
+		private readonly CaseTypeColumnSettingsInterface $columns,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -70,7 +70,7 @@ class PortalCaseTypesController extends Controller {
 	 *       attribute, so this tag is the declaration.
 	 *
 	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
-	 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
 	 */
 	public function index(string $slug): JSONResponse {
 		$portal = $this->catalogue->portalBySlug(slug: $slug);
@@ -133,7 +133,7 @@ class PortalCaseTypesController extends Controller {
 	 *       choice. Nextcloud expresses admin-only as the ABSENCE of an opt-out
 	 *       attribute, so this tag is the declaration.
 	 *
-	 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
 	 */
 	public function updateColumns(string $slug, string $typeId): JSONResponse {
 		$portal = $this->catalogue->portalBySlug(slug: $slug);

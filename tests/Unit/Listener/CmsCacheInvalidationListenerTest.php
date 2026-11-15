@@ -95,6 +95,10 @@ class CmsCacheInvalidationListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testACreatedContentObjectInvalidatesItsPortal(): void {
+		if (class_exists(ObjectCreatedEvent::class) === false) {
+			$this->markTestSkipped('OpenRegister is not installed in this environment.');
+		}
+
 		$this->reader->expects($this->once())
 			->method('invalidate')
 			->with(portal: 'open-tilburg');
@@ -109,6 +113,10 @@ class CmsCacheInvalidationListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnUpdatedContentObjectInvalidatesItsPortal(): void {
+		if (class_exists(ObjectUpdatedEvent::class) === false) {
+			$this->markTestSkipped('OpenRegister is not installed in this environment.');
+		}
+
 		$this->reader->expects($this->once())->method('invalidate')->with(portal: 'open-venray');
 
 		$this->listener->handle(new ObjectUpdatedEvent($this->entity(data: ['portal' => 'open-venray'])));
@@ -124,6 +132,10 @@ class CmsCacheInvalidationListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testADeletedContentObjectInvalidatesItsPortal(): void {
+		if (class_exists(ObjectDeletedEvent::class) === false) {
+			$this->markTestSkipped('OpenRegister is not installed in this environment.');
+		}
+
 		$this->reader->expects($this->once())->method('invalidate')->with(portal: 'open-tilburg');
 
 		$this->listener->handle(new ObjectDeletedEvent($this->entity(data: ['portal' => 'open-tilburg'])));
@@ -174,6 +186,10 @@ class CmsCacheInvalidationListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testAPortalObjectInvalidatesItselfByItsSlug(): void {
+		if (class_exists(ObjectUpdatedEvent::class) === false) {
+			$this->markTestSkipped('OpenRegister is not installed in this environment.');
+		}
+
 		$this->reader->expects($this->once())->method('invalidate')->with(portal: 'open-tilburg');
 
 		$this->listener->handle(new ObjectUpdatedEvent($this->entity(data: ['slug' => 'open-tilburg'])));
@@ -190,6 +206,10 @@ class CmsCacheInvalidationListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnUnrelatedObjectInvalidatesNothing(): void {
+		if (class_exists(ObjectUpdatedEvent::class) === false) {
+			$this->markTestSkipped('OpenRegister is not installed in this environment.');
+		}
+
 		$this->reader->expects($this->never())->method('invalidate');
 
 		$this->listener->handle(new ObjectUpdatedEvent($this->entity(data: ['title' => 'not content'])));
@@ -218,6 +238,10 @@ class CmsCacheInvalidationListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnInvalidationFailureDoesNotBreakTheWrite(): void {
+		if (class_exists(ObjectCreatedEvent::class) === false) {
+			$this->markTestSkipped('OpenRegister is not installed in this environment.');
+		}
+
 		$this->reader->method('invalidate')->willThrowException(new RuntimeException('cache down'));
 
 		$this->listener->handle(new ObjectCreatedEvent($this->entity(data: ['portal' => 'open-tilburg'])));
@@ -251,6 +275,10 @@ class CmsCacheInvalidationListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testAMediaWriteInvalidatesItsPortal(): void {
+		if (class_exists(ObjectUpdatedEvent::class) === false) {
+			$this->markTestSkipped('OpenRegister is not installed in this environment.');
+		}
+
 		$this->reader->expects($this->once())
 			->method('invalidate')
 			->with(portal: 'gemeente');

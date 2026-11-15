@@ -82,8 +82,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
  * @param {object} row The case row.
  * @return {string} The status to show, or ''.
  *
- * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/portal-my-cases/spec.md
- * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-my-cases/spec.md#requirement-a-case-on-my-cases-shows-its-status-in-words-never-a-code
+ * @spec openspec/specs/portal-my-cases/spec.md
+ * @spec openspec/specs/portal-my-cases/spec.md#requirement-a-case-on-my-cases-shows-its-status-in-words-never-a-code
  */
 export function caseStatus(row) {
 	for (const field of [

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
-use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;

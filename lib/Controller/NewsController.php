@@ -20,16 +20,16 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/news-and-newsletter-authoring/design.md#api-design
+ * @spec openspec/changes/archive/2026-10-09-news-and-newsletter-authoring/design.md#api-design
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\ActionAuthService;
-use OCA\Portaliq\Service\NewsAudienceOptions;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\ActionAuthServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\NewsAudienceOptionsInterface;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -44,7 +44,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Staff authoring for news items.
  *
- * @spec openspec/changes/news-and-newsletter-authoring/design.md#api-design
+ * @spec openspec/changes/archive/2026-10-09-news-and-newsletter-authoring/design.md#api-design
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- `IUserSession` is the
  * authorization guard every `#[NoAdminRequired]` method calls first, and
@@ -76,8 +76,8 @@ class NewsController extends Controller {
 	 * @param IUserSession $userSession Confirms an authenticated Nextcloud user reached this endpoint.
 	 * @param ContainerInterface $container For resolving OpenRegister services.
 	 * @param LoggerInterface $logger The logger.
-	 * @param ActionAuthService $actionAuth Decides whether this staff user may author news (ADR-023).
-	 * @param NewsAudienceOptions|null $audienceOptions The school and group choices for the News screen.
+	 * @param ActionAuthServiceInterface $actionAuth Decides whether this staff user may author news (ADR-023).
+	 * @param NewsAudienceOptionsInterface|null $audienceOptions The school and group choices for the News screen.
 	 * @param ITimeFactory|null $timeFactory The server clock that stamps the publish moment.
 	 */
 	public function __construct(
@@ -85,11 +85,11 @@ class NewsController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
-		private readonly ActionAuthService $actionAuth,
-		private readonly ?NewsAudienceOptions $audienceOptions=null,
+		private readonly ActionAuthServiceInterface $actionAuth,
+		private readonly ?NewsAudienceOptionsInterface $audienceOptions=null,
 		private readonly ?ITimeFactory $timeFactory=null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -107,7 +107,7 @@ class NewsController extends Controller {
 	 *
 	 * @return JSONResponse The created object, or a 400/500.
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
 	 * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-a-news-item-shows-on-a-portals-public-website-only-when-staff-put-it-there
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- `public` is a request parameter the framework
@@ -160,7 +160,7 @@ class NewsController extends Controller {
 	 *
 	 * @return JSONResponse The updated object, a 400 or a 404.
 	 *
-	 * @spec openspec/changes/staff-news-screen/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T1
 	 * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-a-news-item-shows-on-a-portals-public-website-only-when-staff-put-it-there
 	 */
 	#[NoAdminRequired]
@@ -176,7 +176,7 @@ class NewsController extends Controller {
 	): JSONResponse {
 		$this->requireAuthenticatedStaff();
 
-		if ($title === '' || $body === '' || $this->hasAnyTarget(target: $target) === false) {
+		if ($this->isValidChange(title: $title, body: $body, target: $target) === false) {
 			return new JSONResponse(['error' => 'invalid_target'], Http::STATUS_BAD_REQUEST);
 		}
 
@@ -186,19 +186,50 @@ class NewsController extends Controller {
 			$data += $this->website(public: $public, portal: $portal, audienceLabel: $audienceLabel);
 		}
 
+		$data = $this->withEventRef(data: $data, eventRef: $eventRef);
+
+		return $this->write(id: $id, data: $data);
+	}//end update()
+
+	/**
+	 * Whether a change has a title, a body and an audience.
+	 *
+	 * @param string               $title  The title.
+	 * @param string               $body   The body.
+	 * @param array<string, mixed> $target The target (schoolRef/groupRefs/childRefs).
+	 *
+	 * @return bool
+	 */
+	private function isValidChange(string $title, string $body, array $target): bool {
+		if ($title === '' || $body === '' || $this->hasAnyTarget(target: $target) === false) {
+			return false;
+		}
+
+		return true;
+	}//end isValidChange()
+
+	/**
+	 * The change with the event whose sign-up the article carries; null leaves it out.
+	 *
+	 * @param array<string, mixed> $data     The change so far.
+	 * @param string|null          $eventRef The event; empty clears it, null leaves it.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withEventRef(array $data, string|null $eventRef): array {
 		if ($eventRef !== null) {
 			$data['eventRef'] = $this->eventRef(value: $eventRef);
 		}
 
-		return $this->write(id: $id, data: $data);
-	}//end update()
+		return $data;
+	}//end withEventRef()
 
 	/**
 	 * The schools and groups the News screen offers as a news item's audience.
 	 *
 	 * @return JSONResponse `{schools: [{id, label}], groups: [{id, label}]}`.
 	 *
-	 * @spec openspec/changes/staff-news-screen/tasks.md#T2
+	 * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T2
 	 */
 	#[NoAdminRequired]
 	public function audiences(): JSONResponse {
@@ -219,8 +250,8 @@ class NewsController extends Controller {
 	 *
 	 * @return JSONResponse The updated object, or 404.
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
-	 * @spec openspec/changes/news-publish-date/specs/portaliq-cms/spec.md#requirement-a-news-item-carries-the-moment-it-was-published
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-news-item-carries-the-moment-it-was-published
 	 */
 	#[NoAdminRequired]
 	public function publish(string $id): JSONResponse {
@@ -242,8 +273,8 @@ class NewsController extends Controller {
 	 *
 	 * @return JSONResponse The updated object, or 404.
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
-	 * @spec openspec/changes/news-publish-date/specs/portaliq-cms/spec.md#requirement-a-news-item-carries-the-moment-it-was-published
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-news-item-carries-the-moment-it-was-published
 	 */
 	#[NoAdminRequired]
 	public function unpublish(string $id): JSONResponse {

@@ -1,0 +1,6 @@
+{
+	"object aggregate": [{"app":"dossiq","block":{"type":"tasks","collection":"vragen","titleFields":["summary"],"dueField":"termijn"},"collection":{"id":"vragen","label":"Vragen","defaultFilters":{"state":"open"}},"record":{"field":"zaak","collection":"zaken"}},{"app":"dossiq","block":{"type":"tasks","collection":"taken","recordField":"zaak"},"collection":{"id":"taken"},"record":{"field":"case","collection":"zaken"}},{"app":"","block":{"type":"tasks","collection":"x"},"collection":{"id":"x"},"record":null}],
+	"list aggregate": [{"app":"","block":{"type":"tasks","collection":"x"},"collection":{"id":"x"},"record":null},{"app":"dossiq","block":{"type":"tasks","collection":"vragen","titleFields":["summary"],"dueField":"termijn"},"collection":{"id":"vragen","label":"Vragen","defaultFilters":{"state":"open"}},"record":{"field":"zaak","collection":"zaken"}},{"app":"dossiq","block":{"type":"tasks","collection":"taken","recordField":"zaak"},"collection":{"id":"taken"},"record":{"field":"case","collection":"zaken"}}],
+	"no aggregate": [],
+	"empty aggregate": []
+}

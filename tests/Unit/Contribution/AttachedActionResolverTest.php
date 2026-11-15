@@ -289,4 +289,21 @@ class AttachedActionResolverTest extends TestCase {
 
 		self::assertArrayNotHasKey('attachedActions', $out[0]['collections'][0]);
 	}//end testAMalformedCollectionAttachesNothing()
+
+	/**
+	 * An action without a string id, an attachTo that is not a map or names
+	 * no schema attaches nothing; an empty collection id attaches to every
+	 * collection on the schema.
+	 *
+	 * @return void
+	 */
+	public function testEveryOtherAttachRuleIsAsRecorded(): void {
+		foreach ([['id' => 7], ['attachTo' => 'opencatalogi'], ['attachTo' => ['app' => 'opencatalogi', 'schema' => '']], ['attachTo' => ['app' => 7, 'schema' => 'collection']]] as $bad) {
+			$out = (new AttachedActionResolver())->resolve(contributions: $this->contributions(action: $this->ask($bad)));
+			self::assertArrayNotHasKey('attachedActions', $out[0]['collections'][0], json_encode($bad));
+		}
+
+		$out = (new AttachedActionResolver())->resolve(contributions: $this->contributions(action: $this->ask(['attachTo' => ['app' => 'opencatalogi', 'schema' => 'collection', 'collection' => '']])));
+		self::assertSame(['askAboutDossier'], array_column($out[0]['collections'][0]['attachedActions'], 'id'));
+	}//end testEveryOtherAttachRuleIsAsRecorded()
 }//end class

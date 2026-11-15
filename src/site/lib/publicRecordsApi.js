@@ -43,39 +43,38 @@ async function read(url, fetcher) {
 }
 
 /**
+ * The address of one public record list.
+ *
+ * @param {{apiBase: string, app: string, list: string}} address The content API base, the contributing app and the list id.
+ * @return {string} The list's address.
+ */
+function listUrl(address) {
+	return `${recordsBase(address.apiBase)}/${encodeURIComponent(address.app)}/${encodeURIComponent(address.list)}`
+}
+
+/**
  * The entries of one list.
  *
- * @param {string} apiBase The content API base.
- * @param {string} app The contributing app.
- * @param {string} list The list id.
+ * @param {{apiBase: string, app: string, list: string}} address The content API base, the contributing app and the list id.
  * @param {Function} [fetcher] The fetch to use.
  * @return {Promise<Array<object>|null>} The entries, or null when the list is gone.
  * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
  */
-export async function fetchRecordList(apiBase, app, list, fetcher) {
-	const body = await read(
-		`${recordsBase(apiBase)}/${encodeURIComponent(app)}/${encodeURIComponent(list)}`,
-		fetcher,
-	)
+export async function fetchRecordList(address, fetcher) {
+	const body = await read(listUrl(address), fetcher)
 	return body ? body.entries || [] : null
 }
 
 /**
  * One record.
  *
- * @param {string} apiBase The content API base.
- * @param {string} app The contributing app.
- * @param {string} list The list id.
- * @param {string} id The record id.
+ * @param {{apiBase: string, app: string, list: string, id: string}} address The content API base, the contributing app, the list id and the record id.
  * @param {Function} [fetcher] The fetch to use.
  * @return {Promise<object|null>} The record, or null when it is gone.
  * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
  */
-export function fetchRecord(apiBase, app, list, id, fetcher) {
-	return read(
-		`${recordsBase(apiBase)}/${encodeURIComponent(app)}/${encodeURIComponent(list)}/${encodeURIComponent(id)}`,
-		fetcher,
-	)
+export function fetchRecord(address, fetcher) {
+	return read(`${listUrl(address)}/${encodeURIComponent(address.id)}`, fetcher)
 }
 
 /**

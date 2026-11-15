@@ -20,23 +20,22 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
-use OCA\Portaliq\Service\Identity\MandateParties;
-use OCA\Portaliq\Service\Identity\PortalMandateService;
-use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
-use OCA\Portaliq\Service\CaseTypeVisibility;
-use OCA\Portaliq\Service\MandatedCaseReader;
-use OCA\Portaliq\Service\PortalCaseListReader;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\CaseTypeVisibilityInterface;
+use OCA\Portaliq\Kernel\Contracts\MandatedCaseReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalCaseListReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalMandateServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalPartyTreeResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -44,11 +43,12 @@ use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCA\Portaliq\Kernel\Contracts\MandatePartiesInterface;
 
 /**
  * Serves the subject's own case list.
  *
- * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 class MyCasesController extends Controller implements PortalProtected {
 	/**
@@ -57,32 +57,34 @@ class MyCasesController extends Controller implements PortalProtected {
 	 * (cases-my-cases-page REQ-CMC-004). Without any value the first mandate
 	 * held is the active one, as before.
 	 */
-	public const ACTING_FOR_SELF = MandatedCaseReader::ACTING_FOR_SELF;
+	public const ACTING_FOR_SELF = MandatedCaseReaderInterface::ACTING_FOR_SELF;
 
 	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalContributionRegistry $registry The contribution aggregator.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param PortalCaseListReader $cases Merges every case collection.
-	 * @param PortalMandateService $mandates The mandates the identity holds.
-	 * @param PortalPartyTreeResolver $tree Resolves how far a mandate reaches.
-	 * @param CaseTypeVisibility|null $caseTypes The case types the serving
+	 * @param PortalContributionRegistryInterface $registry The contribution aggregator.
+	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
+	 * @param PortalCaseListReaderInterface $cases Merges every case collection.
+	 * @param PortalMandateServiceInterface $mandates The mandates the identity holds.
+	 * @param PortalPartyTreeResolverInterface $tree Resolves how far a mandate reaches.
+	 * @param MandatePartiesInterface $mandateParties The MandateParties helper.
+	 * @param CaseTypeVisibilityInterface|null $caseTypes The case types the serving
 	 *                                           portal hides
 	 *                                           (operate-show-per-case-type).
 	 *                                           Absent hides nothing.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalContributionRegistry $registry,
-		private readonly PortalSessionService $session,
-		private readonly PortalCaseListReader $cases,
-		private readonly PortalMandateService $mandates,
-		private readonly PortalPartyTreeResolver $tree,
-		private readonly ?CaseTypeVisibility $caseTypes = null,
+		private readonly PortalContributionRegistryInterface $registry,
+		private readonly PortalSessionServiceInterface $session,
+		private readonly PortalCaseListReaderInterface $cases,
+		private readonly PortalMandateServiceInterface $mandates,
+		private readonly PortalPartyTreeResolverInterface $tree,
+		private readonly MandatePartiesInterface $mandateParties,
+		private readonly ?CaseTypeVisibilityInterface $caseTypes = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -90,7 +92,7 @@ class MyCasesController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The case list, or 401 without a session.
 	 *
-	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 * @spec openspec/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
 	 */
@@ -105,64 +107,151 @@ class MyCasesController extends Controller implements PortalProtected {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$aggregate = $this->registry->aggregateFor($subject);
+		$run = new MyCasesRun(subject: $subject, aggregate: $this->registry->aggregateFor($subject));
 		// The case types the portal this request is served from does not show
 		// (operate-show-per-case-type REQ-OSC-002).
-		$hidden = ($this->caseTypes?->hiddenForRequest(request: $this->request, subject: $subject) ?? []);
-		$rows = $this->cases->listCases(subject: $subject, aggregate: $aggregate, hiddenCaseTypes: $hidden);
+		$run->hidden = ($this->caseTypes?->hiddenForRequest(request: $this->request, subject: $subject) ?? []);
+		$run->rows   = $this->cases->listCases(subject: $subject, aggregate: $run->aggregate, hiddenCaseTypes: $run->hidden);
 
-		// The organisation half (REQ-PIOC-002, REQ-PIOC-008): the mandates the
-		// identity holds, the one it is acting under, and that one's cases.
-		// Naming a mandate that is not theirs selects nothing, rather than
-		// falling back to one that is.
-		$held = $this->mandates->mandatesFor(
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			organisation: (string)($subject['organisation'] ?? ''),
-			holders: (new MandateParties())->holdersOf(subject: $subject)
-		);
-		$requested = (string)$this->request->getParam('mandate', '');
-		$active = null;
-		if ($requested !== self::ACTING_FOR_SELF) {
-			$active = $this->mandates->activeMandate(mandates: $held, mandateId: $requested);
-		}
+		return $this->casesAnswer(run: $run);
+	}//end index()
 
-		$describedActive = null;
-		if ($active !== null) {
-			// How far this mandate reaches, resolved from the party tree at
-			// request time. Past the bound the whole listing is refused: a
-			// partial list would read as "the group has no more cases".
-			$scope = $this->tree->entitiesFor(
-				root: $this->partyOf(mandate: $active),
-				reachesDown: ($this->mandates->reachOf(mandate: $active) === PortalMandateService::REACH_TREE)
-			);
-			if ($scope['refused'] === true) {
-				return new JSONResponse(
-					[
-						'error' => 'group_too_large',
-						'bound' => $scope['bound'],
-					],
-					Http::STATUS_CONFLICT
-				);
-			}
-
-			$active['_entities'] = $scope['entities'];
-			$rows = $this->merge(
-				rows: $rows,
-				extra: $this->cases->listMandatedCases(subject: $subject, aggregate: $aggregate, mandates: [$active], hiddenCaseTypes: $hidden)
-			);
-
-			$describedActive = $this->mandates->describe(mandate: $active);
-			// The switcher offers every entity the mandate reaches, which for
-			// a flat mandate is the one it names (REQ-PTV-006).
-			$describedActive['entities'] = $scope['entities'];
+	/**
+	 * The listing with the organisation half (REQ-PIOC-002, REQ-PIOC-008): the
+	 * mandates the identity holds, the one it is acting under, and that
+	 * one's cases.
+	 *
+	 * @param MyCasesRun $run The listing, with the subject's own cases.
+	 *
+	 * @return JSONResponse
+	 */
+	private function casesAnswer(MyCasesRun $run): JSONResponse {
+		$run->held       = $this->heldMandates(subject: $run->subject);
+		$describedActive = $this->actingMandate(run: $run);
+		if ($describedActive instanceof JSONResponse) {
+			return $describedActive;
 		}
 
 		return new JSONResponse([
-			'cases' => $rows,
-			'mandates' => array_map(fn (array $mandate): array => $this->mandates->describe(mandate: $mandate), $held),
+			'cases' => $run->rows,
+			'mandates' => array_map(fn (array $mandate): array => $this->mandates->describe(mandate: $mandate), $run->held),
 			'activeMandate' => $describedActive,
 		]);
-	}//end index()
+	}//end casesAnswer()
+
+	/**
+	 * The mandates the identity holds.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function heldMandates(array $subject): array {
+		return $this->mandates->mandatesFor(
+			subjectRef: (string)($subject['subjectRef'] ?? ''),
+			organisation: (string)($subject['organisation'] ?? ''),
+			holders: $this->mandateParties->holdersOf(subject: $subject)
+		);
+	}//end heldMandates()
+
+	/**
+	 * The described mandate the request acts under, with its cases merged
+	 * into the listing; null when it acts for itself or names no mandate it
+	 * holds, the 409 when the group is past the bound.
+	 *
+	 * @param MyCasesRun $run The listing, with the mandates held.
+	 *
+	 * @return array<string, mixed>|JSONResponse|null
+	 */
+	private function actingMandate(MyCasesRun $run): array|JSONResponse|null {
+		$active = $this->requestedMandate(held: $run->held);
+		if ($active === null) {
+			return null;
+		}
+
+		return $this->withMandatedCases(run: $run, active: $active);
+	}//end actingMandate()
+
+	/**
+	 * The held mandate the request names, or null. Naming a mandate that is
+	 * not theirs selects nothing, rather than falling back to one that is.
+	 *
+	 * @param array<int, array<string, mixed>> $held The mandates the identity holds.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function requestedMandate(array $held): ?array {
+		$requested = (string)$this->request->getParam('mandate', '');
+		if ($requested === self::ACTING_FOR_SELF) {
+			return null;
+		}
+
+		return $this->mandates->activeMandate(mandates: $held, mandateId: $requested);
+	}//end requestedMandate()
+
+	/**
+	 * Merge the active mandate's cases into the listing and describe it with
+	 * every entity it reaches.
+	 *
+	 * How far this mandate reaches is resolved from the party tree at
+	 * request time. Past the bound the whole listing is refused: a partial
+	 * list would read as "the group has no more cases".
+	 *
+	 * @param MyCasesRun           $run    The listing.
+	 * @param array<string, mixed> $active The mandate acted under.
+	 *
+	 * @return array<string, mixed>|JSONResponse
+	 */
+	private function withMandatedCases(MyCasesRun $run, array $active): array|JSONResponse {
+		$scope = $this->mandateScope(mandate: $active);
+		if ($scope['refused'] === true) {
+			return $this->groupTooLarge(scope: $scope);
+		}
+
+		$active['_entities'] = $scope['entities'];
+		$run->rows = $this->merge(
+			rows: $run->rows,
+			extra: $this->cases->listMandatedCases(subject: $run->subject, aggregate: $run->aggregate, mandates: [$active], hiddenCaseTypes: $run->hidden)
+		);
+
+		$describedActive = $this->mandates->describe(mandate: $active);
+		// The switcher offers every entity the mandate reaches, which for
+		// a flat mandate is the one it names (REQ-PTV-006).
+		$describedActive['entities'] = $scope['entities'];
+		return $describedActive;
+	}//end withMandatedCases()
+
+	/**
+	 * The entities a mandate reaches, from the party it is held for, down
+	 * the tree when its reach says so.
+	 *
+	 * @param array<string, mixed> $mandate The mandate.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function mandateScope(array $mandate): array {
+		return $this->tree->entitiesFor(
+			root: $this->partyOf(mandate: $mandate),
+			reachesDown: ($this->mandates->reachOf(mandate: $mandate) === PortalMandateServiceInterface::REACH_TREE)
+		);
+	}//end mandateScope()
+
+	/**
+	 * The refusal of a group past the bound.
+	 *
+	 * @param array<string, mixed> $scope The refused scope, with its bound.
+	 *
+	 * @return JSONResponse
+	 */
+	private function groupTooLarge(array $scope): JSONResponse {
+		return new JSONResponse(
+			[
+				'error' => 'group_too_large',
+				'bound' => $scope['bound'],
+			],
+			Http::STATUS_CONFLICT
+		);
+	}//end groupTooLarge()
 
 	/**
 	 * The party a mandate is held for: the entity it names, or its tenant.

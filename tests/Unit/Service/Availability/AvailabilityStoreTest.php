@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Availability;
 
-use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 use OCA\Portaliq\Service\Availability\AvailabilityStore;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use PHPUnit\Framework\MockObject\MockObject;

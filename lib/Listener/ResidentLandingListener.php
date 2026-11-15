@@ -33,9 +33,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Listener;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\Identity\NextcloudRegistrationDoor;
-use OCA\Portaliq\Service\PublishedPortals;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\NextcloudRegistrationDoorInterface;
+use OCA\Portaliq\Kernel\Contracts\PublishedPortalsInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\Group\Events\UserAddedEvent;
@@ -69,15 +69,15 @@ class ResidentLandingListener implements IEventListener {
 	 *
 	 * @param IConfig                   $config    The user's preferences.
 	 * @param IGroupManager             $groups    Whether the user is an administrator.
-	 * @param PublishedPortals            $portals   The published portals.
-	 * @param NextcloudRegistrationDoor $residents Which group a portal names, and who is a resident.
+	 * @param PublishedPortalsInterface            $portals   The published portals.
+	 * @param NextcloudRegistrationDoorInterface $residents Which group a portal names, and who is a resident.
 	 * @param LoggerInterface           $logger    Records a failure, which never stops the membership.
 	 */
 	public function __construct(
 		private readonly IConfig $config,
 		private readonly IGroupManager $groups,
-		private readonly PublishedPortals $portals,
-		private readonly NextcloudRegistrationDoor $residents,
+		private readonly PublishedPortalsInterface $portals,
+		private readonly NextcloudRegistrationDoorInterface $residents,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -106,7 +106,7 @@ class ResidentLandingListener implements IEventListener {
 			// must never fail because of it.
 			$this->logger->warning(
 				'Portaliq: the start page of a resident was not changed',
-				['app' => Application::APP_ID, 'reason' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'reason' => $e->getMessage()]
 			);
 		}
 	}//end handle()
@@ -130,7 +130,7 @@ class ResidentLandingListener implements IEventListener {
 			return;
 		}
 
-		$this->config->setUserValue($uid, self::CORE, self::DEFAULT_APP, Application::APP_ID);
+		$this->config->setUserValue($uid, self::CORE, self::DEFAULT_APP, AppIdentity::APP_ID);
 	}//end joined()
 
 	/**
@@ -147,7 +147,7 @@ class ResidentLandingListener implements IEventListener {
 			return;
 		}
 
-		if ($this->config->getUserValue($uid, self::CORE, self::DEFAULT_APP, '') !== Application::APP_ID) {
+		if ($this->config->getUserValue($uid, self::CORE, self::DEFAULT_APP, '') !== AppIdentity::APP_ID) {
 			return;
 		}
 

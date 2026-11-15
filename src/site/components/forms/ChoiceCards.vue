@@ -216,36 +216,13 @@ export default {
 }
 </script>
 
+<style scoped src="./choiceCard.css"></style>
+
 <style scoped>
 .pq-choice-cards {
 	display: flex;
 	flex-direction: column;
 	gap: var(--utrecht-space-block-xs, 0.5rem);
-}
-
-.pq-choice-card {
-	align-items: center;
-	border: 1px solid
-		var(--utrecht-form-control-border-color, var(--utrecht-document-color, #333));
-	border-radius: var(--utrecht-form-control-border-radius, 0.25rem);
-	cursor: pointer;
-	display: flex;
-	gap: var(--utrecht-space-inline-sm, 0.75rem);
-	max-inline-size: 32rem;
-	padding-block: var(--utrecht-space-block-sm, 0.75rem);
-	padding-inline: var(--utrecht-space-inline-md, 1rem);
-}
-
-.pq-choice-card--checked {
-	border-color: var(--utrecht-focus-outline-color, currentColor);
-	border-width: 2px;
-}
-
-.pq-choice-card:focus-within {
-	outline: var(--utrecht-focus-outline-width, 2px)
-		var(--utrecht-focus-outline-style, solid)
-		var(--utrecht-focus-outline-color, currentColor);
-	outline-offset: 2px;
 }
 
 .pq-choice-cards__rest {
@@ -254,16 +231,5 @@ export default {
 	gap: var(--utrecht-space-block-3xs, 0.25rem);
 	margin-block-start: var(--utrecht-space-block-xs, 0.5rem);
 	max-inline-size: 32rem;
-}
-
-.pq-choice-card__text {
-	display: flex;
-	flex-direction: column;
-	gap: var(--utrecht-space-block-3xs, 0.125rem);
-}
-
-.pq-choice-card__description {
-	color: var(--utrecht-form-field-description-color, inherit);
-	font-size: var(--utrecht-form-field-description-font-size, 0.875em);
 }
 </style>

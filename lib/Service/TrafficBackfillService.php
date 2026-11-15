@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
+ * @spec openspec/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
  */
 
 declare(strict_types=1);
@@ -22,7 +22,8 @@ namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\TrafficBackfillServiceInterface;
 use OCA\Portaliq\Service\Traffic\TrafficDayGuard;
 use OCA\Portaliq\Service\Traffic\TrafficEventStore;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -44,9 +45,9 @@ use OCP\IAppConfig;
  * more complete record (TrafficDayGuard). The job's watermark is not
  * touched: this is not the ordinary run.
  *
- * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
+ * @spec openspec/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
  */
-class TrafficBackfillService {
+class TrafficBackfillService implements TrafficBackfillServiceInterface {
 	use PublishedPortalWalk;
 
 	/**
@@ -90,15 +91,15 @@ class TrafficBackfillService {
 	 *
 	 * @return int The days rewritten, 0 when it had already run.
 	 *
-	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
+	 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
 	 */
 	public function runOnce(): int {
-		if ($this->appConfig->getValueString(Application::APP_ID, self::DONE_KEY, '') === self::VERSION) {
+		if ($this->appConfig->getValueString(AppIdentity::APP_ID, self::DONE_KEY, '') === self::VERSION) {
 			return 0;
 		}
 
 		$days = $this->backfill()['days'];
-		$this->appConfig->setValueString(Application::APP_ID, self::DONE_KEY, self::VERSION);
+		$this->appConfig->setValueString(AppIdentity::APP_ID, self::DONE_KEY, self::VERSION);
 
 		return $days;
 	}
@@ -114,30 +115,56 @@ class TrafficBackfillService {
 	 * @return array{portals: int, days: int, kept: int, rollupDays: int} Portals walked, days rewritten,
 	 *                                                                  days kept as they were, roll-up days re-summed.
 	 *
-	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
+	 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
 	 */
 	public function backfill(?string $only = null): array {
 		$now = DateTimeImmutable::createFromMutable($this->time->getDateTime())->setTimezone(new DateTimeZone('UTC'));
 		$written = [];
 		$kept = 0;
 		[$own, $rollups] = $this->portalWalk();
-		foreach ($own as [$slug, $config]) {
-			if ($only !== null && $slug !== $only) {
-				continue;
-			}
-
+		foreach ($this->selectedPortals(own: $own, only: $only) as [$slug, $config]) {
 			$written[$slug] = $this->backfillPortal(slug: $slug, config: $config, now: $now);
 			$kept += ((int)$config['retentionDays'] + 1) - count($written[$slug]);
 		}
 
 		$rollupDays = 0;
-		foreach ($rollups as $slug => $members) {
-			if ($only === null || in_array($only, $members, true) === true) {
-				$rollupDays += $this->aggregation->aggregateRollup(slug: $slug, members: $members, written: $written, now: $now);
-			}
+		foreach ($this->rollupsHolding(rollups: $rollups, only: $only) as $slug => $members) {
+			$rollupDays += $this->aggregation->aggregateRollup(slug: $slug, members: $members, written: $written, now: $now);
 		}
 
 		return ['portals' => count($written), 'days' => (int)array_sum(array_map('count', $written)), 'kept' => $kept, 'rollupDays' => $rollupDays];
+	}
+
+	/**
+	 * The ordinary portals to rebuild, in walk order: every one, or the one asked for.
+	 *
+	 * @param array<int, array{0: string, 1: array<string, mixed>}> $own  The ordinary portals and their configuration.
+	 * @param string|null                                           $only One portal slug, or null for every portal.
+	 *
+	 * @return array<int, array{0: string, 1: array<string, mixed>}>
+	 */
+	private function selectedPortals(array $own, ?string $only): array {
+		if ($only === null) {
+			return $own;
+		}
+
+		return array_filter($own, static fn (array $portal): bool => $portal[0] === $only);
+	}
+
+	/**
+	 * The roll-up portals to re-sum: every one, or those with the asked portal among their members.
+	 *
+	 * @param array<string, array<int, string>> $rollups The roll-up portals and their members.
+	 * @param string|null                       $only    One portal slug, or null for every portal.
+	 *
+	 * @return array<string, array<int, string>>
+	 */
+	private function rollupsHolding(array $rollups, ?string $only): array {
+		if ($only === null) {
+			return $rollups;
+		}
+
+		return array_filter($rollups, static fn (array $members): bool => in_array($only, $members, true) === true);
 	}
 
 	/**

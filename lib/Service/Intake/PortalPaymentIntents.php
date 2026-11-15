@@ -77,31 +77,61 @@ class PortalPaymentIntents {
 			return null;
 		}
 
+		return $this->statusOf(data: $this->dataOf(stored: $this->stored(id: $id)));
+	}//end status()
+
+	/**
+	 * What the store holds for an intent; null when it could not be read.
+	 *
+	 * @param string $id The payment intent id.
+	 *
+	 * @return mixed
+	 */
+	private function stored(string $id): mixed {
 		try {
 			$service = $this->container->get(self::OBJECT_SERVICE);
 			$service->setRegister(register: self::REGISTER);
 			$service->setSchema(schema: self::SCHEMA);
-			$object = $service->find(id: $id, _rbac: false, _multitenancy: false);
+			return $service->find(id: $id, _rbac: false, _multitenancy: false);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: a payment intent could not be read', ['reason' => $e->getMessage()]);
 
 			return null;
 		}
+	}//end stored()
 
-		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
-			$object = $object->jsonSerialize();
+	/**
+	 * An intent's data: an entity serialised, its `object` when it wraps one; [] for anything else.
+	 *
+	 * @param mixed $stored What the store holds.
+	 *
+	 * @return array<mixed>
+	 */
+	private function dataOf(mixed $stored): array {
+		if (is_object($stored) === true && method_exists($stored, 'jsonSerialize') === true) {
+			$stored = $stored->jsonSerialize();
 		}
 
-		if (is_array($object) === false) {
-			return null;
+		if (is_array($stored) === false) {
+			return [];
 		}
 
-		$data   = (array)($object['object'] ?? $object);
-		$status = $data['paymentStatus'] ?? null;
+		return (array)($stored['object'] ?? $stored);
+	}//end dataOf()
+
+	/**
+	 * The `paymentStatus` in an intent's data, or null when it is no text.
+	 *
+	 * @param array<mixed> $data The intent's data.
+	 *
+	 * @return string|null
+	 */
+	private function statusOf(array $data): ?string {
+		$status = ($data['paymentStatus'] ?? null);
 		if (is_string($status) === false || $status === '') {
 			return null;
 		}
 
 		return $status;
-	}//end status()
+	}//end statusOf()
 }//end class

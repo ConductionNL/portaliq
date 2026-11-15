@@ -137,6 +137,39 @@ import { rowInputsOf, rowNotice, runRowAction } from '../../../shared/rowAction.
 import { translatorOr } from '../../components/c/forms.js'
 
 /**
+ * What the confirm step sends: the row, the action, the answers and, with a
+ * file slot, the chosen files.
+ *
+ * @param {object} step The confirm step.
+ * @return {object} The row action's request.
+ */
+function rowRequest(step) {
+	return {
+		collection: step.collection,
+		row: step.row,
+		action: step.action,
+		answers: step.answers(),
+		files: step.fileSlot ? step.files : [],
+	}
+}
+
+/**
+ * The sentence once the action ran: the target's own, else the
+ * contribution's success text, else ours.
+ *
+ * @param {object} step The confirm step.
+ * @param {{messageKey: string, message?: string}} outcome The row action's outcome.
+ * @return {string} The sentence.
+ */
+function doneMessage(step, outcome) {
+	return (
+		outcome.message
+		|| (outcome.messageKey === 'Done.' ? step.action.successText : '')
+		|| step.translate(outcome.messageKey)
+	)
+}
+
+/**
  * The browser navigation, kept apart so a caller or test can pass its own.
  *
  * @param {string} url An absolute https URL, already checked by redirectTarget.
@@ -152,7 +185,7 @@ function goTo(url) {
  * runs, and the browser follows a checked redirect or the answer shows in one
  * line, with any link the action answered.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-an-endpoint-row-action-must-confirm-before-it-runs-req-srp-026
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-an-endpoint-row-action-must-confirm-before-it-runs-req-srp-026
  */
 export default {
 	name: 'RowActionConfirm',
@@ -248,7 +281,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-an-endpoint-row-action-must-confirm-before-it-runs-req-srp-026
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-an-endpoint-row-action-must-confirm-before-it-runs-req-srp-026
 		 */
 		async confirm() {
 			if (this.fileSlot && this.checkFiles() === false) {
@@ -256,32 +289,20 @@ export default {
 			}
 			this.busy = true
 			this.errors = {}
-			const answers = this.answers()
-			const { redirect, messageKey, link, message, errors } =
-				await runRowAction(this.api, {
-					collection: this.collection,
-					row: this.row,
-					action: this.action,
-					answers,
-					files: this.fileSlot ? this.files : [],
-				})
-			if (redirect) {
-				this.navigate(redirect)
+			const outcome = await runRowAction(this.api, rowRequest(this))
+			if (outcome.redirect) {
+				this.navigate(outcome.redirect)
 				return
 			}
 			this.busy = false
 			// A refusal that names inputs shows under each and keeps the dialog
 			// open (REQ-RAI-003).
-			if (errors) {
-				this.errors = this.said(errors)
+			if (outcome.errors) {
+				this.errors = this.said(outcome.errors)
 				return
 			}
-			// The target's own sentence, else the contribution's, else ours.
-			this.message =
-				message
-				|| (messageKey === 'Done.' ? this.action.successText : '')
-				|| this.translate(messageKey)
-			this.link = link || ''
+			this.message = doneMessage(this, outcome)
+			this.link = outcome.link || ''
 			this.$emit('done')
 		},
 
@@ -369,20 +390,9 @@ export default {
 }
 </script>
 
+<style scoped src="./rowActionDialog.css"></style>
+
 <style scoped>
-.pq-rowaction {
-	margin-block: var(--utrecht-space-block-md, 1rem);
-	padding: var(--utrecht-space-block-md, 1rem);
-	border: var(--utrecht-border-width-sm, 1px) solid
-		var(--utrecht-color-grey-60, currentcolor);
-}
-
-.pq-rowaction__buttons {
-	display: flex;
-	flex-wrap: wrap;
-	gap: var(--utrecht-space-inline-sm, 0.5rem);
-}
-
 .pq-rowaction__status:empty {
 	display: none;
 }

@@ -75,7 +75,20 @@ import { longDate } from '../mijn/dates.js'
 let counter = 0
 
 /**
- * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-news-block-must-show-the-subjects-latest-news
+ * A news item's title, in the page language when it carries a translation.
+ *
+ * @param {object|null} item The news item.
+ * @return {{title: string, lang: string}} The title and the language it is in, '' for the original.
+ */
+function titleOf(item) {
+	if (hasTranslatedTitle(item?.translation)) {
+		return { title: item.translation.title, lang: item.translation.targetLanguage || '' }
+	}
+	return { title: String(item?.title || ''), lang: '' }
+}
+
+/**
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-news-block-must-show-the-subjects-latest-news
  */
 export default {
 	name: 'NewsBlock',
@@ -118,7 +131,7 @@ export default {
 		 * translation notice) behind the page's.
 		 *
 		 * @return {(key: string, vars?: object) => string}
-		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-news-block-must-show-the-subjects-latest-news
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-news-block-must-show-the-subjects-latest-news
 		 */
 		tr() {
 			return withStrings(this.t, this.locale)
@@ -130,24 +143,15 @@ export default {
 		 * body (account-news-rows).
 		 *
 		 * @return {Array<{key: string, who: string, when: string, title: string, lang: string}>}
-		 * @spec openspec/changes/account-news-rows/specs/portal-contribution-contract/spec.md#requirement-a-news-block-on-an-account-page-shows-rows-not-bodies
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-news-block-on-an-account-page-shows-rows-not-bodies
 		 */
 		rows() {
-			return this.items.map((item, index) => {
-				const titled = hasTranslatedTitle(item?.translation)
-				return {
-					key: String(item?.id || item?.['@self']?.id || index),
-					who: String(item?.audienceLabel || '').trim(),
-					when: longDate(
-						String(item?.publishedAt || '').slice(0, 10),
-						this.locale,
-					),
-					title: titled
-						? item.translation.title
-						: String(item?.title || ''),
-					lang: titled ? item.translation.targetLanguage || '' : '',
-				}
-			})
+			return this.items.map((item, index) => ({
+				key: String(item?.id || item?.['@self']?.id || index),
+				who: String(item?.audienceLabel || '').trim(),
+				when: longDate(String(item?.publishedAt || '').slice(0, 10), this.locale),
+				...titleOf(item),
+			}))
 		},
 
 		items() {
@@ -173,7 +177,7 @@ export default {
 		 * Read the subject's feed; an unreachable feed reads as empty.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-news-block-must-show-the-subjects-latest-news
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-news-block-must-show-the-subjects-latest-news
 		 */
 		async load() {
 			if (!this.api || typeof this.api.fetchNewsFeed !== 'function') {

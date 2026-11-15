@@ -42,6 +42,8 @@ use ReflectionMethod;
  * @covers \OCA\Portaliq\Controller\MailTemplateAdminController
  * @uses   \OCA\Portaliq\Service\Mail\MailTemplateRenderer
  * @uses   \OCA\Portaliq\Service\Mail\RecipientMask
+ * @uses   \OCA\Portaliq\Controller\SampleMail
+ * @uses   \OCA\Portaliq\Controller\SampleMailSender
  */
 class MailTemplateAdminControllerTest extends TestCase {
 	/**

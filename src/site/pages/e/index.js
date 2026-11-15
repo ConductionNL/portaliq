@@ -7,7 +7,7 @@
 // because the site bundle is at its size budget. Nothing here is imported
 // eagerly except this file, so it keeps its own imports dynamic too.
 //
-// @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md
+// @spec openspec/specs/site-portal-parity/spec.md
 
 /**
  * The props every page component takes (slice contract, rule 2).
@@ -91,7 +91,7 @@ function translated(load) {
  * @param {History|object} [options.history] The window history.
  * @return {Promise<{role: string, text: string}|null>} The outcome, or null.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
  */
 export async function confirmEmailFromLink({
 	api,
@@ -120,7 +120,7 @@ export async function confirmEmailFromLink({
  * @param {Storage|null} [store] sessionStorage, or null.
  * @return {Promise<boolean>} Whether to show it.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
  */
 export async function contactPromptWanted(session, store = defaultStore()) {
 	if (!session || session.contactPrompt !== true) {

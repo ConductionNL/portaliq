@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/parent-polls/specs/parent-polls/spec.md
+ * @spec openspec/specs/parent-polls/spec.md
  */
 
 declare(strict_types=1);
@@ -31,13 +31,16 @@ namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
 use Exception;
+use OCA\Portaliq\Kernel\Contracts\PollServiceInterface;
 
 /**
  * Creates polls, lists a subject's own, and records a subject's answer.
  *
- * @spec openspec/changes/parent-polls/specs/parent-polls/spec.md
+ * @spec openspec/specs/parent-polls/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- The total is the sum of small private steps; each method stays under the method thresholds.
  */
-class PollService {
+class PollService implements PollServiceInterface {
 	/**
 	 * The register both schemas live in.
 	 */
@@ -77,7 +80,7 @@ class PollService {
 	 *
 	 * @return array{poll: array<string, mixed>}|array{error: string}
 	 *
-	 * @spec openspec/changes/parent-polls/specs/parent-polls/spec.md#requirement-a-poll-is-created-by-staff-addressed-to-one-audience-and-organisation
+	 * @spec openspec/specs/parent-polls/spec.md#requirement-a-poll-is-created-by-staff-addressed-to-one-audience-and-organisation
 	 */
 	public function create(
 		string $question,
@@ -87,7 +90,7 @@ class PollService {
 		string $closesAt = '',
 		string $createdBy = '',
 	): array {
-		if ($question === '' || $audience === '' || $organisation === '' || $createdBy === '') {
+		if ($this->isIncompletePoll(question: $question, audience: $audience, organisation: $organisation, createdBy: $createdBy) === true) {
 			return ['error' => 'refused'];
 		}
 
@@ -96,11 +99,7 @@ class PollService {
 			return ['error' => 'needs_two_options'];
 		}
 
-		$created = $this->writer->createObject(
-			register: self::REGISTER,
-			schema: self::POLL_SCHEMA,
-			scopeField: '',
-			subjectRef: '',
+		return $this->stored(
 			organisation: $organisation,
 			data: [
 				'question' => $question,
@@ -112,12 +111,47 @@ class PollService {
 				'createdAt' => (new DateTimeImmutable())->format(DATE_ATOM),
 			]
 		);
+	}//end create()
+
+	/**
+	 * Whether a poll misses its question, audience, organisation or creator.
+	 *
+	 * @param string $question     The question.
+	 * @param string $audience     The audience.
+	 * @param string $organisation The organisation.
+	 * @param string $createdBy    The creator.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/parent-polls/spec.md#requirement-a-poll-is-created-by-staff-addressed-to-one-audience-and-organisation
+	 */
+	private function isIncompletePoll(string $question, string $audience, string $organisation, string $createdBy): bool {
+		return $question === '' || $audience === '' || $organisation === '' || $createdBy === '';
+	}//end isIncompletePoll()
+
+	/**
+	 * Write a new poll within its organisation.
+	 *
+	 * @param string               $organisation The tenant the poll is addressed within.
+	 * @param array<string, mixed> $data         The poll.
+	 *
+	 * @return array{poll: array<string, mixed>}|array{error: string}
+	 */
+	private function stored(string $organisation, array $data): array {
+		$created = $this->writer->createObject(
+			register: self::REGISTER,
+			schema: self::POLL_SCHEMA,
+			scopeField: '',
+			subjectRef: '',
+			organisation: $organisation,
+			data: $data
+		);
 		if ($created === null) {
 			return ['error' => 'not_created'];
 		}
 
 		return ['poll' => $created];
-	}//end create()
+	}//end stored()
 
 	/**
 	 * Every poll for the subject's own audience and organisation, each
@@ -127,27 +161,15 @@ class PollService {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/parent-polls/specs/parent-polls/spec.md#requirement-a-portal-subject-sees-only-polls-for-their-own-audience-and-organisation
+	 * @spec openspec/specs/parent-polls/spec.md#requirement-a-portal-subject-sees-only-polls-for-their-own-audience-and-organisation
 	 */
 	public function forSubject(array $subject): array {
-		$audience = (string)($subject['audience'] ?? '');
-		$organisation = (string)($subject['organisation'] ?? '');
-		$subjectRef = (string)($subject['subjectRef'] ?? '');
-		if ($audience === '' || $organisation === '') {
+		if ($this->hasAudience(subject: $subject) === false) {
 			return [];
 		}
 
-		$polls = $this->reader->readCollection(
-			register: self::REGISTER,
-			schema: self::POLL_SCHEMA,
-			scopeField: '',
-			subjectRef: '',
-			organisation: $organisation,
-			limit: 200,
-			filter: ['audience' => $audience]
-		);
-
-		$responses = $this->responsesBySubject(subjectRef: $subjectRef);
+		$polls     = $this->forSubjectRaw(subject: $subject);
+		$responses = $this->responsesBySubject(subjectRef: (string)($subject['subjectRef'] ?? ''));
 
 		$out = [];
 		foreach ($polls as $poll) {
@@ -174,34 +196,21 @@ class PollService {
 	 *
 	 * @return array{responded: true}|array{error: string}
 	 *
-	 * @spec openspec/changes/parent-polls/specs/parent-polls/spec.md#requirement-a-subject-may-answer-once-and-change-their-answer-while-the-poll-is-open
+	 * @spec openspec/specs/parent-polls/spec.md#requirement-a-subject-may-answer-once-and-change-their-answer-while-the-poll-is-open
 	 */
 	public function respond(string $pollId, string $optionId, array $subject): array {
 		$subjectRef = (string)($subject['subjectRef'] ?? '');
-		if ($pollId === '' || $optionId === '' || $subjectRef === '') {
+		if ($this->isIncompleteResponse(pollId: $pollId, optionId: $optionId, subjectRef: $subjectRef) === true) {
 			return ['error' => 'refused'];
 		}
 
-		$poll = $this->pollForSubject(pollId: $pollId, subject: $subject);
-		if ($poll === null) {
-			return ['error' => 'not_found'];
-		}
-
-		if ($this->isClosed(poll: $poll) === true) {
-			return ['error' => 'closed'];
-		}
-
-		if ($this->declaresOption(poll: $poll, optionId: $optionId) === false) {
-			return ['error' => 'unknown_option'];
+		$refusal = $this->pollRefusal(poll: $this->pollForSubject(pollId: $pollId, subject: $subject), optionId: $optionId);
+		if ($refusal !== null) {
+			return ['error' => $refusal];
 		}
 
 		$existing = $this->existingResponse(pollId: $pollId, subjectRef: $subjectRef);
-		$data = [
-			'pollId' => $pollId,
-			'subjectRef' => $subjectRef,
-			'optionId' => $optionId,
-			'respondedAt' => (new DateTimeImmutable())->format(DATE_ATOM),
-		];
+		$data = $this->responseData(pollId: $pollId, subjectRef: $subjectRef, optionId: $optionId);
 
 		$written = $this->createOrUpdateResponse(existing: $existing, subjectRef: $subjectRef, data: $data);
 		if ($written === null) {
@@ -210,6 +219,67 @@ class PollService {
 
 		return ['responded' => true];
 	}//end respond()
+
+	/**
+	 * Whether a response misses its poll, option or subject.
+	 *
+	 * @param string $pollId     The poll.
+	 * @param string $optionId   The option.
+	 * @param string $subjectRef The subject.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/parent-polls/spec.md#requirement-a-subject-may-answer-once-and-change-their-answer-while-the-poll-is-open
+	 */
+	private function isIncompleteResponse(string $pollId, string $optionId, string $subjectRef): bool {
+		return $pollId === '' || $optionId === '' || $subjectRef === '';
+	}//end isIncompleteResponse()
+
+	/**
+	 * Why the poll cannot take this answer: not found, closed or an unknown option; null when it can.
+	 *
+	 * @param array<string, mixed>|null $poll     The subject's poll, or null.
+	 * @param string                    $optionId The option.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/specs/parent-polls/spec.md#requirement-a-subject-may-answer-once-and-change-their-answer-while-the-poll-is-open
+	 */
+	private function pollRefusal(array|null $poll, string $optionId): string|null {
+		if ($poll === null) {
+			return 'not_found';
+		}
+
+		if ($this->isClosed(poll: $poll) === true) {
+			return 'closed';
+		}
+
+		if ($this->declaresOption(poll: $poll, optionId: $optionId) === false) {
+			return 'unknown_option';
+		}
+
+		return null;
+	}//end pollRefusal()
+
+	/**
+	 * The stored response.
+	 *
+	 * @param string $pollId     The poll.
+	 * @param string $subjectRef The subject.
+	 * @param string $optionId   The option.
+	 *
+	 * @return array<string, string>
+	 *
+	 * @spec openspec/specs/parent-polls/spec.md#requirement-a-subject-may-answer-once-and-change-their-answer-while-the-poll-is-open
+	 */
+	private function responseData(string $pollId, string $subjectRef, string $optionId): array {
+		return [
+			'pollId' => $pollId,
+			'subjectRef' => $subjectRef,
+			'optionId' => $optionId,
+			'respondedAt' => (new DateTimeImmutable())->format(DATE_ATOM),
+		];
+	}//end responseData()
 
 	/**
 	 * Write the response: create the subject's first one, or update their
@@ -299,9 +369,7 @@ class PollService {
 	 * @return array<int, array<string, mixed>>
 	 */
 	private function forSubjectRaw(array $subject): array {
-		$audience = (string)($subject['audience'] ?? '');
-		$organisation = (string)($subject['organisation'] ?? '');
-		if ($audience === '' || $organisation === '') {
+		if ($this->hasAudience(subject: $subject) === false) {
 			return [];
 		}
 
@@ -310,11 +378,23 @@ class PollService {
 			schema: self::POLL_SCHEMA,
 			scopeField: '',
 			subjectRef: '',
-			organisation: $organisation,
+			organisation: (string)$subject['organisation'],
 			limit: 200,
-			filter: ['audience' => $audience]
+			filter: ['audience' => (string)$subject['audience']]
 		);
 	}//end forSubjectRaw()
+
+	/**
+	 * Whether the subject names both the audience and the organisation its
+	 * polls are read for.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 *
+	 * @return bool
+	 */
+	private function hasAudience(array $subject): bool {
+		return (string)($subject['audience'] ?? '') !== '' && (string)($subject['organisation'] ?? '') !== '';
+	}//end hasAudience()
 
 	/**
 	 * Whether a poll's `closesAt` is in the past.

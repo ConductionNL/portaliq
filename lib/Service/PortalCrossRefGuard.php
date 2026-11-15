@@ -32,14 +32,16 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-create-cross-refs/specs/portal-contribution-contract/spec.md
+ * @spec openspec/specs/portal-contribution-contract/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Contribution\CrossRefConfigNormaliser;
+use OCA\Portaliq\Kernel\Contracts\CrossRefConfigNormaliserInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalCrossRefGuardInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use Psr\Log\LoggerInterface;
@@ -47,17 +49,17 @@ use Psr\Log\LoggerInterface;
 /**
  * Refuses a portal write whose references are not the subject's own.
  *
- * @spec openspec/changes/portal-create-cross-refs/specs/portal-contribution-contract/spec.md#requirement-a-declared-cross-reference-must-resolve-inside-the-subjects-own-scope
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-declared-cross-reference-must-resolve-inside-the-subjects-own-scope
  */
-class PortalCrossRefGuard {
+class PortalCrossRefGuard implements PortalCrossRefGuardInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader The scoped read that answers whose an object is.
+	 * @param PortalObjectReaderInterface $reader The scoped read that answers whose an object is.
 	 * @param LoggerInterface    $logger Logger.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly PortalObjectReaderInterface $reader,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -73,7 +75,7 @@ class PortalCrossRefGuard {
 	 *
 	 * @return JSONResponse|null The refusal, or null to go on.
 	 *
-	 * @spec openspec/changes/portal-create-cross-refs/specs/portal-contribution-contract/spec.md#requirement-a-declared-cross-reference-must-resolve-inside-the-subjects-own-scope
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-declared-cross-reference-must-resolve-inside-the-subjects-own-scope
 	 */
 	public function refusal(array $action, array $data, array $subject, string $app): ?JSONResponse {
 		$refused = $this->refusedField(action: $action, data: $data, subject: $subject, app: $app);
@@ -94,42 +96,105 @@ class PortalCrossRefGuard {
 	 *
 	 * @return string The refusing field, empty when every reference is the subject's.
 	 *
-	 * @spec openspec/changes/portal-create-cross-refs/specs/portal-contribution-contract/spec.md#requirement-a-declared-cross-reference-must-resolve-inside-the-subjects-own-scope
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-declared-cross-reference-must-resolve-inside-the-subjects-own-scope
 	 */
 	public function refusedField(array $action, array $data, array $subject, string $app): string {
-		$declared = ($action[CrossRefConfigNormaliser::KEY] ?? []);
-		if (is_array($declared) === false || $declared === []) {
-			return '';
-		}
-
-		foreach ($declared as $field => $reference) {
+		foreach ($this->declaredRefs(action: $action) as $field => $reference) {
 			$ids = $this->idsIn(value: ($data[(string)$field] ?? null));
-			if ($ids === []) {
-				if (($reference['required'] ?? false) === true) {
-					return (string)$field;
-				}
-
-				continue;
+			if ($this->missingRequired(ids: $ids, reference: $reference) === true) {
+				return (string)$field;
 			}
 
-			foreach ($ids as $id) {
-				if ($this->ownedBySubject(reference: $reference, id: $id, subject: $subject, app: $app) === false) {
-					$this->logger->warning(
-						'Portaliq: a portal write named an object outside the subject’s own scope',
-						[
-							'field' => (string)$field,
-							'schema' => (string)($reference['schema'] ?? ''),
-							'audience' => (string)($subject['audience'] ?? ''),
-						]
-					);
-
-					return (string)$field;
-				}
+			if ($this->anyForeign(reference: $reference, ids: $ids, subject: $subject, app: $app) === true) {
+				$this->logForeign(field: (string)$field, reference: $reference, subject: $subject);
+				return (string)$field;
 			}
 		}
 
 		return '';
 	}//end refusedField()
+
+	/**
+	 * The action's declared references, or none when absent or malformed.
+	 *
+	 * @param array<string, mixed> $action The matched action, already normalised.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-declared-cross-reference-must-resolve-inside-the-subjects-own-scope
+	 */
+	private function declaredRefs(array $action): array {
+		$declared = ($action[CrossRefConfigNormaliserInterface::KEY] ?? []);
+		if (is_array($declared) === false || $declared === []) {
+			return [];
+		}
+
+		return $declared;
+	}//end declaredRefs()
+
+	/**
+	 * Whether a required reference was left out.
+	 *
+	 * @param array<int, string>   $ids       The ids the field names.
+	 * @param array<string, mixed> $reference The declared reference.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-declared-cross-reference-must-resolve-inside-the-subjects-own-scope
+	 */
+	private function missingRequired(array $ids, array $reference): bool {
+		if ($ids === []) {
+			if (($reference['required'] ?? false) === true) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end missingRequired()
+
+	/**
+	 * Whether any of the ids is outside the subject's own scope.
+	 *
+	 * @param array<string, mixed> $reference The declared reference.
+	 * @param array<int, string>   $ids       The ids the field names.
+	 * @param array<string, mixed> $subject   The resolved subject.
+	 * @param string               $app       The contributing app.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-declared-cross-reference-must-resolve-inside-the-subjects-own-scope
+	 */
+	private function anyForeign(array $reference, array $ids, array $subject, string $app): bool {
+		foreach ($ids as $id) {
+			if ($this->ownedBySubject(reference: $reference, id: $id, subject: $subject, app: $app) === false) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end anyForeign()
+
+	/**
+	 * Log a write that named an object outside the subject's own scope.
+	 *
+	 * @param string               $field     The refusing field.
+	 * @param array<string, mixed> $reference The declared reference.
+	 * @param array<string, mixed> $subject   The resolved subject.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-declared-cross-reference-must-resolve-inside-the-subjects-own-scope
+	 */
+	private function logForeign(string $field, array $reference, array $subject): void {
+		$this->logger->warning(
+			'Portaliq: a portal write named an object outside the subject’s own scope',
+			[
+				'field' => $field,
+				'schema' => (string)($reference['schema'] ?? ''),
+				'audience' => (string)($subject['audience'] ?? ''),
+			]
+		);
+	}//end logForeign()
 
 	/**
 	 * Whether one referenced id is inside the subject's own scope.
@@ -171,7 +236,7 @@ class PortalCrossRefGuard {
 	 * @return array<int, string> The ids, empty when the field was left out.
 	 */
 	private function idsIn(mixed $value): array {
-		if ($value === null || $value === '' || $value === []) {
+		if ($this->isLeftOut(value: $value) === true) {
 			return [];
 		}
 
@@ -184,6 +249,28 @@ class PortalCrossRefGuard {
 			return [''];
 		}
 
+		return $this->idsOfList(value: $value);
+	}//end idsIn()
+
+	/**
+	 * Whether the field was left out: null, empty or an empty list.
+	 *
+	 * @param mixed $value The written value.
+	 *
+	 * @return bool
+	 */
+	private function isLeftOut(mixed $value): bool {
+		return $value === null || $value === '' || $value === [];
+	}//end isLeftOut()
+
+	/**
+	 * The ids a list names; an entry that is no string is the empty id, which refuses.
+	 *
+	 * @param array<mixed> $value The written list.
+	 *
+	 * @return array<int, string>
+	 */
+	private function idsOfList(array $value): array {
 		$ids = [];
 		foreach ($value as $entry) {
 			if (is_string($entry) === true) {
@@ -197,5 +284,5 @@ class PortalCrossRefGuard {
 		}
 
 		return $ids;
-	}//end idsIn()
+	}//end idsOfList()
 }//end class

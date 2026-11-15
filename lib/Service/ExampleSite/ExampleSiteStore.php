@@ -26,8 +26,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\ExampleSite;
 
-use OCA\OpenRegister\Service\Object\ObjectDeletion;
-use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\Portaliq\Service\ObjectRowNormaliser;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\PortalObjectWriter;
@@ -107,16 +107,23 @@ class ExampleSiteStore {
 			return [];
 		}
 
-		try {
-			if ($this->context->apply(objectService: $objectService, schemaSlug: $schema) === false) {
-				return [];
-			}
+		$rows = $this->rowsOf(objectService: $objectService, schema: $schema, filters: $filters);
 
-			$rows = $objectService->findAll(
-				config: ['filters' => $filters, 'limit' => self::PAGE_SIZE, 'offset' => 0],
-				_rbac: false,
-				_multitenancy: false
-			);
+		return $this->plain(rows: $rows);
+	}//end find()
+
+	/**
+	 * The schema's rows that match the filters, or none when the read failed.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param string               $schema        The schema slug.
+	 * @param array<string, mixed> $filters       Property filters.
+	 *
+	 * @return array<mixed>
+	 */
+	private function rowsOf(object $objectService, string $schema, array $filters): array {
+		try {
+			$rows = $this->query(objectService: $objectService, schema: $schema, filters: $filters);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: example site read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
 			return [];
@@ -126,6 +133,38 @@ class ExampleSiteStore {
 			return [];
 		}
 
+		return $rows;
+	}//end rowsOf()
+
+	/**
+	 * Read the schema's first page of matching rows; none when the schema cannot be set.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param string               $schema        The schema slug.
+	 * @param array<string, mixed> $filters       Property filters.
+	 *
+	 * @return mixed
+	 */
+	private function query(object $objectService, string $schema, array $filters): mixed {
+		if ($this->context->apply(objectService: $objectService, schemaSlug: $schema) === false) {
+			return [];
+		}
+
+		return $objectService->findAll(
+			config: ['filters' => $filters, 'limit' => self::PAGE_SIZE, 'offset' => 0],
+			_rbac: false,
+			_multitenancy: false
+		);
+	}//end query()
+
+	/**
+	 * The rows as plain arrays.
+	 *
+	 * @param array<mixed> $rows The rows as read.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function plain(array $rows): array {
 		$plain = [];
 		foreach ($rows as $row) {
 			$row = $this->normalise(row: $row);
@@ -135,7 +174,7 @@ class ExampleSiteStore {
 		}
 
 		return $plain;
-	}//end find()
+	}//end plain()
 
 	/**
 	 * Write one row and return its id, or null when the write failed.

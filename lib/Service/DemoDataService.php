@@ -26,7 +26,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\DemoDataServiceInterface;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -38,7 +39,7 @@ use Throwable;
  *
  * @spec exclude Demo-data import; ADR-111 rule 1, no per-app behavioural spec.
  */
-class DemoDataService {
+class DemoDataService implements DemoDataServiceInterface {
 	/**
 	 * App-relative path to the generated mock descriptor.
 	 *
@@ -67,7 +68,7 @@ class DemoDataService {
 	 *
 	 * @var string
 	 */
-	private const CONFIG_APP_ID = Application::APP_ID . '.demo';
+	private const CONFIG_APP_ID = AppIdentity::APP_ID . '.demo';
 
 	/**
 	 * Constructor.
@@ -97,24 +98,6 @@ class DemoDataService {
 	public function isAvailable(): bool {
 		return is_file($this->descriptorPath()) === true;
 	}//end isAvailable()
-
-	/**
-	 * The answer that means "plant nothing".
-	 *
-	 * 🔴 NOT THE ABSENCE OF AN ANSWER. An operator who declines has FINISHED the
-	 * step; a step that can never be marked done reopens the wizard over every
-	 * page (nextcloud-vue#806).
-	 *
-	 * @var string
-	 */
-	public const NONE_DATASET = 'none';
-
-	/**
-	 * The id of the dataset this app ships.
-	 *
-	 * @var string
-	 */
-	public const DEMO_DATASET = 'demo';
 
 	/**
 	 * Every answer the wizard's choice step may offer, declining included.
@@ -234,7 +217,7 @@ class DemoDataService {
 		$result = $this->configurationService()->importFromApp(
 			appId: self::CONFIG_APP_ID,
 			data: $data,
-			version: $this->appManager->getAppVersion(Application::APP_ID),
+			version: $this->appManager->getAppVersion(AppIdentity::APP_ID),
 			force: true
 		);
 		$imported = $this->outcome(objects: $objects, result: $result);
@@ -245,7 +228,7 @@ class DemoDataService {
 			. $imported['skipped'] . ' skipped, ' . $imported['present'] . ' present in the demo schemas), '
 			. $imported['registers'] . ' register(s), '
 			. $imported['schemas'] . ' schema(s).',
-			['app' => Application::APP_ID]
+			['app' => AppIdentity::APP_ID]
 		);
 
 		return $imported;
@@ -370,14 +353,7 @@ class DemoDataService {
 	 * @spec exclude Demo-data presence probe; ADR-111 rule 1 has no per-app behavioural spec.
 	 */
 	private function presentObjects(array $objects): int {
-		$slugs = [];
-		foreach ($objects as $object) {
-			$slug = (string)($object['@self']['schema'] ?? '');
-			if ($slug !== '') {
-				$slugs[$slug] = true;
-			}
-		}
-
+		$slugs = $this->schemaSlugs(objects: $objects);
 		if ($slugs === []) {
 			return 0;
 		}
@@ -390,20 +366,54 @@ class DemoDataService {
 		}
 
 		$present = 0;
-		foreach (array_keys($slugs) as $slug) {
-			try {
-				if ($this->registerContext->apply(objectService: $objectService, schemaSlug: $slug) === false) {
-					continue;
-				}
-
-				$present += (int)$objectService->count(config: []);
-			} catch (Throwable $countFailed) {
-				$this->logger->warning('[DemoDataService] count failed for schema ' . $slug . ': ' . $countFailed->getMessage());
-			}
+		foreach ($slugs as $slug) {
+			$present += $this->countIn(objectService: $objectService, slug: $slug);
 		}
 
 		return $present;
 	}//end presentObjects()
+
+	/**
+	 * The distinct schema slugs of the declared objects, in first-seen order.
+	 *
+	 * @param array<int, mixed> $objects The descriptor's `components.objects`.
+	 *
+	 * @return array<int, string>
+	 */
+	private function schemaSlugs(array $objects): array {
+		$slugs = [];
+		foreach ($objects as $object) {
+			$slug = (string)($object['@self']['schema'] ?? '');
+			if ($slug !== '') {
+				$slugs[$slug] = true;
+			}
+		}
+
+		// A numeric slug comes back from array_keys as an int.
+		return array_map(callback: 'strval', array: array_keys($slugs));
+	}//end schemaSlugs()
+
+	/**
+	 * How many objects one of this app's schemas holds; 0 for a schema this
+	 * app does not own, or a count that failed (logged).
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $slug          The schema slug.
+	 *
+	 * @return int
+	 */
+	private function countIn(object $objectService, string $slug): int {
+		try {
+			if ($this->registerContext->apply(objectService: $objectService, schemaSlug: $slug) === false) {
+				return 0;
+			}
+
+			return (int)$objectService->count(config: []);
+		} catch (Throwable $countFailed) {
+			$this->logger->warning('[DemoDataService] count failed for schema ' . $slug . ': ' . $countFailed->getMessage());
+			return 0;
+		}
+	}//end countIn()
 
 	/**
 	 * Absolute path to the shipped descriptor.
@@ -411,7 +421,7 @@ class DemoDataService {
 	 * @return string The path.
 	 */
 	private function descriptorPath(): string {
-		return $this->appManager->getAppPath(Application::APP_ID) . self::DESCRIPTOR;
+		return $this->appManager->getAppPath(AppIdentity::APP_ID) . self::DESCRIPTOR;
 	}//end descriptorPath()
 
 	/**

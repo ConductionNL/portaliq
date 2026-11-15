@@ -15,6 +15,7 @@ use OCA\Portaliq\Service\Intake\DestinationSubmit;
 use OCA\Portaliq\Tests\Unit\Service\Intake\Fakes\PortalOwnerDraft;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Contribution\CreateBody;
 
 /**
  * submit-creates-the-case-directly 5.3: each portalDraft row becomes an
@@ -30,6 +31,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Portaliq\Contribution\ActionScopeResolver
  * @uses \OCA\Portaliq\Contribution\CreateBody
  * @uses \OCA\Portaliq\Service\PortalSessionService
+ * @uses \OCA\Portaliq\Kernel\Support\SessionTrust
  *
  * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#5.3
  */
@@ -67,7 +69,7 @@ class PortalDraftDrainTest extends TestCase {
 		$saved = $this->fake->calls[1];
 		$this->assertTrue($saved['saveDraft']);
 		$this->assertSame(['title' => 'Half', 'subjectRef' => 'sanne'], $saved['payload']);
-		$this->assertSame('portal:sanne', $saved['owner']->value);
+		$this->assertSame('portal:sanne', $saved['owner']->value());
 	}//end testRowsBecomeOpenRegisterDraftsAndOnlyConvertedOrExpiredRowsGo()
 
 	public function testATypeInvalidRowIsReportedAndKept(): void {
@@ -89,6 +91,37 @@ class PortalDraftDrainTest extends TestCase {
 
 		$this->assertSame(['r-1' => 'it was converted but the row could not be deleted'], $result['reasons']);
 	}//end testARowThatCannotBeDeletedIsReported()
+
+	/**
+	 * Every row's outcome and reason, exactly as recorded.
+	 *
+	 * @return void
+	 */
+	public function testEveryRowOutcomeIsAsRecorded(): void {
+		$this->rows = [
+			'r-now' => ['id' => 'r-now', 'subjectRef' => 'sanne', 'actionKey' => 'dossiq/request', 'answers' => [], 'expiresAt' => '2026-10-11T00:00:00+00:00'],
+			'r-later' => ['id' => 'r-later', 'subjectRef' => 'sanne', 'actionKey' => 'dossiq/request', 'answers' => 'x', 'expiresAt' => 'not a date'],
+			'r-nobody' => ['id' => 'r-nobody', 'subjectRef' => '', 'actionKey' => 'dossiq/request', 'answers' => []],
+			'r-noone' => ['id' => 'r-noone', 'actionKey' => 'dossiq/request'],
+			'r-three' => ['id' => 'r-three', 'subjectRef' => 'sanne', 'actionKey' => 'dossiq/request/extra', 'answers' => []],
+			'r-nokey' => ['id' => 'r-nokey', 'subjectRef' => 'sanne'],
+		];
+
+		$result = $this->drain(outcome: ['id' => 'd-1'])->drain(now: new DateTimeImmutable('2026-10-11T00:00:00+00:00'));
+
+		$this->assertSame(1, $result['converted']);
+		$this->assertSame(1, $result['expired']);
+		$this->assertSame(
+			[
+				'r-nobody' => 'its action is not a create action this subject can use',
+				'r-noone' => 'its action is not a create action this subject can use',
+				'r-three' => 'its action is not a create action this subject can use',
+				'r-nokey' => 'its action is not a create action this subject can use',
+			],
+			$result['reasons']
+		);
+		$this->assertSame(['r-nobody', 'r-noone', 'r-three', 'r-nokey'], array_keys($this->rows));
+	}//end testEveryRowOutcomeIsAsRecorded()
 
 	/**
 	 * The drain over fakes.
@@ -123,7 +156,7 @@ class PortalDraftDrainTest extends TestCase {
 		return new PortalDraftDrain(
 			reader: $reader,
 			writer: $writer,
-			actions: new ActionDraft(registry: $registry, reader: $reader, writer: $writer, drafts: $drafts),
+			actions: new ActionDraft(registry: $registry, reader: $reader, writer: $writer, drafts: $drafts, createBody: new CreateBody()),
 			drafts: $drafts
 		);
 	}//end drain()

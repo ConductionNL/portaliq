@@ -199,11 +199,22 @@ if (interface_exists(\OCA\OpenRegister\Mcp\IMcpToolProvider::class) === false) {
 foreach ([
 	'Exception\\NotImplementedException' => 'Exception/NotImplementedException.php',
 	'Service\\Integration\\IntegrationProvider' => 'Service/Integration/IntegrationProvider.php',
+	'Service\\Integration\\LeafIdentity' => 'Service/Integration/LeafIdentity.php',
+	'Service\\Integration\\LeafAvailability' => 'Service/Integration/LeafAvailability.php',
+	'Service\\Integration\\LeafRendering' => 'Service/Integration/LeafRendering.php',
 	'Service\\Integration\\LeafDescriptor' => 'Service/Integration/LeafDescriptor.php',
 	'Event\\RegisterLeafProvidersEvent' => 'Event/RegisterLeafProvidersEvent.php',
+	// The form submit and draft value objects (openregister #7788, #7964):
+	// DraftOwner first, the others name it.
+	'Service\\Object\\DraftOwner' => 'Service/Object/DraftOwner.php',
+	'Service\\Object\\DiscardDraftRequest' => 'Service/Object/DiscardDraftRequest.php',
+	'Service\\Form\\FormSubmitter' => 'Service/Form/FormSubmitter.php',
+	'Service\\Form\\FormSubmission' => 'Service/Form/FormSubmission.php',
+	// The concept register's reader (portal-identity-from-the-admin 3.1).
+	'Service\\Vocabulary\\ConceptRepository' => 'Service/Vocabulary/ConceptRepository.php',
 	// What ObjectService::deleteObject() takes (openregister #9099): the target first.
-	'Service\\Object\\ObjectFindTarget' => 'Service/Object/ObjectFindTarget.php',
-	'Service\\Object\\ObjectDeletion' => 'Service/Object/ObjectDeletion.php',
+	'Kernel\\Contracts\\Value\\ObjectFindTarget' => 'Kernel/Contracts/Value/ObjectFindTarget.php',
+	'Kernel\\Contracts\\Value\\ObjectDeletion' => 'Kernel/Contracts/Value/ObjectDeletion.php',
 ] as $orStubClass => $orStubFile) {
 	if (class_exists('\\OCP\\EventDispatcher\\Event') === true
 		&& class_exists('\\OCA\\OpenRegister\\' . $orStubClass) === false

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Repair;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 use OCA\Portaliq\Repair\MovePortalAuditEntries;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalRegisterContext;
@@ -142,7 +143,8 @@ class FakeOldRecordStore {
 		return array_slice($this->rows, (int)($config['offset'] ?? 0), (int)($config['limit'] ?? 100));
 	}
 
-	public function deleteObject(string $uuid, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): bool {
+	public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true): bool {
+		$uuid = $deletion->uuid;
 		if ($this->refuseDelete === true) {
 			throw new RuntimeException('delete refused');
 		}

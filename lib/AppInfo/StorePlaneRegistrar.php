@@ -134,13 +134,7 @@ final class StorePlaneRegistrar {
 			// OpenRegister absent — fall through to the degraded path.
 		}
 
-		if (class_exists('OCA\\OpenRegister\\AppHost\\Bootstrap') === false
-			// The hydra-gates stub scanned by phpstan declares aliasStoreController(), so
-			// static analysis sees this check as always-true. At runtime it is not:
-			// OpenRegister <= 2.0.12 ships Bootstrap without the method (see docblock).
-			// @phpstan-ignore function.alreadyNarrowedType
-			|| method_exists('OCA\\OpenRegister\\AppHost\\Bootstrap', 'aliasStoreController') === false
-		) {
+		if ($this->storeAliasAvailable() === false) {
 			return false;
 		}
 
@@ -152,4 +146,25 @@ final class StorePlaneRegistrar {
 
 		return true;
 	}//end register()
+
+	/**
+	 * Whether this process's OpenRegister AppHost can alias the store controller.
+	 *
+	 * @return bool
+	 *
+	 * @spec exclude the store plane is OpenRegister's apphost-store-plane spec; Portaliq only declares (ADR-114 D4)
+	 */
+	private function storeAliasAvailable(): bool {
+		if (class_exists('OCA\\OpenRegister\\AppHost\\Bootstrap') === false
+			// The hydra-gates stub scanned by phpstan declares aliasStoreController(), so
+			// static analysis sees this check as always-true. At runtime it is not:
+			// OpenRegister <= 2.0.12 ships Bootstrap without the method (see docblock).
+			// @phpstan-ignore function.alreadyNarrowedType
+			|| method_exists('OCA\\OpenRegister\\AppHost\\Bootstrap', 'aliasStoreController') === false
+		) {
+			return false;
+		}
+
+		return true;
+	}//end storeAliasAvailable()
 }//end class

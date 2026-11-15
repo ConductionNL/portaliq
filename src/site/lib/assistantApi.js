@@ -52,6 +52,21 @@ export async function askAssistant(apiBase, ask, fetcher) {
 }
 
 /**
+ * Whether the server answered with text and at least one source.
+ *
+ * @param {object} body The answer's body.
+ * @param {Array<object>} sources Its sources.
+ * @return {boolean} True for an answer that may be shown.
+ */
+function isSourcedAnswer(body, sources) {
+	return (
+		body.status === 'answered'
+		&& typeof body.answer === 'string'
+		&& sources.length > 0
+	)
+}
+
+/**
  * The reply the screen shows. An answer without a source is never shown,
  * whatever the server sent.
  *
@@ -60,10 +75,7 @@ export async function askAssistant(apiBase, ask, fetcher) {
  */
 function assistantReply(body) {
 	const sources = Array.isArray(body.sources) ? body.sources : []
-	const answered =
-		body.status === 'answered'
-		&& typeof body.answer === 'string'
-		&& sources.length > 0
+	const answered = isSourcedAnswer(body, sources)
 	return {
 		status: answered ? 'answered' : 'abstained',
 		answer: answered ? body.answer : null,
