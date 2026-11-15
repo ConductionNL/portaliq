@@ -181,11 +181,8 @@ export default {
 			this.problem = ''
 			this.busy = true
 			const answer = await requestEmailCode(
-				this.base,
-				this.route,
-				this.modelValue.trim(),
-				this.portal,
-				adoptSessionToken(),
+				{ base: this.base, portal: this.portal, token: adoptSessionToken() },
+				{ route: this.route, email: this.modelValue.trim() },
 			)
 			this.busy = false
 			if (!answer.ok) {
@@ -214,12 +211,8 @@ export default {
 			this.problem = ''
 			this.busy = true
 			const answer = await checkEmailCode(
-				this.base,
-				this.route,
-				this.modelValue.trim(),
-				this.code.trim(),
-				this.portal,
-				adoptSessionToken(),
+				{ base: this.base, portal: this.portal, token: adoptSessionToken() },
+				{ route: this.route, email: this.modelValue.trim(), code: this.code.trim() },
 			)
 			this.busy = false
 			if (!answer.ok) {

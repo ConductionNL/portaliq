@@ -78,18 +78,48 @@ class RequiredFieldsNormaliser {
 			$required = array_merge($required, $this->schemaRequired(askable: $askable, mandatory: $mandatory, configs: $configs));
 		}
 
+		$configs = $this->markRequired(configs: $configs, required: $required);
+
+		return $this->withConfigs(action: $action, configs: $configs);
+	}//end apply()
+
+	/**
+	 * The field configs with every required field marked required.
+	 *
+	 * @param array<string, mixed> $configs  The action's field configs.
+	 * @param array<int, string>   $required The required fields.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-an-action-may-name-its-required-fields-req-smf-023
+	 */
+	private function markRequired(array $configs, array $required): array {
 		foreach (array_unique($required) as $field) {
 			$entry = ($configs[$field] ?? ['size' => 'medium']);
 			$entry['required'] = true;
 			$configs[$field]   = $entry;
 		}
 
+		return $configs;
+	}//end markRequired()
+
+	/**
+	 * The action with its field configs, when it has any or had the key.
+	 *
+	 * @param array<string, mixed> $action  The action.
+	 * @param array<string, mixed> $configs The field configs.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-an-action-may-name-its-required-fields-req-smf-023
+	 */
+	private function withConfigs(array $action, array $configs): array {
 		if ($configs !== [] || array_key_exists('fieldConfigs', $action) === true) {
 			$action['fieldConfigs'] = $configs;
 		}
 
 		return $action;
-	}//end apply()
+	}//end withConfigs()
 
 	/**
 	 * The declared names that are the action's own, non-file fields, once each.

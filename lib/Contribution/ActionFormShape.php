@@ -52,7 +52,7 @@ class ActionFormShape {
 	 * @return array<string, mixed> The entry.
 	 *
 	 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
-	 * @spec openspec/changes/action-fields-prefill-from-the-residents-profile/specs/portal-contribution-contract/spec.md#requirement-an-action-field-may-start-from-the-signed-in-residents-name-or-e-mail-address
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-action-field-may-start-from-the-signed-in-residents-name-or-e-mail-address
 	 */
 	public function fieldWidget(array $entry, array $config): array {
 		$entry = (new ProfilePrefillKey())->apply(entry: $entry, source: $config);
@@ -72,7 +72,7 @@ class ActionFormShape {
 	 *
 	 * @return array<string, mixed> The entry.
 	 *
-	 * @spec openspec/changes/endpoint-action-forms-keep-their-field-shape/specs/site-forms/spec.md#requirement-an-endpoint-action-may-declare-a-fields-input-req-eaf-001
+	 * @spec openspec/specs/site-forms/spec.md#requirement-an-endpoint-action-may-declare-a-fields-input-req-eaf-001
 	 */
 	public function declaredInput(array $entry, array $config): array {
 		if (in_array(($config['input'] ?? null), self::FIELD_INPUTS, true) === true) {

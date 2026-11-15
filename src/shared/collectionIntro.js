@@ -9,7 +9,7 @@
  * Pure functions, no imports, so `tests/collection-intro.spec.mjs` runs them
  * as a plain node script.
  *
- * @spec openspec/changes/collection-intro/tasks.md#t2
+ * @spec openspec/changes/archive/2026-10-30-collection-intro/tasks.md#t2
  */
 
 /**
@@ -18,11 +18,34 @@
  * @param {object|null|undefined} collection The contributed collection.
  * @return {string} The intro text.
  *
- * @spec openspec/changes/collection-intro/tasks.md#t2
+ * @spec openspec/changes/archive/2026-10-30-collection-intro/tasks.md#t2
  */
 export function introOf(collection) {
 	const intro = collection?.intro
 	return typeof intro === 'string' ? intro.trim() : ''
+}
+
+/**
+ * The contributions as a list, from the aggregate or the list itself.
+ *
+ * @param {object|Array|null|undefined} contributions The contributions aggregate, or its list.
+ * @return {Array<object>} The contributions.
+ */
+function contributionList(contributions) {
+	const list = Array.isArray(contributions)
+		? contributions
+		: contributions?.contributions
+	return Array.isArray(list) ? list : []
+}
+
+/**
+ * The intro of a `kind: cases` collection, or ''.
+ *
+ * @param {object|null} collection The collection.
+ * @return {string} The intro.
+ */
+function casesIntroOf(collection) {
+	return collection?.kind === 'cases' ? introOf(collection) : ''
 }
 
 /**
@@ -32,23 +55,14 @@ export function introOf(collection) {
  * @param {object|Array|null|undefined} contributions The contributions aggregate, or its list.
  * @return {Array<string>} The intro texts.
  *
- * @spec openspec/changes/collection-intro/tasks.md#t2
+ * @spec openspec/changes/archive/2026-10-30-collection-intro/tasks.md#t2
  */
 export function casesIntros(contributions) {
-	const list = Array.isArray(contributions)
-		? contributions
-		: contributions?.contributions
-	const out = []
-	for (const contribution of Array.isArray(list) ? list : []) {
-		const collections = Array.isArray(contribution?.collections)
-			? contribution.collections
-			: []
-		for (const collection of collections) {
-			const intro = collection?.kind === 'cases' ? introOf(collection) : ''
-			if (intro !== '' && !out.includes(intro)) {
-				out.push(intro)
-			}
-		}
-	}
-	return out
+	const intros = contributionList(contributions)
+		.flatMap((contribution) =>
+			Array.isArray(contribution?.collections) ? contribution.collections : [],
+		)
+		.map(casesIntroOf)
+		.filter((intro) => intro !== '')
+	return [...new Set(intros)]
 }

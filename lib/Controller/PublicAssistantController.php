@@ -24,10 +24,10 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\Assistant\PublicAssistantChannel;
-use OCA\Portaliq\Service\Assistant\PublicSourceScope;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PublicAssistantChannelInterface;
+use OCA\Portaliq\Kernel\Contracts\PublicSourceScopeInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -47,17 +47,17 @@ class PublicAssistantController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalResolver $portals Resolves the portal being visited.
-	 * @param PublicSourceScope $scope Whether the portal turned the assistant on.
-	 * @param PublicAssistantChannel $channel The adapter to hermiq.
+	 * @param PortalResolverInterface $portals Resolves the portal being visited.
+	 * @param PublicSourceScopeInterface $scope Whether the portal turned the assistant on.
+	 * @param PublicAssistantChannelInterface $channel The adapter to hermiq.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalResolver $portals,
-		private readonly PublicSourceScope $scope,
-		private readonly PublicAssistantChannel $channel,
+		private readonly PortalResolverInterface $portals,
+		private readonly PublicSourceScopeInterface $scope,
+		private readonly PublicAssistantChannelInterface $channel,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -84,13 +84,8 @@ class PublicAssistantController extends Controller {
 			return new JSONResponse(['error' => 'bearer_not_accepted'], Http::STATUS_BAD_REQUEST);
 		}
 
-		$slug = null;
-		if ($portal !== '') {
-			$slug = $portal;
-		}
-
-		$site = $this->portals->resolve(request: $this->request, portalSlug: $slug);
-		if ($site === null || $this->scope->enabledFor(portal: $site) === false) {
+		$site = $this->assistantSite(portal: $portal);
+		if ($site === null) {
 			return new JSONResponse(['error' => 'assistant_off'], Http::STATUS_NOT_FOUND);
 		}
 
@@ -98,11 +93,50 @@ class PublicAssistantController extends Controller {
 			return new JSONResponse(['error' => 'question_required'], Http::STATUS_BAD_REQUEST);
 		}
 
+		return $this->answer(site: $site, question: $question, locale: $locale, conversationId: $conversationId);
+	}//end ask()
+
+	/**
+	 * The portal, when it has the assistant switched on.
+	 *
+	 * @param string $portal The portal's slug; empty resolves it from the host.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/search-assistant-from-public-content/tasks.md#t04
+	 */
+	private function assistantSite(string $portal): array|null {
+		$slug = null;
+		if ($portal !== '') {
+			$slug = $portal;
+		}
+
+		$site = $this->portals->resolve(request: $this->request, portalSlug: $slug);
+		if ($site === null || $this->scope->enabledFor(portal: $site) === false) {
+			return null;
+		}
+
+		return $site;
+	}//end assistantSite()
+
+	/**
+	 * The assistant's answer, or 503 when it is unavailable.
+	 *
+	 * @param array<string, mixed> $site           The portal.
+	 * @param string               $question       The question.
+	 * @param string               $locale         The visitor's locale.
+	 * @param string               $conversationId A conversation id issued earlier in this visit.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/search-assistant-from-public-content/tasks.md#t04
+	 */
+	private function answer(array $site, string $question, string $locale, string $conversationId): JSONResponse {
 		$answer = $this->channel->ask(portal: $site, question: $question, locale: $locale, conversationId: $conversationId);
 		if ($answer['status'] === 'unavailable') {
 			return new JSONResponse(['error' => 'assistant_unavailable'], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
 
 		return new JSONResponse($answer);
-	}//end ask()
+	}//end answer()
 }//end class

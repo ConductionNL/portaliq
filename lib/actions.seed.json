@@ -42,6 +42,13 @@
       "label": "Write news items",
       "description": "Create, change and publish news items for guardians."
     },
+    "portal.write-articles": {
+      "groups": [
+        "admin"
+      ],
+      "label": "Write marketing articles",
+      "description": "Create, change, publish and archive the marketing articles a newsletter, a post or a page reuses."
+    },
     "portal.send-newsletter": {
       "groups": [
         "admin"

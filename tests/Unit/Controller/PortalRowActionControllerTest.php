@@ -17,6 +17,10 @@ use OCP\Http\Client\IResponse;
 use OCP\IRequest;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Service\RequiredFieldsGuard;
+use OCA\Portaliq\Contribution\RowActionFiles;
+use OCA\Portaliq\Contribution\RowActionResolver;
+use OCA\Portaliq\Contribution\RowIdentifier;
 
 /**
  * The row-scoped endpoint action forward (contribution-pay-screen): a guardian
@@ -144,7 +148,11 @@ class PortalRowActionControllerTest extends TestCase {
 			($reader ?? $this->createMock(PortalObjectReader::class)),
 			($forwarder ?? $this->forwarderThatMustNotForward()),
 			($auditor ?? $this->createMock(AuditTrailService::class)),
-		);
+			new AttachedActionResolver(),
+			new RequiredFieldsGuard(),
+			new RowActionFiles(),
+			new RowActionResolver(),
+			new RowIdentifier());
 	}//end controller()
 
 	/**
@@ -654,7 +662,7 @@ class PortalRowActionControllerTest extends TestCase {
 		$session = $this->createMock(PortalSessionService::class);
 		$session->method('resolveFromBearer')->willReturn(self::SUBJECT);
 
-		return new PortalRowActionController($request, $registry, $session, $reader, $forwarder, $this->createMock(AuditTrailService::class));
+		return new PortalRowActionController($request, $registry, $session, $reader, $forwarder, $this->createMock(AuditTrailService::class), new AttachedActionResolver(), new RequiredFieldsGuard(), new RowActionFiles(), new RowActionResolver(), new RowIdentifier());
 	}//end dossierController()
 
 	/**
@@ -776,7 +784,7 @@ class PortalRowActionControllerTest extends TestCase {
 		$session = $this->createMock(PortalSessionService::class);
 		$session->method('resolveFromBearer')->willReturn(self::SUBJECT);
 
-		return new PortalRowActionController($request, $registry, $session, $reader, $forwarder, $this->createMock(AuditTrailService::class));
+		return new PortalRowActionController($request, $registry, $session, $reader, $forwarder, $this->createMock(AuditTrailService::class), new AttachedActionResolver(), new RequiredFieldsGuard(), new RowActionFiles(), new RowActionResolver(), new RowIdentifier());
 	}//end questionController()
 
 	/**

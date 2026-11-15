@@ -7,6 +7,8 @@ namespace OCA\Portaliq\Tests\Unit\Contribution;
 use OCA\Portaliq\Contribution\ActionSummaryNormaliser;
 use OCA\Portaliq\Contribution\FormStepDecision;
 use OCA\Portaliq\Contribution\FormStepsNormaliser;
+use OCA\Portaliq\Contribution\FormStepsRun;
+use OCA\Portaliq\Contribution\FormText;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
@@ -17,6 +19,8 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(FormStepsNormaliser::class)]
 #[UsesClass(ActionSummaryNormaliser::class)]
 #[UsesClass(FormStepDecision::class)]
+#[UsesClass(FormStepsRun::class)]
+#[UsesClass(FormText::class)]
 class FormStepsApplyTest extends TestCase {
 	/**
 	 * Actions that do not carry a form lose the form-only keys.

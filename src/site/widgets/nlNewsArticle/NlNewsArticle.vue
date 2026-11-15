@@ -101,7 +101,63 @@
 							})
 						}}
 					</p>
+					<form
+						v-if="inPlace"
+						class="nl-news-article__answer"
+						data-testid="nl-news-article-event-answer"
+						@submit.prevent="answer('yes')">
+						<p
+							v-if="answeredLine"
+							class="utrecht-paragraph"
+							data-testid="nl-news-article-event-answered">
+							{{ answeredLine }}
+						</p>
+						<p v-if="seats.length > 0" class="nl-news-article__seats">
+							<label :for="seatsId">{{
+								say('answerSeatsLabel')
+							}}</label>
+							<select
+								:id="seatsId"
+								v-model.number="chosenSeats"
+								data-testid="nl-news-article-event-seats">
+								<option
+									v-for="count in seats"
+									:key="count"
+									:value="count">
+									{{ count }}
+								</option>
+							</select>
+						</p>
+						<p class="nl-news-article__actions">
+							<button
+								type="submit"
+								class="utrecht-button utrecht-button--primary-action"
+								:disabled="sending"
+								data-testid="nl-news-article-event-button">
+								{{ signUpLabel }}
+							</button>
+							<button
+								v-if="
+									own.ownAnswer && own.ownAnswer.response === 'yes'
+								"
+								type="button"
+								class="utrecht-button utrecht-button--secondary-action"
+								:disabled="sending"
+								data-testid="nl-news-article-event-cancel"
+								@click="answer('no')">
+								{{ say('answerNo') }}
+							</button>
+						</p>
+						<p
+							class="utrecht-paragraph"
+							role="status"
+							aria-live="polite"
+							data-testid="nl-news-article-event-outcome">
+							{{ outcomeLine }}
+						</p>
+					</form>
 					<a
+						v-else
 						class="utrecht-button utrecht-button--primary-action"
 						:href="button.href"
 						data-testid="nl-news-article-event-button"
@@ -118,7 +174,16 @@
 import MarkdownBlock from '../../components/MarkdownBlock.vue'
 import { longDate } from '../../components/mijn/dates.js'
 import { authoredLink, staysInSite } from '../../components/mijn/links.js'
+import { resolveApiBase } from '../../lib/contentApi.js'
+import {
+	answersInPlace,
+	eventsBaseFrom,
+	fetchOwnEvent,
+	seatChoices,
+	sendAnswer,
+} from '../../lib/eventAnswer.js'
 import { fetchPublicNewsItem } from '../../lib/publicNews.js'
+import { residentToken } from '../../lib/residentSession.js'
 import { interpolate, pageLocale } from '../../pages/inbox/translate.js'
 import strings from '../nlNewsList/strings.js'
 import { cardButton, safeWays } from '../nlSignIn/signIn.js'
@@ -176,7 +241,15 @@ export default {
 	emits: ['navigate', 'subject'],
 
 	data() {
-		return { item: null, state: 'loading' }
+		return {
+			item: null,
+			state: 'loading',
+			// The event as her own feed has it (event-sign-up-by-a-pupil-with-seats).
+			own: null,
+			chosenSeats: 1,
+			sending: false,
+			outcome: '',
+		}
 	},
 
 	computed: {
@@ -215,6 +288,66 @@ export default {
 		 */
 		cardState() {
 			return eventCardState(this.item?.event, this.signedIn)
+		},
+
+		/**
+		 * @return {boolean} Whether the card takes her answer itself.
+		 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-pupil-may-answer-an-event-for-herself-with-the-number-of-seats
+		 */
+		inPlace() {
+			return this.cardState === 'open' && answersInPlace(this.own)
+		},
+
+		/**
+		 * @return {Array<number>} The seats she may choose.
+		 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-pupil-may-answer-an-event-for-herself-with-the-number-of-seats
+		 */
+		seats() {
+			return seatChoices({ ...(this.item?.event || {}), ...(this.own || {}) })
+		},
+
+		/**
+		 * @return {string} The seats field's id.
+		 */
+		seatsId() {
+			return `nl-news-article-seats-${this.item?.event?.id || 'event'}`
+		},
+
+		/**
+		 * @return {string} The answer given for her, in words; empty without one.
+		 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-pupil-may-answer-an-event-for-herself-with-the-number-of-seats
+		 */
+		answeredLine() {
+			const given = this.own?.ownAnswer
+			if (!given) {
+				return ''
+			}
+			if (given.response === 'no') {
+				return this.say('answeredNo')
+			}
+			if (given.response !== 'yes') {
+				return ''
+			}
+			if (!Number.isInteger(given.seats)) {
+				return this.say('answeredYes')
+			}
+			return given.seats === 1
+				? this.say('answeredYesOne')
+				: this.say('answeredYesSeats', { count: given.seats })
+		},
+
+		/**
+		 * @return {string} The last send's outcome in words, when it was refused.
+		 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-pupil-may-answer-an-event-for-herself-with-the-number-of-seats
+		 */
+		outcomeLine() {
+			if (this.sending) {
+				return this.say('answerSending')
+			}
+			if (this.outcome === '' || this.outcome === 'answerSaved') {
+				return ''
+			}
+			return this.say(this.outcome, { count: this.seats.length })
 		},
 
 		/**
@@ -338,6 +471,68 @@ export default {
 				this.state = 'failed'
 			}
 			this.tellSubject()
+			await this.loadOwn()
+		},
+
+		/**
+		 * Read the event from her own feed when she is signed in, so the card
+		 * can take her answer. Without it the card keeps its button to the
+		 * resident area.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-pupil-may-answer-an-event-for-herself-with-the-number-of-seats
+		 */
+		async loadOwn() {
+			this.own = null
+			if (this.cardState !== 'open' || typeof fetch !== 'function') {
+				return
+			}
+			this.own = await fetchOwnEvent({
+				base: eventsBaseFrom(resolveApiBase()),
+				token: residentToken(),
+				id: this.item.event.id,
+				fetch,
+			})
+			const seats = this.own?.ownAnswer?.seats
+			if (Number.isInteger(seats) && seats > 0) {
+				this.chosenSeats = seats
+			}
+		},
+
+		/**
+		 * Send her answer, then read her feed again so the card shows the
+		 * one answer that now counts.
+		 *
+		 * @param {('yes'|'no')} response The answer.
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-pupil-may-answer-an-event-for-herself-with-the-number-of-seats
+		 */
+		async answer(response) {
+			if (!this.inPlace || this.sending) {
+				return
+			}
+			this.sending = true
+			this.outcome = ''
+			const base = eventsBaseFrom(resolveApiBase())
+			this.outcome = await sendAnswer({
+				base,
+				token: residentToken(),
+				id: this.item.event.id,
+				selfRef: this.own.selfRef,
+				response,
+				seats: this.seats.length > 0 ? this.chosenSeats : null,
+				fetch,
+			})
+			if (this.outcome === 'answerSaved') {
+				const own = await fetchOwnEvent({
+					base,
+					token: residentToken(),
+					id: this.item.event.id,
+					fetch,
+				})
+				this.own = own || this.own
+			}
+			this.sending = false
 		},
 
 		/**
@@ -406,6 +601,26 @@ export default {
 </script>
 
 <style scoped>
+.nl-news-article__answer,
+.nl-news-article__actions {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	margin: 0;
+}
+
+.nl-news-article__actions {
+	flex-direction: row;
+	flex-wrap: wrap;
+}
+
+.nl-news-article__seats {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin: 0;
+}
+
 .nl-news-article__event {
 	display: flex;
 	flex-direction: column;

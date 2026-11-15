@@ -2,7 +2,8 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
  * SPDX-License-Identifier: EUPL-1.2
  *
- * portal-traffic-analytics, phase 0: the collector, the served client, the
+ * The portal-traffic-* specs (reporting, visitors-and-geo, kpi-cards,
+ * experiments), phase 0: the collector, the served client, the
  * built-in site loading it, the aggregation job, and the Traffic page.
  *
  * Two seeded portals carry the whole suite (tests/e2e/fixtures/seed-cms.sh):
@@ -138,7 +139,7 @@ function occ(...args: string[]): string {
 }
 
 test.describe('traffic analytics: the collector and the client', () => {
-	// @e2e portal-traffic-analytics::an-anonymous-request-for-the-client
+	// @e2e portal-traffic-reporting::an-anonymous-request-for-the-client
 	test('anonymous GET /api/traffic-client.js serves the client as JavaScript', async ({
 		request,
 	}) => {
@@ -151,7 +152,7 @@ test.describe('traffic analytics: the collector and the client', () => {
 		expect(await res.text()).toContain('portaliqTraffic')
 	})
 
-	// @e2e portal-traffic-analytics::a-client-reads-its-configuration
+	// @e2e portal-traffic-reporting::a-client-reads-its-configuration
 	test('the site record carries traffic.enabled and the collector for both portals', async ({
 		request,
 	}) => {
@@ -180,7 +181,7 @@ test.describe('traffic analytics: the collector and the client', () => {
 		expect((await disabled.json()).traffic.enabled).toBe(false)
 	})
 
-	// @e2e portal-traffic-analytics::a-static-site-on-its-own-domain-posts-a-batch
+	// @e2e portal-traffic-reporting::a-static-site-on-its-own-domain-posts-a-batch
 	test('a cross-origin caller gets the origin reflected without credentials', async ({
 		request,
 	}) => {
@@ -196,7 +197,7 @@ test.describe('traffic analytics: the collector and the client', () => {
 		expect(res.headers()['access-control-allow-credentials']).toBeUndefined()
 	})
 
-	// @e2e portal-traffic-analytics::an-accepted-batch-answers-without-a-body-or-a-cookie
+	// @e2e portal-traffic-reporting::an-accepted-batch-answers-without-a-body-or-a-cookie
 	test('a valid batch is accepted: 204, no body, no Set-Cookie', async ({
 		request,
 	}) => {
@@ -226,7 +227,7 @@ test.describe('traffic analytics: the collector and the client', () => {
 		)
 	})
 
-	// @e2e portal-traffic-analytics::an-unlisted-event-is-refused-not-silently-dropped
+	// @e2e portal-traffic-reporting::an-unlisted-event-is-refused-not-silently-dropped
 	test('an event the portal did not enable is refused and COUNTED', async ({
 		request,
 	}) => {
@@ -258,7 +259,7 @@ test.describe('traffic analytics: the collector and the client', () => {
 		expect(after).toBe(before + 1)
 	})
 
-	// @e2e portal-traffic-analytics::a-browser-claims-a-mail-event
+	// @e2e portal-traffic-reporting::a-browser-claims-a-mail-event
 	test('a browser cannot claim a mail event', async ({ request }) => {
 		const before = await metric(
 			request,
@@ -285,7 +286,7 @@ test.describe('traffic analytics: the collector and the client', () => {
 		).toBe(before + 1)
 	})
 
-	// @e2e portal-traffic-analytics::measurement-is-disabled-for-a-portal
+	// @e2e portal-traffic-kpi-cards::measurement-is-disabled-for-a-portal
 	test('a batch for the disabled portal is refused as measurement-disabled', async ({
 		request,
 	}) => {
@@ -324,7 +325,7 @@ test.describe('traffic analytics: the collector and the client', () => {
 		expect(after).toBe(before + 1)
 	})
 
-	// @e2e portal-traffic-analytics::an-oversized-or-malformed-batch
+	// @e2e portal-traffic-reporting::an-oversized-or-malformed-batch
 	test('fifty-one events, or malformed JSON, is refused whole with a 400', async ({
 		request,
 	}) => {
@@ -351,7 +352,7 @@ test.describe('traffic analytics: the collector and the client', () => {
 		).toBe(before)
 	})
 
-	// @e2e portal-traffic-analytics::a-bot-is-not-a-visitor
+	// @e2e portal-traffic-visitors-and-geo::a-bot-is-not-a-visitor
 	test('a crawler is refused as bot and counted', async ({ request }) => {
 		const before = await metric(
 			request,
@@ -378,8 +379,8 @@ test.describe('traffic analytics: the collector and the client', () => {
 		).toBe(before + 1)
 	})
 
-	// @e2e portal-traffic-analytics::the-served-site-loads-the-client
-	// @e2e portal-traffic-analytics::the-default-mode-stores-nothing-in-the-browser
+	// @e2e portal-traffic-reporting::the-served-site-loads-the-client
+	// @e2e portal-traffic-visitors-and-geo::the-default-mode-stores-nothing-in-the-browser
 	test('the built-in site loads the client, a page view reaches the collector, and nothing is stored', async ({
 		page,
 	}) => {
@@ -420,8 +421,8 @@ test.describe('traffic analytics: the collector and the client', () => {
 })
 
 test.describe('traffic analytics: the rollup and the Traffic page', () => {
-	// @e2e portal-traffic-analytics::a-rollup-exists-after-the-job
-	// @e2e portal-traffic-analytics::the-job-runs-twice
+	// @e2e portal-traffic-reporting::a-rollup-exists-after-the-job
+	// @e2e portal-traffic-reporting::the-job-runs-twice
 	test('the aggregation job writes one portalTrafficDaily per portal-day, and twice gives the same', async ({
 		request,
 	}) => {
@@ -468,8 +469,8 @@ test.describe('traffic analytics: the rollup and the Traffic page', () => {
 		)
 	})
 
-	// @e2e portal-traffic-analytics::measurement-is-disabled-for-a-portal
-	// @e2e portal-traffic-analytics::the-warning-is-shown-where-the-switch-is
+	// @e2e portal-traffic-kpi-cards::measurement-is-disabled-for-a-portal
+	// @e2e portal-traffic-experiments::the-warning-is-shown-where-the-switch-is
 	test('the Traffic page shows the numbers for the measured portal and "not measured" for the other', async ({
 		page,
 		request,

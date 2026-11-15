@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
+ * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
  */
 
 declare(strict_types=1);
@@ -33,7 +33,7 @@ namespace OCA\Portaliq\Service\Traffic;
  * rollup keys, and a rollup keyed by free text is a record that stops
  * fitting.
  *
- * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
+ * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
  */
 class TrafficOutcomeDefinitions {
 
@@ -81,7 +81,7 @@ class TrafficOutcomeDefinitions {
 	 *
 	 * @return array<int, array<string, mixed>> The usable goals.
 	 *
-	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
+	 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
 	 */
 	public function goals(mixed $value): array {
 		$out = [];
@@ -113,7 +113,7 @@ class TrafficOutcomeDefinitions {
 	 *
 	 * @return array<int, array<string, mixed>> The usable funnels.
 	 *
-	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-funnel-steps-must-count-in-order
+	 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-funnel-steps-must-count-in-order
 	 */
 	public function funnels(mixed $value): array {
 		$out = [];
@@ -123,19 +123,7 @@ class TrafficOutcomeDefinitions {
 				continue;
 			}
 
-			$steps = [];
-			foreach ($this->rows(value: ($row['steps'] ?? null), max: self::MAX_STEPS) as $index => $step) {
-				$match = $this->match->normalise(value: ($step['match'] ?? null));
-				if ($match === null) {
-					continue;
-				}
-
-				$steps[] = [
-					'name' => $this->name(value: ($step['name'] ?? null), fallback: 'Step ' . ($index + 1)),
-					'match' => $match,
-				];
-			}
-
+			$steps = $this->funnelStepsOf(row: $row);
 			if ($steps === []) {
 				continue;
 			}
@@ -147,13 +135,40 @@ class TrafficOutcomeDefinitions {
 	}
 
 	/**
+	 * A funnel's usable steps, each `{name, match}`; a step is named by its
+	 * place when it has no name.
+	 *
+	 * @param array<string, mixed> $row The configured funnel.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-funnel-steps-must-count-in-order
+	 */
+	private function funnelStepsOf(array $row): array {
+		$steps = [];
+		foreach ($this->rows(value: ($row['steps'] ?? null), max: self::MAX_STEPS) as $index => $step) {
+			$match = $this->match->normalise(value: ($step['match'] ?? null));
+			if ($match === null) {
+				continue;
+			}
+
+			$steps[] = [
+				'name' => $this->name(value: ($step['name'] ?? null), fallback: 'Step ' . ($index + 1)),
+				'match' => $match,
+			];
+		}
+
+		return $steps;
+	}
+
+	/**
 	 * The portal's custom dimensions, each `{id, name, scope}`.
 	 *
 	 * @param mixed $value The configured list.
 	 *
 	 * @return array<int, array<string, string>> The usable dimensions.
 	 *
-	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-custom-dimensions-must-be-declared-before-they-are-stored
+	 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-custom-dimensions-must-be-declared-before-they-are-stored
 	 */
 	public function customDimensions(mixed $value): array {
 		$out = [];

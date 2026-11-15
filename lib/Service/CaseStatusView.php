@@ -88,21 +88,37 @@ class CaseStatusView {
 			$entry = ($actions[$status] ?? null);
 		}
 
-		if (is_array($entry) === false) {
+		if (is_array($entry) === false || $this->isButton(entry: $entry) === false) {
 			return null;
 		}
 
-		$label  = ($entry['label'] ?? null);
-		$kind   = ($entry['kind'] ?? null);
-		$target = ($entry['target'] ?? null);
-		if (is_string($label) === false || trim($label) === '' || in_array($kind, ['task', 'page', 'action'], true) === false
-			|| is_string($target) === false || trim($target) === ''
-		) {
-			return null;
-		}
-
-		return ['label' => trim($label), 'kind' => $kind, 'target' => trim($target)];
+		return ['label' => trim($entry['label']), 'kind' => $entry['kind'], 'target' => trim($entry['target'])];
 	}//end statusAction()
+
+	/**
+	 * Whether a status action entry is a button: a label, a kind of task,
+	 * page or action, and a target.
+	 *
+	 * @param array<string, mixed> $entry The status action entry.
+	 *
+	 * @return bool
+	 */
+	private function isButton(array $entry): bool {
+		return $this->saysSomething(value: ($entry['label'] ?? null)) === true
+			&& in_array(($entry['kind'] ?? null), ['task', 'page', 'action'], true) === true
+			&& $this->saysSomething(value: ($entry['target'] ?? null)) === true;
+	}//end isButton()
+
+	/**
+	 * Whether a value is a string that says something.
+	 *
+	 * @param mixed $value The value.
+	 *
+	 * @return bool
+	 */
+	private function saysSomething(mixed $value): bool {
+		return is_string($value) === true && trim($value) !== '';
+	}//end saysSomething()
 
 	/**
 	 * The status after the current one, in the order the case type lists its labels.
@@ -119,23 +135,54 @@ class CaseStatusView {
 			return null;
 		}
 
-		$keys     = array_map('strval', array_keys($labels));
-		$position = array_search($status, $keys, true);
-		if ($position === false || isset($keys[($position + 1)]) === false) {
+		$value = $this->keyAfter(labels: $labels, status: $status);
+		if ($value === null) {
 			return null;
 		}
 
-		$value = $keys[($position + 1)];
-		$entry = $labels[$value];
-		$label = '';
-		if (is_array($entry) === true && is_string($entry['label'] ?? null) === true) {
-			$label = $entry['label'];
-		}
-
+		$label = $this->labelOf(entry: $labels[$value]);
 		if ($label === '') {
 			return null;
 		}
 
 		return ['value' => $value, 'label' => $label];
 	}//end nextStatus()
+
+	/**
+	 * The status key after the current one, or null when it is the last or unknown.
+	 *
+	 * @param array<int|string, mixed> $labels The case type's status labels.
+	 * @param string                   $status The case's current status.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/changes/case-page-tasks-decision-dates-and-next-step/tasks.md#t04
+	 */
+	private function keyAfter(array $labels, string $status): string|null {
+		$keys     = array_map('strval', array_keys($labels));
+		$position = array_search($status, $keys, true);
+		if ($position === false || isset($keys[($position + 1)]) === false) {
+			return null;
+		}
+
+		return $keys[($position + 1)];
+	}//end keyAfter()
+
+	/**
+	 * A status label entry's label, or ''.
+	 *
+	 * @param mixed $entry The status label entry.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/case-page-tasks-decision-dates-and-next-step/tasks.md#t04
+	 */
+	private function labelOf(mixed $entry): string {
+		$label = '';
+		if (is_array($entry) === true && is_string($entry['label'] ?? null) === true) {
+			$label = $entry['label'];
+		}
+
+		return $label;
+	}//end labelOf()
 }//end class

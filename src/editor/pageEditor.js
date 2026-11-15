@@ -39,6 +39,166 @@ import { isConflict } from './pageSaver.js'
 const DEFAULT_SIZE = { gridWidth: 6, gridHeight: 4 }
 
 /**
+ * The state of an editor that has loaded nothing yet.
+ *
+ * @return {object} The state.
+ */
+function freshState() {
+	return { ...freshContent(), ...freshStatus() }
+}
+
+/**
+ * @return {object} What a loaded page fills in: the page, its body and the selection.
+ */
+function freshContent() {
+	return {
+		page: {},
+		version: '',
+		kind: 'grid',
+		widgets: [],
+		markdown: '',
+		selectedId: '',
+	}
+}
+
+/**
+ * @return {object} Where the editing stands: loading, saving, the messages and the history.
+ */
+function freshStatus() {
+	return {
+		loading: true,
+		saving: false,
+		dirty: false,
+		hasDraft: false,
+		error: '',
+		notice: '',
+		conflict: null,
+		canUndo: false,
+		canRedo: false,
+	}
+}
+
+/**
+ * @param {object} state The editor's state.
+ * @return {object} The part of the state undo restores.
+ */
+function snapshotOf(state) {
+	return {
+		widgets: cloneWidgets(state.widgets),
+		selectedId: state.selectedId,
+	}
+}
+
+/**
+ * @param {{state: object, history: object}} editing The editor's state and its edit history.
+ * @return {void}
+ */
+function syncHistoryOf(editing) {
+	editing.state.canUndo = editing.history.canUndo()
+	editing.state.canRedo = editing.history.canRedo()
+}
+
+/**
+ * Apply a grid change, remembering the state before it. A page that is no
+ * grid takes no grid change.
+ *
+ * @param {{state: object, history: object}} editing The editor's state and its edit history.
+ * @param {{step: Function, coalesceKey: string|null}} edit The change, and its undo step's key.
+ * @return {void}
+ */
+function applyChange(editing, edit) {
+	const { state, history } = editing
+	if (state.kind !== 'grid') {
+		return
+	}
+	history.record(snapshotOf(state), edit.coalesceKey)
+	edit.step()
+	state.dirty = true
+	state.notice = ''
+	syncHistoryOf(editing)
+}
+
+/**
+ * Take a loaded page into the state; a selection the page no longer holds
+ * goes.
+ *
+ * @param {object} state The editor's state.
+ * @param {{page: object, version: string}} loaded The page and its version.
+ * @return {void}
+ */
+function takeLoaded(state, loaded) {
+	const { page, version } = loaded
+	const body = readBody(page)
+	state.page = page
+	state.version = version
+	state.kind = body.kind
+	state.widgets = body.widgets
+	state.markdown = body.markdown
+	state.hasDraft = Boolean(page.draftBody)
+	state.dirty = false
+	if (!state.widgets.some((w) => w.id === state.selectedId)) {
+		state.selectedId = ''
+	}
+}
+
+/**
+ * A message for a failed request. A refusal is named as one: "saving failed"
+ * over a 403 sends an editor looking for a bug in their content.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The translate function.
+ * @param {{error: unknown, fallback: string}} failure The error and the generic message.
+ * @return {string} The message.
+ */
+function failureMessage(t, failure) {
+	const status = failure.error?.response?.status
+	if (status === 403 || status === 401) {
+		return t(
+			'portaliq',
+			'You are not allowed to edit portal pages. An administrator sets the editor groups in the Portaliq admin settings.',
+		)
+	}
+	if (status === 404) {
+		return t('portaliq', 'This page no longer exists.')
+	}
+	return failure.fallback
+}
+
+/**
+ * @param {(app: string, text: string, vars?: object) => string} t The translate function.
+ * @param {{changedAt: string}} error The conflict.
+ * @return {{conflict: object, error: string}} The state's changes: the conflict and its sentence.
+ */
+function conflictFailure(t, error) {
+	return {
+		conflict: { changedAt: error.changedAt },
+		error: t(
+			'portaliq',
+			'Someone else saved this page after you opened it, so your changes were not saved. Reload the page to see their version, then make your changes again.',
+		),
+	}
+}
+
+/**
+ * What a failed save puts in the state: a conflict with its sentence, or the
+ * message for the refusal.
+ *
+ * @param {(app: string, text: string, vars?: object) => string} t The translate function.
+ * @param {unknown} error The error.
+ * @return {{conflict?: object, error: string}} The state's changes.
+ */
+function saveFailure(t, error) {
+	if (isConflict(error)) {
+		return conflictFailure(t, error)
+	}
+	return {
+		error: failureMessage(t, {
+			error,
+			fallback: t('portaliq', 'Saving failed. Nothing was changed.'),
+		}),
+	}
+}
+
+/**
  * A new editor for one page.
  *
  * @param {object} deps The collaborators.
@@ -61,75 +221,30 @@ export function createPageEditor({
 }) {
 	const history = createEditHistory({ limit: historyLimit })
 
-	const state = reactive({
-		page: {},
-		version: '',
-		kind: 'grid',
-		widgets: [],
-		markdown: '',
-		selectedId: '',
-		loading: true,
-		saving: false,
-		dirty: false,
-		hasDraft: false,
-		error: '',
-		notice: '',
-		conflict: null,
-		canUndo: false,
-		canRedo: false,
-	})
+	const state = reactive(freshState())
 
 	/** @return {object} The part of the state undo restores. */
-	const snapshot = () => ({
-		widgets: cloneWidgets(state.widgets),
-		selectedId: state.selectedId,
-	})
+	const snapshot = () => snapshotOf(state)
 
 	/** @return {void} */
-	const syncHistory = () => {
-		state.canUndo = history.canUndo()
-		state.canRedo = history.canRedo()
-	}
+	const syncHistory = () => syncHistoryOf({ state, history })
 
 	/**
 	 * Apply a grid change, remembering the state before it.
 	 *
-	 * @param {Function} change () => void, mutating state.
+	 * @param {Function} step () => void, mutating state.
 	 * @param {string|null} coalesceKey Same key as the previous change: same undo step.
 	 * @return {void}
 	 */
-	const change = (change, coalesceKey = null) => {
-		if (state.kind !== 'grid') {
-			return
-		}
-		history.record(snapshot(), coalesceKey)
-		change()
-		state.dirty = true
-		state.notice = ''
-		syncHistory()
-	}
+	const change = (step, coalesceKey = null) =>
+		applyChange({ state, history }, { step, coalesceKey })
 
 	/**
-	 * A message for a failed request. A refusal is named as one: "saving
-	 * failed" over a 403 sends an editor looking for a bug in their content.
-	 *
-	 * @param {*} error The error.
+	 * @param {unknown} error The error.
 	 * @param {string} fallback The generic message.
-	 * @return {string} The message.
+	 * @return {string} The message for a failed request.
 	 */
-	const messageFor = (error, fallback) => {
-		const status = error?.response?.status
-		if (status === 403 || status === 401) {
-			return t(
-				'portaliq',
-				'You are not allowed to edit portal pages. An administrator sets the editor groups in the Portaliq admin settings.',
-			)
-		}
-		if (status === 404) {
-			return t('portaliq', 'This page no longer exists.')
-		}
-		return fallback
-	}
+	const messageFor = (error, fallback) => failureMessage(t, { error, fallback })
 
 	const editor = {
 		state,
@@ -144,18 +259,7 @@ export function createPageEditor({
 			state.error = ''
 			state.conflict = null
 			try {
-				const { page, version } = await saver.load(pageId)
-				const body = readBody(page)
-				state.page = page
-				state.version = version
-				state.kind = body.kind
-				state.widgets = body.widgets
-				state.markdown = body.markdown
-				state.hasDraft = Boolean(page.draftBody)
-				state.dirty = false
-				if (!state.widgets.some((w) => w.id === state.selectedId)) {
-					state.selectedId = ''
-				}
+				takeLoaded(state, await saver.load(pageId))
 				history.reset()
 				syncHistory()
 			} catch (error) {
@@ -405,18 +509,7 @@ export function createPageEditor({
 				await editor.load()
 				state.notice = notice
 			} catch (error) {
-				if (isConflict(error)) {
-					state.conflict = { changedAt: error.changedAt }
-					state.error = t(
-						'portaliq',
-						'Someone else saved this page after you opened it, so your changes were not saved. Reload the page to see their version, then make your changes again.',
-					)
-				} else {
-					state.error = messageFor(
-						error,
-						t('portaliq', 'Saving failed. Nothing was changed.'),
-					)
-				}
+				Object.assign(state, saveFailure(t, error))
 			} finally {
 				state.saving = false
 			}

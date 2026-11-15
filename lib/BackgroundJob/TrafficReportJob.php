@@ -20,14 +20,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\BackgroundJob;
 
-use OCA\Portaliq\Service\TrafficReportService;
+use OCA\Portaliq\Kernel\Contracts\TrafficReportServiceInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJob;
 use OCP\BackgroundJob\TimedJob;
@@ -43,7 +43,7 @@ use Throwable;
  * cost nothing. Time-insensitive, and never in parallel: two runs
  * deciding the same report is due would send it twice.
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
  */
 class TrafficReportJob extends TimedJob {
 
@@ -56,14 +56,14 @@ class TrafficReportJob extends TimedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory         $time    Testable clock (job base class).
-	 * @param TrafficReportService $reports Does the work.
+	 * @param TrafficReportServiceInterface $reports Does the work.
 	 * @param LoggerInterface      $logger  The logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly TrafficReportService $reports,
+		private readonly TrafficReportServiceInterface $reports,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(time: $time);
@@ -81,7 +81,7 @@ class TrafficReportJob extends TimedJob {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- the base class dictates
 	 * the signature; dropping the parameter breaks the override.

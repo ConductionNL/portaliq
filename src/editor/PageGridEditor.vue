@@ -20,6 +20,22 @@
 -->
 <template>
 	<div class="page-grid-editor">
+		<!--
+			A REPORTING PAGE IS NOT COUNTED. A visitor row on it records that
+			somebody opened the form, so a page with a report widget belongs in
+			the portal's `traffic.excludedPaths` before it is published.
+		-->
+		<NcNoteCard
+			v-if="reportCounted"
+			type="warning"
+			data-testid="editor-report-counted">
+			{{
+				t(
+					'portaliq',
+					'This page is not excluded from visitor statistics. Add it before you publish.',
+				)
+			}}
+		</NcNoteCard>
 		<div
 			v-if="state.kind === 'markdown'"
 			class="page-grid-editor__markdown"
@@ -316,6 +332,7 @@ import { historyIntent } from './editHistory.js'
 import { cellFromDrop } from './geometry.js'
 import { PALETTE_DRAG_TYPE } from './paletteDrag.js'
 import { recordListChoice } from './recordLists.js'
+import { reportPageIsCounted } from './reportExclusion.js'
 import {
 	formWidgetFor,
 	inspectorModeFor,
@@ -386,6 +403,18 @@ export default {
 			type: Function,
 			default: null,
 		},
+
+		/**
+		 * The portal's `traffic.excludedPaths`, or null when the host could not
+		 * read them. With a list, a report widget on a page outside it shows
+		 * a warning; without one, nothing is said.
+		 *
+		 * @type {Array<string>|null}
+		 */
+		excludedPaths: {
+			type: Array,
+			default: null,
+		},
 	},
 
 	emits: ['update:paletteOpen'],
@@ -430,6 +459,24 @@ export default {
 		 */
 		state() {
 			return this.editor.state
+		},
+
+		/**
+		 * Whether a report widget sits on a page visitor statistics still count.
+		 *
+		 * @return {boolean} True when the warning shows.
+		 *
+		 * @spec openspec/changes/intake-report-pages/specs/report-pages/spec.md#requirement-report-pages-stay-out-of-visitor-statistics-req-irp-003
+		 */
+		reportCounted() {
+			return (
+				this.state.kind !== 'markdown'
+				&& reportPageIsCounted(
+					this.state.widgets,
+					this.state.page?.route,
+					this.excludedPaths,
+				)
+			)
 		},
 
 		/**
@@ -651,7 +698,7 @@ export default {
 		 *
 		 * @param {string} key The widget key.
 		 * @return {string} The name.
-		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-in-place-editing/spec.md#requirement-the-editor-names-a-block-by-its-widgets-name
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-the-editor-names-a-block-by-its-widgets-name
 		 */
 		labelOf(key) {
 			return widgetLabel(key, dashboardWidgetRegistry)
@@ -662,7 +709,7 @@ export default {
 		 *
 		 * @param {object} item The placement.
 		 * @return {string} The line.
-		 * @spec openspec/changes/page-editor-in-the-page/specs/portal-page-designer/spec.md#requirement-the-editor-toolbar-and-block-cards-read-as-the-board
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-editor-toolbar-and-block-cards-read-as-the-board
 		 */
 		widthLineOf(item) {
 			return widgetWidthLine(item?.gridWidth)
