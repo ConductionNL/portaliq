@@ -56,6 +56,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalIntakeQueueInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSubmissionChecksInterface;
+use OCA\Portaliq\Service\Intake\CosignOnSubmit;
 use OCA\Portaliq\Service\Intake\OnBehalfFilling;
 use OCA\Portaliq\Service\Intake\PortalFormAvailability;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
@@ -134,6 +135,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param DestinationLookupInterface|null $lookup Finds the object a reference belongs to.
 	 * @param PortalFormAvailability|null $availability Whether a form takes submissions now (REQ-FGV-001).
 	 * @param OnBehalfFilling|null $onBehalf The desk employee who fills a form in for a resident (resident-identity-in-forms T06).
+	 * @param CosignOnSubmit|null $cosign Creates the case waiting for a co-signer and invites them (decision 271).
 	 */
 	public function __construct(
 		IRequest $request,
@@ -161,6 +163,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		private readonly ?DestinationLookupInterface $lookup = null,
 		private readonly ?PortalFormAvailability $availability = null,
 		private readonly ?OnBehalfFilling $onBehalf = null,
+		private readonly ?CosignOnSubmit $cosign = null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 		$this->checks       = new PortalSubmissionChecks(
@@ -652,12 +655,18 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	private function deliver(array $binding, array $render, array $prepared, ?array $subject, array $site, array $extra = []): JSONResponse {
+		$subjectRef = (string)($subject['subjectRef'] ?? '');
+		$cosign     = ($this->cosign?->prepare(binding: $binding, answers: $prepared['answers']) ?? ['server' => [], 'errors' => []]);
+		if ($cosign['errors'] !== []) {
+			return new JSONResponse(['errors' => $cosign['errors']], Http::STATUS_BAD_REQUEST);
+		}
+
 		$submitted = $this->intake?->submit(
 			binding: $binding,
 			render: $render,
 			answers: $prepared['answers'],
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			server: $this->serverFacts(site: $site, prepared: $prepared) + $extra,
+			subjectRef: $subjectRef,
+			server: $cosign['server'] + $this->serverFacts(site: $site, prepared: $prepared) + $extra,
 			idempotencyKey: (string)$this->request->getHeader('Idempotency-Key')
 		);
 		if ($submitted === null || $submitted['ok'] === false) {
@@ -665,7 +674,9 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			return new JSONResponse($refusal['body'], $refusal['status']);
 		}
 
-		return $this->acknowledged(submitted: $submitted, site: $site, render: $render, prepared: $prepared);
+		$cosigner = $this->cosign?->invite(site: $site, binding: $binding, server: $cosign['server'], answer: $submitted['answer'], subjectRef: $subjectRef);
+
+		return $this->acknowledged(submitted: $submitted, site: $site, render: $render, prepared: $prepared, cosigner: $cosigner);
 	}//end deliver()
 
 	/**
@@ -696,12 +707,13 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param array<string, mixed> $site      The portal.
 	 * @param array<string, mixed> $render    The rendered form.
 	 * @param array<string, mixed> $prepared  The checked answers and their server-side companions.
+	 * @param array<string, mixed>|null $cosigner The co-signer who was invited, or null (decision 271).
 	 *
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
-	private function acknowledged(array $submitted, array $site, array $render, array $prepared): JSONResponse {
+	private function acknowledged(array $submitted, array $site, array $render, array $prepared, ?array $cosigner = null): JSONResponse {
 		$answer    = $submitted['answer'];
 		$reference = (string)($answer['reference'] ?? '');
 		$moments   = (array)($answer['confirmation'] ?? []);
@@ -710,7 +722,8 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		return new JSONResponse(
 			array_merge(
 				$moments,
-				$this->acknowledgement(answer: $answer, reference: $reference, render: $render, mailedTo: $mailedTo)
+				$this->acknowledgement(answer: $answer, reference: $reference, render: $render, mailedTo: $mailedTo),
+				['cosign' => $cosigner]
 			)
 		);
 	}//end acknowledged()

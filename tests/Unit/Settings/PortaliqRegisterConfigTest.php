@@ -333,7 +333,9 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.5.0: `destination` replaces caseRegister/caseSchema/deliverTo (decision 179); those stay, deprecated.
 		// 0.6.0: `intro.enabled`, the form settings page's switch for the introduction (form-statements-intro-and-confirmation-mail T06). Additive.
 		// 0.7.0: `availability` (form-governance-availability-retention-and-routing REQ-FGV-001). Additive.
-		$this->assertSame('0.7.0', self::$register['components']['schemas']['portalFormBinding']['version']);
+		// 0.8.0: `cosign` names the co-signer's fields, the obligation kind and the case app's sign endpoint (decision 271). Additive; moved past development's 0.7.0 at merge time.
+		$this->assertSame('0.8.0', self::$register['components']['schemas']['portalFormBinding']['version']);
+		$this->assertSame('string', self::$register['components']['schemas']['portalFormBinding']['properties']['cosign']['properties']['endpoint']['type']);
 		$this->assertSame('boolean', self::$register['components']['schemas']['portalFormBinding']['properties']['intro']['properties']['enabled']['type']);
 		$this->assertSame(['case', 'wooRequest'], self::$register['components']['schemas']['portalFormBinding']['properties']['deliverTo']['enum']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalIntakeSubmission']['version']);
@@ -430,8 +432,9 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$traffic = self::$register['components']['schemas']['portal']['properties']['traffic']['properties'];
 		$this->assertSame(expected: 'string', actual: $traffic['excludedPaths']['items']['type']);
 		// 0.118.0 (portal 0.34.0): development's 0.115.0 (`traffic.excludedPaths`, intake-report-pages T07) merged with this branch's 0.115.0-0.117.0 above. Additive; both sides kept.
-		$this->assertSame(expected: '0.118.0', actual: self::$register['info']['version']);
-		$this->assertSame(expected: '0.118.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		// 0.119.0 (portalFormBinding 0.8.0): `cosign.nameField`, `emailField`, `kind`, `title`, `endpoint`; the submit creates the case waiting for the co-signer (resident-identity-in-forms T04, decision 271). Additive; moved past development's 0.118.0 at merge time.
+		$this->assertSame(expected: '0.119.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.119.0', actual: self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portalPage']['properties']['pages']['items']['properties']['blocks']['items']['properties']['messageTo']['type']);
 		$this->assertContains(needle: 'yivi', haystack: self::$register['components']['schemas']['portalAccount']['properties']['identityType']['enum']);
 		$this->assertSame(expected: 'date-time', actual: self::$register['components']['schemas']['guardianMessage']['properties']['readAt']['format']);

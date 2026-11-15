@@ -26,11 +26,11 @@ An `email` field with `verify: true` SHALL send a six-digit code to the address,
 
 ### Requirement: A form can require a second person to co-sign (REQ-RIF-003)
 
-A binding with `cosign.required` SHALL hold each submission in state `awaiting-cosign` and MUST NOT deliver it until it is co-signed. The co-signer SHALL get an invitation mail with a code and a deadline, sign in with their own DigiD, see the request read-only and choose "Mede-ondertekenen" or "Weigeren". The co-signer's DigiD subject MUST differ from the submitter's. The submitter's confirmation and case SHALL show "Wacht op mede-ondertekening door {naam}" until the answer.
+A binding with `cosign.required` SHALL create the case at once, carrying in `intakeObligations` what it waits on: the co-signer's name and address from the fields the binding names, a due date `cosign.deadlineDays` ahead, and state `awaiting`. The case app holds the wait; the portal MUST NOT queue the submission (decision 271). The co-signer SHALL get an invitation mail with a signed link and the due date, sign in with their own DigiD, see the request read-only and choose "Mede-ondertekenen" or "Weigeren"; the portal SHALL forward the answer with its signed assertion to the endpoint `cosign.endpoint` names. The co-signer's portal subject MUST differ from the submitter's. The submitter's confirmation SHALL show "Wacht op mede-ondertekening door {naam}".
 
 #### Scenario: Henk co-signs
 - **WHEN** Sanne submits a Woo request that needs co-signing and Henk signs in with his DigiD, ticks "Ik heb de aanvraag gelezen en onderteken mee." and chooses "Mede-ondertekenen"
-- **THEN** the request is delivered with Henk's co-signature and Sanne's case no longer says it waits
+- **THEN** the case app records Henk's co-signature on the case Sanne's submit created, and the case no longer waits for it
 
 #### Scenario: Co-signing your own request
 - **WHEN** the submitter opens the co-sign link and signs in with the same DigiD
@@ -38,7 +38,7 @@ A binding with `cosign.required` SHALL hold each submission in state `awaiting-c
 
 #### Scenario: The deadline passes
 - **WHEN** nobody co-signs before 22 October 2026
-- **THEN** the request is not delivered and the submitter is told by mail and on the case
+- **THEN** the portal refuses the link after that day and the case app applies its rule for the wait to the case
 
 ### Requirement: A resident can sign in with Yivi and share only what the form asks (REQ-RIF-004)
 

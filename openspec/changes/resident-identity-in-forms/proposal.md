@@ -16,7 +16,7 @@ Four Zuiddrecht boards draw them: **FormulierKaart** (the signature box), **Form
 
 - **A signature field.** The resident draws a signature with mouse, finger or pen, or types their name instead. It travels as an image with the submission.
 - **E-mail verification.** An e-mail field can require a six-digit code sent to the address before the form can be sent.
-- **Co-signing.** A form can require a second person to co-sign. After submission the co-signer gets a mail with a code, signs in with their own DigiD, reads the request and co-signs or refuses. Delivery waits for the answer.
+- **Co-signing.** A form can require a second person to co-sign. The submit creates the case at once, waiting for the co-signer; the case app holds that wait, and the portal keeps no queue (decision 271, decisions 179 and 181). The co-signer gets a mail with a sign link, signs in with their own DigiD, reads the request and co-signs or refuses; the answer goes to the case app, and when nobody answers in time the case app's rule for the wait applies.
 - **Yivi.** A portal can offer Yivi as a sign-in route through its broker, and a form can ask for a set of Yivi attributes that prefill its fields.
 - **An employee fills in for a resident.** A form can allow staff to fill it in with their work account, for a resident (by BSN), a company (by KvK number) or under their own name with the applicant noted. The submission and the case record both the applicant and the employee.
 

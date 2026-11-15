@@ -3448,7 +3448,12 @@
         "This portal slug is already used by another portal.": "This portal slug is already used by another portal.",
         "This web address is already used by another portal.": "This web address is already used by another portal.",
         "OpenRegister is not available, so nothing was written.": "OpenRegister is not available, so nothing was written.",
-        "The portal could not be written. Nothing else was created.": "The portal could not be written. Nothing else was created."
+        "The portal could not be written. Nothing else was created.": "The portal could not be written. Nothing else was created.",
+        "Fill in the name and e-mail address of the person who co-signs.": "Fill in the name and e-mail address of the person who co-signs.",
+        "Will you co-sign a request?": "Will you co-sign a request?",
+        "%1$s, you are asked to co-sign the request \"%2$s\". Sign in with your own DigiD, check the request and co-sign or decline. Do this before %3$s.": "%1$s, you are asked to co-sign the request \"%2$s\". Sign in with your own DigiD, check the request and co-sign or decline. Do this before %3$s.",
+        "Co-sign a request": "Co-sign a request",
+        "Sign in and check": "Sign in and check"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

@@ -415,6 +415,7 @@ function submittedOutcome(parsed) {
 		confirmationText: String(parsed.confirmationText || ''),
 		confirmation: parsed.confirmation || null,
 		mailedTo: String(parsed.mailedTo || ''),
+		cosign: parsed.cosign || null,
 		moments: {
 			receivedAt: String(parsed.receivedAt || ''),
 			termStartsAt: String(parsed.termStartsAt || ''),

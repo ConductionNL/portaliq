@@ -581,7 +581,12 @@ OC.L10N.register(
         "Maintenance text": "Maintenance text",
         "Shown to the resident during maintenance.": "Shown to the resident during maintenance.",
         "Submissions in this period": "Submissions in this period",
-        "No limit set": "No limit set"
+        "No limit set": "No limit set",
+        "Fill in the name and e-mail address of the person who co-signs.": "Fill in the name and e-mail address of the person who co-signs.",
+        "Will you co-sign a request?": "Will you co-sign a request?",
+        "%1$s, you are asked to co-sign the request \"%2$s\". Sign in with your own DigiD, check the request and co-sign or decline. Do this before %3$s.": "%1$s, you are asked to co-sign the request \"%2$s\". Sign in with your own DigiD, check the request and co-sign or decline. Do this before %3$s.",
+        "Co-sign a request": "Co-sign a request",
+        "Sign in and check": "Sign in and check"
     },
     "nplurals=2; plural=(n != 1);"
 )

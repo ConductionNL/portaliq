@@ -228,9 +228,20 @@
 							@subject="onSubject" />
 					</aside>
 					<div class="pq-site__content">
+						<!-- The co-signer's link opens the request to co-sign; signed out it
+						     offers the way in, then the signed-in area takes over until a session exists. -->
+						<CosignPage
+							v-if="cosignToken && (session || !accountRoute)"
+							:token="cosignToken"
+							:session="session"
+							:api="api"
+							:t="t"
+							@signin="goSection('/mijn')"
+							@done="forgetCosignToken(claimStorage())" />
+
 						<!-- A signed link opens its one act before any page (REQ-GST-002). -->
 						<GuestActionPage
-							v-if="guestLink"
+							v-else-if="guestLink"
 							:authBase="guestAuthBase"
 							:portal="site.slug || portalSlug" />
 
@@ -526,6 +537,7 @@ import {
 	keepClaimSecret,
 	redeemKeptClaim,
 } from '../shared/claimInvitation.js'
+import { forgetCosignToken, keepCosignToken } from '../shared/cosignLink.js'
 import { createTranslator } from '../shared/i18n/index.js'
 import { logoutTarget, silentSignInUrl } from '../shared/idleSession.js'
 import { noticesFor } from '../shared/notices.js'
@@ -660,6 +672,7 @@ const SharedDossierPage = defineAsyncComponent(
 // loaded only when the address carries one.
 const PageHelp = defineAsyncComponent(() => import('./components/PageHelp.vue'))
 
+const CosignPage = defineAsyncComponent(() => import('./pages/CosignPage.vue'))
 const GuestActionPage = defineAsyncComponent(
 	() => import('./pages/GuestActionPage.vue'),
 )
@@ -685,6 +698,7 @@ export default {
 		ContactPrompt,
 		BrandHeader,
 		FooterColumns,
+		CosignPage,
 		GuestActionPage,
 		WayInLink,
 		IdleWarningDialog,
@@ -764,6 +778,8 @@ export default {
 			contactPrompt: false,
 			// A signed link for one guest act (`#guest/...`); the page reads it.
 			guestLink: String(window.location.hash).startsWith('#guest/'),
+			// The co-signer's link (`#cosign=...`), kept over the sign-in.
+			cosignToken: '',
 			// A mailed way in (`#activate=`, `#invitation=`, `#reference=`).
 			wayInLink: hasWayInLink(window.location),
 			site: {},
@@ -1620,6 +1636,11 @@ export default {
 		// An invitation's secret (`#claim=<secret>`) is kept the same way,
 		// and handed back once the visitor is signed in.
 		keepClaimSecret(window.location, window.history, this.claimStorage())
+		this.cosignToken = keepCosignToken(
+			window.location,
+			window.history,
+			this.claimStorage(),
+		)
 		if (window.location.hash.includes('#mandate-invitation=')) {
 			const { keepMandateInvitation } =
 				await import('../shared/mandateInvitation.js')
@@ -1656,6 +1677,17 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * Forget the co-signer's kept link once the answer is in.
+		 *
+		 * @param {Storage|null} storage sessionStorage, or null.
+		 * @return {void}
+		 * @spec openspec/changes/resident-identity-in-forms/tasks.md#t04
+		 */
+		forgetCosignToken(storage) {
+			forgetCosignToken(storage)
+		},
+
 		/**
 		 * The in-site route this browser location represents.
 		 *
