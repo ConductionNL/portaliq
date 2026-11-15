@@ -70,7 +70,7 @@
       "label": "Media",
       "icon": "PackageVariantClosed",
       "route": "Media",
-      "order": 25,
+      "order": 24,
       "visibleIf": {
         "access.pages": true
       }
@@ -80,7 +80,7 @@
       "label": "Notices",
       "icon": "BullhornOutline",
       "route": "Notices",
-      "order": 26,
+      "order": 25,
       "visibleIf": {
         "access.pages": true
       }
@@ -90,7 +90,17 @@
       "label": "News",
       "icon": "FileDocumentOutline",
       "route": "News",
-      "order": 27
+      "order": 26
+    },
+    {
+      "id": "ArticlesMenu",
+      "label": "Articles",
+      "icon": "NewspaperVariantOutline",
+      "route": "Articles",
+      "order": 27,
+      "visibleIf": {
+        "access.pages": true
+      }
     },
     {
       "id": "Themes",
@@ -196,7 +206,7 @@
     },
     {
       "id": "StoreMenu",
-      "label": "Store",
+      "label": "Marketplace",
       "icon": "StoreOutline",
       "route": "Store",
       "section": "footer",
@@ -340,10 +350,10 @@
       "id": "Store",
       "route": "/store",
       "type": "store",
-      "title": "Store",
+      "title": "Marketplace",
       "config": {
         "app": "portaliq",
-        "title": "Store",
+        "title": "Marketplace",
         "description": "Install portal configurations that other organisations have published: a theme, a set of pages, or the flows behind a form."
       },
       "_note": "ADR-114 Decision 4 / ADR-080. Declarative: openregister hosts the store plane, so this app writes NO store controller. With no registry configured the page renders the app's built-in items and makes NO network call."
@@ -850,33 +860,82 @@
           {
             "id": "themes-portal-table",
             "title": "Portals and their themes",
-            "type": "table",
+            "type": "object-table",
             "icon": "Palette",
+            "_note": "themes-contrast-column: the rows come from /api/themes/portals, which adds the contrast verdict a theme choice is checked with (PortalThemeContrast) to every published portal.",
             "content": {
-              "register": "portaliq",
-              "schema": "portal",
-              "sort": {
-                "field": "title",
-                "dir": "asc"
+              "endpointSource": {
+                "url": "/apps/portaliq/api/themes/portals",
+                "responsePath": "portals"
               },
               "columns": [
                 {
                   "key": "title",
-                  "label": "Portal"
+                  "label": "Portal",
+                  "secondary": "domain"
                 },
                 {
-                  "key": "theme",
+                  "key": "themeName",
                   "label": "Theme"
                 },
                 {
-                  "key": "status",
-                  "label": "Status"
+                  "key": "contrast",
+                  "label": "Contrast",
+                  "widget": "badge",
+                  "enum": [
+                    "readable",
+                    "poor",
+                    "unchecked"
+                  ],
+                  "enumLabels": {
+                    "readable": "Readable",
+                    "poor": "Hard to read",
+                    "unchecked": "Not checked"
+                  },
+                  "widgetProps": {
+                    "colorMap": {
+                      "readable": "success",
+                      "poor": "warning",
+                      "unchecked": "default"
+                    }
+                  }
+                },
+                {
+                  "key": "houseStyle",
+                  "label": "",
+                  "widget": "link",
+                  "enum": [
+                    "change"
+                  ],
+                  "enumLabels": {
+                    "change": "Change house style"
+                  },
+                  "widgetProps": {
+                    "route": "PortalDetail",
+                    "params": {
+                      "id": "id"
+                    }
+                  }
                 }
               ],
-              "limit": 25,
               "rowRoute": "PortalDetail",
               "viewAllRoute": "Portals",
               "emptyText": "There are no portals yet"
+            }
+          },
+          {
+            "id": "themes-contrast-note",
+            "type": "banner",
+            "content": {
+              "variant": "warning",
+              "lead": "Hard to read:",
+              "text": "the text in the footer does not reach a contrast of 4.5 to 1 with this theme. An editor can still use the theme; that is recorded. You choose the house style at the portal, under Settings.",
+              "visibleWhen": {
+                "endpoint": "/apps/portaliq/api/themes/portals",
+                "field": "poorCount",
+                "op": "gt",
+                "value": 0
+              }
             }
           }
         ],
@@ -912,6 +971,14 @@
             "gridY": 1,
             "gridWidth": 12,
             "gridHeight": 4
+          },
+          {
+            "id": 5,
+            "widgetId": "themes-contrast-note",
+            "gridX": 0,
+            "gridY": 5,
+            "gridWidth": 12,
+            "gridHeight": 1
           }
         ],
         "showActionsMenu": false,
@@ -1535,7 +1602,8 @@
             "key": "displayName",
             "label": "Name",
             "secondary": "{email}",
-            "widget": "avatar"
+            "widget": "avatar",
+            "width": "304px"
           },
           {
             "key": "audience",
@@ -1559,7 +1627,8 @@
               "student": "Student",
               "parent": "Parent",
               "external-employee": "External employee"
-            }
+            },
+            "width": "152px"
           },
           {
             "key": "identityType",
@@ -1579,7 +1648,8 @@
               "generic": "OIDC broker",
               "dev": "Developer sign-in",
               "email": "Account"
-            }
+            },
+            "width": "155px"
           },
           {
             "key": "status",
@@ -1604,13 +1674,18 @@
               "suspended": "Suspended",
               "void": "Withdrawn",
               "removed": "Removed"
-            }
+            },
+            "width": "197px"
           },
           {
             "key": "lastLoginAt",
-            "label": "Last signed in"
+            "label": "Last signed in",
+            "width": "186px"
           }
         ],
+        "pagination": {
+          "limit": 7
+        },
         "showAdd": false,
         "headerActions": [
           {
@@ -1637,16 +1712,19 @@
           },
           {
             "action": "import",
-            "label": "Import"
+            "label": "Import",
+            "icon": "Upload"
           },
           {
             "action": "invite-someone",
-            "label": "Iemand uitnodigen"
+            "label": "Iemand uitnodigen",
+            "icon": "EmailOutline"
           },
           {
             "action": "issue-account",
             "variant": "primary",
-            "label": "Account uitgeven"
+            "label": "Account uitgeven",
+            "icon": "Plus"
           }
         ],
         "quickFilters": [
@@ -1737,7 +1815,19 @@
         "columns": [
           {
             "key": "email",
-            "label": "Email"
+            "label": "Email",
+            "width": "229px",
+            "secondary": "audience",
+            "secondaryLabels": {
+              "audience": {
+                "citizen": "Resident",
+                "client": "Client",
+                "organisation": "Business",
+                "business": "Business",
+                "supplier": "Supplier",
+                "partner": "Partner"
+              }
+            }
           },
           {
             "key": "state",
@@ -1746,10 +1836,10 @@
             "widgetProps": {
               "colorMap": {
                 "sent": "info",
-                "opened": "info",
+                "opened": "purple",
                 "accepted": "success",
-                "expired": "warning",
-                "revoked": "error"
+                "expired": "default",
+                "revoked": "default"
               }
             },
             "enum": [
@@ -1760,28 +1850,54 @@
               "revoked"
             ],
             "enumLabels": {
-              "sent": "Open",
+              "sent": "Sent",
               "opened": "Opened",
               "accepted": "Accepted",
               "expired": "Expired",
               "revoked": "Withdrawn"
-            }
+            },
+            "width": "133px"
           },
           {
             "key": "sentAt",
-            "label": "Sent"
+            "label": "Sent",
+            "width": "163px"
           },
           {
             "key": "expiresAt",
-            "label": "Expires"
+            "label": "Expires",
+            "width": "131px"
           },
           {
             "key": "invitedBy",
-            "label": "Invited by"
+            "label": "Invited by",
+            "width": "187px",
+            "formatter": "userName"
           },
           {
             "key": "organisation",
-            "label": "Organisation"
+            "label": "Organisation",
+            "width": "150px"
+          }
+        ],
+        "pagination": {
+          "limit": 6
+        },
+        "rowTitle": "plain",
+        "rowClass": [
+          {
+            "when": {
+              "field": "state",
+              "value": "sent"
+            },
+            "class": "cn-row--attention"
+          },
+          {
+            "when": {
+              "field": "state",
+              "value": "opened"
+            },
+            "class": "cn-row--attention"
           }
         ],
         "headerActions": [
@@ -1793,6 +1909,8 @@
           }
         ],
         "actions": [
+          "builtin:view",
+          "builtin:edit",
           {
             "id": "resend-invitation",
             "label": "Send again",
@@ -1815,6 +1933,7 @@
             "icon": "Close",
             "type": "handler",
             "handler": "withdrawInvitation",
+            "destructive": true,
             "visibleWhen": {
               "field": "state",
               "op": "neq",
@@ -1833,7 +1952,8 @@
           {
             "action": "invite-someone",
             "variant": "primary",
-            "label": "Iemand uitnodigen"
+            "label": "Iemand uitnodigen",
+            "icon": "EmailFastOutline"
           }
         ],
         "quickFilters": [
@@ -1972,6 +2092,8 @@
               "filter": {
                 "subjectRef": "@object.subjectRef"
               },
+              "sortable": true,
+              "filterable": true,
               "sort": {
                 "field": "issuedAt",
                 "dir": "desc"
@@ -2015,6 +2137,8 @@
               "filter": {
                 "subjectRef": "@object.subjectRef"
               },
+              "sortable": true,
+              "filterable": true,
               "sort": {
                 "field": "receivedAt",
                 "dir": "desc"
@@ -2189,7 +2313,7 @@
         ],
         "showTitle": true,
         "showTitleIcon": false,
-        "countText": "{shown} of {total} sessions",
+        "countText": "{shown} of {total} sessions · a session starts when someone signs in",
         "headerButtons": [
           {
             "action": "export",
@@ -2197,6 +2321,8 @@
           }
         ],
         "actions": [
+          "builtin:view",
+          "builtin:edit",
           {
             "id": "open-session-account",
             "label": "Go to the account",
@@ -2210,6 +2336,7 @@
             "icon": "Close",
             "type": "handler",
             "handler": "revokeSession",
+            "destructive": true,
             "visibleWhen": {
               "field": "revoked",
               "op": "neq",
@@ -2219,12 +2346,6 @@
         ],
         "quickFilters": [
           {
-            "label": "Alles",
-            "filter": {},
-            "showCount": true,
-            "default": true
-          },
-          {
             "label": "Actief",
             "filter": {
               "revoked": false,
@@ -2232,7 +2353,8 @@
                 "gt": "@now"
               }
             },
-            "showCount": true
+            "showCount": true,
+            "default": true
           },
           {
             "label": "Verlopen",
@@ -2400,20 +2522,99 @@
         "widgets": [
           {
             "id": "message-data",
-            "type": "data",
+            "type": "facts",
             "title": "Message",
             "icon": "Email",
             "content": {
-              "columns": 3,
-              "include": [
-                "body",
-                "subjectRef",
-                "receivedAt",
-                "read",
-                "nature",
-                "rechtsgevolg",
-                "term",
-                "referenceId"
+              "fields": [
+                {
+                  "as": "text",
+                  "path": "body"
+                },
+                {
+                  "label": "Recipient",
+                  "path": "subjectRef"
+                },
+                {
+                  "key": "sending",
+                  "label": "Sending",
+                  "parts": [
+                    {
+                      "text": "All recipients of this sending"
+                    }
+                  ],
+                  "when": {
+                    "field": "sendingRef",
+                    "op": "notEmpty"
+                  },
+                  "route": {
+                    "name": "PortalMessages",
+                    "query": {
+                      "sendingRef": "@source.sendingRef"
+                    }
+                  }
+                },
+                {
+                  "label": "Received on",
+                  "path": "receivedAt",
+                  "format": "today-time"
+                },
+                {
+                  "label": "Read",
+                  "path": "readAt",
+                  "format": "today-time",
+                  "emptyValue": "not yet",
+                  "when": {
+                    "field": "readReceiptRequested",
+                    "op": "eq",
+                    "value": true
+                  }
+                },
+                {
+                  "label": "Read",
+                  "path": "read",
+                  "map": {
+                    "true": "yes",
+                    "false": "not yet"
+                  },
+                  "emptyValue": "not yet",
+                  "when": {
+                    "field": "readReceiptRequested",
+                    "op": "neq",
+                    "value": true
+                  }
+                },
+                {
+                  "key": "readReceipt",
+                  "label": "Read receipt",
+                  "parts": [
+                    {
+                      "text": "asked for"
+                    }
+                  ],
+                  "when": {
+                    "field": "readReceiptRequested",
+                    "op": "eq",
+                    "value": true
+                  }
+                },
+                {
+                  "label": "Kind",
+                  "path": "nature"
+                },
+                {
+                  "label": "Legal effect",
+                  "path": "rechtsgevolg"
+                },
+                {
+                  "label": "Deadline",
+                  "path": "term",
+                  "format": "date-long"
+                },
+                {
+                  "label": "Reference",
+                  "path": "referenceId"
+                }
               ]
             }
           },
@@ -2428,7 +2629,15 @@
             "id": "message-history",
             "type": "audit-trail",
             "title": "Historie",
-            "icon": "History"
+            "icon": "History",
+            "content": {
+              "changeLabels": [
+                {
+                  "field": "readAt",
+                  "label": "Read by {object.subjectRef}"
+                }
+              ]
+            }
           }
         ],
         "layout": [
@@ -2500,16 +2709,20 @@
         "columns": [
           {
             "key": "actionId",
-            "label": "Submitted action"
+            "label": "Submitted action",
+            "widget": "action-title",
+            "width": "339px"
           },
           {
             "key": "appId",
-            "label": "App"
+            "label": "App",
+            "width": "134px"
           },
           {
             "key": "submittedAt",
             "label": "Submitted on",
-            "widget": "date"
+            "widget": "date",
+            "width": "212px"
           },
           {
             "key": "deliveryStatus",
@@ -2531,9 +2744,13 @@
               "delivered": "Confirmed",
               "pending": "Waiting",
               "failed": "Failed"
-            }
+            },
+            "width": "286px"
           }
         ],
+        "pagination": {
+          "limit": 8
+        },
         "showTitle": true,
         "showTitleIcon": false,
         "countText": "{shown} of {total} submissions via the portals · with the proof that the resident received a confirmation",
@@ -2574,7 +2791,7 @@
             "showCount": true
           }
         ],
-        "rowTitle": "plain",
+        "rowTitle": "strong",
         "filterMenu": true,
         "viewSwitch": [
           "table",
@@ -2594,6 +2811,7 @@
       "config": {
         "register": "portaliq",
         "schema": "portalSubmission",
+        "titleTemplate": "{actionTitle}",
         "titleField": "actionId",
         "documentationUrl": "https://portaliq.conduction.nl",
         "_note": "Detail in the v2 shape: the body is the grid below and the facts beside it are the sideColumn, History last (the board has no tab strip on this record).",
@@ -2621,6 +2839,7 @@
             "content": {
               "columns": 3,
               "include": [
+                "actionTitle",
                 "actionId",
                 "appId",
                 "submittedAt",
@@ -2628,7 +2847,23 @@
                 "subjectRef",
                 "organisation",
                 "receiptMessageRef"
-              ]
+              ],
+              "overrides": {
+                "actionTitle": {
+                  "label": "Submitted action",
+                  "visibleWhen": {
+                    "field": "actionTitle",
+                    "op": "notEmpty"
+                  }
+                },
+                "actionId": {
+                  "label": "Submitted action",
+                  "visibleWhen": {
+                    "field": "actionTitle",
+                    "op": "empty"
+                  }
+                }
+              }
             }
           },
           {
@@ -2704,8 +2939,7 @@
         "favourite": false,
         "breadcrumb": {
           "label": "Submissions",
-          "route": "PortalSubmissions",
-          "currentField": "actionId"
+          "route": "PortalSubmissions"
         },
         "statusPill": {
           "field": "deliveryStatus",
@@ -2765,7 +2999,167 @@
         "showAdd": false,
         "showTitle": true,
         "showTitleIcon": false,
-        "_note": "intake-report-pages T08 / REQ-IRP-004: the reports the caller handles, read from GET /api/reports through the projection, never from a generic OpenRegister index on portalReport."
+        "_note": "intake-report-pages T08 / REQ-IRP-004: the reports the caller handles, read from GET /api/reports through the projection, never from a generic OpenRegister index on portalReport.",
+        "rowRoute": "AccountlessReportDetail"
+      }
+    },
+    {
+      "id": "AccountlessReportDetail",
+      "route": "/accountless-reports/:id",
+      "type": "detail",
+      "title": "Report without an account",
+      "config": {
+        "entitySource": "endpoint",
+        "sourceConfig": {
+          "url": "/apps/portaliq/api/reports/{id}",
+          "recordPath": "report"
+        },
+        "titleField": "subject",
+        "statusPill": {
+          "field": "state",
+          "colorMap": {
+            "open": "warning",
+            "acknowledged": "info",
+            "closed": "success"
+          }
+        },
+        "breadcrumb": {
+          "label": "Reports without an account",
+          "route": "AccountlessReports"
+        },
+        "notFoundRoute": "AccountlessReports",
+        "notFoundRouteLabel": "Reports without an account",
+        "favourite": false,
+        "follow": false,
+        "markRead": false,
+        "headerActions": [
+          {
+            "id": "report-reply",
+            "label": "Reply",
+            "icon": "Reply",
+            "type": "open-form",
+            "formTitle": "Reply to the report",
+            "endpoint": {
+              "url": "/apps/portaliq/api/reports/@objectId/messages",
+              "method": "POST"
+            },
+            "formProperties": {
+              "body": {
+                "type": "string",
+                "title": "Message",
+                "format": "textarea"
+              },
+              "visibleToReporter": {
+                "type": "boolean",
+                "title": "Visible to the reporter",
+                "default": false
+              }
+            },
+            "successMessage": "Your message is saved."
+          },
+          {
+            "id": "report-request-reveal",
+            "label": "Request reveal",
+            "icon": "EyeOutline",
+            "type": "open-form",
+            "formTitle": "Ask the custodian to reveal the reporter",
+            "endpoint": {
+              "url": "/apps/portaliq/api/reports/@objectId/reveal-requests",
+              "method": "POST"
+            },
+            "formProperties": {
+              "motivation": {
+                "type": "string",
+                "title": "Motivation",
+                "format": "textarea"
+              }
+            },
+            "successMessage": "The custodian has your request."
+          }
+        ],
+        "widgets": [
+          {
+            "id": "report-facts",
+            "type": "facts",
+            "title": "What was reported",
+            "content": {
+              "fields": [
+                {
+                  "path": "subject",
+                  "label": "Subject"
+                },
+                {
+                  "path": "body",
+                  "label": "Message"
+                },
+                {
+                  "path": "caseType",
+                  "label": "Kind of report"
+                },
+                {
+                  "path": "receivedAt",
+                  "label": "Received on",
+                  "format": "datetime"
+                },
+                {
+                  "path": "acknowledgedAt",
+                  "label": "Acknowledged on",
+                  "format": "datetime"
+                },
+                {
+                  "path": "feedbackAt",
+                  "label": "Feedback due on",
+                  "format": "datetime"
+                }
+              ]
+            }
+          },
+          {
+            "id": "report-thread",
+            "type": "record-list",
+            "title": "Conversation with the reporter",
+            "content": {
+              "endpointSource": {
+                "url": "/apps/portaliq/api/reports/@objectId",
+                "method": "GET",
+                "responsePath": "messages"
+              },
+              "presentation": "rows",
+              "title": "{authorName}",
+              "text": "{body}",
+              "trailing": "{writtenAt|date}",
+              "pill": {
+                "field": "visibleToReporter",
+                "labels": {
+                  "true": "Visible to the reporter",
+                  "false": "Internal note"
+                },
+                "colorMap": {
+                  "true": "info",
+                  "false": "neutral"
+                }
+              },
+              "emptyText": "No messages yet."
+            }
+          }
+        ],
+        "layout": [
+          {
+            "id": "1",
+            "widgetId": "report-facts",
+            "gridX": 0,
+            "gridY": 0,
+            "gridWidth": 12
+          },
+          {
+            "id": "2",
+            "widgetId": "report-thread",
+            "gridX": 0,
+            "gridY": 1,
+            "gridWidth": 12
+          }
+        ],
+        "_note": "intake-report-pages T08 / REQ-IRP-004: one report the caller handles, read from GET /api/reports/{id} (the projection, never the contact); the thread from the same answer's messages; reply with the visibility toggle and a reveal request with its motivation post to the report routes, which check the handler first."
       }
     },
     {
@@ -2842,7 +3236,8 @@
           {
             "key": "title",
             "label": "Portal",
-            "secondary": "{domains.0.hostname}"
+            "secondary": "{domains.0.hostname}",
+            "width": "142px"
           },
           {
             "key": "kind",
@@ -2854,15 +3249,18 @@
             "enumLabels": {
               "site": "Website",
               "external": "Umbrella"
-            }
+            },
+            "width": "129px"
           },
           {
             "key": "theme",
-            "label": "Theme"
+            "label": "Theme",
+            "width": "119px"
           },
           {
             "key": "organisation",
-            "label": "Organisation"
+            "label": "Organisation",
+            "width": "153px"
           },
           {
             "key": "pages",
@@ -2874,12 +3272,14 @@
                 "portal": "@self.slug"
               }
             },
-            "sortable": false
+            "sortable": false,
+            "width": "128px"
           },
           {
             "key": "@self.updated",
             "label": "Last published",
-            "widget": "date"
+            "widget": "date",
+            "width": "191px"
           },
           {
             "key": "status",
@@ -2898,7 +3298,8 @@
             "enumLabels": {
               "published": "Published",
               "draft": "Draft"
-            }
+            },
+            "width": "131px"
           }
         ],
         "actions": [
@@ -2920,12 +3321,14 @@
           },
           {
             "action": "import",
-            "label": "Import"
+            "label": "Import",
+            "icon": "Upload"
           },
           {
-            "action": "add",
+            "action": "new-portal",
             "variant": "primary",
-            "label": "New portal"
+            "label": "New portal",
+            "icon": "Plus"
           }
         ],
         "quickFilters": [
@@ -2950,7 +3353,6 @@
             "showCount": true
           }
         ],
-        "rowTitle": "plain",
         "filterMenu": true,
         "viewSwitch": [
           "table",
@@ -2959,7 +3361,16 @@
           "map"
         ],
         "bulkHint": "Copy or delete the selected portals.",
-        "footerNote": "an umbrella portal has no pages of its own, it adds up the traffic of its members"
+        "footerNote": "an umbrella portal has no pages of its own, it adds up the traffic of its members",
+        "showAdd": false,
+        "headerActions": [
+          {
+            "id": "new-portal",
+            "label": "New portal",
+            "icon": "Plus",
+            "handler": "newPortal"
+          }
+        ]
       }
     },
     {
@@ -3293,7 +3704,7 @@
           },
           {
             "id": "portal-notices",
-            "type": "object-list",
+            "type": "index-list",
             "title": "Notices",
             "icon": "BullhornOutline",
             "content": {
@@ -3302,32 +3713,177 @@
               "filter": {
                 "portal": "@object.slug"
               },
-              "sort": {
-                "field": "startsAt",
-                "dir": "desc"
-              },
               "columns": [
                 {
                   "key": "message",
-                  "label": "Notice"
+                  "label": "Announcement",
+                  "width": "193px",
+                  "cellClass": "cn-cell--wrap",
+                  "filterable": false,
+                  "sortable": false,
+                  "secondary": "{level} · shows on {surfaces}",
+                  "secondaryLabels": {
+                    "level": {
+                      "info": "Information",
+                      "warning": "Warning"
+                    },
+                    "surfaces": {
+                      "site": "website",
+                      "portal": "Signed-in portal"
+                    }
+                  }
                 },
                 {
                   "key": "startsAt",
-                  "label": "Visible from"
+                  "label": "Visible from",
+                  "width": "140px",
+                  "widget": "date",
+                  "widgetProps": {
+                    "relative": true,
+                    "showTime": true
+                  },
+                  "filterable": false,
+                  "sortable": true
                 },
                 {
                   "key": "endsAt",
-                  "label": "Until"
+                  "label": "Until",
+                  "width": "122px",
+                  "widget": "date",
+                  "widgetProps": {
+                    "relative": true,
+                    "showTime": true
+                  },
+                  "filterable": false,
+                  "sortable": false
                 },
                 {
                   "key": "status",
-                  "label": "Status"
+                  "label": "Status",
+                  "width": "131px",
+                  "widget": "badge",
+                  "filterable": false,
+                  "sortable": false,
+                  "widgetProps": {
+                    "colorMap": {
+                      "visible": "success",
+                      "published": "info",
+                      "draft": "warning",
+                      "expired": "default"
+                    }
+                  },
+                  "enum": [
+                    "published",
+                    "draft"
+                  ],
+                  "enumLabels": {
+                    "visible": "Visible now",
+                    "published": "Published",
+                    "draft": "Draft",
+                    "expired": "Expired"
+                  },
+                  "valueWhen": [
+                    {
+                      "when": [
+                        {
+                          "field": "status",
+                          "value": "published"
+                        },
+                        {
+                          "field": "startsAt",
+                          "op": "lte",
+                          "value": "@now"
+                        },
+                        {
+                          "field": "endsAt",
+                          "op": "gte",
+                          "value": "@now"
+                        }
+                      ],
+                      "value": "visible"
+                    },
+                    {
+                      "when": [
+                        {
+                          "field": "status",
+                          "value": "published"
+                        },
+                        {
+                          "field": "endsAt",
+                          "op": "lt",
+                          "value": "@now"
+                        }
+                      ],
+                      "value": "expired"
+                    }
+                  ]
                 }
               ],
-              "limit": 25,
-              "rowRoute": "NoticeDetail",
-              "viewAllRoute": "Notices",
-              "emptyText": "This portal has no notices yet"
+              "rowIcon": {
+                "field": "level",
+                "icons": {
+                  "warning": "AlertOutline",
+                  "info": "InformationOutline"
+                },
+                "tones": {
+                  "warning": "warning"
+                },
+                "icon": "InformationOutline"
+              },
+              "quickFilters": [
+                {
+                  "label": "Alles",
+                  "filter": {},
+                  "showCount": true,
+                  "default": true
+                },
+                {
+                  "label": "Visible now",
+                  "filter": {
+                    "status": "published",
+                    "startsAt": {
+                      "lte": "@now"
+                    },
+                    "endsAt": {
+                      "gte": "@now"
+                    }
+                  },
+                  "showCount": true
+                },
+                {
+                  "label": "Upcoming",
+                  "filter": {
+                    "status": "published",
+                    "startsAt": {
+                      "gt": "@now"
+                    }
+                  },
+                  "showCount": true
+                },
+                {
+                  "label": "Concept",
+                  "filter": {
+                    "status": "draft"
+                  },
+                  "showCount": true
+                }
+              ],
+              "filterMenu": true,
+              "viewSwitch": [
+                "table",
+                "cards",
+                "board",
+                "map"
+              ],
+              "selectable": true,
+              "defaultOrder": "-startsAt",
+              "pagination": {
+                "limit": 6
+              },
+              "footerNote": "only published and within the period visible",
+              "showAdd": false,
+              "emptyText": "This portal has no notices yet",
+              "rowRoute": "NoticeDetail"
             }
           },
           {
@@ -3478,6 +4034,16 @@
                   "widgetId": "portal-settings-accessibility"
                 },
                 {
+                  "key": "help",
+                  "title": "Help on forms",
+                  "widgetId": "portal-settings-help"
+                },
+                {
+                  "key": "section-help",
+                  "title": "Help per part of Mijn omgeving",
+                  "widgetId": "portal-settings-section-help"
+                },
+                {
                   "key": "editors",
                   "title": "Administrators",
                   "widgetId": "portal-editors"
@@ -3513,6 +4079,20 @@
                 {
                   "key": "organisation",
                   "label": "Organisation"
+                },
+                {
+                  "key": "organisationType",
+                  "label": "Organisation type",
+                  "type": "reference",
+                  "register": "vocabulary",
+                  "schema": "concept",
+                  "labelField": "prefLabel.nl",
+                  "filter": {
+                    "inScheme": "@object.organisationTypeSchemeId"
+                  },
+                  "valueTemplate": "{uri}",
+                  "emptyLabel": "No organisation type",
+                  "hint": "From the TOOI list of organisation types. The site names the organisation's kind with it. When the list offers nothing, it is not installed in the concept register yet, or the portal has not been saved since."
                 },
                 {
                   "key": "kind",
@@ -3589,6 +4169,38 @@
                   "freePatternMessage": "A logo address starts with /, http:// or https://."
                 },
                 {
+                  "key": "favicon",
+                  "label": "Favicon",
+                  "type": "reference",
+                  "register": "portaliq",
+                  "schema": "media",
+                  "labelField": "title",
+                  "filter": {
+                    "kind": "image",
+                    "status": "published",
+                    "portal": "@object.slug"
+                  },
+                  "valueTemplate": "media:{id}",
+                  "emptyLabel": "No favicon",
+                  "hint": "A PNG, SVG or ICO from Media of this portal, shown as the tab icon. Without one the tab shows the logo."
+                },
+                {
+                  "key": "heroImage",
+                  "label": "Hero image",
+                  "type": "reference",
+                  "register": "portaliq",
+                  "schema": "media",
+                  "labelField": "title",
+                  "filter": {
+                    "kind": "image",
+                    "status": "published",
+                    "portal": "@object.slug"
+                  },
+                  "valueTemplate": "media:{id}",
+                  "emptyLabel": "No hero image",
+                  "hint": "A published image from Media of this portal, shown by a home page hero that has no image of its own."
+                },
+                {
                   "key": "frameAncestors",
                   "label": "May be embedded on",
                   "type": "chips",
@@ -3598,6 +4210,119 @@
                   "pattern": "^https?://[A-Za-z0-9.-]+(:[0-9]+)?$",
                   "patternMessage": "An address looks like https://www.example.nl.",
                   "wide": true
+                }
+              ]
+            }
+          },
+          {
+            "id": "portal-settings-help",
+            "type": "settings-form",
+            "title": "Help on forms",
+            "content": {
+              "columns": 2,
+              "saveLabel": "Save",
+              "savedText": "The portal is saved.",
+              "fields": [
+                {
+                  "key": "help.intro",
+                  "label": "Introduction",
+                  "type": "textarea",
+                  "rows": 3,
+                  "wide": true,
+                  "hint": "Opens the \"Hulp nodig?\" dialog on every form. A form may override each of these details; with none set, forms show no \"Hulp nodig?\"."
+                },
+                {
+                  "key": "help.phone",
+                  "label": "Phone",
+                  "placeholder": "14 0123"
+                },
+                {
+                  "key": "help.phoneNote",
+                  "label": "What to say on the phone",
+                  "hint": "May name the form with {formulier}."
+                },
+                {
+                  "key": "help.hours",
+                  "label": "Opening hours"
+                },
+                {
+                  "key": "help.email",
+                  "label": "E-mail",
+                  "pattern": "^$|^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$",
+                  "patternMessage": "An e-mail address looks like info@example.nl."
+                },
+                {
+                  "key": "help.desk",
+                  "label": "Desk",
+                  "type": "textarea",
+                  "rows": 2,
+                  "wide": true,
+                  "hint": "Where to go in person, and what to do first."
+                },
+                {
+                  "key": "help.image",
+                  "label": "Image",
+                  "type": "reference",
+                  "register": "portaliq",
+                  "schema": "media",
+                  "labelField": "title",
+                  "filter": {
+                    "kind": "image",
+                    "status": "published",
+                    "portal": "@object.slug"
+                  },
+                  "valueTemplate": "/apps/portaliq/api/content/media/{id}?portal={portal}",
+                  "emptyLabel": "No image",
+                  "hint": "A published image from Media of this portal, or the address of an image.",
+                  "free": true,
+                  "freeLabel": "Or a web address",
+                  "freePlaceholder": "https://www.example.nl/help.jpg",
+                  "freePattern": "^(/(?!/)\\S*|https://\\S+)$",
+                  "freePatternMessage": "An image address starts with / or https://.",
+                  "wide": true
+                }
+              ]
+            }
+          },
+          {
+            "id": "portal-settings-section-help",
+            "type": "settings-form",
+            "title": "Help per part of Mijn omgeving",
+            "content": {
+              "columns": 1,
+              "saveLabel": "Save",
+              "savedText": "The portal is saved.",
+              "fields": [
+                {
+                  "key": "sectionHelp.overview",
+                  "label": "Overview",
+                  "type": "textarea",
+                  "rows": 2,
+                  "hint": "A part with a text shows \"Hulp bij deze pagina\" under its heading; a part without shows nothing."
+                },
+                {
+                  "key": "sectionHelp.cases",
+                  "label": "Cases",
+                  "type": "textarea",
+                  "rows": 2
+                },
+                {
+                  "key": "sectionHelp.tasks",
+                  "label": "Tasks",
+                  "type": "textarea",
+                  "rows": 2
+                },
+                {
+                  "key": "sectionHelp.messages",
+                  "label": "Messages",
+                  "type": "textarea",
+                  "rows": 2
+                },
+                {
+                  "key": "sectionHelp.contacts",
+                  "label": "Contacts",
+                  "type": "textarea",
+                  "rows": 2
                 }
               ]
             }
@@ -3662,7 +4387,17 @@
                   "template": "Publish this TXT record: {name} = {value}",
                   "when": {
                     "verified": false
-                  }
+                  },
+                  "copy": [
+                    {
+                      "path": "name",
+                      "label": "Copy name"
+                    },
+                    {
+                      "path": "value",
+                      "label": "Copy value"
+                    }
+                  ]
                 }
               },
               "add": {
@@ -3963,24 +4698,55 @@
         ],
         "headerActions": [
           {
-            "id": "view-site",
-            "label": "View website",
-            "icon": "OpenInNew",
-            "href": "/apps/portaliq/site?route=%2F&portal=@object.slug",
+            "id": "view-website",
+            "label": "Website bekijken",
+            "icon": "EyeOutline",
+            "href": "/apps/portaliq/site?portal=@object.slug",
             "target": "_blank"
+          },
+          {
+            "id": "new-notice",
+            "label": "New notice",
+            "icon": "Plus",
+            "type": "navigate",
+            "target": "Notices",
+            "variant": "primary"
           }
         ],
         "quickActions": [
-          "view-site"
-        ]
-      },
-      "primaryAction": {
-        "id": "new-page",
-        "label": "New page",
-        "icon": "Plus",
-        "route": "Pages",
-        "query": {
-          "action": "create"
+          "view-website"
+        ],
+        "primaryActionByStage": {
+          "published": {
+            "id": "new-notice",
+            "label": "New notice",
+            "icon": "Plus",
+            "type": "navigate",
+            "target": "Notices",
+            "tabs": [
+              "portal-notices"
+            ]
+          },
+          "draft": {
+            "id": "new-notice",
+            "label": "New notice",
+            "icon": "Plus",
+            "type": "navigate",
+            "target": "Notices",
+            "tabs": [
+              "portal-notices"
+            ]
+          }
+        },
+        "headerMeta": "{domains.0.hostname} · theme {theme} · {count:pages} pages",
+        "headerMetaCounts": {
+          "pages": {
+            "register": "portaliq",
+            "schema": "page",
+            "filter": {
+              "portal": "@object.slug"
+            }
+          }
         }
       }
     },
@@ -4086,6 +4852,14 @@
                 "published": "success",
                 "draft": "warning"
               }
+            },
+            "enum": [
+              "published",
+              "draft"
+            ],
+            "enumLabels": {
+              "published": "Public",
+              "draft": "Draft"
             }
           },
           "locale"
@@ -4097,6 +4871,18 @@
             "icon": "ViewDashboardOutline",
             "type": "open-page",
             "target": "PageLayout"
+          },
+          {
+            "id": "take-page-back-to-draft",
+            "label": "Take back to draft",
+            "icon": "Close",
+            "type": "handler",
+            "handler": "takePageBackToDraft",
+            "visibleWhen": {
+              "field": "status",
+              "op": "eq",
+              "value": "published"
+            }
           }
         ],
         "sidebar": {
@@ -4127,12 +4913,22 @@
         ],
         "headerActions": [
           {
+            "id": "view-page",
+            "label": "View",
+            "icon": "EyeOutline",
+            "href": "/apps/portaliq/site?route=@object.route&portal=@object.portal",
+            "target": "_blank"
+          },
+          {
             "id": "edit-layout",
             "label": "Edit layout",
             "icon": "ViewDashboardOutline",
             "type": "open-page",
             "target": "PageLayout"
           }
+        ],
+        "quickActions": [
+          "view-page"
         ],
         "sidebar": {
           "enabled": true,
@@ -4349,6 +5145,26 @@
             }
           },
           {
+            "id": "page-help",
+            "type": "settings-form",
+            "title": "Help text",
+            "icon": "HelpCircleOutline",
+            "content": {
+              "columns": 1,
+              "saveLabel": "Save",
+              "savedText": "The page is saved.",
+              "fields": [
+                {
+                  "key": "helpText",
+                  "label": "Help text",
+                  "type": "textarea",
+                  "rows": 4,
+                  "hint": "When set, the page shows \"Hulp bij deze pagina\" under its heading, closed until a visitor opens it. Empty shows nothing."
+                }
+              ]
+            }
+          },
+          {
             "id": "page-traffic-incoming",
             "type": "PageTrafficFlow",
             "title": "Incoming traffic",
@@ -4386,8 +5202,17 @@
                   "label": "Overzicht"
                 },
                 {
+                  "id": "layout",
+                  "widgetId": "page-layout",
+                  "label": "Layout"
+                },
+                {
                   "widgetId": "page-search",
                   "label": "Zoekmachines"
+                },
+                {
+                  "widgetId": "page-help",
+                  "label": "Hulp"
                 },
                 {
                   "widgetIds": [
@@ -4433,10 +5258,17 @@
                 }
               ]
             }
+          },
+          {
+            "id": "page-layout",
+            "type": "PageLayoutEditor",
+            "title": "Layout",
+            "content": {}
           }
         ],
         "tabsLabel": "Onderdelen van de pagina"
-      }
+      },
+      "tabInAddress": true
     },
     {
       "id": "PageLayout",
@@ -4458,20 +5290,28 @@
         "columns": [
           {
             "key": "displayName",
-            "label": "Requester"
+            "label": "Requester",
+            "widget": "avatar",
+            "widgetProps": {
+              "tone": "neutral"
+            },
+            "width": "163px"
           },
           {
             "key": "onBehalfOf",
-            "label": "Access requested to"
+            "label": "Access requested to",
+            "width": "195px"
           },
           {
             "key": "reason",
-            "label": "Reason"
+            "label": "Reason",
+            "width": "262px"
           },
           {
             "key": "requestedAt",
             "label": "Requested on",
-            "widget": "date"
+            "widget": "date",
+            "width": "178px"
           },
           {
             "key": "state",
@@ -4490,13 +5330,31 @@
               "refused"
             ],
             "enumLabels": {
-              "pending": "Awaiting a decision",
-              "granted": "Granted",
+              "pending": "Open",
+              "granted": "Approved",
               "refused": "Refused"
-            }
+            },
+            "width": "194px",
+            "secondary": [
+              "by {decidedBy|user}, {decidedAt|date}"
+            ]
+          }
+        ],
+        "pagination": {
+          "limit": 8
+        },
+        "rowClass": [
+          {
+            "when": {
+              "field": "state",
+              "value": "pending"
+            },
+            "class": "cn-row--attention"
           }
         ],
         "actions": [
+          "builtin:view",
+          "builtin:edit",
           {
             "id": "grant",
             "label": "Approve",
@@ -4509,7 +5367,8 @@
             "label": "Refuse with a reason",
             "icon": "Close",
             "type": "handler",
-            "handler": "refuseAccessRequest"
+            "handler": "refuseAccessRequest",
+            "destructive": true
           }
         ],
         "showTitle": true,
@@ -4633,6 +5492,7 @@
         ],
         "showTitle": true,
         "showTitleIcon": false,
+        "rowTitle": "text",
         "countText": "{shown} of {total} entries on the portals · which form each entry opens, for whom",
         "headerButtons": [
           {
@@ -4835,6 +5695,32 @@
             }
           },
           {
+            "id": "binding-intro",
+            "type": "settings-form",
+            "title": "Introduction",
+            "content": {
+              "columns": 2,
+              "saveLabel": "Save",
+              "savedText": "The form settings are saved.",
+              "fields": [
+                {
+                  "key": "intro.enabled",
+                  "label": "Open the form with an introduction page",
+                  "type": "switch",
+                  "default": true,
+                  "hint": "Off: the form opens at step 1. The introduction's text is kept."
+                },
+                {
+                  "key": "intro.lead",
+                  "label": "Introduction text",
+                  "type": "textarea",
+                  "rows": 3,
+                  "hint": "The opening sentence under the form's heading."
+                }
+              ]
+            }
+          },
+          {
             "id": "binding-general",
             "type": "sections",
             "title": "Algemeen",
@@ -4847,6 +5733,11 @@
                   "widgetId": "binding-form"
                 },
                 {
+                  "key": "intro",
+                  "title": "Introduction",
+                  "widgetId": "binding-intro"
+                },
+                {
                   "key": "signin",
                   "title": "Sign in",
                   "widgetId": "binding-signin"
@@ -4855,6 +5746,136 @@
                   "key": "status",
                   "title": "Status",
                   "widgetId": "binding-status"
+                }
+              ]
+            }
+          },
+          {
+            "id": "binding-availability",
+            "type": "settings-form",
+            "title": "Availability",
+            "content": {
+              "columns": 2,
+              "saveLabel": "Save",
+              "savedText": "The form settings are saved.",
+              "fields": [
+                {
+                  "key": "availability.activeFrom",
+                  "label": "Active from",
+                  "placeholder": "2026-01-01",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                  "patternMessage": "Write a date as 2026-01-31.",
+                  "hint": "The first day the form takes submissions. Empty: open now."
+                },
+                {
+                  "key": "availability.activeUntil",
+                  "label": "Active until",
+                  "placeholder": "2026-12-31",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                  "patternMessage": "Write a date as 2026-01-31.",
+                  "hint": "The last day the form takes submissions. Empty: no end date."
+                },
+                {
+                  "key": "availability.limit.count",
+                  "label": "At most this many submissions",
+                  "type": "number",
+                  "min": 1,
+                  "hint": "Empty: no limit."
+                },
+                {
+                  "key": "availability.limit.per",
+                  "label": "Counted per",
+                  "type": "select",
+                  "options": [
+                    {
+                      "value": "month",
+                      "label": "Calendar month"
+                    },
+                    {
+                      "value": "year",
+                      "label": "Calendar year"
+                    },
+                    {
+                      "value": "total",
+                      "label": "Whole period"
+                    }
+                  ],
+                  "default": "month"
+                },
+                {
+                  "key": "availability.reopensOn",
+                  "label": "Open again on",
+                  "placeholder": "2027-01-05",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                  "patternMessage": "Write a date as 2026-01-31.",
+                  "hint": "Shown to the resident once the limit is reached."
+                },
+                {
+                  "key": "availability.replacedBy",
+                  "label": "Replaced by the form at",
+                  "placeholder": "/aanvragen/nieuw-formulier",
+                  "pattern": "^/\\S*$",
+                  "patternMessage": "A route on this portal starts with /.",
+                  "hint": "The route of the form that replaced this one. The resident is sent there."
+                },
+                {
+                  "key": "availability.maintenance.from",
+                  "label": "Maintenance from",
+                  "placeholder": "2026-10-09T18:00",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}$",
+                  "patternMessage": "Write a moment as 2026-10-09T18:00.",
+                  "hint": "Local time."
+                },
+                {
+                  "key": "availability.maintenance.until",
+                  "label": "Maintenance until",
+                  "placeholder": "2026-10-09T22:00",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}$",
+                  "patternMessage": "Write a moment as 2026-10-09T18:00.",
+                  "hint": "Local time."
+                },
+                {
+                  "key": "availability.maintenance.text",
+                  "label": "Maintenance text",
+                  "type": "textarea",
+                  "rows": 2,
+                  "hint": "Shown to the resident during maintenance."
+                }
+              ]
+            }
+          },
+          {
+            "id": "binding-counter",
+            "type": "stat",
+            "title": "Submissions in this period",
+            "content": {
+              "label": "Submissions in this period",
+              "layout": "stacked",
+              "endpointSource": {
+                "url": "/apps/portaliq/api/form-bindings/@objectId/counter"
+              },
+              "valueField": "count",
+              "limitField": "limit",
+              "limitStyle": "of",
+              "emptyText": "No limit set"
+            }
+          },
+          {
+            "id": "binding-availability-tab",
+            "type": "sections",
+            "title": "Beschikbaarheid",
+            "content": {
+              "cards": true,
+              "sections": [
+                {
+                  "key": "counter",
+                  "title": "Status",
+                  "widgetId": "binding-counter"
+                },
+                {
+                  "key": "availability",
+                  "title": "Availability",
+                  "widgetId": "binding-availability"
                 }
               ]
             }
@@ -4927,7 +5948,8 @@
                 {
                   "key": "cosign.required",
                   "label": "A second person must co-sign",
-                  "type": "switch"
+                  "type": "switch",
+                  "hint": "Off: no second signer is needed."
                 },
                 {
                   "key": "cosign.deadlineDays",
@@ -4956,6 +5978,10 @@
                 {
                   "widgetId": "binding-general",
                   "label": "Algemeen"
+                },
+                {
+                  "widgetId": "binding-availability-tab",
+                  "label": "Beschikbaarheid"
                 },
                 {
                   "widgetId": "binding-confirmation",
@@ -5433,12 +6459,14 @@
         "columns": [
           {
             "key": "title",
-            "label": "Title"
+            "label": "Title",
+            "width": "340px"
           },
           {
             "key": "target",
             "label": "Audience",
-            "widget": "news-target"
+            "widget": "news-target",
+            "width": "216px"
           },
           {
             "key": "status",
@@ -5457,17 +6485,23 @@
             "enumLabels": {
               "published": "Published",
               "draft": "Draft"
-            }
+            },
+            "width": "131px"
           },
           {
             "key": "publishedAt",
-            "label": "Published"
+            "label": "Published",
+            "width": "181px"
           },
           {
             "key": "authorRef",
-            "label": "Author"
+            "label": "Author",
+            "width": "124px"
           }
         ],
+        "pagination": {
+          "limit": 6
+        },
         "headerActions": [
           {
             "id": "new-news-item",
@@ -5511,6 +6545,7 @@
         ],
         "showTitle": true,
         "showTitleIcon": false,
+        "rowTitle": "strong",
         "countText": "{shown} of {total} news items",
         "headerButtons": [
           {
@@ -5520,7 +6555,8 @@
           {
             "action": "new-news-item",
             "variant": "primary",
-            "label": "Nieuw nieuwsbericht"
+            "label": "Nieuw nieuwsbericht",
+            "icon": "Plus"
           }
         ],
         "quickFilters": [
@@ -5555,15 +6591,224 @@
       }
     },
     {
+      "id": "Articles",
+      "route": "/articles",
+      "type": "index",
+      "title": "Articles",
+      "config": {
+        "register": "portaliq",
+        "schema": "article",
+        "_note": "Marketing articles, moved here from pipelinq (marketing-articles-from-pipelinq): reusable public text that a page, a mailing and a post each render their own way. Opens as a table; the cards view shows hero image, title, summary and status. Every write goes through ArticleController (author stamp, slug, first-publish moment, the agent mark a client cannot set), so the object form is off: New article opens ArticleNew, a row opens ArticleDetail.",
+        "showAdd": false,
+        "showFormDialog": false,
+        "showEditAction": false,
+        "showCopyAction": false,
+        "showMassImport": false,
+        "showMassCopy": false,
+        "columns": [
+          {
+            "key": "title",
+            "label": "Title",
+            "width": "340px"
+          },
+          {
+            "key": "status",
+            "label": "Status",
+            "widget": "badge",
+            "widgetProps": {
+              "colorMap": {
+                "published": "success",
+                "review": "info",
+                "draft": "warning",
+                "archived": "neutral"
+              }
+            },
+            "enum": [
+              "draft",
+              "review",
+              "published",
+              "archived"
+            ],
+            "enumLabels": {
+              "draft": "Draft",
+              "review": "In review",
+              "published": "Published",
+              "archived": "Archived"
+            },
+            "width": "131px"
+          },
+          {
+            "key": "language",
+            "label": "Language",
+            "width": "100px"
+          },
+          {
+            "key": "publishedAt",
+            "label": "Published",
+            "width": "181px"
+          }
+        ],
+        "showTitle": true,
+        "showTitleIcon": false,
+        "rowTitle": "strong",
+        "countText": "{shown} of {total} articles",
+        "headerActions": [
+          {
+            "id": "new-article",
+            "label": "New article",
+            "icon": "Plus",
+            "handler": "navigate",
+            "route": "ArticleNew"
+          }
+        ],
+        "quickFilters": [
+          {
+            "label": "All",
+            "filter": {},
+            "showCount": true,
+            "default": true
+          },
+          {
+            "label": "Published",
+            "filter": {
+              "status": "published"
+            },
+            "showCount": true
+          },
+          {
+            "label": "In review",
+            "filter": {
+              "status": "review"
+            },
+            "showCount": true
+          },
+          {
+            "label": "Draft",
+            "filter": {
+              "status": "draft"
+            },
+            "showCount": true
+          }
+        ],
+        "viewSwitch": [
+          "table",
+          "cards"
+        ]
+      }
+    },
+    {
+      "id": "ArticleNew",
+      "route": "/articles/new",
+      "type": "custom",
+      "title": "New article",
+      "component": "ArticleFormView",
+      "_note": "Mounts ArticleEditModal in create mode (marketing-articles-from-pipelinq): the markdown editor and the Files hero-image picker live in that one modal, and the create goes through ArticleController, which a declarative create dialog cannot do.",
+      "config": {
+        "register": "portaliq",
+        "schema": "article"
+      }
+    },
+    {
+      "id": "ArticleDetail",
+      "route": "/articles/:id",
+      "type": "detail",
+      "title": "Article",
+      "config": {
+        "register": "portaliq",
+        "schema": "article",
+        "_note": "One article (marketing-articles-from-pipelinq). ArticleContentSection leads: the rendered body, the hero image, the agent mark, Edit and the lifecycle moves, all through ArticleController. The data widget shows the article's own fields. ArticleUsageSection answers where the article is used, asked from every app through ArticleUsagesRequestedEvent.",
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true
+        },
+        "widgets": [
+          {
+            "id": "article-content",
+            "type": "ArticleContentSection",
+            "title": "Article",
+            "icon": "NewspaperVariantOutline",
+            "content": {}
+          },
+          {
+            "id": "article-data",
+            "type": "data",
+            "title": "Article details",
+            "icon": "InformationOutline",
+            "content": {
+              "columns": 2,
+              "include": [
+                "status",
+                "language",
+                "author",
+                "publishedAt",
+                "slug",
+                "tags",
+                "portalPageRef",
+                "legacyRef"
+              ]
+            }
+          },
+          {
+            "id": "article-usage",
+            "type": "ArticleUsageSection",
+            "title": "Where this is used",
+            "icon": "LinkVariant",
+            "content": {}
+          },
+          {
+            "id": "article-history",
+            "type": "audit-trail",
+            "title": "History",
+            "icon": "History"
+          }
+        ],
+        "layout": [
+          {
+            "id": "article-content",
+            "widgetId": "article-content",
+            "gridX": 0,
+            "gridY": 0,
+            "gridWidth": 12,
+            "gridHeight": 10
+          },
+          {
+            "id": "article-data",
+            "widgetId": "article-data",
+            "gridX": 0,
+            "gridY": 10,
+            "gridWidth": 12,
+            "gridHeight": 5
+          },
+          {
+            "id": "article-usage",
+            "widgetId": "article-usage",
+            "gridX": 0,
+            "gridY": 15,
+            "gridWidth": 12,
+            "gridHeight": 4
+          },
+          {
+            "id": "article-history",
+            "widgetId": "article-history",
+            "gridX": 0,
+            "gridY": 19,
+            "gridWidth": 12,
+            "gridHeight": 5
+          }
+        ]
+      }
+    },
+    {
       "id": "Flows",
       "route": "/flows",
       "type": "index",
       "title": "Flows",
       "config": {
         "entitySource": "flows",
-        "app": "portaliq"
+        "app": "portaliq",
+        "rowRoute": "FlowDetail"
       },
-      "_note": "ADR-110 Decision 4: a flow is app-specific, so the authoring surface lives here rather than behind a deep link to another app's list. An ordinary index over the named `flows` source (config.entitySource) rather than the deprecated `flows` page type, reading OpenRegister's one native flow store (ADR-065), scoped to this app by config.app."
+      "_note": "ADR-110 Decision 4: a flow is app-specific, so the authoring surface lives here rather than behind a deep link to another app's list. An ordinary index over the named `flows` source (config.entitySource) rather than the deprecated `flows` page type, reading OpenRegister's one native flow store (ADR-065), scoped to this app by config.app. rowRoute names the FlowDetail page (a route name, not a path): a named-source page has no register and schema, so without it a row click opens nothing and Edit falls back to the source's own /flows path."
     },
     {
       "id": "FlowDetail",
@@ -5571,6 +6816,8 @@
       "type": "flow",
       "title": "Flow",
       "config": {
+        "listMode": true,
+        "testPayload": true,
         "app": "portaliq"
       },
       "sidebarComponent": "FlowDetailSidebar",
@@ -5740,7 +6987,7 @@
       "config": {
         "register": "portaliq",
         "schema": "portalMailTemplate",
-        "_note": "The text of each kind of mail, per portal (mail-templates-admin-screen). A stored active text replaces the default; a text with a variable its kind does not declare is ignored. Preview and the test mail go through MailTemplateAdminController.",
+        "_note": "The text of each kind of mail, per portal (mail-templates-admin-screen). A stored active text replaces the default; a text with a variable its kind does not declare is ignored. Preview and the test mail go through MailTemplateAdminController. 'New mail text' and 'Change' open MailTemplateDialog, where CnMarkdownEditor inserts the kind's variables and names an unknown one; a text with one is not saved. 'Back to the default text' removes the stored row.",
         "columns": [
           {
             "key": "templateKey",
@@ -5777,6 +7024,12 @@
           {
             "action": "export",
             "label": "Download"
+          },
+          {
+            "action": "new-mail-template",
+            "variant": "primary",
+            "label": "New mail text",
+            "icon": "Plus"
           }
         ],
         "quickFilters": [
@@ -5787,7 +7040,32 @@
             "default": true
           }
         ],
-        "showAdd": false
+        "showAdd": false,
+        "headerActions": [
+          {
+            "id": "new-mail-template",
+            "label": "New mail text",
+            "icon": "Plus",
+            "handler": "newMailTemplate"
+          }
+        ],
+        "actions": [
+          {
+            "id": "change-mail-template",
+            "label": "Change",
+            "icon": "Pencil",
+            "type": "handler",
+            "handler": "editMailTemplate"
+          },
+          {
+            "id": "reset-mail-template",
+            "label": "Back to the default text",
+            "icon": "Restore",
+            "type": "handler",
+            "handler": "resetMailTemplate",
+            "destructive": true
+          }
+        ]
       }
     },
     {
@@ -6122,7 +7400,7 @@
         "Submissions": "Inzendingen",
         "Request forms": "Aanvraagformulieren",
         "Documentation": "Documentatie",
-        "Store": "Store",
+        "Marketplace": "Marktplaats",
         "Reports": "Rapporten",
         "Features & roadmap": "Functies en roadmap",
         "Flows": "Flows",
@@ -6297,7 +7575,14 @@
         "Upload": "Uploaden",
         "{shown} of {total} submissions via the portals · with the proof that the resident received a confirmation": "{shown} van {total} inzendingen via de portals · met het bewijs dat de inwoner een ontvangstbevestiging kreeg",
         "{shown} of {total} accounts · who may sign in, and how": "{shown} van {total} accounts · wie mag inloggen, en hoe",
-        "View website": "Website bekijken"
+        "{shown} of {total} sessions · a session starts when someone signs in": "{shown} van {total} sessies · een sessie ontstaat bij het inloggen",
+        "Contrast": "Contrast",
+        "Readable": "Leesbaar",
+        "Hard to read": "Slecht leesbaar",
+        "Not checked": "Niet gecontroleerd",
+        "Change house style": "Huisstijl wijzigen",
+        "Hard to read:": "Slecht leesbaar:",
+        "the text in the footer does not reach a contrast of 4.5 to 1 with this theme. An editor can still use the theme; that is recorded. You choose the house style at the portal, under Settings.": "de tekst in de voet haalt met dit thema geen contrast van 4,5 op 1. Een redacteur kan het thema toch gebruiken; dat wordt vastgelegd. De huisstijl kiest u bij de portal, onder Instellingen."
       }
     }
   }

@@ -44,11 +44,12 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\NextcloudRegistrationDoorInterface;
+use OCA\Portaliq\Service\PublishedPortals;
 use OCP\App\IAppManager;
 use OCP\Exceptions\AppConfigTypeConflictException;
 use OCP\IAppConfig;
-use OCA\Portaliq\AppInfo\Application;
 use OCP\IGroupManager;
 use OCP\IURLGenerator;
 use OCP\IUser;
@@ -58,16 +59,7 @@ use OCP\IUser;
  *
  * @spec openspec/changes/nextcloud-account-registration/specs/portal-nextcloud-account-login/spec.md#requirement-the-sign-in-page-leads-to-nextclouds-own-registration-req-ncl-005
  */
-class NextcloudRegistrationDoor {
-	/**
-	 * The Nextcloud app that lets a visitor make their own account.
-	 */
-	public const REGISTRATION_APP = 'registration';
-
-	/**
-	 * The registration app's setting that names the group new users join.
-	 */
-	public const REGISTRATION_GROUP_KEY = 'registered_user_group';
+class NextcloudRegistrationDoor implements NextcloudRegistrationDoorInterface {
 
 	/**
 	 * The registration app's email form.
@@ -96,7 +88,7 @@ class NextcloudRegistrationDoor {
 	 * @param IAppConfig     $appConfig The registration app's group setting.
 	 * @param IURLGenerator  $urls      Builds the addresses.
 	 * @param IGroupManager  $groups    Group membership.
-	 * @param PortalResolver $portals   The published portals.
+	 * @param PublishedPortals $portals   The published portals.
 	 * @param NextcloudAccountProvisioner|null $provisioner Writes a resident's first account.
 	 */
 	public function __construct(
@@ -104,7 +96,7 @@ class NextcloudRegistrationDoor {
 		private readonly IAppConfig $appConfig,
 		private readonly IURLGenerator $urls,
 		private readonly IGroupManager $groups,
-		private readonly PortalResolver $portals,
+		private readonly PublishedPortals $portals,
 		private readonly ?NextcloudAccountProvisioner $provisioner = null,
 	) {
 	}//end __construct()
@@ -287,7 +279,7 @@ class NextcloudRegistrationDoor {
 		}
 
 		$provisioned = $this->provisioner->provision(
-			appId: Application::APP_ID,
+			appId: AppIdentity::APP_ID,
 			uid: $user->getUID(),
 			portal: (string)($portal['slug'] ?? ''),
 			audience: $audience,

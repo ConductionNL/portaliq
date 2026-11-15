@@ -40,6 +40,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\PublicNewsReaderInterface;
 use OCA\Portaliq\Service\Cms\MediaReferences;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -52,7 +53,9 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-a-news-item-shows-on-a-portals-public-website-only-when-staff-put-it-there
  */
-class PublicNewsReader {
+class PublicNewsReader implements PublicNewsReaderInterface {
+	use PublishedMoment;
+
 	/**
 	 * The most items one list returns.
 	 */
@@ -174,27 +177,55 @@ class PublicNewsReader {
 		}
 
 		foreach ($this->rows->findAll(schema: 'schoolEvent', filters: ['status' => 'published']) as $event) {
-			if (($event['status'] ?? '') !== 'published' || $this->rows->rowId(row: $event) !== $ref) {
+			if ($this->isPublishedEvent(event: $event, ref: $ref) === false) {
 				continue;
 			}
 
-			$deadline = trim((string)($event['signupDeadline'] ?? ''));
-
-			return [
-				'id'                => $ref,
-				'title'             => (string)($event['title'] ?? ''),
-				'start'             => (string)($event['start'] ?? ''),
-				'end'               => (string)($event['end'] ?? ''),
-				'location'          => trim((string)($event['location'] ?? '')),
-				'signupDeadline'    => $deadline,
-				'closed'            => ($event['rsvpEnabled'] ?? false) !== true || (new EventDeadline())->hasPassed(deadline: $deadline),
-				'askSeats'          => ($event['askSeats'] ?? false) === true,
-				'maxSeatsPerAnswer' => (int)($event['maxSeatsPerAnswer'] ?? 4),
-			];
+			return $this->eventFacts(event: $event, ref: $ref);
 		}
 
 		return null;
 	}//end eventOf()
+
+	/**
+	 * Whether the stored event is the published one the news item refers to.
+	 *
+	 * @param array<string, mixed> $event The stored event.
+	 * @param string               $ref   The referenced event id.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-news-item-may-carry-the-sign-up-of-its-event
+	 */
+	private function isPublishedEvent(array $event, string $ref): bool {
+		return ($event['status'] ?? '') === 'published' && $this->rows->rowId(row: $event) === $ref;
+	}//end isPublishedEvent()
+
+	/**
+	 * The event's dates, place, deadline and seats.
+	 *
+	 * @param array<string, mixed> $event The stored event.
+	 * @param string               $ref   The event id.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-news-item-may-carry-the-sign-up-of-its-event
+	 */
+	private function eventFacts(array $event, string $ref): array {
+		$deadline = trim((string)($event['signupDeadline'] ?? ''));
+
+		return [
+			'id'                => $ref,
+			'title'             => (string)($event['title'] ?? ''),
+			'start'             => (string)($event['start'] ?? ''),
+			'end'               => (string)($event['end'] ?? ''),
+			'location'          => trim((string)($event['location'] ?? '')),
+			'signupDeadline'    => $deadline,
+			'closed'            => ($event['rsvpEnabled'] ?? false) !== true || (new EventDeadline())->hasPassed(deadline: $deadline),
+			'askSeats'          => ($event['askSeats'] ?? false) === true,
+			'maxSeatsPerAnswer' => (int)($event['maxSeatsPerAnswer'] ?? 4),
+		];
+	}//end eventFacts()
 
 	/**
 	 * Whether a stored row may show on a portal's website.
@@ -318,33 +349,4 @@ class PublicNewsReader {
 
 		return rtrim($cut, ' ,.;:').'…';
 	}//end introOf()
-
-	/**
-	 * When an item was published, as a Unix timestamp; PHP_INT_MIN when undated.
-	 * The same order as the guardian feed: `publishedAt`, else OpenRegister's
-	 * `@self.published`, else `@self.created`.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return int
-	 */
-	private function momentOf(array $row): int {
-		$self = [];
-		if (is_array($row['@self'] ?? null) === true) {
-			$self = $row['@self'];
-		}
-
-		foreach ([($row['publishedAt'] ?? null), ($self['published'] ?? null), ($self['created'] ?? null)] as $value) {
-			if (is_string($value) === false || $value === '') {
-				continue;
-			}
-
-			$time = strtotime($value);
-			if ($time !== false) {
-				return $time;
-			}
-		}
-
-		return PHP_INT_MIN;
-	}//end momentOf()
 }//end class

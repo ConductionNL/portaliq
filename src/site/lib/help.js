@@ -22,17 +22,28 @@ const KEYS = ['intro', 'image', 'phone', 'phoneNote', 'hours', 'desk', 'email']
 export function mergeHelp(portalHelp, formHelp) {
 	const out = {}
 	for (const source of [portalHelp, formHelp]) {
-		if (!source || typeof source !== 'object') {
-			continue
-		}
-		for (const key of KEYS) {
-			const value = typeof source[key] === 'string' ? source[key].trim() : ''
-			if (value !== '') {
-				out[key] = value
-			}
+		if (source && typeof source === 'object') {
+			Object.assign(out, filledHelp(source))
 		}
 	}
 	return out
+}
+
+/**
+ * The help keys a source fills with text, trimmed.
+ *
+ * @param {object} source The portal's or the form's help.
+ * @return {object} The filled keys.
+ */
+function filledHelp(source) {
+	const filled = {}
+	for (const key of KEYS) {
+		const value = typeof source[key] === 'string' ? source[key].trim() : ''
+		if (value !== '') {
+			filled[key] = value
+		}
+	}
+	return filled
 }
 
 /**
@@ -76,6 +87,16 @@ export function mailtoFor(email, title) {
 	return `mailto:${address}${subject ? `?subject=${encodeURIComponent(subject)}` : ''}`
 }
 
+/** The help section of each special page. */
+const SECTIONS = {
+	tasks: 'tasks',
+	inbox: 'messages',
+	messages: 'messages',
+	cases: 'cases',
+	myCases: 'cases',
+	contacts: 'contacts',
+}
+
 /**
  * The part of Mijn omgeving a menu entry belongs to, for its help text.
  *
@@ -89,17 +110,6 @@ export function sectionOf(entry, isHome = false) {
 		return 'overview'
 	}
 	const special = entry?.special
-	if (special === 'tasks') {
-		return 'tasks'
-	}
-	if (special === 'inbox' || special === 'messages') {
-		return 'messages'
-	}
-	if (special === 'cases' || special === 'myCases') {
-		return 'cases'
-	}
-	if (special === 'contacts') {
-		return 'contacts'
-	}
-	return ''
+	return Object.hasOwn(SECTIONS, special) ? SECTIONS[special] : ''
 }
+

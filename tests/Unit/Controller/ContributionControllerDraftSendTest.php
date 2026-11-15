@@ -36,22 +36,36 @@ use OCA\Portaliq\Tests\Unit\Service\Intake\Fakes\PortalOwnerDraft;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Service\CaseRowMarker;
+use OCA\Portaliq\Contribution\CreateActionMatcher;
+use OCA\Portaliq\Contribution\CreateBody;
+use OCA\Portaliq\Contribution\InboxMessageFields;
+use OCA\Portaliq\Contribution\PageChoice;
+use OCA\Portaliq\Service\RequestedPortal;
+use OCA\Portaliq\Service\RequiredFieldsGuard;
+use OCA\Portaliq\Contribution\RowIdentifier;
+use OCA\Portaliq\Contribution\ThemeChoice;
+use OCA\Portaliq\Service\VisibleFromGate;
+use OCA\Portaliq\Service\WriteRefusal;
 
 /**
  * Sending a draft instead of creating a second object.
  *
  * @covers \OCA\Portaliq\Controller\ContributionController
  * @uses \OCA\Portaliq\Service\Intake\ActionDraft
+ * @uses \OCA\Portaliq\Service\Intake\ActionAnswerFields
  * @uses \OCA\Portaliq\Service\Intake\DestinationDraft
  * @uses \OCA\Portaliq\Service\Intake\DestinationSubmit
  * @uses \OCA\Portaliq\Contribution\ActionScopeResolver
  * @uses \OCA\Portaliq\Contribution\CreateActionMatcher
  * @uses \OCA\Portaliq\Contribution\CreateBody
- * @uses \OCA\Portaliq\Service\Branch\PortalBranchScope
+ * @uses \OCA\Portaliq\Kernel\Support\PortalBranchScope
  * @uses \OCA\Portaliq\Service\PortalCrossRefGuard
  * @uses \OCA\Portaliq\Service\PortalSessionService
  * @uses \OCA\Portaliq\Service\PortalUserDisplayNames
  * @uses \OCA\Portaliq\Service\RequiredFieldsGuard
+ * @uses \OCA\Portaliq\Contribution\RowIdentifier
+ * @uses \OCA\Portaliq\Kernel\Support\SessionTrust
  */
 class ContributionControllerDraftSendTest extends TestCase {
 	private const SUBJECT = ['subjectRef' => 'sanne', 'audience' => 'resident', 'organisation' => '', 'trust' => 'low', 'jti' => 'jti-1'];
@@ -79,7 +93,7 @@ class ContributionControllerDraftSendTest extends TestCase {
 		$this->assertSame('d-1', $response->getData()['object']['id']);
 		$this->assertSame('2026-0042', $response->getData()['object']['reference']);
 		$this->assertSame('d-1', $sent['draftId']);
-		$this->assertSame('portal:sanne', $sent['owner']->value);
+		$this->assertSame('portal:sanne', $sent['owner']->value());
 		$this->assertSame('key-7', $sent['idempotencyKey']);
 		$this->assertSame(['title' => 'Whole', 'caseType' => 'ct-1', 'subjectRef' => 'sanne'], $sent['payload']);
 	}//end testALiveDraftIsSentAndNoSecondObjectIsWritten()
@@ -183,8 +197,8 @@ class ContributionControllerDraftSendTest extends TestCase {
 			receiptService: $this->createMock(SubmissionReceiptService::class),
 			notificationDispatch: $this->createMock(NotificationDispatchService::class),
 			logger: $this->createMock(LoggerInterface::class),
-			drafts: ($drafts ?? new ActionDraft(registry: $registry, reader: $reader, writer: $writer, drafts: $destinations)),
-			destinations: $destinations
+			drafts: ($drafts ?? new ActionDraft(registry: $registry, reader: $reader, writer: $writer, drafts: $destinations, createBody: new CreateBody())),
+			destinations: $destinations, caseRowMarker: new CaseRowMarker(), createActionMatcher: new CreateActionMatcher(), createBody: new CreateBody(), inboxMessageFields: new InboxMessageFields(), pageChoice: new PageChoice(), requestedPortal: new RequestedPortal(), requiredFieldsGuard: new RequiredFieldsGuard(), rowIdentifier: new RowIdentifier(), themeChoice: new ThemeChoice(), visibleFromGate: new VisibleFromGate(), writeRefusal: new WriteRefusal()
 		);
 	}//end controller()
 }//end class

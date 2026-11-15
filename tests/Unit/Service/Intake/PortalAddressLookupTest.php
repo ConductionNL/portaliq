@@ -76,4 +76,49 @@ class PortalAddressLookupTest extends TestCase {
 		$broken = new PortalAddressLookup($container, new DutchFormats(), $this->createMock(LoggerInterface::class));
 		$this->assertNull($broken->find('1234AB', '12'));
 	}//end testAMissAnIncompleteRowAndABrokenRegisterAnswerNull()
+
+	/**
+	 * Every row shape, filter and failure reads exactly as recorded.
+	 *
+	 * @return void
+	 */
+	public function testEveryLookupIsAsRecorded(): void {
+		$serialisable = new class implements \JsonSerializable {
+			public function jsonSerialize(): array {
+				return ['openbareRuimte' => ' Kerkstraat ', 'woonplaats' => ' Oud-Zuid '];
+			}
+		};
+		$cases = [
+			[[$serialisable], ['1234AB', '99999', 'bc', 'ABCDE'], ['street' => 'Kerkstraat', 'town' => 'Oud-Zuid'], ['postcode' => '1234AB', 'huisnummer' => 99999, 'huisletter' => 'B', 'huisnummertoevoeging' => 'ABCD']],
+			[[['straat' => 'Dorpsweg', 'woonplaats' => 'Dorp'], ['openbareRuimte' => 'Second', 'woonplaats' => 'Row']], ['1234 ab', '1'], ['street' => 'Dorpsweg', 'town' => 'Dorp'], ['postcode' => '1234AB', 'huisnummer' => 1]],
+			// An empty openbareRuimte is a value, so it does not fall back to straat.
+			[[['openbareRuimte' => '', 'straat' => 'Fallback', 'woonplaats' => 'T']], ['1234AB', '1'], null, null],
+			[[['openbareRuimte' => 'S', 'woonplaats' => '  ']], ['1234AB', '1'], null, null],
+			[['not a row'], ['1234AB', '1'], null, null],
+			[[new \stdClass()], ['1234AB', '1'], null, null],
+			[[['openbareRuimte' => 'S', 'woonplaats' => 'T']], ['1234AB', '100000'], null, null],
+			[[['openbareRuimte' => 'S', 'woonplaats' => 'T']], ['1234AB', ' 1'], null, null],
+			[[['openbareRuimte' => 'S', 'woonplaats' => 'T']], ['1234AB', '1', '', ''], ['street' => 'S', 'town' => 'T'], ['postcode' => '1234AB', 'huisnummer' => 1]],
+		];
+		foreach ($cases as $index => [$rows, $args, $expected, $filters]) {
+			$service = null;
+			$found   = $this->lookup($rows, $service)->find(...$args);
+			$this->assertSame($expected, $found, 'case ' . $index);
+			if ($filters !== null) {
+				$this->assertSame($filters, $service->filters, 'case ' . $index);
+			}
+		}
+
+		$logged    = [];
+		$logger    = $this->createMock(LoggerInterface::class);
+		$logger->method('warning')->willReturnCallback(
+			static function (string $message, array $context = []) use (&$logged): void {
+				$logged[] = [$message, $context];
+			}
+		);
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willThrowException(new \RuntimeException('no register'));
+		$this->assertNull((new PortalAddressLookup($container, new DutchFormats(), $logger))->find('1234AB', '12'));
+		$this->assertSame([['Portaliq: the address register could not be read', ['reason' => 'no register']]], $logged);
+	}//end testEveryLookupIsAsRecorded()
 }

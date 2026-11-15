@@ -1,7 +1,8 @@
 # portal-task-delivery Specification
 
 ## Purpose
-TBD - created by archiving change portal-task-delivery. Update Purpose after archive.
+
+Tasks that apps hand to a resident reach them through one proxy, are listed and completed on Mijn taken, and are delivered through the ledger worker with the inbox message and mail that name the delivery kind. This spec fixes that path, its idempotency and how overdue and unknown deliveries read.
 
 ## Requirements
 

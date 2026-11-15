@@ -19,7 +19,7 @@ import { test } from 'node:test'
 import { plansApi } from '../src/shared/areaApi.js'
 import { createPortalApi } from '../src/shared/portalApi.js'
 import { buildNav, shellSections } from '../src/shared/portalNav.js'
-import { chipCount, daysLine, fill, personLine, plansOfChip, planWords } from '../src/site/lib/plans.js'
+import { chipCount, daysLine, fill, personLine, plansOfChip, planWords, versionLine } from '../src/site/lib/plans.js'
 import { sitePageLoader } from '../src/site/pages/registry.js'
 import { loadSfc, renderSfc } from './support/render-sfc.mjs'
 
@@ -249,4 +249,67 @@ test('the owner-only controls show for the owner of a running plan only', () => 
 	}
 	assert.match(source, /:disabled="!plan\.canEdit"/, 'a done plan\'s statuses are read-only')
 	assert.match(source, /plan\.state === 'action'[\s\S]*data-testid="plan-alert"/, 'the alert shows when the plan asks for action')
+})
+
+test('plan files: a new file and a new version go as multipart, a version line reads "Versie 2, nieuwste"', async () => {
+	const asked = []
+	globalThis.fetch = async (url, init = {}) => {
+		asked.push({ url, method: init.method || 'GET', body: init.body, headers: init.headers || {} })
+		return { ok: true, status: 200, json: async () => ({ ok: true }), blob: async () => new Blob(['x']) }
+	}
+	try {
+		const api = plansApi(createPortalApi({ apiBase: '/portal/api' }, { getToken: () => 'tok', setToken: () => {} }))
+		const file = new Blob(['budget'], { type: 'application/pdf' })
+		assert.equal((await api.addPlanFile('p1', file)).ok, true)
+		await api.addPlanFile('p1', file, 'f1')
+	} finally {
+		delete globalThis.fetch
+	}
+	assert.deepEqual(asked.map((a) => `${a.method} ${a.url}`), ['POST /portal/api/plans/p1/files', 'POST /portal/api/plans/p1/files'])
+	assert.ok(asked[0].body instanceof FormData)
+	assert.equal(asked[0].headers['Content-Type'], undefined, 'the browser sets the multipart boundary')
+	assert.equal(asked[0].headers.Authorization, 'Bearer tok')
+	assert.equal(asked[0].body.get('previousVersion'), null)
+	assert.equal(asked[1].body.get('previousVersion'), 'f1')
+
+	const nl = planWords('nl')
+	assert.equal(versionLine({ version: 2 }, true, nl), 'Versie 2, nieuwste')
+	assert.equal(versionLine({ version: 1 }, false, nl), 'Versie 1')
+	assert.equal(fill(nl.earlier, { count: 1 }), 'Eerdere versies (1)')
+	assert.equal(versionLine({ version: 3 }, true, planWords('en')), 'Version 3, newest')
+})
+
+test('the plan page sends a picked file as a new version of the file it was asked for, then forgets it', async () => {
+	const page = await loadSfc(PLAN)
+	const sent = []
+	let loaded = 0
+	const api = {
+		request: async (method, path, body) => {
+			sent.push({ method, path, previousVersion: body?.get?.('previousVersion') ?? null })
+			return { ok: true, status: 200, json: {} }
+		},
+	}
+	const input = { files: [new Blob(['b'])], value: 'C:/fakepath/b.pdf' }
+	const vm = { planId: 'p1', api, words: planWords('nl'), problem: '', notice: '', versionOf: '', $refs: { fileInput: { click: () => {} } }, $emit: () => {}, load: async () => { loaded++ } }
+	page.methods.chooseFile.call(vm, 'f1')
+	assert.equal(vm.versionOf, 'f1')
+	await page.methods.upload.call(vm, { target: input })
+	assert.deepEqual(sent, [{ method: 'POST', path: '/plans/p1/files', previousVersion: 'f1' }])
+	assert.equal(vm.versionOf, '', 'the next pick is a new file again')
+	assert.equal(input.value, '', 'the picker is cleared')
+	assert.equal(vm.notice, planWords('nl').saved)
+	assert.equal(loaded, 1)
+
+	await page.methods.upload.call(vm, { target: { files: [] } })
+	assert.equal(sent.length, 1, 'nothing picked, nothing sent')
+
+	const refused = { ...vm, api: { request: async () => ({ ok: false, status: 403, json: { error: 'forbidden' } }) } }
+	await page.methods.upload.call(refused, { target: { files: [new Blob(['b'])], value: 'x' } })
+	assert.equal(refused.problem, planWords('nl').failed)
+
+	const source = readFileSync(PLAN, 'utf8')
+	for (const id of ['plan-file-add', 'plan-file-new-version']) {
+		const around = source.slice(Math.max(0, source.indexOf(`data-testid="${id}"`) - 400), source.indexOf(`data-testid="${id}"`))
+		assert.match(around, /plan\.canEdit/, `${id} is offered only on a plan that is not done`)
+	}
 })

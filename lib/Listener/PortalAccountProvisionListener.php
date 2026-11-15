@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
@@ -28,8 +28,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Listener;
 
 use OCA\Portaliq\Event\PortalAccountProvisionRequestedEvent;
-use OCA\Portaliq\Service\Identity\NextcloudAccountProvisioner;
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Kernel\Contracts\NextcloudAccountProvisionerInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalAccountServiceInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -40,22 +40,22 @@ use Throwable;
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 class PortalAccountProvisionListener implements IEventListener {
 
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalAccountService $accounts Provisions the account.
+	 * @param PortalAccountServiceInterface $accounts Provisions the account.
 	 * @param LoggerInterface $logger Records a refusal's cause.
-	 * @param NextcloudAccountProvisioner|null $nextcloud Writes an active
+	 * @param NextcloudAccountProvisionerInterface|null $nextcloud Writes an active
 	 *        `nextcloud`-mode account (an-app-provisions-a-nextcloud-account).
 	 */
 	public function __construct(
-		private readonly PortalAccountService $accounts,
+		private readonly PortalAccountServiceInterface $accounts,
 		private readonly LoggerInterface $logger,
-		private readonly ?NextcloudAccountProvisioner $nextcloud = null,
+		private readonly ?NextcloudAccountProvisionerInterface $nextcloud = null,
 	) {
 	}//end __construct()
 
@@ -66,7 +66,7 @@ class PortalAccountProvisionListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function handle(Event $event): void {
 		if (($event instanceof PortalAccountProvisionRequestedEvent) === false) {
@@ -85,17 +85,21 @@ class PortalAccountProvisionListener implements IEventListener {
 			return;
 		}
 
+		$this->provisionPending(event: $event);
+	}//end handle()
+
+	/**
+	 * Answer a request for a pending account, attributed to the dispatching app.
+	 *
+	 * @param PortalAccountProvisionRequestedEvent $event The request.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 */
+	private function provisionPending(PortalAccountProvisionRequestedEvent $event): void {
 		try {
-			$account = $this->accounts->provision(
-				audience: $event->getAudience(),
-				organisation: $event->getOrganisation(),
-				identityType: $event->getIdentityType(),
-				identityRef: $event->getIdentityRef(),
-				email: $event->getEmail(),
-				verifiedEmail: $event->isVerifiedEmail(),
-				provisionedBy: $event->getAppId(),
-				displayName: $event->getDisplayName()
-			);
+			$account = $this->pendingAccount(event: $event);
 		} catch (Throwable $exception) {
 			$this->logger->error('Portal account provisioning failed', ['exception' => $exception]);
 			$event->refuse('unavailable');
@@ -108,7 +112,27 @@ class PortalAccountProvisionListener implements IEventListener {
 		}
 
 		$event->answer($account['subjectRef'], $account['status']);
-	}//end handle()
+	}//end provisionPending()
+
+	/**
+	 * Provision the requested account, stamped with the dispatching app.
+	 *
+	 * @param PortalAccountProvisionRequestedEvent $event The request.
+	 *
+	 * @return array<string, mixed>|null The account, or null when none may be given.
+	 */
+	private function pendingAccount(PortalAccountProvisionRequestedEvent $event): ?array {
+		return $this->accounts->provision(
+			audience: $event->getAudience(),
+			organisation: $event->getOrganisation(),
+			identityType: $event->getIdentityType(),
+			identityRef: $event->getIdentityRef(),
+			email: $event->getEmail(),
+			verifiedEmail: $event->isVerifiedEmail(),
+			provisionedBy: $event->getAppId(),
+			displayName: $event->getDisplayName()
+		);
+	}//end pendingAccount()
 
 	/**
 	 * Answer a request for an active `nextcloud`-mode account.
@@ -126,15 +150,7 @@ class PortalAccountProvisionListener implements IEventListener {
 		}
 
 		try {
-			$answer = $this->nextcloud->provision(
-				appId: $event->getAppId(),
-				uid: $event->getNextcloudUid(),
-				portal: $event->getPortal(),
-				audience: $event->getAudience(),
-				organisation: $event->getOrganisation(),
-				email: $event->getEmail(),
-				displayName: $event->getDisplayName()
-			);
+			$answer = $this->nextcloudAnswer(provisioner: $this->nextcloud, event: $event);
 		} catch (Throwable $exception) {
 			$this->logger->error('Portal account provisioning failed', ['exception' => $exception]);
 			$event->refuse('unavailable');
@@ -148,4 +164,24 @@ class PortalAccountProvisionListener implements IEventListener {
 
 		$event->answer($answer['subjectRef'], $answer['status']);
 	}//end provisionNextcloud()
+
+	/**
+	 * Ask the Nextcloud provisioner for the requested account.
+	 *
+	 * @param NextcloudAccountProvisionerInterface          $provisioner The provisioner.
+	 * @param PortalAccountProvisionRequestedEvent $event       The request.
+	 *
+	 * @return array<string, mixed>|string The account, or why it was refused.
+	 */
+	private function nextcloudAnswer(NextcloudAccountProvisionerInterface $provisioner, PortalAccountProvisionRequestedEvent $event): array|string {
+		return $provisioner->provision(
+			appId: $event->getAppId(),
+			uid: $event->getNextcloudUid(),
+			portal: $event->getPortal(),
+			audience: $event->getAudience(),
+			organisation: $event->getOrganisation(),
+			email: $event->getEmail(),
+			displayName: $event->getDisplayName()
+		);
+	}//end nextcloudAnswer()
 }//end class

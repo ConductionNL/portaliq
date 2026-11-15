@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-sanne-cases/specs/example-set-sanne-cases/spec.md#requirement-sannes-lindelaan-case-is-the-case-the-boards-draw-and-her-cases-name-her
+ * @spec openspec/specs/example-set-sanne-cases/spec.md#requirement-sannes-lindelaan-case-is-the-case-the-boards-draw-and-her-cases-name-her
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * The seeded Lindelaan case: in-progress status, contact moments.
  *
- * @spec openspec/changes/example-set-sanne-cases/specs/example-set-sanne-cases/spec.md#requirement-sannes-lindelaan-case-is-the-case-the-boards-draw-and-her-cases-name-her
+ * @spec openspec/specs/example-set-sanne-cases/spec.md#requirement-sannes-lindelaan-case-is-the-case-the-boards-draw-and-her-cases-name-her
  */
 class ZuiddrechtSanneLindelaanCaseTest extends TestCase {
 
@@ -80,14 +80,26 @@ class ZuiddrechtSanneLindelaanCaseTest extends TestCase {
 		$case   = $this->object(key: 'woo-fietspad');
 		$status = (string)$case['lookups']['status']['where']['name'];
 
-		// Dossiq's Woo case type gives this status, step 2, the role in-progress (register.d/81-woo-verzoek.json).
-		$this->assertSame(expected: 'Beoordeling ontvankelijkheid', actual: $status);
+		// Version 2 of dossiq's Woo case type gives this status, step 2, the role in-progress (register.d/81-woo-verzoek-version-2.json).
+		$this->assertSame(expected: 'In behandeling', actual: $status);
 		$this->assertArrayNotHasKey(key: 'wooPublicationStatus', array: $case['data']);
 		$this->assertSame(expected: '{{lookup:status}}', actual: $case['data']['statusHistory'][1]['status']);
 		$this->assertSame(expected: '{{lookup:sanne}}', actual: $case['data']['requester']);
 		$this->assertSame(expected: ['citizenServiceNumber' => '{{cast:sanne.bsn}}'], actual: $case['lookups']['sanne']['where']);
 		$this->assertSame(expected: 'MZ-ZDR-2026-0412', actual: $case['data']['externalReference']);
 	}//end testTheCaseIsInProgress()
+
+	/**
+	 * Sanne logged in with DigiD on Mijn Zuiddrecht, so the requester card reads "Ingelogd met DigiD" and the header "via Mijn Zuiddrecht".
+	 *
+	 * @return void
+	 */
+	public function testTheCaseCameInThroughThePortal(): void {
+		$case = $this->object(key: 'woo-fietspad');
+
+		$this->assertSame(expected: 'digid', actual: $case['data']['intakeIdentification']);
+		$this->assertSame(expected: 'Mijn Zuiddrecht', actual: $case['data']['intakeSourceName']);
+	}//end testTheCaseCameInThroughThePortal()
 
 	/**
 	 * Every case of Sanne's names her contact record as its requester, so her contact page lists them.
@@ -108,8 +120,9 @@ class ZuiddrechtSanneLindelaanCaseTest extends TestCase {
 	}//end testSannesCasesNameHerAsRequester()
 
 	/**
-	 * The four contact moments of DqZaakContact are on the case, after it,
-	 * with the board's channels and directions.
+	 * The five contact moments of DqZaakContact are on the case, after it,
+	 * with the board's channels and directions: Pieter's acknowledgement
+	 * through Mijn Zuiddrecht follows Sanne's call.
 	 *
 	 * @return void
 	 */
@@ -125,7 +138,7 @@ class ZuiddrechtSanneLindelaanCaseTest extends TestCase {
 		}
 
 		$this->assertSame(
-			expected: [['phone', 'inbound'], ['webformulier', 'outbound'], ['webformulier', 'inbound'], ['email', 'inbound']],
+			expected: [['phone', 'inbound'], ['webformulier', 'outbound'], ['webformulier', 'outbound'], ['webformulier', 'inbound'], ['email', 'inbound']],
 			actual: $moments
 		);
 	}//end testTheCaseCarriesTheBoardsContactMoments()
@@ -164,7 +177,8 @@ class ZuiddrechtSanneLindelaanCaseTest extends TestCase {
 		$assessments = [];
 		foreach ($this->objects() as $object) {
 			$data = (array)($object['data'] ?? []);
-			if (($object['schema'] ?? '') === 'zaakinformatieobject' && ($data['case'] ?? '') === '{{object:woo-fietspad.id}}') {
+			// The concept decision letter is the case's own document, not one under review.
+			if (($object['schema'] ?? '') === 'zaakinformatieobject' && ($data['case'] ?? '') === '{{object:woo-fietspad.id}}' && ($object['key'] ?? '') !== 'woo-fietspad-zio-besluit-concept') {
 				$documents[] = (string)$data['informatieobject'];
 			}
 

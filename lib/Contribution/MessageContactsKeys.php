@@ -36,12 +36,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\MessageContactsKeysInterface;
+
 /**
  * Keeps a collection's `contacts` key, and a provider's answer, in shape.
  *
  * @spec openspec/changes/site-messages-per-record/specs/portal-contribution-contract/spec.md#requirement-a-collection-may-name-who-a-resident-may-write-to-about-each-row
  */
-class MessageContactsKeys {
+class MessageContactsKeys implements MessageContactsKeysInterface {
 	/**
 	 * The longest compose heading, hint, name or role.
 	 */
@@ -79,18 +81,45 @@ class MessageContactsKeys {
 			return $collection;
 		}
 
-		$out       = ['provider' => $declared['provider']];
-		$projected = (array)($collection['fields'] ?? []);
-		$fields    = array_values(
+		$collection['contacts'] = ['provider' => $declared['provider']]
+			+ $this->labelFields(declared: $declared, projected: (array)($collection['fields'] ?? []))
+			+ $this->words(declared: $declared);
+		return $collection;
+	}//end normalise()
+
+	/**
+	 * The record label fields as `['recordLabelFields' => …]`: the declared
+	 * ones the collection projects, at most MAX_LABEL_FIELDS, or nothing.
+	 *
+	 * @param array<string, mixed> $declared  The declared contacts.
+	 * @param array<int, mixed>    $projected The collection's projected fields.
+	 *
+	 * @return array<string, array<int, string>>
+	 */
+	private function labelFields(array $declared, array $projected): array {
+		$fields = array_values(
 			array_filter(
 				(array)($declared['recordLabelFields'] ?? []),
 				static fn ($field): bool => is_string($field) === true && in_array($field, $projected, true) === true
 			)
 		);
-		if ($fields !== []) {
-			$out['recordLabelFields'] = array_slice($fields, 0, self::MAX_LABEL_FIELDS);
+		if ($fields === []) {
+			return [];
 		}
 
+		return ['recordLabelFields' => array_slice($fields, 0, self::MAX_LABEL_FIELDS)];
+	}//end labelFields()
+
+	/**
+	 * The compose label and hint, each trimmed and only when it is a short
+	 * text.
+	 *
+	 * @param array<string, mixed> $declared The declared contacts.
+	 *
+	 * @return array<string, string>
+	 */
+	private function words(array $declared): array {
+		$out = [];
 		foreach (['composeLabel', 'composeHint'] as $key) {
 			$text = $this->text(value: ($declared[$key] ?? null));
 			if ($text !== null) {
@@ -98,9 +127,8 @@ class MessageContactsKeys {
 			}
 		}
 
-		$collection['contacts'] = $out;
-		return $collection;
-	}//end normalise()
+		return $out;
+	}//end words()
 
 	/**
 	 * A provider's answer for one row, held to `{staffRef, name, role}`: an
@@ -116,18 +144,13 @@ class MessageContactsKeys {
 		$out  = [];
 		$seen = [];
 		foreach ($entries as $entry) {
-			if (is_array($entry) === false) {
+			$contact = $this->contactOf(entry: $entry);
+			if ($contact === null || isset($seen[$contact['staffRef']]) === true) {
 				continue;
 			}
 
-			$staffRef = $this->text(value: ($entry['staffRef'] ?? null));
-			$name     = $this->text(value: ($entry['name'] ?? null));
-			if ($staffRef === null || $name === null || isset($seen[$staffRef]) === true) {
-				continue;
-			}
-
-			$seen[$staffRef] = true;
-			$out[]           = ['staffRef' => $staffRef, 'name' => $name, 'role' => ($this->text(value: ($entry['role'] ?? null)) ?? '')];
+			$seen[$contact['staffRef']] = true;
+			$out[] = $contact;
 			if (count($out) >= self::MAX_CONTACTS) {
 				break;
 			}
@@ -135,6 +158,27 @@ class MessageContactsKeys {
 
 		return $out;
 	}//end contacts()
+
+	/**
+	 * One entry held to `{staffRef, name, role}`, or null without a person or a name.
+	 *
+	 * @param mixed $entry One entry of the provider's answer.
+	 *
+	 * @return array{staffRef: string, name: string, role: string}|null
+	 */
+	private function contactOf(mixed $entry): array|null {
+		if (is_array($entry) === false) {
+			return null;
+		}
+
+		$staffRef = $this->text(value: ($entry['staffRef'] ?? null));
+		$name     = $this->text(value: ($entry['name'] ?? null));
+		if ($staffRef === null || $name === null) {
+			return null;
+		}
+
+		return ['staffRef' => $staffRef, 'name' => $name, 'role' => ($this->text(value: ($entry['role'] ?? null)) ?? '')];
+	}//end contactOf()
 
 	/**
 	 * A trimmed, non-empty string of at most MAX_TEXT characters, or null.

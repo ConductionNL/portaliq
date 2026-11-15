@@ -58,6 +58,7 @@ export {
 	bodyFor,
 	discardPayload,
 	draftPayload,
+	draftStatusPayload,
 	isMainWidget,
 	publishPayload,
 	readBody,
@@ -86,6 +87,12 @@ export {
 } from './pageTree.js'
 export { createPortalObjects } from './portalObjects.js'
 export { recordListChoice, recordListsFrom } from './recordLists.js'
+export {
+	holdsReportWidget,
+	isExcludedPath,
+	loadExcludedPaths,
+	reportPageIsCounted,
+} from './reportExclusion.js'
 export {
 	formWidgetFor,
 	inspectorModeFor,

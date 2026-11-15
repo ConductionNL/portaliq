@@ -13,12 +13,14 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-a-pages-traffic-must-be-counted-by-its-in-site-route
+ * @spec openspec/specs/portal-page-traffic/spec.md#requirement-a-pages-traffic-must-be-counted-by-its-in-site-route
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic;
+
+use OCA\Portaliq\Kernel\Contracts\TrafficPagePathInterface;
 
 /**
  * The in-site route a page view belongs to, so a page and its traffic
@@ -33,9 +35,9 @@ namespace OCA\Portaliq\Service\Traffic;
  * `route` parameter when the location carries one, else the path, and no
  * trailing slash. Pure.
  *
- * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-a-pages-traffic-must-be-counted-by-its-in-site-route
+ * @spec openspec/specs/portal-page-traffic/spec.md#requirement-a-pages-traffic-must-be-counted-by-its-in-site-route
  */
-class TrafficPagePath {
+class TrafficPagePath implements TrafficPagePathInterface {
 
 	/**
 	 * The longest route kept, like the stored path.
@@ -55,7 +57,7 @@ class TrafficPagePath {
 	 *
 	 * @return string The route; the stored path when the location names no route.
 	 *
-	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-a-pages-traffic-must-be-counted-by-its-in-site-route
+	 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-a-pages-traffic-must-be-counted-by-its-in-site-route
 	 */
 	public function ofEvent(array $event): string {
 		$location = (string)($event['pageLocation'] ?? '');
@@ -90,7 +92,7 @@ class TrafficPagePath {
 	 *
 	 * @return string The normalised route.
 	 *
-	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-a-pages-traffic-must-be-counted-by-its-in-site-route
+	 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-a-pages-traffic-must-be-counted-by-its-in-site-route
 	 */
 	public function route(string $value): string {
 		$route = trim($value);

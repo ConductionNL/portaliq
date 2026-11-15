@@ -30,7 +30,7 @@ it SHALL wait for staff.
 #### Scenario: Registration under activation
 - **GIVEN** a portal with registration policy activation and an e-mail based sign-in
 - **WHEN** a visitor fills in "Create an account" and follows the activation link from the mail
-- **THEN** their account is active and the screen reads "Your account is ready. Sign in with {provider}."
+- **THEN** their account is active and the screen reads "Uw account is klaar. Log in met DigiD." (board AccountAanmaken, DigiD being the provider)
 
 #### Scenario: Registration is off
 - **GIVEN** a portal with registration policy off
@@ -69,7 +69,7 @@ is no longer valid.
 #### Scenario: An invited supplier accepts
 - **GIVEN** an invitation mailed to piet@leverancier.nl
 - **WHEN** Piet follows the link and chooses "Accept"
-- **THEN** his account exists and the screen reads "Your account is ready. Sign in with {provider}."
+- **THEN** his account exists and the screen reads "Uw account is klaar. Log in met {provider}."
 
 ### Requirement: The sign-in screen shows only the doors that lead somewhere (REQ-IWI-005)
 

@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
+use OCA\Portaliq\Kernel\Contracts\PortalRegisteredDetailsLinksInterface;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCP\IURLGenerator;
 
@@ -38,7 +39,7 @@ use OCP\IURLGenerator;
  *
  * @spec openspec/changes/identity-registered-details/specs/registered-details/spec.md
  */
-class PortalRegisteredDetailsLinks {
+class PortalRegisteredDetailsLinks implements PortalRegisteredDetailsLinksInterface {
 
 	/**
 	 * The built-in site renderer (`portalPage#site`).
