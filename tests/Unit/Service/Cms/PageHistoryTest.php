@@ -32,6 +32,10 @@ class PageHistoryTest extends TestCase {
 	private const PAGE = 'a1b2c3d4-0000-4000-8000-000000000001';
 
 	public function testEveryPublishedBodyIsAVersionNewestFirst(): void {
+		if (class_exists(AuditTrail::class) === false) {
+			$this->markTestSkipped('OpenRegister is not installed in this environment.');
+		}
+
 		$friday = ['type' => 'grid', 'widgets' => [['id' => 'w1', 'widgetKey' => 'text', 'props' => ['text' => 'Friday']]]];
 		$monday = ['type' => 'grid', 'widgets' => [['id' => 'w1', 'widgetKey' => 'text', 'props' => ['text' => 'Monday']]]];
 
@@ -50,6 +54,10 @@ class PageHistoryTest extends TestCase {
 	}//end testEveryPublishedBodyIsAVersionNewestFirst()
 
 	public function testADraftSaveIsNotAVersion(): void {
+		if (class_exists(AuditTrail::class) === false) {
+			$this->markTestSkipped('OpenRegister is not installed in this environment.');
+		}
+
 		$versions = $this->history(rows: [
 			$this->row(id: 13, action: 'update', changed: ['draftBody' => ['old' => null, 'new' => ['type' => 'grid', 'widgets' => []]]], when: '2026-09-26 10:00:00', user: 'anna', name: 'Anna'),
 		])->versions(pageId: self::PAGE);
@@ -58,6 +66,10 @@ class PageHistoryTest extends TestCase {
 	}//end testADraftSaveIsNotAVersion()
 
 	public function testAPublicationWithoutItsBodyShowsWithoutARestore(): void {
+		if (class_exists(AuditTrail::class) === false) {
+			$this->markTestSkipped('OpenRegister is not installed in this environment.');
+		}
+
 		$versions = $this->history(rows: [
 			$this->row(id: 9, action: 'update', changed: ['status' => ['old' => 'draft', 'new' => 'published']], when: '2026-09-22 08:00:00', user: 'anna', name: ''),
 		])->versions(pageId: self::PAGE);
@@ -69,6 +81,10 @@ class PageHistoryTest extends TestCase {
 	}//end testAPublicationWithoutItsBodyShowsWithoutARestore()
 
 	public function testAnotherSchemasObjectLendsNoHistory(): void {
+		if (class_exists(AuditTrail::class) === false) {
+			$this->markTestSkipped('OpenRegister is not installed in this environment.');
+		}
+
 		$row = $this->row(id: 3, action: 'update', changed: ['body' => ['old' => null, 'new' => ['secret' => 'x']]], when: '2026-09-22 08:00:00', user: 'x', name: 'X');
 		$row->setSchema(99);
 
@@ -83,6 +99,10 @@ class PageHistoryTest extends TestCase {
 	}//end testWithoutOpenRegisterThereIsNoHistory()
 
 	public function testOnlyThePagesCreatesAndUpdatesAreRead(): void {
+		if (class_exists(AuditTrailMapper::class) === false) {
+			$this->markTestSkipped('OpenRegister is not installed in this environment.');
+		}
+
 		$trail = $this->getMockBuilder(AuditTrailMapper::class)->disableOriginalConstructor()->onlyMethods(['findForObjectByAction'])->getMock();
 		$trail->expects($this->once())
 			->method('findForObjectByAction')

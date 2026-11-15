@@ -1,0 +1,1698 @@
+{
+    "unknown portal": {
+        "answers": [
+            {
+                "error": "unknown-portal"
+            }
+        ],
+        "asked": [],
+        "cached": []
+    },
+    "unknown segment": {
+        "answers": [
+            {
+                "error": "unknown-segment"
+            }
+        ],
+        "asked": [],
+        "cached": []
+    },
+    "three days": {
+        "answers": [
+            {
+                "portal": "open-tilburg",
+                "from": "2026-09-20",
+                "to": "2026-09-23",
+                "segment": "",
+                "mode": "start",
+                "anchor": "",
+                "steps": 2,
+                "coverage": {
+                    "from": "2026-09-20",
+                    "to": "2026-09-23",
+                    "keptFrom": "2026-06-26",
+                    "retentionDays": 90,
+                    "beyondRetention": false,
+                    "partialDay": null
+                },
+                "truncated": false,
+                "eventCap": 1000,
+                "eventsScanned": 12,
+                "sessionsRead": 6,
+                "sessions": 6,
+                "columns": [
+                    {
+                        "step": 0,
+                        "sessions": 6,
+                        "dropOffs": 2,
+                        "nodes": [
+                            {
+                                "path": "/home",
+                                "sessions": 3,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/about",
+                                "sessions": 1,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/news",
+                                "sessions": 1,
+                                "dropOffs": 0,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/x",
+                                "sessions": 1,
+                                "dropOffs": 0,
+                                "more": 0,
+                                "selected": false
+                            }
+                        ]
+                    },
+                    {
+                        "step": 1,
+                        "sessions": 4,
+                        "dropOffs": 2,
+                        "nodes": [
+                            {
+                                "path": "/news",
+                                "sessions": 2,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/home",
+                                "sessions": 1,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/y",
+                                "sessions": 1,
+                                "dropOffs": 0,
+                                "more": 0,
+                                "selected": false
+                            }
+                        ]
+                    },
+                    {
+                        "step": 2,
+                        "sessions": 2,
+                        "dropOffs": 2,
+                        "nodes": [
+                            {
+                                "path": "/contact",
+                                "sessions": 1,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/z",
+                                "sessions": 1,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            }
+                        ]
+                    }
+                ],
+                "links": [
+                    {
+                        "step": 0,
+                        "source": 0,
+                        "target": 0,
+                        "sessions": 2
+                    },
+                    {
+                        "step": 0,
+                        "source": 2,
+                        "target": 1,
+                        "sessions": 1
+                    },
+                    {
+                        "step": 0,
+                        "source": 3,
+                        "target": 2,
+                        "sessions": 1
+                    },
+                    {
+                        "step": 1,
+                        "source": 0,
+                        "target": 0,
+                        "sessions": 1
+                    },
+                    {
+                        "step": 1,
+                        "source": 2,
+                        "target": 1,
+                        "sessions": 1
+                    }
+                ]
+            }
+        ],
+        "asked": [
+            [
+                "2026-09-23",
+                1000,
+                "2026-09-23T00:00:00.000Z",
+                "2026-09-24T00:00:00.000Z"
+            ],
+            [
+                "2026-09-22",
+                996,
+                "2026-09-22T00:00:00.000Z",
+                "2026-09-23T00:00:00.000Z"
+            ],
+            [
+                "2026-09-21",
+                992,
+                "2026-09-21T00:00:00.000Z",
+                "2026-09-22T00:00:00.000Z"
+            ],
+            [
+                "2026-09-20",
+                991,
+                "2026-09-20T00:00:00.000Z",
+                "2026-09-21T00:00:00.000Z"
+            ]
+        ],
+        "cached": [
+            "{\"folded\":{\"\\/home\\u0000\\/news\\u0000\\/contact\":1,\"\\/about\":1,\"\\/news\\u0000\\/home\":1,\"\\/home\\u0000\\/news\":1,\"\\/home\":1,\"\\/x\\u0000\\/y\\u0000\\/z\":1},\"coveredFrom\":\"2026-09-20\",\"coveredTo\":\"2026-09-23\",\"partialDay\":null,\"truncated\":false,\"scanned\":12,\"sessions\":6}"
+        ]
+    },
+    "end mode, anchor": {
+        "answers": [
+            {
+                "portal": "open-tilburg",
+                "from": "2026-09-20",
+                "to": "2026-09-23",
+                "segment": "",
+                "mode": "end",
+                "anchor": "/news",
+                "steps": 2,
+                "coverage": {
+                    "from": "2026-09-20",
+                    "to": "2026-09-23",
+                    "keptFrom": "2026-06-26",
+                    "retentionDays": 90,
+                    "beyondRetention": false,
+                    "partialDay": null
+                },
+                "truncated": false,
+                "eventCap": 1000,
+                "eventsScanned": 12,
+                "sessionsRead": 6,
+                "sessions": 3,
+                "columns": [
+                    {
+                        "step": 0,
+                        "sessions": 3,
+                        "dropOffs": 1,
+                        "nodes": [
+                            {
+                                "path": "/news",
+                                "sessions": 3,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": true
+                            }
+                        ]
+                    },
+                    {
+                        "step": 1,
+                        "sessions": 2,
+                        "dropOffs": 2,
+                        "nodes": [
+                            {
+                                "path": "/home",
+                                "sessions": 2,
+                                "dropOffs": 2,
+                                "more": 0,
+                                "selected": false
+                            }
+                        ]
+                    },
+                    {
+                        "step": 2,
+                        "sessions": 0,
+                        "dropOffs": 0,
+                        "nodes": []
+                    }
+                ],
+                "links": [
+                    {
+                        "step": 0,
+                        "source": 0,
+                        "target": 0,
+                        "sessions": 2
+                    }
+                ]
+            }
+        ],
+        "asked": [
+            [
+                "2026-09-23",
+                1000,
+                "2026-09-23T00:00:00.000Z",
+                "2026-09-24T00:00:00.000Z"
+            ],
+            [
+                "2026-09-22",
+                996,
+                "2026-09-22T00:00:00.000Z",
+                "2026-09-23T00:00:00.000Z"
+            ],
+            [
+                "2026-09-21",
+                992,
+                "2026-09-21T00:00:00.000Z",
+                "2026-09-22T00:00:00.000Z"
+            ],
+            [
+                "2026-09-20",
+                991,
+                "2026-09-20T00:00:00.000Z",
+                "2026-09-21T00:00:00.000Z"
+            ]
+        ],
+        "cached": [
+            "{\"folded\":{\"\\/home\\u0000\\/news\\u0000\\/contact\":1,\"\\/about\":1,\"\\/news\\u0000\\/home\":1,\"\\/home\\u0000\\/news\":1,\"\\/home\":1,\"\\/x\\u0000\\/y\\u0000\\/z\":1},\"coveredFrom\":\"2026-09-20\",\"coveredTo\":\"2026-09-23\",\"partialDay\":null,\"truncated\":false,\"scanned\":12,\"sessions\":6}"
+        ]
+    },
+    "trail": {
+        "answers": [
+            {
+                "portal": "open-tilburg",
+                "from": "2026-09-20",
+                "to": "2026-09-23",
+                "segment": "",
+                "mode": "start",
+                "anchor": "",
+                "steps": 3,
+                "coverage": {
+                    "from": "2026-09-20",
+                    "to": "2026-09-23",
+                    "keptFrom": "2026-06-26",
+                    "retentionDays": 90,
+                    "beyondRetention": false,
+                    "partialDay": null
+                },
+                "truncated": false,
+                "eventCap": 1000,
+                "eventsScanned": 12,
+                "sessionsRead": 6,
+                "sessions": 6,
+                "columns": [
+                    {
+                        "step": 0,
+                        "sessions": 6,
+                        "dropOffs": 2,
+                        "nodes": [
+                            {
+                                "path": "/home",
+                                "sessions": 3,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/about",
+                                "sessions": 1,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/news",
+                                "sessions": 1,
+                                "dropOffs": 0,
+                                "more": 0,
+                                "selected": true
+                            },
+                            {
+                                "path": "/x",
+                                "sessions": 1,
+                                "dropOffs": 0,
+                                "more": 0,
+                                "selected": false
+                            }
+                        ]
+                    },
+                    {
+                        "step": 1,
+                        "sessions": 1,
+                        "dropOffs": 1,
+                        "nodes": [
+                            {
+                                "path": "/home",
+                                "sessions": 1,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            }
+                        ]
+                    },
+                    {
+                        "step": 2,
+                        "sessions": 0,
+                        "dropOffs": 0,
+                        "nodes": []
+                    },
+                    {
+                        "step": 3,
+                        "sessions": 0,
+                        "dropOffs": 0,
+                        "nodes": []
+                    }
+                ],
+                "links": [
+                    {
+                        "step": 0,
+                        "source": 2,
+                        "target": 0,
+                        "sessions": 1
+                    }
+                ]
+            }
+        ],
+        "asked": [
+            [
+                "2026-09-23",
+                1000,
+                "2026-09-23T00:00:00.000Z",
+                "2026-09-24T00:00:00.000Z"
+            ],
+            [
+                "2026-09-22",
+                996,
+                "2026-09-22T00:00:00.000Z",
+                "2026-09-23T00:00:00.000Z"
+            ],
+            [
+                "2026-09-21",
+                992,
+                "2026-09-21T00:00:00.000Z",
+                "2026-09-22T00:00:00.000Z"
+            ],
+            [
+                "2026-09-20",
+                991,
+                "2026-09-20T00:00:00.000Z",
+                "2026-09-21T00:00:00.000Z"
+            ]
+        ],
+        "cached": [
+            "{\"folded\":{\"\\/home\\u0000\\/news\\u0000\\/contact\":1,\"\\/about\":1,\"\\/news\\u0000\\/home\":1,\"\\/home\\u0000\\/news\":1,\"\\/home\":1,\"\\/x\\u0000\\/y\\u0000\\/z\":1},\"coveredFrom\":\"2026-09-20\",\"coveredTo\":\"2026-09-23\",\"partialDay\":null,\"truncated\":false,\"scanned\":12,\"sessions\":6}"
+        ]
+    },
+    "future to": {
+        "answers": [
+            {
+                "portal": "open-tilburg",
+                "from": "2026-09-22",
+                "to": "2026-10-30",
+                "segment": "",
+                "mode": "start",
+                "anchor": "",
+                "steps": 1,
+                "coverage": {
+                    "from": "2026-09-22",
+                    "to": "2026-09-23",
+                    "keptFrom": "2026-06-26",
+                    "retentionDays": 90,
+                    "beyondRetention": false,
+                    "partialDay": null
+                },
+                "truncated": false,
+                "eventCap": 1000,
+                "eventsScanned": 8,
+                "sessionsRead": 4,
+                "sessions": 4,
+                "columns": [
+                    {
+                        "step": 0,
+                        "sessions": 4,
+                        "dropOffs": 1,
+                        "nodes": [
+                            {
+                                "path": "/home",
+                                "sessions": 2,
+                                "dropOffs": 0,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/about",
+                                "sessions": 1,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/news",
+                                "sessions": 1,
+                                "dropOffs": 0,
+                                "more": 0,
+                                "selected": false
+                            }
+                        ]
+                    },
+                    {
+                        "step": 1,
+                        "sessions": 3,
+                        "dropOffs": 2,
+                        "nodes": [
+                            {
+                                "path": "/news",
+                                "sessions": 2,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/home",
+                                "sessions": 1,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            }
+                        ]
+                    }
+                ],
+                "links": [
+                    {
+                        "step": 0,
+                        "source": 0,
+                        "target": 0,
+                        "sessions": 2
+                    },
+                    {
+                        "step": 0,
+                        "source": 2,
+                        "target": 1,
+                        "sessions": 1
+                    }
+                ]
+            }
+        ],
+        "asked": [
+            [
+                "2026-09-23",
+                1000,
+                "2026-09-23T00:00:00.000Z",
+                "2026-09-24T00:00:00.000Z"
+            ],
+            [
+                "2026-09-22",
+                996,
+                "2026-09-22T00:00:00.000Z",
+                "2026-09-23T00:00:00.000Z"
+            ]
+        ],
+        "cached": [
+            "{\"folded\":{\"\\/home\\u0000\\/news\\u0000\\/contact\":1,\"\\/about\":1,\"\\/news\\u0000\\/home\":1,\"\\/home\\u0000\\/news\":1},\"coveredFrom\":\"2026-09-22\",\"coveredTo\":\"2026-09-23\",\"partialDay\":null,\"truncated\":false,\"scanned\":8,\"sessions\":4}"
+        ]
+    },
+    "beyond retention": {
+        "answers": [
+            {
+                "portal": "open-tilburg",
+                "from": "2026-09-01",
+                "to": "2026-09-23",
+                "segment": "",
+                "mode": "start",
+                "anchor": "",
+                "steps": 1,
+                "coverage": {
+                    "from": "2026-09-21",
+                    "to": "2026-09-23",
+                    "keptFrom": "2026-09-21",
+                    "retentionDays": 3,
+                    "beyondRetention": true,
+                    "partialDay": null
+                },
+                "truncated": false,
+                "eventCap": 1000,
+                "eventsScanned": 9,
+                "sessionsRead": 5,
+                "sessions": 5,
+                "columns": [
+                    {
+                        "step": 0,
+                        "sessions": 5,
+                        "dropOffs": 2,
+                        "nodes": [
+                            {
+                                "path": "/home",
+                                "sessions": 3,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/about",
+                                "sessions": 1,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/news",
+                                "sessions": 1,
+                                "dropOffs": 0,
+                                "more": 0,
+                                "selected": false
+                            }
+                        ]
+                    },
+                    {
+                        "step": 1,
+                        "sessions": 3,
+                        "dropOffs": 2,
+                        "nodes": [
+                            {
+                                "path": "/news",
+                                "sessions": 2,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/home",
+                                "sessions": 1,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            }
+                        ]
+                    }
+                ],
+                "links": [
+                    {
+                        "step": 0,
+                        "source": 0,
+                        "target": 0,
+                        "sessions": 2
+                    },
+                    {
+                        "step": 0,
+                        "source": 2,
+                        "target": 1,
+                        "sessions": 1
+                    }
+                ]
+            }
+        ],
+        "asked": [
+            [
+                "2026-09-23",
+                1000,
+                "2026-09-23T00:00:00.000Z",
+                "2026-09-24T00:00:00.000Z"
+            ],
+            [
+                "2026-09-22",
+                996,
+                "2026-09-22T00:00:00.000Z",
+                "2026-09-23T00:00:00.000Z"
+            ],
+            [
+                "2026-09-21",
+                992,
+                "2026-09-21T00:00:00.000Z",
+                "2026-09-22T00:00:00.000Z"
+            ]
+        ],
+        "cached": [
+            "{\"folded\":{\"\\/home\\u0000\\/news\\u0000\\/contact\":1,\"\\/about\":1,\"\\/news\\u0000\\/home\":1,\"\\/home\\u0000\\/news\":1,\"\\/home\":1},\"coveredFrom\":\"2026-09-21\",\"coveredTo\":\"2026-09-23\",\"partialDay\":null,\"truncated\":false,\"scanned\":9,\"sessions\":5}"
+        ]
+    },
+    "before retention": {
+        "answers": [
+            {
+                "portal": "open-tilburg",
+                "from": "2026-01-01",
+                "to": "2026-02-01",
+                "segment": "",
+                "mode": "start",
+                "anchor": "",
+                "steps": 1,
+                "coverage": {
+                    "from": null,
+                    "to": null,
+                    "keptFrom": "2026-06-26",
+                    "retentionDays": 90,
+                    "beyondRetention": true,
+                    "partialDay": null
+                },
+                "truncated": false,
+                "eventCap": 1000,
+                "eventsScanned": 0,
+                "sessionsRead": 0,
+                "sessions": 0,
+                "columns": [
+                    {
+                        "step": 0,
+                        "sessions": 0,
+                        "dropOffs": 0,
+                        "nodes": []
+                    },
+                    {
+                        "step": 1,
+                        "sessions": 0,
+                        "dropOffs": 0,
+                        "nodes": []
+                    }
+                ],
+                "links": []
+            }
+        ],
+        "asked": [],
+        "cached": [
+            "{\"folded\":[],\"coveredFrom\":null,\"coveredTo\":null,\"partialDay\":null,\"truncated\":false,\"scanned\":0,\"sessions\":0}"
+        ]
+    },
+    "capped mid-day": {
+        "answers": [
+            {
+                "portal": "open-tilburg",
+                "from": "2026-09-19",
+                "to": "2026-09-23",
+                "segment": "",
+                "mode": "start",
+                "anchor": "",
+                "steps": 1,
+                "coverage": {
+                    "from": "2026-09-23",
+                    "to": "2026-09-23",
+                    "keptFrom": "2026-06-26",
+                    "retentionDays": 90,
+                    "beyondRetention": false,
+                    "partialDay": null
+                },
+                "truncated": true,
+                "eventCap": 4,
+                "eventsScanned": 4,
+                "sessionsRead": 2,
+                "sessions": 2,
+                "columns": [
+                    {
+                        "step": 0,
+                        "sessions": 2,
+                        "dropOffs": 1,
+                        "nodes": [
+                            {
+                                "path": "/about",
+                                "sessions": 1,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/home",
+                                "sessions": 1,
+                                "dropOffs": 0,
+                                "more": 0,
+                                "selected": false
+                            }
+                        ]
+                    },
+                    {
+                        "step": 1,
+                        "sessions": 1,
+                        "dropOffs": 0,
+                        "nodes": [
+                            {
+                                "path": "/news",
+                                "sessions": 1,
+                                "dropOffs": 0,
+                                "more": 0,
+                                "selected": false
+                            }
+                        ]
+                    }
+                ],
+                "links": [
+                    {
+                        "step": 0,
+                        "source": 1,
+                        "target": 0,
+                        "sessions": 1
+                    }
+                ]
+            }
+        ],
+        "asked": [
+            [
+                "2026-09-23",
+                4,
+                "2026-09-23T00:00:00.000Z",
+                "2026-09-24T00:00:00.000Z"
+            ]
+        ],
+        "cached": [
+            "{\"folded\":{\"\\/home\\u0000\\/news\\u0000\\/contact\":1,\"\\/about\":1},\"coveredFrom\":\"2026-09-23\",\"coveredTo\":\"2026-09-23\",\"partialDay\":null,\"truncated\":true,\"scanned\":4,\"sessions\":2}"
+        ]
+    },
+    "capped at day end": {
+        "answers": [
+            {
+                "portal": "open-tilburg",
+                "from": "2026-09-19",
+                "to": "2026-09-23",
+                "segment": "",
+                "mode": "start",
+                "anchor": "",
+                "steps": 1,
+                "coverage": {
+                    "from": "2026-09-23",
+                    "to": "2026-09-23",
+                    "keptFrom": "2026-06-26",
+                    "retentionDays": 90,
+                    "beyondRetention": false,
+                    "partialDay": "2026-09-23"
+                },
+                "truncated": true,
+                "eventCap": 3,
+                "eventsScanned": 3,
+                "sessionsRead": 1,
+                "sessions": 1,
+                "columns": [
+                    {
+                        "step": 0,
+                        "sessions": 1,
+                        "dropOffs": 0,
+                        "nodes": [
+                            {
+                                "path": "/home",
+                                "sessions": 1,
+                                "dropOffs": 0,
+                                "more": 0,
+                                "selected": false
+                            }
+                        ]
+                    },
+                    {
+                        "step": 1,
+                        "sessions": 1,
+                        "dropOffs": 0,
+                        "nodes": [
+                            {
+                                "path": "/news",
+                                "sessions": 1,
+                                "dropOffs": 0,
+                                "more": 0,
+                                "selected": false
+                            }
+                        ]
+                    }
+                ],
+                "links": [
+                    {
+                        "step": 0,
+                        "source": 0,
+                        "target": 0,
+                        "sessions": 1
+                    }
+                ]
+            }
+        ],
+        "asked": [
+            [
+                "2026-09-23",
+                3,
+                "2026-09-23T00:00:00.000Z",
+                "2026-09-24T00:00:00.000Z"
+            ]
+        ],
+        "cached": [
+            "{\"folded\":{\"\\/home\\u0000\\/news\\u0000\\/contact\":1},\"coveredFrom\":\"2026-09-23\",\"coveredTo\":\"2026-09-23\",\"partialDay\":\"2026-09-23\",\"truncated\":true,\"scanned\":3,\"sessions\":1}"
+        ]
+    },
+    "segment": {
+        "answers": [
+            {
+                "portal": "open-tilburg",
+                "from": "2026-09-20",
+                "to": "2026-09-23",
+                "segment": "mobile",
+                "mode": "start",
+                "anchor": "",
+                "steps": 1,
+                "coverage": {
+                    "from": "2026-09-20",
+                    "to": "2026-09-23",
+                    "keptFrom": "2026-06-26",
+                    "retentionDays": 90,
+                    "beyondRetention": false,
+                    "partialDay": null
+                },
+                "truncated": false,
+                "eventCap": 1000,
+                "eventsScanned": 12,
+                "sessionsRead": 3,
+                "sessions": 3,
+                "columns": [
+                    {
+                        "step": 0,
+                        "sessions": 3,
+                        "dropOffs": 1,
+                        "nodes": [
+                            {
+                                "path": "/home",
+                                "sessions": 2,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/news",
+                                "sessions": 1,
+                                "dropOffs": 0,
+                                "more": 0,
+                                "selected": false
+                            }
+                        ]
+                    },
+                    {
+                        "step": 1,
+                        "sessions": 2,
+                        "dropOffs": 1,
+                        "nodes": [
+                            {
+                                "path": "/home",
+                                "sessions": 1,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/news",
+                                "sessions": 1,
+                                "dropOffs": 0,
+                                "more": 0,
+                                "selected": false
+                            }
+                        ]
+                    }
+                ],
+                "links": [
+                    {
+                        "step": 0,
+                        "source": 0,
+                        "target": 1,
+                        "sessions": 1
+                    },
+                    {
+                        "step": 0,
+                        "source": 1,
+                        "target": 0,
+                        "sessions": 1
+                    }
+                ]
+            }
+        ],
+        "asked": [
+            [
+                "2026-09-23",
+                1000,
+                "2026-09-23T00:00:00.000Z",
+                "2026-09-24T00:00:00.000Z"
+            ],
+            [
+                "2026-09-22",
+                996,
+                "2026-09-22T00:00:00.000Z",
+                "2026-09-23T00:00:00.000Z"
+            ],
+            [
+                "2026-09-21",
+                992,
+                "2026-09-21T00:00:00.000Z",
+                "2026-09-22T00:00:00.000Z"
+            ],
+            [
+                "2026-09-20",
+                991,
+                "2026-09-20T00:00:00.000Z",
+                "2026-09-21T00:00:00.000Z"
+            ]
+        ],
+        "cached": [
+            "{\"folded\":{\"\\/home\\u0000\\/news\\u0000\\/contact\":1,\"\\/news\\u0000\\/home\":1,\"\\/home\":1},\"coveredFrom\":\"2026-09-20\",\"coveredTo\":\"2026-09-23\",\"partialDay\":null,\"truncated\":false,\"scanned\":12,\"sessions\":3}"
+        ]
+    },
+    "cached second read": {
+        "answers": [
+            {
+                "portal": "open-tilburg",
+                "from": "2026-09-22",
+                "to": "2026-09-23",
+                "segment": "",
+                "mode": "start",
+                "anchor": "",
+                "steps": 1,
+                "coverage": {
+                    "from": "2026-09-22",
+                    "to": "2026-09-23",
+                    "keptFrom": "2026-06-26",
+                    "retentionDays": 90,
+                    "beyondRetention": false,
+                    "partialDay": null
+                },
+                "truncated": false,
+                "eventCap": 1000,
+                "eventsScanned": 8,
+                "sessionsRead": 4,
+                "sessions": 4,
+                "columns": [
+                    {
+                        "step": 0,
+                        "sessions": 4,
+                        "dropOffs": 1,
+                        "nodes": [
+                            {
+                                "path": "/home",
+                                "sessions": 2,
+                                "dropOffs": 0,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/about",
+                                "sessions": 1,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/news",
+                                "sessions": 1,
+                                "dropOffs": 0,
+                                "more": 0,
+                                "selected": false
+                            }
+                        ]
+                    },
+                    {
+                        "step": 1,
+                        "sessions": 3,
+                        "dropOffs": 2,
+                        "nodes": [
+                            {
+                                "path": "/news",
+                                "sessions": 2,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/home",
+                                "sessions": 1,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            }
+                        ]
+                    }
+                ],
+                "links": [
+                    {
+                        "step": 0,
+                        "source": 0,
+                        "target": 0,
+                        "sessions": 2
+                    },
+                    {
+                        "step": 0,
+                        "source": 2,
+                        "target": 1,
+                        "sessions": 1
+                    }
+                ]
+            },
+            {
+                "portal": "open-tilburg",
+                "from": "2026-09-22",
+                "to": "2026-09-23",
+                "segment": "",
+                "mode": "end",
+                "anchor": "",
+                "steps": 2,
+                "coverage": {
+                    "from": "2026-09-22",
+                    "to": "2026-09-23",
+                    "keptFrom": "2026-06-26",
+                    "retentionDays": 90,
+                    "beyondRetention": false,
+                    "partialDay": null
+                },
+                "truncated": false,
+                "eventCap": 1000,
+                "eventsScanned": 8,
+                "sessionsRead": 4,
+                "sessions": 4,
+                "columns": [
+                    {
+                        "step": 0,
+                        "sessions": 4,
+                        "dropOffs": 1,
+                        "nodes": [
+                            {
+                                "path": "/about",
+                                "sessions": 1,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/contact",
+                                "sessions": 1,
+                                "dropOffs": 0,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/home",
+                                "sessions": 1,
+                                "dropOffs": 0,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/news",
+                                "sessions": 1,
+                                "dropOffs": 0,
+                                "more": 0,
+                                "selected": false
+                            }
+                        ]
+                    },
+                    {
+                        "step": 1,
+                        "sessions": 3,
+                        "dropOffs": 2,
+                        "nodes": [
+                            {
+                                "path": "/news",
+                                "sessions": 2,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/home",
+                                "sessions": 1,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            }
+                        ]
+                    },
+                    {
+                        "step": 2,
+                        "sessions": 1,
+                        "dropOffs": 1,
+                        "nodes": [
+                            {
+                                "path": "/home",
+                                "sessions": 1,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            }
+                        ]
+                    }
+                ],
+                "links": [
+                    {
+                        "step": 0,
+                        "source": 1,
+                        "target": 0,
+                        "sessions": 1
+                    },
+                    {
+                        "step": 0,
+                        "source": 2,
+                        "target": 0,
+                        "sessions": 1
+                    },
+                    {
+                        "step": 0,
+                        "source": 3,
+                        "target": 1,
+                        "sessions": 1
+                    },
+                    {
+                        "step": 1,
+                        "source": 0,
+                        "target": 0,
+                        "sessions": 1
+                    }
+                ]
+            }
+        ],
+        "asked": [
+            [
+                "2026-09-23",
+                1000,
+                "2026-09-23T00:00:00.000Z",
+                "2026-09-24T00:00:00.000Z"
+            ],
+            [
+                "2026-09-22",
+                996,
+                "2026-09-22T00:00:00.000Z",
+                "2026-09-23T00:00:00.000Z"
+            ]
+        ],
+        "cached": [
+            "{\"folded\":{\"\\/home\\u0000\\/news\\u0000\\/contact\":1,\"\\/about\":1,\"\\/news\\u0000\\/home\":1,\"\\/home\\u0000\\/news\":1},\"coveredFrom\":\"2026-09-22\",\"coveredTo\":\"2026-09-23\",\"partialDay\":null,\"truncated\":false,\"scanned\":8,\"sessions\":4}"
+        ]
+    },
+    "from at kept edge": {
+        "answers": [
+            {
+                "portal": "open-tilburg",
+                "from": "2026-09-21",
+                "to": "2026-09-23",
+                "segment": "",
+                "mode": "start",
+                "anchor": "",
+                "steps": 1,
+                "coverage": {
+                    "from": "2026-09-21",
+                    "to": "2026-09-23",
+                    "keptFrom": "2026-09-21",
+                    "retentionDays": 3,
+                    "beyondRetention": false,
+                    "partialDay": null
+                },
+                "truncated": false,
+                "eventCap": 1000,
+                "eventsScanned": 9,
+                "sessionsRead": 5,
+                "sessions": 5,
+                "columns": [
+                    {
+                        "step": 0,
+                        "sessions": 5,
+                        "dropOffs": 2,
+                        "nodes": [
+                            {
+                                "path": "/home",
+                                "sessions": 3,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/about",
+                                "sessions": 1,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/news",
+                                "sessions": 1,
+                                "dropOffs": 0,
+                                "more": 0,
+                                "selected": false
+                            }
+                        ]
+                    },
+                    {
+                        "step": 1,
+                        "sessions": 3,
+                        "dropOffs": 2,
+                        "nodes": [
+                            {
+                                "path": "/news",
+                                "sessions": 2,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/home",
+                                "sessions": 1,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            }
+                        ]
+                    }
+                ],
+                "links": [
+                    {
+                        "step": 0,
+                        "source": 0,
+                        "target": 0,
+                        "sessions": 2
+                    },
+                    {
+                        "step": 0,
+                        "source": 2,
+                        "target": 1,
+                        "sessions": 1
+                    }
+                ]
+            }
+        ],
+        "asked": [
+            [
+                "2026-09-23",
+                1000,
+                "2026-09-23T00:00:00.000Z",
+                "2026-09-24T00:00:00.000Z"
+            ],
+            [
+                "2026-09-22",
+                996,
+                "2026-09-22T00:00:00.000Z",
+                "2026-09-23T00:00:00.000Z"
+            ],
+            [
+                "2026-09-21",
+                992,
+                "2026-09-21T00:00:00.000Z",
+                "2026-09-22T00:00:00.000Z"
+            ]
+        ],
+        "cached": [
+            "{\"folded\":{\"\\/home\\u0000\\/news\\u0000\\/contact\":1,\"\\/about\":1,\"\\/news\\u0000\\/home\":1,\"\\/home\\u0000\\/news\":1,\"\\/home\":1},\"coveredFrom\":\"2026-09-21\",\"coveredTo\":\"2026-09-23\",\"partialDay\":null,\"truncated\":false,\"scanned\":9,\"sessions\":5}"
+        ]
+    },
+    "segment then all": {
+        "answers": [
+            {
+                "portal": "open-tilburg",
+                "from": "2026-09-22",
+                "to": "2026-09-23",
+                "segment": "mobile",
+                "mode": "start",
+                "anchor": "",
+                "steps": 1,
+                "coverage": {
+                    "from": "2026-09-22",
+                    "to": "2026-09-23",
+                    "keptFrom": "2026-06-26",
+                    "retentionDays": 90,
+                    "beyondRetention": false,
+                    "partialDay": null
+                },
+                "truncated": false,
+                "eventCap": 1000,
+                "eventsScanned": 8,
+                "sessionsRead": 2,
+                "sessions": 2,
+                "columns": [
+                    {
+                        "step": 0,
+                        "sessions": 2,
+                        "dropOffs": 0,
+                        "nodes": [
+                            {
+                                "path": "/home",
+                                "sessions": 1,
+                                "dropOffs": 0,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/news",
+                                "sessions": 1,
+                                "dropOffs": 0,
+                                "more": 0,
+                                "selected": false
+                            }
+                        ]
+                    },
+                    {
+                        "step": 1,
+                        "sessions": 2,
+                        "dropOffs": 1,
+                        "nodes": [
+                            {
+                                "path": "/home",
+                                "sessions": 1,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/news",
+                                "sessions": 1,
+                                "dropOffs": 0,
+                                "more": 0,
+                                "selected": false
+                            }
+                        ]
+                    }
+                ],
+                "links": [
+                    {
+                        "step": 0,
+                        "source": 0,
+                        "target": 1,
+                        "sessions": 1
+                    },
+                    {
+                        "step": 0,
+                        "source": 1,
+                        "target": 0,
+                        "sessions": 1
+                    }
+                ]
+            },
+            {
+                "portal": "open-tilburg",
+                "from": "2026-09-22",
+                "to": "2026-09-23",
+                "segment": "",
+                "mode": "start",
+                "anchor": "",
+                "steps": 1,
+                "coverage": {
+                    "from": "2026-09-22",
+                    "to": "2026-09-23",
+                    "keptFrom": "2026-06-26",
+                    "retentionDays": 90,
+                    "beyondRetention": false,
+                    "partialDay": null
+                },
+                "truncated": false,
+                "eventCap": 1000,
+                "eventsScanned": 8,
+                "sessionsRead": 4,
+                "sessions": 4,
+                "columns": [
+                    {
+                        "step": 0,
+                        "sessions": 4,
+                        "dropOffs": 1,
+                        "nodes": [
+                            {
+                                "path": "/home",
+                                "sessions": 2,
+                                "dropOffs": 0,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/about",
+                                "sessions": 1,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/news",
+                                "sessions": 1,
+                                "dropOffs": 0,
+                                "more": 0,
+                                "selected": false
+                            }
+                        ]
+                    },
+                    {
+                        "step": 1,
+                        "sessions": 3,
+                        "dropOffs": 2,
+                        "nodes": [
+                            {
+                                "path": "/news",
+                                "sessions": 2,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/home",
+                                "sessions": 1,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            }
+                        ]
+                    }
+                ],
+                "links": [
+                    {
+                        "step": 0,
+                        "source": 0,
+                        "target": 0,
+                        "sessions": 2
+                    },
+                    {
+                        "step": 0,
+                        "source": 2,
+                        "target": 1,
+                        "sessions": 1
+                    }
+                ]
+            }
+        ],
+        "asked": [
+            [
+                "2026-09-23",
+                1000,
+                "2026-09-23T00:00:00.000Z",
+                "2026-09-24T00:00:00.000Z"
+            ],
+            [
+                "2026-09-22",
+                996,
+                "2026-09-22T00:00:00.000Z",
+                "2026-09-23T00:00:00.000Z"
+            ],
+            [
+                "2026-09-23",
+                1000,
+                "2026-09-23T00:00:00.000Z",
+                "2026-09-24T00:00:00.000Z"
+            ],
+            [
+                "2026-09-22",
+                996,
+                "2026-09-22T00:00:00.000Z",
+                "2026-09-23T00:00:00.000Z"
+            ]
+        ],
+        "cached": [
+            "{\"folded\":{\"\\/home\\u0000\\/news\\u0000\\/contact\":1,\"\\/news\\u0000\\/home\":1},\"coveredFrom\":\"2026-09-22\",\"coveredTo\":\"2026-09-23\",\"partialDay\":null,\"truncated\":false,\"scanned\":8,\"sessions\":2}",
+            "{\"folded\":{\"\\/home\\u0000\\/news\\u0000\\/contact\":1,\"\\/about\":1,\"\\/news\\u0000\\/home\":1,\"\\/home\\u0000\\/news\":1},\"coveredFrom\":\"2026-09-22\",\"coveredTo\":\"2026-09-23\",\"partialDay\":null,\"truncated\":false,\"scanned\":8,\"sessions\":4}"
+        ]
+    },
+    "goal segment": {
+        "answers": [
+            {
+                "portal": "open-tilburg",
+                "from": "2026-09-20",
+                "to": "2026-09-23",
+                "segment": "converted",
+                "mode": "start",
+                "anchor": "",
+                "steps": 2,
+                "coverage": {
+                    "from": "2026-09-20",
+                    "to": "2026-09-23",
+                    "keptFrom": "2026-06-26",
+                    "retentionDays": 90,
+                    "beyondRetention": false,
+                    "partialDay": null
+                },
+                "truncated": false,
+                "eventCap": 1000,
+                "eventsScanned": 12,
+                "sessionsRead": 1,
+                "sessions": 1,
+                "columns": [
+                    {
+                        "step": 0,
+                        "sessions": 1,
+                        "dropOffs": 0,
+                        "nodes": [
+                            {
+                                "path": "/home",
+                                "sessions": 1,
+                                "dropOffs": 0,
+                                "more": 0,
+                                "selected": false
+                            }
+                        ]
+                    },
+                    {
+                        "step": 1,
+                        "sessions": 1,
+                        "dropOffs": 0,
+                        "nodes": [
+                            {
+                                "path": "/news",
+                                "sessions": 1,
+                                "dropOffs": 0,
+                                "more": 0,
+                                "selected": false
+                            }
+                        ]
+                    },
+                    {
+                        "step": 2,
+                        "sessions": 1,
+                        "dropOffs": 1,
+                        "nodes": [
+                            {
+                                "path": "/contact",
+                                "sessions": 1,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            }
+                        ]
+                    }
+                ],
+                "links": [
+                    {
+                        "step": 0,
+                        "source": 0,
+                        "target": 0,
+                        "sessions": 1
+                    },
+                    {
+                        "step": 1,
+                        "source": 0,
+                        "target": 0,
+                        "sessions": 1
+                    }
+                ]
+            }
+        ],
+        "asked": [
+            [
+                "2026-09-23",
+                1000,
+                "2026-09-23T00:00:00.000Z",
+                "2026-09-24T00:00:00.000Z"
+            ],
+            [
+                "2026-09-22",
+                996,
+                "2026-09-22T00:00:00.000Z",
+                "2026-09-23T00:00:00.000Z"
+            ],
+            [
+                "2026-09-21",
+                992,
+                "2026-09-21T00:00:00.000Z",
+                "2026-09-22T00:00:00.000Z"
+            ],
+            [
+                "2026-09-20",
+                991,
+                "2026-09-20T00:00:00.000Z",
+                "2026-09-21T00:00:00.000Z"
+            ]
+        ],
+        "cached": [
+            "{\"folded\":{\"\\/home\\u0000\\/news\\u0000\\/contact\":1},\"coveredFrom\":\"2026-09-20\",\"coveredTo\":\"2026-09-23\",\"partialDay\":null,\"truncated\":false,\"scanned\":12,\"sessions\":1}"
+        ]
+    },
+    "other timeout": {
+        "answers": [
+            {
+                "portal": "open-tilburg",
+                "from": "2026-09-22",
+                "to": "2026-09-23",
+                "segment": "",
+                "mode": "start",
+                "anchor": "",
+                "steps": 1,
+                "coverage": {
+                    "from": "2026-09-22",
+                    "to": "2026-09-23",
+                    "keptFrom": "2026-06-26",
+                    "retentionDays": 90,
+                    "beyondRetention": false,
+                    "partialDay": null
+                },
+                "truncated": false,
+                "eventCap": 1000,
+                "eventsScanned": 8,
+                "sessionsRead": 8,
+                "sessions": 8,
+                "columns": [
+                    {
+                        "step": 0,
+                        "sessions": 8,
+                        "dropOffs": 8,
+                        "nodes": [
+                            {
+                                "path": "/home",
+                                "sessions": 3,
+                                "dropOffs": 3,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/news",
+                                "sessions": 3,
+                                "dropOffs": 3,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/about",
+                                "sessions": 1,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            },
+                            {
+                                "path": "/contact",
+                                "sessions": 1,
+                                "dropOffs": 1,
+                                "more": 0,
+                                "selected": false
+                            }
+                        ]
+                    },
+                    {
+                        "step": 1,
+                        "sessions": 0,
+                        "dropOffs": 0,
+                        "nodes": []
+                    }
+                ],
+                "links": []
+            }
+        ],
+        "asked": [
+            [
+                "2026-09-23",
+                1000,
+                "2026-09-23T00:00:00.000Z",
+                "2026-09-24T00:00:00.000Z"
+            ],
+            [
+                "2026-09-22",
+                996,
+                "2026-09-22T00:00:00.000Z",
+                "2026-09-23T00:00:00.000Z"
+            ]
+        ],
+        "cached": [
+            "{\"folded\":{\"\\/home\":3,\"\\/news\":3,\"\\/contact\":1,\"\\/about\":1},\"coveredFrom\":\"2026-09-22\",\"coveredTo\":\"2026-09-23\",\"partialDay\":null,\"truncated\":false,\"scanned\":8,\"sessions\":8}"
+        ]
+    }
+}

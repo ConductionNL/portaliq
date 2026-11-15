@@ -98,6 +98,39 @@ class CitizenWithdrawalResolutionTest extends TestCase {
 
 	}//end testADeclarationWithNowhereToLandOffersNothing()
 
+	/**
+	 * Every answer, whole and in order: open, closed by its window, already
+	 * withdrawn, ended, and not declared.
+	 *
+	 * @return void
+	 */
+	public function testEveryWithdrawalAnswerIsWholeAndInOrder(): void {
+		$resolver = $this->resolver($this->caseType(openStatuses: ['ontvangen']));
+		$confirm  = 'Als u intrekt, stopt de behandeling.';
+
+		$this->assertSame(
+			['declared' => true, 'open' => true, 'reason' => '', 'targetStatus' => 'ingetrokken', 'confirmText' => $confirm],
+			$resolver->withdrawal(action: $this->action(), case: ['caseType' => 'verhuizing', 'status' => 'ontvangen'])
+		);
+		$this->assertSame(
+			['declared' => true, 'open' => false, 'reason' => 'Dit kan niet meer.', 'targetStatus' => 'ingetrokken', 'confirmText' => $confirm],
+			$resolver->withdrawal(action: $this->action(), case: ['caseType' => 'verhuizing', 'status' => 'besloten'])
+		);
+		$this->assertSame(
+			['declared' => true, 'open' => false, 'reason' => 'This request has already been withdrawn.', 'targetStatus' => 'ingetrokken', 'confirmText' => $confirm],
+			$resolver->withdrawal(action: $this->action(), case: ['caseType' => 'verhuizing', 'status' => 'ingetrokken', 'isFinalStatus' => true], closedField: 'isFinalStatus')
+		);
+		$this->assertSame(
+			['declared' => true, 'open' => false, 'reason' => 'This request cannot be withdrawn from the portal.', 'targetStatus' => 'ingetrokken', 'confirmText' => $confirm],
+			$resolver->withdrawal(action: $this->action(), case: ['caseType' => 'verhuizing', 'status' => 'ontvangen', 'isFinalStatus' => true], closedField: 'isFinalStatus')
+		);
+		$this->assertSame(
+			['declared' => false, 'open' => false, 'reason' => 'This request cannot be withdrawn from the portal.', 'targetStatus' => '', 'confirmText' => ''],
+			$this->resolver(null)->withdrawal(action: $this->action(), case: ['caseType' => 'verhuizing', 'status' => 'ontvangen'])
+		);
+
+	}//end testEveryWithdrawalAnswerIsWholeAndInOrder()
+
 	public function testAnActionWithNoCitizenWriteDeclarationOffersNothing(): void {
 		$resolver = $this->resolver($this->caseType(openStatuses: ['ontvangen']));
 

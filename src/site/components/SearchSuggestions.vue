@@ -59,6 +59,33 @@ import {
 } from '../lib/searchSuggestions.js'
 
 /**
+ * Escape or Tab closes the list. Only Escape on an open list is used.
+ *
+ * @param {object} list The suggestion list.
+ * @param {string} key The key.
+ * @return {boolean} True when the host should prevent the key's default.
+ */
+function closeOnKey(list, key) {
+	const wasOpen = list.open
+	list.closed = true
+	return key === 'Escape' && wasOpen
+}
+
+/**
+ * Enter chooses the picked suggestion; with none picked it runs the search.
+ *
+ * @param {object} list The suggestion list.
+ * @return {boolean} True when a suggestion was chosen.
+ */
+function chooseActive(list) {
+	if (list.active < 0) {
+		return false
+	}
+	list.choose(list.suggestions[list.active])
+	return true
+}
+
+/**
  * Publication title suggestions under a search input, from the federation
  * endpoint the search already uses. Every string is a prop.
  *
@@ -232,20 +259,13 @@ export default {
 		 */
 		onKey(event) {
 			if (event.key === 'Escape' || event.key === 'Tab') {
-				const wasOpen = this.open
-				this.closed = true
-				return event.key === 'Escape' && wasOpen
+				return closeOnKey(this, event.key)
 			}
 			if (!this.open) {
 				return false
 			}
 			if (event.key === 'Enter') {
-				if (this.active < 0) {
-					// Nothing picked: Enter runs the search.
-					return false
-				}
-				this.choose(this.suggestions[this.active])
-				return true
+				return chooseActive(this)
 			}
 			const next = moveActive(this.active, this.suggestions.length, event.key)
 			if (next === null) {

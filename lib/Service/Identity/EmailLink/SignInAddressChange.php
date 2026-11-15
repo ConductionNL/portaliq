@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity\EmailLink;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\SignInAddressChangeInterface;
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
 use OCA\Portaliq\Service\PortalObjectWriter;
 
@@ -37,11 +38,7 @@ use OCA\Portaliq\Service\PortalObjectWriter;
  *
  * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#9
  */
-class SignInAddressChange {
-	/**
-	 * The address changed.
-	 */
-	public const CHANGED = 'changed';
+class SignInAddressChange implements SignInAddressChangeInterface {
 
 	/**
 	 * The session is not trusted enough to change it.
@@ -52,11 +49,6 @@ class SignInAddressChange {
 	 * The new address is malformed, or the account is not an `email` one.
 	 */
 	public const REFUSED = 'refused';
-
-	/**
-	 * The store did not take the write.
-	 */
-	public const FAILED = 'failed';
 
 	/**
 	 * The session trust levels that may change it themselves: `substantial`
@@ -98,17 +90,62 @@ class SignInAddressChange {
 		}
 
 		$normalised = $this->address->normalise(address: $newAddress);
-		$id         = (string)($account['uuid'] ?? $account['id'] ?? ((array)($account['@self'] ?? []))['uuid'] ?? '');
-		if ($id === ''
-			|| ($account['identityType'] ?? '') !== EmailLinkEligibility::IDENTITY_TYPE
-			|| filter_var($normalised, FILTER_VALIDATE_EMAIL) === false
-		) {
+		$id         = $this->accountIdOf(account: $account);
+		if ($this->refused(id: $id, account: $account, normalised: $normalised) === true) {
 			return self::REFUSED;
 		}
 
-		$old          = (string)($account['signInAddress'] ?? '');
-		$organisation = (string)($account['organisation'] ?? '');
-		$written      = $this->writer->updateObject(
+		if ($this->writeAddress(id: $id, normalised: $normalised) === false) {
+			return self::FAILED;
+		}
+
+		$this->afterChange(account: $account, normalised: $normalised);
+
+		return self::CHANGED;
+	}//end change()
+
+	/**
+	 * The account row's id, or ''.
+	 *
+	 * @param array<string, mixed> $account The account row.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-an-e-mail-link-session-is-a-fresh-low-session-that-cannot-raise-itself-req-iwi-011
+	 */
+	private function accountIdOf(array $account): string {
+		return (string)($account['uuid'] ?? $account['id'] ?? ((array)($account['@self'] ?? []))['uuid'] ?? '');
+	}//end accountIdOf()
+
+	/**
+	 * Whether the change is refused: no id, not an `email` account, or not a valid address.
+	 *
+	 * @param string               $id         The account's id.
+	 * @param array<string, mixed> $account    The account row.
+	 * @param string               $normalised The normalised new address.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-an-e-mail-link-session-is-a-fresh-low-session-that-cannot-raise-itself-req-iwi-011
+	 */
+	private function refused(string $id, array $account, string $normalised): bool {
+		return $id === ''
+			|| ($account['identityType'] ?? '') !== EmailLinkEligibility::IDENTITY_TYPE
+			|| filter_var($normalised, FILTER_VALIDATE_EMAIL) === false;
+	}//end refused()
+
+	/**
+	 * Write the new sign-in address onto the account.
+	 *
+	 * @param string $id         The account's id.
+	 * @param string $normalised The normalised new address.
+	 *
+	 * @return bool True when the write landed.
+	 *
+	 * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-an-e-mail-link-session-is-a-fresh-low-session-that-cannot-raise-itself-req-iwi-011
+	 */
+	private function writeAddress(string $id, string $normalised): bool {
+		$written = $this->writer->updateObject(
 			register: 'portaliq',
 			schema: 'portalAccount',
 			scopeField: '',
@@ -117,15 +154,26 @@ class SignInAddressChange {
 			id: $id,
 			data: ['signInAddress' => $normalised]
 		);
-		if ($written === null) {
-			return self::FAILED;
-		}
 
+		return $written !== null;
+	}//end writeAddress()
+
+	/**
+	 * Void the unspent links and tell the old address, when there was a different one.
+	 *
+	 * @param array<string, mixed> $account    The account row as it was before the change.
+	 * @param string               $normalised The normalised new address.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-an-e-mail-link-session-is-a-fresh-low-session-that-cannot-raise-itself-req-iwi-011
+	 */
+	private function afterChange(array $account, string $normalised): void {
+		$old          = (string)($account['signInAddress'] ?? '');
+		$organisation = (string)($account['organisation'] ?? '');
 		$this->tokens->voidFor(subjectRef: (string)($account['subjectRef'] ?? ''), organisation: $organisation);
 		if ($old !== '' && $old !== $normalised) {
 			$this->mailer->sendSignInAddressChanged(email: $old, organisation: $organisation, moment: new DateTimeImmutable());
 		}
-
-		return self::CHANGED;
-	}//end change()
+	}//end afterChange()
 }//end class

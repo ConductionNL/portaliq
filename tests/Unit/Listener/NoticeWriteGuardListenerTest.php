@@ -35,6 +35,10 @@ class NoticeWriteGuardListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnEndBeforeTheStartIsRefused(): void {
+		if (class_exists(ObjectCreatingEvent::class) === false) {
+			$this->markTestSkipped('OpenRegister is not installed in this environment.');
+		}
+
 		$event = new ObjectCreatingEvent($this->notice(['startsAt' => '2026-10-03T22:00:00+02:00', 'endsAt' => '2026-10-03T21:00:00+02:00']));
 
 		$this->listener()->handle($event);
@@ -50,6 +54,10 @@ class NoticeWriteGuardListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnEmptyWindowIsRefusedOnUpdate(): void {
+		if (class_exists(ObjectUpdatingEvent::class) === false) {
+			$this->markTestSkipped('OpenRegister is not installed in this environment.');
+		}
+
 		$same    = new ObjectUpdatingEvent($this->notice(['startsAt' => '2026-10-03T22:00:00+02:00', 'endsAt' => '2026-10-03T20:00:00+00:00']));
 		$noStart = new ObjectUpdatingEvent($this->notice(['endsAt' => '2026-10-04T02:00:00+02:00']));
 
@@ -67,6 +75,10 @@ class NoticeWriteGuardListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testAWindowPasses(): void {
+		if (class_exists(ObjectCreatingEvent::class) === false) {
+			$this->markTestSkipped('OpenRegister is not installed in this environment.');
+		}
+
 		$event = new ObjectCreatingEvent($this->notice(['startsAt' => '2026-10-03T22:00:00+02:00', 'endsAt' => '2026-10-04T02:00:00+02:00']));
 
 		$this->listener()->handle($event);
@@ -81,6 +93,10 @@ class NoticeWriteGuardListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnotherSchemasObjectIsLeftAlone(): void {
+		if (class_exists(ObjectEntity::class) === false) {
+			$this->markTestSkipped('OpenRegister is not installed in this environment.');
+		}
+
 		$entity = $this->notice(['endsAt' => 'x']);
 		$entity->setSchema('12');
 		$event = new ObjectCreatingEvent($entity);

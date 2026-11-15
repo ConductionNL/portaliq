@@ -24,9 +24,12 @@
 				:aria-invalid="invalid ? 'true' : undefined"
 				:data-testid="`${id}-choice-${option.value}`"
 				@change="choose(option)" />
-			<span :id="`${id}-${index}-text`" class="pq-choice-card__label">{{
-				option.label
-			}}</span>
+			<span :id="`${id}-${index}-text`" class="pq-choice-card__text">
+				<span class="pq-choice-card__label">{{ option.label }}</span>
+				<span
+					v-if="option.description"
+					class="pq-choice-card__description">{{ option.description }}</span>
+			</span>
 		</label>
 		<label
 			v-if="hasOther"
@@ -101,7 +104,7 @@ export default {
 	props: {
 		/** The field's id: the radio group's name and the first radio's id. */
 		id: { type: String, required: true },
-		/** The field's options, `[{value, label}]`. */
+		/** The field's options, `[{value, label, description?}]`; a description is the card's second line. */
 		options: { type: Array, default: () => [] },
 		/** The value. */
 		modelValue: { type: String, default: '' },
@@ -213,36 +216,13 @@ export default {
 }
 </script>
 
+<style scoped src="./choiceCard.css"></style>
+
 <style scoped>
 .pq-choice-cards {
 	display: flex;
 	flex-direction: column;
 	gap: var(--utrecht-space-block-xs, 0.5rem);
-}
-
-.pq-choice-card {
-	align-items: center;
-	border: 1px solid
-		var(--utrecht-form-control-border-color, var(--utrecht-document-color, #333));
-	border-radius: var(--utrecht-form-control-border-radius, 0.25rem);
-	cursor: pointer;
-	display: flex;
-	gap: var(--utrecht-space-inline-sm, 0.75rem);
-	max-inline-size: 32rem;
-	padding-block: var(--utrecht-space-block-sm, 0.75rem);
-	padding-inline: var(--utrecht-space-inline-md, 1rem);
-}
-
-.pq-choice-card--checked {
-	border-color: var(--utrecht-focus-outline-color, currentColor);
-	border-width: 2px;
-}
-
-.pq-choice-card:focus-within {
-	outline: var(--utrecht-focus-outline-width, 2px)
-		var(--utrecht-focus-outline-style, solid)
-		var(--utrecht-focus-outline-color, currentColor);
-	outline-offset: 2px;
 }
 
 .pq-choice-cards__rest {

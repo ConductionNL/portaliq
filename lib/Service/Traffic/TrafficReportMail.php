@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ use OCP\IL10N;
  * communications officer reads on a phone is better as "Page views:
  * 1,240 (+12% on the week before)" than as a table that wraps.
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
  */
 class TrafficReportMail {
 
@@ -58,7 +58,7 @@ class TrafficReportMail {
 	 *
 	 * @return string The subject.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
 	 */
 	public function subject(IL10N $l, array $portal, array $report, array $period): string {
 		return $l->t('%1$s: %2$s (%3$s)', [
@@ -79,7 +79,7 @@ class TrafficReportMail {
 	 *
 	 * @return array<int, array{heading: string, lines: string[]}> The sections.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
 	 */
 	public function sections(IL10N $l, array $report, array $period, array $current, array $previous): array {
 		$out = [];
@@ -121,7 +121,7 @@ class TrafficReportMail {
 	 *
 	 * @return string The text body.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
 	 */
 	public function plain(array $sections, string $link, string $linkText): string {
 		$out = [];

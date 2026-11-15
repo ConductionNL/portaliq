@@ -34,7 +34,7 @@
 import { MESSAGE_LANGUAGES, pickerLabel } from '../../pages/inbox/translation.js'
 
 /**
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-messages-in-their-chosen-language-req-srp-032
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-messages-in-their-chosen-language-req-srp-032
  */
 export default {
 	name: 'MessageLanguagePicker',
@@ -61,7 +61,7 @@ export default {
 	computed: {
 		/**
 		 * @return {Array<string>} The languages a guardian can pick.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-messages-in-their-chosen-language-req-srp-032
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-messages-in-their-chosen-language-req-srp-032
 		 */
 		languages() {
 			return MESSAGE_LANGUAGES
@@ -72,7 +72,7 @@ export default {
 		/**
 		 * @param {string} tag The language tag.
 		 * @return {string} Its label in the picker.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-messages-in-their-chosen-language-req-srp-032
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-messages-in-their-chosen-language-req-srp-032
 		 */
 		labelFor(tag) {
 			return pickerLabel(tag, this.locale)

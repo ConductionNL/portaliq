@@ -29,7 +29,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+ * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use OCP\EventDispatcher\Event;
 /**
  * A citizen write on their own case, raised once per act.
  *
- * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+ * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
 class PortalClientWriteEvent extends Event {
 	/**
@@ -97,7 +97,7 @@ class PortalClientWriteEvent extends Event {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	public function getRegister(): string {
 		return $this->register;
@@ -108,7 +108,7 @@ class PortalClientWriteEvent extends Event {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	public function getSchema(): string {
 		return $this->schema;
@@ -119,7 +119,7 @@ class PortalClientWriteEvent extends Event {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	public function getCaseId(): string {
 		return $this->caseId;
@@ -130,7 +130,7 @@ class PortalClientWriteEvent extends Event {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	public function getAct(): string {
 		return $this->act;
@@ -141,7 +141,7 @@ class PortalClientWriteEvent extends Event {
 	 *
 	 * @return array<int, string>
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	public function getFields(): array {
 		return $this->fields;
@@ -152,7 +152,7 @@ class PortalClientWriteEvent extends Event {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	public function getIdentity(): array {
 		return $this->identity;
@@ -164,7 +164,7 @@ class PortalClientWriteEvent extends Event {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	public function getMandate(): array {
 		return $this->mandate;
@@ -175,7 +175,7 @@ class PortalClientWriteEvent extends Event {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	public function getOccurredAt(): string {
 		return $this->occurredAt;

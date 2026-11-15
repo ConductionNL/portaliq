@@ -11,7 +11,7 @@
   recording" are different facts and only one of them is a privacy
   posture the operator chose.
 
-  @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+  @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
 -->
 <template>
 	<div class="traffic-table" data-testid="traffic-recordings">
@@ -162,7 +162,7 @@ export default {
 		 * 'not-measured' is kept. A portal that is not measured records
 		 * nothing, so that answer is true whatever the rollups say.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
 		 * @return {string} The state.
 		 */
 		emptyState() {
@@ -180,7 +180,7 @@ export default {
 		/**
 		 * A recording's start as a readable local moment.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
 		 * @param {string} iso The instant.
 		 * @return {string} The label.
 		 */
@@ -195,7 +195,7 @@ export default {
 		/**
 		 * The pages a recording went through, at most three shown.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
 		 * @param {object} recording The recording.
 		 * @return {string} The label.
 		 */
@@ -213,7 +213,7 @@ export default {
 		/**
 		 * A recording's length as m:ss.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
 		 * @param {object} recording The recording.
 		 * @return {string} The clock.
 		 */
@@ -232,7 +232,7 @@ export default {
 		/**
 		 * Open the player on a recording.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
 		 * @param {object} recording The recording.
 		 * @return {void}
 		 */
@@ -243,7 +243,7 @@ export default {
 		/**
 		 * The player closed.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
 		 * @param {boolean} open Whether it is open.
 		 * @return {void}
 		 */

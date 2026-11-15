@@ -115,6 +115,50 @@ function postcode(value) {
 }
 
 /**
+ * @param {string} value The value.
+ * @return {string|null} A Dutch number without spaces, dashes and brackets.
+ */
+function dutchPhone(value) {
+	return phone(value, /^(0[1-9]\d{8}|(\+|00)31[1-9]\d{8})$/)
+}
+
+/**
+ * @param {string} value The value.
+ * @return {string|null} An international number without spaces, dashes and brackets.
+ */
+function internationalPhone(value) {
+	return phone(value, /^\+[1-9]\d{6,14}$/)
+}
+
+/**
+ * @param {string} value The value.
+ * @return {string|null} The KvK number when it has 8 digits.
+ */
+function kvk(value) {
+	return /^\d{8}$/.test(value) ? value : null
+}
+
+/**
+ * @param {string} value The value.
+ * @return {string|null} The branch number when it has 12 digits.
+ */
+function kvkBranch(value) {
+	return /^\d{12}$/.test(value) ? value : null
+}
+
+/** The check of each format: the value in its stored form, or null. */
+const FORMAT_CHECKS = new Map([
+	['bsn', bsn],
+	['iban', iban],
+	['nl-licence-plate', plate],
+	['phone-nl', dutchPhone],
+	['phone-international', internationalPhone],
+	['postcode', postcode],
+	['kvk', kvk],
+	['kvk-branch', kvkBranch],
+])
+
+/**
  * The value in its stored form when it fits the format, else null.
  *
  * @param {string} format The format name.
@@ -123,28 +167,10 @@ function postcode(value) {
  * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t02
  */
 export function normaliseFormat(format, value) {
-	const text = String(value ?? '').trim()
-	switch (format) {
-		case 'bsn':
-			return bsn(text)
-		case 'iban':
-			return iban(text)
-		case 'nl-licence-plate':
-			return plate(text)
-		case 'phone-nl':
-			return phone(text, /^(0[1-9]\d{8}|(\+|00)31[1-9]\d{8})$/)
-		case 'phone-international':
-			return phone(text, /^\+[1-9]\d{6,14}$/)
-		case 'postcode':
-			return postcode(text)
-		case 'kvk':
-			return /^\d{8}$/.test(text) ? text : null
-		case 'kvk-branch':
-			return /^\d{12}$/.test(text) ? text : null
-		default:
-			return null
-	}
+	const check = FORMAT_CHECKS.get(format)
+	return check ? check(String(value ?? '').trim()) : null
 }
+
 
 /** The sentence per format, in Dutch. */
 export const FORMAT_MESSAGES = Object.freeze({

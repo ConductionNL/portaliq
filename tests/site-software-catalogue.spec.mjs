@@ -9,7 +9,7 @@
 // Usage:
 //   node --test tests/site-software-catalogue.spec.mjs
 //
-// @spec openspec/changes/site-software-catalogue-page/specs/example-site/spec.md
+// @spec openspec/specs/example-site/spec.md
 
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
@@ -32,7 +32,7 @@ test('the page places the public records block on stackiq softwareCatalogue', ()
 	assert.ok(block.props.searchLabel, 'the list needs a search label')
 })
 
-// @spec openspec/changes/site-organisation-registration-form/specs/example-site/spec.md#requirement-the-example-site-lets-an-organisation-register-from-the-software-catalogue
+// @spec openspec/specs/example-site/spec.md#requirement-the-example-site-lets-an-organisation-register-from-the-software-catalogue
 test('the page carries the registration form, which saves into stackiq as pending', () => {
 	const form = (site.forms || []).find((f) => f.externalReference === 'organisation-registration')
 	assert.ok(form, 'no registration form declared')

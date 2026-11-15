@@ -26,12 +26,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\PublicCatalogueQueryInterface;
+
 /**
  * Searches, filters, sorts and pages catalogue items.
  *
  * @spec openspec/changes/portal-public-catalogue/specs/portal-public-catalogue/spec.md#requirement-a-visitor-may-search-and-filter-a-portals-public-catalogue
  */
-class PublicCatalogueQuery {
+class PublicCatalogueQuery implements PublicCatalogueQueryInterface {
 	/**
 	 * The most results one page shows.
 	 */
@@ -46,11 +48,6 @@ class PublicCatalogueQuery {
 		'í' => 'i', 'ì' => 'i', 'ï' => 'i', 'î' => 'i', 'ó' => 'o', 'ò' => 'o', 'ö' => 'o', 'ô' => 'o',
 		'ú' => 'u', 'ù' => 'u', 'ü' => 'u', 'û' => 'u', 'ç' => 'c', 'ñ' => 'n', 'ĳ' => 'ij',
 	];
-
-	/**
-	 * The sorts a visitor may choose.
-	 */
-	public const SORTS = ['relevance', 'date', 'dateDesc', 'title'];
 
 	/**
 	 * One page of the items that match a visitor's query, with the facets of
@@ -73,54 +70,72 @@ class PublicCatalogueQuery {
 	 */
 	public function run(array $items, array $params): array {
 		$items   = (new DerivedCatalogueFacets())->apply(items: $items, params: $params);
-		$types   = array_values(array_filter((array)($params['types'] ?? []), 'is_string'));
-		$words   = $this->words(text: (string)($params['q'] ?? ''));
+		$scope   = $this->scopeOf(params: $params);
 		$filters = $this->filters(declared: ($params['filters'] ?? []));
-		$today   = (string)($params['today'] ?? gmdate('Y-m-d'));
+		$base    = array_values(array_filter($items, fn (array $item): bool => $this->isWanted(item: $item, scope: $scope)));
 
-		$app        = (string)($params['app'] ?? '');
-		$categories = array_values(array_filter((array)($params['categories'] ?? []), 'is_string'));
-		$range      = (string)($params['range'] ?? '');
+		$hits = array_values(array_filter($base, fn (array $item): bool => $this->inFilters(item: $item, filters: $filters)));
+		$hits = $this->sorted(items: $hits, sort: (string)($params['sort'] ?? 'relevance'), words: $scope->words);
 
-		$scope = ['types' => $types, 'app' => $app, 'categories' => $categories, 'range' => $range, 'today' => $today];
-		$base  = array_values(
-			array_filter(
-				$items,
-				fn (array $item): bool => $this->inScope(item: $item, scope: $scope)
-					&& $this->matches(item: $item, words: $words)
-					&& (($params['upcoming'] ?? false) !== true || $this->isUpcoming(item: $item, today: $today))
-			)
+		return $this->paged(hits: $hits, params: $params) + ['facets' => $this->facets(items: $base, filters: $filters)];
+	}//end run()
+
+	/**
+	 * The scope a visitor's query asks for.
+	 *
+	 * @param array<string, mixed> $params The query.
+	 *
+	 * @return CatalogueScope
+	 */
+	private function scopeOf(array $params): CatalogueScope {
+		return new CatalogueScope(
+			types: array_values(array_filter((array)($params['types'] ?? []), 'is_string')),
+			words: $this->words(text: (string)($params['q'] ?? '')),
+			today: (string)($params['today'] ?? gmdate('Y-m-d')),
+			app: (string)($params['app'] ?? ''),
+			categories: array_values(array_filter((array)($params['categories'] ?? []), 'is_string')),
+			range: (string)($params['range'] ?? ''),
+			upcoming: (($params['upcoming'] ?? false) === true)
 		);
+	}//end scopeOf()
 
-		$hits  = array_values(array_filter($base, fn (array $item): bool => $this->inFilters(item: $item, filters: $filters)));
-		$hits  = $this->sorted(items: $hits, sort: (string)($params['sort'] ?? 'relevance'), words: $words);
+	/**
+	 * One page of the hits, with how many there are and how many pages: the
+	 * limit held between 1 and the page maximum, the page between 1 and the
+	 * last one.
+	 *
+	 * @param array<int, array<string, mixed>> $hits   The sorted hits.
+	 * @param array<string, mixed>             $params The query (`limit`, `page`).
+	 *
+	 * @return array{items: array<int, array<string, mixed>>, total: int, page: int, pages: int}
+	 */
+	private function paged(array $hits, array $params): array {
 		$limit = max(1, min(self::MAX_PAGE, (int)($params['limit'] ?? 10)));
 		$pages = max(1, (int)ceil(count($hits) / $limit));
 		$page  = max(1, min($pages, (int)($params['page'] ?? 1)));
 
 		return [
-			'items'  => array_slice($hits, ($page - 1) * $limit, $limit),
-			'total'  => count($hits),
-			'page'   => $page,
-			'pages'  => $pages,
-			'facets' => $this->facets(items: $base, filters: $filters),
+			'items' => array_slice($hits, ($page - 1) * $limit, $limit),
+			'total' => count($hits),
+			'page'  => $page,
+			'pages' => $pages,
 		];
-	}//end query()
+	}//end paged()
 
 	/**
-	 * Whether an item is of a wanted type, app and category, and in the wanted range.
+	 * Whether an item is in scope, holds every word, and is upcoming when
+	 * only upcoming items count.
 	 *
 	 * @param array<string, mixed> $item  The item.
-	 * @param array<string, mixed> $scope The `types`, `app`, `categories`, `range` and `today` the query asks for.
+	 * @param CatalogueScope       $scope The scope.
 	 *
 	 * @return bool
 	 */
-	private function inScope(array $item, array $scope): bool {
-		return ($scope['types'] === [] || in_array($item['type'] ?? '', $scope['types'], true) === true)
-			&& ($scope['app'] === '' || str_starts_with((string)($item['id'] ?? ''), $scope['app'] . ':') === true)
-			&& ($scope['categories'] === [] || in_array((string)($item['category'] ?? ''), $scope['categories'], true) === true)
-			&& ($scope['range'] !== 'schoolYear' || $this->inSchoolYear(item: $item, today: $scope['today']) === true);
-	}//end inScope()
+	private function isWanted(array $item, CatalogueScope $scope): bool {
+		return (new CatalogueScopeFilter())->holds(item: $item, scope: $scope)
+			&& $this->matches(item: $item, words: $scope->words)
+			&& ($scope->upcoming === false || $this->isUpcoming(item: $item, today: $scope->today));
+	}//end isWanted()
 
 	/**
 	 * The words of a text, lower case and without accents.
@@ -172,32 +187,6 @@ class PublicCatalogueQuery {
 
 		return true;
 	}//end matches()
-
-	/**
-	 * Whether the item's day falls in the school year that holds today
-	 * (1 August to 31 July).
-	 *
-	 * @param array<string, mixed> $item  The item.
-	 * @param string               $today Today, `Y-m-d`.
-	 *
-	 * @return bool
-	 *
-	 * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-2
-	 */
-	private function inSchoolYear(array $item, string $today): bool {
-		$day = substr((string)($item['date'] ?? ''), 0, 10);
-		if ($day === '' || preg_match('/^\d{4}-\d{2}-\d{2}$/', $today) !== 1) {
-			return false;
-		}
-
-		$year  = (int)substr($today, 0, 4);
-		$start = ($year - 1);
-		if ((int)substr($today, 5, 2) >= 8) {
-			$start = $year;
-		}
-
-		return $day >= sprintf('%04d-08-01', $start) && $day <= sprintf('%04d-07-31', ($start + 1));
-	}//end inSchoolYear()
 
 	/**
 	 * Whether an item's (end) date is today or later; an item without a date
@@ -270,6 +259,23 @@ class PublicCatalogueQuery {
 	 * @return array<int, array{label: string, values: array<int, array{value: string, count: int, selected: bool}>}>
 	 */
 	private function facets(array $items, array $filters): array {
+		$out = [];
+		foreach ($this->facetLabels(items: $items) as $label) {
+			$counts = $this->facetCounts(items: $items, filters: $filters, label: $label);
+			$out[]  = ['label' => $label, 'values' => $this->facetValues(counts: $counts, filters: $filters, label: $label)];
+		}
+
+		return $out;
+	}//end facets()
+
+	/**
+	 * The facet labels the items carry, in first-seen order.
+	 *
+	 * @param array<int, array<string, mixed>> $items The items that match the query.
+	 *
+	 * @return array<int, string>
+	 */
+	private function facetLabels(array $items): array {
 		$labels = [];
 		foreach ($items as $item) {
 			foreach (array_keys((array)($item['facets'] ?? [])) as $label) {
@@ -277,29 +283,50 @@ class PublicCatalogueQuery {
 			}
 		}
 
-		$out = [];
-		foreach (array_keys($labels) as $label) {
-			$counts = [];
-			foreach ($items as $item) {
-				if ($this->inFilters(item: $item, filters: $filters, except: $label) === false) {
-					continue;
-				}
+		return array_keys($labels);
+	}//end facetLabels()
 
-				foreach ((array)($item['facets'][$label] ?? []) as $value) {
-					$counts[$value] = ($counts[$value] ?? 0) + 1;
-				}
+	/**
+	 * How many items hold each value of one facet, among those that match every OTHER facet's choice.
+	 *
+	 * @param array<int, array<string, mixed>>  $items   The items that match the query.
+	 * @param array<string, array<int, string>> $filters The choices.
+	 * @param string                            $label   The facet.
+	 *
+	 * @return array<int|string, int>
+	 */
+	private function facetCounts(array $items, array $filters, string $label): array {
+		$counts = [];
+		foreach ($items as $item) {
+			if ($this->inFilters(item: $item, filters: $filters, except: $label) === false) {
+				continue;
 			}
 
-			$values = [];
-			foreach ($counts as $value => $count) {
-				$values[] = ['value' => (string)$value, 'count' => $count, 'selected' => in_array((string)$value, $filters[$label] ?? [], true)];
+			foreach ((array)($item['facets'][$label] ?? []) as $value) {
+				$counts[$value] = ($counts[$value] ?? 0) + 1;
 			}
+		}
 
-			$out[] = ['label' => $label, 'values' => $values];
-		}//end foreach
+		return $counts;
+	}//end facetCounts()
 
-		return $out;
-	}//end facets()
+	/**
+	 * One facet's values with their counts and whether they are chosen.
+	 *
+	 * @param array<int|string, int>            $counts  The count per value.
+	 * @param array<string, array<int, string>> $filters The choices.
+	 * @param string                            $label   The facet.
+	 *
+	 * @return array<int, array{value: string, count: int, selected: bool}>
+	 */
+	private function facetValues(array $counts, array $filters, string $label): array {
+		$values = [];
+		foreach ($counts as $value => $count) {
+			$values[] = ['value' => (string)$value, 'count' => $count, 'selected' => in_array((string)$value, $filters[$label] ?? [], true)];
+		}
+
+		return $values;
+	}//end facetValues()
 
 	/**
 	 * The items in the chosen order: by relevance (a word in the title first,

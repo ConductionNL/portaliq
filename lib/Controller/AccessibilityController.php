@@ -29,11 +29,11 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use DateTimeImmutable;
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\ActionAuthService;
-use OCA\Portaliq\Service\Cms\AccessibilityMeasurements;
-use OCA\Portaliq\Service\Cms\AccessibilityRun;
-use OCA\Portaliq\Service\Cms\AccessibilityStatement;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\AccessibilityMeasurementsInterface;
+use OCA\Portaliq\Kernel\Contracts\AccessibilityRunInterface;
+use OCA\Portaliq\Kernel\Contracts\AccessibilityStatementInterface;
+use OCA\Portaliq\Kernel\Contracts\ActionAuthServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -41,6 +41,7 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IRequest;
 use OCP\IUserSession;
+use OCA\Portaliq\Kernel\StaffAction;
 
 /**
  * Three guarded routes on a portal.
@@ -52,27 +53,27 @@ class AccessibilityController extends Controller {
 	/**
 	 * The action that may measure and record the audit.
 	 */
-	public const ACTION_MEASURE = 'portal.measure-accessibility';
+	public const ACTION_MEASURE = StaffAction::MEASURE_ACCESSIBILITY;
 
 	/**
 	 * @param IRequest                  $request      The request.
-	 * @param AccessibilityMeasurements $measurements Where runs and settings live.
-	 * @param AccessibilityRun          $run          The run's shape.
-	 * @param AccessibilityStatement    $statement    The statement builder.
-	 * @param ActionAuthService         $actionAuth   The action matrix.
+	 * @param AccessibilityMeasurementsInterface $measurements Where runs and settings live.
+	 * @param AccessibilityRunInterface          $run          The run's shape.
+	 * @param AccessibilityStatementInterface    $statement    The statement builder.
+	 * @param ActionAuthServiceInterface         $actionAuth   The action matrix.
 	 * @param IUserSession              $userSession  The signed-in user.
 	 * @param ITimeFactory              $clock        The clock.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly AccessibilityMeasurements $measurements,
-		private readonly AccessibilityRun $run,
-		private readonly AccessibilityStatement $statement,
-		private readonly ActionAuthService $actionAuth,
+		private readonly AccessibilityMeasurementsInterface $measurements,
+		private readonly AccessibilityRunInterface $run,
+		private readonly AccessibilityStatementInterface $statement,
+		private readonly ActionAuthServiceInterface $actionAuth,
 		private readonly IUserSession $userSession,
 		private readonly ITimeFactory $clock,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

@@ -28,5 +28,8 @@ export const PAGE_PROPS = {
 	nav: { type: Array, default: () => [] },
 }
 
-/** Events a signed-in page may emit. */
-export const PAGE_EMITS = ['navigate', 'unread', 'refresh']
+/**
+ * Events a signed-in page may emit. `titled` (boolean) says the page now shows
+ * its own h1, an open item's title, so the area leaves its own heading out.
+ */
+export const PAGE_EMITS = ['navigate', 'unread', 'refresh', 'titled']

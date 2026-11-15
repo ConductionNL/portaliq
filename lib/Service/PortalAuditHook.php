@@ -37,6 +37,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\PortalAuditHookInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -47,7 +48,7 @@ use Throwable;
  *
  * @spec openspec/specs/supplier-portal/spec.md#download-emits-an-audit-hook
  */
-class PortalAuditHook {
+class PortalAuditHook implements PortalAuditHookInterface {
 	/**
 	 * The audit trail service delivered by portal-session-hardening-v2.
 	 */

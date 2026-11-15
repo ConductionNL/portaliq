@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service\Identity;
 
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
+use OCA\Portaliq\Service\Mail\MailSite;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalResolver;
@@ -346,8 +347,7 @@ class PortalIdentityMailerTest extends TestCase {
 			mailer: $imailer,
 			l10nFactory: $factory,
 			deepLinks: new PortalDeepLinkBuilder($urls),
-			portals: $portals,
-			organisations: $organisations,
+			site: new MailSite(portals: $portals, organisations: $organisations),
 			logger: $logger
 		);
 	}//end mailer()

@@ -31,6 +31,8 @@ use stdClass;
  * The portal record is not anonymously readable; the content API serves a
  * curated projection of it. This class decides the shell part of that
  * projection, so nothing the record holds reaches the public by accident.
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class PortalShell {
 
@@ -72,7 +74,7 @@ class PortalShell {
 	 * @spec openspec/changes/resident-menu-badges-and-cards/specs/site-resident-menu/spec.md#requirement-the-menu-may-open-with-whom-the-resident-acts-for
 	 *
 	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-header-must-be-a-block-whose-shape-the-portal-chooses-req-ptb-004
-	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
+	 * @spec openspec/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
 	 * @spec openspec/changes/site-breadcrumb-follows-the-school-boards/specs/site-look/spec.md#requirement-a-portal-chooses-the-words-of-the-last-crumb
 	 */
 	public function project(array $portal): array {
@@ -128,7 +130,7 @@ class PortalShell {
 	 *
 	 * @return array{enabled: bool, label: string, placeholder: string, route: string} The box.
 	 *
-	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
+	 * @spec openspec/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
 	 */
 	public function headerSearch(array $portal): array {
 		$search = $portal['headerSearch'] ?? [];
@@ -201,7 +203,7 @@ class PortalShell {
 	 * @return array<string, mixed> `{modes, register?, registerLabel?}`.
 	 *
 	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-header-must-be-a-block-whose-shape-the-portal-chooses-req-ptb-004
-	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
+	 * @spec openspec/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
 	 */
 	public function authentication(array $portal): array {
 		$auth   = (array)($portal['authentication'] ?? []);
@@ -229,7 +231,7 @@ class PortalShell {
 	 * @return array<string, mixed> `{description, colophon, socials, legalLinks, badges, cta, contact}`; each list holds `{label, href}` entries.
 	 *
 	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-footer-must-be-a-block-whose-bands-are-styled-by-role-req-ptb-005
-	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
+	 * @spec openspec/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
 	 */
 	public function footer(array $portal): array {
 		$footer = $portal['footer'] ?? [];
@@ -258,39 +260,69 @@ class PortalShell {
 	 *
 	 * @return array{title: string, lines: list<array<string, string>>}|null The column.
 	 *
-	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
+	 * @spec openspec/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
 	 */
 	private function contact(mixed $contact): ?array {
 		if (is_array($contact) === false) {
 			return null;
 		}
 
-		$lines = [];
-		foreach ((array)($contact['lines'] ?? []) as $line) {
-			if (is_array($line) === false) {
-				continue;
-			}
-
-			$text = $this->text(value: ($line['text'] ?? ''));
-			if ($text === '') {
-				continue;
-			}
-
-			$kept = ['text' => $text];
-			$href = $this->text(value: ($line['href'] ?? ''));
-			if ($this->followable(href: $href) === true) {
-				$kept['href'] = $href;
-			}
-
-			$lines[] = $kept;
-		}
-
+		$lines = $this->contactLines(contact: $contact);
 		if ($lines === []) {
 			return null;
 		}
 
 		return ['title' => $this->text(value: ($contact['title'] ?? '')), 'lines' => $lines];
 	}//end contact()
+
+	/**
+	 * The contact column's lines that carry text.
+	 *
+	 * @param array<string, mixed> $contact The authored column.
+	 *
+	 * @return list<array<string, string>>
+	 *
+	 * @spec openspec/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
+	 */
+	private function contactLines(array $contact): array {
+		$lines = [];
+		foreach ((array)($contact['lines'] ?? []) as $line) {
+			$kept = $this->contactLine(line: $line);
+			if ($kept !== null) {
+				$lines[] = $kept;
+			}
+		}
+
+		return $lines;
+	}//end contactLines()
+
+	/**
+	 * One contact line: its text, and its `href` when followable. Null without text.
+	 *
+	 * @param mixed $line The authored line.
+	 *
+	 * @return array<string, string>|null
+	 *
+	 * @spec openspec/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
+	 */
+	private function contactLine(mixed $line): array|null {
+		if (is_array($line) === false) {
+			return null;
+		}
+
+		$text = $this->text(value: ($line['text'] ?? ''));
+		if ($text === '') {
+			return null;
+		}
+
+		$kept = ['text' => $text];
+		$href = $this->text(value: ($line['href'] ?? ''));
+		if ($this->followable(href: $href) === true) {
+			$kept['href'] = $href;
+		}
+
+		return $kept;
+	}//end contactLine()
 
 	/**
 	 * The portal's own region contents, the middle step of resolution.
@@ -370,26 +402,58 @@ class PortalShell {
 		}
 
 		foreach ($entries as $entry) {
-			if (is_array($entry) === false) {
-				continue;
+			$link = $this->linkOf(entry: $entry, extra: $extra);
+			if ($link !== null) {
+				$kept[] = $link;
 			}
-
-			$label = $this->text(value: ($entry['label'] ?? ''));
-			$href  = $this->text(value: ($entry['href'] ?? ''));
-			if ($label === '' || $this->followable(href: $href) === false) {
-				continue;
-			}
-
-			$link = ['label' => $label, 'href' => $href];
-			if ($extra !== null && $this->text(value: ($entry[$extra] ?? '')) !== '') {
-				$link[$extra] = $this->text(value: $entry[$extra]);
-			}
-
-			$kept[] = $link;
 		}
 
 		return $kept;
 	}//end links()
+
+	/**
+	 * One entry's `{label, href}`, plus `$extra` when set; null without a
+	 * label or a followable destination.
+	 *
+	 * @param mixed       $entry The authored entry.
+	 * @param string|null $extra One more text key an entry may carry.
+	 *
+	 * @return array<string, string>|null
+	 *
+	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-footer-must-be-a-block-whose-bands-are-styled-by-role-req-ptb-005
+	 */
+	private function linkOf(mixed $entry, string|null $extra): array|null {
+		if (is_array($entry) === false) {
+			return null;
+		}
+
+		$label = $this->text(value: ($entry['label'] ?? ''));
+		$href  = $this->text(value: ($entry['href'] ?? ''));
+		if ($label === '' || $this->followable(href: $href) === false) {
+			return null;
+		}
+
+		return $this->withExtra(link: ['label' => $label, 'href' => $href], entry: $entry, extra: $extra);
+	}//end linkOf()
+
+	/**
+	 * The link with the entry's `$extra` text when set.
+	 *
+	 * @param array<string, string> $link  The link.
+	 * @param array<string, mixed>  $entry The authored entry.
+	 * @param string|null           $extra One more text key an entry may carry.
+	 *
+	 * @return array<string, string>
+	 *
+	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-footer-must-be-a-block-whose-bands-are-styled-by-role-req-ptb-005
+	 */
+	private function withExtra(array $link, array $entry, string|null $extra): array {
+		if ($extra !== null && $this->text(value: ($entry[$extra] ?? '')) !== '') {
+			$link[$extra] = $this->text(value: $entry[$extra]);
+		}
+
+		return $link;
+	}//end withExtra()
 
 	/**
 	 * Whether a visitor can follow this destination: an in-site route or a
