@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation
+ * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation
  * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
  */
 
@@ -40,14 +40,15 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\PortalDeepLinkBuilderInterface;
 use OCP\IURLGenerator;
 
 /**
  * Builds the absolute deep link into the site for out-of-band mail.
  *
- * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation
+ * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation
  */
-class PortalDeepLinkBuilder {
+class PortalDeepLinkBuilder implements PortalDeepLinkBuilderInterface {
 	/**
 	 * The site's route name (appinfo/routes.php `portalPage#site`), where
 	 * every mail link lands (site-reaches-portal-parity REQ-SRP-049).
@@ -85,7 +86,7 @@ class PortalDeepLinkBuilder {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation
 	 */
 	public function forOrganisation(string $organisation): string {
 		$parameters = [];

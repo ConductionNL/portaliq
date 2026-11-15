@@ -68,6 +68,51 @@ class GuardianAccountDirectoryTest extends TestCase {
 	}//end testListsTheActiveParentAccountsOnce()
 
 	/**
+	 * A row that is not a map and does not serialise to one, an object
+	 * without jsonSerialize() and a subjectRef that is not a string are not
+	 * guardians; the refs keep the order they were first seen in.
+	 */
+	public function testOnlyAWellFormedActiveParentRowIsAGuardian(): void {
+		$os = new class {
+			public function setRegister(string $register): self {
+				return $this;
+			}//end setRegister()
+
+			public function setSchema(string $schema): self {
+				return $this;
+			}//end setSchema()
+
+			/**
+			 * @param array<string, mixed> $config
+			 *
+			 * @return array<int, mixed>
+			 */
+			public function findAll(array $config, bool $_rbac = true, bool $_multitenancy = true): array {
+				return [
+					'parent',
+					new class {
+						public array $row = ['audience' => 'parent', 'status' => 'active', 'subjectRef' => 'plain-object'];
+					},
+					new class {
+						/** @return string */
+						public function jsonSerialize(): string {
+							return 'not a row';
+						}//end jsonSerialize()
+					},
+					['audience' => 'parent', 'status' => 'active', 'subjectRef' => 42],
+					['audience' => 'parent', 'status' => 'Active', 'subjectRef' => 'capital'],
+					['audience' => 'parent', 'status' => 'active', 'subjectRef' => 'zoe'],
+					['audience' => 'parent', 'status' => 'active', 'subjectRef' => 'anna'],
+				];
+			}//end findAll()
+		};
+
+		$directory = new GuardianAccountDirectory($this->container($os), $this->createMock(LoggerInterface::class), $this->createMock(LeafGuardianAudienceReader::class));
+
+		$this->assertSame(['zoe', 'anna'], $directory->activeGuardianRefs());
+	}//end testOnlyAWellFormedActiveParentRowIsAGuardian()
+
+	/**
 	 * Without OpenRegister nobody is listed, and nothing throws.
 	 */
 	public function testWithoutOpenRegisterNobodyIsListed(): void {

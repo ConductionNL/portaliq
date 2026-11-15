@@ -10,7 +10,10 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\PortalCaseTypesController;
+use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Service\CaseTypeColumns\CaseTypeColumnSettings;
 use OCA\Portaliq\Service\PortalCaseTypeCatalogue;
+use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -35,7 +38,7 @@ class PortalCaseTypesControllerTest extends TestCase {
 	 */
 	public function testNonAdminIsRefused(): void {
 		$class = new ReflectionClass(PortalCaseTypesController::class);
-		foreach (['index', 'update'] as $name) {
+		foreach (['index', 'update', 'updateColumns'] as $name) {
 			$method = $class->getMethod($name);
 			$this->assertEmpty($method->getAttributes(PublicPage::class), $name);
 			$this->assertEmpty($method->getAttributes(NoAdminRequired::class), $name);
@@ -49,7 +52,7 @@ class PortalCaseTypesControllerTest extends TestCase {
 			['register' => 'oud', 'schema' => 'zaaktype', 'typeId' => 'afgeschaft', 'label' => 'Afgeschaft', 'shown' => false],
 		]);
 
-		$response = (new PortalCaseTypesController($this->createMock(IRequest::class), $catalogue))->index(slug: 'mijn-alkmaar');
+		$response = ($this->controller($catalogue))->index(slug: 'mijn-alkmaar');
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame('afgeschaft', $response->getData()['caseTypes'][0]['typeId']);
@@ -63,7 +66,7 @@ class PortalCaseTypesControllerTest extends TestCase {
 			->getMock();
 		$catalogue->method('portalBySlug')->willReturn(null);
 		$catalogue->expects($this->never())->method('save');
-		$controller = new PortalCaseTypesController($this->createMock(IRequest::class), $catalogue);
+		$controller = $this->controller($catalogue);
 
 		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->index(slug: 'nergens')->getStatus());
 		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->update(slug: 'nergens', hiddenCaseTypes: [])->getStatus());
@@ -78,7 +81,7 @@ class PortalCaseTypesControllerTest extends TestCase {
 			static fn (array $portal): array => [['typeId' => 'handhaving', 'shown' => ($portal['hiddenCaseTypes'] ?? []) === []]]
 		);
 
-		$response = (new PortalCaseTypesController($this->createMock(IRequest::class), $catalogue))
+		$response = ($this->controller($catalogue))
 			->update(slug: 'mijn-alkmaar', hiddenCaseTypes: [['typeId' => 'handhaving']]);
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
@@ -89,11 +92,92 @@ class PortalCaseTypesControllerTest extends TestCase {
 		$catalogue = $this->catalogue();
 		$catalogue->method('save')->willReturn(null);
 
-		$response = (new PortalCaseTypesController($this->createMock(IRequest::class), $catalogue))
+		$response = ($this->controller($catalogue))
 			->update(slug: 'mijn-alkmaar', hiddenCaseTypes: []);
 
 		$this->assertSame(Http::STATUS_BAD_GATEWAY, $response->getStatus());
 	}//end testAFailedSaveIs502()
+
+	public function testTheListCarriesTheColumnsAndTheFields(): void {
+		$registry = $this->createMock(PortalContributionRegistry::class);
+		$registry->method('servedAudiences')->willReturn(['client']);
+		$registry->method('aggregateFor')->willReturn(
+			['contributions' => [['collections' => [['kind' => 'cases', 'columns' => [['field' => 'bewijs', 'label' => 'Vergunningsbewijs'], ['field' => 'bewijs']]]]]]]
+		);
+		$portal = self::PORTAL + ['caseTypeColumns' => ['parkeren' => [['field' => 'bewijs', 'render' => 'qr']]]];
+		$catalogue = $this->getMockBuilder(PortalCaseTypeCatalogue::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['portalBySlug', 'listFor', 'save'])
+			->getMock();
+		$catalogue->method('portalBySlug')->willReturn($portal);
+		$catalogue->method('listFor')->willReturn([]);
+
+		$data = $this->controller($catalogue, ['columns' => new CaseTypeColumnSettings($this->createMock(PortalObjectWriter::class), $registry)])
+			->index(slug: 'mijn-alkmaar')->getData();
+
+		$this->assertSame([['field' => 'bewijs', 'render' => 'qr']], ((array)$data['columns'])['parkeren']);
+		$this->assertSame([['field' => 'bewijs', 'label' => 'Vergunningsbewijs']], $data['fields']);
+	}//end testTheListCarriesTheColumnsAndTheFields()
+
+	public function testSavingOneTypesColumnsKeepsTheOtherTypes(): void {
+		$stored = self::PORTAL + ['caseTypeColumns' => ['afval' => [['field' => 'adres', 'render' => 'text']], 'parkeren' => [['field' => 'oud', 'render' => 'text']]]];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->once())->method('updateObject')->willReturnCallback(
+			static fn (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, \Closure $data): array => array_merge($stored, $data($stored))
+		);
+		$request = $this->createMock(IRequest::class);
+		$request->method('getParam')->with('columns')->willReturn([['field' => 'bewijs', 'render' => 'qr', 'linkLabel' => 'Toevoegen aan wallet'], ['field' => 'x', 'render' => 'badge']]);
+
+		$response = $this->controller($this->catalogue(), ['columns' => new CaseTypeColumnSettings($writer, $this->createMock(PortalContributionRegistry::class)), 'request' => $request])
+			->updateColumns(slug: 'mijn-alkmaar', typeId: 'parkeren');
+
+		$columns = (array)$response->getData()['columns'];
+		$this->assertSame([['field' => 'adres', 'render' => 'text']], $columns['afval']);
+		$this->assertSame([['field' => 'bewijs', 'render' => 'qr', 'linkLabel' => 'Toevoegen aan wallet']], $columns['parkeren']);
+	}//end testSavingOneTypesColumnsKeepsTheOtherTypes()
+
+	public function testAnEmptyListRemovesTheType(): void {
+		$stored = self::PORTAL + ['caseTypeColumns' => ['parkeren' => [['field' => 'oud', 'render' => 'text']]]];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('updateObject')->willReturnCallback(
+			static fn (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, \Closure $data): array => array_merge($stored, ['caseTypeColumns' => (array)$data($stored)['caseTypeColumns']])
+		);
+
+		$response = $this->controller($this->catalogue(), ['columns' => new CaseTypeColumnSettings($writer, $this->createMock(PortalContributionRegistry::class))])
+			->updateColumns(slug: 'mijn-alkmaar', typeId: 'parkeren');
+
+		$this->assertSame([], (array)$response->getData()['columns']);
+	}//end testAnEmptyListRemovesTheType()
+
+	public function testAColumnsSaveOnAnUnknownPortalOrAFailedWrite(): void {
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('updateObject')->willReturn(null);
+		$settings = new CaseTypeColumnSettings($writer, $this->createMock(PortalContributionRegistry::class));
+		$missing  = $this->getMockBuilder(PortalCaseTypeCatalogue::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['portalBySlug', 'listFor', 'save'])
+			->getMock();
+		$missing->method('portalBySlug')->willReturn(null);
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $this->controller($missing, ['columns' => $settings])->updateColumns(slug: 'nergens', typeId: 'parkeren')->getStatus());
+		$this->assertSame(Http::STATUS_BAD_GATEWAY, $this->controller($this->catalogue(), ['columns' => $settings])->updateColumns(slug: 'mijn-alkmaar', typeId: 'parkeren')->getStatus());
+	}//end testAColumnsSaveOnAnUnknownPortalOrAFailedWrite()
+
+	/**
+	 * The controller over a catalogue double.
+	 *
+	 * @param PortalCaseTypeCatalogue $catalogue The catalogue.
+	 * @param array{columns?: CaseTypeColumnSettings, request?: IRequest} $with Real collaborators; doubles for the rest.
+	 *
+	 * @return PortalCaseTypesController
+	 */
+	private function controller(PortalCaseTypeCatalogue $catalogue, array $with = []): PortalCaseTypesController {
+		return new PortalCaseTypesController(
+			($with['request'] ?? $this->createMock(IRequest::class)),
+			$catalogue,
+			($with['columns'] ?? new CaseTypeColumnSettings($this->createMock(PortalObjectWriter::class), $this->createMock(PortalContributionRegistry::class)))
+		);
+	}//end controller()
 
 	/**
 	 * A catalogue double that finds the portal.

@@ -54,6 +54,13 @@ class ContactInvitationLinkTest extends TestCase {
 	 */
 	private bool $writeFails = false;
 
+	/**
+	 * Whether the inviter's account is withdrawn (void).
+	 *
+	 * @var bool
+	 */
+	private bool $inviterVoid = false;
+
 	private int $seq = 0;
 
 	protected function setUp(): void {
@@ -95,7 +102,7 @@ class ContactInvitationLinkTest extends TestCase {
 			}
 		);
 		$accounts = $this->createMock(PortalAccountLookup::class);
-		$accounts->method('bySubjectRef')->willReturnCallback(static fn (string $ref): ?array => ['subjectRef' => $ref, 'displayName' => 'Anna']);
+		$accounts->method('bySubjectRef')->willReturnCallback(fn (string $ref): ?array => ['subjectRef' => $ref, 'displayName' => 'Anna'] + ($this->inviterVoid ? ['status' => 'void'] : []));
 
 		return new ContactInvitationLink($reader, new ContactRows(reader: $reader), $writer, $accounts);
 	}//end link()
@@ -130,6 +137,15 @@ class ContactInvitationLinkTest extends TestCase {
 		$this->assertSame('', $this->rows['inv']['tokenHash']);
 		$this->assertSame('not_found', $link->accept(subject: ['subjectRef' => 'm', 'organisation' => 'org-1'], token: 'secret', displayName: 'M', now: $now), 'used');
 	}//end testFollowingTheLinkSignedInJoinsBothSidesOnce()
+
+	public function testAWithdrawnInviterIsNotNamedOnTheNewContact(): void {
+		$this->inviterVoid = true;
+		$link = $this->link();
+
+		$this->assertSame('sent', $link->accept(subject: ['subjectRef' => 'n', 'organisation' => 'org-1'], token: 'secret', displayName: 'Nina', now: new DateTimeImmutable(self::NOW)));
+		$this->assertSame(['a' => ''], $this->approvedOf('n'));
+		$this->assertSame(['n' => 'Nina'], $this->approvedOf('a'));
+	}
 
 	public function testAnInvitationHeldForARegistrationJoinsOnActivation(): void {
 		$link = $this->link();

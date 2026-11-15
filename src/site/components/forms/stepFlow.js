@@ -10,6 +10,61 @@ import {
 } from './steps.js'
 
 /**
+ * @param {object} vm The component running the flow.
+ * @return {Array<object>} The fields of the step on screen that show.
+ */
+function shownFields(vm) {
+	return vm.currentStep.fields.filter((field) => vm.isShownField(field))
+}
+
+/**
+ * @param {object} vm The component running the flow.
+ * @return {boolean} Whether the step on screen decides, and the component can ask.
+ */
+function decidesHere(vm) {
+	return vm.currentStep.decides === true && typeof vm.decideStep === 'function'
+}
+
+/**
+ * The step "Volgende stap" opens: the review when the step was opened from
+ * it, else the next shown step, unless a deciding step names another.
+ *
+ * @param {object} vm The component running the flow.
+ * @return {Promise<number|null>} The step's index, or null while the rule engine is down.
+ */
+async function nextTarget(vm) {
+	const planned = vm.backToReview
+		? vm.flow.length - 1
+		: stepTo(vm.flow, vm.stepIndex, 1, vm.isShownField)
+	return decidesHere(vm) ? decidedTarget(vm, planned) : planned
+}
+
+/**
+ * A step that decides asks the rule engine on the server; the step its
+ * outcome names opens next. The engine being down keeps the answers and
+ * offers a retry (form-flow-repeating-groups-calculations-and-decisions
+ * REQ-FFL-003).
+ *
+ * @param {object} vm The component running the flow.
+ * @param {number} planned The step that opens when the outcome names none.
+ * @return {Promise<number|null>} The step's index, or null when the engine is down.
+ */
+async function decidedTarget(vm, planned) {
+	vm.decisionDown = false
+	vm.deciding = true
+	try {
+		const decided = await vm.decideStep(vm.currentStep)
+		const named = stepIndexById(vm.flow, decided && decided.nextStep)
+		return named >= 0 && !vm.backToReview ? named : planned
+	} catch {
+		vm.decisionDown = true
+		return null
+	} finally {
+		vm.deciding = false
+	}
+}
+
+/**
  * The step flow both form renderers share (site-multi-step-forms T6, T7b):
  * one step at a time, "Volgende stap" checks only the step's shown fields,
  * "Vorige stap" never checks, a step whose fields are all hidden is skipped
@@ -86,42 +141,14 @@ export default {
 		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
 		 */
 		async nextStep() {
-			const fields = this.currentStep.fields.filter((field) =>
-				this.isShownField(field),
-			)
-			this.errors = this.checkFields(fields)
+			this.errors = this.checkFields(shownFields(this))
 			if (Object.keys(this.errors).length > 0) {
 				this.$nextTick(() => this.focusSummary())
 				return
 			}
-			let target = this.backToReview
-				? this.flow.length - 1
-				: stepTo(this.flow, this.stepIndex, 1, this.isShownField)
-			// A step that decides asks the rule engine on the server; the step
-			// its outcome names opens next. The engine being down keeps the
-			// answers and offers a retry (form-flow-repeating-groups-
-			// calculations-and-decisions REQ-FFL-003).
-			if (
-				this.currentStep.decides === true
-				&& typeof this.decideStep === 'function'
-			) {
-				this.decisionDown = false
-				this.deciding = true
-				try {
-					const decided = await this.decideStep(this.currentStep)
-					const named = stepIndexById(
-						this.flow,
-						decided && decided.nextStep,
-					)
-					if (named >= 0 && !this.backToReview) {
-						target = named
-					}
-				} catch {
-					this.decisionDown = true
-					return
-				} finally {
-					this.deciding = false
-				}
+			const target = await nextTarget(this)
+			if (target === null) {
+				return
 			}
 			this.backToReview = false
 			this.openStep(target)

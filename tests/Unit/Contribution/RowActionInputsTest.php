@@ -120,4 +120,35 @@ class RowActionInputsTest extends TestCase {
 		$this->assertSame(['available' => false, 'reason' => ''], $inputs->availability($action, ['withdrawable' => 'true', 'blockedReason' => ['not text']]), 'a string is not true');
 		$this->assertSame(['available' => false, 'reason' => ''], $inputs->availability($action, []), 'a row without the field is not available');
 	}
+
+	/**
+	 * Every declared input in full: duplicates and malformed names skipped,
+	 * the label cut at 120 characters, `required` only when exactly true,
+	 * only text and date as types, at most twenty descriptors read.
+	 *
+	 * @return void
+	 */
+	public function testEveryDeclaredInputIsAsRecorded(): void {
+		$inputs = new RowActionInputs();
+		$action = ['rowInputs' => ['from' => 'signerInputs', 'into' => 'fields']];
+		$row    = ['signerInputs' => [
+			'junk',
+			['name' => '1bad'],
+			['name' => 'when', 'type' => 'date', 'required' => true, 'label' => str_repeat('d', 130)],
+			['name' => 'when', 'type' => 'text'],
+			['name' => 'note', 'type' => 'TEXT', 'required' => 'yes', 'label' => 7],
+		]];
+
+		$this->assertSame(
+			[
+				['name' => 'when', 'label' => str_repeat('d', 120), 'required' => true, 'type' => 'date'],
+				['name' => 'note', 'label' => 'note', 'required' => false, 'type' => 'text'],
+			],
+			$inputs->declaredInputs($action, $row)
+		);
+
+		$many = ['signerInputs' => array_map(static fn (int $i): array => ['name' => 'f'.$i], range(1, 25))];
+		$this->assertCount(20, $inputs->declaredInputs($action, $many));
+		$this->assertSame([], $inputs->declaredInputs($action, ['signerInputs' => 'x']));
+	}
 }

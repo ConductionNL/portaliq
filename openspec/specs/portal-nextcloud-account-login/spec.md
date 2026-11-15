@@ -8,7 +8,7 @@ the fact (7 Oct 2026) for parity row `sig-nextcloud-login`. It describes the
 code on development: `lib/Controller/SessionController.php` `nextcloud()`
 (route `session#nextcloud`, `GET /portal/api/session/nextcloud` in
 `appinfo/routes.php`) and `src/site/lib/authApi.js` `signInRoutes()`, which
-draws the "Log in with your account" choice. Which sign-in choices a portal
+draws the "Inloggen met uw account" choice (board PtInloggenDemo). Which sign-in choices a portal
 draws at all is `portaliq-cms` "A portal MUST offer only the sign-in routes it
 declares".
 
@@ -16,7 +16,7 @@ declares".
 
 ### Requirement: The portal offers the Nextcloud way in only when it declares it (REQ-NCL-001)
 
-The site SHALL draw "Log in with your account", pointing at
+The site SHALL draw "Inloggen met uw account", pointing at
 `/portal/api/session/nextcloud` with the portal slug, only when the portal's
 `authentication.modes` includes `nextcloud`. The endpoint SHALL refuse a portal
 that does not declare the mode with 404 `mode_not_offered`, the same status as an
@@ -31,7 +31,7 @@ cannot enter through it and cannot tell the two refusals apart by status.
 #### Scenario: The button follows the declaration
 - **GIVEN** a portal whose `authentication.modes` includes `nextcloud`
 - **WHEN** the site renders its sign-in menu
-- **THEN** it shows "Log in with your account" linking to the Nextcloud sign-in route
+- **THEN** it shows "Inloggen met uw account" linking to the Nextcloud sign-in route
 
 ### Requirement: Nextcloud checks the password, never the portal (REQ-NCL-002)
 
@@ -42,7 +42,7 @@ the endpoint after signing in.
 
 #### Scenario: Not yet signed in to Nextcloud
 - **GIVEN** a visitor with no Nextcloud session
-- **WHEN** they choose "Log in with your account"
+- **WHEN** they choose "Inloggen met uw account"
 - **THEN** they are sent to Nextcloud's login form, and after signing in they return to the endpoint
 
 ### Requirement: Only an existing, active portal account gets a session (REQ-NCL-003)

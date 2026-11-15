@@ -22,7 +22,7 @@ namespace OCA\Portaliq\Tests\Unit\Service\Branch;
 
 use OCA\Portaliq\Service\Branch\BranchChoice;
 use OCA\Portaliq\Service\Identity\PortalRegisteredDetailsService;
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use PHPUnit\Framework\TestCase;
 
 class BranchChoiceTest extends TestCase {
@@ -81,8 +81,8 @@ class BranchChoiceTest extends TestCase {
 	 * @return BranchChoice
 	 */
 	private function choice(array $account, ?array $branches, string $kvk): BranchChoice {
-		$accounts = $this->getMockBuilder(PortalAccountService::class)->disableOriginalConstructor()->onlyMethods(['findBySubjectRef'])->getMock();
-		$accounts->method('findBySubjectRef')->willReturn($account);
+		$accounts = $this->getMockBuilder(PortalAccountLookup::class)->disableOriginalConstructor()->onlyMethods(['bySubjectRef'])->getMock();
+		$accounts->method('bySubjectRef')->willReturn($account);
 
 		$details = $this->getMockBuilder(PortalRegisteredDetailsService::class)->disableOriginalConstructor()->onlyMethods(['companyBranches'])->getMock();
 		if ($kvk === '') {

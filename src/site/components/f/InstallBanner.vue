@@ -118,6 +118,27 @@ function remember(storage) {
 	}
 }
 
+/**
+ * Keep Tab inside the dialog: Shift+Tab on its first control or on the
+ * dialog itself goes to the last control, Tab on the last to the first.
+ *
+ * @param {object} banner The banner, with its `$refs` and window.
+ * @param {KeyboardEvent} event The Tab.
+ * @return {void}
+ */
+function keepTabInside(banner, event) {
+	const { first, last, dialog } = banner.$refs
+	if (!first || !last) {
+		return
+	}
+	const active = banner.win?.document?.activeElement
+	const wraps = event.shiftKey ? active === first || active === dialog : active === last
+	if (wraps) {
+		event.preventDefault()
+		;(event.shiftKey ? last : first).focus()
+	}
+}
+
 export default {
 	name: 'InstallBanner',
 
@@ -159,7 +180,7 @@ export default {
 		 *
 		 * @return {boolean}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-install-offer-must-be-dismissible-req-srp-046
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-install-offer-must-be-dismissible-req-srp-046
 		 */
 		visible() {
 			return (
@@ -212,7 +233,7 @@ export default {
 		 * @param {Event} event The `beforeinstallprompt` event.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-install-offer-must-be-dismissible-req-srp-046
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-install-offer-must-be-dismissible-req-srp-046
 		 */
 		onOffer(event) {
 			event.preventDefault()
@@ -224,7 +245,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-install-offer-must-be-dismissible-req-srp-046
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-install-offer-must-be-dismissible-req-srp-046
 		 */
 		onInstalled() {
 			this.offer = null
@@ -237,7 +258,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-install-offer-must-be-dismissible-req-srp-046
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-install-offer-must-be-dismissible-req-srp-046
 		 */
 		async install() {
 			const offer = this.offer
@@ -260,7 +281,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-install-offer-must-be-dismissible-req-srp-046
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-install-offer-must-be-dismissible-req-srp-046
 		 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md#requirement-the-install-offer-is-a-dialog-over-the-page-that-remembers-not-now
 		 */
 		dismiss() {
@@ -283,24 +304,8 @@ export default {
 				this.dismiss()
 				return
 			}
-			if (event.key !== 'Tab') {
-				return
-			}
-			const first = this.$refs.first
-			const last = this.$refs.last
-			if (!first || !last) {
-				return
-			}
-			const active = this.win?.document?.activeElement
-			if (
-				event.shiftKey
-				&& (active === first || active === this.$refs.dialog)
-			) {
-				event.preventDefault()
-				last.focus()
-			} else if (!event.shiftKey && active === last) {
-				event.preventDefault()
-				first.focus()
+			if (event.key === 'Tab') {
+				keepTabInside(this, event)
 			}
 		},
 	},

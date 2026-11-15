@@ -92,6 +92,7 @@ class SettingsServiceTest extends TestCase {
 		?PageEditorService $pageEditor = null,
 		?object $configService = null,
 		bool $orInstalled = true,
+		string $appPath = '/nonexistent/portaliq',
 	): SettingsService {
 		$appConfig = $this->createMock(IAppConfig::class);
 		$appConfig->method('getValueString')->willReturnCallback(
@@ -106,7 +107,7 @@ class SettingsServiceTest extends TestCase {
 
 		$appManager = $this->createMock(IAppManager::class);
 		$appManager->method('isInstalled')->willReturn($orInstalled);
-		$appManager->method('getAppPath')->willReturn('/nonexistent/portaliq');
+		$appManager->method('getAppPath')->willReturn($appPath);
 
 		$user = $this->createMock(IUser::class);
 		$user->method('getUID')->willReturn('admin');
@@ -310,6 +311,62 @@ class SettingsServiceTest extends TestCase {
 
 		$this->assertTrue($result['success']);
 	}//end testTheImportReAppliesTheEditorGroups()
+
+	/**
+	 * The import reads the app's own register seed and its version, forces
+	 * when asked, and answers whole: the version the import reports, else
+	 * the seed's; every refusal answers whole too.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/settings-management/spec.md#REQ-CFG-003
+	 */
+	public function testTheImportReadsTheSeedAndEveryAnswerIsWhole(): void {
+		$root = sys_get_temp_dir() . '/portaliq-seed-' . uniqid();
+		mkdir($root . '/lib/Settings', 0777, true);
+		file_put_contents($root . '/lib/Settings/portaliq_register.json', json_encode(['info' => ['version' => '2.3.4'], 'components' => ['x' => 1]]));
+
+		$configService = new class {
+
+			/**
+			 * The arguments the import was called with.
+			 *
+			 * @var array<int, mixed>
+			 */
+			public array $calls = [];
+
+			/**
+			 * Record the import and report no version of its own.
+			 *
+			 * @param string $appId   The app id.
+			 * @param array  $data    The register document.
+			 * @param string $version The version.
+			 * @param bool   $force   Whether to force.
+			 *
+			 * @return array The result.
+			 */
+			public function importFromApp(string $appId, array $data, string $version, bool $force): array {
+				$this->calls[] = [$appId, $data, $version, $force];
+				return ['imported' => true];
+			}
+		};
+
+		$result = $this->service(configService: $configService, appPath: $root)->loadConfiguration(force: true);
+
+		$this->assertSame(['success' => true, 'message' => 'Configuration imported successfully.', 'version' => '2.3.4'], $result);
+		$this->assertSame([['portaliq', ['info' => ['version' => '2.3.4'], 'components' => ['x' => 1]], '2.3.4', true]], $configService->calls);
+
+		$this->assertSame(
+			['success' => false, 'message' => 'OpenRegister is not installed or enabled.'],
+			$this->service(orInstalled: false)->loadConfiguration()
+		);
+		$this->assertSame(['success' => false, 'message' => 'absent'], $this->service()->loadConfiguration());
+
+		unlink($root . '/lib/Settings/portaliq_register.json');
+		rmdir($root . '/lib/Settings');
+		rmdir($root . '/lib');
+		rmdir($root);
+	}//end testTheImportReadsTheSeedAndEveryAnswerIsWhole()
 
 
 	/**

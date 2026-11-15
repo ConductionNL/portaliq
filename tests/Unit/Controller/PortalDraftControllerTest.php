@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
+use OCA\OpenRegister\Service\Object\DiscardDraftRequest;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\PortalDraftController;
 use OCA\Portaliq\Service\Intake\ActionDraft;
@@ -19,6 +20,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Contribution\CreateBody;
 
 /**
  * site-multi-step-forms T8 and submit-creates-the-case-directly 5.1/5.2: the
@@ -32,11 +34,14 @@ use Psr\Log\LoggerInterface;
  */
 #[CoversClass(PortalDraftController::class)]
 #[UsesClass(ActionDraft::class)]
+#[UsesClass(\OCA\Portaliq\Service\Intake\ActionAnswerFields::class)]
 #[UsesClass(\OCA\Portaliq\Service\Intake\DestinationDraft::class)]
 #[UsesClass(\OCA\Portaliq\Service\Intake\DestinationSubmit::class)]
 #[UsesClass(\OCA\Portaliq\Contribution\ActionScopeResolver::class)]
 #[UsesClass(\OCA\Portaliq\Contribution\CreateBody::class)]
 #[UsesClass(PortalSessionService::class)]
+#[UsesClass(\OCA\Portaliq\Controller\DraftSave::class)]
+#[UsesClass(\OCA\Portaliq\Kernel\Support\SessionTrust::class)]
 class PortalDraftControllerTest extends TestCase {
 
 	private const ACTION = [
@@ -72,7 +77,7 @@ class PortalDraftControllerTest extends TestCase {
 		$this->assertSame(['register' => 'dossiq', 'schema' => 'case'], $save['destination']);
 		$this->assertSame(['title' => 'Half', 'caseType' => 'ct-1', 'subjectRef' => 'sanne'], $save['payload']);
 		$this->assertNull($save['draftId']);
-		$this->assertSame('portal:sanne', $save['owner']->value);
+		$this->assertSame('portal:sanne', $save['owner']->value());
 		$this->assertSame('dossiq/request', $save['scope']);
 	}//end testSavingStartsADraftOfTheDestinationOwnedByThePortalSubject()
 
@@ -102,7 +107,7 @@ class PortalDraftControllerTest extends TestCase {
 		$this->assertSame(['title' => 'Half'], $data['answers']);
 		$this->assertSame('d-1', $data['id']);
 		$this->assertNotSame('', $data['updatedAt'], 'the resume dialog names the last save');
-		$this->assertSame('portal:sanne', $this->call('findDraft')['owner']->value);
+		$this->assertSame('portal:sanne', $this->call('findDraft')['owner']->value());
 		$this->assertSame(['caseType' => 'ct-1'], $this->call('findDraft')['match']);
 	}//end testShowAnswersTheLiveDraftsAnswersAndExpiry()
 
@@ -254,7 +259,8 @@ class PortalDraftControllerTest extends TestCase {
 			public function __construct(private array &$discarded) {
 			}
 
-			public function discard(array $destination, string $draftId, object $owner): bool {
+			public function discard(DiscardDraftRequest $request): bool {
+				[$destination, $draftId, $owner] = [$request->destination, $request->draftId, $request->owner];
 				$this->discarded[] = $draftId;
 				return true;
 			}
@@ -264,7 +270,7 @@ class PortalDraftControllerTest extends TestCase {
 		return new PortalDraftController(
 			$this->createMock(IRequest::class),
 			$session,
-			new ActionDraft(registry: $registry, reader: $reader, writer: $writer, drafts: $drafts),
+			new ActionDraft(registry: $registry, reader: $reader, writer: $writer, drafts: $drafts, createBody: new CreateBody()),
 			$drafts
 		);
 	}//end controller()

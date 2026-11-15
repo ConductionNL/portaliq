@@ -13,7 +13,7 @@
  *   - Action RBAC (who can invoke which controller method) is this service.
  *   - Admin-only operations (editing the matrix itself, app config, backup/
  *     restore, integrations, credentials) bypass this service and use
- *     #[AuthorizedAdminSetting(Application::APP_ID)] at the route layer.
+ *     #[AuthorizedAdminSetting(AppIdentity::APP_ID)] at the route layer.
  *
  * Controllers call `requireAction` which throws OCSForbiddenException when
  * the caller's groups don't intersect the matrix entry for the action.
@@ -41,7 +41,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\ActionAuthServiceInterface;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
@@ -54,7 +55,7 @@ use OCP\IUser;
  * dot-separated action name; this service checks the admin-configured
  * action-to-group mapping stored in IAppConfig.
  */
-class ActionAuthService {
+class ActionAuthService implements ActionAuthServiceInterface {
 	private const CONFIG_KEY = 'actions';
 
 	/**
@@ -164,7 +165,25 @@ class ActionAuthService {
 	 * @spec openspec/architecture/adr-023-action-authorization.md
 	 */
 	public function getMatrix(): array {
-		$json = $this->appConfig->getValueString(Application::APP_ID, self::CONFIG_KEY, '{}');
+		// Normalize: discard any non-array values + any non-string group entries.
+		$matrix = [];
+		foreach ($this->storedMatrix() as $action => $groups) {
+			if (is_string($action) === true && is_array($groups) === true) {
+				$matrix[$action] = $this->cleanGroups(groups: $groups);
+			}
+		}
+
+		return $matrix;
+	}//end getMatrix()
+
+	/**
+	 * The stored matrix as decoded JSON, or nothing when it is malformed or
+	 * not a map (default-deny).
+	 *
+	 * @return array<mixed>
+	 */
+	private function storedMatrix(): array {
+		$json = $this->appConfig->getValueString(AppIdentity::APP_ID, self::CONFIG_KEY, '{}');
 
 		try {
 			$decoded = json_decode($json, associative: true, depth: 512, flags: JSON_THROW_ON_ERROR);
@@ -176,25 +195,26 @@ class ActionAuthService {
 			return [];
 		}
 
-		// Normalize: discard any non-array values + any non-string group entries.
-		$matrix = [];
-		foreach ($decoded as $action => $groups) {
-			if (is_string($action) === false || is_array($groups) === false) {
-				continue;
-			}
+		return $decoded;
+	}//end storedMatrix()
 
-			$clean = [];
-			foreach ($groups as $g) {
-				if (is_string($g) === true && $g !== '') {
-					$clean[] = $g;
-				}
+	/**
+	 * One action's groups, without empty, non-string or repeated entries.
+	 *
+	 * @param array<mixed> $groups The stored groups.
+	 *
+	 * @return array<int, string>
+	 */
+	private function cleanGroups(array $groups): array {
+		$clean = [];
+		foreach ($groups as $g) {
+			if (is_string($g) === true && $g !== '') {
+				$clean[] = $g;
 			}
-
-			$matrix[$action] = array_values(array_unique($clean));
 		}
 
-		return $matrix;
-	}//end getMatrix()
+		return array_values(array_unique($clean));
+	}//end cleanGroups()
 
 	/**
 	 * Set the full action-to-groups matrix.
@@ -225,7 +245,7 @@ class ActionAuthService {
 		}
 
 		$json = json_encode($normalized, flags: JSON_THROW_ON_ERROR);
-		$this->appConfig->setValueString(Application::APP_ID, self::CONFIG_KEY, $json);
+		$this->appConfig->setValueString(AppIdentity::APP_ID, self::CONFIG_KEY, $json);
 
 	}//end setMatrix()
 

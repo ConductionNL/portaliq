@@ -115,6 +115,7 @@
             <step>OCA\Portaliq\Repair\BackfillNewsPublishedAt</step>
             <step>OCA\Portaliq\Repair\BackfillAccessRequestStateRank</step>
             <step>OCA\Portaliq\Repair\BackfillCmsPortalReference</step>
+            <step>OCA\Portaliq\Repair\StampMissingOrganisation</step>
             <step>OCA\Portaliq\Repair\MoveActionSummarySentence</step>
             <step>OCA\Portaliq\Repair\MoveBindingDestination</step>
         </post-migration>
@@ -153,6 +154,9 @@
         <!-- operate-portals-per-organisation: the draft portal of one
              organisation, in one step. -->
         <command>OCA\Portaliq\Command\PortalProvision</command>
+        <!-- portal-acts-for-its-organisation: give existing rows their
+             OpenRegister organisation; a dry run unless apply is given. -->
+        <command>OCA\Portaliq\Command\TenancyRestamp</command>
         <!-- example-site-zuiddrecht: put a shipped example site on the
              instance, and take it off again. -->
         <command>OCA\Portaliq\Command\ExampleSiteInstall</command>
@@ -165,6 +169,9 @@
         <!-- submit-creates-the-case-directly: send the requests still waiting
              in the old intake queue into their destination, then report. -->
         <command>OCA\Portaliq\Command\IntakeDrain</command>
+        <!-- contributing-apps-census: which enabled apps contribute to the
+             portal, per audience; plain text or JSON output. -->
+        <command>OCA\Portaliq\Command\Contributions</command>
     </commands>
 
     <settings>

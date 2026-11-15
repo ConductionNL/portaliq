@@ -22,6 +22,7 @@ const DETAIL = MANIFEST.pages.find((page) => page.id === 'PortalSubmissionDetail
 const widget = (id) => DETAIL.widgets.find((w) => w.id === id)
 
 test('the page is titled by the submitted action', () => {
+	assert.equal(DETAIL.titleTemplate, '{actionTitle}')
 	assert.equal(DETAIL.titleField, 'actionId')
 })
 
@@ -41,7 +42,7 @@ test('a failed receipt shows an error notice above the facts', () => {
 
 test('the facts card shows the board\'s facts and the history reads Bewijslog', () => {
 	const facts = widget('submission-data')
-	assert.deepEqual(facts.content.include, ['actionId', 'appId', 'submittedAt', 'deliveryStatus', 'subjectRef', 'organisation', 'receiptMessageRef'])
+	assert.deepEqual(facts.content.include, ['actionTitle', 'actionId', 'appId', 'submittedAt', 'deliveryStatus', 'subjectRef', 'organisation', 'receiptMessageRef'])
 	for (const key of facts.content.include) {
 		assert.ok(SUBMISSION[key], `the submission has no "${key}"`)
 	}

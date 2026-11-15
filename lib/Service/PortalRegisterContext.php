@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\PortalRegisterContextInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -62,7 +63,7 @@ use Throwable;
  *
  * @spec openspec/specs/portal-page-designer/spec.md#requirement-a-cms-read-must-not-inherit-another-apps-openregister-context
  */
-class PortalRegisterContext {
+class PortalRegisterContext implements PortalRegisterContextInterface {
 	/**
 	 * OpenRegister's schema mapper.
 	 *
@@ -71,19 +72,11 @@ class PortalRegisterContext {
 	private const SCHEMA_MAPPER = 'OCA\\OpenRegister\\Db\\SchemaMapper';
 
 	/**
-	 * The register every Portaliq schema lives in.
-	 *
-	 * @var string
-	 */
-	public const REGISTER = 'portaliq';
-
-	/**
 	 * Schema entities already resolved in this request, keyed by slug.
 	 *
 	 * @var array<string, object>
 	 */
 	private array $resolved = [];
-
 
 	/**
 	 * Constructor.
@@ -98,7 +91,6 @@ class PortalRegisterContext {
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
-
 
 	/**
 	 * Point an ObjectService at one of this app's schemas.
@@ -124,7 +116,6 @@ class PortalRegisterContext {
 
 		return true;
 	}//end apply()
-
 
 	/**
 	 * Resolve one of this app's schemas to an entity.

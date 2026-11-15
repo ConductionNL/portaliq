@@ -4,15 +4,16 @@
   -->
 
 <!--
-	While a resident acts for someone else, a bar on every signed-in page
-	names that party and offers the way back to acting for themselves
-	("U regelt nu zaken voor H. Bakker", "Wissel naar uzelf"). It is a named
-	region, so a screen reader user can find it, and it shows nothing while
-	the resident acts for themselves.
+	The acting-for bar on Mijn overzicht and Mijn zaken (board
+	huisstijl/NamensBalk): one sentence that names for whom the resident acts,
+	"Wissel naar" to switch to themselves, a party or everyone, and the link to
+	arrange access. It shows nothing for a resident who holds no mandate.
+	Without `value` it reads and keeps the shared acting-for store; with
+	`value` the host keeps the choice and only hears `change`.
 -->
 <template>
 	<section
-		v-if="party"
+		v-if="options.length > 2"
 		class="pq-acting-for-bar"
 		:aria-label="tr('On whose behalf you act')"
 		data-testid="mijn-acting-for-bar">
@@ -22,29 +23,47 @@
 					marked.after
 				}}</template
 			>
-			<template v-else>{{
-				tr('You are now acting for {party}', { party })
-			}}</template>
+			<template v-else>{{ sentence }}</template>
 		</p>
-		<button
-			type="button"
-			class="utrecht-button utrecht-button--secondary-action pq-acting-for-bar__back"
-			data-testid="mijn-acting-for-bar-back"
-			@click="backToSelf">
-			{{ tr('Switch to yourself') }}
-		</button>
+		<span class="pq-acting-for-bar__switch">
+			<label :for="selectId" class="utrecht-form-label">{{
+				tr('Switch to')
+			}}</label>
+			<select
+				:id="selectId"
+				class="utrecht-select pq-acting-for-bar__select"
+				:value="choice"
+				data-testid="mijn-acting-for-bar-select"
+				@change="choose($event.target.value)">
+				<option
+					v-for="option in options"
+					:key="option.id"
+					:value="option.id"
+					:selected="option.id === choice"
+					:translate="option.own ? null : 'no'">
+					{{ option.label }}
+				</option>
+			</select>
+			<a
+				v-if="href"
+				class="utrecht-link pq-acting-for-bar__manage"
+				:href="href"
+				data-testid="mijn-acting-for-bar-manage">
+				{{ tr('Arrange access to cases') }}
+			</a>
+		</span>
 	</section>
 </template>
 
 <script>
 import NoTranslate from '../NoTranslate.vue'
-import { ACTING_FOR_SELF } from '../../../shared/myCases.js'
 import { markAround } from '../../lib/markAround.js'
-import { actingFor, chooseActingFor } from '../e/actingFor.js'
+import { actingFor } from '../e/actingFor.js'
+import { barOptions, barSentence, choiceOf, keepChoice } from './actingForChoice.js'
 import { mijnTranslator } from './rows.js'
 
 /**
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
  */
 export default {
 	name: 'ActingForBar',
@@ -58,8 +77,14 @@ export default {
 		locale: { type: String, default: 'nl' },
 		/** The mandates held; the shared acting-for store's when null. */
 		mandates: { type: Array, default: null },
-		/** The current choice; the shared store's when empty. */
+		/** The choice the host keeps; the shared store's when empty. */
 		value: { type: String, default: '' },
+		/** The resident's name, for "Uzelf, {name}". */
+		name: { type: String, default: '' },
+		/** Where the resident arranges access to cases; no link when empty. */
+		href: { type: String, default: '' },
+		/** The select's id, unique on the page. */
+		selectId: { type: String, default: 'pq-acting-for-bar' },
 	},
 
 	emits: ['change'],
@@ -67,29 +92,44 @@ export default {
 	computed: {
 		/**
 		 * @return {(key: string, vars?: object) => string} The translator.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
 		 */
 		tr() {
 			return mijnTranslator(this.t, this.locale)
 		},
 
 		/**
-		 * The party acted for, by its mandate's label; '' while acting for
-		 * oneself or for a mandate no longer held.
-		 *
-		 * @return {string}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
+		 * @return {string} `everyone`, `self` or the mandate acted under.
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
+		 */
+		choice() {
+			return this.value || choiceOf(actingFor)
+		},
+
+		/**
+		 * @return {Array<{id: string, label: string, own: boolean}>} The options of "Wissel naar".
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
+		 */
+		options() {
+			const mandates = this.mandates ?? actingFor.mandates
+			return barOptions({ mandates, name: this.name }, this.tr)
+		},
+
+		/**
+		 * @return {string} The chosen party's label; '' for oneself, everyone or a mandate no longer held.
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
 		 */
 		party() {
-			const id = this.value || actingFor.id
-			if (!id || id === ACTING_FOR_SELF) {
-				return ''
-			}
-			const list = this.mandates ?? actingFor.mandates
-			const mandate = (Array.isArray(list) ? list : []).find(
-				(m) => m?.id === id,
-			)
-			return mandate ? String(mandate.label || mandate.id) : ''
+			const option = this.options.find((o) => !o.own && o.id === this.choice)
+			return option ? option.label : ''
+		},
+
+		/**
+		 * @return {string} The bar's sentence.
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
+		 */
+		sentence() {
+			return barSentence({ choice: this.choice, party: this.party }, this.tr)
 		},
 
 		/**
@@ -99,23 +139,23 @@ export default {
 		 * @spec openspec/changes/personal-data-left-untranslated/specs/site-chrome/spec.md#requirement-browser-translation-leaves-names-and-personal-data-alone-req-pdu-001
 		 */
 		marked() {
-			return markAround(
-				this.tr('You are now acting for {party}', { party: this.party }),
-				this.party,
-			)
+			return markAround(this.sentence, this.party)
 		},
 	},
 
 	methods: {
 		/**
-		 * Act for oneself again, for the rest of the session.
+		 * Switch to a choice; the store keeps it unless the host does.
 		 *
+		 * @param {string} id `everyone`, `self` or a mandate id.
 		 * @return {void}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
 		 */
-		backToSelf() {
-			chooseActingFor(ACTING_FOR_SELF)
-			this.$emit('change', ACTING_FOR_SELF)
+		choose(id) {
+			if (!this.value) {
+				keepChoice(id)
+			}
+			this.$emit('change', id)
 		},
 	},
 }
@@ -140,5 +180,17 @@ export default {
 .pq-acting-for-bar__text {
 	margin: 0;
 	font-weight: bold;
+}
+
+.pq-acting-for-bar__switch {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--utrecht-space-inline-sm, 0.5rem);
+}
+
+.pq-acting-for-bar__select {
+	min-inline-size: 0;
+	max-inline-size: 100%;
 }
 </style>

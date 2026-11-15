@@ -55,12 +55,12 @@ Entries the case app marks with `kind` `decision` SHALL be listed first on the c
 
 ### Requirement: The resident's own uploads stay visible, and nothing else from the folder (REQ-CDC-004)
 
-A document the resident adds through the portal SHALL be tagged `portal:from-applicant` when it is written. The case screen SHALL list tagged files under "Sent by you" and SHALL let the resident download them. A file in the case folder without that tag SHALL NOT be listed and SHALL NOT be downloadable through the case screen.
+A document the resident adds through the portal SHALL be tagged `portal:from-applicant` when it is written. The case screen SHALL list tagged files under "Door u gestuurd" (board Zaak) and SHALL let the resident download them. A file in the case folder without that tag SHALL NOT be listed and SHALL NOT be downloadable through the case screen.
 
 #### Scenario: The resident finds their own upload
 - **GIVEN** a resident who added a photo to their case through the portal
 - **WHEN** they open the case again
-- **THEN** the photo is listed under "Sent by you" and opens
+- **THEN** the photo is listed under "Door u gestuurd" and opens
 
 #### Scenario: An internal file stays internal
 - **GIVEN** a handler's working note stored in the case object's folder without the tag
@@ -70,9 +70,9 @@ A document the resident adds through the portal SHALL be tagged `portal:from-app
 
 ### Requirement: A case with nothing published says so (REQ-CDC-005)
 
-When the case app declares no documents method, or its method returns nothing, and the resident uploaded nothing, the case screen SHALL show "There are no documents on this case yet." A download that fails SHALL show "The document could not be opened. Try again later."
+When the case app declares no documents method, or its method returns nothing, and the resident uploaded nothing, the case screen SHALL show "Er staan nog geen stukken bij deze zaak." (board Zaak) A download that fails SHALL show "The document could not be opened. Try again later."
 
 #### Scenario: An empty case
 - **GIVEN** a case with no published documents and no uploads
 - **WHEN** the resident opens it
-- **THEN** the documents section shows "There are no documents on this case yet."
+- **THEN** the documents section shows "Er staan nog geen stukken bij deze zaak."
