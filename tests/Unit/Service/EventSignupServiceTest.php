@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-a-sign-up-role-enforces-its-capacity-server-side
@@ -36,6 +37,43 @@ class EventSignupServiceTest extends TestCase {
 		$service2 = new EventSignupService($this->createMock(ContainerInterface::class), $this->feedReader($this->eventWithRole(2)), $this->createMock(LoggerInterface::class));
 		$this->assertSame(EventSignupService::REASON_ROLE_NOT_FOUND, $service2->attemptSignup('g1', 'e1', 'unknown-role'));
 	}//end testReturnsRoleNotFoundForAnUnreachableEventOrUnknownRole()
+
+	/**
+	 * Roles that are not a list, or entries that are not arrays, offer no
+	 * role; the first role with the id is the one found, before anything is read.
+	 */
+	public function testOnlyADeclaredRoleWithTheIdIsFound(): void {
+		$container = $this->createMock(ContainerInterface::class);
+		$container->expects($this->never())->method('get');
+		foreach ([['id' => 'e1', 'signupRoles' => 'begeleiding'], ['id' => 'e1', 'signupRoles' => ['begeleiding', ['label' => 'no id']]], ['id' => 'e1']] as $event) {
+			$service = new EventSignupService($container, $this->feedReader($event), $this->createMock(LoggerInterface::class));
+			$this->assertSame(EventSignupService::REASON_ROLE_NOT_FOUND, $service->attemptSignup('g1', 'e1', 'begeleiding'));
+		}
+
+		$store = new class {
+			public function setRegister(string $register): self {
+				return $this;
+			}
+
+			public function setSchema(string $schema): self {
+				return $this;
+			}
+
+			public function findAll(array $config, bool $_rbac = true, bool $_multitenancy = true): array {
+				return [];
+			}
+
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				return $object;
+			}
+		};
+		$withStore = $this->createMock(ContainerInterface::class);
+		$withStore->method('get')->willReturn($store);
+		$first = new EventSignupService($withStore, $this->feedReader(['id' => 'e1', 'signupRoles' => ['x', ['id' => 'begeleiding', 'capacity' => 0], ['id' => 'begeleiding', 'capacity' => 5]]]), $this->createMock(LoggerInterface::class));
+		$this->assertSame(EventSignupService::REASON_ROLE_FULL, $first->attemptSignup('g1', 'e1', 'begeleiding'), 'the first role with the id, which has no room');
+	}//end testOnlyADeclaredRoleWithTheIdIsFound()
 
 	public function testASignupForAChildThatIsNotTheGuardiansOwnIsRefused(): void {
 		$container = $this->createMock(ContainerInterface::class);
@@ -67,7 +105,10 @@ class EventSignupServiceTest extends TestCase {
 			/**
 			 * @param array<string,mixed> $object
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved = $object;
 				return $object;
 			}//end saveObject()
@@ -103,7 +144,10 @@ class EventSignupServiceTest extends TestCase {
 			/**
 			 * @param array<string,mixed> $object
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saveCalled = true;
 				return $object;
 			}//end saveObject()
@@ -150,7 +194,10 @@ class EventSignupServiceTest extends TestCase {
 			/**
 			 * @param array<string,mixed> $object
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saveCalled = true;
 				return $object;
 			}//end saveObject()

@@ -62,7 +62,7 @@ function initialsOf(title) {
 }
 
 /**
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
  */
 export default {
 	name: 'RecordSwitcher',
@@ -89,7 +89,7 @@ export default {
 	computed: {
 		/**
 		 * @return {Array<object>} `{id, key, title, subtitle, initials}` per row.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
 		 */
 		options() {
 			const pick = (row, fields, fallback) =>

@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Cms;
 
+use OCA\Portaliq\Kernel\Contracts\MediaLibraryReaderInterface;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCP\ICache;
 use OCP\ICacheFactory;
@@ -42,7 +43,7 @@ use Throwable;
  * in CmsReader's cache under the portal's prefix, so CmsReader::invalidate()
  * on a media write drops them with the rest of the portal's content.
  */
-class MediaLibraryReader {
+class MediaLibraryReader implements MediaLibraryReaderInterface {
 
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
@@ -88,25 +89,58 @@ class MediaLibraryReader {
 			return json_decode($hit, true) ?? [];
 		}
 
-		$items = [];
-		foreach ($this->query(schema: 'media', filters: ['portal' => $portal, 'status' => 'published']) as $row) {
-			$id = (string)($row['@self']['id'] ?? $row['id'] ?? $row['uuid'] ?? '');
-			if ($id === '' || (string)($row['portal'] ?? '') !== $portal || ($row['status'] ?? '') !== 'published') {
-				continue;
-			}
-
-			$items[$id] = [
-				'id'    => $id,
-				'title' => (string)($row['title'] ?? ''),
-				'alt'   => (string)($row['alt'] ?? ''),
-				'kind'  => (string)($row['kind'] ?? 'file'),
-			];
-		}
+		$items = $this->publishedItems(portal: $portal);
 
 		$this->cache->set($key, json_encode($items), self::TTL);
 
 		return $items;
 	}//end items()
+
+	/**
+	 * The published media items of a portal as stored, by id.
+	 *
+	 * @param string $portal The portal slug.
+	 *
+	 * @return array<string, array{id: string, title: string, alt: string, kind: string}>
+	 *
+	 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
+	 */
+	private function publishedItems(string $portal): array {
+		$items = [];
+		foreach ($this->query(schema: 'media', filters: ['portal' => $portal, 'status' => 'published']) as $row) {
+			$item = $this->itemOf(row: $row, portal: $portal);
+			if ($item !== null) {
+				$items[$item['id']] = $item;
+			}
+		}
+
+		return $items;
+	}//end publishedItems()
+
+	/**
+	 * The media item a row holds, or null when it has no id or is not this
+	 * portal's published item.
+	 *
+	 * @param array<string, mixed> $row    The stored row.
+	 * @param string               $portal The portal slug.
+	 *
+	 * @return array{id: string, title: string, alt: string, kind: string}|null
+	 *
+	 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
+	 */
+	private function itemOf(array $row, string $portal): array|null {
+		$id = (string)($row['@self']['id'] ?? $row['id'] ?? $row['uuid'] ?? '');
+		if ($id === '' || (string)($row['portal'] ?? '') !== $portal || ($row['status'] ?? '') !== 'published') {
+			return null;
+		}
+
+		return [
+			'id'    => $id,
+			'title' => (string)($row['title'] ?? ''),
+			'alt'   => (string)($row['alt'] ?? ''),
+			'kind'  => (string)($row['kind'] ?? 'file'),
+		];
+	}//end itemOf()
 
 	/**
 	 * One published media item of a portal, or null.
@@ -169,26 +203,44 @@ class MediaLibraryReader {
 	 * @return array<int, array<string, mixed>>
 	 */
 	private function query(string $schema, array $filters): array {
+		$rows = $this->findRows(schema: $schema, filters: $filters);
+		if (is_array($rows) === false) {
+			return [];
+		}
+
+		return $this->rowsAsArrays(rows: $rows);
+	}//end query()
+
+	/**
+	 * What the schema's object service finds, or [] when it cannot be read.
+	 *
+	 * @param string               $schema  The schema slug.
+	 * @param array<string, mixed> $filters The filters, always including `portal`.
+	 *
+	 * @return mixed
+	 */
+	private function findRows(string $schema, array $filters): mixed {
 		try {
 			$objects = $this->container->get(self::OBJECT_SERVICE);
 			if ($this->context->apply(objectService: $objects, schemaSlug: $schema) === false) {
 				return [];
 			}
 
-			$rows = $objects->findAll(
-				config: ['filters' => $filters, 'limit' => 500, 'offset' => 0],
-				_rbac: false,
-				_multitenancy: false
-			);
+			return $objects->findAll(config: ['filters' => $filters, 'limit' => 500, 'offset' => 0], _rbac: false, _multitenancy: false);
 		} catch (Throwable $e) {
 			$this->logger->error('Portaliq: media library read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
 			return [];
 		}
+	}//end findRows()
 
-		if (is_array($rows) === false) {
-			return [];
-		}
-
+	/**
+	 * The rows as arrays; an object row is serialised.
+	 *
+	 * @param array $rows The rows as found.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function rowsAsArrays(array $rows): array {
 		$out = [];
 		foreach ($rows as $row) {
 			if (is_array($row) === false) {
@@ -199,5 +251,5 @@ class MediaLibraryReader {
 		}
 
 		return $out;
-	}//end query()
+	}//end rowsAsArrays()
 }//end class

@@ -28,15 +28,16 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Intake;
 
 use DateTimeImmutable;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Kernel\Contracts\PortalDraftStoreInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 
 /**
  * Saves, reads, deletes and purges the drafts of an action.
  *
  * @spec openspec/changes/site-multi-step-forms/tasks.md#T8
  */
-class PortalDraftStore {
+class PortalDraftStore implements PortalDraftStoreInterface {
 	/**
 	 * The shortest retention a draft may be given, in days.
 	 */
@@ -60,11 +61,11 @@ class PortalDraftStore {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Reads the drafts.
+	 * @param ScopedCollectionReaderInterface $reader Reads the drafts.
 	 * @param PortalObjectWriter $writer Writes and deletes the drafts.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalObjectWriter $writer,
 	) {
 	}//end __construct()
@@ -91,7 +92,7 @@ class PortalDraftStore {
 		int $retentionDays,
 		?DateTimeImmutable $now = null,
 	): ?array {
-		if ($subjectRef === '' || $actionKey === '') {
+		if ($this->namesNoDraft(subjectRef: $subjectRef, actionKey: $actionKey) === true) {
 			return null;
 		}
 
@@ -114,6 +115,20 @@ class PortalDraftStore {
 
 		return ['step' => $step, 'expiresAt' => $expiresAt, 'answers' => $answers];
 	}//end save()
+
+	/**
+	 * Whether a save names no subject or no action, and so saves nothing.
+	 *
+	 * @param string $subjectRef The signed-in subject.
+	 * @param string $actionKey  The contribution and action, `app/action`.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/site-multi-step-forms/tasks.md#T8
+	 */
+	private function namesNoDraft(string $subjectRef, string $actionKey): bool {
+		return $subjectRef === '' || $actionKey === '';
+	}//end namesNoDraft()
 
 	/**
 	 * Update the subject's existing draft, or create it.

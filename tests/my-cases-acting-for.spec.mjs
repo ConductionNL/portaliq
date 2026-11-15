@@ -111,7 +111,11 @@ test('acting for is yourself plus every mandate held, and the choice is kept for
 
 test('site: the shell, the page, the case screen and both locales are wired', () => {
 	const shell = readFileSync(join(ROOT, 'src', 'site', 'App.vue'), 'utf8')
-	assert.match(shell, /<template #account>\s*<ActingForSwitcher :t="t" \/>/)
+	assert.doesNotMatch(
+		shell,
+		/<ActingForSwitcher/,
+		'the header has no "Acting for": the acting-for bar is the one switch (REQ-SMO-008)',
+	)
 	const store = readFileSync(
 		join(ROOT, 'src', 'site', 'components', 'e', 'actingFor.js'),
 		'utf8',
@@ -235,7 +239,7 @@ test('site: sign-out forgets whom the resident acted for and the mandates held',
 	)
 })
 
-test('site: the header switcher with only `t` follows the store', async () => {
+test('site: the switcher with only `t` follows the store', async () => {
 	store.learnMandates({ ok: true, mandates: MANDATES })
 	store.chooseActingFor('mandate-1', storage())
 	const html = await renderSfc('src/site/components/e/ActingForSwitcher.vue', {

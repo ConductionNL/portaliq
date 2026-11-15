@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-cms-content-model/tasks.md#task-3
+ * @spec openspec/changes/archive/2026-10-09-portal-cms-content-model/tasks.md#task-3
  */
 
 declare(strict_types=1);
@@ -24,15 +24,13 @@ namespace OCA\Portaliq\Listener;
 
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\Cms\GlossaryRelations;
-use OCA\Portaliq\Service\CmsReader;
+use OCA\Portaliq\Kernel\Contracts\CmsReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\GlossaryRelationsInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\IL10N;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Vetoes a glossary term write that relates to a term of another portal.
@@ -43,49 +41,39 @@ use Throwable;
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/portal-cms-content-model/tasks.md#task-3
+ * @spec openspec/changes/archive/2026-10-09-portal-cms-content-model/tasks.md#task-3
  */
 class GlossaryRelationGuardListener implements IEventListener {
 
-	private const SCHEMA_MAPPER = 'OCA\\OpenRegister\\Db\\SchemaMapper';
+	use SchemaWriteGuard;
+
+	/**
+	 * The slug of the schema this guard checks.
+	 */
+	private const GUARDED_SCHEMA = 'glossaryTerm';
+
+	/**
+	 * How this guard names itself in the log.
+	 */
+	private const GUARD_NAME = 'glossary guard';
 
 	/**
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container Resolves OpenRegister's schema mapper.
-	 * @param CmsReader          $reader    Reads the terms of a portal.
-	 * @param GlossaryRelations  $relations Decides which relations leave the portal.
+	 * @param CmsReaderInterface          $reader    Reads the terms of a portal.
+	 * @param GlossaryRelationsInterface  $relations Decides which relations leave the portal.
 	 * @param IL10N              $l10n      Translates the refusal.
 	 * @param LoggerInterface    $logger    Logs a failed check.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
-		private readonly CmsReader $reader,
-		private readonly GlossaryRelations $relations,
+		private readonly CmsReaderInterface $reader,
+		private readonly GlossaryRelationsInterface $relations,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
-
-	/**
-	 * Check one pre-write event.
-	 *
-	 * @param Event $event The event.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/portal-cms-content-model/tasks.md#task-3
-	 */
-	public function handle(Event $event): void {
-		if ($event instanceof ObjectCreatingEvent) {
-			$this->check(event: $event, entity: $event->getObject());
-			return;
-		}
-
-		if ($event instanceof ObjectUpdatingEvent) {
-			$this->check(event: $event, entity: $event->getNewObject());
-		}
-	}//end handle()
 
 	/**
 	 * Refuse the write when a relation leaves the portal.
@@ -94,9 +82,11 @@ class GlossaryRelationGuardListener implements IEventListener {
 	 * @param object                                  $entity The object being written.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-10-09-portal-cms-content-model/tasks.md#task-3
 	 */
-	private function check(ObjectCreatingEvent|ObjectUpdatingEvent $event, object $entity): void {
-		if ($this->isTerm(schema: (string)$entity->getSchema()) === false) {
+	protected function check(ObjectCreatingEvent|ObjectUpdatingEvent $event, object $entity): void {
+		if ($this->guardsSchema(schema: (string)$entity->getSchema()) === false) {
 			return;
 		}
 
@@ -106,6 +96,25 @@ class GlossaryRelationGuardListener implements IEventListener {
 			return;
 		}
 
+		$foreign = $this->foreignRelations(term: $term, relations: $relations);
+		if ($foreign !== []) {
+			$event->stopPropagation();
+			$message = $this->l10n->t('A term can only relate to terms on its own portal. Not found there: %s.', [implode(', ', $foreign)]);
+			$event->setErrors(['message' => $message]);
+		}
+	}//end check()
+
+	/**
+	 * The relations that name no term on the term's own portal; every one when the term names no portal.
+	 *
+	 * @param array<string, mixed> $term      The term.
+	 * @param array<int, mixed>    $relations The term's relations.
+	 *
+	 * @return array<int, string>
+	 *
+	 * @spec openspec/changes/archive/2026-10-09-portal-cms-content-model/tasks.md#task-3
+	 */
+	private function foreignRelations(array $term, array $relations): array {
 		$portal  = (string)($term['portal'] ?? '');
 		$foreign = [];
 		if ($portal === '') {
@@ -120,28 +129,6 @@ class GlossaryRelationGuardListener implements IEventListener {
 			);
 		}
 
-		if ($foreign !== []) {
-			$event->stopPropagation();
-			$message = $this->l10n->t('A term can only relate to terms on its own portal. Not found there: %s.', [implode(', ', $foreign)]);
-			$event->setErrors(['message' => $message]);
-		}
-	}//end check()
-
-	/**
-	 * Whether an object's schema is portaliq's glossary term schema.
-	 *
-	 * @param string $schema The object's schema id.
-	 *
-	 * @return bool
-	 */
-	private function isTerm(string $schema): bool {
-		try {
-			$term = $this->container->get(self::SCHEMA_MAPPER)->findByApplicationAndSlug(slug: 'glossaryTerm', application: Application::APP_ID);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: glossary guard could not read the schema', ['reason' => $e->getMessage()]);
-			return false;
-		}
-
-		return $term !== null && $schema !== '' && $schema === (string)$term->getId();
-	}//end isTerm()
+		return $foreign;
+	}//end foreignRelations()
 }//end class

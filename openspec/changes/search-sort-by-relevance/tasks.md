@@ -2,9 +2,9 @@
 
 ## The block
 
-- [ ] **T01**: `sortOptions()` adds "Meest relevant" when there is a term, and a new search with a term defaults to it; `buildRequestUrl()` adds `_fuzzy=true` for a `_relevance` order (REQ-SSR-001). Verification: Vitest on `federatedSearch.js` and the block.
-- [ ] **T02**: The applied-order check, the fallback search, and the one-time message (REQ-SSR-002). Verification: Vitest with a response lacking `@self.relevance`.
-- [ ] **T03**: The visually hidden match description (REQ-SSR-003). Verification: the Playwright spec reads the accessible description.
+- [x] **T01**: `sortOptions()` adds "Meest relevant" when there is a term, and a new search with a term defaults to it; `buildRequestUrl()` adds `_fuzzy=true` for a `_relevance` order (REQ-SSR-001). Verification: Vitest on `federatedSearch.js` and the block.
+- [x] **T02**: The applied-order check, the fallback search, and the one-time message (REQ-SSR-002). Verification: Vitest with a response lacking `@self.relevance`.
+- [x] **T03**: The visually hidden match description (REQ-SSR-003). Built; the Playwright reading waits on T04. Verification: the Playwright spec reads the accessible description.
 
 ## End to end
 
@@ -12,15 +12,15 @@
 
 ## Docs, strings and validation
 
-- [ ] **T05**: The Dutch label "Meest relevant", "Sorting by relevance is not available here." in English and Dutch, "Match: {n} percent"; update the template comment at lines 130-137 so it no longer says relevance is absent; a docs note on what relevance ranks on. Verification: `npm run lint`, `test:l10n`.
-- [ ] **T06**: `openspec validate search-sort-by-relevance --strict`.
+- [x] **T05** (the block's labels and live-region sentences are Dutch only, as every string in `FederatedSearchBlock.vue` is today: "Meest relevant", "Sorteren op relevantie kan hier niet.", "Overeenkomst: {n} procent"; giving the block a translator is its own change; docs in `docs/operations/search-by-relevance.md`): The Dutch label "Meest relevant", "Sorting by relevance is not available here." in English and Dutch, "Match: {n} percent"; update the template comment at lines 130-137 so it no longer says relevance is absent; a docs note on what relevance ranks on. Verification: `npm run lint`, `test:l10n`.
+- [x] **T06**: `openspec validate search-sort-by-relevance --strict`.
 
 ## Amendment, 2026-10-05: Woo capability programme (rows 6.14 and 6.17)
 
 Build rules: `openspec/woo-build-rules.md`. A test marked **fails today** must be run
 on `origin/development` first and seen red; put the failing line in the PR body.
 
-- [ ] **T07**: `buildRequestUrl()` sends `_fuzzy=true` for every non-empty term (REQ-SSR-004).
+- [x] **T07**: `buildRequestUrl()` sends `_fuzzy=true` for every non-empty term (REQ-SSR-004).
   Verification: **fails today**, node test `tests/federated-search.spec.mjs`
   `a term always asks for fuzzy matching` and `no term sends no fuzzy flag`.
 - [ ] **T08**: `lib/Service/Search/SuggestionWordList.php` builds the per-portal word list from the

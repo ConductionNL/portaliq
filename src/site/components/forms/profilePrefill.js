@@ -6,7 +6,7 @@
 // field is filled, so a saved draft, a preset or what the resident typed
 // stays. Pure functions, so a node test pins each rule.
 //
-// @spec openspec/changes/action-fields-prefill-from-the-residents-profile/specs/portal-contribution-contract/spec.md#requirement-an-action-field-may-start-from-the-signed-in-residents-name-or-e-mail-address
+// @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-action-field-may-start-from-the-signed-in-residents-name-or-e-mail-address
 
 /** The profile value each prefill source reads (`identity/details`). */
 const SOURCES = { name: 'displayName', email: 'email' }
@@ -22,6 +22,24 @@ export function prefillFields(action) {
 	return Object.keys(configs)
 		.filter((field) => Object.hasOwn(SOURCES, configs[field]?.prefill))
 		.map((field) => [field, SOURCES[configs[field].prefill]])
+}
+
+/**
+ * The fields the profile filled: empty before, with a value after.
+ *
+ * @param {Record<string, string>} before The values before the prefill.
+ * @param {Record<string, string>} after The values after it.
+ * @param {object} action The normalised action.
+ * @return {string[]} The fields, in the action's prefill order.
+ */
+export function filledFields(before, after, action) {
+	return prefillFields(action)
+		.map(([field]) => field)
+		.filter(
+			(field) =>
+				String(before[field] ?? '').trim() === ''
+				&& String(after[field] ?? '').trim() !== '',
+		)
 }
 
 /**

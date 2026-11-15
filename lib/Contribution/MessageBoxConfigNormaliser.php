@@ -65,18 +65,28 @@ class MessageBoxConfigNormaliser {
 			return $collection;
 		}
 
-		$collection['messageBox'] = ['recipientProvider' => $method];
+		$collection['messageBox'] = ['recipientProvider' => $method] + $this->letterFields(declared: $declared);
+		return $collection;
+	}//end normalise()
 
-		// The fields that hold the letter's text and subject, when the
-		// collection names them (dossiq keeps the text in `content`). Only a
-		// plain field name travels on.
+	/**
+	 * The fields that hold the letter's text and subject, when the
+	 * collection names them (dossiq keeps the text in `content`). Only a
+	 * plain field name travels on.
+	 *
+	 * @param array<string, mixed> $declared The declared message box.
+	 *
+	 * @return array<string, string>
+	 */
+	private function letterFields(array $declared): array {
+		$fields = [];
 		foreach (['bodyField', 'subjectField'] as $key) {
 			$field = ($declared[$key] ?? null);
 			if (is_string($field) === true && preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $field) === 1) {
-				$collection['messageBox'][$key] = $field;
+				$fields[$key] = $field;
 			}
 		}
 
-		return $collection;
-	}//end normalise()
+		return $fields;
+	}//end letterFields()
 }//end class

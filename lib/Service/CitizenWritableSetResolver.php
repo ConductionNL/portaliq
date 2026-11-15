@@ -30,23 +30,27 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+ * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Contribution\CitizenWriteConfigNormaliser;
+use OCA\Portaliq\Contribution\CaseFieldDisplayHints;
+use OCA\Portaliq\Kernel\Contracts\CitizenWritableSetResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\CitizenWriteConfigNormaliserInterface;
 use OCP\IL10N;
 
 /**
  * Resolves the writable set, the amendment window and the public status label
  * for one case.
  *
- * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+ * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
-class CitizenWritableSetResolver {
+class CitizenWritableSetResolver implements CitizenWritableSetResolverInterface {
 	/**
 	 * The property on the case type listing the fields a portal audience may
 	 * change. Each entry IS the field's flag (D16).
@@ -78,7 +82,7 @@ class CitizenWritableSetResolver {
 	 * The property on the case type declaring whether an applicant may end
 	 * their own request, until when, and onto which status.
 	 *
-	 * @spec openspec/changes/withdrawing-your-own-case-from-the-portal/specs/withdrawing-your-own-case/spec.md
+	 * @spec openspec/specs/withdrawing-your-own-case/spec.md
 	 */
 	public const WITHDRAWAL_PROPERTY = 'portalWithdrawal';
 
@@ -110,12 +114,15 @@ class CitizenWritableSetResolver {
 	 *                              `window`, `documents`, `status` and
 	 *                              `ended`.
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
-	 * @spec openspec/changes/citizen-case-ended-shows-only-its-state/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-case-that-has-ended-offers-nothing-and-explains-nothing
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/changes/archive/2026-10-07-citizen-case-ended-shows-only-its-state/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-case-that-has-ended-offers-nothing-and-explains-nothing
+	 * @spec openspec/changes/personal-data-left-untranslated/tasks.md#t03
 	 */
 	public function resolve(array $action, array $case, string $audience, string $closedField = ''): array {
-		$set = $this->resolveOpen(action: $action, case: $case, audience: $audience);
+		$set   = $this->resolveOpen(action: $action, case: $case, audience: $audience);
+		$hints = ($action[CitizenWriteConfigNormaliserInterface::KEY]['fields'] ?? null);
 		if ((new CaseRowMarker())->hasEnded(row: $case, closedField: $closedField) === false) {
+			$set['fields'] = CaseFieldDisplayHints::apply(fields: (array)($set['fields'] ?? []), hints: $hints);
 			return array_merge($set, ['ended' => false]);
 		}
 
@@ -135,7 +142,7 @@ class CitizenWritableSetResolver {
 		return array_merge(
 			$set,
 			[
-				'fields' => $fields,
+				'fields' => CaseFieldDisplayHints::apply(fields: $fields, hints: $hints),
 				'writable' => [],
 				'window' => $closed,
 				'documents' => $closed,
@@ -143,7 +150,6 @@ class CitizenWritableSetResolver {
 			]
 		);
 	}//end resolve()
-
 
 	/**
 	 * The writable set as the case type declares it for the case's status.
@@ -154,23 +160,15 @@ class CitizenWritableSetResolver {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	private function resolveOpen(array $action, array $case, string $audience): array {
-		$config = ($action[CitizenWriteConfigNormaliser::KEY] ?? null);
-		if (is_array($config) === false) {
-			return $this->closedSet(reason: $this->l10n->t('This case is not open for changes from the portal.'));
-		}
-
-		$status = (string)($case[$config['statusField']] ?? '');
-		$caseType = $this->caseTypes->readCaseType(
-			register: (string)$config['typeRegister'],
-			schema: (string)$config['typeSchema'],
-			id: (string)($case[$config['typeField']] ?? '')
-		);
+		$caseType = $this->actionCaseType(action: $action, caseRow: $case);
 		if ($caseType === null) {
 			return $this->closedSet(reason: $this->l10n->t('This case is not open for changes from the portal.'));
 		}
+
+		$status = $this->caseStatusOf(action: $action, caseRow: $case);
 
 		$window = $this->window(caseType: $caseType, property: self::WINDOW_PROPERTY, status: $status);
 		$documents = $this->window(caseType: $caseType, property: self::DOCUMENTS_PROPERTY, status: $status);
@@ -182,21 +180,25 @@ class CitizenWritableSetResolver {
 			window: $window
 		);
 
-		$writable = [];
-		foreach ($fields as $field => $state) {
-			if (($state['writable'] ?? false) === true) {
-				$writable[] = $field;
-			}
-		}
-
 		return [
 			'fields' => $fields,
-			'writable' => $writable,
+			'writable' => $this->writableFieldsOf(fields: $fields),
 			'window' => $window,
 			'documents' => $documents,
 			'status' => (new CaseStatusView())->status(caseType: $caseType, status: $status),
 		];
 	}//end resolveOpen()
+
+	/**
+	 * The names of the fields that may be written now.
+	 *
+	 * @param array<string, array<string, mixed>> $fields The field states.
+	 *
+	 * @return array<int, string>
+	 */
+	private function writableFieldsOf(array $fields): array {
+		return array_keys(array_filter($fields, static fn (mixed $state): bool => ($state['writable'] ?? false) === true));
+	}//end writableFieldsOf()
 
 	/**
 	 * Whether this case may be withdrawn right now, and onto what.
@@ -213,8 +215,8 @@ class CitizenWritableSetResolver {
 	 * @return array<string, mixed> `declared`, `open`, `reason`,
 	 *         `targetStatus` and `confirmText`.
 	 *
-	 * @spec openspec/changes/withdrawing-your-own-case-from-the-portal/specs/withdrawing-your-own-case/spec.md
-	 * @spec openspec/changes/citizen-case-ended-shows-only-its-state/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-case-that-has-ended-offers-nothing-and-explains-nothing
+	 * @spec openspec/specs/withdrawing-your-own-case/spec.md
+	 * @spec openspec/changes/archive/2026-10-07-citizen-case-ended-shows-only-its-state/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-case-that-has-ended-offers-nothing-and-explains-nothing
 	 */
 	public function withdrawal(array $action, array $case, string $closedField = ''): array {
 		$closed = [
@@ -225,66 +227,127 @@ class CitizenWritableSetResolver {
 			'confirmText' => '',
 		];
 
-		$config = ($action[CitizenWriteConfigNormaliser::KEY] ?? null);
-		if (is_array($config) === false) {
+		$declared = $this->declaredWithdrawal(action: $action, caseRow: $case);
+		if ($declared === null) {
 			return $closed;
 		}
 
-		$caseType = $this->caseTypes->readCaseType(
-			register: (string)$config['typeRegister'],
-			schema: (string)$config['typeSchema'],
-			id: (string)($case[$config['typeField']] ?? '')
-		);
+		return $this->withdrawalState(declared: $declared, ended: (new CaseRowMarker())->hasEnded(row: $case, closedField: $closedField));
+	}//end withdrawal()
+
+	/**
+	 * The withdrawal the case's type declares, with the case's status and
+	 * the withdrawal window for it; null when the action carries no citizen
+	 * write declaration, the case type cannot be read or declares none.
+	 *
+	 * @param array<string, mixed> $action  The matched `type: update` action.
+	 * @param array<string, mixed> $caseRow The citizen's own case row.
+	 *
+	 * @return array{status: string, targetStatus: string, confirmText: string, window: array<string, mixed>}|null
+	 */
+	private function declaredWithdrawal(array $action, array $caseRow): ?array {
+		$caseType = $this->actionCaseType(action: $action, caseRow: $caseRow);
 		if ($caseType === null) {
-			return $closed;
+			return null;
 		}
 
+		$declared = $this->withdrawalDeclarationOf(caseType: $caseType);
+		if ($declared === null) {
+			return null;
+		}
+
+		$status = $this->caseStatusOf(action: $action, caseRow: $caseRow);
+		return [
+			'status' => $status,
+			'targetStatus' => (string)$declared['targetStatus'],
+			'confirmText' => (string)($declared['confirmText'] ?? ''),
+			'window' => $this->window(caseType: $caseType, property: self::WITHDRAWAL_PROPERTY, status: $status),
+		];
+	}//end declaredWithdrawal()
+
+	/**
+	 * The case type's withdrawal declaration, or null when it declares none
+	 * or names no status to land on.
+	 *
+	 * @param array<string, mixed> $caseType The case type.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function withdrawalDeclarationOf(array $caseType): ?array {
 		$declared = ($caseType[self::WITHDRAWAL_PROPERTY] ?? null);
 		if (is_array($declared) === false) {
-			return $closed;
+			return null;
 		}
 
-		$targetStatus = (string)($declared['targetStatus'] ?? '');
-		if ($targetStatus === '') {
+		if ((string)($declared['targetStatus'] ?? '') === '') {
 			// A declaration with nowhere to land is not a declaration: the
 			// portal will not invent the status a withdrawal lands on.
-			return $closed;
+			return null;
 		}
 
-		$status = (string)($case[$config['statusField']] ?? '');
-		$window = $this->window(caseType: $caseType, property: self::WITHDRAWAL_PROPERTY, status: $status);
-		$confirmText = (string)($declared['confirmText'] ?? '');
+		return $declared;
+	}//end withdrawalDeclarationOf()
 
-		if ($status === $targetStatus) {
+	/**
+	 * Whether a declared withdrawal is open for the case now, and why not.
+	 *
+	 * @param array{status: string, targetStatus: string, confirmText: string, window: array<string, mixed>} $declared The declared withdrawal.
+	 * @param bool $ended Whether the case's collection marks it closed.
+	 *
+	 * @return array<string, mixed> `declared`, `open`, `reason`, `targetStatus` and `confirmText`.
+	 */
+	private function withdrawalState(array $declared, bool $ended): array {
+		$target = ['targetStatus' => $declared['targetStatus'], 'confirmText' => $declared['confirmText']];
+		if ($declared['status'] === $declared['targetStatus']) {
 			// Already withdrawn. Not an error yet, but never open again.
-			return [
-				'declared' => true,
-				'open' => false,
-				'reason' => $this->l10n->t('This request has already been withdrawn.'),
-				'targetStatus' => $targetStatus,
-				'confirmText' => $confirmText,
-			];
+			return ['declared' => true, 'open' => false, 'reason' => $this->l10n->t('This request has already been withdrawn.')] + $target;
 		}
 
-		if ((new CaseRowMarker())->hasEnded(row: $case, closedField: $closedField) === true) {
+		if ($ended === true) {
 			// A closed case is not withdrawn: there is nothing left to stop.
-			return [
-				'declared' => true,
-				'open' => false,
-				'reason' => $this->l10n->t('This request cannot be withdrawn from the portal.'),
-				'targetStatus' => $targetStatus,
-				'confirmText' => $confirmText,
-			];
+			return ['declared' => true, 'open' => false, 'reason' => $this->l10n->t('This request cannot be withdrawn from the portal.')] + $target;
 		}
 
-		return [
-			'declared' => true,
-			'open' => ($window['open'] === true),
-			'reason' => (string)$window['reason'],
-			'targetStatus' => $targetStatus,
-			'confirmText' => $confirmText,
-		];
-	}//end withdrawal()
+		$window = $declared['window'];
+		return ['declared' => true, 'open' => ($window['open'] === true), 'reason' => (string)$window['reason']] + $target;
+	}//end withdrawalState()
+
+	/**
+	 * The case type the action's citizen write declaration names for the
+	 * case, or null when the action carries no declaration or the type
+	 * cannot be read.
+	 *
+	 * @param array<string, mixed> $action  The matched `type: update` action.
+	 * @param array<string, mixed> $caseRow The citizen's own case row.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function actionCaseType(array $action, array $caseRow): ?array {
+		$config = ($action[CitizenWriteConfigNormaliserInterface::KEY] ?? null);
+		if (is_array($config) === false) {
+			return null;
+		}
+
+		return $this->caseTypes->readCaseType(
+			register: (string)$config['typeRegister'],
+			schema: (string)$config['typeSchema'],
+			id: (string)($caseRow[$config['typeField']] ?? '')
+		);
+	}//end actionCaseType()
+
+	/**
+	 * The case's status, read from the field the action's citizen write
+	 * declaration names.
+	 *
+	 * @param array<string, mixed> $action  The matched action, carrying its declaration.
+	 * @param array<string, mixed> $caseRow The citizen's own case row.
+	 *
+	 * @return string
+	 */
+	private function caseStatusOf(array $action, array $caseRow): string {
+		$config = (array)$action[CitizenWriteConfigNormaliserInterface::KEY];
+		return (string)($caseRow[$config['statusField']] ?? '');
+	}//end caseStatusOf()
 
 	/**
 	 * Whether one field may be written right now, without rebuilding the whole
@@ -296,7 +359,7 @@ class CitizenWritableSetResolver {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	public function isWritable(array $set, string $field): bool {
 		return in_array($field, (array)($set['writable'] ?? []), true);
@@ -337,12 +400,8 @@ class CitizenWritableSetResolver {
 		}
 
 		foreach ($declared as $entry) {
-			$field = null;
-			if (is_array($entry) === true) {
-				$field = ($entry['field'] ?? null);
-			}
-
-			if (is_string($field) === false || $field === '' || in_array($field, $whitelist, true) === false) {
+			$field = $this->whitelistedField(entry: $entry, whitelist: $whitelist);
+			if ($field === null) {
 				continue;
 			}
 
@@ -356,6 +415,27 @@ class CitizenWritableSetResolver {
 
 		return $fields;
 	}//end fields()
+
+	/**
+	 * The field a declared flag names, when the action's whitelist has it.
+	 *
+	 * @param mixed              $entry     The declared flag.
+	 * @param array<int, string> $whitelist The action's `fields`.
+	 *
+	 * @return string|null
+	 */
+	private function whitelistedField(mixed $entry, array $whitelist): string|null {
+		$field = null;
+		if (is_array($entry) === true) {
+			$field = ($entry['field'] ?? null);
+		}
+
+		if (is_string($field) === false || $field === '' || in_array($field, $whitelist, true) === false) {
+			return null;
+		}
+
+		return $field;
+	}//end whitelistedField()
 
 	/**
 	 * One field flag's state. A flag that does not name this audience is not a

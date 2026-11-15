@@ -19,6 +19,7 @@ use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalWriteContext;
+use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IDateTimeZone;
 use OCP\IL10N;
 use OCP\L10N\IFactory;
@@ -26,6 +27,7 @@ use Opis\JsonSchema\Validator;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Contribution\NotificationRuleNormaliser;
 
 /**
  * A change rule that names its recipients by a claim reaches the portal
@@ -138,7 +140,7 @@ class ClaimAddressedChangeNoticeTest extends TestCase {
 		};
 		$mappers = $this->createMock(ContainerInterface::class);
 		$mappers->method('get')->willReturn($mapper);
-		$index = new PortalChangeRuleIndex(registry: $registry, container: $mappers, logger: $this->createMock(LoggerInterface::class));
+		$index = new PortalChangeRuleIndex(registry: $registry, container: $mappers, logger: $this->createMock(LoggerInterface::class), notificationRuleNormaliser: new NotificationRuleNormaliser());
 
 		$writer = $this->createMock(PortalObjectWriter::class);
 		$writer->method('createObject')->willReturnCallback(
@@ -246,8 +248,12 @@ class ClaimAddressedChangeNoticeTest extends TestCase {
 				return array_slice($this->rows, (int)($config['offset'] ?? 0), (int)($config['limit'] ?? 500));
 			}
 		};
-		$container = $this->createMock(ContainerInterface::class);
-		$container->method('get')->willReturn($objectService);
+		// The owning app admits every claim: these accounts are all of the record's tenant.
+		$services  = [IEventDispatcher::class => $this->createMock(originalClassName: IEventDispatcher::class)];
+		$container = $this->createMock(originalClassName: ContainerInterface::class);
+		$container->method('get')->willReturnCallback(
+			static fn (string $id): object => ($services[$id] ?? $objectService)
+		);
 
 		return new PortalAccountsByClaim(container: $container, logger: $this->createMock(LoggerInterface::class));
 	}//end accountsByClaim()

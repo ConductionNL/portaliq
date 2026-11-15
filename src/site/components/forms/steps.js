@@ -43,6 +43,7 @@ export function flowSteps(steps, titles) {
 		...(typeof step.description === 'string' && step.description !== ''
 			? { description: step.description }
 			: {}),
+		...stepNote(step.note),
 		fields: step.fields.filter((field) => typeof field === 'string'),
 		review: false,
 		...(step.decides === true ? { decides: true } : {}),
@@ -58,6 +59,22 @@ export function flowSteps(steps, titles) {
 		review: true,
 	})
 	return out
+}
+
+/**
+ * A step's note, `{note: {title, text}}`, when it has words; else nothing.
+ *
+ * @param {unknown} note The step's declared note.
+ * @return {object} `{note}` or `{}`.
+ * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
+ */
+function stepNote(note) {
+	if (!note || typeof note !== 'object') {
+		return {}
+	}
+	const title = typeof note.title === 'string' ? note.title.trim() : ''
+	const text = typeof note.text === 'string' ? note.text.trim() : ''
+	return title === '' && text === '' ? {} : { note: { title, text } }
 }
 
 /**

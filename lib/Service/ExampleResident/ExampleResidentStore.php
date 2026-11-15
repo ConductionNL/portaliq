@@ -29,6 +29,13 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\ExampleResident;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+use OCA\Portaliq\Service\ObjectRowNormaliser;
+use OCA\Portaliq\Service\ObjectServiceLookup;
+use OCA\Portaliq\Service\RowIdOf;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -43,6 +50,10 @@ use Throwable;
  * @spec openspec/changes/example-resident-zuiddrecht/specs/example-resident/spec.md#requirement-the-install-must-prove-what-arrived
  */
 class ExampleResidentStore {
+	use ObjectServiceLookup;
+	use ObjectRowNormaliser;
+	use RowIdOf;
+
 	/**
 	 * OpenRegister's ObjectService, fetched by string id: OpenRegister is an
 	 * optional sibling app, so its classes are never imported.
@@ -116,12 +127,7 @@ class ExampleResidentStore {
 				return $plain;
 			}
 
-			foreach ($rows as $row) {
-				$row = $this->plain(row: $row);
-				if ($row !== null) {
-					$plain[] = $row;
-				}
-			}
+			array_push($plain, ...$this->plainRows(rows: $rows));
 
 			if (count($rows) < self::PAGE_SIZE) {
 				break;
@@ -130,6 +136,25 @@ class ExampleResidentStore {
 
 		return $plain;
 	}//end find()
+
+	/**
+	 * The rows that normalise to arrays, normalised.
+	 *
+	 * @param array<int|string, mixed> $rows The rows as read.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function plainRows(array $rows): array {
+		$plain = [];
+		foreach ($rows as $row) {
+			$row = $this->normalise(row: $row);
+			if ($row !== null) {
+				$plain[] = $row;
+			}
+		}
+
+		return $plain;
+	}//end plainRows()
 
 	/**
 	 * One row by its id, or null when it is not there.
@@ -149,12 +174,17 @@ class ExampleResidentStore {
 		}
 
 		try {
-			$row = $objectService->find(id: $id, register: $register, schema: $schema, _rbac: false, _multitenancy: false);
+			$row = $objectService->find(
+				id: $id,
+				options: new ObjectFindOptions(register: $register, schema: $schema),
+				_rbac: false,
+				_multitenancy: false
+			);
 		} catch (Throwable) {
 			return null;
 		}
 
-		$row = $this->plain(row: $row);
+		$row = $this->normalise(row: $row);
 		if ($row === null || $this->idOf(row: $row) !== $id) {
 			return null;
 		}
@@ -185,7 +215,12 @@ class ExampleResidentStore {
 		unset($merged['@self'], $merged['id']);
 
 		try {
-			$objectService->saveObject(object: $merged, register: $register, schema: $schema, uuid: $id, _rbac: false, _multitenancy: false);
+			$objectService->saveObject(
+				object: $merged,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $id),
+				_rbac: false,
+				_multitenancy: false
+			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: example resident update failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
 			return false;
@@ -212,7 +247,11 @@ class ExampleResidentStore {
 		}
 
 		try {
-			$deleted = $objectService->deleteObject(uuid: $id, register: $register, schema: $schema, _rbac: false, _multitenancy: false);
+			$deleted = $objectService->deleteObject(
+				new ObjectDeletion(uuid: $id, target: new ObjectFindTarget(register: $register, schema: $schema)),
+				_rbac: false,
+				_multitenancy: false
+			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: example resident delete failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
 			return false;
@@ -220,66 +259,4 @@ class ExampleResidentStore {
 
 		return $deleted !== false;
 	}//end delete()
-
-	/**
-	 * The id OpenRegister gave a row, wherever it put it.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return string The id, or '' when the row names none.
-	 *
-	 * @spec openspec/changes/example-resident-zuiddrecht/specs/example-resident/spec.md#requirement-an-administrator-must-be-able-to-remove-an-example-resident
-	 */
-	public function idOf(array $row): string {
-		$self = [];
-		if (is_array($row['@self'] ?? null) === true) {
-			$self = $row['@self'];
-		}
-
-		foreach ([($self['id'] ?? null), ($self['uuid'] ?? null), ($row['id'] ?? null), ($row['uuid'] ?? null)] as $id) {
-			if (is_string($id) === true && $id !== '') {
-				return $id;
-			}
-		}
-
-		return '';
-	}//end idOf()
-
-	/**
-	 * A row as a plain array, or null when it is not one.
-	 *
-	 * @param mixed $row What OpenRegister handed over.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function plain(mixed $row): ?array {
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			$row = $row->jsonSerialize();
-		}
-
-		if (is_array($row) === true) {
-			return $row;
-		}
-
-		return null;
-	}//end plain()
-
-	/**
-	 * OpenRegister's ObjectService, or null when it is not installed.
-	 *
-	 * @return object|null
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end objectService()
 }//end class

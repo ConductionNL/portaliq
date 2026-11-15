@@ -178,3 +178,31 @@ public, searchable publication".
 - **WHEN** the page renders
 - **THEN** the row shows the name without a link
 - test: `tests/publication-documents.spec.mjs` ("unsafe link")
+
+### Requirement: A link with q opens the search for that term (REQ-SRQ-001)
+
+The federated search block MUST read its term from `_search`, or from `q` when only `q` is on the address. When the visitor searches again, the block MUST write the term into the parameter it was read from, so a visitor who arrived with `q` keeps `q` in the address; otherwise it MUST write `_search`. An empty term MUST remove the parameter.
+
+#### Scenario: A resident follows a link with q
+- GIVEN a link to `/zoeken?q=Lindelaan`
+- WHEN the resident opens it
+- THEN the search field holds "Lindelaan" and the results are for Lindelaan
+- @e2e exclude pinned by `tests/federated-search.spec.mjs` ("?q= opens the search for that term"); the block adopts `readSearchState()` on mount
+
+#### Scenario: She searches again
+- GIVEN the resident arrived with `?q=Lindelaan`
+- WHEN she searches for "fietspad"
+- THEN the address reads `q=fietspad` and reopening it shows the same search
+- @e2e exclude pinned by `tests/federated-search.spec.mjs` ("a visitor who came with q keeps q")
+
+### Requirement: The organisation filter reads the organisation's name
+
+The public site record MUST carry the id and the name of the portal's own organisation as `organisation: {id, name}`, or null when the portal names none that resolves. The search block's organisation filter MUST show that name for a bucket whose value is that id, and MUST still send the id as the filter value. A bucket of another organisation MUST keep the label the search API gave it.
+
+#### Scenario: Zuiddrecht's publications
+- GIVEN the Zuiddrecht portal belongs to the organisation "Gemeente Zuiddrecht" with id `bacda7a4-…`
+- AND 13 publications name that id as their `organization`
+- WHEN a visitor opens the Woo search
+- THEN the "Organisatie" filter reads "Gemeente Zuiddrecht (13)"
+- AND ticking it sends `organization=bacda7a4-…`
+- @e2e exclude pinned by `tests/publication-documents.spec.mjs` and `ContentControllerTest::testSiteNamesItsOrganisation`; the live check on the rehearsal follows the merge

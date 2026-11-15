@@ -31,6 +31,8 @@ known issues, and how to report a barrier. The known issues SHALL be generated f
 measurement: per violated rule, a plain-language sentence, the impact and the number of pages. The
 page SHALL show the date of the measurement it rests on and SHALL be regenerated when a new
 measurement is stored. When the administrator recorded the register URL, the page SHALL link to it.
+A portal that publishes its own page at `/toegankelijkheid` SHALL show that authored page on the
+route instead; every portal without one SHALL keep the generated statement.
 
 #### Scenario: The statement follows the measurement
 - **GIVEN** a measurement with a `color-contrast` violation of impact serious on two pages
@@ -41,6 +43,12 @@ measurement is stored. When the administrator recorded the register URL, the pag
 - **GIVEN** the statement above
 - **WHEN** a new measurement without violations is stored
 - **THEN** the statement SHALL no longer list the contrast issue and SHALL show the new date
+
+#### Scenario: An authored page takes the route
+- **GIVEN** a portal whose site publishes a page "Toegankelijkheidsverklaring" at `/toegankelijkheid`
+- **WHEN** a visitor opens `/toegankelijkheid`
+- **THEN** the site SHALL show that page with its own title and breadcrumb
+- **AND** on a portal without such a page the generated statement SHALL show
 
 ### Requirement: The status never goes beyond the evidence (REQ-SAS-003)
 

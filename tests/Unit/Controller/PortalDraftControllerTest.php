@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
+use OCA\OpenRegister\Service\Object\DiscardDraftRequest;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\PortalDraftController;
 use OCA\Portaliq\Service\Intake\ActionDraft;
@@ -19,6 +20,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Contribution\CreateBody;
 
 /**
  * site-multi-step-forms T8 and submit-creates-the-case-directly 5.1/5.2: the
@@ -32,11 +34,14 @@ use Psr\Log\LoggerInterface;
  */
 #[CoversClass(PortalDraftController::class)]
 #[UsesClass(ActionDraft::class)]
+#[UsesClass(\OCA\Portaliq\Service\Intake\ActionAnswerFields::class)]
 #[UsesClass(\OCA\Portaliq\Service\Intake\DestinationDraft::class)]
 #[UsesClass(\OCA\Portaliq\Service\Intake\DestinationSubmit::class)]
 #[UsesClass(\OCA\Portaliq\Contribution\ActionScopeResolver::class)]
 #[UsesClass(\OCA\Portaliq\Contribution\CreateBody::class)]
 #[UsesClass(PortalSessionService::class)]
+#[UsesClass(\OCA\Portaliq\Controller\DraftSave::class)]
+#[UsesClass(\OCA\Portaliq\Kernel\Support\SessionTrust::class)]
 class PortalDraftControllerTest extends TestCase {
 
 	private const ACTION = [
@@ -72,7 +77,7 @@ class PortalDraftControllerTest extends TestCase {
 		$this->assertSame(['register' => 'dossiq', 'schema' => 'case'], $save['destination']);
 		$this->assertSame(['title' => 'Half', 'caseType' => 'ct-1', 'subjectRef' => 'sanne'], $save['payload']);
 		$this->assertNull($save['draftId']);
-		$this->assertSame('portal:sanne', $save['owner']->value);
+		$this->assertSame('portal:sanne', $save['owner']->value());
 		$this->assertSame('dossiq/request', $save['scope']);
 	}//end testSavingStartsADraftOfTheDestinationOwnedByThePortalSubject()
 
@@ -101,9 +106,40 @@ class PortalDraftControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame(['title' => 'Half'], $data['answers']);
 		$this->assertSame('d-1', $data['id']);
-		$this->assertSame('portal:sanne', $this->call('findDraft')['owner']->value);
+		$this->assertNotSame('', $data['updatedAt'], 'the resume dialog names the last save');
+		$this->assertSame('portal:sanne', $this->call('findDraft')['owner']->value());
 		$this->assertSame(['caseType' => 'ct-1'], $this->call('findDraft')['match']);
 	}//end testShowAnswersTheLiveDraftsAnswersAndExpiry()
+
+	/**
+	 * The index lists each live draft with its label and moments, and nothing
+	 * for an action without a draft declaration or a draft past retention.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-the-own-area-lists-unfinished-forms-req-fsr-003
+	 */
+	public function testIndexListsTheLiveDrafts(): void {
+		$labelled = self::ACTION + ['label' => 'Woo-verzoek'];
+		$data     = $this->controller(subjectRef: 'sanne', found: $this->live(), action: $labelled)->index()->getData();
+
+		$this->assertCount(expectedCount: 1, haystack: $data['drafts']);
+		$first = $data['drafts'][0];
+		$this->assertSame(expected: ['dossiq', 'request', 'Woo-verzoek'], actual: [$first['app'], $first['action'], $first['label']]);
+		$this->assertNotSame(expected: '', actual: $data['drafts'][0]['expiresAt']);
+
+		$undeclared = $labelled;
+		unset($undeclared['draft']);
+		$withoutDeclaration = $this->controller(subjectRef: 'sanne', found: $this->live(), action: $undeclared);
+		$this->assertSame(expected: ['drafts' => []], actual: $withoutDeclaration->index()->getData());
+
+		$old = ['id' => 'd-old', 'status' => 'draft', 'data' => ['title' => 'Old'], 'updatedAt' => '2026-01-01T00:00:00+00:00'];
+		$this->assertSame(expected: ['drafts' => []], actual: $this->controller(subjectRef: 'sanne', found: $old)->index()->getData());
+
+		$this->assertSame(expected: Http::STATUS_UNAUTHORIZED, actual: $this->controller(subjectRef: '')->index()->getStatus());
+		$unreachable = $this->controller(subjectRef: 'sanne', registryFails: true);
+		$this->assertSame(expected: Http::STATUS_SERVICE_UNAVAILABLE, actual: $unreachable->index()->getStatus());
+	}//end testIndexListsTheLiveDrafts()
 
 	public function testADraftPastItsRetentionIsNotShownAndIsDiscarded(): void {
 		$old      = ['id' => 'd-old', 'status' => 'draft', 'data' => ['title' => 'Old'], 'updatedAt' => '2026-01-01T00:00:00+00:00'];
@@ -223,7 +259,8 @@ class PortalDraftControllerTest extends TestCase {
 			public function __construct(private array &$discarded) {
 			}
 
-			public function discard(array $destination, string $draftId, object $owner): bool {
+			public function discard(DiscardDraftRequest $request): bool {
+				[$destination, $draftId, $owner] = [$request->destination, $request->draftId, $request->owner];
 				$this->discarded[] = $draftId;
 				return true;
 			}
@@ -233,7 +270,7 @@ class PortalDraftControllerTest extends TestCase {
 		return new PortalDraftController(
 			$this->createMock(IRequest::class),
 			$session,
-			new ActionDraft(registry: $registry, reader: $reader, writer: $writer, drafts: $drafts),
+			new ActionDraft(registry: $registry, reader: $reader, writer: $writer, drafts: $drafts, createBody: new CreateBody()),
 			$drafts
 		);
 	}//end controller()

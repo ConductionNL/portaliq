@@ -59,6 +59,25 @@ class PublicApiCorsMiddlewareTest extends TestCase {
 		return (new ReflectionProperty(Response::class, 'headers'))->getValue($response);
 	}//end headersFor()
 
+	/**
+	 * A request that throws while being read leaves the response untouched
+	 * (fail-open): no CORS header, and no error escapes.
+	 *
+	 * @return void
+	 */
+	public function testAThrowingRequestLeavesTheResponseUnchanged(): void {
+		$request = $this->createMock(IRequest::class);
+		$request->method('getHeader')->willThrowException(new \RuntimeException('request gone'));
+		$reflector = $this->createMock(IControllerMethodReflector::class);
+		$response  = new Response();
+
+		$returned = (new PublicApiCorsMiddleware($request, $reflector))
+			->afterController($this->createMock(Controller::class), 'anything', $response);
+
+		$this->assertSame($response, $returned);
+		$this->assertSame([], (new ReflectionProperty(Response::class, 'headers'))->getValue($returned));
+	}//end testAThrowingRequestLeavesTheResponseUnchanged()
+
 
 	/**
 	 * A public content or traffic response reflects the origin, allows GET

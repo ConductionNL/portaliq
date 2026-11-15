@@ -76,3 +76,25 @@ portal already holds, and SHALL NOT publish the portal.
 - **WHEN** an administrator provisions a portal for `org-c` with the same host
 - **THEN** the request is refused with "This web address is already used by another portal." and nothing is written
 - e2e: `tests/e2e/operate-portals-per-organisation.spec.ts`
+
+### Requirement: Each organisation looks after its own portal on a shared installation (REQ-OPO-005)
+
+A portal SHALL be able to name `adminGroups`, a list of Nextcloud group ids. A member of such a group who is not an instance administrator SHALL be able to change that portal's settings, domains, theme, sign-in settings, pages, menus and notices, and SHALL be refused, as if the portal did not exist, on any other portal. Only an instance administrator SHALL change a portal's `adminGroups` or provision a portal. The instance-wide editor groups SHALL keep working as before.
+
+#### Scenario: A municipality changes its own theme
+- **GIVEN** portal `zeist` names `adminGroups: ["zeist-beheer"]` and portal `utrecht` names `["utrecht-beheer"]`
+- **WHEN** a member of `zeist-beheer` changes the theme of `zeist`
+- **THEN** the theme is saved
+- e2e: `tests/e2e/operate-portals-per-organisation.spec.ts`
+
+#### Scenario: Another organisation's portal stays closed
+- **GIVEN** the same two portals
+- **WHEN** a member of `zeist-beheer` reads or changes the settings of `utrecht`
+- **THEN** the answer is 404 and nothing of `utrecht` is returned or changed
+- @e2e exclude Authorization guard; pinned by PortalAdminScopeTest
+
+#### Scenario: Only the hoster hands out the keys
+- **GIVEN** a member of `zeist-beheer` who is not an instance administrator
+- **WHEN** they add a group to `adminGroups` of `zeist`
+- **THEN** the change is refused with 403
+- @e2e exclude Authorization guard; pinned by PortalAdminScopeTest

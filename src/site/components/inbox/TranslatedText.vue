@@ -91,7 +91,7 @@ import {
 import LinkedText from './LinkedText.js'
 
 /**
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-machine-translation-must-say-so-req-srp-034
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-machine-translation-must-say-so-req-srp-034
  */
 export default {
 	name: 'TranslatedText',
@@ -133,7 +133,7 @@ export default {
 	computed: {
 		/**
 		 * @return {boolean} Whether a labelled translation is there.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-machine-translation-must-say-so-req-srp-034
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-machine-translation-must-say-so-req-srp-034
 		 */
 		labelled() {
 			return isLabelledTranslation(this.translation)
@@ -141,7 +141,7 @@ export default {
 
 		/**
 		 * @return {string} The notice sentence.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-machine-translation-must-say-so-req-srp-034
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-machine-translation-must-say-so-req-srp-034
 		 */
 		notice() {
 			return noticeText(this.translation, this.t, this.locale)
@@ -149,7 +149,7 @@ export default {
 
 		/**
 		 * @return {string} The id of the original's element.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-machine-translation-must-say-so-req-srp-034
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-machine-translation-must-say-so-req-srp-034
 		 */
 		originalElementId() {
 			return originalId(this.id)
@@ -157,7 +157,7 @@ export default {
 
 		/**
 		 * @return {string|undefined} The original's language, never an invented one.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-machine-translation-must-say-so-req-srp-034
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-machine-translation-must-say-so-req-srp-034
 		 */
 		sourceLanguage() {
 			const source = this.translation?.sourceLanguage

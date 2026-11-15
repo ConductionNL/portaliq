@@ -18,6 +18,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Signin;
 
+use OCA\Portaliq\Kernel\Contracts\SiteReturnAddressInterface;
+
 /**
  * Where a login started on the public site may return to.
  *
@@ -28,9 +30,9 @@ namespace OCA\Portaliq\Service\Signin;
  * fragment, so the return address can never send a bearer to another origin.
  * Anything else answers '' and the caller keeps its own default.
  *
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
-final class SiteReturnAddress {
+final class SiteReturnAddress implements SiteReturnAddressInterface {
 
 	/**
 	 * The return address when it is a page of the site, else ''.
@@ -43,21 +45,64 @@ final class SiteReturnAddress {
 	 *
 	 * @return string The accepted address, or ''.
 	 *
-	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+	 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 	 */
 	public function accept(string $candidate, string $sitePath): string {
 		$sitePath = $this->withoutFrontController(path: $sitePath);
-		if ($candidate === '' || $sitePath === '' || $sitePath[0] !== '/') {
+		if ($this->comparable(candidate: $candidate, sitePath: $sitePath) === false) {
 			return '';
 		}
 
+		[$path, $query] = $this->pathAndQuery(candidate: $candidate);
+		if ($this->withoutFrontController(path: $path) !== $sitePath) {
+			return '';
+		}
+
+		return $path . $query;
+	}//end accept()
+
+	/**
+	 * Whether a candidate can be compared with the site path at all.
+	 *
+	 * @param string $candidate The `returnTo` the site sent.
+	 * @param string $sitePath  The site route's own path, without the front controller.
+	 *
+	 * @return bool
+	 */
+	private function comparable(string $candidate, string $sitePath): bool {
+		if ($candidate === '' || $sitePath === '' || $sitePath[0] !== '/') {
+			return false;
+		}
+
+		return $this->staysHere(candidate: $candidate);
+	}//end comparable()
+
+	/**
+	 * Whether a candidate stays on this origin and path.
+	 *
+	 * @param string $candidate The `returnTo` the site sent.
+	 *
+	 * @return bool
+	 */
+	private function staysHere(string $candidate): bool {
 		// Every way out of this origin or out of the path is refused before the
 		// path is compared: `//host`, `\host`, a fragment, whitespace and
 		// control characters. A scheme cannot pass the comparison below.
 		if (preg_match('/[\\\\#\s\x00-\x1f\x7f]/', $candidate) === 1 || str_contains($candidate, '//') === true) {
-			return '';
+			return false;
 		}
 
+		return true;
+	}//end staysHere()
+
+	/**
+	 * The candidate's path and its query, the question mark included.
+	 *
+	 * @param string $candidate The `returnTo` the site sent.
+	 *
+	 * @return array{0: string, 1: string}
+	 */
+	private function pathAndQuery(string $candidate): array {
 		$path  = $candidate;
 		$query = '';
 		$mark  = strpos($candidate, '?');
@@ -66,12 +111,8 @@ final class SiteReturnAddress {
 			$query = substr($candidate, $mark);
 		}
 
-		if ($this->withoutFrontController(path: $path) !== $sitePath) {
-			return '';
-		}
-
-		return $path . $query;
-	}//end accept()
+		return [$path, $query];
+	}//end pathAndQuery()
 
 	/**
 	 * A path without its leading `/index.php`.

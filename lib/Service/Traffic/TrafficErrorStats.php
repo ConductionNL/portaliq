@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-script-errors-must-be-reported-without-the-stack-or-the-query-string
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-script-errors-must-be-reported-without-the-stack-or-the-query-string
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ namespace OCA\Portaliq\Service\Traffic;
  * handed, so a client that sent more would still store more; that is the
  * validator's job (params are bounded there) and the client's promise.
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-script-errors-must-be-reported-without-the-stack-or-the-query-string
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-script-errors-must-be-reported-without-the-stack-or-the-query-string
  */
 class TrafficErrorStats {
 
@@ -56,7 +56,7 @@ class TrafficErrorStats {
 	 *
 	 * @return array<int, array{message: string, source: string, hits: int, pages: string[]}> The rows.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-script-errors-must-be-reported-without-the-stack-or-the-query-string
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-script-errors-must-be-reported-without-the-stack-or-the-query-string
 	 */
 	public function rows(array $sessions): array {
 		$errors = [];

@@ -16,7 +16,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
+ * @spec openspec/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
  */
 
 declare(strict_types=1);
@@ -27,7 +27,7 @@ namespace OCA\Portaliq\Service\Cms;
  * Projects `authentication.modeLabels` and `authentication.signInPage` on
  * named keys, plain text only, a link only when it can be followed.
  *
- * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
+ * @spec openspec/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
  */
 class PortalSignInText {
 
@@ -44,7 +44,7 @@ class PortalSignInText {
 	 *
 	 * @return array<string, mixed> `modeLabels` and `signInPage`, each only when not empty.
 	 *
-	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
+	 * @spec openspec/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
 	 */
 	public function project(array $auth): array {
 		$public = [];
@@ -70,7 +70,7 @@ class PortalSignInText {
 	 *
 	 * @return array<string, array<string, string>> Mode to `{title?, text?, button?, hint?, icon?}`.
 	 *
-	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
+	 * @spec openspec/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
 	 */
 	private function modeLabels(mixed $labels): array {
 		if (is_array($labels) === false) {
@@ -102,7 +102,7 @@ class PortalSignInText {
 	 *
 	 * @return array<string, mixed> The parts that say something.
 	 *
-	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
+	 * @spec openspec/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
 	 */
 	private function signInPage(mixed $page): array {
 		if (is_array($page) === false) {
@@ -110,24 +110,62 @@ class PortalSignInText {
 		}
 
 		$kept = $this->texts(source: $page, keys: ['title', 'intro']);
+		$kept = $this->withNotice(kept: $kept, page: $page);
+		$kept = $this->withStaffLink(kept: $kept, page: $page);
 
+		return $this->withPanel(kept: $kept, page: $page);
+	}//end signInPage()
+
+	/**
+	 * The parts with the notice under the cards, when it has a text.
+	 *
+	 * @param array<string, mixed>    $kept The parts so far.
+	 * @param array<array-key, mixed> $page The authored block.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withNotice(array $kept, array $page): array {
 		$notice = $this->texts(source: ($page['notice'] ?? null), keys: ['title', 'text']);
 		if (($notice['text'] ?? '') !== '') {
 			$kept['notice'] = $notice;
 		}
 
+		return $kept;
+	}//end withNotice()
+
+	/**
+	 * The parts with the line for staff, when it has a label and a link that can be followed.
+	 *
+	 * @param array<string, mixed>    $kept The parts so far.
+	 * @param array<array-key, mixed> $page The authored block.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withStaffLink(array $kept, array $page): array {
 		$staff = $this->texts(source: ($page['staffLink'] ?? null), keys: ['text', 'label', 'href']);
 		if (($staff['label'] ?? '') !== '' && $this->followable(href: ($staff['href'] ?? '')) === true) {
 			$kept['staffLink'] = $staff;
 		}
 
+		return $kept;
+	}//end withStaffLink()
+
+	/**
+	 * The parts with the side panel, when it has points.
+	 *
+	 * @param array<string, mixed>    $kept The parts so far.
+	 * @param array<array-key, mixed> $page The authored block.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withPanel(array $kept, array $page): array {
 		$panel = $this->panel(panel: ($page['panel'] ?? null));
 		if ($panel !== null) {
 			$kept['panel'] = $panel;
 		}
 
 		return $kept;
-	}//end signInPage()
+	}//end withPanel()
 
 	/**
 	 * The side panel: a title and the points that have a title. Null when
@@ -137,7 +175,7 @@ class PortalSignInText {
 	 *
 	 * @return array{title: string, items: list<array<string, string>>}|null The panel.
 	 *
-	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
+	 * @spec openspec/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
 	 */
 	private function panel(mixed $panel): ?array {
 		if (is_array($panel) === false) {
@@ -168,7 +206,7 @@ class PortalSignInText {
 	 *
 	 * @return array<string, string> The keys that say something.
 	 *
-	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
+	 * @spec openspec/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
 	 */
 	private function texts(mixed $source, array $keys): array {
 		$kept = [];
@@ -194,7 +232,7 @@ class PortalSignInText {
 	 *
 	 * @return bool True when it may be rendered as a link.
 	 *
-	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
+	 * @spec openspec/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
 	 */
 	private function followable(string $href): bool {
 		return preg_match('#^(/(?!/)|https?://|mailto:|tel:)#i', $href) === 1;
@@ -207,7 +245,7 @@ class PortalSignInText {
 	 *
 	 * @return string The text.
 	 *
-	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
+	 * @spec openspec/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
 	 */
 	private function text(mixed $value): string {
 		if (is_scalar($value) === false) {

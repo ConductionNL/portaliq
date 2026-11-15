@@ -27,7 +27,7 @@
 </template>
 
 <script>
-import { encodeQr } from '../../lib/qr.js'
+import { encodeQr } from '@conduction/nextcloud-vue/src/utils/qr.js'
 
 /**
  * @spec openspec/changes/link-field-qr-code/tasks.md#t4

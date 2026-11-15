@@ -13,6 +13,7 @@
 //   node --test tests/not-found-page.spec.mjs
 
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import { contactRouteOf } from '../src/site/lib/notFound.js'
 import { hasPage, notFoundView } from '../src/site/lib/notFoundView.js'
@@ -94,6 +95,41 @@ test('site: the page renders the code, the heading, the links and the search box
 
 	const bare = await renderSfc(PAGE, { path: '/x', initialPages: [{ route: '/' }], t })
 	assert.doesNotMatch(bare, /not-found-search|not-found-contact|not-found-report/)
+})
+
+test('site: the page reads like board NietGevonden', async () => {
+	const html = (
+		await renderSfc(PAGE, {
+			path: '/x',
+			locale: 'nl',
+			site: { accountLabel: 'Mijn Zuiddrecht' },
+			initialPages: PAGES,
+			searchEnabled: true,
+			t,
+		})
+	).replace(/<!--[\s\S]*?-->/g, '')
+	// The page's own heading is its h1; the way on is a heading of its own.
+	assert.match(html, /<h1 class="utrecht-heading-1">\s*Page not found\s*<\/h1>/)
+	assert.match(html, /<h2 class="utrecht-heading-3 pq-not-found__more">\s*Of ga verder naar\s*<\/h2>/)
+	// The field is the plain search's: input and button joined.
+	assert.match(
+		html,
+		/<div class="ac-search-box__search"><input[^>]*class="ac-search-box__input [^"]*"[^>]*><button[^>]*class="ac-search-box__button /,
+	)
+	// Each way on is a link with a chevron before its words.
+	assert.match(
+		html,
+		/<a [^>]*class="utrecht-link pq-not-found__link"[^>]*data-testid="not-found-home"[^>]*><svg class="pq-not-found__chevron"[^>]*aria-hidden="true"/,
+	)
+
+	const css = readFileSync(new URL('../css/site-theme.css', import.meta.url), 'utf8')
+	for (const part of ['search', 'input.utrecht-textbox', 'button.utrecht-button']) {
+		assert.match(
+			css,
+			new RegExp(`\\.pq-site \\.pq-not-found \\.ac-search-box__${part.replace('.', '\\.')}`),
+			part,
+		)
+	}
 })
 
 test('draft and missing look the same: the page takes no word that says which', async () => {

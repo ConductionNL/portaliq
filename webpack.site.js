@@ -39,6 +39,14 @@ const site = {
 		alias: {
 			'@site': path.resolve(__dirname, 'src', 'site'),
 		},
+		// The editor mounts @nextcloud/vue, whose upload picker reaches
+		// @nextcloud/files -> is-svg -> @file-type/xml -> sax. sax requires
+		// Node's `stream` inside a try/catch for its SAXStream only, and
+		// @file-type/xml uses the plain `sax.parser`, so an empty module is
+		// correct and costs no bytes.
+		fallback: {
+			stream: false,
+		},
 	},
 	module: {
 		rules: [
@@ -232,8 +240,13 @@ const embed = {
 		// sentinelTokens, userGroupsPeek) is ~2 KiB larger in the same import chain,
 		// and the embed entry measured 161.5 KiB with the axios stub (so with or
 		// without it). Raise again only with a reason.
-		maxAssetSize: 164 * 1024,
-		maxEntrypointSize: 164 * 1024,
+		//
+		// 166 KiB, was 164, since nextcloud-vue 2.165 (#1850): resolveFilterTokens
+		// grew 2.1 KB of source and visibleWhen gained the `@context.` condition
+		// read. The entry measured 168,024 B, 88 B over 164 KiB, with no portaliq
+		// module in it changed.
+		maxAssetSize: 166 * 1024,
+		maxEntrypointSize: 166 * 1024,
 	},
 }
 
