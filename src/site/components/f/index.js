@@ -8,7 +8,7 @@
 // the service worker once at boot with `registerSiteServiceWorker()` from
 // src/site/lib/pwa.js.
 //
-// @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md
+// @spec openspec/specs/site-portal-parity/spec.md
 
 import { defineAsyncComponent } from 'vue'
 
@@ -27,7 +27,7 @@ export { default as strings } from './strings.js'
  * Emits `installed` when the app was installed, `dismiss` on "Not now"
  * (the banner then stays hidden for this page view).
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-install-offer-must-be-dismissible-req-srp-046
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-install-offer-must-be-dismissible-req-srp-046
  */
 export const InstallBanner = defineAsyncComponent(
 	() => import('./InstallBanner.vue'),

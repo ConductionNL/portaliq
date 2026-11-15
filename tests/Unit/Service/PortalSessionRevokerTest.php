@@ -62,6 +62,24 @@ class PortalSessionRevokerTest extends TestCase {
 		$this->assertSame(['revoked' => 0, 'failed' => 0, 'complete' => true], $this->revoker->revokeAll('', 'admin'));
 	}//end testAnEmptyOrganisationRevokesNothingAndReadsNothing()
 
+	/**
+	 * A row's id: the flat uuid, then the flat id, then `@self`'s uuid and
+	 * id; a string or an integer, never an empty one; none for no row.
+	 *
+	 * @return void
+	 */
+	public function testARowsIdIsTheFirstNonEmptyCandidate(): void {
+		$this->assertNull($this->revoker->rowId(null));
+		$this->assertNull($this->revoker->rowId([]));
+		$this->assertNull($this->revoker->rowId(['uuid' => '', 'id' => '', '@self' => 'not-a-list']));
+		$this->assertSame('u-1', $this->revoker->rowId(['uuid' => 'u-1', 'id' => 'i-1', '@self' => ['uuid' => 'su-1', 'id' => 'si-1']]));
+		$this->assertSame('i-1', $this->revoker->rowId(['uuid' => '', 'id' => 'i-1', '@self' => ['uuid' => 'su-1']]));
+		$this->assertSame('su-1', $this->revoker->rowId(['@self' => ['uuid' => 'su-1', 'id' => 'si-1']]));
+		$this->assertSame('si-1', $this->revoker->rowId(['@self' => ['uuid' => null, 'id' => 'si-1']]));
+		$this->assertSame('42', $this->revoker->rowId(['id' => 42]));
+		$this->assertNull($this->revoker->rowId(['id' => 4.2, '@self' => ['id' => ['x']]]));
+	}//end testARowsIdIsTheFirstNonEmptyCandidate()
+
 	public function testAnUnreadableStoreIsIncompleteAndAudited(): void {
 		$this->reader->method('readScopedPage')->willReturn(null);
 		$this->writer->expects($this->never())->method('updateObject');

@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+ * @spec openspec/specs/change-proposal-queue/spec.md
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use Throwable;
 /**
  * Writes a record as the reviewer, with their rights.
  *
- * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+ * @spec openspec/specs/change-proposal-queue/spec.md
  */
 class ReviewerObjectWriter {
 	/**
@@ -70,13 +70,49 @@ class ReviewerObjectWriter {
 	 *
 	 * @return bool True when the write landed.
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function write(string $register, string $schema, string $id, array $values): bool {
+		if ($this->isComplete(register: $register, schema: $schema, id: $id, values: $values) === false) {
+			return false;
+		}
+
+		return $this->saveAsReviewer(register: $register, schema: $schema, id: $id, values: $values);
+	}//end write()
+
+	/**
+	 * Whether the record is named and there is something to write.
+	 *
+	 * @param string               $register The register the record lives in.
+	 * @param string               $schema   The schema the record lives in.
+	 * @param string               $id       The record.
+	 * @param array<string, mixed> $values   The properties to write.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/change-proposal-queue/spec.md
+	 */
+	private function isComplete(string $register, string $schema, string $id, array $values): bool {
 		if ($register === '' || $schema === '' || $id === '' || $values === []) {
 			return false;
 		}
 
+		return true;
+	}//end isComplete()
+
+	/**
+	 * Save the values as the reviewer.
+	 *
+	 * @param string               $register The register the record lives in.
+	 * @param string               $schema   The schema the record lives in.
+	 * @param string               $id       The record.
+	 * @param array<string, mixed> $values   The properties to write.
+	 *
+	 * @return bool True when the write landed.
+	 *
+	 * @spec openspec/specs/change-proposal-queue/spec.md
+	 */
+	private function saveAsReviewer(string $register, string $schema, string $id, array $values): bool {
 		$objectService = $this->objectService();
 		if ($objectService === null) {
 			return false;
@@ -97,7 +133,7 @@ class ReviewerObjectWriter {
 		}
 
 		return $saved !== null;
-	}//end write()
+	}//end saveAsReviewer()
 
 	/**
 	 * OpenRegister's object service, or null when it is not installed.

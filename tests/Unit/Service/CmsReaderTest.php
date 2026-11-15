@@ -39,6 +39,12 @@ use Psr\Log\LoggerInterface;
  * where nothing on screen would look wrong.
  */
 class CmsReaderTest extends TestCase {
+	private const GRID_PAGE = '{"title":"Home","route":"\/","summary":"Start","locale":"nl","seo":{"title":"Home | Tilburg","description":"","noindex":false,"image":""},"hero":null,"body":{"type":"grid","clearedRegions":["hero"],"widgets":[{"id":"h","widgetKey":"hero","slot":"hero","gridX":0,"gridY":0,"gridWidth":12,"gridHeight":4,"props":[]},{"id":"a","widgetKey":"markdown","slot":"body","gridX":0,"gridY":1,"gridWidth":12,"gridHeight":4,"props":[]},{"id":"b","widgetKey":"markdown","slot":"body","gridX":2,"gridY":1,"gridWidth":12,"gridHeight":4,"props":[]}],"aside":{"width":300,"gap":null},"regions":{"hero":[{"id":"h","widgetKey":"hero","slot":"hero","gridX":0,"gridY":0,"gridWidth":12,"gridHeight":4,"props":[]}],"main":[{"id":"a","widgetKey":"markdown","slot":"body","gridX":0,"gridY":1,"gridWidth":12,"gridHeight":4,"props":[]},{"id":"b","widgetKey":"markdown","slot":"body","gridX":2,"gridY":1,"gridWidth":12,"gridHeight":4,"props":[]}]},"unknownRegions":[]}}';
+
+	private const MARKDOWN_PAGE = '{"title":"Tekst","route":"\/tekst","summary":"","locale":"","seo":{"title":"","description":"","noindex":false,"image":""},"hero":null,"body":{"type":"markdown","clearedRegions":[],"markdown":"# Kop"}}';
+
+	private const MENU = '[{"title":"Hoofd","position":2,"items":[{"order":1,"name":"A","link":"","description":"","icon":"","items":[{"order":0,"name":"A0","link":"","icon":""},{"order":3,"name":"A3","link":"","icon":"x"}]},{"order":2,"name":"B","link":"\/b","description":"Bee","icon":"bee","items":[]}]}]';
+
 
 	/**
 	 * The reader under test.
@@ -1114,5 +1120,64 @@ class CmsReaderTest extends TestCase {
 		$this->assertSame(3, $widget['gridY']);
 	}//end testTheProjectionStillServesTheWidgetItStripped()
 
+	/**
+	 * The whole API shape of a grid page and a markdown page, key order
+	 * included, as recorded before the shapers were split.
+	 *
+	 * @return void
+	 */
+	public function testThePageShapesAreServedAsRecorded(): void {
+		$this->withRows(
+			rows: [
+				[
+					'title' => 'Home',
+					'route' => '/',
+					'summary' => 'Start',
+					'locale' => 'nl',
+					'seoTitle' => 'Home | Tilburg',
+					'body' => [
+						'type' => 'grid',
+						'clearedRegions' => ['hero'],
+						'aside' => ['width' => 300],
+						'widgets' => [
+							['id' => 'b', 'widgetKey' => 'markdown', 'slot' => 'body', 'gridY' => 1, 'gridX' => 2],
+							['id' => 'a', 'widgetKey' => 'markdown', 'slot' => 'body', 'gridY' => 1, 'gridX' => 0],
+							['id' => 'h', 'widgetKey' => 'hero', 'slot' => 'hero', 'gridY' => 0, 'gridX' => 0],
+						],
+					],
+				],
+				['title' => 'Tekst', 'route' => '/tekst', 'body' => ['markdown' => '# Kop', 'aside' => ['width' => 300]]],
+			]
+		);
 
+		$grid     = $this->reader->page(portal: 'open-tilburg', route: '/', locale: 'nl', audience: 'anonymous');
+		$markdown = $this->reader->page(portal: 'open-tilburg', route: '/tekst', locale: 'nl', audience: 'anonymous');
+
+		$this->assertSame(self::GRID_PAGE, json_encode($grid));
+		$this->assertSame(self::MARKDOWN_PAGE, json_encode($markdown));
+	}//end testThePageShapesAreServedAsRecorded()
+
+	/**
+	 * The whole API shape of a menu, key order included: junk dropped, the
+	 * children of a child dropped, both levels ordered.
+	 *
+	 * @return void
+	 */
+	public function testTheMenuShapeIsServedAsRecorded(): void {
+		$this->withRows(
+			rows: [
+				[
+					'title' => 'Hoofd',
+					'position' => '2',
+					'items' => [
+						'junk',
+						['order' => 2, 'name' => 'B', 'link' => '/b', 'description' => 'Bee', 'icon' => 'bee'],
+						['order' => 1, 'name' => 'A', 'items' => ['junk', ['order' => 3, 'name' => 'A3', 'icon' => 'x', 'description' => 'dropped'], ['name' => 'A0']]],
+					],
+				],
+			]
+		);
+
+		$this->assertSame(self::MENU, json_encode($this->reader->menus(portal: 'open-tilburg', locale: 'nl', audience: 'anonymous')));
+	}//end testTheMenuShapeIsServedAsRecorded()
 }//end class

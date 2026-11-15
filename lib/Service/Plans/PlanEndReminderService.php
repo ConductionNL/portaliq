@@ -29,6 +29,7 @@ use DateTimeImmutable;
 use DateTimeZone;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+use OCA\Portaliq\Kernel\Contracts\PlanEndReminderServiceInterface;
 use OCA\Portaliq\Service\PagedObjectReads;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\RowAsArray;
@@ -44,7 +45,7 @@ use Throwable;
  *
  * @spec openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md#requirement-a-plan-near-its-end-date-asks-for-action-req-spl-004
  */
-class PlanEndReminderService {
+class PlanEndReminderService implements PlanEndReminderServiceInterface {
 	use RowAsArray;
 	use PagedObjectReads;
 
@@ -96,30 +97,60 @@ class PlanEndReminderService {
 			return 0;
 		}
 
+		return $this->remindPlans(objectService: $objectService, plans: $plans, today: $today);
+	}//end remindDue()
+
+	/**
+	 * Remind every running plan that is due.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param mixed  $plans         The running plans as read.
+	 * @param string $today         Today, `Y-m-d`.
+	 *
+	 * @return int How many plans were reminded.
+	 *
+	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t05
+	 */
+	private function remindPlans(object $objectService, mixed $plans, string $today): int {
 		$sent = 0;
 		if (is_array($plans) === false) {
 			return 0;
 		}
 
 		foreach ($plans as $row) {
-			$plan = $this->asArray(row: $row);
-			$id   = $this->idOf(row: $plan);
-			if ($id === '' || $this->rules->needsAction(plan: $plan, openActions: 1, today: $today) === false) {
-				continue;
-			}
-
-			$open = $this->openActions(objectService: $objectService, planId: $id);
-			if ($open === 0 || $this->rules->reminderDue(plan: $plan, openActions: $open, today: $today) === false) {
-				continue;
-			}
-
-			if ($this->remind(objectService: $objectService, plan: $plan, id: $id, open: $open, today: $today) === true) {
+			if ($this->remindPlan(objectService: $objectService, row: $row, today: $today) === true) {
 				$sent++;
 			}
 		}
 
 		return $sent;
-	}//end remindDue()
+	}//end remindPlans()
+
+	/**
+	 * Remind one plan when it needs action and its reminder is due.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param mixed  $row           The plan row.
+	 * @param string $today         Today, `Y-m-d`.
+	 *
+	 * @return bool True when the plan was reminded.
+	 *
+	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t05
+	 */
+	private function remindPlan(object $objectService, mixed $row, string $today): bool {
+		$plan = $this->asArray(row: $row);
+		$id   = $this->idOf(row: $plan);
+		if ($id === '' || $this->rules->needsAction(plan: $plan, openActions: 1, today: $today) === false) {
+			return false;
+		}
+
+		$open = $this->openActions(objectService: $objectService, planId: $id);
+		if ($open === 0 || $this->rules->reminderDue(plan: $plan, openActions: $open, today: $today) === false) {
+			return false;
+		}
+
+		return $this->remind(objectService: $objectService, plan: $plan, id: $id, open: $open, today: $today);
+	}//end remindPlan()
 
 	/**
 	 * How many of a plan's actions are not done.
@@ -148,8 +179,7 @@ class PlanEndReminderService {
 		}
 
 		foreach ($rows as $row) {
-			$action = $this->asArray(row: $row);
-			if (($action['plan'] ?? '') === $planId && ($action['status'] ?? '') !== 'done') {
+			if ($this->isOpenAction(action: $this->asArray(row: $row), planId: $planId) === true) {
 				$open++;
 			}
 		}
@@ -157,6 +187,17 @@ class PlanEndReminderService {
 		return $open;
 	}//end openActions()
 
+	/**
+	 * Whether an action belongs to the plan and is not done.
+	 *
+	 * @param array<string, mixed> $action The action row.
+	 * @param string               $planId The plan.
+	 *
+	 * @return bool
+	 */
+	private function isOpenAction(array $action, string $planId): bool {
+		return ($action['plan'] ?? '') === $planId && ($action['status'] ?? '') !== 'done';
+	}//end isOpenAction()
 
 	/**
 	 * A row's identifier.

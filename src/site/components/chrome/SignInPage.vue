@@ -182,7 +182,7 @@ import '@utrecht/button-link-css/dist/index.css'
  * The sign-in page of a portal that writes its cards (`authentication.modeLabels`)
  * or its page text (`authentication.signInPage`). Strings come in as props.
  *
- * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
+ * @spec openspec/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
  */
 export default {
 	name: 'SignInPage',

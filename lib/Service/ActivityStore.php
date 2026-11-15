@@ -26,7 +26,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/extracurricular-activity-offer/design.md#d6-a-store-class-instead-of-openregister-calls-in-every-service
+ * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/design.md#d6-a-store-class-instead-of-openregister-calls-in-every-service
  */
 
 declare(strict_types=1);
@@ -35,6 +35,7 @@ namespace OCA\Portaliq\Service;
 
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+use OCA\Portaliq\Kernel\Contracts\ActivityStoreInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -42,16 +43,11 @@ use Throwable;
 /**
  * Reads and writes the activity schemas in the portaliq register.
  *
- * @spec openspec/changes/extracurricular-activity-offer/design.md#d6-a-store-class-instead-of-openregister-calls-in-every-service
+ * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/design.md#d6-a-store-class-instead-of-openregister-calls-in-every-service
  */
-class ActivityStore {
+class ActivityStore implements ActivityStoreInterface {
 	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
-
-	/**
-	 * The activity schema.
-	 */
-	public const OFFER = 'activityOffer';
 
 	/**
 	 * The sign-up schema.
@@ -99,7 +95,7 @@ class ActivityStore {
 	 *
 	 * @return array<int, array<string, mixed>>|null
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/design.md#d6-a-store-class-instead-of-openregister-calls-in-every-service
+	 * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/design.md#d6-a-store-class-instead-of-openregister-calls-in-every-service
 	 */
 	public function rows(string $schema): ?array {
 		$objectService = $this->objectService();
@@ -107,10 +103,30 @@ class ActivityStore {
 			return null;
 		}
 
+		$rows = $this->readAll(objectService: $objectService, schema: $schema);
+		if (is_array($rows) === false) {
+			return null;
+		}
+
+		return $this->normalisedRows(rows: $rows);
+	}//end rows()
+
+	/**
+	 * Every stored row of one activity schema as OpenRegister returns it, or
+	 * null when the read fails.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $schema        One of the schema constants.
+	 *
+	 * @return mixed
+	 *
+	 * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/design.md#d6-a-store-class-instead-of-openregister-calls-in-every-service
+	 */
+	private function readAll(object $objectService, string $schema): mixed {
 		try {
 			$objectService->setRegister(register: self::REGISTER);
 			$objectService->setSchema(schema: $schema);
-			$rows = $objectService->findAll(
+			return $objectService->findAll(
 				config: ['filters' => [], 'limit' => self::READ_LIMIT, 'offset' => 0],
 				_rbac: false,
 				_multitenancy: false
@@ -119,11 +135,18 @@ class ActivityStore {
 			$this->logger->warning('Portaliq: activity read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
 			return null;
 		}
+	}//end readAll()
 
-		if (is_array($rows) === false) {
-			return null;
-		}
-
+	/**
+	 * The rows normalised, leaving out what does not normalise.
+	 *
+	 * @param array<int|string, mixed> $rows The rows read.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/design.md#d6-a-store-class-instead-of-openregister-calls-in-every-service
+	 */
+	private function normalisedRows(array $rows): array {
 		$normalised = [];
 		foreach ($rows as $row) {
 			$row = $this->normalise(row: $row);
@@ -133,7 +156,7 @@ class ActivityStore {
 		}
 
 		return $normalised;
-	}//end rows()
+	}//end normalisedRows()
 
 	/**
 	 * One row of a schema by its id, uuid or slug, or null.
@@ -143,7 +166,7 @@ class ActivityStore {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/design.md#d6-a-store-class-instead-of-openregister-calls-in-every-service
+	 * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/design.md#d6-a-store-class-instead-of-openregister-calls-in-every-service
 	 */
 	public function lookup(string $schema, string $id): ?array {
 		if ($id === '') {
@@ -168,7 +191,7 @@ class ActivityStore {
 	 *
 	 * @return array<string, mixed>|null The saved row, or null on failure.
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/design.md#d6-a-store-class-instead-of-openregister-calls-in-every-service
+	 * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/design.md#d6-a-store-class-instead-of-openregister-calls-in-every-service
 	 */
 	public function save(string $schema, array $data, string $id = ''): ?array {
 		$objectService = $this->objectService();
@@ -204,7 +227,7 @@ class ActivityStore {
 	 *
 	 * @return string The id, or '' when the row carries none.
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/design.md#d6-a-store-class-instead-of-openregister-calls-in-every-service
+	 * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/design.md#d6-a-store-class-instead-of-openregister-calls-in-every-service
 	 */
 	public function idOf(array $row): string {
 		$self = $row['@self'] ?? [];
@@ -229,7 +252,7 @@ class ActivityStore {
 	 *
 	 * @return array<int, string>
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/design.md#d6-a-store-class-instead-of-openregister-calls-in-every-service
+	 * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/design.md#d6-a-store-class-instead-of-openregister-calls-in-every-service
 	 */
 	public function keys(array $row): array {
 		$self = $row['@self'] ?? [];

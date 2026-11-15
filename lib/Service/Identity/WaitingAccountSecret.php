@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use OCP\IConfig;
 /**
  * The waiting account behind a secret, and the hash a code is stored under.
  *
- * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 class WaitingAccountSecret {
 	/**
@@ -81,7 +81,7 @@ class WaitingAccountSecret {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function isCode(#[\SensitiveParameter] string $secret): bool {
 		return $this->codes->normalise(typed: $secret) !== '';
@@ -99,8 +99,8 @@ class WaitingAccountSecret {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
-	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function find(#[\SensitiveParameter] string $secret, string $organisation, DateTimeImmutable $moment): ?array {
 		if ($secret === '') {
@@ -156,7 +156,7 @@ class WaitingAccountSecret {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function codeHash(#[\SensitiveParameter] string $code): string {
 		return $this->codes->keyedHash(code: $code, instanceSecret: $this->config->getSystemValueString('secret', ''));

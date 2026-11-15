@@ -559,6 +559,28 @@ import {
 import { suggestionRoute } from '../lib/searchSuggestions.js'
 import { addressOfRoute } from '../lib/siteAddress.js'
 
+/** The test id of each chip under a search result. */
+const META_TESTIDS = Object.freeze({
+	date: 'federated-search-date',
+	type: 'federated-search-type',
+	count: 'federated-search-publication-count',
+	publication: 'federated-search-publication',
+	source: 'federated-search-source',
+})
+
+/**
+ * One chip under a search result, or null when it has no text.
+ *
+ * @param {{key: string, text: string, prefix?: string}} chip The chip.
+ * @return {{key: string, text: string, prefix: string, testid: string}|null} The item.
+ */
+function metaChip(chip) {
+	if (!chip.text) {
+		return null
+	}
+	return { key: chip.key, text: chip.text, prefix: chip.prefix || '', testid: META_TESTIDS[chip.key] }
+}
+
 // The button links' classes need their stylesheet, or the browser draws its own blue link.
 import '@utrecht/button-link-css/dist/index.css'
 
@@ -983,7 +1005,7 @@ export default {
 		 *
 		 * @return {Array<string>} Field names.
 		 *
-		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
 		 */
 		fields() {
 			const own = this.facetField ? [this.facetField] : this.facetFields
@@ -1025,7 +1047,7 @@ export default {
 		 *
 		 * @return {boolean} True with facet buckets or the period filter.
 		 *
-		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-a-publication-period-req-wsd-002
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-a-publication-period-req-wsd-002
 		 */
 		hasFilters() {
 			return this.facetGroups.length > 0 || this.hidePeriod === false
@@ -1036,7 +1058,7 @@ export default {
 		 *
 		 * @return {object} The query object.
 		 *
-		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-block-must-describe-its-search-as-the-saved-search-query-req-wsd-004
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-block-must-describe-its-search-as-the-saved-search-query-req-wsd-004
 		 */
 		savedQuery() {
 			return searchQuery(this.$data, this.catalog)
@@ -1354,7 +1376,7 @@ export default {
 		 * @param {number} total The result count.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-site-search-must-be-reported-by-the-built-in-search-box
+		 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-site-search-must-be-reported-by-the-built-in-search-box
 		 */
 		reportSearch(total) {
 			const term = String(this.query || '').trim()
@@ -1410,55 +1432,17 @@ export default {
 		 * @spec openspec/changes/search-names-only-a-foreign-source/specs/portal-federated-search/spec.md#requirement-every-result-from-another-catalogue-must-name-that-catalogue-req-snf-001
 		 */
 		metaItems(result) {
-			const items = []
-
-			if (result.date) {
-				items.push({
-					key: 'date',
-					text: result.date,
-					prefix: '',
-					testid: 'federated-search-date',
-				})
-			}
-
-			const type = result.type || this.typeLabel
-			if (type) {
-				items.push({
-					key: 'type',
-					text: type,
-					prefix: '',
-					testid: 'federated-search-type',
-				})
-			}
-
-			if (result.kind === 'subject' && result.publicationCount > 0) {
-				items.push({
-					key: 'count',
-					text: `${result.publicationCount} ${this.publicationsLabel}`,
-					prefix: '',
-					testid: 'federated-search-publication-count',
-				})
-			}
-
-			if (result.kind === 'document' && result.publication) {
-				items.push({
-					key: 'publication',
-					text: `${this.partOfLabel} ${result.publication}`,
-					prefix: '',
-					testid: 'federated-search-publication',
-				})
-			}
-
-			if (result.directory) {
-				items.push({
-					key: 'source',
-					text: result.directory,
-					prefix: this.sourceLabel,
-					testid: 'federated-search-source',
-				})
-			}
-
-			return items
+			const counted = result.kind === 'subject' && result.publicationCount > 0
+			const partOf = result.kind === 'document' && result.publication
+			return [
+				{ key: 'date', text: result.date },
+				{ key: 'type', text: result.type || this.typeLabel },
+				{ key: 'count', text: counted ? `${result.publicationCount} ${this.publicationsLabel}` : '' },
+				{ key: 'publication', text: partOf ? `${this.partOfLabel} ${result.publication}` : '' },
+				{ key: 'source', text: result.directory, prefix: this.sourceLabel },
+			]
+				.map(metaChip)
+				.filter(Boolean)
 		},
 
 		/**
@@ -1628,7 +1612,7 @@ export default {
 		 * @return {void}
 		 *
 		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-facet-buckets-must-be-read-in-both-dialects-the-endpoint-speaks
-		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
 		 */
 		toggleFacet(value, field = this.fields[0]) {
 			const current = this.facets[field] || []
@@ -1650,7 +1634,7 @@ export default {
 		 * @param {string} value The bucket value.
 		 * @return {boolean} True when selected.
 		 *
-		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
 		 */
 		isSelected(field, value) {
 			return (this.facets[field] || []).includes(value)
@@ -1678,7 +1662,7 @@ export default {
 		 * @param {string} value The date from the input, `YYYY-MM-DD` or ''.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-a-publication-period-req-wsd-002
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-a-publication-period-req-wsd-002
 		 */
 		setPeriod(which, value) {
 			this[which] = value || ''

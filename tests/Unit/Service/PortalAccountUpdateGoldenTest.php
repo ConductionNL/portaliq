@@ -34,6 +34,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Portaliq\Service\PortalAccountService
  * @uses   \OCA\Portaliq\Service\Identity\PortalAccountLookup
  * @uses   \OCA\Portaliq\Service\Identity\WaitingAccountJoin
+ * @uses   \OCA\Portaliq\Service\AccountLoginRun
  */
 class PortalAccountUpdateGoldenTest extends TestCase {
 

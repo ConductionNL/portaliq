@@ -26,6 +26,9 @@ export function createEditHistory({ limit = HISTORY_LIMIT } = {}) {
 	let past = []
 	let future = []
 	let lastKey = null
+	// The same key as the previous record, while there is one: the same step.
+	const continuesStep = (coalesceKey) =>
+		coalesceKey !== null && coalesceKey === lastKey && past.length
 
 	return {
 		/**
@@ -37,7 +40,7 @@ export function createEditHistory({ limit = HISTORY_LIMIT } = {}) {
 		 */
 		record(snapshot, coalesceKey = null) {
 			future = []
-			if (coalesceKey !== null && coalesceKey === lastKey && past.length) {
+			if (continuesStep(coalesceKey)) {
 				return
 			}
 			lastKey = coalesceKey
@@ -96,6 +99,63 @@ export function createEditHistory({ limit = HISTORY_LIMIT } = {}) {
 	}
 }
 
+/** Input types that hold no typing, so the editor may take over their undo. */
+const NON_TEXT_INPUT_TYPES = ['checkbox', 'radio', 'button', 'submit']
+
+/** Elements whose own undo of the typing in them the editor leaves alone. */
+const OWN_UNDO_TAGS = ['TEXTAREA', 'SELECT']
+
+/** What z and y ask for, alone and with shift. */
+const KEY_INTENTS = new Map([
+	['z', { plain: 'undo', shifted: 'redo' }],
+	['y', { plain: 'redo', shifted: null }],
+])
+
+/**
+ * @param {KeyboardEvent|object|null} event The key event.
+ * @return {boolean} Whether it is pressed with ctrl or cmd and without alt.
+ */
+function isCommandPress(event) {
+	return Boolean(event) && (event.ctrlKey || event.metaKey) && !event.altKey
+}
+
+/**
+ * @param {string} tag The focused element's tag, upper case.
+ * @param {object} target The focused element.
+ * @return {boolean} Whether it is an input that holds typing.
+ */
+function isTextInput(tag, target) {
+	return (
+		tag === 'INPUT'
+		&& !NON_TEXT_INPUT_TYPES.includes(String(target.type || 'text'))
+	)
+}
+
+/**
+ * @param {object} target The focused element.
+ * @return {boolean} Whether it is a text field with an undo of its own.
+ */
+function keepsOwnUndo(target) {
+	const tag = String(target.tagName || '').toUpperCase()
+	return (
+		OWN_UNDO_TAGS.includes(tag)
+		|| isTextInput(tag, target)
+		|| Boolean(target.isContentEditable)
+	)
+}
+
+/**
+ * @param {KeyboardEvent|object} event A command key event.
+ * @return {'undo'|'redo'|null} What its key asks for.
+ */
+function keyIntent(event) {
+	const intents = KEY_INTENTS.get(String(event.key || '').toLowerCase())
+	if (!intents) {
+		return null
+	}
+	return event.shiftKey ? intents.shifted : intents.plain
+}
+
 /**
  * Whether a key press asks to undo or redo.
  *
@@ -108,30 +168,8 @@ export function createEditHistory({ limit = HISTORY_LIMIT } = {}) {
  * @spec openspec/specs/portal-page-designer/spec.md#requirement-editor-changes-must-be-undoable-and-redoable-req-pie-004
  */
 export function historyIntent(event) {
-	if (!event || !(event.ctrlKey || event.metaKey) || event.altKey) {
+	if (!isCommandPress(event) || keepsOwnUndo(event.target || {})) {
 		return null
 	}
-	const target = event.target || {}
-	const tag = String(target.tagName || '').toUpperCase()
-	const textInput =
-		tag === 'INPUT'
-		&& !['checkbox', 'radio', 'button', 'submit'].includes(
-			String(target.type || 'text'),
-		)
-	if (
-		tag === 'TEXTAREA'
-		|| tag === 'SELECT'
-		|| textInput
-		|| target.isContentEditable
-	) {
-		return null
-	}
-	const key = String(event.key || '').toLowerCase()
-	if (key === 'z') {
-		return event.shiftKey ? 'redo' : 'undo'
-	}
-	if (key === 'y' && !event.shiftKey) {
-		return 'redo'
-	}
-	return null
+	return keyIntent(event)
 }

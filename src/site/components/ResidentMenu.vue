@@ -121,7 +121,7 @@
 /**
  * The resident's own menu (`/mijn` pages only).
  *
- * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
  */
 export default {
 	name: 'ResidentMenu',
@@ -175,7 +175,7 @@ export default {
 	 * Load the Den Haag side navigation CSS and the icons on demand, so the
 	 * site's entry carries neither (site-mijn-omgeving-components D1).
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-menu-must-show-icons-and-counts-in-groups-req-smo-006
+	 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-resident-menu-must-show-icons-and-counts-in-groups-req-smo-006
 	 */
 	mounted() {
 		import('@gemeente-denhaag/sidenav/index.css').catch(() => {})
@@ -192,7 +192,7 @@ export default {
 		 *
 		 * @param {object} item A menu item.
 		 * @return {string} The SVG path data.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-menu-must-show-icons-and-counts-in-groups-req-smo-006
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-resident-menu-must-show-icons-and-counts-in-groups-req-smo-006
 		 */
 		iconPath(item) {
 			return (item.icon && this.icons[item.icon]) || ''
@@ -205,7 +205,7 @@ export default {
 		 * @param {string} link The item's route.
 		 * @return {boolean} True for the page on screen.
 		 *
-		 * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
+		 * @spec openspec/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
 		 */
 		isCurrent(link) {
 			return link === this.currentRoute
@@ -218,7 +218,7 @@ export default {
 		 * @param {string} link The item's route.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-menu-must-fold-behind-a-button-on-a-phone-req-srm-004
+		 * @spec openspec/specs/site-resident-menu/spec.md#requirement-the-menu-must-fold-behind-a-button-on-a-phone-req-srm-004
 		 */
 		select(link) {
 			this.open = false
@@ -229,7 +229,7 @@ export default {
 		 * @param {object} group A group.
 		 * @return {string} The id of its label.
 		 *
-		 * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
+		 * @spec openspec/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
 		 */
 		groupId(group) {
 			return `pq-resident-menu-${String(group.key).replace(/[^a-z0-9-]/gi, '-')}`

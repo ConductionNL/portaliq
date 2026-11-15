@@ -42,6 +42,80 @@ const DEFAULT_PRESET = '30'
  */
 export const RECORDINGS_LIMIT = 100
 
+/** The object types the page reads, each a schema of the same name. */
+const OBJECT_TYPES = ['portal', 'portalTrafficDaily', 'portalTrafficRecording']
+
+/**
+ * Whether the shared object store already knows an object type.
+ *
+ * @param {object} store The shared object store.
+ * @param {string} type The object type.
+ * @return {boolean} True when registered.
+ */
+function isRegistered(store, type) {
+	const registry = store.objectTypeRegistry
+	return Boolean(registry && registry[type])
+}
+
+/**
+ * A failed read in words: its message, else the thrown value itself.
+ *
+ * @param {Error|string} error What was thrown.
+ * @return {string} The text.
+ */
+function errorText(error) {
+	return String((error && error.message) || error)
+}
+
+/**
+ * Whether a portal measures traffic.
+ *
+ * @param {object} portal The portal.
+ * @return {boolean} True when its traffic is on.
+ */
+function measures(portal) {
+	return Boolean(portal.traffic && portal.traffic.enabled === true)
+}
+
+/**
+ * The portal the page opens on: a measured portal with visitors of its own
+ * first; a roll-up (portal-traffic-reporting) only when nothing else
+ * measures, because its figures are a sum; else the first portal.
+ *
+ * @param {Array<object>} portals The portals.
+ * @return {object|undefined} The portal.
+ */
+function firstPortal(portals) {
+	return (
+		portals.find((p) => measures(p) && rollupOf(p).length === 0)
+		|| portals.find(measures)
+		|| portals[0]
+	)
+}
+
+/**
+ * Whether a row is one day's record of the portal.
+ *
+ * @param {object|null} row The row.
+ * @param {string} slug The portal's slug.
+ * @return {boolean} True for a dated record of that portal.
+ */
+function isDayOf(row, slug) {
+	return Boolean(row && row.portal === slug && typeof row.date === 'string')
+}
+
+/**
+ * Recordings sorted newest first by when they started.
+ *
+ * @param {Array<object>} recordings The recordings.
+ * @return {Array<object>} The same list, sorted.
+ */
+function newestFirst(recordings) {
+	return recordings.sort((a, b) =>
+		String(b.startedAt || '').localeCompare(String(a.startedAt || '')),
+	)
+}
+
 export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 	state: () => ({
 		portals: [],
@@ -86,7 +160,7 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 * @param {object} state The state.
 		 * @return {Array<string>} YYYY-MM-DD.
 		 *
-		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
+		 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
 		 */
 		dates: (state) => {
 			if (state.rangePreset === 'custom') {
@@ -100,7 +174,7 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 *
 		 * @return {Array<{id: string, name: string}>} The segments.
 		 *
-		 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+		 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
 		 */
 		segments() {
 			return segmentsOf(this.portal)
@@ -113,7 +187,7 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 *
 		 * @return {Array<object>} The records.
 		 *
-		 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+		 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
 		 */
 		segmentRecords() {
 			return this.records.filter(
@@ -126,7 +200,7 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 *
 		 * @return {object} See `summarise`.
 		 *
-		 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+		 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 		 */
 		summary() {
 			return summarise(this.segmentRecords, this.dates)
@@ -138,7 +212,7 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 *
 		 * @return {boolean} True when on.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
 		 */
 		recordingOn() {
 			const portal = this.portal
@@ -156,7 +230,7 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 *
 		 * @return {number} The days.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
 		 */
 		retentionDays() {
 			const portal = this.portal
@@ -172,7 +246,7 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 *
 		 * @return {string} The URL, or '' when there is nothing to export.
 		 *
-		 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
+		 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
 		 */
 		exportUrl() {
 			const dates = this.dates
@@ -200,33 +274,15 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 *
 		 * @return {object} The shared object store.
 		 *
-		 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+		 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 		 */
 		objects() {
 			const store = useObjectStore()
-			if (!store.objectTypeRegistry || !store.objectTypeRegistry.portal) {
-				store.registerObjectType('portal', 'portal', REGISTER)
-			}
-			if (
-				!store.objectTypeRegistry
-				|| !store.objectTypeRegistry.portalTrafficDaily
-			) {
-				store.registerObjectType(
-					'portalTrafficDaily',
-					'portalTrafficDaily',
-					REGISTER,
-				)
-			}
-			if (
-				!store.objectTypeRegistry
-				|| !store.objectTypeRegistry.portalTrafficRecording
-			) {
-				store.registerObjectType(
-					'portalTrafficRecording',
-					'portalTrafficRecording',
-					REGISTER,
-				)
-			}
+			OBJECT_TYPES.forEach((type) => {
+				if (!isRegistered(store, type)) {
+					store.registerObjectType(type, type, REGISTER)
+				}
+			})
 			return store
 		},
 
@@ -236,7 +292,7 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+		 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 		 */
 		async load() {
 			this.loadingPortals = true
@@ -249,23 +305,10 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 					(p) => p && typeof p.slug === 'string',
 				)
 				if (!this.portal) {
-					// A measured portal with visitors of its own first; a
-					// roll-up (portal-traffic-reporting) only when nothing
-					// else measures, because its figures are a sum.
-					const measured =
-						this.portals.find(
-							(p) =>
-								p.traffic
-								&& p.traffic.enabled === true
-								&& rollupOf(p).length === 0,
-						)
-						|| this.portals.find(
-							(p) => p.traffic && p.traffic.enabled === true,
-						)
-					this.portalSlug = (measured || this.portals[0] || {}).slug || ''
+					this.portalSlug = (firstPortal(this.portals) || {}).slug || ''
 				}
 			} catch (error) {
-				this.error = String((error && error.message) || error)
+				this.error = errorText(error)
 			} finally {
 				this.loadingPortals = false
 			}
@@ -278,7 +321,7 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 * @param {string} slug The portal slug.
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+		 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 		 */
 		async select(slug) {
 			if (slug === this.portalSlug) {
@@ -296,7 +339,7 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 * @param {string} id The segment id.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+		 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
 		 */
 		setSegment(id) {
 			const value = String(id || '')
@@ -315,7 +358,7 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 * @param {string} preset One of RANGE_PRESETS or 'custom'.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
+		 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
 		 */
 		setRange(preset) {
 			const value = String(preset)
@@ -332,7 +375,7 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 * @param {string} to   The last day.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
+		 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
 		 */
 		setCustomRange(from, to) {
 			this.customFrom = String(from || '')
@@ -351,7 +394,7 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+		 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 		 */
 		async loadRecords() {
 			this.records = []
@@ -368,14 +411,11 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 						_limit: 2000,
 					},
 				)
-				this.records = (rows || []).filter(
-					(r) =>
-						r
-						&& r.portal === this.portalSlug
-						&& typeof r.date === 'string',
+				this.records = (rows || []).filter((r) =>
+					isDayOf(r, this.portalSlug),
 				)
 			} catch (error) {
-				this.error = String((error && error.message) || error)
+				this.error = errorText(error)
 			} finally {
 				this.loadingRecords = false
 			}
@@ -390,7 +430,7 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
 		 */
 		async loadRecordings() {
 			this.recordings = []
@@ -407,15 +447,11 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 						'_order[startedAt]': 'desc',
 					},
 				)
-				this.recordings = (rows || [])
-					.filter((r) => r && r.portal === this.portalSlug)
-					.sort((a, b) =>
-						String(b.startedAt || '').localeCompare(
-							String(a.startedAt || ''),
-						),
-					)
+				this.recordings = newestFirst(
+					(rows || []).filter((r) => r && r.portal === this.portalSlug),
+				)
 			} catch (error) {
-				this.error = String((error && error.message) || error)
+				this.error = errorText(error)
 			} finally {
 				this.loadingRecordings = false
 			}

@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Command;
 
-use OCA\Portaliq\Service\Tenancy\PortalOrganisationRestamp;
+use OCA\Portaliq\Kernel\Contracts\PortalOrganisationRestampInterface;
 use RuntimeException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -66,10 +66,10 @@ class TenancyRestamp extends Command {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalOrganisationRestamp $restamp Counts and restamps the rows.
+	 * @param PortalOrganisationRestampInterface $restamp Counts and restamps the rows.
 	 */
 	public function __construct(
-		private readonly PortalOrganisationRestamp $restamp,
+		private readonly PortalOrganisationRestampInterface $restamp,
 	) {
 		parent::__construct();
 	}//end __construct()

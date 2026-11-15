@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-raw-events-must-be-retained-for-a-finite-configured-period
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-raw-events-must-be-retained-for-a-finite-configured-period
  */
 
 declare(strict_types=1);
@@ -22,6 +22,7 @@ namespace OCA\Portaliq\Service\Traffic;
 
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+use OCA\Portaliq\Kernel\Contracts\TrafficEventStoreInterface;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCA\Portaliq\Service\RowAsArray;
@@ -49,7 +50,7 @@ use Throwable;
  * way every other reader in this app does it, so a missing OpenRegister
  * degrades to "nothing stored, nothing read" rather than a fatal.
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-raw-events-must-be-retained-for-a-finite-configured-period
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-raw-events-must-be-retained-for-a-finite-configured-period
  *
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- every read and
  * write of the two traffic schemas lives here on purpose (the class
@@ -61,7 +62,7 @@ use Throwable;
  * path explorer needs (portal-traffic-path-explorer) is the eleventh
  * entry point, and it pages through the same helper as the other reads.
  */
-class TrafficEventStore {
+class TrafficEventStore implements TrafficEventStoreInterface {
 	use ObjectServiceLookup;
 	use ExpiredRowPurge;
 	use RowAsArray;
@@ -127,7 +128,7 @@ class TrafficEventStore {
 	 *
 	 * @return int How many were written.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-page-view-must-be-reported-by-the-client-never-inferred-from-a-server-side-read
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-page-view-must-be-reported-by-the-client-never-inferred-from-a-server-side-read
 	 */
 	public function append(array $records): int {
 		if ($records === []) {
@@ -140,34 +141,7 @@ class TrafficEventStore {
 		}
 
 		try {
-			if (method_exists($objectService, 'appendObjectsRaw') === true) {
-				$this->logPath(path: 'appendObjectsRaw');
-
-				return (int)$objectService->appendObjectsRaw($records, self::REGISTER, self::EVENT_SCHEMA);
-			}
-
-			$this->logPath(path: 'saveObjects');
-			if ($this->context->apply(objectService: $objectService, schemaSlug: self::EVENT_SCHEMA) === false) {
-				return 0;
-			}
-
-			$saved = $objectService->saveObjects(
-				objects: $records,
-				register: self::REGISTER,
-				schema: self::EVENT_SCHEMA,
-				_rbac: false,
-				_multitenancy: false,
-				validation: false,
-				events: false,
-				enrich: false,
-				_audit: false
-			);
-
-			if (is_array($saved) === true) {
-				return count($saved);
-			}
-
-			return count($records);
+			return $this->writeRecords(objectService: $objectService, records: $records);
 		} catch (Throwable $e) {
 			$this->logger->error('Portaliq: traffic append failed', ['reason' => $e->getMessage()]);
 
@@ -176,11 +150,66 @@ class TrafficEventStore {
 	}
 
 	/**
+	 * Write the events through the raw append when the platform has it, else through saveObjects.
+	 *
+	 * @param object                           $objectService OpenRegister's ObjectService.
+	 * @param array<int, array<string, mixed>> $records       The normalised events.
+	 *
+	 * @return int How many were written.
+	 *
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-page-view-must-be-reported-by-the-client-never-inferred-from-a-server-side-read
+	 */
+	private function writeRecords(object $objectService, array $records): int {
+		if (method_exists($objectService, 'appendObjectsRaw') === true) {
+			$this->logPath(path: 'appendObjectsRaw');
+
+			return (int)$objectService->appendObjectsRaw($records, self::REGISTER, self::EVENT_SCHEMA);
+		}
+
+		$this->logPath(path: 'saveObjects');
+		if ($this->context->apply(objectService: $objectService, schemaSlug: self::EVENT_SCHEMA) === false) {
+			return 0;
+		}
+
+		return $this->saveRecords(objectService: $objectService, records: $records);
+	}
+
+	/**
+	 * Save the events through saveObjects with every side path off.
+	 *
+	 * @param object                           $objectService OpenRegister's ObjectService.
+	 * @param array<int, array<string, mixed>> $records       The normalised events.
+	 *
+	 * @return int How many were written.
+	 *
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-page-view-must-be-reported-by-the-client-never-inferred-from-a-server-side-read
+	 */
+	private function saveRecords(object $objectService, array $records): int {
+		$saved = $objectService->saveObjects(
+			objects: $records,
+			register: self::REGISTER,
+			schema: self::EVENT_SCHEMA,
+			_rbac: false,
+			_multitenancy: false,
+			validation: false,
+			events: false,
+			enrich: false,
+			_audit: false
+		);
+
+		if (is_array($saved) === true) {
+			return count($saved);
+		}
+
+		return count($records);
+	}
+
+	/**
 	 * Delete raw events past their `expires`.
 	 *
 	 * @return int How many were removed, or 0 when the platform cannot say.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-raw-events-must-be-retained-for-a-finite-configured-period
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-raw-events-must-be-retained-for-a-finite-configured-period
 	 */
 	public function purgeExpired(): int {
 		return $this->purgeExpiredOf(schema: self::EVENT_SCHEMA, failure: 'Portaliq: traffic purge failed');
@@ -195,7 +224,7 @@ class TrafficEventStore {
 	 *
 	 * @return int How many were removed.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-raw-events-must-be-retained-for-a-finite-configured-period
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-raw-events-must-be-retained-for-a-finite-configured-period
 	 */
 	protected function deleteExpired(object $objectService): int {
 		$now = gmdate('Y-m-d\TH:i:s\Z');
@@ -229,7 +258,7 @@ class TrafficEventStore {
 	 *
 	 * @return array<int, array<string, mixed>> The events.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 	 */
 	public function eventsBetween(string $portal, string $from, string $to): array {
 		return $this->findAll(
@@ -262,7 +291,7 @@ class TrafficEventStore {
 	 *
 	 * @return array{events: array<int, array<string, mixed>>, truncated: bool} The events, and whether more existed.
 	 *
-	 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-say-when-it-shows-less-than-the-chosen-period
+	 * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-say-when-it-shows-less-than-the-chosen-period
 	 */
 	public function eventsForPaths(string $portal, string $from, string $to, int $limit): array {
 		if ($limit <= 0) {
@@ -293,7 +322,7 @@ class TrafficEventStore {
 	 *
 	 * @return array<int, array<string, mixed>> The events.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 	 */
 	public function receivedSince(string $since): array {
 		return $this->findAll(
@@ -311,7 +340,7 @@ class TrafficEventStore {
 	 *
 	 * @return array<string, mixed>|null The rollup object.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 	 */
 	public function findDaily(string $portal, string $date): ?array {
 		foreach ($this->findDailyRows(portal: $portal, date: $date) as $row) {
@@ -337,7 +366,7 @@ class TrafficEventStore {
 	 *
 	 * @return array<int, array<string, mixed>> The rollups.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
 	 */
 	public function findDailyRows(string $portal, string $date): array {
 		return $this->findAll(schema: self::DAILY_SCHEMA, filters: ['portal' => $portal, 'date' => $date], limit: self::PAGE);
@@ -353,7 +382,7 @@ class TrafficEventStore {
 	 *
 	 * @return array<int, array<string, mixed>> The rollups.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
 	 */
 	public function dailyBetween(string $portal, string $from, string $to, string $segment = ''): array {
 		$rows = $this->findAll(
@@ -376,7 +405,7 @@ class TrafficEventStore {
 	 *
 	 * @return bool True when removed.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
 	 */
 	public function deleteDaily(string $uuid): bool {
 		$objectService = $this->objectService();
@@ -416,7 +445,7 @@ class TrafficEventStore {
 	 *
 	 * @return bool True when saved.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 	 */
 	public function saveDaily(array $rollup, ?string $uuid): bool {
 		$objectService = $this->objectService();
@@ -489,29 +518,13 @@ class TrafficEventStore {
 	private function pages(object $objectService, string $schema, array $filters, int $limit, array $order, ?\Closure $shape = null): array {
 		$out = [];
 		for ($offset = 0; $offset < $limit; $offset += self::PAGE) {
-			$config = ['filters' => $filters, 'limit' => min(self::PAGE, $limit - $offset), 'offset' => $offset];
-			if ($order !== []) {
-				$config['sort'] = $order;
-			}
-
-			// The shared service's schema ref is re-applied before EVERY
-			// page: a nested read elsewhere in the process may have moved
-			// it, and a page read against the wrong schema is an empty
-			// page, not an error.
-			$this->context->apply(objectService: $objectService, schemaSlug: $schema);
-			$rows = $objectService->findAll(config: $config, _rbac: false, _multitenancy: false);
-			if (is_array($rows) === false || $rows === []) {
+			$config = $this->pageConfig(filters: $filters, limit: $limit, offset: $offset, order: $order);
+			$rows   = $this->page(objectService: $objectService, schema: $schema, config: $config);
+			if ($rows === []) {
 				break;
 			}
 
-			foreach ($rows as $row) {
-				$shaped = $this->asArray(row: $row);
-				if ($shape !== null) {
-					$shaped = $shape($shaped);
-				}
-
-				$out[] = $shaped;
-			}
+			array_push($out, ...$this->shapedRows(rows: $rows, shape: $shape));
 
 			if (count($rows) < self::PAGE) {
 				break;
@@ -521,6 +534,69 @@ class TrafficEventStore {
 		return $out;
 	}
 
+	/**
+	 * The findAll config of the page at an offset.
+	 *
+	 * @param array<string, mixed>  $filters The filters.
+	 * @param int                   $limit   The most rows wanted.
+	 * @param int                   $offset  The page's offset.
+	 * @param array<string, string> $order   Sort, field => ASC|DESC.
+	 *
+	 * @return array<string, mixed> The config.
+	 */
+	private function pageConfig(array $filters, int $limit, int $offset, array $order): array {
+		$config = ['filters' => $filters, 'limit' => min(self::PAGE, $limit - $offset), 'offset' => $offset];
+		if ($order !== []) {
+			$config['sort'] = $order;
+		}
+
+		return $config;
+	}
+
+	/**
+	 * Read one page, or [] when the read returned no list.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param string               $schema        The schema slug.
+	 * @param array<string, mixed> $config        The page's findAll config.
+	 *
+	 * @return array<int, mixed> The page's raw rows.
+	 */
+	private function page(object $objectService, string $schema, array $config): array {
+		// The shared service's schema ref is re-applied before EVERY
+		// page: a nested read elsewhere in the process may have moved
+		// it, and a page read against the wrong schema is an empty
+		// page, not an error.
+		$this->context->apply(objectService: $objectService, schemaSlug: $schema);
+		$rows = $objectService->findAll(config: $config, _rbac: false, _multitenancy: false);
+		if (is_array($rows) === false) {
+			return [];
+		}
+
+		return $rows;
+	}
+
+	/**
+	 * The page's rows as arrays, each reshaped when a shape is given.
+	 *
+	 * @param array<int, mixed> $rows  The page's raw rows.
+	 * @param \Closure|null     $shape Reshapes each row, or null to keep it.
+	 *
+	 * @return array<int, array<string, mixed>> The rows, as arrays.
+	 */
+	private function shapedRows(array $rows, \Closure|null $shape): array {
+		$out = [];
+		foreach ($rows as $row) {
+			$shaped = $this->asArray(row: $row);
+			if ($shape !== null) {
+				$shaped = $shape($shaped);
+			}
+
+			$out[] = $shaped;
+		}
+
+		return $out;
+	}
 
 	/**
 	 * A row without `@self` and without its empty fields.

@@ -164,9 +164,9 @@ SPDX-License-Identifier = "Apache-2.0"
 # face and licence as the css/fonts copies above.
 [[annotations]]
 path = [
-"woo/static/fonts/b009a76ad6afe.woff2",
-"woo/static/fonts/f25d774ecfe09.woff2",
-"woo/static/fonts/227c93190fe7f.woff2",
+"build/woo/static/fonts/b009a76ad6afe.woff2",
+"build/woo/static/fonts/f25d774ecfe09.woff2",
+"build/woo/static/fonts/227c93190fe7f.woff2",
 ]
 precedence = "override"
 SPDX-FileCopyrightText = "Google LLC"
@@ -175,7 +175,7 @@ SPDX-License-Identifier = "Apache-2.0"
 # Aldrich (asset-manifest spells it "Aldritch"). SIL Open Font License 1.1,
 # Matthew Desmond, per the font's own name table.
 [[annotations]]
-path = "woo/cb2dd4a29f236588895b.woff2"
+path = "build/woo/cb2dd4a29f236588895b.woff2"
 precedence = "override"
 SPDX-FileCopyrightText = "Matthew Desmond"
 SPDX-License-Identifier = "OFL-1.1"
@@ -186,8 +186,8 @@ SPDX-License-Identifier = "OFL-1.1"
 # same reasoning as the bundles above.
 [[annotations]]
 path = [
-"woo/static/fonts/35d973432fe54.woff",
-"woo/static/fonts/3e220b8f699ca.woff2",
+"build/woo/static/fonts/35d973432fe54.woff",
+"build/woo/static/fonts/3e220b8f699ca.woff2",
 ]
 precedence = "override"
 SPDX-FileCopyrightText = "2026 Conduction B.V. <info@conduction.nl>"
@@ -227,12 +227,12 @@ SPDX-FileCopyrightText = "2013-2026 MaxMind, Inc."
 SPDX-License-Identifier = "Apache-2.0 OR MIT"
 
 # ---------------------------------------------------------------------------
-# woo/ — the bundled tilburg-woo-ui SPA.
+# build/woo/ — the bundled tilburg-woo-ui SPA.
 #
 # WHAT IT IS, established 2026-09-11 (Remko Huisman asked for the analysis).
-# woo/ is 28 MB / 650 committed files: the production build of
+# woo/ is 21 MB / 491 committed files: the production build of
 # ConductionNL/tilburg-woo-ui, the Open Tilburg citizen WOO front end, which
-# lib/Controller/BundledSiteController.php serves from `woo/` on the
+# lib/Controller/BundledSiteController.php serves from `build/woo/` on the
 # public routes `bundledSite#serve` and `bundledSite#servePath` (/woo). It is load-bearing, not dead
 # weight. It arrived in a single commit — 3b109c8, 2026-07-10, "wip: preserve
 # uncommitted work" — and has never been touched since; no script in this
@@ -267,15 +267,15 @@ SPDX-License-Identifier = "Apache-2.0 OR MIT"
 # Raised by Remko Huisman on #553.
 [[annotations]]
 path = [
-    "woo/*.html",
-    "woo/*.js",
-    "woo/*.json",
-    "woo/*.png",
-    "woo/*.svg",
-    "woo/*.ico",
-    "woo/robots.txt",
-    "woo/static/js/**",
-    "woo/static/css/**",
+    "build/woo/*.html",
+    "build/woo/*.js",
+    "build/woo/*.json",
+    "build/woo/*.png",
+    "build/woo/*.svg",
+    "build/woo/*.ico",
+    "build/woo/robots.txt",
+    "build/woo/static/js/**",
+    "build/woo/static/css/**",
 ]
 precedence = "closest"
 SPDX-FileCopyrightText = "2026 Conduction B.V. <info@conduction.nl>"
@@ -289,7 +289,7 @@ SPDX-License-Identifier = "EUPL-1.2"
 [[annotations]]
 # (`woo/**/*.LICENSE.txt` already covers woo/service-worker.js.LICENSE.txt at
 # depth 1 -- reuse translates `**/` so it can match zero path segments.)
-path = "woo/**/*.LICENSE.txt"
+path = "build/woo/**/*.LICENSE.txt"
 precedence = "override"
 SPDX-FileCopyrightText = "the respective authors of the bundled third-party packages"
 SPDX-License-Identifier = "LicenseRef-third-party-notices"
