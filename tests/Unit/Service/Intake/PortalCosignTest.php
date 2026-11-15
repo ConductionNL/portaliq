@@ -94,7 +94,8 @@ class PortalCosignTest extends TestCase {
 			email: ' henk@example.nl ',
 			name: 'Henk de Vries',
 			deadlineDays: $days,
-			now: new DateTimeImmutable(self::SUBMITTED)
+			now: new DateTimeImmutable(self::SUBMITTED),
+			notify: ' sanne@example.nl '
 		);
 		$this->assertNotNull($held);
 		return $held;
@@ -143,7 +144,7 @@ class PortalCosignTest extends TestCase {
 		$this->assertSame('awaiting-cosign', $row['state']);
 		$this->assertSame('bsn-sanne', $row['subjectRef']);
 		$this->assertSame(
-			['state' => 'awaiting', 'email' => 'henk@example.nl', 'name' => 'Henk de Vries', 'codeHash' => hash('sha256', '7RQK2M'), 'deadline' => '2026-10-22T10:00:00+00:00'],
+			['state' => 'awaiting', 'email' => 'henk@example.nl', 'name' => 'Henk de Vries', 'codeHash' => hash('sha256', '7RQK2M'), 'deadline' => '2026-10-22T10:00:00+00:00', 'notify' => 'sanne@example.nl'],
 			$row['cosign']
 		);
 		$this->assertStringNotContainsString('7RQ', json_encode($row));
@@ -178,7 +179,7 @@ class PortalCosignTest extends TestCase {
 
 		$this->assertTrue($opened['ok']);
 		$this->assertSame(
-			['reference' => $held['reference'], 'route' => 'woo', 'answers' => ['onderwerp' => 'Parkeerbeleid'], 'submittedAt' => $this->stored()['submittedAt'], 'deadline' => '2026-10-22T10:00:00+00:00'],
+			['reference' => $held['reference'], 'portal' => 'gemeente-x', 'route' => 'woo', 'answers' => ['onderwerp' => 'Parkeerbeleid'], 'submittedAt' => $this->stored()['submittedAt'], 'deadline' => '2026-10-22T10:00:00+00:00'],
 			$opened['submission']
 		);
 		$this->assertSame('awaiting-cosign', $this->stored()['state']);
@@ -196,8 +197,8 @@ class PortalCosignTest extends TestCase {
 
 		$signed = $cosign->sign(code: '7RQ-K2M', subjectRef: 'bsn-henk', levelOfAssurance: 'substantieel', now: new DateTimeImmutable('2026-10-10T12:00:00+00:00'));
 
-		$this->assertSame(['ok' => true, 'reason' => '', 'reference' => $held['reference']], $signed);
 		$row = $this->stored();
+		$this->assertSame(['ok' => true, 'reason' => '', 'reference' => $held['reference'], 'portal' => 'gemeente-x', 'cosign' => $row['cosign']], $signed);
 		$this->assertSame('queued', $row['state']);
 		$this->assertSame('signed', $row['cosign']['state']);
 		$this->assertSame('bsn-henk', $row['cosign']['cosignerSubject']);
@@ -254,6 +255,8 @@ class PortalCosignTest extends TestCase {
 		$refused = $cosign->refuse(code: '7RQ-K2M', subjectRef: 'bsn-henk', now: new DateTimeImmutable('2026-10-11T08:00:00+00:00'));
 
 		$this->assertTrue($refused['ok']);
+		$this->assertSame('gemeente-x', $refused['portal']);
+		$this->assertSame(['refused', 'sanne@example.nl'], [$refused['cosign']['state'], $refused['cosign']['notify']]);
 		$row = $this->stored();
 		$this->assertSame('not-cosigned', $row['state']);
 		$this->assertSame('refused', $row['cosign']['state']);
@@ -291,9 +294,16 @@ class PortalCosignTest extends TestCase {
 		$this->seedRow('portalIntakeSubmission', ['reference' => 'AANVRAAG-BROKEN', 'state' => 'awaiting-cosign', 'cosign' => ['state' => 'awaiting', 'deadline' => 'whenever']]);
 		$this->seedRow('portalIntakeSubmission', ['reference' => 'AANVRAAG-QUEUED', 'state' => 'queued', 'cosign' => ['deadline' => '2000-01-01T00:00:00+00:00']]);
 
-		$lapsed = $cosign->expire(now: new DateTimeImmutable('2026-10-23T00:00:00+00:00'));
+		$told   = [];
+		$lapsed = $cosign->expire(
+			now: new DateTimeImmutable('2026-10-23T00:00:00+00:00'),
+			onLapse: static function (array $row) use (&$told): void {
+				$told[] = (string)$row['reference'];
+			}
+		);
 
 		$this->assertSame([$first['reference'], 'AANVRAAG-BROKEN'], $lapsed);
+		$this->assertSame($lapsed, $told);
 		$states = array_column($this->storedRows('portalIntakeSubmission'), 'state', 'reference');
 		$this->assertSame('not-cosigned', $states[$first['reference']]);
 		$this->assertSame('not-cosigned', $states['AANVRAAG-BROKEN']);

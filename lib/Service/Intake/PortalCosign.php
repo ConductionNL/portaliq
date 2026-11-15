@@ -114,12 +114,20 @@ class PortalCosign {
 	 * @param string            $name         The co-signer's name, for the waiting line.
 	 * @param int               $deadlineDays Days the co-signer has; 14 when not positive.
 	 * @param DateTimeImmutable $now          The moment of submitting.
+	 * @param string            $notify       The submitter's address, told on a refusal or a lapse.
 	 *
 	 * @return array{reference: string, state: string, code: string, deadline: string}|null Null when the address is missing or nothing was recorded.
 	 *
 	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
 	 */
-	public function hold(QueuedSubmission $submission, string $email, string $name, int $deadlineDays, DateTimeImmutable $now): ?array {
+	public function hold(
+		QueuedSubmission $submission,
+		string $email,
+		string $name,
+		int $deadlineDays,
+		DateTimeImmutable $now,
+		string $notify = ''
+	): ?array {
 		$email = trim($email);
 		if ($email === '' || filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
 			return null;
@@ -139,6 +147,7 @@ class PortalCosign {
 				'name' => trim($name),
 				'codeHash' => self::hash(code: $code),
 				'deadline' => $deadline,
+				'notify' => trim($notify),
 			]
 		);
 		if ($held === null) {
@@ -171,6 +180,7 @@ class PortalCosign {
 			'reason' => '',
 			'submission' => [
 				'reference' => (string)($row['reference'] ?? ''),
+				'portal' => (string)($row['portal'] ?? ''),
 				'route' => (string)($row['route'] ?? ''),
 				'answers' => (array)($row['answers'] ?? []),
 				'submittedAt' => (string)($row['submittedAt'] ?? ''),
@@ -187,7 +197,7 @@ class PortalCosign {
 	 * @param string            $levelOfAssurance The level the sign-in stated.
 	 * @param DateTimeImmutable $now              The moment.
 	 *
-	 * @return array{ok: bool, reason: string, reference: string}
+	 * @return array{ok: bool, reason: string, reference: string, portal?: string, cosign?: array<string, mixed>}
 	 *
 	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
 	 */
@@ -212,7 +222,7 @@ class PortalCosign {
 	 * @param string            $subjectRef The co-signer's DigiD subject.
 	 * @param DateTimeImmutable $now        The moment.
 	 *
-	 * @return array{ok: bool, reason: string, reference: string}
+	 * @return array{ok: bool, reason: string, reference: string, portal?: string, cosign?: array<string, mixed>}
 	 *
 	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
 	 */
@@ -228,17 +238,21 @@ class PortalCosign {
 	/**
 	 * Lapse every held submission whose deadline has passed.
 	 *
-	 * @param DateTimeImmutable $now The moment.
+	 * @param DateTimeImmutable $now     The moment.
+	 * @param callable|null     $onLapse Called with each submission row that lapsed, to tell its submitter.
 	 *
 	 * @return array<int, string> The references that lapsed.
 	 *
 	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
 	 */
-	public function expire(DateTimeImmutable $now): array {
+	public function expire(DateTimeImmutable $now, ?callable $onLapse = null): array {
 		$lapsed = [];
 		foreach ($this->queue->awaitingCosign() as $row) {
 			if ($this->isPastDeadline(row: $row, now: $now) === true && $this->lapse(row: $row, now: $now) === true) {
 				$lapsed[] = (string)($row['reference'] ?? '');
+				if ($onLapse !== null) {
+					$onLapse($row);
+				}
 			}
 		}
 
@@ -289,7 +303,7 @@ class PortalCosign {
 	 * @param DateTimeImmutable    $now        The moment.
 	 * @param array<string, mixed> $change     The co-sign fields to set.
 	 *
-	 * @return array{ok: bool, reason: string, reference: string}
+	 * @return array{ok: bool, reason: string, reference: string, portal?: string, cosign?: array<string, mixed>}
 	 */
 	private function answer(string $code, string $subjectRef, DateTimeImmutable $now, array $change): array {
 		$found = $this->admit(code: $code, subjectRef: $subjectRef, now: $now);
@@ -297,12 +311,19 @@ class PortalCosign {
 			return ['ok' => false, 'reason' => $found['reason'], 'reference' => ''];
 		}
 
-		$row = $found['submission'];
-		if ($this->queue->answerCosign(submission: $row, cosign: array_merge((array)$row['cosign'], $change)) === false) {
+		$row    = $found['submission'];
+		$cosign = array_merge((array)$row['cosign'], $change);
+		if ($this->queue->answerCosign(submission: $row, cosign: $cosign) === false) {
 			return ['ok' => false, 'reason' => 'unavailable', 'reference' => ''];
 		}
 
-		return ['ok' => true, 'reason' => '', 'reference' => (string)($row['reference'] ?? '')];
+		return [
+			'ok' => true,
+			'reason' => '',
+			'reference' => (string)($row['reference'] ?? ''),
+			'portal' => (string)($row['portal'] ?? ''),
+			'cosign' => $cosign,
+		];
 	}//end answer()
 
 	/**

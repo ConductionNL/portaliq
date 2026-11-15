@@ -22,7 +22,7 @@ namespace OCA\Portaliq\Tests\Unit\BackgroundJob;
 
 use DateTimeImmutable;
 use OCA\Portaliq\BackgroundJob\CosignDeadlineJob;
-use OCA\Portaliq\Service\Intake\PortalCosign;
+use OCA\Portaliq\Service\Intake\PortalCosignFlow;
 use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -43,8 +43,8 @@ class CosignDeadlineJobTest extends TestCase {
 	public function testRunLapsesAtTheClocksMoment(): void {
 		$time = $this->createMock(ITimeFactory::class);
 		$time->method('getTime')->willReturn(1792656000);
-		$cosign = $this->createMock(PortalCosign::class);
-		$cosign->expects($this->once())->method('expire')->with(
+		$cosign = $this->createMock(PortalCosignFlow::class);
+		$cosign->expects($this->once())->method('lapse')->with(
 			$this->callback(static fn (DateTimeImmutable $now): bool => $now->getTimestamp() === 1792656000)
 		)->willReturn(['AANVRAAG-1']);
 		$job = new CosignDeadlineJob($time, $cosign);

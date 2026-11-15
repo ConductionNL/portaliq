@@ -26,7 +26,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\BackgroundJob;
 
 use DateTimeImmutable;
-use OCA\Portaliq\Service\Intake\PortalCosign;
+use OCA\Portaliq\Service\Intake\PortalCosignFlow;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
 
@@ -48,11 +48,11 @@ class CosignDeadlineJob extends TimedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory $time   The clock.
-	 * @param PortalCosign $cosign Lapses the co-signatures.
+	 * @param PortalCosignFlow $cosign Lapses the co-signatures and tells each submitter.
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly PortalCosign $cosign,
+		private readonly PortalCosignFlow $cosign,
 	) {
 		parent::__construct(time: $time);
 		$this->setInterval(seconds: self::INTERVAL);
@@ -68,6 +68,6 @@ class CosignDeadlineJob extends TimedJob {
 	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
 	 */
 	protected function run($argument): void {
-		$this->cosign->expire(now: (new DateTimeImmutable())->setTimestamp($this->time->getTime()));
+		$this->cosign->lapse(now: (new DateTimeImmutable())->setTimestamp($this->time->getTime()));
 	}//end run()
 }//end class
