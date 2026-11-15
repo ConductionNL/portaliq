@@ -10,6 +10,7 @@ use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * submit-creates-the-case-directly 1.1: the repair step moves a binding's
@@ -132,7 +133,10 @@ class MoveBindingDestinationTest extends TestCase {
 				return array_slice($this->rows, (int)($config['offset'] ?? 0), (int)($config['limit'] ?? 100));
 			}
 
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saves[] = ['uuid' => $uuid, 'schema' => $schema, 'object' => $object];
 				foreach ($this->rows as $index => $row) {
 					if (($row['@self']['uuid'] ?? null) === $uuid) {

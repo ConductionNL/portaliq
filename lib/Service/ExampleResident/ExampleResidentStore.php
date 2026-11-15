@@ -29,6 +29,10 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\ExampleResident;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\Service\ObjectRowNormaliser;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\RowIdOf;
@@ -170,7 +174,12 @@ class ExampleResidentStore {
 		}
 
 		try {
-			$row = $objectService->find(id: $id, register: $register, schema: $schema, _rbac: false, _multitenancy: false);
+			$row = $objectService->find(
+				id: $id,
+				options: new ObjectFindOptions(register: $register, schema: $schema),
+				_rbac: false,
+				_multitenancy: false
+			);
 		} catch (Throwable) {
 			return null;
 		}
@@ -206,7 +215,12 @@ class ExampleResidentStore {
 		unset($merged['@self'], $merged['id']);
 
 		try {
-			$objectService->saveObject(object: $merged, register: $register, schema: $schema, uuid: $id, _rbac: false, _multitenancy: false);
+			$objectService->saveObject(
+				object: $merged,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $id),
+				_rbac: false,
+				_multitenancy: false
+			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: example resident update failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
 			return false;
@@ -233,7 +247,11 @@ class ExampleResidentStore {
 		}
 
 		try {
-			$deleted = $objectService->deleteObject(uuid: $id, register: $register, schema: $schema, _rbac: false, _multitenancy: false);
+			$deleted = $objectService->deleteObject(
+				new ObjectDeletion(uuid: $id, target: new ObjectFindTarget(register: $register, schema: $schema)),
+				_rbac: false,
+				_multitenancy: false
+			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: example resident delete failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
 			return false;

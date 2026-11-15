@@ -32,6 +32,8 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * The staff writes on events, news and newsletters, pinned per store answer:
@@ -161,7 +163,9 @@ class StaffRowWriteGoldenTest extends TestCase {
 				public function __construct(private array $store, private array &$asked) {
 				}
 
-				public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+					$register = $options?->register;
+					$schema = $options?->schema;
 					$this->asked[] = ['find' => [$id, $register, $schema, $_rbac, $_multitenancy]];
 					if ($this->store[0] instanceof \Throwable) {
 						throw $this->store[0];
@@ -170,7 +174,10 @@ class StaffRowWriteGoldenTest extends TestCase {
 					return $this->store[0];
 				}
 
-				public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed {
+					$register = $options->target->register;
+					$schema = $options->target->schema;
+					$uuid = $options->uuid;
 					$this->asked[] = ['saveObject' => [$object, $register, $schema, $uuid, $_rbac, $_multitenancy]];
 					if ($this->store[1] instanceof \Throwable) {
 						throw $this->store[1];
