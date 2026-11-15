@@ -554,7 +554,7 @@ class PortalThemeResolverTest extends TestCase {
 		$appManager->method('getAppPath')->willReturn($this->themeRoot);
 		$this->assertSame('thematiq.font.css', (new PortalThemeResolver(appManager: $appManager))->fontStylesheetRoute());
 
-		$template = (string)file_get_contents(__DIR__ . '/../../../templates/site.php');
+		$template = (string)file_get_contents(__DIR__ . '/../../../templates/parts/site-stylesheets.php');
 		$this->assertMatchesRegularExpression('/fontStylesheetRoute\(\);\s*if \(\$fontRoute !== null\) \{\s*\$stylesheets\[\] = \$url->linkToRoute\(\$fontRoute\);/', $template);
 	}//end testTheUploadedFontsStylesheetIsLinkedOnlyWhenTheThemeAppHasOne()
 
