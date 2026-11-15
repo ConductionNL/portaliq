@@ -22,7 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Plans;
 
-use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\BackgroundJob\ActionReminderJob;
 use OCA\Portaliq\Service\Plans\PlanEndReminderService;
 use OCA\Portaliq\Service\Plans\PlanEndingMailer;

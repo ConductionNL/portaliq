@@ -20,7 +20,7 @@
  * @spec exclude test stub of an OpenRegister class
  */
 
-namespace OCA\OpenRegister\Service\Object;
+namespace OCA\OpenRegister\Kernel\Contracts\Value;
 
 /**
  * How one object save runs: where it goes, which object it updates, what the answer expands,

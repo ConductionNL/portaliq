@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Repair;
 
-use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\Repair\BackfillCmsPortalReference;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCP\Migration\IOutput;

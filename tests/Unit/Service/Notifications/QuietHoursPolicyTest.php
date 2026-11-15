@@ -6,7 +6,7 @@ namespace OCA\Portaliq\Tests\Unit\Service\Notifications;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\Service\Notifications\QuietHoursPolicy;
 use OCP\IConfig;
 use PHPUnit\Framework\TestCase;

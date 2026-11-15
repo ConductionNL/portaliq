@@ -20,7 +20,7 @@
  * @spec exclude test stub of an OpenRegister class
  */
 
-namespace OCA\OpenRegister\Service\Object;
+namespace OCA\OpenRegister\Kernel\Contracts\Value;
 
 /**
  * The policy switches of one object save. Every default is the behaviour a caller gets without asking.

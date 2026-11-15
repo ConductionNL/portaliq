@@ -202,10 +202,10 @@ foreach ([
 	'Service\\Integration\\LeafDescriptor' => 'Service/Integration/LeafDescriptor.php',
 	'Event\\RegisterLeafProvidersEvent' => 'Event/RegisterLeafProvidersEvent.php',
 	// What ObjectService::saveObject() takes (openregister #9123): its parts first.
-	'Service\\Object\\ObjectFindTarget' => 'Service/Object/ObjectFindTarget.php',
-	'Service\\Object\\SavePolicy' => 'Service/Object/SavePolicy.php',
-	'Service\\Object\\SaveActor' => 'Service/Object/SaveActor.php',
-	'Service\\Object\\ObjectSaveOptions' => 'Service/Object/ObjectSaveOptions.php',
+	'Kernel\\Contracts\\Value\\ObjectFindTarget' => 'Kernel/Contracts/Value/ObjectFindTarget.php',
+	'Kernel\\Contracts\\Value\\SavePolicy' => 'Kernel/Contracts/Value/SavePolicy.php',
+	'Kernel\\Contracts\\Value\\SaveActor' => 'Kernel/Contracts/Value/SaveActor.php',
+	'Kernel\\Contracts\\Value\\ObjectSaveOptions' => 'Kernel/Contracts/Value/ObjectSaveOptions.php',
 ] as $orStubClass => $orStubFile) {
 	if (class_exists('\\OCP\\EventDispatcher\\Event') === true
 		&& class_exists('\\OCA\\OpenRegister\\' . $orStubClass) === false

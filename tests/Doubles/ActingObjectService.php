@@ -23,7 +23,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Doubles;
 
-use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * ObjectService stand-in that acts for organisations.
