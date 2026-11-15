@@ -130,7 +130,7 @@ The inbox page SHALL offer a "Notification settings" section with one labelled c
 #### Scenario: A resident changes a setting
 - **GIVEN** a resident on the inbox page
 - **WHEN** they open "Notification settings", clear "E-mail" for new messages and save
-- **THEN** the page says "Your choices are saved." and the box stays cleared after a reload
+- **THEN** the page says "Uw keuzes zijn opgeslagen." (board Berichten) and the box stays cleared after a reload
 - e2e: `tests/e2e/inbox-notifications-and-preferences.spec.ts`
 
 ### Requirement: A change rule may reach residents by a claim (REQ-NAP-012)
@@ -202,7 +202,7 @@ A resident MUST be able to delete one or several of their own inbox messages. Po
 
 #### Scenario: Several messages at once
 - GIVEN three notices
-- WHEN the parent chooses "Alles selecteren", "Geselecteerde verwijderen (3)" and confirms
+- WHEN the parent chooses "Alles selecteren", "Verwijderen (3 geselecteerd)" (board Berichten) and confirms
 - THEN all three are deleted and the unread count follows
 - @e2e exclude pinned by the node test "deleting the selected messages removes them, updates the count and says so"
 

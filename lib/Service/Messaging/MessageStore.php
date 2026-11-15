@@ -22,22 +22,26 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/guardian-direct-messages/design.md#messaging-leaf-interface
+ * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#messaging-leaf-interface
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Messaging;
 
+use OCA\Portaliq\Service\ObjectRowNormaliser;
+use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\PagedObjectReads;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * @spec openspec/changes/guardian-direct-messages/design.md#messaging-leaf-interface
+ * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#messaging-leaf-interface
  */
 class MessageStore {
+	use ObjectRowNormaliser;
+	use ObjectServiceLookup;
 	use PagedObjectReads;
 
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
@@ -67,7 +71,7 @@ class MessageStore {
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/design.md#messaging-leaf-interface
+	 * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#messaging-leaf-interface
 	 */
 	public function save(string $schema, array $object, ?string $uuid = null): ?string {
 		$objectService = $this->objectService();
@@ -75,8 +79,31 @@ class MessageStore {
 			return null;
 		}
 
+		$saved = $this->savedRow(objectService: $objectService, schema: $schema, object: $object, uuid: $uuid);
+
+		$normalised = $this->normalise(row: $saved);
+		if ($normalised === null) {
+			return null;
+		}
+
+		return $this->rowId(row: $normalised);
+	}//end save()
+
+	/**
+	 * The row OpenRegister answers a save with, or null when the save fails.
+	 *
+	 * @param object               $objectService OpenRegister's ObjectService.
+	 * @param string               $schema        The schema slug.
+	 * @param array<string, mixed> $object        The object to save.
+	 * @param string|null          $uuid          The existing id to update, or null to create.
+	 *
+	 * @return mixed
+	 *
+	 * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#messaging-leaf-interface
+	 */
+	private function savedRow(object $objectService, string $schema, array $object, string|null $uuid): mixed {
 		try {
-			$saved = $objectService->saveObject(
+			return $objectService->saveObject(
 				object: $object,
 				register: self::REGISTER,
 				schema: $schema,
@@ -88,14 +115,7 @@ class MessageStore {
 			$this->logger->warning('Portaliq: messaging save failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
 			return null;
 		}
-
-		$normalised = $this->normalise(row: $saved);
-		if ($normalised === null) {
-			return null;
-		}
-
-		return $this->rowId(row: $normalised);
-	}//end save()
+	}//end savedRow()
 
 	/**
 	 * Fetch every row of a schema that matches the plain filters, every page
@@ -107,7 +127,7 @@ class MessageStore {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/design.md#messaging-leaf-interface
+	 * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#messaging-leaf-interface
 	 */
 	public function findAll(string $schema, array $filters = [], ?array $ids = null): array {
 		$objectService = $this->objectService();
@@ -115,17 +135,45 @@ class MessageStore {
 			return [];
 		}
 
-		try {
-			$rows = $this->readEveryPage(objectService: $objectService, register: self::REGISTER, schema: $schema, filters: $filters, ids: $ids);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: messaging read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
-			return [];
-		}
-
+		$rows = $this->messagingRows(objectService: $objectService, schema: $schema, filters: $filters, ids: $ids);
 		if (is_array($rows) === false) {
 			return [];
 		}
 
+		return $this->normalisedMessagingRows(rows: $rows);
+	}//end findAll()
+
+	/**
+	 * Every page of a schema's matching rows, or null when the read fails.
+	 *
+	 * @param object                  $objectService OpenRegister's ObjectService.
+	 * @param string                  $schema        The schema slug.
+	 * @param array<string, mixed>    $filters       Plain equality filters.
+	 * @param array<int, string>|null $ids           Only these object ids, or null for any.
+	 *
+	 * @return array<int, mixed>|null
+	 *
+	 * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#messaging-leaf-interface
+	 */
+	private function messagingRows(object $objectService, string $schema, array $filters, array|null $ids): array|null {
+		try {
+			return $this->readEveryPage(objectService: $objectService, register: self::REGISTER, schema: $schema, filters: $filters, ids: $ids);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: messaging read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
+			return null;
+		}
+	}//end messagingRows()
+
+	/**
+	 * The rows normalised, leaving out what does not normalise.
+	 *
+	 * @param array<int, mixed> $rows The rows read.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#messaging-leaf-interface
+	 */
+	private function normalisedMessagingRows(array $rows): array {
 		$normalised = [];
 		foreach ($rows as $row) {
 			$row = $this->normalise(row: $row);
@@ -135,7 +183,7 @@ class MessageStore {
 		}
 
 		return $normalised;
-	}//end findAll()
+	}//end normalisedMessagingRows()
 
 	/**
 	 * The row's id/uuid, from a flat property or its `@self` envelope.
@@ -144,7 +192,7 @@ class MessageStore {
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/design.md#messaging-leaf-interface
+	 * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#messaging-leaf-interface
 	 */
 	public function rowId(array $row): ?string {
 		if (isset($row['id']) === true) {
@@ -162,45 +210,4 @@ class MessageStore {
 
 		return null;
 	}//end rowId()
-
-	/**
-	 * Normalise an OpenRegister row (array or object) to an associative array.
-	 *
-	 * @param mixed $row The row.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function normalise(mixed $row): ?array {
-		if (is_array($row) === true) {
-			return $row;
-		}
-
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			$data = $row->jsonSerialize();
-			if (is_array($data) === true) {
-				return $data;
-			}
-		}
-
-		return null;
-	}//end normalise()
-
-	/**
-	 * Resolve OpenRegister's ObjectService, or null when unavailable.
-	 *
-	 * @return object|null
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end objectService()
 }//end class

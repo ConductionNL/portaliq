@@ -62,6 +62,8 @@
 						:accountHref="accountHref"
 						:session="session"
 						:accountLink="accountLink"
+						:pillLabel="pillLabel"
+						:signedInLabel="signedInLabel"
 						:signOutLabel="signOutLabel"
 						:hasMenu="showNavigation && menus.length > 0"
 						:menuOpen="menuOpen"
@@ -238,6 +240,10 @@ export default {
 		session: { type: Object, default: null },
 		/** How to name the signed-in visitor. */
 		sessionLabel: { type: String, default: '' },
+		/** The account pill's accessible name (designed header). */
+		pillLabel: { type: String, default: '' },
+		/** The account pill's text without a name (designed header). */
+		signedInLabel: { type: String, default: '' },
 		/** `{route, href, label}` of the resident's own area, or null. */
 		accountLink: { type: Object, default: null },
 		/** The sign-in routes the portal declares. */
@@ -308,7 +314,7 @@ export default {
 		 *
 		 * @return {boolean}
 		 *
-		 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
+		 * @spec openspec/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
 		 */
 		designed() {
 			return Boolean(this.accountLabel) || this.searchBox.enabled === true

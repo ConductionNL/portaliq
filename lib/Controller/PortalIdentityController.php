@@ -25,27 +25,27 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\CaseTypeReader;
-use OCA\Portaliq\Service\Identity\PortalAccountActivationService;
-use OCA\Portaliq\Service\Identity\PortalChallengeService;
-use OCA\Portaliq\Service\Identity\PortalContactService;
-use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
-use OCA\Portaliq\Service\Identity\PortalReferenceCaseService;
-use OCA\Portaliq\Service\Identity\PortalInvitationService;
-use OCA\Portaliq\Service\Identity\PortalReferenceLinkService;
-use OCA\Portaliq\Service\Identity\PortalRegistrationPolicyService;
-use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
-use OCA\Portaliq\Service\PortalAccountService;
-use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\CaseTypeReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalAccountActivationServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalAccountServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalChallengeServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContactServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFormBindingResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalIdentityMailerInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalInvitationServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalReferenceCaseServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalReferenceLinkServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalRegistrationPolicyServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -53,11 +53,12 @@ use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCA\Portaliq\Kernel\Contracts\RequestedPortalInterface;
 
 /**
  * The citizen's own identity surfaces.
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  *
  * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- one dependency per
  * distinct act; a facade would hide which boundary each one crosses.
@@ -69,37 +70,39 @@ class PortalIdentityController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalResolver $portals Resolves the portal being visited.
-	 * @param PortalChallengeService $challenge The portal's own challenge.
-	 * @param PortalReferenceLinkService $references The one-time reference link.
-	 * @param PortalRegistrationPolicyService $policy The registration policy.
-	 * @param PortalInvitationService $invitations Invitations into the portal.
-	 * @param PortalAccountService $accounts Provisions a registration.
-	 * @param CaseTypeReader $caseTypes Reads the case type's identity kinds.
-	 * @param PortalFormBindingResolver $bindings The case types this portal declares.
-	 * @param PortalIdentityMailer $mailer Mails the reference link to its address.
-	 * @param PortalReferenceCaseService $referenceCases The case behind a reference link.
-	 * @param PortalSessionService $sessions Mints and resolves the reference session.
-	 * @param PortalAccountActivationService $activation Mints and spends the activation link (identity-ways-in-screens T03).
-	 * @param PortalContactService|null $contacts Joins a contact invitation the registration followed (own-contacts-and-invitations T05).
+	 * @param PortalResolverInterface $portals Resolves the portal being visited.
+	 * @param PortalChallengeServiceInterface $challenge The portal's own challenge.
+	 * @param PortalReferenceLinkServiceInterface $references The one-time reference link.
+	 * @param PortalRegistrationPolicyServiceInterface $policy The registration policy.
+	 * @param PortalInvitationServiceInterface $invitations Invitations into the portal.
+	 * @param PortalAccountServiceInterface $accounts Provisions a registration.
+	 * @param CaseTypeReaderInterface $caseTypes Reads the case type's identity kinds.
+	 * @param PortalFormBindingResolverInterface $bindings The case types this portal declares.
+	 * @param PortalIdentityMailerInterface $mailer Mails the reference link to its address.
+	 * @param PortalReferenceCaseServiceInterface $referenceCases The case behind a reference link.
+	 * @param PortalSessionServiceInterface $sessions Mints and resolves the reference session.
+	 * @param PortalAccountActivationServiceInterface $activation Mints and spends the activation link (identity-ways-in-screens T03).
+	 * @param RequestedPortalInterface $requestedPortal The RequestedPortal helper.
+	 * @param PortalContactServiceInterface|null $contacts Joins a contact invitation the registration followed (own-contacts-and-invitations T05).
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalResolver $portals,
-		private readonly PortalChallengeService $challenge,
-		private readonly PortalReferenceLinkService $references,
-		private readonly PortalRegistrationPolicyService $policy,
-		private readonly PortalInvitationService $invitations,
-		private readonly PortalAccountService $accounts,
-		private readonly CaseTypeReader $caseTypes,
-		private readonly PortalFormBindingResolver $bindings,
-		private readonly PortalIdentityMailer $mailer,
-		private readonly PortalReferenceCaseService $referenceCases,
-		private readonly PortalSessionService $sessions,
-		private readonly PortalAccountActivationService $activation,
-		private readonly ?PortalContactService $contacts = null,
+		private readonly PortalResolverInterface $portals,
+		private readonly PortalChallengeServiceInterface $challenge,
+		private readonly PortalReferenceLinkServiceInterface $references,
+		private readonly PortalRegistrationPolicyServiceInterface $policy,
+		private readonly PortalInvitationServiceInterface $invitations,
+		private readonly PortalAccountServiceInterface $accounts,
+		private readonly CaseTypeReaderInterface $caseTypes,
+		private readonly PortalFormBindingResolverInterface $bindings,
+		private readonly PortalIdentityMailerInterface $mailer,
+		private readonly PortalReferenceCaseServiceInterface $referenceCases,
+		private readonly PortalSessionServiceInterface $sessions,
+		private readonly PortalAccountActivationServiceInterface $activation,
+		private readonly RequestedPortalInterface $requestedPortal,
+		private readonly ?PortalContactServiceInterface $contacts = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -109,7 +112,7 @@ class PortalIdentityController extends Controller {
 	 *
 	 * @return JSONResponse The challenge, or 404 for an unknown portal.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -142,7 +145,7 @@ class PortalIdentityController extends Controller {
 	 *
 	 * @return JSONResponse Whether a link was issued, or a refusal.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 * @spec openspec/specs/portal-ways-in/spec.md#requirement-every-way-in-sends-its-secret-by-mail-req-iwi-001
 	 */
 	#[PublicPage]
@@ -154,73 +157,144 @@ class PortalIdentityController extends Controller {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
 		}
 
+		$run = new ReferenceLinkRun(
+			site: $site,
+			asked: ['register' => $register, 'schema' => $schema, 'caseType' => $caseType, 'caseReference' => $caseReference, 'email' => $email]
+		);
+		return $this->referenceLinkAnswer(run: $run);
+	}//end requestReferenceLink()
+
+	/**
+	 * The answer to a reference-link request on a portal that exists: 404
+	 * when the case type is not offered, the same "sent" for a case the
+	 * address does not match as for a mailed link.
+	 *
+	 * @param ReferenceLinkRun $run The request.
+	 *
+	 * @return JSONResponse
+	 */
+	private function referenceLinkAnswer(ReferenceLinkRun $run): JSONResponse {
+		$type = $this->offeredCaseType(run: $run);
+		if ($type === null) {
+			return new JSONResponse(['error' => 'route_not_offered'], Http::STATUS_NOT_FOUND);
+		}
+
+		$case = $this->linkableCase(run: $run);
+		if ($case === null) {
+			return new JSONResponse(['sent' => true, 'expiresAt' => $this->references->nominalExpiry()]);
+		}
+
+		$run->type     = $type;
+		$run->linkable = $case;
+		return $this->issueReferenceLink(run: $run);
+	}//end referenceLinkAnswer()
+
+	/**
+	 * The case type the request names when this portal offers a reference
+	 * link for it, else null.
+	 *
+	 * @param ReferenceLinkRun $run The request.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function offeredCaseType(ReferenceLinkRun $run): ?array {
 		// The register, schema and case type arrive from an anonymous request,
 		// and the read behind them runs with RBAC and multitenancy off. So the
 		// triple is checked against the portal's own published form bindings
 		// BEFORE anything is read: outside that scope nothing is looked up.
 		if ($this->bindings->caseTypeIsInPortalScope(
-			portal: (string)($site['slug'] ?? ''),
-			register: $register,
-			schema: $schema,
-			typeId: $caseType
-		) === false
-		) {
-			return new JSONResponse(['error' => 'route_not_offered'], Http::STATUS_NOT_FOUND);
+			portal: (string)($run->site['slug'] ?? ''),
+			register: $run->register,
+			schema: $run->schema,
+			typeId: $run->caseType
+		) === false) {
+			return null;
 		}
 
-		$type = $this->caseTypes->readCaseType(register: $register, schema: $schema, id: $caseType);
+		// Outside the portal's scope, unknown, and `account` only are one
+		// answer on purpose. A 403 here would tell an anonymous caller
+		// which of the three it was, and that is an existence oracle for
+		// case types on registers that are none of their business.
+		$type = $this->caseTypes->readCaseType(register: $run->register, schema: $run->schema, id: $run->caseType);
 		if ($type === null || $this->references->admitsReference(caseType: $type) === false) {
-			// Outside the portal's scope, unknown, and `account` only are one
-			// answer on purpose. A 403 here would tell an anonymous caller
-			// which of the three it was, and that is an existence oracle for
-			// case types on registers that are none of their business.
-			return new JSONResponse(['error' => 'route_not_offered'], Http::STATUS_NOT_FOUND);
+			return null;
 		}
 
-		// The address must be the one recorded on the case (portaliq#796).
-		// Otherwise anyone who knows or guesses a case number reads the case.
-		// A mismatch, an unknown case and a case app that declares no address
-		// field all answer exactly like a sent link, so this endpoint is no
-		// oracle for case numbers; no link is issued and no mail leaves.
-		$case = $this->referenceCases->linkableCase(
-			portal: (string)($site['slug'] ?? ''),
-			register: $register,
-			schema: $schema,
-			caseType: $caseType,
-			caseReference: $caseReference,
-			email: $email,
-			organisation: (string)($site['organisation'] ?? '')
+		return $type;
+	}//end offeredCaseType()
+
+	/**
+	 * The case behind the number when the address is the one recorded on it.
+	 *
+	 * The address must be the one recorded on the case (portaliq#796).
+	 * Otherwise anyone who knows or guesses a case number reads the case.
+	 * A mismatch, an unknown case and a case app that declares no address
+	 * field all answer exactly like a sent link, so this endpoint is no
+	 * oracle for case numbers; no link is issued and no mail leaves.
+	 *
+	 * @param ReferenceLinkRun $run The request, with its case type offered.
+	 *
+	 * @return array{register: string, schema: string}|null
+	 */
+	private function linkableCase(ReferenceLinkRun $run): ?array {
+		return $this->referenceCases->linkableCase(
+			portal: (string)($run->site['slug'] ?? ''),
+			register: $run->register,
+			schema: $run->schema,
+			caseType: $run->caseType,
+			caseReference: $run->caseReference,
+			email: $run->email,
+			organisation: (string)($run->site['organisation'] ?? '')
 		);
-		if ($case === null) {
-			return new JSONResponse(['sent' => true, 'expiresAt' => $this->references->nominalExpiry()]);
-		}
+	}//end linkableCase()
 
+	/**
+	 * Issue the link and mail it.
+	 *
+	 * The secret goes out by mail, never in this answer: the address is
+	 * what proves the asker is the person the case belongs to. A mail
+	 * that did not leave answers the same, so the answer tells an
+	 * anonymous caller nothing; the mailer logs the failure.
+	 *
+	 * @param ReferenceLinkRun $run The request, with its case found.
+	 *
+	 * @return JSONResponse
+	 */
+	private function issueReferenceLink(ReferenceLinkRun $run): JSONResponse {
 		$issued = $this->references->issue(
-			caseType: $type,
-			caseReference: $caseReference,
-			email: $email,
-			organisation: (string)($site['organisation'] ?? ''),
-			caseRegister: $case['register'],
-			caseSchema: $case['schema']
+			caseType: $run->type,
+			caseReference: $run->caseReference,
+			email: $run->email,
+			organisation: (string)($run->site['organisation'] ?? ''),
+			caseRegister: $run->linkable['register'],
+			caseSchema: $run->linkable['schema']
 		);
 		if ($issued === null) {
 			return new JSONResponse(['error' => 'refused'], Http::STATUS_BAD_REQUEST);
 		}
 
-		// The secret goes out by mail, never in this answer: the address is
-		// what proves the asker is the person the case belongs to. A mail
-		// that did not leave answers the same, so the answer tells an
-		// anonymous caller nothing; the mailer logs the failure.
-		$this->mailer->send(
-			template: PortalIdentityMailer::TEMPLATE_REFERENCE_LINK,
-			email: $email,
-			secret: $issued['token'],
-			organisation: (string)($site['organisation'] ?? ''),
-			portal: $site
-		);
+		$this->mailReferenceLink(run: $run, secret: $issued['token']);
 
 		return new JSONResponse(['sent' => true, 'expiresAt' => $issued['expiresAt']]);
-	}//end requestReferenceLink()
+	}//end issueReferenceLink()
+
+	/**
+	 * Mail the issued link's secret to the address the request named.
+	 *
+	 * @param ReferenceLinkRun $run    The request.
+	 * @param string           $secret The issued link's secret.
+	 *
+	 * @return void
+	 */
+	private function mailReferenceLink(ReferenceLinkRun $run, string $secret): void {
+		$this->mailer->send(
+			template: PortalIdentityMailerInterface::TEMPLATE_REFERENCE_LINK,
+			email: $run->email,
+			secret: $secret,
+			organisation: (string)($run->site['organisation'] ?? ''),
+			portal: $run->site
+		);
+	}//end mailReferenceLink()
 
 	/**
 	 * Follow a reference link, once. The link opens a short, read-only
@@ -232,7 +306,7 @@ class PortalIdentityController extends Controller {
 	 *
 	 * @return JSONResponse The case the link admits to with its bearer, or a refusal.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/design.md
 	 */
 	#[PublicPage]
@@ -246,6 +320,18 @@ class PortalIdentityController extends Controller {
 			return new JSONResponse(['error' => 'link_not_valid'], Http::STATUS_FORBIDDEN);
 		}
 
+		return $this->referenceSessionAnswer(redeemed: $redeemed);
+	}//end redeemReferenceLink()
+
+	/**
+	 * The short, read-only session a redeemed link opens for its one case,
+	 * with its bearer; 503 when none can be minted.
+	 *
+	 * @param array<string, string> $redeemed The redeemed link.
+	 *
+	 * @return JSONResponse
+	 */
+	private function referenceSessionAnswer(array $redeemed): JSONResponse {
 		$session = $this->sessions->issueReferenceSession(
 			linkId: $redeemed['linkId'],
 			caseReference: $redeemed['caseReference'],
@@ -259,13 +345,25 @@ class PortalIdentityController extends Controller {
 			return new JSONResponse(['error' => 'session_unavailable'], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
 
+		return $this->redeemedLinkAnswer(redeemed: $redeemed, session: $session);
+	}//end referenceSessionAnswer()
+
+	/**
+	 * The case a redeemed link admits to, with its session's bearer.
+	 *
+	 * @param array<string, string> $redeemed The redeemed link.
+	 * @param array<string, string> $session  The reference session minted for it.
+	 *
+	 * @return JSONResponse
+	 */
+	private function redeemedLinkAnswer(array $redeemed, array $session): JSONResponse {
 		return new JSONResponse([
 			'caseReference' => $redeemed['caseReference'],
 			'organisation' => $redeemed['organisation'],
 			'bearer' => $session['token'],
 			'expiresAt' => $session['expiresAt'],
 		]);
-	}//end redeemReferenceLink()
+	}//end redeemedLinkAnswer()
 
 	/**
 	 * The one case a reference session may read, read only.
@@ -308,7 +406,7 @@ class PortalIdentityController extends Controller {
 	 *
 	 * @return JSONResponse What became of the registration.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
 	 */
 	#[PublicPage]
@@ -328,64 +426,129 @@ class PortalIdentityController extends Controller {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		if ($this->policy->isOffered(site: $site) === false) {
+		$run = new RegistrationRun(site: $site, email: $email);
+		$run->displayName       = $displayName;
+		$run->contactInvitation = $contactInvitation;
+		$run->challenge         = ['nonce' => $nonce, 'solution' => $solution, 'expiresAt' => $expiresAt, 'signature' => $signature];
+		return $this->registerOnPortal(run: $run);
+	}//end register()
+
+	/**
+	 * Register on a portal that exists: refused when the portal offers no
+	 * registration, the challenge is not solved or the policy declines the
+	 * address; else the account is provisioned.
+	 *
+	 * @param RegistrationRun $run The registration.
+	 *
+	 * @return JSONResponse
+	 */
+	private function registerOnPortal(RegistrationRun $run): JSONResponse {
+		if ($this->policy->isOffered(site: $run->site) === false) {
 			return new JSONResponse(['error' => 'registration_off'], Http::STATUS_FORBIDDEN);
 		}
 
-		// The credential this endpoint authenticates on: a nonce this instance
-		// signed, for this surface, still inside its window, with the proof of
-		// work done over it. $signature is what makes the nonce ours; without
-		// it the caller could mint their own and reuse it for ever.
-		$accepted = $this->challenge->accepts(
-			site: $site,
-			surface: 'registration',
-			submission: (array)$this->request->getParams(),
-			nonce: $nonce,
-			solution: $solution,
-			expiresAt: $expiresAt,
-			signature: $signature
-		);
-		if ($accepted === false) {
+		if ($this->acceptsRegistrationChallenge(run: $run) === false) {
 			return new JSONResponse(['error' => 'challenge_failed'], Http::STATUS_FORBIDDEN);
 		}
 
-		$decision = $this->policy->decide(site: $site, email: $email);
+		$decision = $this->policy->decide(site: $run->site, email: $run->email);
 		if ($decision['accepted'] === false) {
 			return new JSONResponse(['error' => $decision['reason']], Http::STATUS_FORBIDDEN);
 		}
 
-		$account = $this->accounts->provision(
-			audience: 'client',
-			organisation: (string)($site['organisation'] ?? ''),
-			email: $email,
-			// Neither policy trusts the address yet: approval waits for a
-			// person, activation waits for the mail.
-			verifiedEmail: false,
-			provisionedBy: PortalAccountService::SELF_REGISTRATION,
-			displayName: $displayName
+		return $this->provisionRegistration(run: $run, decision: $decision);
+	}//end registerOnPortal()
+
+	/**
+	 * Whether the registration carries a solved challenge.
+	 *
+	 * The credential this endpoint authenticates on: a nonce this instance
+	 * signed, for this surface, still inside its window, with the proof of
+	 * work done over it. The signature is what makes the nonce ours; without
+	 * it the caller could mint their own and reuse it for ever.
+	 *
+	 * @param RegistrationRun $run The registration.
+	 *
+	 * @return bool
+	 */
+	private function acceptsRegistrationChallenge(RegistrationRun $run): bool {
+		return $this->challenge->accepts(
+			site: $run->site,
+			surface: 'registration',
+			submission: (array)$this->request->getParams(),
+			nonce: $run->challenge['nonce'],
+			solution: $run->challenge['solution'],
+			expiresAt: $run->challenge['expiresAt'],
+			signature: $run->challenge['signature']
 		);
+	}//end acceptsRegistrationChallenge()
+
+	/**
+	 * Provision the account the policy accepted, hold a followed contact
+	 * invitation for it and, under activation, mail its link.
+	 *
+	 * @param RegistrationRun      $run      The registration.
+	 * @param array<string, mixed> $decision The policy's decision.
+	 *
+	 * @return JSONResponse
+	 */
+	private function provisionRegistration(RegistrationRun $run, array $decision): JSONResponse {
+		$account = $this->selfRegisteredAccount(run: $run);
 		if ($account === null) {
 			return new JSONResponse(['error' => 'refused'], Http::STATUS_BAD_REQUEST);
 		}
 
-		// An invitation from a resident is held for the new account, so its
-		// activation joins both sides, in whichever tab the link opens.
-		if ($contactInvitation !== '') {
-			$this->contacts?->holdForRegistration(
-				token: $contactInvitation,
-				newRef: (string)$account['subjectRef'],
-				organisation: (string)($site['organisation'] ?? '')
-			);
-		}
+		$this->holdContactInvitation(run: $run, account: $account);
 
-		if ($decision['reason'] === PortalRegistrationPolicyService::POLICY_ACTIVATION) {
-			$this->mailActivation(subjectRef: $account['subjectRef'], email: $email, site: $site);
+		if ($decision['reason'] === PortalRegistrationPolicyServiceInterface::POLICY_ACTIVATION) {
+			$this->mailActivation(subjectRef: $account['subjectRef'], email: $run->email, site: $run->site);
 		}
 
 		// The subjectRef is deliberately not answered: the account cannot sign
 		// in yet, and handing out its reference would only make it guessable.
 		return new JSONResponse(['status' => $account['status'], 'awaiting' => $decision['reason']]);
-	}//end register()
+	}//end provisionRegistration()
+
+	/**
+	 * The self-registered account for the address, or null.
+	 *
+	 * @param RegistrationRun $run The registration.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function selfRegisteredAccount(RegistrationRun $run): ?array {
+		return $this->accounts->provision(
+			audience: 'client',
+			organisation: (string)($run->site['organisation'] ?? ''),
+			email: $run->email,
+			// Neither policy trusts the address yet: approval waits for a
+			// person, activation waits for the mail.
+			verifiedEmail: false,
+			provisionedBy: PortalAccountServiceInterface::SELF_REGISTRATION,
+			displayName: $run->displayName
+		);
+	}//end selfRegisteredAccount()
+
+	/**
+	 * An invitation from a resident is held for the new account, so its
+	 * activation joins both sides, in whichever tab the link opens.
+	 *
+	 * @param RegistrationRun      $run     The registration.
+	 * @param array<string, mixed> $account The new account.
+	 *
+	 * @return void
+	 */
+	private function holdContactInvitation(RegistrationRun $run, array $account): void {
+		if ($run->contactInvitation === '') {
+			return;
+		}
+
+		$this->contacts?->holdForRegistration(
+			token: $run->contactInvitation,
+			newRef: (string)$account['subjectRef'],
+			organisation: (string)($run->site['organisation'] ?? '')
+		);
+	}//end holdContactInvitation()
 
 	/**
 	 * Follow the activation link of a self-registration: the account becomes
@@ -461,7 +624,7 @@ class PortalIdentityController extends Controller {
 		}
 
 		$this->mailer->send(
-			template: PortalIdentityMailer::TEMPLATE_REGISTRATION_ACTIVATION,
+			template: PortalIdentityMailerInterface::TEMPLATE_REGISTRATION_ACTIVATION,
 			email: $email,
 			secret: $token,
 			organisation: (string)($site['organisation'] ?? ''),
@@ -476,7 +639,7 @@ class PortalIdentityController extends Controller {
 	 *
 	 * @return JSONResponse Whether the invitation admitted anybody.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -501,11 +664,6 @@ class PortalIdentityController extends Controller {
 		// The SPA names the portal it is served as, the way `/site` and the
 		// runtime config do; on a shared host the host alone names none.
 		// A named portal that does not exist is a miss, never the host's.
-		$named = $this->request->getParam('portal', '');
-		if (is_string($named) === false) {
-			$named = '';
-		}
-
-		return $this->portals->resolve(request: $this->request, portalSlug: trim($named));
+		return $this->portals->resolve(request: $this->request, portalSlug: $this->requestedPortal->slug(request: $this->request));
 	}//end site()
 }//end class

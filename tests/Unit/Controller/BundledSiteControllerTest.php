@@ -107,7 +107,7 @@ class BundledSiteControllerTest extends TestCase {
 
 		$this->controller = new BundledSiteController('portaliq', $this->createMock(IRequest::class));
 
-		$root = (new ReflectionClass(BundledSiteController::class))->getProperty('appRoot');
+		$root = (new ReflectionClass(BundledSiteController::class))->getProperty('bundlesRoot');
 		$root->setValue($this->controller, realpath($base));
 	}//end setUp()
 

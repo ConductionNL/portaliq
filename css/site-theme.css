@@ -241,6 +241,63 @@
 }
 
 /*
+ * AN OUTLINED BUTTON TAKES ITS INK FROM THE BUTTON'S OWN TOKENS.
+ *
+ * The vendored nlds-app.css paints every secondary button in
+ * `--tilburg-color-blue-400` with !important, which the bridge maps to the
+ * primary's HOVER colour, and that also beat the danger hint: "Aanvraag
+ * intrekken" and "Mijn account verwijderen" drew #234A78 where the boards
+ * draw #3669A5 and the red #A30000. The private `--_utrecht-button-*`
+ * values already resolve hint, appearance and token in that order, so the
+ * button's own states and the danger variant win again.
+ */
+.pq-site .utrecht-button--secondary-action {
+	border-color: var(--_utrecht-button-border-color) !important;
+	color: var(--_utrecht-button-color) !important;
+}
+
+/*
+ * A SELECT IS A FORM CONTROL TOO. The vendored stylesheets style the Utrecht
+ * text box but carry no select rules, so every `utrecht-select` on the site
+ * ("Namens", "Iedereen voor wie ik werk") drew as the browser's 25px grey
+ * box. It reads the select tokens the theme gives, and keeps the browser's
+ * own arrow.
+ */
+.pq-site .utrecht-select {
+	box-sizing: border-box;
+	min-block-size: var(
+		--utrecht-select-min-block-size,
+		var(--utrecht-pointer-target-min-size, 44px)
+	);
+	padding-block: 0;
+	padding-inline: 12px;
+	border: var(--utrecht-select-border-width, 1px) solid
+		var(--utrecht-select-border-color, currentcolor);
+	border-radius: var(--utrecht-select-border-radius, 4px);
+	background-color: var(--utrecht-select-background-color, Canvas);
+	color: var(--utrecht-select-color, CanvasText);
+	font-family: var(--utrecht-select-font-family, inherit);
+	font-size: var(--utrecht-select-font-size, inherit);
+}
+
+/* A button's leading icon, as the boards draw it: 20px in the label's ink,
+   8px before the words. */
+.pq-site .utrecht-button .pq-button-icon {
+	inline-size: 20px;
+	block-size: 20px;
+	flex: none;
+	margin-inline-end: 8px;
+	vertical-align: -4px;
+	fill: currentcolor;
+}
+
+/* "Markeren als gelezen" on a message row is an underlined text button with
+   square ends (board Berichten). */
+.pq-site .pq-inbox-row .utrecht-button--subtle {
+	border-radius: 0;
+}
+
+/*
  * THE SAME FORM'S SECONDARY BUTTONS: the file picker ("Bestand of foto
  * kiezen") and the step buttons. Without a theme they had no border and no
  * padding either, so the picker read as a sentence. Scoped to the form, so the
@@ -2477,6 +2534,12 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	line-height: 1.5 !important;
 }
 
+/* The three ways in stand in one row across the page (board Inloggen). */
+.pq-site:has(.pq-site__header--designed) .pq-signin__cards {
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+	max-inline-size: none;
+}
+
 .pq-site:has(.pq-site__header--designed) .pq-signin__card-head {
 	display: grid;
 	grid-template-columns: 56px minmax(0, 1fr);
@@ -2529,9 +2592,12 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	font-size: 1rem;
 }
 
+/* The sign-in buttons' labels set at the font's own leading, as the Inloggen
+   board draws them (18px on 21.6); the button keeps its 52px. */
 .pq-site:has(.pq-site__header--designed) .pq-signin__button.utrecht-button-link {
 	font-size: 1.125rem;
 	font-weight: 600;
+	line-height: normal;
 }
 
 .pq-site:has(.pq-site__header--designed) .pq-signin__mark--eherkenning {
@@ -2595,12 +2661,19 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	line-height: 1;
 }
 
-/* A resident page's own title (boards MijnZaken, Berichten): 44px, as the
+/* A resident page's own title (boards MijnZaken, Berichten, MijnAccount,
+   MijnGegevens, Machtigingen): 44px on the page title's line, as the
    overview's greeting; a record's name keeps the 40px of its heading. */
 .pq-site:has(.pq-site__header--designed) .pq-account__content > h1,
-.pq-site:has(.pq-site__header--designed) .pq-cases > h1 {
+.pq-site:has(.pq-site__header--designed) .pq-cases > h1,
+.pq-site:has(.pq-site__header--designed)
+	:is(#pq-account-title, #pq-details-title, #pq-access-title) {
 	margin-block-start: 0;
 	font-size: var(--utrecht-heading-1-font-size, 2.75rem);
+	line-height: var(
+		--nldesign-website-page-title-line-height,
+		var(--utrecht-heading-1-line-height, revert)
+	);
 }
 
 /*
@@ -2887,7 +2960,11 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	gap: 10px;
 	margin: 0;
 	padding: 20px 24px;
-	border: 1px solid var(--nldesign-color-border, var(--tilburg-line-border-color));
+	border: 1px solid
+		var(
+			--nldesign-website-card-border-color,
+			var(--nldesign-color-border, var(--tilburg-line-border-color))
+		);
 	border-radius: var(--nldesign-website-border-radius-large, 6px);
 }
 
@@ -3169,6 +3246,7 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	margin-block-start: 6px;
 	font-size: 1.1875rem;
 	font-weight: 500;
+	line-height: normal;
 	color: var(--thematiq-website-text-muted, var(--nldesign-color-text-muted));
 }
 
@@ -3194,7 +3272,7 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
-	margin: -6px 0 0;
+	margin: -3px 0 0;
 	padding: 0 0 22px 56px;
 }
 
@@ -3204,13 +3282,34 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	order: 2;
 	color: var(--thematiq-website-text-muted, var(--nldesign-color-text-muted));
 	font-size: 0.9375rem;
+	line-height: normal;
 }
 
 .pq-site:has(.pq-site__header--designed) .pq-process-steps .pq-process-steps__text {
 	margin: 0;
 	color: var(--thematiq-website-text-muted, var(--nldesign-color-text-muted));
 	font-size: 1rem;
-	line-height: 1.5 !important;
+	line-height: normal !important;
+}
+
+/* The current step names the next one on a dashed chip, 8px under its
+   words, as the Zaak boards draw "Volgende stap: besluit". */
+.pq-site:has(.pq-site__header--designed) .pq-process-steps .pq-process-steps__next {
+	order: 3;
+	align-self: flex-start;
+	margin-block-start: 8px;
+	padding: 6px 12px;
+	border: 1px dashed
+		color-mix(
+			in srgb,
+			var(--nldesign-color-border-dark, currentcolor) 58%,
+			var(--utrecht-document-background-color, var(--color-main-background, Canvas))
+		);
+	border-radius: 4px;
+	background-color: var(--nldesign-color-surface, transparent);
+	color: var(--nldesign-color-text-muted, inherit);
+	font-size: 0.9375rem;
+	line-height: normal;
 }
 
 /* Gegevens: the label column as wide as its longest label, 12px rows
@@ -3507,4 +3606,38 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 .pq-site:has(.pq-site__header--designed) .pq-action-block__form > h2 {
 	margin-block: 0 12px;
 	font-size: 1.375rem;
+}
+
+/*
+ * THE DRAFT DIALOGS (form-save-and-resume-dialogs, boards FormulierOpslaan
+ * and FormulierHervatten): the form's name small above the question, the
+ * buttons in one row at the end.
+ */
+.pq-site .pq-draft-dialog {
+	box-sizing: border-box;
+	max-inline-size: min(40rem, calc(100vw - 2rem));
+	padding: 2rem;
+	color: var(--utrecht-document-color, inherit);
+	background: var(--utrecht-document-background-color, Canvas);
+	border: 0;
+	border-radius: var(--nldesign-website-border-radius-large, 6px);
+}
+
+.pq-site .pq-draft-dialog > * + * {
+	margin-block-start: 1rem;
+}
+
+.pq-site .pq-draft-dialog__form {
+	margin: 0;
+	color: var(--thematiq-website-text-muted, var(--nldesign-color-text-muted, inherit));
+	font-size: 0.9375rem;
+	font-weight: 600;
+}
+
+.pq-site .pq-draft-dialog__buttons {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: 0.75rem;
+	margin-block-start: 1.5rem;
 }

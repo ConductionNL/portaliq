@@ -236,12 +236,14 @@ export default {
 </script>
 
 <style scoped>
-/* Board NietGevonden: one column of at most 760px, its parts 24px apart. */
+/* Board NietGevonden: one column of at most 760px, its parts 24px apart.
+   The page draws no trail, so it starts 59px under the header: the 24px of
+   its own column plus the 35px the trail's bar takes on every other page. */
 .pq-not-found {
 	display: flex;
 	flex-direction: column;
 	gap: 1.5rem;
-	padding-block: 1.5rem 1rem;
+	padding-block: 3.6875rem 1rem;
 }
 
 .pq-not-found > * {

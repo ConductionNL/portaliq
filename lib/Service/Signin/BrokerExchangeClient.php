@@ -20,6 +20,7 @@ namespace OCA\Portaliq\Service\Signin;
 
 use OCP\Http\Client\IClientService;
 use Psr\Log\LoggerInterface;
+use OCP\Http\Client\IResponse;
 use Throwable;
 
 /**
@@ -70,8 +71,34 @@ class BrokerExchangeClient {
 	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-callback-redeems-the-code-once-over-the-authenticated-exchange-req-bel-003
 	 */
 	public function redeem(string $exchangeUrl, string $consumerId, string $secret, string $code): ?string {
+		$response = $this->post(exchangeUrl: $exchangeUrl, consumerId: $consumerId, secret: $secret, code: $code);
+		if ($response === null) {
+			return null;
+		}
+
+		if ($response->getStatusCode() !== 200) {
+			$this->logger->info('Portaliq: integriq refused the envelope exchange', ['status' => $response->getStatusCode()]);
+			return null;
+		}
+
+		return $this->envelopeOf(response: $response);
+	}//end redeem()
+
+	/**
+	 * Post the code to the exchange, or null when it cannot be reached.
+	 *
+	 * @param string $exchangeUrl The configured exchange address.
+	 * @param string $consumerId  Portaliq's consumer id.
+	 * @param string $secret      Portaliq's consumer secret.
+	 * @param string $code        The one-time code from the browser.
+	 *
+	 * @return IResponse|null
+	 *
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-callback-redeems-the-code-once-over-the-authenticated-exchange-req-bel-003
+	 */
+	private function post(string $exchangeUrl, string $consumerId, string $secret, string $code): IResponse|null {
 		try {
-			$response = $this->clientService->newClient()->post(
+			return $this->clientService->newClient()->post(
 				$exchangeUrl,
 				[
 					'timeout' => self::HTTP_TIMEOUT,
@@ -84,12 +111,18 @@ class BrokerExchangeClient {
 			$this->logger->info('Portaliq: the integriq envelope exchange could not be reached', ['reason' => $e->getMessage()]);
 			return null;
 		}
+	}//end post()
 
-		if ($response->getStatusCode() !== 200) {
-			$this->logger->info('Portaliq: integriq refused the envelope exchange', ['status' => $response->getStatusCode()]);
-			return null;
-		}
-
+	/**
+	 * The `envelope` string a 200 answer carries, or null.
+	 *
+	 * @param IResponse $response The exchange's answer.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-callback-redeems-the-code-once-over-the-authenticated-exchange-req-bel-003
+	 */
+	private function envelopeOf(IResponse $response): string|null {
 		$decoded = json_decode((string)$response->getBody(), true);
 		$envelope = null;
 		if (is_array($decoded) === true) {
@@ -101,5 +134,5 @@ class BrokerExchangeClient {
 		}
 
 		return $envelope;
-	}//end redeem()
+	}//end envelopeOf()
 }//end class

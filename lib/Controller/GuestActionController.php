@@ -30,12 +30,11 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Contribution\GuestActionRegistry;
-use OCA\Portaliq\Service\AuditTrailService;
-use OCA\Portaliq\Service\PortalActionForwarder;
-use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\RequiredFieldsGuard;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\AuditTrailServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\GuestActionRegistryInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalActionForwarderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -43,6 +42,8 @@ use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCA\Portaliq\Kernel\Contracts\RequestedPortalInterface;
+use OCA\Portaliq\Kernel\Contracts\RequiredFieldsGuardInterface;
 
 /**
  * Forwards one declared guest action, or its preview, for a signed token.
@@ -59,19 +60,23 @@ class GuestActionController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param GuestActionRegistry $registry Finds the declared guest action.
-	 * @param PortalActionForwarder $forwarder Forwards with the signed assertion.
-	 * @param PortalResolver $portals Resolves the serving portal for its organisation.
-	 * @param AuditTrailService $auditor Records each forward with the token's hash.
+	 * @param GuestActionRegistryInterface $registry Finds the declared guest action.
+	 * @param PortalActionForwarderInterface $forwarder Forwards with the signed assertion.
+	 * @param PortalResolverInterface $portals Resolves the serving portal for its organisation.
+	 * @param AuditTrailServiceInterface $auditor Records each forward with the token's hash.
+	 * @param RequestedPortalInterface $requestedPortal The RequestedPortal helper.
+	 * @param RequiredFieldsGuardInterface $requiredFieldsGuard The RequiredFieldsGuard helper.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly GuestActionRegistry $registry,
-		private readonly PortalActionForwarder $forwarder,
-		private readonly PortalResolver $portals,
-		private readonly AuditTrailService $auditor,
+		private readonly GuestActionRegistryInterface $registry,
+		private readonly PortalActionForwarderInterface $forwarder,
+		private readonly PortalResolverInterface $portals,
+		private readonly AuditTrailServiceInterface $auditor,
+		private readonly RequestedPortalInterface $requestedPortal,
+		private readonly RequiredFieldsGuardInterface $requiredFieldsGuard,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -129,21 +134,61 @@ class GuestActionController extends Controller {
 	 * @return array<string, mixed>
 	 */
 	private function declaration(array $action): array {
+		$fields      = $this->declaredFields(action: $action);
+		$declaration = ['fields' => $fields] + $this->declaredTexts(action: $action);
+
+		$configs = $this->declaredConfigs(action: $action, fields: $fields);
+		if ($configs !== []) {
+			$declaration['fieldConfigs'] = $configs;
+		}
+
+		return $declaration;
+	}//end declaration()
+
+	/**
+	 * The fields the action asks for, without the token field.
+	 *
+	 * @param array<string, mixed> $action The declared guest action.
+	 *
+	 * @return array<int, string>
+	 */
+	private function declaredFields(array $action): array {
 		$tokenField = (string)$action['tokenField'];
-		$fields = array_values(
+		return array_values(
 			array_filter(
 				(array)($action['fields'] ?? []),
 				static fn ($field) => is_string($field) === true && $field !== $tokenField
 			)
 		);
+	}//end declaredFields()
 
-		$declaration = ['fields' => $fields];
+	/**
+	 * The action's label, confirmation and success texts it declares.
+	 *
+	 * @param array<string, mixed> $action The declared guest action.
+	 *
+	 * @return array<string, string>
+	 */
+	private function declaredTexts(array $action): array {
+		$texts = [];
 		foreach (['label', 'confirmText', 'successText'] as $key) {
 			if (is_string(($action[$key] ?? null)) === true) {
-				$declaration[$key] = $action[$key];
+				$texts[$key] = $action[$key];
 			}
 		}
 
+		return $texts;
+	}//end declaredTexts()
+
+	/**
+	 * The field configs of the fields the page asks for.
+	 *
+	 * @param array<string, mixed> $action The declared guest action.
+	 * @param array<int, string>   $fields The fields the page asks for.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function declaredConfigs(array $action, array $fields): array {
 		$configs = [];
 		foreach ((array)($action['fieldConfigs'] ?? []) as $field => $config) {
 			if (in_array($field, $fields, true) === true && is_array($config) === true) {
@@ -151,12 +196,8 @@ class GuestActionController extends Controller {
 			}
 		}
 
-		if ($configs !== []) {
-			$declaration['fieldConfigs'] = $configs;
-		}
-
-		return $declaration;
-	}//end declaration()
+		return $configs;
+	}//end declaredConfigs()
 
 	/**
 	 * Forward the confirmed act: the declared fields only, with the token
@@ -183,6 +224,46 @@ class GuestActionController extends Controller {
 			return $this->notFound();
 		}
 
+		return $this->guardedRelay(action: $action, appId: $appId, actionId: $actionId, token: $token);
+	}//end act()
+
+	/**
+	 * Forward the act unless a required field is missing.
+	 *
+	 * @param array<string, mixed> $action   The declared guest action.
+	 * @param string               $appId    The contributing app.
+	 * @param string               $actionId The declared guest action's id.
+	 * @param string               $token    The signed token.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T02
+	 */
+	private function guardedRelay(array $action, string $appId, string $actionId, string $token): JSONResponse {
+		$body = $this->actBody(action: $action, token: $token);
+
+		// The action's required fields (REQ-SMF-024): refused before the audit
+		// and the forward.
+		$missing = $this->requiredFieldsGuard->refusal(action: $action, body: $body);
+		if ($missing !== null) {
+			return $missing;
+		}
+
+		return $this->relay(action: $action, appId: $appId, auditAs: $actionId, token: $token, body: $body);
+	}//end guardedRelay()
+
+	/**
+	 * The declared fields the request carries, with the token stamped under
+	 * the action's `tokenField` over any client value.
+	 *
+	 * @param array<string, mixed> $action The declared guest action.
+	 * @param string               $token  The signed token.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T02
+	 */
+	private function actBody(array $action, string $token): array {
 		$body = [];
 		foreach ((array)($action['fields'] ?? []) as $field) {
 			if (is_string($field) === false) {
@@ -196,16 +277,8 @@ class GuestActionController extends Controller {
 		}
 
 		$body[(string)$action['tokenField']] = $token;
-
-		// The action's required fields (REQ-SMF-024): refused before the audit
-		// and the forward.
-		$missing = (new RequiredFieldsGuard())->refusal(action: $action, body: $body);
-		if ($missing !== null) {
-			return $missing;
-		}
-
-		return $this->relay(action: $action, appId: $appId, auditAs: $actionId, token: $token, body: $body);
-	}//end act()
+		return $body;
+	}//end actBody()
 
 	/**
 	 * Audit, forward with a guest subject, and relay status and body. An
@@ -260,16 +333,11 @@ class GuestActionController extends Controller {
 	 * @return array{subjectRef: string, audience: string, organisation: string, trust: string, jti: string}
 	 */
 	private function guestSubject(string $token): array {
-		$named = $this->request->getParam('portal', '');
-		if (is_string($named) === false) {
-			$named = '';
-		}
-
-		$site = $this->portals->resolve(request: $this->request, portalSlug: trim($named));
+		$site = $this->portals->resolve(request: $this->request, portalSlug: $this->requestedPortal->slug(request: $this->request));
 
 		return [
 			'subjectRef' => 'guest:' . hash('sha256', $token),
-			'audience' => GuestActionRegistry::GUEST_AUDIENCE,
+			'audience' => GuestActionRegistryInterface::GUEST_AUDIENCE,
 			'organisation' => (string)($site['organisation'] ?? ''),
 			'trust' => 'low',
 			'jti' => bin2hex(random_bytes(16)),

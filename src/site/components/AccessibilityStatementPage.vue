@@ -307,9 +307,22 @@ export default {
 
 .pq-accessibility-statement__status {
 	margin-block: 1.5rem;
+	padding: 1.25rem 1.5rem;
+	border-radius: var(--nldesign-website-border-radius-large, 6px);
+}
+
+/* A status short of full compliance is the attention strip the board draws:
+   its own border, not the plain notice's. */
+.pq-accessibility-statement__status.utrecht-alert--warning {
+	border-color: var(
+		--nldesign-website-attention-border-color,
+		var(--utrecht-alert-warning-border-color, currentcolor)
+	);
 }
 
 .pq-accessibility-statement__status h2 {
 	margin-block: 0 0.25rem;
+	font-size: 1.1875rem;
+	line-height: 1.2;
 }
 </style>

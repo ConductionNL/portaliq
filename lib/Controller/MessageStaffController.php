@@ -22,16 +22,16 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/guardian-direct-messages/design.md#api-design
+ * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#api-design
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\TeacherInboxServiceInterface;
 use OCA\Portaliq\Service\Messaging\GuardianMessagingLeafInterface;
-use OCA\Portaliq\Service\TeacherInboxService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -43,7 +43,7 @@ use OCP\IUserSession;
 /**
  * Staff read/create/post/mark-read path for message threads.
  *
- * @spec openspec/changes/guardian-direct-messages/design.md#api-design
+ * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#api-design
  */
 class MessageStaffController extends Controller {
 	/**
@@ -52,15 +52,15 @@ class MessageStaffController extends Controller {
 	 * @param IRequest $request The request.
 	 * @param IUserSession $userSession Resolves the calling staff member's Nextcloud user id, used as their subjectRef.
 	 * @param GuardianMessagingLeafInterface $messaging The messaging leaf.
-	 * @param TeacherInboxService $inboxService Builds the per-group inbox view (teacher-inbox-per-group).
+	 * @param TeacherInboxServiceInterface $inboxService Builds the per-group inbox view (teacher-inbox-per-group).
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly IUserSession $userSession,
 		private readonly GuardianMessagingLeafInterface $messaging,
-		private readonly TeacherInboxService $inboxService,
+		private readonly TeacherInboxServiceInterface $inboxService,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -68,7 +68,7 @@ class MessageStaffController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/teacher-inbox-per-group/specs/guardian-direct-messaging/spec.md#requirement-a-staff-members-inbox-is-bucketed-by-group-with-an-unread-count
+	 * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-a-staff-members-inbox-is-bucketed-by-group-with-an-unread-count
 	 */
 	#[NoAdminRequired]
 	public function inbox(): JSONResponse {
@@ -83,7 +83,7 @@ class MessageStaffController extends Controller {
 	 *
 	 * @return JSONResponse `{id}` on success, 403 on refusal.
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/specs/guardian-direct-messaging/spec.md#requirement-a-group-thread-reaches-every-in-audience-guardian-replies-are-two-way
+	 * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-a-group-thread-reaches-every-in-audience-guardian-replies-are-two-way
 	 */
 	#[NoAdminRequired]
 	public function createGroupThread(string $groupRef): JSONResponse {
@@ -102,7 +102,7 @@ class MessageStaffController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/design.md#api-design
+	 * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#api-design
 	 */
 	#[NoAdminRequired]
 	public function threads(): JSONResponse {
@@ -117,7 +117,7 @@ class MessageStaffController extends Controller {
 	 *
 	 * @return JSONResponse The messages, or 404.
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/specs/guardian-direct-messaging/spec.md#requirement-every-readpostmark-read-re-verifies-participation-server-side
+	 * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-every-readpostmark-read-re-verifies-participation-server-side
 	 */
 	#[NoAdminRequired]
 	public function messages(string $id): JSONResponse {
@@ -138,7 +138,7 @@ class MessageStaffController extends Controller {
 	 *
 	 * @return JSONResponse 204 on success, 404 otherwise.
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/specs/guardian-direct-messaging/spec.md#requirement-every-readpostmark-read-re-verifies-participation-server-side
+	 * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-every-readpostmark-read-re-verifies-participation-server-side
 	 */
 	#[NoAdminRequired]
 	public function post(string $id, string $body): JSONResponse {
@@ -158,7 +158,7 @@ class MessageStaffController extends Controller {
 	 *
 	 * @return JSONResponse 204 on success, 404 otherwise.
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/specs/guardian-direct-messaging/spec.md#requirement-a-message-tracks-who-has-read-it
+	 * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-a-message-tracks-who-has-read-it
 	 */
 	#[NoAdminRequired]
 	public function markRead(string $id): JSONResponse {

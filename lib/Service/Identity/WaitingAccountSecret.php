@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
@@ -32,13 +32,13 @@ namespace OCA\Portaliq\Service\Identity;
 
 use DateTimeImmutable;
 use OCA\Portaliq\Service\PortalAccountService;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCP\IConfig;
 
 /**
  * The waiting account behind a secret, and the hash a code is stored under.
  *
- * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 class WaitingAccountSecret {
 	/**
@@ -61,13 +61,13 @@ class WaitingAccountSecret {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Finds the account a secret belongs to.
+	 * @param ScopedCollectionReaderInterface $reader Finds the account a secret belongs to.
 	 * @param IConfig $config Holds the instance secret a code's hash is keyed with.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly IConfig $config,
 	) {
 		$this->codes = new InvitationCode();
@@ -81,7 +81,7 @@ class WaitingAccountSecret {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function isCode(#[\SensitiveParameter] string $secret): bool {
 		return $this->codes->normalise(typed: $secret) !== '';
@@ -99,8 +99,8 @@ class WaitingAccountSecret {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
-	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function find(#[\SensitiveParameter] string $secret, string $organisation, DateTimeImmutable $moment): ?array {
 		if ($secret === '') {
@@ -156,7 +156,7 @@ class WaitingAccountSecret {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function codeHash(#[\SensitiveParameter] string $code): string {
 		return $this->codes->keyedHash(code: $code, instanceSecret: $this->config->getSystemValueString('secret', ''));

@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
+ * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ use RuntimeException;
  * ship are handled here: DB-IP is a bare gzip, MaxMind is a tarball with
  * the database one directory down.
  *
- * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
+ * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
  */
 class GzipExtractor {
 
@@ -55,7 +55,7 @@ class GzipExtractor {
 	 *
 	 * @throws RuntimeException When either file cannot be handled.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
 	 */
 	public function extract(string $source, string $target): void {
 		$archive = $this->open(source: $source);
@@ -99,7 +99,7 @@ class GzipExtractor {
 	 *
 	 * @throws RuntimeException When no such member exists.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
 	 */
 	public function extractTarMember(string $source, string $suffix, string $target): string {
 		$archive = $this->open(source: $source);
@@ -235,6 +235,26 @@ class GzipExtractor {
 			throw new RuntimeException('The target file cannot be written.');
 		}
 
+		$remaining = $this->copyBytes(archive: $archive, out: $out, size: $size);
+
+		fclose($out);
+		if ($remaining > 0) {
+			throw new RuntimeException('The archive ended inside a member.');
+		}
+
+		$this->skip(archive: $archive, bytes: $this->padded(size: $size) - $size);
+	}
+
+	/**
+	 * Copy up to `$size` bytes from the archive to the output, chunk by chunk.
+	 *
+	 * @param resource $archive The open archive.
+	 * @param resource $out     The open target file.
+	 * @param int      $size    The member size.
+	 *
+	 * @return int The bytes not copied because the archive ended first.
+	 */
+	private function copyBytes($archive, $out, int $size): int {
 		$remaining = $size;
 		while ($remaining > 0) {
 			$chunk = gzread($archive, min(self::CHUNK, $remaining));
@@ -246,12 +266,7 @@ class GzipExtractor {
 			$remaining -= strlen($chunk);
 		}
 
-		fclose($out);
-		if ($remaining > 0) {
-			throw new RuntimeException('The archive ended inside a member.');
-		}
-
-		$this->skip(archive: $archive, bytes: $this->padded(size: $size) - $size);
+		return $remaining;
 	}
 
 	/**

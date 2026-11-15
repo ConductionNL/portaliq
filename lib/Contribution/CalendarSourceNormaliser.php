@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/contribution-record-page/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-contribution-record-page/tasks.md#T1
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ namespace OCA\Portaliq\Contribution;
 /**
  * Validates one calendar source, fail-closed.
  *
- * @spec openspec/changes/contribution-record-page/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-contribution-record-page/tasks.md#T1
  */
 class CalendarSourceNormaliser {
 	/**
@@ -42,7 +42,7 @@ class CalendarSourceNormaliser {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-calendar-block-must-show-dated-rows-as-a-list-and-a-month
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-calendar-block-must-show-dated-rows-as-a-list-and-a-month
 	 */
 	public function source(mixed $source, array $collectionIds): ?array {
 		if (is_array($source) === false || in_array(($source['collection'] ?? null), $collectionIds, true) === false) {

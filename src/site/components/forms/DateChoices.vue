@@ -26,9 +26,14 @@
 				:aria-invalid="invalid ? 'true' : undefined"
 				:data-testid="`${id}-day-${index}`"
 				@change="choose(day.value)" />
-			<span :id="`${id}-${index}-text`" class="pq-choice-card__label">{{
-				day.label
-			}}</span>
+			<span :id="`${id}-${index}-text`" class="pq-choice-card__text">
+				<span class="pq-choice-card__label">{{ day.label }}</span>
+				<span
+					v-if="day.description"
+					class="pq-choice-card__description">{{
+					day.description
+				}}</span>
+			</span>
 		</label>
 		<label
 			class="pq-choice-card"
@@ -78,8 +83,8 @@ import { namedDays } from './fields.js'
 import '@utrecht/radio-button-css/dist/index.css'
 
 /**
- * A date asked as a few named days: today and the next working days, named
- * in the site's language ("Vandaag, vrijdag 2 oktober", "Maandag 5
+ * A date asked as a few named days: today and the next working days, each
+ * a name over its date in the site's language ("Vandaag" over "Maandag 5
  * oktober"), plus "Een andere dag", which opens the day, month and year
  * group. The value is the same `yyyy-mm-dd` the date group sends.
  *
@@ -103,6 +108,10 @@ export default {
 		now: { type: Date, default: () => new Date() },
 		/** The word for today. */
 		todayWord: { type: String, default: 'Vandaag' },
+		/** The word for tomorrow. */
+		tomorrowWord: { type: String, default: 'Morgen' },
+		/** The words after today's date, that the absence is the whole day. */
+		wholeDayWords: { type: String, default: 'de hele dag' },
 		/** The card that opens the date group. */
 		otherDayLabel: { type: String, default: 'Een andere dag' },
 		/** The example under the date group. */
@@ -136,7 +145,13 @@ export default {
 		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
 		 */
 		days() {
-			return namedDays(this.now, this.count, this.locale, this.todayWord)
+			return namedDays(this.now, {
+				count: this.count,
+				locale: this.locale,
+				todayWord: this.todayWord,
+				tomorrowWord: this.tomorrowWord,
+				wholeDayWords: this.wholeDayWords,
+			})
 		},
 
 		/**
@@ -198,36 +213,13 @@ export default {
 }
 </script>
 
+<style scoped src="./choiceCard.css"></style>
+
 <style scoped>
 .pq-date-choices {
 	display: flex;
 	flex-direction: column;
 	gap: var(--utrecht-space-block-xs, 0.5rem);
-}
-
-.pq-choice-card {
-	align-items: center;
-	border: 1px solid
-		var(--utrecht-form-control-border-color, var(--utrecht-document-color, #333));
-	border-radius: var(--utrecht-form-control-border-radius, 0.25rem);
-	cursor: pointer;
-	display: flex;
-	gap: var(--utrecht-space-inline-sm, 0.75rem);
-	max-inline-size: 32rem;
-	padding-block: var(--utrecht-space-block-sm, 0.75rem);
-	padding-inline: var(--utrecht-space-inline-md, 1rem);
-}
-
-.pq-choice-card--checked {
-	border-color: var(--utrecht-focus-outline-color, currentColor);
-	border-width: 2px;
-}
-
-.pq-choice-card:focus-within {
-	outline: var(--utrecht-focus-outline-width, 2px)
-		var(--utrecht-focus-outline-style, solid)
-		var(--utrecht-focus-outline-color, currentColor);
-	outline-offset: 2px;
 }
 
 .pq-date-choices__other {

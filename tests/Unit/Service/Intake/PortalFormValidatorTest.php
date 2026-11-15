@@ -417,6 +417,46 @@ class PortalFormValidatorTest extends TestCase {
 	}//end testASignatureIsAPngUnder200kbAndARequiredOneMayNotBeEmpty()
 
 	/**
+	 * A form mixing every kind of field validates exactly as recorded, errors and answers in declared order.
+	 *
+	 * @return void
+	 */
+	public function testAMixedFormIsAsRecorded(): void {
+		$fields = array_merge(
+			['not a field', ['label' => 'No name'], ['name' => '']],
+			$this->partnerForm(),
+			[
+				['name' => 'bewoners', 'type' => 'group', 'repeat' => ['min' => 1], 'fields' => [['name' => 'naam', 'required' => true]]],
+				['name' => 'soort', 'computed' => true],
+				['name' => 'telefoon', 'required' => true],
+				['name' => 'opmerking'],
+				['name' => 'kamers', 'type' => 'group', 'fields' => [['name' => 'naam']]],
+				['name' => 'together', 'required' => true],
+			]
+		);
+		$answers = [
+			'together' => 'No',
+			'partnerName' => 'Sam',
+			'partnerBirthDate' => '1990-01-01',
+			'bewoners' => [['naam' => 'Ans'], ['naam' => ' ']],
+			'soort' => 'gehackt',
+			'opmerking' => '',
+			'invented' => 'x',
+		];
+
+		$result = $this->validator()->validate(fields: $fields, answers: $answers);
+
+		$this->assertSame(
+			[
+				'valid' => false,
+				'errors' => ['bewoners[1].naam' => 'This answer is required.', 'telefoon' => 'This answer is required.'],
+				'answers' => ['together' => 'No', 'bewoners' => [['naam' => 'Ans'], []]],
+			],
+			$result
+		);
+	}//end testAMixedFormIsAsRecorded()
+
+	/**
 	 * The validator with a translator that answers the text it was given.
 	 *
 	 * @return PortalFormValidator

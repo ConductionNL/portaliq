@@ -28,7 +28,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Kernel\Contracts\PortalCaseTypeCatalogueInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
+use OCA\Portaliq\Service\CaseTypeColumns\CasesCollections;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 
 /**
@@ -41,7 +43,9 @@ use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
  *
  * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
  */
-class PortalCaseTypeCatalogue {
+class PortalCaseTypeCatalogue implements PortalCaseTypeCatalogueInterface {
+	use CaseTypeLabel;
+
 	/**
 	 * The register the portal objects live in.
 	 */
@@ -60,20 +64,20 @@ class PortalCaseTypeCatalogue {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Reads the portal.
+	 * @param ScopedCollectionReaderInterface $reader Reads the portal.
 	 * @param PortalObjectWriter $writer Writes the portal's hidden list.
 	 * @param PortalFormBindingResolver $bindings The portal's published bindings.
 	 * @param CaseTypeReader $caseTypes Reads case types for their names.
 	 * @param CaseTypeVisibility $visibility Reads the portal's hidden list.
-	 * @param PortalContributionRegistry $registry The case apps' declarations.
+	 * @param PortalContributionRegistryInterface $registry The case apps' declarations.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly PortalFormBindingResolver $bindings,
 		private readonly CaseTypeReader $caseTypes,
 		private readonly CaseTypeVisibility $visibility,
-		private readonly PortalContributionRegistry $registry,
+		private readonly PortalContributionRegistryInterface $registry,
 	) {
 	}//end __construct()
 
@@ -87,25 +91,7 @@ class PortalCaseTypeCatalogue {
 	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
 	 */
 	public function portalBySlug(string $slug): ?array {
-		if ($slug === '') {
-			return null;
-		}
-
-		$rows = $this->reader->readCollection(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: 'slug',
-			subjectRef: $slug,
-			organisation: '',
-			limit: 2
-		);
-		foreach ($rows as $row) {
-			if (is_array($row) === true && ($row['slug'] ?? null) === $slug) {
-				return $row;
-			}
-		}
-
-		return null;
+		return (new PortalSlugLookup(reader: $this->reader))->find(slug: $slug);
 	}//end portalBySlug()
 
 	/**
@@ -118,6 +104,21 @@ class PortalCaseTypeCatalogue {
 	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
 	 */
 	public function listFor(array $portal): array {
+		$listed = $this->boundTypes(portal: $portal);
+		$listed = $this->withSourceTypes(listed: $listed);
+		$listed = $this->withHiddenTypes(listed: $listed, portal: $portal);
+
+		return array_values($this->markShown(listed: $listed, portal: $portal));
+	}//end listFor()
+
+	/**
+	 * The case types the portal's form bindings declare, by type id.
+	 *
+	 * @param array<string, mixed> $portal The portal.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function boundTypes(array $portal): array {
 		$listed = [];
 		foreach ($this->bindings->declaredCaseTypes(portal: (string)($portal['slug'] ?? '')) as [$register, $schema, $typeId]) {
 			$type = ($this->caseTypes->readCaseType(register: $register, schema: $schema, id: $typeId) ?? []);
@@ -125,18 +126,39 @@ class PortalCaseTypeCatalogue {
 			$listed[$typeId] = $this->entry(register: $register, schema: $schema, typeId: $typeId, label: $label);
 		}
 
+		return $listed;
+	}//end boundTypes()
+
+	/**
+	 * The listed case types, with those of every declared source not yet listed.
+	 *
+	 * @param array<string, array<string, mixed>> $listed The case types listed so far.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function withSourceTypes(array $listed): array {
 		foreach ($this->declaredSources() as $source) {
 			foreach ($this->caseTypes->listCaseTypes(register: $source['register'], schema: $source['schema']) as $type) {
 				$typeId = $this->idOf(type: $type);
-				if ($typeId === '' || isset($listed[$typeId]) === true) {
-					continue;
+				if ($typeId !== '' && isset($listed[$typeId]) === false) {
+					$label = $this->labelOf(type: $type, labelField: $source['labelField']);
+					$listed[$typeId] = $this->entry(register: $source['register'], schema: $source['schema'], typeId: $typeId, label: $label);
 				}
-
-				$label = $this->labelOf(type: $type, labelField: $source['labelField']);
-				$listed[$typeId] = $this->entry(register: $source['register'], schema: $source['schema'], typeId: $typeId, label: $label);
 			}
 		}
 
+		return $listed;
+	}//end withSourceTypes()
+
+	/**
+	 * The listed case types, with the portal's hidden ones not yet listed.
+	 *
+	 * @param array<string, array<string, mixed>> $listed The case types listed so far.
+	 * @param array<string, mixed>                $portal The portal.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function withHiddenTypes(array $listed, array $portal): array {
 		foreach ($this->normalise(hidden: (array)($portal['hiddenCaseTypes'] ?? [])) as $hidden) {
 			$typeId = $hidden['typeId'];
 			if (isset($listed[$typeId]) === false) {
@@ -144,13 +166,25 @@ class PortalCaseTypeCatalogue {
 			}
 		}
 
+		return $listed;
+	}//end withHiddenTypes()
+
+	/**
+	 * Mark each listed case type shown, unless the portal hides it.
+	 *
+	 * @param array<string, array<string, mixed>> $listed The listed case types.
+	 * @param array<string, mixed>                $portal The portal.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function markShown(array $listed, array $portal): array {
 		$hiddenIds = $this->visibility->hiddenTypeIds(portal: $portal);
 		foreach (array_keys($listed) as $typeId) {
 			$listed[$typeId]['shown'] = (in_array((string)$typeId, $hiddenIds, true) === false);
 		}
 
-		return array_values($listed);
-	}//end listFor()
+		return $listed;
+	}//end markShown()
 
 	/**
 	 * Write the portal's hidden list; nothing else on the portal changes.
@@ -215,21 +249,10 @@ class PortalCaseTypeCatalogue {
 	 */
 	private function declaredSources(): array {
 		$sources = [];
-		foreach ($this->registry->servedAudiences() as $audience) {
-			$aggregate = $this->registry->aggregateFor(
-				subject: ['audience' => $audience, 'trust' => 'high', 'subjectRef' => '', 'organisation' => '']
-			);
-			foreach ((array)($aggregate['contributions'] ?? []) as $contribution) {
-				if (is_array($contribution) === false) {
-					continue;
-				}
-
-				foreach ((array)($contribution['collections'] ?? []) as $collection) {
-					$source = $this->sourceOf(collection: $collection);
-					if ($source !== null) {
-						$sources[$source['register'] . '/' . $source['schema']] = $source;
-					}
-				}
+		foreach ((new CasesCollections(registry: $this->registry))->all() as $collection) {
+			$source = $this->sourceOf(collection: $collection);
+			if ($source !== null) {
+				$sources[$source['register'] . '/' . $source['schema']] = $source;
 			}
 		}
 
@@ -286,28 +309,4 @@ class PortalCaseTypeCatalogue {
 	private function idOf(array $type): string {
 		return (string)($type['id'] ?? $type['uuid'] ?? ($type['@self']['id'] ?? ''));
 	}//end idOf()
-
-	/**
-	 * A case type object's name: the declared label field first.
-	 *
-	 * @param array<string, mixed> $type The case type.
-	 * @param string $labelField The field the case app named, or ''.
-	 *
-	 * @return string
-	 */
-	private function labelOf(array $type, string $labelField): string {
-		$fields = self::LABEL_FIELDS;
-		if ($labelField !== '') {
-			array_unshift($fields, $labelField);
-		}
-
-		foreach ($fields as $field) {
-			$value = ($type[$field] ?? null);
-			if (is_string($value) === true && trim($value) !== '') {
-				return trim($value);
-			}
-		}
-
-		return '';
-	}//end labelOf()
 }//end class

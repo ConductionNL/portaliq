@@ -182,6 +182,7 @@ export default {
 	border-radius: 50%;
 	display: inline-grid;
 	flex: none;
+	font-size: 1rem;
 	font-weight: var(--utrecht-typography-weight-scale-bold, bold);
 	inline-size: var(--nldesign-website-step-marker-size, 1.75rem);
 	block-size: var(--nldesign-website-step-marker-size, 1.75rem);
@@ -199,10 +200,23 @@ export default {
 }
 
 .pq-form-progress__title {
-	font-weight: var(--utrecht-typography-weight-scale-bold, 600);
+	font-weight: 500;
+	color: var(--nldesign-color-text, var(--utrecht-document-color, inherit));
+}
+
+.pq-form-progress__item--current .pq-form-progress__title {
+	font-weight: var(--utrecht-typography-weight-scale-bold, 700);
+}
+
+.pq-form-progress__item--todo .pq-form-progress__title {
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, inherit)
+	);
 }
 
 .pq-form-progress__item--current .pq-form-progress__marker {
+	border-width: 3px;
 	border-color: var(--nldesign-website-step-current-color, currentColor);
 	color: var(--nldesign-website-step-current-color, inherit);
 }
@@ -227,8 +241,11 @@ export default {
 }
 
 .pq-form-progress__state {
-	color: var(--nldesign-color-text-muted, inherit);
-	font-size: 0.875em;
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, inherit)
+	);
+	font-size: 0.875rem;
 }
 
 /* On a wider screen the steps stand in one row on a grey band, joined by a
@@ -242,15 +259,22 @@ export default {
 		background: var(--nldesign-color-surface, #f4f6f9);
 		border-radius: var(--nldesign-website-border-radius-large, 6px);
 		display: flex;
-		gap: var(--utrecht-space-inline-md, 1rem);
+		gap: 0.75rem 0.875rem;
 		margin-block-start: var(--utrecht-space-block-sm, 0.75rem);
-		padding: var(--utrecht-space-block-sm, 0.75rem)
-			var(--utrecht-space-inline-lg, 1.25rem);
+		padding: 1rem 1.25rem;
 	}
 
+	/* A step on the band is its two lines at the font leading, 38px beside
+	   the 36px marker, so the band is 70px high (WooVerzoekGegevens). */
 	.pq-form-progress__item {
 		flex: 1 1 0;
 		gap: 0.625rem;
+		padding-block: 0;
+	}
+
+	.pq-form-progress__title,
+	.pq-form-progress__state {
+		line-height: normal;
 	}
 
 	.pq-form-progress__item:last-child {
@@ -259,7 +283,7 @@ export default {
 
 	.pq-form-progress__item:not(:last-child)::after {
 		background: var(--nldesign-color-background-darker, #d3d8df);
-		block-size: 2px;
+		block-size: 3px;
 		content: '';
 		flex: 1 1 2rem;
 		min-inline-size: 1rem;

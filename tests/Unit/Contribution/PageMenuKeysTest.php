@@ -107,6 +107,30 @@ class PageMenuKeysTest extends TestCase {
 		$this->assertSame(['collection' => 'parentChildren'], $pages[2]['records']);
 	}
 
+	/**
+	 * Every records key together keeps its order; a lookup that is not a
+	 * map and a records value that is neither a name nor a map are dropped.
+	 *
+	 * @return void
+	 */
+	public function testEveryRecordsKeyTogetherIsAsRecorded(): void {
+		$lookup = ['collection' => 'parentChildren', 'matchField' => 'learnerRef', 'valueField' => 'cohortName'];
+		$pages  = $this->pages(
+			[
+				$this->page(['id' => 'all', 'records' => ['subtitleLookup' => $lookup, 'subtitleFields' => ['familyName'], 'collection' => 'parentChildren', 'titleFields' => ['givenName']]]),
+				$this->page(['id' => 'scalar', 'records' => ['collection' => 'parentChildren', 'subtitleLookup' => 'parentChildren', 'titleFields' => 'givenName']]),
+				$this->page(['id' => 'number', 'records' => 7]),
+			]
+		);
+
+		$this->assertSame(
+			['collection' => 'parentChildren', 'titleFields' => ['givenName'], 'subtitleFields' => ['familyName'], 'subtitleLookup' => $lookup],
+			$pages[0]['records']
+		);
+		$this->assertSame(['collection' => 'parentChildren'], $pages[1]['records']);
+		$this->assertArrayNotHasKey('records', $pages[2]);
+	}//end testEveryRecordsKeyTogetherIsAsRecorded()
+
 	public function testPerRecordNeedsItsRecordCollection(): void {
 		$pages = $this->pages(
 			[

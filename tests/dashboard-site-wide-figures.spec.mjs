@@ -8,7 +8,7 @@
 // card "Beschikbaarheid" per portal for last month, a card "Verkeer, laatste
 // 7 dagen" with four figures and the most viewed pages. Every figure reads the
 // admin overview routes, so the paths it plucks must be keys those routes
-// answer; the live KPIs Portals and Active accounts stay.
+// answer. The KPI row holds the board's four figures, a quarter of the row each.
 //
 // Usage:
 //   node --test tests/dashboard-site-wide-figures.spec.mjs
@@ -41,15 +41,15 @@ test('the overview routes answer at the admin controller', () => {
 	assert.match(ROUTES, /'portalOverview#availability', 'url' => '\/api\/overview\/availability', 'verb' => 'GET'/)
 })
 
-test('the KPI row opens with visitors and availability, and keeps the live KPIs', () => {
-	assert.deepEqual(DASHBOARD.kpiRow, ['kpi-visitors', 'kpi-availability', 'kpi-requests', 'kpi-submissions', 'kpi-portals', 'kpi-accounts'])
+test('the KPI row holds the board\'s four figures, opening with visitors and availability', () => {
+	assert.deepEqual(DASHBOARD.kpiRow, ['kpi-visitors', 'kpi-availability', 'kpi-requests', 'kpi-submissions'])
 	const visitors = widget('kpi-visitors').content.source
 	assert.deepEqual(visitors, { kind: 'endpoint', url: TRAFFIC, params: { days: '7' }, path: 'visitors' })
 	const availability = widget('kpi-availability').content.source
 	assert.deepEqual(availability, { kind: 'endpoint', url: AVAILABILITY, path: 'percentage' })
 	for (const key of ['visitors', 'percentage']) assert.ok(answers(key), key)
 	DASHBOARD.kpiRow.forEach((id, index) => {
-		assert.deepEqual([cell(id).gridX, cell(id).gridY, cell(id).gridWidth], [index * 2, 0, 2], id)
+		assert.deepEqual([cell(id).gridX, cell(id).gridY, cell(id).gridWidth], [index * 3, 0, 3], id)
 	})
 })
 

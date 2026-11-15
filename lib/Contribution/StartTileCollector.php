@@ -56,36 +56,71 @@ class StartTileCollector {
 	 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-contribution-contract/spec.md#requirement-an-action-may-offer-itself-as-a-start-tile-with-a-summary-and-its-audiences-req-snw-020
 	 */
 	public function add(array $contribution): void {
-		$app   = (string)($contribution['app'] ?? '');
-		$pages = $this->pageOfAction(pages: ($contribution['pages'] ?? null));
+		$source = ['app' => (string)($contribution['app'] ?? ''), 'pages' => $this->pageOfAction(pages: ($contribution['pages'] ?? null))];
 		foreach ((array)($contribution['actions'] ?? []) as $action) {
-			if (is_array($action) === false) {
-				continue;
+			$tile = $this->tileOf(action: $action, source: $source);
+			if ($tile !== null) {
+				$this->keep(tile: $tile);
 			}
-
-			$id      = (string)($action['id'] ?? '');
-			$summary = ($action['summary'] ?? null);
-			$label   = ($action['label'] ?? null);
-			if ($app === '' || is_string($summary) === false || is_string($label) === false || isset($pages[$id]) === false) {
-				continue;
-			}
-
-			$audiences = array_values(array_filter((array)($action['audiences'] ?? []), 'is_string'));
-			$key       = $app . ':' . $id;
-			if (isset($this->tiles[$key]) === true) {
-				$merged = array_merge($this->tiles[$key]['audiences'], $audiences);
-				$this->tiles[$key]['audiences'] = array_values(array_unique($merged));
-				continue;
-			}
-
-			$this->tiles[$key] = [
-				'label'     => $label,
-				'summary'   => $summary,
-				'audiences' => $audiences,
-				'route'     => self::ACCOUNT_ROUTE . '/' . rawurlencode($app) . '/' . rawurlencode($pages[$id]),
-			];
-		}//end foreach
+		}
 	}//end add()
+
+	/**
+	 * One action as a tile keyed `app:id`, or null when it is not a start
+	 * tile of this contribution.
+	 *
+	 * @param mixed                $action The declared action.
+	 * @param array<string, mixed> $source The contributing app and the page that places each action.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function tileOf(mixed $action, array $source): ?array {
+		if (is_array($action) === false || $this->offersTile(action: $action, source: $source) === false) {
+			return null;
+		}
+
+		$id = (string)($action['id'] ?? '');
+		return [
+			'key'       => $source['app'] . ':' . $id,
+			'label'     => $action['label'],
+			'summary'   => $action['summary'],
+			'audiences' => array_values(array_filter((array)($action['audiences'] ?? []), 'is_string')),
+			'route'     => self::ACCOUNT_ROUTE . '/' . rawurlencode($source['app']) . '/' . rawurlencode($source['pages'][$id]),
+		];
+	}//end tileOf()
+
+	/**
+	 * Whether an action offers a start tile: an app, a string summary and
+	 * label, and a page that places it.
+	 *
+	 * @param array<string, mixed> $action The declared action.
+	 * @param array<string, mixed> $source The contributing app and the page that places each action.
+	 *
+	 * @return bool
+	 */
+	private function offersTile(array $action, array $source): bool {
+		return $source['app'] !== '' && is_string($action['summary'] ?? null) === true && is_string($action['label'] ?? null) === true
+			&& isset($source['pages'][(string)($action['id'] ?? '')]) === true;
+	}//end offersTile()
+
+	/**
+	 * Keep a tile; a tile already kept only gains the new audiences, without
+	 * duplicates.
+	 *
+	 * @param array<string, mixed> $tile The tile, with its `key`.
+	 *
+	 * @return void
+	 */
+	private function keep(array $tile): void {
+		$key = $tile['key'];
+		unset($tile['key']);
+		if (isset($this->tiles[$key]) === true) {
+			$this->tiles[$key]['audiences'] = array_values(array_unique(array_merge($this->tiles[$key]['audiences'], $tile['audiences'])));
+			return;
+		}
+
+		$this->tiles[$key] = $tile;
+	}//end keep()
 
 	/**
 	 * Every tile, in the order first seen.

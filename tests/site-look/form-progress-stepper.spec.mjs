@@ -112,3 +112,52 @@ test('markers read the theme step tokens: size, current ring, done fill', () => 
 		/\.pq-form-progress__item--done \.pq-form-progress__marker \{[^}]*background: var\(\s*--nldesign-website-step-done-color/,
 	)
 })
+
+test('steps set as the Woo boards draw them (WooVerzoek, WooVerzoekGegevens)', () => {
+	const css = style()
+	assert.match(css, /\.pq-form-progress__title \{ font-weight: 500;/)
+	assert.match(
+		css,
+		/\.pq-form-progress__item--current \.pq-form-progress__title \{ font-weight: var\(--utrecht-typography-weight-scale-bold, 700\); \}/,
+	)
+	assert.match(
+		css,
+		/\.pq-form-progress__item--current \.pq-form-progress__marker \{ border-width: 3px;/,
+	)
+	assert.match(css, /\.pq-form-progress__state \{[^}]*font-size: 0\.875rem/)
+	const band = wide()
+	assert.match(band, /\.pq-form-progress__list \{[^}]*padding: 1rem 1\.25rem/)
+	assert.match(
+		band,
+		/\.pq-form-progress__item:not\(:last-child\)::after \{[^}]*block-size: 3px/,
+	)
+})
+
+test('step labels take the board ink: text for done and current, muted for the rest', () => {
+	const css = style()
+	const muted =
+		'var\\( --thematiq-website-text-muted, var\\(--nldesign-color-text-muted, inherit\\) \\)'
+	assert.match(
+		css,
+		/\.pq-form-progress__title \{[^}]*color: var\(--nldesign-color-text, var\(--utrecht-document-color, inherit\)\)/,
+		'done and current titles draw the text colour (#1a1a1a), not the inherited black',
+	)
+	assert.match(
+		css,
+		new RegExp(
+			`\\.pq-form-progress__item--todo \\.pq-form-progress__title \\{ color: ${muted}; \\}`,
+		),
+		'a step still to do draws the site muted ink (#4a4a4a) before the generic one',
+	)
+	assert.match(
+		css,
+		new RegExp(`\\.pq-form-progress__state \\{ color: ${muted};`),
+		'the state words draw the same muted ink',
+	)
+})
+
+test('on the band a step is as tall as its two lines at the font leading, 38px', () => {
+	const css = wide()
+	assert.match(css, /\.pq-form-progress__item \{[^}]*padding-block: 0;/)
+	assert.match(css, /\.pq-form-progress__title, \.pq-form-progress__state \{ line-height: normal; \}/)
+})

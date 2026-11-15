@@ -31,6 +31,17 @@ class PortalObjectWriterTest extends TestCase {
 
 	}//end testReturnsNullWhenOpenRegisterUnavailable()
 
+	public function testAnUpdateWithoutOpenRegisterWritesNothing(): void {
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willThrowException(new RuntimeException('OR not installed'));
+
+		$writer = new PortalObjectWriter($container, $this->createMock(LoggerInterface::class));
+
+		$this->assertNull($writer->updateObject('portaliq', 'exampleDocument', 'subjectRef', 's1', 'org-1', 'obj-1', ['title' => 'X']));
+		$this->assertNull($writer->updateObject('portaliq', 'exampleDocument', 'subjectRef', 's1', 'org-1', '', ['title' => 'X']));
+
+	}//end testAnUpdateWithoutOpenRegisterWritesNothing()
+
 	public function testStampsOwnershipOverClientInputAndBypassesRbac(): void {
 		$objectService = new class {
 
