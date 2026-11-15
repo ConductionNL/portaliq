@@ -96,12 +96,34 @@ test('the logo is picked from the portal media library and stored as an address 
 	assert.match(read('appinfo/routes.php'), /'url' => '\/api\/content\/media\/\{id\}'/)
 })
 
+// REQ-PIA-001 (portal-identity-from-the-admin 1.2): the favicon and the hero
+// image are picked from this portal's own published images and stored as
+// media:<id>, the reference PortalImageChoice checks on save and SiteIcon and
+// ContentController::site() turn into a public address. No typed address: a
+// favicon is a library item, so its file type can be checked.
+test('the favicon and the hero image are picked from this portal media library as media references', () => {
+	for (const key of ['favicon', 'heroImage']) {
+		const picker = field(key)
+		assert.ok(picker, `the form has no ${key} picker`)
+		assert.equal(picker.type, 'reference')
+		assert.equal(picker.register, 'portaliq')
+		assert.equal(picker.schema, 'media')
+		assert.deepEqual(picker.filter, { kind: 'image', status: 'published', portal: '@object.slug' })
+		assert.equal(picker.valueTemplate, 'media:{id}')
+		assert.notEqual(picker.free, true, `${key} takes a typed address`)
+		assert.ok(PORTAL[key], `#portal declares no ${key}`)
+		assert.ok(REGISTER.components.schemas.media.properties[picker.labelField], picker.labelField)
+		assert.ok(picker.emptyLabel)
+	}
+	assert.match(field('favicon').hint, /PNG, SVG or ICO/)
+})
+
 test('the details are one card, and the old component is gone', () => {
 	const sections = widget('portal-settings').content.sections
 	assert.ok(sections.some((s) => s.widgetId === 'portal-settings-details'))
 	for (const id of ['portal-settings-locales', 'portal-settings-frame']) {
 		assert.equal(widget(id), undefined, `${id} is a card of its own again`)
 	}
-	assert.deepEqual(form.content.fields.map((f) => f.key), ['title', 'tagline', 'slug', 'organisation', 'kind', 'headerVariant', 'locales', 'accountLabel', 'logo', 'frameAncestors'])
+	assert.deepEqual(form.content.fields.map((f) => f.key), ['title', 'tagline', 'slug', 'organisation', 'kind', 'headerVariant', 'locales', 'accountLabel', 'logo', 'favicon', 'heroImage', 'frameAncestors'])
 	assert.equal(read('src/registry.js').includes('PortalDetailsForm'), false)
 })

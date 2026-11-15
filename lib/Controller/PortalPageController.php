@@ -56,6 +56,7 @@ use OCA\Portaliq\Kernel\Contracts\SiteHeadInterface;
 use OCA\Portaliq\Kernel\Contracts\SiteShellInterface;
 use OCA\Portaliq\Service\SiteShell;
 use OCA\Portaliq\Service\Cms\SiteIcon;
+use OCA\Portaliq\Kernel\Contracts\SiteOrganisationInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -108,6 +109,7 @@ class PortalPageController extends Controller {
 	 * @param PortalNoticeReaderInterface $notices The notices running on the signed-in surface now.
 	 * @param AccessibilityFramingInterface $framing Whether the accessibility measurement may frame this request.
 	 * @param SiteIcon|null $siteIcon The portal's own tab icon.
+	 * @param SiteOrganisationInterface|null $siteOrganisation Names the portal's organisation in the head.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -119,6 +121,7 @@ class PortalPageController extends Controller {
 		PortalNoticeReaderInterface $notices,
 		private readonly AccessibilityFramingInterface $framing,
 		?SiteIcon $siteIcon=null,
+		?SiteOrganisationInterface $siteOrganisation=null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 		$this->shell = new SiteShell(
@@ -129,7 +132,8 @@ class PortalPageController extends Controller {
 			siteHead: $siteHead,
 			notices: $notices,
 			configResolver: $configResolver,
-			siteIcon: $siteIcon
+			siteIcon: $siteIcon,
+			siteOrganisation: $siteOrganisation
 		);
 	}//end __construct()
 
