@@ -31,6 +31,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Proposals;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -119,9 +121,10 @@ class ReviewerObjectWriter {
 		try {
 			$saved = $objectService->saveObject(
 				object: $values,
-				register: $register,
-				schema: $schema,
-				uuid: $id,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $schema),
+					uuid: $id
+				),
 				// As the reviewer: their rights decide, and the audit trail
 				// names them.
 				_rbac: true,

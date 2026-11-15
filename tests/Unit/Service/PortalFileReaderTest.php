@@ -11,6 +11,7 @@ use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use stdClass;
+use OCA\Portaliq\Tests\Support\LegacyObjectArgs;
 
 /**
  * Tests the OR file reader: it degrades to a safe empty/null result without
@@ -54,6 +55,7 @@ class PortalFileReaderTest extends TestCase {
 			}//end __construct()
 
 			public function find(...$args): ?object {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				return $this->entity;
 			}//end find()
 		};

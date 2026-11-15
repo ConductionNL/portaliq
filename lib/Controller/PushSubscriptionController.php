@@ -27,6 +27,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
@@ -132,9 +134,10 @@ class PushSubscriptionController extends Controller implements PortalProtected {
 					'createdAt' => gmdate('c'),
 					'active' => true,
 				],
-				register: self::REGISTER,
-				schema: self::SCHEMA,
-				uuid: $existingId,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: self::REGISTER, schema: self::SCHEMA),
+					uuid: $existingId
+				),
 				_rbac: false,
 				_multitenancy: false
 			);
@@ -182,9 +185,10 @@ class PushSubscriptionController extends Controller implements PortalProtected {
 		try {
 			$objectService->saveObject(
 				object: ['subjectRef' => $subjectRef, 'endpoint' => $endpoint, 'active' => false],
-				register: self::REGISTER,
-				schema: self::SCHEMA,
-				uuid: $existingId,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: self::REGISTER, schema: self::SCHEMA),
+					uuid: $existingId
+				),
 				_rbac: false,
 				_multitenancy: false
 			);

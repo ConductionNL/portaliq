@@ -20,6 +20,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\Kernel\Contracts\TrafficEventStoreInterface;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\PortalRegisterContext;
@@ -235,9 +238,10 @@ class TrafficEventStore implements TrafficEventStoreInterface {
 			}
 
 			$objectService->deleteObject(
-				uuid: $uuid,
-				register: self::REGISTER,
-				schema: self::EVENT_SCHEMA,
+				new ObjectDeletion(
+					uuid: $uuid,
+					target: new ObjectFindTarget(register: self::REGISTER, schema: self::EVENT_SCHEMA)
+				),
 				_rbac: false,
 				_multitenancy: false
 			);
@@ -417,9 +421,10 @@ class TrafficEventStore implements TrafficEventStoreInterface {
 			}
 
 			$objectService->deleteObject(
-				uuid: $uuid,
-				register: self::REGISTER,
-				schema: self::DAILY_SCHEMA,
+				new ObjectDeletion(
+					uuid: $uuid,
+					target: new ObjectFindTarget(register: self::REGISTER, schema: self::DAILY_SCHEMA)
+				),
 				_rbac: false,
 				_multitenancy: false
 			);
@@ -458,9 +463,10 @@ class TrafficEventStore implements TrafficEventStoreInterface {
 
 			$objectService->saveObject(
 				object: $rollup,
-				register: self::REGISTER,
-				schema: self::DAILY_SCHEMA,
-				uuid: $uuid,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: self::REGISTER, schema: self::DAILY_SCHEMA),
+					uuid: $uuid
+				),
 				_rbac: false,
 				_multitenancy: false
 			);
