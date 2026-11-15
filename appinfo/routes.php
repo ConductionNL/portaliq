@@ -518,6 +518,8 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         ['name' => 'portalTimeline#show', 'url' => '/portal/api/collections/{register}/{schema}/{id}/timeline', 'verb' => 'GET'],
         // Where one case stands, from its app's steps provider (site-mijn-omgeving-components REQ-SMO-022).
         ['name' => 'portalTimeline#steps', 'url' => '/portal/api/collections/{register}/{schema}/{id}/steps', 'verb' => 'GET'],
+        // The messages about one case, both ways, from its app's messages provider (capability-rows-said-and-planned T07).
+        ['name' => 'portalTimeline#messages', 'url' => '/portal/api/collections/{register}/{schema}/{id}/messages', 'verb' => 'GET'],
         // One object's items, e.g. a dossier's publications (my-dossiers).
         ['name' => 'portalTimeline#items', 'url' => '/portal/api/collections/{register}/{schema}/{id}/items', 'verb' => 'GET'],
         ['name' => 'contribution#update', 'url' => '/portal/api/collections/{register}/{schema}/{id}', 'verb' => 'PATCH'],
@@ -568,6 +570,15 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         // The change-proposal queue (change-proposal-queue). A proposal never
         // writes the record: only a reviewer accepting one does, with their
         // own rights. The staff routes are gated by `portal.review-proposal`.
+        // Marketing articles, moved here from pipelinq (marketing-articles-from-pipelinq).
+        ['name' => 'article#index', 'url' => '/api/articles', 'verb' => 'GET'],
+        ['name' => 'article#create', 'url' => '/api/articles', 'verb' => 'POST'],
+        ['name' => 'article#publish', 'url' => '/api/articles/{id}/publish', 'verb' => 'POST'],
+        ['name' => 'article#archive', 'url' => '/api/articles/{id}/archive', 'verb' => 'POST'],
+        ['name' => 'article#transition', 'url' => '/api/articles/{id}/transition', 'verb' => 'POST'],
+        ['name' => 'article#usages', 'url' => '/api/articles/{id}/usages', 'verb' => 'GET'],
+        ['name' => 'article#show', 'url' => '/api/articles/{id}', 'verb' => 'GET'],
+        ['name' => 'article#update', 'url' => '/api/articles/{id}', 'verb' => 'PATCH'],
         ['name' => 'proposal#index', 'url' => '/api/proposals', 'verb' => 'GET'],
         ['name' => 'proposal#proposeAsColleague', 'url' => '/api/proposals', 'verb' => 'POST'],
         // change-proposals-reach-the-case-page: what the widget shows this

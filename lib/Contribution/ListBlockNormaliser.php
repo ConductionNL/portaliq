@@ -41,7 +41,7 @@ class ListBlockNormaliser {
 	 * The blocks that read one open record through a provider of the same
 	 * name on its collection.
 	 */
-	public const RECORD_BLOCKS = ['steps', 'documents', 'timeline'];
+	public const RECORD_BLOCKS = ['steps', 'documents', 'timeline', 'messages'];
 
 	/**
 	 * The most rows a list block may ask for.
