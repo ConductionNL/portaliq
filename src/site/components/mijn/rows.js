@@ -6,7 +6,7 @@
 // translator these components share. No Vue, so tests/mijn-components.spec.mjs
 // runs it as node.
 //
-// @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+// @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 
 import strings from './strings.js'
 
@@ -24,7 +24,7 @@ const DAY_MS = 24 * 60 * 60 * 1000
  * @param {((key: string) => string)|null} t The site's translator.
  * @param {string} [locale] The page language.
  * @return {(key: string, vars?: object) => string}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
  */
 export function mijnTranslator(t, locale) {
 	const own = strings[pageLanguage(locale)] || strings.en
@@ -95,7 +95,7 @@ function dayInWords(day, today, locale) {
  * @param {(key: string, vars?: object) => string} tr The translator.
  * @param {string} [locale] The page language.
  * @return {{text: string, state: string, datetime: string}|null} The badge, or null without a deadline.
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
  */
 export function deadlineBadge(due, today, tr, locale = 'nl') {
 	const day = localDay(due)
@@ -195,7 +195,7 @@ export function filledTemplate(template, row) {
  * @param {object} block The block (`dueField`, `titleFields`, `limit`).
  * @param {object} collection The collection (`titleFields`, `label`).
  * @return {Array<{id: string, title: string, due: string, row: object}>}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
  */
 export function taskRows(rows, block, collection) {
 	const titleFields = (Array.isArray(block?.titleFields)
@@ -250,31 +250,47 @@ export function taskRows(rows, block, collection) {
  * @param {object} block The block (`collection`, `limit`).
  * @param {string} app The app of the contribution the block belongs to.
  * @return {Array<object>}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
  */
 export function inboxRows(messages, block, app) {
 	const wanted = block?.collection || ''
-	const time = (message) => {
-		const ms = new Date(message?.receivedAt || 0).getTime()
-		return Number.isNaN(ms) ? 0 : ms
-	}
 	return (Array.isArray(messages) ? messages : [])
 		.filter(Boolean)
-		.filter(
-			(message) =>
-				!wanted
-				|| (message._source?.collection === wanted
-					&& message._source?.appId === app),
-		)
+		.filter((message) => !wanted || isFromInbox(message, { collection: wanted, app }))
 		.map((message, index) => ({ message, index }))
 		.sort(
 			(a, b) =>
 				Number(a.message.read === true) - Number(b.message.read === true)
-				|| time(b.message) - time(a.message)
+				|| receivedMs(b.message) - receivedMs(a.message)
 				|| a.index - b.index,
 		)
 		.map(({ message }) => message)
 		.slice(0, limitOf(block))
+}
+
+/**
+ * Whether a message came from one app's inbox collection.
+ *
+ * @param {object} message The message, with its `_source`.
+ * @param {{collection: string, app: string}} inbox The collection and its app.
+ * @return {boolean} True when it came from there.
+ */
+function isFromInbox(message, inbox) {
+	return (
+		message._source?.collection === inbox.collection
+		&& message._source?.appId === inbox.app
+	)
+}
+
+/**
+ * When a message came in, in milliseconds; 0 when it does not say.
+ *
+ * @param {object} message The message.
+ * @return {number} The moment.
+ */
+function receivedMs(message) {
+	const ms = new Date(message?.receivedAt || 0).getTime()
+	return Number.isNaN(ms) ? 0 : ms
 }
 
 /**
@@ -286,7 +302,7 @@ export function inboxRows(messages, block, app) {
  * @param {(key: string, vars?: object) => string} tr The translator.
  * @param {string} [locale] The page language.
  * @return {string}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
  */
 export function receivedInWords(value, today, tr, locale = 'nl') {
 	const at = value ? new Date(value) : null
@@ -295,17 +311,29 @@ export function receivedInWords(value, today, tr, locale = 'nl') {
 	if (!at || !day || !now) {
 		return ''
 	}
+	const time = clockTime(at, locale)
+	if (day.getTime() === now.getTime()) {
+		return tr('Today at {time}', { time })
+	}
+	return tr('{date} at {time}', { date: dayInWords(day, now, locale), time })
+}
+
+/**
+ * A time of day as the page language writes it: "14.20" in Dutch, "14:20"
+ * in English.
+ *
+ * @param {Date} at The moment.
+ * @param {string} locale The page language.
+ * @return {string} The time.
+ */
+function clockTime(at, locale) {
 	const english = pageLanguage(locale) === 'en'
-	const time = at
+	return at
 		.toLocaleTimeString(english ? 'en-GB' : 'nl-NL', {
 			hour: '2-digit',
 			minute: '2-digit',
 		})
 		.replace(':', english ? ':' : '.')
-	if (day.getTime() === now.getTime()) {
-		return tr('Today at {time}', { time })
-	}
-	return tr('{date} at {time}', { date: dayInWords(day, now, locale), time })
 }
 
 /**
@@ -351,7 +379,7 @@ function momentInWords(value, { today, tr, locale }) {
  *
  * @param {string} route The in-site route.
  * @return {string}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
  */
 export function siteHref(route) {
 	if (!route) {

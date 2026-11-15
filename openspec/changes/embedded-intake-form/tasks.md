@@ -3,7 +3,7 @@
 ## The form and its origins
 
 - [x] **T01**: `portalForm.allowedOrigins[]` on the portal page, edited in the CMS admin, with an empty list meaning the form serves to nobody (REQ-EIF-001)
-- [ ] **T02**: The snippet, shown on the page beside the origin list, with the origins named in plain language (REQ-EIF-001) — not run: the CMS admin has no surface for the snippet yet
+- [x] **T02**: The snippet, shown on the page beside the origin list, with the origins named in plain language (REQ-EIF-001) (the request forms list's `Insert form` row action, `openFormBindingEmbed` in `src/manifest.json`, opens `src/dialogs/FormEmbedDialog.vue` through `src/lib/formBindingEmbed.js`; it reads `POST /api/form-bindings/embed-snippet` (`FormBindingAdminController::embedSnippet` over `PortalEmbedSnippetDescription`) and shows the code, the websites that may show the form, and for an empty list a warning that the form cannot be put on another website yet; covered by `tests/form-binding-embed.spec.mjs`, `FormBindingAdminControllerTest` and `PortalEmbedSnippetDescriptionTest`)
 
 ## The frame
 
@@ -32,11 +32,12 @@ resolved, the submission down the ordinary anonymous intake path with the
 origin recorded, the reference and its follow link, and the per-origin and
 per-address throttle.
 
-Left open, and marked so: **T02**, the snippet shown in the CMS admin beside
-the origin list. `PortalEmbedGuard::snippetFor()` produces the snippet and the
-plain-language origin list, and withholds both for a form that is not
-embeddable; placing that on the admin screen is the remaining work. **T05**,
-height negotiation over `postMessage`, is frame-side script: the minimum height
-is declared and carried on the frame's own element
-(`PortalEmbedGuard::MINIMUM_HEIGHT`, `templates/embed.php`).
-
+The CMS admin surface for the snippet (**T02**) is the `Insert form` row
+action on the request forms list: `src/dialogs/FormEmbedDialog.vue` shows the
+code to copy, the websites allowed to show the form, and, for a form with no
+allowed origins, a warning in place of the code. `PortalEmbedGuard::snippetFor()`
+and `PortalEmbedSnippetDescription` produce what it shows and withhold the code
+for a form that is not embeddable. **T05**, height negotiation over
+`postMessage`, is frame-side script: the minimum height is declared and
+carried on the frame's own element (`PortalEmbedGuard::MINIMUM_HEIGHT`,
+`templates/embed.php`).

@@ -38,6 +38,7 @@ use RuntimeException;
  *
  * @covers \OCA\Portaliq\Service\PortalFileReader
  * @covers \OCA\Portaliq\Service\PortalFileWriter
+ * @uses   \OCA\Portaliq\Service\FileAttachment
  */
 class PortalFileGoldenTest extends TestCase {
 

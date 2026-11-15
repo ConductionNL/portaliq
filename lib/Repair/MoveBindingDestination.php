@@ -34,8 +34,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Repair;
 
+use OCA\Portaliq\Kernel\Contracts\PortalRegisterContextInterface;
 use OCA\Portaliq\Service\ObjectServiceLookup;
-use OCA\Portaliq\Service\PortalRegisterContext;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Container\ContainerInterface;
@@ -90,12 +90,12 @@ class MoveBindingDestination implements IRepairStep {
 	 * Constructor.
 	 *
 	 * @param ContainerInterface    $container The container (OpenRegister is optional).
-	 * @param PortalRegisterContext $context   Points the object service at a portaliq schema.
+	 * @param PortalRegisterContextInterface $context   Points the object service at a portaliq schema.
 	 * @param LoggerInterface       $logger    The logger.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
-		private readonly PortalRegisterContext $context,
+		private readonly PortalRegisterContextInterface $context,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -135,21 +135,56 @@ class MoveBindingDestination implements IRepairStep {
 			$page    = $this->page(objectService: $objectService, offset: $offset);
 			$read    = $page['read'];
 			$offset += $read;
-			foreach ($page['rows'] as $row) {
-				$outcome = $this->repair(objectService: $objectService, row: $row);
-				$moved  += (int)($outcome === 'moved');
-				if ($outcome === 'without') {
-					$without[] = $this->uuidOf(row: $row);
-				}
-			}
+			$repaired = $this->repairRows(objectService: $objectService, rows: $page['rows']);
+			$moved   += $repaired['moved'];
+			$without  = array_merge($without, $repaired['without']);
 		} while ($read === self::PAGE && $pages < self::MAX_PAGES);
 
+		$this->report(output: $output, moved: $moved, without: $without);
+	}//end run()
+
+	/**
+	 * Repair one page of bindings: how many moved, and the ids of those without a destination.
+	 *
+	 * @param object                           $objectService OpenRegister's ObjectService.
+	 * @param array<int, array<string, mixed>> $rows          The page's bindings.
+	 *
+	 * @return array{moved: int, without: array<int, string>}
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#1.1
+	 */
+	private function repairRows(object $objectService, array $rows): array {
+		$moved   = 0;
+		$without = [];
+		foreach ($rows as $row) {
+			$outcome = $this->repair(objectService: $objectService, row: $row);
+			$moved  += (int)($outcome === 'moved');
+			if ($outcome === 'without') {
+				$without[] = $this->uuidOf(row: $row);
+			}
+		}
+
+		return ['moved' => $moved, 'without' => $without];
+	}//end repairRows()
+
+	/**
+	 * Report how many moved, and warn about the bindings without a destination.
+	 *
+	 * @param IOutput            $output  The output.
+	 * @param int                $moved   How many bindings moved.
+	 * @param array<int, string> $without The ids of the bindings without a destination.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#1.1
+	 */
+	private function report(IOutput $output, int $moved, array $without): void {
 		$output->info('MoveBindingDestination: moved the destination of ' . $moved . ' form bindings.');
 		if ($without !== []) {
 			$this->logger->warning('Portaliq: form bindings without a destination; name one before the form can send', ['bindings' => $without]);
 			$output->warning('MoveBindingDestination: ' . count($without) . ' form bindings name no destination: ' . implode(', ', $without));
 		}
-	}//end run()
+	}//end report()
 
 	/**
 	 * The binding with its destination moved, or null when there is nothing to move.

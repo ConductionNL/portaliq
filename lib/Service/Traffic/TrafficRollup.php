@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
  */
 
 declare(strict_types=1);
@@ -33,7 +33,7 @@ namespace OCA\Portaliq\Service\Traffic;
  * communications officer already expects: a session is engaged when it
  * lasted ten seconds or more, viewed more than one page, or scrolled.
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
  */
 class TrafficRollup {
 
@@ -82,12 +82,12 @@ class TrafficRollup {
 	 *
 	 * @return array<string, mixed> The `portalTrafficDaily` fields.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-visitors-must-be-counted-honestly-in-each-mode
-	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-script-errors-must-be-reported-without-the-stack-or-the-query-string
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
-	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-each-daily-page-row-must-carry-its-sessions-visitors-sources-and-outbound-links
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-visitors-must-be-counted-honestly-in-each-mode
+	 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-script-errors-must-be-reported-without-the-stack-or-the-query-string
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
+	 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-each-daily-page-row-must-carry-its-sessions-visitors-sources-and-outbound-links
 	 * @spec openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md#requirement-the-roll-up-counts-searches-that-found-nothing-req-pzr-001
 	 */
 	public function build(string $portal, string $date, array $sessions, string $aggregatedAt, array $options = []): array {
@@ -116,7 +116,7 @@ class TrafficRollup {
 	 *
 	 * @return array<string, mixed> The visit fields, in record order.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-visitors-must-be-counted-honestly-in-each-mode
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-visitors-must-be-counted-honestly-in-each-mode
 	 */
 	private function visits(array $day): array {
 		$totals        = $day['totals'];
@@ -148,7 +148,7 @@ class TrafficRollup {
 	 *
 	 * @return array<string, mixed> The source fields, in record order.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 	 */
 	private function sessionSources(array $sessions): array {
 		return [
@@ -210,8 +210,8 @@ class TrafficRollup {
 	 *
 	 * @return array<string, mixed> The outcome fields, in record order.
 	 *
-	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
+	 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
 	 */
 	private function outcomes(array $day): array {
 		$sessions        = $day['sessions'];

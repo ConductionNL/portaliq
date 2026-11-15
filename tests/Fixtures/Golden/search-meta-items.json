@@ -1,0 +1,13 @@
+{
+	"empty": [],
+	"date-type-source": [{"key":"date","text":"1 mei 2026","prefix":"","testid":"federated-search-date"},{"key":"type","text":"Besluit","prefix":"","testid":"federated-search-type"},{"key":"source","text":"Gemeente X","prefix":"Bron:","testid":"federated-search-source"}],
+	"block-type": [{"key":"type","text":"Woo-verzoek","prefix":"","testid":"federated-search-type"}],
+	"own-type-wins": [{"key":"type","text":"Advies","prefix":"","testid":"federated-search-type"}],
+	"subject-with-count": [{"key":"count","text":"4 publicaties","prefix":"","testid":"federated-search-publication-count"}],
+	"subject-without-count": [],
+	"count-on-other-kind": [],
+	"document-of-publication": [{"key":"publication","text":"Onderdeel van Raadsbesluit","prefix":"","testid":"federated-search-publication"}],
+	"document-alone": [],
+	"publication-on-other-kind": [],
+	"everything": [{"key":"date","text":"d","prefix":"","testid":"federated-search-date"},{"key":"type","text":"t","prefix":"","testid":"federated-search-type"},{"key":"publication","text":"Onderdeel van p","prefix":"","testid":"federated-search-publication"},{"key":"source","text":"dir","prefix":"Bron:","testid":"federated-search-source"}]
+}

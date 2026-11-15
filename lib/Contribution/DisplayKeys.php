@@ -88,23 +88,50 @@ class DisplayKeys {
 			return [];
 		}
 
-		$out = ['display' => $display];
-		foreach (self::FIELDS[$display] as $key) {
+		$out = ['display' => $display] + $this->fieldKeys(block: $block, collection: $collection) + $this->textKeys(block: $block);
+		return $out + $this->lists(display: $display, block: $block, collection: $collection)
+			+ $this->numbers(display: $display, block: $block) + $this->tones(display: $display, block: $block);
+	}//end keys()
+
+	/**
+	 * The single-field keys of the block's display that name a field the
+	 * collection projects.
+	 *
+	 * @param array<string, mixed>      $block      The declared block, its display known.
+	 * @param array<string, mixed>|null $collection The collection it reads, or null when unknown.
+	 *
+	 * @return array<string, string>
+	 */
+	private function fieldKeys(array $block, ?array $collection): array {
+		$out = [];
+		foreach (self::FIELDS[$block['display']] as $key) {
 			if ($this->projects(collection: $collection, field: ($block[$key] ?? null)) === true) {
 				$out[$key] = $block[$key];
 			}
 		}
 
-		foreach (self::TEXTS[$display] as $key) {
+		return $out;
+	}//end fieldKeys()
+
+	/**
+	 * The text keys of the block's display, each trimmed and kept only when
+	 * it says something in at most MAX_TEXT characters.
+	 *
+	 * @param array<string, mixed> $block The declared block, its display known.
+	 *
+	 * @return array<string, string>
+	 */
+	private function textKeys(array $block): array {
+		$out = [];
+		foreach (self::TEXTS[$block['display']] as $key) {
 			$text = ($block[$key] ?? null);
 			if (is_string($text) === true && trim($text) !== '' && mb_strlen($text) <= self::MAX_TEXT) {
 				$out[$key] = trim($text);
 			}
 		}
 
-		return $out + $this->lists(display: $display, block: $block, collection: $collection)
-			+ $this->numbers(display: $display, block: $block) + $this->tones(display: $display, block: $block);
-	}//end keys()
+		return $out;
+	}//end textKeys()
 
 	/**
 	 * The tone of each status value on rows and cards: `statusTones`, a map

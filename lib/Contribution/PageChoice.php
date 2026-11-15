@@ -31,12 +31,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\PageChoiceInterface;
+
 /**
  * Applies a portal's page choice and an account's hidden pages to an aggregate.
  *
  * @spec openspec/changes/operate-pages-per-portal-and-client/specs/portal-page-choice/spec.md
  */
-class PageChoice {
+class PageChoice implements PageChoiceInterface {
 	/**
 	 * The key a choice uses for one page.
 	 *
@@ -71,47 +73,32 @@ class PageChoice {
 			return $aggregate;
 		}
 
-		$rank = array_flip(array_keys($listed));
+		$run  = new ArrangeRun(listed: $listed, rank: array_flip(array_keys($listed)));
 		$best = [];
 		foreach ($aggregate['contributions'] as $i => $contribution) {
-			$app   = (string)($contribution['app'] ?? '');
-			$pages = [];
-			foreach ((array)($contribution['pages'] ?? []) as $page) {
-				$key = self::keyOf(app: $app, pageId: (string)($page['id'] ?? ''));
-				if (($listed[$key] ?? false) === true) {
-					continue;
-				}
-
-				$pages[] = $page;
-			}
-
-			// Named pages first, in the listed order; the others after, as they came.
-			usort(
-				$pages,
-				static function (array $a, array $b) use ($rank, $app): int {
-					$left  = $rank[self::keyOf(app: $app, pageId: (string)($a['id'] ?? ''))] ?? PHP_INT_MAX;
-					$right = $rank[self::keyOf(app: $app, pageId: (string)($b['id'] ?? ''))] ?? PHP_INT_MAX;
-
-					return $left <=> $right;
-				}
-			);
-
-			if (array_key_exists('pages', $contribution) === true) {
-				$aggregate['contributions'][$i]['pages'] = $pages;
-			}
-
-			$best[$i] = PHP_INT_MAX;
-			foreach ($pages as $page) {
-				$best[$i] = min($best[$i], ($rank[self::keyOf(app: $app, pageId: (string)($page['id'] ?? ''))] ?? PHP_INT_MAX));
-			}
+			$aggregate['contributions'][$i] = $run->arranged(contribution: $contribution);
+			$best[$i] = $run->bestOf(contribution: $aggregate['contributions'][$i]);
 		}
 
-		$order = array_keys($aggregate['contributions']);
-		usort($order, static fn (int $a, int $b): int => [$best[$a], $a] <=> [$best[$b], $b]);
-		$aggregate['contributions'] = array_values(array_map(static fn (int $position): array => $aggregate['contributions'][$position], $order));
+		$aggregate['contributions'] = self::byBestRank(contributions: $aggregate['contributions'], best: $best);
 
 		return $aggregate;
 	}//end arrange()
+
+	/**
+	 * The contributions ordered by their best listed page; ties keep their order.
+	 *
+	 * @param array<int, mixed> $contributions The contributions.
+	 * @param array<int, int>   $best          Each contribution's best place.
+	 *
+	 * @return array<int, mixed>
+	 */
+	private static function byBestRank(array $contributions, array $best): array {
+		$order = array_keys($contributions);
+		usort($order, static fn (int $a, int $b): int => [$best[$a], $a] <=> [$best[$b], $b]);
+
+		return array_values(array_map(static fn (int $position): mixed => $contributions[$position], $order));
+	}//end byBestRank()
 
 	/**
 	 * Remove the pages an account may not see and the collections only those
@@ -151,28 +138,50 @@ class PageChoice {
 	 * @return array<string, mixed> The contribution, unchanged when no page of it is hidden.
 	 */
 	private function withoutHiddenPages(array $contribution, array $keys): array {
-		$app     = (string)($contribution['app'] ?? '');
-		$kept    = [];
-		$closing = [];
-		foreach ((array)($contribution['pages'] ?? []) as $page) {
+		$pages = $this->partitionPages(pages: (array)($contribution['pages'] ?? []), app: (string)($contribution['app'] ?? ''), keys: $keys);
+		if (count($pages['kept']) === count((array)($contribution['pages'] ?? []))) {
+			return $contribution;
+		}
+
+		return $this->withClosedCollections(contribution: $contribution, kept: $pages['kept'], hidden: $pages['hidden']);
+	}//end withoutHiddenPages()
+
+	/**
+	 * The pages split into those kept and those hidden, each in order.
+	 *
+	 * @param array<int, mixed>   $pages The contribution's pages.
+	 * @param string              $app   The contributing app.
+	 * @param array<string, int>  $keys  The hidden `<app>:<pageId>` keys, flipped.
+	 *
+	 * @return array{kept: array<int, mixed>, hidden: array<int, mixed>}
+	 */
+	private function partitionPages(array $pages, string $app, array $keys): array {
+		$kept   = [];
+		$hidden = [];
+		foreach ($pages as $page) {
 			if (isset($keys[self::keyOf(app: $app, pageId: (string)($page['id'] ?? ''))]) === true) {
-				$closing = array_merge($closing, $this->collectionsOf(page: $page));
+				$hidden[] = $page;
 				continue;
 			}
 
 			$kept[] = $page;
 		}
 
-		if (count($kept) === count((array)($contribution['pages'] ?? []))) {
-			return $contribution;
-		}
+		return ['kept' => $kept, 'hidden' => $hidden];
+	}//end partitionPages()
 
-		$stillShown = [];
-		foreach ($kept as $page) {
-			$stillShown = array_merge($stillShown, $this->collectionsOf(page: $page));
-		}
-
-		$closed                = array_diff($closing, $stillShown);
+	/**
+	 * The contribution with only the kept pages, and without the collections
+	 * only hidden pages showed.
+	 *
+	 * @param array<string, mixed> $contribution The contribution.
+	 * @param array<int, mixed>    $kept         The kept pages.
+	 * @param array<int, mixed>    $hidden       The hidden pages.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withClosedCollections(array $contribution, array $kept, array $hidden): array {
+		$closed                = array_diff($this->collectionsIn(pages: $hidden), $this->collectionsIn(pages: $kept));
 		$contribution['pages'] = $kept;
 		if ($closed !== [] && is_array($contribution['collections'] ?? null) === true) {
 			$contribution['collections'] = array_values(
@@ -184,7 +193,23 @@ class PageChoice {
 		}
 
 		return $contribution;
-	}//end withoutHiddenPages()
+	}//end withClosedCollections()
+
+	/**
+	 * The collections the pages show, page by page.
+	 *
+	 * @param array<int, mixed> $pages The pages.
+	 *
+	 * @return array<int, string>
+	 */
+	private function collectionsIn(array $pages): array {
+		$ids = [];
+		foreach ($pages as $page) {
+			$ids = array_merge($ids, $this->collectionsOf(page: $page));
+		}
+
+		return $ids;
+	}//end collectionsIn()
 
 	/**
 	 * The collections a page shows: those of its blocks and its record pages.

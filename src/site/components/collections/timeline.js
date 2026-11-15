@@ -8,7 +8,7 @@
 //
 // Imports nothing, so tests/case-timeline.spec.mjs runs it as node.
 //
-// @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-records-timeline-must-show-as-its-app-returned-it-req-srp-019
+// @spec openspec/specs/site-portal-parity/spec.md#requirement-a-records-timeline-must-show-as-its-app-returned-it-req-srp-019
 
 /**
  * The moment of an entry, for sorting; entries without one sort last.

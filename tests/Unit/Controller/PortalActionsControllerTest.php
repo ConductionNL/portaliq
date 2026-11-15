@@ -43,6 +43,28 @@ class PortalActionsControllerTest extends TestCase {
 		}
 	}
 
+	/**
+	 * A bearer that names no subject is no session, and every outcome's
+	 * answer is whole: `ok` for success, the outcome as the error otherwise,
+	 * an unknown outcome a 500.
+	 *
+	 * @return void
+	 */
+	public function testANamelessSubjectIsNoSessionAndEveryAnswerIsWhole(): void {
+		$actions = $this->createMock(PortalActionService::class);
+		$actions->expects($this->never())->method($this->anything());
+		$nameless = $this->controller(subject: ['subjectRef' => ''], actions: $actions)->index();
+		$this->assertSame([401, ['authenticated' => false]], [$nameless->getStatus(), $nameless->getData()]);
+
+		$actions = $this->createMock(PortalActionService::class);
+		$actions->method('delete')->willReturnOnConsecutiveCalls('ok', 'forbidden', 'something-else');
+		$controller = $this->controller(subject: ['subjectRef' => 'sanne'], actions: $actions);
+
+		$this->assertSame([200, ['ok' => true]], [($r = $controller->destroy('a'))->getStatus(), $r->getData()]);
+		$this->assertSame([403, ['error' => 'forbidden']], [($r = $controller->destroy('a'))->getStatus(), $r->getData()]);
+		$this->assertSame([500, ['error' => 'something-else']], [($r = $controller->destroy('a'))->getStatus(), $r->getData()]);
+	}
+
 	public function testOutcomesBecomeStatuses(): void {
 		$actions = $this->createMock(PortalActionService::class);
 		$actions->method('delete')->willReturnOnConsecutiveCalls('ok', 'forbidden', 'not_found', 'invalid');

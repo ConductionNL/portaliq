@@ -18,6 +18,7 @@ use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Tests\Unit\Service\Identity\PortalIdentityStoreTrait;
 use Opis\JsonSchema\Validator;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Contribution\FormStepsNormaliser;
 
 /**
  * operate-show-per-case-type REQ-OSC-001 and REQ-OSC-003: the "Case types"
@@ -166,7 +167,7 @@ class PortalCaseTypeCatalogueTest extends TestCase {
 		return new PortalCaseTypeCatalogue(
 			$reader,
 			$this->fakeWriter(),
-			new PortalFormBindingResolver($reader),
+			new PortalFormBindingResolver($reader, new FormStepsNormaliser()),
 			$caseTypes,
 			new CaseTypeVisibility($portals),
 			$registry

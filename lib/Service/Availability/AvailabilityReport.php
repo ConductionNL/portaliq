@@ -29,6 +29,7 @@ namespace OCA\Portaliq\Service\Availability;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\Portaliq\Kernel\Contracts\AvailabilityReportInterface;
 
 /**
  * Availability is `available / intervals` as a percentage to two decimals.
@@ -38,7 +39,7 @@ use DateTimeZone;
  *
  * @spec openspec/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
  */
-class AvailabilityReport {
+class AvailabilityReport implements AvailabilityReportInterface {
 	/**
 	 * Constructor.
 	 *

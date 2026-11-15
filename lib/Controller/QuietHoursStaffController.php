@@ -20,15 +20,15 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/push-notifications-quiet-hours/design.md#api-design
+ * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#api-design
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\Notifications\QuietHoursPolicy;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\QuietHoursPolicyInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -38,7 +38,7 @@ use OCP\IRequest;
 use OCP\IUserSession;
 
 /**
- * @spec openspec/changes/push-notifications-quiet-hours/design.md#api-design
+ * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#api-design
  */
 class QuietHoursStaffController extends Controller {
 	/**
@@ -46,14 +46,14 @@ class QuietHoursStaffController extends Controller {
 	 *
 	 * @param IRequest $request The request.
 	 * @param IUserSession $userSession Resolves the calling staff member's Nextcloud user id, used as their subjectRef.
-	 * @param QuietHoursPolicy $quietHours The single source of truth.
+	 * @param QuietHoursPolicyInterface $quietHours The single source of truth.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly IUserSession $userSession,
-		private readonly QuietHoursPolicy $quietHours,
+		private readonly QuietHoursPolicyInterface $quietHours,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -61,7 +61,7 @@ class QuietHoursStaffController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/push-notifications-quiet-hours/design.md#api-design
+	 * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#api-design
 	 */
 	#[NoAdminRequired]
 	public function index(): JSONResponse {
@@ -77,7 +77,7 @@ class QuietHoursStaffController extends Controller {
 	 *
 	 * @return JSONResponse 204 on success, 400 for an invalid window.
 	 *
-	 * @spec openspec/changes/push-notifications-quiet-hours/design.md#api-design
+	 * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#api-design
 	 */
 	#[NoAdminRequired]
 	public function update(string $start, string $end): JSONResponse {

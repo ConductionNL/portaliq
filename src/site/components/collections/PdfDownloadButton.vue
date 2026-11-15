@@ -49,7 +49,7 @@ const STRINGS = {
 }
 
 /**
- * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t06
+ * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t06
  */
 export default {
 	name: 'PdfDownloadButton',
@@ -71,7 +71,7 @@ export default {
 	computed: {
 		/**
 		 * @return {{button: string, tooLong: string, failed: string}} The words in the page language.
-		 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t07
+		 * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t07
 		 */
 		words() {
 			return STRINGS[
@@ -85,7 +85,7 @@ export default {
 		 * Ask for the file. A 400 means the list is too long for one PDF.
 		 *
 		 * @return {Promise<void>} Resolves when the file is saved or the reason is shown.
-		 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t07
+		 * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t07
 		 */
 		async download() {
 			this.busy = true

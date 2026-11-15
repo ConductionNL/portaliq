@@ -148,7 +148,7 @@ export default {
 		 *
 		 * @return {Array<number>} One tabindex per button.
 		 *
-		 * @spec openspec/changes/editor-text-toolbar/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
 		 */
 		tabindexes() {
 			return rovingTabindexes(this.current, this.actions.length)
@@ -159,7 +159,7 @@ export default {
 		 *
 		 * @return {Array<{name: string, text: string, label: string}>} The buttons.
 		 *
-		 * @spec openspec/changes/editor-text-toolbar/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
 		 */
 		actions() {
 			const mac =
@@ -208,7 +208,7 @@ export default {
 		 * @param {number} index The button that has focus.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/editor-text-toolbar/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
 		 */
 		onToolbarKeydown(event, index) {
 			const next = toolbarIndexFor(index, event.key, this.actions.length)
@@ -231,7 +231,7 @@ export default {
 		 * @param {object} [vars] Placeholders.
 		 * @return {string} The translation.
 		 *
-		 * @spec openspec/changes/editor-text-toolbar/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
 		 */
 		t(app, text, vars) {
 			return translate(app, text, vars)
@@ -242,7 +242,7 @@ export default {
 		 *
 		 * @return {{value: string, start: number, end: number}} The selection.
 		 *
-		 * @spec openspec/changes/editor-text-toolbar/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
 		 */
 		currentSelection() {
 			const area = this.$refs.textarea
@@ -259,7 +259,7 @@ export default {
 		 * @param {{value: string, start: number, end: number}} result The new text and selection.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/editor-text-toolbar/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
 		 */
 		commit(result) {
 			if (result.value !== this.modelValue) {
@@ -287,7 +287,7 @@ export default {
 		 * @param {number} [index] Its place in the toolbar, which becomes the Tab stop.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/editor-text-toolbar/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
 		 */
 		onAction(name, index) {
 			if (Number.isInteger(index)) {
@@ -306,7 +306,7 @@ export default {
 		 * @param {KeyboardEvent} event The key.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/editor-text-toolbar/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
 		 */
 		onKeydown(event) {
 			const transform = shortcutFor(event)
@@ -322,7 +322,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/editor-text-toolbar/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
 		 */
 		openLink() {
 			this.linkSelection = this.currentSelection()
@@ -336,7 +336,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/editor-text-toolbar/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
 		 */
 		insertLink() {
 			const selection = this.linkSelection || this.currentSelection()
@@ -354,7 +354,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/editor-text-toolbar/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-an-editor-must-be-able-to-shape-a-text-block-without-knowing-markdown
 		 */
 		closeLink() {
 			const selection = this.linkSelection

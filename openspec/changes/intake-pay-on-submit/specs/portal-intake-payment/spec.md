@@ -1,7 +1,3 @@
----
-status: proposed
----
-
 # Spec: portal-intake-payment
 
 ## Purpose

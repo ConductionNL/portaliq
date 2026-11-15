@@ -24,7 +24,7 @@
  * Pure functions, no imports, so `tests/collection-groups.spec.mjs` runs
  * them as a plain node script.
  *
- * @spec openspec/changes/collection-group-by-field/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-collection-group-by-field/tasks.md#T1
  */
 
 /**
@@ -33,7 +33,7 @@
  *
  * @param {object|null} contribution The contribution.
  * @return {object|null}
- * @spec openspec/changes/collection-group-by-field/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-collection-group-by-field/tasks.md#T1
  */
 export function groupLabelCollection(contribution) {
 	const id = contribution?.guardianAudience?.children
@@ -51,7 +51,7 @@ export function groupLabelCollection(contribution) {
  *
  * @param {object|null} collection The collection.
  * @return {string}
- * @spec openspec/changes/collection-group-by-field/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-collection-group-by-field/tasks.md#T1
  */
 export function groupFieldOf(collection) {
 	const field = collection?.groupByField
@@ -63,7 +63,7 @@ export function groupFieldOf(collection) {
  *
  * @param {Array<object>} collections The collections.
  * @return {boolean}
- * @spec openspec/changes/collection-group-by-field/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-collection-group-by-field/tasks.md#T1
  */
 export function anyGrouped(collections) {
 	return (collections || []).some((collection) => groupFieldOf(collection) !== '')
@@ -85,7 +85,7 @@ function idOf(row) {
  *
  * @param {object} row The row.
  * @return {string}
- * @spec openspec/changes/collection-group-by-field/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-collection-group-by-field/tasks.md#T1
  */
 export function nameOf(row) {
 	const person = [row?.givenName, row?.familyName]
@@ -132,7 +132,7 @@ function valueOf(row, field) {
  * @param {string} field The group field.
  * @param {Array<object>} labelRows The rows that name the values (the children).
  * @return {Array<{value: string, label: string, rows: Array<object>}>}
- * @spec openspec/changes/collection-group-by-field/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-collection-group-by-field/tasks.md#T1
  */
 export function groupRows(rows, field, labelRows = []) {
 	if (!field || !Array.isArray(rows) || rows.length === 0) {

@@ -11,7 +11,7 @@
  * which groups. It imports only shared code, so
  * tests/site-resident-menu.spec.mjs runs it as node.
  *
- * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
  */
 
 import {
@@ -19,6 +19,7 @@ import {
 	isAccountRoute,
 	routeForNav,
 } from '../../shared/portalNav.js'
+import { themeCaseCollections } from '../pages/e/themes.js'
 
 /** Shell sections about cases, in "Mijn zaken en verzoeken". */
 const CASE_SECTIONS = ['cases', 'tasks', 'access']
@@ -40,7 +41,7 @@ const PROFILE_SECTIONS = ['details', 'account']
  * @param {string} route The route on screen.
  * @param {Array<object>} nav The signed-in navigation.
  * @return {boolean} True when the menu shows.
- * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
  */
 export function showsResidentMenu(session, route, nav) {
 	return (
@@ -79,7 +80,7 @@ export function withAreaName(t, name) {
  * @param {(key: string) => string} t The translator.
  * @param {(route: string) => string} hrefFor A real address for a route.
  * @return {{route: string, href: string, label: string}|null} The link.
- * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-header-must-hold-the-name-the-way-to-the-own-area-and-sign-out-req-srm-003
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-the-header-must-hold-the-name-the-way-to-the-own-area-and-sign-out-req-srm-003
  */
 export function ownAreaLink(session, t, hrefFor) {
 	if (!session) {
@@ -104,6 +105,7 @@ export function ownAreaLink(session, t, hrefFor) {
  * @property {(route: string) => string} hrefFor A real address for a route.
  * @property {Record<string, Array<object>>} [recordRows] Known rows, by `<app>:<collection>`.
  * @property {number} [openTasks] The resident's open tasks.
+ * @property {Record<string, number>} [themeCases] The running cases per theme slug.
  * @property {string} [area] The name the portal gives its own area ("Mijn Zuiddrecht").
  */
 
@@ -113,7 +115,7 @@ export function ownAreaLink(session, t, hrefFor) {
  * @param {object} entry The navigation entry.
  * @param {MenuContext} ctx What the item is built from.
  * @return {object} `{key, name, link, href, icon?, badge?, badgeLabel?}`.
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-menu-must-show-icons-and-counts-in-groups-req-smo-006
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-resident-menu-must-show-icons-and-counts-in-groups-req-smo-006
  */
 function itemFor(entry, ctx) {
 	const link = routeForNav(entry)
@@ -130,6 +132,9 @@ function itemFor(entry, ctx) {
 	return withBadge(item, { entry, ctx })
 }
 
+/** The counts an item may carry, in order; a later one wins. */
+const BADGES = [unreadBadge, openTasksBadge, rowsBadge]
+
 /**
  * An item with the count its entry shows, if any: the unread messages beside
  * the inbox, the open tasks beside "My tasks", or the rows a page's `badge`
@@ -138,26 +143,71 @@ function itemFor(entry, ctx) {
  * @param {object} item The item (changed in place).
  * @param {{entry: object, ctx: MenuContext}} source The entry and what it is built from.
  * @return {object} The item.
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-menu-must-show-icons-and-counts-in-groups-req-smo-006
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-resident-menu-must-show-icons-and-counts-in-groups-req-smo-006
  */
-function withBadge(item, { entry, ctx }) {
-	const { t, unread, recordRows = {}, openTasks = 0 } = ctx
-	if (entry.special === 'inbox' && Number(unread) > 0) {
-		item.badge = String(unread)
-		item.badgeLabel = t('{count} unread', { count: unread })
+function withBadge(item, source) {
+	let badge = null
+	for (const countOf of BADGES) {
+		badge = countOf(source) || badge
 	}
-	if (entry.special === 'tasks' && Number(openTasks) > 0) {
-		item.badge = String(openTasks)
-		item.badgeLabel = t('{count} open', { count: openTasks })
-	}
-	const counted = badgeRows(entry, recordRows)
-	if (counted && counted.length > 0) {
-		item.badge = String(counted.length)
-		item.badgeLabel = t(entry.page.badge.label || '{count} open', {
-			count: counted.length,
-		})
+	if (badge) {
+		item.badge = badge.badge
+		item.badgeLabel = badge.badgeLabel
 	}
 	return item
+}
+
+/**
+ * The inbox's count: its unread messages.
+ *
+ * @param {{entry: object, ctx: MenuContext}} source The entry and what it is built from.
+ * @return {{badge: string, badgeLabel: string}|null} The count, or null.
+ */
+function unreadBadge({ entry, ctx }) {
+	if (entry.special !== 'inbox' || !(Number(ctx.unread) > 0)) {
+		return null
+	}
+	return {
+		badge: String(ctx.unread),
+		badgeLabel: ctx.t('{count} unread', { count: ctx.unread }),
+	}
+}
+
+/**
+ * The tasks section's count: the open tasks.
+ *
+ * @param {{entry: object, ctx: MenuContext}} source The entry and what it is built from.
+ * @return {{badge: string, badgeLabel: string}|null} The count, or null.
+ */
+function openTasksBadge({ entry, ctx }) {
+	const { openTasks = 0 } = ctx
+	if (entry.special !== 'tasks' || !(Number(openTasks) > 0)) {
+		return null
+	}
+	return {
+		badge: String(openTasks),
+		badgeLabel: ctx.t('{count} open', { count: openTasks }),
+	}
+}
+
+/**
+ * A page's count: the rows its `badge` counts, once those are known.
+ *
+ * @param {{entry: object, ctx: MenuContext}} source The entry and what it is built from.
+ * @return {{badge: string, badgeLabel: string}|null} The count, or null.
+ */
+function rowsBadge({ entry, ctx }) {
+	const { recordRows = {} } = ctx
+	const counted = badgeRows(entry, recordRows)
+	if (!counted || counted.length === 0) {
+		return null
+	}
+	return {
+		badge: String(counted.length),
+		badgeLabel: ctx.t(entry.page.badge.label || '{count} open', {
+			count: counted.length,
+		}),
+	}
 }
 
 /**
@@ -229,14 +279,14 @@ const NAMES = new WeakMap()
  * @param {number} [menu.openTasks] The resident's open tasks, counted beside "My tasks".
  * @param {string} [menu.area] The name the portal gives its own area.
  * @return {Array<{key: string, title: string, items: Array<object>}>} The groups.
- * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
- * @spec openspec/changes/resident-sees-words-not-codes/specs/site-resident-menu/spec.md#requirement-a-contributed-page-may-name-the-menu-group-it-belongs-to-req-srm-005
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-a-contributed-page-may-name-the-menu-group-it-belongs-to-req-srm-005
  * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
  * @spec openspec/changes/resident-menu-leave-out/specs/site-resident-menu/spec.md#requirement-a-portal-may-leave-items-out-of-the-resident-menu
  */
 export function residentMenuGroups(nav, menu) {
 	const { t, unread, hrefFor, recordRows = {}, layout = null, leaveOut = null, openTasks = 0 } = menu
-	const ctx = { entries: Array.isArray(nav) ? nav : [], t, unread, hrefFor, recordRows, openTasks, area: menu.area }
+	const ctx = { entries: Array.isArray(nav) ? nav : [], t, unread, hrefFor, recordRows, openTasks, area: menu.area, themeCases: menu.themeCases || {} }
 	const groups = defaultGroups(ctx).filter((group) => group.items.length > 0)
 	withDistinctNames(groups, t)
 	return laidOut(withoutLeftOut(groups, leaveOut), { layout, t, hrefFor })
@@ -303,7 +353,7 @@ function named(item, name) {
  * @param {MenuContext} ctx What the items are built from.
  * @param {[string, string, Array<string>]} group The group's key, heading and sections.
  * @return {{key: string, title: string, items: Array<object>}} The group.
- * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
  */
 function sectionGroup(ctx, [key, title, sections]) {
 	return {
@@ -321,7 +371,7 @@ function sectionGroup(ctx, [key, title, sections]) {
  *
  * @param {MenuContext} ctx What the items are built from.
  * @return {{key: string, title: string, items: Array<object>}} The group.
- * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
  */
 function themeGroup(ctx) {
 	return {
@@ -329,8 +379,27 @@ function themeGroup(ctx) {
 		title: ctx.t('Themes'),
 		items: ctx.entries
 			.filter((entry) => entry.theme)
-			.map((entry) => named(itemFor(entry, ctx), entry.key)),
+			.map((entry) => named(withRunningCases(itemFor(entry, ctx), entry, ctx), entry.key)),
 	}
+}
+
+/**
+ * A theme's item with the count of the resident's running cases in that
+ * theme beside it, once those cases are known (life-domain-theme-pages T10).
+ *
+ * @param {object} item The item (changed in place).
+ * @param {object} entry The theme's navigation entry.
+ * @param {MenuContext} ctx What the items are built from.
+ * @return {object} The item.
+ * @spec openspec/changes/life-domain-theme-pages/tasks.md#t10
+ */
+function withRunningCases(item, entry, ctx) {
+	const count = ctx.themeCases?.[entry.theme?.slug] || 0
+	if (count > 0) {
+		item.badge = String(count)
+		item.badgeLabel = ctx.t('{count} running', { count })
+	}
+	return item
 }
 
 /**
@@ -340,8 +409,8 @@ function themeGroup(ctx) {
  *
  * @param {MenuContext} ctx What the items are built from.
  * @return {{appGroups: Array<object>, recordGroups: Array<object>}} The groups.
- * @spec openspec/changes/resident-sees-words-not-codes/specs/site-resident-menu/spec.md#requirement-a-contributed-page-may-name-the-menu-group-it-belongs-to-req-srm-005
- * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-a-contributed-page-may-name-the-menu-group-it-belongs-to-req-srm-005
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
  */
 function contributedGroups(ctx) {
 	const appGroups = []
@@ -395,23 +464,47 @@ function groupIn(groups, { key, title }) {
  * @param {Array<{items: Array<object>}>} groups The groups (changed in place).
  * @param {(key: string, vars?: object) => string} t The translator.
  * @return {void}
- * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
  */
 function withDistinctNames(groups, t) {
-	const counts = new Map()
+	const counts = nameCounts(groups.flatMap((group) => group.items))
 	for (const item of groups.flatMap((group) => group.items)) {
+		withDistinctName(item, { counts, t })
+	}
+}
+
+/**
+ * How often each name is used, in lower case; rows of a `perRecord` page
+ * never count.
+ *
+ * @param {Array<object>} items The items.
+ * @return {Map<string, number>} The uses by name.
+ */
+function nameCounts(items) {
+	const counts = new Map()
+	for (const item of items) {
 		if (!item.perRecord) {
 			const name = item.name.toLowerCase()
 			counts.set(name, (counts.get(name) || 0) + 1)
 		}
 	}
-	for (const item of groups.flatMap((group) => group.items)) {
-		const source = item.source
-		delete item.source
-		delete item.perRecord
-		if (source !== undefined && counts.get(item.name.toLowerCase()) > 1) {
-			item.name = t('{label} ({source})', { label: item.name, source })
-		}
+	return counts
+}
+
+/**
+ * Take the bookkeeping off one item and add its app's name when its name is
+ * used more than once.
+ *
+ * @param {object} item The item (changed in place).
+ * @param {{counts: Map<string, number>, t: (key: string, vars?: object) => string}} names The uses by name and the translator.
+ * @return {void}
+ */
+function withDistinctName(item, { counts, t }) {
+	const source = item.source
+	delete item.source
+	delete item.perRecord
+	if (source !== undefined && counts.get(item.name.toLowerCase()) > 1) {
+		item.name = t('{label} ({source})', { label: item.name, source })
 	}
 }
 
@@ -431,17 +524,61 @@ function withDistinctNames(groups, t) {
  * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
  */
 export function menuCurrentRoute(route, { groups, nav = [], contributions = null }) {
-	const links = (Array.isArray(groups) ? groups : [])
-		.flatMap((group) => (Array.isArray(group?.items) ? group.items : []))
-		.map((item) => item?.link)
-		.filter((link) => typeof link === 'string' && link !== '')
-	if (typeof route !== 'string' || route === '' || links.includes(route)) {
+	const links = menuLinks(groups)
+	if (isMarkedItself(route, links)) {
 		return route || ''
 	}
-	const under = links
+	return markedAbove(route, { links, nav, contributions })
+}
+
+/**
+ * The links the menu's items lead to.
+ *
+ * @param {Array<{items: Array<{link: string}>}>} groups The menu's groups.
+ * @return {Array<string>} The links.
+ */
+function menuLinks(groups) {
+	return listOf(groups)
+		.flatMap((group) => listOf(group?.items))
+		.map((item) => item?.link)
+		.filter((link) => typeof link === 'string' && link !== '')
+}
+
+/**
+ * Whether a route is handed back as it is: no route, or one an item links
+ * to.
+ *
+ * @param {unknown} route The route on screen.
+ * @param {Array<string>} links The menu's links.
+ * @return {boolean}
+ */
+function isMarkedItself(route, links) {
+	return typeof route !== 'string' || route === '' || links.includes(route)
+}
+
+/**
+ * The deepest item a route lies under, else the cases section for a cases
+ * page, else the route itself.
+ *
+ * @param {string} route The route on screen.
+ * @param {{links: Array<string>, nav: Array<object>, contributions: object|null}} menu The menu's links, the navigation and the contributions aggregate.
+ * @return {string} The route to mark.
+ */
+function markedAbove(route, menu) {
+	const under = menu.links
 		.filter((link) => link !== ACCOUNT_ROUTE && route.startsWith(`${link}/`))
 		.sort((a, b) => b.length - a.length)[0]
-	return under || casesRouteFor(route, { links, nav, contributions })
+	return under || casesRouteFor(route, menu)
+}
+
+/**
+ * A value that should be a list, or none.
+ *
+ * @param {unknown} value The value.
+ * @return {Array} The list.
+ */
+function listOf(value) {
+	return Array.isArray(value) ? value : []
 }
 
 /**
@@ -454,22 +591,29 @@ export function menuCurrentRoute(route, { groups, nav = [], contributions = null
  * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
  */
 function casesRouteFor(route, { links, nav, contributions }) {
-	const entries = Array.isArray(nav) ? nav : []
-	const entry = entries.find((candidate) => {
-		if (candidate.special) {
-			return false
-		}
-		const own = routeForNav(candidate)
-		return route === own || route.startsWith(`${own}/`)
-	})
+	const entries = listOf(nav)
+	const entry = entries.find((candidate) => showsRoute(candidate, route))
 	const cases = entries.find((candidate) => candidate.special === 'cases')
-	if (entry && cases && isCasesPage(entry, contributions)) {
-		const link = routeForNav(cases)
-		if (links.includes(link)) {
-			return link
-		}
+	if (!entry || !cases || !isCasesPage(entry, contributions)) {
+		return route
 	}
-	return route
+	const link = routeForNav(cases)
+	return links.includes(link) ? link : route
+}
+
+/**
+ * Whether a contributed page shows a route: its own, or one under it.
+ *
+ * @param {object} candidate A navigation entry.
+ * @param {string} route The route on screen.
+ * @return {boolean}
+ */
+function showsRoute(candidate, route) {
+	if (candidate.special) {
+		return false
+	}
+	const own = routeForNav(candidate)
+	return route === own || route.startsWith(`${own}/`)
 }
 
 /**
@@ -482,26 +626,36 @@ function casesRouteFor(route, { links, nav, contributions }) {
  */
 function isCasesPage(entry, contributions) {
 	const app = entry.contribution?.app || ''
-	const page = entry.page || {}
-	const names = [
-		page.record?.collection,
-		...(Array.isArray(page.blocks) ? page.blocks : []).map(
-			(block) => block?.collection,
-		),
-	].filter((name) => typeof name === 'string' && name !== '')
-	const list = Array.isArray(contributions?.contributions)
-		? contributions.contributions
-		: []
-	return list.some(
+	const names = pageCollections(entry.page || {})
+	return listOf(contributions?.contributions).some(
 		(contribution) =>
-			contribution?.app === app
-			&& (Array.isArray(contribution.collections)
-				? contribution.collections
-				: []
-			).some(
-				(collection) =>
-					collection?.kind === 'cases' && names.includes(collection.id),
-			),
+			contribution?.app === app && offersCases(contribution, names),
+	)
+}
+
+/**
+ * The collections a page shows: its record's and its blocks'.
+ *
+ * @param {object} page The page.
+ * @return {Array<string>} The collection ids.
+ */
+function pageCollections(page) {
+	return [
+		page.record?.collection,
+		...listOf(page.blocks).map((block) => block?.collection),
+	].filter((name) => typeof name === 'string' && name !== '')
+}
+
+/**
+ * Whether a contribution offers one of these collections as its cases.
+ *
+ * @param {object} contribution The contribution.
+ * @param {Array<string>} names The collection ids.
+ * @return {boolean}
+ */
+function offersCases(contribution, names) {
+	return listOf(contribution.collections).some(
+		(collection) => collection?.kind === 'cases' && names.includes(collection.id),
 	)
 }
 
@@ -641,14 +795,15 @@ function withRestOf(out, { groups, placed }) {
 
 /**
  * Read the rows of every collection a page lists itself per row of
- * (`perRecord`), scoped to the resident, by `<app>:<collection>`. A
+ * (`perRecord`) or counts (`badge`), and of every cases collection tagged
+ * with a theme, scoped to the resident, by `<app>:<collection>`. A
  * collection that cannot be read is left out, and its pages are then listed
  * once, as any page.
  *
  * @param {Array<object>|null} contributions The aggregate's `contributions`.
  * @param {object} api The portal api (`fetchCollection`).
  * @return {Promise<Record<string, Array<object>>>} The rows.
- * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
  */
 export async function loadPerRecordRows(contributions, api) {
 	const wanted = new Map()
@@ -664,6 +819,10 @@ export async function loadPerRecordRows(contributions, api) {
 				}
 			}
 		}
+	}
+	// The cases collections tagged with a theme, to count the theme's running cases.
+	for (const { key, collection } of themeCaseCollections(contributions)) {
+		wanted.set(key, collection)
 	}
 	const rows = {}
 	if (typeof api?.fetchCollection !== 'function') {
@@ -693,7 +852,7 @@ export async function loadPerRecordRows(contributions, api) {
  * @param {object} entry A navigation entry of a contributed page.
  * @param {Record<string, Array<object>>} recordRows The known rows.
  * @return {Array<object>|null} The rows.
- * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
  */
 export function perRecordRows(entry, recordRows) {
 	const collection = entry.page?.perRecord
@@ -727,7 +886,7 @@ function titleFieldsOf(page) {
  * @param {boolean} [target.grouped] Whether the rows are items of the page's declared group.
  * @param {MenuContext} ctx What the items are built from.
  * @return {void}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
  * @spec openspec/changes/resident-menu-badges-and-cards/specs/site-resident-menu/spec.md#requirement-a-per-record-page-in-a-group-lists-each-row-with-its-subtitle
  */
 function addPerRecordItems(target, ctx) {
@@ -833,7 +992,7 @@ function appNameOf(entry) {
  *
  * @param {object} entry A navigation entry of a contributed page.
  * @return {{key: string, title: string}} The group's key and heading.
- * @spec openspec/changes/resident-sees-words-not-codes/specs/site-resident-menu/spec.md#requirement-a-contributed-page-may-name-the-menu-group-it-belongs-to-req-srm-005
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-a-contributed-page-may-name-the-menu-group-it-belongs-to-req-srm-005
  */
 export function pageGroupOf(entry) {
 	const declared = entry.page?.group

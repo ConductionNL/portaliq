@@ -116,6 +116,20 @@ import { lookupAddress } from '../../lib/intakeApi.js'
 import { pageLocale } from '../../pages/inbox/translate.js'
 import { canLookUp, emptyAddress, withFound } from './address.js'
 
+/** The parts of an address the register is asked about. */
+const ASKED_PARTS = Object.freeze(['postcode', 'number', 'letter', 'addition'])
+
+/**
+ * Whether the asked parts of an address are still what was asked.
+ *
+ * @param {object} block The address now.
+ * @param {object} asked The address the register was asked about.
+ * @return {boolean} True when none of the asked parts changed.
+ */
+function stillAsked(block, asked) {
+	return ASKED_PARTS.every((part) => block[part] === asked[part])
+}
+
 import '@utrecht/form-label-css/dist/index.css'
 import '@utrecht/paragraph-css/dist/index.css'
 import '@utrecht/textbox-css/dist/index.css'
@@ -226,12 +240,7 @@ export default {
 			}
 			const asked = { ...this.block }
 			const found = await lookupAddress({ base: this.base }, asked)
-			const unchanged =
-				this.block.postcode === asked.postcode
-				&& this.block.number === asked.number
-				&& this.block.letter === asked.letter
-				&& this.block.addition === asked.addition
-			if (!found || !unchanged) {
+			if (!found || !stillAsked(this.block, asked)) {
 				return
 			}
 			this.foundNote = true

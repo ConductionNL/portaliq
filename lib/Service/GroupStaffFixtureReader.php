@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/guardian-direct-messages/design.md#participation-model
+ * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#participation-model
  */
 
 declare(strict_types=1);
@@ -34,12 +34,11 @@ use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * @spec openspec/changes/guardian-direct-messages/design.md#participation-model
+ * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#participation-model
  */
 class GroupStaffFixtureReader {
 	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
-	use PagedObjectReads;
 
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
@@ -67,7 +66,7 @@ class GroupStaffFixtureReader {
 	 *
 	 * @return array<int, string>
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/design.md#participation-model
+	 * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#participation-model
 	 */
 	public function staffForGroup(string $groupRef): array {
 		if ($groupRef === '') {
@@ -79,30 +78,55 @@ class GroupStaffFixtureReader {
 			return [];
 		}
 
-		try {
-			$objectService->setRegister(register: self::REGISTER);
-			$objectService->setSchema(schema: self::SCHEMA);
-			$rows = $objectService->findAll(
-				config: ['filters' => ['groupRef' => $groupRef], 'limit' => 1, 'offset' => 0],
-				_rbac: false,
-				_multitenancy: false
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: group staff fixture read failed', ['reason' => $e->getMessage()]);
-			return [];
-		}
-
-		if (is_array($rows) === false || count($rows) === 0) {
-			return [];
-		}
-
-		$row = $this->normalise(row: $rows[0]);
+		$row = $this->firstRow(objectService: $objectService, groupRef: $groupRef);
 		if ($row === null) {
 			return [];
 		}
 
-		return $this->stringList(value: $row['staffRefs'] ?? []);
+		return (new NonEmptyStrings())->from(value: $row['staffRefs'] ?? []);
 	}//end staffForGroup()
+
+	/**
+	 * The group's fixture row, or null when there is none or the read failed.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $groupRef      The group.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function firstRow(object $objectService, string $groupRef): array|null {
+		try {
+			$rows = $this->query(objectService: $objectService, groupRef: $groupRef);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: group staff fixture read failed', ['reason' => $e->getMessage()]);
+			return null;
+		}
+
+		if (is_array($rows) === false || count($rows) === 0) {
+			return null;
+		}
+
+		return $this->normalise(row: $rows[0]);
+	}//end firstRow()
+
+	/**
+	 * Read the group's fixture row.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $groupRef      The group.
+	 *
+	 * @return mixed
+	 */
+	private function query(object $objectService, string $groupRef): mixed {
+		$objectService->setRegister(register: self::REGISTER);
+		$objectService->setSchema(schema: self::SCHEMA);
+
+		return $objectService->findAll(
+			config: ['filters' => ['groupRef' => $groupRef], 'limit' => 1, 'offset' => 0],
+			_rbac: false,
+			_multitenancy: false
+		);
+	}//end query()
 
 	/**
 	 * Whether a staff member teaches a group.
@@ -112,7 +136,7 @@ class GroupStaffFixtureReader {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/design.md#participation-model
+	 * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#participation-model
 	 */
 	public function staffTeachesGroup(string $staffRef, string $groupRef): bool {
 		if ($staffRef === '') {
@@ -129,29 +153,33 @@ class GroupStaffFixtureReader {
 	 *
 	 * @return array<int, string>
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/design.md#participation-model
+	 * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#participation-model
 	 */
 	public function groupsTaughtBy(string $staffRef): array {
 		if ($staffRef === '') {
 			return [];
 		}
 
-		$objectService = $this->objectService();
-		if ($objectService === null) {
+		$rows = (new FixtureRowReader(objectService: $this->objectService(), logger: $this->logger))->everyRow(
+			source: ['register' => self::REGISTER, 'schema' => self::SCHEMA],
+			failure: 'Portaliq: group staff fixture enumeration failed'
+		);
+		if ($rows === null) {
 			return [];
 		}
 
-		try {
-			$rows = $this->readEveryPage(objectService: $objectService, register: self::REGISTER, schema: self::SCHEMA);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: group staff fixture enumeration failed', ['reason' => $e->getMessage()]);
-			return [];
-		}
+		return $this->groupsOf(rows: $rows, staffRef: $staffRef);
+	}//end groupsTaughtBy()
 
-		if (is_array($rows) === false) {
-			return [];
-		}
-
+	/**
+	 * The groups of the fixture rows that list the staff member.
+	 *
+	 * @param array<int, mixed> $rows     The fixture rows.
+	 * @param string            $staffRef The staff subjectRef.
+	 *
+	 * @return array<int, string>
+	 */
+	private function groupsOf(array $rows, string $staffRef): array {
 		$groups = [];
 		foreach ($rows as $row) {
 			$normalised = $this->normalise(row: $row);
@@ -159,7 +187,7 @@ class GroupStaffFixtureReader {
 				continue;
 			}
 
-			$staffRefs = $this->stringList(value: $normalised['staffRefs'] ?? []);
+			$staffRefs = (new NonEmptyStrings())->from(value: $normalised['staffRefs'] ?? []);
 			$groupRef = (string)($normalised['groupRef'] ?? '');
 			if ($groupRef !== '' && in_array($staffRef, $staffRefs, true) === true) {
 				$groups[] = $groupRef;
@@ -167,27 +195,5 @@ class GroupStaffFixtureReader {
 		}
 
 		return $groups;
-	}//end groupsTaughtBy()
-
-	/**
-	 * Coerce a value to a list of strings, dropping anything else.
-	 *
-	 * @param mixed $value The raw value.
-	 *
-	 * @return array<int, string>
-	 */
-	private function stringList(mixed $value): array {
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		$list = [];
-		foreach ($value as $item) {
-			if (is_string($item) === true && $item !== '') {
-				$list[] = $item;
-			}
-		}
-
-		return $list;
-	}//end stringList()
+	}//end groupsOf()
 }//end class

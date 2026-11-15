@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
  */
 
 declare(strict_types=1);
@@ -29,7 +29,9 @@ namespace OCA\Portaliq\Service\Traffic;
  * be computed for nobody; an alert on a metric this app does not count
  * would never fire and never say why.
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class TrafficReportDefinitions {
 
@@ -80,33 +82,61 @@ class TrafficReportDefinitions {
 	 *
 	 * @return array<int, array<string, mixed>> The usable reports.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
 	 */
 	public function reports(mixed $value): array {
 		$out = [];
 		foreach ($this->rows(value: $value) as $row) {
 			$id = $this->token(value: ($row['id'] ?? null));
-			$cadence = (string)($row['cadence'] ?? '');
-			$recipients = $this->recipients(value: ($row['recipients'] ?? null));
-			if ($id === '' || isset($out[$id]) === true || in_array($cadence, self::CADENCES, true) === false || $recipients === []) {
+			$report = $this->report(row: $row, id: $id);
+			if ($id === '' || isset($out[$id]) === true || $report === null) {
 				continue;
 			}
 
-			$sections = $this->names(value: ($row['sections'] ?? null), known: self::SECTIONS);
-			if ($sections === []) {
-				$sections = ['overview'];
-			}
-
-			$out[$id] = [
-				'id' => $id,
-				'name' => $this->name(value: ($row['name'] ?? null), fallback: $id),
-				'cadence' => $cadence,
-				'recipients' => $recipients,
-				'sections' => $sections,
-			];
+			$out[$id] = $report;
 		}
 
 		return array_values($out);
+	}
+
+	/**
+	 * One report, or null when its cadence is unknown or it has no recipients.
+	 *
+	 * @param array<string, mixed> $row The configured report.
+	 * @param string               $id  The report's id.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function report(array $row, string $id): array|null {
+		$cadence = (string)($row['cadence'] ?? '');
+		$recipients = $this->recipients(value: ($row['recipients'] ?? null));
+		if (in_array($cadence, self::CADENCES, true) === false || $recipients === []) {
+			return null;
+		}
+
+		return [
+			'id' => $id,
+			'name' => $this->name(value: ($row['name'] ?? null), fallback: $id),
+			'cadence' => $cadence,
+			'recipients' => $recipients,
+			'sections' => $this->sectionsOf(row: $row),
+		];
+	}
+
+	/**
+	 * The report's known sections, the overview when it names none.
+	 *
+	 * @param array<string, mixed> $row The configured report.
+	 *
+	 * @return string[]
+	 */
+	private function sectionsOf(array $row): array {
+		$sections = $this->names(value: ($row['sections'] ?? null), known: self::SECTIONS);
+		if ($sections === []) {
+			$sections = ['overview'];
+		}
+
+		return $sections;
 	}
 
 	/**
@@ -117,15 +147,10 @@ class TrafficReportDefinitions {
 	 *
 	 * @return array<int, array<string, mixed>> The usable alerts.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-an-alert-must-fire-once-per-period
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-alert-must-fire-once-per-period
 	 */
 	public function alerts(mixed $value, array $goals = []): array {
-		$goalIds = [];
-		foreach ($goals as $goal) {
-			if (is_array($goal) === true && isset($goal['id']) === true) {
-				$goalIds[(string)$goal['id']] = true;
-			}
-		}
+		$goalIds = $this->goalIds(goals: $goals);
 
 		$out = [];
 		foreach ($this->rows(value: $value) as $row) {
@@ -134,18 +159,48 @@ class TrafficReportDefinitions {
 				continue;
 			}
 
-			$out[$id] = [
-				'id' => $id,
-				'name' => $this->name(value: ($row['name'] ?? null), fallback: $id),
-				'metric' => (string)$row['metric'],
-				'comparison' => (string)$row['comparison'],
-				'threshold' => (float)$row['threshold'],
-				'period' => (string)($row['period'] ?? 'day'),
-				'recipients' => $this->recipients(value: ($row['recipients'] ?? null)),
-			];
+			$out[$id] = $this->alert(row: $row, id: $id);
 		}
 
 		return array_values($out);
+	}
+
+	/**
+	 * The ids of the portal's goals.
+	 *
+	 * @param array<int, array<string, mixed>> $goals The portal's resolved goals.
+	 *
+	 * @return array<string, true>
+	 */
+	private function goalIds(array $goals): array {
+		$goalIds = [];
+		foreach ($goals as $goal) {
+			if (is_array($goal) === true && isset($goal['id']) === true) {
+				$goalIds[(string)$goal['id']] = true;
+			}
+		}
+
+		return $goalIds;
+	}
+
+	/**
+	 * One usable alert.
+	 *
+	 * @param array<string, mixed> $row The configured alert.
+	 * @param string               $id  The alert's id.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function alert(array $row, string $id): array {
+		return [
+			'id' => $id,
+			'name' => $this->name(value: ($row['name'] ?? null), fallback: $id),
+			'metric' => (string)$row['metric'],
+			'comparison' => (string)$row['comparison'],
+			'threshold' => (float)$row['threshold'],
+			'period' => (string)($row['period'] ?? 'day'),
+			'recipients' => $this->recipients(value: ($row['recipients'] ?? null)),
+		];
 	}
 
 	/**
@@ -156,7 +211,7 @@ class TrafficReportDefinitions {
 	 *
 	 * @return string[] The member slugs.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-roll-up-portal-must-sum-its-members-and-never-count-its-own
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-roll-up-portal-must-sum-its-members-and-never-count-its-own
 	 */
 	public function rollupOf(mixed $value, string $self): array {
 		if (is_array($value) === false) {

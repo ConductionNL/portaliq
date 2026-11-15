@@ -46,20 +46,38 @@ export function mergedAnswer(answers) {
 	}
 	const seen = new Set()
 	const cases = []
-	for (const answer of answers) {
-		if (!answer || answer.ok === false) {
-			continue
-		}
-		for (const row of Array.isArray(answer.cases) ? answer.cases : []) {
-			const target = caseTarget(row)
-			const key = target
-				? `${target.app}:${target.collection}:${target.id}`
-				: JSON.stringify(row)
-			if (!seen.has(key)) {
-				seen.add(key)
-				cases.push(row)
-			}
+	for (const row of answeredCases(answers)) {
+		const key = caseKey(row)
+		if (!seen.has(key)) {
+			seen.add(key)
+			cases.push(row)
 		}
 	}
 	return { ...first, cases }
+}
+
+/**
+ * The cases of every answer that did not fail, in order.
+ *
+ * @param {Array<object|null>} answers The answers.
+ * @return {Array<object>} The case rows.
+ */
+function answeredCases(answers) {
+	return answers
+		.filter((answer) => answer && answer.ok !== false)
+		.flatMap((answer) => (Array.isArray(answer.cases) ? answer.cases : []))
+}
+
+/**
+ * What makes a case the same case across answers: its app, collection and
+ * id, else the whole row.
+ *
+ * @param {object} row The case row.
+ * @return {string} The key.
+ */
+function caseKey(row) {
+	const target = caseTarget(row)
+	return target
+		? `${target.app}:${target.collection}:${target.id}`
+		: JSON.stringify(row)
 }

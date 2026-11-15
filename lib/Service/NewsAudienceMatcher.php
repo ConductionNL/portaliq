@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 /**
- * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
  */
 class NewsAudienceMatcher {
 	/**
@@ -46,7 +46,7 @@ class NewsAudienceMatcher {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
 	 */
 	public static function matches(array $target, array $audience): bool {
 		$targetSchool = (string)($target['schoolRef'] ?? '');
@@ -64,6 +64,26 @@ class NewsAudienceMatcher {
 
 		return false;
 	}//end matches()
+
+	/**
+	 * Whether a row reaches an audience: its `target` (none when it is not a
+	 * list) intersects the audience.
+	 *
+	 * @param array<string, mixed>                                            $row      The news item, event, activity or newsletter.
+	 * @param array{schoolRef?: mixed, groupRefs?: mixed, childRefs?: mixed} $audience The guardian's resolved audience.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
+	 */
+	public static function reaches(array $row, array $audience): bool {
+		$target = [];
+		if (is_array($row['target'] ?? null) === true) {
+			$target = $row['target'];
+		}
+
+		return self::matches(target: $target, audience: $audience);
+	}//end reaches()
 
 	/**
 	 * Whether two lists share at least one element (strict string equality).
