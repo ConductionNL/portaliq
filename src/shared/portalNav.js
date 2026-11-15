@@ -16,6 +16,7 @@ export const NAV_KEYS = {
 	access: '__access__',
 	cases: '__cases__',
 	details: '__details__',
+	contacts: '__contacts__',
 	account: '__account__',
 }
 
@@ -23,13 +24,24 @@ export const NAV_KEYS = {
  * Sections that are never the page a signed-in resident lands on: they are
  * there to visit, not to open with.
  */
-const NEVER_DEFAULT = ['inbox', 'access', 'details', 'account']
+const NEVER_DEFAULT = [
+	'inbox',
+	'access',
+	'details',
+	'contacts',
+	'samenwerken',
+	'acties',
+	'account',
+]
 
 /**
  * The in-site route every signed-in section lives under. A CMS page with this
  * route is shadowed by the signed-in area, so no seeded portal uses it.
  */
 export const ACCOUNT_ROUTE = '/mijn'
+
+/** The segment under a theme's route that lists all its products. */
+export const THEME_PRODUCTS_SEGMENT = 'producten'
 
 /**
  * Flatten every contribution's pages into one navigable list, each tagged with
@@ -45,85 +57,191 @@ export const ACCOUNT_ROUTE = '/mijn'
  * @param {boolean} [enabled.news] The guardian's feed holds news.
  * @param {boolean} [enabled.access] Signed in with the contributions loaded.
  * @param {boolean} [enabled.cases] `cases.enabled` on the aggregate.
- * @return {Array<object>} `{key, label, icon, page?, contribution?, special?}` entries.
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @param {Array<object>} [enabled.pages] The own-area pages the portal switched on: `{special, label, icon}`.
+ * @param {Array<object>} [enabled.themes] The life domains with something for this resident.
+ * @param {Array<object>} [enabled.stepUp] The aggregate's `stepUp`: collections the login is too low for.
+ * @return {Array<object>} `{key, label, icon, page?, contribution?, special?, stepUp?}` entries.
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t6
  */
 export function buildNav(contributions, t, enabled = {}) {
-	const nav = []
-	for (const contribution of contributions || []) {
-		for (const page of contribution.pages || []) {
-			nav.push({
-				key: `${contribution.app}:${page.id}`,
-				label: page.label || page.id,
-				icon: page.icon,
-				page,
-				contribution,
-			})
-		}
-	}
+	const nav = contributionEntries(contributions)
 	if (enabled.cases === true) {
-		nav.unshift({
-			key: NAV_KEYS.cases,
-			label: t('My cases'),
-			icon: 'FolderAccount',
-			special: 'cases',
-		})
+		nav.unshift(sectionEntry('cases', t))
 	}
-	if (enabled.tasks === true) {
-		nav.push({
-			key: NAV_KEYS.tasks,
-			label: t('My tasks'),
-			icon: 'CheckboxMarkedOutline',
-			special: 'tasks',
-		})
-	}
-	if (enabled.messages === true) {
-		nav.push({
-			key: NAV_KEYS.messages,
-			label: t('Conversations'),
-			icon: 'MessageText',
-			special: 'messages',
-		})
-	}
-	if (enabled.news === true) {
-		nav.push({
-			key: NAV_KEYS.news,
-			label: t('News'),
-			icon: 'Newspaper',
-			special: 'news',
-		})
+	for (const special of ['tasks', 'messages', 'news']) {
+		if (enabled[special] === true) {
+			nav.push(sectionEntry(special, t))
+		}
 	}
 	// The inbox only once something else is there: on the pre-load render it
 	// would be the sole entry and lock the default page to an empty inbox.
 	if (nav.length > 0) {
-		nav.push({
-			key: NAV_KEYS.inbox,
-			label: t('Inbox'),
-			icon: 'Email',
-			special: 'inbox',
-		})
+		nav.push(sectionEntry('inbox', t))
 	}
+	nav.push(...ownAreaEntries(enabled, t))
 	if (enabled.access === true) {
-		nav.push({
-			key: NAV_KEYS.access,
-			label: t('Access to cases'),
-			icon: 'AccountKey',
-			special: 'access',
-		})
-		nav.push({
-			key: NAV_KEYS.details,
-			label: t('My details'),
-			icon: 'CardAccountDetails',
-			special: 'details',
-		})
-		nav.push({
-			key: NAV_KEYS.account,
-			label: t('My account'),
-			icon: 'AccountCog',
-			special: 'account',
-		})
+		nav.push(...['access', 'details', 'account'].map((special) => sectionEntry(special, t)))
+	}
+	// A page the login is too low for says which login reaches it, last, and
+	// never as the page the resident opens on (REQ-SCR-004).
+	nav.push(...stepUpEntries(enabled.stepUp, nav))
+	return nav
+}
+
+/** The shell's own sections: the English label and the icon of each. */
+const SHELL_SECTIONS = {
+	cases: ['My cases', 'FolderAccount'],
+	tasks: ['My tasks', 'CheckboxMarkedOutline'],
+	messages: ['Conversations', 'MessageText'],
+	news: ['News', 'Newspaper'],
+	inbox: ['Inbox', 'Email'],
+	access: ['Access to cases', 'AccountKey'],
+	details: ['My details', 'CardAccountDetails'],
+	account: ['My account', 'AccountCog'],
+}
+
+/**
+ * The navigation entry of one of the shell's own sections.
+ *
+ * @param {string} special The section.
+ * @param {(key: string) => string} t The translator.
+ * @return {{key: string, label: string, icon: string, special: string}} The entry.
+ */
+function sectionEntry(special, t) {
+	const [label, icon] = SHELL_SECTIONS[special]
+	return { key: NAV_KEYS[special], label: t(label), icon, special }
+}
+
+/**
+ * Every contribution's pages, each tagged with its owning contribution so a
+ * block's refs resolve in the right scope.
+ *
+ * @param {Array|null} contributions The aggregate's `contributions`.
+ * @return {Array<object>} `{key, label, icon, page, contribution}` entries.
+ */
+function contributionEntries(contributions) {
+	const nav = []
+	for (const contribution of contributions || []) {
+		for (const page of contribution.pages || []) {
+			nav.push(pageEntry(contribution, page))
+		}
 	}
 	return nav
+}
+
+/**
+ * The entry of one contributed page, tagged with its contribution.
+ *
+ * @param {object} contribution The contribution.
+ * @param {object} page One of its pages.
+ * @return {{key: string, label: string, icon: string, page: object, contribution: object}} The entry.
+ */
+function pageEntry(contribution, page) {
+	return {
+		key: `${contribution.app}:${page.id}`,
+		label: page.label || page.id,
+		icon: page.icon,
+		page,
+		contribution,
+	}
+}
+
+/**
+ * The own-area pages the portal switched on, then the life domains with
+ * something for this resident.
+ *
+ * @param {{pages?: Array<object>, themes?: Array<object>}} enabled What the backend announced.
+ * @param {(key: string) => string} t The translator.
+ * @return {Array<object>} The entries.
+ */
+function ownAreaEntries(enabled, t) {
+	const pages = (enabled.pages || []).map((page) => ({
+		key: `__${page.special}__`,
+		label: t(page.label),
+		icon: page.icon,
+		special: page.special,
+	}))
+	const themes = (enabled.themes || []).map((theme) => ({
+		key: `__theme__:${theme.slug}`,
+		label: theme.title,
+		icon: 'Tag',
+		special: `thema/${theme.slug}`,
+		theme,
+	}))
+	return [...pages, ...themes]
+}
+
+/**
+ * The navigation entries for the aggregate's `stepUp`, one per collection, at
+ * the route the dropped page would have had (`/mijn/<app>/<collection>`),
+ * skipping any route a real page already holds. The server drops a page whose
+ * blocks all read such a collection, so without this entry the resident would
+ * never learn the page exists (site-member-voting-record-and-confidential-papers
+ * design D5).
+ *
+ * @param {Array<object>|null} stepUp The aggregate's `stepUp`: `{app, collection, label, minTrust}`.
+ * @param {Array<object>} nav The navigation built so far.
+ * @return {Array<object>} `{key, label, icon, stepUp}` entries.
+ * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t6
+ */
+export function stepUpEntries(stepUp, nav = []) {
+	const taken = new Set((nav || []).map((entry) => entry.key))
+	return (Array.isArray(stepUp) ? stepUp : [])
+		.map(stepUpEntry)
+		.filter((entry) => claimsRoute(entry, taken))
+}
+
+/**
+ * Whether an entry takes a route no entry holds yet; one that does is
+ * marked taken.
+ *
+ * @param {object|null} entry The entry, or null.
+ * @param {Set<string>} taken The keys held so far (changed in place).
+ * @return {boolean}
+ */
+function claimsRoute(entry, taken) {
+	if (entry === null || taken.has(entry.key)) {
+		return false
+	}
+	taken.add(entry.key)
+	return true
+}
+
+/**
+ * The navigation entry for one `stepUp` item, or null when it does not name
+ * both its app and its collection.
+ *
+ * @param {object|null} item `{app, collection, label, minTrust}`.
+ * @return {{key: string, label: string, icon: string, stepUp: object}|null} The entry.
+ */
+function stepUpEntry(item) {
+	const app = textOr(item?.app, '')
+	const collection = textOr(item?.collection, '')
+	if (app === '' || collection === '') {
+		return null
+	}
+	return {
+		key: `${app}:${collection}`,
+		label: textOr(item.label, '') || collection,
+		icon: 'Lock',
+		stepUp: {
+			app,
+			collection,
+			minTrust: textOr(item.minTrust, ''),
+		},
+	}
+}
+
+/**
+ * A value when it is text, else the fallback.
+ *
+ * @param {string|number|object|null|undefined} value The value.
+ * @param {string} fallback The fallback.
+ * @return {string} The text.
+ */
+function textOr(value, fallback) {
+	return typeof value === 'string' ? value : fallback
 }
 
 /**
@@ -137,8 +255,8 @@ export function buildNav(contributions, t, enabled = {}) {
  * @param {object|null} state.contributions The contributions aggregate, or null.
  * @param {Array|null} state.threads The message threads.
  * @param {Array|null} state.news The news feed.
- * @return {{tasks: boolean, messages: boolean, news: boolean, access: boolean, cases: boolean}}
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @return {{tasks: boolean, messages: boolean, news: boolean, access: boolean, cases: boolean, pages: Array<object>, themes: Array<object>}}
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export function shellSections({ session, contributions, threads, news }) {
 	return {
@@ -147,6 +265,15 @@ export function shellSections({ session, contributions, threads, news }) {
 		news: Array.isArray(news) && news.length > 0,
 		access: Boolean(session && contributions),
 		cases: contributions?.cases?.enabled === true,
+		pages:
+			session && Array.isArray(contributions?.areaPages)
+				? contributions.areaPages
+				: [],
+		themes: Array.isArray(contributions?.themes) ? contributions.themes : [],
+		stepUp:
+			session && Array.isArray(contributions?.stepUp)
+				? contributions.stepUp
+				: [],
 	}
 }
 
@@ -157,14 +284,15 @@ export function shellSections({ session, contributions, threads, news }) {
  *
  * @param {Array<object>} nav The navigation.
  * @return {string|null} The key, or null for an empty navigation.
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export function defaultNavKey(nav) {
 	if (!Array.isArray(nav) || nav.length === 0) {
 		return null
 	}
 	const first =
-		nav.find((entry) => !NEVER_DEFAULT.includes(entry.special)) || nav[0]
+		nav.find((entry) => !NEVER_DEFAULT.includes(entry.special) && !entry.stepUp)
+		|| nav[0]
 	return first.key
 }
 
@@ -174,15 +302,60 @@ export function defaultNavKey(nav) {
  *
  * @param {object} entry A navigation entry.
  * @return {string} The route.
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export function routeForNav(entry) {
 	if (entry.special) {
 		return `${ACCOUNT_ROUTE}/${entry.special}`
 	}
-	const app = encodeURIComponent(entry.contribution?.app || '')
-	const page = encodeURIComponent(entry.page?.id || '')
+	const app = encodeURIComponent(entryApp(entry))
+	const page = encodeURIComponent(entryPage(entry))
 	return `${ACCOUNT_ROUTE}/${app}/${page}`
+}
+
+/**
+ * The app an entry belongs to: its contribution's, else its step-up's.
+ *
+ * @param {object} entry A navigation entry.
+ * @return {string} The app, or ''.
+ */
+function entryApp(entry) {
+	return entry.contribution?.app || entry.stepUp?.app || ''
+}
+
+/**
+ * The page an entry opens: its page's id, else its step-up's collection.
+ *
+ * @param {object} entry A navigation entry.
+ * @return {string} The page, or ''.
+ */
+function entryPage(entry) {
+	return entry.page?.id || entry.stepUp?.collection || ''
+}
+
+/**
+ * The route of a theme's full product list, expired ones last:
+ * `/mijn/thema/<slug>/producten`. '' for an entry that is no theme.
+ *
+ * @param {object|null} entry A navigation entry.
+ * @return {string} The route, or ''.
+ * @spec openspec/changes/life-domain-theme-pages/tasks.md#t05b
+ */
+export function themeProductsRoute(entry) {
+	return entry?.theme ? `${routeForNav(entry)}/${THEME_PRODUCTS_SEGMENT}` : ''
+}
+
+/**
+ * Whether a route is the full product list of this theme entry.
+ *
+ * @param {object|null} entry A navigation entry.
+ * @param {string} route The route on screen.
+ * @return {boolean}
+ * @spec openspec/changes/life-domain-theme-pages/tasks.md#t05b
+ */
+export function isThemeProductsRoute(entry, route) {
+	const products = themeProductsRoute(entry)
+	return products !== '' && String(route || '') === products
 }
 
 /**
@@ -190,7 +363,7 @@ export function routeForNav(entry) {
  *
  * @param {string} route The route.
  * @return {boolean}
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export function isAccountRoute(route) {
 	const value = String(route || '')
@@ -204,7 +377,7 @@ export function isAccountRoute(route) {
  * @param {Array<object>} nav The navigation.
  * @param {string} route The route.
  * @return {object|null} The entry.
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export function navEntryForRoute(nav, route) {
 	if (!isAccountRoute(route)) {
@@ -214,21 +387,43 @@ export function navEntryForRoute(nav, route) {
 	if (exact) {
 		return exact
 	}
-	// A record page with one record chosen: `/mijn/<app>/<page>/<id>`
-	// (site-mijn-omgeving-components REQ-SMO-008, REQ-SMO-020).
-	const id = recordIdOfRoute(route)
-	if (id === '') {
+	// The full product list of a theme is the theme's own page, one segment
+	// deeper: `/mijn/thema/<slug>/producten` (life-domain-theme-pages T05b).
+	const products = (nav || []).find((entry) => isThemeProductsRoute(entry, route))
+	if (products) {
+		return products
+	}
+	return recordPageEntry(nav, route)
+}
+
+/**
+ * The record page a route chooses one record on: `/mijn/<app>/<page>/<id>`
+ * (site-mijn-omgeving-components REQ-SMO-008, REQ-SMO-020), or null.
+ *
+ * @param {Array<object>} nav The navigation.
+ * @param {string} route The route.
+ * @return {object|null} The record page's entry.
+ */
+function recordPageEntry(nav, route) {
+	if (recordIdOfRoute(route) === '') {
 		return null
 	}
 	const pageRoute = String(route).slice(0, String(route).lastIndexOf('/'))
 	return (
 		(nav || []).find(
-			(entry) =>
-				!entry.special
-				&& (entry.page?.record || entry.page?.records)
-				&& routeForNav(entry) === pageRoute,
+			(entry) => isRecordPage(entry) && routeForNav(entry) === pageRoute,
 		) || null
 	)
+}
+
+/**
+ * Whether an entry is a contribution's page that lists records.
+ *
+ * @param {object} entry A navigation entry.
+ * @return {boolean} True for a record page.
+ */
+function isRecordPage(entry) {
+	return !entry.special && Boolean(entry.page?.record || entry.page?.records)
 }
 
 /**
@@ -237,7 +432,7 @@ export function navEntryForRoute(nav, route) {
  *
  * @param {string} route The route.
  * @return {string} The record id, decoded.
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
  */
 export function recordIdOfRoute(route) {
 	const parts = String(route || '').split('/')

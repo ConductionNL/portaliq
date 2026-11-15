@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
+ * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
  */
 
 declare(strict_types=1);
@@ -35,7 +35,7 @@ namespace OCA\Portaliq\Service\Traffic;
  *
  * Pure: sessions in, rows out.
  *
- * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
+ * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
  */
 class TrafficHeatmapStats {
 
@@ -71,29 +71,12 @@ class TrafficHeatmapStats {
 	 *
 	 * @return array<int, array{path: string, samples: int, clicks: array<int, array{x: int, y: int, count: int}>, scroll: array<int, int>}> The rows.
 	 *
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
 	 */
 	public function rows(array $sessions): array {
 		$pages = [];
 		foreach ($sessions as $session) {
-			foreach (($session['events'] ?? []) as $event) {
-				if (is_array($event) === false) {
-					continue;
-				}
-
-				$name = (string)($event['name'] ?? '');
-				if ($name !== self::CLICK && $name !== self::SCROLL) {
-					continue;
-				}
-
-				$path = trim((string)($event['pagePath'] ?? ''));
-				if ($path === '') {
-					continue;
-				}
-
-				$pages[$path] ??= ['path' => $path, 'samples' => 0, 'cells' => [], 'scroll' => array_fill(0, self::DECILES, 0)];
-				$pages[$path] = $this->add(page: $pages[$path], name: $name, params: $this->params(event: $event));
-			}
+			$pages = $this->counted(pages: $pages, session: $session);
 		}
 
 		$out = [];
@@ -104,6 +87,49 @@ class TrafficHeatmapStats {
 		usort($out, static fn (array $a, array $b): int => [$b['samples'], $a['path']] <=> [$a['samples'], $b['path']]);
 
 		return array_slice($out, 0, self::TOP);
+	}
+
+	/**
+	 * The pages with one session's click and scroll events counted in.
+	 *
+	 * @param array<string, array<string, mixed>> $pages   The page accumulators by path.
+	 * @param array<string, mixed>                $session The session.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function counted(array $pages, array $session): array {
+		foreach (($session['events'] ?? []) as $event) {
+			if (is_array($event) === false) {
+				continue;
+			}
+
+			$name = (string)($event['name'] ?? '');
+			$path = trim((string)($event['pagePath'] ?? ''));
+			if ($this->counts(name: $name, path: $path) === false) {
+				continue;
+			}
+
+			$pages[$path] ??= ['path' => $path, 'samples' => 0, 'cells' => [], 'scroll' => array_fill(0, self::DECILES, 0)];
+			$pages[$path] = $this->add(page: $pages[$path], name: $name, params: $this->params(event: $event));
+		}
+
+		return $pages;
+	}
+
+	/**
+	 * Whether an event counts: a click or a scroll on a known page.
+	 *
+	 * @param string $name The event name.
+	 * @param string $path The page path.
+	 *
+	 * @return bool
+	 */
+	private function counts(string $name, string $path): bool {
+		if ($name !== self::CLICK && $name !== self::SCROLL) {
+			return false;
+		}
+
+		return $path !== '';
 	}
 
 	/**

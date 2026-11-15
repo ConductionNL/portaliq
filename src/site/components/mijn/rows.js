@@ -6,7 +6,7 @@
 // translator these components share. No Vue, so tests/mijn-components.spec.mjs
 // runs it as node.
 //
-// @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+// @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 
 import strings from './strings.js'
 
@@ -24,7 +24,7 @@ const DAY_MS = 24 * 60 * 60 * 1000
  * @param {((key: string) => string)|null} t The site's translator.
  * @param {string} [locale] The page language.
  * @return {(key: string, vars?: object) => string}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
  */
 export function mijnTranslator(t, locale) {
 	const own = strings[pageLanguage(locale)] || strings.en
@@ -95,7 +95,7 @@ function dayInWords(day, today, locale) {
  * @param {(key: string, vars?: object) => string} tr The translator.
  * @param {string} [locale] The page language.
  * @return {{text: string, state: string, datetime: string}|null} The badge, or null without a deadline.
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
  */
 export function deadlineBadge(due, today, tr, locale = 'nl') {
 	const day = localDay(due)
@@ -108,27 +108,33 @@ export function deadlineBadge(due, today, tr, locale = 'nl') {
 		String(day.getMonth() + 1).padStart(2, '0'),
 		String(day.getDate()).padStart(2, '0'),
 	].join('-')
+	return { ...countdown(day, { now, tr, locale }), datetime }
+}
+
+/**
+ * The words and state of a deadline badge, by the days left.
+ *
+ * @param {Date} day The deadline's day.
+ * @param {{now: Date, tr: (key: string, vars?: object) => string, locale: string}} context Today, the translator and the page language.
+ * @return {{text: string, state: string}} The badge's words and state.
+ */
+function countdown(day, { now, tr, locale }) {
 	const days = Math.round((day.getTime() - now.getTime()) / DAY_MS)
 	if (days < 0) {
-		return { text: tr('Overdue'), state: 'error', datetime }
+		return { text: tr('Overdue'), state: 'error' }
 	}
 	if (days === 0) {
-		return { text: tr('Due today'), state: 'warning', datetime }
+		return { text: tr('Due today'), state: 'warning' }
 	}
 	if (days === 1) {
-		return { text: tr('1 day left'), state: 'warning', datetime }
+		return { text: tr('1 day left'), state: 'warning' }
 	}
 	if (days <= COUNTDOWN_DAYS) {
-		return {
-			text: tr('{count} days left', { count: days }),
-			state: 'warning',
-			datetime,
-		}
+		return { text: tr('{count} days left', { count: days }), state: 'warning' }
 	}
 	return {
 		text: tr('Before {date}', { date: dayInWords(day, now, locale) }),
 		state: 'neutral',
-		datetime,
 	}
 }
 
@@ -154,6 +160,34 @@ function limitOf(block) {
 }
 
 /**
+ * A sentence with `{field}` places filled from a row, or '' when a place
+ * stays empty, so a half sentence never shows (lookup-by-row-field).
+ *
+ * @param {string|undefined} template The block's `titleTemplate`.
+ * @param {object} row The row, with its looked-up values.
+ * @return {string} The sentence, or ''.
+ * @spec openspec/changes/lookup-by-row-field/specs/portal-contribution-contract/spec.md#requirement-a-task-may-be-titled-by-a-sentence-with-fields
+ */
+export function filledTemplate(template, row) {
+	if (typeof template !== 'string' || template === '') {
+		return ''
+	}
+	let empty = false
+	const out = template.replace(/\{([A-Za-z_][A-Za-z0-9_]*)\}/g, (match, name) => {
+		const value = row?.[name]
+		const text =
+			typeof value === 'string' || typeof value === 'number'
+				? String(value).trim()
+				: ''
+		if (text === '') {
+			empty = true
+		}
+		return text
+	})
+	return empty ? '' : out
+}
+
+/**
  * The rows of a `tasks` block: titled by its title fields, soonest deadline
  * first, rows without a deadline after them, at most its limit.
  *
@@ -161,7 +195,7 @@ function limitOf(block) {
  * @param {object} block The block (`dueField`, `titleFields`, `limit`).
  * @param {object} collection The collection (`titleFields`, `label`).
  * @return {Array<{id: string, title: string, due: string, row: object}>}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
  */
 export function taskRows(rows, block, collection) {
 	const titleFields = (Array.isArray(block?.titleFields)
@@ -185,7 +219,8 @@ export function taskRows(rows, block, collection) {
 		.map((row) => ({
 			id: idOf(row),
 			title:
-				titleFields
+				filledTemplate(block?.titleTemplate, row)
+				|| titleFields
 					.map((field) => row[field])
 					.filter(
 						(value) => typeof value === 'string' && value.trim() !== '',
@@ -215,31 +250,47 @@ export function taskRows(rows, block, collection) {
  * @param {object} block The block (`collection`, `limit`).
  * @param {string} app The app of the contribution the block belongs to.
  * @return {Array<object>}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
  */
 export function inboxRows(messages, block, app) {
 	const wanted = block?.collection || ''
-	const time = (message) => {
-		const ms = new Date(message?.receivedAt || 0).getTime()
-		return Number.isNaN(ms) ? 0 : ms
-	}
 	return (Array.isArray(messages) ? messages : [])
 		.filter(Boolean)
-		.filter(
-			(message) =>
-				!wanted
-				|| (message._source?.collection === wanted
-					&& message._source?.appId === app),
-		)
+		.filter((message) => !wanted || isFromInbox(message, { collection: wanted, app }))
 		.map((message, index) => ({ message, index }))
 		.sort(
 			(a, b) =>
 				Number(a.message.read === true) - Number(b.message.read === true)
-				|| time(b.message) - time(a.message)
+				|| receivedMs(b.message) - receivedMs(a.message)
 				|| a.index - b.index,
 		)
 		.map(({ message }) => message)
 		.slice(0, limitOf(block))
+}
+
+/**
+ * Whether a message came from one app's inbox collection.
+ *
+ * @param {object} message The message, with its `_source`.
+ * @param {{collection: string, app: string}} inbox The collection and its app.
+ * @return {boolean} True when it came from there.
+ */
+function isFromInbox(message, inbox) {
+	return (
+		message._source?.collection === inbox.collection
+		&& message._source?.appId === inbox.app
+	)
+}
+
+/**
+ * When a message came in, in milliseconds; 0 when it does not say.
+ *
+ * @param {object} message The message.
+ * @return {number} The moment.
+ */
+function receivedMs(message) {
+	const ms = new Date(message?.receivedAt || 0).getTime()
+	return Number.isNaN(ms) ? 0 : ms
 }
 
 /**
@@ -251,7 +302,7 @@ export function inboxRows(messages, block, app) {
  * @param {(key: string, vars?: object) => string} tr The translator.
  * @param {string} [locale] The page language.
  * @return {string}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
  */
 export function receivedInWords(value, today, tr, locale = 'nl') {
 	const at = value ? new Date(value) : null
@@ -260,17 +311,66 @@ export function receivedInWords(value, today, tr, locale = 'nl') {
 	if (!at || !day || !now) {
 		return ''
 	}
+	const time = clockTime(at, locale)
+	if (day.getTime() === now.getTime()) {
+		return tr('Today at {time}', { time })
+	}
+	return tr('{date} at {time}', { date: dayInWords(day, now, locale), time })
+}
+
+/**
+ * A time of day as the page language writes it: "14.20" in Dutch, "14:20"
+ * in English.
+ *
+ * @param {Date} at The moment.
+ * @param {string} locale The page language.
+ * @return {string} The time.
+ */
+function clockTime(at, locale) {
 	const english = pageLanguage(locale) === 'en'
-	const time = at
+	return at
 		.toLocaleTimeString(english ? 'en-GB' : 'nl-NL', {
 			hour: '2-digit',
 			minute: '2-digit',
 		})
 		.replace(':', english ? ':' : '.')
-	if (day.getTime() === now.getTime()) {
-		return tr('Today at {time}', { time })
+}
+
+/**
+ * Who settled a row and when, as wilgenboom/MijnLijst reads it under a
+ * status: "Meester Daan, 1 oktober 8:20 uur", "Juf Esra, vandaag 8:12 uur".
+ * Without a moment it is the name alone; without a name the moment alone.
+ *
+ * @param {{who: string, at: string}} note The name and the ISO moment.
+ * @param {{today: Date, tr: (key: string, vars?: object) => string, locale?: string}} context Today, the translator and the page language.
+ * @return {string}
+ * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/portal-contribution-contract/spec.md#requirement-a-dated-row-may-say-when-its-status-was-set
+ */
+export function decidedInWords(note, context) {
+	const moment = momentInWords(note.at, context)
+	if (!moment) {
+		return note.who
 	}
-	return tr('{date} at {time}', { date: dayInWords(day, now, locale), time })
+	return note.who ? `${note.who}, ${moment}` : moment.charAt(0).toUpperCase() + moment.slice(1)
+}
+
+/**
+ * A moment in words, lower case: "vandaag 8:12 uur", "1 oktober 8:20 uur".
+ *
+ * @param {string} value An ISO date-time.
+ * @param {{today: Date, tr: (key: string, vars?: object) => string, locale?: string}} context Today, the translator and the page language.
+ * @return {string} The words, or '' for no moment.
+ */
+function momentInWords(value, { today, tr, locale }) {
+	const day = localDay(value)
+	if (!day) {
+		return ''
+	}
+	const time = new Date(value).toLocaleTimeString(pageLanguage(locale) === 'en' ? 'en-GB' : 'nl-NL', { hour: 'numeric', minute: '2-digit' })
+	const now = localDay(today || new Date())
+	return day.getTime() === now.getTime()
+		? tr('today {time}', { time })
+		: tr('{date} {time}', { date: dayInWords(day, now, locale), time })
 }
 
 /**
@@ -279,7 +379,7 @@ export function receivedInWords(value, today, tr, locale = 'nl') {
  *
  * @param {string} route The in-site route.
  * @return {string}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
  */
 export function siteHref(route) {
 	if (!route) {

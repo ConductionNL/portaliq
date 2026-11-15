@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
@@ -34,57 +34,27 @@ namespace OCA\Portaliq\Service\Identity;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\WaitingAccountInvitationInterface;
 use OCA\Portaliq\Service\AuditTrailService;
-use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCP\Security\ISecureRandom;
 
 /**
  * Issues and redeems the one-time secret of a waiting account.
  *
- * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
-class WaitingAccountInvitation {
+class WaitingAccountInvitation implements WaitingAccountInvitationInterface {
 	/**
 	 * How long the secret works: the week an invitation into the portal has.
 	 */
 	public const TTL = 'P7D';
 
 	/**
-	 * The secret was right: the waiting account joined the caller's account.
-	 */
-	public const CLAIMED = 'claimed';
-
-	/**
 	 * Wrong, expired and already used, told apart by nobody.
 	 */
 	public const NOT_VALID = 'not_valid';
-
-	/**
-	 * The caller offered too many wrong secrets.
-	 */
-	public const LOCKED = 'locked';
-
-	/**
-	 * The caller's own account cannot take over a waiting account: it is not
-	 * active, did not sign in through an identity provider, or sits in
-	 * another organisation. About the caller, never about the invitation,
-	 * and nothing is spent or counted (security review L6).
-	 */
-	public const CANNOT_RECEIVE = 'cannot_receive';
-
-	/**
-	 * The secret is right, but the waiting account carries a claim the
-	 * caller's account holds with another value. Nothing is spent, so the
-	 * invitation stays with its real holder (security review M1).
-	 */
-	public const CONFLICT = 'conflict';
-
-	/**
-	 * Another request holds the lock of the caller's or the waiting account
-	 * past a short wait. Nothing changed; trying again is safe.
-	 */
-	public const BUSY = 'busy';
 
 	/**
 	 * The reason written on the waiting account once it is joined.
@@ -110,24 +80,26 @@ class WaitingAccountInvitation {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Finds the account a secret belongs to.
+	 * @param ScopedCollectionReaderInterface $reader Finds the account a secret belongs to.
 	 * @param PortalObjectWriter $writer Stores the hash and spends it.
 	 * @param ISecureRandom $random Mints the secret.
 	 * @param ClaimAttempts $attempts Limits the wrong secrets one person may offer.
 	 * @param AuditTrailService $auditor Records who joined which account.
 	 * @param ClaimLock $lock Makes the read and the write of a redeem one step.
 	 * @param WaitingAccountSecret $secrets Finds the waiting account a secret opens, and hashes a code.
+	 * @param WaitingAccountClaim $claims Joins the waiting account a secret opened, under its lock.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly ISecureRandom $random,
 		private readonly ClaimAttempts $attempts,
 		private readonly AuditTrailService $auditor,
 		private readonly ClaimLock $lock,
 		private readonly WaitingAccountSecret $secrets,
+		private readonly WaitingAccountClaim $claims,
 	) {
 	}//end __construct()
 
@@ -146,15 +118,45 @@ class WaitingAccountInvitation {
 	 * @return array{token: string, email: string, organisation: string, expiresAt: string}|null
 	 *         Null when the account is not this app's waiting account or the write failed.
 	 *
-	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function issue(string $subjectRef, string $appId, ?DateTimeImmutable $now = null): ?array {
 		$lookup  = new PortalAccountLookup(reader: $this->reader);
 		$account = $lookup->bySubjectRef(subjectRef: $subjectRef);
-		if ($account === null || $appId === '' || $this->isInvitable(account: $account, appId: $appId) === false) {
+		if ($this->cannotInvite(account: $account, appId: $appId) === true) {
 			return null;
 		}
 
+		return $this->mintLink(lookup: $lookup, account: $account, now: $now);
+	}//end issue()
+
+	/**
+	 * Whether the account is absent, the app unnamed, or the account not this
+	 * app's waiting account.
+	 *
+	 * @param array<string, mixed>|null $account The account, or null.
+	 * @param string                    $appId   The app asking.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 */
+	private function cannotInvite(array|null $account, string $appId): bool {
+		return $account === null || $appId === '' || $this->isInvitable(account: $account, appId: $appId) === false;
+	}//end cannotInvite()
+
+	/**
+	 * Mint and store the link secret of an invitable account.
+	 *
+	 * @param PortalAccountLookup    $lookup  The account lookup.
+	 * @param array<string, mixed>   $account The waiting account.
+	 * @param DateTimeImmutable|null $now     The moment the secret is dated from.
+	 *
+	 * @return array{token: string, email: string, organisation: string, expiresAt: string}|null
+	 *
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 */
+	private function mintLink(PortalAccountLookup $lookup, array $account, DateTimeImmutable|null $now): array|null {
 		$uuid  = $lookup->identifierOf(row: $account);
 		$token = $this->random->generate(48, (ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS));
 		if ($uuid === null || $token === '') {
@@ -168,13 +170,28 @@ class WaitingAccountInvitation {
 			return null;
 		}
 
+		return $this->invitation(token: $token, account: $account, expiresAt: $expiresAt);
+	}//end mintLink()
+
+	/**
+	 * What the mail needs: the secret, the address, the tenant and the expiry.
+	 *
+	 * @param string               $token     The secret.
+	 * @param array<string, mixed> $account   The waiting account.
+	 * @param string               $expiresAt When the secret expires.
+	 *
+	 * @return array{token: string, email: string, organisation: string, expiresAt: string}
+	 *
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 */
+	private function invitation(string $token, array $account, string $expiresAt): array {
 		return [
 			'token' => $token,
 			'email' => (string)$account['email'],
 			'organisation' => (string)($account['organisation'] ?? ''),
 			'expiresAt' => $expiresAt,
 		];
-	}//end issue()
+	}//end invitation()
 
 	/**
 	 * Mint the short code of a waiting account, for a paper letter.
@@ -191,7 +208,7 @@ class WaitingAccountInvitation {
 	 * @return array{code: string, expiresAt: string}|null Null when the
 	 *         account is not this app's waiting account or the write failed.
 	 *
-	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function issueCode(string $subjectRef, string $appId, ?DateTimeImmutable $now = null): ?array {
 		$lookup  = new PortalAccountLookup(reader: $this->reader);
@@ -239,8 +256,8 @@ class WaitingAccountInvitation {
 	 *
 	 * @return string One of CLAIMED, NOT_VALID, LOCKED, CANNOT_RECEIVE, CONFLICT and BUSY.
 	 *
-	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
-	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function redeem(array $subject, #[\SensitiveParameter] string $secret, ?DateTimeImmutable $now = null): string {
 		$moment  = ($now ?? new DateTimeImmutable());
@@ -306,7 +323,14 @@ class WaitingAccountInvitation {
 		}
 
 		try {
-			$result = $this->claimWaiting(account: $account, waitingId: $waitingId, secret: $secret, moment: $moment, lookup: $lookup);
+			$result = $this->claims->claim(
+				account: $account,
+				waitingId: $waitingId,
+				secret: $secret,
+				moment: $moment,
+				lookup: $lookup,
+				subject: $subject
+			);
 		} finally {
 			$this->lock->release(accountId: $waitingId);
 		}
@@ -331,59 +355,26 @@ class WaitingAccountInvitation {
 	}//end redeemLocked()
 
 	/**
-	 * Read the waiting account again under its lock, refuse what may not
-	 * join before anything is spent, then spend the secret and join.
+	 * The audience the session's own account holds now, or '' when it has
+	 * none or is not in the session's organisation. A redeem can move an
+	 * unbound account into the invitation's audience; the caller then
+	 * reissues the session so its audience follows the account.
 	 *
-	 * Spent first. If the join then fails the invitation is dead and the app
-	 * invites again: a secret that worked twice would be worse.
+	 * @param array<string, mixed> $subject The session.
 	 *
-	 * @param array<string, mixed> $account The caller's account.
-	 * @param string $waitingId The waiting account the secret opened a moment ago.
-	 * @param string $secret The secret.
-	 * @param DateTimeImmutable $moment The moment.
-	 * @param PortalAccountLookup $lookup The account finder.
+	 * @return string
 	 *
-	 * @return string CLAIMED, NOT_VALID or CONFLICT.
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
-	private function claimWaiting(
-		array $account,
-		string $waitingId,
-		#[\SensitiveParameter] string $secret,
-		DateTimeImmutable $moment,
-		PortalAccountLookup $lookup,
-	): string {
-		// Read again inside the lock: a request that held it a moment ago
-		// may have spent this secret.
-		$waiting = $this->secrets->find(secret: $secret, organisation: (string)$account['organisation'], moment: $moment);
-		if ($waiting === null || $lookup->identifierOf(row: $waiting) !== $waitingId) {
-			return self::NOT_VALID;
+	public function audienceOf(array $subject): string {
+		$account = (new PortalAccountLookup(reader: $this->reader))->bySubjectRef(subjectRef: (string)($subject['subjectRef'] ?? ''));
+		$organisation = (string)($subject['organisation'] ?? '');
+		if ($organisation === '' || (($account ?? [])['organisation'] ?? null) !== $organisation) {
+			return '';
 		}
 
-		$join = new WaitingAccountJoin(lookup: $lookup, writer: $this->writer);
-		if ($join->claimsConflict(account: $account, waiting: $waiting) === true) {
-			return self::CONFLICT;
-		}
-
-		// Another audience (a supplier account redeeming a parent's
-		// invitation) and everything else the join refuses: nothing spent.
-		if ($join->isJoinable(account: $account, waiting: $waiting) === false) {
-			return self::NOT_VALID;
-		}
-
-		if ($this->write(id: $waitingId, data: ['claimTokenHash' => '', 'claimCodeHash' => '']) === false) {
-			return self::NOT_VALID;
-		}
-
-		// A link was mailed to the invited address, so following it proves the
-		// address; a code came on paper and proves only the letter. The
-		// address then arrives unverified (security review L2).
-		$byLink = $this->secrets->isCode(secret: $secret) === false;
-		if ($join->joinWaiting(account: $account, waiting: $waiting, reason: self::VOID_REASON, addressProven: $byLink) === null) {
-			return self::NOT_VALID;
-		}
-
-		return self::CLAIMED;
-	}//end claimWaiting()
+		return (string)(($account ?? [])['audience'] ?? '');
+	}//end audienceOf()
 
 	/**
 	 * The session's own account, when it may take over a waiting account:

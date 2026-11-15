@@ -30,7 +30,7 @@ accepted; a withdrawn invitation SHALL admit nobody.
 #### Scenario: A withdrawn invitation stops working
 - **GIVEN** an invitation that was sent and not accepted
 - **WHEN** a clerk chooses "Withdraw invitation" and the invitee then follows the link
-- **THEN** the list shows the invitation as withdrawn and the invitee reads "This invitation is no longer valid."
+- **THEN** the list shows the invitation as withdrawn and the invitee reads "Deze uitnodiging is niet meer geldig." (board PtUitnodigingen)
 
 ### Requirement: Staff issue and withdraw accounts through the validated actions (REQ-ISA-003)
 

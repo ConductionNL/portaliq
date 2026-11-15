@@ -25,3 +25,101 @@ export function splitLead(body) {
 		rest: blocks.slice(1).join('\n\n').trim(),
 	}
 }
+
+/**
+ * What the article's sign-up card does for this visitor: `closed` when the
+ * event no longer takes answers, `signin` for a visitor without a session,
+ * else `open`. A closed event wins, so the card never invites an answer the
+ * server would refuse.
+ *
+ * @param {object|null} event The event facts from the content API.
+ * @param {boolean} signedIn Whether the visitor holds a session.
+ * @return {('none'|'closed'|'signin'|'open')} The card's state.
+ * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-news-item-may-carry-the-sign-up-of-its-event
+ */
+export function eventCardState(event, signedIn) {
+	if (!event || typeof event !== 'object') {
+		return 'none'
+	}
+	if (event.closed === true) {
+		return 'closed'
+	}
+	return signedIn === true ? 'open' : 'signin'
+}
+
+/**
+ * The name of the resident area for the sign-in line ("Mijn Vaartveld"): the
+ * authored name, else the portal's slug with a capital.
+ *
+ * @param {string} authored The authored name.
+ * @param {string} portal The portal slug.
+ * @return {string} "Mijn Vaartveld", or "Mijn omgeving" without a slug.
+ * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-news-item-may-carry-the-sign-up-of-its-event
+ */
+export function areaName(authored, portal) {
+	const name = String(authored ?? '').trim()
+	if (name !== '') {
+		return name
+	}
+	const slug = String(portal ?? '').trim()
+	return slug === ''
+		? 'Mijn omgeving'
+		: `Mijn ${slug.charAt(0).toUpperCase()}${slug.slice(1)}`
+}
+
+/** A list item that is a fact: `- **Wanneer:** woensdag 14 oktober`. */
+const FACT = /^[-*+]\s+\*\*([^*]+?):?\*\*:?\s+(.+)$/
+
+/**
+ * A block's facts when every line of it is one, else null.
+ *
+ * @param {string} block A trimmed block of the body.
+ * @return {Array<{term: string, value: string}>|null} The facts.
+ */
+function factsOf(block) {
+	const facts = block.split('\n').map((line) => FACT.exec(line.trim()))
+	if (!facts.every(Boolean)) {
+		return null
+	}
+	return facts.map((match) => ({ term: match[1].trim(), value: match[2].trim() }))
+}
+
+/**
+ * Add a markdown block to the parts, joined to the markdown just before it.
+ *
+ * @param {Array<object>} parts The parts so far.
+ * @param {string} block The block.
+ * @return {void}
+ */
+function addMarkdown(parts, block) {
+	const last = parts[parts.length - 1]
+	if (last && last.kind === 'markdown') {
+		last.source = `${last.source}\n\n${block}`
+	} else {
+		parts.push({ kind: 'markdown', source: block })
+	}
+}
+
+/**
+ * The body in parts: markdown, and the fact lists in it. A list whose every
+ * item opens with a bold label ("**Wanneer:** ...") is a set of facts, which
+ * the boards draw as a grey block of labels and values rather than as
+ * bullets. Any other list, and every other block, stays markdown.
+ *
+ * @param {string} body The markdown after the lead.
+ * @return {Array<{kind: 'markdown', source: string}|{kind: 'facts', items: Array<{term: string, value: string}>}>} The parts, in order.
+ * @spec openspec/changes/site-article-page-follows-the-board/specs/site-look/spec.md#requirement-a-news-article-reads-like-the-article-board
+ */
+export function articleParts(body) {
+	const parts = []
+	const blocks = String(body ?? '').split(/\n\s*\n/).map((raw) => raw.trim())
+	blocks.filter((block) => block !== '').forEach((block) => {
+		const items = factsOf(block)
+		if (items) {
+			parts.push({ kind: 'facts', items })
+		} else {
+			addMarkdown(parts, block)
+		}
+	})
+	return parts
+}

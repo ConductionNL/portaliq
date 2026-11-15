@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\MetricsController;
+use OCA\Portaliq\Service\MetricsSources;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\SettingsService;
 use OCA\Portaliq\Service\Traffic\TrafficMetrics;
@@ -62,7 +63,7 @@ class MetricsControllerTest extends TestCase {
 	 * Build a controller with a canned ObjectService (notification/fallback
 	 * counts) and a canned AuditTrailService (audit-entry counts).
 	 */
-	private function controller(?object $objectService = null, ?AuditTrailService $auditor = null, ?TrafficMetrics $traffic = null): MetricsController {
+	private function controller(?object $objectService = null, ?AuditTrailService $auditor = null, ?TrafficMetrics $traffic = null, ?\OCA\Portaliq\Service\CmsReader $cms = null): MetricsController {
 		$settingsService = $this->createMock(SettingsService::class);
 		$settingsService->method('isOpenRegisterAvailable')->willReturn(true);
 
@@ -71,11 +72,14 @@ class MetricsControllerTest extends TestCase {
 
 		return new MetricsController(
 			$this->createMock(IRequest::class),
-			$settingsService,
 			$container,
 			$this->createMock(LoggerInterface::class),
-			($auditor ?? $this->auditorReturning([])),
-			($traffic ?? $this->createMock(TrafficMetrics::class))
+			new MetricsSources(
+				settingsService: $settingsService,
+				auditor: ($auditor ?? $this->auditorReturning(counts: [])),
+				traffic: ($traffic ?? $this->createMock(originalClassName: TrafficMetrics::class)),
+				cms: $cms
+			)
 		);
 	}//end controller()
 
@@ -127,11 +131,13 @@ class MetricsControllerTest extends TestCase {
 
 		$controller = new MetricsController(
 			$this->createMock(IRequest::class),
-			$settings,
 			$container,
 			$this->createMock(LoggerInterface::class),
-			$this->auditorReturning([]),
-			$this->createMock(TrafficMetrics::class)
+			new MetricsSources(
+				settingsService: $settings,
+				auditor: $this->auditorReturning(counts: []),
+				traffic: $this->createMock(originalClassName: TrafficMetrics::class)
+			)
 		);
 
 		$body = $controller->index()->render();
@@ -168,11 +174,13 @@ class MetricsControllerTest extends TestCase {
 
 		$controller = new MetricsController(
 			$this->createMock(IRequest::class),
-			$settingsService,
 			$container,
 			$this->createMock(LoggerInterface::class),
-			$this->auditorReturning([]),
-			$this->createMock(TrafficMetrics::class)
+			new MetricsSources(
+				settingsService: $settingsService,
+				auditor: $this->auditorReturning(counts: []),
+				traffic: $this->createMock(originalClassName: TrafficMetrics::class)
+			)
 		);
 
 		$response = $controller->index();
@@ -203,4 +211,14 @@ class MetricsControllerTest extends TestCase {
 		$this->assertStringContainsString('portaliq_traffic_refused_total{reason="bot"} 3', $body);
 		$this->assertStringContainsString('portaliq_traffic_refused_total{reason="event-not-enabled"} 7', $body);
 	}//end testTrafficCountersAreExposedByReason()
+
+	public function testTheContentCacheHitsAndMissesAreExposed(): void {
+		$cms = $this->createMock(\OCA\Portaliq\Service\CmsReader::class);
+		$cms->method('cacheStats')->willReturn(['hits' => 9, 'misses' => 4]);
+
+		$body = $this->controller(cms: $cms)->index()->render();
+
+		$this->assertStringContainsString('portaliq_content_cache_total{outcome="hit"} 9', $body);
+		$this->assertStringContainsString('portaliq_content_cache_total{outcome="miss"} 4', $body);
+	}//end testTheContentCacheHitsAndMissesAreExposed()
 }//end class

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\PortalPageController;
+use OCA\Portaliq\Service\Cms\AccessibilityFraming;
 use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalThemeResolver;
@@ -29,6 +30,10 @@ use PHPUnit\Framework\TestCase;
  * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#3.2
  */
 class PortalPageControllerTest extends TestCase {
+
+	/** @var AccessibilityFraming|null The framing rule a test sets, or a mock that says no. */
+	private ?AccessibilityFraming $framing = null;
+
 
 	/**
 	 * `/portal` answers 302 to the site with the same query string
@@ -163,6 +168,62 @@ class PortalPageControllerTest extends TestCase {
 	 * Asserted by NAME, because the three modes fail differently and only this
 	 * one means "we own the document".
 	 */
+	/**
+	 * The site is never framed, except by its own origin for a request the
+	 * accessibility measurement may make (site-accessibility-statement
+	 * REQ-SAS-001).
+	 *
+	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+	 */
+	public function testOnlyTheMeasurementMayFrameTheSiteAndOnlyFromItsOwnOrigin(): void {
+		$policy = $this->controller(orgSlug: '')->site()->getContentSecurityPolicy()->buildPolicy();
+		$this->assertStringContainsString("frame-ancestors 'none'", $policy);
+
+		$this->framing = $this->getMockBuilder(AccessibilityFraming::class)->disableOriginalConstructor()->onlyMethods(['allowsSelf'])->getMock();
+		$this->framing->method('allowsSelf')->willReturn(true);
+		$policy = $this->controller(orgSlug: '')->site()->getContentSecurityPolicy()->buildPolicy();
+		$this->assertStringContainsString("frame-ancestors 'self'", $policy);
+		$this->assertStringNotContainsString('frame-ancestors *', $policy);
+
+	}//end testOnlyTheMeasurementMayFrameTheSiteAndOnlyFromItsOwnOrigin()
+
+	/**
+	 * The notice a browser without JavaScript shows links to the plain version
+	 * of the same page: the route, the named portal, the search and the page
+	 * carried over, a slash left readable, and nothing it was not given
+	 * (site-honest-without-javascript REQ-SHJ-001).
+	 *
+	 * @spec openspec/changes/site-honest-without-javascript/specs/site-without-javascript/spec.md#requirement-every-site-page-says-so-when-javascript-is-off-req-shj-001
+	 */
+	public function testThePlainUrlCarriesTheRouteAndTheSearch(): void {
+		$search = $this->controller(orgSlug: '', route: '/zoeken', params: ['_search' => 'afval'])->site()->getParams();
+		$this->assertSame('/index.php/apps/portaliq/site/plain?route=/zoeken&_search=afval', $search['plainUrl']);
+
+		$all = $this->controller(orgSlug: '', route: '/zoeken', portalParam: 'demo', params: ['_search' => 'a&b c', '_page' => '2'])
+			->site()->getParams();
+		$this->assertSame('/index.php/apps/portaliq/site/plain?route=/zoeken&portal=demo&_search=a%26b%20c&_page=2', $all['plainUrl']);
+
+		$path = $this->controller(orgSlug: '', route: '/elders')->sitePath(path: 'afval/container')->getParams();
+		$this->assertSame('/index.php/apps/portaliq/site/plain?route=/afval/container', $path['plainUrl']);
+
+		$bare = $this->controller(orgSlug: '', params: ['_search' => ['x']])->site()->getParams();
+		$this->assertSame('/index.php/apps/portaliq/site/plain', $bare['plainUrl']);
+
+	}//end testThePlainUrlCarriesTheRouteAndTheSearch()
+
+
+	/**
+	 * The real framing rule with nobody allowed to measure.
+	 *
+	 * @return AccessibilityFraming
+	 */
+	private function noFraming(): AccessibilityFraming {
+		$framing = $this->getMockBuilder(AccessibilityFraming::class)->disableOriginalConstructor()->onlyMethods(['allowsSelf'])->getMock();
+		$framing->method('allowsSelf')->willReturn(false);
+
+		return $framing;
+	}//end noFraming()
+
 	public function testSiteRendersSiteTemplateAsBlank(): void {
 		$controller = $this->controller(orgSlug: '');
 		$response = $controller->site();
@@ -201,6 +262,23 @@ class PortalPageControllerTest extends TestCase {
 		$this->assertSame('themes/vng-tokens', $params['nldsStylesheet']);
 
 	}//end testSiteEmitsBothStylesheetsForAThemedPortal()
+
+
+	/**
+	 * REQ-PTB-002: a themed portal's token overrides reach the template as
+	 * filtered CSS; an unthemed portal gets none, whatever it declares.
+	 *
+	 * @return void
+	 */
+	public function testSiteCarriesTheFilteredTokenOverridesOfAThemedPortalOnly(): void {
+		$tokens = ['--nldesign-header-link-color' => '#f36c21', '--evil-x' => 'red', '--nldesign-bad' => 'url(x)'];
+
+		$themed = $this->controller(orgSlug: '', portal: ['theme' => 'vng', 'tokens' => $tokens], themeStylesheet: 'themes/vng');
+		$this->assertSame(':root{--nldesign-header-link-color:#f36c21}', $themed->site()->getParams()['themeTokenCss']);
+
+		$unthemed = $this->controller(orgSlug: '', portal: ['theme' => 'vng', 'tokens' => $tokens], themeStylesheet: null);
+		$this->assertSame('', $unthemed->site()->getParams()['themeTokenCss']);
+	}//end testSiteCarriesTheFilteredTokenOverridesOfAThemedPortalOnly()
 
 
 	/**
@@ -293,7 +371,7 @@ class PortalPageControllerTest extends TestCase {
 		$signin = $controller->site()->getParams()['portalConfig']['signin'];
 
 		$this->assertSame(
-			expected: ['devLogin' => true, 'silentSignIn' => 'digid', 'signinOrganisation' => 'school-org', 'audience' => 'client', 'waysIn' => []],
+			expected: ['devLogin' => true, 'silentSignIn' => 'digid', 'signinOrganisation' => 'school-org', 'audience' => 'client', 'waysIn' => [], 'exampleResident' => '', 'exampleResidents' => []],
 			actual: $signin
 		);
 
@@ -395,6 +473,28 @@ class PortalPageControllerTest extends TestCase {
 
 	}//end testSiteAlwaysPassesANonEmptyLocale()
 
+
+	/**
+	 * site-matches-the-zuiddrecht-boards: the document language follows the
+	 * portal. A portal that declares only `nl` serves `nl` to a browser that
+	 * asks for English; a portal that declares `en` as well serves the English
+	 * the browser asked for; a portal that declares nothing serves what the
+	 * browser asked for, as before.
+	 *
+	 * @return void
+	 */
+	public function testSiteLocaleFollowsThePortalsDeclaredLocales(): void {
+		$dutchOnly = $this->controller(orgSlug: '', portal: ['slug' => 'zuiddrecht', 'locales' => ['nl']], acceptLanguage: 'en-US,en;q=0.9');
+		$this->assertSame(expected: 'nl', actual: $dutchOnly->site()->getParams()['locale']);
+
+		$both = $this->controller(orgSlug: '', portal: ['slug' => 'zuiddrecht', 'locales' => ['nl', 'en']], acceptLanguage: 'en-US,en;q=0.9');
+		$this->assertSame(expected: 'en-US', actual: $both->site()->getParams()['locale']);
+
+		$undeclared = $this->controller(orgSlug: '', portal: ['slug' => 'open-tilburg'], acceptLanguage: 'en-US,en;q=0.9');
+		$this->assertSame(expected: 'en-US', actual: $undeclared->site()->getParams()['locale']);
+
+	}//end testSiteLocaleFollowsThePortalsDeclaredLocales()
+
 	/**
 	 * site-page-seo-history-and-media REQ-SPH-002: the served head carries the
 	 * page's search title, description and robots, without JavaScript.
@@ -472,7 +572,9 @@ class PortalPageControllerTest extends TestCase {
 		string $portalParam = '',
 		?array $byOrganisation = null,
 		bool $byOrganisationThrows = false,
-		?PortalNoticeReader $notices = null
+		?PortalNoticeReader $notices = null,
+		string $acceptLanguage = '',
+		array $params = []
 	): PortalPageController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParam')->willReturnCallback(
@@ -480,10 +582,12 @@ class PortalPageControllerTest extends TestCase {
 				'org' => $orgSlug,
 				'portal' => ($portalParam !== '' ? $portalParam : $default),
 				'route' => ($route !== '' ? $route : $default),
-				default => $default,
+				default => ($params[$key] ?? $default),
 			}
 		);
-		$request->method('getHeader')->willReturn('');
+		$request->method('getHeader')->willReturnCallback(
+			fn (string $name) => ($name === 'Accept-Language' ? $acceptLanguage : '')
+		);
 		$request->method('getRequestUri')->willReturn($requestUri);
 
 		$default = [
@@ -545,6 +649,11 @@ class PortalPageControllerTest extends TestCase {
 		// parameters above let a single test opt into the resolved path or the
 		// throwing one, which is what the callers below exercise.
 		$portalResolver = $this->createMock(PortalResolver::class);
+		// The rule itself is PortalResolverTest's; here only the wiring: the
+		// controller hands the resolved portal and the visitor's language over.
+		$portalResolver->method('localeFor')->willReturnCallback(
+			fn (?array $portal, string $locale) => (($portal['locales'] ?? []) === ['nl'] ? 'nl' : $locale)
+		);
 		if ($portalResolverThrows === true) {
 			$portalResolver->method('resolve')
 				->willThrowException(new \RuntimeException('unknown host'));
@@ -584,7 +693,8 @@ class PortalPageControllerTest extends TestCase {
 			$portalResolver,
 			$themeResolver,
 			new SiteHead($reader),
-			($notices ?? $this->createMock(PortalNoticeReader::class))
+			($notices ?? $this->createMock(PortalNoticeReader::class)),
+			($this->framing ?? $this->noFraming())
 		);
 	}//end controller()
 

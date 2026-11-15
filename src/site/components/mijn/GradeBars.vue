@@ -148,8 +148,8 @@ export default {
 		var(--utrecht-color-grey-90, transparent)
 	);
 	color: var(
-		--nldesign-color-text-muted,
-		var(--utrecht-document-color, CanvasText)
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, var(--utrecht-document-color, CanvasText))
 	);
 }
 

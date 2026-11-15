@@ -34,23 +34,21 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-create-cross-refs/specs/portal-contribution-contract/spec.md
+ * @spec openspec/specs/portal-contribution-contract/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\CrossRefConfigNormaliserInterface;
+
 /**
  * Validates the per-action `crossRefs` declaration, fail closed.
  *
- * @spec openspec/changes/portal-create-cross-refs/specs/portal-contribution-contract/spec.md
+ * @spec openspec/specs/portal-contribution-contract/spec.md
  */
-class CrossRefConfigNormaliser {
-	/**
-	 * The manifest key carrying the declaration.
-	 */
-	public const KEY = 'crossRefs';
+class CrossRefConfigNormaliser implements CrossRefConfigNormaliserInterface {
 
 	/**
 	 * The action types a cross reference can be declared on. A read has no
@@ -73,7 +71,7 @@ class CrossRefConfigNormaliser {
 	 *
 	 * @return array<string, mixed>|null The action, or null when it must be dropped.
 	 *
-	 * @spec openspec/changes/portal-create-cross-refs/specs/portal-contribution-contract/spec.md
+	 * @spec openspec/specs/portal-contribution-contract/spec.md
 	 */
 	public function normaliseAction(array $action, array $whitelist): ?array {
 		if (array_key_exists(self::KEY, $action) === false) {
@@ -87,19 +85,9 @@ class CrossRefConfigNormaliser {
 			return $action;
 		}
 
-		$declared = $action[self::KEY];
-		if (is_array($declared) === false || $declared === []) {
+		$config = $this->references(declared: $action[self::KEY], whitelist: $whitelist);
+		if ($config === null) {
 			return null;
-		}
-
-		$config = [];
-		foreach ($declared as $field => $reference) {
-			$entry = $this->normaliseReference(field: $field, reference: $reference, whitelist: $whitelist);
-			if ($entry === null) {
-				return null;
-			}
-
-			$config[(string)$field] = $entry;
 		}
 
 		$action[self::KEY] = $config;
@@ -114,6 +102,33 @@ class CrossRefConfigNormaliser {
 	}//end normaliseAction()
 
 	/**
+	 * Every declared reference, sanitised, or null when the declaration is
+	 * empty, not a map, or holds one unusable reference.
+	 *
+	 * @param mixed              $declared  The declaration as authored.
+	 * @param array<int, string> $whitelist The fields the action accepts.
+	 *
+	 * @return array<string, array<string, mixed>>|null
+	 */
+	private function references(mixed $declared, array $whitelist): ?array {
+		if (is_array($declared) === false || $declared === []) {
+			return null;
+		}
+
+		$config = [];
+		foreach ($declared as $field => $reference) {
+			$entry = $this->normaliseReference(field: $field, reference: $reference, whitelist: $whitelist);
+			if ($entry === null) {
+				return null;
+			}
+
+			$config[(string)$field] = $entry;
+		}
+
+		return $config;
+	}//end references()
+
+	/**
 	 * One declared reference, or null when it is unusable.
 	 *
 	 * @param mixed                $field     The field name as authored.
@@ -122,7 +137,7 @@ class CrossRefConfigNormaliser {
 	 *
 	 * @return array<string, mixed>|null The sanitised reference, or null.
 	 *
-	 * @spec openspec/changes/portal-create-cross-refs/specs/portal-contribution-contract/spec.md
+	 * @spec openspec/specs/portal-contribution-contract/spec.md
 	 */
 	private function normaliseReference(mixed $field, mixed $reference, array $whitelist): ?array {
 		if (is_string($field) === false || $field === '' || is_array($reference) === false) {
@@ -135,6 +150,23 @@ class CrossRefConfigNormaliser {
 			return null;
 		}
 
+		$entry = $this->requiredKeys(reference: $reference);
+		if ($entry === null) {
+			return null;
+		}
+
+		return $entry + ['required' => (($reference['required'] ?? false) === true), 'scopeClaim' => $this->scopeClaimOf(reference: $reference)];
+	}//end normaliseReference()
+
+	/**
+	 * The register, schema and scope field a reference must name, or null
+	 * when one is missing or empty.
+	 *
+	 * @param array<string, mixed> $reference The reference config as authored.
+	 *
+	 * @return array<string, string>|null
+	 */
+	private function requiredKeys(array $reference): ?array {
 		$entry = [];
 		foreach (self::REQUIRED as $key) {
 			$value = ($reference[$key] ?? null);
@@ -145,14 +177,22 @@ class CrossRefConfigNormaliser {
 			$entry[$key] = $value;
 		}
 
-		$entry['required'] = (($reference['required'] ?? false) === true);
+		return $entry;
+	}//end requiredKeys()
 
+	/**
+	 * The claim a reference scopes by, '' for none.
+	 *
+	 * @param array<string, mixed> $reference The reference config as authored.
+	 *
+	 * @return string
+	 */
+	private function scopeClaimOf(array $reference): string {
 		$scopeClaim = ($reference['scopeClaim'] ?? null);
-		$entry['scopeClaim'] = '';
 		if (is_string($scopeClaim) === true) {
-			$entry['scopeClaim'] = $scopeClaim;
+			return $scopeClaim;
 		}
 
-		return $entry;
-	}//end normaliseReference()
+		return '';
+	}//end scopeClaimOf()
 }//end class

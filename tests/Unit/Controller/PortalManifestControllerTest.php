@@ -13,6 +13,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
 use ReflectionProperty;
+use OCA\Portaliq\Service\RequestedPortal;
 
 /**
  * parent-pwa-installability: the manifest names the SAME portal
@@ -23,12 +24,45 @@ use ReflectionProperty;
  */
 class PortalManifestControllerTest extends TestCase {
 
+	private const MANIFEST = '{"name":"Gemeente X","short_name":"Gemeente X","start_url":"/index.php/apps/portaliq/route/portaliq.portalPage.site?org=gemeente-x","scope":"/index.php/apps/portaliq/route/portaliq.portalPage.site?","display":"standalone","background_color":"#ffffff","theme_color":"#ffffff","icons":[{"src":"/index.php/apps/portaliq/img/app.svg","sizes":"any","type":"image/svg+xml"}]}';
+
+
+	/**
+	 * The slug the resolver was asked for.
+	 *
+	 * @var string|null
+	 */
+	private ?string $resolvedSlug = null;
+
+	/**
+	 * The portal the site names in its header alone is the one the manifest is for.
+	 *
+	 * @return void
+	 */
+	public function testTheSiteHeaderNamesThePortal(): void {
+		$this->controller(orgSlug: '', portalHeader: 'zuid')->manifest();
+
+		$this->assertSame(expected: 'zuid', actual: $this->resolvedSlug);
+	}//end testTheSiteHeaderNamesThePortal()
+
 	/**
 	 * Throwaway app directories to remove after the test.
 	 *
 	 * @var list<string>
 	 */
 	private array $cleanUp = [];
+
+	/**
+	 * The whole manifest body and status, key order included, as recorded.
+	 *
+	 * @return void
+	 */
+	public function testTheWholeManifestIsAsRecorded(): void {
+		$response = $this->controller(orgSlug: 'gemeente-x', resolved: ['organisationName' => 'Gemeente X'])->manifest();
+
+		$this->assertSame(200, $response->getStatus());
+		$this->assertSame(self::MANIFEST, (string)$response->getData());
+	}//end testTheWholeManifestIsAsRecorded()
 
 	public function testManifestNamesTheResolvedOrganisation(): void {
 		$controller = $this->controller(orgSlug: 'gemeente-x', resolved: ['organisationName' => 'Gemeente X']);
@@ -306,8 +340,10 @@ class PortalManifestControllerTest extends TestCase {
 		string $portalSlug = '',
 		string $requestUri = '/index.php/apps/portaliq/portal/sw.js',
 		string $workerRoute = '/index.php/apps/portaliq/portal/sw.js',
+		string $portalHeader = '',
 	): PortalManifestController {
 		$request = $this->createMock(IRequest::class);
+		$request->method('getHeader')->willReturnCallback(static fn (string $name): string => ($name === 'X-Portaliq-Portal' ? $portalHeader : ''));
 		$request->method('getRequestUri')->willReturn($requestUri);
 		$request->method('getParam')->willReturnCallback(
 			function (string $key, $default = null) use ($orgSlug, $portalSlug) {
@@ -337,7 +373,12 @@ class PortalManifestControllerTest extends TestCase {
 		];
 
 		$configResolver = $this->createMock(PortalRuntimeConfigResolver::class);
-		$configResolver->method('resolvePortal')->willReturn(null);
+		$configResolver->method('resolvePortal')->willReturnCallback(
+			function (IRequest $request, string $portalSlug = '', string $orgValue = ''): ?array {
+				$this->resolvedSlug = $portalSlug;
+				return null;
+			}
+		);
 		$configResolver->method('runtimeConfigFor')->willReturn(array_merge($default, $resolved));
 
 		$urlGenerator = $this->createMock(IURLGenerator::class);
@@ -352,7 +393,7 @@ class PortalManifestControllerTest extends TestCase {
 		// Where the app's FILES are served: an app installed in custom_apps/.
 		$urlGenerator->method('linkTo')->willReturn('/custom_apps/portaliq/');
 
-		return new PortalManifestController($request, $configResolver, $urlGenerator);
+		return new PortalManifestController($request, $configResolver, $urlGenerator, new RequestedPortal());
 	}//end controller()
 
 	/**

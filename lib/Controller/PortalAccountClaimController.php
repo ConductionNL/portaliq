@@ -23,17 +23,18 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
-use OCA\Portaliq\Service\Identity\WaitingAccountInvitation;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\WaitingAccountInvitationInterface;
+use OCA\Portaliq\Kernel\Support\SessionTrust;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -47,7 +48,7 @@ use Throwable;
 /**
  * Redeems an invitation's secret for the bearer.
  *
- * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 class PortalAccountClaimController extends Controller implements PortalProtected {
 	/**
@@ -59,17 +60,17 @@ class PortalAccountClaimController extends Controller implements PortalProtected
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param WaitingAccountInvitation $invitations Redeems the secret.
+	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
+	 * @param WaitingAccountInvitationInterface $invitations Redeems the secret.
 	 * @param LoggerInterface $logger Records a failure's cause, never the secret.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
-		private readonly WaitingAccountInvitation $invitations,
+		private readonly PortalSessionServiceInterface $session,
+		private readonly WaitingAccountInvitationInterface $invitations,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -88,7 +89,7 @@ class PortalAccountClaimController extends Controller implements PortalProtected
 	 *                      could not finish; and one 403 `invitation_not_valid`
 	 *                      for wrong, expired and used.
 	 *
-	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -101,7 +102,7 @@ class PortalAccountClaimController extends Controller implements PortalProtected
 
 		// About the session, not the secret: it is checked before the secret
 		// is looked at, so it tells the caller nothing about any invitation.
-		if ($this->session::trustSatisfies(subjectTrust: ($subject['trust'] ?? ''), minTrust: self::MIN_TRUST) === false) {
+		if (SessionTrust::trustSatisfies(subjectTrust: ($subject['trust'] ?? ''), minTrust: self::MIN_TRUST) === false) {
 			return new JSONResponse(['error' => 'trust_too_low'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -110,11 +111,49 @@ class PortalAccountClaimController extends Controller implements PortalProtected
 		} catch (Throwable $exception) {
 			// The class only: a message or a trace could carry the secret.
 			$this->logger->error('Portal invitation redeem failed', ['exception' => get_class($exception)]);
-			$result = WaitingAccountInvitation::BUSY;
+			$result = WaitingAccountInvitationInterface::BUSY;
+		}
+
+		if ($result === WaitingAccountInvitationInterface::CLAIMED) {
+			return new JSONResponse($this->claimed(subject: $subject));
 		}
 
 		return $this->answer(result: $result);
 	}//end redeem()
+
+	/**
+	 * The body of a successful redeem. When the redeem moved the account into
+	 * the invitation's audience, the session is reissued for it and the new
+	 * bearer goes back with the answer, so the pages of that audience open
+	 * without a second sign-in. A reissue that fails costs nothing: the next
+	 * sign-in carries the account's audience.
+	 *
+	 * @param array<string, mixed> $subject The session.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 */
+	private function claimed(array $subject): array {
+		$body = ['claimed' => true];
+		try {
+			$audience = $this->invitations->audienceOf(subject: $subject);
+			if ($audience === '' || $audience === (string)($subject['audience'] ?? '')) {
+				return $body;
+			}
+
+			$issued = $this->session->refreshSession(authorizationHeader: $this->request->getHeader('Authorization'), audience: $audience);
+		} catch (Throwable $exception) {
+			$this->logger->warning('Portal session reissue after a claim failed', ['exception' => get_class($exception)]);
+			return $body;
+		}
+
+		if ($issued === null) {
+			return $body;
+		}
+
+		return $body + ['audience' => $audience, 'token' => $issued['token'], 'expiresAt' => $issued['expiresAt']];
+	}//end claimed()
 
 	/**
 	 * The answer for what the redeem came to.
@@ -125,11 +164,11 @@ class PortalAccountClaimController extends Controller implements PortalProtected
 	 */
 	private function answer(string $result): JSONResponse {
 		return match ($result) {
-			WaitingAccountInvitation::CLAIMED => new JSONResponse(['claimed' => true]),
-			WaitingAccountInvitation::LOCKED => new JSONResponse(['error' => 'too_many_attempts'], Http::STATUS_TOO_MANY_REQUESTS),
-			WaitingAccountInvitation::CANNOT_RECEIVE => new JSONResponse(['error' => 'account_cannot_receive'], Http::STATUS_FORBIDDEN),
-			WaitingAccountInvitation::CONFLICT => new JSONResponse(['error' => 'invitation_conflict'], Http::STATUS_CONFLICT),
-			WaitingAccountInvitation::BUSY => new JSONResponse(['error' => 'try_again'], Http::STATUS_SERVICE_UNAVAILABLE),
+			WaitingAccountInvitationInterface::CLAIMED => new JSONResponse(['claimed' => true]),
+			WaitingAccountInvitationInterface::LOCKED => new JSONResponse(['error' => 'too_many_attempts'], Http::STATUS_TOO_MANY_REQUESTS),
+			WaitingAccountInvitationInterface::CANNOT_RECEIVE => new JSONResponse(['error' => 'account_cannot_receive'], Http::STATUS_FORBIDDEN),
+			WaitingAccountInvitationInterface::CONFLICT => new JSONResponse(['error' => 'invitation_conflict'], Http::STATUS_CONFLICT),
+			WaitingAccountInvitationInterface::BUSY => new JSONResponse(['error' => 'try_again'], Http::STATUS_SERVICE_UNAVAILABLE),
 			default => new JSONResponse(['error' => 'invitation_not_valid'], Http::STATUS_FORBIDDEN),
 		};
 	}//end answer()

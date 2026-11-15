@@ -18,6 +18,7 @@
 // tests/manifest-v2.spec.js — this app has no JS test runner, and adding one
 // for three functions would be a bigger change than the thing being tested.
 
+import { consumeOidcCallbackFragment, getToken } from '../src/shared/portalApi.js'
 import {
 	adoptLegacyToken,
 	adoptSessionToken,
@@ -68,22 +69,22 @@ console.log('signInRoutes')
 // THE NEGATIVE CASE, first because it is the one that goes wrong.
 assertEqual(
 	'a public-only portal offers NO sign-in route',
-	signInRoutes({ authentication: { modes: ['public'] } }, '/x'),
+	signInRoutes({ authentication: { modes: ['public'] } }, { authBase: '/x' }),
 	[],
 )
 assertEqual(
 	'a portal with no authentication block offers none either',
-	signInRoutes({}, '/x'),
+	signInRoutes({}, { authBase: '/x' }),
 	[],
 )
 assertEqual(
 	'a malformed modes value offers none',
-	signInRoutes({ authentication: { modes: 'digid' } }, '/x'),
+	signInRoutes({ authentication: { modes: 'digid' } }, { authBase: '/x' }),
 	[],
 )
 assertEqual(
 	'an unknown mode is not turned into a route',
-	signInRoutes({ authentication: { modes: ['telepathy'] } }, '/x'),
+	signInRoutes({ authentication: { modes: ['telepathy'] } }, { authBase: '/x' }),
 	[],
 )
 
@@ -91,9 +92,10 @@ assertEqual(
 // function that returns [] unconditionally.
 assertEqual(
 	'digid becomes a labelled OIDC start',
-	signInRoutes({ authentication: { modes: ['digid'] } }, '/x'),
+	signInRoutes({ authentication: { modes: ['digid'] } }, { authBase: '/x' }),
 	[
 		{
+			key: 'digid',
 			mode: 'digid',
 			label: 'Inloggen met DigiD',
 			href: '/x/session/oidc/start?provider=digid',
@@ -102,9 +104,10 @@ assertEqual(
 )
 assertEqual(
 	'nextcloud routes to the nextcloud edge, not to OIDC',
-	signInRoutes({ authentication: { modes: ['nextcloud'] } }, '/x'),
+	signInRoutes({ authentication: { modes: ['nextcloud'] } }, { authBase: '/x' }),
 	[
 		{
+			key: 'nextcloud',
 			mode: 'nextcloud',
 			label: 'Inloggen met uw account',
 			href: '/x/session/nextcloud',
@@ -112,18 +115,86 @@ assertEqual(
 	],
 )
 assertEqual(
+	'with example residents on offer, the nextcloud way stays the account route and one demo card per resident follows the ways in (demo-sign-in-beside-the-account)',
+	signInRoutes({
+			slug: 'zuiddrecht',
+			registerUrl: '/r',
+			authentication: { modes: ['nextcloud', 'digid'] },
+		}, { authBase: '/x', t: undefined, exampleResident: 'zuiddrecht', demoResidents: [
+			{ key: 'sanne', name: 'Sanne de Vries', card: {} },
+			{
+				key: 'linda',
+				name: 'Linda Bakker',
+				card: { text: 'Regelt zaken voor Henk.' },
+			},
+		] }),
+	[
+		{
+			key: 'nextcloud',
+			mode: 'nextcloud',
+			label: 'Inloggen met uw account',
+			registerUrl: '/r',
+			href: '/x/session/nextcloud?portal=zuiddrecht',
+		},
+		{
+			key: 'digid',
+			mode: 'digid',
+			label: 'Inloggen met DigiD',
+			href: '/x/session/oidc/start?provider=digid&portal=zuiddrecht',
+		},
+		{
+			key: 'example-resident:sanne',
+			mode: 'example-resident',
+			label: 'Inloggen als Sanne de Vries',
+			card: { title: 'Sanne de Vries' },
+			demo: true,
+			href: '/x/session/example-resident?id=zuiddrecht&resident=sanne&portal=zuiddrecht',
+		},
+		{
+			key: 'example-resident:linda',
+			mode: 'example-resident',
+			label: 'Inloggen als Linda Bakker',
+			card: { title: 'Linda Bakker', text: 'Regelt zaken voor Henk.' },
+			demo: true,
+			href: '/x/session/example-resident?id=zuiddrecht&resident=linda&portal=zuiddrecht',
+		},
+	],
+)
+assertEqual(
+	'a shell that names only the set gets one card for its first resident',
+	signInRoutes({ slug: 'zuiddrecht', authentication: { modes: ['nextcloud'] } }, { authBase: '/x', t: undefined, exampleResident: 'zuiddrecht' }).map((r) => [r.key, r.label, r.href]),
+	[
+		['nextcloud', 'Inloggen met uw account', '/x/session/nextcloud?portal=zuiddrecht'],
+		[
+			'example-resident:',
+			'Inloggen als voorbeeldinwoner',
+			'/x/session/example-resident?id=zuiddrecht&portal=zuiddrecht',
+		],
+	],
+)
+assertEqual(
+	'a portal without the nextcloud way gets no demo card, as the route would refuse it',
+	signInRoutes({ slug: 'zuiddrecht', authentication: { modes: ['digid'] } }, { authBase: '/x', t: undefined, exampleResident: 'zuiddrecht', demoResidents: [{ key: 'sanne', name: 'Sanne de Vries' }] }).map((r) => r.mode),
+	['digid'],
+)
+assertEqual(
+	'without one the nextcloud way keeps the account path',
+	signInRoutes({ slug: 'zuiddrecht', authentication: { modes: ['nextcloud'] } }, { authBase: '/x', t: undefined, exampleResident: '' }).map((r) => [r.href, r.demo]),
+	[['/x/session/nextcloud?portal=zuiddrecht', undefined]],
+)
+assertEqual(
 	'public is dropped from a MIXED list while the real modes survive',
-	signInRoutes(
-		{ authentication: { modes: ['public', 'digid', 'eherkenning'] } },
-		'/x',
-	).map((r) => r.mode),
+	signInRoutes({ authentication: { modes: ['public', 'digid', 'eherkenning'] } }, { authBase: '/x' }).map((r) => r.mode),
 	['digid', 'eherkenning'],
 )
 
 assertEqual(
 	'the portal slug travels with the sign-in link, so a shared host cannot resolve the wrong portal',
-	signInRoutes({ slug: 'la-franken', authentication: { modes: ['nextcloud', 'digid'] } }, '/x').map((r) => r.href),
-	['/x/session/nextcloud?portal=la-franken', '/x/session/oidc/start?provider=digid&portal=la-franken'],
+	signInRoutes({ slug: 'la-franken', authentication: { modes: ['nextcloud', 'digid'] } }, { authBase: '/x' }).map((r) => r.href),
+	[
+		'/x/session/nextcloud?portal=la-franken',
+		'/x/session/oidc/start?provider=digid&portal=la-franken',
+	],
 )
 
 // #802: `oidc` is a portal MODE (Google, Microsoft, Keycloak through one
@@ -132,7 +203,7 @@ assertEqual(
 // was refused whatever the organisation had configured.
 assertEqual(
 	'the oidc mode starts the generic provider, which is the one the edge knows',
-	signInRoutes({ slug: 'la-franken', authentication: { modes: ['oidc'] } }, '/x').map((r) => r.href),
+	signInRoutes({ slug: 'la-franken', authentication: { modes: ['oidc'] } }, { authBase: '/x' }).map((r) => r.href),
 	['/x/session/oidc/start?provider=generic&portal=la-franken'],
 )
 
@@ -161,7 +232,9 @@ function fakeWindow(hash) {
 
 const signedIn = fakeWindow('#token=abc%20123')
 assertEqual('a bearer in the fragment is adopted', adoptSessionToken(), 'abc 123')
-assertEqual('and the fragment is stripped from the address bar', signedIn.replaced, ['/apps/portaliq/site?portal=demo'])
+assertEqual('and the fragment is stripped from the address bar', signedIn.replaced, [
+	'/apps/portaliq/site?portal=demo',
+])
 window.location.hash = ''
 assertEqual('a later read returns the stored bearer', adoptSessionToken(), 'abc 123')
 clearSessionToken()
@@ -175,8 +248,14 @@ assertEqual('and is no failed sign-in', takeSigninFailed(), false)
 // `#signin=failed`, read once and stripped; the message names no reason.
 const failed = fakeWindow('#signin=failed')
 assertEqual('a failed sign-in is read from the fragment', takeSigninFailed(), true)
-assertEqual('and the fragment is stripped', failed.replaced, ['/apps/portaliq/site?portal=demo'])
-assertEqual('the message names no reason', SIGNIN_FAILED_MESSAGE, 'Inloggen is niet gelukt. Probeer het opnieuw of kies een andere manier.')
+assertEqual('and the fragment is stripped', failed.replaced, [
+	'/apps/portaliq/site?portal=demo',
+])
+assertEqual(
+	'the message names no reason',
+	SIGNIN_FAILED_MESSAGE,
+	'Inloggen is niet gelukt. Probeer het opnieuw of kies een andere manier.',
+)
 
 // site-reaches-portal-parity REQ-SRP-002: a bearer the retired React portal
 // left in localStorage `portaliq_token` is taken once, into this tab's store,
@@ -191,19 +270,43 @@ const localStorage = {
 }
 window.localStorage = localStorage
 assertEqual('the old key is portaliq_token', LEGACY_TOKEN_KEY, 'portaliq_token')
-assertEqual('a bearer under the old key is adopted', adoptSessionToken(), 'old-bearer')
-assertEqual('into this tab\'s store', legacy.store.get('portaliq.session.token'), 'old-bearer')
+assertEqual(
+	'a bearer under the old key is adopted',
+	adoptSessionToken(),
+	'old-bearer',
+)
+assertEqual(
+	"into this tab's store",
+	legacy.store.get('portaliq.session.token'),
+	'old-bearer',
+)
 assertEqual('and removed from localStorage', local.has(LEGACY_TOKEN_KEY), false)
 assertEqual('a later read keeps it', adoptSessionToken(), 'old-bearer')
 clearSessionToken()
-assertEqual('after signing out nothing comes back from the old key', adoptSessionToken(), '')
+assertEqual(
+	'after signing out nothing comes back from the old key',
+	adoptSessionToken(),
+	'',
+)
 
 const both = fakeWindow('#token=fresh')
 window.localStorage = localStorage
 local.set(LEGACY_TOKEN_KEY, 'old-bearer')
-assertEqual('a bearer in the fragment wins over the old key', adoptSessionToken(), 'fresh')
-assertEqual('the tab stores the fresh one', both.store.get('portaliq.session.token'), 'fresh')
-assertEqual('and the old key is gone all the same', local.has(LEGACY_TOKEN_KEY), false)
+assertEqual(
+	'a bearer in the fragment wins over the old key',
+	adoptSessionToken(),
+	'fresh',
+)
+assertEqual(
+	'the tab stores the fresh one',
+	both.store.get('portaliq.session.token'),
+	'fresh',
+)
+assertEqual(
+	'and the old key is gone all the same',
+	local.has(LEGACY_TOKEN_KEY),
+	false,
+)
 window.location.hash = ''
 assertEqual('the tab keeps its own bearer', adoptSessionToken(), 'fresh')
 
@@ -213,7 +316,59 @@ window.localStorage = {
 		throw new Error('blocked')
 	},
 }
-assertEqual('blocked storage adopts nothing and throws nothing', adoptLegacyToken(), '')
+assertEqual(
+	'blocked storage adopts nothing and throws nothing',
+	adoptLegacyToken(),
+	'',
+)
+delete globalThis.window
+
+// signin-eherkenning-eidas-and-the-token-fragment REQ-SEE-003: the shared
+// portal client reads `#token=` once, keeps the bearer, and replaces the
+// address with one without the fragment; a load without it adopts nothing.
+console.log('consumeOidcCallbackFragment')
+
+/**
+ * Install a minimal browser window at the given address for the portal client.
+ *
+ * @param {string} href The full address, fragment included.
+ * @return {{store: Map, replaced: Array}} What the window recorded.
+ */
+function fakePortalWindow(href) {
+	const store = new Map()
+	const replaced = []
+	const url = new URL(href)
+	globalThis.window = {
+		location: { href, hash: url.hash },
+		localStorage: {
+			getItem: (k) => (store.has(k) ? store.get(k) : null),
+			setItem: (k, v) => store.set(k, v),
+			removeItem: (k) => store.delete(k),
+		},
+		history: {
+			replaceState: (_s, _t, next) => {
+				replaced.push(next)
+				window.location.href = next
+				window.location.hash = new URL(next).hash
+			},
+		},
+	}
+	return { store, replaced }
+}
+
+const portalSignedIn = fakePortalWindow('https://portal.example/apps/portaliq/site?portal=zuiddrecht#token=abc%2F123')
+assertEqual('a bearer in the fragment is adopted', consumeOidcCallbackFragment(), true)
+assertEqual('and kept', getToken(), 'abc/123')
+assertEqual('and the address loses the fragment, keeping its query', portalSignedIn.replaced, [
+	'https://portal.example/apps/portaliq/site?portal=zuiddrecht',
+])
+assertEqual('a second read adopts nothing more', consumeOidcCallbackFragment(), false)
+assertEqual('and leaves the address alone', portalSignedIn.replaced.length, 1)
+
+const portalNoToken = fakePortalWindow('https://portal.example/apps/portaliq/site?portal=zuiddrecht&token=leaked#section-2')
+assertEqual('a load without a #token= fragment adopts nothing', consumeOidcCallbackFragment(), false)
+assertEqual('not even a token in the query string', getToken(), null)
+assertEqual('and the address is not rewritten', portalNoToken.replaced, [])
 delete globalThis.window
 
 if (failures > 0) {

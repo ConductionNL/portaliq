@@ -13,5 +13,5 @@ One PR. Build from `origin/development`.
 - [ ] **T3** (coordinator): Live check on the local instance, recorded in the PR.
   - A portal on `denhaag`: header bar and headings take the set's colours.
   - A portal on `vng`: computed `--utrecht-*` roles unchanged against a capture from before the change.
-  - A portal with no theme: no bridge link in the head.
+  - A portal with no theme: no bridge link in the head. — not run: needs a live instance
 - [x] **T4**: Note in `portal-theme-blocks-and-contributed-pages/tasks.md` task 2 that the bridge link and its order moved to this change.

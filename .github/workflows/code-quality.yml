@@ -134,21 +134,24 @@ concurrency:
   # superseding really is correct.
   cancel-in-progress: ${{ github.event_name != 'push' }}
 
-# Permission CEILING for the called quality pipeline. GitHub statically
-# validates the called workflow's declared job permissions against this
-# grant — even for jobs that are disabled — so it must cover the maximum
-# any nested job declares: journeydoc-capture (contents+actions write),
-# update-baseline / features-extract (contents write), and the Quality
-# Report PR comment (issues / pull-requests write).
+# Read-only by default; the write grants sit on the job that needs them.
 permissions:
-  contents: write
-  actions: write
-  issues: write
-  pull-requests: write
+  contents: read
 
 jobs:
   quality:
     if: (github.event_name != 'pull_request' || github.head_ref != 'development')
+    # Permission CEILING for the called quality pipeline. GitHub statically
+    # validates the called workflow's declared job permissions against this
+    # grant, even for jobs that are disabled, so it must cover the maximum
+    # any nested job declares: journeydoc-capture (contents+actions write),
+    # update-baseline / features-extract (contents write), and the Quality
+    # Report PR comment (issues / pull-requests write).
+    permissions:
+      contents: write
+      actions: write
+      issues: write
+      pull-requests: write
     uses: ConductionNL/.github/.github/workflows/quality.yml@main
     with:
       app-name: portaliq
@@ -167,22 +170,23 @@ jobs:
       # openregister cannot load.
       #
       # THE WHOLE DECLARED RANGE, NOT A POINT IN IT. appinfo/info.xml declares
-      # <nextcloud min-version="32" max-version="34"/>, and
+      # <nextcloud min-version="32" max-version="35"/>, and
       # tests/Unit/AppInfoDependenciesTest::testFloorIsNotBelowTheOldestTestedVersion
       # fails the build when the floor sits below the oldest tested leg. Adopting
       # NC 34 by REPLACING the list left 32 and 33 advertised to the App Store
       # with no job touching them; adding stable34 to the two legs that were
-      # already here covers 32, 33 and 34 — every major inside the declared
-      # range, which is also what testEveryTestedVersionIsInsideTheDeclaredRange
-      # checks from the other direction.
+      # already here covered 32, 33 and 34, and stable35 joined when max-version
+      # rose to 35 — every major inside the declared range, which is also what
+      # testEveryTestedVersionIsInsideTheDeclaredRange checks from the other
+      # direction.
       #
-      # stable34 is FIRST on purpose, for the same reason stable31 must not have
-      # been: [0] is the single server playwright and newman get, and NC 34 is
-      # the one this app had never been exercised on. That ordering immediately
+      # The newest major is FIRST on purpose, for the same reason stable31 must
+      # not have been: [0] is the single server playwright and newman get, so it
+      # is stable35 since max-version rose to 35. When stable34 led, the ordering
       # earned its keep — it caught tests/e2e/app-shell-and-admin.spec.ts
       # scoping the admin nav to `#app-navigation`, markup NC 34 no longer
       # renders.
-      nextcloud-test-refs: '["stable34", "stable32", "stable33"]'
+      nextcloud-test-refs: '["stable35", "stable32", "stable33", "stable34"]'
       enable-psalm: true
       enable-phpstan: true
       enable-phpmetrics: true
@@ -313,6 +317,15 @@ jobs:
       # in the job log.
       # See https://github.com/ConductionNL/.github/tree/main/hydra-gates
       enable-hydra-gates: true
+      # Gate 122 (SIG unit ratchet) blocks: a unit this change adds or makes
+      # worse must stay at NLOC 60, McCabe 10 and at most 4 parameters, and a
+      # new duplicated fragment of 6+ lines fails. Units the change does not
+      # touch, or touches without making worse, are inherited and do not count.
+      hydra-gates-sig-blocking: true
+      # Maintainability floor: no rating in .maintainability-floor.json may drop
+      # more than 0.01 against the merge base (pull request) or below the
+      # committed floor (push). The floor is raised after improving merges.
+      enable-maintainability-floor: true
       # No `hydra-gates-ref` here on purpose. The shared workflow defaults it
       # to @main, and this workflow is itself consumed at @main, so the two
       # sides move together and a gate fix reaches this repo without a commit

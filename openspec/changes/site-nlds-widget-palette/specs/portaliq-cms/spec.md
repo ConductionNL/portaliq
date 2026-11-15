@@ -37,3 +37,21 @@ A widget in the Mijn omgeving group MUST read only the signed-in visitor's data,
 - GIVEN a CMS page with an `nlCases` widget
 - WHEN a signed-out visitor opens it
 - THEN the widget shows a sign-in prompt and sends no case request
+
+### Requirement: The language switch renders and the chosen language reaches the content (REQ-SNW-013)
+
+The site shell SHALL hand `#portal.locales` to every `nlLanguageNav` placement after the authored
+props, so the switch renders whenever the portal serves more than one locale and an author cannot
+add a locale the portal does not serve. Every content read the site makes (`contentApi.js`) SHALL
+send the chosen locale as `locale`, and site links SHALL keep it. A page without a translation in the
+chosen locale SHALL render in the portal's default locale and SHALL say so.
+
+#### Scenario: A visitor reads the portal in English
+- **GIVEN** a portal with locales `nl` and `en`, and a page with an English translation
+- **WHEN** a visitor chooses English in the language switch
+- **THEN** the page SHALL render its English text, and the next page they open SHALL also be read with `locale=en`
+
+#### Scenario: The switch offers only the portal's languages
+- **GIVEN** a portal with locales `nl` and `en`, and an `nlLanguageNav` placement whose props list `de`
+- **WHEN** the page renders
+- **THEN** the switch SHALL offer Nederlands and English and not Deutsch

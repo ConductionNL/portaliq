@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
 
 declare(strict_types=1);
@@ -32,14 +32,15 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use DateTimeImmutable;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Kernel\Contracts\PortalMandateServiceInterface;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 
 /**
  * Reads and resolves the mandates a portal identity holds.
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
-class PortalMandateService {
+class PortalMandateService implements PortalMandateServiceInterface {
 	/**
 	 * The register the mandate lives in.
 	 */
@@ -56,11 +57,6 @@ class PortalMandateService {
 	public const REACH_ORGANISATION = 'organisation';
 
 	/**
-	 * A mandate covering the entity it names and those below it.
-	 */
-	public const REACH_TREE = 'tree';
-
-	/**
 	 * Row cap per identity. A person with more mandates than this has an
 	 * administration problem, not a portal problem.
 	 */
@@ -69,10 +65,10 @@ class PortalMandateService {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader The subject-scoped OpenRegister reader.
+	 * @param ScopedCollectionReaderInterface $reader The subject-scoped OpenRegister reader.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 	) {
 	}//end __construct()
 
@@ -82,52 +78,135 @@ class PortalMandateService {
 	 * @param string $subjectRef The portal identity.
 	 * @param string $organisation The tenant, or '' for every tenant.
 	 * @param DateTimeImmutable|null $now The moment to judge expiry against.
+	 * @param array<int, string> $holders The parties the session carries beyond itself (`kvk:<8 digits>`).
 	 *
 	 * @return array<int, array<string, mixed>> The live mandates, never null.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
-	public function mandatesFor(string $subjectRef, string $organisation = '', ?DateTimeImmutable $now = null): array {
+	public function mandatesFor(string $subjectRef, string $organisation = '', ?DateTimeImmutable $now = null, array $holders = []): array {
 		if ($subjectRef === '') {
 			return [];
 		}
 
-		$rows = $this->reader->readCollection(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: 'subjectRef',
-			subjectRef: $subjectRef,
-			organisation: $organisation,
-			limit: self::ROW_LIMIT
-		);
-
+		$candidates = $this->candidates(subjectRef: $subjectRef, organisation: $organisation, holders: $holders);
 		$moment = ($now ?? new DateTimeImmutable());
+		$live   = [];
+		foreach ($candidates as $row) {
+			if ($this->isLive(row: $row, organisation: $organisation, moment: $moment) === true) {
+				$live[] = $row;
+			}
+		}
+
+		return $this->distinctMandates(rows: $live);
+	}//end mandatesFor()
+
+	/**
+	 * Whether a mandate row is in the tenant, active and not expired.
+	 *
+	 * @param array<string, mixed> $row          The mandate row.
+	 * @param string               $organisation The tenant, or '' for every tenant.
+	 * @param DateTimeImmutable    $moment       The moment to judge expiry against.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
+	 */
+	private function isLive(array $row, string $organisation, DateTimeImmutable $moment): bool {
+		if ($organisation !== '' && ($row['organisation'] ?? '') !== $organisation) {
+			return false;
+		}
+
+		return ($row['status'] ?? 'active') === 'active' && $this->hasExpired(row: $row, now: $moment) === false;
+	}//end isLive()
+
+	/**
+	 * The mandate rows with each mandate once, first one kept.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The live mandate rows.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
+	 */
+	private function distinctMandates(array $rows): array {
 		$live = [];
+		$seen = [];
 		foreach ($rows as $row) {
-			if (is_array($row) === false || ($row['subjectRef'] ?? '') !== $subjectRef) {
-				// The reader's scope filter is trusted to narrow, never to
-				// answer: a mandate is the record that opens somebody else's
-				// cases, so it is re-verified here.
+			$id = $this->mandateId(mandate: $row);
+			if ($id !== '' && isset($seen[$id]) === true) {
 				continue;
 			}
 
-			if ($organisation !== '' && ($row['organisation'] ?? '') !== $organisation) {
-				continue;
-			}
-
-			if (($row['status'] ?? 'active') !== 'active') {
-				continue;
-			}
-
-			if ($this->hasExpired(row: $row, now: $moment) === true) {
-				continue;
-			}
-
-			$live[] = $row;
-		}//end foreach
+			$seen[$id] = true;
+			$live[]    = $row;
+		}
 
 		return $live;
-	}//end mandatesFor()
+	}//end distinctMandates()
+
+	/**
+	 * The rows that may be this identity's mandates: its own, and the ones a
+	 * company it signs in for holds.
+	 *
+	 * The reader's scope filter is trusted to narrow, never to answer: a
+	 * mandate is the record that opens somebody else's cases, so every row
+	 * is re-verified against what it was asked for.
+	 *
+	 * @param string             $subjectRef   The portal identity.
+	 * @param string             $organisation The tenant, or ''.
+	 * @param array<int, string> $holders      The parties the session carries beyond itself.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function candidates(string $subjectRef, string $organisation, array $holders): array {
+		$candidates = [];
+		foreach ($this->readBy(field: 'subjectRef', value: $subjectRef, organisation: $organisation) as $row) {
+			if (($row['subjectRef'] ?? '') === $subjectRef) {
+				$candidates[] = $row;
+			}
+		}
+
+		// A company holds the mandate it accepted: every sign-in that carries
+		// its number reads it (site-mandates-the-represented-manage REQ-SMR-005).
+		$companies = array_filter($holders, static fn ($holder): bool => is_string($holder) === true && str_starts_with($holder, 'kvk:') === true);
+		foreach (array_values($companies) as $holder) {
+			foreach ($this->readBy(field: 'holder', value: $holder, organisation: $organisation) as $row) {
+				if (($row['holder'] ?? '') === $holder) {
+					$candidates[] = $row;
+				}
+			}
+		}
+
+		return $candidates;
+	}//end candidates()
+
+	/**
+	 * The mandate rows on one scope field.
+	 *
+	 * @param string $field        The scope field.
+	 * @param string $value        Its value.
+	 * @param string $organisation The tenant, or ''.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function readBy(string $field, string $value, string $organisation): array {
+		$out = [];
+		foreach ($this->reader->readCollection(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: $field,
+			subjectRef: $value,
+			organisation: $organisation,
+			limit: self::ROW_LIMIT
+		) as $row) {
+			if (is_array($row) === true) {
+				$out[] = $row;
+			}
+		}
+
+		return $out;
+	}//end readBy()
 
 	/**
 	 * The mandate the identity is acting under, out of the ones it holds.
@@ -142,7 +221,7 @@ class PortalMandateService {
 	 * @return array<string, mixed>|null The active mandate, or null when the
 	 *                                   identity holds none.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function activeMandate(array $mandates, string $mandateId = ''): ?array {
 		if ($mandates === []) {
@@ -170,7 +249,7 @@ class PortalMandateService {
 	 *
 	 * @return array<string, mixed> The id, label, organisation and party.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function describe(array $mandate): array {
 		$label = (string)($mandate['label'] ?? '');
@@ -183,7 +262,11 @@ class PortalMandateService {
 			'label' => $label,
 			'reach' => $this->reachOf(mandate: $mandate),
 			'organisation' => (string)($mandate['organisation'] ?? ''),
-			'onBehalfOf' => (string)($mandate['onBehalfOf'] ?? ''),
+			// The party as the case providers know it: without the type, which
+			// is why a typed mandate (`kvk:87654321`) opens the same cases as an
+			// old untyped one (site-mandates-the-represented-manage REQ-SMR-001).
+			'onBehalfOf' => $this->untyped(value: (string)($mandate['onBehalfOf'] ?? '')),
+			'party' => (new MandateParties())->typed(value: (string)($mandate['onBehalfOf'] ?? '')),
 			'caseTypes' => array_values((array)($mandate['caseTypes'] ?? [])),
 		];
 	}//end describe()
@@ -199,7 +282,7 @@ class PortalMandateService {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/portal-visibility-follows-the-party-tree/specs/portal-visibility-and-the-party-tree/spec.md
+	 * @spec openspec/specs/portal-visibility-and-the-party-tree/spec.md
 	 */
 	public function reachOf(array $mandate): string {
 		if ((string)($mandate['reach'] ?? '') === self::REACH_TREE) {
@@ -220,7 +303,7 @@ class PortalMandateService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function covers(array $mandate, string $caseType): bool {
 		$caseTypes = array_values((array)($mandate['caseTypes'] ?? []));
@@ -254,6 +337,23 @@ class PortalMandateService {
 
 		return '';
 	}//end mandateId()
+
+	/**
+	 * A party without its type prefix.
+	 *
+	 * @param string $value A stored party, typed or not.
+	 *
+	 * @return string
+	 */
+	private function untyped(string $value): string {
+		foreach (['kvk:', 'subject:'] as $prefix) {
+			if (str_starts_with($value, $prefix) === true) {
+				return substr($value, strlen($prefix));
+			}
+		}
+
+		return $value;
+	}//end untyped()
 
 	/**
 	 * Whether the mandate's expiry has passed.

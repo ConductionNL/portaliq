@@ -40,6 +40,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\PublicNewsReaderInterface;
 use OCA\Portaliq\Service\Cms\MediaReferences;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -52,11 +53,18 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-a-news-item-shows-on-a-portals-public-website-only-when-staff-put-it-there
  */
-class PublicNewsReader {
+class PublicNewsReader implements PublicNewsReaderInterface {
+	use PublishedMoment;
+
 	/**
 	 * The most items one list returns.
 	 */
 	public const MAX_LIMIT = 12;
+
+	/**
+	 * The most items the catalogue reads (portal-public-catalogue).
+	 */
+	public const ALL_LIMIT = 200;
 
 	/**
 	 * The longest intro, in characters.
@@ -84,6 +92,22 @@ class PublicNewsReader {
 	) {
 		$this->rows = new NewsRowSource(container: $container, logger: $logger);
 	}//end __construct()
+
+	/**
+	 * Every public item of a portal, newest first, at most ALL_LIMIT: the
+	 * news half of the public catalogue (portal-public-catalogue).
+	 *
+	 * @param string $portal The portal slug.
+	 *
+	 * @return array<int, array<string, mixed>> The summaries.
+	 *
+	 * @spec openspec/changes/portal-public-catalogue/specs/portal-public-catalogue/spec.md#requirement-a-visitor-may-search-and-filter-a-portals-public-catalogue
+	 */
+	public function allFor(string $portal): array {
+		$items = array_slice($this->publicRows(portal: $portal), 0, self::ALL_LIMIT);
+
+		return array_map(fn (array $row): array => $this->summary(portal: $portal, row: $row), $items);
+	}//end allFor()
 
 	/**
 	 * The newest public items of a portal, newest first.
@@ -122,12 +146,86 @@ class PublicNewsReader {
 			if ($this->rows->rowId(row: $row) === $id) {
 				$body = $this->media->markdown(portal: $portal, markdown: (string)($row['body'] ?? ''));
 
-				return $this->summary(portal: $portal, row: $row) + ['body' => $body];
+				$item = $this->summary(portal: $portal, row: $row) + ['body' => $body];
+				$event = $this->eventOf(row: $row);
+				if ($event !== null) {
+					$item['event'] = $event;
+				}
+
+				return $item;
 			}
 		}
 
 		return null;
 	}//end itemFor()
+
+	/**
+	 * The facts of the event a news item refers to, or null. Only a
+	 * published event is shown, and only its dates, place, deadline and
+	 * seats: its audience and its answers stay with the school.
+	 *
+	 * @param array<string, mixed> $row The news item.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-news-item-may-carry-the-sign-up-of-its-event
+	 */
+	private function eventOf(array $row): ?array {
+		$ref = trim((string)($row['eventRef'] ?? ''));
+		if ($ref === '') {
+			return null;
+		}
+
+		foreach ($this->rows->findAll(schema: 'schoolEvent', filters: ['status' => 'published']) as $event) {
+			if ($this->isPublishedEvent(event: $event, ref: $ref) === false) {
+				continue;
+			}
+
+			return $this->eventFacts(event: $event, ref: $ref);
+		}
+
+		return null;
+	}//end eventOf()
+
+	/**
+	 * Whether the stored event is the published one the news item refers to.
+	 *
+	 * @param array<string, mixed> $event The stored event.
+	 * @param string               $ref   The referenced event id.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-news-item-may-carry-the-sign-up-of-its-event
+	 */
+	private function isPublishedEvent(array $event, string $ref): bool {
+		return ($event['status'] ?? '') === 'published' && $this->rows->rowId(row: $event) === $ref;
+	}//end isPublishedEvent()
+
+	/**
+	 * The event's dates, place, deadline and seats.
+	 *
+	 * @param array<string, mixed> $event The stored event.
+	 * @param string               $ref   The event id.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-news-item-may-carry-the-sign-up-of-its-event
+	 */
+	private function eventFacts(array $event, string $ref): array {
+		$deadline = trim((string)($event['signupDeadline'] ?? ''));
+
+		return [
+			'id'                => $ref,
+			'title'             => (string)($event['title'] ?? ''),
+			'start'             => (string)($event['start'] ?? ''),
+			'end'               => (string)($event['end'] ?? ''),
+			'location'          => trim((string)($event['location'] ?? '')),
+			'signupDeadline'    => $deadline,
+			'closed'            => ($event['rsvpEnabled'] ?? false) !== true || (new EventDeadline())->hasPassed(deadline: $deadline),
+			'askSeats'          => ($event['askSeats'] ?? false) === true,
+			'maxSeatsPerAnswer' => (int)($event['maxSeatsPerAnswer'] ?? 4),
+		];
+	}//end eventFacts()
 
 	/**
 	 * Whether a stored row may show on a portal's website.
@@ -251,33 +349,4 @@ class PublicNewsReader {
 
 		return rtrim($cut, ' ,.;:').'…';
 	}//end introOf()
-
-	/**
-	 * When an item was published, as a Unix timestamp; PHP_INT_MIN when undated.
-	 * The same order as the guardian feed: `publishedAt`, else OpenRegister's
-	 * `@self.published`, else `@self.created`.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return int
-	 */
-	private function momentOf(array $row): int {
-		$self = [];
-		if (is_array($row['@self'] ?? null) === true) {
-			$self = $row['@self'];
-		}
-
-		foreach ([($row['publishedAt'] ?? null), ($self['published'] ?? null), ($self['created'] ?? null)] as $value) {
-			if (is_string($value) === false || $value === '') {
-				continue;
-			}
-
-			$time = strtotime($value);
-			if ($time !== false) {
-				return $time;
-			}
-		}
-
-		return PHP_INT_MIN;
-	}//end momentOf()
 }//end class

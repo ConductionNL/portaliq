@@ -134,29 +134,36 @@ class PortalFieldProjector {
 	 * @spec openspec/changes/archive/2026-09-07-field-projection/tasks.md#T1
 	 */
 	private function preserveIdentifiers(array $row, array $projected): array {
-		foreach (['id', 'uuid'] as $idKey) {
-			if (array_key_exists($idKey, $row) === true && array_key_exists($idKey, $projected) === false) {
-				$projected[$idKey] = $row[$idKey];
-			}
-		}
-
+		$projected += $this->identifiersOf(values: $row);
 		if (array_key_exists('@self', $projected) === true || is_array(($row['@self'] ?? null)) === false) {
 			return $projected;
 		}
 
-		$self = [];
-		foreach (['id', 'uuid'] as $idKey) {
-			if (array_key_exists($idKey, $row['@self']) === true) {
-				$self[$idKey] = $row['@self'][$idKey];
-			}
-		}
-
+		$self = $this->identifiersOf(values: $row['@self']);
 		if (count($self) > 0) {
 			$projected['@self'] = $self;
 		}
 
 		return $projected;
 	}//end preserveIdentifiers()
+
+	/**
+	 * The `id` and `uuid` members a map carries, in that order.
+	 *
+	 * @param array<string, mixed> $values The map.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function identifiersOf(array $values): array {
+		$ids = [];
+		foreach (['id', 'uuid'] as $idKey) {
+			if (array_key_exists($idKey, $values) === true) {
+				$ids[$idKey] = $values[$idKey];
+			}
+		}
+
+		return $ids;
+	}//end identifiersOf()
 
 	/**
 	 * Normalise a raw `fields` declaration to a list of usable property

@@ -35,14 +35,15 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/staff-news-screen/tasks.md#T2
+ * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T2
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Kernel\Contracts\NewsAudienceOptionsInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -50,9 +51,14 @@ use Throwable;
 /**
  * Resolves the school and group choices for a news item's audience.
  *
- * @spec openspec/changes/staff-news-screen/tasks.md#T2
+ * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T2
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
-class NewsAudienceOptions {
+class NewsAudienceOptions implements NewsAudienceOptionsInterface {
+	use ObjectRowNormaliser;
+	use ObjectServiceLookup;
+
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
 	/**
@@ -68,12 +74,12 @@ class NewsAudienceOptions {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalContributionRegistry $registry The contributions for the parent audience.
+	 * @param PortalContributionRegistryInterface $registry The contributions for the parent audience.
 	 * @param ContainerInterface $container For resolving OpenRegister services.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
-		private readonly PortalContributionRegistry $registry,
+		private readonly PortalContributionRegistryInterface $registry,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 	) {
@@ -86,7 +92,7 @@ class NewsAudienceOptions {
 	 *
 	 * @return array{schools: array<int, array{id: string, label: string}>, groups: array<int, array{id: string, label: string}>}
 	 *
-	 * @spec openspec/changes/staff-news-screen/tasks.md#T2
+	 * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T2
 	 */
 	public function options(): array {
 		$options = ['schools' => [], 'groups' => []];
@@ -220,6 +226,24 @@ class NewsAudienceOptions {
 			return null;
 		}
 
+		$entity = $this->schemaEntity(objectService: $objectService, register: $register, schema: $schema);
+		if ($entity === null) {
+			return null;
+		}
+
+		return $this->referencedSlug(entity: $entity, field: $field);
+	}//end referencedSchema()
+
+	/**
+	 * The schema entity, or null when it cannot be read or lists no properties.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $register      The register slug.
+	 * @param string $schema        The schema slug.
+	 *
+	 * @return object|null
+	 */
+	private function schemaEntity(object $objectService, string $register, string $schema): object|null {
 		// An OpenRegister without getCurrentSchemaEntity() throws an Error,
 		// caught below like any other failed lookup.
 		try {
@@ -235,6 +259,18 @@ class NewsAudienceOptions {
 			return null;
 		}
 
+		return $entity;
+	}//end schemaEntity()
+
+	/**
+	 * The slug of the schema a field's `$ref` names, or null when it names none.
+	 *
+	 * @param object $entity The schema entity.
+	 * @param string $field  The field.
+	 *
+	 * @return string|null
+	 */
+	private function referencedSlug(object $entity, string $field): string|null {
 		$properties = $entity->getProperties();
 		$ref = ($properties[$field]['$ref'] ?? null);
 		if (is_string($ref) === false || $ref === '') {
@@ -243,7 +279,7 @@ class NewsAudienceOptions {
 
 		$name = basename(str_replace('#/components/schemas/', '', $ref));
 		return strtolower((string)preg_replace('/(?<=[a-z0-9])(?=[A-Z])/', '-', $name));
-	}//end referencedSchema()
+	}//end referencedSlug()
 
 	/**
 	 * The `{id, label}` options of one source, read as the signed-in user.
@@ -257,24 +293,57 @@ class NewsAudienceOptions {
 			return [];
 		}
 
+		return $this->optionsOf(rows: $this->sourceRows(source: $source));
+	}//end listOptions()
+
+	/**
+	 * The rows of one source, read as the signed-in user; none when the read fails.
+	 *
+	 * @param array{register: string, schema: string} $source The source.
+	 *
+	 * @return array<int|string, mixed>
+	 */
+	private function sourceRows(array $source): array {
 		$objectService = $this->objectService();
 		if ($objectService === null) {
 			return [];
 		}
 
-		try {
-			$objectService->setRegister(register: $source['register']);
-			$objectService->setSchema(schema: $source['schema']);
-			$rows = $objectService->findAll(config: ['filters' => [], 'limit' => self::LIMIT, 'offset' => 0]);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: news audience options read failed', ['schema' => $source['schema'], 'reason' => $e->getMessage()]);
-			return [];
-		}
-
+		$rows = $this->readRows(objectService: $objectService, source: $source);
 		if (is_array($rows) === false) {
 			return [];
 		}
 
+		return $rows;
+	}//end sourceRows()
+
+	/**
+	 * Read one source's rows; null when the read fails, which is logged.
+	 *
+	 * @param object                                  $objectService OpenRegister's ObjectService.
+	 * @param array{register: string, schema: string} $source        The source.
+	 *
+	 * @return mixed What the read returned, or null.
+	 */
+	private function readRows(object $objectService, array $source): mixed {
+		try {
+			$objectService->setRegister(register: $source['register']);
+			$objectService->setSchema(schema: $source['schema']);
+			return $objectService->findAll(config: ['filters' => [], 'limit' => self::LIMIT, 'offset' => 0]);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: news audience options read failed', ['schema' => $source['schema'], 'reason' => $e->getMessage()]);
+			return null;
+		}
+	}//end readRows()
+
+	/**
+	 * The `{id, label}` options of the rows that carry an id, in their order.
+	 *
+	 * @param array<int|string, mixed> $rows The rows.
+	 *
+	 * @return array<int, array{id: string, label: string}>
+	 */
+	private function optionsOf(array $rows): array {
 		$options = [];
 		foreach ($rows as $row) {
 			$option = $this->option(row: $row);
@@ -284,7 +353,7 @@ class NewsAudienceOptions {
 		}
 
 		return $options;
-	}//end listOptions()
+	}//end optionsOf()
 
 	/**
 	 * One row as `{id, label}`, or null without an id.
@@ -294,27 +363,52 @@ class NewsAudienceOptions {
 	 * @return array{id: string, label: string}|null
 	 */
 	private function option(mixed $row): ?array {
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			$row = $row->jsonSerialize();
-		}
-
-		if (is_array($row) === false) {
+		$row = $this->normalise(row: $row);
+		if ($row === null) {
 			return null;
 		}
 
+		$id = $this->optionId(row: $row);
+		if ($id === '') {
+			return null;
+		}
+
+		return ['id' => $id, 'label' => $this->optionLabel(row: $row, fallback: $id)];
+	}//end option()
+
+	/**
+	 * A row's id: `id`, else `uuid`, else `@self.id`; '' when none is a string.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return string The id, or ''.
+	 */
+	private function optionId(array $row): string {
 		$id = ($row['id'] ?? ($row['uuid'] ?? ($row['@self']['id'] ?? null)));
-		if (is_string($id) === false || $id === '') {
-			return null;
+		if (is_string($id) === false) {
+			return '';
 		}
 
+		return $id;
+	}//end optionId()
+
+	/**
+	 * A row's label: the first non-empty `name`, `title` or `label`, else the fallback.
+	 *
+	 * @param array<string, mixed> $row      The row.
+	 * @param string               $fallback The label when the row names none.
+	 *
+	 * @return string The label.
+	 */
+	private function optionLabel(array $row, string $fallback): string {
 		foreach (['name', 'title', 'label'] as $key) {
 			if (is_string($row[$key] ?? null) === true && $row[$key] !== '') {
-				return ['id' => $id, 'label' => $row[$key]];
+				return $row[$key];
 			}
 		}
 
-		return ['id' => $id, 'label' => $id];
-	}//end option()
+		return $fallback;
+	}//end optionLabel()
 
 	/**
 	 * Distinct by id, sorted by label (natural order, so "Groep 10" follows
@@ -335,23 +429,4 @@ class NewsAudienceOptions {
 
 		return $list;
 	}//end sorted()
-
-	/**
-	 * Resolve OpenRegister's ObjectService, or null when unavailable.
-	 *
-	 * @return object|null
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end objectService()
 }//end class

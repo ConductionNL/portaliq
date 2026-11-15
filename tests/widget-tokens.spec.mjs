@@ -215,6 +215,38 @@ test('every widget with its own stylesheet is one design D5 names', () => {
 		'nlNewsList',
 		'nlNewsArticle',
 		'nlEventList',
+		// site-matches-the-zuiddrecht-boards. The drawn options the boards
+		// ask for and Utrecht's CSS does not carry: a link list as a card or
+		// under an accent line, a boxed table, a chevron in a button link, and
+		// the two compositions (link columns on a band, the lookup form).
+		// Layout and theme tokens only, as above.
+		'nlLinkList',
+		'nlTable',
+		'nlButtonLink',
+		'nlLinkColumns',
+		'nlLookupForm',
+		// portal-public-catalogue: a composition too (search, facets, cards,
+		// pages); layout and theme tokens only.
+		'nlCatalogue',
+		// public-detail-page-for-a-provider-item: date cards and a facts grid.
+		'nlPublicDetail',
+		// public-faq-and-product-finder: the FAQ's group spacing and the
+		// finder's chips, layout and result panel; layout and tokens only.
+		'nlFaqList',
+		'nlProductFinder',
+		// home-and-theme-landing-pages: a card grid, a count grid and the
+		// subject page's picture; layout and tokens only.
+		'nlFeaturedSubjects',
+		'nlPortalCounts',
+		'nlSubjectLanding',
+		// site-callouts-steps-and-tables-follow-the-boards: a button and a
+		// warning mark inside the melding, and a plain white card, which
+		// Utrecht's alert does not draw. Layout and theme tokens only.
+		'nlAlert',
+		// site-location-map: chips, a sketch map with numbered markers and the
+		// numbered list beside it, which no Utrecht component draws. Layout and
+		// theme tokens only.
+		'nlLocationMap',
 	]
 
 	for (const { key, source } of components()) {

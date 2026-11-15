@@ -13,6 +13,8 @@
  * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-date-field-must-be-asked-as-day-month-and-year-req-smf-003
  */
 
+import { formatProblem } from './formats.js'
+
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/
 
 /**
@@ -61,6 +63,33 @@ export function dateValue(day, month, year) {
 }
 
 /**
+ * A whole date typed or pasted into one box, split into day, month and year;
+ * null when the text is not a whole date. Reads `d-m-yyyy` with `-`, `/`, `.`
+ * or a space between the parts, `yyyy-mm-dd`, and `ddmmyyyy`.
+ *
+ * @param {string} text What the box received.
+ * @return {{day: string, month: string, year: string}|null} The parts, or null.
+ *
+ * @spec openspec/changes/resident-pages-live-round-3/specs/site-forms/spec.md#requirement-a-date-typed-or-pasted-whole-fills-day-month-and-year-req-rr3-001
+ */
+export function typedDate(text) {
+	const value = String(text ?? '').trim()
+	const dutch = /^(\d{1,2})[-/.\s]+(\d{1,2})[-/.\s]+(\d{4})$/.exec(value)
+	if (dutch) {
+		return { day: dutch[1], month: dutch[2], year: dutch[3] }
+	}
+	const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(value)
+	if (iso) {
+		return { day: iso[3], month: iso[2], year: iso[1] }
+	}
+	const digits = /^(\d{2})(\d{2})(\d{4})$/.exec(value)
+	if (digits) {
+		return { day: digits[1], month: digits[2], year: digits[3] }
+	}
+	return null
+}
+
+/**
  * The three parts a date group shows for a value: an ISO date split into day,
  * month and year without leading zeros, or the `d-m-y` it typed earlier.
  *
@@ -79,6 +108,17 @@ export function dateParts(value) {
 			year: iso[1],
 		}
 	}
+	return typedParts(text)
+}
+
+/**
+ * The parts of a date typed earlier as `d-m-y`; anything after the second
+ * dash belongs to the year.
+ *
+ * @param {string} text The value, trimmed.
+ * @return {{day: string, month: string, year: string}} The parts.
+ */
+function typedParts(text) {
 	const typed = text === '' ? [] : text.split('-')
 	return {
 		day: typed[0] || '',
@@ -163,6 +203,8 @@ export const DUTCH = Object.freeze({
 	optional: '(niet verplicht)',
 	optionalNote: 'Een veld zonder "niet verplicht" moet u invullen.',
 	summaryHeading: 'Er ontbreekt nog iets',
+	oneError: 'Er is 1 fout',
+	manyErrors: 'Er zijn {count} fouten',
 	summaryIntro: 'Vul dit aan. Daarna kunt u verder.',
 	titlePrefix: 'Fout: ',
 	required: '{field} is verplicht.',
@@ -183,7 +225,46 @@ export const DUTCH = Object.freeze({
 	change: 'Wijzigen',
 	changeStep: 'Stap {n} wijzigen',
 	notAnswered: 'Niet ingevuld',
+	mailedTo:
+		'Wij hebben een bevestiging gestuurd naar {email}, met een samenvatting van uw aanvraag. Geen mail gezien? Kijk ook bij uw ongewenste e-mail.',
+	whatNow: 'Wat gebeurt er nu?',
+	print: 'Deze pagina printen',
+	statementRequired: 'Vink deze verklaring aan voordat u verstuurt.',
+	decisionDown: 'Er is een storing bij een koppeling. Uw antwoorden zijn bewaard.',
+	retry: 'Opnieuw proberen',
+	notCalculated: 'Nog niet te berekenen',
+	feeLine: 'Deze aanvraag kost {amount}.',
+	payNow: 'Betaal {amount} nu',
+	paid: 'Betaald',
+	unpaid: 'Nog niet betaald',
+	paymentFailed: 'De betaling is mislukt',
+	paymentUnknown: 'Wij kunnen de betaling nu nog niet tonen',
+	payUnavailable: 'U kunt nu niet betalen. Probeer het later opnieuw.',
+	signInFee: 'Voor deze aanvraag betaalt u {amount} leges.',
+	signInFirst: 'Log eerst in.',
+	receivedOn: 'Ontvangen op {date}.',
+	termStartsOn: 'De termijn begint op {date}.',
+	decisionBy: 'U krijgt uiterlijk {date} een besluit.',
 })
+
+/**
+ * The error summary's heading: a failed step counts its errors ("Er is 1
+ * fout", "Er zijn 3 fouten"), a failed send reads "Er ontbreekt nog iets".
+ *
+ * @param {{count: number, step: boolean}} failed How many errors, and whether a step failed rather than the send.
+ * @param {{summaryHeading: string, oneError: string, manyErrors: string}} text The form's words.
+ * @return {string} The heading.
+ * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-failed-submit-must-show-an-error-summary-that-takes-focus-req-smf-002
+ */
+export function summaryHeadingOf(failed, text) {
+	if (!failed.step) {
+		return text.summaryHeading
+	}
+	if (failed.count === 1) {
+		return text.oneError
+	}
+	return text.manyErrors.split('{count}').join(String(failed.count))
+}
 
 /**
  * The client-side errors of a form of plain field descriptions: a required
@@ -201,17 +282,41 @@ export function plainFieldErrors(fields, values, text = DUTCH) {
 	const errors = {}
 	for (const field of Array.isArray(fields) ? fields : []) {
 		const value = String((values || {})[field.name] ?? '').trim()
-		if (value === '') {
-			if (field.required === true) {
-				errors[field.name] = text.required.split('{field}').join(field.label)
-			}
-			continue
-		}
-		if (field.date === true && dateProblem(value)) {
-			errors[field.name] = text.date.split('{field}').join(field.label)
+		const problem = plainFieldProblem(field, { value, text })
+		if (problem) {
+			errors[field.name] = problem
 		}
 	}
 	return errors
+}
+
+/**
+ * What is wrong with one plain field's value: required and empty, not a
+ * real date, or not in its format; '' or null when it is fine.
+ *
+ * @param {{name: string, label: string, required: boolean, date: boolean, format?: string}} field The field.
+ * @param {{value: string, text: {required: string, date: string}}} check The trimmed value and the messages.
+ * @return {string|null} The message, or '' / null.
+ */
+function plainFieldProblem(field, check) {
+	if (check.value === '') {
+		return field.required === true ? withField(check.text.required, field.label) : ''
+	}
+	if (field.date === true && dateProblem(check.value)) {
+		return withField(check.text.date, field.label)
+	}
+	return formatProblem(field.format, check.value)
+}
+
+/**
+ * A message with the field's label in every `{field}`.
+ *
+ * @param {string} message The message.
+ * @param {string} label The field's label.
+ * @return {string} The message.
+ */
+function withField(message, label) {
+	return message.split('{field}').join(label)
 }
 
 /**
@@ -230,36 +335,97 @@ function localIso(date) {
 
 /**
  * The named days a `dateChoices` field offers: today, then the next working
- * days (Monday to Friday) until there are `count`. Today reads "Vandaag,
- * vrijdag 2 oktober"; the others read "Maandag 5 oktober", in the locale.
+ * days (Monday to Friday) until there are `count`. Each day is a name and
+ * its date, as the wilgenboom/MobielDetail board draws them: "Vandaag" over
+ * "Maandag 5 oktober", "Morgen" over "Dinsdag 6 oktober"; a later day reads
+ * its date alone.
  *
  * @param {Date} now The moment the form opened.
- * @param {number} count How many days, 1 to 5.
- * @param {string} locale The site's language, e.g. `nl`.
- * @param {string} todayWord The word for today, e.g. "Vandaag".
- * @return {Array<{value: string, label: string}>} The days, today first.
+ * @param {{count?: number, locale?: string, todayWord?: string, tomorrowWord?: string, wholeDayWords?: string}} [ask] How many days (1 to 5), the site's language, the words for today and tomorrow, and the whole-day words after today's date.
+ * @return {Array<{value: string, label: string, description: string}>} The days, today first.
  *
  * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
+ * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/site-forms/spec.md#requirement-a-choice-card-may-carry-a-second-line
  */
-export function namedDays(now, count, locale, todayWord) {
-	const total = Number.isInteger(count) && count >= 1 && count <= 5 ? count : 2
-	const format = new Intl.DateTimeFormat(locale || 'nl', {
-		weekday: 'long',
-		day: 'numeric',
-		month: 'long',
-	})
-	const capital = (text) => text.charAt(0).toUpperCase() + text.slice(1)
-	const day = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-	const days = [
-		{ value: localIso(day), label: `${todayWord}, ${format.format(day)}` },
-	]
+export function namedDays(now, ask = {}) {
+	const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+	return workingDaysFrom(today, dayCount(ask.count)).map((date) => namedDay(date, { today, ask }))
+}
+
+/**
+ * How many named days a field asks for: 1 to 5, else 2.
+ *
+ * @param {unknown} count The declared count.
+ * @return {number}
+ */
+function dayCount(count) {
+	return Number.isInteger(count) && count >= 1 && count <= 5 ? count : 2
+}
+
+/**
+ * Today and the next working days (Monday to Friday), `total` in all.
+ *
+ * @param {Date} today Today at midnight.
+ * @param {number} total How many days.
+ * @return {Array<Date>}
+ */
+function workingDaysFrom(today, total) {
+	const days = [today]
+	const day = new Date(today)
 	while (days.length < total) {
 		day.setDate(day.getDate() + 1)
-		if (day.getDay() !== 0 && day.getDay() !== 6) {
-			days.push({ value: localIso(day), label: capital(format.format(day)) })
+		if (day.getDay() % 6 !== 0) {
+			days.push(new Date(day))
 		}
 	}
 	return days
+}
+
+/**
+ * One named day: its name and its date in the site's language. Today's date
+ * says it is the whole day ("Maandag 5 oktober, de hele dag").
+ *
+ * @param {Date} date The day.
+ * @param {{today: Date, ask: object}} context Today and the words asked for.
+ * @return {{value: string, label: string, description: string}} The day.
+ * @spec openspec/changes/guardian-message-to-and-whole-day/specs/site-forms/spec.md#requirement-today-reads-as-the-whole-day
+ */
+function namedDay(date, { today, ask }) {
+	const offset = Math.round((date - today) / 86400000)
+	const words = dayWords(ask)
+	const full = fullDate(date, ask.locale)
+	if (!words.names[offset]) {
+		return { value: localIso(date), label: full, description: '' }
+	}
+	const allDay = offset === 0 ? `, ${words.allDay}` : ''
+	return { value: localIso(date), label: words.names[offset], description: full + allDay }
+}
+
+/**
+ * The words of the named days: today and tomorrow, and the whole-day words
+ * after today's date; Dutch unless asked otherwise.
+ *
+ * @param {{todayWord?: string, tomorrowWord?: string, wholeDayWords?: string}} ask The words asked for.
+ * @return {{names: Array<string>, allDay: string}}
+ * @spec openspec/changes/guardian-message-to-and-whole-day/specs/site-forms/spec.md#requirement-today-reads-as-the-whole-day
+ */
+function dayWords(ask) {
+	return {
+		names: [ask.todayWord || 'Vandaag', ask.tomorrowWord || 'Morgen'],
+		allDay: ask.wholeDayWords || 'de hele dag',
+	}
+}
+
+/**
+ * A date as its weekday, day and month, with a capital ("Maandag 5 oktober").
+ *
+ * @param {Date} date The day.
+ * @param {string} [locale] The site's language.
+ * @return {string}
+ */
+function fullDate(date, locale) {
+	const text = new Intl.DateTimeFormat(locale || 'nl', { weekday: 'long', day: 'numeric', month: 'long' }).format(date)
+	return text.charAt(0).toUpperCase() + text.slice(1)
 }
 
 /**
@@ -287,4 +453,63 @@ export function choiceSplit(options, choiceOptions) {
 		cards,
 		rest: list.filter((option) => !subset.includes(String(option.value))),
 	}
+}
+
+/**
+ * The value a count stepper sends: a whole number between `min` and `max`.
+ * An empty or unreadable value becomes `min`.
+ *
+ * @param {string|number} value The typed or stepped value.
+ * @param {number} min The lowest count.
+ * @param {number} max The highest count.
+ * @return {string} The count, as the form sends it.
+ *
+ * @spec openspec/changes/count-field/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-a-count-with-a-stepper
+ */
+export function countValue(value, min, max) {
+	const low = Number.isInteger(min) ? min : 1
+	const high = Number.isInteger(max) && max >= low ? max : Math.max(low, 99)
+	const n = Number.parseInt(String(value ?? '').trim(), 10)
+	if (Number.isNaN(n)) {
+		return String(low)
+	}
+	return String(Math.min(high, Math.max(low, n)))
+}
+
+/**
+ * The line under a count stepper: "3 deelnemers", and with a price label
+ * "3 deelnemers × [PRIJS]".
+ *
+ * @param {string|number} value The count.
+ * @param {{one?: string, other?: string}} unit The unit in its two forms.
+ * @param {string} priceLabel The price per unit as authored text, or ''.
+ * @return {string} The line, or '' without a unit.
+ *
+ * @spec openspec/changes/count-field/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-a-count-with-a-stepper
+ */
+export function countLine(value, unit, priceLabel) {
+	const n = Number.parseInt(String(value ?? ''), 10)
+	const forms = unit && typeof unit === 'object' ? unit : {}
+	const word = n === 1 ? forms.one : forms.other
+	if (Number.isNaN(n) || typeof word !== 'string' || word === '') {
+		return ''
+	}
+	const line = `${n} ${word}`
+	return typeof priceLabel === 'string' && priceLabel !== ''
+		? `${line} × ${priceLabel}`
+		: line
+}
+
+/**
+ * The words a visitor sees for a select option: the field's `optionLabels`
+ * entry, or the option itself. The option is what the form sends.
+ *
+ * @param {object} field One declared form field.
+ * @param {string} option One of its options.
+ * @return {string} The words to show.
+ * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-a-select-field-shows-words-for-its-stored-values
+ */
+export function optionLabel(field, option) {
+	const labels = field && field.optionLabels
+	return labels && typeof labels[option] === 'string' && labels[option] !== '' ? labels[option] : option
 }

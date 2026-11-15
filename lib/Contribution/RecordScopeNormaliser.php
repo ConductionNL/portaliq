@@ -31,7 +31,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/contribution-record-page/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-contribution-record-page/tasks.md#T1
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ namespace OCA\Portaliq\Contribution;
 /**
  * Validates the record scope keys and lookups, fail-closed.
  *
- * @spec openspec/changes/contribution-record-page/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-contribution-record-page/tasks.md#T1
  */
 class RecordScopeNormaliser {
 	/**
@@ -54,7 +54,7 @@ class RecordScopeNormaliser {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-block-on-a-record-page-may-narrow-its-rows-to-the-open-record
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-block-on-a-record-page-may-narrow-its-rows-to-the-open-record
 	 */
 	public function scope(array $declared, array $entry): array {
 		if ($this->isName(value: ($declared['recordField'] ?? null)) === true) {
@@ -80,7 +80,7 @@ class RecordScopeNormaliser {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-may-label-its-rows-from-a-second-collection
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-may-label-its-rows-from-a-second-collection
 	 */
 	public function lookups(array $declared, array $entry, array $collectionIds): array {
 		$lookups = [];
@@ -97,6 +97,27 @@ class RecordScopeNormaliser {
 
 		return $entry;
 	}//end lookups()
+
+	/**
+	 * The collection with its lookups' names added to the fields it
+	 * projects, so a block may show a looked-up value where it names a field
+	 * (lookup-by-row-field). A collection that projects nothing keeps no list.
+	 *
+	 * @param array<string, mixed>|null $collection The collection, or null.
+	 * @param array<string, mixed>      $entry      The normalised block, with its `lookups`.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/lookup-by-row-field/specs/portal-contribution-contract/spec.md#requirement-a-lookup-may-be-keyed-on-a-field-of-the-row
+	 */
+	public function withLookupFields(?array $collection, array $entry): ?array {
+		if ($collection === null || is_array($collection['fields'] ?? null) === false) {
+			return $collection;
+		}
+
+		$collection['fields'] = array_values(array_unique(array_merge($collection['fields'], array_column((array)($entry['lookups'] ?? []), 'as'))));
+		return $collection;
+	}//end withLookupFields()
 
 	/**
 	 * One lookup, or null when it misses a name or its collection does not resolve.
@@ -123,15 +144,22 @@ class RecordScopeNormaliser {
 			'matchField' => $lookup['matchField'],
 			'valueField' => $lookup['valueField'],
 		];
-		if ($this->isName(value: ($lookup['recordField'] ?? null)) === true) {
-			$out['recordField'] = $lookup['recordField'];
-		}
+		return $out + $this->optionalKeys(lookup: $lookup);
+	}//end lookup()
 
-		$values = array_filter(
-			(array)($lookup['values'] ?? []),
-			fn ($label, $value): bool => is_string($value) === true && $this->isName(value: $label),
-			ARRAY_FILTER_USE_BOTH
-		);
+	/**
+	 * A lookup's optional keys: the open record's field, the row's own field
+	 * it is keyed on instead of its id (lookup-by-row-field: a report's
+	 * `learnerRef` finds the child it is about), its value labels and its
+	 * fallback.
+	 *
+	 * @param array<string, mixed> $lookup The declared lookup.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function optionalKeys(array $lookup): array {
+		$out    = $this->fieldKeys(lookup: $lookup);
+		$values = $this->namedValues(lookup: $lookup);
 		if ($values !== []) {
 			$out['values'] = $values;
 		}
@@ -141,7 +169,40 @@ class RecordScopeNormaliser {
 		}
 
 		return $out;
-	}//end lookup()
+	}//end optionalKeys()
+
+	/**
+	 * The lookup's `recordField` and `rowField` that are names.
+	 *
+	 * @param array<string, mixed> $lookup The declared lookup.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function fieldKeys(array $lookup): array {
+		$out = [];
+		foreach (['recordField', 'rowField'] as $key) {
+			if ($this->isName(value: ($lookup[$key] ?? null)) === true) {
+				$out[$key] = $lookup[$key];
+			}
+		}
+
+		return $out;
+	}//end fieldKeys()
+
+	/**
+	 * The lookup's `values` with a string value and a name as label.
+	 *
+	 * @param array<string, mixed> $lookup The declared lookup.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function namedValues(array $lookup): array {
+		return array_filter(
+			(array)($lookup['values'] ?? []),
+			fn ($label, $value): bool => is_string($value) === true && $this->isName(value: $label),
+			ARRAY_FILTER_USE_BOTH
+		);
+	}//end namedValues()
 
 	/**
 	 * Whether a value is a non-empty string.

@@ -136,6 +136,11 @@ class AppInfoDependenciesTest extends TestCase {
 	 * failure by the callers rather than as "no constraint" — a matrix this
 	 * function could not read must not silently satisfy every assertion.
 	 *
+	 * When the workflow sets no `nextcloud-test-refs` key and calls the shared
+	 * ConductionNL quality.yml, that workflow derives the matrix from
+	 * appinfo/info.xml, so CI covers exactly the declared range: every major
+	 * from min-version to max-version is returned.
+	 *
 	 * @return int[]
 	 */
 	private function testedNextcloudMajors(): array {
@@ -144,6 +149,7 @@ class AppInfoDependenciesTest extends TestCase {
 
 		$lines = file($path, (FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
 		$majors = [];
+		$hasKey = false;
 		foreach ($lines as $line) {
 			$trimmed = ltrim($line);
 			// Only a live key, never a commented-out one: the block above the
@@ -157,6 +163,8 @@ class AppInfoDependenciesTest extends TestCase {
 				continue;
 			}
 
+			$hasKey = true;
+
 			if (preg_match_all('/stable(\d+)/', $trimmed, $matches) === 0) {
 				continue;
 			}
@@ -164,6 +172,16 @@ class AppInfoDependenciesTest extends TestCase {
 			foreach ($matches[1] as $major) {
 				$majors[] = (int)$major;
 			}
+		}
+
+		if ($hasKey === false) {
+			if (str_contains(implode("\n", $lines), 'ConductionNL/.github/.github/workflows/quality.yml') === false) {
+				return [];
+			}
+
+			$range = $this->declaredRange();
+
+			return range($range['min'], $range['max']);
 		}
 
 		sort($majors);

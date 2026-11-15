@@ -10,6 +10,7 @@
 		:aria-labelledby="headingId"
 		role="group"
 		data-testid="error-summary">
+		<ErrorIcon />
 		<h2
 			:id="headingId"
 			ref="heading"
@@ -40,6 +41,8 @@
 </template>
 
 <script>
+import ErrorIcon from './ErrorIcon.vue'
+
 /**
  * The NL Design System error summary: shown above a form after a failed
  * submit, with a heading that takes focus and one link per error, in field
@@ -54,6 +57,8 @@
  */
 export default {
 	name: 'ErrorSummary',
+
+	components: { ErrorIcon },
 
 	props: {
 		/** The errors, `[{field, target, message}]` from `summaryEntries()`. */
@@ -172,16 +177,43 @@ export default {
 </script>
 
 <style scoped>
+/* The NL Design System error summary on the error tint: a red frame with a
+   thick bar at the start, the icon beside the heading, the links in the
+   dark red that reads 7:1 on the tint. */
 .pq-error-summary {
-	border: 2px solid
+	background: var(
+		--nldesign-component-status-badge-error-background-color,
+		transparent
+	);
+	border: 1px solid
 		var(
 			--utrecht-form-field-invalid-border-color,
-			var(--utrecht-form-field-error-message-color, #c0210f)
+			var(--nldesign-color-error, #c0210f)
 		);
-	border-radius: var(--utrecht-alert-border-radius, 0.5rem);
-	margin-block-end: var(--utrecht-space-block-md, 1rem);
-	padding-block: var(--utrecht-space-block-md, 1rem);
-	padding-inline: var(--utrecht-space-inline-lg, 1.25rem);
+	border-inline-start-width: 6px;
+	border-radius: var(--nldesign-website-border-radius, 4px);
+	column-gap: var(--utrecht-space-inline-sm, 0.75rem);
+	display: grid;
+	grid-template-columns: auto 1fr;
+	margin-block-end: var(--utrecht-space-block-lg, 1.5rem);
+	padding-block: var(--utrecht-space-block-md, 1.25rem);
+	padding-inline: var(--utrecht-space-inline-lg, 1.5rem);
+}
+
+.pq-error-summary > :not(.pq-error-icon) {
+	grid-column: 2;
+}
+
+.pq-error-icon {
+	block-size: 1.25rem;
+	color: var(--nldesign-color-error, #c0210f);
+	inline-size: 1.25rem;
+	margin-block-start: 0.2rem;
+}
+
+.pq-error-summary > .pq-error-icon {
+	grid-column: 1;
+	grid-row: 1;
 }
 
 .pq-error-summary__heading {
@@ -201,7 +233,10 @@ export default {
 }
 
 .pq-error-summary__link {
-	color: var(--utrecht-form-field-error-message-color, #c0210f);
+	color: var(
+		--nldesign-color-accent-text,
+		var(--utrecht-form-field-error-message-color, #a30000)
+	);
 	font-weight: var(--utrecht-typography-weight-scale-bold, bold);
 }
 </style>

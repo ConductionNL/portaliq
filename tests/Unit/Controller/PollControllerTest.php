@@ -21,6 +21,7 @@ use PHPUnit\Framework\TestCase;
  * @spec openspec/changes/parent-polls/specs/parent-polls/spec.md
  */
 class PollControllerTest extends TestCase {
+	use StaffActionDoubleTrait;
 
 	/**
 	 * The doubles the controller under test is built from.
@@ -56,6 +57,23 @@ class PollControllerTest extends TestCase {
 		$this->assertSame(expected: Http::STATUS_UNAUTHORIZED, actual: $controller->create(question: 'Welke datum?')->getStatus());
 
 	}//end testACallerWithNoStaffSessionCreatesNothing()
+
+	/**
+	 * A signed-in user without portal.create-poll is refused with 403 and
+	 * no poll is created (#1094).
+	 *
+	 * @return void
+	 */
+	public function testAUserWithoutTheActionCreatesNothing(): void {
+		$controller = $this->controller(user: $this->user('clerk-bob'), subject: null, mayCreate: false);
+		$this->doubles['polls']->expects($this->never())->method('create');
+
+		$response = $controller->create(question: 'Welke datum?', audience: 'parent', organisation: 'gemeente-x');
+
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
+		$this->assertSame(expected: ['error' => 'forbidden'], actual: $response->getData());
+
+	}//end testAUserWithoutTheActionCreatesNothing()
 
 	public function testAPortalSubjectListsTheirOwnPolls(): void {
 		$controller = $this->controller(user: null, subject: ['audience' => 'parent', 'organisation' => 'gemeente-x', 'subjectRef' => 'guardian-1']);
@@ -98,10 +116,11 @@ class PollControllerTest extends TestCase {
 	 *
 	 * @param IUser|null $user The staff user, or null.
 	 * @param array<string, mixed>|null $subject The portal subject, or null.
+	 * @param bool $mayCreate Whether the staff user holds portal.create-poll.
 	 *
 	 * @return PollController
 	 */
-	private function controller(?IUser $user, ?array $subject): PollController {
+	private function controller(?IUser $user, ?array $subject, bool $mayCreate = true): PollController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('Bearer token');
 
@@ -121,7 +140,7 @@ class PollControllerTest extends TestCase {
 
 		$this->doubles = ['polls' => $polls];
 
-		return new PollController($request, $polls, $session, $userSession);
+		return new PollController($request, $polls, $session, $userSession, $this->staffActionAuth(PollController::ACTION, $mayCreate));
 	}//end controller()
 
 	/**

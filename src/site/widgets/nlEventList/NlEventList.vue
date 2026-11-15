@@ -33,7 +33,10 @@
 				:key="row.key"
 				class="nl-event-list__row"
 				data-testid="nl-event-row">
-				<DateTile v-if="mode === 'tiles'" :date="row.date" />
+				<DateTile
+					v-if="mode === 'tiles'"
+					:date="row.date"
+					:locale="contentLocale()" />
 				<span v-else class="nl-event-list__label">{{ row.label }}</span>
 				<span class="nl-event-list__text">
 					<a
@@ -80,6 +83,8 @@
 <script>
 import DateTile from '../../components/mijn/DateTile.vue'
 import { authoredLink, staysInSite } from '../../components/mijn/links.js'
+import { fetchCatalogue } from '../../lib/publicCatalogue.js'
+import { eventItemsOf, sourceQuery } from '../nlCatalogue/catalogue.js'
 import { eventRows } from './events.js'
 
 import '@utrecht/heading-3-css/dist/index.css'
@@ -89,10 +94,40 @@ import '@utrecht/paragraph-css/dist/index.css'
 /**
  * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-a-dated-list-shows-each-date-as-a-tile-or-a-label
  */
+/**
+ * What the list asks the catalogue for its source: an app's own index (its
+ * kind, categories and a limit or range, upcoming unless it is the school
+ * year), else the old list of types, upcoming by date; null for neither.
+ *
+ * @param {object|null} source The placement's source.
+ * @return {object|null} The catalogue query, or null.
+ */
+function eventQuery(source) {
+	const own = sourceQuery(source)
+	if (own !== null) {
+		return { ...own, upcoming: source?.range !== 'schoolYear' }
+	}
+	const types = Array.isArray(source?.types)
+		? source.types.filter((type) => typeof type === 'string')
+		: []
+	if (types.length === 0) {
+		return null
+	}
+	return { types, upcoming: true, sort: 'date', limit: 20 }
+}
+
 export default {
 	name: 'NlEventList',
 
 	components: { DateTile },
+
+	inject: {
+		/**
+		 * The language of the page's content (site-dates-in-content-language);
+		 * empty outside the site shell, so the document's language applies.
+		 */
+		contentLocale: { from: 'siteContentLocale', default: () => () => '' },
+	},
 
 	props: {
 		/** The heading. */
@@ -115,9 +150,21 @@ export default {
 		framed: { type: Boolean, default: true },
 		/** What is said when nothing is coming up. */
 		emptyLabel: { type: String, default: 'Er staat niets gepland.' },
+		/**
+		 * Fill the list from the portal's public catalogue instead of the
+		 * authored items: `{types: ['event' | 'course' | ...]}`
+		 * (portal-public-catalogue).
+		 */
+		source: { type: Object, default: null },
+		/** The portal, handed in by the host. */
+		portal: { type: String, default: '' },
 	},
 
 	emits: ['navigate'],
+
+	data() {
+		return { fetched: null }
+	},
 
 	computed: {
 		/**
@@ -133,9 +180,10 @@ export default {
 		 * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-a-dated-list-shows-each-date-as-a-tile-or-a-label
 		 */
 		rows() {
-			return eventRows(this.items, {
+			return eventRows(this.fetched || this.items, {
 				upcomingOnly: this.upcomingOnly,
 				limit: this.limit,
+				locale: this.contentLocale(),
 			})
 		},
 
@@ -148,7 +196,31 @@ export default {
 		},
 	},
 
+	mounted() {
+		this.loadSource()
+	},
+
 	methods: {
+		/**
+		 * Read the dated items of the catalogue when the list declares a
+		 * source; a read that fails leaves the authored items.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/portal-public-catalogue/specs/portaliq-cms/spec.md#requirement-a-dated-list-may-fill-itself-from-the-catalogue
+		 */
+		async loadSource() {
+			const query = eventQuery(this.source)
+			if (query === null) {
+				return
+			}
+			try {
+				const page = await fetchCatalogue(this.portal, query)
+				this.fetched = eventItemsOf(page.items)
+			} catch {
+				this.fetched = null
+			}
+		},
+
 		/**
 		 * @param {MouseEvent} event The click.
 		 * @param {object} link The link.
@@ -190,8 +262,8 @@ export default {
 .nl-event-list__subtitle {
 	margin: -0.5rem 0 0.5rem;
 	color: var(
-		--nldesign-color-text-muted,
-		var(--utrecht-document-color, CanvasText)
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, var(--utrecht-document-color, CanvasText))
 	);
 	font-size: 0.9375rem;
 }
@@ -238,8 +310,8 @@ export default {
 
 .nl-event-list__meta {
 	color: var(
-		--nldesign-color-text-muted,
-		var(--utrecht-document-color, CanvasText)
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, var(--utrecht-document-color, CanvasText))
 	);
 	font-size: 0.9375rem;
 }

@@ -14,9 +14,23 @@
 		class="pq-inbox-block"
 		:aria-labelledby="label ? headingId : undefined"
 		data-testid="mijn-inbox-block">
+		<!-- The plain list carries "Alle berichten" beside its heading
+		     (zuiddrecht-resident-pages-match-the-boards). -->
+		<div v-if="label && plain" class="pq-inbox-block__head">
+			<component :is="`h${level}`" :id="headingId" class="utrecht-heading-3">
+				{{ label }}
+			</component>
+			<a
+				class="utrecht-link pq-inbox-block__all-link"
+				:href="allHref"
+				data-testid="mijn-inbox-all"
+				@click="openAll"
+				>{{ tr('All messages') }}</a
+			>
+		</div>
 		<component
 			:is="`h${level}`"
-			v-if="label"
+			v-else-if="label"
 			:id="headingId"
 			class="utrecht-heading-3">
 			{{ label }}
@@ -33,6 +47,26 @@
 		<EmptyState
 			v-else-if="entries.length === 0"
 			:text="tr('You have no messages yet.')" />
+		<!-- The plain list: a title and the day, no badge, no chevron. -->
+		<ul v-else-if="plain" class="pq-inbox-block__plain">
+			<li
+				v-for="entry in entries"
+				:key="entry.key"
+				class="pq-inbox-block__plain-row"
+				data-testid="mijn-inbox-plain-row">
+				<span class="pq-inbox-block__plain-mark" aria-hidden="true">
+					<svg viewBox="0 0 24 24" focusable="false"><path d="M20,8L12,13L4,8V6L12,11L20,6M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z" /></svg>
+				</span>
+				<a
+					class="utrecht-link pq-inbox-block__plain-title"
+					:class="{ 'pq-inbox-block__plain-title--unread': entry.unread }"
+					:href="hrefOf(entry.route)"
+					@click="openRow($event, entry)"
+					>{{ entry.title }}</a
+				>
+				<span class="pq-inbox-block__plain-day">{{ entry.day }}</span>
+			</li>
+		</ul>
 		<template v-else>
 			<ul class="pq-inbox-block__list">
 				<ActionRow
@@ -67,13 +101,16 @@ import {
 	recordRoute,
 	sessionStore,
 } from '../../pages/inbox/inbox.js'
+import { dayInWords } from './cases.js'
 import { inboxRows, mijnTranslator, receivedInWords, siteHref } from './rows.js'
+
+const DAY_MS = 24 * 60 * 60 * 1000
 
 /** The site route of the inbox, as the shell builds it. */
 const INBOX_ROUTE = routeForNav({ special: 'inbox' })
 
 /**
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
  */
 export default {
 	name: 'InboxBlock',
@@ -115,7 +152,7 @@ export default {
 	computed: {
 		/**
 		 * @return {(key: string, vars?: object) => string} The translator.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 		 */
 		tr() {
 			return mijnTranslator(this.t, this.locale)
@@ -123,7 +160,7 @@ export default {
 
 		/**
 		 * @return {string} The block's heading, or ''.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 		 */
 		label() {
 			return this.block?.label || ''
@@ -131,7 +168,7 @@ export default {
 
 		/**
 		 * @return {string} The heading's id.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 		 */
 		headingId() {
 			return `pq-inbox-${String(this.block?.collection || 'all').replace(/[^A-Za-z0-9_-]/g, '')}`
@@ -143,7 +180,7 @@ export default {
 		 * open record such a block shows none.
 		 *
 		 * @return {Array<object>}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-tasks-and-inbox-blocks-may-narrow-to-the-open-record-and-leave-rows-out-by-a-lookup-req-smo-025
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-tasks-and-inbox-blocks-may-narrow-to-the-open-record-and-leave-rows-out-by-a-lookup-req-smo-025
 		 */
 		aboutTheRecord() {
 			const field = this.block?.recordField
@@ -163,17 +200,25 @@ export default {
 
 		/**
 		 * @return {string} The inbox's real address.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 		 */
 		allHref() {
 			return siteHref(INBOX_ROUTE)
 		},
 
 		/**
+		 * @return {boolean} Whether the block draws the plain list.
+		 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-contribution-may-declare-the-board-displays
+		 */
+		plain() {
+			return this.block?.display === 'list'
+		},
+
+		/**
 		 * The rows on screen, each with where it leads.
 		 *
 		 * @return {Array<object>}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 		 */
 		entries() {
 			return inboxRows(this.aboutTheRecord, this.block, this.app).map(
@@ -197,6 +242,7 @@ export default {
 						unread: message.read !== true,
 						link: recordAt ? link : null,
 						route: recordAt || INBOX_ROUTE,
+						day: this.dayOf(message.receivedAt),
 					}
 				},
 			)
@@ -206,7 +252,7 @@ export default {
 	/**
 	 * Read on arrival.
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+	 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 	 */
 	created() {
 		if (this.messages === null) {
@@ -216,10 +262,63 @@ export default {
 
 	methods: {
 		/**
+		 * The day a message came in, as the plain list says it: "vandaag",
+		 * "gisteren", else the day in words.
+		 *
+		 * @param {string} value An ISO date-time.
+		 * @return {string}
+		 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-contribution-may-declare-the-board-displays
+		 */
+		dayOf(value) {
+			const at = value ? new Date(value) : null
+			if (!at || Number.isNaN(at.getTime())) {
+				return ''
+			}
+			const today = this.today || new Date()
+			const midnight = (d) =>
+				new Date(d.getFullYear(), d.getMonth(), d.getDate())
+			const days = Math.round(
+				(midnight(today).getTime() - midnight(at).getTime()) / DAY_MS,
+			)
+			if (days === 0) {
+				return this.tr('today')
+			}
+			if (days === 1) {
+				return this.tr('yesterday')
+			}
+			return dayInWords(value, today, this.locale)
+		},
+
+		/**
+		 * @param {string} route An in-site route.
+		 * @return {string} Its real address.
+		 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-contribution-may-declare-the-board-displays
+		 */
+		hrefOf(route) {
+			return siteHref(route)
+		},
+
+		/**
+		 * A plain click on a row of the plain list stays in the site.
+		 *
+		 * @param {MouseEvent} event The click.
+		 * @param {object} entry The row.
+		 * @return {void}
+		 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-contribution-may-declare-the-board-displays
+		 */
+		openRow(event, entry) {
+			if (event?.ctrlKey || event?.metaKey || event?.shiftKey) {
+				return
+			}
+			event?.preventDefault?.()
+			this.open(entry)
+		},
+
+		/**
 		 * Read the unified inbox; a read that fails says so, it is not empty.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 		 */
 		async load() {
 			let answer
@@ -236,7 +335,7 @@ export default {
 		 * Try the read again after it failed, showing the skeleton meanwhile.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-loading-and-empty-states-must-say-what-is-happening-req-smo-009
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-loading-and-empty-states-must-say-what-is-happening-req-smo-009
 		 */
 		async retry() {
 			this.failed = false
@@ -249,7 +348,7 @@ export default {
 		 *
 		 * @param {object} entry The row.
 		 * @return {void}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 		 */
 		open(entry) {
 			if (entry.link) {
@@ -261,7 +360,7 @@ export default {
 		/**
 		 * @param {MouseEvent} event The click.
 		 * @return {void}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 		 */
 		openAll(event) {
 			if (event?.ctrlKey || event?.metaKey || event?.shiftKey) {
@@ -286,5 +385,72 @@ export default {
 
 .pq-inbox-block__all {
 	margin-block-start: var(--utrecht-space-block-sm, 0.5rem);
+}
+
+/* The plain list (zuiddrecht-resident-pages-match-the-boards): hairlines
+   between the rows, a round mark, the title as a link, the day at the end. */
+.pq-inbox-block__head {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: baseline;
+	gap: 0.5rem;
+}
+
+.pq-inbox-block__head > * {
+	margin: 0;
+}
+
+.pq-inbox-block__all-link {
+	font-weight: 600;
+}
+
+.pq-inbox-block__plain {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	border-block-start: 1px solid var(--nldesign-color-border, currentcolor);
+}
+
+.pq-inbox-block__plain-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 0.5rem 0.875rem;
+	padding-block: 1rem;
+	border-block-end: 1px solid var(--nldesign-color-border, currentcolor);
+}
+
+.pq-inbox-block__plain-mark {
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	inline-size: 36px;
+	block-size: 36px;
+	border-radius: 50%;
+	background: var(--nldesign-color-primary-light, transparent);
+	color: var(--nldesign-color-primary-light-text, var(--nldesign-color-primary, currentcolor));
+}
+
+.pq-inbox-block__plain-mark svg {
+	inline-size: 20px;
+	block-size: 20px;
+	fill: currentcolor;
+}
+
+.pq-inbox-block__plain-title {
+	flex: 1 1 auto;
+	font-size: 1.125rem;
+	font-weight: 600;
+}
+
+.pq-inbox-block__plain-day {
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, inherit)
+	);
+	font-size: 0.9375rem;
 }
 </style>

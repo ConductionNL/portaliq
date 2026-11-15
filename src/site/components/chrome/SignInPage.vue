@@ -33,7 +33,7 @@
 			<ul v-if="routes.length" class="pq-signin__cards">
 				<li
 					v-for="(way, index) in routes"
-					:key="way.mode"
+					:key="way.key || way.mode"
 					class="pq-signin__card"
 					data-testid="site-signin-card">
 					<div class="pq-signin__card-head">
@@ -62,7 +62,15 @@
 							</p>
 						</div>
 					</div>
+					<!-- The e-mail link is a form on its card (sign-in-with-an-email-link). -->
+					<EmailLinkForm
+						v-if="way.form === 'email-link'"
+						:authBase="way.authBase"
+						:portal="way.portal"
+						:label="way.label"
+						:secondary="index !== 0" />
 					<a
+						v-else
 						class="utrecht-button-link utrecht-button-link--html-a pq-signin__button"
 						:class="
 							index === 0
@@ -74,8 +82,32 @@
 						data-testid="site-account-signin-route">
 						{{ way.label }}
 					</a>
+					<p v-if="way.lostPasswordUrl" class="pq-signin__hint">
+						<a
+							class="utrecht-link"
+							:href="way.lostPasswordUrl"
+							data-testid="site-signin-lost-password">
+							{{ lostPasswordLabel }}
+						</a>
+					</p>
+					<p v-if="way.registerUrl" class="pq-signin__hint">
+						<a
+							class="utrecht-link"
+							:href="way.registerUrl"
+							data-testid="site-signin-register">
+							{{ registerLabel }}
+						</a>
+					</p>
 					<p v-if="way.card && way.card.hint" class="pq-signin__hint">
 						{{ way.card.hint }}
+					</p>
+					<!-- The one-click demo sign-in says so under its button
+					     (example-resident-demo-login). -->
+					<p
+						v-if="way.demo"
+						class="pq-signin__hint pq-signin__demo"
+						data-testid="site-account-signin-demo">
+						{{ demoLabel }}
 					</p>
 				</li>
 			</ul>
@@ -140,6 +172,7 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
 import icons from '../../lib/menuIcons.js'
 
 // The button links' classes need their stylesheet, or the browser draws its own blue link.
@@ -149,10 +182,15 @@ import '@utrecht/button-link-css/dist/index.css'
  * The sign-in page of a portal that writes its cards (`authentication.modeLabels`)
  * or its page text (`authentication.signInPage`). Strings come in as props.
  *
- * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
+ * @spec openspec/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
  */
 export default {
 	name: 'SignInPage',
+
+	// On demand: the form only shows when the instance switch is on.
+	components: {
+		EmailLinkForm: defineAsyncComponent(() => import('../EmailLinkForm.vue')),
+	},
 
 	props: {
 		/** The sign-in routes, each with its `card` (authApi signInRoutes). */
@@ -160,7 +198,17 @@ export default {
 		/** The portal's `authentication.signInPage`. */
 		page: { type: Object, default: () => ({}) },
 		welcomeLabel: { type: String, default: 'Welkom' },
+		/** The note under a one-click demo way in. */
+		demoLabel: {
+			type: String,
+			default: 'Alleen op deze demo. Er wordt geen wachtwoord gevraagd.',
+		},
+
 		introLabel: { type: String, default: 'Log in om uw gegevens te bekijken.' },
+		/** The link to Nextcloud's own password reset. */
+		lostPasswordLabel: { type: String, default: 'Wachtwoord vergeten' },
+		/** The link to Nextcloud's own registration (REQ-NCL-005). */
+		registerLabel: { type: String, default: 'Account aanmaken' },
 		noWayLabel: {
 			type: String,
 			default: 'Er is nog geen manier van inloggen ingesteld.',

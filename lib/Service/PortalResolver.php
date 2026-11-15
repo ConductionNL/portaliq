@@ -26,11 +26,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCP\IRequest;
-use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Resolves the serving portal for a request.
@@ -54,14 +52,7 @@ use Throwable;
  *
  * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-request-must-resolve-to-exactly-one-portal-or-to-none
  */
-class PortalResolver {
-
-	/**
-	 * OpenRegister's ObjectService FQCN, resolved lazily from the container.
-	 *
-	 * @var string
-	 */
-	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
+class PortalResolver implements PortalResolverInterface {
 
 	/**
 	 * The register the CMS schemas live in.
@@ -71,39 +62,18 @@ class PortalResolver {
 	public const REGISTER = 'portaliq';
 
 	/**
-	 * The published portals, read once per request.
-	 *
-	 * `allPublishedPortals()` is a `findAll(limit: 500)` against OpenRegister,
-	 * and `site()` alone reaches it five times -- once for the resolved slug,
-	 * the theme stylesheet, the theme logo, the NLDS stylesheet and the title
-	 * (review of #516). The container hands out one PortalResolver per
-	 * request, so memoising on the instance is request scope: a portal edited
-	 * in one request is read fresh by the next.
-	 *
-	 * Null means "not read yet", which is NOT the same as the empty array a
-	 * fail-closed read returns -- see `allPublishedPortals()`.
-	 *
-	 * @var array|null
-	 */
-	private ?array $publishedPortals = null;
-
-
-	/**
 	 * Constructor.
 	 *
-	 * @param ContainerInterface    $container For the lazy OpenRegister lookup.
-	 * @param LoggerInterface       $logger    The logger.
-	 * @param PortalRegisterContext $context   Points the shared ObjectService at this app's schemas.
+	 * @param PublishedPortals $publishedPortals The published portals, read once per request.
+	 * @param LoggerInterface  $logger           The logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly ContainerInterface $container,
+		private readonly PublishedPortals $publishedPortals,
 		private readonly LoggerInterface $logger,
-		private readonly PortalRegisterContext $context,
 	) {
 	}//end __construct()
-
 
 	/**
 	 * Resolve the portal for a request.
@@ -137,7 +107,6 @@ class PortalResolver {
 		return $this->resolveByHost(host: $this->requestHost(request: $request), sites: $sites);
 	}//end resolve()
 
-
 	/**
 	 * Resolve the portal for the traffic collector: HOST first, slug second.
 	 *
@@ -152,7 +121,7 @@ class PortalResolver {
 	 *
 	 * @return array|null The portal object, or null when nothing matched.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
 	 */
 	public function resolveForCollector(IRequest $request, ?string $portalSlug = null): ?array {
 		$sites = $this->allPublishedPortals();
@@ -211,41 +180,63 @@ class PortalResolver {
 			return null;
 		}
 
-		$matches = [];
-		foreach ($this->allPublishedPortals() as $site) {
-			$value = ($site['organisation'] ?? null);
-			if (is_string($value) === false || trim($value) !== $organisation) {
-				continue;
-			}
-
-			$matches[] = $site;
-		}
-
+		$matches = $this->portalsOf(organisation: $organisation);
 		if (count($matches) === 1) {
 			return $matches[0];
 		}
 
 		if ($matches !== []) {
-			// Worth a log line rather than silence: an ambiguous `?org=` is a
-			// deployment that has outgrown the alias, and the neutral default
-			// the visitor gets looks like a bug from the outside.
-			$this->logger->info(
-				'Portaliq: ?org= matched several published portals; refusing to guess a brand',
-				[
-					'organisation' => $organisation,
-					'portals' => array_map(
-						static function (array $site): string {
-							return (string)($site['slug'] ?? '');
-						},
-						$matches
-					),
-				]
-			);
+			$this->logAmbiguous(organisation: $organisation, matches: $matches);
 		}
 
 		return null;
 	}//end resolveByOrganisation()
 
+	/**
+	 * The published portals whose organisation is this one, trimmed.
+	 *
+	 * @param string $organisation The trimmed `?org=` value.
+	 *
+	 * @return array<int, array> The matching portals.
+	 */
+	private function portalsOf(string $organisation): array {
+		$matches = [];
+		foreach ($this->allPublishedPortals() as $site) {
+			$value = ($site['organisation'] ?? null);
+			if (is_string($value) === true && trim($value) === $organisation) {
+				$matches[] = $site;
+			}
+		}
+
+		return $matches;
+	}//end portalsOf()
+
+	/**
+	 * Log an organisation that matched several portals.
+	 *
+	 * Worth a log line rather than silence: an ambiguous `?org=` is a
+	 * deployment that has outgrown the alias, and the neutral default the
+	 * visitor gets looks like a bug from the outside.
+	 *
+	 * @param string            $organisation The trimmed `?org=` value.
+	 * @param array<int, array> $matches      The matching portals.
+	 *
+	 * @return void
+	 */
+	private function logAmbiguous(string $organisation, array $matches): void {
+		$this->logger->info(
+			'Portaliq: ?org= matched several published portals; refusing to guess a brand',
+			[
+				'organisation' => $organisation,
+				'portals' => array_map(
+					static function (array $site): string {
+						return (string)($site['slug'] ?? '');
+					},
+					$matches
+				),
+			]
+		);
+	}//end logAmbiguous()
 
 	/**
 	 * Match a host against the verified domains of the published portals.
@@ -258,38 +249,64 @@ class PortalResolver {
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-custom-domain-must-be-verified-before-it-serves
 	 */
 	public function resolveByHost(string $host, array $sites): ?array {
-		if ($host === '') {
+		$match = $this->verifiedMatch(host: $host, sites: $sites);
+		if ($match === null) {
 			return null;
 		}
 
-		foreach ($sites as $site) {
-			foreach (($site['domains'] ?? []) as $domain) {
-				if (is_array($domain) === false) {
-					continue;
-				}
-
-				$hostname = strtolower(trim((string)($domain['hostname'] ?? '')));
-				if ($hostname === '' || $hostname !== $host) {
-					continue;
-				}
-
-				// Unverified is treated exactly like unknown. This is the whole
-				// point of verification: DNS pointing here is not consent.
-				if (($domain['verified'] ?? false) !== true) {
-					$this->logger->info(
-						'Portaliq: host matched an UNVERIFIED domain; refusing to serve',
-						['host' => $host, 'site' => $site['slug'] ?? null]
-					);
-					continue;
-				}
-
-				return $site;
-			}
-		}
-
-		return null;
+		return $match['site'];
 	}//end resolveByHost()
 
+	/**
+	 * The verified domain entry this request is served on, or null.
+	 *
+	 * A domain carries settings of its own (whether its host serves the site
+	 * at its root, and the page its root opens). Those settings belong to the
+	 * host, so they are read ONLY when the host itself decides the portal:
+	 * the request host matches a verified domain, and the caller named either
+	 * no portal or that same portal. A request that names another portal by
+	 * slug is served as that portal and gets no domain, so the settings of
+	 * one portal's host never shape another portal's pages.
+	 *
+	 * An unknown host and an unverified domain both answer null, exactly as
+	 * they resolve to no portal.
+	 *
+	 * @param IRequest    $request    The incoming request.
+	 * @param string|null $portalSlug The slug the caller named, if any.
+	 *
+	 * @return array<string, mixed>|null The domain entry, or null.
+	 *
+	 * @spec openspec/changes/site-at-the-root-of-a-portal-host/specs/portal-settings/spec.md#requirement-a-verified-domain-may-serve-the-site-at-its-root-req-srh-001
+	 */
+	public function servingDomain(IRequest $request, ?string $portalSlug = null): ?array {
+		$sites = $this->allPublishedPortals();
+		if ($sites === []) {
+			return null;
+		}
+
+		$match = $this->verifiedMatch(host: $this->requestHost(request: $request), sites: $sites);
+		if ($match === null) {
+			return null;
+		}
+
+		if ($portalSlug !== null && $portalSlug !== '' && ($match['site']['slug'] ?? null) !== $portalSlug) {
+			return null;
+		}
+
+		return $match['domain'];
+	}//end servingDomain()
+
+	/**
+	 * The portal and the verified domain entry a host matches, or null.
+	 *
+	 * @param string $host  The request host, lower-cased, without port.
+	 * @param array  $sites The published portals.
+	 *
+	 * @return array{site: array<string, mixed>, domain: array<string, mixed>}|null
+	 */
+	private function verifiedMatch(string $host, array $sites): ?array {
+		return (new PortalDomainMatch(logger: $this->logger))->find(host: $host, sites: $sites);
+	}//end verifiedMatch()
 
 	/**
 	 * The host this request is for, taken from the server-resolved value.
@@ -313,78 +330,62 @@ class PortalResolver {
 		return $host;
 	}//end requestHost()
 
-
 	/**
 	 * Every published portal.
-	 *
-	 * Memoised for the life of this instance, i.e. for the request (review of
-	 * #516): `site()` composes its page from five helpers that each resolve
-	 * the portal themselves, and without this each one re-ran a
-	 * `findAll(limit: 500)` against OpenRegister on every public page load.
-	 *
-	 * Only an ANSWERED read is memoised. The three `return []` paths are not:
-	 * two of them are transient (OpenRegister threw, or the shared
-	 * ObjectService could not be pointed at this app's schemas) and caching
-	 * them would turn one unlucky read into a 404 for the whole request,
-	 * which is a worse failure than the duplicate reads this removes.
 	 *
 	 * @return array The published portal objects.
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-portal
 	 */
 	public function allPublishedPortals(): array {
-		if ($this->publishedPortals !== null) {
-			return $this->publishedPortals;
-		}
-
-		try {
-			$objectService = $this->container->get(self::OBJECT_SERVICE);
-			// Applied through the context helper rather than by two slug
-			// setters, because the slug form inherits whatever schema ref an
-			// unrelated app left pending on the shared service — which took
-			// every public read of this portal down. See PortalRegisterContext.
-			if ($this->context->apply(objectService: $objectService, schemaSlug: 'portal') === false) {
-				return [];
-			}
-
-			// RBAC and multitenancy OFF: a public site is read by visitors who
-			// are not Nextcloud users at all, so OR's user-based scoping would
-			// filter every row out. The security boundary here is the
-			// `status: published` filter plus per-domain verification, not OR's
-			// user model.
-			$rows = $objectService->findAll(
-				config: ['filters' => ['status' => 'published'], 'limit' => 500, 'offset' => 0],
-				_rbac: false,
-				_multitenancy: false
-			);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Portaliq: portal read failed',
-				['app' => Application::APP_ID, 'reason' => $e->getMessage()]
-			);
-			// Fail CLOSED. An empty list means every request 404s, which is
-			// visible immediately; returning "some site" on an OR error would
-			// serve the wrong tenant silently.
-			return [];
-		}
-
-		if (is_array($rows) === false) {
-			return [];
-		}
-
-		$this->publishedPortals = array_map(
-			static function ($row) {
-				if (is_array($row) === true) {
-					return $row;
-				}
-
-				return (array)$row->jsonSerialize();
-			},
-			$rows
-		);
-
-		return $this->publishedPortals;
+		return $this->publishedPortals->allPublishedPortals();
 	}//end allPublishedPortals()
 
+	/**
+	 * @param array<string, mixed>|null $portal The serving portal, or null when it could not be resolved.
+	 * @param string                    $locale The visitor's language, never empty.
+	 *
+	 * @return string The language to serve.
+	 *
+	 * The visitor's language held against the languages the portal declares
+	 * (`locales`, site-matches-the-zuiddrecht-boards). A portal that declares
+	 * only `nl` serves `nl` to a browser that asks for English: the document
+	 * language, and so every date the widgets print, follow the portal. A
+	 * portal that declares nothing, or null, serves what the visitor asked for.
+	 *
+	 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md#requirement-the-document-language-follows-the-portal
+	 */
+	public function localeFor(?array $portal, string $locale): string {
+		$declared = $this->declaredLocales(portal: $portal);
+		if ($declared === []) {
+			return $locale;
+		}
 
+		$base = strtolower(substr($locale, 0, 2));
+		foreach ($declared as $candidate) {
+			if ($candidate === strtolower($locale) || substr($candidate, 0, 2) === $base) {
+				return $locale;
+			}
+		}
+
+		return $declared[0];
+	}//end localeFor()
+
+	/**
+	 * @param array<string, mixed>|null $portal The portal.
+	 *
+	 * @return list<string> Its declared locales, lower case, blanks left out.
+	 *
+	 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md#requirement-the-document-language-follows-the-portal
+	 */
+	private function declaredLocales(?array $portal): array {
+		$declared = [];
+		foreach ((array)($portal['locales'] ?? []) as $candidate) {
+			if (is_string($candidate) === true && trim($candidate) !== '') {
+				$declared[] = strtolower(trim($candidate));
+			}
+		}
+
+		return $declared;
+	}//end declaredLocales()
 }//end class

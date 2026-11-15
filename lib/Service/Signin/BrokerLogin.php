@@ -18,6 +18,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Signin;
 
+use OCA\Portaliq\Kernel\Contracts\BrokerLoginInterface;
 use OCA\Portaliq\Service\OidcStateStoreService;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -35,14 +36,13 @@ use OCA\Portaliq\Service\PortalSessionService;
  *
  * @spec openspec/specs/portal-broker-envelope-login/spec.md
  */
-class BrokerLogin {
+class BrokerLogin implements BrokerLoginInterface {
 
 	/**
 	 * The trust level asked of integriq. Integriq maps the login it actually
 	 * got to the envelope's `trust`, and that answer is what the session gets.
 	 */
 	private const REQUESTED_TRUST = 'substantial';
-
 
 	/**
 	 * Constructor.
@@ -65,7 +65,6 @@ class BrokerLogin {
 		private readonly BrokerEnvelopeCheck $envelopes = new BrokerEnvelopeCheck(),
 	) {
 	}//end __construct()
-
 
 	/**
 	 * The address to send the browser to, or null when this organisation does
@@ -113,14 +112,25 @@ class BrokerLogin {
 			PHP_QUERY_RFC3986
 		);
 
+		return $this->withQuery(startUrl: $broker['startUrl'], query: $query);
+	}//end start()
+
+	/**
+	 * The broker's start address with the query appended.
+	 *
+	 * @param string $startUrl The broker's start address.
+	 * @param string $query    The encoded query.
+	 *
+	 * @return string
+	 */
+	private function withQuery(string $startUrl, string $query): string {
 		$separator = '?';
-		if (str_contains($broker['startUrl'], '?') === true) {
+		if (str_contains($startUrl, '?') === true) {
 			$separator = '&';
 		}
 
-		return $broker['startUrl'] . $separator . $query;
-	}//end start()
-
+		return $startUrl . $separator . $query;
+	}//end withQuery()
 
 	/**
 	 * Complete a login: the minted bearer and where to land, or null when no
@@ -136,7 +146,7 @@ class BrokerLogin {
 	 *
 	 * @return array{token: string, returnTo: string}|null
 	 *
-	 * @spec openspec/changes/portal-broker-login-keeps-the-portal/specs/portal-broker-envelope-login/spec.md
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md
 	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-envelope-becomes-an-ordinary-portal-session-req-bel-005
 	 */
 	public function complete(string $state, string $code): ?array {
@@ -165,14 +175,16 @@ class BrokerLogin {
 		return ['token' => $token, 'returnTo' => $returnTo];
 	}//end complete()
 
-
 	/**
 	 * Redeem the code and check the envelope's claims against the state row.
 	 *
 	 * @param array<string, string|bool> $pending The consumed state row.
 	 * @param string                $code    The one-time code.
 	 *
-	 * @return array{sub: string, provider: string, trust: string, audience: string}|null
+	 * @return array{sub: string, provider: string, trust: string, audience: string, attributes?: array<string, string>}|null
+	 *
+	 * @spec openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md#requirement-an-eherkenning-sign-in-is-a-business-sign-in-req-see-001
+	 * @spec openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md#requirement-an-eidas-sign-in-is-a-visitor-from-another-eu-country-req-see-002
 	 */
 	private function redeem(array $pending, string $code): ?array {
 		$broker = $this->orgConfig->resolveBrokerConfig(orgSlug: $pending['org'], provider: $pending['provider']);
@@ -204,14 +216,13 @@ class BrokerLogin {
 		return $claims + ['audience' => $broker['audience']];
 	}//end redeem()
 
-
 	/**
 	 * The envelope as an ordinary portal session (design D6): the provider is
 	 * the identity type, the subject the identity reference, the preset's
 	 * audience the audience, and integriq's trust the session's trust.
 	 *
 	 * @param array<string, string|bool> $pending The consumed state row.
-	 * @param array<string, string> $claims  The checked claims plus the audience.
+	 * @param array<string, mixed>  $claims  The checked claims plus the audience.
 	 *
 	 * @return string|null The bearer.
 	 */
@@ -228,12 +239,16 @@ class BrokerLogin {
 			return null;
 		}
 
-		$issued = $this->session->issueSession(
+		// The account's own audience wins over the preset's (the-account-names-
+		// the-audience-and-the-company): an employer an app invited stays one.
+		$audience = (string)($account['audience'] ?? $claims['audience']);
+		$issued   = $this->session->issueSession(
 			subjectRef: (string)$account['subjectRef'],
-			audience: $claims['audience'],
+			audience: $audience,
 			organisation: $pending['org'],
 			trust: $claims['trust'],
-			roles: [$claims['audience'] . ':read']
+			roles: [$audience . ':read'],
+			attributes: (array)($claims['attributes'] ?? [])
 		);
 		if ($issued === null) {
 			return null;

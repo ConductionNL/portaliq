@@ -19,20 +19,21 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/events-and-signups/design.md#api-design
+ * @spec openspec/changes/archive/2026-09-28-events-and-signups/design.md#api-design
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\ActionAuthServiceInterface;
+use OCA\Portaliq\Service\ObjectServiceLookup;
+use OCA\Portaliq\Service\PagedObjectReads;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
-use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
@@ -42,14 +43,31 @@ use Throwable;
 /**
  * Staff authoring for events.
  *
- * @spec openspec/changes/events-and-signups/design.md#api-design
+ * @spec openspec/changes/archive/2026-09-28-events-and-signups/design.md#api-design
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- `IUserSession` and
+ * `ActionAuthService` are the authorization guard every `#[NoAdminRequired]`
+ * method calls first (portal.manage-event); a security requirement, not
+ * incidental coupling (see NewsController).
  */
 class EventController extends Controller {
+	use ObjectServiceLookup;
+	use StaffActionGuard;
+	use ObjectArrayRow;
+	use TargetedAudience;
+	use StaffRowWrite;
+	use PagedObjectReads;
+
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
 	private const REGISTER = 'portaliq';
 
 	private const SCHEMA = 'schoolEvent';
+
+	/**
+	 * The ADR-023 action every staff method is gated by (create and publish an event).
+	 */
+	public const ACTION = 'portal.manage-event';
 
 	/**
 	 * Constructor.
@@ -58,33 +76,80 @@ class EventController extends Controller {
 	 * @param IUserSession $userSession Confirms an authenticated Nextcloud user reached this endpoint.
 	 * @param ContainerInterface $container For resolving OpenRegister services.
 	 * @param LoggerInterface $logger The logger.
+	 * @param ActionAuthServiceInterface $actionAuth Decides whether this staff user may author events (ADR-023).
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly IUserSession $userSession,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly ActionAuthServiceInterface $actionAuth,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
-	 * The staff authorization guard every `#[NoAdminRequired]` method calls
-	 * FIRST, before any read or write (see `NewsController`'s identical
-	 * guard for the full rationale).
+	 * Every event, for staff choosing one: its id, title, start and status,
+	 * the latest start first. A news item names the event whose sign-up it
+	 * carries (`eventRef`); this is the list staff pick it from.
 	 *
-	 * @return string The staff member's user id.
+	 * @return JSONResponse `{events: [{id, title, start, status}]}`, or 500 when the events cannot be read.
 	 *
-	 * @throws OCSForbiddenException When no Nextcloud user is authenticated.
+	 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/tasks.md#task-4
 	 */
-	private function requireAuthenticatedStaff(): string {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			throw new OCSForbiddenException('Authentication required');
+	#[NoAdminRequired]
+	public function index(): JSONResponse {
+		$this->requireAuthenticatedStaff();
+
+		$objectService = $this->objectService();
+		if ($objectService === null) {
+			return new JSONResponse(['error' => 'server_error'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 
-		return $user->getUID();
-	}//end requireAuthenticatedStaff()
+		try {
+			$rows = $this->readEveryPage(objectService: $objectService, register: self::REGISTER, schema: self::SCHEMA);
+		} catch (Throwable $e) {
+			$this->logger->error('Portaliq: event list failed', ['reason' => $e->getMessage()]);
+			return new JSONResponse(['error' => 'server_error'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		if ($rows === null) {
+			return new JSONResponse(['error' => 'server_error'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		return new JSONResponse(['events' => $this->eventChoices(rows: $rows)]);
+	}//end index()
+
+	/**
+	 * The choices for a list of event rows: those with an id, latest start first.
+	 *
+	 * @param array<int, mixed> $rows The event rows as read.
+	 *
+	 * @return list<array{id: string, title: string, start: string, status: string}>
+	 *
+	 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/tasks.md#task-4
+	 */
+	private function eventChoices(array $rows): array {
+		$choices = [];
+		foreach ($rows as $row) {
+			$event = $this->normalise(row: $row);
+			$id    = (string)($event['id'] ?? ($event['@self']['id'] ?? ($event['uuid'] ?? '')));
+			if ($id === '') {
+				continue;
+			}
+
+			$choices[] = [
+				'id' => $id,
+				'title' => (string)($event['title'] ?? ''),
+				'start' => (string)($event['start'] ?? ''),
+				'status' => (string)($event['status'] ?? ''),
+			];
+		}
+
+		usort($choices, static fn (array $a, array $b): int => strcmp($b['start'], $a['start']));
+
+		return $choices;
+	}//end eventChoices()
 
 	/**
 	 * Create a draft event. The author is the signed-in staff member, never
@@ -100,7 +165,7 @@ class EventController extends Controller {
 	 *
 	 * @return JSONResponse The created object, or 400/500.
 	 *
-	 * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- `rsvpEnabled` is a
 	 * request-bound field stored verbatim on the created object, not a
@@ -122,35 +187,20 @@ class EventController extends Controller {
 			return new JSONResponse(['error' => 'invalid_target'], Http::STATUS_BAD_REQUEST);
 		}
 
-		$objectService = $this->objectService();
-		if ($objectService === null) {
-			return new JSONResponse(['error' => 'server_error'], Http::STATUS_INTERNAL_SERVER_ERROR);
-		}
-
-		try {
-			$saved = $objectService->saveObject(
-				object: [
-					'title' => $title,
-					'description' => $description,
-					'start' => $start,
-					'end' => $end,
-					'target' => $target,
-					'status' => 'draft',
-					'rsvpEnabled' => $rsvpEnabled,
-					'signupRoles' => $signupRoles,
-					'authorRef' => $authorRef,
-				],
-				register: self::REGISTER,
-				schema: self::SCHEMA,
-				_rbac: false,
-				_multitenancy: false
-			);
-		} catch (Throwable $e) {
-			$this->logger->error('Portaliq: event create failed', ['reason' => $e->getMessage()]);
-			return new JSONResponse(['error' => 'server_error'], Http::STATUS_INTERNAL_SERVER_ERROR);
-		}
-
-		return new JSONResponse($this->normalise(row: $saved));
+		return $this->createRow(
+			object: [
+				'title' => $title,
+				'description' => $description,
+				'start' => $start,
+				'end' => $end,
+				'target' => $target,
+				'status' => 'draft',
+				'rsvpEnabled' => $rsvpEnabled,
+				'signupRoles' => $signupRoles,
+				'authorRef' => $authorRef,
+			],
+			failure: 'Portaliq: event create failed'
+		);
 	}//end create()
 
 	/**
@@ -160,7 +210,7 @@ class EventController extends Controller {
 	 *
 	 * @return JSONResponse The updated object, or 404.
 	 *
-	 * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
 	 */
 	#[NoAdminRequired]
 	public function publish(string $id): JSONResponse {
@@ -170,85 +220,6 @@ class EventController extends Controller {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$writer = new PortalObjectWriter(container: $this->container, logger: $this->logger);
-		$updated = $writer->updateObject(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: '',
-			subjectRef: '',
-			organisation: '',
-			id: $id,
-			data: ['status' => 'published']
-		);
-
-		if ($updated === null) {
-			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
-		}
-
-		return new JSONResponse($updated);
+		return $this->writeRow(id: $id, data: ['status' => 'published']);
 	}//end publish()
-
-	/**
-	 * Whether a target names at least one dimension.
-	 *
-	 * @param array<string, mixed> $target The target.
-	 *
-	 * @return bool
-	 */
-	private function hasAnyTarget(array $target): bool {
-		if (is_string($target['schoolRef'] ?? null) === true && $target['schoolRef'] !== '') {
-			return true;
-		}
-
-		if (is_array($target['groupRefs'] ?? null) === true && count($target['groupRefs']) > 0) {
-			return true;
-		}
-
-		if (is_array($target['childRefs'] ?? null) === true && count($target['childRefs']) > 0) {
-			return true;
-		}
-
-		return false;
-	}//end hasAnyTarget()
-
-	/**
-	 * Normalise an OpenRegister row (array or object) to an associative array.
-	 *
-	 * @param mixed $row The row.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function normalise(mixed $row): array {
-		if (is_array($row) === true) {
-			return $row;
-		}
-
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			$data = $row->jsonSerialize();
-			if (is_array($data) === true) {
-				return $data;
-			}
-		}
-
-		return [];
-	}//end normalise()
-
-	/**
-	 * Resolve OpenRegister's ObjectService, or null when unavailable.
-	 *
-	 * @return object|null
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end objectService()
 }//end class

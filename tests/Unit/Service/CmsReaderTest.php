@@ -39,6 +39,12 @@ use Psr\Log\LoggerInterface;
  * where nothing on screen would look wrong.
  */
 class CmsReaderTest extends TestCase {
+	private const GRID_PAGE = '{"title":"Home","route":"\/","summary":"Start","locale":"nl","seo":{"title":"Home | Tilburg","description":"","noindex":false,"image":""},"hero":null,"body":{"type":"grid","clearedRegions":["hero"],"widgets":[{"id":"h","widgetKey":"hero","slot":"hero","gridX":0,"gridY":0,"gridWidth":12,"gridHeight":4,"props":[]},{"id":"a","widgetKey":"markdown","slot":"body","gridX":0,"gridY":1,"gridWidth":12,"gridHeight":4,"props":[]},{"id":"b","widgetKey":"markdown","slot":"body","gridX":2,"gridY":1,"gridWidth":12,"gridHeight":4,"props":[]}],"aside":{"width":300,"gap":null},"regions":{"hero":[{"id":"h","widgetKey":"hero","slot":"hero","gridX":0,"gridY":0,"gridWidth":12,"gridHeight":4,"props":[]}],"main":[{"id":"a","widgetKey":"markdown","slot":"body","gridX":0,"gridY":1,"gridWidth":12,"gridHeight":4,"props":[]},{"id":"b","widgetKey":"markdown","slot":"body","gridX":2,"gridY":1,"gridWidth":12,"gridHeight":4,"props":[]}]},"unknownRegions":[]}}';
+
+	private const MARKDOWN_PAGE = '{"title":"Tekst","route":"\/tekst","summary":"","locale":"","seo":{"title":"","description":"","noindex":false,"image":""},"hero":null,"body":{"type":"markdown","clearedRegions":[],"markdown":"# Kop"}}';
+
+	private const MENU = '[{"title":"Hoofd","position":2,"items":[{"order":1,"name":"A","link":"","description":"","icon":"","items":[{"order":0,"name":"A0","link":"","icon":""},{"order":3,"name":"A3","link":"","icon":"x"}]},{"order":2,"name":"B","link":"\/b","description":"Bee","icon":"bee","items":[]}]}]';
+
 
 	/**
 	 * The reader under test.
@@ -264,6 +270,197 @@ class CmsReaderTest extends TestCase {
 		$this->assertStringNotContainsString('secret', $encoded);
 		$this->assertStringContainsString('PUBLISHED COPY', $encoded);
 	}//end testADraftIsNeverServedPublicly()
+
+
+	/**
+	 * A draft FAQ entry is never served; the rest stand in their order and filter by page.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t02
+	 */
+	public function testAFaqDraftIsNeverServedAndEntriesAreFiltered(): void {
+		$this->cache->method('get')->willReturn(null);
+		$this->withRows(
+			[
+				['question' => 'Tweede?', 'answer' => 'b', 'status' => 'published', 'order' => 20, 'pages' => ['/parkeren'], 'topic' => 'Parkeren'],
+				['question' => 'GEHEIM?', 'answer' => 'x', 'status' => 'draft', 'order' => 1, 'pages' => ['/parkeren']],
+				['question' => 'Eerste?', 'answer' => 'a', 'status' => 'published', 'order' => 10, 'pages' => ['/parkeren', '/afval'], 'topic' => 'Parkeren'],
+				['question' => 'Afval?', 'answer' => 'c', 'status' => 'published', 'order' => 5, 'pages' => ['/afval'], 'topic' => 'Afval'],
+			]
+		);
+
+		$all = $this->reader->faq('open-tilburg', 'nl', 'anonymous');
+		$this->assertSame(['Afval?', 'Eerste?', 'Tweede?'], array_column($all, 'question'));
+		$this->assertStringNotContainsString('GEHEIM', json_encode($all));
+		$this->assertSame(['Eerste?', 'Tweede?'], array_column($this->reader->faq('open-tilburg', 'nl', 'anonymous', '/parkeren'), 'question'));
+		$this->assertSame(['Afval?'], array_column($this->reader->faq('open-tilburg', 'nl', 'anonymous', '', 'Afval'), 'question'));
+	}//end testAFaqDraftIsNeverServedAndEntriesAreFiltered()
+
+
+	/**
+	 * A finder offers only products whose page is published, and keeps the question rules.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t02
+	 */
+	public function testAFinderOffersOnlyPublishedProducts(): void {
+		$this->cache->method('get')->willReturn(null);
+		$this->withRows(
+			[
+				[
+					'id' => 'f1',
+					'title' => 'Welke vergunning?',
+					'status' => 'published',
+					'products' => ['/p/a', '/p/gone'],
+					'questions' => [
+						['id' => 'q1', 'text' => 'Woont u in de binnenstad?', 'excludesOnNo' => ['/p/a']],
+						['id' => 'q2', 'text' => ''],
+					],
+				],
+				['title' => 'Product A', 'route' => '/p/a', 'summary' => '38,50 euro per jaar', 'status' => 'published', 'body' => ['type' => 'markdown']],
+			]
+		);
+
+		$finder = $this->reader->finder('open-tilburg', 'f1', 'nl', 'anonymous');
+		// Each product carries its page's summary, the line under its name.
+		$this->assertSame([['route' => '/p/a', 'title' => 'Product A', 'summary' => '38,50 euro per jaar']], $finder['products']);
+		$this->assertCount(1, $finder['questions']);
+		$this->assertSame(['/p/a'], $finder['questions'][0]['excludesOnNo']);
+		$this->assertNull($this->reader->finder('open-tilburg', 'other', 'nl', 'anonymous'));
+	}//end testAFinderOffersOnlyPublishedProducts()
+
+
+	/**
+	 * The page a visitor gets carries the help of the stored form its placement names.
+	 *
+	 * Asserted from the reader, the caller: a class that shapes the help but is
+	 * never asked would pass its own test and change nothing on the site.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
+	 */
+	public function testAFormPlacementIsServedWithItsStoredFormsHelp(): void {
+		$this->cache->method('get')->willReturn(null);
+		$this->withRows(
+			[
+				[
+					'title'  => 'Woo-verzoek indienen',
+					'route'  => '/woo-verzoek',
+					'portal' => 'zuiddrecht',
+					'status' => 'published',
+					'body'   => [
+						'type'    => 'grid',
+						'widgets' => [
+							['id' => 'form', 'widgetKey' => 'form', 'props' => ['formId' => 'f-1', 'fields' => []]],
+						],
+					],
+				],
+				['id' => 'f-1', 'portal' => 'zuiddrecht', 'help' => ['phone' => '14 021', 'email' => 'woo@zuiddrecht.example']],
+			]
+		);
+
+		$page = $this->reader->page('zuiddrecht', '/woo-verzoek', 'nl', 'anonymous');
+
+		$this->assertSame(
+			['phone' => '14 021', 'email' => 'woo@zuiddrecht.example'],
+			$page['body']['widgets'][0]['props']['formHelp']
+		);
+		$this->assertSame(2, substr_count((string)json_encode($page['body']), '14 021'), 'the copy grouped by region carries it too');
+	}//end testAFormPlacementIsServedWithItsStoredFormsHelp()
+
+
+	/**
+	 * A block of the serving organisation expands into the placement; the placement keeps its cell.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t02
+	 */
+	public function testSharedBlockExpandsForTheSameOrganisation(): void {
+		$this->cache->method('get')->willReturn(null);
+		$this->withRows($this->pageAndBlockRows(status: 'published', organisation: 'gemeente-voorbeeld'));
+
+		$page = $this->reader->page('inwoners', '/', 'nl', 'anonymous', 'gemeente-voorbeeld');
+		$placement = $page['body']['widgets'][0];
+
+		$this->assertSame('sharedBlock', $placement['widgetKey']);
+		$this->assertSame(['gridX' => 0, 'gridY' => 0, 'gridWidth' => 6, 'gridHeight' => 2], [
+			'gridX' => $placement['gridX'], 'gridY' => $placement['gridY'], 'gridWidth' => $placement['gridWidth'], 'gridHeight' => $placement['gridHeight'],
+		]);
+		$this->assertFalse($placement['props']['unavailable']);
+		$this->assertCount(1, $placement['props']['widgets'], 'the nested placement inside the block is dropped');
+		$this->assertSame('Open van negen tot vijf', $placement['props']['widgets'][0]['props']['markdown']);
+	}//end testSharedBlockExpandsForTheSameOrganisation()
+
+
+	/**
+	 * Another organisation's block expands to nothing, exactly as a block that is not there.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t02
+	 */
+	public function testForeignBlockExpandsToNothing(): void {
+		$this->cache->method('get')->willReturn(null);
+		$this->withRows($this->pageAndBlockRows(status: 'published', organisation: 'gemeente-voorbeeld'));
+		$foreign = $this->reader->page('noord', '/', 'nl', 'anonymous', 'gemeente-noord')['body']['widgets'][0]['props'];
+
+		$this->withRows(array_slice($this->pageAndBlockRows(status: 'published', organisation: 'gemeente-noord'), 0, 1));
+		$missing = $this->reader->page('noord', '/', 'nl', 'anonymous', 'gemeente-noord')['body']['widgets'][0]['props'];
+
+		$this->assertSame(['block' => 'blk-1', 'widgets' => [], 'unavailable' => true], $foreign);
+		$this->assertSame($missing, $foreign, 'a foreign block and a missing one answer the same');
+	}//end testForeignBlockExpandsToNothing()
+
+
+	/**
+	 * An unpublished block expands to nothing, and so does a read with no organisation.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t02
+	 */
+	public function testUnpublishedBlockExpandsToNothing(): void {
+		$this->cache->method('get')->willReturn(null);
+		$this->withRows($this->pageAndBlockRows(status: 'draft', organisation: 'gemeente-voorbeeld'));
+		$draft = $this->reader->page('inwoners', '/', 'nl', 'anonymous', 'gemeente-voorbeeld')['body']['widgets'][0]['props'];
+		$this->assertTrue($draft['unavailable']);
+		$this->assertSame([], $draft['widgets']);
+		$this->assertStringNotContainsString('Open van negen', json_encode($draft));
+
+		$this->withRows($this->pageAndBlockRows(status: 'published', organisation: 'gemeente-voorbeeld'));
+		$this->assertTrue($this->reader->page('inwoners', '/', 'nl', 'anonymous')['body']['widgets'][0]['props']['unavailable']);
+	}//end testUnpublishedBlockExpandsToNothing()
+
+
+	/**
+	 * A page placing one block, then the block.
+	 *
+	 * @param string $status       The block's status.
+	 * @param string $organisation The block's organisation.
+	 *
+	 * @return array The rows.
+	 */
+	private function pageAndBlockRows(string $status, string $organisation): array {
+		return [
+			[
+				'title' => 'Home', 'route' => '/', 'status' => 'published',
+				'body' => ['type' => 'grid', 'widgets' => [
+					['id' => 'w1', 'widgetKey' => 'sharedBlock', 'gridX' => 0, 'gridY' => 0, 'gridWidth' => 6, 'gridHeight' => 2, 'props' => ['block' => 'blk-1']],
+				]],
+			],
+			[
+				'id' => 'blk-1', 'title' => 'Contact', 'status' => $status, 'organisation' => $organisation,
+				'widgets' => [
+					['id' => 'b1', 'widgetKey' => 'markdown', 'gridX' => 0, 'gridY' => 0, 'gridWidth' => 12, 'gridHeight' => 2, 'props' => ['markdown' => 'Open van negen tot vijf']],
+					['id' => 'b2', 'widgetKey' => 'sharedBlock', 'gridX' => 0, 'gridY' => 2, 'gridWidth' => 12, 'gridHeight' => 2, 'props' => ['block' => 'blk-1']],
+				],
+			],
+		];
+	}//end pageAndBlockRows()
 
 
 	/**
@@ -644,6 +841,29 @@ class CmsReaderTest extends TestCase {
 	}//end testAPageServesItsRegionsBesideItsWidgets()
 
 	/**
+	 * A grid page serves the aside column it asks for, as whole pixels, and
+	 * a page that asks for none serves no aside.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-may-give-its-aside-a-fixed-width
+	 */
+	public function testAGridPageServesItsAsideColumn(): void {
+		$this->withRows(
+			rows: [
+				['title' => 'Home', 'route' => '/', 'body' => ['type' => 'grid', 'aside' => ['width' => '340', 'gap' => 56], 'widgets' => []]],
+				['title' => 'Over', 'route' => '/over', 'body' => ['type' => 'grid', 'aside' => ['gap' => 56], 'widgets' => []]],
+			]
+		);
+
+		$home = $this->reader->page(portal: 'open-tilburg', route: '/', locale: 'nl', audience: 'anonymous');
+		$over = $this->reader->page(portal: 'open-tilburg', route: '/over', locale: 'nl', audience: 'anonymous');
+
+		$this->assertSame(expected: ['width' => 340, 'gap' => 56], actual: $home['body']['aside']);
+		$this->assertArrayNotHasKey(key: 'aside', array: $over['body'], message: 'an aside without a width is not served');
+	}//end testAGridPageServesItsAsideColumn()
+
+	/**
 	 * A grid page without widgets serves `regions` as an empty JSON object,
 	 * and a markdown page still carries the regions it clears.
 	 *
@@ -900,5 +1120,64 @@ class CmsReaderTest extends TestCase {
 		$this->assertSame(3, $widget['gridY']);
 	}//end testTheProjectionStillServesTheWidgetItStripped()
 
+	/**
+	 * The whole API shape of a grid page and a markdown page, key order
+	 * included, as recorded before the shapers were split.
+	 *
+	 * @return void
+	 */
+	public function testThePageShapesAreServedAsRecorded(): void {
+		$this->withRows(
+			rows: [
+				[
+					'title' => 'Home',
+					'route' => '/',
+					'summary' => 'Start',
+					'locale' => 'nl',
+					'seoTitle' => 'Home | Tilburg',
+					'body' => [
+						'type' => 'grid',
+						'clearedRegions' => ['hero'],
+						'aside' => ['width' => 300],
+						'widgets' => [
+							['id' => 'b', 'widgetKey' => 'markdown', 'slot' => 'body', 'gridY' => 1, 'gridX' => 2],
+							['id' => 'a', 'widgetKey' => 'markdown', 'slot' => 'body', 'gridY' => 1, 'gridX' => 0],
+							['id' => 'h', 'widgetKey' => 'hero', 'slot' => 'hero', 'gridY' => 0, 'gridX' => 0],
+						],
+					],
+				],
+				['title' => 'Tekst', 'route' => '/tekst', 'body' => ['markdown' => '# Kop', 'aside' => ['width' => 300]]],
+			]
+		);
 
+		$grid     = $this->reader->page(portal: 'open-tilburg', route: '/', locale: 'nl', audience: 'anonymous');
+		$markdown = $this->reader->page(portal: 'open-tilburg', route: '/tekst', locale: 'nl', audience: 'anonymous');
+
+		$this->assertSame(self::GRID_PAGE, json_encode($grid));
+		$this->assertSame(self::MARKDOWN_PAGE, json_encode($markdown));
+	}//end testThePageShapesAreServedAsRecorded()
+
+	/**
+	 * The whole API shape of a menu, key order included: junk dropped, the
+	 * children of a child dropped, both levels ordered.
+	 *
+	 * @return void
+	 */
+	public function testTheMenuShapeIsServedAsRecorded(): void {
+		$this->withRows(
+			rows: [
+				[
+					'title' => 'Hoofd',
+					'position' => '2',
+					'items' => [
+						'junk',
+						['order' => 2, 'name' => 'B', 'link' => '/b', 'description' => 'Bee', 'icon' => 'bee'],
+						['order' => 1, 'name' => 'A', 'items' => ['junk', ['order' => 3, 'name' => 'A3', 'icon' => 'x', 'description' => 'dropped'], ['name' => 'A0']]],
+					],
+				],
+			]
+		);
+
+		$this->assertSame(self::MENU, json_encode($this->reader->menus(portal: 'open-tilburg', locale: 'nl', audience: 'anonymous')));
+	}//end testTheMenuShapeIsServedAsRecorded()
 }//end class

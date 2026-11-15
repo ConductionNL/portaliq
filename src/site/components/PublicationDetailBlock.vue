@@ -24,7 +24,18 @@
 			</p>
 		</div>
 
-		<article v-else-if="publication" class="pq-detail__body">
+		<article
+			v-else-if="publication"
+			class="pq-detail__body"
+			:class="{ 'pq-detail__body--cards': cards }">
+			<!-- The cards variant (board Publicatie) names the category as a
+			     pill above the title; the plain variant keeps it in the list. -->
+			<span
+				v-if="cards && categoryName"
+				class="pq-detail__pill"
+				data-testid="publication-detail-pill">
+				{{ categoryName }}
+			</span>
 			<h1 class="utrecht-heading-1" data-testid="publication-detail-title">
 				{{ title }}
 			</h1>
@@ -46,18 +57,22 @@
 				WHAT A VISITOR NEEDS, IN WORDS (resident-sees-words-not-codes):
 				the date, the information category by name and the themes by
 				name. The archive's bookkeeping (Plooi, retention, the
-				organisation id, the status) stays off the page.
+				organisation id, the status) stays out of this worded part;
+				it shows only in the "All details" table at the end.
 			-->
 			<dl
 				v-if="fields.length > 0"
 				class="pq-detail__fields"
+				:class="{ 'pq-detail__fields--boxed': cards }"
 				data-testid="publication-detail-fields">
 				<div
 					v-for="field in fields"
 					:key="field.name"
 					class="pq-detail__field">
+					<!-- The cards variant sets the labels in a column of their
+					     own, without the colon (board Publicatie). -->
 					<dt class="pq-detail__label">
-						<strong>{{ field.label }}:</strong>
+						<strong>{{ cards ? field.label : `${field.label}:` }}</strong>
 					</dt>
 					<dd class="pq-detail__value">
 						<ul v-if="field.kind === 'list'" class="pq-detail__list">
@@ -87,6 +102,60 @@
 					data-testid="publication-documents-empty">
 					{{ t('This publication has no documents.') }}
 				</p>
+				<!-- The cards variant draws each document as a card: a file
+				     mark, the name with its type and size under it, and a
+				     "Download" button that names the file for assistive tech. -->
+				<ul v-else-if="cards" class="pq-detail__document-cards">
+					<li
+						v-for="document in documents"
+						:key="document.id || document.title"
+						class="pq-detail__document-card"
+						data-testid="publication-document">
+						<span class="pq-detail__document-head">
+							<svg
+								class="pq-detail__document-mark"
+								viewBox="0 0 24 24"
+								aria-hidden="true"
+								focusable="false">
+								<path d="M6 3h9l4 4v14H6zM14 3v5h5" />
+							</svg>
+							<span class="pq-detail__document-words">
+								<span class="pq-detail__document-name">{{
+									document.title
+								}}</span>
+								<span
+									v-if="document.type || document.size"
+									class="pq-detail__document-meta">
+									{{
+										[document.type, document.size]
+											.filter(Boolean)
+											.join(', ')
+									}}
+								</span>
+							</span>
+						</span>
+						<a
+							v-if="document.href"
+							class="utrecht-button utrecht-button--secondary-action pq-detail__download"
+							:href="document.href"
+							download
+							rel="noopener noreferrer">
+							<svg
+								viewBox="0 0 24 24"
+								aria-hidden="true"
+								focusable="false">
+								<path d="M12 4v11M7 10l5 5 5-5M5 20h14" />
+							</svg>
+							{{ t('Download')
+							}}<span class="sr-only">{{ ` ${document.title}` }}</span>
+						</a>
+						<SaveToDossier
+							v-if="signedIn && document.id"
+							:publication="subjectId"
+							:attachment="document.id"
+							:subject="document.title" />
+					</li>
+				</ul>
 				<ul v-else class="pq-detail__document-list">
 					<li
 						v-for="document in documents"
@@ -118,6 +187,57 @@
 					</li>
 				</ul>
 			</section>
+
+			<!--
+				ALL DETAILS (publication-page-all-details): every stored
+				property below the worded part, with a readable label. The
+				object's own metadata and empty values are left out, and a
+				value shaped like a URL is a link. The worded part above stays
+				free of stored codes.
+			-->
+			<section
+				v-if="details.length > 0"
+				class="pq-detail__all"
+				data-testid="publication-all-details">
+				<h2 id="pq-detail-all-details" class="utrecht-heading-2">
+					{{ t('All details') }}
+				</h2>
+				<table
+					class="utrecht-table pq-detail__all-table"
+					aria-labelledby="pq-detail-all-details">
+					<tbody class="utrecht-table__body">
+						<tr
+							v-for="row in details"
+							:key="row.name"
+							class="utrecht-table__row"
+							:data-property="row.name">
+							<th scope="row" class="utrecht-table__header-cell">
+								{{ row.label }}
+							</th>
+							<td class="utrecht-table__cell">
+								<ul v-if="row.items.length > 1" class="pq-detail__list">
+									<li v-for="(item, index) in row.items" :key="index">
+										<a
+											v-if="item.href"
+											class="utrecht-link"
+											:href="item.href"
+											rel="noopener noreferrer">{{ item.text }}</a>
+										<span v-else>{{ item.text }}</span>
+									</li>
+								</ul>
+								<template v-else>
+									<a
+										v-if="row.items[0].href"
+										class="utrecht-link"
+										:href="row.items[0].href"
+										rel="noopener noreferrer">{{ row.items[0].text }}</a>
+									<span v-else>{{ row.items[0].text }}</span>
+								</template>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</section>
 		</article>
 	</section>
 </template>
@@ -125,13 +245,14 @@
 <script>
 import { defineAsyncComponent } from 'vue'
 import { createTranslator } from '../../shared/i18n/index.js'
+import { pageLocale } from '../lib/facetLabels.js'
 import {
+	allDetailRows,
 	publicationSummary,
 	themeIdsOf,
 	toDocuments,
 	visitorRows,
 } from '../lib/publicationDetail.js'
-import { pageLocale } from '../lib/wooCategories.js'
 
 /**
  * One publication, as a visitor reads it: title, summary, date, category and
@@ -178,6 +299,17 @@ export default {
 		 * Whether the page shell holds a portal session. Set by the host
 		 * after the authored props, never by page configuration.
 		 */
+		/**
+		 * `plain` (title, rows, a list of documents) or `cards`: the category
+		 * as a pill above the title, the rows in a tinted box, each document
+		 * as a card with a download button (site-matches-the-zuiddrecht-boards,
+		 * board Publicatie).
+		 */
+		variant: {
+			type: String,
+			default: 'plain',
+		},
+
 		signedIn: {
 			type: Boolean,
 			default: false,
@@ -201,6 +333,8 @@ export default {
 		},
 	},
 
+	emits: ['subject'],
+
 	data() {
 		return {
 			publication: null,
@@ -215,7 +349,7 @@ export default {
 		/**
 		 * @return {string} The page's language.
 		 *
-		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
 		 */
 		locale() {
 			return pageLocale()
@@ -224,7 +358,7 @@ export default {
 		/**
 		 * @return {(key: string) => string} The translator for the page's language.
 		 *
-		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
 		 */
 		t() {
 			return createTranslator(this.locale)
@@ -233,7 +367,7 @@ export default {
 		/**
 		 * @return {string} The summary under the title, or ''.
 		 *
-		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
 		 */
 		summary() {
 			return publicationSummary(this.publication)
@@ -254,8 +388,33 @@ export default {
 		/**
 		 * @return {Array<object>} The rendered field rows.
 		 *
-		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
 		 */
+		/**
+		 * @return {boolean} Whether the cards variant is drawn.
+		 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md#requirement-the-publication-page-may-draw-the-boards-cards
+		 */
+		cards() {
+			return this.variant === 'cards'
+		},
+
+		/**
+		 * @return {string} The information category's name, for the pill.
+		 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md#requirement-the-publication-page-may-draw-the-boards-cards
+		 */
+		categoryName() {
+			const row = this.fields.find((field) => field.name === 'wooCategory')
+			return row ? String(row.value) : ''
+		},
+
+		/**
+		 * @return {Array<object>} The rows of the "All details" table.
+		 * @spec openspec/changes/publication-page-all-details/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-end-with-an-all-details-table-of-every-stored-property
+		 */
+		details() {
+			return allDetailRows(this.publication)
+		},
+
 		fields() {
 			return visitorRows(this.publication, {
 				t: this.t,
@@ -356,6 +515,25 @@ export default {
 			} finally {
 				this.loading = false
 			}
+			this.tellSubject()
+		},
+
+		/**
+		 * Tell the page what it shows: the publication's title ends the
+		 * breadcrumb instead of the page's own title, which read
+		 * "Publicatie › Publicatie" (live round 3, 14 Oct). Nothing found
+		 * tells nothing, so the trail keeps the page's words.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/resident-pages-live-round-3/specs/site-navigation/spec.md#requirement-a-publication-ends-the-breadcrumb-with-its-own-title-req-rr3-004
+		 */
+		tellSubject() {
+			this.$emit(
+				'subject',
+				this.error === false && this.publication
+					? { title: String(this.title) }
+					: null,
+			)
 		},
 
 		/**
@@ -368,7 +546,7 @@ export default {
 		 * @param {string} publicationUrl The publication's own URL.
 		 * @return {Promise<void>} Resolves once `documents` is set.
 		 *
-		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-list-and-offer-every-document-for-download-req-wsd-005
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-list-and-offer-every-document-for-download-req-wsd-005
 		 */
 		async loadDocuments(publicationUrl) {
 			const asked = this.subjectId
@@ -418,7 +596,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves once `themeNames` is set.
 		 *
-		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
 		 */
 		async loadThemeNames() {
 			const asked = this.subjectId
@@ -495,7 +673,186 @@ export default {
 }
 
 .pq-detail__document-meta {
-	color: var(--nldesign-color-text-muted, #65757b);
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, #65757b)
+	);
 	margin-inline-start: 4px;
+}
+
+/* All details: label column and value column, tokens only. */
+.pq-detail__all {
+	margin-block-start: 24px;
+}
+
+.pq-detail__all-table {
+	inline-size: 100%;
+	border-collapse: collapse;
+}
+
+.pq-detail__all-table th,
+.pq-detail__all-table td {
+	padding-block: 0.5rem;
+	padding-inline-end: 1rem;
+	border-block-end: 1px solid
+		var(--nldesign-color-border, var(--nldesign-color-border-dark, currentcolor));
+	text-align: start;
+	vertical-align: top;
+	overflow-wrap: anywhere;
+}
+
+.pq-detail__all-table th {
+	inline-size: 30%;
+	font-weight: 600;
+}
+
+/* The cards variant (board Publicatie). Tokens only. */
+.pq-detail__body--cards {
+	display: flex;
+	flex-direction: column;
+	gap: 1.75rem;
+}
+
+.pq-detail__body--cards h1 {
+	margin: 0;
+}
+
+/* The pill sits 12px over the title, the summary 20px under it. */
+.pq-detail__body--cards .pq-detail__pill + h1 {
+	margin-block-start: -1rem;
+}
+
+.pq-detail__body--cards h1 + .pq-detail__summary {
+	margin-block-start: -0.5rem;
+}
+
+.pq-detail__pill {
+	align-self: flex-start;
+	padding: 0.25rem 0.75rem;
+	border-radius: 0.875rem;
+	background: var(--nldesign-color-primary-light, transparent);
+	color: var(--nldesign-color-primary-hover, currentcolor);
+	font-size: 0.9375rem;
+	font-weight: 600;
+}
+
+.pq-detail__body--cards .pq-detail__summary {
+	margin: 0;
+	font-size: 1.25rem;
+	line-height: 1.5;
+}
+
+.pq-detail__fields--boxed {
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	gap: 0.625rem 1.5rem;
+	padding: 1.25rem 1.5rem;
+	border-radius: var(--nldesign-website-border-radius-large, 0);
+	background: var(
+		--nldesign-color-surface,
+		var(--nldesign-component-content-surface-background-color, transparent)
+	);
+}
+
+.pq-detail__fields--boxed .pq-detail__field {
+	display: contents;
+}
+
+.pq-detail__fields--boxed .pq-detail__label,
+.pq-detail__fields--boxed .pq-detail__value {
+	display: block;
+	margin: 0;
+}
+
+.pq-detail__body--cards .pq-detail__documents {
+	display: flex;
+	flex-direction: column;
+	gap: 0.875rem;
+	margin: 0;
+}
+
+.pq-detail__body--cards .pq-detail__documents h2 {
+	margin: 0;
+	font-size: 1.75rem;
+	line-height: 1.2;
+}
+
+.pq-detail__document-cards {
+	display: flex;
+	flex-direction: column;
+	gap: 0.625rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.pq-detail__document-card {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem 1.25rem;
+	align-items: center;
+	justify-content: space-between;
+	padding: 1rem 1.25rem;
+	border: 1px solid
+		var(
+			--nldesign-website-card-border-color,
+			var(--nldesign-color-border-dark, currentcolor)
+		);
+	border-radius: var(--nldesign-website-border-radius-large, 0);
+}
+
+.pq-detail__document-head {
+	display: flex;
+	gap: 0.875rem;
+	align-items: center;
+}
+
+.pq-detail__document-mark {
+	flex: none;
+	inline-size: 1.75rem;
+	block-size: 1.75rem;
+	fill: none;
+	stroke: var(--nldesign-color-accent, currentcolor);
+	stroke-width: 1.8;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+.pq-detail__document-words {
+	display: flex;
+	flex-direction: column;
+	gap: 0.125rem;
+}
+
+.pq-detail__document-name {
+	font-size: 1.125rem;
+	font-weight: 600;
+}
+
+.pq-detail__document-card .pq-detail__document-meta {
+	margin: 0;
+	font-size: 0.9375rem;
+}
+
+.pq-detail__document-card .utrecht-button.pq-detail__download {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	min-block-size: 2.75rem;
+	padding-inline: 1rem;
+	border: 2px solid var(--nldesign-color-primary, currentcolor);
+	border-radius: var(--nldesign-website-border-radius, 0);
+	color: var(--nldesign-color-primary, currentcolor);
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.pq-detail__download svg {
+	inline-size: 1.125rem;
+	block-size: 1.125rem;
+	fill: none;
+	stroke: currentcolor;
+	stroke-width: 2.2;
+	stroke-linecap: round;
 }
 </style>

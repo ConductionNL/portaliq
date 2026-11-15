@@ -6,10 +6,13 @@ namespace OCA\Portaliq\Tests\Unit\Service\Intake;
 
 use OCA\Portaliq\Service\CaseTypeVisibility;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
+use OCA\Portaliq\Service\Intake\PortalReferenceLists;
+use OCA\Portaliq\Service\Intake\VisibleWhenLocal;
 use OCA\Portaliq\Service\Intake\PortalFormTrustLevel;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Tests\Unit\Service\Identity\PortalIdentityStoreTrait;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Contribution\FormStepsNormaliser;
 
 /**
  * portal-intake-form-as-an-object REQ-PIFO-001 and REQ-PIFO-002: a page binds
@@ -157,6 +160,57 @@ class PortalFormBindingResolverTest extends TestCase {
 
 	}//end testAPresetIsCarriedOntoItsField()
 
+	/**
+	 * data-lookups-and-checks-in-forms T03: a field naming a reference list
+	 * gets the list's items as options; an empty or missing list closes it.
+	 *
+	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t03
+	 */
+	public function testAReferenceListFillsTheFieldsOptionsAndAnEmptyOneClosesIt(): void {
+		$this->seedForm(audience: 'client', fields: [
+			['name' => 'woning', 'order' => 1, 'options' => ['referenceList' => 'woningtypen']],
+			['name' => 'leeg', 'order' => 2, 'options' => ['referenceList' => 'bestaatniet']],
+			['name' => 'vast', 'order' => 3, 'options' => ['a', 'b']],
+		]);
+		$lists = $this->createMock(PortalReferenceLists::class);
+		$lists->method('items')->willReturnCallback(
+			static fn (string $list): array => $list === 'woningtypen' ? [['value' => 'flat', 'label' => 'Flat'], ['value' => 'huis', 'label' => 'Huis']] : []
+		);
+
+		$fields = (new PortalFormBindingResolver($this->fakeReader(), new FormStepsNormaliser(), null, new VisibleWhenLocal(), $lists))->render(binding: $this->binding())['fields'];
+
+		$this->assertSame([['value' => 'flat', 'label' => 'Flat'], ['value' => 'huis', 'label' => 'Huis']], $fields[0]['options']);
+		$this->assertArrayNotHasKey('referenceListEmpty', $fields[0]);
+		$this->assertSame([], $fields[1]['options']);
+		$this->assertTrue($fields[1]['referenceListEmpty']);
+		$this->assertSame(['a', 'b'], $fields[2]['options'], 'a plain list is left as it is');
+
+		$none = (new PortalFormBindingResolver($this->fakeReader(), new FormStepsNormaliser()))->render(binding: $this->binding())['fields'];
+		$this->assertTrue($none[0]['referenceListEmpty'], 'without a reader the field is closed, not open');
+	}//end testAReferenceListFillsTheFieldsOptionsAndAnEmptyOneClosesIt()
+
+	/**
+	 * intake-pay-on-submit T03: the render carries the case type's fee, and a
+	 * fee makes the form need a session at substantial.
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t03
+	 */
+	public function testFeeRequiresSession(): void {
+		$this->seedForm(audience: 'client', fields: [['name' => 'kenteken', 'order' => 1]]);
+		$reader = $this->createMock(\OCA\Portaliq\Service\CaseTypeReader::class);
+		$reader->method('readCaseType')->willReturn(['portalFee' => ['amount' => '38.50', 'currency' => 'EUR', 'payAction' => 'create-payment']]);
+		$resolver = new PortalFormBindingResolver($this->fakeReader(), new FormStepsNormaliser(), null, new VisibleWhenLocal(), null, new \OCA\Portaliq\Service\Intake\PortalFormCalculator(), new \OCA\Portaliq\Service\Intake\PortalFee($reader));
+
+		$render = $resolver->render(binding: $this->binding());
+
+		$this->assertSame(expected: '38.50', actual: $render['fee']['amount']);
+		$this->assertSame('substantial', $resolver->requiredTrust(site: ['slug' => 'gemeente-x'], binding: $this->binding(), render: $render));
+
+		$free = $this->resolver()->render(binding: $this->binding());
+		$this->assertNull($free['fee']);
+		$this->assertNull($this->resolver()->requiredTrust(site: ['slug' => 'gemeente-x'], binding: $this->binding(), render: $free));
+	}//end testFeeRequiresSession()
+
 	public function testTheFormsSignInLevelIsCarriedToTheRender(): void {
 		// portaliq#725: buildiq writes the per-form sign-in level on the
 		// registration form (buildiq#935); the render must carry it or no
@@ -215,6 +269,31 @@ class PortalFormBindingResolverTest extends TestCase {
 		$this->assertSame('Bedankt, u hoort van ons.', $render['settings']['confirmationText']);
 
 	}//end testTheConfirmationTextIsTheFormsOwn()
+
+	/**
+	 * form-statements-intro-and-confirmation-mail T06: an introduction is
+	 * shown unless the form settings page switched it off; switched off, its
+	 * text stays on the binding and the form opens at step 1.
+	 *
+	 * @return void
+	 */
+	public function testAnIntroductionSwitchedOffOpensTheFormAtStepOne(): void {
+		$this->seedForm(audience: 'client', fields: [['name' => 'postcode', 'order' => 1]]);
+		$resolver = $this->resolver();
+		$intro    = ['lead' => 'Voordat u begint.', 'blocks' => [['title' => 'Wat heeft u nodig?']]];
+
+		$shown = $resolver->render(binding: $this->binding(['intro' => $intro]));
+		$this->assertSame($intro, $shown['settings']['intro']);
+
+		$switchedOn = $resolver->render(binding: $this->binding(['intro' => ['enabled' => true] + $intro]));
+		$this->assertSame(['enabled' => true] + $intro, $switchedOn['settings']['intro']);
+
+		$switchedOff = $resolver->render(binding: $this->binding(['intro' => ['enabled' => false] + $intro]));
+		$this->assertNull($switchedOff['settings']['intro']);
+
+		$this->assertNull($resolver->render(binding: $this->binding([]))['settings']['intro']);
+		$this->assertNull($resolver->render(binding: $this->binding(['intro' => 'Voordat u begint.']))['settings']['intro']);
+	}//end testAnIntroductionSwitchedOffOpensTheFormAtStepOne()
 
 	public function testABindingThatResolvesToNoFormSaysSoAndRendersNoFields(): void {
 		$this->seedForm(audience: 'supplier', fields: [['name' => 'kvk', 'order' => 1]]);
@@ -305,6 +384,23 @@ class PortalFormBindingResolverTest extends TestCase {
 		$this->assertSame([['dossiq', 'zaaktype', 'verhuizing']], $resolver->declaredCaseTypes(portal: 'gemeente-x'));
 
 	}//end testAPortalDeclaresOnlyTheCaseTypesItPublishedABindingFor()
+
+	/**
+	 * The whole instance's published bindings, for a destination schema that
+	 * is about to change: every portal's, and no draft.
+	 *
+	 * @return void
+	 */
+	public function testEveryPortalsPublishedBindingsAreListedAndNoDraft(): void {
+		$this->seedRow('portalFormBinding', $this->binding());
+		$this->seedRow('portalFormBinding', $this->binding(['portal' => 'gemeente-y', 'route' => 'aanvragen/kap']));
+		$this->seedRow('portalFormBinding', $this->binding(['route' => 'aanvragen/concept', 'status' => 'draft']));
+
+		$all = $this->resolver()->allPublishedBindings();
+
+		$this->assertSame(['gemeente-x', 'gemeente-y'], array_column($all, 'portal'));
+		$this->assertSame(['published', 'published'], array_column($all, 'status'));
+	}//end testEveryPortalsPublishedBindingsAreListedAndNoDraft()
 
 	/**
 	 * gate-7. The predicate the anonymous route refuses on: another portal's
@@ -399,6 +495,35 @@ class PortalFormBindingResolverTest extends TestCase {
 	}//end testNonLocalConditionResolvesToNoForm()
 
 	/**
+	 * form-flow-repeating-groups-calculations-and-decisions REQ-FFL-002: a form
+	 * with a calculation the server cannot repeat opens no form.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+	 */
+	public function testAnUnknownCalculationResolvesToNoForm(): void {
+		$this->seedForm(audience: 'client', fields: [
+			['name' => 'start', 'order' => 1],
+			['name' => 'end', 'order' => 2, 'calculate' => ['op' => 'power', 'args' => ['start', 2]]],
+		]);
+
+		$render = $this->resolver()->render(binding: $this->binding());
+
+		$this->assertTrue($render['resolvesToNoForm']);
+		$this->assertSame('unsupportedCalculation', $render['reason']);
+		$this->assertSame([], $render['fields']);
+
+		$this->setUp();
+		$this->seedForm(audience: 'client', fields: [
+			['name' => 'start', 'order' => 1],
+			['name' => 'end', 'order' => 2, 'calculate' => ['op' => 'addDays', 'args' => ['start', 365]]],
+		]);
+		$this->assertFalse($this->resolver()->render(binding: $this->binding())['resolvesToNoForm']);
+
+	}//end testAnUnknownCalculationResolvesToNoForm()
+
+	/**
 	 * A resolver whose portal gemeente-x hides the case type verhuizing.
 	 *
 	 * @return PortalFormBindingResolver
@@ -410,7 +535,7 @@ class PortalFormBindingResolverTest extends TestCase {
 			['slug' => 'gemeente-y'],
 		]);
 
-		return new PortalFormBindingResolver($this->fakeReader(), new CaseTypeVisibility($portals));
+		return new PortalFormBindingResolver($this->fakeReader(), new FormStepsNormaliser(), new CaseTypeVisibility($portals));
 	}//end hidingResolver()
 
 	/**
@@ -460,7 +585,7 @@ class PortalFormBindingResolverTest extends TestCase {
 	 * @return PortalFormBindingResolver
 	 */
 	private function resolver(): PortalFormBindingResolver {
-		return new PortalFormBindingResolver($this->fakeReader());
+		return new PortalFormBindingResolver($this->fakeReader(), new FormStepsNormaliser());
 	}//end resolver()
 
 }//end class

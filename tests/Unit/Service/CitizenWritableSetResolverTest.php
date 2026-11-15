@@ -24,7 +24,9 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Portaliq\Service\CitizenWritableSetResolver
  * @uses   \OCA\Portaliq\Contribution\CitizenWriteConfigNormaliser
+ * @uses   \OCA\Portaliq\Contribution\CaseFieldDisplayHints
  * @uses   \OCA\Portaliq\Service\CaseRowMarker
+ * @uses   \OCA\Portaliq\Service\CaseStatusView
  *
  * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
  */
@@ -204,6 +206,38 @@ class CitizenWritableSetResolverTest extends TestCase {
 	}//end testTheStatusLabelIsTheCaseAppsOwnOrNothing()
 
 	/**
+	 * The current status names its button and the next status is the one the
+	 * case type lists after it (case-page-tasks-decision-dates-and-next-step).
+	 */
+	public function testTheCurrentStatusOffersItsActionAndNamesTheNextStep(): void {
+		$caseType = $this->caseType();
+		$caseType[CitizenWritableSetResolver::STATUS_LABELS_PROPERTY]['besluit'] = ['label' => 'Besluit'];
+		$caseType[CitizenWritableSetResolver::STATUS_ACTIONS_PROPERTY] = [
+			'ontvangen' => ['label' => 'Stuur de ontbrekende stukken', 'kind' => 'task', 'target' => 'aanvullen'],
+		];
+
+		$status = $this->resolve(caseType: $caseType)['status'];
+
+		$this->assertSame(['label' => 'Stuur de ontbrekende stukken', 'kind' => 'task', 'target' => 'aanvullen'], $status['action']);
+		$this->assertSame(['value' => 'besluit', 'label' => 'Besluit'], $status['next']);
+	}//end testTheCurrentStatusOffersItsActionAndNamesTheNextStep()
+
+	/**
+	 * A status without an entry, or with a malformed one, shows no button.
+	 */
+	public function testAMissingOrMalformedActionOffersNoButton(): void {
+		$none = $this->resolve(caseType: $this->caseType())['status'];
+		$this->assertNull($none['action']);
+		$this->assertNull($none['next'], 'the last status has no next step');
+
+		foreach ([['label' => '', 'kind' => 'task', 'target' => 'x'], ['label' => 'Go', 'kind' => 'url', 'target' => 'x'], ['label' => 'Go', 'kind' => 'page', 'target' => ''], 'text'] as $entry) {
+			$caseType = $this->caseType();
+			$caseType[CitizenWritableSetResolver::STATUS_ACTIONS_PROPERTY] = ['ontvangen' => $entry];
+			$this->assertNull($this->resolve(caseType: $caseType)['status']['action']);
+		}
+	}//end testAMissingOrMalformedActionOffersNoButton()
+
+	/**
 	 * A withdrawn case closes every window with the neutral sentence, not the
 	 * case type's invitation to send more, and says it has ended.
 	 *
@@ -279,6 +313,33 @@ class CitizenWritableSetResolverTest extends TestCase {
 		$this->assertSame('De aanvraag is in behandeling genomen.', $set['window']['reason']);
 		$this->assertSame('De zaak neemt geen stukken meer aan.', $set['documents']['reason']);
 	}//end testARunningCaseKeepsTheCaseTypesSentences()
+
+	/**
+	 * A field the contribution marked personal carries the mark on its state,
+	 * open or ended, and the mark changes nothing about who may write it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/personal-data-left-untranslated/specs/site-chrome/spec.md#scenario-a-personal-field-of-a-contribution
+	 */
+	public function testAPersonalFieldCarriesItsMarkAndNothingMore(): void {
+		$action = (new CitizenWriteConfigNormaliser())->normaliseAction(action: array_merge(
+			self::ACTION,
+			['citizenWrite' => self::ACTION['citizenWrite'] + ['fields' => ['toelichting' => ['personal' => true, 'format' => 'email']]]]
+		));
+
+		$open = $this->resolve(caseType: $this->caseType(), action: $action);
+		$this->assertSame(['writable' => true, 'reason' => '', 'personal' => true, 'format' => 'email'], $open['fields']['toelichting']);
+		$this->assertSame(['writable' => true, 'reason' => ''], $open['fields']['omschrijving']);
+		$this->assertSame(['omschrijving', 'toelichting'], $open['writable']);
+
+		$case = self::CASE_ROW;
+		$case['withdrawnAt'] = '2026-10-02T20:00:24+00:00';
+		$ended = $this->resolve(caseType: $this->caseType(), case: $case, action: $action);
+		$neutral = 'This case is not open for changes from the portal.';
+		$this->assertSame(['writable' => false, 'reason' => $neutral, 'personal' => true, 'format' => 'email'], $ended['fields']['toelichting']);
+		$this->assertSame([], $ended['writable']);
+	}//end testAPersonalFieldCarriesItsMarkAndNothingMore()
 
 	/**
 	 * A case type dossiq could ship today.

@@ -51,6 +51,17 @@ use OCP\IRequest;
 use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Service\CaseRowMarker;
+use OCA\Portaliq\Contribution\CreateActionMatcher;
+use OCA\Portaliq\Contribution\CreateBody;
+use OCA\Portaliq\Contribution\InboxMessageFields;
+use OCA\Portaliq\Contribution\PageChoice;
+use OCA\Portaliq\Service\RequestedPortal;
+use OCA\Portaliq\Service\RequiredFieldsGuard;
+use OCA\Portaliq\Contribution\RowIdentifier;
+use OCA\Portaliq\Contribution\ThemeChoice;
+use OCA\Portaliq\Service\VisibleFromGate;
+use OCA\Portaliq\Service\WriteRefusal;
 
 /**
  * The server never writes or forwards an empty required field.
@@ -129,6 +140,55 @@ class ContributionControllerRequiredFieldsTest extends TestCase {
 
 		$this->assertSame(200, $response->getStatus());
 	}//end testAFilledCreateIsWritten()
+
+	/**
+	 * A value the store refuses names its field (site-action-forms): 422 with
+	 * the field and the kind of value it wants, and none of the store's text.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+	 */
+	public function testAValueTheStoreRefusesNamesItsField(): void {
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->once())->method('createObject')->willReturn(null);
+		$writer->method('lastFailure')->willReturn(
+			"Property 'notes' should be type 'number' but is 'string'. Make sure the value is a number."
+		);
+		$controller = $this->controller(
+			params: ['actionId' => 'bookConferenceSlot', 'learnerRef' => 'vera-1', 'slotId' => 'slot-9', 'notes' => '8'],
+			action: $this->booking(),
+			writer: $writer
+		);
+
+		$response = $controller->create('learniq', 'conference-signup');
+
+		$this->assertSame(422, $response->getStatus());
+		$this->assertSame(['error' => 'invalid', 'invalid' => ['notes' => 'number']], $response->getData());
+	}//end testAValueTheStoreRefusesNamesItsField()
+
+	/**
+	 * A refusal that names no field the portal wrote stays the plain 502.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+	 */
+	public function testARefusalOfAnotherFieldStaysAWriteFailure(): void {
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('createObject')->willReturn(null);
+		$writer->method('lastFailure')->willReturn("Property 'organisation' should be type 'string' but is 'null'.");
+		$controller = $this->controller(
+			params: ['actionId' => 'bookConferenceSlot', 'learnerRef' => 'vera-1', 'slotId' => 'slot-9'],
+			action: $this->booking(),
+			writer: $writer
+		);
+
+		$response = $controller->create('learniq', 'conference-signup');
+
+		$this->assertSame(502, $response->getStatus());
+		$this->assertSame(['error' => 'write_failed'], $response->getData());
+	}//end testARefusalOfAnotherFieldStaysAWriteFailure()
 
 	/**
 	 * An anonymous create (a landing page form) is held to the same rule.
@@ -274,7 +334,18 @@ class ContributionControllerRequiredFieldsTest extends TestCase {
 			($auditor ?? $this->createMock(AuditTrailService::class)),
 			$this->createMock(SubmissionReceiptService::class),
 			$this->createMock(NotificationDispatchService::class),
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(LoggerInterface::class),
+			new CaseRowMarker(),
+			new CreateActionMatcher(),
+			new CreateBody(),
+			new InboxMessageFields(),
+			new PageChoice(),
+			new RequestedPortal(),
+			new RequiredFieldsGuard(),
+			new RowIdentifier(),
+			new ThemeChoice(),
+			new VisibleFromGate(),
+			new WriteRefusal()
 		);
 	}//end controller()
 }//end class

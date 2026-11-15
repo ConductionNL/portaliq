@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-invitation-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ use OCA\Portaliq\Service\PortalObjectWriter;
 /**
  * Joins a waiting account into the account that signed in.
  *
- * @spec openspec/changes/portal-invitation-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 class WaitingAccountJoin {
 	/**
@@ -89,8 +89,8 @@ class WaitingAccountJoin {
 	 * @return string|null The identifier of the waiting account that was
 	 *                     joined, or null when nothing was.
 	 *
-	 * @spec openspec/changes/portal-invitation-joins-the-signed-in-account/specs/portal-identity-space/spec.md
-	 * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function join(array $account, string $verifiedEmail, string $organisation): ?string {
 		if ($verifiedEmail === '') {
@@ -121,19 +121,62 @@ class WaitingAccountJoin {
 	 * @param bool $addressProven Whether the way in proved the invited
 	 *                            address (an address or a mailed link did; a
 	 *                            code on paper did not).
+	 * @param UnboundAccount|null $unbound The rules for an unbound account, given
+	 *                                     only by the redeem of a mailed link,
+	 *                                     or null for every other way in. Only
+	 *                                     with them may an account take on the
+	 *                                     waiting account's audience, see
+	 *                                     mayAdoptAudience().
 	 *
 	 * @return string|null The identifier of the waiting account that was
 	 *                     joined, or null when nothing was.
 	 *
-	 * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
-	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
-	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- one field of the write
 	 * depends on it; two methods would differ in that value only.
 	 */
-	public function joinWaiting(array $account, array $waiting, string $reason = self::VOID_REASON, bool $addressProven = true): ?string {
-		if ($this->isJoinable(account: $account, waiting: $waiting) === false) {
+	public function joinWaiting(
+		array $account,
+		array $waiting,
+		string $reason = self::VOID_REASON,
+		bool $addressProven = true,
+		?UnboundAccount $unbound = null,
+	): ?string {
+		$plan = $this->joinPlan(account: $account, waiting: $waiting, unbound: $unbound);
+		if ($plan === null) {
+			return null;
+		}
+
+		$data = $this->withAudience(
+			data: $this->joinData(account: $account, waiting: $waiting, addressProven: $addressProven),
+			audience: $plan['audience']
+		);
+		if ($this->wroteJoin(plan: $plan, data: $data, reason: $reason) === false) {
+			return null;
+		}
+
+		return $plan['waitingId'];
+	}//end joinWaiting()
+
+	/**
+	 * The audience after the join and the two accounts' ids, or null when
+	 * the join may not happen or either account has no id.
+	 *
+	 * @param array<string, mixed> $account The receiving account.
+	 * @param array<string, mixed> $waiting The waiting account.
+	 * @param UnboundAccount|null  $unbound The redeemed link's facts, or null.
+	 *
+	 * @return array{audience: string, accountId: string, waitingId: string}|null
+	 *
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 */
+	private function joinPlan(array $account, array $waiting, UnboundAccount|null $unbound): array|null {
+		$audience = $this->audienceAfterJoin(account: $account, waiting: $waiting, unbound: $unbound);
+		if ($audience === null) {
 			return null;
 		}
 
@@ -143,17 +186,45 @@ class WaitingAccountJoin {
 			return null;
 		}
 
-		$data = $this->joinData(account: $account, waiting: $waiting, addressProven: $addressProven);
-		if ($data !== [] && $this->write(id: $accountId, data: $data) === false) {
-			return null;
+		return ['audience' => $audience, 'accountId' => $accountId, 'waitingId' => $waitingId];
+	}//end joinPlan()
+
+	/**
+	 * The join's write with the audience the account takes on, when it changes.
+	 *
+	 * @param array<string, mixed> $data     The join's write.
+	 * @param string               $audience The audience after the join, or '' to keep it.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 */
+	private function withAudience(array $data, string $audience): array {
+		if ($audience !== '') {
+			$data['audience'] = $audience;
 		}
 
-		if ($this->write(id: $waitingId, data: ['status' => PortalAccountLookup::STATUS_VOID, 'voidReason' => $reason]) === false) {
-			return null;
+		return $data;
+	}//end withAudience()
+
+	/**
+	 * Write the join onto the receiving account, then withdraw the waiting one.
+	 *
+	 * @param array{audience: string, accountId: string, waitingId: string} $plan   The join's ids.
+	 * @param array<string, mixed>                                         $data   The join's write.
+	 * @param string                                                       $reason Why the waiting account is withdrawn.
+	 *
+	 * @return bool True when both writes landed.
+	 *
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 */
+	private function wroteJoin(array $plan, array $data, string $reason): bool {
+		if ($data !== [] && $this->write(id: $plan['accountId'], data: $data) === false) {
+			return false;
 		}
 
-		return $waitingId;
-	}//end joinWaiting()
+		return $this->write(id: $plan['waitingId'], data: ['status' => PortalAccountLookup::STATUS_VOID, 'voidReason' => $reason]);
+	}//end wroteJoin()
 
 	/**
 	 * Whether one account may take over the claims of another: the other is
@@ -172,7 +243,7 @@ class WaitingAccountJoin {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function isJoinable(array $account, array $waiting): bool {
 		$organisation = (string)($waiting['organisation'] ?? '');
@@ -189,6 +260,72 @@ class WaitingAccountJoin {
 	}//end isJoinable()
 
 	/**
+	 * Whether an account of another audience may still take over a waiting
+	 * account by its invitation's secret, and take on its audience.
+	 *
+	 * 🔑 A GUARDIAN WHO SIGNED IN BEFORE SHE WAS INVITED. Her first DigiD
+	 * sign-in made an account with the sign-in route's audience (`client`).
+	 * The school's invitation then made a `parent` account, and the audience
+	 * check (security review M3) refused every join between the two, so she
+	 * stood on an empty page with an invitation she could never accept
+	 * (proof run 3, 09 Oct 2026). This lets exactly that account through:
+	 *
+	 * - it names one natural person (DigiD or eIDAS) and carries its
+	 *   identity reference: the session's own sign-in, never an address;
+	 * - nobody provisioned it: no app and no clerk gave it an audience;
+	 * - it holds no claims yet, so no access is moved from one audience to
+	 *   another;
+	 * - the invitation's audience is one the organisation allows an unbound
+	 *   account to take on (default `parent`, never `supplier`), and the
+	 *   account is no company account, so a supplier still never takes over
+	 *   a parent's invitation (M3, review L1);
+	 * - the session is at substantial or higher;
+	 * - everything else isJoinable() asks holds, with the waiting account's
+	 *   audience in place of the account's own: pending, no identity
+	 *   reference, the same organisation, no conflicting claim (M1).
+	 *
+	 * Only the redeem of a mailed link passes these rules, so an address
+	 * alone (the join at sign-in, a confirmed address) and a code from a
+	 * paper letter never move an audience (second review M1).
+	 *
+	 * @param array<string, mixed> $account The account that would receive the claims.
+	 * @param array<string, mixed> $waiting The account that would be withdrawn.
+	 * @param UnboundAccount $unbound The rules: the session's trust and the
+	 *                                audiences the organisation allows.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 */
+	public function mayAdoptAudience(array $account, array $waiting, UnboundAccount $unbound): bool {
+		return $unbound->mayTakeOn(account: $account, waiting: $waiting)
+			&& $this->isJoinable(account: ['audience' => (string)($waiting['audience'] ?? '')] + $account, waiting: $waiting) === true;
+	}//end mayAdoptAudience()
+
+	/**
+	 * The audience the receiver holds after the join: '' when it keeps its
+	 * own, the waiting account's when an unbound account takes it on, and
+	 * null when the join is refused.
+	 *
+	 * @param array<string, mixed> $account The account that receives the claims.
+	 * @param array<string, mixed> $waiting The waiting account.
+	 * @param UnboundAccount|null $unbound The rules for an unbound account, or null.
+	 *
+	 * @return string|null
+	 */
+	private function audienceAfterJoin(array $account, array $waiting, ?UnboundAccount $unbound): ?string {
+		if ($this->isJoinable(account: $account, waiting: $waiting) === true) {
+			return '';
+		}
+
+		if ($unbound !== null && $this->mayAdoptAudience(account: $account, waiting: $waiting, unbound: $unbound) === true) {
+			return (string)$waiting['audience'];
+		}
+
+		return null;
+	}//end audienceAfterJoin()
+
+	/**
 	 * Whether the waiting account carries a claim the receiver already holds
 	 * under the same app and name with a different value.
 	 *
@@ -197,7 +334,7 @@ class WaitingAccountJoin {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function claimsConflict(array $account, array $waiting): bool {
 		$held = (array)($account['claims'] ?? []);

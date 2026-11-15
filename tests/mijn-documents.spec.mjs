@@ -12,6 +12,7 @@
 
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { channelIcon } from '../src/site/components/collections/timeline.js'
 import {
 	fileLine,
 	fileType,
@@ -68,13 +69,13 @@ test('the receipt reads who sent it, when, its type and its size', () => {
 	// REQ-SMO-005 scenario "The receipt on the case page".
 	assert.equal(
 		fileLine(RECEIPT, nl, 'nl'),
-		'Van de gemeente, 2 oktober 2026. PDF, 84 kB',
+		'Van de organisatie, 2 oktober 2026. PDF, 84 kB',
 	)
 	assert.equal(
 		fileLine({ title: 'foto.jpg', kind: 'yours', size: 1536 * 1024 }, nl, 'nl'),
 		'Van u. JPG, 1,5 MB',
 	)
-	assert.equal(fileLine({ title: 'zonder' }, nl, 'nl'), 'Van de gemeente.')
+	assert.equal(fileLine({ title: 'zonder' }, nl, 'nl'), 'Van de organisatie.')
 	assert.equal(fileType({ title: 'brief.docx' }), 'DOCX')
 	assert.equal(fileType({ mimeType: 'application/msword', title: 'x' }), 'Word')
 	assert.equal(sizeInWords(0), '')
@@ -105,7 +106,7 @@ test('a file item is one button named after the document, with its line', async 
 	assert.match(html, /<span class="denhaag-file__left" aria-hidden="true">/)
 	assert.match(
 		html,
-		/<span class="pq-file-item__name">Ontvangstbevestiging<\/span><span class="pq-file-item__line">Van de gemeente, 2 oktober 2026\. PDF, 84 kB<\/span>/,
+		/<span class="pq-file-item__name">Ontvangstbevestiging<\/span><span class="pq-file-item__line">Van de organisatie, 2 oktober 2026\. PDF, 84 kB<\/span>/,
 	)
 })
 
@@ -142,6 +143,19 @@ test('the contact timeline lists events newest first, each a moment and a senten
 		2,
 		'an event without a moment has no <time>',
 	)
+	assert.doesNotMatch(html, /timeline-channel/, 'no channel, no pill')
+})
+
+test('a contact with a channel carries it as a pill with its icon (board Zaak)', async () => {
+	const html = await renderComponent(ContactTimeline, {
+		entries: [{ id: 'c1', message: 'Vraag over de planning', channel: 'Telefoon', occurredAt: '2026-10-05T14:20:00' }],
+		tr: nl,
+		locale: 'nl',
+	})
+	assert.match(html, /data-testid="timeline-channel"><svg class="pq-contact-timeline__channel-icon"[^>]*><path d="M6\.62,10\.79/)
+	assert.match(html, /<\/svg> Telefoon<\/span>/)
+	assert.equal(channelIcon('Balie').startsWith('M20,6H16'), true)
+	assert.equal(channelIcon('Bericht via het portaal').startsWith('M20,2H4'), true)
 })
 
 test('a description list is a dl of keys and values', async () => {
@@ -187,7 +201,7 @@ test('the documents block lists the case documents as file items, and a failed r
 		},
 	)
 	assert.match(html, /data-testid="mijn-file-item"/)
-	assert.match(html, /Van de gemeente, 2 oktober 2026\. PDF, 84 kB/)
+	assert.match(html, /Van de organisatie, 2 oktober 2026\. PDF, 84 kB/)
 
 	const failing = instance(DocumentsBlock, {
 		block: { type: 'documents', collection: 'mijnZaken' },
@@ -288,4 +302,68 @@ test('a page renders its documents and timeline blocks, loaded on demand', () =>
 	)
 	assert.equal(typeof blocks.documents, 'function')
 	assert.equal(typeof blocks.timeline, 'function')
+})
+
+test('any collection that declares documents reads them through its own route (T4)', async () => {
+	// site-member-voting-record-and-confidential-papers T4: not only a case.
+	const PAPERS = {
+		id: 'vertrouwelijkeStukken',
+		register: 'decidiq',
+		schema: 'agendaItem',
+		documents: { label: 'Stukken', provider: 'confidentialPapers' },
+	}
+	const calls = []
+	const api = {
+		fetchCitizenCase: async () => {
+			calls.push('case')
+			return null
+		},
+		fetchCollectionDocuments: async (collection, id) => {
+			calls.push(`collection:${collection.schema}:${id}`)
+			return { documents: [RECEIPT], documentsLabel: 'Stukken' }
+		},
+		downloadCitizenDocument: async () => {
+			calls.push('case-download')
+			return { ok: true }
+		},
+		downloadCollectionDocument: async (collection, id, entry) => {
+			calls.push(`collection-download:${id}:${entry.id}`)
+			return { ok: false, status: 503 }
+		},
+	}
+	const ctx = instance(DocumentsBlock, {
+		block: { type: 'documents', collection: 'vertrouwelijkeStukken', upload: true },
+		collection: PAPERS,
+		record: { id: 'a-7' },
+		api,
+		locale: 'nl',
+	})
+	assert.equal(ctx.isCase, false)
+	await ctx.load()
+	assert.equal(ctx.failed, false)
+	assert.equal(ctx.heading, 'Stukken')
+	await ctx.openDocument(RECEIPT)
+	assert.equal(ctx.openFailed, true, 'a paper the hook refuses (503) says so')
+	assert.deepEqual(calls, ['collection:agendaItem:a-7', 'collection-download:a-7:d1'], 'the case route is never asked')
+
+	const html = await renderComponent(
+		inState(DocumentsBlock, { answer: { documents: [RECEIPT] }, failed: false }),
+		{ block: { type: 'documents', collection: 'vertrouwelijkeStukken', upload: true }, collection: PAPERS, record: { id: 'a-7' }, api, locale: 'nl' },
+	)
+	assert.doesNotMatch(html, /mijn-documents-upload/, 'only a case takes an upload')
+
+	const gone = instance(DocumentsBlock, {
+		block: { type: 'documents', collection: 'vertrouwelijkeStukken' },
+		collection: PAPERS,
+		record: { id: 'a-8' },
+		api: { fetchCollectionDocuments: async () => null },
+		locale: 'nl',
+	})
+	await gone.load()
+	assert.equal(gone.failed, true, 'a 404 from the route reads as a failed read')
+
+	const caseCtx = instance(DocumentsBlock, { block: { type: 'documents' }, collection: ZAKEN, record: { id: 'z-3' }, api, locale: 'nl' })
+	calls.length = 0
+	await caseCtx.load()
+	assert.deepEqual(calls, ['case'], 'a case keeps the case screen route')
 })

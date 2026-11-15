@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Availability;
 
+use OCA\Portaliq\Kernel\Contracts\AvailabilityProbeInterface;
 use OCA\Portaliq\Service\InstanceLoopback;
 use OCP\IURLGenerator;
 use Throwable;
@@ -41,7 +42,7 @@ use Throwable;
  *
  * @spec openspec/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
  */
-class AvailabilityProbe {
+class AvailabilityProbe implements AvailabilityProbeInterface {
 	/**
 	 * Seconds a visitor would wait before giving up.
 	 */

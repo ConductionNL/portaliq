@@ -18,13 +18,13 @@
 	<div
 		v-if="display === 'card'"
 		class="nl-signin-card"
-		:class="`nl-signin-card--${tone === 'light' ? 'light' : 'inverse'}`"
+		:class="`nl-signin-card--${['light', 'outline'].includes(tone) ? tone : 'inverse'}`"
 		data-testid="nl-sign-in">
 		<h2 v-if="heading" class="utrecht-heading-3 nl-signin-card__heading">
 			{{ heading }}
 		</h2>
-		<p v-if="intro" class="utrecht-paragraph nl-signin-card__intro">
-			{{ intro }}
+		<p v-if="introText" class="utrecht-paragraph nl-signin-card__intro">
+			{{ introText }}
 		</p>
 		<ul v-if="pointList.length > 0" class="nl-signin-card__points">
 			<li
@@ -39,7 +39,11 @@
 		</ul>
 		<a
 			class="utrecht-button nl-signin-card__button"
-			:class="{ 'utrecht-button--primary-action': tone === 'light' }"
+			:class="{
+				'utrecht-button--primary-action': ['light', 'outline'].includes(
+					tone,
+				),
+			}"
 			:href="button.href"
 			:data-testid="`nl-sign-in-${button.id}`"
 			@click="open">
@@ -73,7 +77,7 @@
 <script>
 import { authoredLink, staysInSite } from '../../components/mijn/links.js'
 import { interpolate, pageLocale } from '../../pages/inbox/translate.js'
-import { cardButton, safeWays } from './signIn.js'
+import { cardButton, cardIntro, safeWays } from './signIn.js'
 import strings from './strings.js'
 
 import '@utrecht/digid-button-css/dist/index.css'
@@ -95,6 +99,8 @@ export default {
 		display: { type: String, default: 'buttons' },
 		/** The card's text under the heading. */
 		intro: { type: String, default: '' },
+		/** The card's text for a visitor who is signed in; none when empty. */
+		signedInIntro: { type: String, default: '' },
 		/** The card's check list. */
 		points: { type: Array, default: () => [] },
 		/** The card button's words. */
@@ -119,6 +125,18 @@ export default {
 		 */
 		waysIn() {
 			return safeWays(this.ways)
+		},
+
+		/**
+		 * @return {string} The card's text: the invitation, or once signed in what the page wrote for that.
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-sign-in-card-does-not-invite-a-signed-in-visitor-to-sign-in
+		 */
+		introText() {
+			return cardIntro({
+				intro: this.intro,
+				signedInIntro: this.signedInIntro,
+				signedIn: this.signedIn,
+			})
 		},
 
 		/**
@@ -221,6 +239,18 @@ export default {
 	);
 }
 
+/* A white card with a thin line round it (board Publicatie, "Bewaren of
+   volgen"): the page's own ink, a primary button. */
+.nl-signin-card--outline {
+	padding: 1.5rem;
+	border: 1px solid
+		var(
+			--nldesign-website-card-border-color,
+			var(--nldesign-color-border-dark, var(--utrecht-color-grey-80, currentcolor))
+		);
+	background: transparent;
+}
+
 .nl-signin-card__heading,
 .nl-signin-card__intro {
 	margin: 0;
@@ -260,8 +290,11 @@ export default {
 	justify-content: center;
 	inline-size: 100%;
 	max-inline-size: none;
+	min-block-size: 3.25rem;
 	margin-block-start: 0.375rem;
 	font-weight: 700;
+	font-size: 1.125rem;
+	text-decoration: none;
 }
 
 .nl-signin-card--inverse .utrecht-button.nl-signin-card__button {
