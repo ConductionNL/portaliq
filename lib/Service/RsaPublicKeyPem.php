@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T04
+ * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T04
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ namespace OCA\Portaliq\Service;
  *
  * @internal
  *
- * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T04
+ * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T04
  */
 final class RsaPublicKeyPem {
 	/**
@@ -51,7 +51,7 @@ final class RsaPublicKeyPem {
 	 *
 	 * @return string PEM-encoded public key.
 	 *
-	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T04
 	 */
 	public function encode(string $modulus, string $exponent): string {
 		$rsaPublicKey = $this->derSequence(content: $this->derInteger(bytes: $modulus) . $this->derInteger(bytes: $exponent));

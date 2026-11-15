@@ -163,4 +163,92 @@ class TrafficReportMailTest extends TestCase {
 		$this->assertSame('2026-09-08', $periods->alertPeriod(period: 'day', comparison: 'below', now: $wednesday)['key']);
 		$this->assertSame('2026-W36', $periods->alertPeriod(period: 'week', comparison: 'changeAbove', now: $wednesday)['key']);
 	}//end testPeriodsFollowTheCalendar()
+
+	/**
+	 * The visitors, goals, funnels and forms sections, each from its own
+	 * numbers; an unknown section is left out and every section keeps its heading.
+	 *
+	 * @return void
+	 */
+	public function testTheBreakdownSectionsCarryTheirOwnNumbers(): void {
+		$current = [
+			'devices' => ['mobile' => 3, 'desktop' => 5],
+			'browsers' => ['a' => 1, 'b' => 7, 'c' => 3, 'd' => 4, 'e' => 5, 'f' => 6],
+			'languages' => [],
+			'regions' => ['NB' => 2.5],
+			'goals' => [['id' => 'a', 'name' => 'Aanvraag', 'conversions' => 3], ['id' => 'b', 'conversions' => 2], ['id' => 'c', 'conversions' => 1]],
+			'conversionRate' => 0.1234,
+			'funnels' => [['name' => 'Melding', 'steps' => [['name' => 'Start', 'sessions' => 10], ['name' => 'Klaar', 'sessions' => 4]]], ['id' => 'f2', 'steps' => []]],
+			'forms' => [['formId' => 'woo', 'starts' => 5, 'submits' => 3, 'abandons' => 2]],
+		];
+		$previous = ['goals' => [['id' => 'a', 'conversions' => 2], ['id' => 'c', 'conversions' => 4]]];
+		$report = ['sections' => ['visitors', 'weather', 'goals', 'funnels', 'forms']];
+		$period = ['from' => '2026-09-08', 'to' => '2026-09-08', 'previousFrom' => '2026-09-07', 'previousTo' => '2026-09-07'];
+
+		$sections = (new TrafficReportMail())->sections(l: $this->l10n(), report: $report, period: $period, current: $current, previous: $previous);
+
+		$this->assertSame(['Visitors', 'Goals', 'Funnels', 'Forms', 'Period'], array_column($sections, 'heading'));
+		$this->assertSame(['Devices: desktop 5, mobile 3', 'Browsers: b 7, f 6, e 5, d 4, c 3', 'Regions: NB 2.5'], $sections[0]['lines']);
+		$this->assertSame(
+			[
+				'Aanvraag: 3 (+50% on the previous period, 2)',
+				'b: 2 (no figure for the previous period)',
+				'c: 1 (-75% on the previous period, 4)',
+				'Conversion rate: 12.3%',
+			],
+			$sections[1]['lines']
+		);
+		$this->assertSame(['Melding: Start 10 > Klaar 4', 'f2: '], $sections[2]['lines']);
+		$this->assertSame(['woo: 5 started, 3 submitted, 2 abandoned'], $sections[3]['lines']);
+		$this->assertSame(['This period: 2026-09-08 to 2026-09-08.', 'Compared with: 2026-09-07 to 2026-09-07.'], $sections[4]['lines']);
+	}//end testTheBreakdownSectionsCarryTheirOwnNumbers()
+
+
+	/**
+	 * A section with nothing measured says so instead of being left out.
+	 *
+	 * @return void
+	 */
+	public function testAnEmptySectionSaysThereIsNothing(): void {
+		$report = ['sections' => ['pages', 'sources', 'visitors', 'goals', 'funnels', 'forms']];
+		$period = ['from' => 'a', 'to' => 'b', 'previousFrom' => 'c', 'previousTo' => 'd'];
+
+		$sections = (new TrafficReportMail())->sections(l: $this->l10n(), report: $report, period: $period, current: [], previous: []);
+
+		$this->assertSame(
+			[
+				['heading' => 'Pages', 'lines' => ['No pages viewed.']],
+				['heading' => 'Sources', 'lines' => ['No referrers recorded.']],
+				['heading' => 'Visitors', 'lines' => ['No visitor breakdown is measured for this portal.']],
+				['heading' => 'Goals', 'lines' => ['No goals are defined for this portal.']],
+				['heading' => 'Funnels', 'lines' => ['No funnels are defined for this portal.']],
+				['heading' => 'Forms', 'lines' => ['No form activity was recorded.']],
+				['heading' => 'Period', 'lines' => ['This period: a to b.', 'Compared with: c to d.']],
+			],
+			$sections
+		);
+	}//end testAnEmptySectionSaysThereIsNothing()
+
+
+	/**
+	 * Sources list the ten largest, highest first; a one-day period names
+	 * the day alone, and a portal without a title is named by its slug.
+	 *
+	 * @return void
+	 */
+	public function testSourcesAreCappedAndTheSubjectNamesTheDay(): void {
+		$sources = [];
+		foreach (range(1, 11) as $count) {
+			$sources['s' . $count] = $count;
+		}
+
+		$mail = new TrafficReportMail();
+		$sections = $mail->sections(l: $this->l10n(), report: ['sections' => ['sources']], period: ['from' => 'a', 'to' => 'b', 'previousFrom' => 'c', 'previousTo' => 'd'], current: ['sources' => $sources], previous: []);
+
+		$this->assertCount(10, $sections[0]['lines']);
+		$this->assertSame('s11: 11', $sections[0]['lines'][0]);
+		$this->assertSame('s2: 2', $sections[0]['lines'][9]);
+		$this->assertSame('tilburg: Daily (2026-09-08)', $mail->subject(l: $this->l10n(), portal: ['slug' => 'tilburg'], report: ['name' => 'Daily'], period: ['from' => '2026-09-08', 'to' => '2026-09-08']));
+		$this->assertSame(': Daily ( to x)', $mail->subject(l: $this->l10n(), portal: [], report: ['name' => 'Daily'], period: ['to' => 'x']));
+	}//end testSourcesAreCappedAndTheSubjectNamesTheDay()
 }//end class

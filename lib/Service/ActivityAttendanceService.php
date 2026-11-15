@@ -21,45 +21,22 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-mark-attendance-per-session
+ * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-mark-attendance-per-session
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\ActivityAttendanceServiceInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 
 /**
  * Marks attendance for one session and one child.
  *
- * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-mark-attendance-per-session
+ * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-mark-attendance-per-session
  */
-class ActivityAttendanceService {
-	/**
-	 * Refusal: the activity does not exist (404).
-	 */
-	public const REASON_NOT_FOUND = 'not_found';
-
-	/**
-	 * Refusal: the session is not one of the activity's (422).
-	 */
-	public const REASON_UNKNOWN_SESSION = 'unknown_session';
-
-	/**
-	 * Refusal: the child has no place (422).
-	 */
-	public const REASON_NOT_CONFIRMED = 'not_confirmed';
-
-	/**
-	 * Refusal: the status is not one of present, absent, excused (422).
-	 */
-	public const REASON_INVALID_STATUS = 'invalid_status';
-
-	/**
-	 * Refusal: the rows could not be read or written (502).
-	 */
-	public const REASON_UNAVAILABLE = 'unavailable';
+class ActivityAttendanceService implements ActivityAttendanceServiceInterface {
 
 	/**
 	 * The statuses a mark may carry.
@@ -91,7 +68,7 @@ class ActivityAttendanceService {
 	 *
 	 * @return array{attendance?: array<string, mixed>, error?: string}
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-mark-attendance-per-session
+	 * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-mark-attendance-per-session
 	 */
 	public function mark(string $activityId, string $sessionId, string $childRef, string $status, string $markedByRef): array {
 		return $this->record(
@@ -106,7 +83,7 @@ class ActivityAttendanceService {
 	 *
 	 * @return array{attendance?: array<string, mixed>, error?: string}
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-mark-attendance-per-session
+	 * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-mark-attendance-per-session
 	 */
 	private function record(AttendanceMark $mark): array {
 		$activity = $this->store->lookup(schema: ActivityStore::OFFER, id: $mark->activityId);

@@ -20,18 +20,18 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+ * @spec openspec/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\ExampleResident\ExampleResidentSignIn;
-use OCA\Portaliq\Service\PortalAccountService;
-use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\ExampleResidentSignInInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalAccountLookupInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -47,7 +47,7 @@ use OCP\IURLGenerator;
 /**
  * The one-click demo sign-in for the example resident.
  *
- * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+ * @spec openspec/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
  */
 class ExampleResidentController extends Controller {
 
@@ -55,21 +55,21 @@ class ExampleResidentController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest              $request      The request object.
-	 * @param PortalSessionService  $session      Mints the portal session.
-	 * @param PortalAccountService  $accounts     Finds the resident's `portalAccount`.
+	 * @param PortalSessionServiceInterface  $session      Mints the portal session.
+	 * @param PortalAccountLookupInterface   $accounts     Finds the resident's `portalAccount`.
 	 * @param IURLGenerator         $urlGenerator Builds the final SPA redirect.
-	 * @param PortalResolver        $portals      Resolves the portal being signed in to.
-	 * @param ExampleResidentSignIn $signIns      The demo switch and the installed resident of a portal.
+	 * @param PortalResolverInterface        $portals      Resolves the portal being signed in to.
+	 * @param ExampleResidentSignInInterface $signIns      The demo switch and the installed resident of a portal.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
-		private readonly PortalAccountService $accounts,
+		private readonly PortalSessionServiceInterface $session,
+		private readonly PortalAccountLookupInterface $accounts,
 		private readonly IURLGenerator $urlGenerator,
-		private readonly PortalResolver $portals,
-		private readonly ExampleResidentSignIn $signIns,
+		private readonly PortalResolverInterface $portals,
+		private readonly ExampleResidentSignInInterface $signIns,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -92,7 +92,7 @@ class ExampleResidentController extends Controller {
 	 *
 	 * @return Response A redirect carrying the bearer in the URL fragment, or 404.
 	 *
-	 * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+	 * @spec openspec/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
 	 * @spec openspec/changes/demo-sign-in-beside-the-account/specs/example-resident/spec.md#requirement-a-demo-may-sign-in-each-example-resident-with-one-click
 	 */
 	#[PublicPage]
@@ -132,7 +132,7 @@ class ExampleResidentController extends Controller {
 			return null;
 		}
 
-		$account = $this->accounts->findBySubjectRef(subjectRef: $userId);
+		$account = $this->accounts->bySubjectRef(subjectRef: $userId);
 		if ($account === null || ($account['status'] ?? 'active') !== 'active') {
 			return null;
 		}
@@ -190,7 +190,7 @@ class ExampleResidentController extends Controller {
 	 *
 	 * @return string The user id, or ''.
 	 *
-	 * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+	 * @spec openspec/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
 	 */
 	private function residentUser(string $id, string $portal, string $resident): string {
 		if ($this->signIns->open() === false || $portal === '') {
@@ -219,7 +219,7 @@ class ExampleResidentController extends Controller {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+	 * @spec openspec/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
 	 */
 	private function offersNextcloud(?array $site, string $portal): bool {
 		if ($site === null || (string)($site['slug'] ?? '') !== $portal) {

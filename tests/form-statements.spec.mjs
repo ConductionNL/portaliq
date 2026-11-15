@@ -66,6 +66,22 @@ test('introView is null without content, so the form opens at step 1', () => {
 	assert.equal(introView({ lead: 'Vraag informatie.' }).lead, 'Vraag informatie.')
 })
 
+test('introView is null for an introduction switched off on the form settings page', () => {
+	assert.equal(introView({ enabled: false, lead: 'Vraag informatie.' }), null)
+	assert.deepEqual(introView({ enabled: true, lead: 'Vraag informatie.' }), { lead: 'Vraag informatie.', blocks: [] })
+})
+
+test('the form settings page carries the introduction switch and its text', async () => {
+	const { readFileSync } = await import('node:fs')
+	const manifest = JSON.parse(readFileSync(new URL('../src/manifest.json', import.meta.url), 'utf8'))
+	const page = manifest.pages.find((entry) => entry.id === 'FormBindingDetail')
+	const intro = page.config.widgets.find((widget) => widget.id === 'binding-intro')
+	assert.deepEqual(intro.content.fields.map((field) => [field.key, field.type]), [['intro.enabled', 'switch'], ['intro.lead', 'textarea']])
+	assert.equal(intro.content.fields[0].default, true, 'absent reads as on, as the server does')
+	const general = page.config.widgets.find((widget) => widget.id === 'binding-general')
+	assert.ok(general.content.sections.some((section) => section.widgetId === 'binding-intro'))
+})
+
 test('site: the introduction shows Voordat u begint, its blocks and Start', async () => {
 	const html = await renderSfc('src/site/components/forms/FormIntro.vue', {
 		formName: 'Woo-verzoek indienen',

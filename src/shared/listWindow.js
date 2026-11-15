@@ -7,7 +7,7 @@
 // week from Monday to Sunday, this month). Imports nothing, so
 // tests/mijn-lists.spec.mjs runs it as node.
 //
-// @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+// @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
 
 /**
  * A value to compare: a date as its time, a number as itself, else its text.
@@ -78,7 +78,7 @@ function byValue(sign) {
  * @param {Array<object>} rows The rows.
  * @param {{field: string, direction: string}|undefined} sort The order.
  * @return {Array<object>} A sorted copy.
- * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
  */
 export function sortRows(rows, sort) {
 	const list = Array.isArray(rows) ? [...rows] : []
@@ -99,7 +99,7 @@ export function sortRows(rows, sort) {
  * @param {object|undefined} block The block (`sort`).
  * @param {object|undefined} collection Its collection (`defaultSort`).
  * @return {{field: string, direction: string}|undefined} The order.
- * @spec openspec/changes/site-tables-read-in-their-declared-order/specs/portal-contribution-contract/spec.md#requirement-a-table-reads-in-its-collections-default-order
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-table-reads-in-its-collections-default-order
  */
 export function listOrder(block, collection) {
 	if (block?.sort?.field) {
@@ -129,7 +129,7 @@ export function skipRows(rows, block) {
  * @param {Array<object>} rows The rows.
  * @param {object} block The block (`sort`, `limit`).
  * @return {{rows: Array<object>, more: boolean}}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
  */
 export function windowRows(rows, block) {
 	const sorted = skipRows(sortRows(rows, block?.sort), block)
@@ -207,7 +207,7 @@ export function rangeSpan(range, today) {
  * @param {string|undefined} range `day`, `week` or `month`.
  * @param {Date} today Today.
  * @return {Array<object>}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
  */
 export function itemsInRange(items, range, today) {
 	const span = rangeSpan(range, today || new Date())

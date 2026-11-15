@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-session-must-be-reconstructable-into-an-ordered-journey
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-session-must-be-reconstructable-into-an-ordered-journey
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ namespace OCA\Portaliq\Service\Traffic;
  * ties within one page load. Neither ordering consults the receipt time,
  * which is the one a slow connection scrambles.
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-session-must-be-reconstructable-into-an-ordered-journey
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-session-must-be-reconstructable-into-an-ordered-journey
  */
 class TrafficSessioniser {
 
@@ -51,7 +51,7 @@ class TrafficSessioniser {
 	 * @return array<int, array<string, mixed>> The sessions, each `{visitor, explicit, events}`
 	 *                                          with its events in journey order.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-session-must-end-by-inactivity-and-the-timeout-must-be-configured
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-session-must-end-by-inactivity-and-the-timeout-must-be-configured
 	 */
 	public function sessions(array $events, int $timeoutMinutes): array {
 		$sessions = [];
@@ -158,7 +158,7 @@ class TrafficSessioniser {
 	 *
 	 * @return array<int, array<string, mixed>> The events with distinct sequences.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-session-must-be-reconstructable-into-an-ordered-journey
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-session-must-be-reconstructable-into-an-ordered-journey
 	 */
 	private function withoutRepeats(array $events): array {
 		$seen = [];

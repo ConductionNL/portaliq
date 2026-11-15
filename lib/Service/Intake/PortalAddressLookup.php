@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Kernel\Contracts\PortalAddressLookupInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -35,7 +36,7 @@ use Throwable;
  *
  * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t01
  */
-class PortalAddressLookup {
+class PortalAddressLookup implements PortalAddressLookupInterface {
 	/**
 	 * OpenRegister's BAG register and its address schema.
 	 */

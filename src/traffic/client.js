@@ -148,13 +148,260 @@ function idleApi() {
  */
 function anchorOf(target) {
 	let node = target
-	while (node && node.nodeType === 1 && node.tagName !== 'A') {
+	while (isElement(node) && node.tagName !== 'A') {
 		node = node.parentNode
 	}
-	if (!node || node.nodeType !== 1 || !node.href) {
-		return null
+	return isElement(node) && node.href ? node : null
+}
+
+/**
+ * Whether a node is an element.
+ *
+ * @param {Node|null} node The node.
+ * @return {boolean} True for an element.
+ */
+function isElement(node) {
+	return Boolean(node) && node.nodeType === 1
+}
+
+/**
+ * How far a window's page is scrolled down, in pixels.
+ *
+ * @param {Window} win The window.
+ * @return {number} The offset.
+ */
+function scrollTopOf(win) {
+	return win.pageYOffset || win.document.documentElement.scrollTop || 0
+}
+
+/**
+ * A document's full height, in pixels.
+ *
+ * @param {Document} doc The document.
+ * @return {number} The height.
+ */
+function pageHeightOf(doc) {
+	return Math.max(
+		doc.documentElement.scrollHeight,
+		doc.body ? doc.body.scrollHeight : 0,
+	)
+}
+
+/**
+ * Whether a variant lives on another page than the route.
+ *
+ * @param {object} variant The variant.
+ * @param {string} route The in-site route.
+ * @return {boolean} True when the visitor has to move.
+ */
+function isElsewhere(variant, route) {
+	return Boolean(variant.pageRoute) && siteRoute(variant.pageRoute) !== route
+}
+
+/**
+ * The text changes a variant names, or null for none.
+ *
+ * @param {object} variant The variant.
+ * @return {Array<object>|null} The changes.
+ */
+function changesOf(variant) {
+	return Array.isArray(variant.changes) ? variant.changes : null
+}
+
+/**
+ * Whether the experiment running on a route is the one the session joined.
+ *
+ * @param {object} state The client's state, with the joined `experiment`.
+ * @param {string} route The in-site route.
+ * @return {boolean} True on the joined experiment's page.
+ */
+function onJoinedExperiment(state, route) {
+	const page = experimentFor(state.traffic, route)
+	return Boolean(page) && String(page.id) === state.experiment.id
+}
+
+/**
+ * A popstate event, also where the browser has no PopStateEvent.
+ *
+ * @param {Window} win The window.
+ * @return {Event} The event.
+ */
+function popStateEvent(win) {
+	try {
+		return new win.PopStateEvent('popstate', {
+			state: win.history.state,
+		})
+	} catch {
+		const event = win.document.createEvent('Event')
+		event.initEvent('popstate', false, false)
+		return event
 	}
-	return node
+}
+
+/**
+ * Stop a variant's observer, when one watches the page.
+ *
+ * @param {{observer: MutationObserver|null}|null} changes The variant's watched changes.
+ * @return {void}
+ */
+function stopObserving(changes) {
+	if (changes && changes.observer) {
+		changes.observer.disconnect()
+	}
+}
+
+/**
+ * Whether a window can watch its page for changes.
+ *
+ * @param {Window} win The window.
+ * @return {boolean} True when a MutationObserver and a document element exist.
+ */
+function canObserve(win) {
+	return (
+		typeof win.MutationObserver === 'function'
+		&& Boolean(win.document.documentElement)
+	)
+}
+
+/**
+ * Watch a window's page text and tree for a re-render.
+ *
+ * @param {Window} win The window.
+ * @param {MutationCallback} onChange Called after the page changed.
+ * @return {MutationObserver} The observer.
+ */
+function observeTree(win, onChange) {
+	const observer = new win.MutationObserver(onChange)
+	observer.observe(win.document.documentElement, {
+		childList: true,
+		subtree: true,
+		characterData: true,
+	})
+	return observer
+}
+
+/**
+ * The elements a selector names; none for a selector the browser refuses.
+ *
+ * @param {Document} doc The document.
+ * @param {string|undefined} selector The selector.
+ * @return {NodeList|Array} The elements.
+ */
+function elementsMatching(doc, selector) {
+	try {
+		return doc.querySelectorAll(String(selector || ''))
+	} catch {
+		return []
+	}
+}
+
+/**
+ * Set the text of every element one change names, when it differs. Text
+ * only, through textContent, so a variant can never add markup.
+ *
+ * @param {Document} doc The document.
+ * @param {{selector?: string, text?: string}} change The change.
+ * @return {void}
+ */
+function applyChange(doc, change) {
+	const nodes = elementsMatching(doc, change.selector)
+	const text = String(change.text || '')
+	for (let i = 0; i < nodes.length; i++) {
+		if (nodes[i].textContent !== text) {
+			nodes[i].textContent = text
+		}
+	}
+}
+
+/**
+ * The route the renderer could not find, when it says: the built-in site
+ * carries its route in the query string, which the collector strips from
+ * the path.
+ *
+ * @param {Element} marker The renderer's not-found marker.
+ * @return {{path?: string}} The params.
+ */
+function notFoundParams(marker) {
+	const path = String(marker.getAttribute(PATH_ATTRIBUTE) || '')
+	return path === '' ? {} : { path: path.substring(0, 256) }
+}
+
+/**
+ * The headers of a batch sent by fetch, with the bearer when there is one.
+ *
+ * @param {string} bearer The bearer, or ''.
+ * @return {object} The headers.
+ */
+function batchHeaders(bearer) {
+	const headers = { 'Content-Type': 'text/plain' }
+	if (bearer !== '') {
+		headers.Authorization = 'Bearer ' + bearer
+	}
+	return headers
+}
+
+/**
+ * The fetch request that posts one batch, with the bearer of a linked
+ * account when there is one.
+ *
+ * @param {string} body The batch's envelope.
+ * @param {string} bearer The bearer, or ''.
+ * @return {object} The request init.
+ */
+function batchRequest(body, bearer) {
+	return {
+		method: 'POST',
+		body,
+		headers: batchHeaders(bearer),
+		mode: 'cors',
+		credentials: 'omit',
+		keepalive: true,
+	}
+}
+
+/**
+ * Whether the portal links visits to accounts.
+ *
+ * @param {object|null} traffic The portal's traffic configuration.
+ * @return {boolean} True when account linking is on.
+ */
+function linksAccounts(traffic) {
+	const sensitive = traffic && traffic.sensitive
+	return Boolean(sensitive) && sensitive.accountLinking === true
+}
+
+/**
+ * The portal session bearer, ONLY for a portal that links accounts
+ * (Ruben, decision 6). The built-in portal keeps its session token in
+ * local storage; a batch that carries it lets the collector attach the
+ * account's pseudonymous reference. sendBeacon cannot carry a header,
+ * so such a batch goes by fetch. Every other portal never reads the
+ * token at all.
+ *
+ * @param {Window} win The window.
+ * @param {object|null} traffic The portal's traffic configuration.
+ * @return {string} The bearer, or ''.
+ */
+function linkedBearer(win, traffic) {
+	if (!linksAccounts(traffic)) {
+		return ''
+	}
+	try {
+		return String(win.localStorage.getItem('portaliq_token') || '')
+	} catch {
+		return ''
+	}
+}
+
+/**
+ * A session's stored sequence number, or 0.
+ *
+ * @param {Storage} storage The session storage.
+ * @param {string} key The storage key prefix.
+ * @return {number} The sequence.
+ */
+function storedSequence(storage, key) {
+	return parseInt(storage.getItem(key + ':sequence') || '0', 10) || 0
 }
 
 /**
@@ -346,12 +593,8 @@ export function boot(win) {
 		if (state.scrolled) {
 			return
 		}
-		const root = doc.documentElement
-		const top = win.pageYOffset || root.scrollTop || 0
-		const height = Math.max(
-			root.scrollHeight,
-			doc.body ? doc.body.scrollHeight : 0,
-		)
+		const top = scrollTopOf(win)
+		const height = pageHeightOf(doc)
 		if (scrollPercent(top, win.innerHeight, height) >= SCROLL_AT) {
 			state.scrolled = true
 			record('scroll', { percent: SCROLL_AT })
@@ -490,17 +733,28 @@ export function boot(win) {
 		if (state.experiment === null && !joinExperiment(route)) {
 			return false
 		}
-		const variant = state.experiment.variant
-		const page = experimentFor(state.traffic, route)
-		if (!page || String(page.id) !== state.experiment.id) {
+		if (!onJoinedExperiment(state, route)) {
 			watchChanges(null)
 			return false
 		}
-		if (variant.pageRoute && siteRoute(variant.pageRoute) !== route) {
+		return applyVariant(location, route)
+	}
+
+	/**
+	 * Apply the joined variant on its experiment's page: move to the
+	 * variant's own page, or watch for the text it changes.
+	 *
+	 * @param {string} location The page URL.
+	 * @param {string} route The in-site route.
+	 * @return {boolean} True when the location changed.
+	 */
+	function applyVariant(location, route) {
+		const variant = state.experiment.variant
+		if (isElsewhere(variant, route)) {
 			moveToVariant(location, variant)
 			return true
 		}
-		watchChanges(Array.isArray(variant.changes) ? variant.changes : null)
+		watchChanges(changesOf(variant))
 		return false
 	}
 
@@ -537,24 +791,7 @@ export function boot(win) {
 	function moveToVariant(location, variant) {
 		const target = variantUrl(location, String(variant.pageRoute))
 		win.history.replaceState(win.history.state, '', target)
-		win.dispatchEvent(popStateEvent())
-	}
-
-	/**
-	 * A popstate event, also where the browser has no PopStateEvent.
-	 *
-	 * @return {Event} The event.
-	 */
-	function popStateEvent() {
-		try {
-			return new win.PopStateEvent('popstate', {
-				state: win.history.state,
-			})
-		} catch {
-			const event = doc.createEvent('Event')
-			event.initEvent('popstate', false, false)
-			return event
-		}
+		win.dispatchEvent(popStateEvent(win))
 	}
 
 	/**
@@ -565,25 +802,17 @@ export function boot(win) {
 	 * @return {void}
 	 */
 	function watchChanges(changes) {
-		if (state.changes && state.changes.observer) {
-			state.changes.observer.disconnect()
-		}
+		stopObserving(state.changes)
 		state.changes = null
 		if (!changes || changes.length === 0) {
 			return
 		}
 		state.changes = { list: changes, observer: null, timer: null }
 		applyChanges()
-		if (typeof win.MutationObserver !== 'function' || !doc.documentElement) {
+		if (!canObserve(win)) {
 			return
 		}
-		const observer = new win.MutationObserver(scheduleChanges)
-		observer.observe(doc.documentElement, {
-			childList: true,
-			subtree: true,
-			characterData: true,
-		})
-		state.changes.observer = observer
+		state.changes.observer = observeTree(win, scheduleChanges)
 	}
 
 	/**
@@ -614,20 +843,7 @@ export function boot(win) {
 		if (!state.changes) {
 			return
 		}
-		state.changes.list.forEach((change) => {
-			let nodes
-			try {
-				nodes = doc.querySelectorAll(String(change.selector || ''))
-			} catch {
-				return
-			}
-			const text = String(change.text || '')
-			for (let i = 0; i < nodes.length; i++) {
-				if (nodes[i].textContent !== text) {
-					nodes[i].textContent = text
-				}
-			}
-		})
+		state.changes.list.forEach((change) => applyChange(doc, change))
 	}
 
 	/**
@@ -757,17 +973,11 @@ export function boot(win) {
 			return
 		}
 		const marker = doc.querySelector('[' + STATUS_ATTRIBUTE + '="404"]')
-		if (marker) {
-			state.notFound = true
-			// The route the renderer could not find, when it says: the
-			// built-in site carries its route in the query string, which
-			// the collector strips from the path.
-			const path = String(marker.getAttribute(PATH_ATTRIBUTE) || '')
-			record(
-				'page_not_found',
-				path === '' ? {} : { path: path.substring(0, 256) },
-			)
+		if (!marker) {
+			return
 		}
+		state.notFound = true
+		record('page_not_found', notFoundParams(marker))
 	}
 
 	/**
@@ -777,7 +987,7 @@ export function boot(win) {
 	 * @return {void}
 	 */
 	function watchNotFound() {
-		if (typeof win.MutationObserver !== 'function' || !doc.documentElement) {
+		if (!canObserve(win)) {
 			return
 		}
 		new win.MutationObserver(notFoundCheck).observe(doc.documentElement, {
@@ -892,7 +1102,7 @@ export function boot(win) {
 		}
 		const batches = chunk(state.queue)
 		state.queue = []
-		const bearer = linkedBearer()
+		const bearer = linkedBearer(win, state.traffic)
 		batches.forEach((events) => sendBatch(events, bearer))
 	}
 
@@ -913,40 +1123,7 @@ export function boot(win) {
 		) {
 			return
 		}
-		const headers = { 'Content-Type': 'text/plain' }
-		if (bearer !== '') {
-			headers.Authorization = 'Bearer ' + bearer
-		}
-		win.fetch(state.collector, {
-			method: 'POST',
-			body,
-			headers,
-			mode: 'cors',
-			credentials: 'omit',
-			keepalive: true,
-		}).catch(() => {})
-	}
-
-	/**
-	 * The portal session bearer, ONLY for a portal that links accounts
-	 * (Ruben, decision 6). The built-in portal keeps its session token in
-	 * local storage; a batch that carries it lets the collector attach the
-	 * account's pseudonymous reference. sendBeacon cannot carry a header,
-	 * so such a batch goes by fetch. Every other portal never reads the
-	 * token at all.
-	 *
-	 * @return {string} The bearer, or ''.
-	 */
-	function linkedBearer() {
-		const sensitive = state.traffic && state.traffic.sensitive
-		if (!sensitive || sensitive.accountLinking !== true) {
-			return ''
-		}
-		try {
-			return String(win.localStorage.getItem('portaliq_token') || '')
-		} catch {
-			return ''
-		}
+		win.fetch(state.collector, batchRequest(body, bearer)).catch(() => {})
 	}
 
 	/**
@@ -963,20 +1140,28 @@ export function boot(win) {
 		}
 		const key = storageKey()
 		try {
-			const client = storedClient(key)
-			const sessionId = win.sessionStorage.getItem(key + ':session')
-			if (!sessionId) {
-				startSession(key, client)
-				return
-			}
-			state.sequence =
-				parseInt(win.sessionStorage.getItem(key + ':sequence') || '0', 10)
-				|| 0
-			state.clientId = client.id
-			state.sessionId = sessionId
+			resumeSession(key)
 		} catch {
 			// Storage refused (private mode, a blocking policy): cookieless it is.
 		}
+	}
+
+	/**
+	 * Pick up the stored session and its sequence, or start a new session.
+	 *
+	 * @param {string} key The storage key prefix.
+	 * @return {void}
+	 */
+	function resumeSession(key) {
+		const client = storedClient(key)
+		const sessionId = win.sessionStorage.getItem(key + ':session')
+		if (!sessionId) {
+			startSession(key, client)
+			return
+		}
+		state.sequence = storedSequence(win.sessionStorage, key)
+		state.clientId = client.id
+		state.sessionId = sessionId
 	}
 
 	/**

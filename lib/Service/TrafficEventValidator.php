@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
  */
 
 declare(strict_types=1);
@@ -22,6 +22,7 @@ namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\Portaliq\Kernel\Contracts\TrafficEventValidatorInterface;
 use OCA\Portaliq\Service\Traffic\TrafficOutcomeParams;
 use Throwable;
 
@@ -46,13 +47,13 @@ use Throwable;
  * `persistClientId`; otherwise it is dropped even if a stale client sends one,
  * because the portal said no.
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the validator reads
  * DateTimeImmutable/DateTimeZone/Throwable and the resolver; there is no
  * abstraction that would make that fewer.
  */
-class TrafficEventValidator {
+class TrafficEventValidator implements TrafficEventValidatorInterface {
 
 	/**
 	 * The longest URL, referrer or title kept.
@@ -62,13 +63,6 @@ class TrafficEventValidator {
 	 * view over a cosmetic limit.
 	 */
 	public const MAX_STRING = 512;
-
-	/**
-	 * The most events one batch may carry.
-	 *
-	 * A batch is a convenience for the client, not an invitation.
-	 */
-	public const MAX_BATCH = 50;
 
 	/**
 	 * The most keys a `params` map may carry, and the longest value in it.
@@ -123,7 +117,7 @@ class TrafficEventValidator {
 	 * @return array{ok: bool, reason?: string, event?: array<string, mixed>}
 	 *                                                                       The outcome.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
 	 */
 	public function validate(
 		array $event,
@@ -229,7 +223,7 @@ class TrafficEventValidator {
 	 *
 	 * @return string|null The refusal reason, or null.
 	 *
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
 	 */
 	private function refusal(TrafficEventCheck $check): ?string {
 		$name = $this->string(value: ($check->event['name'] ?? null), max: 64);
@@ -388,16 +382,45 @@ class TrafficEventValidator {
 	 */
 	private function occurredAt(mixed $value, DateTimeImmutable $now, int $maxAge = self::MAX_AGE_SECONDS): ?DateTimeImmutable {
 		$now = $now->setTimezone(new DateTimeZone('UTC'));
-		if (is_string($value) === false || trim($value) === '') {
+		$parsed = $this->parsedMoment(value: $value);
+		if ($parsed === null) {
 			return $now;
+		}
+
+		return $this->clamped(parsed: $parsed, now: $now, maxAge: $maxAge);
+	}
+
+	/**
+	 * The posted timestamp in UTC, or null when it is missing or unparseable.
+	 *
+	 * @param mixed $value The posted timestamp.
+	 *
+	 * @return DateTimeImmutable|null
+	 */
+	private function parsedMoment(mixed $value): DateTimeImmutable|null {
+		if (is_string($value) === false || trim($value) === '') {
+			return null;
 		}
 
 		try {
 			$parsed = (new DateTimeImmutable(trim($value)))->setTimezone(new DateTimeZone('UTC'));
 		} catch (Throwable) {
-			return $now;
+			return null;
 		}
 
+		return $parsed;
+	}
+
+	/**
+	 * The moment clamped to now when slightly ahead; null when far ahead or older than the age kept.
+	 *
+	 * @param DateTimeImmutable $parsed The posted moment, in UTC.
+	 * @param DateTimeImmutable $now    The server clock, in UTC.
+	 * @param int               $maxAge The oldest age kept, in seconds.
+	 *
+	 * @return DateTimeImmutable|null
+	 */
+	private function clamped(DateTimeImmutable $parsed, DateTimeImmutable $now, int $maxAge): DateTimeImmutable|null {
 		$delta = $parsed->getTimestamp() - $now->getTimestamp();
 		if ($delta > self::MAX_FUTURE_SECONDS || -$delta > $maxAge) {
 			return null;

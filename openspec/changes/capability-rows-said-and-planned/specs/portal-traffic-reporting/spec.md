@@ -8,6 +8,7 @@ The traffic export SHALL hold the same portal, period and segment as the Traffic
 - **GIVEN** the Traffic page set to portal "zuiddrecht", March and the segment "mobile"
 - **WHEN** the administrator downloads the CSV
 - **THEN** the file holds only the daily records for that portal, that month and that segment
+@e2e tests/e2e/traffic-reporting.spec.ts (unit: tests/Unit/Controller/TrafficReportControllerTest.php)
 
 ### Requirement: A portal switches measurement off (REQ-RSP-010)
 
@@ -17,3 +18,4 @@ A portal SHALL be able to switch measurement off. While it is off, the collector
 - **GIVEN** a portal with measurement switched off
 - **WHEN** a visitor opens one of its pages
 - **THEN** no measuring script loads, and an event posted for that portal is refused and not stored
+@e2e exclude Not built in full: the collector refuses the event (Unit: tests/Unit/Service/TrafficConfigResolverTest.php), but templates/site.php still loads the traffic client, which then stays idle

@@ -28,17 +28,18 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use Closure;
-use OCA\Portaliq\Contribution\PortalContributionFilter;
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
-use OCA\Portaliq\Service\Assistant\PublicAssistantChannel;
-use OCA\Portaliq\Service\Assistant\PublicSourceScope;
-use OCA\Portaliq\Service\CmsReader;
-use OCA\Portaliq\Service\Identity\NextcloudRegistrationDoor;
-use OCA\Portaliq\Service\PortalNoticeReader;
-use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
-use OCA\Portaliq\Service\SiteOrganisation;
-use OCA\Portaliq\Service\TrafficConfigResolver;
+use OCA\Portaliq\Kernel\Contracts\CmsReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\NextcloudRegistrationDoorInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionFilterInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalNoticeReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PublicAssistantChannelInterface;
+use OCA\Portaliq\Kernel\Contracts\PublicSourceScopeInterface;
+use OCA\Portaliq\Kernel\Contracts\SiteOrganisationInterface;
+use OCA\Portaliq\Kernel\Contracts\TrafficConfigResolverInterface;
+use OCA\Portaliq\Service\Cms\MediaReferences;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -85,44 +86,77 @@ class ContentController extends Controller {
 	 *
 	 * @param string                     $appName      The app id.
 	 * @param IRequest                   $request      The request.
-	 * @param PortalResolver             $resolver     Resolves the serving portal.
-	 * @param CmsReader                  $reader       Reads portal-scoped content.
-	 * @param PortalContributionRegistry $registry     Aggregates leaf apps' contributions.
-	 * @param PortalContributionFilter   $contribFilter Scopes that aggregate to one portal.
+	 * @param PortalResolverInterface             $resolver     Resolves the serving portal.
+	 * @param CmsReaderInterface                  $reader       Reads portal-scoped content.
+	 * @param PortalContributionRegistryInterface $registry     Aggregates leaf apps' contributions.
+	 * @param PortalContributionFilterInterface   $contribFilter Scopes that aggregate to one portal.
 	 * @param LoggerInterface            $logger       Records a provider failure the visitor never sees.
-	 * @param PortalSessionService       $session      Resolves the caller's portal session for the content gate.
-	 * @param TrafficConfigResolver      $traffic      Resolves the portal's measurement configuration.
+	 * @param PortalSessionServiceInterface       $session      Resolves the caller's portal session for the content gate.
+	 * @param TrafficConfigResolverInterface      $traffic      Resolves the portal's measurement configuration.
 	 * @param IURLGenerator              $urlGenerator Builds the absolute collector URL.
-	 * @param PortalNoticeReader         $notices      The notices running on the site now.
+	 * @param PortalNoticeReaderInterface         $notices      The notices running on the site now.
 	 * @param IUserSession               $userSession  Tells a signed-in Nextcloud user (an editor) from a visitor.
-	 * @param PublicAssistantChannel|null $assistant   The public assistant's channel, when wired.
-	 * @param PublicSourceScope|null     $assistantScope What the public assistant may read.
-	 * @param NextcloudRegistrationDoor|null $registrationDoor Where "Create an account" leads (REQ-NCL-005).
-	 * @param SiteOrganisation|null      $siteOrganisation Names the portal's organisation.
+	 * @param PublicSourceScopeInterface $publicSourceScope The PublicSourceScope helper.
+	 * @param PublicAssistantChannelInterface|null $assistant   The public assistant's channel, when wired.
+	 * @param PublicSourceScopeInterface|null     $assistantScope What the public assistant may read.
+	 * @param NextcloudRegistrationDoorInterface|null $registrationDoor Where "Create an account" leads (REQ-NCL-005).
+	 * @param SiteOrganisationInterface|null      $siteOrganisation Names the portal's organisation.
+	 * @param MediaReferences|null       $media        Resolves the portal's media:<id> images.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly PortalResolver $resolver,
-		private readonly CmsReader $reader,
-		private readonly PortalContributionRegistry $registry,
-		private readonly PortalContributionFilter $contribFilter,
+		private readonly PortalResolverInterface $resolver,
+		private readonly CmsReaderInterface $reader,
+		private readonly PortalContributionRegistryInterface $registry,
+		private readonly PortalContributionFilterInterface $contribFilter,
 		private readonly LoggerInterface $logger,
-		private readonly PortalSessionService $session,
-		private readonly TrafficConfigResolver $traffic,
+		private readonly PortalSessionServiceInterface $session,
+		private readonly TrafficConfigResolverInterface $traffic,
 		private readonly IURLGenerator $urlGenerator,
-		private readonly PortalNoticeReader $notices,
+		private readonly PortalNoticeReaderInterface $notices,
 		private readonly IUserSession $userSession,
-		private readonly ?PublicAssistantChannel $assistant = null,
-		private readonly ?PublicSourceScope $assistantScope = null,
-		private readonly ?NextcloudRegistrationDoor $registrationDoor = null,
-		private readonly ?SiteOrganisation $siteOrganisation = null,
+		private readonly PublicSourceScopeInterface $publicSourceScope,
+		private readonly ?PublicAssistantChannelInterface $assistant = null,
+		private readonly ?PublicSourceScopeInterface $assistantScope = null,
+		private readonly ?NextcloudRegistrationDoorInterface $registrationDoor = null,
+		private readonly ?SiteOrganisationInterface $siteOrganisation = null,
+		private readonly ?MediaReferences $media = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
 
+
+	/**
+	 * A portal image field as the address the site can load: a media:<id>
+	 * reference becomes the published item's public address of this portal,
+	 * '' when it does not resolve; any other value is sent as it is stored.
+	 *
+	 * @param array<string, mixed> $portal The serving portal.
+	 * @param string               $field  The image field.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+	 */
+	private function portalImage(array $portal, string $field): string {
+		$value = $portal[$field] ?? '';
+		if (is_string($value) === false) {
+			return '';
+		}
+
+		if (MediaReferences::isReference(value: $value) === false) {
+			return $value;
+		}
+
+		if ($this->media === null) {
+			return '';
+		}
+
+		return $this->media->image(portal: (string)($portal['slug'] ?? ''), value: $value);
+	}//end portalImage()
 
 	/**
 	 * The resolved site's own presentation record.
@@ -150,7 +184,15 @@ class ContentController extends Controller {
 				'title'   => (string)($portal['title'] ?? ''),
 				'slug'    => (string)($portal['slug'] ?? ''),
 				'theme'   => (string)($portal['theme'] ?? ''),
-				'logo'    => (string)($portal['logo'] ?? ''),
+				// The logo and the hero image may be items of the portal's
+				// media library (portal-identity-from-the-admin REQ-PIA-001):
+				// sent as their public address, never as the reference.
+				'logo'    => $this->portalImage(portal: $portal, field: 'logo'),
+				'heroImage' => $this->portalImage(portal: $portal, field: 'heroImage'),
+				// The organisation type's label, stored from the TOOI concept on
+				// save: the site names the organisation's kind with it, and says
+				// "de organisatie" without it (REQ-PIA-003).
+				'organisationTypeLabel' => (string)($portal['organisationTypeLabel'] ?? ''),
 				// The line under the name in the footer's logo block. The
 				// reference carries one ("Één plek voor alle publicaties van
 				// Gemeente Tilburg") and this app had no field for it at all,
@@ -545,7 +587,7 @@ class ContentController extends Controller {
 	 *
 	 * @return JSONResponse The response.
 	 *
-	 * @spec openspec/changes/site-shows-what-was-published/specs/portal-in-place-editing/spec.md#requirement-the-site-must-show-what-an-editor-published-not-a-cached-copy-req-ssp-001
+	 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-the-site-must-show-what-an-editor-published-not-a-cached-copy-req-ssp-001
 	 */
 	private function publicJson(array $payload): JSONResponse {
 		$response = new JSONResponse($payload);
@@ -596,7 +638,7 @@ class ContentController extends Controller {
 	 * @spec openspec/changes/search-assistant-from-public-content/tasks.md#t05
 	 */
 	private function assistantEnabled(array $portal): bool {
-		$scope = $this->assistantScope ?? new PublicSourceScope();
+		$scope = $this->assistantScope ?? $this->publicSourceScope;
 		return $scope->enabledFor(portal: $portal) === true && $this->assistant !== null && $this->assistant->isAvailable() === true;
 	}//end assistantEnabled()
 }//end class

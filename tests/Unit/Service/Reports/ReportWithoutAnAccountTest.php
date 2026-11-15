@@ -192,6 +192,45 @@ class ReportWithoutAnAccountTest extends TestCase {
 
 	}//end testTheTermsComeFromTheDeclarationAndNeverFromAConstant()
 
+	public function testAnEmptyCodeOpensNothingAndIsThrottledOnlyWithAnAddress(): void {
+		$this->intake()->accept(portal: 'gemeente-x', caseType: 'misstandmelding', report: ['body' => 'Melding.']);
+		$threads = $this->threads();
+
+		$this->assertNull($threads->openByCode(code: '', address: '203.0.113.9'));
+		$this->assertSame(['203.0.113.9'], $this->attempts);
+
+		$this->assertNull($threads->openByCode(code: ''));
+		$this->assertSame(['203.0.113.9'], $this->attempts);
+
+	}//end testAnEmptyCodeOpensNothingAndIsThrottledOnlyWithAnAddress()
+
+	public function testAMessageWithoutAReportABodyOrAKnownAuthorIsNotWritten(): void {
+		$this->intake()->accept(portal: 'gemeente-x', caseType: 'misstandmelding', report: ['body' => 'Melding.']);
+		$reportId = $this->storedRows('portalReport')[0]['uuid'];
+		$threads = $this->threads();
+
+		$this->assertFalse($threads->write(reportId: '', author: 'handler', body: 'Tekst.'));
+		$this->assertFalse($threads->write(reportId: $reportId, author: 'handler', body: "  \n "));
+		$this->assertFalse($threads->write(reportId: $reportId, author: 'custodian', body: 'Tekst.'));
+		$this->assertSame([], $this->storedRows('portalReportMessage'));
+		$this->assertSame([], $threads->allMessages(reportId: ''));
+
+		$this->assertTrue($threads->write(reportId: $reportId, author: 'handler', body: '  Tekst.  '));
+		$this->assertSame('Tekst.', $this->storedRows('portalReportMessage')[0]['body']);
+
+	}//end testAMessageWithoutAReportABodyOrAKnownAuthorIsNotWritten()
+
+	public function testAnUnreadableReceiptDateOrAZeroDayTermYieldsNoTerm(): void {
+		$terms = new ReportTermsService();
+		$declared = [ReportTermsService::DECLARATION => ['acknowledgementDays' => 0, 'feedbackDays' => 90]];
+
+		$this->assertSame([], $terms->forReport(caseType: $declared, report: ['receivedAt' => 'geen datum']));
+
+		$rendered = $terms->forReport(caseType: $declared, report: ['receivedAt' => '2026-09-01T09:00:00+00:00'], now: new DateTimeImmutable('2026-09-05T09:00:00+00:00'));
+		$this->assertSame(['feedback'], array_column($rendered, 'term'));
+
+	}//end testAnUnreadableReceiptDateOrAZeroDayTermYieldsNoTerm()
+
 	public function testARevealRequestWithoutAMotivationIsRefusedAndNothingIsWritten(): void {
 		$reveals = $this->reveals();
 

@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T08
+ * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T08
  */
 
 declare(strict_types=1);

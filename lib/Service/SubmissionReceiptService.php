@@ -47,6 +47,7 @@ namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\Portaliq\Kernel\Contracts\SubmissionReceiptServiceInterface;
 use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IDateTimeZone;
@@ -59,7 +60,7 @@ use Throwable;
  *
  * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
  */
-class SubmissionReceiptService {
+class SubmissionReceiptService implements SubmissionReceiptServiceInterface {
 	/**
 	 * The register every portal-owned schema lives in.
 	 */
@@ -225,7 +226,7 @@ class SubmissionReceiptService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-a-notification-mail-and-a-task-notice-are-written-in-the-portals-language-only
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-a-notification-mail-and-a-task-notice-are-written-in-the-portals-language-only
 	 */
 	private function doRecord(ReceiptRun $run): void {
 		$run->referenceId = $this->generateReferenceId();
@@ -593,6 +594,5 @@ class SubmissionReceiptService {
 
 		return $recorded;
 	}//end recordedOutcome()
-
 
 }//end class

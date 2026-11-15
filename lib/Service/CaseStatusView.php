@@ -135,23 +135,54 @@ class CaseStatusView {
 			return null;
 		}
 
-		$keys     = array_map('strval', array_keys($labels));
-		$position = array_search($status, $keys, true);
-		if ($position === false || isset($keys[($position + 1)]) === false) {
+		$value = $this->keyAfter(labels: $labels, status: $status);
+		if ($value === null) {
 			return null;
 		}
 
-		$value = $keys[($position + 1)];
-		$entry = $labels[$value];
-		$label = '';
-		if (is_array($entry) === true && is_string($entry['label'] ?? null) === true) {
-			$label = $entry['label'];
-		}
-
+		$label = $this->labelOf(entry: $labels[$value]);
 		if ($label === '') {
 			return null;
 		}
 
 		return ['value' => $value, 'label' => $label];
 	}//end nextStatus()
+
+	/**
+	 * The status key after the current one, or null when it is the last or unknown.
+	 *
+	 * @param array<int|string, mixed> $labels The case type's status labels.
+	 * @param string                   $status The case's current status.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/changes/case-page-tasks-decision-dates-and-next-step/tasks.md#t04
+	 */
+	private function keyAfter(array $labels, string $status): string|null {
+		$keys     = array_map('strval', array_keys($labels));
+		$position = array_search($status, $keys, true);
+		if ($position === false || isset($keys[($position + 1)]) === false) {
+			return null;
+		}
+
+		return $keys[($position + 1)];
+	}//end keyAfter()
+
+	/**
+	 * A status label entry's label, or ''.
+	 *
+	 * @param mixed $entry The status label entry.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/case-page-tasks-decision-dates-and-next-step/tasks.md#t04
+	 */
+	private function labelOf(mixed $entry): string {
+		$label = '';
+		if (is_array($entry) === true && is_string($entry['label'] ?? null) === true) {
+			$label = $entry['label'];
+		}
+
+		return $label;
+	}//end labelOf()
 }//end class

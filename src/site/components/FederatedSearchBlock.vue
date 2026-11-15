@@ -1005,7 +1005,7 @@ export default {
 		 *
 		 * @return {Array<string>} Field names.
 		 *
-		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
 		 */
 		fields() {
 			const own = this.facetField ? [this.facetField] : this.facetFields
@@ -1047,7 +1047,7 @@ export default {
 		 *
 		 * @return {boolean} True with facet buckets or the period filter.
 		 *
-		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-a-publication-period-req-wsd-002
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-a-publication-period-req-wsd-002
 		 */
 		hasFilters() {
 			return this.facetGroups.length > 0 || this.hidePeriod === false
@@ -1058,7 +1058,7 @@ export default {
 		 *
 		 * @return {object} The query object.
 		 *
-		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-block-must-describe-its-search-as-the-saved-search-query-req-wsd-004
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-block-must-describe-its-search-as-the-saved-search-query-req-wsd-004
 		 */
 		savedQuery() {
 			return searchQuery(this.$data, this.catalog)
@@ -1376,7 +1376,7 @@ export default {
 		 * @param {number} total The result count.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-site-search-must-be-reported-by-the-built-in-search-box
+		 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-site-search-must-be-reported-by-the-built-in-search-box
 		 */
 		reportSearch(total) {
 			const term = String(this.query || '').trim()
@@ -1612,7 +1612,7 @@ export default {
 		 * @return {void}
 		 *
 		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-facet-buckets-must-be-read-in-both-dialects-the-endpoint-speaks
-		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
 		 */
 		toggleFacet(value, field = this.fields[0]) {
 			const current = this.facets[field] || []
@@ -1634,7 +1634,7 @@ export default {
 		 * @param {string} value The bucket value.
 		 * @return {boolean} True when selected.
 		 *
-		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
 		 */
 		isSelected(field, value) {
 			return (this.facets[field] || []).includes(value)
@@ -1662,7 +1662,7 @@ export default {
 		 * @param {string} value The date from the input, `YYYY-MM-DD` or ''.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-a-publication-period-req-wsd-002
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-a-publication-period-req-wsd-002
 		 */
 		setPeriod(which, value) {
 			this[which] = value || ''

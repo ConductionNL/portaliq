@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/withdrawing-your-own-case-from-the-portal/specs/withdrawing-your-own-case/spec.md
+ * @spec openspec/specs/withdrawing-your-own-case/spec.md
  */
 
 declare(strict_types=1);

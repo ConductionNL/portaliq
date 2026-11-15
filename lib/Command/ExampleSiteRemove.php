@@ -26,8 +26,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Command;
 
-use OCA\Portaliq\Service\ExampleSite\ExampleSiteCatalogue;
-use OCA\Portaliq\Service\ExampleSite\ExampleSiteRemover;
+use OCA\Portaliq\Kernel\Contracts\ExampleSiteCatalogueInterface;
+use OCA\Portaliq\Kernel\Contracts\ExampleSiteRemoverInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -61,14 +61,14 @@ class ExampleSiteRemove extends Command {
 	/**
 	 * Constructor.
 	 *
-	 * @param ExampleSiteCatalogue $catalogue The shipped sites.
-	 * @param ExampleSiteRemover   $remover   Deletes from the install's own record.
+	 * @param ExampleSiteCatalogueInterface $catalogue The shipped sites.
+	 * @param ExampleSiteRemoverInterface   $remover   Deletes from the install's own record.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly ExampleSiteCatalogue $catalogue,
-		private readonly ExampleSiteRemover $remover,
+		private readonly ExampleSiteCatalogueInterface $catalogue,
+		private readonly ExampleSiteRemoverInterface $remover,
 	) {
 		parent::__construct();
 	}//end __construct()

@@ -21,19 +21,20 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/push-notifications-quiet-hours/specs/guardian-push-notifications/spec.md#requirement-an-emergency-push-bypasses-quiet-hours-unconditionally
+ * @spec openspec/specs/guardian-push-notifications/spec.md#requirement-an-emergency-push-bypasses-quiet-hours-unconditionally
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Notifications;
 
+use OCA\Portaliq\Kernel\Contracts\PushDeliveryServiceInterface;
 use Psr\Log\LoggerInterface;
 
 /**
- * @spec openspec/changes/push-notifications-quiet-hours/specs/guardian-push-notifications/spec.md#requirement-an-emergency-push-bypasses-quiet-hours-unconditionally
+ * @spec openspec/specs/guardian-push-notifications/spec.md#requirement-an-emergency-push-bypasses-quiet-hours-unconditionally
  */
-class PushDeliveryService {
+class PushDeliveryService implements PushDeliveryServiceInterface {
 	/**
 	 * Constructor.
 	 *
@@ -60,7 +61,7 @@ class PushDeliveryService {
 	 *
 	 * @return bool True when sent immediately OR successfully queued; false on failure.
 	 *
-	 * @spec openspec/changes/push-notifications-quiet-hours/specs/guardian-push-notifications/spec.md#requirement-an-emergency-push-bypasses-quiet-hours-unconditionally
+	 * @spec openspec/specs/guardian-push-notifications/spec.md#requirement-an-emergency-push-bypasses-quiet-hours-unconditionally
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- `emergency` is the
 	 * declared shape of the ONE deliberate fail-open branch in this app

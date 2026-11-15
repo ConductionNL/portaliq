@@ -12,6 +12,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * The organisation is stamped on create and never written on update.
@@ -171,7 +172,11 @@ class PortalObjectWriterOrganisationTest extends TestCase {
 		);
 
 		$objectService->method('saveObject')->willReturnCallback(
-			function (array $object, ?array $extend = [], mixed $register = null, mixed $schema = null, ?string $uuid = null): object {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): object {
+				$extend = $options->extend ?? [];
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saves[] = ['object' => $object, 'uuid' => $uuid];
 				return $this->entity(row: $object);
 			}

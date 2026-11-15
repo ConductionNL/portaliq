@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service\Intake;
 
 use OCA\Portaliq\Service\Intake\PortalApplicantPrefill;
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -55,11 +55,11 @@ class PortalApplicantPrefillTest extends TestCase {
 	public function testAReaderThatAnswersSomebodyElseIsIgnored(): void {
 		// The reader is told to answer the wrong account: the service must
 		// re-check the subjectRef rather than trust what came back.
-		$accounts = $this->getMockBuilder(PortalAccountService::class)
+		$accounts = $this->getMockBuilder(PortalAccountLookup::class)
 			->disableOriginalConstructor()
-			->onlyMethods(['findBySubjectRef'])
+			->onlyMethods(['bySubjectRef'])
 			->getMock();
-		$accounts->method('findBySubjectRef')->willReturn(['subjectRef' => 'subject-2', 'displayName' => 'Iemand anders']);
+		$accounts->method('bySubjectRef')->willReturn(['subjectRef' => 'subject-2', 'displayName' => 'Iemand anders']);
 
 		$values = (new PortalApplicantPrefill($accounts))->forSubject(subject: ['subjectRef' => 'subject-1'], fields: $this->applicantFields());
 
@@ -96,11 +96,11 @@ class PortalApplicantPrefillTest extends TestCase {
 	 * @return PortalApplicantPrefill
 	 */
 	private function prefill(array $accounts): PortalApplicantPrefill {
-		$service = $this->getMockBuilder(PortalAccountService::class)
+		$service = $this->getMockBuilder(PortalAccountLookup::class)
 			->disableOriginalConstructor()
-			->onlyMethods(['findBySubjectRef'])
+			->onlyMethods(['bySubjectRef'])
 			->getMock();
-		$service->method('findBySubjectRef')->willReturnCallback(
+		$service->method('bySubjectRef')->willReturnCallback(
 			static function (string $subjectRef) use ($accounts): ?array {
 				return ($accounts[$subjectRef] ?? null);
 			}
@@ -108,6 +108,45 @@ class PortalApplicantPrefillTest extends TestCase {
 
 		return new PortalApplicantPrefill($service);
 	}//end prefill()
+
+	/**
+	 * A Yivi session fills the fields its form asks attributes for, ahead of
+	 * the account, and lists the attributes the form asks for
+	 * (resident-identity-in-forms REQ-RIF-004).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#T05
+	 */
+	public function testAYiviSessionFillsTheFieldsItsFormAsksFor(): void {
+		$prefill = $this->prefill(['yivi-1' => ['subjectRef' => 'yivi-1', 'displayName' => '', 'email' => 'account@example.org']]);
+		$binding = [
+			'yiviAttributes' => [
+				['attribute' => 'pbdf.gemeente.personalData.fullname', 'field' => 'applicantName'],
+				['attribute' => 'pbdf.sidn-pbdf.email.email', 'field' => 'applicantEmail'],
+				['attribute' => 'pbdf.gemeente.address.zipcode', 'field' => 'postcode'],
+			],
+		];
+		$subject = [
+			'subjectRef' => 'yivi-1',
+			'attributes' => ['pbdf.gemeente.personalData.fullname' => 'Sanne de Vries', 'pbdf.sidn-pbdf.email.email' => 'sanne@example.nl', 'bsn' => '1'],
+		];
+
+		$this->assertSame(
+			['applicantName' => 'Sanne de Vries', 'applicantEmail' => 'sanne@example.nl'],
+			$prefill->forSubject(subject: $subject, fields: $this->applicantFields(), binding: $binding)
+		);
+		$this->assertSame(
+			['applicantEmail' => 'account@example.org'],
+			$prefill->forSubject(subject: $subject, fields: $this->applicantFields()),
+			'without yiviAttributes on the form the attributes fill nothing'
+		);
+		$this->assertSame([], $prefill->forSubject(subject: ['attributes' => $subject['attributes']], fields: $this->applicantFields(), binding: $binding));
+		$this->assertSame(
+			['pbdf.gemeente.personalData.fullname', 'pbdf.sidn-pbdf.email.email', 'pbdf.gemeente.address.zipcode'],
+			$prefill->yiviRequest(binding: $binding)
+		);
+	}//end testAYiviSessionFillsTheFieldsItsFormAsksFor()
 
 	/**
 	 * Every subject and field reads exactly as recorded.

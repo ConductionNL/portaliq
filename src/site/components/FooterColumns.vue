@@ -221,7 +221,7 @@ export default {
 		 *
 		 * @return {boolean}
 		 *
-		 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
+		 * @spec openspec/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
 		 */
 		designed() {
 			return Boolean(this.content.cta || this.content.contact)
@@ -245,7 +245,7 @@ export default {
 		 *
 		 * @return {Array<object>} `{key, brand?, contact?, menu?}` entries.
 		 *
-		 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
+		 * @spec openspec/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
 		 */
 		columns() {
 			const menus = this.menus.map((menu) => ({

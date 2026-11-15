@@ -362,3 +362,52 @@ test('a variant page moves the visitor without a reload, also where PopStateEven
 	Date.now = realNow
 	file.save()
 })
+
+test('without a MutationObserver the variant text is applied once and nothing is watched', async () => {
+	const site = {
+		collector: 'https://collect.example/c',
+		traffic: { enabled: true, events: ALL_EVENTS, experiments: [{ id: 'e1', status: 'running', page: '/afval', variants: [{ id: 'a', weight: 1, changes: [{ selector: '.hero h1', text: 'Hallo' }, { text: 'leeg' }] }, { id: 'b', weight: 0, changes: [] }] }] },
+	}
+	const b = browser({ site, href: 'https://site.example/afval' })
+	b.win.MutationObserver = undefined
+	boot(b.win)
+	await settle()
+	assert.deepEqual(b.nodes['.hero h1'].map((n) => n.textContent), ['Hallo', 'Hallo'])
+	assert.deepEqual(b.seen.observers, [])
+	b.marker.found = el('div', { attrs: {} })
+	b.fire('win', 'pagehide')
+	assert.deepEqual(
+		b.seen.beacons.flatMap((beacon) => beacon.body.events.map((event) => event.name)),
+		['page_view'],
+		'no observer, so the late not-found marker is not reported',
+	)
+})
+
+test('a linked account whose token storage refuses goes by beacon without a bearer', async () => {
+	const site = {
+		collector: 'https://collect.example/c',
+		traffic: { enabled: true, events: ALL_EVENTS, sensitive: { accountLinking: true } },
+	}
+	const b = browser({ site, token: 'tok' })
+	boot(b.win)
+	await settle()
+	b.win.localStorage.refuse = true
+	b.fire('win', 'pagehide')
+	assert.equal(b.seen.beacons.length, 1)
+	assert.equal(b.seen.requests.filter((r) => r[0] === 'fetch').length, 1, 'only the site record is fetched')
+
+	const linked = browser({ site, token: 'tok' })
+	boot(linked.win)
+	await settle()
+	linked.fire('win', 'pagehide')
+	assert.deepEqual(linked.seen.beacons, [])
+	const sent = linked.seen.requests.filter((r) => r[0] === 'fetch')[1]
+	assert.deepEqual(sent[2], { 'Content-Type': 'text/plain', Authorization: 'Bearer tok' })
+
+	const unlinked = browser({ site: { ...site, traffic: { ...site.traffic, sensitive: { accountLinking: 'yes' } } }, token: 'tok', beaconRefused: true })
+	boot(unlinked.win)
+	await settle()
+	unlinked.fire('win', 'pagehide')
+	const plainSend = unlinked.seen.requests.filter((r) => r[0] === 'fetch')[1]
+	assert.deepEqual(plainSend[2], { 'Content-Type': 'text/plain' }, 'a refused beacon falls back to fetch without a bearer')
+})

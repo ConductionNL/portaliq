@@ -4,7 +4,8 @@
 //
 // page-detail-tabs.spec.mjs: the Page detail's tab strip follows the
 // portaliq/PtPagina, PtPaginaVerkeer and PtPaginaZoekmachines boards:
-// Overzicht, Indeling (the layout editor), Zoekmachines, Verkeer, Historie.
+// Overzicht, Indeling (the layout editor), Zoekmachines, Verkeer, Historie,
+// with the page's help text (Hulp, help-texts-and-form-help) after Zoekmachines.
 //
 // Zoekmachines is a settings-form over the page's own search fields, so every
 // key it writes must be a property of the page schema and every limit the
@@ -29,7 +30,7 @@ const tab = (label) => TABS.find((entry) => entry.label === label)
 const widgetsOf = (entry) => entry.widgetIds || [entry.widgetId]
 
 test('the tabs follow the board order', () => {
-	assert.deepEqual(TABS.map((entry) => entry.label), ['Overzicht', 'Layout', 'Zoekmachines', 'Verkeer', 'Historie'])
+	assert.deepEqual(TABS.map((entry) => entry.label), ['Overzicht', 'Layout', 'Zoekmachines', 'Hulp', 'Verkeer', 'Historie'])
 	for (const entry of TABS) {
 		assert.ok(NL[entry.label], `tab "${entry.label}" is not in the Dutch catalogue`)
 		for (const id of widgetsOf(entry)) {

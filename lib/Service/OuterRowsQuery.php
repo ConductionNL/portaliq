@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/via-read-scoped-query/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-via-read-scoped-query/tasks.md#T1
  */
 
 declare(strict_types=1);
@@ -28,7 +28,7 @@ namespace OCA\Portaliq\Service;
 /**
  * The parts of one PortalFilteredRows::outerRows() read.
  *
- * @spec openspec/changes/via-read-scoped-query/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-via-read-scoped-query/tasks.md#T1
  */
 final class OuterRowsQuery {
 	/**

@@ -545,7 +545,7 @@ export default {
 		/**
 		 * The three providers as select options.
 		 *
-		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
+		 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
 		 * @return {Array<{id: string, label: string}>} The options.
 		 */
 		geoProviderOptions() {
@@ -562,7 +562,7 @@ export default {
 		/**
 		 * The two MaxMind editions as select options.
 		 *
-		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
+		 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
 		 * @return {Array<{id: string, label: string}>} The options.
 		 */
 		geoEditionOptions() {
@@ -576,7 +576,7 @@ export default {
 	/**
 	 * Load both admin blocks: the editor groups and the geography settings.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
 	 * @return {void}
 	 */
 	mounted() {
@@ -707,7 +707,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when loaded.
 		 *
-		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-maxmind-credentials-must-never-be-echoed-back
+		 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-maxmind-credentials-must-never-be-echoed-back
 		 */
 		async loadGeo() {
 			try {
@@ -781,7 +781,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when saved.
 		 *
-		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-maxmind-credentials-must-never-be-echoed-back
+		 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-maxmind-credentials-must-never-be-echoed-back
 		 */
 		async saveGeo() {
 			if (!this.geoProvider) {

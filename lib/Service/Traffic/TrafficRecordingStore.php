@@ -13,13 +13,16 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+ * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCA\Portaliq\Service\RowAsArray;
@@ -39,7 +42,7 @@ use Throwable;
  * Reached by duck typing through the container like TrafficEventStore,
  * so a missing OpenRegister degrades to "nothing stored, nothing read".
  *
- * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+ * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
  */
 class TrafficRecordingStore {
 	use ObjectServiceLookup;
@@ -90,7 +93,7 @@ class TrafficRecordingStore {
 	 *
 	 * @return array<string, mixed>|null The object, with its `@self`.
 	 *
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 	 */
 	public function find(string $portal, string $recordingId): ?array {
 		foreach ($this->findAll(filters: ['portal' => $portal, 'recordingId' => $recordingId], limit: 5) as $row) {
@@ -110,7 +113,7 @@ class TrafficRecordingStore {
 	 *
 	 * @return bool True when saved.
 	 *
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 	 */
 	public function save(array $recording, ?string $uuid): bool {
 		$objectService = $this->objectService();
@@ -125,9 +128,10 @@ class TrafficRecordingStore {
 
 			$objectService->saveObject(
 				object: $recording,
-				register: self::REGISTER,
-				schema: self::SCHEMA,
-				uuid: $uuid,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: self::REGISTER, schema: self::SCHEMA),
+					uuid: $uuid
+				),
 				_rbac: false,
 				_multitenancy: false
 			);
@@ -145,7 +149,7 @@ class TrafficRecordingStore {
 	 *
 	 * @return int How many were removed.
 	 *
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 	 */
 	public function purgeExpired(): int {
 		return $this->purgeExpiredOf(schema: self::SCHEMA, failure: 'Portaliq: traffic recording purge failed');
@@ -158,7 +162,7 @@ class TrafficRecordingStore {
 	 *
 	 * @return int How many were removed.
 	 *
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 	 */
 	protected function deleteExpired(object $objectService): int {
 		$now = gmdate('Y-m-d\TH:i:s\Z');
@@ -169,7 +173,11 @@ class TrafficRecordingStore {
 				continue;
 			}
 
-			$objectService->deleteObject(uuid: $uuid, register: self::REGISTER, schema: self::SCHEMA, _rbac: false, _multitenancy: false);
+			$objectService->deleteObject(
+				new ObjectDeletion(uuid: $uuid, target: new ObjectFindTarget(register: self::REGISTER, schema: self::SCHEMA)),
+				_rbac: false,
+				_multitenancy: false
+			);
 			$removed++;
 		}
 
@@ -183,7 +191,7 @@ class TrafficRecordingStore {
 	 *
 	 * @return string The uuid.
 	 *
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 	 */
 	public function uuidOf(array $row): string {
 		return trim((string)($row['@self']['uuid'] ?? $row['uuid'] ?? $row['@self']['id'] ?? $row['id'] ?? ''));
@@ -204,25 +212,38 @@ class TrafficRecordingStore {
 		}
 
 		try {
-			if ($this->context->apply(objectService: $objectService, schemaSlug: self::SCHEMA) === false) {
-				return [];
-			}
-
-			$rows = $objectService->findAll(config: ['filters' => $filters, 'limit' => $limit, 'offset' => 0], _rbac: false, _multitenancy: false);
-			if (is_array($rows) === false) {
-				return [];
-			}
-
-			$out = [];
-			foreach ($rows as $row) {
-				$out[] = $this->asArray(row: $row);
-			}
-
-			return $out;
+			return $this->readRows(objectService: $objectService, filters: $filters, limit: $limit);
 		} catch (Throwable $e) {
 			$this->logger->error('Portaliq: traffic recording read failed', ['reason' => $e->getMessage()]);
 
 			return [];
 		}
+	}
+
+	/**
+	 * The recording rows matching the filters, as arrays.
+	 *
+	 * @param object               $objectService OpenRegister's ObjectService.
+	 * @param array<string, mixed> $filters       The filters.
+	 * @param int                  $limit         The most rows.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function readRows(object $objectService, array $filters, int $limit): array {
+		if ($this->context->apply(objectService: $objectService, schemaSlug: self::SCHEMA) === false) {
+			return [];
+		}
+
+		$rows = $objectService->findAll(config: ['filters' => $filters, 'limit' => $limit, 'offset' => 0], _rbac: false, _multitenancy: false);
+		if (is_array($rows) === false) {
+			return [];
+		}
+
+		$out = [];
+		foreach ($rows as $row) {
+			$out[] = $this->asArray(row: $row);
+		}
+
+		return $out;
 	}
 }

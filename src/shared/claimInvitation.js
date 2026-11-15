@@ -13,7 +13,7 @@
 // Imports only the shared invitation secret steps, so
 // tests/claim-invitation.spec.mjs runs it as a plain node script.
 //
-// @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+// @spec openspec/specs/portal-identity-space/spec.md
 
 import {
 	forgetSecret,
@@ -35,7 +35,7 @@ const LINK = /^#claim=([^&]+)$/
  * @param {Storage|null} storage sessionStorage, or null.
  * @return {string} The secret, or '' when the page was not opened from an invitation.
  *
- * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 export function keepClaimSecret(location, history, storage) {
 	return keepInvitationSecret(
@@ -86,7 +86,7 @@ const CLAIM_REFUSALS = new Map([
  * @param {{ok: boolean, status: number, error: string}} answer The answer.
  * @return {{role: string, text: string}}
  *
- * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 export function claimOutcome(answer) {
 	if (answer && answer.ok) {
@@ -109,7 +109,7 @@ export function claimOutcome(answer) {
  * @param {{ok: boolean, status: number, error: string}} answer The answer.
  * @return {{role: string, text: string}}
  *
- * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 export function codeOutcome(answer) {
 	if (answer && answer.ok) {
@@ -165,7 +165,7 @@ function keepsTheSecret(answer) {
  * @param {Storage|null} options.storage sessionStorage, or null.
  * @return {Promise<{role: string, text: string, claimed: boolean}|null>}
  *
- * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 export async function redeemKeptClaim({ api, session, t, storage }) {
 	const { secret, notice } = heldInvitation({ session, t, storage }, CLAIM_STORAGE_KEY)

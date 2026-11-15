@@ -15,19 +15,21 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-cms-content-model/tasks.md#task-3
+ * @spec openspec/changes/archive/2026-10-09-portal-cms-content-model/tasks.md#task-3
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Cms;
 
+use OCA\Portaliq\Kernel\Contracts\GlossaryRelationsInterface;
+
 /**
  * Decides whether a glossary term's relations stay on its portal.
  *
- * @spec openspec/changes/portal-cms-content-model/tasks.md#task-3
+ * @spec openspec/changes/archive/2026-10-09-portal-cms-content-model/tasks.md#task-3
  */
-class GlossaryRelations {
+class GlossaryRelations implements GlossaryRelationsInterface {
 
 	/**
 	 * Why a term's relations are refused, or null when each one names a term of the same portal.
@@ -38,7 +40,7 @@ class GlossaryRelations {
 	 *
 	 * @return string[] The relation ids that do not resolve to a term of this portal.
 	 *
-	 * @spec openspec/changes/portal-cms-content-model/tasks.md#task-3
+	 * @spec openspec/changes/archive/2026-10-09-portal-cms-content-model/tasks.md#task-3
 	 */
 	public function foreign(string $portal, array $relations, array $portalTerms): array {
 		$known = $this->knownIds(portal: $portal, portalTerms: $portalTerms);

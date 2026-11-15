@@ -24,13 +24,15 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
+use OCA\Portaliq\Kernel\Contracts\MandatePartiesInterface;
+
 /**
  * Who a session is as a mandate party: the party it manages, the parties it
  * holds a mandate as, and a stored party in its typed form.
  *
  * @spec openspec/changes/site-mandates-the-represented-manage/design.md#d1-who-is-the-represented-party
  */
-class MandateParties {
+class MandateParties implements MandatePartiesInterface {
 	/**
 	 * The party a session may manage, from the session alone: the company of
 	 * an eHerkenning sign-in, the person of any other. An eHerkenning session
@@ -45,7 +47,7 @@ class MandateParties {
 	public function partyOf(array $subject): ?string {
 		if (($subject['provider'] ?? '') === 'eherkenning') {
 			$kvk = (string)($subject['kvk'] ?? '');
-			if (preg_match('/^\d{8}$/', $kvk) === 1) {
+			if (preg_match('/^\d{8}$/D', $kvk) === 1) {
 				return 'kvk:' . $kvk;
 			}
 
@@ -77,7 +79,7 @@ class MandateParties {
 		}
 
 		$kvk = (string)($subject['kvk'] ?? '');
-		if (($subject['provider'] ?? '') === 'eherkenning' && preg_match('/^\d{8}$/', $kvk) === 1) {
+		if (($subject['provider'] ?? '') === 'eherkenning' && preg_match('/^\d{8}$/D', $kvk) === 1) {
 			$out[] = 'kvk:' . $kvk;
 		}
 
@@ -100,7 +102,7 @@ class MandateParties {
 			return $value;
 		}
 
-		if (preg_match('/^\d{8}$/', $value) === 1) {
+		if (preg_match('/^\d{8}$/D', $value) === 1) {
 			return 'kvk:' . $value;
 		}
 

@@ -190,6 +190,33 @@ class ConnectionObservationsTest extends TestCase {
 	}//end testABrokerIsNamedByHostOnly()
 
 	/**
+	 * A broker that answered discovery without the endpoints is told apart
+	 * from one that did not answer.
+	 *
+	 * @return void
+	 */
+	public function testADiscoveryAnswerWithoutEndpointsSaysSo(): void {
+		$this->assertSame(
+			expected: ['error', 'The broker at idp.gemeente.example answered discovery without the endpoints a login needs.'],
+			actual: (new ConnectionObservations())->oidcDiscoveryFailed(issuer: 'https://idp.gemeente.example/realms/portal', answered: true)
+		);
+	}//end testADiscoveryAnswerWithoutEndpointsSaysSo()
+
+	/**
+	 * An installed database that cannot be opened is an error that names the
+	 * command to run, and no file path.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableDatabaseIsAnErrorNamingTheFix(): void {
+		[$status, $message] = (new ConnectionObservations())->geoUnreadable();
+
+		$this->assertSame(expected: 'error', actual: $status);
+		$this->assertStringContainsString(needle: 'occ portaliq:traffic:geo-refresh', haystack: $message);
+		$this->assertStringNotContainsString(needle: '/', haystack: str_replace('occ portaliq:traffic:geo-refresh', '', $message));
+	}//end testAnUnreadableDatabaseIsAnErrorNamingTheFix()
+
+	/**
 	 * Each code exchange answer maps to its status, and an answer about one login reports nothing.
 	 *
 	 * @return void

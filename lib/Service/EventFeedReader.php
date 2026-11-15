@@ -22,25 +22,26 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/events-and-signups/design.md#architecture-overview
+ * @spec openspec/changes/archive/2026-09-28-events-and-signups/design.md#architecture-overview
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\EventFeedReaderInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
- * @spec openspec/changes/events-and-signups/design.md#architecture-overview
+ * @spec openspec/changes/archive/2026-09-28-events-and-signups/design.md#architecture-overview
  *
  * @SuppressWarnings(PHPMD.StaticAccess) -- NewsAudienceMatcher::matches() is
  * deliberately the ONE stateless match predicate every caller shares (see
  * the sibling news-and-newsletter-authoring change), so the two features'
  * audience rules can never fork.
  */
-class EventFeedReader {
+class EventFeedReader implements EventFeedReaderInterface {
 	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
 	use PagedObjectReads;
@@ -77,7 +78,7 @@ class EventFeedReader {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
 	 */
 	public function feedFor(string $subjectRef): array {
 		$audience = $this->audienceReader->resolveAudience(subjectRef: $subjectRef);
@@ -110,8 +111,9 @@ class EventFeedReader {
 	}//end isListedEvent()
 
 	/**
-	 * The event with the guardian's own RSVP and, when it asks for seats,
-	 * the seats taken.
+	 * The event with the guardian's own RSVP, whether the caller may answer
+	 * for herself (with the answer given for her) and, when it asks for
+	 * seats, the seats taken.
 	 *
 	 * @param EventFeedRun         $run The feed.
 	 * @param array<string, mixed> $row The event.
@@ -120,6 +122,13 @@ class EventFeedReader {
 	 */
 	private function withRsvpState(EventFeedRun $run, array $row): array {
 		$row['myRsvp'] = $this->myRsvp(eventId: $this->rowId(row: $row), subjectRef: $run->subjectRef, rsvps: $run->rsvps);
+		$row['mayAnswerSelf'] = EventRsvpEligibility::learnersMayAnswer(event: $row);
+		if ($row['mayAnswerSelf'] === true) {
+			// The site answers for her under her own reference.
+			$row['selfRef']   = $run->subjectRef;
+			$row['ownAnswer'] = $this->ownAnswer(eventId: $this->rowId(row: $row), subjectRef: $run->subjectRef, rsvps: $run->rsvps);
+		}
+
 		if (($row['askSeats'] ?? false) === true) {
 			$row['seatsTaken'] = EventRsvpService::seatsTaken(answers: $this->answersTo(run: $run, eventId: $this->rowId(row: $row)));
 		}
@@ -157,7 +166,7 @@ class EventFeedReader {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/events-and-signups/design.md#api-design
+	 * @spec openspec/changes/archive/2026-09-28-events-and-signups/design.md#api-design
 	 */
 	public function readOwnEvent(string $subjectRef, string $id): ?array {
 		if ($id === '') {
@@ -202,7 +211,7 @@ class EventFeedReader {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
 	 */
 	public function isOwnChild(string $subjectRef, string $childRef): bool {
 		if ($subjectRef === '' || $childRef === '') {
@@ -212,6 +221,33 @@ class EventFeedReader {
 		$audience = $this->audienceReader->resolveAudience(subjectRef: $subjectRef);
 		return in_array($childRef, $audience['childRefs'], true);
 	}//end isOwnChild()
+
+	/**
+	 * The answer given for the calling person herself, by whoever gave it,
+	 * or null.
+	 *
+	 * @param string                           $eventId    The event id.
+	 * @param string                           $subjectRef The calling person.
+	 * @param array<int, array<string, mixed>> $rsvps      The RSVPs given by or for them.
+	 *
+	 * @return array{response: string, seats: int|null}|null
+	 *
+	 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-pupil-may-answer-an-event-for-herself-with-the-number-of-seats
+	 */
+	private function ownAnswer(string $eventId, string $subjectRef, array $rsvps): ?array {
+		foreach ($rsvps as $rsvp) {
+			if ((string)($rsvp['eventRef'] ?? '') === $eventId && (string)($rsvp['childRef'] ?? '') === $subjectRef) {
+				$seats = null;
+				if (is_int($rsvp['seats'] ?? null) === true) {
+					$seats = $rsvp['seats'];
+				}
+
+				return ['response' => (string)($rsvp['response'] ?? ''), 'seats' => $seats];
+			}
+		}
+
+		return null;
+	}//end ownAnswer()
 
 	/**
 	 * The guardian's own RSVP response for one event, or null.

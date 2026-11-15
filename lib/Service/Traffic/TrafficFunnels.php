@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-funnel-steps-must-count-in-order
+ * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-funnel-steps-must-count-in-order
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ namespace OCA\Portaliq\Service\Traffic;
  *
  * Pure: definitions and sessions in, rows out.
  *
- * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-funnel-steps-must-count-in-order
+ * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-funnel-steps-must-count-in-order
  */
 class TrafficFunnels {
 
@@ -61,7 +61,7 @@ class TrafficFunnels {
 	 *
 	 * @return array<int, array<string, mixed>> Rows of `{id, name, steps: [{name, sessions, dropOff}]}`.
 	 *
-	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-funnel-steps-must-count-in-order
+	 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-funnel-steps-must-count-in-order
 	 */
 	public function rows(array $funnels, array $sessions): array {
 		$out = [];
@@ -105,23 +105,36 @@ class TrafficFunnels {
 		$total = count($events);
 		$from = 0;
 		foreach ($steps as $step) {
-			$found = false;
-			for ($i = $from; $i < $total; $i++) {
-				if ($this->match->matches(match: $step['match'], event: $events[$i]) === true) {
-					$found = true;
-					$from = $i + 1;
-					break;
-				}
-			}
-
-			if ($found === false) {
+			$next = $this->nextMatch(step: $step, events: $events, from: $from, total: $total);
+			if ($next === null) {
 				break;
 			}
 
+			$from = $next;
 			$depth++;
 		}
 
 		return $depth;
+	}
+
+	/**
+	 * The position after the first event from `$from` on that matches the step.
+	 *
+	 * @param array<string, mixed> $step   The funnel step.
+	 * @param array                $events The session's events.
+	 * @param int                  $from   The first event to look at.
+	 * @param int                  $total  The number of events.
+	 *
+	 * @return int|null Null when no later event matches.
+	 */
+	private function nextMatch(array $step, array $events, int $from, int $total): int|null {
+		for ($i = $from; $i < $total; $i++) {
+			if ($this->match->matches(match: $step['match'], event: $events[$i]) === true) {
+				return $i + 1;
+			}
+		}
+
+		return null;
 	}
 
 	/**

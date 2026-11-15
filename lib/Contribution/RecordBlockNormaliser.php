@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/contribution-record-page/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-contribution-record-page/tasks.md#T1
  */
 
 declare(strict_types=1);
@@ -35,7 +35,9 @@ namespace OCA\Portaliq\Contribution;
 /**
  * Validates the record page keys and the kpi, calendar and news blocks.
  *
- * @spec openspec/changes/contribution-record-page/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-contribution-record-page/tasks.md#T1
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class RecordBlockNormaliser {
 	/**
@@ -56,7 +58,7 @@ class RecordBlockNormaliser {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-page-may-be-the-record-page-of-a-collection
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-page-may-be-the-record-page-of-a-collection
 	 */
 	public function pageRecord(mixed $record, array $collectionIds): ?array {
 		if (is_array($record) === false || in_array(($record['collection'] ?? null), $collectionIds, true) === false) {
@@ -82,7 +84,7 @@ class RecordBlockNormaliser {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-kpi-block-must-show-figure-cards-from-one-row
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-kpi-block-must-show-figure-cards-from-one-row
 	 */
 	public function kpiBlock(array $block, array $collectionIds): ?array {
 		$collection = ($block['collection'] ?? null);
@@ -90,13 +92,7 @@ class RecordBlockNormaliser {
 			return null;
 		}
 
-		$cards = [];
-		foreach ($this->listOf(value: ($block['cards'] ?? null)) as $card) {
-			$entry = $this->card(card: $card);
-			if ($entry !== null) {
-				$cards[] = $entry;
-			}
-		}
+		$cards = $this->kpiCards(block: $block);
 
 		// A segmented bar (site-school-blocks) may stand without cards.
 		$segmented = (new SchoolBlockKeys())->segmentedKeys(block: $block);
@@ -109,6 +105,27 @@ class RecordBlockNormaliser {
 		$out['cards'] = $cards;
 		return $this->withPickAndCaption(declared: $block, entry: $out) + $segmented;
 	}//end kpiBlock()
+
+	/**
+	 * The kpi block's cards that survive.
+	 *
+	 * @param array<string, mixed> $block The declared block.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-kpi-block-must-show-figure-cards-from-one-row
+	 */
+	private function kpiCards(array $block): array {
+		$cards = [];
+		foreach ($this->listOf(value: ($block['cards'] ?? null)) as $card) {
+			$entry = $this->card(card: $card);
+			if ($entry !== null) {
+				$cards[] = $entry;
+			}
+		}
+
+		return $cards;
+	}//end kpiCards()
 
 	/**
 	 * Copy a kpi block's valid `pick` (`desc` unless it says `asc`) and `caption`.
@@ -145,7 +162,7 @@ class RecordBlockNormaliser {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-calendar-block-must-show-dated-rows-as-a-list-and-a-month
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-calendar-block-must-show-dated-rows-as-a-list-and-a-month
 	 */
 	public function calendarBlock(array $block, array $collectionIds): ?array {
 		$sources = [];
@@ -173,7 +190,7 @@ class RecordBlockNormaliser {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-news-block-must-show-the-subjects-latest-news
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-news-block-must-show-the-subjects-latest-news
 	 */
 	public function newsBlock(array $block): array {
 		$limit = self::NEWS_DEFAULT_LIMIT;
@@ -259,7 +276,7 @@ class RecordBlockNormaliser {
 	 *
 	 * @return string|array{one: string, other: string}|null
 	 *
-	 * @spec openspec/changes/kpi-unit-singular-and-plural/specs/portal-contribution-contract/spec.md#requirement-a-figure-cards-unit-may-name-its-singular-and-plural
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-figure-cards-unit-may-name-its-singular-and-plural
 	 */
 	private function countedWord(mixed $value): string|array|null {
 		if ($this->isName(value: $value) === true) {

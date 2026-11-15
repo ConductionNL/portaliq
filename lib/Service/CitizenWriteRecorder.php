@@ -29,7 +29,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+ * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
 
 declare(strict_types=1);
@@ -39,14 +39,15 @@ namespace OCA\Portaliq\Service;
 use DateTimeImmutable;
 use OCA\Portaliq\Event\PortalClientWithdrawalEvent;
 use OCA\Portaliq\Event\PortalClientWriteEvent;
+use OCA\Portaliq\Kernel\Contracts\CitizenWriteRecorderInterface;
 use OCP\EventDispatcher\IEventDispatcher;
 
 /**
  * Builds the record on the case and announces the write.
  *
- * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+ * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
-class CitizenWriteRecorder {
+class CitizenWriteRecorder implements CitizenWriteRecorderInterface {
 	/**
 	 * Constructor.
 	 *
@@ -66,7 +67,7 @@ class CitizenWriteRecorder {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	public function identity(array $subject): array {
 		return [
@@ -87,7 +88,7 @@ class CitizenWriteRecorder {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 * @spec openspec/changes/write-record-names-the-mandate/specs/portal-visibility-and-the-party-tree/spec.md
 	 */
 	public function mandate(array $action, array $subject): array {
@@ -125,7 +126,7 @@ class CitizenWriteRecorder {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	public function buildRecord(
 		string $act,
@@ -153,7 +154,7 @@ class CitizenWriteRecorder {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	public function append(mixed $existing, array $record): array {
 		$history = [];
@@ -188,7 +189,7 @@ class CitizenWriteRecorder {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	public function announce(
 		string $register,
@@ -234,7 +235,7 @@ class CitizenWriteRecorder {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/withdrawing-your-own-case-from-the-portal/specs/withdrawing-your-own-case/spec.md
+	 * @spec openspec/specs/withdrawing-your-own-case/spec.md
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the parameters are the
 	 * fact being recorded; folding them into an array would lose the types on
@@ -291,7 +292,7 @@ class CitizenWriteRecorder {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	public function now(): string {
 		return (new DateTimeImmutable())->format(DATE_ATOM);

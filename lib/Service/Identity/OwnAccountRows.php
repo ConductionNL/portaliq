@@ -26,7 +26,6 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
-use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalObjectWriter;
 
 /**
@@ -48,11 +47,11 @@ final class OwnAccountRows {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalAccountService $accounts Finds the account by subjectRef.
+	 * @param PortalAccountLookup  $accounts Finds the account by subjectRef.
 	 * @param PortalObjectWriter   $writer   Writes the account row.
 	 */
 	public function __construct(
-		private readonly PortalAccountService $accounts,
+		private readonly PortalAccountLookup $accounts,
 		private readonly PortalObjectWriter $writer,
 	) {
 	}//end __construct()
@@ -71,7 +70,7 @@ final class OwnAccountRows {
 			return null;
 		}
 
-		$account = $this->accounts->findBySubjectRef(subjectRef: $subjectRef);
+		$account = $this->accounts->bySubjectRef(subjectRef: $subjectRef);
 		if ($account === null || ($account['status'] ?? '') === 'removed') {
 			return null;
 		}

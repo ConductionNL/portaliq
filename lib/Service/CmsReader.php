@@ -27,6 +27,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\CmsReaderInterface;
+use OCA\Portaliq\Service\Articles\PageArticle;
 use OCA\Portaliq\Service\Cms\MediaReferences;
 use OCA\Portaliq\Service\Cms\PortalHelp;
 use OCA\Portaliq\Service\Cms\PortalShell;
@@ -52,7 +54,7 @@ use Psr\Log\LoggerInterface;
  *
  * @SuppressWarnings(PHPMD.TooManyPublicMethods) -- one method per kind of content the headless API serves.
  */
-class CmsReader {
+class CmsReader implements CmsReaderInterface {
 
 	/**
 	 * The audience-keyed distributed cache.
@@ -92,6 +94,7 @@ class CmsReader {
 	 * @param MediaReferences       $media        Resolves a page's media:<id> references.
 	 * @param PortalRegionResolver  $regions      Groups a page's widgets by region.
 	 * @param PortalShell           $shell        Projects the portal's header, footer and regions.
+	 * @param PageArticle|null      $articles     Resolves the article a markdown page names.
 	 *
 	 * @return void
 	 */
@@ -103,13 +106,13 @@ class CmsReader {
 		private readonly MediaReferences $media,
 		private readonly PortalRegionResolver $regions=new PortalRegionResolver(),
 		private readonly PortalShell $shell=new PortalShell(),
+		private readonly ?PageArticle $articles=null,
 	) {
 		$this->cache     = new CmsContentCache(cache: $cacheFactory->createDistributed('portaliq_cms'), logger: $logger);
 		$this->rows      = new CmsRows(container: $container, logger: $logger, context: $context);
 		$this->blocks    = new CmsSharedBlocks(rows: $this->rows);
 		$this->faqReader = new CmsFaq(cache: $this->cache, rows: $this->rows, reader: $this);
 	}//end __construct()
-
 
 	/**
 	 * Read the menus of a portal.
@@ -137,7 +140,6 @@ class CmsReader {
 
 		return $menus;
 	}//end menus()
-
 
 	/**
 	 * Read the published pages of a portal, without their bodies.
@@ -176,7 +178,6 @@ class CmsReader {
 		return $pages;
 	}//end pages()
 
-
 	/**
 	 * Read one published page by route.
 	 *
@@ -195,22 +196,70 @@ class CmsReader {
 		// The organisation is part of the key: a placed shared block expands for
 		// the organisation it is read for, and a read without one must not
 		// hand its unexpanded page to a read with one.
+		$selector = $this->pageSelector(route: $route, organisation: $organisation);
+
+		$key = $this->cache->key(portal: $portal, kind: 'page', selector: $selector, locale: $locale, audience: $audience);
+		$hit = $this->cache->lookup(key: $key);
+		if ($hit !== null) {
+			return $this->withArticle(page: $this->cachedPage(hit: $hit), portal: $portal, organisation: $organisation);
+		}
+
+		$page = $this->publishedPage(portal: $portal, route: $route, organisation: $organisation);
+
+		$this->cache->store($key, json_encode($page ?? []));
+
+		return $this->withArticle(page: $page, portal: $portal, organisation: $organisation);
+	}//end page()
+
+	/**
+	 * The page's cache selector: the route, with the organisation when there is one.
+	 *
+	 * @param string $route        The in-site route.
+	 * @param string $organisation The serving portal's organisation, or ''.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t02
+	 */
+	private function pageSelector(string $route, string $organisation): string {
 		$selector = $route;
 		if ($organisation !== '') {
 			$selector = $route . '#org=' . $organisation;
 		}
 
-		$key = $this->cache->key(portal: $portal, kind: 'page', selector: $selector, locale: $locale, audience: $audience);
-		$hit = $this->cache->lookup(key: $key);
-		if ($hit !== null) {
-			$decoded = json_decode($hit, true);
-			if ($decoded === []) {
-				return null;
-			}
+		return $selector;
+	}//end pageSelector()
 
-			return $decoded;
+	/**
+	 * A cached page, or null when the cache holds the empty answer.
+	 *
+	 * @param string $hit The cached JSON.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
+	 */
+	private function cachedPage(string $hit): array|null {
+		$decoded = json_decode($hit, true);
+		if ($decoded === []) {
+			return null;
 		}
 
+		return $decoded;
+	}//end cachedPage()
+
+	/**
+	 * The published page on the route, shaped, or null.
+	 *
+	 * @param string $portal       The portal slug.
+	 * @param string $route        The in-site route.
+	 * @param string $organisation The serving portal's organisation, or ''.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
+	 */
+	private function publishedPage(string $portal, string $route, string $organisation): array|null {
 		// The `status` filter is applied in the QUERY, not after. A draft page
 		// must never reach this process's memory, let alone a response: an
 		// unpublished route and a non-existent route are answered identically,
@@ -224,11 +273,32 @@ class CmsReader {
 			}
 		}
 
-		$this->cache->store($key, json_encode($page ?? []));
+		return $page;
+	}//end publishedPage()
+
+	/**
+	 * The page with the article its markdown body names, read now: only a
+	 * published or archived article of the portal's organisation shows, and
+	 * any other answer is null (marketing-articles-from-pipelinq).
+	 *
+	 * @param array|null $page         The shaped page, or null.
+	 * @param string     $portal       The portal slug.
+	 * @param string     $organisation The serving portal's organisation.
+	 *
+	 * @return array|null The page, with `body.article` when the body names one.
+	 *
+	 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-page-can-show-an-article
+	 */
+	private function withArticle(?array $page, string $portal, string $organisation): ?array {
+		$ref = ($page['body']['articleRef'] ?? '');
+		if ($page === null || is_string($ref) === false || $ref === '' || $this->articles === null) {
+			return $page;
+		}
+
+		$page['body']['article'] = $this->articles->shown(portal: $portal, ref: $ref, organisation: $organisation);
 
 		return $page;
-	}//end page()
-
+	}//end withArticle()
 
 	/**
 	 * Resolve the stored identifier of a page at a route, published or not.
@@ -271,7 +341,6 @@ class CmsReader {
 
 		return null;
 	}//end identify()
-
 
 	/**
 	 * Every row of one schema for a portal, drafts included, for the editor's
@@ -328,7 +397,6 @@ class CmsReader {
 		return $terms;
 	}//end glossary()
 
-
 	/**
 	 * Shape a stored menu row for the API.
 	 *
@@ -352,7 +420,6 @@ class CmsReader {
 			'items'    => $items,
 		];
 	}//end shapeMenu()
-
 
 	/**
 	 * Shape one top-level menu item, with its children ordered.
@@ -381,7 +448,6 @@ class CmsReader {
 		];
 	}//end shapeMenuItem()
 
-
 	/**
 	 * Shape one child of a menu item.
 	 *
@@ -401,7 +467,6 @@ class CmsReader {
 			'icon'  => (string)($child['icon'] ?? ''),
 		];
 	}//end shapeMenuChild()
-
 
 	/**
 	 * A page's search-engine fields, stored flat as `seo*` so the page form
@@ -423,7 +488,6 @@ class CmsReader {
 		];
 	}//end shapeSeo()
 
-
 	/**
 	 * The portal's shell as the public site contract serves it.
 	 *
@@ -436,7 +500,6 @@ class CmsReader {
 	public function shell(array $portal): array {
 		return $this->shell->project(portal: $portal);
 	}//end shell()
-
 
 	/**
 	 * Shape a stored page row for the API.
@@ -459,7 +522,6 @@ class CmsReader {
 			'body'    => $this->shapeBody(row: $row, organisation: $organisation),
 		];
 	}//end shapePage()
-
 
 	/**
 	 * Shape a stored page's body: markdown source, or a widget grid.
@@ -486,9 +548,17 @@ class CmsReader {
 		// Only a media:<id> link target is rewritten to the item's address.
 		$shaped['markdown'] = $this->media->markdown(portal: (string)($row['portal'] ?? ''), markdown: (string)($body['markdown'] ?? ''));
 
+		// A markdown page may name an article (marketing-articles-from-pipelinq).
+		// The reference is cached with the page; the article itself is read
+		// per request in withArticle(), so publishing or archiving it shows
+		// at once without a page write to drop the cache.
+		$articleRef = $body['articleRef'] ?? '';
+		if (is_string($articleRef) === true && trim($articleRef) !== '') {
+			$shaped['articleRef'] = trim($articleRef);
+		}
+
 		return $shaped;
 	}//end shapeBody()
-
 
 	/**
 	 * Shape a grid body: its widgets ordered by row then column, its aside
@@ -523,7 +593,6 @@ class CmsReader {
 			'unknownRegions' => $grouped['unknownRegions'],
 		];
 	}//end shapeGrid()
-
 
 	/**
 	 * A fixed-width aside column, when the page asks for one

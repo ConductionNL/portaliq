@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/guardian-enumeration-from-the-school-app/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-guardian-enumeration-from-the-school-app/tasks.md#T1
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use Throwable;
 /**
  * The active guardian accounts, as subjectRefs.
  *
- * @spec openspec/changes/guardian-enumeration-from-the-school-app/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-guardian-enumeration-from-the-school-app/tasks.md#T1
  *
  * @SuppressWarnings(PHPMD.StaticAccess) -- NewsAudienceMatcher::matches() is
  * the ONE stateless match predicate the news feed and every enumeration
@@ -92,7 +92,7 @@ class GuardianAccountDirectory {
 	 *
 	 * @return array<int, string> Distinct guardian subjectRefs.
 	 *
-	 * @spec openspec/changes/guardian-enumeration-from-the-school-app/tasks.md#T2
+	 * @spec openspec/changes/archive/2026-10-07-guardian-enumeration-from-the-school-app/tasks.md#T2
 	 */
 	public function guardiansMatching(array $target, array $exclude = []): array {
 		// A keyed set: an in_array() per guardian made this quadratic.
@@ -119,7 +119,7 @@ class GuardianAccountDirectory {
 	 *
 	 * @return array<int, string>
 	 *
-	 * @spec openspec/changes/guardian-enumeration-from-the-school-app/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-10-07-guardian-enumeration-from-the-school-app/tasks.md#T1
 	 */
 	public function activeGuardianRefs(): array {
 		$objectService = $this->objectService();
@@ -132,13 +132,7 @@ class GuardianAccountDirectory {
 		$refs = [];
 		for ($page = 0; $page < self::MAX_PAGES; $page++) {
 			$rows = $this->page(objectService: $objectService, offset: ($page * self::PAGE));
-			foreach ($rows as $row) {
-				$ref = $this->activeGuardianRef(row: $row);
-				if ($ref !== null) {
-					$refs[$ref] = true;
-				}
-			}
-
+			$refs = $this->withActiveRefs(refs: $refs, rows: $rows);
 			if (count($rows) < self::PAGE) {
 				break;
 			}
@@ -146,6 +140,27 @@ class GuardianAccountDirectory {
 
 		return array_map('strval', array_keys($refs));
 	}//end activeGuardianRefs()
+
+	/**
+	 * The refs with the page's active guardians added, keyed by subjectRef.
+	 *
+	 * @param array<string, true> $refs The refs so far.
+	 * @param array               $rows The page's rows.
+	 *
+	 * @return array<string, true>
+	 *
+	 * @spec openspec/changes/archive/2026-10-07-guardian-enumeration-from-the-school-app/tasks.md#T1
+	 */
+	private function withActiveRefs(array $refs, array $rows): array {
+		foreach ($rows as $row) {
+			$ref = $this->activeGuardianRef(row: $row);
+			if ($ref !== null) {
+				$refs[$ref] = true;
+			}
+		}
+
+		return $refs;
+	}//end withActiveRefs()
 
 	/**
 	 * One page of active parent accounts.

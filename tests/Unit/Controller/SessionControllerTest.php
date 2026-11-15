@@ -21,6 +21,9 @@ use OCP\IURLGenerator;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Service\Identity\ContactAddressValues;
+use OCA\Portaliq\Service\RequestedPortal;
+use OCA\Portaliq\Service\Signin\SiteReturnAddress;
 
 /**
  * portal-controller-http-test-coverage: the three HTTP-facing behaviours
@@ -869,6 +872,9 @@ class SessionControllerTest extends TestCase {
 		$this->assertStringContainsString(rawurlencode('signed.bearer.jwt'), $redirectUrl);
 		// The FRAGMENT carries the token, never the query string.
 		$this->assertStringNotContainsString('?token=', $redirectUrl);
+		// REQ-SEE-003: the bearer is in the fragment only; no query parameter holds it.
+		parse_str((string)parse_url($redirectUrl, PHP_URL_QUERY), $query);
+		$this->assertArrayNotHasKey('token', $query);
 
 	}//end testOidcCallbackMintsASessionAndRedirectsWithTheBearerInTheFragment()
 
@@ -1338,6 +1344,9 @@ class SessionControllerTest extends TestCase {
 			($urlGenerator ?? $this->createMock(originalClassName: IURLGenerator::class)),
 			($userSession ?? $this->createMock(originalClassName: IUserSession::class)),
 			($portals ?? $this->createMock(originalClassName: PortalResolver::class)),
+			new ContactAddressValues(),
+			new RequestedPortal(),
+			new SiteReturnAddress(),
 			$loginConfig
 		);
 
@@ -1535,6 +1544,9 @@ class SessionControllerTest extends TestCase {
 		$this->assertSame(expected: Http::STATUS_FOUND, actual: $response->getStatus());
 		$this->assertStringStartsWith('https://nc.example/apps/portaliq/site?portal=', $response->getRedirectURL());
 		$this->assertStringEndsWith('#token=t', $response->getRedirectURL());
+		// REQ-SEE-003: the bearer is in the fragment only; no query parameter holds it.
+		parse_str((string)parse_url($response->getRedirectURL(), PHP_URL_QUERY), $query);
+		$this->assertArrayNotHasKey('token', $query);
 
 	}//end testNextcloudSignInWithoutASecretIs503AndWithoutReturnToLandsOnThePortal()
 

@@ -24,13 +24,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/news-and-newsletter-authoring/design.md#audience-source-seam
+ * @spec openspec/changes/archive/2026-10-09-news-and-newsletter-authoring/design.md#audience-source-seam
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\GuardianAudienceFixtureReaderInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -39,7 +40,7 @@ use Throwable;
  * Resolves a guardian's audience (school/group/child + photo consent) from
  * the interim fixture register.
  *
- * @spec openspec/changes/news-and-newsletter-authoring/design.md#audience-source-seam
+ * @spec openspec/changes/archive/2026-10-09-news-and-newsletter-authoring/design.md#audience-source-seam
  *
  * @SuppressWarnings(PHPMD.StaticAccess) -- NewsAudienceMatcher::matches() is
  * deliberately the ONE stateless match predicate every caller (this class,
@@ -50,7 +51,7 @@ use Throwable;
  * replaced as a whole when the real audience source lands, so splitting it
  * now would only spread the seam.
  */
-class GuardianAudienceFixtureReader {
+class GuardianAudienceFixtureReader implements GuardianAudienceFixtureReaderInterface {
 	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
 
@@ -96,7 +97,7 @@ class GuardianAudienceFixtureReader {
 	 *
 	 * @return array{schoolRef: string, groupRefs: array<int, string>, childRefs: array<int, string>, photoConsent: array<string, array<string, bool>>}
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/design.md#audience-source-seam
+	 * @spec openspec/changes/archive/2026-10-09-news-and-newsletter-authoring/design.md#audience-source-seam
 	 */
 	public function resolveAudience(string $subjectRef): array {
 		$empty = ['schoolRef' => '', 'groupRefs' => [], 'childRefs' => [], 'photoConsent' => []];
@@ -105,11 +106,44 @@ class GuardianAudienceFixtureReader {
 			return $empty;
 		}
 
-		$objectService = $this->objectService();
-		if ($objectService === null) {
+		$rows = $this->fixtureRows(subjectRef: $subjectRef);
+		if ($rows === null) {
 			return $empty;
 		}
 
+		return $this->audienceFromRows(rows: $rows, subjectRef: $subjectRef, empty: $empty);
+	}//end resolveAudience()
+
+	/**
+	 * What the fixture holds for the guardian, or null when OpenRegister is
+	 * unavailable or the read failed.
+	 *
+	 * @param string $subjectRef The guardian's own subjectRef.
+	 *
+	 * @return mixed
+	 *
+	 * @spec openspec/changes/archive/2026-10-09-news-and-newsletter-authoring/design.md#audience-source-seam
+	 */
+	private function fixtureRows(string $subjectRef): mixed {
+		$objectService = $this->objectService();
+		if ($objectService === null) {
+			return null;
+		}
+
+		return $this->readFixture(objectService: $objectService, subjectRef: $subjectRef);
+	}//end fixtureRows()
+
+	/**
+	 * Read the guardian's fixture row.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $subjectRef    The guardian's own subjectRef.
+	 *
+	 * @return mixed The rows, or null when the read failed.
+	 *
+	 * @spec openspec/changes/archive/2026-10-09-news-and-newsletter-authoring/design.md#audience-source-seam
+	 */
+	private function readFixture(object $objectService, string $subjectRef): mixed {
 		try {
 			$objectService->setRegister(register: self::REGISTER);
 			$objectService->setSchema(schema: self::SCHEMA);
@@ -120,9 +154,25 @@ class GuardianAudienceFixtureReader {
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: guardian audience fixture read failed', ['reason' => $e->getMessage()]);
-			return $empty;
+			return null;
 		}
 
+		return $rows;
+	}//end readFixture()
+
+	/**
+	 * The audience the fixture row grants, or the school app's when the
+	 * fixture has none.
+	 *
+	 * @param mixed                $rows       What the fixture holds for the guardian.
+	 * @param string               $subjectRef The guardian's own subjectRef.
+	 * @param array<string, mixed> $empty      The empty audience.
+	 *
+	 * @return array{schoolRef: string, groupRefs: array<int, string>, childRefs: array<int, string>, photoConsent: array<string, array<string, bool>>}
+	 *
+	 * @spec openspec/changes/archive/2026-10-09-news-and-newsletter-authoring/design.md#audience-source-seam
+	 */
+	private function audienceFromRows(mixed $rows, string $subjectRef, array $empty): array {
 		if (is_array($rows) === false || count($rows) === 0) {
 			// No fixture row: ask the school app that serves the guardian
 			// (news-audience-from-the-school-app). A fixture row still wins,
@@ -136,7 +186,7 @@ class GuardianAudienceFixtureReader {
 		}
 
 		return $this->audienceOf(row: $row) + ['photoConsent' => $this->nestedBoolMap(value: $row['photoConsent'] ?? [])];
-	}//end resolveAudience()
+	}//end audienceFromRows()
 
 	/**
 	 * Whether a guardian's own audience includes a group.
@@ -146,7 +196,7 @@ class GuardianAudienceFixtureReader {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/design.md#participation-model
+	 * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#participation-model
 	 */
 	public function guardianReachesGroup(string $subjectRef, string $groupRef): bool {
 		if ($groupRef === '') {
@@ -167,7 +217,7 @@ class GuardianAudienceFixtureReader {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-photos-in-a-news-item-are-gated-by-the-target-childs-photo-consent
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-photos-in-a-news-item-are-gated-by-the-target-childs-photo-consent
 	 */
 	public function photoConsentGranted(string $subjectRef, string $childRef, string $purpose = self::PURPOSE_NEWS): bool {
 		$audience = $this->resolveAudience(subjectRef: $subjectRef);
@@ -190,7 +240,7 @@ class GuardianAudienceFixtureReader {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-photos-in-a-news-item-are-gated-by-the-target-childs-photo-consent
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-photos-in-a-news-item-are-gated-by-the-target-childs-photo-consent
 	 */
 	public function childPhotoConsentGranted(string $childRef, string $purpose = self::PURPOSE_NEWS): bool {
 		if ($childRef === '') {
@@ -270,8 +320,8 @@ class GuardianAudienceFixtureReader {
 	 *
 	 * @return array<int, string> Distinct guardian subjectRefs.
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
-	 * @spec openspec/changes/guardian-enumeration-from-the-school-app/tasks.md#T2
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
+	 * @spec openspec/changes/archive/2026-10-07-guardian-enumeration-from-the-school-app/tasks.md#T2
 	 */
 	public function guardiansMatching(array $target): array {
 		$fixture = $this->fixtureGuardiansMatching(target: $target);
@@ -300,14 +350,40 @@ class GuardianAudienceFixtureReader {
 			return ['matched' => [], 'covered' => []];
 		}
 
-		$matched = [];
-		$covered = [];
+		return $this->matchRows(rows: $this->normalisedRows(rows: $rows), target: $target);
+	}//end fixtureGuardiansMatching()
+
+	/**
+	 * The rows that normalise; the rest are left out.
+	 *
+	 * @param array $rows The raw rows.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function normalisedRows(array $rows): array {
+		$out = [];
 		foreach ($rows as $row) {
 			$normalised = $this->normalise(row: $row);
-			if ($normalised === null) {
-				continue;
+			if ($normalised !== null) {
+				$out[] = $normalised;
 			}
+		}
 
+		return $out;
+	}//end normalisedRows()
+
+	/**
+	 * The guardians of the rows matching a target, and every guardian the rows name.
+	 *
+	 * @param array<int, array<string, mixed>>                                                         $rows   The normalised rows.
+	 * @param array{schoolRef?: string, groupRefs?: array<int, string>, childRefs?: array<int, string>} $target The target.
+	 *
+	 * @return array{matched: array<int, string>, covered: array<int, string>}
+	 */
+	private function matchRows(array $rows, array $target): array {
+		$matched = [];
+		$covered = [];
+		foreach ($rows as $normalised) {
 			$guardianRef = (string)($normalised['guardianRef'] ?? '');
 			$covered[]   = $guardianRef;
 			if (NewsAudienceMatcher::matches(target: $target, audience: $this->audienceOf(row: $normalised)) === true
@@ -318,7 +394,7 @@ class GuardianAudienceFixtureReader {
 		}
 
 		return ['matched' => $matched, 'covered' => $covered];
-	}//end fixtureGuardiansMatching()
+	}//end matchRows()
 
 	/**
 	 * The audience a fixture row grants: school, groups and children.
@@ -368,18 +444,29 @@ class GuardianAudienceFixtureReader {
 				continue;
 			}
 
-			$inner = [];
-			if (is_array($purposes) === true) {
-				foreach ($purposes as $purpose => $granted) {
-					if (is_string($purpose) === true) {
-						$inner[$purpose] = ($granted === true);
-					}
-				}
-			}
-
-			$map[$childRef] = $inner;
+			$map[$childRef] = $this->boolMap(purposes: $purposes);
 		}
 
 		return $map;
 	}//end nestedBoolMap()
+
+	/**
+	 * One child's purposes as a map of string => bool; a malformed value is an empty map.
+	 *
+	 * @param mixed $purposes The raw purposes.
+	 *
+	 * @return array<string, bool>
+	 */
+	private function boolMap(mixed $purposes): array {
+		$inner = [];
+		if (is_array($purposes) === true) {
+			foreach ($purposes as $purpose => $granted) {
+				if (is_string($purpose) === true) {
+					$inner[$purpose] = ($granted === true);
+				}
+			}
+		}
+
+		return $inner;
+	}//end boolMap()
 }//end class

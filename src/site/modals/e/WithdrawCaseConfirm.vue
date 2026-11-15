@@ -91,7 +91,7 @@ export default {
 	 *
 	 * @return {void}
 	 *
-	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-citizen-must-be-able-to-withdraw-a-request-req-srp-043
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-citizen-must-be-able-to-withdraw-a-request-req-srp-043
 	 */
 	mounted() {
 		openDialog(this.$refs.dialog, this.$refs.heading)
@@ -107,7 +107,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-citizen-must-be-able-to-withdraw-a-request-req-srp-043
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-citizen-must-be-able-to-withdraw-a-request-req-srp-043
 		 */
 		submit() {
 			this.$emit('confirm', this.reason.trim())

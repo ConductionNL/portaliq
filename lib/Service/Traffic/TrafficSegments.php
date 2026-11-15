@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ namespace OCA\Portaliq\Service\Traffic;
  * that goal). Each evaluates to a string so the four operators apply to
  * everything alike.
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
  *
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- the class is the
  * normaliser AND the evaluator of one small grammar (four operators,
@@ -119,7 +119,7 @@ class TrafficSegments {
 	 * @return array<int, array{id: string, name: string,
 	 *                          conditions: array<int, array{dimension: string, operator: string, value: string}>}> The segments.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
 	 */
 	public function definitions(mixed $value, array $goals = []): array {
 		if (is_array($value) === false) {
@@ -205,7 +205,7 @@ class TrafficSegments {
 	 *
 	 * @return bool True when known.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
 	 */
 	public function knowsDimension(string $dimension, array $goalIds = []): bool {
 		if (in_array($dimension, self::FIELD_DIMENSIONS, true) === true || in_array($dimension, self::DERIVED_DIMENSIONS, true) === true) {
@@ -228,7 +228,7 @@ class TrafficSegments {
 	 *
 	 * @return array<int, array<string, mixed>> The matching sessions, in order.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
 	 */
 	public function filter(array $segment, array $sessions, array $goals = []): array {
 		return array_values(array_filter(
@@ -246,7 +246,7 @@ class TrafficSegments {
 	 *
 	 * @return bool True when all conditions hold.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
 	 */
 	public function matches(array $segment, array $session, array $goals = []): bool {
 		foreach (($segment['conditions'] ?? []) as $condition) {

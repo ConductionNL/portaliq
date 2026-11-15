@@ -182,7 +182,7 @@ function addedName(result, file) {
  * The server checks ownership and the opt-in on every upload and download;
  * these controls are a convenience, not the authority.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-detail-card-must-show-one-record-req-srp-017
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-detail-card-must-show-one-record-req-srp-017
  */
 export default {
 	name: 'DetailCard',
@@ -255,7 +255,7 @@ export default {
 		 * The fields that have a value, formatted for reading.
 		 *
 		 * @return {Array<object>}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 		 */
 		fields() {
 			const row = this.detailRow || {}
@@ -279,7 +279,7 @@ export default {
 		 * The fields as facts for the description list.
 		 *
 		 * @return {Array<{key: string, label: string, value: string}>}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 		 */
 		facts() {
 			return this.fields.map((field) => ({

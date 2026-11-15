@@ -13,12 +13,14 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic;
+
+use OCA\Portaliq\Kernel\Contracts\TrafficReportNumbersInterface;
 
 /**
  * Folds a period's daily records into the numbers a report or an alert
@@ -26,9 +28,9 @@ namespace OCA\Portaliq\Service\Traffic;
  * `trafficSummary.js` does, so a figure in the mail is the figure on the
  * page.
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
  */
-class TrafficReportNumbers {
+class TrafficReportNumbers implements TrafficReportNumbersInterface {
 
 	/**
 	 * How many rows a ranked list keeps.
@@ -44,7 +46,7 @@ class TrafficReportNumbers {
 	 *                              pages, sources, devices, browsers, languages, regions, goals,
 	 *                              conversionRate, funnels, forms, notFound, errors.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
 	 */
 	public function fold(array $records): array {
 		$sum = new TrafficRollupSum();
@@ -141,7 +143,7 @@ class TrafficReportNumbers {
 	 *
 	 * @return float The value.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-an-alert-must-fire-once-per-period
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-alert-must-fire-once-per-period
 	 */
 	public function metric(string $metric, array $records): float {
 		$total = 0.0;
@@ -216,7 +218,7 @@ class TrafficReportNumbers {
 	 *
 	 * @return float|null The change in percent, one decimal.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-an-alert-must-fire-once-per-period
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-alert-must-fire-once-per-period
 	 */
 	public function change(float $current, float $previous): ?float {
 		if ($previous <= 0.0) {

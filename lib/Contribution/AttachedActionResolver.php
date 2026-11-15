@@ -30,20 +30,24 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-journey-entry-points/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
- * @spec openspec/changes/attach-to-own-collection/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-be-able-to-name-one-collection-and-its-own-app-req-ato-001
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-be-able-to-name-one-collection-and-its-own-app-req-ato-001
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\AttachedActionResolverInterface;
+
 /**
  * Resolves `attachTo` declarations into `attachedActions` on target collections.
  *
- * @spec openspec/changes/woo-journey-entry-points/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
-class AttachedActionResolver {
+class AttachedActionResolver implements AttachedActionResolverInterface {
 	/**
 	 * The manifest key on the collection.
 	 */
@@ -82,7 +86,7 @@ class AttachedActionResolver {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/woo-journey-entry-points/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
 	 */
 	public function resolve(array $contributions): array {
 		$attaching = $this->attaching(contributions: $contributions);
@@ -92,30 +96,57 @@ class AttachedActionResolver {
 				continue;
 			}
 
-			$app = (string)($contribution['app'] ?? '');
-			foreach ((array)($contribution['collections'] ?? []) as $position => $collection) {
-				if (is_array($collection) === false) {
-					continue;
-				}
-
-				unset($collection[self::KEY]);
-				$listed = [];
-				foreach ($attaching as $entry) {
-					if ($this->targets(entry: $entry, app: $app, collection: $collection) === true) {
-						$listed[] = $entry['listed'];
-					}
-				}
-
-				if ($listed !== []) {
-					$collection[self::KEY] = $listed;
-				}
-
-				$contributions[$index]['collections'][$position] = $collection;
-			}
-		}//end foreach
+			$contributions[$index] = $this->withAttached(contribution: $contribution, attaching: $attaching);
+		}
 
 		return $contributions;
 	}//end resolve()
+
+	/**
+	 * The contribution with each of its collections listing the actions that attach to it.
+	 *
+	 * @param array<string, mixed>             $contribution The contribution.
+	 * @param array<int, array<string, mixed>> $attaching    The attaching actions.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withAttached(array $contribution, array $attaching): array {
+		$app = (string)($contribution['app'] ?? '');
+		foreach ((array)($contribution['collections'] ?? []) as $position => $collection) {
+			if (is_array($collection) === false) {
+				continue;
+			}
+
+			$contribution['collections'][$position] = $this->listedOn(collection: $collection, app: $app, attaching: $attaching);
+		}
+
+		return $contribution;
+	}//end withAttached()
+
+	/**
+	 * The collection with the list of actions that attach to it, and no list when none does.
+	 *
+	 * @param array<string, mixed>             $collection The collection.
+	 * @param string                           $app        The app that owns the collection.
+	 * @param array<int, array<string, mixed>> $attaching  The attaching actions.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function listedOn(array $collection, string $app, array $attaching): array {
+		unset($collection[self::KEY]);
+		$listed = [];
+		foreach ($attaching as $entry) {
+			if ($this->targets(entry: $entry, app: $app, collection: $collection) === true) {
+				$listed[] = $entry['listed'];
+			}
+		}
+
+		if ($listed !== []) {
+			$collection[self::KEY] = $listed;
+		}
+
+		return $collection;
+	}//end listedOn()
 
 	/**
 	 * The attaching action a forward names, when the collection lists it and
@@ -129,8 +160,8 @@ class AttachedActionResolver {
 	 *
 	 * @return array<string, mixed>|null The action as its own app declares it.
 	 *
-	 * @spec openspec/changes/woo-journey-entry-points/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
-	 * @spec openspec/changes/attach-to-own-collection/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-be-able-to-name-one-collection-and-its-own-app-req-ato-001
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-be-able-to-name-one-collection-and-its-own-app-req-ato-001
 	 */
 	public function attachedAction(array $contributions, string $collectionApp, array $collection, string $actionApp, string $actionId): ?array {
 		if ($this->isListed(collection: $collection, actionApp: $actionApp, actionId: $actionId) === false) {

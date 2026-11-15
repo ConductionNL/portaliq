@@ -136,14 +136,13 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
 		 */
 		withDesignSystemClasses(html) {
-			const template = document.createElement('template')
-			template.innerHTML = html
+			const body = new DOMParser().parseFromString(html, 'text/html').body
 
 			for (const [tag, className] of Object.entries(DESIGN_SYSTEM_CLASSES)) {
-				addMissingClass(template.content.querySelectorAll(tag.toLowerCase()), className)
+				addMissingClass(body.querySelectorAll(tag.toLowerCase()), className)
 			}
 
-			return template.innerHTML
+			return body.innerHTML
 		},
 	},
 }

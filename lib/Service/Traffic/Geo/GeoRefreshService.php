@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
+ * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
  */
 
 declare(strict_types=1);
@@ -22,6 +22,7 @@ namespace OCA\Portaliq\Service\Traffic\Geo;
 
 use MaxMind\Db\Reader;
 use OCA\Portaliq\BackgroundJob\TrafficGeoFirstDownloadJob;
+use OCA\Portaliq\Kernel\Contracts\GeoRefreshServiceInterface;
 use OCA\Portaliq\Service\Connection\ConnectionReporter;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
@@ -44,13 +45,13 @@ use Throwable;
  * download the resolver asks for when a portal wants a region and there
  * is no file yet.
  *
- * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
+ * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the thirteenth class is
  * the optional ConnectionReporter (adopt-connection-registry). Reporting here
  * covers all three callers at once, where three caller-side reports could drift.
  */
-class GeoRefreshService {
+class GeoRefreshService implements GeoRefreshServiceInterface {
 
 	/**
 	 * The outcome when the provider is none.
@@ -96,7 +97,7 @@ class GeoRefreshService {
 	 *
 	 * @return GeoDatabaseProvider|null The provider.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
 	 */
 	public function provider(): ?GeoDatabaseProvider {
 		return match ($this->settings->provider()) {
@@ -114,7 +115,7 @@ class GeoRefreshService {
 	 *
 	 * @return array{status: string, provider: string, message: string} `disabled`, `refreshed` or `failed`, and why.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
 	 * @spec openspec/changes/adopt-connection-registry/specs/app-connections/spec.md#requirement-req-portaliq-conn-002-a-geography-save-refreshes-and-a-refresh-or-a-failed-open-reports
 	 */
 	public function refresh(): array {
@@ -129,7 +130,7 @@ class GeoRefreshService {
 	 *
 	 * @return array{status: string, provider: string, message: string} `disabled`, `refreshed` or `failed`, and why.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
 	 */
 	private function refreshDatabase(): array {
 		$provider = $this->provider();
@@ -217,7 +218,7 @@ class GeoRefreshService {
 	 *
 	 * @return array{provider: string, present: bool, path: string|null, metadata: array<string, mixed>} The status.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
 	 */
 	public function status(): array {
 		$path = $this->store->databasePath();
@@ -237,7 +238,7 @@ class GeoRefreshService {
 	 *
 	 * @return bool True when a job was queued now, false when one already waits or the provider is none.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
 	 */
 	public function queueFirstDownload(): bool {
 		if ($this->provider() === null || $this->queueOnce() === false) {

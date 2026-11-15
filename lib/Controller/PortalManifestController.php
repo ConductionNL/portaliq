@@ -25,16 +25,15 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/parent-pwa-installability/specs/parent-pwa-installability/spec.md
+ * @spec openspec/specs/parent-pwa-installability/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
-use OCA\Portaliq\Service\RequestedPortal;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalRuntimeConfigResolverInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -44,11 +43,12 @@ use OCP\AppFramework\Http\DataDisplayResponse;
 use OCP\AppFramework\Http\EmptyContentSecurityPolicy;
 use OCP\IRequest;
 use OCP\IURLGenerator;
+use OCA\Portaliq\Kernel\Contracts\RequestedPortalInterface;
 
 /**
  * Serves the manifest and the service worker.
  *
- * @spec openspec/changes/parent-pwa-installability/specs/parent-pwa-installability/spec.md
+ * @spec openspec/specs/parent-pwa-installability/spec.md
  */
 class PortalManifestController extends Controller {
 
@@ -56,7 +56,7 @@ class PortalManifestController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalRuntimeConfigResolver $configResolver Resolves the serving
+	 * @param PortalRuntimeConfigResolverInterface $configResolver Resolves the serving
 	 *                                                    portal, the SAME way
 	 *                                                    PortalPageController
 	 *                                                    does, so the manifest
@@ -64,13 +64,15 @@ class PortalManifestController extends Controller {
 	 *                                                    actually being
 	 *                                                    installed.
 	 * @param IURLGenerator $urlGenerator Builds the icon and start_url links.
+	 * @param RequestedPortalInterface $requestedPortal The RequestedPortal helper.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalRuntimeConfigResolver $configResolver,
+		private readonly PortalRuntimeConfigResolverInterface $configResolver,
 		private readonly IURLGenerator $urlGenerator,
+		private readonly RequestedPortalInterface $requestedPortal,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -78,7 +80,7 @@ class PortalManifestController extends Controller {
 	 *
 	 * @return DataDisplayResponse
 	 *
-	 * @spec openspec/changes/parent-pwa-installability/specs/parent-pwa-installability/spec.md#requirement-the-portal-serves-a-web-app-manifest-naming-the-resolved-portal
+	 * @spec openspec/specs/parent-pwa-installability/spec.md#requirement-the-portal-serves-a-web-app-manifest-naming-the-resolved-portal
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -86,7 +88,7 @@ class PortalManifestController extends Controller {
 	#[AnonRateLimit(limit: 120, period: 60)]
 	public function manifest(): DataDisplayResponse {
 		$orgValue = (string)$this->request->getParam('org', '');
-		$portalSlug = (string)(new RequestedPortal())->slug(request: $this->request);
+		$portalSlug = (string)$this->requestedPortal->slug(request: $this->request);
 
 		$portal = $this->configResolver->resolvePortal(request: $this->request, portalSlug: $portalSlug, orgValue: $orgValue);
 		$runtimeConfig = $this->configResolver->runtimeConfigFor(portal: $portal, orgValue: $orgValue, locale: 'nl');
@@ -140,7 +142,7 @@ class PortalManifestController extends Controller {
 			'theme_color' => '#ffffff',
 			'icons' => [
 				[
-					'src' => $this->urlGenerator->imagePath(appName: Application::APP_ID, file: 'app.svg'),
+					'src' => $this->urlGenerator->imagePath(appName: AppIdentity::APP_ID, file: 'app.svg'),
 					'sizes' => 'any',
 					'type' => 'image/svg+xml',
 				],
@@ -153,7 +155,7 @@ class PortalManifestController extends Controller {
 	 *
 	 * @return DataDisplayResponse
 	 *
-	 * @spec openspec/changes/parent-pwa-installability/specs/parent-pwa-installability/spec.md#requirement-the-service-worker-caches-the-app-shell-and-never-the-api
+	 * @spec openspec/specs/parent-pwa-installability/spec.md#requirement-the-service-worker-caches-the-app-shell-and-never-the-api
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -207,7 +209,7 @@ class PortalManifestController extends Controller {
 	 *
 	 * @return string The scope, ending in a slash.
 	 *
-	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-service-worker-must-cache-the-site-shell-req-srp-045
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-service-worker-must-cache-the-site-shell-req-srp-045
 	 */
 	private function serviceWorkerScope(): string {
 		$suffix = 'portal/sw.js';
@@ -216,13 +218,13 @@ class PortalManifestController extends Controller {
 			// Not reached through its own route (a test, an internal call):
 			// the route the URL generator builds is the same address.
 			$path = (string)parse_url(
-				$this->urlGenerator->linkToRoute(Application::APP_ID . '.portalManifest.serviceWorker'),
+				$this->urlGenerator->linkToRoute(AppIdentity::APP_ID . '.portalManifest.serviceWorker'),
 				PHP_URL_PATH
 			);
 		}
 
 		if (str_ends_with($path, '/' . $suffix) === false) {
-			return '/apps/' . Application::APP_ID . '/';
+			return '/apps/' . AppIdentity::APP_ID . '/';
 		}
 
 		return substr($path, 0, (strlen($path) - strlen($suffix)));
@@ -244,7 +246,7 @@ class PortalManifestController extends Controller {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-service-worker-must-cache-the-site-shell-req-srp-045
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-service-worker-must-cache-the-site-shell-req-srp-045
 	 */
 	private function serviceWorkerSourcePath(string $appRoot): string {
 		$source = $appRoot . '/src/shared/serviceWorker.js';
@@ -290,7 +292,7 @@ class PortalManifestController extends Controller {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-site-must-be-installable-req-srp-044
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-site-must-be-installable-req-srp-044
 	 */
 	private function startUrl(string $orgValue, string $portalSlug): string {
 		$params = [];

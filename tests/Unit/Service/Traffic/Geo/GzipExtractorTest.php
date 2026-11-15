@@ -146,4 +146,93 @@ class GzipExtractorTest extends TestCase {
 		$this->expectExceptionMessage('.mmdb');
 		(new GzipExtractor())->extractTarMember(source: $source, suffix: '.mmdb', target: $this->temp());
 	}//end testATarballWithoutTheMemberIsRefused()
+
+	/**
+	 * A target in a folder that does not exist is refused, for both shapes.
+	 *
+	 * @return void
+	 */
+	public function testATargetThatCannotBeWrittenIsRefused(): void {
+		$source = $this->temp();
+		file_put_contents($source, (string)gzencode('payload'));
+		$tarball = $this->temp();
+		file_put_contents($tarball, (string)gzencode(self::tarMember('db.mmdb', 'database') . str_repeat("\0", 1024)));
+		$nowhere = sys_get_temp_dir() . '/no-such-folder-' . bin2hex(random_bytes(4)) . '/out';
+
+		foreach ([fn () => (new GzipExtractor())->extract(source: $source, target: $nowhere), fn () => (new GzipExtractor())->extractTarMember(source: $tarball, suffix: '.mmdb', target: $nowhere)] as $call) {
+			try {
+				$call();
+				$this->fail('an unwritable target was accepted');
+			} catch (RuntimeException $e) {
+				$this->assertSame('The target file cannot be written.', $e->getMessage());
+			}
+		}
+
+		$this->assertFileDoesNotExist($nowhere);
+	}//end testATargetThatCannotBeWrittenIsRefused()
+
+
+	/**
+	 * A gzip that decompresses to nothing is not a database.
+	 *
+	 * @return void
+	 */
+	public function testAnEmptyDownloadIsRefused(): void {
+		$source = $this->temp();
+		file_put_contents($source, (string)gzencode(''));
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('The download decompressed to nothing.');
+		(new GzipExtractor())->extract(source: $source, target: $this->temp());
+	}//end testAnEmptyDownloadIsRefused()
+
+
+	/**
+	 * A member whose path sits in the ustar prefix field is found by its full name.
+	 *
+	 * @return void
+	 */
+	public function testAMemberNamedThroughTheUstarPrefixIsFound(): void {
+		$member = substr_replace(self::tarMember('City.mmdb', 'database bytes'), str_pad('GeoLite2-City_20260901', 155, "\0"), 345, 155);
+		$source = $this->temp();
+		file_put_contents($source, (string)gzencode($member . str_repeat("\0", 1024)));
+		$target = $this->temp();
+
+		$name = (new GzipExtractor())->extractTarMember(source: $source, suffix: '.mmdb', target: $target);
+
+		$this->assertSame('GeoLite2-City_20260901/City.mmdb', $name);
+		$this->assertSame('database bytes', file_get_contents($target));
+	}//end testAMemberNamedThroughTheUstarPrefixIsFound()
+
+
+	/**
+	 * An archive that ends inside the member it extracts is refused.
+	 *
+	 * @return void
+	 */
+	public function testAnArchiveEndingInsideTheMemberIsRefused(): void {
+		$full = self::tarMember('db.mmdb', str_repeat('x', 2000));
+		$source = $this->temp();
+		file_put_contents($source, (string)gzencode(substr($full, 0, 512 + 100)));
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('The archive ended inside a member.');
+		(new GzipExtractor())->extractTarMember(source: $source, suffix: '.mmdb', target: $this->temp());
+	}//end testAnArchiveEndingInsideTheMemberIsRefused()
+
+
+	/**
+	 * An archive that ends inside a member it skips has no such member.
+	 *
+	 * @return void
+	 */
+	public function testAnArchiveEndingInsideASkippedMemberHasNoMember(): void {
+		$full = self::tarMember('LICENSE.txt', str_repeat('l', 2000));
+		$source = $this->temp();
+		file_put_contents($source, (string)gzencode(substr($full, 0, 512 + 100)));
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('The archive carries no .mmdb member.');
+		(new GzipExtractor())->extractTarMember(source: $source, suffix: '.mmdb', target: $this->temp());
+	}//end testAnArchiveEndingInsideASkippedMemberHasNoMember()
 }//end class

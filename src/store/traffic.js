@@ -160,7 +160,7 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 * @param {object} state The state.
 		 * @return {Array<string>} YYYY-MM-DD.
 		 *
-		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
+		 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
 		 */
 		dates: (state) => {
 			if (state.rangePreset === 'custom') {
@@ -174,7 +174,7 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 *
 		 * @return {Array<{id: string, name: string}>} The segments.
 		 *
-		 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+		 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
 		 */
 		segments() {
 			return segmentsOf(this.portal)
@@ -187,7 +187,7 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 *
 		 * @return {Array<object>} The records.
 		 *
-		 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+		 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
 		 */
 		segmentRecords() {
 			return this.records.filter(
@@ -200,7 +200,7 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 *
 		 * @return {object} See `summarise`.
 		 *
-		 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+		 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 		 */
 		summary() {
 			return summarise(this.segmentRecords, this.dates)
@@ -212,7 +212,7 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 *
 		 * @return {boolean} True when on.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
 		 */
 		recordingOn() {
 			const portal = this.portal
@@ -230,7 +230,7 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 *
 		 * @return {number} The days.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
 		 */
 		retentionDays() {
 			const portal = this.portal
@@ -246,7 +246,7 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 *
 		 * @return {string} The URL, or '' when there is nothing to export.
 		 *
-		 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
+		 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
 		 */
 		exportUrl() {
 			const dates = this.dates
@@ -274,7 +274,7 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 *
 		 * @return {object} The shared object store.
 		 *
-		 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+		 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 		 */
 		objects() {
 			const store = useObjectStore()
@@ -292,7 +292,7 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+		 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 		 */
 		async load() {
 			this.loadingPortals = true
@@ -321,7 +321,7 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 * @param {string} slug The portal slug.
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+		 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 		 */
 		async select(slug) {
 			if (slug === this.portalSlug) {
@@ -339,7 +339,7 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 * @param {string} id The segment id.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+		 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
 		 */
 		setSegment(id) {
 			const value = String(id || '')
@@ -358,7 +358,7 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 * @param {string} preset One of RANGE_PRESETS or 'custom'.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
+		 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
 		 */
 		setRange(preset) {
 			const value = String(preset)
@@ -375,7 +375,7 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 * @param {string} to   The last day.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
+		 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-traffic-page-must-let-the-reader-choose-the-range
 		 */
 		setCustomRange(from, to) {
 			this.customFrom = String(from || '')
@@ -394,7 +394,7 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+		 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 		 */
 		async loadRecords() {
 			this.records = []
@@ -430,7 +430,7 @@ export const useTrafficReportStore = defineStore('portaliq-traffic-report', {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
 		 */
 		async loadRecordings() {
 			this.recordings = []

@@ -19,15 +19,15 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Command;
 
-use OCA\Portaliq\Service\Traffic\TrafficLogImporter;
-use OCA\Portaliq\Service\Traffic\TrafficLogParser;
+use OCA\Portaliq\Kernel\Contracts\TrafficLogImporterInterface;
+use OCA\Portaliq\Kernel\Contracts\TrafficLogParserInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -37,19 +37,19 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Import an access log.
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
  */
 class TrafficImportLog extends Command {
 
 	/**
 	 * Constructor.
 	 *
-	 * @param TrafficLogImporter $importer Does the work.
+	 * @param TrafficLogImporterInterface $importer Does the work.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly TrafficLogImporter $importer,
+		private readonly TrafficLogImporterInterface $importer,
 	) {
 		parent::__construct();
 	}//end __construct()
@@ -60,7 +60,7 @@ class TrafficImportLog extends Command {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
 	 */
 	protected function configure(): void {
 		$this->setName(name: 'portaliq:traffic:import-log');
@@ -90,11 +90,11 @@ class TrafficImportLog extends Command {
 	 *
 	 * @return int 0 when imported, 1 when the portal, the file or the format is wrong.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
 	 */
 	protected function execute(InputInterface $input, OutputInterface $output): int {
 		$format = (string)$input->getOption('format');
-		if (in_array($format, TrafficLogParser::FORMATS, true) === false) {
+		if (in_array($format, TrafficLogParserInterface::FORMATS, true) === false) {
 			$output->writeln('<error>Unknown format "' . $format . '"; use combined or json.</error>');
 
 			return 1;

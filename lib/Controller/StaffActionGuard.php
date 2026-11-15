@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
  */
 
 declare(strict_types=1);
@@ -29,7 +29,7 @@ use OCP\AppFramework\OCS\OCSForbiddenException;
  *
  * The using controller provides `$userSession`, `$actionAuth` (ActionAuthService) and the `ACTION` it requires.
  *
- * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
  */
 trait StaffActionGuard {
 	/**

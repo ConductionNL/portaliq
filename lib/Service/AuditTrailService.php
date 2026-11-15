@@ -39,7 +39,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use DateTime;
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\AuditTrailServiceInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -50,7 +51,7 @@ use Throwable;
  *
  * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T01
  */
-class AuditTrailService {
+class AuditTrailService implements AuditTrailServiceInterface {
 	/**
 	 * OpenRegister's audit-trail mapper: the only place a proof record is written.
 	 */
@@ -59,7 +60,7 @@ class AuditTrailService {
 	/**
 	 * The action prefix of every portal row in the audit trail.
 	 */
-	public const ACTION_PREFIX = Application::APP_ID . '.';
+	public const ACTION_PREFIX = AppIdentity::APP_ID . '.';
 
 	/**
 	 * The verbs the portal records. `claim` is an account taking over the
@@ -104,7 +105,7 @@ class AuditTrailService {
 	 * @return void
 	 *
 	 * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T01
-	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function record(
 		string $verb,
@@ -114,7 +115,7 @@ class AuditTrailService {
 		string $schema,
 		string $id,
 		string $jti = '',
-		string $appId = Application::APP_ID,
+		string $appId = AppIdentity::APP_ID,
 		array $detail = [],
 	): void {
 		$fact = [
@@ -177,7 +178,7 @@ class AuditTrailService {
 	 */
 	private function changedOf(array $fact): array {
 		return [
-			'appId' => (string)($fact['appId'] ?? Application::APP_ID),
+			'appId' => (string)($fact['appId'] ?? AppIdentity::APP_ID),
 			'register' => (string)($fact['register'] ?? ''),
 			'schema' => (string)($fact['schema'] ?? ''),
 			'targetId' => (string)($fact['targetId'] ?? ''),

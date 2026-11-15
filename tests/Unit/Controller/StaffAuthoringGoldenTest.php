@@ -26,6 +26,7 @@ use OCA\Portaliq\Controller\ActivityController;
 use OCA\Portaliq\Controller\EventController;
 use OCA\Portaliq\Controller\NewsController;
 use OCA\Portaliq\Controller\NewsletterController;
+use OCA\Portaliq\Kernel\Contracts\ActionAuthServiceInterface;
 use OCA\Portaliq\Service\ActionAuthService;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Http\JSONResponse;
@@ -40,6 +41,7 @@ use ReflectionClass;
 use ReflectionMethod;
 use ReflectionNamedType;
 use Throwable;
+use OCA\Portaliq\Tests\Support\LegacyObjectArgs;
 
 /**
  * The staff authoring routes for events, news, newsletters and activities
@@ -169,7 +171,7 @@ class StaffAuthoringGoldenTest extends TestCase {
 			$type = ltrim($type, '?');
 			$args[$param->getName()] = match ($type) {
 				IUserSession::class => $this->session(uid: $uid),
-				ActionAuthService::class => $this->auth(action: $action),
+				ActionAuthService::class, ActionAuthServiceInterface::class => $this->auth(action: $action),
 				ContainerInterface::class => $this->container(),
 				ITimeFactory::class => $this->recorder(class: ITimeFactory::class, label: 'time', answers: ['getTime' => 1793606400, 'now' => new DateTimeImmutable('2026-11-02T10:00:00+00:00'), 'getDateTime' => new DateTime('2026-11-02T10:00:00+00:00')]),
 				default => $this->recorder(class: $type, label: (new ReflectionClass($type))->getShortName()),
@@ -230,6 +232,7 @@ class StaffAuthoringGoldenTest extends TestCase {
 			}
 
 			public function __call(string $name, array $args): mixed {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				$this->test->note([$name => $args]);
 				if (in_array('missing', $args, true) === true) {
 					throw new DoesNotExistException('Object not found');

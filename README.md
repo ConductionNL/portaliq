@@ -48,7 +48,7 @@ portal-contribution registry. Employees stay internal.
 ## Test coverage
 
 <!-- coverage:start -->
-Measured test coverage: 91.1% of statements (PHP 91.1% of 35,486 statements), at commit `430a4315` on 2026-11-11. The JavaScript frontend is not in this figure, because it has no coverage measurement yet. The figures come from [`coverage-summary.json`](coverage-summary.json); refresh them with `composer coverage:publish`.
+Measured test coverage: 90.1% of statements (PHP 90.1% of 35,717 statements), at commit `cf14bd3c8` on 2026-11-13. The JavaScript frontend is not in this figure, because it has no coverage measurement yet. The figures come from [`coverage-summary.json`](coverage-summary.json); refresh them with `composer coverage:publish`.
 <!-- coverage:end -->
 
 ## Screenshots
@@ -619,6 +619,29 @@ cd portaliq
 npm install && npm run build
 php occ app:enable portaliq
 ```
+
+### Try it with Docker
+
+The repository builds an evaluation image: the official Nextcloud image with portaliq and OpenRegister installed and enabled. It is meant for trying the app out and for test environments. For production, install the app from the Nextcloud App Store.
+
+```bash
+docker compose -f docker-compose.yml up -d --build
+```
+
+Open http://localhost:8080/apps/portaliq/ and sign in as `admin` with password `admin`. The first start takes a minute or two. Set `NEXTCLOUD_ADMIN_PASSWORD` and `APP_PORT` to change the password and the port; `docker-compose.yml` lists every setting. `docker compose -f docker-compose.yml down -v` removes the stack and its data.
+
+Released versions are published as `ghcr.io/conductionnl/portaliq`, so leaving out `--build` uses the published image.
+
+### Run it on Kubernetes
+
+`charts/portaliq` wraps the official [Nextcloud Helm chart](https://github.com/nextcloud/helm) and runs the same image with PostgreSQL:
+
+```bash
+helm dependency build charts/portaliq
+helm install portaliq charts/portaliq --set nextcloud.nextcloud.host=portaliq.example.org
+```
+
+Change the passwords in `charts/portaliq/values.yaml` before you install it anywhere that matters.
 
 ## Development
 

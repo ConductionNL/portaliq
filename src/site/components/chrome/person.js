@@ -38,7 +38,7 @@ function initialsOf(name) {
  * @param {object|null} session The portal session.
  * @return {{name: string, initials: string, subline: string}|null} The person.
  *
- * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
+ * @spec openspec/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
  */
 export function personOf(session) {
 	const name = String(

@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
+ * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ namespace OCA\Portaliq\Service\Traffic;
  *
  * Pure: definitions and sessions in, rows out.
  *
- * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
+ * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
  */
 class TrafficGoals {
 
@@ -60,7 +60,7 @@ class TrafficGoals {
 	 *
 	 * @return array<int, array<string, mixed>> Rows of `{id, name, conversions, completions, value}`.
 	 *
-	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
+	 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
 	 */
 	public function rows(array $goals, array $sessions): array {
 		$out = [];
@@ -93,7 +93,7 @@ class TrafficGoals {
 	 *
 	 * @return float Between 0 and 1; 0 with no sessions or no goals.
 	 *
-	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
+	 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
 	 */
 	public function conversionRate(array $goals, array $sessions): float {
 		if ($goals === [] || $sessions === []) {

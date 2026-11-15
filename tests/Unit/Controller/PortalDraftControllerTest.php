@@ -20,6 +20,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Contribution\CreateBody;
 
 /**
  * site-multi-step-forms T8 and submit-creates-the-case-directly 5.1/5.2: the
@@ -40,6 +41,7 @@ use Psr\Log\LoggerInterface;
 #[UsesClass(\OCA\Portaliq\Contribution\CreateBody::class)]
 #[UsesClass(PortalSessionService::class)]
 #[UsesClass(\OCA\Portaliq\Controller\DraftSave::class)]
+#[UsesClass(\OCA\Portaliq\Kernel\Support\SessionTrust::class)]
 class PortalDraftControllerTest extends TestCase {
 
 	private const ACTION = [
@@ -268,7 +270,7 @@ class PortalDraftControllerTest extends TestCase {
 		return new PortalDraftController(
 			$this->createMock(IRequest::class),
 			$session,
-			new ActionDraft(registry: $registry, reader: $reader, writer: $writer, drafts: $drafts),
+			new ActionDraft(registry: $registry, reader: $reader, writer: $writer, drafts: $drafts, createBody: new CreateBody()),
 			$drafts
 		);
 	}//end controller()

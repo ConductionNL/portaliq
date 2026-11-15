@@ -20,23 +20,22 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
-use OCA\Portaliq\Service\Identity\MandateParties;
-use OCA\Portaliq\Service\Identity\PortalMandateService;
-use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
-use OCA\Portaliq\Service\CaseTypeVisibility;
-use OCA\Portaliq\Service\MandatedCaseReader;
-use OCA\Portaliq\Service\PortalCaseListReader;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\CaseTypeVisibilityInterface;
+use OCA\Portaliq\Kernel\Contracts\MandatedCaseReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalCaseListReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalMandateServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalPartyTreeResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -44,11 +43,12 @@ use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCA\Portaliq\Kernel\Contracts\MandatePartiesInterface;
 
 /**
  * Serves the subject's own case list.
  *
- * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 class MyCasesController extends Controller implements PortalProtected {
 	/**
@@ -57,32 +57,34 @@ class MyCasesController extends Controller implements PortalProtected {
 	 * (cases-my-cases-page REQ-CMC-004). Without any value the first mandate
 	 * held is the active one, as before.
 	 */
-	public const ACTING_FOR_SELF = MandatedCaseReader::ACTING_FOR_SELF;
+	public const ACTING_FOR_SELF = MandatedCaseReaderInterface::ACTING_FOR_SELF;
 
 	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalContributionRegistry $registry The contribution aggregator.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param PortalCaseListReader $cases Merges every case collection.
-	 * @param PortalMandateService $mandates The mandates the identity holds.
-	 * @param PortalPartyTreeResolver $tree Resolves how far a mandate reaches.
-	 * @param CaseTypeVisibility|null $caseTypes The case types the serving
+	 * @param PortalContributionRegistryInterface $registry The contribution aggregator.
+	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
+	 * @param PortalCaseListReaderInterface $cases Merges every case collection.
+	 * @param PortalMandateServiceInterface $mandates The mandates the identity holds.
+	 * @param PortalPartyTreeResolverInterface $tree Resolves how far a mandate reaches.
+	 * @param MandatePartiesInterface $mandateParties The MandateParties helper.
+	 * @param CaseTypeVisibilityInterface|null $caseTypes The case types the serving
 	 *                                           portal hides
 	 *                                           (operate-show-per-case-type).
 	 *                                           Absent hides nothing.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalContributionRegistry $registry,
-		private readonly PortalSessionService $session,
-		private readonly PortalCaseListReader $cases,
-		private readonly PortalMandateService $mandates,
-		private readonly PortalPartyTreeResolver $tree,
-		private readonly ?CaseTypeVisibility $caseTypes = null,
+		private readonly PortalContributionRegistryInterface $registry,
+		private readonly PortalSessionServiceInterface $session,
+		private readonly PortalCaseListReaderInterface $cases,
+		private readonly PortalMandateServiceInterface $mandates,
+		private readonly PortalPartyTreeResolverInterface $tree,
+		private readonly MandatePartiesInterface $mandateParties,
+		private readonly ?CaseTypeVisibilityInterface $caseTypes = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -90,7 +92,7 @@ class MyCasesController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The case list, or 401 without a session.
 	 *
-	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 * @spec openspec/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
 	 */
@@ -148,7 +150,7 @@ class MyCasesController extends Controller implements PortalProtected {
 		return $this->mandates->mandatesFor(
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
 			organisation: (string)($subject['organisation'] ?? ''),
-			holders: (new MandateParties())->holdersOf(subject: $subject)
+			holders: $this->mandateParties->holdersOf(subject: $subject)
 		);
 	}//end heldMandates()
 
@@ -230,7 +232,7 @@ class MyCasesController extends Controller implements PortalProtected {
 	private function mandateScope(array $mandate): array {
 		return $this->tree->entitiesFor(
 			root: $this->partyOf(mandate: $mandate),
-			reachesDown: ($this->mandates->reachOf(mandate: $mandate) === PortalMandateService::REACH_TREE)
+			reachesDown: ($this->mandates->reachOf(mandate: $mandate) === PortalMandateServiceInterface::REACH_TREE)
 		);
 	}//end mandateScope()
 

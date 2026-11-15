@@ -12,7 +12,7 @@
  * language, and every content request sends it as `locale`. The content API
  * checks it against the portal's set and falls back to the first entry.
  *
- * @spec openspec/changes/language-switch-reaches-the-content/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
  */
 
 /**
@@ -28,7 +28,7 @@ export const LANGUAGE_PARAM = 'lang'
  * @param {string} search The address's query string, such as `?lang=en`.
  * @return {string} A lower-case language tag, or ''.
  *
- * @spec openspec/changes/language-switch-reaches-the-content/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
  */
 export function requestedLocale(search) {
 	const value = new URLSearchParams(search || '').get(LANGUAGE_PARAM) || ''
@@ -43,7 +43,7 @@ export function requestedLocale(search) {
  * @param {string} locale A language tag.
  * @return {string} The name, or the tag when the runtime does not know it.
  *
- * @spec openspec/changes/language-switch-reaches-the-content/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
  */
 export function languageName(locale) {
 	try {
@@ -65,7 +65,7 @@ export function languageName(locale) {
  * @param {string} locale The language to switch to.
  * @return {string} The address with `?lang=` set.
  *
- * @spec openspec/changes/language-switch-reaches-the-content/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
  */
 export function hrefForLocale(href, locale) {
 	const url = new URL(href)
@@ -81,7 +81,7 @@ export function hrefForLocale(href, locale) {
  * @param {string}        href    The address of the page on screen.
  * @return {Array<{locale: string, label: string, href: string}>} The entries.
  *
- * @spec openspec/changes/language-switch-reaches-the-content/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
  */
 export function languageEntries(locales, href) {
 	if (!href) {

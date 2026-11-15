@@ -20,20 +20,20 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
-use OCA\Portaliq\Service\PortalJwtService;
+use OCA\Portaliq\Kernel\ScopeClaims;
 
 /**
  * Removes an action whose guard cannot be honoured. Built by
  * ActionConfigNormaliser for each action it normalises.
  *
- * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
  *
  * @SuppressWarnings(PHPMD.StaticAccess) -- PortalJwtService::isReservedScopeClaim() is a pure check on
  *                                         the frozen assertion claims, with no state to inject.
@@ -57,7 +57,7 @@ final class ActionGuards {
 	 *
 	 * @return array<string, mixed>|null The action, or null when a guard cannot be honoured.
 	 *
-	 * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
 	 */
 	public function guard(array $action, array $whitelist): ?array {
 		// A server-stamped subject field (portal-take-assessment) is a
@@ -70,7 +70,7 @@ final class ActionGuards {
 		// A declared scope claim rides in the signed assertion; one that
 		// names a frozen assertion claim (`sub`, `iss`, ...) is removed with
 		// its action, so it can never stand in for that claim.
-		if (PortalJwtService::isReservedScopeClaim(scopeClaim: ($action['scopeClaim'] ?? null)) === true) {
+		if (ScopeClaims::isReserved(scopeClaim: ($action['scopeClaim'] ?? null)) === true) {
 			return null;
 		}
 
@@ -81,6 +81,12 @@ final class ActionGuards {
 		if ($guarded === null) {
 			return null;
 		}
+
+		// After the cross-ref normaliser, because `onCase.crossRef` must name
+		// one of the references it just sanitised. A malformed `onCase` drops
+		// its own key and keeps the action: it only stops the action being
+		// offered on a case page, it guards nothing.
+		$guarded = (new OnCaseConfigNormaliser())->normaliseAction(action: $guarded);
 
 		// A guest action (identity-guest-page-for-signed-links) without a
 		// token field, local endpoints and `low` trust is removed whole.
@@ -96,7 +102,7 @@ final class ActionGuards {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
 	 */
 	private function subjectFieldIsMalformed(array $action): bool {
 		if (array_key_exists('subjectField', $action) === false) {

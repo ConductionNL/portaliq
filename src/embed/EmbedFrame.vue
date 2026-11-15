@@ -207,7 +207,7 @@ export default {
 		 * @param {string} honeypot The honeypot's value.
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-embed-frame-must-render-its-form-from-a-small-entry-req-srp-047
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-embed-frame-must-render-its-form-from-a-small-entry-req-srp-047
 		 */
 		async send(answers, honeypot = '') {
 			this.busy = true

@@ -275,7 +275,7 @@ export default {
 		 *
 		 * @param {object} row The case type.
 		 * @return {void}
-		 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
+		 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
 		 */
 		toggleColumns(row) {
 			this.openColumns = this.openColumns === row.typeId ? '' : row.typeId

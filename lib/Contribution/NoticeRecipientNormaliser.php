@@ -32,19 +32,21 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+ * @spec openspec/specs/portal-notifications-and-preferences/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\NoticeRecipientNormaliserInterface;
+
 /**
  * Validates and shapes a change rule's recipients and message texts.
  *
- * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+ * @spec openspec/specs/portal-notifications-and-preferences/spec.md
  */
-class NoticeRecipientNormaliser {
+class NoticeRecipientNormaliser implements NoticeRecipientNormaliserInterface {
 
 	/**
 	 * A field or claim name.
@@ -52,13 +54,6 @@ class NoticeRecipientNormaliser {
 	 * @var string
 	 */
 	private const NAME = '/^[A-Za-z_][A-Za-z0-9_-]*$/';
-
-	/**
-	 * A placeholder in a message text: `{field}` or `{field|datetime}`.
-	 *
-	 * @var string
-	 */
-	public const PLACEHOLDER = '/\{([A-Za-z_][A-Za-z0-9_-]*)(\|datetime)?\}/';
 
 	/**
 	 * Why the rule's recipients or messages cannot be kept, or null.
@@ -70,7 +65,7 @@ class NoticeRecipientNormaliser {
 	 *
 	 * @return string|null The reason.
 	 *
-	 * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md
 	 */
 	public function refusal(array $rule, array $collection, string $appId, string $label): ?string {
 		if (array_key_exists('recipients', $rule) === true && $this->claimOf(recipients: $rule['recipients'], appId: $appId) === null) {
@@ -122,7 +117,7 @@ class NoticeRecipientNormaliser {
 	 *
 	 * @return array<string, mixed> `recipients` and `messages`, each only when declared.
 	 *
-	 * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md
 	 */
 	public function shape(array $rule, string $appId): array {
 		$shaped = [];

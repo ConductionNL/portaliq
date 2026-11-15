@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
  */
 
 declare(strict_types=1);
@@ -27,9 +27,9 @@ namespace OCA\Portaliq\Controller;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use OCA\Portaliq\Service\Traffic\TrafficEventStore;
+use OCA\Portaliq\Kernel\Contracts\TrafficEventStoreInterface;
+use OCA\Portaliq\Kernel\Contracts\TrafficReportNumbersInterface;
 use OCA\Portaliq\Service\Traffic\TrafficExport;
-use OCA\Portaliq\Service\Traffic\TrafficReportNumbers;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -47,7 +47,7 @@ use OCP\IRequest;
  * nothing, and the session cookie's SameSite guard is what a cross-site
  * GET meets.
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
  */
 class TrafficReportController extends Controller {
 
@@ -67,18 +67,18 @@ class TrafficReportController extends Controller {
 	 *
 	 * @param string            $appName The app id.
 	 * @param IRequest          $request The request.
-	 * @param TrafficEventStore $store   Reads the daily records.
+	 * @param TrafficEventStoreInterface $store   Reads the daily records.
 	 * @param TrafficExport     $export  Renders the file.
-	 * @param TrafficReportNumbers $numbers Folds the records into totals.
+	 * @param TrafficReportNumbersInterface $numbers Folds the records into totals.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly TrafficEventStore $store,
+		private readonly TrafficEventStoreInterface $store,
 		private readonly TrafficExport $export,
-		private readonly TrafficReportNumbers $numbers,
+		private readonly TrafficReportNumbersInterface $numbers,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -95,7 +95,7 @@ class TrafficReportController extends Controller {
 	 *
 	 * @return Response The file, or a 400 with a reason.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
 	 */
 	#[NoCSRFRequired]
 	public function export(string $portal = '', string $from = '', string $to = '', string $segment = '', string $format = 'csv'): Response {
@@ -155,7 +155,7 @@ class TrafficReportController extends Controller {
 	 *
 	 * @auth admin-only audience measurement is an operator's surface, the same posture as the export
 	 *
-	 * @spec openspec/changes/portal-traffic-kpi-cards/specs/portal-traffic-kpi-cards/spec.md#requirement-the-summary-endpoint-must-return-a-portals-four-totals-for-a-period
+	 * @spec openspec/specs/portal-traffic-kpi-cards/spec.md#requirement-the-summary-endpoint-must-return-a-portals-four-totals-for-a-period
 	 */
 	public function summary(string $portal = '', string $days = ''): JSONResponse {
 		if (preg_match('/^[A-Za-z0-9][A-Za-z0-9-]{0,127}$/', $portal) !== 1) {

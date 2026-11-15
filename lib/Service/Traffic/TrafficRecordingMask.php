@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+ * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ namespace OCA\Portaliq\Service\Traffic;
  *
  * Pure: a chunk in, a smaller chunk out.
  *
- * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+ * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
  */
 class TrafficRecordingMask {
 
@@ -129,7 +129,7 @@ class TrafficRecordingMask {
 	 *
 	 * @return array<int, array<string, mixed>> The storable events.
 	 *
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 	 */
 	public function events(mixed $events): array {
 		if (is_array($events) === false) {

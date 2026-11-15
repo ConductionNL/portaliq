@@ -7,6 +7,7 @@ A search field placed on a page, such as the home page hero, SHALL open the port
 #### Scenario: A visitor searches from the home page
 - **WHEN** a visitor types "afvalkalender" in the home page search field and presses Enter
 - **THEN** the search page opens with "afvalkalender" in its field and the results for that term
+@e2e no browser test types in the hero yet; the route is src/site/App.vue goSearch()
 
 ### Requirement: Results can be sorted by date (REQ-RSP-008)
 
@@ -15,3 +16,4 @@ The search block SHALL let a visitor sort results by publication date, newest fi
 #### Scenario: Newest first
 - **WHEN** a visitor searching for "subsidie" chooses "Newest first"
 - **THEN** the results are ordered by publication date, newest first, and the page address carries that order
+@e2e exclude ordering is set by the test; node: tests/federated-search-sort-by-date.spec.mjs

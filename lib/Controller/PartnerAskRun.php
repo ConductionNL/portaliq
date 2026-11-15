@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/partner-tasks-in-the-portal/specs/partner-tasks-in-the-portal/spec.md
+ * @spec openspec/specs/partner-tasks-in-the-portal/spec.md
  */
 
 declare(strict_types=1);

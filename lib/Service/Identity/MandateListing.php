@@ -62,48 +62,101 @@ class MandateListing {
 	 */
 	public function given(string $party, string $organisation, ?DateTimeImmutable $now = null): array {
 		$moment = ($now ?? new DateTimeImmutable());
-		$out    = [];
+
+		return array_merge(
+			$this->givenMandates(party: $party, organisation: $organisation, moment: $moment),
+			$this->openInvitations(party: $party, organisation: $organisation)
+		);
+	}//end given()
+
+	/**
+	 * The mandates given on this party's behalf that are not revoked.
+	 *
+	 * @param string            $party        The session's party.
+	 * @param string            $organisation The tenant.
+	 * @param DateTimeImmutable $moment       The moment.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function givenMandates(string $party, string $organisation, DateTimeImmutable $moment): array {
+		$out = [];
 		foreach ($this->store->rows(schema: MandateStore::MANDATES, organisation: $organisation) as $row) {
 			if ($this->parties->typed(value: (string)($row['onBehalfOf'] ?? '')) !== $party || ($row['status'] ?? 'active') === 'revoked') {
 				continue;
 			}
 
-			$mandateState = 'active';
-			if ($this->days->expired(value: (string)($row['expiresAt'] ?? ''), now: $moment) === true) {
-				$mandateState = 'expired';
-			}
-
-			$out[] = [
-				'kind' => 'mandate',
-				'id' => $this->store->idOf(row: $row),
-				'holder' => $this->parties->holderOf(row: $row),
-				'label' => (string)($row['label'] ?? ''),
-				'caseTypes' => array_values((array)($row['caseTypes'] ?? [])),
-				'expiresAt' => (string)($row['expiresAt'] ?? ''),
-				'state' => $mandateState,
-			] + $this->named(row: $row);
+			$out[] = $this->givenMandate(row: $row, moment: $moment);
 		}
 
+		return $out;
+	}//end givenMandates()
+
+	/**
+	 * One given mandate, with the name and email of its account.
+	 *
+	 * @param array<string, mixed> $row    The mandate.
+	 * @param DateTimeImmutable    $moment The moment.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function givenMandate(array $row, DateTimeImmutable $moment): array {
+		$mandateState = 'active';
+		if ($this->days->expired(value: (string)($row['expiresAt'] ?? ''), now: $moment) === true) {
+			$mandateState = 'expired';
+		}
+
+		return [
+			'kind' => 'mandate',
+			'id' => $this->store->idOf(row: $row),
+			'holder' => $this->parties->holderOf(row: $row),
+			'label' => (string)($row['label'] ?? ''),
+			'caseTypes' => array_values((array)($row['caseTypes'] ?? [])),
+			'expiresAt' => (string)($row['expiresAt'] ?? ''),
+			'state' => $mandateState,
+		] + $this->named(row: $row);
+	}//end givenMandate()
+
+	/**
+	 * The invitations on this party's behalf that are still open.
+	 *
+	 * @param string $party        The session's party.
+	 * @param string $organisation The tenant.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function openInvitations(string $party, string $organisation): array {
+		$out = [];
 		foreach ($this->store->rows(schema: MandateStore::INVITATIONS, organisation: $organisation) as $row) {
 			$state = (string)($row['state'] ?? 'sent');
 			if ($this->parties->typed(value: (string)($row['onBehalfOf'] ?? '')) !== $party || in_array($state, ['sent', 'opened'], true) === false) {
 				continue;
 			}
 
-			$terms = (array)($row['mandate'] ?? []);
-			$out[] = [
-				'kind' => 'invitation',
-				'id' => $this->store->idOf(row: $row),
-				'email' => (string)($row['email'] ?? ''),
-				'label' => (string)($terms['label'] ?? ''),
-				'caseTypes' => array_values((array)($terms['caseTypes'] ?? [])),
-				'expiresAt' => (string)($terms['expiresAt'] ?? ''),
-				'state' => 'pending',
-			];
+			$out[] = $this->openInvitation(row: $row);
 		}
 
 		return $out;
-	}//end given()
+	}//end openInvitations()
+
+	/**
+	 * One open invitation, in the listing's shape.
+	 *
+	 * @param array<string, mixed> $row The invitation.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function openInvitation(array $row): array {
+		$terms = (array)($row['mandate'] ?? []);
+		return [
+			'kind' => 'invitation',
+			'id' => $this->store->idOf(row: $row),
+			'email' => (string)($row['email'] ?? ''),
+			'label' => (string)($terms['label'] ?? ''),
+			'caseTypes' => array_values((array)($terms['caseTypes'] ?? [])),
+			'expiresAt' => (string)($terms['expiresAt'] ?? ''),
+			'state' => 'pending',
+		];
+	}//end openInvitation()
 
 	/**
 	 * The mandates the session holds, in the shape "Uw machtiging" shows.
@@ -122,27 +175,52 @@ class MandateListing {
 		$moment = ($now ?? new DateTimeImmutable());
 		$out    = [];
 		foreach ($this->store->rows(schema: MandateStore::MANDATES, organisation: $organisation) as $row) {
-			if (in_array($this->parties->holderOf(row: $row), $holders, true) === false || ($row['status'] ?? 'active') !== 'active') {
+			if ($this->isNotHeld(row: $row, holders: $holders, moment: $moment) === true) {
 				continue;
 			}
 
-			if ($this->days->expired(value: (string)($row['expiresAt'] ?? ''), now: $moment) === true) {
-				continue;
-			}
-
-			$out[] = [
-				'id' => $this->store->idOf(row: $row),
-				'label' => (string)($row['label'] ?? ''),
-				'onBehalfOf' => $this->parties->typed(value: (string)($row['onBehalfOf'] ?? '')),
-				'caseTypes' => array_values((array)($row['caseTypes'] ?? [])),
-				'expiresAt' => (string)($row['expiresAt'] ?? ''),
-				'givenBy' => $this->givenBy(row: $row),
-				'grantedAt' => (string)($row['grantedAt'] ?? ''),
-			];
+			$out[] = $this->heldMandate(row: $row);
 		}
 
 		return $out;
 	}//end held()
+
+	/**
+	 * Whether a mandate is not one the session holds today: another holder,
+	 * not active, or expired.
+	 *
+	 * @param array<string, mixed> $row     The mandate.
+	 * @param array<int, string>   $holders The parties the session carries.
+	 * @param DateTimeImmutable    $moment  The moment.
+	 *
+	 * @return bool
+	 */
+	private function isNotHeld(array $row, array $holders, DateTimeImmutable $moment): bool {
+		if (in_array($this->parties->holderOf(row: $row), $holders, true) === false || ($row['status'] ?? 'active') !== 'active') {
+			return true;
+		}
+
+		return $this->days->expired(value: (string)($row['expiresAt'] ?? ''), now: $moment) === true;
+	}//end isNotHeld()
+
+	/**
+	 * One held mandate, in the shape "Uw machtiging" shows.
+	 *
+	 * @param array<string, mixed> $row The mandate.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function heldMandate(array $row): array {
+		return [
+			'id' => $this->store->idOf(row: $row),
+			'label' => (string)($row['label'] ?? ''),
+			'onBehalfOf' => $this->parties->typed(value: (string)($row['onBehalfOf'] ?? '')),
+			'caseTypes' => array_values((array)($row['caseTypes'] ?? [])),
+			'expiresAt' => (string)($row['expiresAt'] ?? ''),
+			'givenBy' => $this->givenBy(row: $row),
+			'grantedAt' => (string)($row['grantedAt'] ?? ''),
+		];
+	}//end heldMandate()
 
 	/**
 	 * The name and address of the account a mandate names: the holder when a

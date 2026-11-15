@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\CaseTypeVisibilityInterface;
 use OCA\Portaliq\Service\CaseTypeColumns\CaseTypeColumnsNormaliser;
 use OCA\Portaliq\Service\CaseTypeColumns\ColumnOverrides;
 use OCP\IRequest;
@@ -43,11 +44,7 @@ use OCP\IRequest;
  *
  * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
  */
-class CaseTypeVisibility {
-	/**
-	 * The header the resident portal names its own portal slug in.
-	 */
-	public const HEADER = RequestedPortal::HEADER;
+class CaseTypeVisibility implements CaseTypeVisibilityInterface {
 
 	/**
 	 * The case field a `cases` collection keeps its case type in, unless it
@@ -174,7 +171,7 @@ class CaseTypeVisibility {
 	 *
 	 * @return ColumnOverrides
 	 *
-	 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-a-case-row-reads-with-its-case-types-columns
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-case-row-reads-with-its-case-types-columns
 	 */
 	public function servingColumns(IRequest $request, array $subject): ColumnOverrides {
 		$portal = $this->servingPortal(request: $request, subject: $subject);

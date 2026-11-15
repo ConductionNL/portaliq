@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-photos-in-a-news-item-are-gated-by-the-target-childs-photo-consent
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-photos-in-a-news-item-are-gated-by-the-target-childs-photo-consent
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 /**
- * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-photos-in-a-news-item-are-gated-by-the-target-childs-photo-consent
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-photos-in-a-news-item-are-gated-by-the-target-childs-photo-consent
  */
 class NewsPhotoConsentGate {
 	/**
@@ -53,7 +53,7 @@ class NewsPhotoConsentGate {
 	 *
 	 * @return array<string, mixed> The row, `photoRefs` withheld when required.
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-photos-in-a-news-item-are-gated-by-the-target-childs-photo-consent
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-photos-in-a-news-item-are-gated-by-the-target-childs-photo-consent
 	 */
 	public function apply(array $item): array {
 		$photoRefs = $item['photoRefs'] ?? [];
