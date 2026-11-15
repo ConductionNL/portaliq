@@ -1,7 +1,3 @@
----
-status: proposed
----
-
 # Spec: report-pages
 
 ## Purpose

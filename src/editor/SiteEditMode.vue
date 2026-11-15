@@ -156,6 +156,7 @@
 			v-else
 			v-model:paletteOpen="paletteOpen"
 			:editor="editor"
+			:excludedPaths="excludedPaths"
 			publicOnly />
 
 		<PageHistoryDialog
@@ -183,6 +184,7 @@ import SitePagesPanel from './SitePagesPanel.vue'
 import { defaultSizeFor } from '../lib/pageWidgetCatalogue.js'
 import { createPageEditor, createPageSaver } from './index.js'
 import { instanceUrl } from './instanceUrl.js'
+import { loadExcludedPaths } from './reportExclusion.js'
 
 import 'gridstack/dist/gridstack.css'
 import '@conduction/nextcloud-vue/css/index.css'
@@ -262,6 +264,14 @@ export default {
 			confirmingPublish: false,
 			leaving: false,
 			panel: '',
+
+			/**
+			 * The portal's `traffic.excludedPaths`, or null until read and
+			 * when it cannot be read.
+			 *
+			 * @type {Array<string>|null}
+			 */
+			excludedPaths: null,
 		}
 	},
 
@@ -305,6 +315,11 @@ export default {
 		}
 		this.ready = true
 		await this.editor.load()
+		this.excludedPaths = await loadExcludedPaths(
+			(url, config) => axios.get(url, config),
+			instanceUrl('/apps/openregister/api/objects/portaliq/portal'),
+			this.portal || this.state.page?.portal,
+		)
 	},
 
 	methods: {
