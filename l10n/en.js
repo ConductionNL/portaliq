@@ -1,6 +1,12 @@
 OC.L10N.register(
     "portaliq",
     {
+        "Organisation type": "Organisation type",
+        "The kind of organisation that runs the portal: a concept uri of the TOOI organisation type scheme in OpenRegister's concept register. Empty: the site says \"de organisatie\".": "The kind of organisation that runs the portal: a concept uri of the TOOI organisation type scheme in OpenRegister's concept register. Empty: the site says \"de organisatie\".",
+        "Organisation type label": "Organisation type label",
+        "The Dutch label of the organisation type, stored beside it on save from the concept register (\"waterschap\"); the site names the organisation's kind with it.": "The Dutch label of the organisation type, stored beside it on save from the concept register (\"waterschap\"); the site names the organisation's kind with it.",
+        "Organisation type scheme": "Organisation type scheme",
+        "The uuid of the TOOI organisation type scheme in the concept register, stored on every save while the scheme is installed. The details form's type picker lists the concepts of this scheme; it is the instance's own uuid, never chosen by hand.": "The uuid of the TOOI organisation type scheme in the concept register, stored on every save while the scheme is installed. The details form's type picker lists the concepts of this scheme; it is the instance's own uuid, never chosen by hand.",
         "Marketplace": "Marketplace",
         "This site uses JavaScript for its interactive parts, and JavaScript is off in your browser.": "This site uses JavaScript for its interactive parts, and JavaScript is off in your browser.",
         "Open the plain version of this page": "Open the plain version of this page",

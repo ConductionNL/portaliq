@@ -1,6 +1,11 @@
 OC.L10N.register(
     "portaliq",
     {
+        "The kind of organisation that runs the portal: a concept uri of the TOOI organisation type scheme in OpenRegister's concept register. Empty: the site says \"de organisatie\".": "Het soort organisatie dat de portal voert: een begrip-uri uit het TOOI-schema van organisatietypen in het begrippenregister van OpenRegister. Leeg: de website zegt \"de organisatie\".",
+        "Organisation type label": "Naam van de soort organisatie",
+        "The Dutch label of the organisation type, stored beside it on save from the concept register (\"waterschap\"); the site names the organisation's kind with it.": "De Nederlandse naam van het organisatietype, bij het opslaan uit het begrippenregister ernaast vastgelegd (\"waterschap\"); de website noemt de soort organisatie hiermee.",
+        "Organisation type scheme": "Schema van de soorten organisatie",
+        "The uuid of the TOOI organisation type scheme in the concept register, stored on every save while the scheme is installed. The details form's type picker lists the concepts of this scheme; it is the instance's own uuid, never chosen by hand.": "De uuid van het TOOI-schema van organisatietypen in het begrippenregister, bij elke opslag vastgelegd zolang het schema geïnstalleerd is. De keuzelijst voor de soort organisatie in het formulier met gegevens toont de begrippen van dit schema; het is de eigen uuid van deze installatie en wordt nooit met de hand gekozen.",
         "Choose media": "Media kiezen",
         "This site uses JavaScript for its interactive parts, and JavaScript is off in your browser.": "Deze website gebruikt JavaScript voor de interactieve onderdelen, en JavaScript staat uit in uw browser.",
         "Open the plain version of this page": "Open de eenvoudige versie van deze pagina",
@@ -1808,6 +1813,9 @@ OC.L10N.register(
         "{shown} of {total} articles": "{shown} van {total} artikelen",
         "No favicon": "Geen tabbladpictogram",
         "No hero image": "Geen hero-afbeelding",
+        "Organisation type": "Soort organisatie",
+        "No organisation type": "Geen soort organisatie",
+        "From the TOOI list of organisation types. The site names the organisation's kind with it. When the list offers nothing, it is not installed in the concept register yet, or the portal has not been saved since.": "Uit de TOOI-lijst van organisatietypen. De website noemt de soort organisatie hiermee. Biedt de lijst niets, dan is die nog niet in het begrippenregister geïnstalleerd, of is de portal sindsdien niet opgeslagen.",
         "A PNG, SVG or ICO from Media of this portal, shown as the tab icon. Without one the tab shows the logo.": "Een PNG, SVG of ICO uit Media van deze portal, getoond als tabbladpictogram. Zonder pictogram toont het tabblad het logo.",
         "A published image from Media of this portal, shown by a home page hero that has no image of its own.": "Een gepubliceerde afbeelding uit Media van deze portal, getoond door een hero op de startpagina die zelf geen afbeelding heeft.",
         "Choose the organisation type from the TOOI list.": "Kies het organisatietype uit de TOOI-lijst.",

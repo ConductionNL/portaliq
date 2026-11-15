@@ -51,7 +51,7 @@ that is not in `check:specs` does not run in CI.
 
 ## 3. The organisation type
 
-- [ ] 3.1 Declare `organisationType` and `organisationTypeLabel` on `#portal`. The settings picker reads
+- [x] 3.1 Declare `organisationType` and `organisationTypeLabel` on `#portal`. The settings picker reads
   the TOOI organisation type scheme from OpenRegister's concept register through OpenRegister's
   public PHP API; read the real class on openregister `development` first and name it in the PR
   body. When the scheme is missing it shows a sentence and offers nothing (REQ-PIA-003).
@@ -69,6 +69,15 @@ that is not in `check:specs` does not run in CI.
   - Left: the picker in the portal details form. The settings-form widget reads choices only from an
     OpenRegister register and schema, and a concept's `inScheme` holds the scheme's uuid, which differs per
     instance, so it cannot list one scheme's concepts; it needs a choices source in the widget library.
+  - 2026-11-15 built (the picker): every portal save also stores the installed scheme's uuid as
+    `#portal.organisationTypeSchemeId` (register 0.116.0, portal 0.33.0;
+    `OrganisationTypeOptions::settle()`, removed when the scheme is missing or unreadable), and the
+    details form's `organisationType` field is a reference over OpenRegister's `vocabulary` register,
+    schema `concept`, filtered `inScheme: @object.organisationTypeSchemeId` (the widget's own record
+    token), labelled `prefLabel.nl`, storing the concept's `uri`. Without the scheme the filter stays
+    unresolved, the picker offers nothing and its hint says why. Tests: `OrganisationTypeOptionsTest`
+    (`testASaveStoresTheInstalledSchemesUuid`, `testAnUnreadableSchemeStoresNoUuid`) and
+    `tests/portal-details.spec.mjs`. A portal saved before this change gets the uuid on its next save.
 - [ ] 3.2 Replace "Van de gemeente" in `src/site/components/mijn/strings.js` and every other place
   the site names the organisation's kind with the label and its article; add the footer line and
   `DCTERMS.creator` (REQ-PIA-003).
