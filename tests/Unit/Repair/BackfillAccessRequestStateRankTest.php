@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Repair;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\Repair\BackfillAccessRequestStateRank;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCP\Migration\IOutput;
@@ -54,8 +55,9 @@ class BackfillAccessRequestStateRankTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
-				$this->saves[] = ['uuid' => $uuid, 'object' => $object];
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$uuid = $options->uuid;
+				$this->saves[] = ['uuid' => $uuid, 'object' => $object, 'register' => $options->target->register, 'schema' => $options->target->schema];
 				foreach ($this->rows as $index => $row) {
 					if (($row['@self']['uuid'] ?? null) === $uuid) {
 						$this->rows[$index] = $object + ['@self' => $row['@self']];
@@ -89,6 +91,7 @@ class BackfillAccessRequestStateRankTest extends TestCase {
 
 		$this->assertSame(['a' => 0, 'b' => 1, 'c' => 2], array_column(array_map(static fn (array $save): array => ['uuid' => $save['uuid'], 'rank' => $save['object']['stateRank']], $store->saves), 'rank', 'uuid'));
 		$this->assertArrayNotHasKey('@self', $store->saves[0]['object']);
+		$this->assertSame(['portaliq', 'portalAccessRequest'], [$store->saves[0]['register'], $store->saves[0]['schema']]);
 
 		$store->saves = [];
 		$this->step($store)->run($this->createMock(IOutput::class));

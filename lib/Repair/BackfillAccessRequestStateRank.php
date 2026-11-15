@@ -28,6 +28,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Repair;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\Service\Identity\PortalAccessRequestService;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCP\Migration\IOutput;
@@ -149,7 +151,12 @@ class BackfillAccessRequestStateRank implements IRepairStep {
 		try {
 			unset($row['@self']);
 			$row['stateRank'] = $rank;
-			$objectService->saveObject(object: $row, register: self::REGISTER, schema: self::SCHEMA, uuid: $uuid, _rbac: false, _multitenancy: false);
+			$objectService->saveObject(
+				object: $row,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: self::REGISTER, schema: self::SCHEMA), uuid: $uuid),
+				_rbac: false,
+				_multitenancy: false
+			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: an access request could not be ranked', ['uuid' => $uuid, 'reason' => $e->getMessage()]);
 			return false;
