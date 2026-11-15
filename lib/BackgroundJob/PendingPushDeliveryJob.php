@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/push-notifications-quiet-hours/specs/guardian-push-notifications/spec.md#requirement-a-due-deferred-push-is-delivered-by-the-background-job-an-undue-one-is-left-alone
+ * @spec openspec/specs/guardian-push-notifications/spec.md#requirement-a-due-deferred-push-is-delivered-by-the-background-job-an-undue-one-is-left-alone
  */
 
 declare(strict_types=1);
@@ -28,7 +28,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\BackgroundJob;
 
 use DateTimeImmutable;
-use OCA\Portaliq\Service\Notifications\PendingPushService;
+use OCA\Portaliq\Kernel\Contracts\PendingPushServiceInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJob;
 use OCP\BackgroundJob\TimedJob;
@@ -38,7 +38,7 @@ use Throwable;
 /**
  * Deliver due deferred pushes, every 5 minutes.
  *
- * @spec openspec/changes/push-notifications-quiet-hours/specs/guardian-push-notifications/spec.md#requirement-a-due-deferred-push-is-delivered-by-the-background-job-an-undue-one-is-left-alone
+ * @spec openspec/specs/guardian-push-notifications/spec.md#requirement-a-due-deferred-push-is-delivered-by-the-background-job-an-undue-one-is-left-alone
  */
 class PendingPushDeliveryJob extends TimedJob {
 	/**
@@ -51,12 +51,12 @@ class PendingPushDeliveryJob extends TimedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory $time Testable clock (job base class).
-	 * @param PendingPushService $pending Does the work.
+	 * @param PendingPushServiceInterface $pending Does the work.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly PendingPushService $pending,
+		private readonly PendingPushServiceInterface $pending,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(time: $time);
@@ -73,7 +73,7 @@ class PendingPushDeliveryJob extends TimedJob {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/push-notifications-quiet-hours/specs/guardian-push-notifications/spec.md#requirement-a-due-deferred-push-is-delivered-by-the-background-job-an-undue-one-is-left-alone
+	 * @spec openspec/specs/guardian-push-notifications/spec.md#requirement-a-due-deferred-push-is-delivered-by-the-background-job-an-undue-one-is-left-alone
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- the base class dictates
 	 * the signature; dropping the parameter breaks the override.

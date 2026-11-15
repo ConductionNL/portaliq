@@ -76,7 +76,7 @@ Signing out MUST end the portal session as for any session.
 - WHEN the route is called
 - THEN it MUST answer 404 and mint nothing, even with `debug` on
 
-#### Scenario: Another set or another portal
+#### Scenario: Another resident or another portal
 @e2e exclude Unit: tests/Unit/Controller/SessionControllerTest.php
 - GIVEN the switch is on
 - WHEN the route is called with a set that did not install the portal's resident, or with a portal that is not the resident's

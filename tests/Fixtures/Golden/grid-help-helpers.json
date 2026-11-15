@@ -1,0 +1,8 @@
+{
+	"cellFromDrop": [{"gridX":0,"gridY":0},{"gridX":0,"gridY":0},{"gridX":0,"gridY":0},{"gridX":6,"gridY":3},{"gridX":11,"gridY":0},{"gridX":0,"gridY":0},{"gridX":0,"gridY":0},{"gridX":6,"gridY":5},{"gridX":6,"gridY":5},{"gridX":6,"gridY":2},{"gridX":6,"gridY":300}],
+	"cellOf": [{"gridX":0,"gridY":0,"gridWidth":12,"gridHeight":1},{"gridX":0,"gridY":0,"gridWidth":12,"gridHeight":1},{"gridX":3,"gridY":2,"gridWidth":4,"gridHeight":2},{"gridX":11,"gridY":0,"gridWidth":1,"gridHeight":1},{"gridX":8,"gridY":0,"gridWidth":4,"gridHeight":1},{"gridX":0,"gridY":0,"gridWidth":1,"gridHeight":1},{"gridX":0,"gridY":0,"gridWidth":6,"gridHeight":1}],
+	"mergeHelp": [{},{"intro":"Bel ons","phone":"14 0"},{"intro":"Formulier","hours":"9-5","desk":"Balie"},{"phoneNote":"n"}],
+	"sectionOf": ["overview","tasks","messages","messages","cases","cases","contacts","","",""],
+	"takeChoice": [[null,["portaliq.detailChoice:/c"]],[{"date":"d1","count":4},["portaliq.detailChoice:/c"]],[{"date":"","count":10},["portaliq.detailChoice:/c"]],[{"date":"","count":1},["portaliq.detailChoice:/c"]],[null,["portaliq.detailChoice:/c"]],[{"date":"","count":1},["portaliq.detailChoice:/c"]],[null,[]],[null,[]],[{"date":"","count":2},[]]],
+	"measureDocument": [480,480,480,0,1200,2000]
+}

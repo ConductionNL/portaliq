@@ -66,4 +66,38 @@ class FormStatementsTest extends TestCase {
 		$optional = $statements->asked(['truth' => ['required' => false]], []);
 		$this->assertSame([], $statements->check($optional, ['truth'])['record'], 'ticked but unreadable is not recorded');
 	}//end testAStatementWithoutTextCanNeverBeAccepted()
+
+	/**
+	 * Every asked statement and tick is an error, a record or nothing, exactly as recorded.
+	 *
+	 * @return void
+	 */
+	public function testEveryStatementIsAsRecorded(): void {
+		$st    = static fn (string $key, bool $required, string $text, string $version = 'v1'): array => ['key' => $key, 'required' => $required, 'text' => $text, 'version' => $version];
+		$asked = [
+			$st('needed-unreadable', true, ''),
+			$st('needed-ticked', true, 'Text', 'v2'),
+			$st('needed-left', true, 'Text'),
+			$st('optional-ticked', false, 'Text', 'v3'),
+			$st('optional-left', false, 'Text'),
+			$st('optional-unreadable', false, ''),
+		];
+
+		$out = $this->statements()->check(asked: $asked, accepted: ['needed-unreadable', 'needed-ticked', 'optional-ticked', 'optional-unreadable', 'invented', 7, null]);
+
+		$this->assertSame(
+			[
+				'needed-unreadable' => 'This form cannot be sent yet: a statement it needs has no text.',
+				'needed-left' => 'Accept this statement before you send the form.',
+			],
+			$out['errors']
+		);
+		$this->assertSame(['needed-ticked', 'optional-ticked'], array_column($out['record'], 'key'));
+		$this->assertSame(['v2', 'v3'], array_column($out['record'], 'textVersion'));
+		$this->assertSame(['key', 'textVersion', 'acceptedAt'], array_keys($out['record'][0]));
+		$this->assertNotFalse(\DateTimeImmutable::createFromFormat(DATE_ATOM, $out['record'][0]['acceptedAt']));
+
+		$this->assertSame(['errors' => [], 'record' => []], $this->statements()->check(asked: [], accepted: 'x'));
+		$this->assertSame(['needed-ticked', 'needed-left'], array_keys($this->statements()->check(asked: array_slice($asked, 1, 2), accepted: 'needed-x')['errors']));
+	}//end testEveryStatementIsAsRecorded()
 }

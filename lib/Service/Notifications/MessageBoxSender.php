@@ -29,8 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Notifications;
 
-use OCA\Portaliq\Contribution\PortalProviderLocator;
-use OCA\Portaliq\Contribution\TimelineProviderMethod;
+use OCA\Portaliq\Kernel\Contracts\MessageBoxSenderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalProviderLocatorInterface;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
@@ -42,8 +42,10 @@ use Throwable;
  * Requests the send from integriq and logs what it answered.
  *
  * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-portaliq-asks-integriq-to-send-and-records-the-answer-req-mbc-003
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
-class MessageBoxSender {
+class MessageBoxSender implements MessageBoxSenderInterface {
 
 	/**
 	 * Integriq's send command, named as a string so portaliq does not depend
@@ -54,17 +56,10 @@ class MessageBoxSender {
 	public const SEND_EVENT = 'OCA\\Integriq\\Event\\DigitalPostSendRequestedEvent';
 
 	/**
-	 * Who portaliq says asked for the letter; integriq's status reports carry it back.
-	 *
-	 * @var string
-	 */
-	public const REQUESTED_BY = 'portaliq';
-
-	/**
 	 * Wire the sender.
 	 *
 	 * @param PortalOrganisationConfigService $orgConfig The organisation's source.
-	 * @param PortalProviderLocator           $locator   Finds the case app's provider.
+	 * @param PortalProviderLocatorInterface           $locator   Finds the case app's provider.
 	 * @param PortalObjectReader              $reader    Reads the message, scoped to the resident.
 	 * @param PortalObjectWriter              $writer    Writes the notification row.
 	 * @param IEventDispatcher                $events    Dispatches integriq's command.
@@ -73,7 +68,7 @@ class MessageBoxSender {
 	 */
 	public function __construct(
 		private readonly PortalOrganisationConfigService $orgConfig,
-		private readonly PortalProviderLocator $locator,
+		private readonly PortalProviderLocatorInterface $locator,
 		private readonly PortalObjectReader $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly IEventDispatcher $events,
@@ -100,27 +95,76 @@ class MessageBoxSender {
 			return;
 		}
 
+		$outcome = $this->outcomeFor(argument: $argument, record: $record, sourceId: $offer['sourceId']);
+		if ($outcome === null) {
+			return;
+		}
+
+		$data = $this->attemptData(argument: $argument, record: $record, outcome: $outcome);
+		$this->logAttempt(accountId: $accountId, organisation: $organisation, data: $data, record: $record);
+	}//end send()
+
+	/**
+	 * Read the message, find its recipient and ask integriq to send the letter.
+	 *
+	 * @param array<string, mixed>  $argument The job argument.
+	 * @param array<string, string> $record   The message's reference.
+	 * @param string                $sourceId The organisation's digital post source.
+	 *
+	 * @return array<string, string>|null The outcome, or null when nothing was sent and nothing is recorded.
+	 */
+	private function outcomeFor(array $argument, array $record, string $sourceId): array|null {
+		$message = $this->readMessage(argument: $argument, record: $record);
+		if ($message === null) {
+			return null;
+		}
+
+		$recipient = $this->recipient(record: $record, method: (string)($argument['recipientProvider'] ?? ''));
+		if ($recipient === null) {
+			// The case app keeps this message in the portal (REQ-MBC-002).
+			return null;
+		}
+
+		$letter = $this->letter(message: $message, fields: (array)($argument['letterFields'] ?? []));
+		$outcome = $this->request(sourceId: $sourceId, recipient: $recipient, letter: $letter, record: $record);
+
+		unset($recipient);
+
+		return $outcome;
+	}//end outcomeFor()
+
+	/**
+	 * The message, or null with a warning when it could not be read.
+	 *
+	 * @param array<string, mixed>  $argument The job argument.
+	 * @param array<string, string> $record   The message's reference.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function readMessage(array $argument, array $record): array|null {
 		$message = $this->message(argument: $argument, record: $record);
 		if ($message === null) {
 			$this->logger->warning(
 				'Portaliq: message box send skipped, the message could not be read',
 				['app' => $record['app'], 'collection' => $record['collection']]
 			);
-			return;
+			return null;
 		}
 
-		$recipient = $this->recipient(record: $record, method: (string)($argument['recipientProvider'] ?? ''));
-		if ($recipient === null) {
-			// The case app keeps this message in the portal (REQ-MBC-002).
-			return;
-		}
+		return $message;
+	}//end readMessage()
 
-		$letter = $this->letter(message: $message, fields: (array)($argument['letterFields'] ?? []));
-		$outcome = $this->request(sourceId: $offer['sourceId'], recipient: $recipient, letter: $letter, record: $record);
-
-		unset($recipient);
-
-		$data = [
+	/**
+	 * The notification row recording one attempt.
+	 *
+	 * @param array<string, mixed>  $argument The job argument.
+	 * @param array<string, string> $record   The message's reference.
+	 * @param array<string, string> $outcome  The attempt's outcome.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function attemptData(array $argument, array $record, array $outcome): array {
+		return [
 			'ruleKey' => (string)($argument['ruleKey'] ?? ''),
 			'appId' => $record['app'],
 			'channel' => MessageBoxChannel::CHANNEL,
@@ -128,7 +172,19 @@ class MessageBoxSender {
 			'lastAttemptAt' => gmdate('c'),
 			'recordLink' => ['app' => $record['app'], 'collection' => $record['collection'], 'id' => $record['id']],
 		] + $outcome;
+	}//end attemptData()
 
+	/**
+	 * Write the notification row, with a warning when it was not written.
+	 *
+	 * @param string                $accountId    The resident's account id.
+	 * @param string                $organisation The organisation.
+	 * @param array<string, mixed>  $data         The notification row.
+	 * @param array<string, string> $record       The message's reference.
+	 *
+	 * @return void
+	 */
+	private function logAttempt(string $accountId, string $organisation, array $data, array $record): void {
 		$written = $this->writer->createObject(
 			register: 'portaliq',
 			schema: 'portalNotification',
@@ -138,9 +194,9 @@ class MessageBoxSender {
 			data: $data
 		);
 		if ($written === null) {
-			$this->logger->warning('Portaliq: message box attempt was not logged', ['app' => $record['app'], 'status' => $outcome['status']]);
+			$this->logger->warning('Portaliq: message box attempt was not logged', ['app' => $record['app'], 'status' => $data['status']]);
 		}
-	}//end send()
+	}//end logAttempt()
 
 	/**
 	 * Ask integriq to send the letter.
@@ -153,6 +209,29 @@ class MessageBoxSender {
 	 * @return array<string, string> `status`, and `externalMessageId` or `refusalCode`.
 	 */
 	private function request(string $sourceId, string $recipient, array $letter, array $record): array {
+		$refused = $this->refusedBeforeSending(letter: $letter, record: $record);
+		if ($refused !== null) {
+			return $refused;
+		}
+
+		$event  = $this->sendCommand(sourceId: $sourceId, recipient: $recipient, letter: $letter, record: $record);
+		$failed = $this->dispatch(event: $event);
+		if ($failed !== null) {
+			return $failed;
+		}
+
+		return $this->answerOf(event: $event);
+	}//end request()
+
+	/**
+	 * The refusal for a letter that is not sent at all: an empty one, or integriq absent.
+	 *
+	 * @param array<string, mixed>  $letter The letter: subject, body, attachments.
+	 * @param array<string, string> $record The message's reference.
+	 *
+	 * @return array<string, string>|null
+	 */
+	private function refusedBeforeSending(array $letter, array $record): array|null {
 		if ($letter['body'] === '') {
 			// Never an empty letter: the resident would receive a blank
 			// message in their government message box. Refused and recorded.
@@ -167,7 +246,21 @@ class MessageBoxSender {
 			return ['status' => 'failed', 'refusalCode' => 'not_installed'];
 		}
 
-		$event = new ($this->sendEvent)(
+		return null;
+	}//end refusedBeforeSending()
+
+	/**
+	 * Integriq's send command for the letter.
+	 *
+	 * @param string                $sourceId  The organisation's digital post source.
+	 * @param string                $recipient The recipient identity; it goes into the event only.
+	 * @param array<string, mixed>  $letter    The letter: subject, body, attachments.
+	 * @param array<string, string> $record    The message's reference.
+	 *
+	 * @return object
+	 */
+	private function sendCommand(string $sourceId, string $recipient, array $letter, array $record): object {
+		return new ($this->sendEvent)(
 			sourceApp: self::REQUESTED_BY,
 			sourceId: $sourceId,
 			recipient: $recipient,
@@ -177,7 +270,16 @@ class MessageBoxSender {
 			requestedBy: self::REQUESTED_BY,
 			correlationId: $record['app'].'/'.$record['collection'].'/'.$record['id']
 		);
+	}//end sendCommand()
 
+	/**
+	 * Dispatch the send command.
+	 *
+	 * @param object $event The send command.
+	 *
+	 * @return array<string, string>|null The failure, or null when it was dispatched.
+	 */
+	private function dispatch(object $event): array|null {
 		try {
 			$this->events->dispatchTyped($event);
 		} catch (Throwable $e) {
@@ -186,6 +288,17 @@ class MessageBoxSender {
 			return ['status' => 'failed', 'refusalCode' => 'dispatch_failed'];
 		}
 
+		return null;
+	}//end dispatch()
+
+	/**
+	 * Integriq's answer on the dispatched command.
+	 *
+	 * @param object $event The dispatched send command.
+	 *
+	 * @return array<string, string>
+	 */
+	private function answerOf(object $event): array {
 		$refusal = $event->getRefusal();
 		if (is_array($refusal) === true) {
 			return ['status' => 'failed', 'refusalCode' => (string)($refusal['code'] ?? 'refused')];
@@ -199,7 +312,7 @@ class MessageBoxSender {
 		$early = (new MessageBoxStatus())->take(messageId: $messageId);
 
 		return ['status' => ($early ?? 'sent'), 'externalMessageId' => $messageId];
-	}//end request()
+	}//end answerOf()
 
 	/**
 	 * The resident's account id, the notification row's scope, or null when
@@ -247,16 +360,31 @@ class MessageBoxSender {
 
 		$out = [];
 		foreach (['app', 'collection', 'id'] as $key) {
-			$value = ($record[$key] ?? null);
-			if (is_string($value) === false || $value === '') {
+			$out[$key] = $this->recordPart(record: $record, key: $key);
+			if ($out[$key] === '') {
 				return null;
 			}
-
-			$out[$key] = $value;
 		}
 
 		return $out;
 	}//end record()
+
+	/**
+	 * One part of the message's reference, or '' when it is not a non-empty string.
+	 *
+	 * @param array<string, mixed> $record The job's record.
+	 * @param string               $key    The part: `app`, `collection` or `id`.
+	 *
+	 * @return string
+	 */
+	private function recordPart(array $record, string $key): string {
+		$value = ($record[$key] ?? null);
+		if (is_string($value) === false) {
+			return '';
+		}
+
+		return $value;
+	}//end recordPart()
 
 	/**
 	 * The message, read the way the resident's own inbox reads it.
@@ -291,26 +419,7 @@ class MessageBoxSender {
 	 * @return string|null
 	 */
 	private function recipient(array $record, string $method): ?string {
-		$provider = $this->locator->locate(appId: $record['app']);
-		if ($provider === null || (new TimelineProviderMethod())->callableOn(provider: $provider, method: $method) === false) {
-			return null;
-		}
-
-		try {
-			$recipient = $provider->{$method}($record['id']);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Portaliq: message box recipient method failed',
-				['app' => $record['app'], 'method' => $method, 'exception' => get_class($e)]
-			);
-			return null;
-		}
-
-		if (is_string($recipient) === false || trim($recipient) === '') {
-			return null;
-		}
-
-		return trim($recipient);
+		return (new MessageBoxRecipient(locator: $this->locator, logger: $this->logger))->forRecord(record: $record, method: $method);
 	}//end recipient()
 
 	/**
@@ -382,13 +491,32 @@ class MessageBoxSender {
 
 		$out = [];
 		foreach ($value as $attachment) {
-			if (is_array($attachment) === true) {
-				$out[] = $attachment;
-			} elseif (is_string($attachment) === true && $attachment !== '') {
-				$out[] = ['id' => $attachment];
+			$reference = $this->attachmentReference(attachment: $attachment);
+			if ($reference !== null) {
+				$out[] = $reference;
 			}
 		}
 
 		return $out;
 	}//end attachments()
+
+	/**
+	 * One attachment as integriq takes it: an array as it is, a non-empty id
+	 * as `{id}`, anything else null.
+	 *
+	 * @param mixed $attachment The attachment.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function attachmentReference(mixed $attachment): ?array {
+		if (is_array($attachment) === true) {
+			return $attachment;
+		}
+
+		if (is_string($attachment) === true && $attachment !== '') {
+			return ['id' => $attachment];
+		}
+
+		return null;
+	}//end attachmentReference()
 }//end class

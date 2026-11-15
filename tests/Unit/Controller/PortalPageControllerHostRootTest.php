@@ -28,6 +28,7 @@ use OCA\Portaliq\Service\PortalRegisterContext;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
 use OCA\Portaliq\Service\PortalThemeResolver;
+use OCA\Portaliq\Service\PublishedPortals;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IURLGenerator;
@@ -275,7 +276,7 @@ class PortalPageControllerHostRootTest extends TestCase {
 		$container->method('get')->willReturn($objects);
 		$context = $this->createMock(PortalRegisterContext::class);
 		$context->method('apply')->willReturn(true);
-		$resolver = new PortalResolver($container, $this->createMock(LoggerInterface::class), $context);
+		$resolver = new PortalResolver(new PublishedPortals($container, $this->createMock(LoggerInterface::class), $context), $this->createMock(LoggerInterface::class));
 
 		$urlGenerator = $this->createMock(IURLGenerator::class);
 		$urlGenerator->method('linkTo')->willReturn('/apps/x/y');

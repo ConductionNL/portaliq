@@ -25,6 +25,7 @@ use OCA\Portaliq\Service\ExampleSite\ExampleSiteRecord;
 use OCA\Portaliq\Service\ExampleSite\ExampleSiteRemover;
 use OCA\Portaliq\Service\ExampleSite\ExampleSiteRows;
 use OCA\Portaliq\Service\ExampleSite\ExampleSiteStore;
+use OCA\Portaliq\Service\PortalNameSetting;
 use OCA\Portaliq\Service\PortalThemeResolver;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
@@ -58,6 +59,13 @@ class ExampleSiteInstallerTest extends TestCase {
 	private array $refusedRoutes = [];
 
 	/**
+	 * Ids the fake store refuses to delete, per schema.
+	 *
+	 * @var array<string, array<int, string>>
+	 */
+	private array $refusedDeletes = [];
+
+	/**
 	 * Whether the fake store hands over every row, whatever the filter.
 	 *
 	 * @var bool
@@ -84,9 +92,10 @@ class ExampleSiteInstallerTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->rows = ['portal' => [], 'menu' => [], 'page' => [], 'newsItem' => [], 'glossaryTerm' => []];
+		$this->rows = ['portal' => [], 'form' => [], 'menu' => [], 'page' => [], 'newsItem' => [], 'glossaryTerm' => []];
 		$this->unknownKeys = [];
 		$this->refusedRoutes = [];
+		$this->refusedDeletes = [];
 		$this->ignoreFilters = false;
 		$this->config = [];
 	}//end setUp()
@@ -123,6 +132,60 @@ class ExampleSiteInstallerTest extends TestCase {
 		$this->assertCount(4, $record['newsItem']);
 		$this->assertNotSame('', $record['portal']);
 	}//end testAFreshInstanceGetsTheWholeSite()
+
+	/**
+	 * The install names the resident portal for the other apps after the
+	 * site's own area ("Mijn Zuiddrecht"), and leaves a name an
+	 * administrator set alone.
+	 *
+	 * @return void
+	 */
+	public function testTheInstallNamesThePortalOnlyWhenNoneIsSet(): void {
+		$this->installer()->install(site: $this->zuiddrecht());
+		$this->assertSame(expected: 'Mijn Zuiddrecht', actual: $this->config['portalName']);
+
+		$this->setUp();
+		$this->config['portalName'] = 'Loket Zuiddrecht';
+		$this->installer()->install(site: $this->zuiddrecht());
+		$this->assertSame(expected: 'Loket Zuiddrecht', actual: $this->config['portalName']);
+	}//end testTheInstallNamesThePortalOnlyWhenNoneIsSet()
+
+	/**
+	 * A site's form is installed before its pages, and the page's form block
+	 * carries the installed form's id instead of its key.
+	 *
+	 * @return void
+	 */
+	public function testAFormArrivesBeforeThePageThatShowsIt(): void {
+		$site = $this->zuiddrecht();
+		$site['forms'] = [[
+			'externalReference' => 'organisation-registration',
+			'sourceApp' => 'stackiq',
+			'fields' => [['id' => 'name', 'label' => 'Naam', 'type' => 'text']],
+			'submitLabel' => 'Versturen',
+			'status' => 'active',
+			'destination' => ['register' => 'stackiq', 'schema' => 'organization', 'fixed' => ['registrationStatus' => 'pending']],
+		]];
+		$site['pages'][] = [
+			'route' => '/aanmelden',
+			'title' => 'Aanmelden',
+			'status' => 'published',
+			'body' => ['type' => 'grid', 'widgets' => [['id' => 'f', 'widgetKey' => 'form', 'props' => ['formKey' => 'organisation-registration', 'submitLabel' => 'Versturen']]]],
+		];
+
+		$report = $this->installer()->install(site: $site);
+
+		$this->assertTrue($report['ok'], implode("\n", array_merge($report['missing'], $report['lost'])));
+		$formId = array_key_first($this->rows['form']);
+		$this->assertSame('zuiddrecht', $this->rows['form'][$formId]['portal']);
+		$this->assertSame(['registrationStatus' => 'pending'], $this->rows['form'][$formId]['destination']['fixed']);
+		$props = $this->rows['page'][$this->idOfPage(route: '/aanmelden')]['body']['widgets'][0]['props'];
+		$this->assertSame($formId, $props['formId']);
+		$this->assertArrayNotHasKey('formKey', $props);
+
+		$again = $this->installer()->install(site: $site);
+		$this->assertSame(['declared' => 1, 'created' => 0, 'kept' => 1, 'arrived' => 1], $again['types']['form']);
+	}//end testAFormArrivesBeforeThePageThatShowsIt()
 
 	/**
 	 * The glossary terms arrive with the portal's slug, keyed by their term,
@@ -265,10 +328,10 @@ class ExampleSiteInstallerTest extends TestCase {
 		$report = $this->remover->remove(site: 'zuiddrecht', slug: 'zuiddrecht');
 
 		$this->assertTrue($report['recorded']);
-		$this->assertSame(['menu' => 3, 'page' => 50, 'newsItem' => 4, 'glossaryTerm' => 6], $report['deleted']);
+		$this->assertSame(['menu' => 3, 'page' => 50, 'newsItem' => 4, 'glossaryTerm' => 6, 'form' => 0], $report['deleted']);
 		$this->assertSame('deleted', $report['portal']);
 		$this->assertSame([], $report['failed']);
-		$this->assertSame(['portal' => [], 'menu' => [], 'page' => [], 'newsItem' => [], 'glossaryTerm' => []], $this->rows);
+		$this->assertSame(['portal' => [], 'form' => [], 'menu' => [], 'page' => [], 'newsItem' => [], 'glossaryTerm' => []], $this->rows);
 		$this->assertArrayNotHasKey('example_site_zuiddrecht', $this->config);
 	}//end testRemoveDeletesWhatTheInstallCreated()
 
@@ -357,6 +420,61 @@ class ExampleSiteInstallerTest extends TestCase {
 		$this->assertSame(['new'], array_keys($this->rows['portal']));
 		$this->assertArrayNotHasKey('example_site_zuiddrecht', $this->config);
 	}//end testAnotherPortalUnderTheSameSlugIsKept()
+
+	/**
+	 * A page the store refuses to delete is named as failed, keeps the
+	 * portal around it, and stays in the record so a later run can finish.
+	 *
+	 * @return void
+	 */
+	public function testARefusedDeleteIsNamedAndStaysRecorded(): void {
+		$installer = $this->installer();
+		$installer->install(site: $this->zuiddrecht());
+		$stuck = $this->idOfPage(route: '/afval');
+		$this->refusedDeletes = ['page' => [$stuck]];
+
+		$report = $this->remover->remove(site: 'zuiddrecht', slug: 'zuiddrecht');
+
+		$this->assertSame(49, $report['deleted']['page']);
+		$this->assertSame(0, $report['gone']['page']);
+		$this->assertSame(['page ' . $stuck], $report['failed']);
+		$this->assertSame('kept-content', $report['portal']);
+		$this->assertSame([$stuck], array_keys($this->rows['page']));
+		$this->assertCount(1, $this->rows['portal']);
+
+		$this->refusedDeletes = [];
+		$again = $this->remover->remove(site: 'zuiddrecht', slug: 'zuiddrecht');
+		$this->assertSame(1, $again['deleted']['page']);
+		$this->assertSame([], $again['failed']);
+		$this->assertSame('deleted', $again['portal']);
+		$this->assertSame([], $this->rows['page']);
+		$this->assertArrayNotHasKey('example_site_zuiddrecht', $this->config);
+	}//end testARefusedDeleteIsNamedAndStaysRecorded()
+
+	/**
+	 * An emptied portal the store refuses to delete is reported as failed
+	 * and stays in the record, so a later run deletes it.
+	 *
+	 * @return void
+	 */
+	public function testARefusedPortalDeleteIsReportedAndStaysRecorded(): void {
+		$installer = $this->installer();
+		$installer->install(site: $this->zuiddrecht());
+		$this->refusedDeletes = ['portal' => array_keys($this->rows['portal'])];
+
+		$report = $this->remover->remove(site: 'zuiddrecht', slug: 'zuiddrecht');
+
+		$this->assertSame('failed', $report['portal']);
+		$this->assertSame([], $report['failed']);
+		$this->assertSame([], $this->rows['page']);
+		$this->assertCount(1, $this->rows['portal']);
+		$this->assertArrayHasKey('example_site_zuiddrecht', $this->config);
+
+		$this->refusedDeletes = [];
+		$this->assertSame('deleted', $this->remover->remove(site: 'zuiddrecht', slug: 'zuiddrecht')['portal']);
+		$this->assertSame([], $this->rows['portal']);
+		$this->assertArrayNotHasKey('example_site_zuiddrecht', $this->config);
+	}//end testARefusedPortalDeleteIsReportedAndStaysRecorded()
 
 	/**
 	 * Remove without a record does nothing.
@@ -511,7 +629,9 @@ class ExampleSiteInstallerTest extends TestCase {
 		);
 		$store->method('delete')->willReturnCallback(
 			function (string $schema, string $id): bool {
-				if (isset($this->rows[$schema][$id]) === false) {
+				if (isset($this->rows[$schema][$id]) === false
+					|| in_array($id, ($this->refusedDeletes[$schema] ?? []), true) === true
+				) {
 					return false;
 				}
 
@@ -545,6 +665,6 @@ class ExampleSiteInstallerTest extends TestCase {
 		$record = new ExampleSiteRecord($appConfig);
 		$this->remover = new ExampleSiteRemover($store, $rows, $record);
 
-		return new ExampleSiteInstaller($store, $rows, $record, new ExampleSiteProof(), $themes);
+		return new ExampleSiteInstaller($store, $rows, $record, new ExampleSiteProof(), $themes, new PortalNameSetting(appConfig: $appConfig));
 	}//end installer()
 }//end class

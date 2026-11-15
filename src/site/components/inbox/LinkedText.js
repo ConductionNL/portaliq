@@ -14,7 +14,7 @@
 import { h } from 'vue'
 
 /**
- * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-shows-other-site-addresses-as-named-links-req-nap-013
+ * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-shows-other-site-addresses-as-named-links-req-nap-013
  */
 export default {
 	name: 'LinkedText',
@@ -35,7 +35,7 @@ export default {
 		 * @param {MouseEvent} event The click.
 		 * @param {{route?: (string|null)}} part The link.
 		 * @return {void}
-		 * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-shows-other-site-addresses-as-named-links-req-nap-013
+		 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-shows-other-site-addresses-as-named-links-req-nap-013
 		 */
 		follow(event, part) {
 			if (

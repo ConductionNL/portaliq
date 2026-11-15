@@ -1,11 +1,14 @@
 # portal-traffic-outcomes Specification
 
 ## Purpose
-TBD - created by archiving change portal-traffic-outcomes. Update Purpose after archive.
+
+Beyond page views a portal measures outcomes: goals, funnels, form progress, missing pages, custom dimensions and site search. This spec fixes how each is declared by the portal, evaluated by the aggregation and reported, without ever carrying what a visitor typed.
 
 ## Requirements
 
 ### Requirement: Goals MUST be evaluated from the portal's own definitions
+
+Goals MUST be evaluated from the portal's own definitions.
 
 A portal names its goals in `traffic.goals[]`, each `{ id, name, type,
 match, value? }` with `type` one of `page_reached`, `event`, `download`,
@@ -38,6 +41,8 @@ that met any goal.
 
 ### Requirement: Funnel steps MUST count in order
 
+Funnel steps MUST count in order.
+
 A portal names funnels in `traffic.funnels[]`, each `{ id, name, steps:
 [{ name, match }] }` with the goal's match shape. A session is at step N
 only when it matched step N after (by sequence) it matched step N-1. The
@@ -59,6 +64,8 @@ that did not reach this one.
 @e2e exclude covered by TrafficFunnelsTest (in order, out of order, partial); one browser session cannot be made to arrive out of order on purpose
 
 ### Requirement: Form analytics MUST never carry a value
+
+Form analytics MUST never carry a value.
 
 When `form_start`, `form_field` and `form_abandon` are enabled events, the
 client reports a form's first interaction, each field left (its id and the
@@ -95,6 +102,8 @@ avgMs, abandonedHere }] }]`.
 
 ### Requirement: Missing pages MUST be reported by the renderer and listed
 
+Missing pages MUST be reported by the renderer and listed.
+
 The built-in renderer marks its not-found state with
 `data-portaliq-status="404"`; an external page may carry the same. The
 client then sends `page_not_found` when the portal enabled it. The rollup
@@ -108,6 +117,8 @@ carries `notFound: [{ path, hits }]` and the Pages widget lists them under
 - **AND** after aggregation the rollup lists the path and the Traffic page shows it as a missing page
 
 ### Requirement: Custom dimensions MUST be declared before they are stored
+
+Custom dimensions MUST be declared before they are stored.
 
 A portal declares `traffic.customDimensions[]`, each `{ id, name, scope }`
 with `scope` one of `session`, `event`. The client accepts
@@ -124,6 +135,8 @@ scoped dimension, events for an event scoped one.
 - **AND** the day's rollup counts the declared value and the Dimensions widget lists it
 
 ### Requirement: Site search MUST be reported by the built-in search box
+
+Site search MUST be reported by the built-in search box.
 
 The built-in renderer's search block reports a `search` event with the term
 and, when the search completed, the result count. The Traffic page lists

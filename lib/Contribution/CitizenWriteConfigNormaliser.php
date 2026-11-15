@@ -24,23 +24,21 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+ * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\CitizenWriteConfigNormaliserInterface;
+
 /**
  * Validates the per-action `citizenWrite` declaration, fail closed.
  *
- * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+ * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
-class CitizenWriteConfigNormaliser {
-	/**
-	 * The manifest key carrying the declaration.
-	 */
-	public const KEY = 'citizenWrite';
+class CitizenWriteConfigNormaliser implements CitizenWriteConfigNormaliserInterface {
 
 	/**
 	 * Keys the case app MUST supply; without all three the portal cannot
@@ -68,7 +66,7 @@ class CitizenWriteConfigNormaliser {
 	 *
 	 * @return array<string, mixed> The action, with a valid declaration or none.
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	public function normaliseAction(array $action): array {
 		if (array_key_exists(self::KEY, $action) === false) {
@@ -100,11 +98,38 @@ class CitizenWriteConfigNormaliser {
 	 *
 	 * @param array<string, mixed> $declared The declaration as authored.
 	 *
-	 * @return array<string, string>|null The sanitised config, or null.
+	 * @return array<string, mixed>|null The sanitised config, or null.
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/changes/personal-data-left-untranslated/tasks.md#t03
 	 */
 	private function normaliseConfig(array $declared): ?array {
+		$config = $this->requiredKeys(declared: $declared);
+		if ($config === null) {
+			return null;
+		}
+
+		$config = $config + $this->defaultedKeys(declared: $declared);
+
+		// How a field's value is shown (personal data, its format) rides along
+		// only when the declaration says something about at least one field.
+		$hints = CaseFieldDisplayHints::normalise(declared: ($declared['fields'] ?? null));
+		if ($hints !== []) {
+			$config['fields'] = $hints;
+		}
+
+		return $config;
+	}//end normaliseConfig()
+
+	/**
+	 * The keys the declaration must name, or null when one is missing or
+	 * empty.
+	 *
+	 * @param array<string, mixed> $declared The declaration as authored.
+	 *
+	 * @return array<string, string>|null
+	 */
+	private function requiredKeys(array $declared): ?array {
 		$config = [];
 		foreach (self::REQUIRED as $key) {
 			$value = ($declared[$key] ?? null);
@@ -115,8 +140,21 @@ class CitizenWriteConfigNormaliser {
 			$config[$key] = $value;
 		}
 
+		return $config;
+	}//end requiredKeys()
+
+	/**
+	 * The keys with a default: the declared value when it is a non-empty
+	 * string, else the default.
+	 *
+	 * @param array<string, mixed> $declared The declaration as authored.
+	 *
+	 * @return array<string, string>
+	 */
+	private function defaultedKeys(array $declared): array {
+		$config = [];
 		foreach (self::DEFAULTS as $key => $fallback) {
-			$value = ($declared[$key] ?? null);
+			$value        = ($declared[$key] ?? null);
 			$config[$key] = $fallback;
 			if (is_string($value) === true && $value !== '') {
 				$config[$key] = $value;
@@ -124,5 +162,5 @@ class CitizenWriteConfigNormaliser {
 		}
 
 		return $config;
-	}//end normaliseConfig()
+	}//end defaultedKeys()
 }//end class

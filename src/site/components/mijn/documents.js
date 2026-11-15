@@ -2,11 +2,13 @@
 // SPDX-License-Identifier: EUPL-1.2
 //
 // The plain logic of the file items and the contact timeline: a document's
-// type and size in words ("PDF, 84 kB"), who added it and when ("Van de
-// gemeente, 2 oktober 2026"), and a moment in words for the timeline. No
+// type and size in words ("PDF, 84 kB"), who added it and when ("Van het
+// waterschap, 2 oktober 2026"), and a moment in words for the timeline. No
 // Vue, so tests/mijn-documents.spec.mjs runs it as node.
 //
-// @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+// @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+
+import { organisationKind } from './organisationKind.js'
 
 /** File types a resident recognises by name, by media type. */
 const TYPES = {
@@ -42,7 +44,7 @@ function language(locale) {
  *
  * @param {object} entry The document (`mimeType?`, `title`).
  * @return {string}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
  */
 export function fileType(entry) {
 	const known = TYPES[String(entry?.mimeType || '').toLowerCase()]
@@ -61,7 +63,7 @@ export function fileType(entry) {
  * @param {number} bytes The size.
  * @param {string} [locale] The page language.
  * @return {string} The words, or '' without a size.
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
  */
 export function sizeInWords(bytes, locale = 'nl') {
 	const size = Number(bytes)
@@ -102,7 +104,7 @@ export function fullDay(value, locale = 'nl') {
  * @param {(key: string, vars?: object) => string} tr The translator.
  * @param {string} [locale] The page language.
  * @return {string}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
  */
 export function momentInWords(value, tr, locale = 'nl') {
 	const day = fullDay(value, locale)
@@ -121,17 +123,23 @@ export function momentInWords(value, tr, locale = 'nl') {
 
 /**
  * The line under a document's name: who added it and when, then its type
- * and size. "Van de gemeente, 2 oktober 2026. PDF, 84 kB".
+ * and size. "Van het waterschap, 2 oktober 2026. PDF, 84 kB".
  *
  * @param {object} entry The document (`kind`, `date?`, `mimeType?`, `size?`, `title`).
  * @param {(key: string, vars?: object) => string} tr The translator.
  * @param {string} [locale] The page language.
+ * @param {string} [kind] The portal's organisation type label; none reads "de organisatie".
  * @return {string}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+ * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
  */
-export function fileLine(entry, tr, locale = 'nl') {
+export function fileLine(entry, tr, locale = 'nl', kind = '') {
 	const from =
-		entry?.kind === 'yours' ? tr('From you') : tr('From the municipality')
+		entry?.kind === 'yours'
+			? tr('From you')
+			: tr('From {organisation}', {
+				organisation: organisationKind(kind, locale),
+			})
 	const day = fullDay(entry?.date, locale)
 	const who = day ? `${from}, ${day}` : from
 	const facts = [fileType(entry), sizeInWords(entry?.size, locale)]
@@ -183,4 +191,44 @@ export function groupDocuments(entries, field) {
 export function statusState(entry) {
 	const tone = String(entry?.statusTone || '').toLowerCase()
 	return ['success', 'warning', 'error'].includes(tone) ? tone : 'neutral'
+}
+
+/**
+ * The line under a paper that is not a case's: its day and its type and
+ * size, "2 oktober 2026 · PDF, 84 kB". No sender: the school is not the
+ * municipality, and the group heading already says whose it is.
+ *
+ * @param {object} entry The document (`date?`, `mimeType?`, `size?`, `title`).
+ * @param {string} [locale] The page language.
+ * @return {string}
+ * @spec openspec/changes/documents-for-each-record/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
+ */
+export function paperLine(entry, locale = 'nl') {
+	const facts = [fileType(entry), sizeInWords(entry?.size, locale)]
+		.filter(Boolean)
+		.join(', ')
+	return [fullDay(entry?.date, locale), facts].filter(Boolean).join(' · ')
+}
+
+/**
+ * The block one record of an each-record documents block draws: headed by
+ * the row's title fields (else the block's label) and, beside it, the row's
+ * subtitle fields (else the block's subtitle).
+ *
+ * @param {object} block The normalised documents block.
+ * @param {object} row One row of its collection.
+ * @return {object} The block for that row.
+ * @spec openspec/changes/documents-for-each-record/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
+ */
+export function eachRecordBlock(block, row) {
+	const words = (fields) =>
+		(Array.isArray(fields) ? fields : [])
+			.map((field) => row?.[field])
+			.filter((value) => typeof value === 'string' && value.trim() !== '')
+			.join(' ')
+	return {
+		...block,
+		label: words(block?.titleFields) || block?.label || '',
+		subtitle: words(block?.subtitleFields) || block?.subtitle || '',
+	}
 }

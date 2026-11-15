@@ -26,13 +26,15 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+ * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\Portaliq\Kernel\Contracts\CaseTypeReaderInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -40,9 +42,11 @@ use Throwable;
 /**
  * Resolves a case type object by id, fail closed.
  *
- * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+ * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
-class CaseTypeReader {
+class CaseTypeReader implements CaseTypeReaderInterface {
+	use ObjectServiceLookup;
+
 	/**
 	 * OpenRegister's object service.
 	 */
@@ -69,10 +73,10 @@ class CaseTypeReader {
 	 *
 	 * @return array<string, mixed>|null The case type, or null.
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	public function readCaseType(string $register, string $schema, string $id): ?array {
-		if ($register === '' || $schema === '' || $id === '') {
+		if ($this->namesNoCaseType(register: $register, schema: $schema, id: $id) === true) {
 			return null;
 		}
 
@@ -81,24 +85,45 @@ class CaseTypeReader {
 			return null;
 		}
 
+		return $this->asArray(entity: $this->caseTypeEntity(objectService: $objectService, register: $register, schema: $schema, id: $id));
+	}//end readCaseType()
+
+	/**
+	 * Whether a register, schema or id is missing.
+	 *
+	 * @param string $register The register the case type lives in.
+	 * @param string $schema   The schema the case type lives in.
+	 * @param string $id       The case type id.
+	 *
+	 * @return bool
+	 */
+	private function namesNoCaseType(string $register, string $schema, string $id): bool {
+		return $register === '' || $schema === '' || $id === '';
+	}//end namesNoCaseType()
+
+	/**
+	 * The stored case type entity, or null when the read fails.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $register      The register the case type lives in.
+	 * @param string $schema        The schema the case type lives in.
+	 * @param string $id            The case type id.
+	 *
+	 * @return mixed
+	 */
+	private function caseTypeEntity(object $objectService, string $register, string $schema, string $id): mixed {
 		try {
-			$entity = $objectService->find(
+			return $objectService->find(
 				id: $id,
-				register: $register,
-				schema: $schema,
+				options: new ObjectFindOptions(register: $register, schema: $schema),
 				_rbac: false,
 				_multitenancy: false
 			);
 		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Portaliq: case type read failed',
-				['schema' => $schema, 'reason' => $e->getMessage()]
-			);
+			$this->logger->warning('Portaliq: case type read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
 			return null;
 		}
-
-		return $this->asArray(entity: $entity);
-	}//end readCaseType()
+	}//end caseTypeEntity()
 
 	/**
 	 * The case types of one schema, as a case app declares them in its
@@ -123,18 +148,43 @@ class CaseTypeReader {
 			return [];
 		}
 
-		try {
-			$objectService->setRegister(register: $register);
-			$objectService->setSchema(schema: $schema);
-			$rows = $objectService->findAll(config: ['filters' => [], 'limit' => $limit, 'offset' => 0], _rbac: false, _multitenancy: false);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Portaliq: case type list failed',
-				['schema' => $schema, 'reason' => $e->getMessage()]
-			);
+		$rows = $this->caseTypeRows(objectService: $objectService, register: $register, schema: $schema, limit: $limit);
+		if ($rows === null) {
 			return [];
 		}
 
+		return $this->caseTypesIn(rows: $rows);
+	}//end listCaseTypes()
+
+	/**
+	 * The stored rows of one case type schema, or null when the read fails.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $register      The register the case types live in.
+	 * @param string $schema        The schema the case types live in.
+	 * @param int    $limit         The row cap.
+	 *
+	 * @return mixed
+	 */
+	private function caseTypeRows(object $objectService, string $register, string $schema, int $limit): mixed {
+		try {
+			$objectService->setRegister(register: $register);
+			$objectService->setSchema(schema: $schema);
+			return $objectService->findAll(config: ['filters' => [], 'limit' => $limit, 'offset' => 0], _rbac: false, _multitenancy: false);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: case type list failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
+			return null;
+		}
+	}//end caseTypeRows()
+
+	/**
+	 * The rows that are case types, as plain arrays.
+	 *
+	 * @param mixed $rows The rows read.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function caseTypesIn(mixed $rows): array {
 		$types = [];
 		foreach ((array)$rows as $row) {
 			$type = $this->asArray(entity: $row);
@@ -144,7 +194,7 @@ class CaseTypeReader {
 		}
 
 		return $types;
-	}//end listCaseTypes()
+	}//end caseTypesIn()
 
 	/**
 	 * The entity as a plain array, or null when it cannot be one.
@@ -172,23 +222,4 @@ class CaseTypeReader {
 
 		return null;
 	}//end asArray()
-
-	/**
-	 * Resolve OpenRegister's ObjectService, or null when unavailable.
-	 *
-	 * @return object|null
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end objectService()
 }//end class

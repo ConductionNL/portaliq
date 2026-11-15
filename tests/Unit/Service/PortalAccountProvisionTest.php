@@ -72,6 +72,42 @@ class PortalAccountProvisionTest extends TestCase {
 
 	}//end testProvisioningWithNeitherReferenceNorEmailIsRefused()
 
+	/**
+	 * The provisioned rows, field by field and in order: an identity account
+	 * carries its identity first, an address-only account carries none.
+	 */
+	public function testAProvisionedRowHasItsFieldsInOrder(): void {
+		$service = $this->service();
+
+		$withIdentity = $service->provision(
+			audience: 'client',
+			organisation: 'gemeente-x',
+			identityType: 'digid',
+			identityRef: 'bsn-1',
+			email: 'ans@example.org',
+			verifiedEmail: true,
+			provisionedBy: 'clerk-anna',
+			displayName: 'Ans'
+		);
+		$row = $this->rowBySubjectRef($withIdentity['subjectRef']);
+		$this->assertSame(
+			['identityType', 'identityRef', 'audience', 'subjectRef', 'organisation', 'displayName', 'email', 'verifiedEmail', 'status', 'provisionedBy', 'provisionedAt'],
+			array_values(array_diff(array_keys($row), ['uuid']))
+		);
+		$this->assertSame(['subjectRef' => $withIdentity['subjectRef'], 'isNew' => true, 'status' => 'pending'], $withIdentity);
+		$this->assertSame(['digid', 'bsn-1', 'client', 'gemeente-x', 'Ans', 'ans@example.org', true, 'pending', 'clerk-anna'], [$row['identityType'], $row['identityRef'], $row['audience'], $row['organisation'], $row['displayName'], $row['email'], $row['verifiedEmail'], $row['status'], $row['provisionedBy']]);
+
+		$addressOnly = $service->provision(audience: 'client', organisation: 'gemeente-x', email: 'bob@example.org');
+		$row = $this->rowBySubjectRef($addressOnly['subjectRef']);
+		$this->assertArrayNotHasKey('identityType', $row);
+		$this->assertArrayNotHasKey('identityRef', $row);
+		$this->assertFalse($row['verifiedEmail']);
+
+		$again = $service->provision(audience: 'client', organisation: 'gemeente-x', identityType: 'digid', identityRef: 'bsn-1');
+		$this->assertSame(['subjectRef' => $withIdentity['subjectRef'], 'isNew' => false, 'status' => 'pending'], $again);
+
+	}//end testAProvisionedRowHasItsFieldsInOrder()
+
 	public function testTheProvisionedCitizensFirstLoginActivatesTheirOwnAccount(): void {
 		$service = $this->service();
 

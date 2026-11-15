@@ -6,7 +6,7 @@
   it, so the editor draws no title line of its own. It reads the page from the
   route's `id`, which the page detail route carries as the layout route does.
 
-  @spec openspec/changes/page-editor-in-the-page/specs/portal-page-designer/spec.md#requirement-the-layout-editor-is-a-tab-of-the-page
+  @spec openspec/specs/portal-page-designer/spec.md#requirement-the-layout-editor-is-a-tab-of-the-page
 -->
 <template>
 	<PageLayoutDesigner embedded data-testid="page-layout-editor" />

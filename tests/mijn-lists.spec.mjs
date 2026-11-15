@@ -296,12 +296,13 @@ test("a table reads in its collection's default order, and a block's own sort wi
 	)
 })
 
-test('Linda acts for her father: a named bar with the way back to herself', async () => {
-	// REQ-SMO-008 scenario "Linda acts for her father, DossiqPhone.dc.html".
+test('Linda acts for her father: one bar with "Wissel naar" inside it', async () => {
+	// REQ-SMO-008 scenario "Linda acts for her father, huisstijl/NamensBalk".
 	const mandates = [{ id: 'm1', label: 'uw vader, H. Bakker' }]
 	const html = await renderComponent(ActingForBar, {
 		mandates,
 		value: 'm1',
+		name: 'Linda Bakker',
 		locale: 'nl',
 	})
 	assert.match(
@@ -309,29 +310,34 @@ test('Linda acts for her father: a named bar with the way back to herself', asyn
 		/^<section class="pq-acting-for-bar" aria-label="Namens wie u werkt"/,
 	)
 	assert.match(html, /U regelt nu zaken voor <span translate="no"[^>]*>(<!--\[-->)?uw vader, H\. Bakker/)
-	assert.match(html, /<button type="button"[^>]*>Wissel naar uzelf<\/button>/)
+	assert.match(html, /<label for="pq-acting-for-bar"[^>]*>Wissel naar<\/label>/)
+	assert.match(html, /Uzelf, Linda Bakker/)
+	assert.match(html, /Iedereen voor wie u zaken regelt/)
 
-	assert.doesNotMatch(
+	assert.match(
 		await renderComponent(ActingForBar, { mandates, value: 'self' }),
-		/pq-acting-for-bar/,
-		'nothing for oneself',
+		/U regelt nu uw eigen zaken\./,
 	)
 	assert.doesNotMatch(
-		await renderComponent(ActingForBar, { mandates, value: 'gone' }),
+		await renderComponent(ActingForBar, { mandates: [], value: 'self' }),
 		/pq-acting-for-bar/,
-		'nothing for a mandate no longer held',
+		'nothing without a mandate',
 	)
 
 	actingFor.id = 'm1'
+	actingFor.chosen = true
 	actingFor.mandates = mandates
 	const bar = instance(ActingForBar, { locale: 'nl' })
-	assert.equal(
-		bar.party,
-		'uw vader, H. Bakker',
-		'it reads the shared acting-for store',
-	)
-	bar.backToSelf()
+	assert.equal(bar.party, 'uw vader, H. Bakker', 'it reads the shared store')
+	bar.choose('everyone')
+	assert.equal(actingFor.chosen, false, 'everyone forgets the party chosen')
+	assert.equal(bar.choice, 'everyone')
+	bar.choose('self')
 	assert.equal(actingFor.id, 'self')
-	assert.deepEqual(bar.emitted, [['change', 'self']])
+	assert.deepEqual(bar.emitted, [
+		['change', 'everyone'],
+		['change', 'self'],
+	])
 	actingFor.mandates = []
+	actingFor.chosen = false
 })

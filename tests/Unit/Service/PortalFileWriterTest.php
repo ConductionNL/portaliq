@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use stdClass;
+use OCA\Portaliq\Tests\Support\LegacyObjectArgs;
 
 /**
  * A resident's upload is tagged, so the case screen can list it apart from
@@ -87,6 +88,7 @@ class PortalFileWriterTest extends TestCase {
 			 * @return object
 			 */
 			public function find(...$args): object {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				return new stdClass();
 			}
 		};

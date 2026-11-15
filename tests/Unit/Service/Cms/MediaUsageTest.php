@@ -12,7 +12,7 @@ namespace OCA\Portaliq\Tests\Unit\Service\Cms;
 use OCA\Portaliq\Service\Cms\MediaUsage;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PublishedPortals;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -49,7 +49,7 @@ class MediaUsageTest extends TestCase {
 	 * @spec openspec/changes/media-usage-count/specs/site-page-seo-history-and-media/spec.md#requirement-a-media-item-knows-how-many-records-use-it-req-mu-001
 	 */
 	public function testTheRecountWritesWhatChanged(): void {
-		$portals = $this->createMock(originalClassName: PortalResolver::class);
+		$portals = $this->createMock(originalClassName: PublishedPortals::class);
 		$portals->method('allPublishedPortals')->willReturn(value: [['slug' => 'zuiddrecht', 'logo' => 'media:m-3']]);
 
 		$rows = [

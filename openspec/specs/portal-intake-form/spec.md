@@ -39,7 +39,7 @@ prefill from earlier cases, a challenge, and the confirmation text.
 - **GIVEN** a binding naming an audience for which no form is published
 - **WHEN** an administrator opens the page in the CMS admin
 - **THEN** the admin surface states that the binding resolves to no form
-- **AND** the portal page renders a message and no fields
+- **AND** the portal page renders a message and no fields, such as "Dit formulier is niet meer beschikbaar"
 - @e2e exclude A toast over an admin row action; pinned by FormBindingAdminControllerTest::testABindingThatResolvesToNoFormSaysSoInTheAdmin and tests/form-binding-preview.spec.mjs
 
 ### Requirement: Intake can point at an externally hosted start form (REQ-PIFO-002)

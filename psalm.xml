@@ -91,12 +91,20 @@
                 <referencedClass name="OCA\OpenRegister\Event\ObjectDeletedEvent"/>
                 <referencedClass name="OCA\OpenRegister\Event\FormDestinationDependentsEvent"/>
                 <referencedClass name="OCA\OpenRegister\Service\Form\FormDependent"/>
+                <referencedClass name="OCA\OpenRegister\Service\Form\PublishedForm"/>
+                <referencedClass name="OCA\OpenRegister\Service\Form\FormSubmission"/>
+                <referencedClass name="OCA\OpenRegister\Service\Form\FormSubmitter"/>
+                <referencedClass name="OCA\OpenRegister\Service\Form\FormSubmitService"/>
+                <referencedClass name="OCA\OpenRegister\Service\Form\FormDestinationValidator"/>
+                <referencedClass name="OCA\OpenRegister\Service\Object\DiscardDraftRequest"/>
+                <referencedClass name="OCA\OpenRegister\Service\Object\DraftDiscard"/>
+                <referencedClass name="OCA\OpenRegister\Service\Object\DraftOwner"/>
                 <referencedClass name="OCA\OpenRegister\Service\ObjectService"/>
                 <referencedClass name="OCA\OpenRegister\Service\ConfigurationService"/>
                 <referencedClass name="OCA\OpenRegister\Service\RegisterService"/>
                 <referencedClass name="OCA\OpenRegister\Service\FileService"/>
                 <referencedClass name="OCA\OpenRegister\Service\CalendarEventService"/>
-                <referencedClass name="OCA\OpenRegister\Service\RiskLevelService"/>
+                <referencedClass name="OCA\OpenRegister\Files\Service\RiskLevelService"/>
                 <referencedClass name="OCA\OpenRegister\Db\EntityRelationMapper"/>
                 <referencedClass name="OCA\OpenRegister\Mcp\IMcpToolProvider"/>
                 <!-- Additional OCP infrastructure types used across the fleet -->

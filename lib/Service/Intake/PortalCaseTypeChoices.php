@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Kernel\Contracts\PortalCaseTypeChoicesInterface;
 use OCA\Portaliq\Service\CaseTypeReader;
 
 /**
@@ -33,7 +34,7 @@ use OCA\Portaliq\Service\CaseTypeReader;
  *
  * @spec openspec/changes/site-mandates-the-represented-manage/tasks.md#t4
  */
-class PortalCaseTypeChoices {
+class PortalCaseTypeChoices implements PortalCaseTypeChoicesInterface {
 
 	/**
 	 * Constructor.
