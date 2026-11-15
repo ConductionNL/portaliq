@@ -3927,6 +3927,18 @@
                                 "default": 90,
                                 "example": 90
                             },
+                            "excludedPaths": {
+                                "title": "Excluded paths",
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "description": "Pages the collector writes no visitor row for: each path and everything below it. Put every page that takes or shows a report of wrongdoing here, so nothing records that somebody opened the form.",
+                                "default": [],
+                                "example": [
+                                    "/meldpunt"
+                                ]
+                            },
                             "regionGranularity": {
                                 "title": "Region granularity",
                                 "type": "string",

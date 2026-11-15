@@ -419,9 +419,12 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(expected: '0.1.0', actual: self::$register['components']['schemas']['article']['version']);
 		// 0.113.0 (portalAccount 0.19.0): identity type `yivi`, a sign-in through the broker that shares only what a form asks (resident-identity-in-forms T05). Additive; moved past development's 0.112.0 at merge time.
 		// 0.114.0 (portal 0.31.0): a portal's `authentication.deskGroup`, the Nextcloud group whose members may fill a form in for a resident (resident-identity-in-forms T06). Additive; portal moved past development's 0.30.0.
+		// 0.115.0 (portal 0.32.0) on development: `traffic.excludedPaths`, the pages the collector writes no visitor row for (intake-report-pages T07). Additive.
+		$traffic = self::$register['components']['schemas']['portal']['properties']['traffic']['properties'];
+		$this->assertSame(expected: 'string', actual: $traffic['excludedPaths']['items']['type']);
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portal']['properties']['authentication']['properties']['deskGroup']['type']);
-		// 0.115.0 (portal 0.32.0): a portal's `organisationType` and `organisationTypeLabel` (portal-identity-from-the-admin REQ-PIA-003), with the marketing articles above. Additive; moved past development's 0.114.0 at merge time.
-		// 0.116.0 (portal 0.33.0): a portal's `organisationTypeSchemeId`, the scheme uuid the type picker filters on (portal-identity-from-the-admin REQ-PIA-003). Additive.
+		// 0.116.0 (portal 0.33.0): a portal's `organisationType` and `organisationTypeLabel` (portal-identity-from-the-admin REQ-PIA-003), with the marketing articles above. Additive; moved past development's 0.115.0 (portal 0.32.0) at merge time.
+		// also 0.116.0: a portal's `organisationTypeSchemeId`, the scheme uuid the type picker filters on (portal-identity-from-the-admin REQ-PIA-003). Additive.
 		$this->assertSame(expected: 'uuid', actual: self::$register['components']['schemas']['portal']['properties']['organisationTypeSchemeId']['format']);
 		$this->assertSame(expected: '0.116.0', actual: self::$register['info']['version']);
 		$this->assertSame(expected: '0.116.0', actual: self::$register['components']['registers']['portaliq']['version']);
