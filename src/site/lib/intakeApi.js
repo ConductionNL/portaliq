@@ -16,6 +16,8 @@
  * a recorder.
  */
 
+import { solveChallenge } from './waysIn.js'
+
 /**
  * @typedef {object} IntakeConnection
  * @property {string} base The portal API base, e.g. `/apps/portaliq/portal/api`.
@@ -348,6 +350,7 @@ function emptyOrPreset(field) {
  * @param {object} submission.answers The answers, keyed by field name.
  * @param {string[]} [submission.statements] The keys of the statements ticked.
  * @param {Record<string, string>} [submission.verifiedEmails] The proof of each verified e-mail address, by address.
+ * @param {{nonce: string, solution: string, expiresAt: number, signature: string}|null} [submission.proof] The solved challenge, when the form carries one.
  * @return {Promise<{reference: string, confirmationText: string, errors: object, moments?: object, unavailable?: object}>} The outcome.
  *
  * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
@@ -383,12 +386,16 @@ export async function submitIntake(conn, submission) {
  * The body of a submission: the route and answers, and the verified e-mail
  * addresses and ticked statements when there are any.
  *
- * @param {{route: string, answers: object, statements?: string[], verifiedEmails?: Record<string, string>}} submission What is sent.
+ * @param {{route: string, answers: object, statements?: string[], verifiedEmails?: Record<string, string>, proof?: {nonce: string, solution: string, expiresAt: number, signature: string}|null}} submission What is sent.
  * @param {string} [portal] The portal slug, or ''.
  * @return {object} The body.
  */
-function submissionBody({ route, answers, statements = [], verifiedEmails = {}, onBehalf = null }, portal) {
+function submissionBody({ route, answers, statements = [], verifiedEmails = {}, onBehalf = null, proof = null }, portal) {
 	const body = { route, answers: answers || {} }
+	// The solved challenge the form was issued with, checked by the submit route.
+	if (proof && typeof proof.nonce === 'string' && proof.nonce !== '') {
+		Object.assign(body, proof)
+	}
 	if (verifiedEmails && Object.keys(verifiedEmails).length > 0) {
 		body.verifiedEmails = verifiedEmails
 	}
@@ -853,4 +860,32 @@ export async function lookUpApplicant(conn, { route, kind, value }) {
  */
 export function deskSignInUrl(base, { portal, route, returnTo }) {
 	return intakeUrl(base, '/session/desk', { portal, route, returnTo })
+}
+
+/**
+ * Solve the challenge a form was issued with, as the submit route checks it
+ * (PortalChallengeService::accepts()): the nonce, its expiry and signature
+ * travel back unchanged with the solution.
+ *
+ * @param {{nonce: string, difficulty: number, expiresAt: number, signature: string}|null|undefined} challenge The issued challenge.
+ * @param {SubtleCrypto} [subtle] The browser's digest.
+ * @return {Promise<{nonce: string, solution: string, expiresAt: number, signature: string}|null>} The proof, or null without a challenge.
+ *
+ * @spec openspec/changes/intake-conditional-questions-and-drafts/specs/portal-intake-form/spec.md#requirement-a-bound-form-can-be-filled-in-on-a-site-page-req-icq-004
+ */
+export async function challengeProof(challenge, subtle = globalThis.crypto?.subtle) {
+	if (!challenge || !challenge.nonce) {
+		return null
+	}
+
+	return {
+		nonce: String(challenge.nonce),
+		solution: await solveChallenge(
+			String(challenge.nonce),
+			Number(challenge.difficulty) || 0,
+			subtle,
+		),
+		expiresAt: Number(challenge.expiresAt) || 0,
+		signature: String(challenge.signature || ''),
+	}
 }
