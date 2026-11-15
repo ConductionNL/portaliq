@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-lars-gathers-documents/specs/example-set-lars-gathers-documents/spec.md#requirement-lars-de-koning-gathered-the-lindelaan-documents
+ * @spec openspec/specs/example-set-lars-gathers-documents/spec.md#requirement-lars-de-koning-gathered-the-lindelaan-documents
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * The finished task "Stukken opvragen bij Mobiliteit en verkeer" is Lars's.
  *
- * @spec openspec/changes/example-set-lars-gathers-documents/specs/example-set-lars-gathers-documents/spec.md#requirement-lars-de-koning-gathered-the-lindelaan-documents
+ * @spec openspec/specs/example-set-lars-gathers-documents/spec.md#requirement-lars-de-koning-gathered-the-lindelaan-documents
  */
 class ZuiddrechtLarsGathersDocumentsTest extends TestCase {
 

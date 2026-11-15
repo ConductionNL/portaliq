@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-lindelaan-related/specs/example-set-lindelaan-related/spec.md#requirement-the-lindelaan-woo-case-has-sub-cases-a-subject-case-and-objects
+ * @spec openspec/specs/example-set-lindelaan-related/spec.md#requirement-the-lindelaan-woo-case-has-sub-cases-a-subject-case-and-objects
  */
 
 declare(strict_types=1);
@@ -29,7 +29,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * The Gerelateerd tab's tables have rows on the Lindelaan case.
  *
- * @spec openspec/changes/example-set-lindelaan-related/specs/example-set-lindelaan-related/spec.md#requirement-the-lindelaan-woo-case-has-sub-cases-a-subject-case-and-objects
+ * @spec openspec/specs/example-set-lindelaan-related/spec.md#requirement-the-lindelaan-woo-case-has-sub-cases-a-subject-case-and-objects
  */
 class ZuiddrechtLindelaanRelatedTest extends TestCase {
 

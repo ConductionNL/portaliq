@@ -49,7 +49,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
-use OCA\Portaliq\Service\PortalSchemaReader;
+use OCA\Portaliq\Kernel\Contracts\PortalSchemaReaderInterface;
 
 /**
  * Validates and sanitises the v3 UI-configuration vocabulary, fail-closed.
@@ -95,7 +95,7 @@ class PortalManifestNormaliser {
 	 * constructible with no arguments (its pre-existing default-value call site
 	 * in PortalContributionRegistry and every direct unit-test instantiation).
 	 *
-	 * @param PortalSchemaReader|null $schemaReader Resolves an action's schema
+	 * @param PortalSchemaReaderInterface|null $schemaReader Resolves an action's schema
 	 *                                              `required` set for the WMEBV
 	 *                                              data-minimisation guard.
 	 *                                              Optional/nullable; a null
@@ -105,7 +105,7 @@ class PortalManifestNormaliser {
 	 *
 	 * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
 	 */
-	public function __construct(?PortalSchemaReader $schemaReader = null) {
+	public function __construct(?PortalSchemaReaderInterface $schemaReader = null) {
 		$values = new ManifestValueNormaliser();
 
 		$this->collections = new CollectionConfigNormaliser($values);
@@ -127,7 +127,7 @@ class PortalManifestNormaliser {
 	 *                              a resolved/synthesised `pages` array.
 	 *
 	 * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T3
-	 * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-a-timed-task-driven-by-five-endpoint-actions
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-a-timed-task-driven-by-five-endpoint-actions
 	 * @spec openspec/changes/collection-column-labels/specs/portal-contribution-contract/spec.md#requirement-a-collection-field-must-read-under-its-schema-title-when-the-app-gave-no-label
 	 */
 	public function normalise(array $contribution): array {

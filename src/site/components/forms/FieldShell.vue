@@ -25,24 +25,7 @@
 			:id="`${id}-error`"
 			class="utrecht-form-field-error-message pq-field-shell__error"
 			:data-testid="errorTestid || undefined">
-			<svg
-				class="pq-error-icon"
-				viewBox="0 0 20 20"
-				aria-hidden="true"
-				focusable="false">
-				<circle
-					cx="10"
-					cy="10"
-					r="8"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="1.75" />
-				<path
-					d="M10 5.5v5.5M10 13.75v.5"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round" />
-			</svg>
+			<ErrorIcon />
 			{{ error }}
 		</div>
 		<div class="utrecht-form-field__input">
@@ -69,24 +52,7 @@
 			:id="`${id}-error`"
 			class="utrecht-form-field-error-message pq-field-shell__error"
 			:data-testid="errorTestid || undefined">
-			<svg
-				class="pq-error-icon"
-				viewBox="0 0 20 20"
-				aria-hidden="true"
-				focusable="false">
-				<circle
-					cx="10"
-					cy="10"
-					r="8"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="1.75" />
-				<path
-					d="M10 5.5v5.5M10 13.75v.5"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round" />
-			</svg>
+			<ErrorIcon />
 			{{ error }}
 		</div>
 		<div class="utrecht-form-field__input">
@@ -96,6 +62,7 @@
 </template>
 
 <script>
+import ErrorIcon from './ErrorIcon.vue'
 import LabelSuffix from './LabelSuffix.vue'
 
 import '@utrecht/form-field-css/dist/index.css'
@@ -123,7 +90,7 @@ import '@utrecht/form-field-error-message-css/dist/index.css'
 export default {
 	name: 'FieldShell',
 
-	components: { LabelSuffix },
+	components: { ErrorIcon, LabelSuffix },
 
 	props: {
 		/** The input's id; the label points at it, and the help and error ids derive from it. */

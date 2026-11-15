@@ -25,6 +25,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Kernel\Contracts\PortalFormCalculatorInterface;
+
 /**
  * Six operations: `sum`, `multiply`, `subtract`, `addDays`, `diffDays` and
  * `count`. An argument is a field name, a group sub-field written
@@ -33,7 +35,7 @@ namespace OCA\Portaliq\Service\Intake;
  *
  * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
  */
-class PortalFormCalculator {
+class PortalFormCalculator implements PortalFormCalculatorInterface {
 	/**
 	 * Constructor.
 	 *
@@ -43,7 +45,6 @@ class PortalFormCalculator {
 		private readonly PortalFormOperands $operands = new PortalFormOperands(),
 	) {
 	}//end __construct()
-
 
 	/**
 	 * The operations a form may name.
@@ -175,6 +176,25 @@ class PortalFormCalculator {
 			return null;
 		}
 
+		if (in_array($op, ['count', 'addDays', 'diffDays'], true) === true) {
+			return $this->operandResult(op: $op, args: $args, answers: $answers);
+		}
+
+		return $this->numericResult(op: $op, args: $args, answers: $answers);
+	}//end evaluate()
+
+	/**
+	 * The result of a count, addDays or diffDays calculation.
+	 *
+	 * @param string               $op      `count`, `addDays` or `diffDays`.
+	 * @param array<int, mixed>    $args    The calculation's arguments.
+	 * @param array<string, mixed> $answers The answers so far.
+	 *
+	 * @return int|string|null
+	 *
+	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+	 */
+	private function operandResult(string $op, array $args, array $answers): int|string|null {
 		if ($op === 'count') {
 			return $this->operands->count(arg: $args[0], answers: $answers);
 		}
@@ -183,17 +203,28 @@ class PortalFormCalculator {
 			return $this->operands->addDays(args: $args, answers: $answers);
 		}
 
-		if ($op === 'diffDays') {
-			return $this->operands->diffDays(args: $args, answers: $answers);
-		}
+		return $this->operands->diffDays(args: $args, answers: $answers);
+	}//end operandResult()
 
+	/**
+	 * The result of an arithmetic calculation, or null when an argument is no number.
+	 *
+	 * @param string               $op      The arithmetic operation.
+	 * @param array<int, mixed>    $args    The calculation's arguments.
+	 * @param array<string, mixed> $answers The answers so far.
+	 *
+	 * @return int|float|null
+	 *
+	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+	 */
+	private function numericResult(string $op, array $args, array $answers): int|float|null {
 		$numbers = $this->numbersOf(args: $args, answers: $answers);
 		if ($numbers === null) {
 			return null;
 		}
 
 		return $this->arithmetic(op: $op, numbers: $numbers);
-	}//end evaluate()
+	}//end numericResult()
 
 	/**
 	 * The numbers every argument stands for, or null when one of them has no answer or is no number.

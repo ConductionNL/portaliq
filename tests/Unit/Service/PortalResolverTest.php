@@ -22,6 +22,7 @@ namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PublishedPortals;
 use PHPUnit\Framework\TestCase;
 use OCP\IRequest;
 use Psr\Container\ContainerInterface;
@@ -62,9 +63,8 @@ class PortalResolverTest extends TestCase {
 		parent::setUp();
 
 		$this->resolver = new PortalResolver(
-			$this->createMock(ContainerInterface::class),
-			$this->createMock(LoggerInterface::class),
-			$this->contextDouble()
+			new PublishedPortals($this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class), $this->contextDouble()),
+			$this->createMock(LoggerInterface::class)
 		);
 
 		$this->sites = [
@@ -200,7 +200,7 @@ class PortalResolverTest extends TestCase {
 	 *
 	 * @return PortalResolver The resolver, wired.
 	 */
-	private function resolverReturning(?array $rows): PortalResolver {
+	private function resolverReturning(?array $rows, ?LoggerInterface $logger = null): PortalResolver {
 		$container = $this->createMock(ContainerInterface::class);
 
 		if ($rows === null) {
@@ -268,9 +268,8 @@ class PortalResolverTest extends TestCase {
 		}
 
 		return new PortalResolver(
-			$container,
-			$this->createMock(LoggerInterface::class),
-			$this->contextDouble()
+			new PublishedPortals($container, $this->createMock(LoggerInterface::class), $this->contextDouble()),
+			($logger ?? $this->createMock(LoggerInterface::class))
 		);
 	}//end resolverReturning()
 
@@ -467,9 +466,8 @@ class PortalResolverTest extends TestCase {
 		);
 
 		$resolver = new PortalResolver(
-			$container,
-			$this->createMock(LoggerInterface::class),
-			$this->contextDouble()
+			new PublishedPortals($container, $this->createMock(LoggerInterface::class), $this->contextDouble()),
+			$this->createMock(LoggerInterface::class)
 		);
 
 		$this->assertSame([], $resolver->allPublishedPortals());
@@ -567,9 +565,8 @@ class PortalResolverTest extends TestCase {
 		$container->method('get')->willReturn($reader);
 
 		return new PortalResolver(
-			$container,
-			$this->createMock(LoggerInterface::class),
-			$this->contextDouble()
+			new PublishedPortals($container, $this->createMock(LoggerInterface::class), $this->contextDouble()),
+			$this->createMock(LoggerInterface::class)
 		);
 	}//end resolverOver()
 
@@ -617,6 +614,32 @@ class PortalResolverTest extends TestCase {
 
 		$this->assertNull($resolver->resolveByOrganisation('gemeente-x'));
 	}//end testAnOrganisationWithTwoPortalsResolvesToNothing()
+
+
+	/**
+	 * An ambiguous organisation is logged with the organisation as asked
+	 * (trimmed) and every matching portal's slug; one match logs nothing.
+	 *
+	 * @return void
+	 */
+	public function testAnAmbiguousOrganisationIsLoggedWithItsPortals(): void {
+		$rows   = [
+			['slug' => 'inwoners', 'organisation' => ' gemeente-x '],
+			['slug' => 'other', 'organisation' => 'gemeente-y'],
+			['organisation' => 'gemeente-x'],
+		];
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('info')->with(
+			'Portaliq: ?org= matched several published portals; refusing to guess a brand',
+			['organisation' => 'gemeente-x', 'portals' => ['inwoners', '']]
+		);
+
+		$this->assertNull($this->resolverReturning(rows: $rows, logger: $logger)->resolveByOrganisation(' gemeente-x '));
+
+		$quiet = $this->createMock(LoggerInterface::class);
+		$quiet->expects($this->never())->method('info');
+		$this->assertSame('other', $this->resolverReturning(rows: $rows, logger: $quiet)->resolveByOrganisation('gemeente-y')['slug']);
+	}//end testAnAmbiguousOrganisationIsLoggedWithItsPortals()
 
 
 	/**

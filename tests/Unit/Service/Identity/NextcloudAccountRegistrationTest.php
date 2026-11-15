@@ -39,6 +39,7 @@ use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\PublishedPortals;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\RedirectResponse;
@@ -53,6 +54,9 @@ use OCP\IUser;
 use OCP\IUserManager;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Service\Identity\ContactAddressValues;
+use OCA\Portaliq\Service\RequestedPortal;
+use OCA\Portaliq\Service\Signin\SiteReturnAddress;
 
 /**
  * The registration door, the first sign-in and the way back.
@@ -148,7 +152,7 @@ class NextcloudAccountRegistrationTest extends TestCase {
 		$groups->method('isInGroup')->willReturnCallback(fn (string $uid, string $group): bool => in_array($group, ($this->memberships[$uid] ?? []), true));
 		$groups->method('isAdmin')->willReturnCallback(fn (string $uid): bool => in_array('admin', ($this->memberships[$uid] ?? []), true));
 
-		$portals = $this->createMock(PortalResolver::class);
+		$portals = $this->createMock(PublishedPortals::class);
 		$portals->method('allPublishedPortals')->willReturn($published);
 
 		return new NextcloudRegistrationDoor($apps, $appConfig, $urls, $groups, $portals, $provisioner);
@@ -216,7 +220,7 @@ class NextcloudAccountRegistrationTest extends TestCase {
 			$appConfig,
 			$this->createMock(IURLGenerator::class),
 			$this->createMock(IGroupManager::class),
-			$this->createMock(PortalResolver::class)
+			$this->createMock(PublishedPortals::class)
 		);
 
 		$this->assertSame('', $door->registerUrl(portal: self::PORTAL));
@@ -302,6 +306,8 @@ class NextcloudAccountRegistrationTest extends TestCase {
 		$resolver = $this->createMock(PortalResolver::class);
 		$resolver->method('resolve')->willReturn($portal);
 		$resolver->method('allPublishedPortals')->willReturn([$portal]);
+		$published = $this->createMock(PublishedPortals::class);
+		$published->method('allPublishedPortals')->willReturn([$portal]);
 
 		$accounts = $this->createMock(PortalAccountService::class);
 		$accounts->method('findBySubjectRef')->willReturnCallback(
@@ -347,8 +353,11 @@ class NextcloudAccountRegistrationTest extends TestCase {
 			$urls,
 			$userSession,
 			$resolver,
+			new ContactAddressValues(),
+			new RequestedPortal(),
+			new SiteReturnAddress(),
 			null,
-			$this->door(published: [$portal], provisioner: new NextcloudAccountProvisioner($reader, $writer, $users, $resolver))
+			$this->door(published: [$portal], provisioner: new NextcloudAccountProvisioner($reader, $writer, $users, $published))
 		);
 	}//end sessionController()
 

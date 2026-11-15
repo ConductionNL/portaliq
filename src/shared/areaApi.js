@@ -7,6 +7,85 @@
 // and load with the pages that use them.
 
 /**
+ * @param {unknown} value An id or a reference.
+ * @return {string} The value as one encoded path segment, or ''.
+ */
+function segment(value) {
+	return encodeURIComponent(value || '')
+}
+
+/**
+ * @param {{data?: object}} args An action's arguments.
+ * @return {object} The fields to send, or none.
+ */
+function dataOf(args) {
+	return args.data || {}
+}
+
+/**
+ * Send one `[method, path, body]` call.
+ *
+ * @param {{request: (method: string, path: string, body?: unknown) => Promise<object>}} api The portal api.
+ * @param {Array} call The method, the path and the body.
+ * @return {Promise<object>} The answer.
+ */
+function send(api, call) {
+	return api.request(call[0], call[1], call[2])
+}
+
+/**
+ * What an action's answer says: whether it worked, its status, and the
+ * reason a refusal names.
+ *
+ * @param {{ok: boolean, status: number, json: object|null}} answer The answer.
+ * @return {{ok: boolean, status: number, error: string}} The outcome.
+ */
+function outcomeOf(answer) {
+	return {
+		ok: answer.ok,
+		status: answer.status,
+		error: String(answer.json?.error || ''),
+	}
+}
+
+/**
+ * The request of each contact action.
+ *
+ * @param {object} args `email` and `message` to invite, `id` for the rest, `accept` for respond, `token` to accept a link.
+ * @return {Record<string, Array>} The calls by action.
+ */
+function contactCalls(args) {
+	const id = segment(args.id)
+	return {
+		invite: ['POST', '/contacts/invite', { email: args.email, message: args.message }],
+		accept: ['POST', '/contacts/accept-invitation', { token: args.token }],
+		respond: ['POST', `/contacts/${id}/respond`, { accept: args.accept === true }],
+		resend: ['POST', `/contacts/${id}/resend`, {}],
+		withdraw: ['POST', `/contacts/${id}/withdraw`, {}],
+		remove: ['DELETE', `/contacts/${id}`, null],
+	}
+}
+
+/**
+ * The request of each plan action.
+ *
+ * @param {object} args `id` of the plan, `actionId`, `ref`, and the fields to send as `data`.
+ * @return {Record<string, Array>} The calls by action.
+ */
+function planCalls(args) {
+	const id = segment(args.id)
+	return {
+		start: ['POST', '/plans', dataOf(args)],
+		update: ['PATCH', `/plans/${id}`, dataOf(args)],
+		delete: ['DELETE', `/plans/${id}`, null],
+		addParticipants: ['POST', `/plans/${id}/participants`, dataOf(args)],
+		removeParticipant: ['DELETE', `/plans/${id}/participants/${segment(args.ref)}`, null],
+		addAction: ['POST', `/plans/${id}/actions`, dataOf(args)],
+		updateAction: ['PATCH', `/plans/${id}/actions/${segment(args.actionId)}`, dataOf(args)],
+	}
+}
+
+/**
  * The contact calls over a portal api.
  *
  * @param {{request: Function}} api The portal api.
@@ -35,37 +114,11 @@ export function contactsApi(api) {
 		 * @return {Promise<{ok: boolean, status: number, error: string}>} The outcome; a refusal names its reason in `error`.
 		 */
 		async contactAction(action, args = {}) {
-			const id = encodeURIComponent(args.id || '')
-			const calls = {
-				invite: [
-					'POST',
-					'/contacts/invite',
-					{ email: args.email, message: args.message },
-				],
-				accept: [
-					'POST',
-					'/contacts/accept-invitation',
-					{ token: args.token },
-				],
-				respond: [
-					'POST',
-					`/contacts/${id}/respond`,
-					{ accept: args.accept === true },
-				],
-				resend: ['POST', `/contacts/${id}/resend`, {}],
-				withdraw: ['POST', `/contacts/${id}/withdraw`, {}],
-				remove: ['DELETE', `/contacts/${id}`, null],
-			}
-			const call = calls[action]
+			const call = contactCalls(args)[action]
 			if (!call) {
 				return { ok: false, status: 0, error: 'unknown' }
 			}
-			const answer = await api.request(call[0], call[1], call[2])
-			return {
-				ok: answer.ok,
-				status: answer.status,
-				error: String(answer.json?.error || ''),
-			}
+			return outcomeOf(await send(api, call))
 		},
 
 		/**
@@ -141,39 +194,12 @@ export function plansApi(api) {
 		 * @return {Promise<{ok: boolean, status: number, error: string, id: string}>} The outcome; `id` names a plan just started.
 		 */
 		async planAction(action, args = {}) {
-			const id = encodeURIComponent(args.id || '')
-			const calls = {
-				start: ['POST', '/plans', args.data || {}],
-				update: ['PATCH', `/plans/${id}`, args.data || {}],
-				delete: ['DELETE', `/plans/${id}`, null],
-				addParticipants: [
-					'POST',
-					`/plans/${id}/participants`,
-					args.data || {},
-				],
-				removeParticipant: [
-					'DELETE',
-					`/plans/${id}/participants/${encodeURIComponent(args.ref || '')}`,
-					null,
-				],
-				addAction: ['POST', `/plans/${id}/actions`, args.data || {}],
-				updateAction: [
-					'PATCH',
-					`/plans/${id}/actions/${encodeURIComponent(args.actionId || '')}`,
-					args.data || {},
-				],
-			}
-			const call = calls[action]
+			const call = planCalls(args)[action]
 			if (!call) {
 				return { ok: false, status: 0, error: 'unknown', id: '' }
 			}
-			const answer = await api.request(call[0], call[1], call[2])
-			return {
-				ok: answer.ok,
-				status: answer.status,
-				error: String(answer.json?.error || ''),
-				id: String(answer.json?.id || ''),
-			}
+			const answer = await send(api, call)
+			return { ...outcomeOf(answer), id: String(answer.json?.id || '') }
 		},
 
 		/**
@@ -193,19 +219,192 @@ export function plansApi(api) {
 			if (!answer.ok) {
 				return { ok: false, status: answer.status }
 			}
-			const objectUrl = window.URL.createObjectURL(await answer.res.blob())
-			const link = document.createElement('a')
-			link.href = objectUrl
-			link.download = `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'plan'}.pdf`
-			document.body.appendChild(link)
-			link.click()
-			setTimeout(() => {
-				link.remove()
-				window.URL.revokeObjectURL(objectUrl)
-			}, 10000)
+			await saveBlob(
+				answer.res,
+				`${name.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'plan'}.pdf`,
+			)
+			return { ok: true, status: answer.status }
+		},
+
+		/**
+		 * Add a file to a plan, or a new version of a file it holds.
+		 *
+		 * @param {string} id The plan.
+		 * @param {File} file The file.
+		 * @param {string} [previousVersion] The file this one is a new version of.
+		 * @return {Promise<{ok: boolean, status: number, error: string}>} The outcome.
+		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
+		 */
+		async addPlanFile(id, file, previousVersion = '') {
+			const form = new FormData()
+			form.append('file', file)
+			if (previousVersion) {
+				form.append('previousVersion', previousVersion)
+			}
+			const answer = await api.request(
+				'POST',
+				`/plans/${encodeURIComponent(id)}/files`,
+				form,
+			)
+			return outcomeOf(answer)
+		},
+
+		/**
+		 * Save one file of a plan.
+		 *
+		 * @param {string} id The plan.
+		 * @param {{id: string, name: string}} file The file.
+		 * @return {Promise<{ok: boolean, status: number}>} The outcome.
+		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
+		 */
+		async downloadPlanFile(id, file) {
+			const answer = await api.request(
+				'GET',
+				`/plans/${encodeURIComponent(id)}/files/${encodeURIComponent(file.id)}`,
+				null,
+				true,
+			)
+			if (!answer.ok) {
+				return { ok: false, status: answer.status }
+			}
+			await saveBlob(answer.res, file.name || 'bestand')
 			return { ok: true, status: answer.status }
 		},
 	}
+}
+
+/**
+ * The calls of Mijn acties and the action dialog (personal-action-list). An
+ * action read through a plan names the plan in `plan`.
+ *
+ * @param {{request: Function}} api The portal api.
+ * @return {object} The calls.
+ *
+ * @spec openspec/changes/personal-action-list/tasks.md#t03
+ */
+export function actionsApi(api) {
+	const path = (id, rest = '', plan = '') => {
+		const query = plan ? `?plan=${encodeURIComponent(plan)}` : ''
+		return `/my-actions${id ? `/${encodeURIComponent(id)}` : ''}${rest}${query}`
+	}
+	const outcome = (answer) => ({
+		...outcomeOf(answer),
+		id: String(answer.json?.id || ''),
+	})
+	return {
+		/**
+		 * The resident's actions, or null when refused.
+		 *
+		 * @return {Promise<{actions: Array<object>, done: number, total: number, assignees: Array<object>}|null>} The list.
+		 */
+		async fetchActions() {
+			const answer = await api.request('GET', path())
+			return answer.ok ? answer.json : null
+		},
+
+		/**
+		 * Add an action to the resident's own list.
+		 *
+		 * @param {object} data The fields.
+		 * @return {Promise<{ok: boolean, status: number, error: string, id: string}>} The outcome.
+		 */
+		async createAction(data) {
+			return outcome(await api.request('POST', path(), data))
+		},
+
+		/**
+		 * Change an action.
+		 *
+		 * @param {string} id The action.
+		 * @param {object} data The fields to change.
+		 * @param {string} [plan] The plan it is in.
+		 * @return {Promise<{ok: boolean, status: number, error: string}>} The outcome.
+		 */
+		async updateAction(id, data, plan = '') {
+			return outcome(await api.request('PATCH', path(id, '', plan), data))
+		},
+
+		/**
+		 * Delete an action.
+		 *
+		 * @param {string} id The action.
+		 * @param {string} [plan] The plan it is in.
+		 * @return {Promise<{ok: boolean, status: number, error: string}>} The outcome.
+		 */
+		async deleteAction(id, plan = '') {
+			return outcome(await api.request('DELETE', path(id, '', plan), null))
+		},
+
+		/**
+		 * The history of an action, newest first, or null when refused.
+		 *
+		 * @param {string} id The action.
+		 * @param {string} [plan] The plan it is in.
+		 * @return {Promise<Array<object>|null>} The lines.
+		 */
+		async fetchHistory(id, plan = '') {
+			const answer = await api.request('GET', path(id, '/history', plan))
+			return answer.ok && Array.isArray(answer.json?.history)
+				? answer.json.history
+				: null
+		},
+
+		/**
+		 * Keep one file with an action, replacing the one it had.
+		 *
+		 * @param {string} id The action.
+		 * @param {File} file The file.
+		 * @param {string} [plan] The plan it is in.
+		 * @return {Promise<{ok: boolean, status: number, error: string}>} The outcome.
+		 */
+		async attachActionFile(id, file, plan = '') {
+			const form = new FormData()
+			form.append('file', file)
+			return outcome(await api.request('POST', path(id, '/file', plan), form))
+		},
+
+		/**
+		 * Save the action's file.
+		 *
+		 * @param {string} id The action.
+		 * @param {string} name The file's name.
+		 * @param {string} [plan] The plan it is in.
+		 * @return {Promise<{ok: boolean, status: number}>} The outcome.
+		 */
+		async downloadActionFile(id, name, plan = '') {
+			const answer = await api.request(
+				'GET',
+				path(id, '/file', plan),
+				null,
+				true,
+			)
+			if (!answer.ok) {
+				return { ok: false, status: answer.status }
+			}
+			await saveBlob(answer.res, name || 'bestand')
+			return { ok: true, status: answer.status }
+		},
+	}
+}
+
+/**
+ * Hand a response's body to the browser as a download.
+ *
+ * @param {Response} res The response.
+ * @param {string} name The file's name.
+ * @return {Promise<void>} Resolves when the download started.
+ */
+async function saveBlob(res, name) {
+	const objectUrl = window.URL.createObjectURL(await res.blob())
+	const link = document.createElement('a')
+	link.href = objectUrl
+	link.download = name
+	document.body.appendChild(link)
+	link.click()
+	setTimeout(() => {
+		link.remove()
+		window.URL.revokeObjectURL(objectUrl)
+	}, 10000)
 }
 
 /**

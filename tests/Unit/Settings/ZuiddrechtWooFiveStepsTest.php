@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-woo-five-steps/specs/example-set-woo-five-steps/spec.md#requirement-the-zuiddrecht-woo-cases-are-on-the-five-step-version
+ * @spec openspec/specs/example-set-woo-five-steps/spec.md#requirement-the-zuiddrecht-woo-cases-are-on-the-five-step-version
  */
 
 declare(strict_types=1);
@@ -29,7 +29,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Every Woo case of the fragment looks up version 2 and one of its five statuses.
  *
- * @spec openspec/changes/example-set-woo-five-steps/specs/example-set-woo-five-steps/spec.md#requirement-the-zuiddrecht-woo-cases-are-on-the-five-step-version
+ * @spec openspec/specs/example-set-woo-five-steps/spec.md#requirement-the-zuiddrecht-woo-cases-are-on-the-five-step-version
  */
 class ZuiddrechtWooFiveStepsTest extends TestCase {
 

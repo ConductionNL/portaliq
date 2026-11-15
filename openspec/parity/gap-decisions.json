@@ -1465,5 +1465,13 @@
 		"change": "shared-plans-with-a-caseworker",
 		"owner": "ConductionNL/portaliq",
 		"decidedOn": "2026-10-08"
+	},
+	{
+		"row": "cmp-site-map",
+		"matrix": "portaliq",
+		"decision": "build",
+		"reason": "Decision 399 (12 Nov 2026): the locations-on-a-map block is built (src/site/widgets/nlLocationMap/, change site-location-map), so the row is built.",
+		"change": "site-location-map",
+		"decidedOn": "2026-11-12"
 	}
 ]

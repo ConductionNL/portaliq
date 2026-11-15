@@ -27,7 +27,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use DateTimeImmutable;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 
 /**
@@ -41,13 +41,13 @@ class ContactInvitationLink {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Reads the rows held for a new account.
+	 * @param ScopedCollectionReaderInterface $reader Reads the rows held for a new account.
 	 * @param ContactRows $rows Finds the invitation by its secret.
 	 * @param PortalObjectWriter $writer Writes both sides.
 	 * @param PortalAccountLookup $accounts Reads the inviter's name.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly ContactRows $rows,
 		private readonly PortalObjectWriter $writer,
 		private readonly PortalAccountLookup $accounts,
@@ -223,6 +223,9 @@ class ContactInvitationLink {
 		}
 
 		$inviterAccount = $this->accounts->bySubjectRef(subjectRef: $inviter);
+		if (($inviterAccount['status'] ?? '') === PortalAccountLookup::STATUS_VOID) {
+			$inviterAccount = null;
+		}
 		$this->writer->createObject(
 			register: PortalContactService::REGISTER,
 			schema: PortalContactService::SCHEMA,

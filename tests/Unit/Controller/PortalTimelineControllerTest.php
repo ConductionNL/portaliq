@@ -13,6 +13,7 @@ use OCA\Portaliq\Service\PortalTimelineReader;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Contribution\StepsProviderMethod;
 
 /**
  * portaliq#723: a case's history reaches the portal only after the subject
@@ -34,6 +35,7 @@ class PortalTimelineControllerTest extends TestCase {
 		'minTrust' => 'low',
 		'fields' => ['identifier', 'title'],
 		'timeline' => ['label' => 'Wat er is gebeurd', 'provider' => 'caseTimeline'],
+		'messages' => ['label' => 'Berichten', 'provider' => 'caseMessages'],
 	];
 
 	private const ENTRIES = [['id' => 'e1', 'message' => 'In behandeling', 'occurredAt' => '2026-09-20T10:00:00+00:00']];
@@ -126,6 +128,71 @@ class PortalTimelineControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_BAD_GATEWAY, $controller->show(register: 'dossiq', schema: 'case', id: 'case-1')->getStatus());
 
 	}//end testATimelineThatCouldNotBeReadIsA502NotAnEmptyHistory()
+
+	/**
+	 * The messages about the owner's case, both ways, newest first, held to
+	 * the case page's shape (capability-rows-said-and-planned T07).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/capability-rows-said-and-planned/tasks.md#t07
+	 */
+	public function testTheMessagesOfTheOwnersCaseAreServedNewestFirst(): void {
+		$controller = $this->controller();
+		$this->doubles['timelines']->expects($this->once())
+			->method('entries')
+			->with($this->equalTo('dossiq'), $this->equalTo('caseMessages'), $this->equalTo('case-1'))
+			->willReturn(
+				[
+					['id' => 'm1', 'subject' => 'Vraag', 'body' => 'Wanneer hoor ik iets?', 'receivedAt' => '2026-11-01T09:00:00+00:00', 'direction' => 'citizen_to_handler', 'senderName' => 'J. Jansen', 'read' => true],
+					['id' => 'm2', 'subject' => 'Antwoord', 'body' => 'Volgende week.', 'receivedAt' => '2026-11-03T10:00:00+00:00', 'direction' => 'handler_to_citizen', 'senderName' => 'Gemeente', 'read' => false],
+				]
+			);
+
+		$response = $controller->messages(register: 'dossiq', schema: 'case', id: 'case-1');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$data = $response->getData();
+		$this->assertSame('Berichten', $data['label']);
+		$this->assertSame(['m2', 'm1'], array_column($data['messages'], 'id'));
+		$this->assertSame([false, true], array_column($data['messages'], 'fromResident'));
+
+	}//end testTheMessagesOfTheOwnersCaseAreServedNewestFirst()
+
+	/**
+	 * A foreign case is one 404 and the messages provider is never asked; a
+	 * collection without `messages` has none; a failed read is a 502.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/capability-rows-said-and-planned/tasks.md#t07
+	 */
+	public function testTheMessagesOfAForeignCaseAreNeverAskedAndAFailedReadIsA502(): void {
+		$controller = $this->controller(owned: null);
+		$this->doubles['timelines']->expects($this->never())->method('entries');
+		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->messages(register: 'dossiq', schema: 'case', id: 'someone-elses')->getStatus());
+
+		$collection = self::COLLECTION;
+		unset($collection['messages']);
+		$controller = $this->controller(collection: $collection);
+		$this->doubles['reader']->expects($this->never())->method('readObject');
+		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->messages(register: 'dossiq', schema: 'case', id: 'case-1')->getStatus());
+
+		$controller = $this->controller();
+		$this->doubles['timelines']->method('entries')->willReturn(null);
+		$response = $controller->messages(register: 'dossiq', schema: 'case', id: 'case-1');
+		$this->assertSame(Http::STATUS_BAD_GATEWAY, $response->getStatus());
+		$this->assertSame(['error' => 'messages_unavailable'], $response->getData());
+
+	}//end testTheMessagesOfAForeignCaseAreNeverAskedAndAFailedReadIsA502()
+
+	public function testNoSessionGetsNoMessages(): void {
+		$controller = $this->controller(subject: null);
+		$this->doubles['timelines']->expects($this->never())->method('entries');
+
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->messages(register: 'dossiq', schema: 'case', id: 'case-1')->getStatus());
+
+	}//end testNoSessionGetsNoMessages()
 
 	/**
 	 * Where a case stands (site-mijn-omgeving-components REQ-SMO-022): the
@@ -256,7 +323,7 @@ class PortalTimelineControllerTest extends TestCase {
 
 		$this->doubles = ['reader' => $reader, 'timelines' => $timelines];
 
-		return new PortalTimelineController($request, $registry, $session, $reader, $timelines, null, $mandatedCases);
+		return new PortalTimelineController($request, $registry, $session, $reader, $timelines, new StepsProviderMethod(), null, $mandatedCases);
 
 	}//end controller()
 

@@ -30,7 +30,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Repair;
 
-use OCA\Portaliq\Service\PortalRegisterContext;
+use OCA\Portaliq\Kernel\Contracts\PortalRegisterContextInterface;
+use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Container\ContainerInterface;
@@ -43,6 +44,9 @@ use Throwable;
  * @spec openspec/changes/action-summary-sentence/specs/portal-contribution-contract/spec.md#requirement-an-action-may-sum-up-the-answers-in-one-sentence
  */
 class MoveActionSummarySentence implements IRepairStep {
+	use PagedSchemaRead;
+	use ObjectServiceLookup;
+
 	/**
 	 * The schema of a data-provisioned contribution.
 	 */
@@ -69,15 +73,20 @@ class MoveActionSummarySentence implements IRepairStep {
 	private const MAX_PAGES = 10000;
 
 	/**
+	 * Logged when the schema cannot be read.
+	 */
+	private const EMPTY_PAGE_LOG = 'Portaliq: no portal pages to repair';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container The container (OpenRegister is optional).
-	 * @param PortalRegisterContext $context Points the object service at a portaliq schema.
+	 * @param PortalRegisterContextInterface $context Points the object service at a portaliq schema.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
-		private readonly PortalRegisterContext $context,
+		private readonly PortalRegisterContextInterface $context,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -108,23 +117,55 @@ class MoveActionSummarySentence implements IRepairStep {
 			return;
 		}
 
+		$moved = $this->moveEveryPage(objectService: $objectService);
+
+		$output->info('MoveActionSummarySentence: moved the answer sentence on ' . $moved . ' portal pages.');
+	}//end run()
+
+	/**
+	 * Move the summaries page by page, up to the page cap.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 *
+	 * @return int How many records were moved.
+	 *
+	 * @spec openspec/changes/action-summary-sentence/specs/portal-contribution-contract/spec.md#requirement-an-action-may-sum-up-the-answers-in-one-sentence
+	 */
+	private function moveEveryPage(object $objectService): int {
 		$moved  = 0;
 		$offset = 0;
 		$pages  = 0;
 		do {
 			$pages++;
 			$page    = $this->page(objectService: $objectService, offset: $offset);
-			$read    = count($page);
+			$read    = $page['read'];
 			$offset += $read;
-			foreach ($page as $row) {
-				if ($this->move(objectService: $objectService, row: $row) === true) {
-					$moved++;
-				}
-			}
+			$moved  += $this->moveRows(objectService: $objectService, rows: $page['rows']);
 		} while ($read === self::PAGE && $pages < self::MAX_PAGES);
 
-		$output->info('MoveActionSummarySentence: moved the answer sentence on ' . $moved . ' portal pages.');
-	}//end run()
+		return $moved;
+	}//end moveEveryPage()
+
+	/**
+	 * Move the summaries of one page of records.
+	 *
+	 * @param object                           $objectService OpenRegister's object service.
+	 * @param array<int, array<string, mixed>> $rows          The page's records.
+	 *
+	 * @return int How many records were moved.
+	 *
+	 * @spec openspec/changes/action-summary-sentence/specs/portal-contribution-contract/spec.md#requirement-an-action-may-sum-up-the-answers-in-one-sentence
+	 */
+	private function moveRows(object $objectService, array $rows): int {
+		$moved = 0;
+		foreach ($rows as $row) {
+			if ($this->move(objectService: $objectService, row: $row) === true) {
+				$moved++;
+			}
+		}
+
+		return $moved;
+	}//end moveRows()
 
 	/**
 	 * The record's actions with every old object summary moved, or null when
@@ -141,27 +182,56 @@ class MoveActionSummarySentence implements IRepairStep {
 			return null;
 		}
 
-		$changed = false;
-		$actions = [];
-		foreach ($row['actions'] as $action) {
-			if (is_array($action) === true && is_array(($action['summary'] ?? null)) === true) {
-				if (array_key_exists('answerSummary', $action) === false) {
-					$action['answerSummary'] = $action['summary'];
-				}
-
-				unset($action['summary']);
-				$changed = true;
-			}
-
-			$actions[] = $action;
-		}
-
+		[$actions, $changed] = $this->actionsWithSummariesMoved(actions: $row['actions']);
 		if ($changed === false) {
 			return null;
 		}
 
 		return $actions;
 	}//end movedActions()
+
+	/**
+	 * The actions with every old object summary moved, and whether any was.
+	 *
+	 * @param array<int, mixed> $actions The stored actions.
+	 *
+	 * @return array{0: array<int, mixed>, 1: bool}
+	 *
+	 * @spec openspec/changes/action-summary-sentence/specs/portal-contribution-contract/spec.md#requirement-an-action-may-sum-up-the-answers-in-one-sentence
+	 */
+	private function actionsWithSummariesMoved(array $actions): array {
+		$changed = false;
+		$moved   = [];
+		foreach ($actions as $action) {
+			if (is_array($action) === true && is_array(($action['summary'] ?? null)) === true) {
+				$action  = $this->summaryMoved(action: $action);
+				$changed = true;
+			}
+
+			$moved[] = $action;
+		}
+
+		return [$moved, $changed];
+	}//end actionsWithSummariesMoved()
+
+	/**
+	 * One action with its old object summary moved to `answerSummary`,
+	 * unless that is already set.
+	 *
+	 * @param array<string, mixed> $action The action.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/action-summary-sentence/specs/portal-contribution-contract/spec.md#requirement-an-action-may-sum-up-the-answers-in-one-sentence
+	 */
+	private function summaryMoved(array $action): array {
+		if (array_key_exists('answerSummary', $action) === false) {
+			$action['answerSummary'] = $action['summary'];
+		}
+
+		unset($action['summary']);
+		return $action;
+	}//end summaryMoved()
 
 	/**
 	 * Save one record with its sentences moved.
@@ -195,58 +265,4 @@ class MoveActionSummarySentence implements IRepairStep {
 
 		return true;
 	}//end move()
-
-	/**
-	 * One page of portalPage records.
-	 *
-	 * @param object $objectService OpenRegister's object service.
-	 * @param int $offset The offset.
-	 *
-	 * @return array<int, array<string, mixed>>
-	 */
-	private function page(object $objectService, int $offset): array {
-		try {
-			if ($this->context->apply(objectService: $objectService, schemaSlug: self::SCHEMA) === false) {
-				return [];
-			}
-
-			$rows = $objectService->findAll(config: ['limit' => self::PAGE, 'offset' => $offset], _rbac: false, _multitenancy: false);
-		} catch (Throwable $e) {
-			$this->logger->info('Portaliq: no portal pages to repair', ['reason' => $e->getMessage()]);
-
-			return [];
-		}
-
-		$out = [];
-		foreach ((array)$rows as $row) {
-			if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-				$row = $row->jsonSerialize();
-			}
-
-			if (is_array($row) === true) {
-				$out[] = $row;
-			}
-		}
-
-		return $out;
-	}//end page()
-
-	/**
-	 * OpenRegister's object service, or null when it is not installed.
-	 *
-	 * @return object|null
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end objectService()
 }//end class

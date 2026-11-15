@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
@@ -27,8 +27,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Listener;
 
 use OCA\Portaliq\Event\PortalAccountInvitationRequestedEvent;
-use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
-use OCA\Portaliq\Service\Identity\WaitingAccountInvitation;
+use OCA\Portaliq\Kernel\Contracts\PortalIdentityMailerInterface;
+use OCA\Portaliq\Kernel\Contracts\WaitingAccountInvitationInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -39,20 +39,20 @@ use Throwable;
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 class PortalAccountInvitationListener implements IEventListener {
 
 	/**
 	 * Constructor.
 	 *
-	 * @param WaitingAccountInvitation $invitations Mints the secret.
-	 * @param PortalIdentityMailer $mailer Mails it inside its link.
+	 * @param WaitingAccountInvitationInterface $invitations Mints the secret.
+	 * @param PortalIdentityMailerInterface $mailer Mails it inside its link.
 	 * @param LoggerInterface $logger Records a refusal's cause, never the secret.
 	 */
 	public function __construct(
-		private readonly WaitingAccountInvitation $invitations,
-		private readonly PortalIdentityMailer $mailer,
+		private readonly WaitingAccountInvitationInterface $invitations,
+		private readonly PortalIdentityMailerInterface $mailer,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -64,8 +64,8 @@ class PortalAccountInvitationListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
-	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function handle(Event $event): void {
 		if (($event instanceof PortalAccountInvitationRequestedEvent) === false) {
@@ -82,31 +82,66 @@ class PortalAccountInvitationListener implements IEventListener {
 			return;
 		}
 
-		try {
-			$issued = $this->invitations->issue(subjectRef: $event->getSubjectRef(), appId: $event->getAppId());
-		} catch (Throwable $exception) {
-			$this->logger->error('Portal account invitation failed', ['exception' => get_class($exception)]);
-			$issued = null;
-		}
+		$this->answerMail(event: $event);
+	}//end handle()
 
+	/**
+	 * Mail the invitation secret to the waiting account's address. The secret
+	 * itself is never answered.
+	 *
+	 * @param PortalAccountInvitationRequestedEvent $event The event.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 */
+	private function answerMail(PortalAccountInvitationRequestedEvent $event): void {
+		$issued = $this->issuedInvitation(event: $event);
 		if ($issued === null) {
 			$event->answer(PortalAccountInvitationRequestedEvent::REFUSED);
 			return;
 		}
 
-		$sent = $this->mailer->send(
-			template: PortalIdentityMailer::TEMPLATE_ACCOUNT_INVITATION,
-			email: $issued['email'],
-			secret: $issued['token'],
-			organisation: $issued['organisation']
-		);
-		if ($sent === false) {
+		if ($this->mailed(issued: $issued) === false) {
 			$event->answer(PortalAccountInvitationRequestedEvent::NOT_SENT, $issued['expiresAt']);
 			return;
 		}
 
 		$event->answer(PortalAccountInvitationRequestedEvent::SENT, $issued['expiresAt']);
-	}//end handle()
+	}//end answerMail()
+
+	/**
+	 * Issue the invitation, or null when it may not be issued or the issue
+	 * failed (logged by class only, never its message).
+	 *
+	 * @param PortalAccountInvitationRequestedEvent $event The event.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function issuedInvitation(PortalAccountInvitationRequestedEvent $event): ?array {
+		try {
+			return $this->invitations->issue(subjectRef: $event->getSubjectRef(), appId: $event->getAppId());
+		} catch (Throwable $exception) {
+			$this->logger->error('Portal account invitation failed', ['exception' => get_class($exception)]);
+			return null;
+		}
+	}//end issuedInvitation()
+
+	/**
+	 * Mail an issued invitation's secret.
+	 *
+	 * @param array<string, mixed> $issued The issued invitation.
+	 *
+	 * @return bool Whether the mail left.
+	 */
+	private function mailed(array $issued): bool {
+		return $this->mailer->send(
+			template: PortalIdentityMailerInterface::TEMPLATE_ACCOUNT_INVITATION,
+			email: $issued['email'],
+			secret: $issued['token'],
+			organisation: $issued['organisation']
+		);
+	}//end mailed()
 
 	/**
 	 * Answer the code for a paper letter. Nothing is mailed.
@@ -115,7 +150,7 @@ class PortalAccountInvitationListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	private function answerCode(PortalAccountInvitationRequestedEvent $event): void {
 		try {
