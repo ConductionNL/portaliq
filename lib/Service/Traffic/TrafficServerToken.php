@@ -13,13 +13,16 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+use OCA\Portaliq\Kernel\Contracts\TrafficServerTokenInterface;
 use OCA\Portaliq\Service\PortalBySlug;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCA\Portaliq\Service\PublishedPortals;
@@ -43,9 +46,9 @@ use Throwable;
  * The hash is compared with `hash_equals` so the comparison's timing does
  * not say how many characters matched.
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
  */
-class TrafficServerToken {
+class TrafficServerToken implements TrafficServerTokenInterface {
 	use PortalBySlug;
 
 	/**
@@ -87,7 +90,7 @@ class TrafficServerToken {
 	 *
 	 * @return string|null The token, shown once; null when the portal is unknown or the write failed.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
 	 */
 	public function issue(string $slug): ?string {
 		$portal = $this->portalBySlug(slug: $slug);
@@ -96,6 +99,23 @@ class TrafficServerToken {
 		}
 
 		$token = $this->random->generate(self::LENGTH, ISecureRandom::CHAR_ALPHANUMERIC . '-_');
+		$record = $this->withTokenHash(portal: $portal, token: $token);
+		if ($this->saved(portal: $portal, record: $record) === false) {
+			return null;
+		}
+
+		return $token;
+	}
+
+	/**
+	 * The portal record with the token's hash in its traffic settings.
+	 *
+	 * @param array<string, mixed> $portal The portal record.
+	 * @param string               $token  The minted token.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withTokenHash(array $portal, string $token): array {
 		$traffic = $portal['traffic'] ?? [];
 		if (is_array($traffic) === false) {
 			$traffic = [];
@@ -104,13 +124,26 @@ class TrafficServerToken {
 		$traffic['serverToken'] = $this->hash(token: $token);
 		$record = $portal;
 		$record['traffic'] = $traffic;
+
+		return $record;
+	}
+
+	/**
+	 * Save the record over the portal.
+	 *
+	 * @param array<string, mixed> $portal The portal record as read.
+	 * @param array<string, mixed> $record The record to write.
+	 *
+	 * @return bool False when the portal has no id or the write failed.
+	 */
+	private function saved(array $portal, array $record): bool {
 		$uuid = trim((string)($portal['@self']['uuid'] ?? $portal['uuid'] ?? $portal['@self']['id'] ?? $portal['id'] ?? ''));
 		unset($record['@self']);
 		if ($uuid === '' || $this->save(record: $record, uuid: $uuid) === false) {
-			return null;
+			return false;
 		}
 
-		return $token;
+		return true;
 	}
 
 	/**
@@ -121,7 +154,7 @@ class TrafficServerToken {
 	 *
 	 * @return bool True when it matches the stored hash.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
 	 */
 	public function verify(array $portal, string $token): bool {
 		$stored = $this->config->serverTokenHash(portal: $portal);
@@ -140,7 +173,7 @@ class TrafficServerToken {
 	 *
 	 * @return string The sha256 hex.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
 	 */
 	public function hash(string $token): string {
 		return hash('sha256', $token);
@@ -163,9 +196,10 @@ class TrafficServerToken {
 
 			$objectService->saveObject(
 				object: $record,
-				register: TrafficEventStore::REGISTER,
-				schema: 'portal',
-				uuid: $uuid,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: TrafficEventStore::REGISTER, schema: 'portal'),
+					uuid: $uuid
+				),
 				_rbac: false,
 				_multitenancy: false
 			);

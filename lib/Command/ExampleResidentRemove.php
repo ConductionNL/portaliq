@@ -26,12 +26,13 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Command;
 
-use OCA\Portaliq\Service\ExampleResident\ExampleResidentRemover;
+use OCA\Portaliq\Kernel\Contracts\ExampleResidentRemoverInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+
 /**
  * Remove an example resident.
  *
@@ -70,12 +71,12 @@ class ExampleResidentRemove extends Command {
 	/**
 	 * Constructor.
 	 *
-	 * @param ExampleResidentRemover $remover Deletes from the install's own record.
+	 * @param ExampleResidentRemoverInterface $remover Deletes from the install's own record.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly ExampleResidentRemover $remover,
+		private readonly ExampleResidentRemoverInterface $remover,
 	) {
 		parent::__construct();
 	}//end __construct()
@@ -113,16 +114,9 @@ class ExampleResidentRemove extends Command {
 	 */
 	protected function execute(InputInterface $input, OutputInterface $output): int {
 		$id     = trim((string)$input->getArgument('site'));
-		$portal = trim((string)$input->getOption('portal'));
-		if ($portal === '') {
-			$portal = $id;
-		}
-
-		$report = $this->remover->remove(id: $id, slug: $portal);
+		$report = $this->remover->remove(id: $id, slug: $this->portalOf(input: $input, id: $id));
 		if ($report['recorded'] === false) {
-			$output->writeln('<error>Nothing is recorded for "' . $id . '": it was not installed with this command, or it is already removed.</error>');
-			$output->writeln('The example resident now comes with occ openregister:example-set:install ' . $id . '.');
-			return 1;
+			return $this->notRecorded(output: $output, id: $id);
 		}
 
 		if ($report['available'] === false) {
@@ -130,6 +124,55 @@ class ExampleResidentRemove extends Command {
 			return 1;
 		}
 
+		$this->writeRemoved(output: $output, report: $report);
+		$output->writeln('Install the example resident again with occ openregister:example-set:install ' . $id . '.');
+
+		return $this->leftOver(output: $output, failed: $report['failed']);
+	}//end execute()
+
+	/**
+	 * The portal the install added its sign-in mode to: the option, else the
+	 * site's own name.
+	 *
+	 * @param InputInterface $input The command input.
+	 * @param string         $id    The site.
+	 *
+	 * @return string
+	 */
+	private function portalOf(InputInterface $input, string $id): string {
+		$portal = trim((string)$input->getOption('portal'));
+		if ($portal === '') {
+			return $id;
+		}
+
+		return $portal;
+	}//end portalOf()
+
+	/**
+	 * Nothing is recorded for the site: say so, and where the resident now
+	 * comes from.
+	 *
+	 * @param OutputInterface $output The command output.
+	 * @param string          $id     The site.
+	 *
+	 * @return int 1.
+	 */
+	private function notRecorded(OutputInterface $output, string $id): int {
+		$output->writeln('<error>Nothing is recorded for "' . $id . '": it was not installed with this command, or it is already removed.</error>');
+		$output->writeln('The example resident now comes with occ openregister:example-set:install ' . $id . '.');
+		return 1;
+	}//end notRecorded()
+
+	/**
+	 * One line per record type, one per part of the account, and one per
+	 * record that could not be deleted.
+	 *
+	 * @param OutputInterface      $output The command output.
+	 * @param array<string, mixed> $report The removal report.
+	 *
+	 * @return void
+	 */
+	private function writeRemoved(OutputInterface $output, array $report): void {
 		foreach ($report['types'] as $type => $counts) {
 			$output->writeln(sprintf('%s: %d deleted, %d already gone', $type, $counts['deleted'], $counts['gone']));
 		}
@@ -143,16 +186,25 @@ class ExampleResidentRemove extends Command {
 				$output->writeln('<error>Could not be deleted: ' . $failed . '</error>');
 			}
 		}
+	}//end writeRemoved()
 
-		$output->writeln('Install the example resident again with occ openregister:example-set:install ' . $id . '.');
-		if ($report['failed'] !== []) {
-			$output->writeln(
-				'<comment>OpenRegister keeps an archive record, such as a case, until its retention rule removes it.'
-				. ' What is left stays in its app and stays recorded here: a new install for the same account id uses it again.</comment>'
-			);
-			return 2;
+	/**
+	 * The exit code: 2 with the archive note when something is left, else 0.
+	 *
+	 * @param OutputInterface    $output The command output.
+	 * @param array<int, string> $failed What could not be deleted.
+	 *
+	 * @return int
+	 */
+	private function leftOver(OutputInterface $output, array $failed): int {
+		if ($failed === []) {
+			return 0;
 		}
 
-		return 0;
-	}//end execute()
+		$output->writeln(
+			'<comment>OpenRegister keeps an archive record, such as a case, until its retention rule removes it.'
+			. ' What is left stays in its app and stays recorded here: a new install for the same account id uses it again.</comment>'
+		);
+		return 2;
+	}//end leftOver()
 }//end class

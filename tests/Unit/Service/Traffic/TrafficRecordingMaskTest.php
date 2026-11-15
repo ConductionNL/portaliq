@@ -113,4 +113,35 @@ class TrafficRecordingMaskTest extends TestCase {
 			['k' => 'y', 't' => 550, 'h' => '', 's' => '.a { background: none } '],
 		], $events, 'a stylesheet keeps its text without url() or @import, and an upper-case hash is not a hash');
 	}//end testMovesClicksScrollsAndNavigationsKeepNumbersOnly()
+
+	/**
+	 * Every kind of event keeps exactly the fields recorded, in order.
+	 *
+	 * @return void
+	 */
+	public function testEveryEventKindIsAsRecorded(): void {
+		$m = new TrafficRecordingMask();
+		$events = [
+			['k' => 's', 't' => '12', 'w' => 1024.7, 'h' => -5, 'n' => ['type' => 'text', 'len' => 4], 'extra' => 'x'],
+			['k' => 's', 't' => 1],
+			['k' => 'y', 't' => 2, 'h' => 'abc', 's' => 'body{color:red}'],
+			['k' => 'y', 't' => 2, 's' => ['x']],
+			['k' => 'm', 't' => 3, 'x' => '10', 'y' => 'nope'],
+			['k' => 'c', 't' => 4, 'x' => 1, 'y' => 2, 'secret' => 'typed'],
+			['k' => 'r', 't' => 5],
+			['k' => 'v', 't' => 6, 'w' => 800, 'h' => 600],
+			['k' => 'n', 't' => 7, 'p' => '/page?q=1'],
+			['k' => 'n', 't' => 8, 'p' => 5],
+			['k' => 'z', 't' => 9],
+			['t' => 10],
+			'not an event',
+			['k' => 5, 't' => 11],
+		];
+
+		$this->assertSame(
+			'[{"k":"s","t":0,"w":1024.7,"h":0,"n":{"l":0}},{"k":"s","t":1,"w":0,"h":0,"n":{"l":0}},{"k":"y","t":2,"h":"abc","s":"body{color:red}"},{"k":"y","t":2,"h":"","s":""},{"k":"m","t":3,"x":0,"y":0},{"k":"c","t":4,"x":1,"y":2},{"k":"r","t":5,"x":0,"y":0},{"k":"v","t":6,"w":800,"h":600},{"k":"n","t":7,"p":"/page"},{"k":"n","t":8,"p":""}]',
+			json_encode($m->events(events: $events), JSON_UNESCAPED_SLASHES)
+		);
+		$this->assertSame([], $m->events(events: 'x'));
+	}//end testEveryEventKindIsAsRecorded()
 }//end class

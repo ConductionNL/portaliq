@@ -34,13 +34,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+ * @spec openspec/specs/portal-notifications-and-preferences/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Notifications;
 
+use OCA\Portaliq\Kernel\Contracts\ChangeRuleNoticesInterface;
 use OCA\Portaliq\Service\Identity\PortalAccountsByClaim;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCP\IDateTimeZone;
@@ -49,9 +50,9 @@ use OCP\IDateTimeZone;
  * Resolves the accounts a claim-addressed change rule reaches, and the words
  * a rule declares.
  *
- * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+ * @spec openspec/specs/portal-notifications-and-preferences/spec.md
  */
-class ChangeRuleNotices {
+class ChangeRuleNotices implements ChangeRuleNoticesInterface {
 
 	/**
 	 * Constructor.
@@ -78,7 +79,7 @@ class ChangeRuleNotices {
 	 *
 	 * @return array{subject: string, body: string}|null
 	 *
-	 * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md
 	 */
 	public function text(array $messages, string $value, array $row, string $language): ?array {
 		return (new ChangeNoticeText(timeZone: $this->timeZone))->render(messages: $messages, value: $value, row: $row, language: $language);
@@ -97,7 +98,7 @@ class ChangeRuleNotices {
 	 *
 	 * @return array<int, array{account: array<string, mixed>, row: array<string, mixed>}>
 	 *
-	 * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md
 	 * @spec openspec/changes/portal-acts-for-its-organisation/specs/portal-tenancy/spec.md#requirement-claim-addressed-recipients-are-found-in-the-records-organisation-req-pao-003
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- each argument is one
@@ -111,34 +112,86 @@ class ChangeRuleNotices {
 			return [];
 		}
 
+		$accounts = $this->accounts->find(appId: $appId, claim: $claim, value: $value, organisation: $record['organisation']);
+		return $this->readableBy(appId: $appId, collection: $collection, accounts: $accounts, recordId: $recordId);
+	}//end recipients()
+
+	/**
+	 * Each account once, with the record as it may read it; an account that
+	 * may not read the record is left out.
+	 *
+	 * @param string                           $appId      The contributing app.
+	 * @param array<string, mixed>             $collection The rule's collection.
+	 * @param array<int, array<string, mixed>> $accounts   The accounts holding the claim.
+	 * @param string                           $recordId   The record's uuid.
+	 *
+	 * @return array<int, array{account: array<string, mixed>, row: array<string, mixed>}>
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md
+	 */
+	private function readableBy(string $appId, array $collection, array $accounts, string $recordId): array {
 		$recipients = [];
 		$seen = [];
-		foreach ($this->accounts->find(appId: $appId, claim: $claim, value: $value, organisation: $record['organisation']) as $account) {
+		foreach ($accounts as $account) {
 			$subjectRef = (string)($account['subjectRef'] ?? '');
 			if (isset($seen[$subjectRef]) === true) {
 				continue;
 			}
 
 			$seen[$subjectRef] = true;
-			$row = $this->reader->readObject(
-				register: (string)($collection['register'] ?? ''),
-				schema: (string)($collection['schema'] ?? ''),
-				scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
-				subjectRef: $subjectRef,
-				id: $recordId,
-				organisation: (string)($account['organisation'] ?? ''),
-				scopeClaim: (string)($collection['scopeClaim'] ?? ''),
-				contributingApp: $appId,
-				via: ($collection['via'] ?? null),
-				audience: (string)($account['audience'] ?? ''),
-				fields: ($collection['fields'] ?? null),
-				filter: (array)($collection['filter'] ?? [])
-			);
-			if ($row !== null) {
-				$recipients[] = ['account' => $account, 'row' => $row];
-			}
-		}//end foreach
+			$recipients = array_merge($recipients, $this->recipientOf(appId: $appId, collection: $collection, account: $account, recordId: $recordId));
+		}
 
 		return $recipients;
-	}//end recipients()
+	}//end readableBy()
+
+	/**
+	 * The account with the record as it may read it, or nothing when it may not.
+	 *
+	 * @param string               $appId      The contributing app.
+	 * @param array<string, mixed> $collection The rule's collection.
+	 * @param array<string, mixed> $account    The account.
+	 * @param string               $recordId   The record's uuid.
+	 *
+	 * @return array<int, array{account: array<string, mixed>, row: array<string, mixed>}>
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md
+	 */
+	private function recipientOf(string $appId, array $collection, array $account, string $recordId): array {
+		$row = $this->readAs(appId: $appId, collection: $collection, account: $account, recordId: $recordId);
+		if ($row === null) {
+			return [];
+		}
+
+		return [['account' => $account, 'row' => $row]];
+	}//end recipientOf()
+
+	/**
+	 * The record as one account may read it.
+	 *
+	 * @param string               $appId      The contributing app.
+	 * @param array<string, mixed> $collection The rule's collection.
+	 * @param array<string, mixed> $account    The account.
+	 * @param string               $recordId   The record's uuid.
+	 *
+	 * @return array<string, mixed>|null Null when the account may not read it.
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md
+	 */
+	private function readAs(string $appId, array $collection, array $account, string $recordId): array|null {
+		return $this->reader->readObject(
+			register: (string)($collection['register'] ?? ''),
+			schema: (string)($collection['schema'] ?? ''),
+			scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
+			subjectRef: (string)($account['subjectRef'] ?? ''),
+			id: $recordId,
+			organisation: (string)($account['organisation'] ?? ''),
+			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
+			contributingApp: $appId,
+			via: ($collection['via'] ?? null),
+			audience: (string)($account['audience'] ?? ''),
+			fields: ($collection['fields'] ?? null),
+			filter: (array)($collection['filter'] ?? [])
+		);
+	}//end readAs()
 }//end class

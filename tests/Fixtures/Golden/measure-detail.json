@@ -1,0 +1,5 @@
+{
+	"violationsOf": [{"rule":"color-contrast","impact":"minor","nodes":2,"help":"Contrast","helpUrl":"https://x"},{"rule":"label","impact":"critical","nodes":0,"help":"","helpUrl":""},{"rule":"7","impact":"moderate","nodes":0,"help":"","helpUrl":""}],
+	"measurePage": [{"url":"/a","measured":true,"violations":[{"rule":"x","impact":"serious","nodes":1,"help":"","helpUrl":""}]},{"url":"/b","measured":false,"reason":"Blocked by the frame"},{"url":"/c","measured":false,"reason":"The page could not be loaded."},{"url":"/d","measured":false,"reason":"The page showed no site content."},{"url":"/e","measured":false,"reason":"The measurement could not run on this page."}],
+	"auditProblem": ["","","","expired","expired","","incomplete","incomplete","incomplete","incomplete","incomplete"]
+}

@@ -55,7 +55,20 @@ class PortalSlugLookup {
 			return null;
 		}
 
-		$rows = $this->reader->readCollection(
+		$rows = $this->slugRows(slug: $slug);
+
+		return $this->rowWithSlug(rows: $rows, slug: $slug);
+	}//end find()
+
+	/**
+	 * The portal rows scoped to the slug.
+	 *
+	 * @param string $slug The portal slug.
+	 *
+	 * @return array<int|string, mixed>
+	 */
+	private function slugRows(string $slug): array {
+		return $this->reader->readCollection(
 			register: 'portaliq',
 			schema: 'portal',
 			scopeField: 'slug',
@@ -63,6 +76,17 @@ class PortalSlugLookup {
 			organisation: '',
 			limit: 2
 		);
+	}//end slugRows()
+
+	/**
+	 * The row that really carries the slug.
+	 *
+	 * @param array<int|string, mixed> $rows The portal rows.
+	 * @param string                   $slug The portal slug.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function rowWithSlug(array $rows, string $slug): array|null {
 		foreach ($rows as $row) {
 			if (is_array($row) === true && ($row['slug'] ?? null) === $slug) {
 				return $row;
@@ -70,5 +94,5 @@ class PortalSlugLookup {
 		}
 
 		return null;
-	}//end find()
+	}//end rowWithSlug()
 }//end class

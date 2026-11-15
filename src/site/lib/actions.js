@@ -207,11 +207,7 @@ export function dayText(day, locale, withYear = true) {
 	}
 	const [year, month, date] = day.slice(0, 10).split('-').map(Number)
 	return new Date(Date.UTC(year, month - 1, date)).toLocaleDateString(
-		String(locale || '')
-			.toLowerCase()
-			.startsWith('en')
-			? 'en-GB'
-			: 'nl-NL',
+		dateLocale(locale),
 		{
 			day: 'numeric',
 			month: 'long',
@@ -219,6 +215,21 @@ export function dayText(day, locale, withYear = true) {
 			timeZone: 'UTC',
 		},
 	)
+}
+
+/**
+ * The locale dates are written in: British English for an English page,
+ * else Dutch.
+ *
+ * @param {string} locale The locale.
+ * @return {string} `en-GB` or `nl-NL`.
+ */
+function dateLocale(locale) {
+	return String(locale || '')
+		.toLowerCase()
+		.startsWith('en')
+		? 'en-GB'
+		: 'nl-NL'
 }
 
 /**
@@ -235,11 +246,7 @@ export function daysLeftLine(action, today, words) {
 	if (action.status === 'done' || !action.endDate || !today) {
 		return ''
 	}
-	const days = Math.round(
-		(Date.parse(`${action.endDate.slice(0, 10)}T00:00:00Z`)
-			- Date.parse(`${today}T00:00:00Z`))
-			/ 86400000,
-	)
+	const days = daysBetween(today, action.endDate)
 	if (Number.isNaN(days)) {
 		return ''
 	}
@@ -253,6 +260,38 @@ export function daysLeftLine(action, today, words) {
 }
 
 /**
+ * Whole days from today to an end date; NaN when either is not a date.
+ *
+ * @param {string} today Today, `YYYY-MM-DD`.
+ * @param {string} endDate The end date, `YYYY-MM-DD…`.
+ * @return {number} The days, negative when it has passed.
+ */
+function daysBetween(today, endDate) {
+	return Math.round(
+		(Date.parse(`${endDate.slice(0, 10)}T00:00:00Z`)
+			- Date.parse(`${today}T00:00:00Z`))
+			/ 86400000,
+	)
+}
+
+/**
+ * The words of a history line by its kind; any other kind is a field change.
+ */
+const HISTORY_LINES = {
+	created: (line, { words, locale }) =>
+		line.to
+			? fill(words.createdDue, { date: dayText(line.to, locale) })
+			: words.created,
+	status: (line, { words }) =>
+		fill(words.statusChange, {
+			from: words[line.from] || line.from,
+			to: words[line.to] || line.to,
+		}),
+	file: (line, { words }) => fill(words.fileAdded, { name: line.to }),
+	fileRemoved: (line, { words }) => fill(words.fileRemoved, { name: line.from }),
+}
+
+/**
  * One line of an action's history in words: "Status van Te doen naar Bezig".
  *
  * @param {{kind: string, field: string, from: string, to: string}} line The server's line.
@@ -263,27 +302,24 @@ export function daysLeftLine(action, today, words) {
  * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
  */
 export function historyText(line, words, locale) {
-	const label = (value) => words[value] || value
-	switch (line.kind) {
-		case 'created':
-			return line.to
-				? fill(words.createdDue, { date: dayText(line.to, locale) })
-				: words.created
-		case 'status':
-			return fill(words.statusChange, {
-				from: label(line.from),
-				to: label(line.to),
-			})
-		case 'file':
-			return fill(words.fileAdded, { name: line.to })
-		case 'fileRemoved':
-			return fill(words.fileRemoved, { name: line.from })
-		default:
-			if (line.field === 'assignee') {
-				return fill(words.assigneeChange, { to: line.to })
-			}
-			return fill(words.fieldChange, { field: fieldLabel(line.field, words) })
+	const say = Object.hasOwn(HISTORY_LINES, line.kind)
+		? HISTORY_LINES[line.kind]
+		: fieldChangeText
+	return say(line, { words, locale })
+}
+
+/**
+ * A field change in words: who an action was given to, or which field changed.
+ *
+ * @param {{field: string, to: string}} line The server's line.
+ * @param {{words: Record<string, string>}} context The words.
+ * @return {string} The line.
+ */
+function fieldChangeText(line, { words }) {
+	if (line.field === 'assignee') {
+		return fill(words.assigneeChange, { to: line.to })
 	}
+	return fill(words.fieldChange, { field: fieldLabel(line.field, words) })
 }
 
 /**

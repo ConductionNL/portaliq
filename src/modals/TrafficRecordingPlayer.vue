@@ -18,7 +18,7 @@
   The pointer and the clicks are drawn by this component OVER the frame,
   scaled from the recorded viewport to the frame's size.
 
-  @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+  @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 -->
 <template>
 	<NcModal
@@ -147,6 +147,20 @@ const MASK_STYLE =
 	+ '.pq-box{display:inline-block;background:rgba(127,127,127,.25);min-width:1em;min-height:1em}'
 	+ 'input,textarea,select{color:rgba(127,127,127,.7)}'
 
+/**
+ * A masked text node as a run of blocks of its length, at most 400; nothing
+ * for an empty one.
+ *
+ * @param {{l: number}} node The masked text node.
+ * @return {string} The HTML.
+ */
+function maskedText(node) {
+	const length = Math.min(400, Math.max(0, Number(node.l) || 0))
+	return length === 0
+		? ''
+		: '<span class="pq-mask">' + '░'.repeat(length) + '</span>'
+}
+
 export default {
 	name: 'TrafficRecordingPlayer',
 
@@ -193,7 +207,7 @@ export default {
 		/**
 		 * The modal's heading.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 		 * @return {string} The title.
 		 */
 		title() {
@@ -208,7 +222,7 @@ export default {
 		/**
 		 * Every event of every chunk, in time order.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 		 * @return {Array<object>} The events.
 		 */
 		events() {
@@ -232,7 +246,7 @@ export default {
 		/**
 		 * The recording's length in milliseconds: the last event's offset.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 		 * @return {number} The length.
 		 */
 		duration() {
@@ -243,7 +257,7 @@ export default {
 		/**
 		 * Where the replay is, in milliseconds.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 		 * @return {number} The offset.
 		 */
 		position() {
@@ -254,7 +268,7 @@ export default {
 		/**
 		 * The frame's size and scale, from the recorded viewport.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 		 * @return {object} The style.
 		 */
 		frameStyle() {
@@ -268,7 +282,7 @@ export default {
 		/**
 		 * The stage's height: the scaled viewport.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 		 * @return {number} Pixels.
 		 */
 		stageHeight() {
@@ -280,7 +294,7 @@ export default {
 		/**
 		 * Start the replay when the player opens, stop it when it closes.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 		 * @param {boolean} value Whether the player is open.
 		 * @return {void}
 		 */
@@ -301,7 +315,7 @@ export default {
 		/**
 		 * Start from the first event and play.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 		 * @return {void}
 		 */
 		restart() {
@@ -319,7 +333,7 @@ export default {
 		/**
 		 * Play or pause.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 		 * @return {void}
 		 */
 		toggle() {
@@ -338,7 +352,7 @@ export default {
 		/**
 		 * Stop the clock.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 		 * @return {void}
 		 */
 		pause() {
@@ -352,7 +366,7 @@ export default {
 		/**
 		 * The stage's width, for the scale.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 		 * @return {void}
 		 */
 		measure() {
@@ -366,7 +380,7 @@ export default {
 		 * Apply the next event and schedule the one after it by the
 		 * recorded gap, capped so a long pause does not stall the replay.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 		 * @return {void}
 		 */
 		step() {
@@ -396,7 +410,7 @@ export default {
 		 * Apply one event to the frame and the overlay. An event of a kind the
 		 * player does not know changes nothing.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 		 * @param {object} event The event.
 		 * @return {void}
 		 */
@@ -409,7 +423,7 @@ export default {
 		/**
 		 * A stylesheet the stream carries once, kept by its hash.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 		 * @param {object} event The event.
 		 * @return {void}
 		 */
@@ -422,7 +436,7 @@ export default {
 		/**
 		 * A snapshot: its viewport, then its masked document.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 		 * @param {object} event The event.
 		 * @return {void}
 		 */
@@ -434,7 +448,7 @@ export default {
 		/**
 		 * A viewport change, kept where a size is missing.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 		 * @param {object} event The event.
 		 * @return {void}
 		 */
@@ -449,7 +463,7 @@ export default {
 		/**
 		 * A pointer move.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 		 * @param {object} event The event.
 		 * @return {void}
 		 */
@@ -463,7 +477,7 @@ export default {
 		/**
 		 * A click: the pointer moves there and flashes briefly.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 		 * @param {object} event The event.
 		 * @return {void}
 		 */
@@ -478,7 +492,7 @@ export default {
 		/**
 		 * A scroll of the frame.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 		 * @param {object} event The event.
 		 * @return {void}
 		 */
@@ -499,7 +513,7 @@ export default {
 		/**
 		 * A navigation to another page.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 		 * @param {object} event The event.
 		 * @return {void}
 		 */
@@ -510,7 +524,7 @@ export default {
 		/**
 		 * A masked tree as a whole document.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 		 * @param {object} root The snapshot's root node.
 		 * @return {string} The HTML.
 		 */
@@ -524,7 +538,7 @@ export default {
 		 * One masked node as HTML: a text node as a run of blocks of its
 		 * length, an element with its allowed attributes and children.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 		 * @param {object} node The node.
 		 * @return {string} The HTML.
 		 */
@@ -533,15 +547,28 @@ export default {
 				return ''
 			}
 			if (typeof node.n !== 'string') {
-				const length = Math.min(400, Math.max(0, Number(node.l) || 0))
-				return length === 0
-					? ''
-					: '<span class="pq-mask">' + '░'.repeat(length) + '</span>'
+				return maskedText(node)
 			}
 			const tag = node.n.replace(/[^a-z0-9-]/g, '')
 			if (tag === '' || tag === 'script') {
 				return ''
 			}
+			const attributes = this.attributesOf(node, tag)
+			if (VOID.includes(tag)) {
+				return '<' + tag + attributes + '>'
+			}
+			return '<' + tag + attributes + '>' + this.innerOf(node, tag) + '</' + tag + '>'
+		},
+
+		/**
+		 * An element's attributes as HTML: only plain names that are no event
+		 * handler, every value escaped; a box marked as one, a value as dots.
+		 *
+		 * @param {object} node The masked element.
+		 * @param {string} tag Its safe tag.
+		 * @return {string} The attributes, each with a leading space.
+		 */
+		attributesOf(node, tag) {
 			let attributes = ''
 			const given = node.a && typeof node.a === 'object' ? node.a : {}
 			Object.keys(given).forEach((name) => {
@@ -557,28 +584,34 @@ export default {
 			if (typeof node.v === 'number' && node.v > 0) {
 				attributes += ' value="' + '•'.repeat(Math.min(200, node.v)) + '"'
 			}
-			if (VOID.includes(tag)) {
-				return '<' + tag + attributes + '>'
-			}
-			let inner = ''
+			return attributes
+		},
+
+		/**
+		 * An element's content as HTML: a stylesheet without anything that
+		 * could close it, else its children.
+		 *
+		 * @param {object} node The masked element.
+		 * @param {string} tag Its safe tag.
+		 * @return {string} The content.
+		 */
+		innerOf(node, tag) {
 			if (tag === 'style') {
 				const sheet =
 					typeof node.s === 'string'
 						? node.s
 						: this.styles[String(node.h || '')] || ''
-				inner = sheet.replace(/<\/style/gi, '')
-			} else {
-				;(Array.isArray(node.c) ? node.c : []).forEach((child) => {
-					inner += this.html(child)
-				})
+				return sheet.replace(/<\/style/gi, '')
 			}
-			return '<' + tag + attributes + '>' + inner + '</' + tag + '>'
+			return (Array.isArray(node.c) ? node.c : [])
+				.map((child) => this.html(child))
+				.join('')
 		},
 
 		/**
 		 * Escape an attribute value.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 		 * @param {string} value The value.
 		 * @return {string} The escaped value.
 		 */
@@ -593,7 +626,7 @@ export default {
 		/**
 		 * Milliseconds as m:ss.
 		 *
-		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+		 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 		 * @param {number} ms The milliseconds.
 		 * @return {string} The clock.
 		 */

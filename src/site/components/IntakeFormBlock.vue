@@ -23,6 +23,10 @@
 			{{ noFormLabel }}
 		</p>
 
+		<FormUnavailable
+			v-else-if="state === 'unavailable'"
+			:unavailable="render.unavailable" />
+
 		<div v-else-if="state === 'signIn'" data-testid="intake-form-sign-in">
 			<p v-if="feeAmountText" class="utrecht-paragraph">
 				{{ text.signInFee.split('{amount}').join(feeAmountText) }}
@@ -30,6 +34,18 @@
 			<p class="utrecht-paragraph">
 				{{ feeAmountText ? text.signInFirst : signInLabel }}
 			</p>
+			<!-- What a Yivi sign-in shares, listed before the Yivi app opens (REQ-RIF-004). -->
+			<div v-if="yiviAttributes.length" data-testid="intake-form-yivi-attributes">
+				<p class="utrecht-paragraph">
+					{{ identity.yiviAsks }}
+				</p>
+				<ul class="utrecht-unordered-list">
+					<li v-for="attribute in yiviAttributes" :key="attribute" class="utrecht-unordered-list__item">
+						{{ yiviAttributeName(attribute) }}
+					</li>
+				</ul>
+			</div>
+			<DeskApplicant v-if="render.staffMayFill === true" :signInHref="deskSignInHref" />
 		</div>
 
 		<div v-else-if="state === 'external'" data-testid="intake-form-external">
@@ -69,6 +85,12 @@
 			<p class="utrecht-paragraph" role="status">
 				{{ referenceLabel }}
 				<strong data-testid="intake-form-reference">{{ reference }}</strong>
+			</p>
+			<p
+				v-if="waiting"
+				class="utrecht-paragraph"
+				data-testid="intake-form-cosign-waiting">
+				{{ waiting }}
 			</p>
 			<p
 				v-for="line in confirmationMoments"
@@ -143,6 +165,13 @@
 			class="pq-intake-form__form"
 			novalidate
 			@submit.prevent="onSubmit">
+			<!-- An employee fills it in for a resident (REQ-RIF-005): signed in, whom for; else the way in. -->
+			<DeskApplicant
+				v-if="render.staff || render.settings?.staffMayFill === true"
+				:staff="render.staff || null"
+				:signInHref="deskSignInHref"
+				:lookUp="lookUpApplicant"
+				@applicant="onApplicant" />
 			<!-- The form's title with "Hulp nodig?" to its right (board FormulierHulp). -->
 			<div
 				v-if="(render.formName && !hideFormName) || offersHelp"
@@ -390,12 +419,14 @@ import { evaluateVisibleWhenLocal } from '@conduction/nextcloud-vue/src/utils/vi
 import { defineAsyncComponent } from 'vue'
 import AddressNL from './forms/AddressNL.vue'
 import DateInputGroup from './forms/DateInputGroup.vue'
+import DeskApplicant from './forms/DeskApplicant.vue'
 import EmailCodeField from './forms/EmailCodeField.vue'
 import ErrorSummary from './forms/ErrorSummary.vue'
 import FamilyMembers from './forms/FamilyMembers.vue'
 import FieldShell from './forms/FieldShell.vue'
 import FormIntro from './forms/FormIntro.vue'
 import FormProgress from './forms/FormProgress.vue'
+import FormUnavailable from './forms/FormUnavailable.vue'
 import RepeatingGroup from './forms/RepeatingGroup.vue'
 import ReviewList from './forms/ReviewList.vue'
 import SignatureField from './forms/SignatureField.vue'
@@ -406,8 +437,10 @@ import { hasHelp, mergeHelp } from '../lib/help.js'
 import {
 	bindingRouteFrom,
 	decideStep as decideStepOnServer,
+	deskSignInUrl,
 	initialValues,
 	loadForm,
+	lookUpApplicant as lookUpApplicantOnServer,
 	lookUpStatus,
 	payIntake,
 	submitIntake,
@@ -429,7 +462,7 @@ import {
 	summaryHeadingOf,
 } from './forms/fields.js'
 import { groupCountErrors, itemLines } from './forms/group.js'
-import { identityWords } from './forms/identityWords.js'
+import { identityWords, yiviAttributeName } from './forms/identityWords.js'
 import { feeAmount, paymentView, returnedReference } from './forms/payment.js'
 import stepFlow from './forms/stepFlow.js'
 import { stepHeading } from './forms/steps.js'
@@ -472,6 +505,159 @@ function intakeConnection(portal) {
 	}
 }
 
+/**
+ * A calculated field's value as the answer holds it: the value as text, or
+ * '' when the calculation gave none.
+ *
+ * @param {Record<string, number|string>} now The calculated values.
+ * @param {string} name The field's name.
+ * @return {string} The answer.
+ */
+function calculatedAnswer(now, name) {
+	if (!Object.hasOwn(now, name)) {
+		return ''
+	}
+	return String(now[name])
+}
+
+/**
+ * An e-mail address as the verified-address map keys it: trimmed and in
+ * lower case.
+ *
+ * @param {string|null|undefined} address The address as typed, or nothing.
+ * @return {string} The key, or ''.
+ */
+function addressKey(address) {
+	return String(address ?? '')
+		.trim()
+		.toLowerCase()
+}
+
+/**
+ * The verified addresses without one that changed after it was verified.
+ *
+ * @param {Record<string, string>} verified The proof per address key.
+ * @param {string} address The address key to drop.
+ * @return {Record<string, string>} A new map without it.
+ */
+function withoutAddress(verified, address) {
+	const rest = { ...verified }
+	delete rest[address]
+	return rest
+}
+
+/**
+ * One server message as text: a list of messages joined, anything that is
+ * not text left out.
+ *
+ * @param {string|Array<string|object>|object} message The server's message for one field.
+ * @return {string} The text, or ''.
+ */
+function messageText(message) {
+	if (Array.isArray(message)) {
+		return message.filter((m) => typeof m === 'string').join(' ')
+	}
+	return typeof message === 'string' ? message : ''
+}
+
+/** A date as the date field stores it: `YYYY-MM-DD`. */
+const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/
+
+/**
+ * The review's answer for the field types that do not hold plain text, by
+ * type: each takes the field and its answer.
+ */
+const TYPED_ANSWERS = {
+	signature: (field, value) => signatureAnswer(value),
+	addressNL: (field, value) => addressLine(value),
+	familyMembers: (field, value) => (value || []).length + '',
+	group: groupAnswer,
+}
+
+/**
+ * A signature as the review shows it: that one was set, or ''.
+ *
+ * @param {string} value The signature, or ''.
+ * @return {string} The text.
+ */
+function signatureAnswer(value) {
+	if (!value) {
+		return ''
+	}
+	return identityWords(document.documentElement?.lang).signatureSet
+}
+
+/**
+ * A repeating group as the review shows it: each item's lines on one line,
+ * the items separated by semicolons.
+ *
+ * @param {object} field The group field.
+ * @param {Array<object>} items The group's items, or nothing.
+ * @return {string} The text.
+ */
+function groupAnswer(field, items) {
+	return (items || [])
+		.map((item) => {
+			const lines = itemLines(field, item)
+			return [lines.first, lines.rest].filter(Boolean).join(', ')
+		})
+		.join('; ')
+}
+
+/**
+ * The option of a choice field the answer picks, if any.
+ *
+ * @param {object} field The field.
+ * @param {string} value The answer as text.
+ * @return {object|string|undefined} The option, or undefined.
+ */
+function chosenOption(field, value) {
+	return (Array.isArray(field.options) ? field.options : []).find(
+		(entry) => String(entry?.value ?? entry) === value,
+	)
+}
+
+/**
+ * What the review shows for a chosen option: its label, else the option.
+ *
+ * @param {object|string} option The option.
+ * @return {string} The text.
+ */
+function optionLabel(option) {
+	return String(option?.label ?? option)
+}
+
+/**
+ * A `YYYY-MM-DD` date written in Dutch: `4 maart 2026`.
+ *
+ * @param {string} value The date.
+ * @return {string} The written date.
+ */
+function dutchDay(value) {
+	const [year, month, day] = value.split('-').map(Number)
+	return new Intl.DateTimeFormat('nl', {
+		day: 'numeric',
+		month: 'long',
+		year: 'numeric',
+	}).format(new Date(year, month - 1, day))
+}
+
+/**
+ * The plain check of one field: what `plainFieldErrors` reads of it.
+ *
+ * @param {object} field The field.
+ * @return {{name: string, label: string, required: boolean, date: boolean, format: string}} The check.
+ */
+function plainCheck(field) {
+	return {
+		name: field.name,
+		label: field.label || field.name,
+		required: field.required === true,
+		date: field.type === 'date',
+		format: typeof field.format === 'string' ? field.format : '',
+	}
+}
+
 export default {
 	name: 'IntakeFormBlock',
 
@@ -484,10 +670,12 @@ export default {
 		ErrorSummary,
 		FieldShell,
 		FormProgress,
+		FormUnavailable,
 		RepeatingGroup,
 		ReviewList,
 		SignatureField,
 		EmailCodeField,
+		DeskApplicant,
 		FormHelp: defineAsyncComponent(() => import('./FormHelp.vue')),
 	},
 
@@ -623,9 +811,13 @@ export default {
 			confirmationText: '',
 			accepted: [],
 			verifiedEmails: {},
+			/** The applicant a desk employee fills the form in for, `{kind, value}`; null otherwise. */
+			onBehalf: null,
 			statementErrors: {},
 			confirmation: null,
 			mailedTo: '',
+			/** "Wacht op mede-ondertekening door …" for a request that waits for its co-signer, else ''. */
+			waiting: '',
 			payment: null,
 			paying: false,
 			payFailed: false,
@@ -633,6 +825,39 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * @return {Record<string, string>} The signature, e-mail, desk and Yivi words in the page language.
+		 * @spec openspec/changes/resident-identity-in-forms/tasks.md#T06
+		 */
+		identity() {
+			return identityWords(typeof document !== 'undefined' ? document.documentElement?.lang : '')
+		},
+
+		/**
+		 * @return {string[]} The Yivi attributes the form asks for (REQ-RIF-004).
+		 * @spec openspec/changes/resident-identity-in-forms/tasks.md#T05
+		 */
+		yiviAttributes() {
+			const asked = this.render?.yiviAttributes
+			return Array.isArray(asked) ? asked.filter((id) => typeof id === 'string' && id !== '') : []
+		},
+
+		/**
+		 * @return {string} Where "Inloggen met werkaccount" starts, back to this page.
+		 * @spec openspec/changes/resident-identity-in-forms/tasks.md#T06
+		 */
+		deskSignInHref() {
+			const here =
+				typeof window !== 'undefined' && window.location
+					? window.location.pathname + window.location.search
+					: ''
+			return deskSignInUrl(authBaseFrom(resolveApiBase()), {
+				portal: this.portal,
+				route: this.bindingRoute,
+				returnTo: here,
+			})
+		},
+
 		/**
 		 * @return {boolean} Whether the portal or the form has help details to offer.
 		 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
@@ -742,7 +967,7 @@ export default {
 		 *
 		 * @return {string} The binding route, or ''.
 		 *
-		 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
+		 * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
 		 */
 		bindingRoute() {
 			return bindingRouteFrom(this.routeParam, this.route)
@@ -753,7 +978,7 @@ export default {
 		 *
 		 * @return {Array<object>} The fields.
 		 *
-		 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
+		 * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
 		 */
 		fields() {
 			return (
@@ -929,9 +1154,7 @@ export default {
 		calculated(now) {
 			for (const field of this.fields) {
 				if (field.calculate) {
-					this.values[field.name] = Object.hasOwn(now, field.name)
-						? String(now[field.name])
-						: ''
+					this.values[field.name] = calculatedAnswer(now, field.name)
 				}
 			}
 		},
@@ -941,7 +1164,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
+		 * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
 		 */
 		bindingRoute() {
 			this.load()
@@ -953,12 +1176,47 @@ export default {
 	},
 
 	methods: {
+		yiviAttributeName,
+
+		/**
+		 * Look up the applicant the employee named.
+		 *
+		 * @param {string} kind `bsn`, `kvk` or `named`.
+		 * @param {string} value The number or the name.
+		 * @return {Promise<object>} The lookup's outcome.
+		 * @spec openspec/changes/resident-identity-in-forms/tasks.md#T06
+		 */
+		lookUpApplicant(kind, value) {
+			return lookUpApplicantOnServer(intakeConnection(this.portal), {
+				route: this.bindingRoute,
+				kind,
+				value,
+			})
+		},
+
+		/**
+		 * The employee chose an applicant: remember them for the submit and
+		 * fill the fields the registers answered, never over what was typed.
+		 *
+		 * @param {{applicant: object|null, prefill: object}} chosen The applicant and the prefill.
+		 * @return {void}
+		 * @spec openspec/changes/resident-identity-in-forms/tasks.md#T06
+		 */
+		onApplicant({ applicant, prefill }) {
+			this.onBehalf = applicant
+			for (const [name, value] of Object.entries(prefill || {})) {
+				if (Object.hasOwn(this.values, name) && (this.values[name] === '' || this.values[name] === undefined)) {
+					this.values[name] = String(value)
+				}
+			}
+		},
+
 		/**
 		 * Load the form the binding route resolves to right now.
 		 *
 		 * @return {Promise<void>} Resolves when loaded.
 		 *
-		 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-applicant-block-is-prefilled-from-the-signed-in-identity-only-req-pifo-003
+		 * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-applicant-block-is-prefilled-from-the-signed-in-identity-only-req-pifo-003
 		 */
 		async load() {
 			this.state = 'loading'
@@ -989,7 +1247,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when answered.
 		 *
-		 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
+		 * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
 		 */
 		async submit() {
 			this.sendFailed = false
@@ -1004,6 +1262,10 @@ export default {
 				return
 			}
 			this.errors = {}
+			if (this.render.staff && !this.onBehalf) {
+				this.formError = this.identity.deskChooseFirst
+				return
+			}
 			const missing = missingStatements(this.render.statements, this.accepted)
 			this.statementErrors = Object.fromEntries(
 				missing.map((key) => [key, this.text.statementRequired]),
@@ -1018,8 +1280,14 @@ export default {
 					route: this.bindingRoute,
 					answers: this.values,
 					statements: this.accepted,
+					onBehalf: this.onBehalf,
 					verifiedEmails: this.verifiedEmails,
 				})
+				if (outcome.unavailable) {
+					this.render = { ...this.render, unavailable: outcome.unavailable }
+					this.state = 'unavailable'
+					return
+				}
 				if (outcome.reference === '') {
 					const { _form: formLevel, ...fieldErrors } = outcome.errors || {}
 					this.formError = String(formLevel || '')
@@ -1039,6 +1307,7 @@ export default {
 				this.confirmationText = outcome.confirmationText
 				this.confirmation = outcome.confirmation
 				this.mailedTo = outcome.mailedTo
+				this.waiting = outcome.waiting || ''
 				this.moments = outcome.moments || {}
 				this.state = 'done'
 				this.$nextTick(() => {
@@ -1062,10 +1331,8 @@ export default {
 		 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t05
 		 */
 		async showReturnedPayment() {
-			const reference = returnedReference(
-				typeof window === 'undefined' ? '' : window.location.search,
-			)
-			if (this.state !== 'form' || reference === '' || !this.render.fee) {
+			const reference = this.returnedPaymentReference()
+			if (reference === '') {
 				return
 			}
 			const status = await lookUpStatus(
@@ -1075,10 +1342,37 @@ export default {
 			if (!status || !status.reference) {
 				return
 			}
+			this.showPaidStatus(status)
+		},
+
+		/**
+		 * Show the reference, the confirmation and the payment of a request
+		 * the resident came back to from the payment page.
+		 *
+		 * @param {object} status The request's status.
+		 * @return {void}
+		 */
+		showPaidStatus(status) {
 			this.reference = status.reference
 			this.moments = status.confirmation || {}
 			this.payment = status.payment || null
 			this.state = 'done'
+		},
+
+		/**
+		 * The reference the payment page sent the resident back with, when the
+		 * form asks a fee and is still showing; else ''.
+		 *
+		 * @return {string} The reference, or ''.
+		 */
+		returnedPaymentReference() {
+			const reference = returnedReference(
+				typeof window === 'undefined' ? '' : window.location.search,
+			)
+			if (this.state !== 'form' || reference === '' || !this.render.fee) {
+				return ''
+			}
+			return reference
 		},
 
 		/**
@@ -1125,11 +1419,7 @@ export default {
 		messagesOf(errors) {
 			const out = {}
 			for (const [name, message] of Object.entries(errors || {})) {
-				const text = Array.isArray(message)
-					? message.filter((m) => typeof m === 'string').join(' ')
-					: typeof message === 'string'
-						? message
-						: ''
+				const text = messageText(message)
 				if (text !== '') {
 					out[name] = text
 				}
@@ -1165,36 +1455,65 @@ export default {
 		 */
 		checkFields(names) {
 			const asked = this.fields.filter((field) => names.includes(field.name))
-			const addresses = asked.filter((field) => field.type === 'addressNL')
 			const errors = this.checkPlainFields(names)
 			Object.assign(errors, groupCountErrors(asked, this.values))
-			for (const field of addresses) {
-				const block = this.values[field.name]
-				const problem = addressProblem(block)
-				if (
-					problem !== ''
-					&& (field.required === true || addressLine(block) !== '')
-				) {
-					errors[field.name] = problem
-				}
+			for (const field of asked.filter((entry) => entry.type === 'addressNL')) {
+				this.checkAddress(field, errors)
 			}
+			this.checkVerifications(asked, errors)
+			return errors
+		},
+
+		/**
+		 * Ask for the code of every e-mail address that must be verified first.
+		 *
+		 * @param {Array<object>} asked The fields being checked.
+		 * @param {Record<string, string>} errors The errors so far, added to.
+		 * @return {void}
+		 */
+		checkVerifications(asked, errors) {
 			for (const field of asked) {
-				const address = String(this.values[field.name] ?? '')
-					.trim()
-					.toLowerCase()
-				if (
-					field.type === 'email'
-					&& field.verify === true
-					&& address !== ''
-					&& !errors[field.name]
-					&& !this.verifiedEmails[address]
-				) {
+				if (this.waitsForVerification(field, errors)) {
 					errors[field.name] = identityWords(
 						document.documentElement?.lang,
 					).emailVerifyFirst
 				}
 			}
-			return errors
+		},
+
+		/**
+		 * Add an address field's problem to the errors when it is required or
+		 * partly filled in.
+		 *
+		 * @param {object} field The address field.
+		 * @param {Record<string, string>} errors The errors so far, added to.
+		 * @return {void}
+		 */
+		checkAddress(field, errors) {
+			const block = this.values[field.name]
+			const problem = addressProblem(block)
+			if (problem === '') {
+				return
+			}
+			if (field.required === true || addressLine(block) !== '') {
+				errors[field.name] = problem
+			}
+		},
+
+		/**
+		 * Whether an e-mail field that asks for verification holds an address
+		 * that is otherwise fine but not verified yet.
+		 *
+		 * @param {object} field The field.
+		 * @param {Record<string, string>} errors The errors so far.
+		 * @return {boolean} True when the resident must verify it first.
+		 */
+		waitsForVerification(field, errors) {
+			if (field.type !== 'email' || field.verify !== true) {
+				return false
+			}
+			const address = addressKey(this.values[field.name])
+			return address !== '' && !errors[field.name] && !this.verifiedEmails[address]
 		},
 
 		/**
@@ -1206,9 +1525,7 @@ export default {
 		 * @spec openspec/changes/resident-identity-in-forms/tasks.md#t03
 		 */
 		onVerified(verified) {
-			const address = String(verified?.address ?? '')
-				.trim()
-				.toLowerCase()
+			const address = addressKey(verified?.address)
 			if (address === '') {
 				return
 			}
@@ -1219,9 +1536,7 @@ export default {
 				}
 				return
 			}
-			const rest = { ...this.verifiedEmails }
-			delete rest[address]
-			this.verifiedEmails = rest
+			this.verifiedEmails = withoutAddress(this.verifiedEmails, address)
 		},
 
 		/**
@@ -1233,6 +1548,25 @@ export default {
 		 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t02
 		 */
 		checkPlainFields(names) {
+			return plainFieldErrors(
+				this.fields
+					.filter((field) => names.includes(field.name))
+					.filter(
+						(field) =>
+							field.type !== 'group' && !this.isComputedField(field),
+					)
+					.map(plainCheck),
+				this.plainValues(),
+			)
+		},
+
+		/**
+		 * The answers as the plain checks read them: an address as its line,
+		 * family members as one comma-separated text.
+		 *
+		 * @return {Record<string, string|object>} The answers.
+		 */
+		plainValues() {
 			const values = { ...this.values }
 			for (const field of this.fields) {
 				if (field.type === 'addressNL') {
@@ -1242,22 +1576,7 @@ export default {
 					values[field.name] = (values[field.name] || []).join(',')
 				}
 			}
-			return plainFieldErrors(
-				this.fields
-					.filter((field) => names.includes(field.name))
-					.filter(
-						(field) =>
-							field.type !== 'group' && !this.isComputedField(field),
-					)
-					.map((field) => ({
-						name: field.name,
-						label: field.label || field.name,
-						required: field.required === true,
-						date: this.isDate(field),
-						format: typeof field.format === 'string' ? field.format : '',
-					})),
-				values,
-			)
+			return values
 		},
 
 		/**
@@ -1270,41 +1589,26 @@ export default {
 		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-form-with-steps-must-end-with-a-review-and-a-confirmation-req-smf-011
 		 */
 		answerText(field) {
-			if (field.type === 'signature') {
-				return this.values[field.name]
-					? identityWords(document.documentElement?.lang).signatureSet
-					: ''
+			if (Object.hasOwn(TYPED_ANSWERS, field.type)) {
+				return TYPED_ANSWERS[field.type](field, this.values[field.name])
 			}
-			if (field.type === 'addressNL') {
-				return addressLine(this.values[field.name])
-			}
-			if (field.type === 'familyMembers') {
-				return (this.values[field.name] || []).length + ''
-			}
-			if (field.type === 'group') {
-				return (this.values[field.name] || [])
-					.map((item) => {
-						const lines = itemLines(field, item)
-						return [lines.first, lines.rest].filter(Boolean).join(', ')
-					})
-					.join('; ')
-			}
+			return this.plainAnswerText(field)
+		},
+
+		/**
+		 * An answer without a type of its own as the review shows it: the
+		 * option's label, a date as written in Dutch, or the text.
+		 *
+		 * @param {object} field The field.
+		 * @return {string} The answer.
+		 */
+		plainAnswerText(field) {
 			const value = String(this.values[field.name] ?? '')
-			const option = (Array.isArray(field.options) ? field.options : []).find(
-				(entry) => String(entry?.value ?? entry) === value,
-			)
+			const option = chosenOption(field, value)
 			if (option !== undefined) {
-				return String(option?.label ?? option)
+				return optionLabel(option)
 			}
-			if (this.isDate(field) && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
-				const [year, month, day] = value.split('-').map(Number)
-				return new Intl.DateTimeFormat('nl', {
-					day: 'numeric',
-					month: 'long',
-					year: 'numeric',
-				}).format(new Date(year, month - 1, day))
-			}
-			return value
+			return this.isDate(field) && ISO_DAY.test(value) ? dutchDay(value) : value
 		},
 
 		/**
@@ -1414,7 +1718,7 @@ export default {
 		 * @param {object} field The field.
 		 * @return {string} The id.
 		 *
-		 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
+		 * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
 		 */
 		elementId(field) {
 			return `pq-intake-field-${field.name}`
@@ -1426,7 +1730,7 @@ export default {
 		 * @param {object} field The field.
 		 * @return {string} The input type.
 		 *
-		 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
+		 * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
 		 */
 		inputType(field) {
 			const KNOWN = ['text', 'email', 'tel', 'number', 'date', 'url']

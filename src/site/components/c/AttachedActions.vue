@@ -129,7 +129,7 @@ import {
  * the record's id through the row-action route with `actionApp`, so the
  * server proves the record is the resident's first.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-another-apps-actions-must-show-on-a-record-req-srp-028
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-another-apps-actions-must-show-on-a-record-req-srp-028
  */
 export default {
 	name: 'AttachedActions',
@@ -172,7 +172,7 @@ export default {
 		 *
 		 * @return {Array<object>} The actions.
 		 *
-		 * @spec openspec/changes/attach-to-own-collection/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-carry-its-rowwhen-to-the-renderer-req-ato-002
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-carry-its-rowwhen-to-the-renderer-req-ato-002
 		 */
 		actions() {
 			return this.row ? attachedActionsOf(this.collection, this.row) : []
@@ -323,7 +323,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-another-apps-actions-must-show-on-a-record-req-srp-028
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-another-apps-actions-must-show-on-a-record-req-srp-028
 		 */
 		async submit() {
 			this.errors = fieldErrors(this.open, this.values, {}, this.t)

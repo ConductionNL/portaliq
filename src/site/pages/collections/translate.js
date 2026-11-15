@@ -6,7 +6,7 @@
 // the site's translator carries these keys, a Dutch resident still reads
 // Dutch instead of the English source key.
 //
-// @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-contribution-page-must-render-its-blocks-req-srp-014
+// @spec openspec/specs/site-portal-parity/spec.md#requirement-a-contribution-page-must-render-its-blocks-req-srp-014
 
 import strings from './strings.js'
 

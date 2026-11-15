@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+ * @spec openspec/specs/portal-notifications-and-preferences/spec.md
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ use Throwable;
 /**
  * The active accounts whose app claim holds a value.
  *
- * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+ * @spec openspec/specs/portal-notifications-and-preferences/spec.md
  */
 class PortalAccountsByClaim {
 	use ActsForTheOrganisation;
@@ -110,7 +110,7 @@ class PortalAccountsByClaim {
 	 *
 	 * @return array<int, array<string, mixed>> The accounts; empty when none or OpenRegister is unavailable.
 	 *
-	 * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md
 	 * @spec openspec/changes/portal-acts-for-its-organisation/specs/portal-tenancy/spec.md#requirement-claim-addressed-recipients-are-found-in-the-records-organisation-req-pao-003
 	 */
 	public function find(string $appId, string $claim, string $value, string $organisation=''): array {
@@ -145,14 +145,7 @@ class PortalAccountsByClaim {
 		$index = [];
 		for ($page = 0; $page < self::MAX_PAGES; $page++) {
 			$rows = $this->page(objectService: $objectService, offset: ($page * self::PAGE));
-			foreach ($rows as $row) {
-				$account = $this->activeAccount(row: $row);
-				$held = ($account['claims'][$address['appId']][$address['claimName']] ?? null);
-				$admitted = ($account !== null && is_string($held) === true && $held !== '');
-				if ($admitted === true && $this->admitted(address: $address, account: $account) === true) {
-					$index[$held][] = $account;
-				}
-			}
+			$index = $this->withAdmittedAccounts(index: $index, rows: $rows, address: $address);
 
 			if (count($rows) < self::PAGE) {
 				break;
@@ -161,6 +154,46 @@ class PortalAccountsByClaim {
 
 		return $index;
 	}//end index()
+
+	/**
+	 * The index with the active accounts of one page that hold the claim, and
+	 * whose app lets it stand, added under the claim's value.
+	 *
+	 * @param array<string, array<int, array<string, mixed>>> $index   The index so far.
+	 * @param array<int, mixed>                               $rows    One page of accounts.
+	 * @param array{appId: string, claimName: string}         $address The claim's app and name.
+	 *
+	 * @return array<string, array<int, array<string, mixed>>>
+	 */
+	private function withAdmittedAccounts(array $index, array $rows, array $address): array {
+		foreach ($rows as $row) {
+			$account = $this->activeAccount(row: $row);
+			$held = $this->admittedClaim(account: $account, address: $address);
+			if ($held !== null) {
+				$index[$held][] = $account;
+			}
+		}
+
+		return $index;
+	}//end withAdmittedAccounts()
+
+	/**
+	 * The claim value an active account holds when its app lets it stand, or null.
+	 *
+	 * @param array<string, mixed>|null               $account The active account, or null.
+	 * @param array{appId: string, claimName: string} $address The claim's app and name.
+	 *
+	 * @return string|null
+	 */
+	private function admittedClaim(array|null $account, array $address): string|null {
+		$held = ($account['claims'][$address['appId']][$address['claimName']] ?? null);
+		$admitted = ($account !== null && is_string($held) === true && $held !== '');
+		if ($admitted === true && $this->admitted(address: $address, account: $account) === true) {
+			return $held;
+		}
+
+		return null;
+	}//end admittedClaim()
 
 	/**
 	 * Whether the app that owns the claim lets it stand for the account's organisation.

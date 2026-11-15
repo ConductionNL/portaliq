@@ -72,6 +72,55 @@ class NewsAudienceOptionsTest extends TestCase {
 	}//end testNothingDeclaredMeansNoChoices()
 
 	/**
+	 * An option takes its id from `id`, `uuid` or `@self.id` and its label
+	 * from `name`, `title` or `label`, else the id.
+	 */
+	public function testOptionIdsAndLabels(): void {
+		$contribution = $this->learniq();
+		$contribution['guardianAudience']['schoolOptions'] = ['schema' => 'school'];
+		$os = $this->objectService(
+			properties: ['enrolment' => ['cohortId' => ['type' => 'string']]],
+			rows: ['school' => [['uuid' => 'u1', 'name' => '', 'title' => 'Title'], ['@self' => ['id' => 's2'], 'label' => 'Label'], ['id' => 'zz'], ['id' => '', 'name' => 'empty id'], 'junk']]
+		);
+
+		$options = (new NewsAudienceOptions($this->registry($contribution), $this->container($os), $this->createMock(LoggerInterface::class)))->options();
+
+		$this->assertSame([['id' => 's2', 'label' => 'Label'], ['id' => 'u1', 'label' => 'Title'], ['id' => 'zz', 'label' => 'zz']], $options['schools']);
+	}//end testOptionIdsAndLabels()
+
+	/**
+	 * A read that fails offers no options and is logged.
+	 */
+	public function testAFailedReadOffersNothing(): void {
+		$contribution = $this->learniq();
+		$contribution['guardianAudience']['schoolOptions'] = ['schema' => 'school'];
+		$os = new class {
+			public function setRegister(string $register): self {
+				return $this;
+			}//end setRegister()
+
+			public function setSchema(string $schema): self {
+				return $this;
+			}//end setSchema()
+
+			public function getCurrentSchemaEntity(): object {
+				throw new RuntimeException('no schema');
+			}//end getCurrentSchemaEntity()
+
+			/** @param array<string, mixed> $config */
+			public function findAll(array $config): array {
+				throw new RuntimeException('down');
+			}//end findAll()
+		};
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->exactly(2))->method('warning');
+
+		$options = (new NewsAudienceOptions($this->registry($contribution), $this->container($os), $logger))->options();
+
+		$this->assertSame(['schools' => [], 'groups' => []], $options);
+	}//end testAFailedReadOffersNothing()
+
+	/**
 	 * A fake ObjectService: schema properties per slug, rows per slug, and a
 	 * log of the reads with their access-rule flag.
 	 *

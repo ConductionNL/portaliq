@@ -237,7 +237,7 @@ function declaredProps(component) {
 /**
  * The signed-in area of the site renderer.
  *
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export default {
 	name: 'AccountArea',
@@ -374,7 +374,7 @@ export default {
 		 *
 		 * @return {object} `authentication.signInPage`.
 		 *
-		 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
+		 * @spec openspec/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
 		 */
 		signInPageText() {
 			return this.portal?.authentication?.signInPage || {}
@@ -386,7 +386,7 @@ export default {
 		 *
 		 * @return {boolean}
 		 *
-		 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
+		 * @spec openspec/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
 		 */
 		signInDesigned() {
 			return (
@@ -401,7 +401,7 @@ export default {
 		 *
 		 * @return {boolean} True when the menu shows.
 		 *
-		 * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
+		 * @spec openspec/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
 		 */
 		withMenu() {
 			return (
@@ -438,14 +438,14 @@ export default {
 		/**
 		 * @return {boolean} Whether the page on screen shows its own h1.
 		 *
-		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 		 */
 		/**
 		 * Whether `/mijn` itself is on screen, signed in with something to
 		 * show: then the home renders instead of a page.
 		 *
 		 * @return {boolean}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
 		 */
 		isHome() {
 			return (
@@ -465,7 +465,7 @@ export default {
 		 *
 		 * @return {object} The props.
 		 *
-		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 		 */
 		pageProps() {
 			const contract = {
@@ -506,7 +506,7 @@ export default {
 			 *
 			 * @param {boolean} home Whether `/mijn` itself is on screen.
 			 * @return {void}
-			 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
+			 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
 			 */
 			handler(home) {
 				if (home && !this.homeComponent) {
@@ -536,7 +536,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when the page is set.
 		 *
-		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 		 */
 		async loadPage() {
 			const entry = this.entry
@@ -576,7 +576,7 @@ export default {
 		 * @param {object} [row] The case row, so a case read under a mandate opens.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-record-link-must-open-its-record-after-sign-in-req-srp-021
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-record-link-must-open-its-record-after-sign-in-req-srp-021
 		 */
 		openCase(target, row) {
 			const route = this.caseRoute(target)
@@ -606,7 +606,7 @@ export default {
 		 * @param {{app: string, collection: string, id: string}} target The case.
 		 * @return {string} The route, or ''.
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-record-link-must-open-its-record-after-sign-in-req-srp-021
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-record-link-must-open-its-record-after-sign-in-req-srp-021
 		 */
 		caseRoute(target) {
 			const key = navKeyFor(this.nav, target)

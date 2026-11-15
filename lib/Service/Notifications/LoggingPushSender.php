@@ -26,7 +26,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/push-notifications-quiet-hours/design.md#messaging-leaf-interface-naming-convention-reused-from-guardian-direct-messages
+ * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#messaging-leaf-interface-naming-convention-reused-from-guardian-direct-messages
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ namespace OCA\Portaliq\Service\Notifications;
 use Psr\Log\LoggerInterface;
 
 /**
- * @spec openspec/changes/push-notifications-quiet-hours/design.md#messaging-leaf-interface-naming-convention-reused-from-guardian-direct-messages
+ * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#messaging-leaf-interface-naming-convention-reused-from-guardian-direct-messages
  */
 class LoggingPushSender implements PushSenderInterface {
 	/**
@@ -58,7 +58,7 @@ class LoggingPushSender implements PushSenderInterface {
 	 *
 	 * @return bool Always false — nothing is delivered, only logged.
 	 *
-	 * @spec openspec/changes/push-notifications-quiet-hours/design.md#messaging-leaf-interface-naming-convention-reused-from-guardian-direct-messages
+	 * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#messaging-leaf-interface-naming-convention-reused-from-guardian-direct-messages
 	 */
 	public function send(string $subjectRef, string $title, string $body): bool {
 		$this->logger->info('Portaliq: push (interim logging transport)', [

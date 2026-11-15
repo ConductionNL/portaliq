@@ -41,26 +41,53 @@ export function buildRequestUrl(state) {
 	url.searchParams.set('_limit', String(state.pageSize))
 	url.searchParams.set('_page', String(state.page))
 
+	setSearchTerm(url.searchParams, state)
+	setFacetsAndFilters(url.searchParams, state)
+	setPeriod(url.searchParams, state)
+	setOrder(url.searchParams, state)
+
+	return url.toString()
+}
+
+/**
+ * The free-text term and the options that travel with it.
+ *
+ * @param {URLSearchParams} params The request's parameters.
+ * @param {object} state The search state.
+ * @return {void}
+ */
+function setSearchTerm(params, state) {
 	// An empty term is OMITTED rather than sent as `_search=`. The two are not
 	// the same request: one asks for everything, the other asks the backend to
 	// match the empty string, and which of those a given backend does is not
 	// something this portal should be betting on.
-	if (state.query) {
-		url.searchParams.set('_search', state.query)
-
-		// THE TEXT INSIDE PUBLIC DOCUMENTS (REQ-PFS-CONTENT-001). The opt-in
-		// opencatalogi's document content search defines; sent whenever there
-		// is a term, unless the portal switched it off. Only the published,
-		// redacted copy of a document is searched on the other side.
-		if (state.searchInsideDocuments !== false) {
-			url.searchParams.set('_content', 'true')
-		}
-
-		// A misspelt title is still found, and the relevance order has a
-		// score to sort on (search-sort-by-relevance REQ-SSR-001, REQ-SSR-004).
-		url.searchParams.set('_fuzzy', 'true')
+	if (!state.query) {
+		return
 	}
 
+	params.set('_search', state.query)
+
+	// THE TEXT INSIDE PUBLIC DOCUMENTS (REQ-PFS-CONTENT-001). The opt-in
+	// opencatalogi's document content search defines; sent whenever there
+	// is a term, unless the portal switched it off. Only the published,
+	// redacted copy of a document is searched on the other side.
+	if (state.searchInsideDocuments !== false) {
+		params.set('_content', 'true')
+	}
+
+	// A misspelt title is still found, and the relevance order has a
+	// score to sort on (search-sort-by-relevance REQ-SSR-001, REQ-SSR-004).
+	params.set('_fuzzy', 'true')
+}
+
+/**
+ * The facets asked for, the values ticked and the locked filters.
+ *
+ * @param {URLSearchParams} params The request's parameters.
+ * @param {object} state The search state.
+ * @return {void}
+ */
+function setFacetsAndFilters(params, state) {
 	// ONE FACET PER FIELD, IN THE SAME REQUEST (woo-search-and-detail D1).
 	// `facetFields` with a `facets` map is the current shape; a caller that
 	// still passes the single `facetField` with `selectedFacets` gets exactly
@@ -70,22 +97,41 @@ export function buildRequestUrl(state) {
 	const locked = lockedFiltersOf(state)
 	const fields = withoutLocked(facetFieldsOf(state), locked)
 	for (const field of fields) {
-		url.searchParams.set(`_facets[${field}][type]`, 'terms')
+		params.set(`_facets[${field}][type]`, 'terms')
 	}
 
 	const selected = state.facets || { [fields[0]]: state.selectedFacets || [] }
 	for (const field of fields) {
-		for (const value of selected[field] || []) {
-			url.searchParams.append(field, value)
-		}
+		appendAll(params, field, selected[field] || [])
 	}
 
 	for (const [field, values] of Object.entries(locked)) {
-		for (const value of values) {
-			url.searchParams.append(field, value)
-		}
+		appendAll(params, field, values)
 	}
+}
 
+/**
+ * Append every value under one field.
+ *
+ * @param {URLSearchParams} params The request's parameters.
+ * @param {string} field The field.
+ * @param {Array<string>} values The values.
+ * @return {void}
+ */
+function appendAll(params, field, values) {
+	for (const value of values) {
+		params.append(field, value)
+	}
+}
+
+/**
+ * The period as a range.
+ *
+ * @param {URLSearchParams} params The request's parameters.
+ * @param {object} state The search state.
+ * @return {void}
+ */
+function setPeriod(params, state) {
 	// THE PERIOD AS A RANGE (D2). OpenRegister reads `<field>[gte]` and
 	// `<field>[lte]`; the to date covers its whole day. A date that does not
 	// parse is left out: a filter nobody can read back is not sent.
@@ -93,25 +139,34 @@ export function buildRequestUrl(state) {
 	const from = validDate(state.periodFrom)
 	const to = validDate(state.periodTo)
 	if (from) {
-		url.searchParams.set(`${periodField}[gte]`, from)
+		params.set(`${periodField}[gte]`, from)
 	}
 	if (to) {
-		url.searchParams.set(`${periodField}[lte]`, `${to}T23:59:59Z`)
+		params.set(`${periodField}[lte]`, `${to}T23:59:59Z`)
 	}
+}
 
+/**
+ * The sort order.
+ *
+ * @param {URLSearchParams} params The request's parameters.
+ * @param {object} state The search state.
+ * @return {void}
+ */
+function setOrder(params, state) {
 	// `_order[<field>]=ASC|DESC`. Verified against the live endpoint on
 	// 2026-08-20: title ASC/DESC and publicationDate ASC/DESC each return a
 	// different first row, so the control changes something. `_relevance`
 	// is OpenRegister's trigram score, present only with a term; the block
 	// checks every relevance answer for it (relevanceApplied).
-	if (state.sort) {
-		const [field, direction] = String(state.sort).split(':')
-		if (field && direction) {
-			url.searchParams.set(`_order[${field}]`, direction)
-		}
+	if (!state.sort) {
+		return
 	}
 
-	return url.toString()
+	const [field, direction] = String(state.sort).split(':')
+	if (field && direction) {
+		params.set(`_order[${field}]`, direction)
+	}
 }
 
 /**
@@ -215,8 +270,18 @@ export function foreignDirectory(directory) {
  * @spec openspec/changes/search-filter-by-kind/specs/portal-federated-search/spec.md#requirement-each-kind-links-to-its-own-page-req-sfk-002
  */
 export function subjectSlug(row) {
-	const slug = String((row || {}).slug || ((row || {})['@self'] || {}).slug || '')
+	const slug = String(slugOf(row || {}))
 	return /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/.test(slug) ? slug : ''
+}
+
+/**
+ * The slug a row carries, or its envelope's.
+ *
+ * @param {object} row The result row.
+ * @return {unknown} The slug as given, or ''.
+ */
+function slugOf(row) {
+	return row.slug || (row['@self'] || {}).slug || ''
 }
 
 /** The facet field the endpoint counts the kinds of record in. */
@@ -249,17 +314,26 @@ export function withKindField(fields, hideKind = false) {
  * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-a-visitors-search-reaches-the-text-inside-public-documents-req-pfs-content-001
  */
 export function resultKind(row) {
-	const self = (row || {})['@self'] || {}
-	const word = String(
-		(row || {}).resultType || self.resultType || self.schema || '',
-	)
-		.toLowerCase()
-		.trim()
+	const word = kindWordOf(row || {})
 	if (word === 'document' || word === 'subject') {
 		return word
 	}
 
 	return 'publication'
+}
+
+/**
+ * The word a row names its kind with: its `resultType`, else the one on
+ * `@self`, else the schema word; lower case.
+ *
+ * @param {object} row One API result.
+ * @return {string} The word, or ''.
+ */
+function kindWordOf(row) {
+	const self = row['@self'] || {}
+	return String(row.resultType || self.resultType || self.schema || '')
+		.toLowerCase()
+		.trim()
 }
 
 /**
@@ -269,15 +343,37 @@ export function resultKind(row) {
  * @return {string} The name, or ''.
  */
 function publicationName(row) {
-	const publication = (row || {}).publication
+	const of = row || {}
+	const publication = of.publication
 	if (publication && typeof publication === 'object') {
-		return String(publication.title || publication.name || '')
+		return recordName(publication)
 	}
 
-	return String(
-		(typeof publication === 'string' ? publication : '')
-			|| (row || {}).publicationTitle
-			|| '',
+	return String(publicationTitleOf(of))
+}
+
+/**
+ * A publication record's name: its title, else its name.
+ *
+ * @param {object} publication The publication record.
+ * @return {string} The name, or ''.
+ */
+function recordName(publication) {
+	return String(publication.title || publication.name || '')
+}
+
+/**
+ * The publication a document row names as text: the `publication` string,
+ * else its `publicationTitle`.
+ *
+ * @param {object} row One API result.
+ * @return {unknown} The name as given, or ''.
+ */
+function publicationTitleOf(row) {
+	return (
+		(typeof row.publication === 'string' ? row.publication : '')
+		|| row.publicationTitle
+		|| ''
 	)
 }
 
@@ -305,12 +401,32 @@ export function toBuckets(facets, facetField) {
 	const raw = (facet.data || {}).buckets || facet.buckets || []
 
 	return raw
-		.map((bucket) => ({
-			value: String(bucket.value ?? bucket.key ?? ''),
-			label: String(bucket.label ?? bucket.value ?? bucket.key ?? ''),
-			count: Number(bucket.count ?? bucket.results ?? 0),
-		}))
+		.map(toBucket)
 		.filter((bucket) => bucket.value !== '')
+}
+
+/**
+ * One bucket in either shape as `{value, label, count}`.
+ *
+ * @param {object} bucket The bucket as the API answered it.
+ * @return {{value: string, label: string, count: number}} The bucket.
+ */
+function toBucket(bucket) {
+	return {
+		value: String(bucketValue(bucket)),
+		label: String(bucket.label ?? bucketValue(bucket)),
+		count: Number(bucket.count ?? bucket.results ?? 0),
+	}
+}
+
+/**
+ * A bucket's value: `value` in the first shape, `key` in the second.
+ *
+ * @param {object} bucket The bucket as the API answered it.
+ * @return {unknown} The value, or ''.
+ */
+function bucketValue(bucket) {
+	return bucket.value ?? bucket.key ?? ''
 }
 
 /**
@@ -355,6 +471,18 @@ export function paginationItems(page, pages) {
 		return [1]
 	}
 
+	return withGaps(shownPages(page, pages))
+}
+
+/**
+ * The page numbers shown, in order: the first and the last, and a run
+ * around the current one.
+ *
+ * @param {number} page  Current 1-based page.
+ * @param {number} pages Total pages.
+ * @return {Array<number>} The page numbers.
+ */
+function shownPages(page, pages) {
 	const shown = new Set([1, pages])
 
 	// Five consecutive pages at the start, matching the reference; once the
@@ -366,9 +494,18 @@ export function paginationItems(page, pages) {
 		shown.add(index)
 	}
 
-	const ordered = [...shown]
+	return [...shown]
 		.filter((n) => n >= 1 && n <= pages)
 		.sort((a, b) => a - b)
+}
+
+/**
+ * Page numbers with a `'gap'` wherever the sequence skips.
+ *
+ * @param {Array<number>} ordered The page numbers, in order.
+ * @return {Array<number|string>} The pagination row.
+ */
+function withGaps(ordered) {
 	const out = []
 
 	for (const [index, number] of ordered.entries()) {
@@ -429,7 +566,7 @@ export function formatDutchDate(value) {
  * @param {object} state The search state.
  * @return {Array<string>} The field names, never empty.
  *
- * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
  */
 export function facetFieldsOf(state) {
 	const fields = (
@@ -448,7 +585,7 @@ export function facetFieldsOf(state) {
  * @param {string} value The value from an input or the page address.
  * @return {string} The date, or ''.
  *
- * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-a-publication-period-req-wsd-002
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-a-publication-period-req-wsd-002
  */
 export function validDate(value) {
 	const text = String(value || '')
@@ -492,26 +629,12 @@ export function termParameter(params) {
  * @param {Array<string>} facetFields The block's facet fields.
  * @return {object} `{query, page, sort, facets, periodFrom, periodTo}`.
  *
- * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-every-filter-must-survive-a-shared-link-req-wsd-003
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-every-filter-must-survive-a-shared-link-req-wsd-003
  * @spec openspec/specs/portal-federated-search/spec.md#requirement-a-link-with-q-opens-the-search-for-that-term-req-srq-001
  */
 export function readSearchState(search, facetFields) {
 	const params = new URLSearchParams(search || '')
-	const split = (value) => (value ? value.split(',').filter(Boolean) : [])
-	const facets = {}
-
-	for (const field of facetFields) {
-		facets[field] = split(params.get(`f.${field}`))
-	}
-
-	const legacy = split(params.get('_facets'))
-	if (
-		legacy.length > 0
-		&& facetFields.length > 0
-		&& facets[facetFields[0]].length === 0
-	) {
-		facets[facetFields[0]] = legacy
-	}
+	const facets = facetsFrom(params, facetFields)
 
 	return {
 		query: params.get(termParameter(params)) || '',
@@ -521,6 +644,43 @@ export function readSearchState(search, facetFields) {
 		periodFrom: validDate(params.get('periodFrom')),
 		periodTo: validDate(params.get('periodTo')),
 	}
+}
+
+/**
+ * The facet values an address names, by field; the older `_facets`
+ * parameter fills the FIRST field when that names none of its own.
+ *
+ * @param {URLSearchParams} params The address's query.
+ * @param {Array<string>} facetFields The block's facet fields.
+ * @return {Record<string, Array<string>>} The values by field.
+ */
+function facetsFrom(params, facetFields) {
+	const facets = {}
+
+	for (const field of facetFields) {
+		facets[field] = listParameter(params.get(`f.${field}`))
+	}
+
+	const legacy = listParameter(params.get('_facets'))
+	if (
+		legacy.length > 0
+		&& facetFields.length > 0
+		&& facets[facetFields[0]].length === 0
+	) {
+		facets[facetFields[0]] = legacy
+	}
+
+	return facets
+}
+
+/**
+ * A comma-separated parameter as its non-empty values.
+ *
+ * @param {string|null} value The parameter.
+ * @return {Array<string>} The values.
+ */
+function listParameter(value) {
+	return value ? value.split(',').filter(Boolean) : []
 }
 
 /**
@@ -535,7 +695,7 @@ export function readSearchState(search, facetFields) {
  * @param {Array<string>} facetFields The block's facet fields.
  * @return {URL} The same address.
  *
- * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-every-filter-must-survive-a-shared-link-req-wsd-003
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-every-filter-must-survive-a-shared-link-req-wsd-003
  * @spec openspec/specs/portal-federated-search/spec.md#requirement-a-link-with-q-opens-the-search-for-that-term-req-srq-001
  */
 export function writeSearchState(url, state, facetFields) {
@@ -572,23 +732,45 @@ export function writeSearchState(url, state, facetFields) {
  * @param {string} catalog The catalog the block searches, or ''.
  * @return {object} `{text, filters: {informatiecategorie, organisation, periodFrom, periodTo}, catalog}`.
  *
- * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-block-must-describe-its-search-as-the-saved-search-query-req-wsd-004
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-block-must-describe-its-search-as-the-saved-search-query-req-wsd-004
  */
 export function searchQuery(state, catalog = '') {
-	const facets = (state && state.facets) || {}
+	const of = state || {}
 
 	return {
-		text: String((state && state.query) || ''),
-		filters: {
-			informatiecategorie: [
-				...(facets.wooCategory || facets.informatiecategorie || []),
-			],
-			organisation: [...(facets.organization || facets.organisation || [])],
-			periodFrom: validDate(state && state.periodFrom),
-			periodTo: validDate(state && state.periodTo),
-		},
+		text: String(of.query || ''),
+		filters: queryFilters(of),
 		catalog: String(catalog || ''),
 	}
+}
+
+/**
+ * The C2 filters of a search state, each from the publication schema's
+ * field name or C2's own.
+ *
+ * @param {object} state The search state.
+ * @return {{informatiecategorie: Array<string>, organisation: Array<string>, periodFrom: string, periodTo: string}} The filters.
+ */
+function queryFilters(state) {
+	const facets = state.facets || {}
+
+	return {
+		informatiecategorie: copyOfFirst(facets.wooCategory, facets.informatiecategorie),
+		organisation: copyOfFirst(facets.organization, facets.organisation),
+		periodFrom: validDate(state.periodFrom),
+		periodTo: validDate(state.periodTo),
+	}
+}
+
+/**
+ * A copy of the first list given, or none.
+ *
+ * @param {Array<string>|undefined} list The list under the schema's name.
+ * @param {Array<string>|undefined} alias The list under C2's name.
+ * @return {Array<string>} The copy.
+ */
+function copyOfFirst(list, alias) {
+	return [...(list || alias || [])]
 }
 
 /**
@@ -606,20 +788,42 @@ export function searchQuery(state, catalog = '') {
 export function lockedFiltersOf(state) {
 	const raw = state && state.lockedFilters
 	const locked = {}
-	if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+	if (!isFieldMap(raw)) {
 		return locked
 	}
 
-	for (const [field, value] of Object.entries(raw)) {
-		const values = (Array.isArray(value) ? value : [value])
-			.map((entry) => String(entry ?? ''))
-			.filter((entry) => entry !== '')
-		if (field !== '' && values.length > 0) {
-			locked[field] = values
-		}
+	for (const entry of Object.entries(raw)) {
+		addLock(locked, entry)
 	}
 
 	return locked
+}
+
+/**
+ * Whether locked filters arrive as a map of field to values.
+ *
+ * @param {unknown} raw The state's `lockedFilters`.
+ * @return {boolean}
+ */
+function isFieldMap(raw) {
+	return Boolean(raw) && typeof raw === 'object' && !Array.isArray(raw)
+}
+
+/**
+ * Lock one field on its non-empty values, when it is named and has any.
+ *
+ * @param {Record<string, Array<string>>} locked The locks so far.
+ * @param {Array} entry The field and its value or values.
+ * @return {void}
+ */
+function addLock(locked, entry) {
+	const field = entry[0]
+	const values = (Array.isArray(entry[1]) ? entry[1] : [entry[1]])
+		.map((value) => String(value ?? ''))
+		.filter((value) => value !== '')
+	if (field !== '' && values.length > 0) {
+		locked[field] = values
+	}
 }
 
 /**

@@ -18,8 +18,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Signin;
 
-use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSigninSettingsInterface;
 use OCA\Portaliq\Service\PortalSlugLookup;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 
 /**
  * The sign-in settings an administrator edits on a portal's page: per
@@ -34,7 +35,7 @@ use OCA\Portaliq\Service\PortalSlugLookup;
  *
  * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
  */
-class PortalSigninSettings {
+class PortalSigninSettings implements PortalSigninSettingsInterface {
 
 	/**
 	 * The broker fields an administrator sets.
@@ -42,7 +43,6 @@ class PortalSigninSettings {
 	 * @var string[]
 	 */
 	private const BROKER_FIELDS = ['startUrl', 'exchangeUrl', 'consumerId'];
-
 
 	/**
 	 * Constructor.
@@ -60,7 +60,6 @@ class PortalSigninSettings {
 	) {
 	}//end __construct()
 
-
 	/**
 	 * The portal with this slug, or null.
 	 *
@@ -73,7 +72,6 @@ class PortalSigninSettings {
 	public function portalBySlug(string $slug): ?array {
 		return (new PortalSlugLookup(reader: $this->reader))->find(slug: $slug);
 	}//end portalBySlug()
-
 
 	/**
 	 * What the settings screen shows, secret-free, or null when the portal
@@ -111,7 +109,6 @@ class PortalSigninSettings {
 		];
 	}//end view()
 
-
 	/**
 	 * Save the routes and the broker settings. Answers the new view, or an
 	 * `error`: `no_organisation`, `broker_incomplete` (a provider routed to a
@@ -136,6 +133,25 @@ class PortalSigninSettings {
 		$overrides['loginRoutes'] = $this->routesFrom(routes: $routes);
 		$overrides['broker'] = $this->brokerFrom(broker: $broker);
 
+		if ($this->brokerIncomplete(overrides: $overrides, presentation: $presentation, secret: $secret) === true) {
+			return ['error' => 'broker_incomplete'];
+		}
+
+		return $this->writeSettings(portal: $portal, presentation: $presentation, overrides: $overrides, secret: $secret);
+	}//end save()
+
+	/**
+	 * Whether a provider is routed to a broker that is not fully set.
+	 *
+	 * @param array<string, mixed> $overrides    The organisation's overrides with the new routes and broker.
+	 * @param array<string, mixed> $presentation The organisation's presentation.
+	 * @param string               $secret       A new consumer secret, or ''.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 */
+	private function brokerIncomplete(array $overrides, array $presentation, string $secret): bool {
 		// The secret counts when one is stored or one is given now; its value
 		// is not what is judged here.
 		$knownSecret = '';
@@ -144,10 +160,23 @@ class PortalSigninSettings {
 		}
 
 		$brokerComplete = ($this->route->settings(overrides: $overrides, secret: $knownSecret) !== null);
-		if (in_array(BrokerLoginRoute::ROUTE_BROKER, $overrides['loginRoutes'], true) === true && $brokerComplete === false) {
-			return ['error' => 'broker_incomplete'];
-		}
+		return in_array(BrokerLoginRoute::ROUTE_BROKER, $overrides['loginRoutes'], true) === true && $brokerComplete === false;
+	}//end brokerIncomplete()
 
+	/**
+	 * Write the overrides and a new secret, and answer the new view, or
+	 * `save_failed`.
+	 *
+	 * @param array<string, mixed> $portal       The portal.
+	 * @param array<string, mixed> $presentation The organisation's presentation.
+	 * @param array<string, mixed> $overrides    The overrides to write.
+	 * @param string               $secret       A new consumer secret, or '' to keep the stored one.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
+	 */
+	private function writeSettings(array $portal, array $presentation, array $overrides, string $secret): array {
 		if ($this->orgConfig->writePresentation(organisationUuid: $presentation['uuid'], overrides: $overrides) === false) {
 			return ['error' => 'save_failed'];
 		}
@@ -157,8 +186,7 @@ class PortalSigninSettings {
 		}
 
 		return (array)$this->view(portal: $portal);
-	}//end save()
-
+	}//end writeSettings()
 
 	/**
 	 * The routes map: only brokered providers, only the two routes, and only
@@ -178,7 +206,6 @@ class PortalSigninSettings {
 
 		return $clean;
 	}//end routesFrom()
-
 
 	/**
 	 * The broker fields as trimmed text; anything else is dropped.

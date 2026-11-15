@@ -365,6 +365,31 @@ class DemoDataServiceTest extends TestCase {
 		$this->assertSame(7, $this->service()->install()['present']);
 	}
 
+	public function testANumericSchemaSlugIsCountedAsAString(): void {
+		file_put_contents(
+			$this->descriptor(),
+			json_encode(['components' => ['objects' => [
+				['@self' => ['register' => 'portaliq', 'schema' => '42']],
+			]]])
+		);
+		$importer = new class {
+			public function importFromApp(string $appId, array $data, string $version, bool $force): array {
+				return ['registers' => [1], 'objects' => [], 'skipped' => ['objects' => 0]];
+			}
+
+			public function count(array $config = []): int {
+				return 3;
+			}
+		};
+		$this->container->method('get')->willReturn($importer);
+		$this->registerContext = $this->createMock(PortalRegisterContext::class);
+		$this->registerContext->method('apply')->willReturnCallback(
+			static fn (object $objectService, string $schemaSlug): bool => $schemaSlug === '42'
+		);
+
+		$this->assertSame(3, $this->service()->install()['present']);
+	}
+
 	public function testACountThatFailsForOneSchemaDoesNotHideTheOthers(): void {
 		// One schema whose count throws is logged and skipped; the other
 		// schema's count still decides the outcome.

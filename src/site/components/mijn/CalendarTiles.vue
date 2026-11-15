@@ -110,7 +110,7 @@ export default {
 		 * items inside this month.
 		 *
 		 * @return {Date} The day.
-		 * @spec openspec/changes/month-keeps-this-week/specs/site-mijn-omgeving/spec.md#requirement-this-month-keeps-this-weeks-past-days
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-this-month-keeps-this-weeks-past-days
 		 */
 		fromDay() {
 			const day = new Date(
@@ -143,7 +143,7 @@ export default {
 		 *
 		 * @param {{start: Date, end: Date}} item An item.
 		 * @return {boolean} True on today.
-		 * @spec openspec/changes/month-keeps-this-week/specs/site-mijn-omgeving/spec.md#requirement-this-month-keeps-this-weeks-past-days
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-this-month-keeps-this-weeks-past-days
 		 */
 		isToday(item) {
 			const key = this.dayOf(this.today)

@@ -42,6 +42,7 @@ use PHPUnit\Framework\TestCase;
  * @uses   \OCA\Portaliq\Service\Traffic\TrafficOutcomeDefinitions
  * @uses   \OCA\Portaliq\Service\Traffic\TrafficMatch
  * @uses   \OCA\Portaliq\Service\Traffic\TrafficPagePath
+ * @uses   \OCA\Portaliq\Service\Traffic\TrafficFirstEventTally
  */
 class TrafficRollupBuildGoldenTest extends TestCase {
 

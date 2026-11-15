@@ -66,25 +66,48 @@ function wordsFor(answer, source) {
 			.filter(Boolean)
 			.join(', ')
 	}
-	const { field, phrases, options, context } = source
-	if (answer === null || answer === undefined || typeof answer === 'object') {
+	if (isNoAnswer(answer)) {
 		return ''
 	}
 	const text = String(answer).trim()
-	if (text === '') {
-		return ''
-	}
-	const phrase = phrases?.[field]?.[text]
-	if (typeof phrase === 'string' && phrase.trim() !== '') {
-		return phrase.trim()
+	return text === '' ? '' : wordsOfText(text, source)
+}
+
+/**
+ * @param {unknown} answer One answer.
+ * @return {boolean} Whether it is absent or an object, which has no words.
+ */
+function isNoAnswer(answer) {
+	return answer === null || answer === undefined || typeof answer === 'object'
+}
+
+/**
+ * @param {unknown} words A phrase or a label.
+ * @return {string} The words trimmed, or '' when they are no text.
+ */
+function filledWords(words) {
+	return typeof words === 'string' ? words.trim() : ''
+}
+
+/**
+ * The words for one typed answer: the action's phrase for it, else its
+ * option's label, else the day it names, else the answer itself.
+ *
+ * @param {string} text The answer, trimmed.
+ * @param {{field: string, phrases: object, options: Array<{value: unknown, label: string}>, context: {locale?: string, now?: Date}}} source The field, the action's phrases, the field's options, and the page language and today.
+ * @return {string} The words.
+ */
+function wordsOfText(text, source) {
+	const { field, phrases, options, context } = source
+	const phrase = filledWords(phrases?.[field]?.[text])
+	if (phrase !== '') {
+		return phrase
 	}
 	const option = (Array.isArray(options) ? options : []).find(
 		(candidate) => String(candidate?.value) === text,
 	)
-	if (option && typeof option.label === 'string' && option.label.trim() !== '') {
-		return option.label.trim()
-	}
-	return dayWords(text, context) || text
+	const label = filledWords(option?.label)
+	return label !== '' ? label : dayWords(text, context) || text
 }
 
 /**

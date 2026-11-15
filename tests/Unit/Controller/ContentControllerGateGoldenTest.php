@@ -37,6 +37,7 @@ use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use ReflectionProperty;
+use OCA\Portaliq\Service\Assistant\PublicSourceScope;
 
 /**
  * The gated content routes answer every portal and caller as recorded: the
@@ -46,6 +47,7 @@ use ReflectionProperty;
  * @covers \OCA\Portaliq\Controller\ContentController
  * @covers \OCA\Portaliq\Controller\PublicContentGate
  * @uses   \OCA\Portaliq\Service\PortalSessionService
+ * @uses   \OCA\Portaliq\Kernel\Support\SessionTrust
  */
 class ContentControllerGateGoldenTest extends TestCase {
 
@@ -171,7 +173,8 @@ class ContentControllerGateGoldenTest extends TestCase {
 			$this->createMock(TrafficConfigResolver::class),
 			$this->createMock(IURLGenerator::class),
 			$this->createMock(PortalNoticeReader::class),
-			$users
+			$users,
+			new PublicSourceScope()
 		);
 	}//end controller()
 }//end class

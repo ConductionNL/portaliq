@@ -170,7 +170,7 @@ describe('layoutPaths', () => {
 describe('band', () => {
 	it('is a closed outline from the leaving edge to the arriving edge', () => {
 		assert.equal(
-			band(0, 10, 100, 40, 5),
+			band({ x0: 0, y0: 10, x1: 100, y1: 40, thickness: 5 }),
 			'M 0 10 C 50 10 50 40 100 40 L 100 45 C 50 45 50 15 0 15 Z',
 		)
 	})
