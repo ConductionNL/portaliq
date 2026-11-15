@@ -34,7 +34,7 @@ function message (extra) {
 
 test('a message with a receipt request shows the notice, one without does not', async () => {
 	const asked = await render([message({ readReceiptRequested: true })])
-	assert.match(asked, /data-testid="inbox-row-receipt-notice"[^>]*>\s*The sender sees when you opened this message\./)
+	assert.match(asked, /data-testid="inbox-row-receipt-notice"[^>]*>\s*Read receipt requested/)
 
 	const plain = await render([message({}), message({ id: 'm2', readReceiptRequested: false })])
 	assert.doesNotMatch(plain, /inbox-row-receipt-notice/)
@@ -42,7 +42,7 @@ test('a message with a receipt request shows the notice, one without does not', 
 
 test('the notice is in Dutch for a Dutch page', async () => {
 	const html = await render([message({ readReceiptRequested: true })], 'nl')
-	assert.match(html, /De afzender ziet wanneer u dit bericht hebt geopend\./)
+	assert.match(html, /Leesbevestiging gevraagd/)
 })
 
 test('staff see the recipient, the read state and the read moment in the Portal Messages index', () => {
@@ -69,4 +69,43 @@ test('the register declares the three receipt fields, optional, each with a titl
 		assert.equal((schema.required || []).includes(name), false, `${name} is optional`)
 	}
 	assert.equal(schema.properties.readReceiptRequested.default, false)
+})
+
+test('the message page shows the read moment, the receipt request and the link to the sending', () => {
+	const manifest = JSON.parse(readFileSync('src/manifest.json', 'utf8'))
+	const page = manifest.pages.find((entry) => entry.id === 'PortalMessageDetail')
+	const facts = page.config.widgets.find((widget) => widget.id === 'message-data')
+	assert.equal(facts.type, 'facts')
+	const fields = facts.content.fields
+
+	const asked = fields.find((field) => field.path === 'readAt')
+	assert.equal(asked.label, 'Read')
+	assert.equal(asked.emptyValue, 'not yet')
+	assert.deepEqual(asked.when, { field: 'readReceiptRequested', op: 'eq', value: true })
+
+	const plain = fields.find((field) => field.path === 'read')
+	assert.equal(plain.label, 'Read')
+	assert.deepEqual(plain.map, { true: 'yes', false: 'not yet' })
+	assert.deepEqual(plain.when, { field: 'readReceiptRequested', op: 'neq', value: true })
+
+	const receipt = fields.find((field) => field.key === 'readReceipt')
+	assert.equal(receipt.label, 'Read receipt')
+	assert.deepEqual(receipt.when, asked.when)
+
+	const recipient = fields.findIndex((field) => field.path === 'subjectRef')
+	const sending = fields[recipient + 1]
+	assert.equal(sending.key, 'sending', 'the link to the sending sits under the recipient')
+	assert.deepEqual(sending.when, { field: 'sendingRef', op: 'notEmpty' })
+	assert.deepEqual(sending.route, { name: 'PortalMessages', query: { sendingRef: '@source.sendingRef' } })
+	assert.ok(manifest.pages.some((entry) => entry.id === 'PortalMessages'), 'the link names an existing page')
+
+	const history = page.config.widgets.find((widget) => widget.id === 'message-history')
+	assert.deepEqual(history.content.changeLabels, [{ field: 'readAt', label: 'Read by {object.subjectRef}' }])
+
+	const nl = JSON.parse(readFileSync('l10n/nl.json', 'utf8')).translations
+	assert.equal(nl['not yet'], 'nog niet')
+	assert.equal(nl['Read receipt'], 'Leesbevestiging')
+	assert.equal(nl['asked for'], 'gevraagd')
+	assert.equal(nl['All recipients of this sending'], 'Alle ontvangers van deze verzending')
+	assert.equal(nl['Read by {object.subjectRef}'], 'Gelezen door {object.subjectRef}')
 })

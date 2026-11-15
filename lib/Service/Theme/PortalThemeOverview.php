@@ -15,15 +15,16 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/themes-contrast-column/specs/portal-themes/spec.md#requirement-the-themes-overview-says-per-portal-whether-its-theme-is-readable
+ * @spec openspec/specs/portal-themes/spec.md#requirement-the-themes-overview-says-per-portal-whether-its-theme-is-readable
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Theme;
 
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Kernel\Contracts\PortalThemeOverviewInterface;
 use OCA\Portaliq\Service\PortalThemeResolver;
+use OCA\Portaliq\Service\PublishedPortals;
 
 /**
  * The rows of the Themes page: a portal, its theme and a contrast verdict.
@@ -32,17 +33,17 @@ use OCA\Portaliq\Service\PortalThemeResolver;
  * with, so the overview and the picker never disagree. It is worked out once
  * per theme, not once per portal.
  */
-class PortalThemeOverview {
+class PortalThemeOverview implements PortalThemeOverviewInterface {
 
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalResolver      $portals  The published portals.
+	 * @param PublishedPortals      $portals  The published portals.
 	 * @param PortalThemeResolver $resolver The theme app's catalogue and tokens.
 	 * @param PortalThemeContrast $contrast The contrast verdict per theme.
 	 */
 	public function __construct(
-		private readonly PortalResolver $portals,
+		private readonly PublishedPortals $portals,
 		private readonly PortalThemeResolver $resolver,
 		private readonly PortalThemeContrast $contrast,
 	) {
@@ -53,7 +54,7 @@ class PortalThemeOverview {
 	 *
 	 * @return array{portals: array<int, array<string, string>>, poorCount: int}
 	 *
-	 * @spec openspec/changes/themes-contrast-column/specs/portal-themes/spec.md#requirement-the-themes-overview-says-per-portal-whether-its-theme-is-readable
+	 * @spec openspec/specs/portal-themes/spec.md#requirement-the-themes-overview-says-per-portal-whether-its-theme-is-readable
 	 */
 	public function rows(): array {
 		$names = [];

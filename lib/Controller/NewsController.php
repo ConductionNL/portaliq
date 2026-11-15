@@ -20,33 +20,31 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/news-and-newsletter-authoring/design.md#api-design
+ * @spec openspec/changes/archive/2026-10-09-news-and-newsletter-authoring/design.md#api-design
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\ActionAuthService;
-use OCA\Portaliq\Service\NewsAudienceOptions;
-use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\ActionAuthServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\NewsAudienceOptionsInterface;
+use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
-use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Staff authoring for news items.
  *
- * @spec openspec/changes/news-and-newsletter-authoring/design.md#api-design
+ * @spec openspec/changes/archive/2026-10-09-news-and-newsletter-authoring/design.md#api-design
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- `IUserSession` is the
  * authorization guard every `#[NoAdminRequired]` method calls first, and
@@ -54,6 +52,12 @@ use Throwable;
  * the endpoint's purpose, not incidental coupling (see NewsletterController).
  */
 class NewsController extends Controller {
+	use ObjectServiceLookup;
+	use StaffActionGuard;
+	use ObjectArrayRow;
+	use TargetedAudience;
+	use StaffRowWrite;
+
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
 	private const REGISTER = 'portaliq';
@@ -72,8 +76,8 @@ class NewsController extends Controller {
 	 * @param IUserSession $userSession Confirms an authenticated Nextcloud user reached this endpoint.
 	 * @param ContainerInterface $container For resolving OpenRegister services.
 	 * @param LoggerInterface $logger The logger.
-	 * @param ActionAuthService $actionAuth Decides whether this staff user may author news (ADR-023).
-	 * @param NewsAudienceOptions|null $audienceOptions The school and group choices for the News screen.
+	 * @param ActionAuthServiceInterface $actionAuth Decides whether this staff user may author news (ADR-023).
+	 * @param NewsAudienceOptionsInterface|null $audienceOptions The school and group choices for the News screen.
 	 * @param ITimeFactory|null $timeFactory The server clock that stamps the publish moment.
 	 */
 	public function __construct(
@@ -81,36 +85,12 @@ class NewsController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
-		private readonly ActionAuthService $actionAuth,
-		private readonly ?NewsAudienceOptions $audienceOptions=null,
+		private readonly ActionAuthServiceInterface $actionAuth,
+		private readonly ?NewsAudienceOptionsInterface $audienceOptions=null,
 		private readonly ?ITimeFactory $timeFactory=null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
-
-	/**
-	 * The staff authorization guard every `#[NoAdminRequired]` method calls
-	 * FIRST, before any read or write: `#[NoAdminRequired]` already opens
-	 * this endpoint to every authenticated Nextcloud user, so this makes the
-	 * requirement explicit at the call site (ADR-005) rather than relying
-	 * only on the framework attribute, and narrows it to the groups holding
-	 * the ADR-023 action `portal.author-news`.
-	 *
-	 * @return string The staff member's user id.
-	 *
-	 * @throws OCSForbiddenException When no Nextcloud user is authenticated, or the
-	 *                               user's groups do not hold self::ACTION.
-	 */
-	private function requireAuthenticatedStaff(): string {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			throw new OCSForbiddenException('Authentication required');
-		}
-
-		$this->actionAuth->requireAction(user: $user, action: self::ACTION);
-
-		return $user->getUID();
-	}//end requireAuthenticatedStaff()
 
 	/**
 	 * Create a draft news item. The author is the signed-in staff member,
@@ -127,7 +107,7 @@ class NewsController extends Controller {
 	 *
 	 * @return JSONResponse The created object, or a 400/500.
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
 	 * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-a-news-item-shows-on-a-portals-public-website-only-when-staff-put-it-there
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- `public` is a request parameter the framework
@@ -150,33 +130,18 @@ class NewsController extends Controller {
 			return new JSONResponse(['error' => 'invalid_target'], Http::STATUS_BAD_REQUEST);
 		}
 
-		$objectService = $this->objectService();
-		if ($objectService === null) {
-			return new JSONResponse(['error' => 'server_error'], Http::STATUS_INTERNAL_SERVER_ERROR);
-		}
-
-		try {
-			$saved = $objectService->saveObject(
-				object: [
-					'title' => $title,
-					'body' => $body,
-					'target' => $target,
-					'authorRef' => $authorRef,
-					'status' => 'draft',
-					'photoRefs' => $photoRefs,
-					'readReceipts' => [],
-				] + $this->website(public: $public, portal: $portal, audienceLabel: $audienceLabel) + ['eventRef' => $this->eventRef(value: $eventRef)],
-				register: self::REGISTER,
-				schema: self::SCHEMA,
-				_rbac: false,
-				_multitenancy: false
-			);
-		} catch (Throwable $e) {
-			$this->logger->error('Portaliq: news item create failed', ['reason' => $e->getMessage()]);
-			return new JSONResponse(['error' => 'server_error'], Http::STATUS_INTERNAL_SERVER_ERROR);
-		}
-
-		return new JSONResponse($this->normalise(row: $saved));
+		return $this->createRow(
+			object: [
+				'title' => $title,
+				'body' => $body,
+				'target' => $target,
+				'authorRef' => $authorRef,
+				'status' => 'draft',
+				'photoRefs' => $photoRefs,
+				'readReceipts' => [],
+			] + $this->website(public: $public, portal: $portal, audienceLabel: $audienceLabel) + ['eventRef' => $this->eventRef(value: $eventRef)],
+			failure: 'Portaliq: news item create failed'
+		);
 	}//end create()
 
 	/**
@@ -195,7 +160,7 @@ class NewsController extends Controller {
 	 *
 	 * @return JSONResponse The updated object, a 400 or a 404.
 	 *
-	 * @spec openspec/changes/staff-news-screen/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T1
 	 * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-a-news-item-shows-on-a-portals-public-website-only-when-staff-put-it-there
 	 */
 	#[NoAdminRequired]
@@ -211,7 +176,7 @@ class NewsController extends Controller {
 	): JSONResponse {
 		$this->requireAuthenticatedStaff();
 
-		if ($title === '' || $body === '' || $this->hasAnyTarget(target: $target) === false) {
+		if ($this->isValidChange(title: $title, body: $body, target: $target) === false) {
 			return new JSONResponse(['error' => 'invalid_target'], Http::STATUS_BAD_REQUEST);
 		}
 
@@ -221,19 +186,50 @@ class NewsController extends Controller {
 			$data += $this->website(public: $public, portal: $portal, audienceLabel: $audienceLabel);
 		}
 
+		$data = $this->withEventRef(data: $data, eventRef: $eventRef);
+
+		return $this->write(id: $id, data: $data);
+	}//end update()
+
+	/**
+	 * Whether a change has a title, a body and an audience.
+	 *
+	 * @param string               $title  The title.
+	 * @param string               $body   The body.
+	 * @param array<string, mixed> $target The target (schoolRef/groupRefs/childRefs).
+	 *
+	 * @return bool
+	 */
+	private function isValidChange(string $title, string $body, array $target): bool {
+		if ($title === '' || $body === '' || $this->hasAnyTarget(target: $target) === false) {
+			return false;
+		}
+
+		return true;
+	}//end isValidChange()
+
+	/**
+	 * The change with the event whose sign-up the article carries; null leaves it out.
+	 *
+	 * @param array<string, mixed> $data     The change so far.
+	 * @param string|null          $eventRef The event; empty clears it, null leaves it.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withEventRef(array $data, string|null $eventRef): array {
 		if ($eventRef !== null) {
 			$data['eventRef'] = $this->eventRef(value: $eventRef);
 		}
 
-		return $this->write(id: $id, data: $data);
-	}//end update()
+		return $data;
+	}//end withEventRef()
 
 	/**
 	 * The schools and groups the News screen offers as a news item's audience.
 	 *
 	 * @return JSONResponse `{schools: [{id, label}], groups: [{id, label}]}`.
 	 *
-	 * @spec openspec/changes/staff-news-screen/tasks.md#T2
+	 * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T2
 	 */
 	#[NoAdminRequired]
 	public function audiences(): JSONResponse {
@@ -254,8 +250,8 @@ class NewsController extends Controller {
 	 *
 	 * @return JSONResponse The updated object, or 404.
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
-	 * @spec openspec/changes/news-publish-date/specs/portaliq-cms/spec.md#requirement-a-news-item-carries-the-moment-it-was-published
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-news-item-carries-the-moment-it-was-published
 	 */
 	#[NoAdminRequired]
 	public function publish(string $id): JSONResponse {
@@ -277,8 +273,8 @@ class NewsController extends Controller {
 	 *
 	 * @return JSONResponse The updated object, or 404.
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
-	 * @spec openspec/changes/news-publish-date/specs/portaliq-cms/spec.md#requirement-a-news-item-carries-the-moment-it-was-published
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-news-item-carries-the-moment-it-was-published
 	 */
 	#[NoAdminRequired]
 	public function unpublish(string $id): JSONResponse {
@@ -305,22 +301,7 @@ class NewsController extends Controller {
 			return new JSONResponse(['error' => 'server_error'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 
-		$writer = new PortalObjectWriter(container: $this->container, logger: $this->logger);
-		$updated = $writer->updateObject(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: '',
-			subjectRef: '',
-			organisation: '',
-			id: $id,
-			data: $data
-		);
-
-		if ($updated === null) {
-			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
-		}
-
-		return new JSONResponse($updated);
+		return $this->writeRow(id: $id, data: $data);
 	}//end write()
 
 	/**
@@ -365,68 +346,4 @@ class NewsController extends Controller {
 
 		return $value;
 	}//end eventRef()
-
-	/**
-	 * Whether a target names at least one dimension.
-	 *
-	 * @param array<string, mixed> $target The target.
-	 *
-	 * @return bool
-	 */
-	private function hasAnyTarget(array $target): bool {
-		if (is_string($target['schoolRef'] ?? null) === true && $target['schoolRef'] !== '') {
-			return true;
-		}
-
-		if (is_array($target['groupRefs'] ?? null) === true && count($target['groupRefs']) > 0) {
-			return true;
-		}
-
-		if (is_array($target['childRefs'] ?? null) === true && count($target['childRefs']) > 0) {
-			return true;
-		}
-
-		return false;
-	}//end hasAnyTarget()
-
-	/**
-	 * Normalise an OpenRegister row (array or object) to an associative array.
-	 *
-	 * @param mixed $row The row.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function normalise(mixed $row): array {
-		if (is_array($row) === true) {
-			return $row;
-		}
-
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			$data = $row->jsonSerialize();
-			if (is_array($data) === true) {
-				return $data;
-			}
-		}
-
-		return [];
-	}//end normalise()
-
-	/**
-	 * Resolve OpenRegister's ObjectService, or null when unavailable.
-	 *
-	 * @return object|null
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end objectService()
 }//end class

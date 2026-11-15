@@ -44,9 +44,13 @@ class PortalBlockResolverTest extends TestCase {
 						'steps'  => ['label' => 'Stappen', 'provider' => 'caseSteps'],
 						'documents' => ['label' => 'Documenten', 'provider' => 'caseDocuments'],
 						'timeline'  => ['label' => 'Wat er is gebeurd', 'provider' => 'caseTimeline'],
+						'messages'  => ['label' => 'Berichten', 'provider' => 'caseMessages'],
 					],
 				],
-				'actions'     => [['id' => 'createExcuseRequest', 'type' => 'create', 'schema' => 'excuse']],
+				'actions'     => [
+					['id' => 'createExcuseRequest', 'type' => 'create', 'schema' => 'excuse'],
+					['id' => 'askAboutCase', 'type' => 'create', 'schema' => 'message', 'recordField' => 'caseId'],
+				],
 				'pages'       => [
 					[
 						'id'     => 'overzicht',
@@ -289,6 +293,51 @@ class PortalBlockResolverTest extends TestCase {
 	}//end testADocumentsAndATimelineBlockStayOnlyOnTheirRecordPage()
 
 	/**
+	 * A messages block reads its collection's `messages` provider on that
+	 * collection's record page, and keeps an `askAction` only when it names
+	 * an action of the same contribution (capability-rows-said-and-planned T07).
+	 *
+	 * @spec openspec/changes/capability-rows-said-and-planned/tasks.md#t07
+	 *
+	 * @return void
+	 */
+	public function testAMessagesBlockKeepsItsAskActionOnlyWhenItIsAnActionOfTheContribution(): void {
+		$this->assertSame(
+			[['type' => 'messages', 'collection' => 'zaken', 'label' => 'Berichten', 'askAction' => 'askAboutCase', 'askLabel' => 'Stel een vraag over deze zaak']],
+			$this->blocks(
+				blocks: [['type' => 'messages', 'collection' => 'zaken', 'label' => 'Berichten', 'askAction' => 'askAboutCase', 'askLabel' => '  Stel een vraag over deze zaak ']],
+				record: 'zaken'
+			)
+		);
+		$this->assertSame(
+			[['type' => 'messages', 'collection' => 'zaken']],
+			$this->blocks(blocks: [['type' => 'messages', 'collection' => 'zaken', 'askAction' => 'elsewhere', 'askLabel' => 'Vraag']], record: 'zaken'),
+			'an unknown action drops the ask button and its label'
+		);
+		$this->assertSame([], $this->blocks(blocks: [['type' => 'messages', 'collection' => 'zaken']]), 'not a record page');
+		$this->assertSame([], $this->blocks(blocks: [['type' => 'messages', 'collection' => 'vragenAanU']], record: 'vragenAanU'), 'no provider');
+	}//end testAMessagesBlockKeepsItsAskActionOnlyWhenItIsAnActionOfTheContribution()
+
+	/**
+	 * A documents block with `eachRecord: true` reads every record of its
+	 * collection itself, so it stays on a page that is no record page, with
+	 * its title and subtitle fields; anything but true keeps the old rule.
+	 *
+	 * @spec openspec/changes/documents-for-each-record/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
+	 *
+	 * @return void
+	 */
+	public function testADocumentsBlockForEachRecordStaysOnAnyPage(): void {
+		$declared = ['type' => 'documents', 'collection' => 'zaken', 'eachRecord' => true, 'titleFields' => ['givenName'], 'subtitleFields' => 'groupLabel', 'subtitle' => 'Voor alle ouders', 'emptyLabel' => 'Nog geen rapporten.'];
+		$this->assertSame(
+			[['type' => 'documents', 'collection' => 'zaken', 'subtitle' => 'Voor alle ouders', 'emptyLabel' => 'Nog geen rapporten.', 'eachRecord' => true, 'titleFields' => ['givenName']]],
+			$this->blocks(blocks: [$declared])
+		);
+		$this->assertSame([], $this->blocks(blocks: [['eachRecord' => 'yes'] + $declared]), 'only true reads every record');
+		$this->assertSame([], $this->blocks(blocks: [['collection' => 'vragenAanU'] + $declared]), 'no provider');
+	}//end testADocumentsBlockForEachRecordStaysOnAnyPage()
+
+	/**
 	 * A collection block keeps a limit of 1 to 50 and a sort on a projected
 	 * field, asc or desc; anything else is dropped and the block stays
 	 * (site-mijn-omgeving-components REQ-SMO-021, T10).
@@ -395,6 +444,38 @@ class PortalBlockResolverTest extends TestCase {
 			$this->assertSame([], $this->blocks([$bad + ['type' => 'cta', 'label' => 'Ga']]), (string)json_encode($bad));
 		}
 	}//end testACtaNamesExactlyOneTarget()
+
+	/**
+	 * A cta keeps the label it falls back to when a field its label names is
+	 * empty on the open record, and drops a blank one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/portal-contribution-contract/spec.md#requirement-a-cta-label-may-name-any-field-of-the-open-record
+	 */
+	public function testACtaKeepsTheLabelForAnEmptyField(): void {
+		$declared = ['type' => 'cta', 'route' => '/mijn/messages', 'label' => 'Bericht aan {teacherName}', 'labelWhenEmpty' => ' Bericht sturen '];
+		$this->assertSame(
+			[['type' => 'cta', 'route' => '/mijn/messages', 'label' => 'Bericht aan {teacherName}', 'labelWhenEmpty' => 'Bericht sturen']],
+			$this->blocks([$declared])
+		);
+		$this->assertArrayNotHasKey('labelWhenEmpty', $this->blocks([['labelWhenEmpty' => ' '] + $declared])[0]);
+	}//end testACtaKeepsTheLabelForAnEmptyField()
+
+	/**
+	 * A cta keeps the field that names whom its message goes to, and drops
+	 * one that is not a plain field name.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/guardian-message-to-and-whole-day/specs/portal-contribution-contract/spec.md#requirement-a-message-button-opens-the-form-with-its-teacher-chosen
+	 */
+	public function testACtaKeepsWhomItsMessageGoesTo(): void {
+		$declared = ['type' => 'cta', 'route' => '/mijn/messages', 'label' => 'Bericht aan {teacherName}', 'messageTo' => 'teacherRef'];
+		$this->assertSame('teacherRef', $this->blocks([$declared])[0]['messageTo']);
+		$this->assertArrayNotHasKey('messageTo', $this->blocks([['messageTo' => 'teacher ref'] + $declared])[0]);
+		$this->assertArrayNotHasKey('messageTo', $this->blocks([['messageTo' => ['x']] + $declared])[0]);
+	}//end testACtaKeepsWhomItsMessageGoesTo()
 
 	/**
 	 * A route outside the portal is refused: a scheme, a host or `//`.

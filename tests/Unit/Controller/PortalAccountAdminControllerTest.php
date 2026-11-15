@@ -188,6 +188,43 @@ class PortalAccountAdminControllerTest extends TestCase {
 		return new PortalAccountAdminController($this->createMock(IRequest::class), $accounts, $actionAuth, $session, $invitations, $mailer, $signInAddresses);
 	}//end controller()
 
+	/**
+	 * A clerk with the action still hears when the service says no: an
+	 * account that is not pending, and an invitation it refused to make.
+	 *
+	 * @return void
+	 */
+	public function testAServiceRefusalReachesTheClerkAsABadRequest(): void {
+		$accounts = $this->accounts();
+		$accounts->method('voidPending')->willReturn(false);
+		$invitations = $this->getMockBuilder(PortalInvitationService::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['invite'])
+			->getMock();
+		$invitations->method('invite')->willReturn(null);
+		$session = $this->createMock(IUserSession::class);
+		$session->method('getUser')->willReturn($this->user('clerk-anna'));
+		$mailer = $this->mailer();
+		$mailer->expects($this->never())->method('send');
+		$controller = new PortalAccountAdminController(
+			request: $this->createMock(IRequest::class),
+			accounts: $accounts,
+			actionAuth: $this->createMock(ActionAuthService::class),
+			userSession: $session,
+			invitations: $invitations,
+			mailer: $mailer
+		);
+
+		$void = $controller->void(subjectRef: 'subject-1', reason: 'mistake');
+		$refuse = $controller->refuse(subjectRef: 'subject-1', reason: 'unknown address');
+		$invite = $controller->invite(email: 'ans@example.org', organisation: 'gemeente-x');
+
+		$this->assertSame([Http::STATUS_BAD_REQUEST, ['error' => 'not_pending']], [$void->getStatus(), $void->getData()]);
+		$this->assertSame([Http::STATUS_BAD_REQUEST, ['error' => 'not_pending']], [$refuse->getStatus(), $refuse->getData()]);
+		$this->assertSame([Http::STATUS_BAD_REQUEST, ['error' => 'refused']], [$invite->getStatus(), $invite->getData()]);
+
+	}//end testAServiceRefusalReachesTheClerkAsABadRequest()
+
 	public function testAnInvitationIsOnlySentByAClerkWithTheAction(): void {
 		$refused = $this->controller(accounts: $this->accounts(), allowed: false, user: $this->user('ordinary-user'));
 		$allowed = $this->controller(accounts: $this->accounts(), allowed: true, user: $this->user('clerk-anna'));

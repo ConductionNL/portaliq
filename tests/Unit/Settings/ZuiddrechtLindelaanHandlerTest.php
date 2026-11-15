@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-lindelaan-woo-team/specs/example-set-lindelaan-woo-team/spec.md#requirement-pieter-jansen-of-woo-en-informatie-handles-the-lindelaan-woo-case
+ * @spec openspec/specs/example-set-lindelaan-woo-team/spec.md#requirement-pieter-jansen-of-woo-en-informatie-handles-the-lindelaan-woo-case
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * The handler and team the DqZaak boards draw on the Woo case.
  *
- * @spec openspec/changes/example-set-lindelaan-woo-team/specs/example-set-lindelaan-woo-team/spec.md#requirement-pieter-jansen-of-woo-en-informatie-handles-the-lindelaan-woo-case
+ * @spec openspec/specs/example-set-lindelaan-woo-team/spec.md#requirement-pieter-jansen-of-woo-en-informatie-handles-the-lindelaan-woo-case
  */
 class ZuiddrechtLindelaanHandlerTest extends TestCase {
 

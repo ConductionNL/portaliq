@@ -11,12 +11,16 @@ namespace OCA\Portaliq\Tests\Unit\BackgroundJob;
 
 use DateTime;
 use OCA\Portaliq\BackgroundJob\AvailabilityProbeJob;
+use OCA\Portaliq\Kernel\Contracts\AvailabilityProbeInterface;
+use OCA\Portaliq\Kernel\Contracts\AvailabilityRollupInterface;
+use OCA\Portaliq\Kernel\Contracts\AvailabilityStoreInterface;
+use OCA\Portaliq\Kernel\Contracts\PublishedPortalsInterface;
 use OCA\Portaliq\Service\Availability\AvailabilityProbe;
 use OCA\Portaliq\Service\Availability\AvailabilityRollup;
 use OCA\Portaliq\Service\Availability\AvailabilityStore;
 use OCA\Portaliq\Service\InstanceLoopback;
 use OCA\Portaliq\Service\InternalBaseUrl;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PublishedPortals;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
@@ -117,6 +121,59 @@ class AvailabilityProbeJobTest extends TestCase {
 	}//end savedOf()
 
 	/**
+	 * One portal whose check explodes is logged with its slug; the next
+	 * portal is still checked and the retention purge still runs.
+	 *
+	 * @spec openspec/specs/portal-availability/spec.md#requirement-each-published-portal-is-checked-every-five-minutes-req-oar-001
+	 */
+	public function testOnePortalsFailureNeverStopsTheOthers(): void {
+		$time = $this->createMock(ITimeFactory::class);
+		$time->method('getDateTime')->willReturn(new DateTime('2026-09-29T10:00:00+00:00'));
+
+		$portals = $this->createMock(PublishedPortalsInterface::class);
+		$portals->method('allPublishedPortals')->willReturn([['slug' => 'broken'], ['slug' => 'fine']]);
+
+		$checked = [];
+		$probe = $this->createMock(AvailabilityProbeInterface::class);
+		$probe->method('check')->willReturnCallback(
+			function (string $slug) use (&$checked): array {
+				$checked[] = $slug;
+				if ($slug === 'broken') {
+					throw new RuntimeException('probe exploded');
+				}
+
+				throw new RuntimeException('second failure');
+			}
+		);
+
+		$store = $this->createMock(AvailabilityStoreInterface::class);
+		$store->expects($this->once())->method('purgeBefore')->with('2025-08-29');
+
+		$rollup = $this->createMock(AvailabilityRollupInterface::class);
+		$rollup->expects($this->never())->method('record');
+
+		$warnings = [];
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->method('warning')->willReturnCallback(
+			function (string $message, array $context = []) use (&$warnings): void {
+				$warnings[] = [$message, $context];
+			}
+		);
+
+		$job = new AvailabilityProbeJob($time, $portals, $probe, $store, $rollup, $logger);
+		(new ReflectionMethod($job, 'run'))->invoke($job, null);
+
+		$this->assertSame(['broken', 'fine'], $checked);
+		$this->assertSame(
+			[
+				['[AvailabilityProbeJob] Could not record a check: probe exploded', ['portal' => 'broken']],
+				['[AvailabilityProbeJob] Could not record a check: second failure', ['portal' => 'fine']],
+			],
+			$warnings
+		);
+	}//end testOnePortalsFailureNeverStopsTheOthers()
+
+	/**
 	 * Run the job once at 2026-09-29 10:00 UTC over one published portal.
 	 *
 	 * @param int|null $site The site route's status, or null for a timeout.
@@ -128,7 +185,7 @@ class AvailabilityProbeJobTest extends TestCase {
 		$time = $this->createMock(ITimeFactory::class);
 		$time->method('getDateTime')->willReturn(new DateTime('2026-09-29T10:00:00+00:00'));
 
-		$portals = $this->createMock(PortalResolver::class);
+		$portals = $this->createMock(PublishedPortals::class);
 		$portals->method('allPublishedPortals')->willReturn([['slug' => 'open-tilburg'], ['title' => 'no slug']]);
 
 		$client = $this->createMock(IClient::class);

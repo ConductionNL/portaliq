@@ -31,7 +31,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-cross-origin-posting-must-work-without-a-preflight
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-cross-origin-posting-must-work-without-a-preflight
  */
 
 declare(strict_types=1);
@@ -49,7 +49,7 @@ use Throwable;
 /**
  * Reflect-Origin CORS headers on the public content and traffic responses.
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-cross-origin-posting-must-work-without-a-preflight
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-cross-origin-posting-must-work-without-a-preflight
  */
 class PublicApiCorsMiddleware extends Middleware {
 
@@ -87,7 +87,7 @@ class PublicApiCorsMiddleware extends Middleware {
 	 *
 	 * @return Response The response, with reflect-Origin headers when it qualifies.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-cross-origin-posting-must-work-without-a-preflight
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-cross-origin-posting-must-work-without-a-preflight
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- the base class dictates
 	 * the signature; the reflector already knows the dispatched method.
@@ -95,21 +95,7 @@ class PublicApiCorsMiddleware extends Middleware {
 	public function afterController(Controller $controller, string $methodName, Response $response): Response {
 		try {
 			$origin = trim($this->request->getHeader('Origin'));
-			if ($origin === '' || preg_match('#^https?://[^/\s]+$#i', $origin) !== 1) {
-				return $response;
-			}
-
-			if (preg_match(self::PATHS, (string)$this->request->getPathInfo()) !== 1) {
-				return $response;
-			}
-
-			// The reflector was pointed at the dispatched method by the
-			// framework before any middleware ran; the OCP interface exposes
-			// no `reflect()` to point it again. (Calling one anyway threw,
-			// the catch below swallowed it, and no response was ever opened:
-			// the tests caught what a browser would only have shown as a
-			// silent CORS failure).
-			if ($this->reflector->hasAnnotationOrAttribute('PublicPage', PublicPage::class) === false) {
+			if ($this->opensTo(origin: $origin) === false) {
 				return $response;
 			}
 
@@ -125,4 +111,32 @@ class PublicApiCorsMiddleware extends Middleware {
 
 		return $response;
 	}//end afterController()
+
+	/**
+	 * Whether the response opens to the origin: a bare http(s) origin, a
+	 * public API path and a public page.
+	 *
+	 * @param string $origin The request's Origin, trimmed.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-cross-origin-posting-must-work-without-a-preflight
+	 */
+	private function opensTo(string $origin): bool {
+		if ($origin === '' || preg_match('#^https?://[^/\s]+$#i', $origin) !== 1) {
+			return false;
+		}
+
+		if (preg_match(self::PATHS, (string)$this->request->getPathInfo()) !== 1) {
+			return false;
+		}
+
+		// The reflector was pointed at the dispatched method by the
+		// framework before any middleware ran; the OCP interface exposes
+		// no `reflect()` to point it again. (Calling one anyway threw,
+		// the catch in afterController() swallowed it, and no response was
+		// ever opened: the tests caught what a browser would only have shown
+		// as a silent CORS failure).
+		return $this->reflector->hasAnnotationOrAttribute('PublicPage', PublicPage::class) === true;
+	}//end opensTo()
 }//end class

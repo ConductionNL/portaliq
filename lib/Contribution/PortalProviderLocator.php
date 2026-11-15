@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\PortalProviderLocatorInterface;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -38,7 +39,7 @@ use Throwable;
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T04
  */
-class PortalProviderLocator {
+class PortalProviderLocator implements PortalProviderLocatorInterface {
 	/**
 	 * FQCN template each contributing app implements its provider at. `%s` is
 	 * the app's namespace (see `namespaceFor()`). Discovering by concrete class
@@ -77,7 +78,7 @@ class PortalProviderLocator {
 	 *
 	 * @return mixed What the provider returned; null when it has no `getContribution`.
 	 *
-	 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-the-portal-api-must-ask-contributing-apps-in-the-portals-language
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-the-portal-api-must-ask-contributing-apps-in-the-portals-language
 	 */
 	public function contributionOf(object $provider, array $subject): mixed {
 		if (method_exists($provider, 'getContribution') === false) {

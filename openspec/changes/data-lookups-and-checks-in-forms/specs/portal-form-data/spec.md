@@ -64,6 +64,6 @@ A step that declares `fetch` SHALL call the named integriq source from the serve
 
 A field of type `productVariant` SHALL offer the variants of its product from the portal's product catalogue with name and price. When the form is paid on submit, the amount SHALL be the chosen variant's catalogue price, read on the server. The server MUST ignore any amount the browser sends.
 
-#### Scenario: A visitor permit
-- **WHEN** the resident picks "Bezoekersvergunning, € 12,00 per jaar"
-- **THEN** the pay step asks for € 12,00
+#### Scenario: A parking permit for the first car
+- **WHEN** the resident picks "Eerste auto, € 62,40 per jaar"
+- **THEN** the pay step asks for € 62,40

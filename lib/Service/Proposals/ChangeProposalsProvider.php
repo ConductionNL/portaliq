@@ -33,7 +33,7 @@ namespace OCA\Portaliq\Service\Proposals;
 use InvalidArgumentException;
 use OCA\OpenRegister\Exception\NotImplementedException;
 use OCA\OpenRegister\Service\Integration\IntegrationProvider;
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\Tasks\PortalCaseAccessGuard;
 use OCP\IL10N;
 use OCP\IUserSession;
@@ -126,7 +126,7 @@ class ChangeProposalsProvider implements IntegrationProvider {
 	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function getRequiredApp(): ?string {
-		return Application::APP_ID;
+		return AppIdentity::APP_ID;
 	}//end getRequiredApp()
 
 	/**

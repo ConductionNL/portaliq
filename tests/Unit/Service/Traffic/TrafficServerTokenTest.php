@@ -19,7 +19,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service\Traffic;
 
 use OCA\Portaliq\Service\PortalRegisterContext;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PublishedPortals;
 use OCA\Portaliq\Service\Traffic\TrafficServerToken;
 use OCA\Portaliq\Service\TrafficConfigResolver;
 use OCP\Security\ISecureRandom;
@@ -48,7 +48,7 @@ class TrafficServerTokenTest extends TestCase {
 	 * @return TrafficServerToken The service.
 	 */
 	private function service(array $portal): TrafficServerToken {
-		$portals = $this->createMock(PortalResolver::class);
+		$portals = $this->createMock(PublishedPortals::class);
 		$portals->method('allPublishedPortals')->willReturn([$portal]);
 
 		$random = $this->createMock(ISecureRandom::class);

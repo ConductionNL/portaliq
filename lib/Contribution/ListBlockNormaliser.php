@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
  */
 
 declare(strict_types=1);
@@ -34,14 +34,14 @@ namespace OCA\Portaliq\Contribution;
 /**
  * Normalises the `tasks` and `inbox` blocks.
  *
- * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
  */
 class ListBlockNormaliser {
 	/**
 	 * The blocks that read one open record through a provider of the same
 	 * name on its collection.
 	 */
-	public const RECORD_BLOCKS = ['steps', 'documents', 'timeline'];
+	public const RECORD_BLOCKS = ['steps', 'documents', 'timeline', 'messages'];
 
 	/**
 	 * The most rows a list block may ask for.
@@ -65,7 +65,7 @@ class ListBlockNormaliser {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
 	 */
 	public function tasksBlock(array $block, array $collections): ?array {
 		$collection = $this->collection(id: ($block['collection'] ?? null), collections: $collections);
@@ -75,6 +75,25 @@ class ListBlockNormaliser {
 
 		$entry = ['type' => 'tasks', 'collection' => $collection['id']];
 
+		[$entry, $collection] = $this->scopedEntry(block: $block, entry: $entry, collection: $collection, collections: $collections);
+		$entry = $this->withTaskFields(block: $block, entry: $entry, collection: $collection);
+
+		// The highlight card (site-school-blocks).
+		return $entry + $this->common(block: $block) + (new SchoolBlockKeys())->tasksKeys(block: $block, collection: $collection)
+			+ (new BoardKeys())->tasksKeys(block: $block);
+	}//end tasksBlock()
+
+	/**
+	 * The entry with the record scope, the lookups and `excludeWhen`, and the collection with the looked-up fields.
+	 *
+	 * @param array<string, mixed>             $block       The declared block.
+	 * @param array<string, mixed>             $entry       The entry so far.
+	 * @param array<string, mixed>             $collection  The block's collection.
+	 * @param array<int, array<string, mixed>> $collections The contribution's sanitised collections.
+	 *
+	 * @return array{0: array<string, mixed>, 1: array<string, mixed>}
+	 */
+	private function scopedEntry(array $block, array $entry, array $collection, array $collections): array {
 		// The record scope and lookups a collection block takes, plus
 		// excludeWhen over a declared lookup (REQ-SMO-025). First, so a
 		// looked-up value may name a task (lookup-by-row-field).
@@ -84,22 +103,33 @@ class ListBlockNormaliser {
 		$entry += $this->excludeWhen(declared: ($block['excludeWhen'] ?? null), lookups: ($entry['lookups'] ?? []));
 		$collection = ($scopes->withLookupFields(collection: $collection, entry: $entry) ?? $collection);
 
+		return [$entry, $collection];
+	}//end scopedEntry()
+
+	/**
+	 * The entry with the due field, the title fields and the title template the collection projects.
+	 *
+	 * @param array<string, mixed> $block      The declared block.
+	 * @param array<string, mixed> $entry      The entry so far.
+	 * @param array<string, mixed> $collection The block's collection, with its looked-up fields.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withTaskFields(array $block, array $entry, array $collection): array {
 		$due = ($block['dueField'] ?? null);
-		if (is_string($due) === true && $this->projects(collection: $collection, field: $due) === true) {
+		if (is_string($due) === true && (new CollectionProjection())->projects(collection: $collection, field: $due) === true) {
 			$entry['dueField'] = $due;
 		}
 
-		$titles = $this->projectedNames(value: ($block['titleFields'] ?? null), collection: $collection);
+		$titles = (new CollectionProjection())->projectedNames(value: ($block['titleFields'] ?? null), collection: $collection);
 		if ($titles !== []) {
 			$entry['titleFields'] = $titles;
 		}
 
 		$entry += (new TaskTitleTemplate())->keys(declared: ($block['titleTemplate'] ?? null), collection: $collection);
 
-		// The highlight card (site-school-blocks).
-		return $entry + $this->common(block: $block) + (new SchoolBlockKeys())->tasksKeys(block: $block, collection: $collection)
-			+ (new BoardKeys())->tasksKeys(block: $block);
-	}//end tasksBlock()
+		return $entry;
+	}//end withTaskFields()
 
 	/**
 	 * A tasks block's `excludeWhen: {lookup, in}`, kept only when it names a
@@ -110,7 +140,7 @@ class ListBlockNormaliser {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-tasks-and-inbox-blocks-may-narrow-to-the-open-record-and-leave-rows-out-by-a-lookup-req-smo-025
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-tasks-and-inbox-blocks-may-narrow-to-the-open-record-and-leave-rows-out-by-a-lookup-req-smo-025
 	 */
 	private function excludeWhen(mixed $declared, array $lookups): array {
 		if (is_array($declared) === false || in_array(($declared['lookup'] ?? null), array_column($lookups, 'as'), true) === false) {
@@ -147,7 +177,7 @@ class ListBlockNormaliser {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
 	 */
 	public function inboxBlock(array $block, array $collections): ?array {
 		$entry = ['type' => 'inbox'];
@@ -180,7 +210,7 @@ class ListBlockNormaliser {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
 	 */
 	public function casesBlock(array $block, array $collections): ?array {
 		$collection = $this->collection(id: ($block['collection'] ?? null), collections: $collections);
@@ -211,8 +241,9 @@ class ListBlockNormaliser {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
 	 * @spec openspec/changes/steps-as-bars/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-as-a-row-of-bars
+	 * @spec openspec/changes/documents-for-each-record/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
 	 */
 	public function recordBlock(string $type, array $block, array $collections): ?array {
 		$collection = $this->collection(id: ($block['collection'] ?? null), collections: $collections);
@@ -225,8 +256,7 @@ class ListBlockNormaliser {
 
 		$entry = ['type' => $type, 'collection' => $collection['id']] + $this->common(block: $block);
 		if ($type === 'documents') {
-			// The upload button beside the heading (zuiddrecht-resident-pages-match-the-boards).
-			$entry += (new BoardKeys())->documentsKeys(block: $block);
+			$entry += $this->documentsKeys(block: $block, collection: $collection);
 		}
 
 		// The steps as a row of bars, as the school boards draw them (steps-as-bars).
@@ -238,16 +268,47 @@ class ListBlockNormaliser {
 	}//end recordBlock()
 
 	/**
+	 * A documents block's own keys: the board keys, and `eachRecord: true`
+	 * for one group per row of its collection, headed by the row's projected
+	 * `titleFields` and `subtitleFields`.
+	 *
+	 * @param array<string, mixed> $block      The declared block.
+	 * @param array<string, mixed> $collection The block's collection.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/documents-for-each-record/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
+	 */
+	private function documentsKeys(array $block, array $collection): array {
+		// The upload button beside the heading (zuiddrecht-resident-pages-match-the-boards).
+		$out = (new BoardKeys())->documentsKeys(block: $block);
+		if (($block['eachRecord'] ?? null) !== true) {
+			return $out;
+		}
+
+		$out['eachRecord'] = true;
+		foreach (['titleFields', 'subtitleFields'] as $key) {
+			$names = (new CollectionProjection())->projectedNames(value: ($block[$key] ?? null), collection: $collection);
+			if ($names !== []) {
+				$out[$key] = $names;
+			}
+		}
+
+		return $out;
+	}//end documentsKeys()
+
+	/**
 	 * The blocks without a `steps`, `documents` or `timeline` block that does
 	 * not read the page's own record collection: each belongs to one open
-	 * record.
+	 * record. A documents block with `eachRecord` reads every record itself.
 	 *
 	 * @param array<int, array<string, mixed>> $blocks            The page's normalised blocks.
 	 * @param array<int, string>               $recordCollections The page's `record` and `records` collections.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 * @spec openspec/changes/documents-for-each-record/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
 	 */
 	public function recordPageOnly(array $blocks, array $recordCollections): array {
 		return array_values(
@@ -255,6 +316,7 @@ class ListBlockNormaliser {
 				$blocks,
 				static fn (array $block): bool => in_array(($block['type'] ?? null), self::RECORD_BLOCKS, true) === false
 					|| in_array(($block['collection'] ?? null), $recordCollections, true) === true
+					|| ($block['eachRecord'] ?? null) === true
 			)
 		);
 	}//end recordPageOnly()
@@ -306,42 +368,4 @@ class ListBlockNormaliser {
 
 		return null;
 	}//end collection()
-
-	/**
-	 * Whether the collection projects this field (any field, when it projects none).
-	 *
-	 * @param array<string, mixed> $collection The collection.
-	 * @param string               $field      The field.
-	 *
-	 * @return bool
-	 */
-	private function projects(array $collection, string $field): bool {
-		if ($field === '') {
-			return false;
-		}
-
-		$fields = ($collection['fields'] ?? null);
-		return is_array($fields) === false || in_array($field, $fields, true) === true;
-	}//end projects()
-
-	/**
-	 * The names of a declared list that the collection projects, in order.
-	 *
-	 * @param mixed                $value      The declared list.
-	 * @param array<string, mixed> $collection The collection.
-	 *
-	 * @return array<int, string>
-	 */
-	private function projectedNames(mixed $value, array $collection): array {
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		return array_values(
-			array_filter(
-				$value,
-				fn ($name): bool => is_string($name) === true && $this->projects(collection: $collection, field: $name) === true
-			)
-		);
-	}//end projectedNames()
 }//end class
