@@ -32,6 +32,8 @@ final class OrganisationTypeOptionsTest extends TestCase {
 
 	private const SCHEME = OrganisationTypeOptions::DEFAULT_SCHEME;
 
+	private const SCHEME_ID = '5f0c2a52-6e2b-4c1a-9a43-1d6a0c3f7e11';
+
 	private const WATERSCHAP = 'https://identifier.overheid.nl/tooi/def/ont/Waterschap';
 
 	private const GEMEENTE = 'https://identifier.overheid.nl/tooi/def/ont/Gemeente';
@@ -76,7 +78,7 @@ final class OrganisationTypeOptionsTest extends TestCase {
 	private function repository(?string $uri): ConceptRepository {
 		$repository = $this->createMock(ConceptRepository::class);
 		$repository->method('scheme')->willReturnCallback(
-			static fn (string $schemeUri): ?array => ($schemeUri === $uri ? ['uri' => $uri, 'title' => 'Organisatietypen'] : null)
+			static fn (string $schemeUri): ?array => ($schemeUri === $uri ? ['uri' => $uri, 'title' => 'Organisatietypen', '@uuid' => self::SCHEME_ID] : null)
 		);
 		$repository->method('conceptsOf')->willReturnCallback(
 			static fn (string $schemeUri): array => ($schemeUri === $uri ? self::concepts() : [])
@@ -169,6 +171,44 @@ final class OrganisationTypeOptionsTest extends TestCase {
 		);
 
 		self::assertNull($result['refusal']);
-		self::assertSame([], $result['portal']);
+		self::assertSame(['organisationTypeSchemeId' => self::SCHEME_ID], $result['portal']);
 	}//end testAnEmptyTypeClearsTheLabel()
+
+	/**
+	 * Every save stores the installed scheme's uuid for the picker's filter;
+	 * without the scheme a stale one is removed.
+	 *
+	 * @return void
+	 */
+	public function testASaveStoresTheInstalledSchemesUuid(): void {
+		$installed = $this->options(repository: $this->repository(uri: self::SCHEME))->settle(
+			portal: ['slug' => 'hhnk', 'organisationType' => self::WATERSCHAP],
+			old: []
+		);
+		$missing   = $this->options(repository: $this->repository(uri: null))->settle(
+			portal: ['slug' => 'hhnk', 'organisationTypeSchemeId' => 'stale-uuid'],
+			old: []
+		);
+
+		self::assertSame(self::SCHEME_ID, $installed['portal']['organisationTypeSchemeId']);
+		self::assertSame(['slug' => 'hhnk'], $missing['portal']);
+	}//end testASaveStoresTheInstalledSchemesUuid()
+
+	/**
+	 * An unreadable register stores no scheme uuid and keeps the save going.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableSchemeStoresNoUuid(): void {
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willThrowException(new \RuntimeException('not installed'));
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnArgument(0);
+		$types = new OrganisationTypeOptions(container: $container, appConfig: $this->createMock(IAppConfig::class), l10n: $l10n, logger: new NullLogger());
+
+		$result = $types->settle(portal: ['slug' => 'hhnk', 'organisationTypeSchemeId' => 'stale-uuid'], old: []);
+
+		self::assertNull($result['refusal']);
+		self::assertSame(['slug' => 'hhnk'], $result['portal']);
+	}//end testAnUnreadableSchemeStoresNoUuid()
 }//end class

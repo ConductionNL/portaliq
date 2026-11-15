@@ -3930,6 +3930,20 @@
                   "label": "Organisation"
                 },
                 {
+                  "key": "organisationType",
+                  "label": "Organisation type",
+                  "type": "reference",
+                  "register": "vocabulary",
+                  "schema": "concept",
+                  "labelField": "prefLabel.nl",
+                  "filter": {
+                    "inScheme": "@object.organisationTypeSchemeId"
+                  },
+                  "valueTemplate": "{uri}",
+                  "emptyLabel": "No organisation type",
+                  "hint": "From the TOOI list of organisation types. The site names the organisation's kind with it. When the list offers nothing, it is not installed in the concept register yet, or the portal has not been saved since."
+                },
+                {
                   "key": "kind",
                   "label": "Kind",
                   "type": "select",

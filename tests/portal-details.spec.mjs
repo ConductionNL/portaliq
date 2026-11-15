@@ -118,12 +118,34 @@ test('the favicon and the hero image are picked from this portal media library a
 	assert.match(field('favicon').hint, /PNG, SVG or ICO/)
 })
 
+// REQ-PIA-003 (portal-identity-from-the-admin 3.1): the organisation type is
+// picked from the TOOI scheme's concepts in OpenRegister's concept register.
+// A concept names its scheme by uuid, which differs per instance, so the
+// filter reads the uuid OrganisationTypeOptions::settle() stores on the portal
+// on every save; the stored value is the concept's uri, the value settle()
+// checks and labels.
+test('the organisation type is picked from the TOOI scheme in the concept register', () => {
+	const picker = field('organisationType')
+	assert.ok(picker, 'the form has no organisation type picker')
+	assert.equal(picker.type, 'reference')
+	assert.equal(picker.register, 'vocabulary')
+	assert.equal(picker.schema, 'concept')
+	assert.equal(picker.labelField, 'prefLabel.nl')
+	assert.deepEqual(picker.filter, { inScheme: '@object.organisationTypeSchemeId' })
+	assert.equal(picker.valueTemplate, '{uri}')
+	assert.notEqual(picker.free, true, 'the organisation type takes free text')
+	assert.ok(PORTAL.organisationType, '#portal declares no organisationType')
+	assert.equal(PORTAL.organisationTypeSchemeId.format, 'uuid')
+	assert.match(read('lib/Service/OrganisationTypeOptions.php'), /SCHEME_ID_FIELD = 'organisationTypeSchemeId'/)
+	assert.match(picker.hint, /not installed/)
+})
+
 test('the details are one card, and the old component is gone', () => {
 	const sections = widget('portal-settings').content.sections
 	assert.ok(sections.some((s) => s.widgetId === 'portal-settings-details'))
 	for (const id of ['portal-settings-locales', 'portal-settings-frame']) {
 		assert.equal(widget(id), undefined, `${id} is a card of its own again`)
 	}
-	assert.deepEqual(form.content.fields.map((f) => f.key), ['title', 'tagline', 'slug', 'organisation', 'kind', 'headerVariant', 'locales', 'accountLabel', 'logo', 'favicon', 'heroImage', 'frameAncestors'])
+	assert.deepEqual(form.content.fields.map((f) => f.key), ['title', 'tagline', 'slug', 'organisation', 'organisationType', 'kind', 'headerVariant', 'locales', 'accountLabel', 'logo', 'favicon', 'heroImage', 'frameAncestors'])
 	assert.equal(read('src/registry.js').includes('PortalDetailsForm'), false)
 })

@@ -49,6 +49,13 @@ class OrganisationTypeOptions {
 	public const SCHEME_KEY = 'organisationTypeScheme';
 
 	/**
+	 * The portal field holding the installed scheme's uuid, for the type picker's filter.
+	 *
+	 * @var string
+	 */
+	public const SCHEME_ID_FIELD = 'organisationTypeSchemeId';
+
+	/**
 	 * The uri the TOOI organisation type list is expected under.
 	 */
 	public const DEFAULT_SCHEME = 'https://identifier.overheid.nl/tooi/set/scw_organisatietypen';
@@ -110,6 +117,11 @@ class OrganisationTypeOptions {
 	 * An empty type removes the type and its label. A type of the scheme stores the
 	 * concept's label beside it. Anything else is refused, so no free text is
 	 * stored; when the list is not installed only the stored type is kept.
+	 * Every save also stores the installed scheme's uuid as
+	 * `organisationTypeSchemeId`, which the details form's type picker filters
+	 * the concepts on (a concept names its scheme by uuid, and the uuid differs
+	 * per instance); without the scheme the field is removed and the picker
+	 * offers nothing.
 	 *
 	 * @param array<string, mixed> $portal The portal as it is saved.
 	 * @param array<string, mixed> $old    The portal as it was stored, or [] when new.
@@ -119,6 +131,7 @@ class OrganisationTypeOptions {
 	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
 	 */
 	public function settle(array $portal, array $old): array {
+		$portal = $this->withSchemeId(portal: $portal);
 		$type = trim((string)($portal['organisationType'] ?? ''));
 		if ($type === '') {
 			unset($portal['organisationType'], $portal['organisationTypeLabel']);
@@ -152,6 +165,32 @@ class OrganisationTypeOptions {
 
 		return $uri;
 	}//end schemeUri()
+
+	/**
+	 * The portal with the installed scheme's uuid, or without the field when the scheme is missing.
+	 *
+	 * @param array<string, mixed> $portal The portal as it is saved.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+	 */
+	private function withSchemeId(array $portal): array {
+		unset($portal[self::SCHEME_ID_FIELD]);
+		try {
+			$scheme = $this->container->get(self::REPOSITORY)->scheme(schemeUri: $this->schemeUri());
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: the organisation type scheme could not be read', ['reason' => $e->getMessage()]);
+			return $portal;
+		}
+
+		$uuid = trim((string)($scheme['@uuid'] ?? ''));
+		if ($uuid !== '') {
+			$portal[self::SCHEME_ID_FIELD] = $uuid;
+		}
+
+		return $portal;
+	}//end withSchemeId()
 
 	/**
 	 * The scheme's concepts keyed by uri, or [] when the scheme or OpenRegister is missing.
