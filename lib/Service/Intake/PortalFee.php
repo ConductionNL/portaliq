@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Kernel\Contracts\PortalFeeInterface;
 use OCA\Portaliq\Service\CaseTypeReader;
 
 /**
@@ -35,7 +36,7 @@ use OCA\Portaliq\Service\CaseTypeReader;
  *
  * @spec openspec/changes/intake-pay-on-submit/tasks.md#t03
  */
-class PortalFee {
+class PortalFee implements PortalFeeInterface {
 	/**
 	 * Constructor.
 	 *

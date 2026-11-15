@@ -6,6 +6,141 @@
 // names their due day, the two decision dates, and the button on the current
 // status step. Pure functions; CitizenCase.vue renders what they return.
 
+/** The fields a task's title is read from when its collection names none. */
+const TASK_TITLE_FIELDS = ['title', 'name', 'subject', 'onderwerp']
+
+/**
+ * @param {unknown} value A value that should be a list.
+ * @return {Array} The value, or an empty list when it is not one.
+ */
+function listOf(value) {
+	return Array.isArray(value) ? value : []
+}
+
+/**
+ * @param {Array<string>} caseKeys The values that name a case.
+ * @return {Array<string>} The values trimmed, without the empty ones.
+ */
+function trimmedKeys(caseKeys) {
+	return listOf(caseKeys)
+		.map((key) => String(key ?? '').trim())
+		.filter((key) => key !== '')
+}
+
+/**
+ * @param {string|undefined} closedField The field that marks a row closed.
+ * @param {object|null} row A row.
+ * @return {boolean} Whether the collection marks the row closed.
+ */
+function isClosed(closedField, row) {
+	return closedField && row?.[closedField] ? true : false
+}
+
+/**
+ * @param {{field: string, closedField: string|undefined, keys: Array<string>}} match The case field, the closed field and the case's keys.
+ * @param {object|null} row A row.
+ * @return {boolean} Whether the row is an open task of the case.
+ */
+function isOpenCaseRow(match, row) {
+	const value = row?.[match.field]
+	if (isClosed(match.closedField, row) || value === undefined || value === null) {
+		return false
+	}
+	return match.keys.includes(String(value).trim())
+}
+
+/**
+ * @param {unknown} text A field value.
+ * @return {boolean} Whether it is a text with more than white space.
+ */
+function isFilledText(text) {
+	return typeof text === 'string' && text.trim() !== ''
+}
+
+/**
+ * @param {object} collection The task collection.
+ * @param {object} row The task row.
+ * @return {string} The first filled title field, the collection's label, or ''.
+ */
+function taskTitle(collection, row) {
+	const titleFields = collection.titleFields || TASK_TITLE_FIELDS
+	return (
+		titleFields.map((name) => row[name]).find(isFilledText)
+		|| collection.label
+		|| ''
+	)
+}
+
+/**
+ * @param {object} row The task row.
+ * @return {string} The row's id, or ''.
+ */
+function taskId(row) {
+	return String(row.id || row['@self']?.id || '')
+}
+
+/**
+ * @param {object} row The task row.
+ * @return {string} The row's task type, type or kind, or ''.
+ */
+function taskType(row) {
+	return String(row.taskType ?? row.type ?? row.kind ?? '')
+}
+
+/**
+ * @param {object} collection The task collection.
+ * @param {object} row The task row.
+ * @return {{id: string, title: string, due: string, type: string, collection: object, row: object}} The task.
+ */
+function taskOf(collection, row) {
+	return {
+		id: taskId(row),
+		title: taskTitle(collection, row),
+		due: typeof row.due === 'string' ? row.due : '',
+		type: taskType(row),
+		collection,
+		row,
+	}
+}
+
+/**
+ * The open tasks of the case in one read, in the read's order.
+ *
+ * @param {{collection: object, rows: Array<object>}} read A task collection and its rows.
+ * @param {Array<string>} keys The trimmed values that name the case.
+ * @return {Array<object>} The tasks.
+ */
+function tasksOfRead(read, keys) {
+	const field = read?.collection?.caseField
+	if (typeof field !== 'string' || field === '' || keys.length === 0) {
+		return []
+	}
+	const match = { field, closedField: read.collection.closedField, keys }
+	return listOf(read.rows)
+		.filter((row) => isOpenCaseRow(match, row))
+		.map((row) => taskOf(read.collection, row))
+}
+
+/**
+ * @param {{due: string}} task A task.
+ * @return {number} Its due moment, or infinity for none or an unreadable one.
+ */
+function dueTime(task) {
+	const ms = task.due ? new Date(task.due).getTime() : Number.NaN
+	return Number.isNaN(ms) ? Number.POSITIVE_INFINITY : ms
+}
+
+/**
+ * @param {Array<object>} tasks The tasks in read order.
+ * @return {Array<object>} The tasks soonest due first, ties in read order.
+ */
+function soonestDueFirst(tasks) {
+	return tasks
+		.map((task, index) => ({ task, index }))
+		.sort((a, b) => dueTime(a.task) - dueTime(b.task) || a.index - b.index)
+		.map(({ task }) => task)
+}
+
 /**
  * The open tasks that belong to one case, soonest due first.
  *
@@ -18,56 +153,8 @@
  * @spec openspec/changes/case-page-tasks-decision-dates-and-next-step/tasks.md#t03
  */
 export function tasksOfCase(reads, caseKeys) {
-	const keys = (Array.isArray(caseKeys) ? caseKeys : [])
-		.map((key) => String(key ?? '').trim())
-		.filter((key) => key !== '')
-	const tasks = []
-	for (const read of Array.isArray(reads) ? reads : []) {
-		const field = read?.collection?.caseField
-		if (typeof field !== 'string' || field === '' || keys.length === 0) {
-			continue
-		}
-		const closedField = read.collection.closedField
-		for (const row of Array.isArray(read.rows) ? read.rows : []) {
-			const value = row?.[field]
-			const closed = closedField && row?.[closedField] ? true : false
-			if (closed || value === undefined || value === null) {
-				continue
-			}
-			if (!keys.includes(String(value).trim())) {
-				continue
-			}
-			const titleFields = read.collection.titleFields || [
-				'title',
-				'name',
-				'subject',
-				'onderwerp',
-			]
-			tasks.push({
-				id: String(row.id || row['@self']?.id || ''),
-				title:
-					titleFields
-						.map((name) => row[name])
-						.find(
-							(text) => typeof text === 'string' && text.trim() !== '',
-						)
-					|| read.collection.label
-					|| '',
-				due: typeof row.due === 'string' ? row.due : '',
-				type: String(row.taskType ?? row.type ?? row.kind ?? ''),
-				collection: read.collection,
-				row,
-			})
-		}
-	}
-	const time = (task) => {
-		const ms = task.due ? new Date(task.due).getTime() : Number.NaN
-		return Number.isNaN(ms) ? Number.POSITIVE_INFINITY : ms
-	}
-	return tasks
-		.map((task, index) => ({ task, index }))
-		.sort((a, b) => time(a.task) - time(b.task) || a.index - b.index)
-		.map(({ task }) => task)
+	const keys = trimmedKeys(caseKeys)
+	return soonestDueFirst(listOf(reads).flatMap((read) => tasksOfRead(read, keys)))
 }
 
 /**
@@ -83,12 +170,25 @@ export function dayWords(value, locale, withYear = false) {
 	if (!date || Number.isNaN(date.getTime())) {
 		return ''
 	}
-	return date.toLocaleDateString(
-		String(locale || 'nl').startsWith('en') ? 'en-GB' : 'nl-NL',
-		withYear
-			? { day: 'numeric', month: 'long', year: 'numeric' }
-			: { day: 'numeric', month: 'long' },
-	)
+	return date.toLocaleDateString(dateLocale(locale), dayFormat(withYear))
+}
+
+/**
+ * @param {string} locale The page language.
+ * @return {string} The date locale: English for an English page, else Dutch.
+ */
+function dateLocale(locale) {
+	return String(locale || 'nl').startsWith('en') ? 'en-GB' : 'nl-NL'
+}
+
+/**
+ * @param {boolean} withYear Add the year.
+ * @return {object} The day-and-month format, with the year when asked.
+ */
+function dayFormat(withYear) {
+	return withYear
+		? { day: 'numeric', month: 'long', year: 'numeric' }
+		: { day: 'numeric', month: 'long' }
 }
 
 /**
@@ -108,8 +208,24 @@ export function bannerSentence(tasks, legalDecisionDate, t, locale) {
 	if (!Array.isArray(tasks) || tasks.length === 0) {
 		return ''
 	}
-	const due = dayWords(tasks.find((task) => task.due)?.due, locale)
-	const legal = dayWords(legalDecisionDate, locale)
+	return documentsSentence(
+		{
+			due: dayWords(tasks.find((task) => task.due)?.due, locale),
+			legal: dayWords(legalDecisionDate, locale),
+		},
+		t,
+	)
+}
+
+/**
+ * The banner sentence with the halves whose day is known.
+ *
+ * @param {{due: string, legal: string}} days The earliest due day and the legal decision day, in words.
+ * @param {(key: string, vars?: object) => string} t The translator.
+ * @return {string} The sentence.
+ */
+function documentsSentence(days, t) {
+	const { due, legal } = days
 	if (due && legal) {
 		return t(
 			'We still need documents from you. Send them before {due}, and we will decide by {legal}.',
@@ -162,18 +278,44 @@ export function decisionDateRows(caseRow, t, locale) {
  */
 export function nextStepView(status, tasks, offered) {
 	const action = status?.action
-	let button = null
-	if (action && typeof action.label === 'string') {
-		if (action.kind === 'task') {
-			const task = (tasks || []).find((entry) => entry.type === action.target)
-			button = task ? { label: action.label, kind: 'task', task } : null
-		} else if (action.kind === 'page') {
-			button = { label: action.label, kind: 'page', route: action.target }
-		} else if (action.kind === 'action' && offered(action.target) === true) {
-			button = { label: action.label, kind: 'action', id: action.target }
-		}
-	}
+	const button =
+		action && typeof action.label === 'string'
+			? stepButton(action, { tasks, offered })
+			: null
 	return { button, next: status?.next?.label || '' }
+}
+
+/**
+ * A button to the first open task of the action's target type.
+ *
+ * @param {{label: string, target: string}} action The step's action.
+ * @param {Array<object>|null} tasks The open tasks of the case.
+ * @return {object|null} The button, or null when no such task is open.
+ */
+function taskButton(action, tasks) {
+	const task = (tasks || []).find((entry) => entry.type === action.target)
+	return task ? { label: action.label, kind: 'task', task } : null
+}
+
+/**
+ * The button a status step's action draws, or null when it has nothing to
+ * lead to.
+ *
+ * @param {{label: string, kind: string, target: string}} action The step's action.
+ * @param {{tasks: Array<object>, offered: (id: string) => boolean}} screen The open tasks and the case actions the screen offers.
+ * @return {object|null} The button.
+ */
+function stepButton(action, screen) {
+	if (action.kind === 'task') {
+		return taskButton(action, screen.tasks)
+	}
+	if (action.kind === 'page') {
+		return { label: action.label, kind: 'page', route: action.target }
+	}
+	if (action.kind === 'action' && screen.offered(action.target) === true) {
+		return { label: action.label, kind: 'action', id: action.target }
+	}
+	return null
 }
 
 /**

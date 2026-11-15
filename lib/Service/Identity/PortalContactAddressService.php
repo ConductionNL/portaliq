@@ -29,7 +29,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use OCA\Portaliq\Event\PortalContactDetailsChangedEvent;
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Kernel\Contracts\PortalContactAddressServiceInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\Security\ISecureRandom;
@@ -39,21 +39,11 @@ use OCP\Security\ISecureRandom;
  *
  * @spec openspec/changes/archive/2026-09-30-identity-profile-page/specs/portal-profile/spec.md
  */
-class PortalContactAddressService {
-	/**
-	 * The register the account lives in.
-	 */
-	private const REGISTER = 'portaliq';
-
-	/**
-	 * The account schema.
-	 */
-	private const SCHEMA = 'portalAccount';
-
+class PortalContactAddressService implements PortalContactAddressServiceInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalAccountService $accounts Finds the account by subjectRef.
+	 * @param PortalAccountLookup  $accounts Finds the account by subjectRef.
 	 * @param PortalObjectWriter $writer Writes the account row.
 	 * @param ISecureRandom $random Mints the confirmation secret.
 	 * @param IEventDispatcher $dispatcher Announces a changed contact channel (ADR-041).
@@ -61,7 +51,7 @@ class PortalContactAddressService {
 	 * @param ContactAddressValues $values The address values.
 	 */
 	public function __construct(
-		private readonly PortalAccountService $accounts,
+		private readonly PortalAccountLookup $accounts,
 		private readonly PortalObjectWriter $writer,
 		private readonly ISecureRandom $random,
 		private readonly IEventDispatcher $dispatcher,
@@ -88,7 +78,7 @@ class PortalContactAddressService {
 	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T03
 	 */
 	public function addAddress(string $subjectRef, string $kind, string $value): array {
-		$account = $this->ownAccount(subjectRef: $subjectRef);
+		$account = $this->rows()->find(subjectRef: $subjectRef);
 		if ($account === null) {
 			return $this->refused(refusal: 'no_account');
 		}
@@ -103,6 +93,21 @@ class PortalContactAddressService {
 			return $this->refused(refusal: $added['refusal']);
 		}
 
+		return $this->storeAdded(account: $account, added: $added, normalised: $normalised);
+	}//end addAddress()
+
+	/**
+	 * Write the grown list, parking a new e-mail address with a fresh secret.
+	 *
+	 * @param array<string, mixed> $account    The account row.
+	 * @param array<string, mixed> $added      What the address book answered.
+	 * @param string               $normalised The address, normalised.
+	 *
+	 * @return array{refusal: string, value: string, confirmationToken: string}
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T03
+	 */
+	private function storeAdded(array $account, array $added, string $normalised): array {
 		$data  = ['contactAddresses' => $added['entries']];
 		$token = '';
 		if ($added['confirm'] === true) {
@@ -115,7 +120,7 @@ class PortalContactAddressService {
 		}
 
 		return ['refusal' => '', 'value' => $normalised, 'confirmationToken' => $token];
-	}//end addAddress()
+	}//end storeAdded()
 
 	/**
 	 * Mark an address as the preferred one of its kind. A preferred e-mail
@@ -131,7 +136,7 @@ class PortalContactAddressService {
 	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T03
 	 */
 	public function preferAddress(string $subjectRef, string $kind, string $value): string {
-		$account = $this->ownAccount(subjectRef: $subjectRef);
+		$account = $this->rows()->find(subjectRef: $subjectRef);
 		if ($account === null) {
 			return 'no_account';
 		}
@@ -157,7 +162,7 @@ class PortalContactAddressService {
 	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T03
 	 */
 	public function removeAddress(string $subjectRef, string $kind, string $value): string {
-		$account = $this->ownAccount(subjectRef: $subjectRef);
+		$account = $this->rows()->find(subjectRef: $subjectRef);
 		if ($account === null) {
 			return 'no_account';
 		}
@@ -189,7 +194,7 @@ class PortalContactAddressService {
 	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T04
 	 */
 	public function chooseChannel(string $subjectRef, string $channel): string {
-		$account = $this->ownAccount(subjectRef: $subjectRef);
+		$account = $this->rows()->find(subjectRef: $subjectRef);
 		if ($account === null) {
 			return 'no_account';
 		}
@@ -257,24 +262,13 @@ class PortalContactAddressService {
 	}//end refused()
 
 	/**
-	 * The account behind a subjectRef, while it is not removed.
+	 * The account rows this service reads and writes.
 	 *
-	 * @param string $subjectRef The account.
-	 *
-	 * @return array<string, mixed>|null
+	 * @return OwnAccountRows
 	 */
-	private function ownAccount(string $subjectRef): ?array {
-		if ($subjectRef === '') {
-			return null;
-		}
-
-		$account = $this->accounts->findBySubjectRef(subjectRef: $subjectRef);
-		if ($account === null || ($account['status'] ?? '') === 'removed') {
-			return null;
-		}
-
-		return $account;
-	}//end ownAccount()
+	private function rows(): OwnAccountRows {
+		return new OwnAccountRows(accounts: $this->accounts, writer: $this->writer);
+	}//end rows()
 
 	/**
 	 * Write on the account row.
@@ -287,18 +281,6 @@ class PortalContactAddressService {
 	private function write(array $account, array $data): bool {
 		$self = (array)($account['@self'] ?? []);
 		$id   = (string)($account['uuid'] ?? $account['id'] ?? $self['uuid'] ?? $self['id'] ?? '');
-		if ($id === '') {
-			return false;
-		}
-
-		return $this->writer->updateObject(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: '',
-			subjectRef: '',
-			organisation: '',
-			id: $id,
-			data: $data
-		) !== null;
+		return $this->rows()->update(id: $id, data: $data);
 	}//end write()
 }//end class

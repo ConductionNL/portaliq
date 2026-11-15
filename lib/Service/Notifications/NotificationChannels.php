@@ -32,7 +32,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Notifications;
 
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Kernel\Contracts\NotificationChannelsInterface;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use Throwable;
 
 /**
@@ -40,7 +41,7 @@ use Throwable;
  *
  * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-resident-chooses-per-kind-and-per-channel-req-nap-007
  */
-class NotificationChannels {
+class NotificationChannels implements NotificationChannelsInterface {
 
 	/**
 	 * The kind every change rule counts as.
@@ -57,28 +58,14 @@ class NotificationChannels {
 	public const KIND_MESSAGE_CREATED = 'message.created';
 
 	/**
-	 * The e-mail channel.
-	 *
-	 * @var string
-	 */
-	public const CHANNEL_EMAIL = 'email';
-
-	/**
-	 * The push channel.
-	 *
-	 * @var string
-	 */
-	public const CHANNEL_PUSH = 'push';
-
-	/**
 	 * Wire the channels. Without a push service or a reader, no push is sent.
 	 *
 	 * @param PushDeliveryService|null $push   Sends the web push.
-	 * @param PortalObjectReader|null  $reader Reads the resident's devices.
+	 * @param ScopedCollectionReaderInterface|null  $reader Reads the resident's devices.
 	 */
 	public function __construct(
 		private readonly ?PushDeliveryService $push = null,
-		private readonly ?PortalObjectReader $reader = null,
+		private readonly ?ScopedCollectionReaderInterface $reader = null,
 	) {
 	}//end __construct()
 

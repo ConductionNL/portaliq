@@ -147,13 +147,15 @@
 				:field="field"
 				:state="fieldStates[field] || null"
 				:value="draft[field] !== undefined ? draft[field] : caseRow[field]"
+				:format="fieldStates[field]?.format || ''"
+				:personal="fieldStates[field]?.personal === true"
 				:quiet="ended"
 				:t="t"
 				@change="onFieldChange" />
 		</div>
 
 		<button
-			v-if="windowOpen"
+			v-if="windowOpen && hasWritableField"
 			type="button"
 			class="utrecht-button utrecht-button--primary-action pq-case-save"
 			data-testid="case-save"
@@ -241,11 +243,11 @@
 			v-if="withdrawal.kind === 'button'"
 			ref="withdrawButton"
 			type="button"
-			class="utrecht-button utrecht-button--secondary-action pq-case-withdraw"
+			class="utrecht-button utrecht-button--secondary-action utrecht-button--danger pq-case-withdraw"
 			data-testid="case-withdraw"
 			:disabled="busy"
 			@click="openWithdraw">
-			{{ t('Withdraw this request') }}
+			{{ t('Withdraw request') }}
 		</button>
 
 		<WithdrawCaseConfirm
@@ -295,6 +297,10 @@ export default {
 	name: 'CitizenCase',
 
 	components: { CaseField, FileItem, WithdrawCaseConfirm },
+
+	// The portal's organisation type label, from the site shell (App.vue);
+	// none reads "de organisatie" (portal-identity-from-the-admin REQ-PIA-003).
+	inject: { siteOrganisationType: { default: () => () => '' } },
 
 	props: {
 		/** The manifest collection the case lives in (`{id, register, schema, ...}`). */
@@ -394,6 +400,19 @@ export default {
 			return caseFieldNames(this.caseRow, this.writableSet)
 		},
 
+		/**
+		 * Whether any field on screen may be changed: without one there is
+		 * nothing to save, so the save button stays away.
+		 *
+		 * @return {boolean}
+		 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-contribution-may-declare-the-board-displays
+		 */
+		hasWritableField() {
+			return this.fields.some(
+				(field) => this.fieldStates[field]?.writable === true,
+			)
+		},
+
 		withdrawal() {
 			return withdrawalView(this.data?.withdrawal, this.caseRow)
 		},
@@ -480,7 +499,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when read.
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-citizen-must-work-on-their-own-case-req-srp-042
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-citizen-must-work-on-their-own-case-req-srp-042
 		 */
 		async load() {
 			if (!this.caseId) {
@@ -631,13 +650,14 @@ export default {
 		 * @param {object} entry The listed document.
 		 * @return {string} The line.
 		 *
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 		 */
 		fileLineOf(entry) {
 			return fileLine(
 				entry,
 				mijnTranslator(this.t, readerLocale(this.locale)),
 				readerLocale(this.locale),
+				this.siteOrganisationType(),
 			)
 		},
 
@@ -647,7 +667,7 @@ export default {
 		 * @param {string} value An ISO date.
 		 * @return {string} The date.
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-citizen-must-work-on-their-own-case-req-srp-042
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-citizen-must-work-on-their-own-case-req-srp-042
 		 */
 		dateOf(value) {
 			return shortDate(value, readerLocale(this.locale))
@@ -659,7 +679,7 @@ export default {
 		 * @param {object} entry The listed entry.
 		 * @return {Promise<void>} Resolves when answered.
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-citizen-must-work-on-their-own-case-req-srp-042
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-citizen-must-work-on-their-own-case-req-srp-042
 		 */
 		async onOpenDocument(entry) {
 			const result = await this.api.downloadCitizenDocument(
@@ -681,7 +701,7 @@ export default {
 		 * @param {string} value The new answer.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-citizen-must-work-on-their-own-case-req-srp-042
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-citizen-must-work-on-their-own-case-req-srp-042
 		 */
 		onFieldChange(field, value) {
 			this.draft = { ...this.draft, [field]: value }
@@ -692,7 +712,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when answered.
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-citizen-must-work-on-their-own-case-req-srp-042
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-citizen-must-work-on-their-own-case-req-srp-042
 		 */
 		async onSave() {
 			if (Object.keys(this.draft).length === 0) {
@@ -720,7 +740,7 @@ export default {
 		 * @param {Event} event The file input's change event.
 		 * @return {Promise<void>} Resolves when answered.
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-citizen-must-work-on-their-own-case-req-srp-042
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-citizen-must-work-on-their-own-case-req-srp-042
 		 */
 		async onAddDocument(event) {
 			const file = event.target.files && event.target.files[0]
@@ -751,7 +771,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-citizen-must-be-able-to-withdraw-a-request-req-srp-043
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-citizen-must-be-able-to-withdraw-a-request-req-srp-043
 		 */
 		openWithdraw() {
 			this.notice = ''
@@ -763,7 +783,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-citizen-must-be-able-to-withdraw-a-request-req-srp-043
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-citizen-must-be-able-to-withdraw-a-request-req-srp-043
 		 */
 		closeWithdraw() {
 			this.confirming = false
@@ -777,7 +797,7 @@ export default {
 		 * @param {string} reason Why, or ''.
 		 * @return {Promise<void>} Resolves when answered.
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-citizen-must-be-able-to-withdraw-a-request-req-srp-043
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-citizen-must-be-able-to-withdraw-a-request-req-srp-043
 		 */
 		async onWithdraw(reason) {
 			this.busy = true

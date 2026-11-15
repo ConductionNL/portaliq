@@ -14,13 +14,15 @@
   /api/news/audiences). When the school app offers no choices, the screen
   asks for the school's or groups' reference instead.
 
-  @spec openspec/changes/staff-news-screen/tasks.md#T4
+  @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T4
 -->
 <template>
-	<NcDialog
+	<CnDialog
+		:look="look"
 		:name="
 			item ? t('portaliq', 'Change news item') : t('portaliq', 'New news item')
 		"
+		:eyebrow="eyebrow"
 		size="normal"
 		data-testid="news-item-dialog"
 		@closing="$emit('close', null)">
@@ -102,6 +104,15 @@
 				"
 				data-testid="news-item-groups" />
 
+			<NcSelect
+				v-if="events.length > 0"
+				v-model="event"
+				:options="events"
+				label="label"
+				:inputLabel="t('portaliq', 'Event to sign up for')"
+				:placeholder="t('portaliq', 'No event')"
+				data-testid="news-item-event" />
+
 			<p class="news-item__hint">
 				{{
 					t(
@@ -132,21 +143,22 @@
 				{{ t('portaliq', 'Save') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
 import {
 	NcButton,
 	NcCheckboxRadioSwitch,
-	NcDialog,
 	NcNoteCard,
 	NcSelect,
 	NcTextArea,
 	NcTextField,
 } from '@nextcloud/vue'
 import { emptyForm, formFromItem, missingFields } from '../lib/newsAuthoring.js'
+import { closeOrRefuse } from './submitDialog.js'
 
 export default {
 	name: 'NewsItemDialog',
@@ -154,7 +166,7 @@ export default {
 	components: {
 		NcButton,
 		NcCheckboxRadioSwitch,
-		NcDialog,
+		CnDialog,
 		NcNoteCard,
 		NcSelect,
 		NcTextArea,
@@ -162,6 +174,12 @@ export default {
 	},
 
 	props: {
+		/** The look to draw in; a spawned dialog gets the app's (src/lib/dialogLook.js). */
+		look: {
+			type: String,
+			default: undefined,
+		},
+
 		/** The news item to change, or null for a new one. */
 		item: {
 			type: Object,
@@ -172,6 +190,15 @@ export default {
 		options: {
 			type: Object,
 			default: () => ({ schools: [], groups: [] }),
+		},
+
+		/**
+		 * The events the item may carry the sign-up of, `{id, label}`; none
+		 * hides the choice (event-sign-up-by-a-pupil-with-seats task 4).
+		 */
+		events: {
+			type: Array,
+			default: () => [],
 		},
 
 		/** Saves the form; answers `{ok, message}`. */
@@ -193,11 +220,27 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The line above the title: the list, and for an item that exists its
+		 * state (PtNieuwsbericht "Nieuws, concept").
+		 *
+		 * @return {string}
+		 * @spec openspec/specs/staff-news/spec.md#requirement-the-news-dialog-names-the-list-and-the-items-state-above-its-title
+		 */
+		eyebrow() {
+			if (!this.item) {
+				return t('portaliq', 'News')
+			}
+			return this.item.status === 'published'
+				? t('portaliq', 'News, published')
+				: t('portaliq', 'News, draft')
+		},
+
 		/** The chosen school as an option, read and written through the form. */
 		school: {
 			/**
 			 * @return {object|null}
-			 * @spec openspec/changes/staff-news-screen/tasks.md#T4
+			 * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T4
 			 */
 			get() {
 				return this.optionFor(this.options.schools, this.form.schoolRef)
@@ -205,10 +248,29 @@ export default {
 
 			/**
 			 * @param {object|null} option The chosen school.
-			 * @spec openspec/changes/staff-news-screen/tasks.md#T4
+			 * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T4
 			 */
 			set(option) {
 				this.form.schoolRef = option?.id || ''
+			},
+		},
+
+		/** The chosen event as an option, read and written through the form. */
+		event: {
+			/**
+			 * @return {object|null}
+			 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/tasks.md#task-4
+			 */
+			get() {
+				return this.optionFor(this.events, this.form.eventRef)
+			},
+
+			/**
+			 * @param {object|null} option The chosen event; null clears it.
+			 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/tasks.md#task-4
+			 */
+			set(option) {
+				this.form.eventRef = option?.id || ''
 			},
 		},
 
@@ -216,7 +278,7 @@ export default {
 		groups: {
 			/**
 			 * @return {Array<object>}
-			 * @spec openspec/changes/staff-news-screen/tasks.md#T4
+			 * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T4
 			 */
 			get() {
 				return this.form.groupRefs.map((ref) =>
@@ -226,7 +288,7 @@ export default {
 
 			/**
 			 * @param {Array} selected The chosen groups.
-			 * @spec openspec/changes/staff-news-screen/tasks.md#T4
+			 * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T4
 			 */
 			set(selected) {
 				this.form.groupRefs = (selected || [])
@@ -243,7 +305,7 @@ export default {
 	/**
 	 * A single school needs no choosing.
 	 *
-	 * @spec openspec/changes/staff-news-screen/tasks.md#T4
+	 * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T4
 	 */
 	created() {
 		if (!this.item && this.options.schools.length === 1) {
@@ -261,7 +323,7 @@ export default {
 		 * @param {string} ref The reference.
 		 * @return {object|null}
 		 *
-		 * @spec openspec/changes/staff-news-screen/tasks.md#T4
+		 * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T4
 		 */
 		optionFor(list, ref) {
 			if (!ref) {
@@ -277,7 +339,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/staff-news-screen/tasks.md#T4
+		 * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T4
 		 */
 		async confirm() {
 			this.missing = missingFields(this.form)
@@ -287,12 +349,7 @@ export default {
 			}
 			this.busy = true
 			const outcome = await this.submit({ ...this.form })
-			this.busy = false
-			if (outcome.ok) {
-				this.$emit('close', outcome.message)
-				return
-			}
-			this.refusal = outcome.message
+			closeOrRefuse(this, outcome)
 		},
 	},
 }

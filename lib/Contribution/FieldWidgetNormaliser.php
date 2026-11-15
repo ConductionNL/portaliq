@@ -121,36 +121,56 @@ class FieldWidgetNormaliser {
 			return $action;
 		}
 
-		$providers = [];
-		if (is_array($action['optionsProviders'] ?? null) === true) {
-			$providers = $action['optionsProviders'];
-		}
-
+		$providers = $this->providersOf(action: $action);
 		foreach ($configs as $field => $config) {
-			if (is_array($config) === false || isset($config['widget']) === false) {
-				continue;
-			}
-
-			$provider = ($providers[$field] ?? null);
-			if ($config['widget'] === self::COUNT) {
-				$configs[$field] = (new CountWidgetKeys())->fit(config: $config, provider: $provider);
-				continue;
-			}
-
-			if ($config['widget'] === self::CHOICES) {
-				$configs[$field] = $this->fitChoices(config: $config, provider: $provider);
-				continue;
-			}
-
-			if (($config['input'] ?? null) !== 'date') {
-				unset($config['widget'], $config['dateChoices']);
-				$configs[$field] = $config;
+			if (is_array($config) === true && isset($config['widget']) === true) {
+				$configs[$field] = $this->fitWidget(config: $config, provider: ($providers[$field] ?? null));
 			}
 		}
 
 		$action['fieldConfigs'] = $configs;
 		return $action;
 	}//end reconcile()
+
+	/**
+	 * The action's options providers by field, or none.
+	 *
+	 * @param array<string, mixed> $action The action.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function providersOf(array $action): array {
+		if (is_array($action['optionsProviders'] ?? null) === true) {
+			return $action['optionsProviders'];
+		}
+
+		return [];
+	}//end providersOf()
+
+	/**
+	 * Keep a field's widget only where it fits: a count stepper and choice
+	 * cards by their own rules, named days only on a date input.
+	 *
+	 * @param array<string, mixed> $config   The field config, with a widget.
+	 * @param mixed                $provider The field's options provider, if any.
+	 *
+	 * @return array<string, mixed> The config.
+	 */
+	private function fitWidget(array $config, mixed $provider): array {
+		if ($config['widget'] === self::COUNT) {
+			return (new CountWidgetKeys())->fit(config: $config, provider: $provider);
+		}
+
+		if ($config['widget'] === self::CHOICES) {
+			return $this->fitChoices(config: $config, provider: $provider);
+		}
+
+		if (($config['input'] ?? null) !== 'date') {
+			unset($config['widget'], $config['dateChoices']);
+		}
+
+		return $config;
+	}//end fitWidget()
 
 	/**
 	 * The `choices` widget with its subset and its "other" card label.
@@ -195,6 +215,17 @@ class FieldWidgetNormaliser {
 			return $config;
 		}
 
+		return $this->withStaticSubset(config: $config, known: $this->staticValues(provider: $provider));
+	}//end fitChoices()
+
+	/**
+	 * The values of a static options provider.
+	 *
+	 * @param array<string, mixed> $provider The field's static options provider.
+	 *
+	 * @return array<int, string>
+	 */
+	private function staticValues(array $provider): array {
 		$known = [];
 		foreach (($provider['options'] ?? []) as $option) {
 			if (is_array($option) === true && isset($option['value']) === true) {
@@ -202,6 +233,19 @@ class FieldWidgetNormaliser {
 			}
 		}
 
+		return $known;
+	}//end staticValues()
+
+	/**
+	 * The config with its `choiceOptions` narrowed to the known values, or
+	 * without its choices when none is left.
+	 *
+	 * @param array<string, mixed> $config The field config.
+	 * @param array<int, string>   $known  The static option values.
+	 *
+	 * @return array<string, mixed> The config.
+	 */
+	private function withStaticSubset(array $config, array $known): array {
 		$subset = array_values(array_filter($config['choiceOptions'], static fn (string $value): bool => in_array($value, $known, true)));
 		if ($subset === []) {
 			unset($config['choiceOptions'], $config['otherLabel']);
@@ -210,7 +254,7 @@ class FieldWidgetNormaliser {
 
 		$config['choiceOptions'] = $subset;
 		return $config;
-	}//end fitChoices()
+	}//end withStaticSubset()
 
 	/**
 	 * A list of distinct option values, strings, capped.

@@ -76,7 +76,7 @@
 					variant="primary"
 					data-testid="site-edit-publish"
 					:disabled="state.loading || state.saving"
-					@click="publish">
+					@click="confirmingPublish = true">
 					{{ t('portaliq', 'Publish') }}
 				</NcButton>
 				<NcButton
@@ -156,6 +156,7 @@
 			v-else
 			v-model:paletteOpen="paletteOpen"
 			:editor="editor"
+			:excludedPaths="excludedPaths"
 			publicOnly />
 
 		<PageHistoryDialog
@@ -163,6 +164,10 @@
 			:pageId="pageId"
 			:busy="state.saving"
 			@restore="restore" />
+		<PublishPageDialog
+			v-if="confirmingPublish"
+			:address="publicAddress"
+			@close="publish" />
 	</section>
 </template>
 
@@ -172,12 +177,14 @@ import { register, translate } from '@nextcloud/l10n'
 import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import { reactive } from 'vue'
 import PageHistoryDialog from '../dialogs/PageHistoryDialog.vue'
+import PublishPageDialog from '../dialogs/PublishPageDialog.vue'
 import PageGridEditor from './PageGridEditor.vue'
 import SiteMenuPanel from './SiteMenuPanel.vue'
 import SitePagesPanel from './SitePagesPanel.vue'
 import { defaultSizeFor } from '../lib/pageWidgetCatalogue.js'
 import { createPageEditor, createPageSaver } from './index.js'
 import { instanceUrl } from './instanceUrl.js'
+import { loadExcludedPaths } from './reportExclusion.js'
 
 import 'gridstack/dist/gridstack.css'
 import '@conduction/nextcloud-vue/css/index.css'
@@ -213,6 +220,7 @@ export default {
 		NcNoteCard,
 		PageGridEditor,
 		PageHistoryDialog,
+		PublishPageDialog,
 		SiteMenuPanel,
 		SitePagesPanel,
 	},
@@ -253,12 +261,34 @@ export default {
 			ready: false,
 			paletteOpen: false,
 			historyOpen: false,
+			confirmingPublish: false,
 			leaving: false,
 			panel: '',
+
+			/**
+			 * The portal's `traffic.excludedPaths`, or null until read and
+			 * when it cannot be read.
+			 *
+			 * @type {Array<string>|null}
+			 */
+			excludedPaths: null,
 		}
 	},
 
 	computed: {
+		/**
+		 * The address the edited page is served at: the page the editor is on.
+		 *
+		 * @return {string} The address, without a fragment.
+		 *
+		 * @spec openspec/changes/page-public-on-purpose/tasks.md#1.1
+		 */
+		publicAddress() {
+			return typeof window === 'undefined'
+				? ''
+				: String(window.location.href).split('#')[0]
+		},
+
 		/**
 		 * @return {object} The editor's state.
 		 *
@@ -285,6 +315,11 @@ export default {
 		}
 		this.ready = true
 		await this.editor.load()
+		this.excludedPaths = await loadExcludedPaths(
+			(url, config) => axios.get(url, config),
+			instanceUrl('/apps/openregister/api/objects/portaliq/portal'),
+			this.portal || this.state.page?.portal,
+		)
 	},
 
 	methods: {
@@ -315,13 +350,22 @@ export default {
 		},
 
 		/**
-		 * Publish, and tell the site to show the published page again.
+		 * Publish once the editor confirmed that anyone may read the page,
+		 * and tell the site to show the published page again. Cancelled, the
+		 * page stays as it is.
 		 *
-		 * @return {Promise<void>} Resolves when published or refused.
+		 * @param {boolean} confirmed Whether the editor chose Publish.
+		 * @return {Promise<void>} Resolves when published, refused or cancelled.
+		 *
+		 * @spec openspec/changes/page-public-on-purpose/tasks.md#1.1
 		 *
 		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
 		 */
-		async publish() {
+		async publish(confirmed) {
+			this.confirmingPublish = false
+			if (confirmed !== true) {
+				return
+			}
 			await this.editor.publish()
 			if (!this.state.error) {
 				this.$emit('saved')
@@ -363,22 +407,23 @@ export default {
 
 <style scoped>
 .pq-site-editor {
-	padding: 16px;
+	padding: 24px 24px 64px;
 	margin: 0 auto;
 	max-width: 1280px;
 }
 
+/* The bar as the editor boards draw it: one tinted row in the portal's deep
+   primary, the label first, outlined 40px buttons, "Stop editing" at the end. */
 .pq-site-editor__bar {
 	display: flex;
-	justify-content: space-between;
 	align-items: center;
 	flex-wrap: wrap;
-	gap: 12px;
-	margin-bottom: 12px;
-	padding: 8px 12px;
-	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius-large);
-	background: var(--color-main-background);
+	gap: 8px;
+	margin-bottom: 16px;
+	padding: 12px 16px;
+	border: 2px solid var(--nldesign-color-primary-hover, #234a78);
+	border-radius: 6px;
+	background: var(--nldesign-color-primary-light, #eaf0f7);
 	position: sticky;
 	top: 0;
 	z-index: 10;
@@ -386,14 +431,57 @@ export default {
 
 .pq-site-editor__status {
 	display: flex;
+	align-items: center;
 	gap: 8px;
 	margin: 0;
+	color: var(--nldesign-color-primary-hover, #234a78);
 }
 
+.pq-site-editor__status strong {
+	margin-inline-end: 8px;
+	font-size: 17px;
+}
+
+/* The buttons are items of the bar itself, so the last one can sit at its end. */
 .pq-site-editor__actions {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 8px;
+	display: contents;
+}
+
+.pq-site-editor__bar .button-vue {
+	height: 40px;
+	min-height: 40px;
+	padding: 0 14px;
+	border: 1px solid var(--nldesign-color-primary, #3669a5);
+	border-radius: 4px;
+	background: var(--color-main-background);
+	color: var(--nldesign-color-primary-hover, #234a78);
+}
+
+.pq-site-editor__bar .button-vue :deep(.button-vue__wrapper),
+.pq-site-editor__bar .button-vue :deep(.button-vue__text) {
+	margin: 0;
+	padding: 0;
+	font-weight: 600;
+}
+
+.pq-site-editor__bar .button-vue--primary {
+	padding: 0 16px;
+	border-color: transparent;
+	background: var(--nldesign-color-primary, #3669a5);
+	color: var(--color-primary-element-text);
+}
+
+.pq-site-editor__bar .button-vue[aria-pressed='true'] {
+	border-color: var(--nldesign-color-primary-hover, #234a78);
+	background: var(--nldesign-color-primary-hover, #234a78);
+	color: var(--color-primary-element-text);
+}
+
+.pq-site-editor__bar .button-vue[data-testid='site-edit-leave'] {
+	margin-inline-start: auto;
+	border-color: transparent;
+	background: transparent;
+	text-decoration: underline;
 }
 
 .pq-site-editor__loading {

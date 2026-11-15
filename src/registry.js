@@ -38,11 +38,14 @@
 // See: https://github.com/ConductionNL/hydra → openspec/architecture/adr-036-universal-widget-manifest.md
 
 import StatusBadge from './cellRenderers/StatusBadge.vue'
+import ArticleContentSection from './components/articles/ArticleContentSection.vue'
+import ArticleUsageSection from './components/articles/ArticleUsageSection.vue'
 import EmailField from './formFields/EmailField.vue'
 import ExampleModal from './modals/ExampleModal.vue'
+import ArticleFormView from './views/articles/ArticleFormView.vue'
 import FlowDetailSidebar from './views/flows/FlowDetailSidebar.vue'
 import PageLayoutDesigner from './views/PageLayoutDesigner.vue'
-import AvailabilityReport from './widgets/AvailabilityReport.vue'
+import PageLayoutEditor from './widgets/PageLayoutEditor.vue'
 import PageTrafficFlow from './widgets/PageTrafficFlow.vue'
 import PortalAccessibility from './widgets/PortalAccessibility.vue'
 import PortalAccountWithdraw from './widgets/PortalAccountWithdraw.vue'
@@ -207,17 +210,6 @@ export default {
 		...TRAFFIC_WIDGET_META,
 		_note: 'A page picker, the click grid on a canvas over a plain rectangle, and the scroll deciles as bars (portal-traffic-experiments). Custom because no built-in widget draws a grid, and because a portal with the switch off must read "off" rather than "no clicks".',
 	},
-	// @custom-widget-ratchet exclude the report reads an admin controller that folds the portal's own availability records into twelve months, which no built-in widget reads
-	AvailabilityReport: {
-		kind: 'widget',
-		component: AvailabilityReport,
-		defaultSize: { w: 12, h: 10 },
-		minSize: { w: 6, h: 6 },
-		maxSize: { w: 12, h: 16 },
-		allowedSlots: ['body'],
-		propsSchema: null,
-		_note: "A portal picker, the twelve monthly availability percentages, the outages and a CSV download (operate-availability-report). Custom because a month without intervals must read 'Not measured' rather than 0 or 100, and because the page must say how the figure is measured.",
-	},
 	// @custom-widget-ratchet exclude the switches write the portal's hiddenCaseTypes through an admin controller that lists case types from three sources, which no built-in widget reads or writes
 	PortalCaseTypes: {
 		kind: 'widget',
@@ -283,6 +275,39 @@ export default {
 		allowedSlots: ['body'],
 		propsSchema: null,
 		_note: "The accessibility measurement and the audit the public statement rests on (site-accessibility-statement). Custom because axe-core runs in a frame of each page in the administrator's browser and the server refuses an A or B claim without an audit.",
+	},
+	// @custom-widget-ratchet exclude the page designer is a drag-and-resize editor over OpenRegister with undo, drafts and a block inspector, which no built-in widget is
+	PageLayoutEditor: {
+		kind: 'widget',
+		component: PageLayoutEditor,
+		defaultSize: { w: 12, h: 12 },
+		minSize: { w: 12, h: 8 },
+		maxSize: { w: 12, h: 40 },
+		allowedSlots: ['body'],
+		propsSchema: null,
+		_note: 'The page layout editor as the Indeling tab of a page (page-editor-in-the-page, PtPagina). The same PageLayoutDesigner the standalone /pages/:id/layout route shows, embedded: the page header above it names the page, so it draws no title line.',
+	},
+	// @custom-widget-ratchet exclude the body renders as formatted markdown with its hero image and agent mark, and every lifecycle move goes through ArticleController, which a data or text widget cannot do
+	ArticleContentSection: {
+		kind: 'widget',
+		component: ArticleContentSection,
+		defaultSize: { w: 12, h: 10 },
+		minSize: { w: 6, h: 4 },
+		maxSize: { w: 12, h: 40 },
+		allowedSlots: ['body'],
+		propsSchema: null,
+		_note: 'One article: its rendered body, hero image, agent mark, Edit and the lifecycle moves (marketing-articles-from-pipelinq). Custom because the moves go through ArticleController (first-publish moment, the agent mark), not the object form.',
+	},
+	// @custom-widget-ratchet exclude the usages come from several apps through ArticleUsagesRequestedEvent, which no object list over one schema can show
+	ArticleUsageSection: {
+		kind: 'widget',
+		component: ArticleUsageSection,
+		defaultSize: { w: 12, h: 4 },
+		minSize: { w: 6, h: 2 },
+		maxSize: { w: 12, h: 12 },
+		allowedSlots: ['body'],
+		propsSchema: null,
+		_note: 'Where an article is used, asked from every app at read time (marketing-articles-from-pipelinq): portaliq answers for its pages, pipelinq for its templates and mailings.',
 	},
 	// @custom-widget-ratchet exclude the three states are a classification over the portal's pages read through an admin controller, and a built-in widget has no way to say "no page at the root" rather than show an empty list
 	PortalHomePage: {
@@ -352,6 +377,16 @@ export default {
 	PageLayoutDesigner: {
 		kind: 'page',
 		component: PageLayoutDesigner,
+	},
+
+	/**
+	 * New article (marketing-articles-from-pipelinq): mounts ArticleEditModal,
+	 * whose markdown editor and Files picker a declarative dialog cannot host,
+	 * and whose create goes through ArticleController.
+	 */
+	ArticleFormView: {
+		kind: 'page',
+		component: ArticleFormView,
 	},
 
 	// -------------------------------------------------------------------------

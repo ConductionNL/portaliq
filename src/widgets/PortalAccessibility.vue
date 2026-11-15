@@ -137,9 +137,39 @@ import {
 	measureRun,
 	SITE_ROOT,
 } from '../lib/accessibilityMeasure.js'
+import portalWidgetMixin from './portalWidgetMixin.js'
 
 /** How long a page may take to show its site root, in milliseconds. */
 const PAGE_TIMEOUT = 20000
+
+/** The refusals the widget words itself, by code. */
+const AUDIT_MESSAGES = {
+	incomplete: () =>
+		t(
+			'portaliq',
+			'Status A or B needs the party, the date and an https link to the audit report.',
+		),
+	expired: () =>
+		t(
+			'portaliq',
+			'This audit is older than three years. It no longer supports status A or B.',
+		),
+	register_url_invalid: () =>
+		t('portaliq', 'The register entry must be an https address.'),
+}
+
+/**
+ * The pages typed one per line, trimmed, without empty lines.
+ *
+ * @param {string} text What the field holds.
+ * @return {Array<string>} The pages.
+ */
+function typedPages(text) {
+	return text
+		.split('\n')
+		.map((line) => line.trim())
+		.filter(Boolean)
+}
 
 export default {
 	name: 'PortalAccessibility',
@@ -153,13 +183,7 @@ export default {
 		NcTextField,
 	},
 
-	props: {
-		/** The portal the detail page shows. */
-		objectData: {
-			type: Object,
-			default: null,
-		},
-	},
+	mixins: [portalWidgetMixin],
 
 	data() {
 		return {
@@ -178,14 +202,6 @@ export default {
 	},
 
 	computed: {
-		/**
-		 * @return {string} The portal's slug.
-		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
-		 */
-		slug() {
-			return String(this.objectData?.slug || '')
-		},
-
 		/**
 		 * @return {string} The site's address on this instance.
 		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
@@ -311,10 +327,7 @@ export default {
 			const result = await this.api.save(this.slug, {
 				audit: this.audit,
 				registerUrl: this.registerUrl,
-				pages: this.addedPages
-					.split('\n')
-					.map((line) => line.trim())
-					.filter(Boolean),
+				pages: typedPages(this.addedPages),
 			})
 			this.saving = false
 			if (result.ok) {
@@ -334,28 +347,11 @@ export default {
 		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
 		 */
 		auditMessage(error) {
-			switch (String(error).replace(/^audit_/, '')) {
-				case 'incomplete':
-					return t(
-						'portaliq',
-						'Status A or B needs the party, the date and an https link to the audit report.',
-					)
-				case 'expired':
-					return t(
-						'portaliq',
-						'This audit is older than three years. It no longer supports status A or B.',
-					)
-				case 'register_url_invalid':
-					return t(
-						'portaliq',
-						'The register entry must be an https address.',
-					)
-				default:
-					return t(
-						'portaliq',
-						'The accessibility settings could not be saved.',
-					)
-			}
+			const code = String(error).replace(/^audit_/, '')
+			const message = Object.hasOwn(AUDIT_MESSAGES, code)
+				? AUDIT_MESSAGES[code]
+				: () => t('portaliq', 'The accessibility settings could not be saved.')
+			return message()
 		},
 
 		/**
@@ -392,21 +388,10 @@ export default {
 			this.closeFrame()
 			const result = await this.api.store(this.slug, run)
 			this.measuring = false
-			if (!result.ok) {
-				this.say(
-					'error',
-					t('portaliq', 'The measurement could not be stored.'),
-				)
-				return
+			this.say(...storeNotice(result.ok))
+			if (result.ok) {
+				await this.load()
 			}
-			this.say(
-				'success',
-				t(
-					'portaliq',
-					'The measurement is stored. The statement now follows it.',
-				),
-			)
-			await this.load()
 		},
 
 		/**
@@ -428,40 +413,16 @@ export default {
 			const started = Date.now()
 			return new Promise((resolve, reject) => {
 				const look = () => {
-					let doc
-					try {
-						doc = frame.contentDocument
-					} catch {
-						doc = null
+					const state = frameState(frame, started)
+					if (state === 'refused') {
+						reject(new Error(t('portaliq', 'The page refused to load in a frame.')))
+					} else if (state === 'timed-out') {
+						reject(new Error(t('portaliq', 'The page showed no site content within 20 seconds.')))
+					} else if (state) {
+						resolve(state)
+					} else {
+						setTimeout(look, 250)
 					}
-					if (!doc) {
-						reject(
-							new Error(
-								t(
-									'portaliq',
-									'The page refused to load in a frame.',
-								),
-							),
-						)
-						return
-					}
-					const root = doc.querySelector(SITE_ROOT)
-					if (root) {
-						resolve(root)
-						return
-					}
-					if (Date.now() - started > PAGE_TIMEOUT) {
-						reject(
-							new Error(
-								t(
-									'portaliq',
-									'The page showed no site content within 20 seconds.',
-								),
-							),
-						)
-						return
-					}
-					setTimeout(look, 250)
 				}
 				frame.addEventListener('load', look, { once: true })
 				frame.src = frameAddress(this.siteBase, this.slug, route)
@@ -507,6 +468,43 @@ export default {
 			}
 		},
 	},
+}
+
+/**
+ * What the widget says once a run was handed to the server.
+ *
+ * @param {boolean} stored Whether the server stored it.
+ * @return {[string, string]} The notice type and its words.
+ */
+function storeNotice(stored) {
+	return stored
+		? ['success', t('portaliq', 'The measurement is stored. The statement now follows it.')]
+		: ['error', t('portaliq', 'The measurement could not be stored.')]
+}
+
+/**
+ * Where a frame's page stands: its site root, refused, timed out, or null
+ * while it is still coming.
+ *
+ * @param {HTMLIFrameElement} frame The frame.
+ * @param {number} started When loading began, in milliseconds.
+ * @return {Element|string|null} The site root, 'refused', 'timed-out' or null.
+ */
+function frameState(frame, started) {
+	let doc
+	try {
+		doc = frame.contentDocument
+	} catch {
+		doc = null
+	}
+	if (!doc) {
+		return 'refused'
+	}
+	const root = doc.querySelector(SITE_ROOT)
+	if (root) {
+		return root
+	}
+	return Date.now() - started > PAGE_TIMEOUT ? 'timed-out' : null
 }
 </script>
 

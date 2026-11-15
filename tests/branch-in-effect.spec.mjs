@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 // Copyright (C) 2026 Conduction B.V.
 //
-// branch-in-effect.spec.mjs: the portal header names the branch (vestiging)
+// branch-in-effect.spec.mjs: Mijn zaken names the branch (vestiging)
 // a business session acts for (signin-eherkenning-branch T06).
 //
 // Usage:
@@ -41,7 +41,7 @@ test('both strings are translated for every locale the portal ships', () => {
 	}
 })
 
-test('the site header shows the branch in effect', () => {
+test('Mijn zaken shows the branch in effect', () => {
 	const switcher = readFileSync(join(ROOT, 'src', 'site', 'components', 'BranchSwitcher.vue'), 'utf8')
 	assert.match(switcher, /import \{ branchInEffect, branchOptions \} from '\.\.\/\.\.\/shared\/branch\.js'/)
 	assert.match(switcher, /branchInEffect\(this\.session, this\.t\)/)

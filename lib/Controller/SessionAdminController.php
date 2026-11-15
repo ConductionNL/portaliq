@@ -35,9 +35,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\Identity\EmailLink\EmailLinkTokens;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\EmailLinkTokensInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -54,17 +54,17 @@ class SessionAdminController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request object.
-	 * @param PortalSessionService $session The session service.
+	 * @param PortalSessionServiceInterface $session The session service.
 	 * @param IUserSession $userSession The signed-in admin (named in the audit trail).
-	 * @param EmailLinkTokens|null $emailLinks Voids one account's unspent e-mail links (sign-in-with-an-email-link).
+	 * @param EmailLinkTokensInterface|null $emailLinks Voids one account's unspent e-mail links (sign-in-with-an-email-link).
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
+		private readonly PortalSessionServiceInterface $session,
 		private readonly IUserSession $userSession,
-		private readonly ?EmailLinkTokens $emailLinks = null,
+		private readonly ?EmailLinkTokensInterface $emailLinks = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -132,4 +132,33 @@ class SessionAdminController extends Controller {
 
 		return new JSONResponse($result);
 	}//end revokeAccount()
+
+	/**
+	 * Revoke one portal session, found by its token id.
+	 *
+	 * @param string $jti The session's token id.
+	 *
+	 * @return JSONResponse `{revoked: true}`; 400 when `jti` is empty; 404
+	 *                      when no live session carries it or it could not
+	 *                      be written.
+	 *
+	 * @auth admin-only Incident response on one session, the same posture as
+	 *       revokeOrganisation(): instance admin + CSRF, expressed by the
+	 *       absence of an opt-out attribute, checked by Nextcloud before this
+	 *       method runs.
+	 *
+	 * @spec openspec/changes/staff-revoke-one-session/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
+	 */
+	public function revokeSession(string $jti = ''): JSONResponse {
+		if ($jti === '') {
+			return new JSONResponse(['error' => 'session_required'], Http::STATUS_BAD_REQUEST);
+		}
+
+		$admin = (string)$this->userSession->getUser()?->getUID();
+		if ($this->session->revokeByAdmin(jti: $jti, admin: $admin) === false) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		return new JSONResponse(['revoked' => true]);
+	}//end revokeSession()
 }//end class

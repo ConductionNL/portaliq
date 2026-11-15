@@ -23,8 +23,9 @@
 		<div
 			v-if="error !== ''"
 			:id="`${id}-error`"
-			class="utrecht-form-field-error-message"
+			class="utrecht-form-field-error-message pq-field-shell__error"
 			:data-testid="errorTestid || undefined">
+			<ErrorIcon />
 			{{ error }}
 		</div>
 		<div class="utrecht-form-field__input">
@@ -49,8 +50,9 @@
 		<div
 			v-if="error !== ''"
 			:id="`${id}-error`"
-			class="utrecht-form-field-error-message"
+			class="utrecht-form-field-error-message pq-field-shell__error"
 			:data-testid="errorTestid || undefined">
+			<ErrorIcon />
 			{{ error }}
 		</div>
 		<div class="utrecht-form-field__input">
@@ -60,6 +62,7 @@
 </template>
 
 <script>
+import ErrorIcon from './ErrorIcon.vue'
 import LabelSuffix from './LabelSuffix.vue'
 
 import '@utrecht/form-field-css/dist/index.css'
@@ -87,7 +90,7 @@ import '@utrecht/form-field-error-message-css/dist/index.css'
 export default {
 	name: 'FieldShell',
 
-	components: { LabelSuffix },
+	components: { ErrorIcon, LabelSuffix },
 
 	props: {
 		/** The input's id; the label points at it, and the help and error ids derive from it. */
@@ -140,5 +143,29 @@ export default {
 
 .pq-field-shell__legend {
 	padding: 0;
+}
+
+/* A field with an error: a red bar along its start, the message in dark red
+   with its icon, so the error never rests on colour alone. */
+.pq-field-shell.utrecht-form-field--invalid {
+	border-inline-start: 4px solid var(--nldesign-color-error, #c0210f);
+	padding-inline-start: var(--utrecht-space-inline-md, 1rem);
+}
+
+.pq-field-shell__error {
+	align-items: center;
+	color: var(
+		--nldesign-color-accent-text,
+		var(--utrecht-form-field-error-message-color, #a30000)
+	);
+	display: flex;
+	font-weight: var(--utrecht-typography-weight-scale-bold, 600);
+	gap: 0.5rem;
+}
+
+.pq-error-icon {
+	block-size: 1.125rem;
+	flex: none;
+	inline-size: 1.125rem;
 }
 </style>

@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-endpoint-must-return-one-pages-figures-for-a-period
+ * @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-endpoint-must-return-one-pages-figures-for-a-period
  */
 
 declare(strict_types=1);
@@ -27,11 +27,11 @@ namespace OCA\Portaliq\Controller;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\Traffic\TrafficEventStore;
-use OCA\Portaliq\Service\Traffic\TrafficPagePath;
-use OCA\Portaliq\Service\Traffic\TrafficPageReport;
-use OCA\Portaliq\Service\TrafficConfigResolver;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\TrafficConfigResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\TrafficEventStoreInterface;
+use OCA\Portaliq\Kernel\Contracts\TrafficPagePathInterface;
+use OCA\Portaliq\Kernel\Contracts\TrafficPageReportInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -42,7 +42,7 @@ use OCP\IRequest;
  * `NoAdminRequired` on the action. A page's audience is part of the
  * portal's audience measurement, which is an operator's surface.
  *
- * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-endpoint-must-return-one-pages-figures-for-a-period
+ * @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-endpoint-must-return-one-pages-figures-for-a-period
  */
 class TrafficPageController extends Controller {
 
@@ -69,22 +69,22 @@ class TrafficPageController extends Controller {
 	 *
 	 * @param string                $appName The app id.
 	 * @param IRequest              $request The request.
-	 * @param TrafficEventStore     $store   Reads the daily records.
-	 * @param PortalResolver        $portals Lists the published portals.
-	 * @param TrafficConfigResolver $config  Says whether a portal is measured.
-	 * @param TrafficPageReport     $report  Folds one route's rows.
-	 * @param TrafficPagePath       $paths   Normalises the page's route.
+	 * @param TrafficEventStoreInterface     $store   Reads the daily records.
+	 * @param PortalResolverInterface        $portals Lists the published portals.
+	 * @param TrafficConfigResolverInterface $config  Says whether a portal is measured.
+	 * @param TrafficPageReportInterface     $report  Folds one route's rows.
+	 * @param TrafficPagePathInterface       $paths   Normalises the page's route.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly TrafficEventStore $store,
-		private readonly PortalResolver $portals,
-		private readonly TrafficConfigResolver $config,
-		private readonly TrafficPageReport $report,
-		private readonly TrafficPagePath $paths,
+		private readonly TrafficEventStoreInterface $store,
+		private readonly PortalResolverInterface $portals,
+		private readonly TrafficConfigResolverInterface $config,
+		private readonly TrafficPageReportInterface $report,
+		private readonly TrafficPagePathInterface $paths,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -106,7 +106,7 @@ class TrafficPageController extends Controller {
 	 *
 	 * @auth admin-only audience measurement is an operator's surface, the same posture as the summary and the export
 	 *
-	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-endpoint-must-return-one-pages-figures-for-a-period
+	 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-endpoint-must-return-one-pages-figures-for-a-period
 	 */
 	public function page(string $portal = '', string $route = '', string $days = ''): JSONResponse {
 		$reason = $this->refusal(portal: $portal, route: $route, days: $days);

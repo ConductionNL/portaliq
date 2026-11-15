@@ -19,6 +19,8 @@ export default {
 		'Allowed file types: {types}.': 'Toegestane bestandstypen: {types}.',
 		'Also send letters to {label}': 'Brieven ook naar {label} sturen',
 		'Also sent to {label}.': 'Ook verstuurd naar {label}.',
+		'Also sent to {label}, on {date} at {time}.':
+			'Ook verstuurd naar {label}, op {date} om {time}.',
 		'As written': 'Zoals geschreven',
 		Attachments: 'Bijlagen',
 		'Back to tests': 'Terug naar toetsen',
@@ -44,8 +46,7 @@ export default {
 		'Legal effect': 'Rechtsgevolg',
 		'Loading…': 'Laden…',
 		'Mark as read': 'Markeren als gelezen',
-		'The sender sees when you opened this message.':
-			'De afzender ziet wanneer u dit bericht hebt geopend.',
+		'Read receipt requested': 'Leesbevestiging gevraagd',
 		'Maximum file size: {size} MB.': 'Maximale bestandsgrootte: {size} MB.',
 		Messages: 'Berichten',
 		'Messages from school are translated by AI into this language. You can always see the original text.':
@@ -54,6 +55,7 @@ export default {
 		'Move up': 'Omhoog',
 		'My tasks': 'Mijn taken',
 		Nature: 'Aard',
+		New: 'Nieuw',
 		'New messages': 'Nieuwe berichten',
 		News: 'Nieuws',
 		'News from school is translated by AI into your language. You can always see the original text.':
@@ -168,6 +170,8 @@ export default {
 		'Allowed file types: {types}.': 'Allowed file types: {types}.',
 		'Also send letters to {label}': 'Also send letters to {label}',
 		'Also sent to {label}.': 'Also sent to {label}.',
+		'Also sent to {label}, on {date} at {time}.':
+			'Also sent to {label}, on {date} at {time}.',
 		'As written': 'As written',
 		Attachments: 'Attachments',
 		'Back to tests': 'Back to tests',
@@ -193,8 +197,7 @@ export default {
 		'Legal effect': 'Legal effect',
 		'Loading…': 'Loading…',
 		'Mark as read': 'Mark as read',
-		'The sender sees when you opened this message.':
-			'The sender sees when you opened this message.',
+		'Read receipt requested': 'Read receipt requested',
 		'Maximum file size: {size} MB.': 'Maximum file size: {size} MB.',
 		Messages: 'Messages',
 		'Messages from school are translated by AI into this language. You can always see the original text.':
@@ -203,6 +206,7 @@ export default {
 		'Move up': 'Move up',
 		'My tasks': 'My tasks',
 		Nature: 'Nature',
+		New: 'New',
 		'New messages': 'New messages',
 		News: 'News',
 		'News from school is translated by AI into your language. You can always see the original text.':

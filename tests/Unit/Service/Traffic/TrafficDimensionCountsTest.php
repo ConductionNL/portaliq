@@ -6,12 +6,14 @@ namespace OCA\Portaliq\Tests\Unit\Service\Traffic;
 
 use OCA\Portaliq\Service\Traffic\TrafficDimensionCounts;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Per-session and per-event dimension counting for the traffic rollup.
  */
 #[CoversClass(TrafficDimensionCounts::class)]
+#[UsesClass(\OCA\Portaliq\Service\Traffic\TrafficFirstEventTally::class)]
 class TrafficDimensionCountsTest extends TestCase {
 	/**
 	 * Sessions are grouped on the first event's values, busiest first.

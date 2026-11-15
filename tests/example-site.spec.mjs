@@ -160,6 +160,7 @@ const blockComponents = {
 	publicationDetail: 'src/site/components/PublicationDetailBlock.vue',
 	contactForm: 'src/site/components/ContactForm.vue',
 	publicRecords: 'src/site/components/PublicRecordsBlock.vue',
+	form: 'src/site/components/FormBlock.vue',
 }
 const widgetProps = {}
 for (const [key, path] of Object.entries(blockComponents)) {
@@ -168,6 +169,20 @@ for (const [key, path] of Object.entries(blockComponents)) {
 		new RegExp(`\\n\\t${key}: `),
 		`${key} is a public widget`,
 	)
+	widgetProps[key] = propsOfVue(path)
+}
+// A declared form block names its form by key; the installer writes the
+// installed form's id as `formId` (site-organisation-registration-form).
+widgetProps.form.push('formKey')
+// The blocks the shared library's public registry brings, which WidgetGrid
+// spreads into its own map.
+const libraryIndex = read('node_modules/@conduction/nextcloud-vue/src/public/index.js')
+const libraryBlocks = {
+	glossary: 'node_modules/@conduction/nextcloud-vue/src/public/components/CnSiteGlossary.vue',
+}
+assert.match(publicMap, /\.\.\.siteBlockRegistry/, 'the library blocks are public')
+for (const [key, path] of Object.entries(libraryBlocks)) {
+	assert.match(libraryIndex, new RegExp(`\\n\\t${key}: `), `${key} is a library block`)
 	widgetProps[key] = propsOfVue(path)
 }
 assert.match(
@@ -196,6 +211,23 @@ const { default: taskIcons } = await import(
  * @return {Array<{href: string, where: string}>} The links.
  */
 function linksOf(site) {
+	return [
+		...menuLinksOf(site),
+		...footerLinksOf(site.portal.footer || {}),
+		...headerLinksOf(site.portal),
+		...site.pages.flatMap((page) =>
+			(page.body.widgets || []).flatMap((widget) => widgetLinksOf(page, widget)),
+		),
+	]
+}
+
+/**
+ * The links in the declaration's menus, one level of children deep.
+ *
+ * @param {object} site The declaration.
+ * @return {Array<{href: string, where: string}>} The links.
+ */
+function menuLinksOf(site) {
 	const links = []
 	for (const menu of site.menus) {
 		for (const item of menu.items || []) {
@@ -211,7 +243,17 @@ function linksOf(site) {
 			}
 		}
 	}
-	const footer = site.portal.footer || {}
+	return links
+}
+
+/**
+ * The links in the portal footer.
+ *
+ * @param {object} footer The portal's footer declaration.
+ * @return {Array<{href: string, where: string}>} The links.
+ */
+function footerLinksOf(footer) {
+	const links = []
 	if (footer.cta) {
 		links.push({ href: footer.cta.href, where: 'footer button' })
 	}
@@ -225,59 +267,74 @@ function linksOf(site) {
 			links.push({ href: entry.href, where: `footer ${key} "${entry.label}"` })
 		}
 	}
-	if (site.portal.headerSearch) {
-		links.push({
-			href: site.portal.headerSearch.route || '/zoeken',
-			where: 'header search',
-		})
+	return links
+}
+
+/**
+ * The link of the header search, when the portal has one.
+ *
+ * @param {object} portal The portal declaration.
+ * @return {Array<{href: string, where: string}>} The links.
+ */
+function headerLinksOf(portal) {
+	if (!portal.headerSearch) {
+		return []
 	}
-	for (const page of site.pages) {
-		for (const widget of page.body.widgets || []) {
-			const props = widget.props || {}
-			const where = `page ${page.route} widget ${widget.id}`
-			for (const key of [
-				'href',
-				'moreHref',
-				'articleRoute',
-				'signInHref',
-				'linkHref',
-			]) {
-				if (props[key]) {
-					links.push({ href: props[key], where: `${where} ${key}` })
-				}
-			}
-			for (const key of [
-				'items',
-				'links',
-				'actions',
-				'buttons',
-				'popularLinks',
-			]) {
-				for (const entry of Array.isArray(props[key]) ? props[key] : []) {
-					if (entry && entry.href) {
-						links.push({
-							href: entry.href,
-							where: `${where} ${key} "${entry.label}"`,
-						})
-					}
-				}
-			}
-			// The link columns' links (site-matches-the-zuiddrecht-boards).
-			for (const column of Array.isArray(props.columns) ? props.columns : []) {
-				for (const entry of Array.isArray(column?.links)
-					? column.links
-					: []) {
-					if (entry && entry.href) {
-						links.push({
-							href: entry.href,
-							where: `${where} column "${column.title}" "${entry.label}"`,
-						})
-					}
-				}
-			}
+	return [{
+		href: portal.headerSearch.route || '/zoeken',
+		where: 'header search',
+	}]
+}
+
+/**
+ * The links one page widget declares in its props.
+ *
+ * @param {object} page The page holding the widget.
+ * @param {object} widget The widget.
+ * @return {Array<{href: string, where: string}>} The links.
+ */
+function widgetLinksOf(page, widget) {
+	const props = widget.props || {}
+	const where = `page ${page.route} widget ${widget.id}`
+	const links = []
+	for (const key of [
+		'href',
+		'moreHref',
+		'articleRoute',
+		'signInHref',
+		'linkHref',
+	]) {
+		if (props[key]) {
+			links.push({ href: props[key], where: `${where} ${key}` })
 		}
 	}
+	for (const key of [
+		'items',
+		'links',
+		'actions',
+		'buttons',
+		'popularLinks',
+	]) {
+		links.push(...entryLinksOf(props[key], (entry) => `${where} ${key} "${entry.label}"`))
+	}
+	// The link columns' links (site-matches-the-zuiddrecht-boards).
+	for (const column of Array.isArray(props.columns) ? props.columns : []) {
+		links.push(...entryLinksOf(column?.links, (entry) => `${where} column "${column.title}" "${entry.label}"`))
+	}
 	return links
+}
+
+/**
+ * The entries of a list that carry an href, as links.
+ *
+ * @param {*} list A list of entries, or anything else (read as empty).
+ * @param {Function} whereOf Describes where an entry stands.
+ * @return {Array<{href: string, where: string}>} The links.
+ */
+function entryLinksOf(list, whereOf) {
+	return (Array.isArray(list) ? list : [])
+		.filter((entry) => entry && entry.href)
+		.map((entry) => ({ href: entry.href, where: whereOf(entry) }))
 }
 
 /**
@@ -349,7 +406,7 @@ test('the Zuiddrecht site holds what the design shows', () => {
 	)
 	// Counts the installer's own test and the documentation name.
 	assert.equal(site.menus.length, 3)
-	assert.equal(site.pages.length, 39)
+	assert.equal(site.pages.length, 55)
 	assert.equal(site.news.length, 4)
 })
 
@@ -381,6 +438,22 @@ for (const { file, site } of sites) {
 				problems,
 			),
 		)
+		for (const form of site.forms || []) {
+			hold(
+				{ ...form, portal: site.portal.slug },
+				schemas.form,
+				`form ${form.externalReference}`,
+				problems,
+			)
+		}
+		for (const term of site.glossary || []) {
+			hold(
+				{ ...term, portal: site.portal.slug },
+				schemas.glossaryTerm,
+				`glossary "${term.term}"`,
+				problems,
+			)
+		}
 		assert.deepEqual(problems, [])
 	})
 
@@ -746,13 +819,14 @@ test('the Zuiddrecht site lays out its own area as the MijnMenu and MijnZaken bo
 		site.portal.residentMenu.groups.map((group) => [group.title, group.items]),
 		[
 			['Mijn Zuiddrecht', ['overview', 'inbox']],
-			['Zaken en taken', ['cases', 'tasks']],
-			['Vragen en meldingen', ['portaliq:meldingen']],
+			['Mijn zaken en verzoeken', ['cases', 'tasks', 'access']],
+			['Samenwerken', ['samenwerken', 'contacts']],
+			['Vragen en contact', ['portaliq:meldingen']],
 			['Uw gegevens', ['details', 'account']],
 		],
 	)
-	// Mijn zaken as rows (the MijnZaken board).
-	assert.equal(site.portal.myCases.display, 'rows')
+	// Mijn zaken as the board folders (the MijnZaken board).
+	assert.equal(site.portal.myCases.display, 'folders')
 	// Both keys are in the portal schema, so OpenRegister keeps them.
 	const portal = schemas.portal
 	assert.ok(
@@ -762,9 +836,17 @@ test('the Zuiddrecht site lays out its own area as the MijnMenu and MijnZaken bo
 	assert.deepEqual(portal.properties.myCases.properties.display.enum, [
 		'cards',
 		'rows',
+		'folders',
 	])
-	assert.equal(portal.version, '0.25.0')
-	assert.equal(register.info.version, '0.97.0')
+	assert.equal(portal.version, '0.34.0')
+	// 0.111.0: a form binding's `availability` (form-governance-availability-retention-and-routing).
+	// 0.112.0: a portal's `adminGroups` (operate-portals-per-organisation).
+	// 0.113.0 and 0.114.0: the Yivi identity type and the portal's desk group (resident-identity-in-forms).
+	// 0.115.0: marketing articles (marketing-articles-from-pipelinq) and a portal's `organisationType` and its label (portal-identity-from-the-admin).
+	// 0.116.0: a portal's `organisationTypeSchemeId` (portal-identity-from-the-admin).
+	// 0.117.0: a collection's `messages` provider and the `messages` block (capability-rows-said-and-planned T07).
+	// 0.118.0: a portal's `traffic.excludedPaths` (intake-report-pages T07, development's 0.115.0), merged with the above; portal 0.34.0.
+	assert.equal(register.info.version, '0.118.0')
 })
 
 // zuiddrecht-site-details: the portal names the organisation of the example
