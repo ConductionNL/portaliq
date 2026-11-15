@@ -313,6 +313,10 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         // deleted is not a comparison. `/site` retires `/portal` once the
         // control pair is recorded, not before.
         ['name' => 'portalPage#site', 'url' => '/site', 'verb' => 'GET'],
+        // The plain version of a site page, for a browser without JavaScript
+        // (site-honest-without-javascript). Before sitePath, which would
+        // otherwise read `plain` as a page route.
+        ['name' => 'portalPage#plain', 'url' => '/site/plain', 'verb' => 'GET'],
         // The same site with the page in the path: /site/afval is the route
         // /afval. A proxy in front of Nextcloud rewrites the short address of
         // a portal's own host to this one (site-at-the-root-of-a-portal-host).

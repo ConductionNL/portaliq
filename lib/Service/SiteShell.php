@@ -217,6 +217,39 @@ class SiteShell implements SiteShellInterface {
 	}//end plainUrl()
 
 	/**
+	 * What the plain version of the page this request asks for is built from:
+	 * the serving portal, resolved the way the head resolves it, the route
+	 * (`?route=`, else the landing page of the host), the document language,
+	 * the slug the request names, and the search term and page number.
+	 *
+	 * @return array{portal: array<string, mixed>|null, route: string, locale: string, slug: string, query: string, page: int}
+	 *
+	 * @spec openspec/changes/site-honest-without-javascript/specs/site-without-javascript/spec.md#requirement-the-server-renders-a-plain-version-of-every-public-page-req-shj-002
+	 */
+	public function plainRequest(): array {
+		$slug = $this->requestedPortalSlug();
+		try {
+			$portal = $this->portalResolver->resolve(request: $this->request, portalSlug: $slug);
+		} catch (\Throwable) {
+			$portal = null;
+		}
+
+		$page = 1;
+		if (ctype_digit($this->stringParam(name: '_page')) === true) {
+			$page = max(1, (int)$this->stringParam(name: '_page'));
+		}
+
+		return [
+			'portal' => $portal,
+			'route'  => $this->addressing->route(request: $this->request, portalSlug: $slug, path: ''),
+			'locale' => $this->siteLocale(),
+			'slug'   => $slug,
+			'query'  => $this->stringParam(name: '_search'),
+			'page'   => $page,
+		];
+	}//end plainRequest()
+
+	/**
 	 * A request parameter as a trimmed string; anything that is not a string or
 	 * a number (an array from `?x[]=`) is ''.
 	 *
