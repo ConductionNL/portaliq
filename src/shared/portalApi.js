@@ -1334,6 +1334,27 @@ export function createPortalApi(config, store = {}) {
 		},
 
 		/**
+		 * The messages about one object the subject owns, both ways, newest
+		 * first (capability-rows-said-and-planned T07): `{ label, messages }`
+		 * from the app's `messages` provider, read only after the server
+		 * proved the object is the subject's. Null when the collection
+		 * declares none, the object is not the subject's, or the messages
+		 * could not be read.
+		 *
+		 * @param {object} collection Manifest collection: `{ id, register, schema }`.
+		 * @param {string} id The object id.
+		 * @param {string} [mandateId] The mandate a case listed under one is read under.
+		 * @return {Promise<object|null>} The messages, or null.
+		 * @spec openspec/changes/capability-rows-said-and-planned/tasks.md#t07
+		 */
+		async fetchCaseMessages(collection, id, mandateId = '') {
+			const body = await get(
+				`${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/messages?collection=${encodeURIComponent(collection.id)}${mandateQuery(mandateId)}`,
+			).catch(() => null)
+			return body && Array.isArray(body.messages) ? body : null
+		},
+
+		/**
 		 * The items of one object the subject owns (my-dossiers): `{ label,
 		 * items, removeAction }` from the app's `itemList` provider, read only
 		 * after the server proved the object is the subject's. Null when the

@@ -57,6 +57,7 @@ use OCA\Portaliq\Service\SiteShell;
 use OCA\Portaliq\Service\Cms\PlainAddress;
 use OCA\Portaliq\Service\Cms\PlainPageRenderer;
 use OCA\Portaliq\Service\Cms\SiteIcon;
+use OCA\Portaliq\Kernel\Contracts\SiteOrganisationInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -110,6 +111,7 @@ class PortalPageController extends Controller {
 	 * @param AccessibilityFramingInterface $framing Whether the accessibility measurement may frame this request.
 	 * @param SiteIcon|null $siteIcon The portal's own tab icon.
 	 * @param PlainPageRenderer|null $plainPage The plain version of a page (site-honest-without-javascript).
+	 * @param SiteOrganisationInterface|null $siteOrganisation Names the portal's organisation in the head.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -122,6 +124,7 @@ class PortalPageController extends Controller {
 		private readonly AccessibilityFramingInterface $framing,
 		?SiteIcon $siteIcon=null,
 		private readonly ?PlainPageRenderer $plainPage=null,
+		?SiteOrganisationInterface $siteOrganisation=null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 		$this->shell = new SiteShell(
@@ -132,7 +135,8 @@ class PortalPageController extends Controller {
 			siteHead: $siteHead,
 			notices: $notices,
 			configResolver: $configResolver,
-			siteIcon: $siteIcon
+			siteIcon: $siteIcon,
+			siteOrganisation: $siteOrganisation
 		);
 	}//end __construct()
 

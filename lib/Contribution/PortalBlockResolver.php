@@ -56,6 +56,7 @@ class PortalBlockResolver {
 		'steps',
 		'documents',
 		'timeline',
+		'messages',
 		'greeting',
 	];
 
@@ -71,7 +72,7 @@ class PortalBlockResolver {
 	/**
 	 * The block types a normaliser of their own resolves.
 	 */
-	private const OWN_RULES_BLOCK_TYPES = ['kpi', 'calendar', 'news', 'tasks', 'inbox', 'cases', 'steps', 'documents', 'timeline'];
+	private const OWN_RULES_BLOCK_TYPES = ['kpi', 'calendar', 'news', 'tasks', 'inbox', 'cases', 'steps', 'documents', 'timeline', 'messages'];
 
 	/**
 	 * Filter a page's blocks to the registry with resolvable references.
@@ -339,8 +340,40 @@ class PortalBlockResolver {
 			$entry = (new StepsHighlightKeys())->keys(block: $block, pageIds: $run->pageIds) + $entry;
 		}
 
+		// The question a resident asks about the open record, above its
+		// messages (capability-rows-said-and-planned T07).
+		if ($entry !== null && $type === 'messages') {
+			$entry += $this->askActionKey(block: $block, actionIds: $run->actionIds);
+		}
+
 		return $entry;
 	}//end recordListBlock()
+
+	/**
+	 * A messages block's `askAction`, kept only when it names an action of
+	 * the same contribution, with its `askLabel` when that is text.
+	 *
+	 * @param array<string, mixed> $block     The declared block.
+	 * @param array<int, string>   $actionIds The valid action ids.
+	 *
+	 * @return array<string, string>
+	 *
+	 * @spec openspec/changes/capability-rows-said-and-planned/tasks.md#t07
+	 */
+	private function askActionKey(array $block, array $actionIds): array {
+		$action = ($block['askAction'] ?? null);
+		if (is_string($action) === false || in_array($action, $actionIds, true) === false) {
+			return [];
+		}
+
+		$out   = ['askAction' => $action];
+		$label = ($block['askLabel'] ?? null);
+		if (is_string($label) === true && trim($label) !== '') {
+			$out['askLabel'] = mb_substr(trim($label), 0, 120);
+		}
+
+		return $out;
+	}//end askActionKey()
 
 	/**
 	 * A `kpi`, `calendar` or `news` block (contribution-record-page), or null
