@@ -18,7 +18,7 @@ import strings from './strings.js'
  * @param {string} text The text.
  * @param {Record<string, string|number>} [vars] The values.
  * @return {string} The filled text.
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
  */
 export function interpolate(text, vars) {
 	let out = String(text)
@@ -33,7 +33,7 @@ export function interpolate(text, vars) {
  *
  * @param {string} [locale] The locale the shell passed.
  * @return {string} `nl` or `en`.
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
  */
 export function pageLocale(locale) {
 	const raw =
@@ -49,7 +49,7 @@ export function pageLocale(locale) {
  * @param {((key: string, vars?: object) => string)|null} t The shell's translator, or null.
  * @param {string} [locale] The page language.
  * @return {(key: string, vars?: object) => string} The translator.
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
  */
 export function withStrings(t, locale) {
 	return withBundles(strings, t, locale)
@@ -63,7 +63,7 @@ export function withStrings(t, locale) {
  * @param {((key: string, vars?: object) => string)|null} t The shell's translator, or null.
  * @param {string} [locale] The page language.
  * @return {(key: string, vars?: object) => string} The translator.
- * @spec openspec/changes/acting-for-and-access-page-read-in-dutch/specs/site-portal-parity/spec.md#requirement-the-account-pages-speak-the-pages-language
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-account-pages-speak-the-pages-language
  */
 export function withBundles(bundles, t, locale) {
 	const bundle = bundles[pageLocale(locale)] || bundles.nl

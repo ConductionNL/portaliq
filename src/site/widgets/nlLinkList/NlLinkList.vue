@@ -80,7 +80,7 @@ export default {
 	 * page.
 	 *
 	 * @return {{headingId: string}} The state.
-	 * @spec openspec/changes/site-content-blocks-styled/specs/site-look/spec.md#requirement-a-link-list-must-be-a-named-landmark-with-targets-of-at-least-24px
+	 * @spec openspec/specs/site-look/spec.md#requirement-a-link-list-must-be-a-named-landmark-with-targets-of-at-least-24px
 	 */
 	data() {
 		instances += 1

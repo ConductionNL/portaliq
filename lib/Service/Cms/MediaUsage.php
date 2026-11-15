@@ -27,16 +27,17 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Cms;
 
+use OCA\Portaliq\Kernel\Contracts\MediaUsageInterface;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PublishedPortals;
 
 /**
  * Keeps each media item's `usedOn` count.
  *
  * @spec openspec/changes/media-usage-count/specs/site-page-seo-history-and-media/spec.md#requirement-a-media-item-knows-how-many-records-use-it-req-mu-001
  */
-class MediaUsage {
+class MediaUsage implements MediaUsageInterface {
 	/**
 	 * The register the library and its users live in.
 	 */
@@ -55,12 +56,12 @@ class MediaUsage {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalResolver $portals The published portals.
+	 * @param PublishedPortals $portals The published portals.
 	 * @param PortalObjectReader $reader Reads a portal's records.
 	 * @param PortalObjectWriter $writer Writes the count onto an item.
 	 */
 	public function __construct(
-		private readonly PortalResolver $portals,
+		private readonly PublishedPortals $portals,
 		private readonly PortalObjectReader $reader,
 		private readonly PortalObjectWriter $writer,
 	) {
@@ -106,36 +107,76 @@ class MediaUsage {
 				continue;
 			}
 
-			$users  = array_merge([$portal], $this->read(schema: 'page', slug: $slug), $this->read(schema: 'newsItem', slug: $slug));
-			$counts = self::count(records: $users);
-			foreach ($this->read(schema: 'media', slug: $slug) as $item) {
-				$id = (string)($item['uuid'] ?? $item['id'] ?? (($item['@self'] ?? [])['id'] ?? ''));
-				if ($id === '') {
-					continue;
-				}
-
-				$used = ($counts[$id] ?? 0);
-				if (array_key_exists(key: 'usedOn', array: $item) === true && (int)$item['usedOn'] === $used) {
-					continue;
-				}
-
-				$updated = $this->writer->updateObject(
-					register: self::REGISTER,
-					schema: 'media',
-					scopeField: '',
-					subjectRef: '',
-					organisation: '',
-					id: $id,
-					data: ['usedOn' => $used]
-				);
-				if ($updated !== null) {
-					$written++;
-				}
-			}//end foreach
-		}//end foreach
+			$written += $this->refreshPortal(portal: $portal, slug: $slug);
+		}
 
 		return $written;
 	}//end refresh()
+
+	/**
+	 * Recount one portal's library and write the counts that changed.
+	 *
+	 * @param array<string, mixed> $portal The published portal.
+	 * @param string               $slug   The portal slug.
+	 *
+	 * @return int How many items got a new count.
+	 */
+	private function refreshPortal(array $portal, string $slug): int {
+		$written = 0;
+		$users   = array_merge([$portal], $this->read(schema: 'page', slug: $slug), $this->read(schema: 'newsItem', slug: $slug));
+		$counts  = self::count(records: $users);
+		foreach ($this->read(schema: 'media', slug: $slug) as $item) {
+			if ($this->recount(item: $item, counts: $counts) === true) {
+				$written++;
+			}
+		}
+
+		return $written;
+	}//end refreshPortal()
+
+	/**
+	 * Write one item's count when it changed.
+	 *
+	 * @param array<string, mixed> $item   The media item.
+	 * @param array<string, int>   $counts Count by item id.
+	 *
+	 * @return bool True when the item got a new count.
+	 */
+	private function recount(array $item, array $counts): bool {
+		$id = (string)($item['uuid'] ?? $item['id'] ?? (($item['@self'] ?? [])['id'] ?? ''));
+		if ($id === '') {
+			return false;
+		}
+
+		$used = ($counts[$id] ?? 0);
+		if (array_key_exists(key: 'usedOn', array: $item) === true && (int)$item['usedOn'] === $used) {
+			return false;
+		}
+
+		return $this->writeCount(id: $id, used: $used);
+	}//end recount()
+
+	/**
+	 * Write the count onto the item.
+	 *
+	 * @param string $id   The item id.
+	 * @param int    $used How many records use it.
+	 *
+	 * @return bool True when written.
+	 */
+	private function writeCount(string $id, int $used): bool {
+		$updated = $this->writer->updateObject(
+			register: self::REGISTER,
+			schema: 'media',
+			scopeField: '',
+			subjectRef: '',
+			organisation: '',
+			id: $id,
+			data: ['usedOn' => $used]
+		);
+
+		return $updated !== null;
+	}//end writeCount()
 
 	/**
 	 * One schema's records of a portal.

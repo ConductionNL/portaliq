@@ -14,7 +14,7 @@
  * work factor is per surface, so a form that is being hammered can be made
  * expensive without making every form expensive.
  *
- * The nonce is signed by this instance and carries the surface it was issued
+ * The nonce is signed by this instance and carries the surface and portal it was issued
  * for and the moment it stops counting. Without that it was not a credential
  * at all: nothing was stored, so a caller could invent their own nonce, solve
  * it once, and send the same pair for as long as they liked. Signing it is
@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
 
 declare(strict_types=1);
@@ -40,15 +40,16 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\PortalChallengeServiceInterface;
 use OCP\Security\ICrypto;
 use OCP\Security\ISecureRandom;
 
 /**
  * Issues and verifies the portal's own challenge.
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
-class PortalChallengeService {
+class PortalChallengeService implements PortalChallengeServiceInterface {
 	/**
 	 * The work factor used when a surface names none.
 	 */
@@ -86,7 +87,7 @@ class PortalChallengeService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function isEnabled(array $site): bool {
 		$proofOfWork = $this->proofOfWorkConfig(site: $site);
@@ -98,8 +99,8 @@ class PortalChallengeService {
 	 * Issue a challenge for a surface.
 	 *
 	 * The visitor gets the nonce, the moment it stops counting, and this
-	 * instance's signature over both plus the surface. All three come back on
-	 * the submission, and all three are checked there.
+	 * instance's signature over both plus the surface and the portal. All
+	 * three come back on the submission, and all three are checked there.
 	 *
 	 * @param array<string, mixed> $site The portal's own configuration row.
 	 * @param string $surface The surface asking, e.g. `form` or `registration`.
@@ -107,7 +108,7 @@ class PortalChallengeService {
 	 *
 	 * @return array{nonce: string, expiresAt: int, signature: string, difficulty: int, algorithm: string}
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function issue(array $site, string $surface, ?DateTimeImmutable $now = null): array {
 		$nonce = $this->random->generate(32, (ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS));
@@ -116,45 +117,55 @@ class PortalChallengeService {
 		return [
 			'nonce' => $nonce,
 			'expiresAt' => $expiresAt,
-			'signature' => $this->signatureFor(nonce: $nonce, surface: $surface, expiresAt: $expiresAt),
+			'signature' => $this->signatureFor(nonce: $nonce, surface: $surface, portal: $this->portalOf(site: $site), expiresAt: $expiresAt),
 			'difficulty' => $this->difficultyFor(site: $site, surface: $surface),
 			'algorithm' => 'sha256-leading-zero-bits',
 		];
 	}//end issue()
 
 	/**
-	 * This instance's signature over a nonce, its surface and its expiry.
+	 * This instance's signature over a nonce, its surface, its portal and its expiry.
 	 *
 	 * The instance secret is the key, so a nonce cannot be minted anywhere
-	 * else, and the surface is inside the message, so a nonce issued for a
-	 * cheap surface cannot be spent on an expensive one.
+	 * else. The surface is inside the message, so a nonce issued for a
+	 * cheap surface cannot be spent on an expensive one, and so is the portal,
+	 * so a nonce issued by one portal is not good at another.
 	 *
 	 * @param string $nonce The nonce being signed.
 	 * @param string $surface The surface it was issued for.
+	 * @param string $portal The slug of the portal that issued it, or ''.
 	 * @param int $expiresAt The unix second it stops counting.
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
-	public function signatureFor(string $nonce, string $surface, int $expiresAt): string {
-		return $this->crypto->calculateHMAC($nonce . ':' . $surface . ':' . $expiresAt);
+	public function signatureFor(string $nonce, string $surface, string $portal, int $expiresAt): string {
+		return $this->crypto->calculateHMAC($nonce . ':' . $surface . ':' . $portal . ':' . $expiresAt);
 	}//end signatureFor()
 
 	/**
-	 * Whether a nonce really came from here, for this surface, and still counts.
+	 * Whether a nonce really came from here, for this surface and portal, and still counts.
 	 *
 	 * @param string $nonce The nonce the visitor sent back.
 	 * @param string $surface The surface they are submitting to.
+	 * @param string $portal The slug of the portal they are submitting to, or ''.
 	 * @param int $expiresAt The expiry they sent back.
 	 * @param string $signature The signature they sent back.
 	 * @param DateTimeImmutable|null $now The moment to judge expiry against.
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
-	public function nonceIsOurs(string $nonce, string $surface, int $expiresAt, string $signature, ?DateTimeImmutable $now = null): bool {
+	public function nonceIsOurs(
+		string $nonce,
+		string $surface,
+		string $portal,
+		int $expiresAt,
+		string $signature,
+		?DateTimeImmutable $now = null,
+	): bool {
 		if ($nonce === '' || $signature === '') {
 			return false;
 		}
@@ -163,7 +174,7 @@ class PortalChallengeService {
 			return false;
 		}
 
-		return hash_equals($this->signatureFor(nonce: $nonce, surface: $surface, expiresAt: $expiresAt), $signature);
+		return hash_equals($this->signatureFor(nonce: $nonce, surface: $surface, portal: $portal, expiresAt: $expiresAt), $signature);
 	}//end nonceIsOurs()
 
 	/**
@@ -174,7 +185,7 @@ class PortalChallengeService {
 	 *
 	 * @return int
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function difficultyFor(array $site, string $surface): int {
 		$proofOfWork = $this->proofOfWorkConfig(site: $site);
@@ -214,7 +225,7 @@ class PortalChallengeService {
 	 *
 	 * @return bool True when the submission may proceed.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function accepts(
 		array $site,
@@ -237,7 +248,8 @@ class PortalChallengeService {
 		// The signature comes first. A nonce this instance never issued costs
 		// the caller nothing to invent, so checking the work on it would only
 		// be checking work the caller chose to do.
-		if ($this->nonceIsOurs(nonce: $nonce, surface: $surface, expiresAt: $expiresAt, signature: $signature, now: $now) === false) {
+		$portal = $this->portalOf(site: $site);
+		if ($this->nonceIsOurs(nonce: $nonce, surface: $surface, portal: $portal, expiresAt: $expiresAt, signature: $signature, now: $now) === false) {
 			return false;
 		}
 
@@ -271,7 +283,7 @@ class PortalChallengeService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function solves(string $nonce, string $solution, int $difficulty): bool {
 		if ($nonce === '' || $solution === '') {
@@ -313,6 +325,17 @@ class PortalChallengeService {
 
 		return $bits;
 	}//end leadingZeroBits()
+
+	/**
+	 * The portal's slug, or '' for a row without one.
+	 *
+	 * @param array<string, mixed> $site The portal's own configuration row.
+	 *
+	 * @return string
+	 */
+	private function portalOf(array $site): string {
+		return (string)($site['slug'] ?? '');
+	}//end portalOf()
 
 	/**
 	 * The proof-of-work configuration block, or an empty one.

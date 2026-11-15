@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ use Throwable;
 /**
  * The attempt limits of the invitation redeem route.
  *
- * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 class ClaimAttempts {
 	/**
@@ -92,7 +92,7 @@ class ClaimAttempts {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function locked(array $account, string $jti, DateTimeImmutable $now): bool {
 		if ($this->countInWindow(account: $account, now: $now) >= self::PER_ACCOUNT) {
@@ -112,7 +112,7 @@ class ClaimAttempts {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function fail(array $account, string $accountId, string $jti, DateTimeImmutable $now): void {
 		$count = $this->countInWindow(account: $account, now: $now);
@@ -146,7 +146,7 @@ class ClaimAttempts {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function clear(array $account, string $accountId): void {
 		if ((int)($account['claimAttempts'] ?? 0) === 0) {

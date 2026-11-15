@@ -1,0 +1,745 @@
+{
+    "no rows": {
+        "calls": [
+            [
+                "reader.pages",
+                "zuiddrecht",
+                "nl",
+                "resident"
+            ],
+            [
+                "rows.query",
+                "portalFinder",
+                {
+                    "portal": "zuiddrecht",
+                    "status": "published"
+                }
+            ]
+        ],
+        "finder": null
+    },
+    "full row, no id asked": {
+        "calls": [
+            [
+                "reader.pages",
+                "zuiddrecht",
+                "nl",
+                "resident"
+            ],
+            [
+                "rows.query",
+                "portalFinder",
+                {
+                    "portal": "zuiddrecht",
+                    "status": "published"
+                }
+            ]
+        ],
+        "finder": {
+            "id": "f-1",
+            "title": "Wat heeft u nodig?",
+            "intro": "Beantwoord een paar vragen.",
+            "products": [
+                {
+                    "route": "/afval",
+                    "title": "Afval (nieuw)",
+                    "summary": "Laatste wint"
+                },
+                {
+                    "route": "/parkeren",
+                    "title": "Parkeren",
+                    "summary": "Vergunningen"
+                },
+                {
+                    "route": "/afval",
+                    "title": "Afval (nieuw)",
+                    "summary": "Laatste wint"
+                }
+            ],
+            "questions": [
+                {
+                    "id": "q1",
+                    "text": "Heeft u een auto?",
+                    "help": "Ook een deelauto",
+                    "excludesOnYes": [
+                        "/afval"
+                    ],
+                    "excludesOnNo": [
+                        "/parkeren",
+                        "3"
+                    ]
+                },
+                {
+                    "id": "",
+                    "text": "Zonder id",
+                    "help": "",
+                    "excludesOnYes": [
+                        "losse"
+                    ],
+                    "excludesOnNo": []
+                }
+            ]
+        }
+    },
+    "full row, asked by self id": {
+        "calls": [
+            [
+                "reader.pages",
+                "zuiddrecht",
+                "nl",
+                "resident"
+            ],
+            [
+                "rows.query",
+                "portalFinder",
+                {
+                    "portal": "zuiddrecht",
+                    "status": "published"
+                }
+            ]
+        ],
+        "finder": {
+            "id": "f-1",
+            "title": "Wat heeft u nodig?",
+            "intro": "Beantwoord een paar vragen.",
+            "products": [
+                {
+                    "route": "/afval",
+                    "title": "Afval (nieuw)",
+                    "summary": "Laatste wint"
+                },
+                {
+                    "route": "/parkeren",
+                    "title": "Parkeren",
+                    "summary": "Vergunningen"
+                },
+                {
+                    "route": "/afval",
+                    "title": "Afval (nieuw)",
+                    "summary": "Laatste wint"
+                }
+            ],
+            "questions": [
+                {
+                    "id": "q1",
+                    "text": "Heeft u een auto?",
+                    "help": "Ook een deelauto",
+                    "excludesOnYes": [
+                        "/afval"
+                    ],
+                    "excludesOnNo": [
+                        "/parkeren",
+                        "3"
+                    ]
+                },
+                {
+                    "id": "",
+                    "text": "Zonder id",
+                    "help": "",
+                    "excludesOnYes": [
+                        "losse"
+                    ],
+                    "excludesOnNo": []
+                }
+            ]
+        }
+    },
+    "full row, asked by flat id": {
+        "calls": [
+            [
+                "reader.pages",
+                "zuiddrecht",
+                "nl",
+                "resident"
+            ],
+            [
+                "rows.query",
+                "portalFinder",
+                {
+                    "portal": "zuiddrecht",
+                    "status": "published"
+                }
+            ]
+        ],
+        "finder": null
+    },
+    "flat id when no self": {
+        "calls": [
+            [
+                "reader.pages",
+                "zuiddrecht",
+                "nl",
+                "resident"
+            ],
+            [
+                "rows.query",
+                "portalFinder",
+                {
+                    "portal": "zuiddrecht",
+                    "status": "published"
+                }
+            ]
+        ],
+        "finder": {
+            "id": "flat-1",
+            "title": "Wat heeft u nodig?",
+            "intro": "Beantwoord een paar vragen.",
+            "products": [
+                {
+                    "route": "/afval",
+                    "title": "Afval (nieuw)",
+                    "summary": "Laatste wint"
+                },
+                {
+                    "route": "/parkeren",
+                    "title": "Parkeren",
+                    "summary": "Vergunningen"
+                },
+                {
+                    "route": "/afval",
+                    "title": "Afval (nieuw)",
+                    "summary": "Laatste wint"
+                }
+            ],
+            "questions": [
+                {
+                    "id": "q1",
+                    "text": "Heeft u een auto?",
+                    "help": "Ook een deelauto",
+                    "excludesOnYes": [
+                        "/afval"
+                    ],
+                    "excludesOnNo": [
+                        "/parkeren",
+                        "3"
+                    ]
+                },
+                {
+                    "id": "",
+                    "text": "Zonder id",
+                    "help": "",
+                    "excludesOnYes": [
+                        "losse"
+                    ],
+                    "excludesOnNo": []
+                }
+            ]
+        }
+    },
+    "uuid when no self or id": {
+        "calls": [
+            [
+                "reader.pages",
+                "zuiddrecht",
+                "nl",
+                "resident"
+            ],
+            [
+                "rows.query",
+                "portalFinder",
+                {
+                    "portal": "zuiddrecht",
+                    "status": "published"
+                }
+            ]
+        ],
+        "finder": {
+            "id": "u-1",
+            "title": "Wat heeft u nodig?",
+            "intro": "Beantwoord een paar vragen.",
+            "products": [
+                {
+                    "route": "/afval",
+                    "title": "Afval (nieuw)",
+                    "summary": "Laatste wint"
+                },
+                {
+                    "route": "/parkeren",
+                    "title": "Parkeren",
+                    "summary": "Vergunningen"
+                },
+                {
+                    "route": "/afval",
+                    "title": "Afval (nieuw)",
+                    "summary": "Laatste wint"
+                }
+            ],
+            "questions": [
+                {
+                    "id": "q1",
+                    "text": "Heeft u een auto?",
+                    "help": "Ook een deelauto",
+                    "excludesOnYes": [
+                        "/afval"
+                    ],
+                    "excludesOnNo": [
+                        "/parkeren",
+                        "3"
+                    ]
+                },
+                {
+                    "id": "",
+                    "text": "Zonder id",
+                    "help": "",
+                    "excludesOnYes": [
+                        "losse"
+                    ],
+                    "excludesOnNo": []
+                }
+            ]
+        }
+    },
+    "no id at all": {
+        "calls": [
+            [
+                "reader.pages",
+                "zuiddrecht",
+                "nl",
+                "resident"
+            ],
+            [
+                "rows.query",
+                "portalFinder",
+                {
+                    "portal": "zuiddrecht",
+                    "status": "published"
+                }
+            ]
+        ],
+        "finder": {
+            "id": "",
+            "title": "Wat heeft u nodig?",
+            "intro": "Beantwoord een paar vragen.",
+            "products": [
+                {
+                    "route": "/afval",
+                    "title": "Afval (nieuw)",
+                    "summary": "Laatste wint"
+                },
+                {
+                    "route": "/parkeren",
+                    "title": "Parkeren",
+                    "summary": "Vergunningen"
+                },
+                {
+                    "route": "/afval",
+                    "title": "Afval (nieuw)",
+                    "summary": "Laatste wint"
+                }
+            ],
+            "questions": [
+                {
+                    "id": "q1",
+                    "text": "Heeft u een auto?",
+                    "help": "Ook een deelauto",
+                    "excludesOnYes": [
+                        "/afval"
+                    ],
+                    "excludesOnNo": [
+                        "/parkeren",
+                        "3"
+                    ]
+                },
+                {
+                    "id": "",
+                    "text": "Zonder id",
+                    "help": "",
+                    "excludesOnYes": [
+                        "losse"
+                    ],
+                    "excludesOnNo": []
+                }
+            ]
+        }
+    },
+    "no id at all, asked for one": {
+        "calls": [
+            [
+                "reader.pages",
+                "zuiddrecht",
+                "nl",
+                "resident"
+            ],
+            [
+                "rows.query",
+                "portalFinder",
+                {
+                    "portal": "zuiddrecht",
+                    "status": "published"
+                }
+            ]
+        ],
+        "finder": null
+    },
+    "draft skipped": {
+        "calls": [
+            [
+                "reader.pages",
+                "zuiddrecht",
+                "nl",
+                "resident"
+            ],
+            [
+                "rows.query",
+                "portalFinder",
+                {
+                    "portal": "zuiddrecht",
+                    "status": "published"
+                }
+            ]
+        ],
+        "finder": {
+            "id": "f-2",
+            "title": "Tweede",
+            "intro": "",
+            "products": [],
+            "questions": []
+        }
+    },
+    "status missing skipped": {
+        "calls": [
+            [
+                "reader.pages",
+                "zuiddrecht",
+                "nl",
+                "resident"
+            ],
+            [
+                "rows.query",
+                "portalFinder",
+                {
+                    "portal": "zuiddrecht",
+                    "status": "published"
+                }
+            ]
+        ],
+        "finder": null
+    },
+    "second row asked": {
+        "calls": [
+            [
+                "reader.pages",
+                "zuiddrecht",
+                "nl",
+                "resident"
+            ],
+            [
+                "rows.query",
+                "portalFinder",
+                {
+                    "portal": "zuiddrecht",
+                    "status": "published"
+                }
+            ]
+        ],
+        "finder": {
+            "id": "f-2",
+            "title": "",
+            "intro": "",
+            "products": [
+                {
+                    "route": "/afval",
+                    "title": "Afval (nieuw)",
+                    "summary": "Laatste wint"
+                }
+            ],
+            "questions": []
+        }
+    },
+    "first published wins": {
+        "calls": [
+            [
+                "reader.pages",
+                "zuiddrecht",
+                "nl",
+                "resident"
+            ],
+            [
+                "rows.query",
+                "portalFinder",
+                {
+                    "portal": "zuiddrecht",
+                    "status": "published"
+                }
+            ]
+        ],
+        "finder": {
+            "id": "f-1",
+            "title": "Wat heeft u nodig?",
+            "intro": "Beantwoord een paar vragen.",
+            "products": [
+                {
+                    "route": "/afval",
+                    "title": "Afval (nieuw)",
+                    "summary": "Laatste wint"
+                },
+                {
+                    "route": "/parkeren",
+                    "title": "Parkeren",
+                    "summary": "Vergunningen"
+                },
+                {
+                    "route": "/afval",
+                    "title": "Afval (nieuw)",
+                    "summary": "Laatste wint"
+                }
+            ],
+            "questions": [
+                {
+                    "id": "q1",
+                    "text": "Heeft u een auto?",
+                    "help": "Ook een deelauto",
+                    "excludesOnYes": [
+                        "/afval"
+                    ],
+                    "excludesOnNo": [
+                        "/parkeren",
+                        "3"
+                    ]
+                },
+                {
+                    "id": "",
+                    "text": "Zonder id",
+                    "help": "",
+                    "excludesOnYes": [
+                        "losse"
+                    ],
+                    "excludesOnNo": []
+                }
+            ]
+        }
+    },
+    "unknown id": {
+        "calls": [
+            [
+                "reader.pages",
+                "zuiddrecht",
+                "nl",
+                "resident"
+            ],
+            [
+                "rows.query",
+                "portalFinder",
+                {
+                    "portal": "zuiddrecht",
+                    "status": "published"
+                }
+            ]
+        ],
+        "finder": null
+    },
+    "no pages": {
+        "calls": [
+            [
+                "reader.pages",
+                "zuiddrecht",
+                "nl",
+                "resident"
+            ],
+            [
+                "rows.query",
+                "portalFinder",
+                {
+                    "portal": "zuiddrecht",
+                    "status": "published"
+                }
+            ]
+        ],
+        "finder": {
+            "id": "f-1",
+            "title": "Wat heeft u nodig?",
+            "intro": "Beantwoord een paar vragen.",
+            "products": [],
+            "questions": [
+                {
+                    "id": "q1",
+                    "text": "Heeft u een auto?",
+                    "help": "Ook een deelauto",
+                    "excludesOnYes": [
+                        "/afval"
+                    ],
+                    "excludesOnNo": [
+                        "/parkeren",
+                        "3"
+                    ]
+                },
+                {
+                    "id": "",
+                    "text": "Zonder id",
+                    "help": "",
+                    "excludesOnYes": [
+                        "losse"
+                    ],
+                    "excludesOnNo": []
+                }
+            ]
+        }
+    },
+    "numeric self id": {
+        "calls": [
+            [
+                "reader.pages",
+                "zuiddrecht",
+                "nl",
+                "resident"
+            ],
+            [
+                "rows.query",
+                "portalFinder",
+                {
+                    "portal": "zuiddrecht",
+                    "status": "published"
+                }
+            ]
+        ],
+        "finder": {
+            "id": "12",
+            "title": "Wat heeft u nodig?",
+            "intro": "Beantwoord een paar vragen.",
+            "products": [
+                {
+                    "route": "/afval",
+                    "title": "Afval (nieuw)",
+                    "summary": "Laatste wint"
+                },
+                {
+                    "route": "/parkeren",
+                    "title": "Parkeren",
+                    "summary": "Vergunningen"
+                },
+                {
+                    "route": "/afval",
+                    "title": "Afval (nieuw)",
+                    "summary": "Laatste wint"
+                }
+            ],
+            "questions": [
+                {
+                    "id": "q1",
+                    "text": "Heeft u een auto?",
+                    "help": "Ook een deelauto",
+                    "excludesOnYes": [
+                        "/afval"
+                    ],
+                    "excludesOnNo": [
+                        "/parkeren",
+                        "3"
+                    ]
+                },
+                {
+                    "id": "",
+                    "text": "Zonder id",
+                    "help": "",
+                    "excludesOnYes": [
+                        "losse"
+                    ],
+                    "excludesOnNo": []
+                }
+            ]
+        }
+    },
+    "self id null falls through": {
+        "calls": [
+            [
+                "reader.pages",
+                "zuiddrecht",
+                "nl",
+                "resident"
+            ],
+            [
+                "rows.query",
+                "portalFinder",
+                {
+                    "portal": "zuiddrecht",
+                    "status": "published"
+                }
+            ]
+        ],
+        "finder": {
+            "id": "flat-1",
+            "title": "Wat heeft u nodig?",
+            "intro": "Beantwoord een paar vragen.",
+            "products": [
+                {
+                    "route": "/afval",
+                    "title": "Afval (nieuw)",
+                    "summary": "Laatste wint"
+                },
+                {
+                    "route": "/parkeren",
+                    "title": "Parkeren",
+                    "summary": "Vergunningen"
+                },
+                {
+                    "route": "/afval",
+                    "title": "Afval (nieuw)",
+                    "summary": "Laatste wint"
+                }
+            ],
+            "questions": [
+                {
+                    "id": "q1",
+                    "text": "Heeft u een auto?",
+                    "help": "Ook een deelauto",
+                    "excludesOnYes": [
+                        "/afval"
+                    ],
+                    "excludesOnNo": [
+                        "/parkeren",
+                        "3"
+                    ]
+                },
+                {
+                    "id": "",
+                    "text": "Zonder id",
+                    "help": "",
+                    "excludesOnYes": [
+                        "losse"
+                    ],
+                    "excludesOnNo": []
+                }
+            ]
+        }
+    },
+    "questions not a list": {
+        "calls": [
+            [
+                "reader.pages",
+                "zuiddrecht",
+                "nl",
+                "resident"
+            ],
+            [
+                "rows.query",
+                "portalFinder",
+                {
+                    "portal": "zuiddrecht",
+                    "status": "published"
+                }
+            ]
+        ],
+        "finder": {
+            "id": "f-1",
+            "title": "Wat heeft u nodig?",
+            "intro": "Beantwoord een paar vragen.",
+            "products": [
+                {
+                    "route": "/afval",
+                    "title": "Afval (nieuw)",
+                    "summary": "Laatste wint"
+                },
+                {
+                    "route": "/parkeren",
+                    "title": "Parkeren",
+                    "summary": "Vergunningen"
+                },
+                {
+                    "route": "/afval",
+                    "title": "Afval (nieuw)",
+                    "summary": "Laatste wint"
+                }
+            ],
+            "questions": []
+        }
+    }
+}

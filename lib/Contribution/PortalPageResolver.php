@@ -105,7 +105,7 @@ class PortalPageResolver {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
 	 */
 	private function normalisePage(mixed $page, array $collections, array $actionIds, int $index, array $pageIds=[]): ?array {
 		if (is_array($page) === false) {
@@ -174,7 +174,7 @@ class PortalPageResolver {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
 	 */
 	private function withRecordBlocksOnRecordPagesOnly(array $entry): ?array {
 		$records = array_filter(
@@ -200,7 +200,7 @@ class PortalPageResolver {
 	 *
 	 * @return array<string, string> `['group' => <trimmed>]`, or [] when it names none.
 	 *
-	 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-name-the-menu-group-it-belongs-to
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-name-the-menu-group-it-belongs-to
 	 */
 	private function menuGroup(mixed $group): array {
 		if (is_string($group) === false) {
@@ -233,27 +233,40 @@ class PortalPageResolver {
 				continue;
 			}
 
-			$blocks = [];
-			$createRef = $this->createActionFor(schema: (string)($collection['schema'] ?? ''), actions: $actions);
-			if ($createRef !== null) {
-				$blocks[] = ['type' => 'action', 'action' => $createRef];
-			}
-
-			$blocks[] = ['type' => 'collection', 'collection' => $id];
-			// The selected row needs somewhere to render, or a resident can
-			// pick their own case and see nothing (portaliq#723).
-			$blocks[] = ['type' => 'detail', 'collection' => $id];
-
-			$page = ['id' => $id, 'blocks' => $blocks];
-			if (isset($collection['label']) === true && is_string($collection['label']) === true) {
-				$page['label'] = $collection['label'];
-			}
-
-			$pages[] = $page;
-		}//end foreach
+			$pages[] = $this->defaultPage(collection: $collection, id: $id, actions: $actions);
+		}
 
 		return $pages;
 	}//end synthesiseDefaultPages()
+
+	/**
+	 * One collection's default page: its create action, its table and the detail of the selected row.
+	 *
+	 * @param array<string, mixed>             $collection The listable collection.
+	 * @param string                           $id         The collection id.
+	 * @param array<int, array<string, mixed>> $actions    The sanitised actions.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function defaultPage(array $collection, string $id, array $actions): array {
+		$blocks = [];
+		$createRef = $this->createActionFor(schema: (string)($collection['schema'] ?? ''), actions: $actions);
+		if ($createRef !== null) {
+			$blocks[] = ['type' => 'action', 'action' => $createRef];
+		}
+
+		$blocks[] = ['type' => 'collection', 'collection' => $id];
+		// The selected row needs somewhere to render, or a resident can
+		// pick their own case and see nothing (portaliq#723).
+		$blocks[] = ['type' => 'detail', 'collection' => $id];
+
+		$page = ['id' => $id, 'blocks' => $blocks];
+		if (isset($collection['label']) === true && is_string($collection['label']) === true) {
+			$page['label'] = $collection['label'];
+		}
+
+		return $page;
+	}//end defaultPage()
 
 	/**
 	 * Find the id of a `type: create` action for a schema, or null.

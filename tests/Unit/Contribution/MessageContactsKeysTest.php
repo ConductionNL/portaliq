@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Contribution;
 
+use OCA\Portaliq\Contribution\MessageContactsKeys;
 use OCA\Portaliq\Contribution\PortalManifestNormaliser;
 use PHPUnit\Framework\TestCase;
 
@@ -55,5 +56,28 @@ class MessageContactsKeysTest extends TestCase {
 		}
 
 		$this->assertArrayNotHasKey('contacts', $this->collection('messageContactsFor'));
+	}
+
+	/**
+	 * At most three projected label fields, in the declared order (a single
+	 * name reads as a list of one); both
+	 * words trimmed, a word over 200 characters dropped; keys in a fixed
+	 * order; a collection without the key untouched.
+	 *
+	 * @return void
+	 */
+	public function testEveryContactsPartIsAsRecorded(): void {
+		$keys       = new MessageContactsKeys();
+		$collection = ['id' => 'c', 'fields' => ['a', 'b', 'c', 'd']];
+
+		$this->assertSame(
+			['id' => 'c', 'fields' => ['a', 'b', 'c', 'd'], 'contacts' => ['provider' => 'contactsFor', 'recordLabelFields' => ['d', 'a', 'b'], 'composeLabel' => 'L', 'composeHint' => 'H']],
+			$keys->normalise($collection + ['contacts' => ['composeHint' => ' H ', 'composeLabel' => 'L', 'recordLabelFields' => ['d', 7, 'x', 'a', 'b', 'c'], 'provider' => 'contactsFor']])
+		);
+		$this->assertSame(
+			['provider' => 'contactsFor', 'recordLabelFields' => ['a']],
+			$keys->normalise($collection + ['contacts' => ['provider' => 'contactsFor', 'recordLabelFields' => 'a', 'composeLabel' => str_repeat('l', 201)]])['contacts']
+		);
+		$this->assertSame($collection, $keys->normalise($collection));
 	}
 }

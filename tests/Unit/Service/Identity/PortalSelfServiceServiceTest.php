@@ -7,7 +7,7 @@ namespace OCA\Portaliq\Tests\Unit\Service\Identity;
 use DateTimeImmutable;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -627,11 +627,11 @@ class PortalSelfServiceServiceTest extends TestCase {
 	 * @return PortalSelfServiceService
 	 */
 	private function service(?AuditTrailService $auditor = null): PortalSelfServiceService {
-		$accounts = $this->getMockBuilder(PortalAccountService::class)
+		$accounts = $this->getMockBuilder(PortalAccountLookup::class)
 			->disableOriginalConstructor()
-			->onlyMethods(['findBySubjectRef'])
+			->onlyMethods(['bySubjectRef'])
 			->getMock();
-		$accounts->method('findBySubjectRef')->willReturnCallback(
+		$accounts->method('bySubjectRef')->willReturnCallback(
 			function (string $subjectRef): ?array {
 				foreach ($this->storedRows('portalAccount') as $row) {
 					if (($row['subjectRef'] ?? '') === $subjectRef) {

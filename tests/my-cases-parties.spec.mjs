@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: EUPL-1.2
 // Copyright (C) 2026 Conduction B.V.
 //
-// my-cases-parties.spec.mjs: "Zaken van" on Mijn zaken (board MijnZakenTabel,
-// mijn-zaken-chooses-whose-cases REQ-MZC-001). A resident who acts for
-// someone else chooses whose cases the list shows: everyone, themself, or one
-// party; everyone reads each and lists a case once.
+// my-cases-parties.spec.mjs: "Wissel naar" in the acting-for bar on Mijn
+// zaken (board huisstijl/NamensBalk, REQ-MZC-001, REQ-SMO-008). A resident who
+// acts for someone else chooses whose cases the list shows: themself, one
+// party, or everyone; everyone reads each and lists a case once.
 //
 // Usage:
 //   node --test tests/my-cases-parties.spec.mjs
@@ -13,13 +13,13 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { actingFor } from '../src/site/components/e/actingFor.js'
-import { mijnTranslator } from '../src/site/components/mijn/rows.js'
 import {
-	EVERYONE,
-	mergedAnswer,
-	partyOptions,
-	readsFor,
-} from '../src/site/pages/e/caseParties.js'
+	barOptions,
+	barSentence,
+	choiceOf,
+} from '../src/site/components/mijn/actingForChoice.js'
+import { mijnTranslator } from '../src/site/components/mijn/rows.js'
+import { EVERYONE, mergedAnswer, readsFor } from '../src/site/pages/e/caseParties.js'
 import { instance, t } from './support/page-instance.mjs'
 import { loadSfc, renderComponent } from './support/render-sfc.mjs'
 
@@ -36,12 +36,35 @@ function row(id) {
 	return { id, title: id, _source: { appId: 'dossiq', collection: 'cases' } }
 }
 
-test('the choices are everyone, the resident by name, and each party', () => {
+test('the choices are the resident by name, each party, and everyone', () => {
 	assert.deepEqual(
-		partyOptions(MANDATES, nl, 'Linda de Vries').map((o) => o.label),
-		['Iedereen voor wie ik werk', 'Mijzelf, Linda de Vries', 'Henk de Vries'],
+		barOptions({ mandates: MANDATES, name: 'Linda de Vries' }, nl).map(
+			(o) => o.label,
+		),
+		[
+			'Uzelf, Linda de Vries',
+			'Henk de Vries',
+			'Iedereen voor wie u zaken regelt',
+		],
 	)
-	assert.equal(partyOptions([], nl, '')[1].label, 'Mijzelf')
+	assert.equal(barOptions({ mandates: [], name: '' }, nl)[0].label, 'Uzelf')
+})
+
+test('the bar names the party, oneself, or everyone', () => {
+	assert.equal(
+		barSentence({ choice: 'mandate-henk', party: 'Henk de Vries' }, nl),
+		'U regelt nu zaken voor Henk de Vries.',
+	)
+	assert.equal(
+		barSentence({ choice: 'self', party: '' }, nl),
+		'U regelt nu uw eigen zaken.',
+	)
+	assert.equal(
+		barSentence({ choice: EVERYONE, party: '' }, nl),
+		'U ziet nu de zaken van iedereen voor wie u zaken regelt.',
+	)
+	assert.equal(choiceOf({ id: 'self', chosen: false }), EVERYONE)
+	assert.equal(choiceOf({ id: 'mandate-henk', chosen: true }), 'mandate-henk')
 })
 
 test('everyone reads the resident and every mandate; a party reads itself', () => {
@@ -70,7 +93,7 @@ test('the answers merge into one list with each case once', () => {
 	)
 })
 
-test('Mijn zaken shows "Zaken van" only to a resident who holds a mandate', async () => {
+test('Mijn zaken shows the acting-for bar only to a resident who holds a mandate', async () => {
 	const MyCasesPage = await loadSfc('src/site/pages/e/MyCasesPage.vue')
 	const props = {
 		api: {},
@@ -84,19 +107,25 @@ test('Mijn zaken shows "Zaken van" only to a resident who holds a mandate', asyn
 	actingFor.mandates = []
 	assert.doesNotMatch(
 		await renderComponent(MyCasesPage, props),
-		/my-cases-parties/,
+		/mijn-acting-for-bar/,
 	)
 
 	actingFor.mandates = MANDATES
+	actingFor.chosen = false
 	const html = await renderComponent(MyCasesPage, props)
-	assert.match(html, /<label for="pq-cases-parties"[^>]*>Zaken van<\/label>/)
-	assert.match(html, /Iedereen voor wie ik werk/)
-	assert.match(html, /Mijzelf, Linda de Vries/)
+	assert.match(html, /<label for="pq-cases-parties"[^>]*>Wissel naar<\/label>/)
+	assert.match(html, /U ziet nu de zaken van iedereen voor wie u zaken regelt\./)
+	assert.match(html, /Uzelf, Linda de Vries/)
 	assert.match(html, /<option[^>]*translate="no"[^>]*>\s*Henk de Vries/)
+	assert.match(
+		html,
+		/<option[^>]*selected[^>]*>\s*Iedereen voor wie u zaken regelt/,
+	)
 	assert.match(
 		html,
 		/href="\/mijn\/machtigingen"[^>]*>\s*Toegang tot zaken regelen/,
 	)
+	assert.doesNotMatch(html, /Zaken van/)
 	actingFor.mandates = []
 })
 

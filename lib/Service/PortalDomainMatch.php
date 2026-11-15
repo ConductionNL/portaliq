@@ -64,30 +64,60 @@ final class PortalDomainMatch {
 		}
 
 		foreach ($sites as $site) {
-			foreach (($site['domains'] ?? []) as $domain) {
-				if (is_array($domain) === false) {
-					continue;
-				}
-
-				$hostname = strtolower(trim((string)($domain['hostname'] ?? '')));
-				if ($hostname === '' || $hostname !== $host) {
-					continue;
-				}
-
-				// Unverified is treated exactly like unknown. This is the whole
-				// point of verification: DNS pointing here is not consent.
-				if (($domain['verified'] ?? false) !== true) {
-					$this->logger->info(
-						'Portaliq: host matched an UNVERIFIED domain; refusing to serve',
-						['host' => $host, 'site' => $site['slug'] ?? null]
-					);
-					continue;
-				}
-
-				return ['site' => $site, 'domain' => $domain];
+			$match = $this->verifiedMatch(site: $site, host: $host);
+			if ($match !== null) {
+				return $match;
 			}
 		}
 
 		return null;
 	}//end find()
+
+	/**
+	 * The site and its verified domain entry naming the host, or null. A
+	 * named but unverified entry is logged and skipped.
+	 *
+	 * @param mixed  $site The published portal.
+	 * @param string $host The request host, lower-cased, without port.
+	 *
+	 * @return array{site: array<string, mixed>, domain: array<string, mixed>}|null
+	 */
+	private function verifiedMatch(mixed $site, string $host): ?array {
+		foreach (($site['domains'] ?? []) as $domain) {
+			if ($this->namesHost(domain: $domain, host: $host) === false) {
+				continue;
+			}
+
+			// Unverified is treated exactly like unknown. This is the whole
+			// point of verification: DNS pointing here is not consent.
+			if (($domain['verified'] ?? false) === true) {
+				return ['site' => $site, 'domain' => $domain];
+			}
+
+			$this->logger->info(
+				'Portaliq: host matched an UNVERIFIED domain; refusing to serve',
+				['host' => $host, 'site' => $site['slug'] ?? null]
+			);
+		}
+
+		return null;
+	}//end verifiedMatch()
+
+	/**
+	 * Whether a domain entry names the host: its stored name, trimmed and
+	 * lower-cased, is the host.
+	 *
+	 * @param mixed  $domain The domain entry.
+	 * @param string $host   The request host, lower-cased, without port.
+	 *
+	 * @return bool
+	 */
+	private function namesHost(mixed $domain, string $host): bool {
+		if (is_array($domain) === false) {
+			return false;
+		}
+
+		$hostname = strtolower(trim((string)($domain['hostname'] ?? '')));
+		return $hostname !== '' && $hostname === $host;
+	}//end namesHost()
 }//end class

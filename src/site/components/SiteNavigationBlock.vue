@@ -79,7 +79,7 @@ let instances = 0
  * and nothing here reads a router, a translator or a Nextcloud global, so
  * the block mounts at a public origin and in an editor canvas alike.
  *
- * @spec openspec/changes/site-navigation-block/specs/portaliq-cms/spec.md#requirement-a-menu-block-must-show-the-portals-navigation-in-groups
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-menu-block-must-show-the-portals-navigation-in-groups
  */
 export default {
 	name: 'SiteNavigationBlock',
