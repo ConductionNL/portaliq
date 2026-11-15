@@ -16,6 +16,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Portaliq\Tests\Support\LegacyObjectArgs;
 
 /**
  * The availability records in OpenRegister: daily summaries and outages per
@@ -93,10 +94,12 @@ class AvailabilityStoreRecordsTest extends TestCase {
 			}
 
 			public function saveObject(...$args): void {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				$this->saved[] = $args;
 			}
 
 			public function deleteObject(...$args): void {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				if ($args['uuid'] === 'locked') {
 					throw new RuntimeException('locked');
 				}
@@ -171,7 +174,7 @@ class AvailabilityStoreRecordsTest extends TestCase {
 		$this->assertSame(
 			[
 				['object' => ['portal' => 'gem'], 'register' => 'portaliq', 'schema' => 'portalAvailabilityOutage', 'uuid' => 'u-1', '_rbac' => false, '_multitenancy' => false],
-				['object' => ['portal' => 'gem'], 'register' => 'portaliq', 'schema' => 'portalAvailabilityDaily', 'uuid' => null, '_rbac' => false, '_multitenancy' => false],
+				['object' => ['portal' => 'gem'], 'register' => 'portaliq', 'schema' => 'portalAvailabilityDaily', '_rbac' => false, '_multitenancy' => false],
 			],
 			$service->saved
 		);
@@ -188,6 +191,7 @@ class AvailabilityStoreRecordsTest extends TestCase {
 	public function testAFailedSaveIsLoggedAndFalse(): void {
 		$service = new class {
 			public function saveObject(...$args): void {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				throw new RuntimeException('invalid');
 			}
 		};
