@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Intake;
 
+use OCA\OpenRegister\Service\Object\DiscardDraftRequest;
 use OCA\Portaliq\Service\Intake\DestinationDraft;
 use OCA\Portaliq\Service\Intake\DestinationSubmit;
 use OCA\Portaliq\Tests\Unit\Service\Intake\Fakes\FormSubmitFake;
@@ -44,7 +45,7 @@ class DestinationDraftTest extends TestCase {
 		$this->assertNull($fake->calls[0]['mapping']);
 		$this->assertNull($fake->calls[0]['subject']);
 		$this->assertNull($fake->calls[0]['draftId']);
-		$this->assertSame('portal:sub-1', $fake->calls[0]['owner']->value);
+		$this->assertSame('portal:sub-1', $fake->calls[0]['owner']->value());
 
 		$this->drafts($fake)->saveDraft(destination: ['register' => 'dossiq', 'schema' => 'case'], payload: [], subjectRef: 'sub-1', draftId: 'd-1');
 		$this->assertSame('d-1', $fake->calls[1]['draftId']);
@@ -68,7 +69,7 @@ class DestinationDraftTest extends TestCase {
 
 		$this->assertSame('d-1', $drafts->findDraft(destination: ['register' => 'a', 'schema' => 'b'], subjectRef: 'sub-1', match: ['caseType' => 'ct'])['id']);
 		$this->assertSame(['caseType' => 'ct'], $fake->calls[0]['match']);
-		$this->assertSame('portal:sub-1', $fake->calls[0]['owner']->value);
+		$this->assertSame('portal:sub-1', $fake->calls[0]['owner']->value());
 		$this->assertNull($drafts->findDraft(destination: [], subjectRef: ''));
 
 		$fake->found = null;
@@ -88,7 +89,7 @@ class DestinationDraftTest extends TestCase {
 		$this->assertSame('2026-7', $result['answer']['reference']);
 		$this->assertSame('d-1', $fake->calls[0]['draftId']);
 		$this->assertSame('k', $fake->calls[0]['idempotencyKey']);
-		$this->assertSame('portal:sub-1', $fake->calls[0]['owner']->value);
+		$this->assertSame('portal:sub-1', $fake->calls[0]['owner']->value());
 		$this->assertNull($fake->calls[0]['mapping']);
 
 		$this->assertSame(503, $this->drafts($fake)->sendDraft(destination: [], payload: [], subjectRef: 'sub-1', draftId: '')['status']);
@@ -101,12 +102,13 @@ class DestinationDraftTest extends TestCase {
 		$discard = new class {
 			public array $asked = [];
 
-			public function discard(array $destination, string $draftId, object $owner): bool {
+			public function discard(DiscardDraftRequest $request): bool {
+				[$destination, $draftId, $owner] = [$request->destination, $request->draftId, $request->owner];
 				if ($draftId === 'boom') {
 					throw new RuntimeException('gone');
 				}
 
-				$this->asked[] = [$destination, $draftId, $owner->value];
+				$this->asked[] = [$destination, $draftId, $owner->value()];
 				return $draftId === 'd-1';
 			}
 		};

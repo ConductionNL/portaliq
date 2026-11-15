@@ -75,51 +75,117 @@ function schemaFiles(dir) {
 }
 
 /**
- * Collect the display strings a schema puts on screen.
- *
- * @param {object|Array} node - current node
- * @param {string} where - file label, for --list
- * @param {Map<string, string>} sink - string -> first place it was seen
+ * The display strings found so far, and the file they are being read from.
  */
-function collect(node, where, sink) {
-	if (Array.isArray(node)) {
-		for (const item of node) collect(item, where, sink)
-		return
+class FoundStrings {
+	/**
+	 * @param {Map<string, string>} sink - string -> first place it was seen
+	 * @param {string} where - file label, for --list
+	 */
+	constructor(sink, where) {
+		this.sink = sink
+		this.where = where
 	}
-	if (node === null || typeof node !== 'object') return
 
-	const remember = (value, what) => {
+	/**
+	 * Keep a non-blank string with the first place it was seen.
+	 *
+	 * @param {unknown} value - the candidate string
+	 * @param {string} what - which part of the schema it came from
+	 */
+	remember(value, what) {
 		if (typeof value !== 'string' || value.trim() === '') return
-		if (!sink.has(value)) sink.set(value, `${where}:${what}`)
+		if (!this.sink.has(value)) this.sink.set(value, `${this.where}:${what}`)
 	}
-
-	const props = node.properties
-	if (props !== null && typeof props === 'object' && !Array.isArray(props)) {
-		remember(node.title, 'schema title')
-		for (const [key, prop] of Object.entries(props)) {
-			if (prop === null || typeof prop !== 'object') continue
-			remember(prop.title, `${key}.title`)
-			remember(prop.description, `${key}.description`)
-			for (const source of [prop, prop.items]) {
-				if (source === null || typeof source !== 'object') continue
-				const labels = source['x-enum-labels']
-				if (labels === null || typeof labels !== 'object') continue
-				for (const label of Object.values(labels))
-					remember(label, `${key}.x-enum-labels`)
-			}
-		}
-	}
-
-	for (const value of Object.values(node)) collect(value, where, sink)
 }
 
 /**
+ * Whether a value is a non-null object (arrays included).
  *
+ * @param {unknown} value - the value
+ * @return {boolean} true for an object
  */
-function main() {
-	const update = process.argv.includes('--update')
-	const list = process.argv.includes('--list')
+function isObject(value) {
+	return value !== null && typeof value === 'object'
+}
 
+/**
+ * Collect the display strings a schema puts on screen.
+ *
+ * @param {object|Array} node - current node
+ * @param {FoundStrings} found - the strings so far
+ */
+function collect(node, found) {
+	if (Array.isArray(node)) {
+		collectEach(node, found)
+		return
+	}
+	if (!isObject(node)) return
+
+	if (isObject(node.properties) && !Array.isArray(node.properties)) {
+		collectSchema(node, found)
+	}
+
+	collectEach(Object.values(node), found)
+}
+
+/**
+ * Collect from each node in turn.
+ *
+ * @param {Array} nodes - the nodes
+ * @param {FoundStrings} found - the strings so far
+ */
+function collectEach(nodes, found) {
+	for (const item of nodes) collect(item, found)
+}
+
+/**
+ * A schema's title and the strings of each of its properties.
+ *
+ * @param {object} node - a node with a `properties` object
+ * @param {FoundStrings} found - the strings so far
+ */
+function collectSchema(node, found) {
+	found.remember(node.title, 'schema title')
+	for (const entry of Object.entries(node.properties)) {
+		if (isObject(entry[1])) collectProperty(found, entry)
+	}
+}
+
+/**
+ * A property's title, description and enum labels (its own and its items').
+ *
+ * @param {FoundStrings} found - the strings so far
+ * @param {Array} entry - the property key and the property
+ */
+function collectProperty(found, entry) {
+	const [key, prop] = entry
+	found.remember(prop.title, `${key}.title`)
+	found.remember(prop.description, `${key}.description`)
+	for (const source of [prop, prop.items]) {
+		for (const label of enumLabels(source))
+			found.remember(label, `${key}.x-enum-labels`)
+	}
+}
+
+/**
+ * The values of a node's `x-enum-labels`, none when it has no such object.
+ *
+ * @param {unknown} source - a property or its `items`
+ * @return {Array} the labels
+ */
+function enumLabels(source) {
+	if (!isObject(source)) return []
+	const labels = source['x-enum-labels']
+	return isObject(labels) ? Object.values(labels) : []
+}
+
+/**
+ * Every display string in the schema documents, with where it was first seen.
+ *
+ * @return {Map<string, string>} string -> first place it was seen
+ */
+function schemaStrings() {
 	const strings = new Map()
 	for (const file of schemaFiles(SCHEMA_DIR)) {
 		let doc
@@ -128,63 +194,95 @@ function main() {
 		} catch {
 			continue // not a schema document; the manifest checks own their own files
 		}
-		collect(doc, path.relative(REPO_ROOT, file), strings)
+		collect(doc, new FoundStrings(strings, path.relative(REPO_ROOT, file)))
 	}
+	return strings
+}
 
-	let covered = new Set()
+/**
+ * The keys of the English catalogue.
+ *
+ * @return {Set<string>} the covered strings
+ */
+function catalogueKeys() {
 	try {
-		covered = new Set(
+		return new Set(
 			Object.keys(
 				JSON.parse(fs.readFileSync(CATALOGUE, 'utf8')).translations || {},
 			),
 		)
 	} catch {
 		// no catalogue yet — then everything is uncovered, which the baseline records
+		return new Set()
 	}
+}
 
-	const uncovered = [...strings.keys()].filter((s) => !covered.has(s)).sort()
+/**
+ * Write the uncovered count as the new baseline.
+ *
+ * @param {string[]} uncovered - the uncovered strings
+ */
+function writeBaseline(uncovered) {
+	fs.writeFileSync(
+		BASELINE,
+		JSON.stringify({ uncovered: uncovered.length }, null, 2) + '\n',
+	)
+	console.log(
+		`baseline written: ${uncovered.length} uncovered schema string(s)`,
+	)
+}
 
-	if (list) {
-		for (const s of uncovered) console.log(`${strings.get(s)}\n  ${s}`)
-	}
-
-	if (update) {
-		fs.writeFileSync(
-			BASELINE,
-			JSON.stringify({ uncovered: uncovered.length }, null, 2) + '\n',
-		)
-		console.log(
-			`baseline written: ${uncovered.length} uncovered schema string(s)`,
-		)
-		return
-	}
-
+/**
+ * The recorded uncovered count; exits 1 when there is no baseline file.
+ *
+ * @return {number} the baseline
+ */
+function readBaseline() {
 	if (!fs.existsSync(BASELINE)) {
 		console.error(
 			'No baseline. Run `npm run check:schema-l10n -- --update` and commit it.',
 		)
 		process.exit(1)
 	}
-	const baseline = JSON.parse(fs.readFileSync(BASELINE, 'utf8')).uncovered
+	return JSON.parse(fs.readFileSync(BASELINE, 'utf8')).uncovered
+}
+
+/**
+ * Explain the strings added with no catalogue key, and exit 1.
+ *
+ * @param {number} added - how many more than the baseline
+ */
+function failOnGrowth(added) {
+	console.error('')
+	console.error(
+		`${added} schema string(s) added with no catalogue key — they will render`,
+	)
+	console.error('in English inside an otherwise translated form.')
+	console.error('')
+	console.error(
+		'Add them to l10n/en.json (identity) and l10n/nl.json (translated), then',
+	)
+	console.error('run `npm run l10n:build`. See what is uncovered with:')
+	console.error('  node scripts/check-schema-l10n.js --list')
+	process.exit(1)
+}
+
+/**
+ * Compare the uncovered count with the baseline: fail when it grew, and say
+ * how to lower the baseline when it shrank.
+ *
+ * @param {Map<string, string>} strings - every schema string
+ * @param {string[]} uncovered - the uncovered strings
+ */
+function compareWithBaseline(strings, uncovered) {
+	const baseline = readBaseline()
 
 	console.log(
 		`${strings.size} schema string(s); ${uncovered.length} uncovered, baseline ${baseline}`,
 	)
 
 	if (uncovered.length > baseline) {
-		const added = uncovered.length - baseline
-		console.error('')
-		console.error(
-			`${added} schema string(s) added with no catalogue key — they will render`,
-		)
-		console.error('in English inside an otherwise translated form.')
-		console.error('')
-		console.error(
-			'Add them to l10n/en.json (identity) and l10n/nl.json (translated), then',
-		)
-		console.error('run `npm run l10n:build`. See what is uncovered with:')
-		console.error('  node scripts/check-schema-l10n.js --list')
-		process.exit(1)
+		failOnGrowth(uncovered.length - baseline)
 	}
 
 	if (uncovered.length < baseline) {
@@ -193,6 +291,30 @@ function main() {
 		)
 		console.log('  npm run check:schema-l10n -- --update')
 	}
+}
+
+/**
+ * Count the uncovered schema strings, then list them, rewrite the baseline,
+ * or hold the count to the baseline, as the arguments ask.
+ */
+function main() {
+	const update = process.argv.includes('--update')
+	const list = process.argv.includes('--list')
+
+	const strings = schemaStrings()
+	const covered = catalogueKeys()
+	const uncovered = [...strings.keys()].filter((s) => !covered.has(s)).sort()
+
+	if (list) {
+		for (const s of uncovered) console.log(`${strings.get(s)}\n  ${s}`)
+	}
+
+	if (update) {
+		writeBaseline(uncovered)
+		return
+	}
+
+	compareWithBaseline(strings, uncovered)
 }
 
 main()

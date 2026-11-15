@@ -33,6 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\WriteRefusalInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 
@@ -41,7 +42,7 @@ use OCP\AppFramework\Http\JSONResponse;
  *
  * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
  */
-class WriteRefusal {
+class WriteRefusal implements WriteRefusalInterface {
 	/**
 	 * The kinds a refused value may have, by the schema type the store named.
 	 */
@@ -92,23 +93,8 @@ class WriteRefusal {
 	 */
 	public function invalidFields(string $failure, array $fields): array {
 		$out = [];
-		$found = preg_match_all(
-			"/Property '([^']+)'([^.]*)|required property \\(([^)]+)\\)/",
-			$failure,
-			$matches,
-			PREG_SET_ORDER
-		);
-		if ($found === false || $found === 0) {
-			return [];
-		}
-
-		foreach ($matches as $match) {
-			$path = $match[1];
-			$kind = $this->kindOf(rest: ($match[2] ?? ''));
-			if (($match[3] ?? '') !== '') {
-				$path = $match[3];
-				$kind = 'required';
-			}
+		foreach ($this->refusalMatches(failure: $failure) as $hit) {
+			[$path, $kind] = $this->pathAndKind(hit: $hit);
 
 			$field = $this->fieldOf(path: $path);
 			if (in_array($field, $fields, true) === false || isset($out[$field]) === true) {
@@ -120,6 +106,49 @@ class WriteRefusal {
 
 		return $out;
 	}//end invalidFields()
+
+	/**
+	 * The property and required-property mentions in the refusal.
+	 *
+	 * @param string $failure The store's refusal.
+	 *
+	 * @return array<int, array<int, string>> The matches, none when the refusal names no property.
+	 *
+	 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+	 */
+	private function refusalMatches(string $failure): array {
+		$found = preg_match_all(
+			"/Property '([^']+)'([^.]*)|required property \\(([^)]+)\\)/",
+			$failure,
+			$matches,
+			PREG_SET_ORDER
+		);
+		if ($found === false || $found === 0) {
+			return [];
+		}
+
+		return $matches;
+	}//end refusalMatches()
+
+	/**
+	 * The property path and kind one mention names.
+	 *
+	 * @param array<int, string> $hit One mention.
+	 *
+	 * @return array{0: string, 1: string}
+	 *
+	 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+	 */
+	private function pathAndKind(array $hit): array {
+		$path = $hit[1];
+		$kind = $this->kindOf(rest: ($hit[2] ?? ''));
+		if (($hit[3] ?? '') !== '') {
+			$path = $hit[3];
+			$kind = 'required';
+		}
+
+		return [$path, $kind];
+	}//end pathAndKind()
 
 	/**
 	 * The top-level field of a property path (`/hoursSubmitted`,

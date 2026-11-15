@@ -22,7 +22,11 @@
 				:aria-controls="formId"
 				:data-testid="`address-open-${kind}`"
 				@click="toggle">
-				<span aria-hidden="true" class="pq-address__plus">+</span>
+				<svg
+					class="pq-button-icon"
+					viewBox="0 0 24 24"
+					aria-hidden="true"
+					focusable="false"><path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" /></svg>
 				{{ email ? t('Add e-mail address') : t('Add phone number') }}
 			</button>
 		</div>
@@ -39,7 +43,7 @@
 				:key="entry.value"
 				class="pq-address__row"
 				:data-testid="`address-${kind}`">
-				<NoTranslate class="pq-address__value" :value="entry.value" />
+				<NoTranslate class="pq-address__value" :value="shown(entry.value)" />
 				<span
 					v-if="entry.preferred"
 					class="pq-address__pill pq-address__pill--preferred">
@@ -102,6 +106,7 @@
 
 <script>
 import NoTranslate from '../NoTranslate.vue'
+import { phoneDisplay } from '../../lib/phoneDisplay.js'
 
 export default {
 	name: 'AddressList',
@@ -164,10 +169,22 @@ export default {
 
 	methods: {
 		/**
+		 * An address as the list shows it: a phone number the Dutch way, an
+		 * e-mail address as it is. Actions still send the stored value.
+		 *
+		 * @param {string} value The stored address.
+		 * @return {string} The address to show.
+		 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T05
+		 */
+		shown(value) {
+			return this.kind === 'phone' ? phoneDisplay(value) : value
+		},
+
+		/**
 		 * Show or hide the form to add an address; once shown, the focus
 		 * goes to its field.
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
 		 */
 		toggle() {
 			this.adding = !this.adding
@@ -181,7 +198,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when answered.
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
 		 */
 		async add() {
 			const ok = await this.act('add', this.kind, this.draft)
@@ -211,11 +228,6 @@ export default {
 
 .pq-address__head .utrecht-heading-3 {
 	margin-block: 0;
-}
-
-.pq-address__plus {
-	font-weight: normal;
-	margin-inline-end: 0.25em;
 }
 
 .pq-address__list {

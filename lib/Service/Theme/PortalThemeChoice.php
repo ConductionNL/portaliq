@@ -22,9 +22,11 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Theme;
 
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Kernel\Contracts\PortalThemeChoiceInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\PortalSlugLookup;
 use OCA\Portaliq\Service\PortalThemeResolver;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 
 /**
  * Lists the adoptable sets with their contrast verdict, and saves a choice.
@@ -33,7 +35,7 @@ use OCA\Portaliq\Service\PortalThemeResolver;
  * theme app's catalogue and with a token file on disk. `portal.theme` stops
  * being free text an administrator has to spell right.
  */
-class PortalThemeChoice {
+class PortalThemeChoice implements PortalThemeChoiceInterface {
 
 	/**
 	 * Portaliq's register.
@@ -48,13 +50,13 @@ class PortalThemeChoice {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader  $reader   Reads the portal.
+	 * @param ScopedCollectionReaderInterface  $reader   Reads the portal.
 	 * @param PortalObjectWriter  $writer   Saves the choice.
 	 * @param PortalThemeResolver $resolver The theme app's catalogue and tokens.
 	 * @param PortalThemeContrast $contrast The contrast verdict per set.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly PortalThemeResolver $resolver,
 		private readonly PortalThemeContrast $contrast,
@@ -71,25 +73,7 @@ class PortalThemeChoice {
 	 * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
 	 */
 	public function portalBySlug(string $slug): ?array {
-		if ($slug === '') {
-			return null;
-		}
-
-		$rows = $this->reader->readCollection(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: 'slug',
-			subjectRef: $slug,
-			organisation: '',
-			limit: 2
-		);
-		foreach ($rows as $row) {
-			if (is_array($row) === true && ($row['slug'] ?? null) === $slug) {
-				return $row;
-			}
-		}
-
-		return null;
+		return (new PortalSlugLookup(reader: $this->reader))->find(slug: $slug);
 	}//end portalBySlug()
 
 	/**

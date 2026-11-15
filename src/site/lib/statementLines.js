@@ -36,26 +36,11 @@ export function statementLines(statement, t, formatDate) {
 	const audit = value.audit || null
 	return {
 		status,
-		automated:
-			value.automatedOnly !== false
-				? t(
-						"This status rests on the portal's own automated measurement. An automated check does not prove that the website meets the requirements. Only an independent audit can.",
-					)
-				: '',
+		automated: automatedLine(value, t),
 		auditExpired: value.auditExpired
 			? t('The last audit is older than three years and no longer counts.')
 			: '',
-		evidence: measurement
-			? t(
-					'Measured on {date} with axe-core {version}: {measured} pages measured, {skipped} pages could not be measured.',
-					{
-						date: formatDate(measurement.measuredAt),
-						version: measurement.axeVersion || '',
-						measured: measurement.pagesMeasured || 0,
-						skipped: measurement.pagesNotMeasured || 0,
-					},
-				)
-			: '',
+		evidence: evidenceLine(measurement, t, formatDate),
 		audit: audit
 			? t('Audited by {party} on {date}.', {
 					party: audit.party,
@@ -63,15 +48,7 @@ export function statementLines(statement, t, formatDate) {
 				})
 			: '',
 		auditReport: audit ? String(audit.reportUrl || '') : '',
-		issues: (value.issues || []).map((issue) => ({
-			rule: String(issue.rule || ''),
-			sentence: String(issue.sentence || issue.rule || ''),
-			detail: t('{impact}, on {pages} pages', {
-				impact: t(impactWord(issue.impact)),
-				pages: issue.pages || 0,
-			}),
-			helpUrl: String(issue.helpUrl || ''),
-		})),
+		issues: (value.issues || []).map((issue) => issueLine(issue, t)),
 		notMeasured: (value.notMeasured || []).map((page) => ({
 			url: String(page.url || ''),
 			reason: String(page.reason || ''),
@@ -81,6 +58,63 @@ export function statementLines(statement, t, formatDate) {
 			email: String(value.contact?.email || ''),
 			phone: String(value.contact?.phone || ''),
 		},
+	}
+}
+
+/**
+ * The warning that the status rests on an automated measurement only, or ''.
+ *
+ * @param {object} value The server's statement.
+ * @param {(key: string, vars?: object) => string} t The translator.
+ * @return {string}
+ */
+function automatedLine(value, t) {
+	return value.automatedOnly !== false
+		? t(
+				"This status rests on the portal's own automated measurement. An automated check does not prove that the website meets the requirements. Only an independent audit can.",
+			)
+		: ''
+}
+
+/**
+ * The sentence describing the automated measurement, or ''.
+ *
+ * @param {object|null} measurement The measurement.
+ * @param {(key: string, vars?: object) => string} t The translator.
+ * @param {(iso: string) => string} formatDate Writes a date for the visitor.
+ * @return {string}
+ */
+function evidenceLine(measurement, t, formatDate) {
+	if (!measurement) {
+		return ''
+	}
+	return t(
+		'Measured on {date} with axe-core {version}: {measured} pages measured, {skipped} pages could not be measured.',
+		{
+			date: formatDate(measurement.measuredAt),
+			version: measurement.axeVersion || '',
+			measured: measurement.pagesMeasured || 0,
+			skipped: measurement.pagesNotMeasured || 0,
+		},
+	)
+}
+
+/**
+ * One open issue as the page lists it.
+ *
+ * @param {object} issue The issue.
+ * @param {(key: string, vars?: object) => string} t The translator.
+ * @return {{rule: string, sentence: string, detail: string, helpUrl: string}}
+ */
+function issueLine(issue, t) {
+	return {
+		rule: String(issue.rule || ''),
+		sentence: String(issue.sentence || issue.rule || ''),
+		detail: t('{impact}, on {pages} pages', {
+			impact: t(impactWord(issue.impact)),
+			pages: issue.pages || 0,
+		}),
+		helpUrl: String(issue.helpUrl || ''),
 	}
 }
 

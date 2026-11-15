@@ -53,18 +53,28 @@ export function confirmationView(confirmation, fallbackText, values, defaultTitl
 	const own = confirmation && typeof confirmation === 'object' ? confirmation : {}
 	const title = String(own.title || '').trim() || defaultTitle
 	const body = fillBody(String(own.body || '').trim() || fallbackText, values)
-	const next = (Array.isArray(own.next) ? own.next : [])
-		.filter(
-			(step) =>
-				step
-				&& (String(step.title || '').trim()
-					|| String(step.text || '').trim()),
-		)
-		.map((step) => ({
-			title: String(step.title || ''),
-			text: String(step.text || ''),
-		}))
-	return { title, body, next }
+	return { title, body, next: nextSteps(own.next) }
+}
+
+/**
+ * @param {object|null} step A declared next step.
+ * @return {boolean} Whether it has a title or a text with words.
+ */
+function hasWords(step) {
+	return Boolean(step) && Boolean(String(step.title || '').trim() || String(step.text || '').trim())
+}
+
+/**
+ * The next steps the confirmation lists: those with words, as text.
+ *
+ * @param {unknown} next The binding's `next`.
+ * @return {Array<{title: string, text: string}>} The steps.
+ */
+function nextSteps(next) {
+	return (Array.isArray(next) ? next : []).filter(hasWords).map((step) => ({
+		title: String(step.title || ''),
+		text: String(step.text || ''),
+	}))
 }
 
 /**
@@ -87,14 +97,17 @@ export function missingStatements(asked, accepted) {
 }
 
 /**
- * The introduction page's content, or null when the form opens at step 1.
+ * The introduction page's content, or null when the form opens at step 1:
+ * without content, or switched off on the form settings page (`enabled`
+ * false).
  *
  * @param {object|null} intro The binding's `intro`.
  * @return {{lead: string, blocks: Array<{title: string, text: string, items: string[]}>}|null} The page.
  * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t02
+ * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t06
  */
 export function introView(intro) {
-	if (!intro || typeof intro !== 'object') {
+	if (!intro || typeof intro !== 'object' || intro.enabled === false) {
 		return null
 	}
 	const blocks = (Array.isArray(intro.blocks) ? intro.blocks : [])

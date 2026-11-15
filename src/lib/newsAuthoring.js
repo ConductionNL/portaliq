@@ -17,7 +17,7 @@
  * `tests/news-authoring.spec.mjs` runs it as a plain node script, the same
  * shape as `staffAccountActions.js`.
  *
- * @spec openspec/changes/staff-news-screen/tasks.md#T3
+ * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T3
  */
 
 /** The audience kinds the screen offers, plus the one it only keeps. */
@@ -36,7 +36,7 @@ export const AUDIENCE_CHILDREN = 'children'
  *
  * @param {object} error The rejected request.
  * @return {string}
- * @spec openspec/changes/staff-news-screen/tasks.md#T3
+ * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T3
  */
 export function failureKey(error) {
 	const status = error?.response?.status ?? 0
@@ -79,7 +79,7 @@ function strings(value) {
  *
  * @param {object} row The row.
  * @return {string}
- * @spec openspec/changes/staff-news-screen/tasks.md#T3
+ * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T3
  */
 export function idOf(row) {
 	return String(row?.id || row?.uuid || row?.['@self']?.id || '')
@@ -89,7 +89,7 @@ export function idOf(row) {
  * An empty form for a new news item.
  *
  * @return {object}
- * @spec openspec/changes/staff-news-screen/tasks.md#T3
+ * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T3
  */
 export function emptyForm() {
 	return {
@@ -99,6 +99,7 @@ export function emptyForm() {
 		schoolRef: '',
 		groupRefs: [],
 		childRefs: [],
+		eventRef: '',
 	}
 }
 
@@ -109,26 +110,38 @@ export function emptyForm() {
  *
  * @param {object} item The news item.
  * @return {object}
- * @spec openspec/changes/staff-news-screen/tasks.md#T3
+ * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T3
  */
 export function formFromItem(item) {
 	const target = item?.target && typeof item.target === 'object' ? item.target : {}
 	const groupRefs = strings(target.groupRefs)
 	const childRefs = strings(target.childRefs)
-	let audience = AUDIENCE_SCHOOL
-	if (groupRefs.length > 0) {
-		audience = AUDIENCE_GROUPS
-	} else if (text(target.schoolRef) === '' && childRefs.length > 0) {
-		audience = AUDIENCE_CHILDREN
-	}
 	return {
 		title: text(item?.title),
 		body: typeof item?.body === 'string' ? item.body : '',
-		audience,
+		audience: audienceOfTarget(target),
 		schoolRef: text(target.schoolRef),
 		groupRefs,
 		childRefs,
+		eventRef: text(item?.eventRef),
 	}
+}
+
+/**
+ * Who a target addresses: its groups when it names any, else specific
+ * children when it names children and no school, else the whole school.
+ *
+ * @param {object} target The item's target.
+ * @return {string} One of the AUDIENCE_ values.
+ */
+function audienceOfTarget(target) {
+	if (strings(target.groupRefs).length > 0) {
+		return AUDIENCE_GROUPS
+	}
+	if (text(target.schoolRef) === '' && strings(target.childRefs).length > 0) {
+		return AUDIENCE_CHILDREN
+	}
+	return AUDIENCE_SCHOOL
 }
 
 /**
@@ -136,7 +149,7 @@ export function formFromItem(item) {
  *
  * @param {object} form The form.
  * @return {object}
- * @spec openspec/changes/staff-news-screen/tasks.md#T3
+ * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T3
  */
 export function targetFromForm(form) {
 	if (form.audience === AUDIENCE_GROUPS) {
@@ -154,7 +167,7 @@ export function targetFromForm(form) {
  *
  * @param {object} form The form.
  * @return {Array<string>}
- * @spec openspec/changes/staff-news-screen/tasks.md#T3
+ * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T3
  */
 export function missingFields(form) {
 	const missing = []
@@ -164,11 +177,7 @@ export function missingFields(form) {
 	if (text(form.body) === '') {
 		missing.push('Write the text of the news item.')
 	}
-	const target = targetFromForm(form)
-	const chosen = Object.values(target).some((value) =>
-		Array.isArray(value) ? value.length > 0 : value !== '',
-	)
-	if (!chosen) {
+	if (!hasTarget(form)) {
 		missing.push(
 			form.audience === AUDIENCE_GROUPS
 				? 'Choose at least one group.'
@@ -179,13 +188,25 @@ export function missingFields(form) {
 }
 
 /**
+ * Whether the form's chosen audience names anyone.
+ *
+ * @param {object} form The form.
+ * @return {boolean} True when a school, a group or a child is chosen.
+ */
+function hasTarget(form) {
+	return Object.values(targetFromForm(form)).some((value) =>
+		Array.isArray(value) ? value.length > 0 : value !== '',
+	)
+}
+
+/**
  * Who a news item is for, as `{kind, names}`, with the school and group
  * names from the choices when they are known and the reference otherwise.
  *
  * @param {object} item The news item.
  * @param {{schools: Array, groups: Array}} options The audience choices.
  * @return {{kind: string, names: Array<string>}}
- * @spec openspec/changes/staff-news-screen/tasks.md#T3
+ * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T3
  */
 export function audienceOf(item, options = { schools: [], groups: [] }) {
 	const form = formFromItem(item)
@@ -207,6 +228,33 @@ export function audienceOf(item, options = { schools: [], groups: [] }) {
 }
 
 /**
+ * What a save sends for a form: the title, the text and the target.
+ *
+ * @param {object} form The form.
+ * @return {{title: string, body: string, target: object}} The body.
+ */
+function newsBody(form) {
+	return {
+		title: text(form.title),
+		body: form.body.trim(),
+		target: targetFromForm(form),
+		eventRef: text(form.eventRef),
+	}
+}
+
+/**
+ * How an event reads in the picker: its title, and the day it starts.
+ *
+ * @param {object} event An event from GET /api/events.
+ * @return {string} The label.
+ */
+function eventLabel(event) {
+	const title = text(event.title) || text(event.id)
+	const day = text(event.start).slice(0, 10)
+	return day === '' ? title : `${title} (${day})`
+}
+
+/**
  * The News screen's calls over an injected transport.
  *
  * @param {object} deps The collaborators.
@@ -215,7 +263,7 @@ export function audienceOf(item, options = { schools: [], groups: [] }) {
  * @param {Function} deps.put (url, body) => Promise<{data}>
  * @param {Function} deps.generateUrl path => url, Nextcloud's URL generator
  * @return {object}
- * @spec openspec/changes/staff-news-screen/tasks.md#T3
+ * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T3
  */
 export function createNewsApi({ get, post, put, generateUrl }) {
 	const route = (path, id) =>
@@ -226,7 +274,7 @@ export function createNewsApi({ get, post, put, generateUrl }) {
 		 * The school and group choices.
 		 *
 		 * @return {Promise<{schools: Array, groups: Array}>}
-		 * @spec openspec/changes/staff-news-screen/tasks.md#T3
+		 * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T3
 		 */
 		async audiences() {
 			const { data } = await get(route('/apps/portaliq/api/news/audiences'))
@@ -237,20 +285,29 @@ export function createNewsApi({ get, post, put, generateUrl }) {
 		},
 
 		/**
+		 * The events an item may carry the sign-up of, latest start first.
+		 *
+		 * @return {Promise<Array<{id: string, label: string}>>} The choices.
+		 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/tasks.md#task-4
+		 */
+		async events() {
+			const { data } = await get(route('/apps/portaliq/api/events'))
+			return (Array.isArray(data?.events) ? data.events : [])
+				.filter((event) => text(event?.id) !== '')
+				.map((event) => ({ id: text(event.id), label: eventLabel(event) }))
+		},
+
+		/**
 		 * Save a form: a new draft, or the changes to an existing item.
 		 *
 		 * @param {object} form The form.
 		 * @param {string} id The item id, '' for a new item.
 		 * @param {string} authorRef The signed-in staff member, for a new item.
 		 * @return {Promise<object>} The saved item.
-		 * @spec openspec/changes/staff-news-screen/tasks.md#T3
+		 * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T3
 		 */
 		async save(form, id, authorRef) {
-			const body = {
-				title: text(form.title),
-				body: form.body.trim(),
-				target: targetFromForm(form),
-			}
+			const body = newsBody(form)
 			if (id) {
 				const { data } = await put(
 					route('/apps/portaliq/api/news/{id}', id),
@@ -271,7 +328,7 @@ export function createNewsApi({ get, post, put, generateUrl }) {
 		 * @param {string} id The item id.
 		 * @param {boolean} published True to publish.
 		 * @return {Promise<object>} The item.
-		 * @spec openspec/changes/staff-news-screen/tasks.md#T3
+		 * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T3
 		 */
 		async setPublished(id, published) {
 			const path = published
@@ -281,6 +338,18 @@ export function createNewsApi({ get, post, put, generateUrl }) {
 			return data
 		},
 	}
+}
+
+/**
+ * What staff read after publishing an item or taking it back.
+ *
+ * @param {boolean} published True when it was published.
+ * @return {string} The English source sentence.
+ */
+function publishedSentence(published) {
+	return published
+		? 'The news item is published.'
+		: 'The news item is back to a draft. Parents no longer see it.'
 }
 
 /**
@@ -299,7 +368,7 @@ export function createNewsApi({ get, post, put, generateUrl }) {
  * @param {Function} deps.notifyError Shows a failure sentence.
  * @param {Function} deps.reload Shows the changed list (a handler gets no handle on it).
  * @return {object}
- * @spec openspec/changes/staff-news-screen/tasks.md#T4
+ * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T4
  */
 export function createNewsHandlers({
 	api,
@@ -317,30 +386,11 @@ export function createNewsHandlers({
 	 * @return {Promise<boolean>} Whether something was saved.
 	 */
 	async function edit(item) {
-		let options = { schools: [], groups: [] }
-		try {
-			options = await api.audiences()
-		} catch {
-			// No choices: the dialog asks for a reference instead.
-		}
 		const message = await openDialog({
 			item,
-			options,
-			submit: async (form) => {
-				try {
-					await api.save(form, item ? idOf(item) : '', currentUser())
-					return {
-						ok: true,
-						message: translate(
-							item
-								? 'The news item is changed.'
-								: 'The news item is saved as a draft. Publish it when it is ready.',
-						),
-					}
-				} catch (error) {
-					return { ok: false, message: translate(failureKey(error)) }
-				}
-			},
+			options: await audienceChoices(),
+			events: await eventChoices(),
+			submit: (form) => saveFromDialog(item, form),
 		})
 		if (typeof message !== 'string' || message === '') {
 			return false
@@ -348,6 +398,57 @@ export function createNewsHandlers({
 		notify(message)
 		reload()
 		return true
+	}
+
+	/**
+	 * The school and group choices, or none when they cannot be read.
+	 *
+	 * @return {Promise<{schools: Array, groups: Array}>} The choices.
+	 */
+	async function audienceChoices() {
+		try {
+			return await api.audiences()
+		} catch {
+			// No choices: the dialog asks for a reference instead.
+			return { schools: [], groups: [] }
+		}
+	}
+
+	/**
+	 * The events an item may carry the sign-up of, or none when they cannot be read.
+	 *
+	 * @return {Promise<Array<{id: string, label: string}>>} The choices.
+	 */
+	async function eventChoices() {
+		try {
+			return await api.events()
+		} catch {
+			// No choices: the dialog offers no event.
+			return []
+		}
+	}
+
+	/**
+	 * Save the dialog's form, and say how that went.
+	 *
+	 * @param {object|null} item The news item, null for a new one.
+	 * @param {object} form The dialog's form.
+	 * @return {Promise<{ok: boolean, message: string}>} The outcome.
+	 */
+	async function saveFromDialog(item, form) {
+		try {
+			await api.save(form, item ? idOf(item) : '', currentUser())
+		} catch (error) {
+			return { ok: false, message: translate(failureKey(error)) }
+		}
+		return {
+			ok: true,
+			message: translate(
+				item
+					? 'The news item is changed.'
+					: 'The news item is saved as a draft. Publish it when it is ready.',
+			),
+		}
 	}
 
 	/**
@@ -364,13 +465,7 @@ export function createNewsHandlers({
 			notifyError(translate(failureKey(error)))
 			return false
 		}
-		notify(
-			translate(
-				published
-					? 'The news item is published.'
-					: 'The news item is back to a draft. Parents no longer see it.',
-			),
-		)
+		notify(translate(publishedSentence(published)))
 		reload()
 		return true
 	}
@@ -380,7 +475,7 @@ export function createNewsHandlers({
 		 * `New news item` on the News page.
 		 *
 		 * @return {Promise<boolean>}
-		 * @spec openspec/changes/staff-news-screen/tasks.md#T4
+		 * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T4
 		 */
 		newNewsItem: () => edit(null),
 
@@ -389,7 +484,7 @@ export function createNewsHandlers({
 		 *
 		 * @param {{item: object}} payload The row action payload.
 		 * @return {Promise<boolean>}
-		 * @spec openspec/changes/staff-news-screen/tasks.md#T4
+		 * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T4
 		 */
 		changeNewsItem: ({ item }) => edit(item),
 
@@ -398,7 +493,7 @@ export function createNewsHandlers({
 		 *
 		 * @param {{item: object}} payload The row action payload.
 		 * @return {Promise<boolean>}
-		 * @spec openspec/changes/staff-news-screen/tasks.md#T4
+		 * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T4
 		 */
 		publishNewsItem: ({ item }) => publish(item, true),
 
@@ -407,7 +502,7 @@ export function createNewsHandlers({
 		 *
 		 * @param {{item: object}} payload The row action payload.
 		 * @return {Promise<boolean>}
-		 * @spec openspec/changes/staff-news-screen/tasks.md#T4
+		 * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T4
 		 */
 		unpublishNewsItem: ({ item }) => publish(item, false),
 	}
@@ -420,7 +515,7 @@ export function createNewsHandlers({
  * @param {{schools: Array, groups: Array}} options The audience choices.
  * @param {Function} translate (text, vars) => string
  * @return {string}
- * @spec openspec/changes/staff-news-screen/tasks.md#T4
+ * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T4
  */
 export function audienceLine(item, options, translate) {
 	const { kind, names } = audienceOf(item, options)

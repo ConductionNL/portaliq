@@ -72,21 +72,33 @@ class ActionOptionsNormaliser {
 			return $action;
 		}
 
-		$providers = [];
-		foreach ($action['optionsProviders'] as $field => $provider) {
+		$action['optionsProviders'] = $this->whitelistedProviders(providers: $action['optionsProviders'], whitelist: $whitelist);
+		return $action;
+	}//end normaliseOptionsProviders()
+
+	/**
+	 * The valid providers of the whitelisted fields.
+	 *
+	 * @param array<mixed>       $providers The declared providers, by field.
+	 * @param array<int, string> $whitelist The action's `fields` whitelist.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function whitelistedProviders(array $providers, array $whitelist): array {
+		$kept = [];
+		foreach ($providers as $field => $provider) {
 			if (in_array($field, $whitelist, true) === false || is_array($provider) === false) {
 				continue;
 			}
 
 			$normalised = $this->normaliseProvider(provider: $provider);
 			if ($normalised !== null) {
-				$providers[$field] = $normalised;
+				$kept[$field] = $normalised;
 			}
-		}//end foreach
+		}
 
-		$action['optionsProviders'] = $providers;
-		return $action;
-	}//end normaliseOptionsProviders()
+		return $kept;
+	}//end whitelistedProviders()
 
 	/**
 	 * Dispatch ONE provider to its kind-specific validator, or null when the
@@ -121,19 +133,7 @@ class ActionOptionsNormaliser {
 			return null;
 		}
 
-		$options = [];
-		foreach ($provider['options'] as $option) {
-			if (is_array($option) === false) {
-				continue;
-			}
-
-			$value = ($option['value'] ?? null);
-			$label = ($option['label'] ?? null);
-			if ((is_string($value) === true || is_int($value) === true) && is_string($label) === true) {
-				$options[] = ['value' => (string)$value, 'label' => $label];
-			}
-		}
-
+		$options = $this->staticOptions(declared: $provider['options']);
 		if ($options === []) {
 			return null;
 		}
@@ -142,18 +142,61 @@ class ActionOptionsNormaliser {
 	}//end normaliseStaticProvider()
 
 	/**
+	 * The well-formed options of a static provider.
+	 *
+	 * @param array<mixed> $declared The declared options.
+	 *
+	 * @return array<int, array{value: string, label: string}>
+	 */
+	private function staticOptions(array $declared): array {
+		$options = [];
+		foreach ($declared as $option) {
+			if (is_array($option) === false) {
+				continue;
+			}
+
+			$kept = $this->staticOption(option: $option);
+			if ($kept !== null) {
+				$options[] = $kept;
+			}
+		}
+
+		return $options;
+	}//end staticOptions()
+
+	/**
+	 * One option, when its value is a string or an integer and its label a string.
+	 *
+	 * @param array<string, mixed> $option The declared option.
+	 *
+	 * @return array{value: string, label: string}|null
+	 */
+	private function staticOption(array $option): array|null {
+		$value = ($option['value'] ?? null);
+		$label = ($option['label'] ?? null);
+		if ((is_string($value) === true || is_int($value) === true) && is_string($label) === true) {
+			return ['value' => (string)$value, 'label' => $label];
+		}
+
+		return null;
+	}//end staticOption()
+
+	/**
 	 * Validate a `collection` option provider. The dropdown is populated by the
 	 * frontend through the SUBJECT-SCOPED collection endpoint, so it can only
-	 * ever offer values the subject may already read.
+	 * ever offer values the subject may already read. An optional
+	 * `descriptionField` names the row field a choice card shows as its second
+	 * line ("Groep 7 · Meester Daan").
 	 *
 	 * @param array<string, mixed> $provider The provider config.
 	 *
 	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/site-forms/spec.md#requirement-a-choice-card-may-carry-a-second-line
 	 */
 	private function normaliseCollectionProvider(array $provider): ?array {
-		$keys = ['register', 'schema', 'labelField', 'valueField'];
 		$out = ['type' => 'collection'];
-		foreach ($keys as $key) {
+		foreach (['register', 'schema', 'labelField', 'valueField'] as $key) {
 			$value = ($provider[$key] ?? null);
 			if (is_string($value) === false || $value === '') {
 				return null;
@@ -162,6 +205,24 @@ class ActionOptionsNormaliser {
 			$out[$key] = $value;
 		}
 
-		return $out;
+		return $out + $this->descriptionFieldOf(provider: $provider);
 	}//end normaliseCollectionProvider()
+
+	/**
+	 * The provider's `descriptionField`, kept when it names a field.
+	 *
+	 * @param array<string, mixed> $provider The provider config.
+	 *
+	 * @return array<string, string>
+	 *
+	 * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/site-forms/spec.md#requirement-a-choice-card-may-carry-a-second-line
+	 */
+	private function descriptionFieldOf(array $provider): array {
+		$field = ($provider['descriptionField'] ?? null);
+		if (is_string($field) === false || $field === '') {
+			return [];
+		}
+
+		return ['descriptionField' => $field];
+	}//end descriptionFieldOf()
 }//end class

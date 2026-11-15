@@ -108,32 +108,7 @@ final class OpenRegisterAutoloader {
 		try {
 			$appManager ??= \OCP\Server::get(\OCP\App\IAppManager::class);
 
-			// Checked before the short-circuit: under a long-lived worker this
-			// static outlives the request, and an OpenRegister disabled since
-			// must not stay wired.
-			if ($appManager->isEnabledForAnyone(self::OPENREGISTER_APP_ID) === false) {
-				self::unregister();
-				return false;
-			}
-
-			if (self::$loader !== null) {
-				return true;
-			}
-
-			$path = rtrim($appManager->getAppPath(self::OPENREGISTER_APP_ID), '/');
-			if (is_dir($path . '/lib') === false) {
-				return false;
-			}
-
-			self::$loader = static function (string $class) use ($path): void {
-				$file = self::classFile(appPath: $path, class: $class);
-				if ($file !== null && is_file($file) === true) {
-					require_once $file;
-				}
-			};
-			spl_autoload_register(self::$loader);
-
-			return true;
+			return self::registerFor(appManager: $appManager);
 		} catch (\Throwable) {
 			// OpenRegister absent, or the server container is not up (unit
 			// tests). The caller's class_exists() guard then skips the AppHost
@@ -144,6 +119,57 @@ final class OpenRegisterAutoloader {
 		}//end try
 
 	}//end register()
+
+	/**
+	 * Register the prefix with a resolved app manager.
+	 *
+	 * @param \OCP\App\IAppManager $appManager The app manager.
+	 *
+	 * @return bool True when the prefix is registered.
+	 *
+	 * @spec exclude autoload plumbing for the OpenRegister store plane (ADR-114 D4), no Portaliq requirement of its own
+	 */
+	private static function registerFor(\OCP\App\IAppManager $appManager): bool {
+		// Checked before the short-circuit: under a long-lived worker this
+		// static outlives the request, and an OpenRegister disabled since
+		// must not stay wired.
+		if ($appManager->isEnabledForAnyone(self::OPENREGISTER_APP_ID) === false) {
+			self::unregister();
+			return false;
+		}
+
+		if (self::$loader !== null) {
+			return true;
+		}
+
+		$path = rtrim($appManager->getAppPath(self::OPENREGISTER_APP_ID), '/');
+		if (is_dir($path . '/lib') === false) {
+			return false;
+		}
+
+		self::installLoader(path: $path);
+
+		return true;
+	}//end registerFor()
+
+	/**
+	 * Put a PSR-4 loader for OpenRegister's `lib/` on the SPL chain.
+	 *
+	 * @param string $path OpenRegister's app path, without a trailing slash.
+	 *
+	 * @return void
+	 *
+	 * @spec exclude autoload plumbing for the OpenRegister store plane (ADR-114 D4), no Portaliq requirement of its own
+	 */
+	private static function installLoader(string $path): void {
+		self::$loader = static function (string $class) use ($path): void {
+			$file = self::classFile(appPath: $path, class: $class);
+			if ($file !== null && is_file($file) === true) {
+				require_once $file;
+			}
+		};
+		spl_autoload_register(self::$loader);
+	}//end installLoader()
 
 	/**
 	 * Take the loader off the SPL chain (tests, and OpenRegister disabled).

@@ -21,7 +21,7 @@
 ## Docs, strings and validation
 
 - [x] **T07**: English and Dutch strings ("This request costs {amount}.", "Pay {amount} now", "Paid", "Not paid yet", "The payment failed", "We cannot show the payment yet", "You cannot pay right now. Try again later.", "Log in to submit this request. It has a fee of {amount}."); a docs page for administrators on `paymentHosts` and for case app authors on `portalFee`. Verification: `npm run lint`, `test:l10n`.
-- [ ] **T08**: `openspec validate intake-pay-on-submit --strict`. — not run: the openspec CLI is not installed here
+- [x] **T08**: `openspec validate intake-pay-on-submit --strict`. Valid once the spec's `status` frontmatter, which strict validation reports as text above the first section, was removed.
 
 ## Build notes
 

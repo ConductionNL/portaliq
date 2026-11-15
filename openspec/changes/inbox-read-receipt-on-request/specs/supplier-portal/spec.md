@@ -34,12 +34,12 @@ Mark-read on a message with `readReceiptRequested: true` and no `readAt` SHALL w
 
 ### Requirement: The resident sees that a receipt was asked (REQ-IRR-003)
 
-On the Berichten page a message with a receipt request SHALL show the line "De afzender ziet wanneer u dit bericht hebt geopend." (English: "The sender sees when you opened this message."). A message without a request MUST NOT show it. On an app's inbox, the line SHALL show when the collection names `readReceiptRequested` in `messageFields` and that field is true.
+On the Berichten page a message with a receipt request SHALL show the line "Leesbevestiging gevraagd" before it is opened and "Leesbevestiging gevraagd: gelezen door de gemeente op {moment}" once the sender has read the receipt, as the Berichten board draws it (English: "Read receipt requested"). A message without a request MUST NOT show it. On an app's inbox, the line SHALL show when the collection names `readReceiptRequested` in `messageFields` and that field is true.
 
 #### Scenario: A parent sees the notice before opening
 - **GIVEN** a parent with a class letter that asks for a receipt
 - **WHEN** she opens Berichten
-- **THEN** the letter's card shows "De afzender ziet wanneer u dit bericht hebt geopend."
+- **THEN** the letter's card shows "Leesbevestiging gevraagd"
 - @e2e exclude pinned by the node test in `tests/inbox-read-receipt.spec.mjs`; the live check is in the build PR
 
 ### Requirement: Staff see when a message was read (REQ-IRR-004)

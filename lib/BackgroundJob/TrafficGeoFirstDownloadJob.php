@@ -20,14 +20,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
+ * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\BackgroundJob;
 
-use OCA\Portaliq\Service\Traffic\Geo\GeoRefreshService;
+use OCA\Portaliq\Kernel\Contracts\GeoRefreshServiceInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\QueuedJob;
 use Psr\Log\LoggerInterface;
@@ -37,7 +37,7 @@ use Throwable;
  * Fetch the geography database once, then leave the schedule to the
  * monthly job.
  *
- * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
+ * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
  */
 class TrafficGeoFirstDownloadJob extends QueuedJob {
 
@@ -45,14 +45,14 @@ class TrafficGeoFirstDownloadJob extends QueuedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory      $time    Testable clock (job base class).
-	 * @param GeoRefreshService $refresh Does the work.
+	 * @param GeoRefreshServiceInterface $refresh Does the work.
 	 * @param LoggerInterface   $logger  The logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly GeoRefreshService $refresh,
+		private readonly GeoRefreshServiceInterface $refresh,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(time: $time);
@@ -67,7 +67,7 @@ class TrafficGeoFirstDownloadJob extends QueuedJob {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- the base class dictates
 	 * the signature; dropping the parameter breaks the override.

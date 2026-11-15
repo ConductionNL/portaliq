@@ -8,7 +8,7 @@ use OCA\Portaliq\Event\PortalContactDetailsChangedEvent;
 use OCA\Portaliq\Service\Identity\ContactAddressBook;
 use OCA\Portaliq\Service\Identity\PortalContactAddressService;
 use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use OCP\EventDispatcher\IEventDispatcher;
 use PHPUnit\Framework\TestCase;
 
@@ -139,14 +139,14 @@ class PortalContactAddressServiceTest extends TestCase {
 	/**
 	 * An account service that reads the fake store.
 	 *
-	 * @return PortalAccountService
+	 * @return PortalAccountLookup
 	 */
-	private function accounts(): PortalAccountService {
-		$accounts = $this->getMockBuilder(PortalAccountService::class)
+	private function accounts(): PortalAccountLookup {
+		$accounts = $this->getMockBuilder(PortalAccountLookup::class)
 			->disableOriginalConstructor()
-			->onlyMethods(['findBySubjectRef'])
+			->onlyMethods(['bySubjectRef'])
 			->getMock();
-		$accounts->method('findBySubjectRef')->willReturnCallback(
+		$accounts->method('bySubjectRef')->willReturnCallback(
 			function (string $subjectRef): ?array {
 				foreach ($this->storedRows('portalAccount') as $row) {
 					if (($row['subjectRef'] ?? '') === $subjectRef) {

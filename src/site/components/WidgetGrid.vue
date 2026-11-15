@@ -36,14 +36,14 @@
 			     container is here rather than around the whole component so a
 			     band between two runs still reaches the viewport edge. -->
 			<div v-else-if="!run.band" class="container">
-				<div class="pq-grid">
+				<div class="pq-grid" :style="gridStyle(run)">
 					<div
 						v-for="widget in run.widgets"
 						:key="widget.id || `${widget.gridX}-${widget.gridY}`"
 						class="pq-grid__cell"
 						:data-testid="`widget-${widget.id || widget.widgetKey}`"
 						:data-widget-key="widget.widgetKey"
-						:style="cellStyle(widget, run.rowOffset)">
+						:style="placeCell(widget, run)">
 						<component
 							:is="componentFor(widget.widgetKey)"
 							v-if="componentFor(widget.widgetKey)"
@@ -75,8 +75,14 @@ import { defineAsyncComponent } from 'vue'
 import HeroBlock from './HeroBlock.vue'
 import MarkdownBlock from './MarkdownBlock.vue'
 import { assistantAvailable } from '../lib/assistantAvailable.js'
-import { withoutStyling } from '../lib/blockProps.js'
-import { cellStyle, ownBand, runsFor } from '../lib/gridPlacement.js'
+import { heroWithPortalImage, withoutStyling } from '../lib/blockProps.js'
+import {
+	asideCellStyle,
+	cellStyle,
+	isAsideRun,
+	ownBand,
+	runsFor,
+} from '../lib/gridPlacement.js'
 import { loaders as siteWidgetLoaders } from '../widgets/loaders.js'
 
 /**
@@ -132,6 +138,10 @@ const IntakeCatalogueBlock = defineAsyncComponent(
 )
 const ContactForm = defineAsyncComponent(() => import('./ContactForm.vue'))
 const IntakeFormBlock = defineAsyncComponent(() => import('./IntakeFormBlock.vue'))
+const ReportBlock = defineAsyncComponent(() => import('./ReportBlock.vue'))
+const ReportThreadBlock = defineAsyncComponent(
+	() => import('./ReportThreadBlock.vue'),
+)
 const PublicRecordsBlock = defineAsyncComponent(
 	() => import('./PublicRecordsBlock.vue'),
 )
@@ -251,6 +261,11 @@ const PUBLIC_WIDGETS = {
 	assistant: AssistantBlock,
 	// site-member-voting-record-and-confidential-papers: a contributed public record list.
 	publicRecords: PublicRecordsBlock,
+	// intake-report-pages: a report without an account and its follow-up with
+	// the receipt code. They call this app's own anonymous report routes and
+	// send no traffic event.
+	report: ReportBlock,
+	reportThread: ReportThreadBlock,
 	intakeStatus: IntakeStatusBlock,
 	...nldsWidgets,
 	...siteBlockRegistry,
@@ -305,6 +320,24 @@ export default {
 	},
 
 	props: {
+		/**
+		 * The portal's hero image, resolved to its public address by the
+		 * content API: a hero block without its own image shows it.
+		 */
+		heroImage: {
+			type: String,
+			default: '',
+		},
+
+		/**
+		 * The page's aside column (`asideOf(page.body)`): a run of a main
+		 * column beside an aside then gives the aside this fixed width.
+		 */
+		aside: {
+			type: Object,
+			default: null,
+		},
+
 		/** Widget placements in the canonical manifest-v2 widgetEntry shape. */
 		widgets: {
 			type: Array,
@@ -466,7 +499,7 @@ export default {
 		 *
 		 * @param {*} query The words, or a browser event.
 		 * @return {void}
-		 * @spec openspec/changes/portal-subject-rate-limit/specs/site-search/spec.md#requirement-enter-in-a-search-field-must-search-for-the-typed-words
+		 * @spec openspec/specs/site-search/spec.md#requirement-enter-in-a-search-field-must-search-for-the-typed-words
 		 */
 		forwardSearch(query) {
 			if (typeof query === 'string') {
@@ -518,7 +551,7 @@ export default {
 		 * @return {object} The component props.
 		 *
 		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-blocks-must-take-their-data-as-props-and-nothing-else-req-ptb-007
-		 * @spec openspec/changes/language-switch-reaches-the-content/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
 		 * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-the-sign-in-card-offers-the-portals-own-ways-in
 		 */
 		propsFor(widget) {
@@ -716,8 +749,10 @@ export default {
 
 			// The hero hands the portal on to the list beside it, which reads
 			// this portal's catalogue or news (hero-on-the-school-boards).
+			// A hero without its own image shows the portal's
+			// (portal-identity-from-the-admin REQ-PIA-002).
 			if (widget.widgetKey === 'hero') {
-				return { ...props, portal: this.portal }
+				return { ...heroWithPortalImage(props, this.heroImage), portal: this.portal }
 			}
 
 			// The host names the portal, the session and the ways in; the
@@ -736,6 +771,14 @@ export default {
 			}
 
 			// The assistant asks THIS portal's route; the portal comes from the host.
+			// The report blocks file and read on THIS portal's report routes.
+			if (
+				widget.widgetKey === 'report'
+				|| widget.widgetKey === 'reportThread'
+			) {
+				return { ...props, portal: this.portal }
+			}
+
 			if (widget.widgetKey === 'assistant') {
 				return { ...props, portal: this.portal }
 			}
@@ -768,16 +811,45 @@ export default {
 		},
 
 		/**
-		 * Place one widget on the 12-column grid, re-based onto its run.
+		 * Whether this run draws as main column and fixed aside.
 		 *
-		 * @param {object} widget    The placement.
-		 * @param {number} rowOffset The run's first authored row.
-		 * @return {object} The style bindings.
-		 *
-		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-hero-must-cap-its-calls-to-action-and-keep-one-outline-entry-req-ptb-006
+		 * @param {object} run A run of ordinary widgets.
+		 * @return {boolean}
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-may-give-its-aside-a-fixed-width
 		 */
-		cellStyle(widget, rowOffset) {
-			return cellStyle(widget, rowOffset)
+		asideRun(run) {
+			return this.aside !== null && isAsideRun(run.widgets)
+		},
+
+		/**
+		 * The run's grid columns: twelve, or the main column and the aside.
+		 *
+		 * @param {object} run A run of ordinary widgets.
+		 * @return {object|null} The style bindings.
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-may-give-its-aside-a-fixed-width
+		 */
+		gridStyle(run) {
+			if (!this.asideRun(run)) {
+				return null
+			}
+			return {
+				gridTemplateColumns: `minmax(0, 1fr) ${this.aside.width}px`,
+				columnGap: `${this.aside.gap}px`,
+			}
+		},
+
+		/**
+		 * One widget's place in its run.
+		 *
+		 * @param {object} widget The placement.
+		 * @param {object} run    Its run.
+		 * @return {object} The style bindings.
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-may-give-its-aside-a-fixed-width
+		 */
+		placeCell(widget, run) {
+			return this.asideRun(run)
+				? asideCellStyle(widget, run.rowOffset)
+				: cellStyle(widget, run.rowOffset)
 		},
 	},
 }
