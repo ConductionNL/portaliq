@@ -66,6 +66,8 @@
 </template>
 
 <script>
+import { closeDialog, openDialog } from '../forms/draftDialog.js'
+
 export default {
 	name: 'WithdrawCaseConfirm',
 
@@ -89,25 +91,14 @@ export default {
 	 *
 	 * @return {void}
 	 *
-	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-citizen-must-be-able-to-withdraw-a-request-req-srp-043
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-citizen-must-be-able-to-withdraw-a-request-req-srp-043
 	 */
 	mounted() {
-		const dialog = this.$refs.dialog
-		if (typeof dialog?.showModal === 'function') {
-			dialog.showModal()
-		} else {
-			dialog?.setAttribute('open', '')
-		}
-		this.$refs.heading?.focus()
+		openDialog(this.$refs.dialog, this.$refs.heading)
 	},
 
 	beforeUnmount() {
-		if (
-			this.$refs.dialog?.open
-			&& typeof this.$refs.dialog.close === 'function'
-		) {
-			this.$refs.dialog.close()
-		}
+		closeDialog(this.$refs.dialog)
 	},
 
 	methods: {
@@ -116,7 +107,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-citizen-must-be-able-to-withdraw-a-request-req-srp-043
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-citizen-must-be-able-to-withdraw-a-request-req-srp-043
 		 */
 		submit() {
 			this.$emit('confirm', this.reason.trim())

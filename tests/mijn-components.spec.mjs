@@ -16,7 +16,9 @@ import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { OPEN_STORAGE_KEY } from '../src/shared/openRecord.js'
+import { fileLine } from '../src/site/components/mijn/documents.js'
 import { blocks } from '../src/site/components/mijn/index.js'
+import { organisationKind } from '../src/site/components/mijn/organisationKind.js'
 import {
 	deadlineBadge,
 	inboxRows,
@@ -520,4 +522,27 @@ test("the components take only the Den Haag CSS, at thematiq's pinned versions, 
 		'@gemeente-denhaag/step-marker/index.css',
 		'@gemeente-denhaag/step-marker/index.css',
 	])
+})
+
+// portal-identity-from-the-admin 3.2 (REQ-PIA-003): the site names the
+// organisation's kind from the portal's TOOI organisation type label, with
+// its Dutch article, and never assumes a municipality.
+test('a water authority is not called a municipality', () => {
+	const nl = mijnTranslator((key) => key, 'nl')
+	const line = fileLine({ title: 'Aanslag', date: '2026-10-02' }, nl, 'nl', 'waterschap')
+	assert.match(line, /^Van het waterschap, /)
+	assert.doesNotMatch(line, /gemeente/i)
+	assert.equal(organisationKind('Ministerie', 'nl'), 'het ministerie')
+	assert.equal(organisationKind('provincie', 'nl'), 'de provincie')
+	assert.equal(organisationKind('gemeente', 'nl'), 'de gemeente')
+	assert.equal(strings.nl['From {organisation}'], 'Van {organisation}')
+	assert.equal(strings.nl['From the municipality'], undefined)
+})
+
+test('no type reads van de organisatie', () => {
+	const nl = mijnTranslator((key) => key, 'nl')
+	assert.equal(fileLine({ title: 'Brief' }, nl, 'nl'), 'Van de organisatie.')
+	assert.equal(fileLine({ title: 'Brief' }, nl, 'nl', '  '), 'Van de organisatie.')
+	assert.equal(organisationKind('', 'en'), 'the organisation')
+	assert.equal(organisationKind('waterschap', 'en'), 'the organisation')
 })

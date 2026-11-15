@@ -62,6 +62,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Portal;
 
 use OCA\Portaliq\Contribution\IPortalContributionProvider;
+use OCA\Portaliq\Service\RowIdLookup;
 use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCP\Security\ISecureRandom;
 use Psr\Log\LoggerInterface;
@@ -435,21 +436,6 @@ class PortalContributionProvider implements IPortalContributionProvider {
 	 * @return string
 	 */
 	private function rowId(array $row): string {
-		$self = ($row['@self'] ?? null);
-		$selfId = null;
-		$selfUuid = null;
-		if (is_array($self) === true) {
-			$selfId = ($self['id'] ?? null);
-			$selfUuid = ($self['uuid'] ?? null);
-		}
-
-		$candidates = [($row['id'] ?? null), ($row['uuid'] ?? null), $selfId, $selfUuid];
-		foreach ($candidates as $candidate) {
-			if ((is_string($candidate) === true || is_int($candidate) === true) && (string)$candidate !== '') {
-				return (string)$candidate;
-			}
-		}
-
-		return '';
+		return ((new RowIdLookup())->firstIdOrUuid(row: $row) ?? '');
 	}//end rowId()
 }//end class

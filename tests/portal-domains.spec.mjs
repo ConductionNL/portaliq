@@ -63,6 +63,23 @@ test('a pending domain shows its TXT record and can be checked again', () => {
 	assert.equal(content.row.aside.fallback, 'not checked yet')
 })
 
+test('the TXT record name and value each have their own copy button', () => {
+	const { detail } = widget('portal-domains').content.row
+	assert.deepEqual(detail.copy, [
+		{ path: 'name', label: 'Copy name' },
+		{ path: 'value', label: 'Copy value' },
+	])
+	// The copied values are the fields the domain list answers with, the same
+	// two the record line shows, so the copy is exactly what is to be published.
+	for (const copy of detail.copy) {
+		assert.match(detail.template, new RegExp(`\\{${copy.path}\\}`))
+	}
+	const nl = JSON.parse(readFileSync(new URL('../l10n/nl.json', import.meta.url), 'utf8')).translations
+	for (const text of ['Copy name', 'Copy value', 'Copied', 'Copying did not work. Select the text and copy it yourself.']) {
+		assert.ok(nl[text], `"${text}" is not in the Dutch catalogue`)
+	}
+})
+
 test('an editor needs a user, is not listed twice and shows the user id without a name', () => {
 	const { content } = widget('portal-editors')
 	assert.equal(content.field, 'editors')

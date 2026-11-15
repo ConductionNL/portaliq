@@ -94,7 +94,7 @@
 import { dayInWords } from './cases.js'
 
 /**
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
  */
 export default {
 	name: 'ProcessSteps',
@@ -116,7 +116,7 @@ export default {
 		/**
 		 * @param {object} step A step.
 		 * @return {string} The Den Haag marker state.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
 		 */
 		/**
 		 * The one line under a bar: the step's own words, else its date when
@@ -157,7 +157,7 @@ export default {
 		/**
 		 * @param {object} step A step.
 		 * @return {string} The step's state in words, for a screen reader.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
 		 */
 		stateWords(step) {
 			if (step.state === 'done') {
@@ -174,7 +174,7 @@ export default {
 		 *
 		 * @param {string} value An ISO date.
 		 * @return {string} The day in words.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
 		 */
 		day(value) {
 			return (

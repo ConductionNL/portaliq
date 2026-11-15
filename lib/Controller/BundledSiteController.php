@@ -2,13 +2,13 @@
 
 /**
  * Hosts a bundled single-page site as a Nextcloud public page. A bundled site
- * is a directory of build output in the app root; this controller serves its
+ * is a directory of build output under `build/`; this controller serves its
  * static assets and falls back to `index.html` for client-side routes
  * (ADR-046: the standalone-SPA pattern, served in-app).
  *
  * Which bundle a URL serves is configuration, not code: the route names the
  * bundle in its `defaults` (appinfo/routes.php), and BUNDLES lists the
- * directories this app ships. Today that is one, `woo/`, the Open Tilburg
+ * directories this app ships. Today that is one, `build/woo/`, the Open Tilburg
  * publication site built with `PUBLIC_URL=/index.php/apps/portaliq/woo`
  * (decision 182: named by what it does, the procedure is configuration).
  *
@@ -47,7 +47,7 @@ use OCP\IRequest;
 class BundledSiteController extends Controller {
 
 	/**
-	 * The bundle directories this app ships, relative to the app root. A
+	 * The bundle directories this app ships, relative to `build/`. A
 	 * route may only name one of these: `bundle` arrives as a request
 	 * parameter, so it is checked against this list and never used as a path.
 	 *
@@ -56,11 +56,11 @@ class BundledSiteController extends Controller {
 	private const BUNDLES = ['woo'];
 
 	/**
-	 * Absolute path to the app root, the directory the bundles live in.
+	 * Absolute path to the directory the bundles live in, `build/` in the app root.
 	 *
 	 * @var string
 	 */
-	private string $appRoot;
+	private string $bundlesRoot;
 
 	/**
 	 * Constructor.
@@ -73,10 +73,10 @@ class BundledSiteController extends Controller {
 
 		// Initialise to the unresolved path, then override when `realpath()`
 		// can canonicalise it.
-		$this->appRoot = __DIR__ . '/../..';
-		$resolved = realpath($this->appRoot);
+		$this->bundlesRoot = __DIR__ . '/../../build';
+		$resolved = realpath($this->bundlesRoot);
 		if ($resolved !== false) {
-			$this->appRoot = $resolved;
+			$this->bundlesRoot = $resolved;
 		}
 	}//end __construct()
 
@@ -138,15 +138,41 @@ class BundledSiteController extends Controller {
 
 		$resolved = $this->bundledFile(root: $root, path: $path);
 
+		$content = $this->contentOf(resolved: $resolved);
+		if ($content === false) {
+			return new DataDisplayResponse('Not found', Http::STATUS_NOT_FOUND, ['Content-Type' => 'text/plain']);
+		}
+
+		return $this->fileResponse(resolved: $resolved, content: $content);
+	}//end render()
+
+	/**
+	 * The bytes of a resolved bundled file, or false when it is not a file or
+	 * cannot be read.
+	 *
+	 * @param string $resolved The resolved file.
+	 *
+	 * @return string|false
+	 */
+	private function contentOf(string $resolved): string|false {
 		$content = false;
 		if (is_file($resolved) === true) {
 			$content = file_get_contents($resolved);
 		}
 
-		if ($content === false) {
-			return new DataDisplayResponse('Not found', Http::STATUS_NOT_FOUND, ['Content-Type' => 'text/plain']);
-		}
+		return $content;
+	}//end contentOf()
 
+	/**
+	 * The response serving a bundled file: hash-named assets cached, the SPA
+	 * index and the runtime config never cached and under the SPA's CSP.
+	 *
+	 * @param string $resolved The resolved file.
+	 * @param string $content  Its bytes.
+	 *
+	 * @return Response
+	 */
+	private function fileResponse(string $resolved, string $content): Response {
 		$isIndex = (substr($resolved, -10) === 'index.html');
 		$response = new DataDisplayResponse($content, Http::STATUS_OK, ['Content-Type' => $this->mimeFor(file: $resolved)]);
 
@@ -161,7 +187,7 @@ class BundledSiteController extends Controller {
 		$this->applySpaCsp(response: $response);
 
 		return $response;
-	}//end render()
+	}//end fileResponse()
 
 	/**
 	 * The file a request path names inside a bundle, or the bundle's
@@ -201,7 +227,7 @@ class BundledSiteController extends Controller {
 			return null;
 		}
 
-		$root = $this->appRoot . '/' . $bundle;
+		$root = $this->bundlesRoot . '/' . $bundle;
 		$canonical = realpath($root);
 		if ($canonical !== false) {
 			return $canonical;

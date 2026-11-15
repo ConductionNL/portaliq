@@ -7,6 +7,85 @@
 // and load with the pages that use them.
 
 /**
+ * @param {unknown} value An id or a reference.
+ * @return {string} The value as one encoded path segment, or ''.
+ */
+function segment(value) {
+	return encodeURIComponent(value || '')
+}
+
+/**
+ * @param {{data?: object}} args An action's arguments.
+ * @return {object} The fields to send, or none.
+ */
+function dataOf(args) {
+	return args.data || {}
+}
+
+/**
+ * Send one `[method, path, body]` call.
+ *
+ * @param {{request: (method: string, path: string, body?: unknown) => Promise<object>}} api The portal api.
+ * @param {Array} call The method, the path and the body.
+ * @return {Promise<object>} The answer.
+ */
+function send(api, call) {
+	return api.request(call[0], call[1], call[2])
+}
+
+/**
+ * What an action's answer says: whether it worked, its status, and the
+ * reason a refusal names.
+ *
+ * @param {{ok: boolean, status: number, json: object|null}} answer The answer.
+ * @return {{ok: boolean, status: number, error: string}} The outcome.
+ */
+function outcomeOf(answer) {
+	return {
+		ok: answer.ok,
+		status: answer.status,
+		error: String(answer.json?.error || ''),
+	}
+}
+
+/**
+ * The request of each contact action.
+ *
+ * @param {object} args `email` and `message` to invite, `id` for the rest, `accept` for respond, `token` to accept a link.
+ * @return {Record<string, Array>} The calls by action.
+ */
+function contactCalls(args) {
+	const id = segment(args.id)
+	return {
+		invite: ['POST', '/contacts/invite', { email: args.email, message: args.message }],
+		accept: ['POST', '/contacts/accept-invitation', { token: args.token }],
+		respond: ['POST', `/contacts/${id}/respond`, { accept: args.accept === true }],
+		resend: ['POST', `/contacts/${id}/resend`, {}],
+		withdraw: ['POST', `/contacts/${id}/withdraw`, {}],
+		remove: ['DELETE', `/contacts/${id}`, null],
+	}
+}
+
+/**
+ * The request of each plan action.
+ *
+ * @param {object} args `id` of the plan, `actionId`, `ref`, and the fields to send as `data`.
+ * @return {Record<string, Array>} The calls by action.
+ */
+function planCalls(args) {
+	const id = segment(args.id)
+	return {
+		start: ['POST', '/plans', dataOf(args)],
+		update: ['PATCH', `/plans/${id}`, dataOf(args)],
+		delete: ['DELETE', `/plans/${id}`, null],
+		addParticipants: ['POST', `/plans/${id}/participants`, dataOf(args)],
+		removeParticipant: ['DELETE', `/plans/${id}/participants/${segment(args.ref)}`, null],
+		addAction: ['POST', `/plans/${id}/actions`, dataOf(args)],
+		updateAction: ['PATCH', `/plans/${id}/actions/${segment(args.actionId)}`, dataOf(args)],
+	}
+}
+
+/**
  * The contact calls over a portal api.
  *
  * @param {{request: Function}} api The portal api.
@@ -35,37 +114,11 @@ export function contactsApi(api) {
 		 * @return {Promise<{ok: boolean, status: number, error: string}>} The outcome; a refusal names its reason in `error`.
 		 */
 		async contactAction(action, args = {}) {
-			const id = encodeURIComponent(args.id || '')
-			const calls = {
-				invite: [
-					'POST',
-					'/contacts/invite',
-					{ email: args.email, message: args.message },
-				],
-				accept: [
-					'POST',
-					'/contacts/accept-invitation',
-					{ token: args.token },
-				],
-				respond: [
-					'POST',
-					`/contacts/${id}/respond`,
-					{ accept: args.accept === true },
-				],
-				resend: ['POST', `/contacts/${id}/resend`, {}],
-				withdraw: ['POST', `/contacts/${id}/withdraw`, {}],
-				remove: ['DELETE', `/contacts/${id}`, null],
-			}
-			const call = calls[action]
+			const call = contactCalls(args)[action]
 			if (!call) {
 				return { ok: false, status: 0, error: 'unknown' }
 			}
-			const answer = await api.request(call[0], call[1], call[2])
-			return {
-				ok: answer.ok,
-				status: answer.status,
-				error: String(answer.json?.error || ''),
-			}
+			return outcomeOf(await send(api, call))
 		},
 
 		/**
@@ -141,39 +194,12 @@ export function plansApi(api) {
 		 * @return {Promise<{ok: boolean, status: number, error: string, id: string}>} The outcome; `id` names a plan just started.
 		 */
 		async planAction(action, args = {}) {
-			const id = encodeURIComponent(args.id || '')
-			const calls = {
-				start: ['POST', '/plans', args.data || {}],
-				update: ['PATCH', `/plans/${id}`, args.data || {}],
-				delete: ['DELETE', `/plans/${id}`, null],
-				addParticipants: [
-					'POST',
-					`/plans/${id}/participants`,
-					args.data || {},
-				],
-				removeParticipant: [
-					'DELETE',
-					`/plans/${id}/participants/${encodeURIComponent(args.ref || '')}`,
-					null,
-				],
-				addAction: ['POST', `/plans/${id}/actions`, args.data || {}],
-				updateAction: [
-					'PATCH',
-					`/plans/${id}/actions/${encodeURIComponent(args.actionId || '')}`,
-					args.data || {},
-				],
-			}
-			const call = calls[action]
+			const call = planCalls(args)[action]
 			if (!call) {
 				return { ok: false, status: 0, error: 'unknown', id: '' }
 			}
-			const answer = await api.request(call[0], call[1], call[2])
-			return {
-				ok: answer.ok,
-				status: answer.status,
-				error: String(answer.json?.error || ''),
-				id: String(answer.json?.id || ''),
-			}
+			const answer = await send(api, call)
+			return { ...outcomeOf(answer), id: String(answer.json?.id || '') }
 		},
 
 		/**
@@ -220,11 +246,7 @@ export function plansApi(api) {
 				`/plans/${encodeURIComponent(id)}/files`,
 				form,
 			)
-			return {
-				ok: answer.ok,
-				status: answer.status,
-				error: String(answer.json?.error || ''),
-			}
+			return outcomeOf(answer)
 		},
 
 		/**
@@ -266,9 +288,7 @@ export function actionsApi(api) {
 		return `/my-actions${id ? `/${encodeURIComponent(id)}` : ''}${rest}${query}`
 	}
 	const outcome = (answer) => ({
-		ok: answer.ok,
-		status: answer.status,
-		error: String(answer.json?.error || ''),
+		...outcomeOf(answer),
 		id: String(answer.json?.id || ''),
 	})
 	return {

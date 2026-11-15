@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\ExampleSite;
 
+use OCA\Portaliq\Kernel\Contracts\ExampleSiteInstallerInterface;
 use OCA\Portaliq\Service\PortalNameSetting;
 use OCA\Portaliq\Service\PortalThemeResolver;
 
@@ -40,7 +41,7 @@ use OCA\Portaliq\Service\PortalThemeResolver;
  *
  * @spec openspec/changes/example-site-zuiddrecht/specs/example-site/spec.md#requirement-the-install-must-prove-what-arrived
  */
-class ExampleSiteInstaller {
+class ExampleSiteInstaller implements ExampleSiteInstallerInterface {
 	/**
 	 * The schema behind each list of a declaration.
 	 */

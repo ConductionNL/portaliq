@@ -84,7 +84,23 @@ const IMAGE = 'fsfe/reuse:5'
  *   so this helper does not own half the process lifecycle.
  */
 function runLint() {
-	const attempts = [
+	for (const attempt of lintAttempts()) {
+		const result = runAttempt(attempt)
+		if (result !== null) {
+			return result
+		}
+	}
+
+	return null
+}
+
+/**
+ * The two ways to run the linter, in the order they are tried.
+ *
+ * @return {Array<{how: string, cmd: string, args: string[]}>} the runners
+ */
+function lintAttempts() {
+	return [
 		{ how: 'reuse (PATH)', cmd: 'reuse', args: ['lint', '--json'] },
 		{
 			how: `docker ${IMAGE}`,
@@ -100,25 +116,30 @@ function runLint() {
 			],
 		},
 	]
+}
 
-	for (const attempt of attempts) {
-		const result = spawnSync(attempt.cmd, attempt.args, {
-			cwd: REPO_ROOT,
-			encoding: 'utf8',
-			maxBuffer: 64 * 1024 * 1024,
-		})
-		// ENOENT means this runner has no such binary; fall through to the next.
-		// Any other failure is the linter itself talking, and `reuse lint` exits
-		// non-zero on a non-compliant tree, which is the expected state here.
-		if (result.error && result.error.code === 'ENOENT') continue
-		if (result.error) {
-			console.error(`Could not run ${attempt.how}: ${result.error.message}`)
-			process.exit(1)
-		}
-		return { stdout: result.stdout, stderr: result.stderr, how: attempt.how }
+/**
+ * Run one runner: its output, null when it is not installed, or exit when it
+ * could not be started for another reason.
+ *
+ * @param {{how: string, cmd: string, args: string[]}} attempt - the runner
+ * @return {?{stdout: string, stderr: string, how: string}} captured output
+ */
+function runAttempt(attempt) {
+	const result = spawnSync(attempt.cmd, attempt.args, {
+		cwd: REPO_ROOT,
+		encoding: 'utf8',
+		maxBuffer: 64 * 1024 * 1024,
+	})
+	// ENOENT means this runner has no such binary; fall through to the next.
+	// Any other failure is the linter itself talking, and `reuse lint` exits
+	// non-zero on a non-compliant tree, which is the expected state here.
+	if (result.error && result.error.code === 'ENOENT') return null
+	if (result.error) {
+		console.error(`Could not run ${attempt.how}: ${result.error.message}`)
+		process.exit(1)
 	}
-
-	return null
+	return { stdout: result.stdout, stderr: result.stderr, how: attempt.how }
 }
 
 /**
@@ -265,6 +286,36 @@ function stderrFailed(errors) {
 }
 
 /**
+ * The hygiene lists, in the order they are reported.
+ *
+ * @type {string[]}
+ */
+const HYGIENE_KEYS = [
+	'unused_licenses',
+	'bad_licenses',
+	'deprecated_licenses',
+	'missing_licenses',
+	'read_errors',
+]
+
+/**
+ * What to add under a hygiene list that is not empty, by list.
+ *
+ * @type {Object<string, string[]>}
+ */
+const HYGIENE_NOTES = {
+	unused_licenses: [
+		'A licence text in LICENSES/ that nothing references is itself a',
+		'REUSE failure. Changing an override orphans the licence it used',
+		'to name — remove that file in the same commit.',
+	],
+	read_errors: [
+		'An unreadable file is EXCLUDED from files_total, so the coverage',
+		'sets below cannot see it. Hence the absolute check.',
+	],
+}
+
+/**
  * 2. licence hygiene, absolute. An unused licence is itself a REUSE failure.
  *
  * @param {object} nonCompliant - the report's non_compliant block
@@ -272,37 +323,28 @@ function stderrFailed(errors) {
  */
 function hygieneFailed(nonCompliant) {
 	let failed = false
-	for (const key of [
-		'unused_licenses',
-		'bad_licenses',
-		'deprecated_licenses',
-		'missing_licenses',
-		'read_errors',
-	]) {
-		const value = nonCompliant[key]
-		const entries = Array.isArray(value) ? value : Object.keys(value || {})
-		if (entries.length > 0) {
-			console.error('')
-			console.error(`${key}: ${entries.join(', ')}`)
-			if (key === 'unused_licenses') {
-				console.error(
-					'A licence text in LICENSES/ that nothing references is itself a',
-				)
-				console.error(
-					'REUSE failure. Changing an override orphans the licence it used',
-				)
-				console.error('to name — remove that file in the same commit.')
-			}
-			if (key === 'read_errors') {
-				console.error(
-					'An unreadable file is EXCLUDED from files_total, so the coverage',
-				)
-				console.error('sets below cannot see it. Hence the absolute check.')
-			}
+	for (const key of HYGIENE_KEYS) {
+		if (hygieneKeyFailed(key, nonCompliant[key]) === true) {
 			failed = true
 		}
 	}
 	return failed
+}
+
+/**
+ * Report one hygiene list when it is not empty.
+ *
+ * @param {string} key - the list's name in the report
+ * @param {Array|object|undefined} value - the list, or a map keyed by entry
+ * @return {boolean} true when it is not empty
+ */
+function hygieneKeyFailed(key, value) {
+	const entries = Array.isArray(value) ? value : Object.keys(value || {})
+	if (entries.length === 0) return false
+	console.error('')
+	console.error(`${key}: ${entries.join(', ')}`)
+	for (const line of HYGIENE_NOTES[key] || []) console.error(line)
+	return true
 }
 
 /**
@@ -368,37 +410,92 @@ function readBaseline() {
  */
 function ratchetFailed(findings, baseline) {
 	let failed = false
-	for (const [key, found] of [
+	for (const entry of [
 		['missing_licensing_info', findings.missingLicensing],
 		['missing_copyright_info', findings.missingCopyright],
 	]) {
-		const allowed = baseline[key]
-		if (!Array.isArray(allowed)) {
-			console.error('')
-			console.error(`Baseline key \`${key}\` is not a list of paths.`)
-			console.error('Regenerate it with `npm run check:reuse -- --update`.')
-			failed = true
-			continue
-		}
-		const known = new Set(allowed)
-		const added = found.filter((file) => !known.has(file)).sort()
-		if (added.length > 0) {
-			const what = key.replace('missing_', '').replace(/_/g, ' ')
-			console.error('')
-			console.error(`${added.length} new file(s) with no ${what}:`)
-			for (const file of added) console.error(`  ${file}`)
-			console.error('')
-			console.error(
-				'The likely cause is an extension REUSE.toml does not list —',
-			)
-			console.error('it lists extensions rather than using a blanket, so an')
-			console.error('unlisted one falls through silently.')
-			console.error('')
-			console.error('Add it to the appropriate block in REUSE.toml.')
+		if (ratchetKeyFailed(entry, baseline) === true) {
 			failed = true
 		}
 	}
 	return failed
+}
+
+/**
+ * The ratchet for one list: the baseline must hold a list, and nothing found
+ * may be missing from it.
+ *
+ * @param {[string, string[]]} entry - the list's key and the files found
+ * @param {object} baseline - the committed baseline
+ * @return {boolean} true when the baseline list is malformed or a file is new
+ */
+function ratchetKeyFailed(entry, baseline) {
+	const [key, found] = entry
+	const allowed = baseline[key]
+	if (!Array.isArray(allowed)) {
+		console.error('')
+		console.error(`Baseline key \`${key}\` is not a list of paths.`)
+		console.error('Regenerate it with `npm run check:reuse -- --update`.')
+		return true
+	}
+	const known = new Set(allowed)
+	const added = found.filter((file) => !known.has(file)).sort()
+	if (added.length === 0) return false
+	reportNewFiles(key, added)
+	return true
+}
+
+/**
+ * Name the new files without licensing or copyright information.
+ *
+ * @param {string} key - the list's key
+ * @param {string[]} added - the new files, sorted
+ * @return {void}
+ */
+function reportNewFiles(key, added) {
+	const what = key.replace('missing_', '').replace(/_/g, ' ')
+	console.error('')
+	console.error(`${added.length} new file(s) with no ${what}:`)
+	for (const file of added) console.error(`  ${file}`)
+	console.error('')
+	console.error(
+		'The likely cause is an extension REUSE.toml does not list —',
+	)
+	console.error('it lists extensions rather than using a blanket, so an')
+	console.error('unlisted one falls through silently.')
+	console.error('')
+	console.error('Add it to the appropriate block in REUSE.toml.')
+}
+
+/**
+ * Check the findings against the committed baseline and exit 1 when the
+ * ratchet or an absolute check failed; say how to lower a baseline that is
+ * higher than it needs to be.
+ *
+ * @param {object} findings - the findings
+ * @param {boolean} failed - whether an absolute check failed
+ * @return {void}
+ */
+function checkAgainstBaseline(findings, failed) {
+	const baseline = readBaseline()
+	const { summary, missingLicensing, errors, how } = findings
+
+	console.log(
+		`${summary.files_total} file(s) checked via ${how}; `
+			+ `${missingLicensing.length} without licensing info `
+			+ `(baseline ${(baseline.missing_licensing_info || []).length}), `
+			+ `${errors.length} stderr ERROR line(s)`,
+	)
+
+	if (ratchetFailed(findings, baseline) || failed) process.exit(1)
+
+	const baselineCount = (baseline.missing_licensing_info || []).length
+	if (missingLicensing.length < baselineCount) {
+		console.log(
+			`${baselineCount - missingLicensing.length} fewer than the baseline — lower it with:`,
+		)
+		console.log('  npm run check:reuse -- --update')
+	}
 }
 
 /**
@@ -429,25 +526,7 @@ function main() {
 		return
 	}
 
-	const baseline = readBaseline()
-	const { summary, missingLicensing, errors, how } = findings
-
-	console.log(
-		`${summary.files_total} file(s) checked via ${how}; `
-			+ `${missingLicensing.length} without licensing info `
-			+ `(baseline ${(baseline.missing_licensing_info || []).length}), `
-			+ `${errors.length} stderr ERROR line(s)`,
-	)
-
-	if (ratchetFailed(findings, baseline) || failed) process.exit(1)
-
-	const baselineCount = (baseline.missing_licensing_info || []).length
-	if (missingLicensing.length < baselineCount) {
-		console.log(
-			`${baselineCount - missingLicensing.length} fewer than the baseline — lower it with:`,
-		)
-		console.log('  npm run check:reuse -- --update')
-	}
+	checkAgainstBaseline(findings, failed)
 }
 
 main()

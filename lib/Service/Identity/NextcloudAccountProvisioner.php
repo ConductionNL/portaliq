@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\NextcloudAccountProvisionerInterface;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PublishedPortals;
@@ -47,7 +48,7 @@ use OCP\IUserManager;
  *
  * @spec openspec/changes/an-app-provisions-a-nextcloud-account/specs/portal-identity-space/spec.md#requirement-an-app-may-provision-an-active-account-for-a-nextcloud-user
  */
-class NextcloudAccountProvisioner {
+class NextcloudAccountProvisioner implements NextcloudAccountProvisionerInterface {
 	/**
 	 * The register and schema of a portal account.
 	 */
@@ -114,12 +115,9 @@ class NextcloudAccountProvisioner {
 		string $email = '',
 		string $displayName = '',
 	): array|string {
-		if (in_array('', [$appId, $uid, $portal, $audience, $organisation], true) === true) {
-			return 'refused';
-		}
-
-		if ($this->users->userExists($uid) === false) {
-			return 'unknown_user';
+		$asked = $this->askRefusal(required: [$appId, $uid, $portal, $audience, $organisation], uid: $uid);
+		if ($asked !== null) {
+			return $asked;
 		}
 
 		$refusal = $this->portalRefusal(slug: $portal, organisation: $organisation);
@@ -153,6 +151,28 @@ class NextcloudAccountProvisioner {
 	}//end provision()
 
 	/**
+	 * Why the ask itself is refused: a required field is empty or the user is unknown; null when it holds.
+	 *
+	 * @param array<int, string> $required The required fields.
+	 * @param string             $uid      The Nextcloud user id.
+	 *
+	 * @return string|null `refused`, `unknown_user`, or null.
+	 *
+	 * @spec openspec/changes/an-app-provisions-a-nextcloud-account/specs/portal-identity-space/spec.md#requirement-an-app-may-provision-an-active-account-for-a-nextcloud-user
+	 */
+	private function askRefusal(array $required, string $uid): string|null {
+		if (in_array('', $required, true) === true) {
+			return 'refused';
+		}
+
+		if ($this->users->userExists($uid) === false) {
+			return 'unknown_user';
+		}
+
+		return null;
+	}//end askRefusal()
+
+	/**
 	 * Whether a live account in the tenant already holds this address.
 	 *
 	 * Compared without regard to case (security review L4); a withdrawn or
@@ -178,10 +198,7 @@ class NextcloudAccountProvisioner {
 				limit: 5
 			);
 			foreach ($rows as $row) {
-				if (strtolower((string)($row['email'] ?? '')) === strtolower($email)
-					&& ($row['organisation'] ?? '') === $organisation
-					&& in_array(($row['status'] ?? self::STATUS_ACTIVE), self::CLOSED, true) === false
-				) {
+				if ($this->holdsAddress(row: $row, email: $email, organisation: $organisation) === true) {
 					return true;
 				}
 			}
@@ -189,6 +206,21 @@ class NextcloudAccountProvisioner {
 
 		return false;
 	}//end addressHeld()
+
+	/**
+	 * Whether one account row is a live account in the tenant holding the address.
+	 *
+	 * @param array<string, mixed> $row          The account row.
+	 * @param string               $email        The address.
+	 * @param string               $organisation The tenant.
+	 *
+	 * @return bool
+	 */
+	private function holdsAddress(array $row, string $email, string $organisation): bool {
+		return strtolower((string)($row['email'] ?? '')) === strtolower($email)
+			&& ($row['organisation'] ?? '') === $organisation
+			&& in_array(($row['status'] ?? self::STATUS_ACTIVE), self::CLOSED, true) === false;
+	}//end holdsAddress()
 
 	/**
 	 * Why the portal cannot take this account, or null when it can.

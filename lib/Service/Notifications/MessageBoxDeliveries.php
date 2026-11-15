@@ -103,15 +103,7 @@ class MessageBoxDeliveries {
 			return [];
 		}
 
-		$accounts = $this->reader->readCollection(
-			register: 'portaliq',
-			schema: 'portalAccount',
-			scopeField: 'subjectRef',
-			subjectRef: $subjectRef,
-			organisation: $organisation,
-			limit: 2
-		);
-		$accountId = $this->idOf(row: ($accounts[0] ?? []))[0] ?? '';
+		$accountId = $this->accountIdOf(subjectRef: $subjectRef, organisation: $organisation);
 		if ($accountId === '') {
 			return [];
 		}
@@ -124,19 +116,91 @@ class MessageBoxDeliveries {
 			organisation: $organisation,
 			limit: self::LOG_LIMIT
 		);
+
+		return $this->deliveredIn(rows: $rows);
+	}//end delivered()
+
+	/**
+	 * The id of the resident's portal account, or '' when there is none.
+	 *
+	 * @param string $subjectRef   The resident.
+	 * @param string $organisation The organisation.
+	 *
+	 * @return string
+	 */
+	private function accountIdOf(string $subjectRef, string $organisation): string {
+		$accounts = $this->reader->readCollection(
+			register: 'portaliq',
+			schema: 'portalAccount',
+			scopeField: 'subjectRef',
+			subjectRef: $subjectRef,
+			organisation: $organisation,
+			limit: 2
+		);
+
+		return $this->idOf(row: ($accounts[0] ?? []))[0] ?? '';
+	}//end accountIdOf()
+
+	/**
+	 * The `app|collection|id` keys of the shown message box sends in the log, each with its moment.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The log rows.
+	 *
+	 * @return array<string, string>
+	 */
+	private function deliveredIn(array $rows): array {
 		$delivered = [];
 		foreach ($rows as $row) {
-			$link = ($row['recordLink'] ?? null);
-			$shown = in_array(($row['status'] ?? null), MessageBoxStatus::SHOWN, true);
-			if (($row['channel'] ?? null) !== MessageBoxChannel::CHANNEL || $shown === false || is_array($link) === false) {
+			$link = $this->shownLink(row: $row);
+			if ($link === null) {
 				continue;
 			}
 
-			$delivered[(string)($link['app'] ?? '').'|'.(string)($link['collection'] ?? '').'|'.(string)($link['id'] ?? '')] = $this->momentOf(row: $row);
+			$delivered[$this->linkKey(link: $link)] = $this->momentOf(row: $row);
 		}
 
 		return $delivered;
-	}//end delivered()
+	}//end deliveredIn()
+
+	/**
+	 * The record link of a shown message box send, or null for any other row.
+	 *
+	 * @param array<string, mixed> $row The log row.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function shownLink(array $row): array|null {
+		$link = ($row['recordLink'] ?? null);
+		if ($this->shownSend(row: $row) === false || is_array($link) === false) {
+			return null;
+		}
+
+		return $link;
+	}//end shownLink()
+
+	/**
+	 * Whether a log row is a message box send that was delivered or read.
+	 *
+	 * @param array<string, mixed> $row The log row.
+	 *
+	 * @return bool
+	 */
+	private function shownSend(array $row): bool {
+		$shown = in_array(($row['status'] ?? null), MessageBoxStatus::SHOWN, true);
+
+		return ($row['channel'] ?? null) === MessageBoxChannel::CHANNEL && $shown === true;
+	}//end shownSend()
+
+	/**
+	 * A record link as its `app|collection|id` key.
+	 *
+	 * @param array<string, mixed> $link The record link.
+	 *
+	 * @return string
+	 */
+	private function linkKey(array $link): string {
+		return (string)($link['app'] ?? '').'|'.(string)($link['collection'] ?? '').'|'.(string)($link['id'] ?? '');
+	}//end linkKey()
 
 	/**
 	 * When a send was delivered: the moment its log row last changed (the

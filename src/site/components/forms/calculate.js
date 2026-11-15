@@ -119,62 +119,124 @@ function dateArgument(arg, answers) {
 }
 
 /**
+ * The number of items of a repeating group.
+ *
+ * @param {Array<unknown>} args The group's name.
+ * @param {Record<string, unknown>} answers The answers.
+ * @return {number|null} The count, or null when the answer is no list.
+ */
+function countOf(args, answers) {
+	const value = answers[String(args[0])]
+	return Array.isArray(value) ? value.length : null
+}
+
+/**
+ * A date plus a number of days.
+ *
+ * @param {Array<unknown>} args The date and the days.
+ * @param {Record<string, unknown>} answers The answers.
+ * @return {string|null} The date, or null.
+ */
+function addDays(args, answers) {
+	const from = dateArgument(args[0], answers)
+	const days = valuesOf(args[1], answers)
+	if (from === null || days.length !== 1 || !isNumeric(days[0])) {
+		return null
+	}
+	return isoOf(from + Math.trunc(Number(days[0])))
+}
+
+/**
+ * The days from one date to another.
+ *
+ * @param {Array<unknown>} args The two dates.
+ * @param {Record<string, unknown>} answers The answers.
+ * @return {number|null} The days, or null.
+ */
+function diffDays(args, answers) {
+	const from = dateArgument(args[0], answers)
+	const to = dateArgument(args[1], answers)
+	return from === null || to === null ? null : to - from
+}
+
+/**
+ * @param {unknown} arg An argument.
+ * @return {boolean} Whether it names a field inside a repeating group (`group[].field`).
+ */
+function isGroupPath(arg) {
+	return typeof arg === 'string' && arg.includes('[].')
+}
+
+/**
+ * Every argument's numbers, a group's field giving one per item.
+ *
+ * @param {Array<unknown>} args The arguments.
+ * @param {Record<string, unknown>} answers The answers.
+ * @return {Array<number>|null} The numbers, or null when an argument is missing or not a number.
+ */
+function numbersOf(args, answers) {
+	const numbers = []
+	for (const arg of args) {
+		const values = valuesOf(arg, answers)
+		if ((values.length === 0 && !isGroupPath(arg)) || !values.every(isNumeric)) {
+			return null
+		}
+		numbers.push(...values.map(Number))
+	}
+	return numbers
+}
+
+/**
+ * A calculation over the numbers of its arguments.
+ *
+ * @param {(numbers: Array<number>) => number} fold How the numbers make the result.
+ * @return {(args: Array<unknown>, answers: Record<string, unknown>) => number|null} The calculation.
+ */
+function overNumbers(fold) {
+	return (args, answers) => {
+		const numbers = numbersOf(args, answers)
+		return numbers === null || numbers.length === 0 ? null : fold(numbers)
+	}
+}
+
+/** How each operation works out. */
+const CALCULATIONS = new Map([
+	['count', countOf],
+	['addDays', addDays],
+	['diffDays', diffDays],
+	['sum', overNumbers((numbers) => numbers.reduce((total, number) => total + number, 0))],
+	['multiply', overNumbers((numbers) => numbers.reduce((total, number) => total * number, 1))],
+	[
+		'subtract',
+		overNumbers((numbers) =>
+			numbers.slice(1).reduce((total, number) => total - number, numbers[0]),
+		),
+	],
+])
+
+/**
+ * @param {{args: Array<unknown>}|null} calculate The field's `calculate`.
+ * @return {Array<unknown>} Its arguments, or none.
+ */
+function argsOf(calculate) {
+	return Array.isArray(calculate && calculate.args) ? calculate.args : []
+}
+
+/**
  * Work one calculation out over the answers.
  *
- * @param {{op: string, args: Array<*>}} calculate The field's `calculate`.
- * @param {Record<string, any>} answers The answers so far.
+ * @param {{op: string, args: Array<unknown>}} calculate The field's `calculate`.
+ * @param {Record<string, unknown>} answers The answers so far.
  * @return {number|string|null} The result, or null when it cannot be worked out.
  * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t04
  */
 export function evaluate(calculate, answers) {
 	const op = calculate && calculate.op
-	const args = Array.isArray(calculate && calculate.args) ? calculate.args : []
+	const args = argsOf(calculate)
 	if (!OPERATIONS.includes(op) || args.length === 0) {
 		return null
 	}
-	if (op === 'count') {
-		const value = answers[String(args[0])]
-		return Array.isArray(value) ? value.length : null
-	}
-	if (op === 'addDays') {
-		const from = dateArgument(args[0], answers)
-		const days = valuesOf(args[1], answers)
-		if (from === null || days.length !== 1 || !isNumeric(days[0])) {
-			return null
-		}
-		return isoOf(from + Math.trunc(Number(days[0])))
-	}
-	if (op === 'diffDays') {
-		const from = dateArgument(args[0], answers)
-		const to = dateArgument(args[1], answers)
-		return from === null || to === null ? null : to - from
-	}
-	const numbers = []
-	for (const arg of args) {
-		const values = valuesOf(arg, answers)
-		if (
-			values.length === 0
-			&& !(typeof arg === 'string' && arg.includes('[].'))
-		) {
-			return null
-		}
-		for (const value of values) {
-			if (!isNumeric(value)) {
-				return null
-			}
-			numbers.push(Number(value))
-		}
-	}
-	if (numbers.length === 0) {
-		return null
-	}
-	if (op === 'sum') {
-		return numbers.reduce((total, number) => total + number, 0)
-	}
-	if (op === 'multiply') {
-		return numbers.reduce((total, number) => total * number, 1)
-	}
-	return numbers.slice(1).reduce((total, number) => total - number, numbers[0])
+	return CALCULATIONS.get(op)(args, answers)
 }
 
 /**
@@ -187,18 +249,28 @@ export function evaluate(calculate, answers) {
  * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t04
  */
 export function calculatedValues(fields, values) {
-	const answers = { ...(values || {}) }
-	const out = {}
+	const run = { answers: { ...(values || {}) }, out: {} }
 	for (const field of Array.isArray(fields) ? fields : []) {
-		if (!field || !field.calculate) {
-			continue
-		}
-		delete answers[field.name]
-		const result = evaluate(field.calculate, answers)
-		if (result !== null) {
-			answers[field.name] = result
-			out[field.name] = result
+		if (field && field.calculate) {
+			calculateField(run, field)
 		}
 	}
-	return out
+	return run.out
+}
+
+/**
+ * Work one calculated field out over the answers before it, so a later field
+ * can read it. A field is never read by its own calculation.
+ *
+ * @param {{answers: Record<string, unknown>, out: Record<string, number|string>}} run The answers so far and the values worked out.
+ * @param {{name: string, calculate: object}} field The calculated field.
+ * @return {void}
+ */
+function calculateField(run, field) {
+	delete run.answers[field.name]
+	const result = evaluate(field.calculate, run.answers)
+	if (result !== null) {
+		run.answers[field.name] = result
+		run.out[field.name] = result
+	}
 }

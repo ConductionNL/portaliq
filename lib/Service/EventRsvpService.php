@@ -22,21 +22,22 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\EventRsvpServiceInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
  */
-class EventRsvpService {
+class EventRsvpService implements EventRsvpServiceInterface {
 	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
 	use PagedObjectReads;
@@ -60,11 +61,6 @@ class EventRsvpService {
 	private const REGISTER = 'portaliq';
 
 	private const SCHEMA = 'eventRsvp';
-
-	/**
-	 * The refusals attempt() answers with; null is a recorded answer.
-	 */
-	public const REASON_NOT_FOUND = 'not_found';
 
 	public const REASON_FULL = 'event-full';
 
@@ -102,7 +98,7 @@ class EventRsvpService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
 	 */
 	public function rsvp(string $subjectRef, string $eventId, string $childRef, string $response, ?int $seats = null): bool {
 		$reason = $this->attempt(subjectRef: $subjectRef, eventId: $eventId, childRef: $childRef, response: $response, seats: $seats);
@@ -228,6 +224,23 @@ class EventRsvpService {
 			return false;
 		}
 
+		$taken = $this->seatsOfOthers(objectService: $objectService, eventId: $eventId, asked: $asked, existing: $existing);
+
+		return ($taken + ($asked ?? 1)) > $capacity;
+	}//end passesCapacity()
+
+	/**
+	 * The seats the event's other yes answers take; the child's own earlier
+	 * answer is not counted.
+	 *
+	 * @param object     $objectService OpenRegister's ObjectService.
+	 * @param string     $eventId       The event id.
+	 * @param int|null   $asked         The seats this answer takes; null counts one per answer.
+	 * @param array|null $existing      The child's earlier answer.
+	 *
+	 * @return int
+	 */
+	private function seatsOfOthers(object $objectService, string $eventId, int|null $asked, array|null $existing): int {
 		$taken = 0;
 		foreach ($this->answersOf(objectService: $objectService, eventId: $eventId) as $row) {
 			if ($existing !== null && $this->rowId(row: $row) === $this->rowId(row: $existing)) {
@@ -238,16 +251,28 @@ class EventRsvpService {
 				continue;
 			}
 
-			$rowSeats = 1;
-			if ($asked !== null) {
-				$rowSeats = max(1, (int)($row['seats'] ?? 1));
-			}
-
-			$taken += $rowSeats;
+			$taken += $this->rowSeats(row: $row, asked: $asked);
 		}
 
-		return ($taken + ($asked ?? 1)) > $capacity;
-	}//end passesCapacity()
+		return $taken;
+	}//end seatsOfOthers()
+
+	/**
+	 * The seats one yes answer takes: its own seats when seats are asked, else one.
+	 *
+	 * @param array<string, mixed> $row   The answer.
+	 * @param int|null             $asked The seats this answer takes; null counts one per answer.
+	 *
+	 * @return int
+	 */
+	private function rowSeats(array $row, int|null $asked): int {
+		$rowSeats = 1;
+		if ($asked !== null) {
+			$rowSeats = max(1, (int)($row['seats'] ?? 1));
+		}
+
+		return $rowSeats;
+	}//end rowSeats()
 
 	/**
 	 * The seats taken on an event: the seats of every yes, or one per yes
@@ -279,18 +304,42 @@ class EventRsvpService {
 	 * @return array<int, array<string, mixed>>
 	 */
 	private function answersOf(object $objectService, string $eventId): array {
-		try {
-			$rows = $this->readEveryPage(objectService: $objectService, register: self::REGISTER, schema: self::SCHEMA, filters: ['eventRef' => $eventId]);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: event RSVP count failed', ['reason' => $e->getMessage()]);
-			return [];
-		}
-
-		$out = [];
+		$rows = $this->everyAnswer(objectService: $objectService, eventId: $eventId);
 		if (is_array($rows) === false) {
 			return [];
 		}
 
+		return $this->answersFor(rows: $rows, eventId: $eventId);
+	}//end answersOf()
+
+	/**
+	 * Every stored answer on one event, read page by page; [] when the read
+	 * fails, which is logged.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $eventId       The event id.
+	 *
+	 * @return mixed What the read returned.
+	 */
+	private function everyAnswer(object $objectService, string $eventId): mixed {
+		try {
+			return $this->readEveryPage(objectService: $objectService, register: self::REGISTER, schema: self::SCHEMA, filters: ['eventRef' => $eventId]);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: event RSVP count failed', ['reason' => $e->getMessage()]);
+			return [];
+		}
+	}//end everyAnswer()
+
+	/**
+	 * The rows that are answers on this event, as arrays.
+	 *
+	 * @param array<int|string, mixed> $rows    The rows read.
+	 * @param string                   $eventId The event id.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function answersFor(array $rows, string $eventId): array {
+		$out = [];
 		foreach ($rows as $row) {
 			$row = $this->normalise(row: $row);
 			if ($row !== null && (string)($row['eventRef'] ?? '') === $eventId) {
@@ -299,7 +348,7 @@ class EventRsvpService {
 		}
 
 		return $out;
-	}//end answersOf()
+	}//end answersFor()
 
 	/**
 	 * The existing answer for this child on this event, whoever gave it.
@@ -336,11 +385,21 @@ class EventRsvpService {
 			return (string)$row['uuid'];
 		}
 
-		$self = $row['@self'] ?? [];
-		if (is_array($self) === true && (isset($self['id']) === true || isset($self['uuid']) === true)) {
-			return (string)($self['id'] ?? $self['uuid']);
+		return $this->envelopeId(envelope: ($row['@self'] ?? []));
+	}//end rowId()
+
+	/**
+	 * The id, else the uuid, of a row's `@self` envelope, or null.
+	 *
+	 * @param mixed $envelope The `@self` envelope.
+	 *
+	 * @return string|null
+	 */
+	private function envelopeId(mixed $envelope): ?string {
+		if (is_array($envelope) === false || (isset($envelope['id']) === false && isset($envelope['uuid']) === false)) {
+			return null;
 		}
 
-		return null;
-	}//end rowId()
+		return (string)($envelope['id'] ?? $envelope['uuid']);
+	}//end envelopeId()
 }//end class

@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Plans;
 
+use OCA\Portaliq\Kernel\Contracts\PortalPlanServiceInterface;
 use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use OCA\Portaliq\Service\Identity\PortalContactService;
 use OCA\Portaliq\Service\PortalObjectReader;
@@ -40,22 +41,13 @@ use OCP\IL10N;
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- reader, writer, contacts, accounts and rules.
  * @SuppressWarnings(PHPMD.TooManyPublicMethods) -- one method per thing a resident does with a plan.
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- the permission rules of one plan live together.
+ * @SuppressWarnings(PHPMD.TooManyMethods) -- The total is the sum of small private steps; each method stays under the method thresholds.
  *
  * @spec openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md
  */
-class PortalPlanService {
+class PortalPlanService implements PortalPlanServiceInterface {
 
 	public const REGISTER = 'portaliq';
-
-	public const OK = 'ok';
-
-	public const NOT_FOUND = 'not_found';
-
-	public const FORBIDDEN = 'forbidden';
-
-	public const INVALID = 'invalid';
-
-	public const FAILED = 'failed';
 
 	/**
 	 * The statuses an action may have.
@@ -225,20 +217,83 @@ class PortalPlanService {
 			return ['status' => self::FORBIDDEN, 'id' => ''];
 		}
 
+		$picked = $this->startTemplate(portal: $portal, templateId: $templateId, title: $title);
+		if ($picked === null || $owner === '') {
+			return ['status' => self::INVALID, 'id' => ''];
+		}
+
+		$plan = ['owner' => $owner, 'participants' => $participants, 'title' => $picked['title'], 'status' => 'running', 'template' => $templateId];
+		return $this->createStarted(subject: $subject, plan: $plan, template: $picked['template'], today: $today);
+	}//end start()
+
+	/**
+	 * The template a plan starts from and its title, or null when the
+	 * template is unknown or the title ends up empty.
+	 *
+	 * @param string $portal     The portal's slug, for the templates.
+	 * @param string $templateId A published template, or '' for an empty plan.
+	 * @param string $title      The name; the template's when empty.
+	 *
+	 * @return array{template: array<string, mixed>|null, title: string}|null
+	 *
+	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t03
+	 */
+	private function startTemplate(string $portal, string $templateId, string $title): array|null {
 		$template = null;
 		if ($templateId !== '') {
 			$template = $this->templates->byId(portal: $portal, id: $templateId);
 			if ($template === null) {
-				return ['status' => self::INVALID, 'id' => ''];
+				return null;
 			}
 		}
 
 		$title = $this->templates->startTitle(template: $template, title: $title);
-		if ($title === '' || $owner === '') {
-			return ['status' => self::INVALID, 'id' => ''];
+		if ($title === '') {
+			return null;
 		}
 
-		$plan = ['owner' => $owner, 'participants' => $participants, 'title' => $title, 'status' => 'running', 'template' => $templateId];
+		return ['template' => $template, 'title' => $title];
+	}//end startTemplate()
+
+	/**
+	 * Create a started plan and the template's actions.
+	 *
+	 * @param array<string, mixed>      $subject  The session subject, who becomes the owner.
+	 * @param array<string, mixed>      $plan     The plan's data.
+	 * @param array<string, mixed>|null $template The template, or null for an empty plan.
+	 * @param string                    $today    Today, `Y-m-d`.
+	 *
+	 * @return array{status: string, id: string}
+	 *
+	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t03
+	 */
+	private function createStarted(array $subject, array $plan, array|null $template, string $today): array {
+		$built   = $this->expandTemplate(plan: $plan, template: $template, today: $today);
+		$created = $this->createPlan(plan: $built['plan'], organisation: (string)($subject['organisation'] ?? ''));
+		if ($created === null) {
+			return ['status' => self::FAILED, 'id' => ''];
+		}
+
+		$id = $this->idOf(row: $created);
+		foreach ($built['actions'] as $action) {
+			$this->createAction(subject: $subject, planId: $id, data: $action + ['assignee' => $plan['owner']]);
+		}
+
+		return ['status' => self::OK, 'id' => $id];
+	}//end createStarted()
+
+	/**
+	 * The plan with the template's goal and end date, and the template's actions.
+	 *
+	 * @param array<string, mixed>      $plan     The plan's data.
+	 * @param array<string, mixed>|null $template The template, or null for an empty plan.
+	 * @param string                    $today    Today, `Y-m-d`.
+	 *
+	 * @return array{plan: array<string, mixed>, actions: array}
+	 *
+	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t03
+	 */
+	private function expandTemplate(array $plan, array|null $template, string $today): array {
 		$expanded = ['endDate' => '', 'actions' => []];
 		if ($template !== null) {
 			$expanded = $this->rules->expand(template: $template, today: $today);
@@ -247,25 +302,29 @@ class PortalPlanService {
 			$plan['endDate']    = $expanded['endDate'];
 		}
 
-		$created = $this->writer->createObject(
+		return ['plan' => $plan, 'actions' => $expanded['actions']];
+	}//end expandTemplate()
+
+	/**
+	 * Write the plan row.
+	 *
+	 * @param array<string, mixed> $plan         The plan's data.
+	 * @param string               $organisation The owner's organisation.
+	 *
+	 * @return array<string, mixed>|null The created row, or null when the write failed.
+	 *
+	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t03
+	 */
+	private function createPlan(array $plan, string $organisation): array|null {
+		return $this->writer->createObject(
 			register: self::REGISTER,
 			schema: 'portalPlan',
 			scopeField: 'owner',
-			subjectRef: $owner,
+			subjectRef: $plan['owner'],
 			organisation: $organisation,
 			data: $plan
 		);
-		if ($created === null) {
-			return ['status' => self::FAILED, 'id' => ''];
-		}
-
-		$id = $this->idOf(row: $created);
-		foreach ($expanded['actions'] as $action) {
-			$this->createAction(subject: $subject, planId: $id, data: $action + ['assignee' => $owner]);
-		}
-
-		return ['status' => self::OK, 'id' => $id];
-	}//end start()
+	}//end createPlan()
 
 	/**
 	 * Change a plan. A participant changes the goal, its explanation and the
@@ -281,33 +340,73 @@ class PortalPlanService {
 	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t02
 	 */
 	public function update(array $subject, string $id, array $changes, string $today): string {
+		$plan = $this->editablePlan(subject: $subject, id: $id);
+		if (is_string($plan) === true) {
+			return $plan;
+		}
+
+		$changed = $this->changedData(subject: $subject, plan: $plan, changes: $changes, today: $today);
+		if ($changed['status'] !== self::OK) {
+			return $changed['status'];
+		}
+
+		if ($changed['data'] === []) {
+			return self::INVALID;
+		}
+
+		return $this->write(subject: $subject, plan: $plan, isOwner: $this->isOwner(plan: $plan, subject: $subject), data: $changed['data']);
+	}//end update()
+
+	/**
+	 * The plan a participant may change, or NOT_FOUND or FORBIDDEN (a done plan).
+	 *
+	 * @param array<string, mixed> $subject The session subject.
+	 * @param string               $id      The plan.
+	 *
+	 * @return array<string, mixed>|string The plan, or the refusal.
+	 *
+	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t02
+	 */
+	private function editablePlan(array $subject, string $id): array|string {
 		$plan = $this->planFor(subject: $subject, id: $id);
 		if ($plan === null) {
 			return self::NOT_FOUND;
 		}
 
-		$isOwner = $this->isOwner(plan: $plan, subject: $subject);
 		if (($plan['status'] ?? 'running') === 'done') {
 			return self::FORBIDDEN;
 		}
 
-		$data = [];
+		return $plan;
+	}//end editablePlan()
+
+	/**
+	 * The data the changes write, or the first refusal among them.
+	 *
+	 * @param array<string, mixed> $subject The session subject.
+	 * @param array<string, mixed> $plan    The plan.
+	 * @param array<string, mixed> $changes What to change.
+	 * @param string               $today   Today, `Y-m-d`.
+	 *
+	 * @return array{status: string, data: array<string, mixed>}
+	 *
+	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t02
+	 */
+	private function changedData(array $subject, array $plan, array $changes, string $today): array {
+		$isOwner = $this->isOwner(plan: $plan, subject: $subject);
+		$data    = [];
 		foreach ($changes as $field => $value) {
 			$editor = $this->refOf(subject: $subject);
 			$result = $this->changes->change(plan: $plan, editor: $editor, isOwner: $isOwner, field: (string)$field, value: $value, today: $today);
 			if ($result['status'] !== self::OK) {
-				return $result['status'];
+				return ['status' => $result['status'], 'data' => []];
 			}
 
 			$data = array_merge($data, $result['data']);
 		}
 
-		if ($data === []) {
-			return self::INVALID;
-		}
-
-		return $this->write(subject: $subject, plan: $plan, isOwner: $isOwner, data: $data);
-	}//end update()
+		return ['status' => self::OK, 'data' => $data];
+	}//end changedData()
 
 	/**
 	 * Add approved contacts of the owner to the plan. Owner only.
@@ -426,21 +525,47 @@ class PortalPlanService {
 	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
 	 */
 	public function addAction(array $subject, string $id, array $data): string {
-		$plan = $this->planFor(subject: $subject, id: $id);
-		if ($plan === null) {
-			return self::NOT_FOUND;
+		$plan = $this->editablePlan(subject: $subject, id: $id);
+		if (is_string($plan) === true) {
+			return $plan;
 		}
 
-		if (($plan['status'] ?? 'running') === 'done') {
-			return self::FORBIDDEN;
-		}
-
-		$members = array_merge([(string)($plan['owner'] ?? '')], $this->participantsOf(plan: $plan));
-		$clean   = $this->actionFields->clean(data: $data, members: $members, requireTitle: true);
+		$clean = $this->cleanAction(plan: $plan, data: $data, requireTitle: true);
 		if ($clean === null) {
 			return self::INVALID;
 		}
 
+		return $this->createAssigned(subject: $subject, id: $id, clean: $clean);
+	}//end addAction()
+
+	/**
+	 * The action's cleaned fields, with the plan's members as the allowed assignees.
+	 *
+	 * @param array<string, mixed> $plan         The plan.
+	 * @param array<string, mixed> $data         The action's fields.
+	 * @param bool                 $requireTitle Whether a title is required.
+	 *
+	 * @return array<string, mixed>|null Null when the fields are invalid.
+	 *
+	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
+	 */
+	private function cleanAction(array $plan, array $data, bool $requireTitle): array|null {
+		$members = array_merge([(string)($plan['owner'] ?? '')], $this->participantsOf(plan: $plan));
+		return $this->actionFields->clean(data: $data, members: $members, requireTitle: $requireTitle);
+	}//end cleanAction()
+
+	/**
+	 * Create the action, assigned to the caller unless it names an assignee.
+	 *
+	 * @param array<string, mixed> $subject The session subject.
+	 * @param string               $id      The plan.
+	 * @param array<string, mixed> $clean   The action's cleaned fields.
+	 *
+	 * @return string OK or FAILED.
+	 *
+	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
+	 */
+	private function createAssigned(array $subject, string $id, array $clean): string {
 		if (isset($clean['assignee']) === false) {
 			$clean['assignee'] = (string)$subject['subjectRef'];
 		}
@@ -450,7 +575,7 @@ class PortalPlanService {
 		}
 
 		return self::OK;
-	}//end addAction()
+	}//end createAssigned()
 
 	/**
 	 * Change an action of a plan. Any participant may.
@@ -467,9 +592,47 @@ class PortalPlanService {
 	public function updateAction(array $subject, string $id, string $actionId, array $data): string {
 		$plan = $this->planFor(subject: $subject, id: $id);
 		$organisation = (string)($subject['organisation'] ?? '');
-		$ids   = array_map(fn (array $action): string => $this->idOf(row: $action), $this->actionsOf(planId: $id, organisation: $organisation));
-		$known = in_array($actionId, $ids, true);
+		$known   = $this->knownAction(id: $id, actionId: $actionId, organisation: $organisation);
+		$refusal = $this->actionRefusal(plan: $plan, known: $known);
+		if ($refusal !== null) {
+			return $refusal;
+		}
 
+		$clean = $this->cleanAction(plan: $plan, data: $data, requireTitle: false);
+		if ($clean === null || $clean === []) {
+			return self::INVALID;
+		}
+
+		return $this->writeAction(id: $id, actionId: $actionId, organisation: $organisation, clean: $clean);
+	}//end updateAction()
+
+	/**
+	 * Whether the action belongs to the plan.
+	 *
+	 * @param string $id           The plan.
+	 * @param string $actionId     The action.
+	 * @param string $organisation The caller's organisation.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
+	 */
+	private function knownAction(string $id, string $actionId, string $organisation): bool {
+		$ids = array_map(fn (array $action): string => $this->idOf(row: $action), $this->actionsOf(planId: $id, organisation: $organisation));
+		return in_array($actionId, $ids, true);
+	}//end knownAction()
+
+	/**
+	 * NOT_FOUND for an unknown plan or action, FORBIDDEN for a done plan, else null.
+	 *
+	 * @param array<string, mixed>|null $plan  The plan, or null when not found.
+	 * @param bool                      $known Whether the action belongs to the plan.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
+	 */
+	private function actionRefusal(array|null $plan, bool $known): string|null {
 		if ($plan === null || $known === false) {
 			return self::NOT_FOUND;
 		}
@@ -478,17 +641,48 @@ class PortalPlanService {
 			return self::FORBIDDEN;
 		}
 
-		$members = array_merge([(string)($plan['owner'] ?? '')], $this->participantsOf(plan: $plan));
-		$clean   = $this->actionFields->clean(data: $data, members: $members, requireTitle: false);
-		if ($clean === null || $clean === []) {
-			return self::INVALID;
-		}
+		return null;
+	}//end actionRefusal()
 
+	/**
+	 * Write the action's cleaned fields; a new end date resets its reminder.
+	 *
+	 * @param string               $id           The plan.
+	 * @param string               $actionId     The action.
+	 * @param string               $organisation The caller's organisation.
+	 * @param array<string, mixed> $clean        The action's cleaned fields.
+	 *
+	 * @return string OK or FAILED.
+	 *
+	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
+	 */
+	private function writeAction(string $id, string $actionId, string $organisation, array $clean): string {
 		if (array_key_exists('endDate', $clean) === true) {
 			$clean['reminderSentAt'] = null;
 		}
 
-		$written = $this->writer->updateObject(
+		$written = $this->updateActionRow(id: $id, actionId: $actionId, organisation: $organisation, clean: $clean);
+		if ($written === null) {
+			return self::FAILED;
+		}
+
+		return self::OK;
+	}//end writeAction()
+
+	/**
+	 * Update the action row.
+	 *
+	 * @param string               $id           The plan.
+	 * @param string               $actionId     The action.
+	 * @param string               $organisation The caller's organisation.
+	 * @param array<string, mixed> $clean        The action's fields.
+	 *
+	 * @return array<string, mixed>|null The updated row, or null when the write failed.
+	 *
+	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
+	 */
+	private function updateActionRow(string $id, string $actionId, string $organisation, array $clean): array|null {
+		return $this->writer->updateObject(
 			register: self::REGISTER,
 			schema: 'portalAction',
 			scopeField: 'plan',
@@ -497,12 +691,7 @@ class PortalPlanService {
 			id: $actionId,
 			data: $clean
 		);
-		if ($written === null) {
-			return self::FAILED;
-		}
-
-		return self::OK;
-	}//end updateAction()
+	}//end updateActionRow()
 
 	/**
 	 * The plan as rows of a PDF for a participant: goal, end date, who takes
@@ -522,20 +711,7 @@ class PortalPlanService {
 			return null;
 		}
 
-		$rows = [
-			['part' => $this->l10n->t('Goal'), 'content' => trim($plan['goal'].' '.$plan['goalDetail'])],
-			['part' => $this->l10n->t('End date'), 'content' => $plan['endDate']],
-			['part' => $this->l10n->t('Participants'), 'content' => implode(', ', array_column($plan['participants'], 'displayName'))],
-		];
-		foreach ($plan['actions'] as $action) {
-			$until  = '';
-			if ($action['endDate'] !== '') {
-				$until = ', '.$action['endDate'];
-			}
-
-			$rows[] = ['part' => $this->l10n->t('Action'), 'content' => $action['title'].' ('.$action['status'].$until.')'];
-		}
-
+		$rows = array_merge($this->headRows(plan: $plan), $this->actionRows(actions: $plan['actions']));
 		if ($plan['note']['text'] !== '') {
 			$rows[] = ['part' => $this->l10n->t('Note'), 'content' => $plan['note']['text']];
 		}
@@ -546,6 +722,46 @@ class PortalPlanService {
 			'rows'    => $rows,
 		];
 	}//end pdfRows()
+
+	/**
+	 * The PDF's goal, end date and participants rows.
+	 *
+	 * @param array<string, mixed> $plan The plan's detail.
+	 *
+	 * @return array<int, array<string, string>>
+	 *
+	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t06
+	 */
+	private function headRows(array $plan): array {
+		return [
+			['part' => $this->l10n->t('Goal'), 'content' => trim($plan['goal'].' '.$plan['goalDetail'])],
+			['part' => $this->l10n->t('End date'), 'content' => $plan['endDate']],
+			['part' => $this->l10n->t('Participants'), 'content' => implode(', ', array_column($plan['participants'], 'displayName'))],
+		];
+	}//end headRows()
+
+	/**
+	 * The PDF's row per action.
+	 *
+	 * @param array<int, array<string, mixed>> $actions The plan's actions.
+	 *
+	 * @return array<int, array<string, string>>
+	 *
+	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t06
+	 */
+	private function actionRows(array $actions): array {
+		$rows = [];
+		foreach ($actions as $action) {
+			$until  = '';
+			if ($action['endDate'] !== '') {
+				$until = ', '.$action['endDate'];
+			}
+
+			$rows[] = ['part' => $this->l10n->t('Action'), 'content' => $action['title'].' ('.$action['status'].$until.')'];
+		}
+
+		return $rows;
+	}//end actionRows()
 
 	/**
 	 * The plan for a viewer who owns it or takes part in it, with whether

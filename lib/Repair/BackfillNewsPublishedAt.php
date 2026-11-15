@@ -22,17 +22,17 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/news-publish-date/tasks.md#T3
+ * @spec openspec/changes/archive/2026-10-07-news-publish-date/tasks.md#T3
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Repair;
 
-use OCA\Portaliq\Service\ObjectServiceLookup;
 use DateTimeImmutable;
 use DateTimeZone;
-use OCA\Portaliq\Service\PortalRegisterContext;
+use OCA\Portaliq\Kernel\Contracts\PortalRegisterContextInterface;
+use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Container\ContainerInterface;
@@ -42,7 +42,7 @@ use Throwable;
 /**
  * Stamps `publishedAt` on published news items that have none.
  *
- * @spec openspec/changes/news-publish-date/tasks.md#T3
+ * @spec openspec/changes/archive/2026-10-07-news-publish-date/tasks.md#T3
  */
 class BackfillNewsPublishedAt implements IRepairStep {
 	use PagedSchemaRead;
@@ -82,12 +82,12 @@ class BackfillNewsPublishedAt implements IRepairStep {
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container Resolves OpenRegister's object service, which may be absent.
-	 * @param PortalRegisterContext $context Points the object service at the news item schema.
+	 * @param PortalRegisterContextInterface $context Points the object service at the news item schema.
 	 * @param LoggerInterface $logger Names an item that could not be stamped.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
-		private readonly PortalRegisterContext $context,
+		private readonly PortalRegisterContextInterface $context,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -97,7 +97,7 @@ class BackfillNewsPublishedAt implements IRepairStep {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/news-publish-date/tasks.md#T3
+	 * @spec openspec/changes/archive/2026-10-07-news-publish-date/tasks.md#T3
 	 */
 	public function getName(): string {
 		return 'Give published news items their publish moment';
@@ -110,7 +110,7 @@ class BackfillNewsPublishedAt implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/news-publish-date/tasks.md#T3
+	 * @spec openspec/changes/archive/2026-10-07-news-publish-date/tasks.md#T3
 	 */
 	public function run(IOutput $output): void {
 		$objectService = $this->objectService();
@@ -126,15 +126,32 @@ class BackfillNewsPublishedAt implements IRepairStep {
 			$page    = $this->page(objectService: $objectService, offset: $offset);
 			$read    = $page['read'];
 			$offset += $read;
-			foreach ($page['rows'] as $row) {
-				if ($this->stamp(objectService: $objectService, row: $row) === true) {
-					$stamped++;
-				}
-			}
+			$stamped += $this->stampRows(objectService: $objectService, rows: $page['rows']);
 		} while ($read === self::PAGE && $pages < self::MAX_PAGES);
 
 		$output->info('BackfillNewsPublishedAt: stamped ' . $stamped . ' news items.');
 	}//end run()
+
+	/**
+	 * Stamp the items of one page.
+	 *
+	 * @param object                           $objectService OpenRegister's object service.
+	 * @param array<int, array<string, mixed>> $rows          The page's items.
+	 *
+	 * @return int How many items were written.
+	 *
+	 * @spec openspec/changes/archive/2026-10-07-news-publish-date/tasks.md#T3
+	 */
+	private function stampRows(object $objectService, array $rows): int {
+		$stamped = 0;
+		foreach ($rows as $row) {
+			if ($this->stamp(objectService: $objectService, row: $row) === true) {
+				$stamped++;
+			}
+		}
+
+		return $stamped;
+	}//end stampRows()
 
 	/**
 	 * Stamp one item when it is published, has no moment and has a creation moment.
@@ -145,16 +162,11 @@ class BackfillNewsPublishedAt implements IRepairStep {
 	 * @return bool True when the item was written.
 	 */
 	private function stamp(object $objectService, array $row): bool {
-		$self = [];
-		if (is_array($row['@self'] ?? null) === true) {
-			$self = $row['@self'];
-		}
+		$self = $this->selfOf(row: $row);
 
 		$uuid    = (string)($self['uuid'] ?? $self['id'] ?? $row['id'] ?? '');
 		$created = $self['created'] ?? null;
-		if (($row['status'] ?? '') !== 'published' || empty($row['publishedAt']) === false
-			|| $uuid === '' || is_string($created) === false || $created === ''
-		) {
+		if ($this->skips(row: $row, uuid: $uuid, created: $created) === true) {
 			return false;
 		}
 
@@ -171,4 +183,34 @@ class BackfillNewsPublishedAt implements IRepairStep {
 
 		return true;
 	}//end stamp()
+
+	/**
+	 * The item's `@self` block, or [] without one.
+	 *
+	 * @param array<string, mixed> $row The stored item.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function selfOf(array $row): array {
+		$self = [];
+		if (is_array($row['@self'] ?? null) === true) {
+			$self = $row['@self'];
+		}
+
+		return $self;
+	}//end selfOf()
+
+	/**
+	 * Whether an item is left alone: not published, already stamped, or without an id or creation moment.
+	 *
+	 * @param array<string, mixed> $row     The stored item.
+	 * @param string               $uuid    The item's id.
+	 * @param mixed                $created The item's creation moment.
+	 *
+	 * @return bool
+	 */
+	private function skips(array $row, string $uuid, mixed $created): bool {
+		return ($row['status'] ?? '') !== 'published' || empty($row['publishedAt']) === false
+			|| $uuid === '' || is_string($created) === false || $created === '';
+	}//end skips()
 }//end class

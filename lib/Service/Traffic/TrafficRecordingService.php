@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+ * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
  */
 
 declare(strict_types=1);
@@ -22,6 +22,7 @@ namespace OCA\Portaliq\Service\Traffic;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\Portaliq\Kernel\Contracts\TrafficRecordingServiceInterface;
 use OCA\Portaliq\Service\TrafficConfigResolver;
 use OCP\AppFramework\Utility\ITimeFactory;
 
@@ -40,9 +41,9 @@ use OCP\AppFramework\Utility\ITimeFactory;
  * Every chunk passes through the mask before it is stored, whatever the
  * recorder promised.
  *
- * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+ * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
  */
-class TrafficRecordingService {
+class TrafficRecordingService implements TrafficRecordingServiceInterface {
 
 	/**
 	 * The most bytes one chunk may carry, after masking: 256 KB.
@@ -93,7 +94,7 @@ class TrafficRecordingService {
 	 *
 	 * @return array{ok: bool, reason: string} The outcome; the reason is '' when stored.
 	 *
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
 	 */
 	public function ingest(array $portal, array $body, array $context = []): array {
 		$config = $this->config->resolve(portal: $portal);
@@ -103,15 +104,46 @@ class TrafficRecordingService {
 		}
 
 		$events = $this->mask->events(events: $body['events']);
+		$reason = $this->chunkRefusal(events: $events);
+		if ($reason !== null) {
+			return $this->refuse(reason: $reason);
+		}
+
+		return $this->storeChunk(portal: $portal, body: $body, config: $config, events: $events);
+	}
+
+	/**
+	 * Why a masked chunk is refused: nothing left, or too large.
+	 *
+	 * @param array<int, array<string, mixed>> $events The masked events.
+	 *
+	 * @return string|null The reason, or null when the chunk may be stored.
+	 */
+	private function chunkRefusal(array $events): string|null {
 		if ($events === []) {
-			return $this->refuse(reason: 'recording-empty');
+			return 'recording-empty';
 		}
 
 		$chunkBytes = strlen((string)json_encode($events));
 		if ($chunkBytes > self::MAX_CHUNK_BYTES) {
-			return $this->refuse(reason: 'recording-chunk-too-large');
+			return 'recording-chunk-too-large';
 		}
 
+		return null;
+	}
+
+	/**
+	 * Append the masked chunk to its recording, new or existing, within the recording's bound.
+	 *
+	 * @param array<string, mixed>             $portal The portal record.
+	 * @param array<string, mixed>             $body   The posted chunk.
+	 * @param array<string, mixed>             $config The resolved configuration.
+	 * @param array<int, array<string, mixed>> $events The masked events.
+	 *
+	 * @return array{ok: bool, reason: string} The outcome; the reason is '' when stored.
+	 */
+	private function storeChunk(array $portal, array $body, array $config, array $events): array {
+		$chunkBytes = strlen((string)json_encode($events));
 		$slug = (string)($portal['slug'] ?? '');
 		$recordingId = (string)$body['recording'];
 		$existing = $this->store->find(portal: $slug, recordingId: $recordingId);
@@ -122,6 +154,19 @@ class TrafficRecordingService {
 		}
 
 		$record = $this->appended(record: $record, body: $body, events: $events, bytes: $chunkBytes, now: $now);
+
+		return $this->persist(record: $record, existing: $existing);
+	}
+
+	/**
+	 * Save the recording over the existing object, or as a new one.
+	 *
+	 * @param array<string, mixed>      $record   The record.
+	 * @param array<string, mixed>|null $existing The stored object, or null for a new recording.
+	 *
+	 * @return array{ok: bool, reason: string} The outcome; the reason is '' when stored.
+	 */
+	private function persist(array $record, array|null $existing): array {
 		$uuid = null;
 		if ($existing !== null) {
 			$uuid = $this->store->uuidOf(row: $existing);

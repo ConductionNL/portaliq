@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\CaseTypeVisibilityInterface;
 use OCA\Portaliq\Service\CaseTypeColumns\CaseTypeColumnsNormaliser;
 use OCA\Portaliq\Service\CaseTypeColumns\ColumnOverrides;
 use OCP\IRequest;
@@ -43,11 +44,7 @@ use OCP\IRequest;
  *
  * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
  */
-class CaseTypeVisibility {
-	/**
-	 * The header the resident portal names its own portal slug in.
-	 */
-	public const HEADER = RequestedPortal::HEADER;
+class CaseTypeVisibility implements CaseTypeVisibilityInterface {
 
 	/**
 	 * The case field a `cases` collection keeps its case type in, unless it
@@ -174,7 +171,7 @@ class CaseTypeVisibility {
 	 *
 	 * @return ColumnOverrides
 	 *
-	 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-a-case-row-reads-with-its-case-types-columns
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-case-row-reads-with-its-case-types-columns
 	 */
 	public function servingColumns(IRequest $request, array $subject): ColumnOverrides {
 		$portal = $this->servingPortal(request: $request, subject: $subject);
@@ -211,19 +208,9 @@ class CaseTypeVisibility {
 	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 */
 	public function servingPortal(IRequest $request, array $subject): ?array {
-		$slug = (new RequestedPortal())->slug(request: $request);
-
-		$named = null;
-		if ($slug !== null) {
-			$named = $this->portals->resolve(request: $request, portalSlug: $slug);
-		}
-
-		if ($named === null) {
-			$named = $this->portals->resolve(request: $request);
-		}
-
+		$named        = $this->namedPortal(request: $request);
 		$organisation = (string)($subject['organisation'] ?? '');
-		if ($named !== null && ($organisation === '' || (string)($named['organisation'] ?? '') === $organisation)) {
+		if ($named !== null && $this->belongsTo(portal: $named, organisation: $organisation) === true) {
 			return $named;
 		}
 
@@ -233,6 +220,38 @@ class CaseTypeVisibility {
 
 		return $this->portals->resolveByOrganisation(organisation: $organisation);
 	}//end servingPortal()
+
+	/**
+	 * The portal a request names (header, then `?portal=`), else the one its host serves.
+	 *
+	 * @param IRequest $request The request.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function namedPortal(IRequest $request): ?array {
+		$slug = (new RequestedPortal())->slug(request: $request);
+		if ($slug !== null) {
+			$named = $this->portals->resolve(request: $request, portalSlug: $slug);
+			if ($named !== null) {
+				return $named;
+			}
+		}
+
+		return $this->portals->resolve(request: $request);
+	}//end namedPortal()
+
+	/**
+	 * Whether a portal may serve a subject of an organisation: any portal when
+	 * the subject has none, else only that organisation's own.
+	 *
+	 * @param array<string, mixed> $portal       The portal.
+	 * @param string               $organisation The subject's organisation, or ''.
+	 *
+	 * @return bool
+	 */
+	private function belongsTo(array $portal, string $organisation): bool {
+		return $organisation === '' || (string)($portal['organisation'] ?? '') === $organisation;
+	}//end belongsTo()
 
 	/**
 	 * The case type id of one case row, read from the collection's type field.

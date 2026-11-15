@@ -21,24 +21,25 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/push-notifications-quiet-hours/specs/guardian-push-notifications/spec.md#requirement-a-due-deferred-push-is-delivered-by-the-background-job-an-undue-one-is-left-alone
+ * @spec openspec/specs/guardian-push-notifications/spec.md#requirement-a-due-deferred-push-is-delivered-by-the-background-job-an-undue-one-is-left-alone
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Notifications;
 
+use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\PendingPushServiceInterface;
 use OCA\Portaliq\Service\ObjectRowNormaliser;
 use OCA\Portaliq\Service\ObjectServiceLookup;
-use DateTimeImmutable;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * @spec openspec/changes/push-notifications-quiet-hours/specs/guardian-push-notifications/spec.md#requirement-a-due-deferred-push-is-delivered-by-the-background-job-an-undue-one-is-left-alone
+ * @spec openspec/specs/guardian-push-notifications/spec.md#requirement-a-due-deferred-push-is-delivered-by-the-background-job-an-undue-one-is-left-alone
  */
-class PendingPushService {
+class PendingPushService implements PendingPushServiceInterface {
 	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
 
@@ -79,7 +80,7 @@ class PendingPushService {
 	 *
 	 * @return bool True on success.
 	 *
-	 * @spec openspec/changes/push-notifications-quiet-hours/specs/guardian-push-notifications/spec.md#requirement-a-non-emergency-push-during-quiet-hours-is-deferred-not-dropped
+	 * @spec openspec/specs/guardian-push-notifications/spec.md#requirement-a-non-emergency-push-during-quiet-hours-is-deferred-not-dropped
 	 */
 	public function queue(string $subjectRef, string $title, string $body, DateTimeImmutable $deliverAfter): bool {
 		$objectService = $this->objectService();
@@ -117,7 +118,7 @@ class PendingPushService {
 	 *
 	 * @return int The number of rows delivered.
 	 *
-	 * @spec openspec/changes/push-notifications-quiet-hours/specs/guardian-push-notifications/spec.md#requirement-a-due-deferred-push-is-delivered-by-the-background-job-an-undue-one-is-left-alone
+	 * @spec openspec/specs/guardian-push-notifications/spec.md#requirement-a-due-deferred-push-is-delivered-by-the-background-job-an-undue-one-is-left-alone
 	 */
 	public function deliverDue(DateTimeImmutable $now): int {
 		$objectService = $this->objectService();
@@ -125,34 +126,79 @@ class PendingPushService {
 			return 0;
 		}
 
+		return $this->deliverAll(objectService: $objectService, now: $now);
+	}//end deliverDue()
+
+	/**
+	 * Deliver the due rows of every page, until a short page.
+	 *
+	 * @param object            $objectService OpenRegister's ObjectService.
+	 * @param DateTimeImmutable $now           The run time.
+	 *
+	 * @return int The number of rows delivered.
+	 */
+	private function deliverAll(object $objectService, DateTimeImmutable $now): int {
 		$delivered = 0;
 		$offset = 0;
 		do {
-			try {
-				$objectService->setRegister(register: self::REGISTER);
-				$objectService->setSchema(schema: self::SCHEMA);
-				$rows = $objectService->findAll(config: ['filters' => [], 'limit' => self::PAGE, 'offset' => $offset], _rbac: false, _multitenancy: false);
-			} catch (Throwable $e) {
-				$this->logger->warning('Portaliq: pending push read failed', ['reason' => $e->getMessage()]);
+			$rows = $this->readPage(objectService: $objectService, offset: $offset);
+			if ($rows === null) {
 				return $delivered;
 			}
 
-			if (is_array($rows) === false) {
-				return $delivered;
-			}
-
-			foreach ($rows as $row) {
-				if ($this->deliverIfDue(objectService: $objectService, row: $row, now: $now) === true) {
-					$delivered++;
-				}
-			}
+			$delivered += $this->deliverPage(objectService: $objectService, rows: $rows, now: $now);
 
 			$offset += self::PAGE;
 			$pageSize = count($rows);
 		} while ($pageSize === self::PAGE);
 
 		return $delivered;
-	}//end deliverDue()
+	}//end deliverAll()
+
+	/**
+	 * Read one page of queue rows.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param int    $offset        The page offset.
+	 *
+	 * @return array|null The rows, or null when the read failed or returned no list.
+	 */
+	private function readPage(object $objectService, int $offset): array|null {
+		try {
+			$objectService->setRegister(register: self::REGISTER);
+			$objectService->setSchema(schema: self::SCHEMA);
+			$rows = $objectService->findAll(config: ['filters' => [], 'limit' => self::PAGE, 'offset' => $offset], _rbac: false, _multitenancy: false);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: pending push read failed', ['reason' => $e->getMessage()]);
+			return null;
+		}
+
+		if (is_array($rows) === false) {
+			return null;
+		}
+
+		return $rows;
+	}//end readPage()
+
+	/**
+	 * Deliver every due row of one page.
+	 *
+	 * @param object            $objectService OpenRegister's ObjectService.
+	 * @param array             $rows          The page's raw rows.
+	 * @param DateTimeImmutable $now           The run time.
+	 *
+	 * @return int The number of rows delivered.
+	 */
+	private function deliverPage(object $objectService, array $rows, DateTimeImmutable $now): int {
+		$delivered = 0;
+		foreach ($rows as $row) {
+			if ($this->deliverIfDue(objectService: $objectService, row: $row, now: $now) === true) {
+				$delivered++;
+			}
+		}
+
+		return $delivered;
+	}//end deliverPage()
 
 	/**
 	 * Deliver one row if it is due and not already delivered.
@@ -164,16 +210,73 @@ class PendingPushService {
 	 * @return bool Whether this row was delivered on this call.
 	 */
 	private function deliverIfDue(object $objectService, mixed $row, DateTimeImmutable $now): bool {
-		$normalised = $this->normalise(row: $row);
-		if ($normalised === null || ($normalised['delivered'] ?? false) === true) {
+		$normalised = $this->undeliveredRow(row: $row);
+		if ($normalised === null) {
 			return false;
 		}
 
+		if ($this->isDue(normalised: $normalised, now: $now) === false) {
+			return false;
+		}
+
+		if ($this->sendRow(normalised: $normalised) === false) {
+			return false;
+		}
+
+		return $this->markDelivered(objectService: $objectService, normalised: $normalised);
+	}//end deliverIfDue()
+
+	/**
+	 * The normalised row, or null when it is unreadable or already delivered.
+	 *
+	 * @param mixed $row The raw row.
+	 *
+	 * @return array|null
+	 */
+	private function undeliveredRow(mixed $row): array|null {
+		$normalised = $this->normalise(row: $row);
+		if ($normalised === null || ($normalised['delivered'] ?? false) === true) {
+			return null;
+		}
+
+		return $normalised;
+	}//end undeliveredRow()
+
+	/**
+	 * Whether the row's `deliverAfter` has been reached.
+	 *
+	 * @param array             $normalised The normalised row.
+	 * @param DateTimeImmutable $now        The run time.
+	 *
+	 * @return bool
+	 */
+	private function isDue(array $normalised, DateTimeImmutable $now): bool {
 		$deliverAfter = (string)($normalised['deliverAfter'] ?? '');
 		if ($deliverAfter === '') {
 			return false;
 		}
 
+		$due = $this->dueAt(normalised: $normalised, deliverAfter: $deliverAfter);
+		if ($due === null) {
+			return false;
+		}
+
+		if ($due > $now) {
+			return false;
+		}
+
+		return true;
+	}//end isDue()
+
+	/**
+	 * Parse the row's `deliverAfter`, logging an unreadable one.
+	 *
+	 * @param array  $normalised   The normalised row.
+	 * @param string $deliverAfter The row's non-empty `deliverAfter`.
+	 *
+	 * @return DateTimeImmutable|null The moment, or null when unreadable.
+	 */
+	private function dueAt(array $normalised, string $deliverAfter): DateTimeImmutable|null {
 		try {
 			$due = new DateTimeImmutable($deliverAfter);
 		} catch (Throwable $e) {
@@ -182,23 +285,36 @@ class PendingPushService {
 				'Portaliq: pending push has an unreadable deliverAfter',
 				['id' => $this->rowId(row: $normalised), 'reason' => $e->getMessage()]
 			);
-			return false;
+			return null;
 		}
 
-		if ($due > $now) {
-			return false;
-		}
+		return $due;
+	}//end dueAt()
 
-		$sent = $this->sender->send(
+	/**
+	 * Send the row's push.
+	 *
+	 * @param array $normalised The normalised row.
+	 *
+	 * @return bool Whether the push was sent.
+	 */
+	private function sendRow(array $normalised): bool {
+		return $this->sender->send(
 			subjectRef: (string)($normalised['subjectRef'] ?? ''),
 			title: (string)($normalised['title'] ?? ''),
 			body: (string)($normalised['body'] ?? '')
 		);
+	}//end sendRow()
 
-		if ($sent === false) {
-			return false;
-		}
-
+	/**
+	 * Mark the row delivered in the queue.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param array  $normalised    The normalised row.
+	 *
+	 * @return bool Whether the row was marked delivered.
+	 */
+	private function markDelivered(object $objectService, array $normalised): bool {
 		$id = $this->rowId(row: $normalised);
 		if ($id === null) {
 			return false;
@@ -208,22 +324,28 @@ class PendingPushService {
 		unset($merged['@self']);
 		$merged['delivered'] = true;
 
+		return $this->saveDelivered(objectService: $objectService, merged: $merged, id: $id);
+	}//end markDelivered()
+
+	/**
+	 * Save the delivered row.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param array  $merged        The row marked delivered.
+	 * @param string $id            The row's id.
+	 *
+	 * @return bool Whether the save succeeded.
+	 */
+	private function saveDelivered(object $objectService, array $merged, string $id): bool {
 		try {
-			$objectService->saveObject(
-				object: $merged,
-				register: self::REGISTER,
-				schema: self::SCHEMA,
-				uuid: $id,
-				_rbac: false,
-				_multitenancy: false
-			);
+			$objectService->saveObject(object: $merged, register: self::REGISTER, schema: self::SCHEMA, uuid: $id, _rbac: false, _multitenancy: false);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: pending push mark-delivered failed', ['reason' => $e->getMessage()]);
 			return false;
 		}
 
 		return true;
-	}//end deliverIfDue()
+	}//end saveDelivered()
 
 	/**
 	 * The row's id/uuid, from a flat property or its `@self` envelope.

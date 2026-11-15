@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/news-and-newsletter-authoring/design.md#architecture-overview
+ * @spec openspec/changes/archive/2026-10-09-news-and-newsletter-authoring/design.md#architecture-overview
  */
 
 declare(strict_types=1);
@@ -34,7 +34,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Reads news rows from OpenRegister.
  *
- * @spec openspec/changes/news-and-newsletter-authoring/design.md#architecture-overview
+ * @spec openspec/changes/archive/2026-10-09-news-and-newsletter-authoring/design.md#architecture-overview
  */
 class NewsRowSource {
 	use ObjectRowNormaliser;

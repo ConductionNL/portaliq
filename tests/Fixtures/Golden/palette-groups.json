@@ -1,0 +1,12 @@
+{
+	"q:": [{"group":"content","label":"Inhoud","entries":[{"key":"text","label":"Text","group":"content","publicSafe":true,"description":"Plain words"},{"key":"later","label":"Later","group":"content","publicSafe":true}]},{"group":"nav","label":"Navigatie","entries":[{"key":"siteNavigation","label":"Menu van deze site","group":"nav","publicSafe":true}]},{"group":"forms","label":"Formulieren","entries":[{"key":"form","label":"Formulier","group":"forms","publicSafe":true,"description":"Zaak starten"}]},{"group":"other","label":"Overig","entries":[{"key":"nogroup","label":"nogroup","publicSafe":true}]},{"group":"notPublic","label":"Niet op een openbare pagina","entries":[{"key":"cases","label":"Cases","group":"mijn","publicSafe":false,"description":"Mijn zaken"},{"key":"hidden","label":"Hidden","publicSafe":false}]}],
+	"q:zaak": [],
+	"q:odd": [],
+	"q:nothing at all": [],
+	"q:siteNavigation": [{"group":"nav","label":"Navigatie","entries":[{"key":"siteNavigation","label":"Menu van deze site","group":"nav","publicSafe":true}]}],
+	"q:text": [{"group":"content","label":"Inhoud","entries":[{"key":"text","label":"Text","group":"content","publicSafe":true,"description":"Plain words"}]}],
+	"q:Mijn": [],
+	"q:hid": [{"group":"notPublic","label":"Niet op een openbare pagina","entries":[{"key":"hidden","label":"Hidden","publicSafe":false}]}],
+	"null": [],
+	"empty": []
+}

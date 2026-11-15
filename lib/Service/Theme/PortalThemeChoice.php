@@ -22,10 +22,11 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Theme;
 
-use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalThemeChoiceInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
-use OCA\Portaliq\Service\PortalThemeResolver;
 use OCA\Portaliq\Service\PortalSlugLookup;
+use OCA\Portaliq\Service\PortalThemeResolver;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 
 /**
  * Lists the adoptable sets with their contrast verdict, and saves a choice.
@@ -34,7 +35,7 @@ use OCA\Portaliq\Service\PortalSlugLookup;
  * theme app's catalogue and with a token file on disk. `portal.theme` stops
  * being free text an administrator has to spell right.
  */
-class PortalThemeChoice {
+class PortalThemeChoice implements PortalThemeChoiceInterface {
 
 	/**
 	 * Portaliq's register.

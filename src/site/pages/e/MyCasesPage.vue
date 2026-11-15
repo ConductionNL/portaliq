@@ -286,7 +286,7 @@ export default {
 		 * The mandate the list is read under: the page's own, else the session's choice.
 		 *
 		 * @return {string} The mandate id, or `self`.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
 		 */
 		actingUnder() {
 			return this.mandateId || actingFor.id
@@ -349,7 +349,7 @@ export default {
 
 		/**
 		 * @return {(key: string, vars?: object) => string} The translator of the mijn omgeving components.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
 		 */
 		mt() {
 			return mijnTranslator(this.t, readerLocale(this.locale))
@@ -386,7 +386,7 @@ export default {
 		 * The cases, open and closed apart.
 		 *
 		 * @return {{open: Array<object>, closed: Array<object>}} The two lists.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
 		 */
 		split() {
 			return splitCases(this.data?.cases)
@@ -396,7 +396,7 @@ export default {
 		 * The cases of the tab on screen.
 		 *
 		 * @return {Array<object>} The rows.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
 		 */
 		shown() {
 			return this.closedMarker && this.tab === 'closed'
@@ -409,7 +409,7 @@ export default {
 		 *
 		 * @return {Array<object>} The rows.
 		 *
-		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-my-cases/spec.md#requirement-a-case-on-my-cases-shows-its-status-in-words-never-a-code
+		 * @spec openspec/specs/portal-my-cases/spec.md#requirement-a-case-on-my-cases-shows-its-status-in-words-never-a-code
 		 */
 		rows() {
 			const locale = readerLocale(this.locale)
@@ -459,7 +459,7 @@ export default {
 		 * Another mandate chosen: read the list again.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
 		 */
 		actingUnder() {
 			this.load()
@@ -469,7 +469,7 @@ export default {
 	/**
 	 * Read the list on arrival, unless a test handed one in.
 	 *
-	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
 	 */
 	mounted() {
 		if (this.initialData === null) {
@@ -511,7 +511,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when read.
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
 		 */
 		async load() {
 			const ticket = ++this.request
@@ -587,7 +587,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
 		 */
 		switchTab() {
 			this.tab = this.tab === 'closed' ? 'open' : 'closed'

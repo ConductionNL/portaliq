@@ -11,7 +11,7 @@
   The column widget `news-target` (src/App.vue cellWidgets, used by the News
   page's `target` column in src/manifest.json).
 
-  @spec openspec/changes/staff-news-screen/tasks.md#T4
+  @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T4
   @visual exclude one line of text in a table cell; its wording is pinned by tests/news-authoring.spec.mjs (audienceOf, audienceLine)
 -->
 <template>
@@ -65,7 +65,7 @@ export default {
 		 * The item's audience as one line.
 		 *
 		 * @return {string}
-		 * @spec openspec/changes/staff-news-screen/tasks.md#T4
+		 * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T4
 		 */
 		line() {
 			return audienceLine({ target: this.value }, this.options, (text, vars) =>

@@ -22,8 +22,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Theme;
 
-use OCA\Portaliq\Service\PublishedPortals;
+use OCA\Portaliq\Kernel\Contracts\PortalThemeOverviewInterface;
 use OCA\Portaliq\Service\PortalThemeResolver;
+use OCA\Portaliq\Service\PublishedPortals;
 
 /**
  * The rows of the Themes page: a portal, its theme and a contrast verdict.
@@ -32,7 +33,7 @@ use OCA\Portaliq\Service\PortalThemeResolver;
  * with, so the overview and the picker never disagree. It is worked out once
  * per theme, not once per portal.
  */
-class PortalThemeOverview {
+class PortalThemeOverview implements PortalThemeOverviewInterface {
 
 	/**
 	 * Constructor.
