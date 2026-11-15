@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * The `via` read asks OpenRegister for the subject's own rows, the way a real
@@ -228,7 +229,9 @@ class PortalObjectReaderViaQueryTest extends TestCase {
 			/**
 			 * @return array<string,mixed>|null
 			 */
-			public function find(string $id, string $register = '', string $schema = '', bool $_rbac = true, bool $_multitenancy = true): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				foreach (($this->rows[$schema !== '' ? $schema : $this->schema] ?? []) as $row) {
 					if (($row['id'] ?? null) === $id) {
 						return $row;

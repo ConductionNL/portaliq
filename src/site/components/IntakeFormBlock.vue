@@ -87,6 +87,12 @@
 				<strong data-testid="intake-form-reference">{{ reference }}</strong>
 			</p>
 			<p
+				v-if="waiting"
+				class="utrecht-paragraph"
+				data-testid="intake-form-cosign-waiting">
+				{{ waiting }}
+			</p>
+			<p
 				v-for="line in confirmationMoments"
 				:key="line"
 				class="utrecht-paragraph"
@@ -810,6 +816,8 @@ export default {
 			statementErrors: {},
 			confirmation: null,
 			mailedTo: '',
+			/** "Wacht op mede-ondertekening door …" for a request that waits for its co-signer, else ''. */
+			waiting: '',
 			payment: null,
 			paying: false,
 			payFailed: false,
@@ -1299,6 +1307,7 @@ export default {
 				this.confirmationText = outcome.confirmationText
 				this.confirmation = outcome.confirmation
 				this.mailedTo = outcome.mailedTo
+				this.waiting = outcome.waiting || ''
 				this.moments = outcome.moments || {}
 				this.state = 'done'
 				this.$nextTick(() => {
