@@ -148,3 +148,14 @@ foreach (['ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent', 'D
 }
 
 unset($integriqStubEvent);
+
+// OpenRegister's tree request and find options (PartyTreeSource builds them by
+// class name, so portaliq stays installable without OpenRegister). The stubs
+// mirror openregister's constructors on `main` and load only when absent.
+if (class_exists('\\OCA\\OpenRegister\\Service\\Relation\\ObjectTreeQuery') === false) {
+	require_once __DIR__ . '/Stubs/OpenRegister/Service/Relation/ObjectTreeQuery.php';
+}
+
+if (class_exists('\\OCA\\OpenRegister\\Kernel\\Contracts\\Value\\ObjectFindOptions') === false) {
+	require_once __DIR__ . '/Stubs/OpenRegister/Kernel/Contracts/Value/ObjectFindOptions.php';
+}

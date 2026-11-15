@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Identity;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Service\Relation\ObjectTreeQuery;
 use OCA\Portaliq\Service\Identity\PartyTreeSource;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -80,8 +82,8 @@ class PartyTreeSourceTest extends TestCase {
 				return $this->rows;
 			}
 
-			public function find(string $id, string $register, string $schema, bool $_rbac, bool $_multitenancy): object {
-				$this->calls[] = ['find', $id, $register, $schema, $_rbac, $_multitenancy];
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): object {
+				$this->calls[] = ['find', $id, $options?->register, $options?->schema, $options?->render, $_rbac, $_multitenancy];
 				return PartyTreeSourceTest::entity(uuid: $id);
 			}
 		};
@@ -104,11 +106,11 @@ class PartyTreeSourceTest extends TestCase {
 			}
 
 			/**
-			 * @param string[] $fields
 			 * @return array<string, mixed>
 			 */
-			public function tree(object $root, string $direction, ?int $depth, array $fields, bool $_rbac): array {
-				$this->calls[] = ['tree', $root->getUuid(), $direction, $depth, $fields, $_rbac];
+			public function tree(ObjectTreeQuery $query, bool $_rbac = true): array {
+				$root = $query->root;
+				$this->calls[] = ['tree', $root->getUuid(), $query->direction, $query->depth, $query->fields, $_rbac];
 				if ($this->fails === true) {
 					throw new RuntimeException('table gone');
 				}
@@ -171,7 +173,7 @@ class PartyTreeSourceTest extends TestCase {
 		$this->source(services: $this->services(rows: [['@self' => ['id' => 'uuid-holding'], 'kvkNumber' => '10000000']]))
 			->below(register: 'dossiq', schema: 'kvkCompany', identityField: 'kvkNumber', identity: '10000000', maxDepth: 3);
 
-		$this->assertSame(['find', 'uuid-holding', 'dossiq', 'kvkCompany', false, false], $this->calls[3]);
+		$this->assertSame(['find', 'uuid-holding', 'dossiq', 'kvkCompany', false, false, false], $this->calls[3]);
 		$this->assertSame('tree', $this->calls[4][0]);
 	}//end testARenderedRowIsReadBackAsTheEntity()
 

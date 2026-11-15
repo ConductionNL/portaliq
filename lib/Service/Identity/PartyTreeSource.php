@@ -48,6 +48,16 @@ class PartyTreeSource {
 	private const TREE_SERVICE = 'OCA\\OpenRegister\\Service\\Relation\\ObjectTreeService';
 
 	/**
+	 * OpenRegister's tree request: `tree()` takes one of these.
+	 */
+	public const TREE_QUERY = 'OCA\\OpenRegister\\Service\\Relation\\ObjectTreeQuery';
+
+	/**
+	 * OpenRegister's find options: `find()` takes the register and schema in one of these.
+	 */
+	public const FIND_OPTIONS = 'OCA\\OpenRegister\\Kernel\\Contracts\\Value\\ObjectFindOptions';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container Resolves OpenRegister's services.
@@ -82,7 +92,7 @@ class PartyTreeSource {
 	public function below(string $register, string $schema, string $identityField, string $identity, int $maxDepth): ?array {
 		$objects = $this->service(id: self::OBJECT_SERVICE);
 		$trees = $this->service(id: self::TREE_SERVICE);
-		if ($objects === null || $trees === null || $identity === '') {
+		if ($objects === null || $trees === null || $identity === '' || $this->canAskForATree() === false) {
 			return null;
 		}
 
@@ -100,11 +110,14 @@ class PartyTreeSource {
 				return null;
 			}
 
-			$tree = $trees->tree(
-				root: $root,
-				direction: 'descendants',
-				depth: $maxDepth,
-				fields: [$identityField],
+			$queryClass = self::TREE_QUERY;
+			$tree       = $trees->tree(
+				query: new $queryClass(
+					root: $root,
+					direction: 'descendants',
+					depth: $maxDepth,
+					fields: [$identityField]
+				),
 				_rbac: false
 			);
 		} catch (Throwable $e) {
@@ -151,7 +164,13 @@ class PartyTreeSource {
 			return null;
 		}
 
-		$entity = $objects->find(id: $uuid, register: $register, schema: $schema, _rbac: false, _multitenancy: false);
+		$optionsClass = self::FIND_OPTIONS;
+		$entity       = $objects->find(
+			id: $uuid,
+			options: new $optionsClass(register: $register, schema: $schema, render: false),
+			_rbac: false,
+			_multitenancy: false
+		);
 		if (is_object($entity) === false) {
 			return null;
 		}
@@ -179,4 +198,13 @@ class PartyTreeSource {
 
 		return null;
 	}//end service()
+
+	/**
+	 * Whether this OpenRegister has the request objects its tree read and find take.
+	 *
+	 * @return bool True when both classes exist.
+	 */
+	private function canAskForATree(): bool {
+		return class_exists(self::TREE_QUERY) === true && class_exists(self::FIND_OPTIONS) === true;
+	}//end canAskForATree()
 }//end class
