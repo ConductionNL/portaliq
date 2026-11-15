@@ -239,6 +239,83 @@ class PortalIntakeQueueTest extends TestCase {
 	 *
 	 * @return PortalIntakeQueue
 	 */
+	/**
+	 * resident-identity-in-forms T04: Mijn zaken lists the resident's own
+	 * requests on this portal that wait for a co-signer or were not
+	 * co-signed, newest first, with the waiting line; nothing of another
+	 * resident, another portal, or a request already on its way.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 */
+	public function testHeldForListsOnlyTheResidentsOwnHeldRequestsOnThisPortal(): void {
+		$waiting = ['state' => 'awaiting', 'name' => 'Henk de Vries', 'deadline' => '2026-10-22T23:59:59+02:00', 'codeHash' => 'h', 'email' => 'henk@example.nl'];
+		$this->seed(reference: 'AANVRAAG-OLD', subjectRef: 'bsn-sanne', portal: 'gemeente-x', state: 'not-cosigned', submittedAt: '2026-10-01T10:00:00+02:00', cosign: ['state' => 'expired'] + $waiting);
+		$this->seed(reference: 'AANVRAAG-NEW', subjectRef: 'bsn-sanne', portal: 'gemeente-x', state: 'awaiting-cosign', submittedAt: '2026-10-08T10:00:00+02:00', cosign: $waiting);
+		$this->seed(reference: 'AANVRAAG-Y', subjectRef: 'bsn-sanne', portal: 'gemeente-y', state: 'awaiting-cosign', submittedAt: '2026-10-08T11:00:00+02:00', cosign: $waiting);
+		$this->seed(reference: 'AANVRAAG-HENK', subjectRef: 'bsn-henk', portal: 'gemeente-x', state: 'awaiting-cosign', submittedAt: '2026-10-08T12:00:00+02:00', cosign: $waiting);
+		$this->seed(reference: 'AANVRAAG-SENT', subjectRef: 'bsn-sanne', portal: 'gemeente-x', state: 'queued', submittedAt: '2026-10-09T10:00:00+02:00', cosign: ['state' => 'signed'] + $waiting);
+
+		$held = $this->queue()->heldFor(subjectRef: 'bsn-sanne', portal: 'gemeente-x');
+
+		$this->assertSame(
+			[
+				[
+					'reference' => 'AANVRAAG-NEW',
+					'route' => 'woo',
+					'submittedAt' => '2026-10-08T10:00:00+02:00',
+					'state' => 'awaiting-cosign',
+					'cosign' => ['state' => 'awaiting', 'name' => 'Henk de Vries', 'deadline' => '2026-10-22T23:59:59+02:00'],
+				],
+				[
+					'reference' => 'AANVRAAG-OLD',
+					'route' => 'woo',
+					'submittedAt' => '2026-10-01T10:00:00+02:00',
+					'state' => 'not-cosigned',
+					'cosign' => ['state' => 'expired', 'name' => 'Henk de Vries', 'deadline' => '2026-10-22T23:59:59+02:00'],
+				],
+			],
+			$held
+		);
+	}//end testHeldForListsOnlyTheResidentsOwnHeldRequestsOnThisPortal()
+
+	/**
+	 * An anonymous submitter or an unknown portal has no held requests to list.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 */
+	public function testHeldForWithoutASubjectOrPortalListsNothing(): void {
+		$this->seed(reference: 'AANVRAAG-ANON', subjectRef: '', portal: 'gemeente-x', state: 'awaiting-cosign', submittedAt: '2026-10-08T10:00:00+02:00', cosign: ['state' => 'awaiting']);
+
+		$this->assertSame([], $this->queue()->heldFor(subjectRef: '', portal: 'gemeente-x'));
+		$this->assertSame([], $this->queue()->heldFor(subjectRef: 'bsn-sanne', portal: ''));
+	}//end testHeldForWithoutASubjectOrPortalListsNothing()
+
+	/**
+	 * Put a submission row in the fake store.
+	 *
+	 * @param string               $reference   The reference.
+	 * @param string               $subjectRef  The submitter.
+	 * @param string               $portal      The portal.
+	 * @param string               $state       The submission state.
+	 * @param string               $submittedAt When it was submitted.
+	 * @param array<string, mixed> $cosign      The co-sign block.
+	 *
+	 * @return void
+	 */
+	private function seed(string $reference, string $subjectRef, string $portal, string $state, string $submittedAt, array $cosign): void {
+		$this->rows[$reference] = [
+			'_schema' => 'portalIntakeSubmission',
+			'reference' => $reference,
+			'portal' => $portal,
+			'route' => 'woo',
+			'subjectRef' => $subjectRef,
+			'answers' => [],
+			'state' => $state,
+			'submittedAt' => $submittedAt,
+			'cosign' => $cosign,
+		];
+	}//end seed()
+
 	private function queue(): PortalIntakeQueue {
 		return new PortalIntakeQueue($this->fakeReader(), $this->fakeWriter(), $this->fakeRandom());
 	}//end queue()

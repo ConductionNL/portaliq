@@ -35,6 +35,10 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\Kernel\Contracts\PortalObjectWriterInterface;
 use OCA\Portaliq\Service\Tenancy\ActsForTheOrganisation;
 use Psr\Container\ContainerInterface;
@@ -123,8 +127,7 @@ class PortalObjectWriter implements PortalObjectWriterInterface {
 		try {
 			$saved = $this->insideWriteContext(write: static fn () => $objectService->saveObject(
 				object: $data,
-				register: $register,
-				schema: $schema,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema)),
 				_rbac: false,
 				_multitenancy: false
 			));
@@ -165,8 +168,7 @@ class PortalObjectWriter implements PortalObjectWriterInterface {
 		try {
 			$saved = $this->insideWriteContext(write: static fn () => $objectService->saveObject(
 				object: $data,
-				register: $register,
-				schema: $schema,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema)),
 				_rbac: false,
 				_multitenancy: false
 			));
@@ -281,9 +283,10 @@ class PortalObjectWriter implements PortalObjectWriterInterface {
 		try {
 			$saved = $this->insideWriteContext(write: static fn () => $objectService->saveObject(
 				object: $merged,
-				register: $register,
-				schema: $schema,
-				uuid: $id,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $schema),
+					uuid: $id
+				),
 				_rbac: false,
 				_multitenancy: false
 			));
@@ -479,7 +482,11 @@ class PortalObjectWriter implements PortalObjectWriterInterface {
 	private function deleteRow(object $objectService, string $uuid, string $register, string $schema): bool {
 		try {
 			$deleted = $this->insideWriteContext(
-				write: static fn () => $objectService->deleteObject(uuid: $uuid, register: $register, schema: $schema, _rbac: false, _multitenancy: false)
+				write: static fn () => $objectService->deleteObject(
+					new ObjectDeletion(uuid: $uuid, target: new ObjectFindTarget(register: $register, schema: $schema)),
+					_rbac: false,
+					_multitenancy: false
+				)
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: OR delete failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
@@ -579,8 +586,7 @@ class PortalObjectWriter implements PortalObjectWriterInterface {
 		try {
 			return $objectService->find(
 				id: $id,
-				register: $register,
-				schema: $schema,
+				options: new ObjectFindOptions(register: $register, schema: $schema),
 				_rbac: false,
 				_multitenancy: false
 			);

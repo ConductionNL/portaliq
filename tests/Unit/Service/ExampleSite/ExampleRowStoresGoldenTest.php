@@ -28,6 +28,7 @@ use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
 use RuntimeException;
 use stdClass;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * What the example site and example resident stores answer, per store world:
@@ -222,7 +223,9 @@ class ExampleRowStoresGoldenTest extends TestCase {
 				 *
 				 * @return mixed
 				 */
-				public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+					$register = $options?->register;
+					$schema = $options?->schema;
 					if ($this->rows instanceof \Throwable) {
 						throw $this->rows;
 					}

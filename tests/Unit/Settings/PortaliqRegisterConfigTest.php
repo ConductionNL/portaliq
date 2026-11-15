@@ -419,6 +419,8 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(expected: '0.1.0', actual: self::$register['components']['schemas']['article']['version']);
 		// 0.113.0 (portalAccount 0.19.0): identity type `yivi`, a sign-in through the broker that shares only what a form asks (resident-identity-in-forms T05). Additive; moved past development's 0.112.0 at merge time.
 		// 0.114.0 (portal 0.31.0): a portal's `authentication.deskGroup`, the Nextcloud group whose members may fill a form in for a resident (resident-identity-in-forms T06). Additive; portal moved past development's 0.30.0.
+		// 0.115.0 (portal 0.32.0): `traffic.excludedPaths`, the pages the collector writes no visitor row for (intake-report-pages T07). Additive; moved past development's 0.114.0 and portal 0.31.0 at merge time.
+		// 0.116.0: a submission's state can be `awaiting-cosign` (held for a co-signer) or `not-cosigned` (refused or lapsed) (resident-identity-in-forms T04). Additive; moved past development's 0.115.0 at merge time.
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portal']['properties']['authentication']['properties']['deskGroup']['type']);
 		// 0.115.0 (portal 0.32.0): a portal's `organisationType` and `organisationTypeLabel` (portal-identity-from-the-admin REQ-PIA-003), with the marketing articles above. Additive; moved past development's 0.114.0 at merge time.
 		// 0.116.0 (portal 0.33.0): a portal's `organisationTypeSchemeId`, the scheme uuid the type picker filters on (portal-identity-from-the-admin REQ-PIA-003). Additive.
@@ -429,9 +431,11 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// development's 0.115.0 (portal 0.32.0): `traffic.excludedPaths`, the pages the collector writes no visitor row for (intake-report-pages T07). Additive; moved past development's 0.114.0 and portal 0.31.0 at merge time.
 		$traffic = self::$register['components']['schemas']['portal']['properties']['traffic']['properties'];
 		$this->assertSame(expected: 'string', actual: $traffic['excludedPaths']['items']['type']);
+		$this->assertContains(needle: 'awaiting-cosign', haystack: self::$register['components']['schemas']['portalIntakeSubmission']['properties']['state']['enum']);
 		// 0.118.0 (portal 0.34.0): development's 0.115.0 (`traffic.excludedPaths`, intake-report-pages T07) merged with this branch's 0.115.0-0.117.0 above. Additive; both sides kept.
-		$this->assertSame(expected: '0.118.0', actual: self::$register['info']['version']);
-		$this->assertSame(expected: '0.118.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		// 0.119.0: this branch's 0.116.0 (submission states `awaiting-cosign` and `not-cosigned`, resident-identity-in-forms T04) merged past development's 0.118.0. Additive.
+		$this->assertSame(expected: '0.119.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.119.0', actual: self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portalPage']['properties']['pages']['items']['properties']['blocks']['items']['properties']['messageTo']['type']);
 		$this->assertContains(needle: 'yivi', haystack: self::$register['components']['schemas']['portalAccount']['properties']['identityType']['enum']);
 		$this->assertSame(expected: 'date-time', actual: self::$register['components']['schemas']['guardianMessage']['properties']['readAt']['format']);
