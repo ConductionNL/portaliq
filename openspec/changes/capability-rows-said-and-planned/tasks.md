@@ -4,7 +4,11 @@
 
 ## Check what is built
 
-- [ ] **T02**: Check REQ-RSP-001 to REQ-RSP-007 and REQ-RSP-009 to REQ-RSP-016 against the code the rows cite, tag the tests that cover them with `@e2e` or `@e2e exclude`, and move a row that the code does not meet to `specified` with a "Not built" evidence line
+- [x] **T02**: Check REQ-RSP-001 to REQ-RSP-007 and REQ-RSP-009 to REQ-RSP-016 against the code the rows cite, tag the tests that cover them with `@e2e` or `@e2e exclude`, and move a row that the code does not meet to `specified` with a "Not built" evidence line
+  - Checked 2026-11-15. Every scenario carries an `@e2e` or `@e2e exclude` line naming the test that covers it. Two requirements are not met in full, so their rows move to `specified` with a "Not built" line:
+    REQ-RSP-013 (`ops-audit-trail`, `cmp-ops-audit`): only session revocation writes an audit row; withdrawing an account, moving it to another audience and an emergency message do not.
+    REQ-RSP-010 (`ana-per-portal-config`): the collector refuses events of a portal that measures nothing, but `templates/site.php` still loads the traffic client, which then stays idle.
+    Scenarios with no browser test yet: REQ-RSP-002 (changing the name) and REQ-RSP-007 (the hero search).
 
 ## Build what is owed
 
