@@ -32,6 +32,8 @@ import IntakeFormBlock from '../site/components/IntakeFormBlock.vue'
 import IntakeStatusBlock from '../site/components/IntakeStatusBlock.vue'
 import PublicationDetailBlock from '../site/components/PublicationDetailBlock.vue'
 import PublicRecordsBlock from '../site/components/PublicRecordsBlock.vue'
+import ReportBlock from '../site/components/ReportBlock.vue'
+import ReportThreadBlock from '../site/components/ReportThreadBlock.vue'
 import SharedBlock from '../site/components/SharedBlock.vue'
 import { publicWidgetFor, publicWidgetKeys } from '../site/components/WidgetGrid.vue'
 import { metas as siteWidgetMetas } from '../site/widgets/index.js'
@@ -76,6 +78,8 @@ const DEFAULT_SIZES = {
 	contactForm: { gridWidth: 8, gridHeight: 6 },
 	assistant: { gridWidth: 8, gridHeight: 6 },
 	publicRecords: { gridWidth: 12, gridHeight: 6 },
+	report: { gridWidth: 12, gridHeight: 8 },
+	reportThread: { gridWidth: 12, gridHeight: 8 },
 	sharedBlock: { gridWidth: 12, gridHeight: 3 },
 	card: { gridWidth: 4, gridHeight: 3 },
 	emptyState: { gridWidth: 6, gridHeight: 3 },
@@ -103,6 +107,8 @@ const HOST_SUPPLIED = {
 	contactForm: ['portal', 'signedIn', 'ways', 'apiOverride'],
 	assistant: ['portal', 'askOverride'],
 	publicRecords: ['recordParam', 'apiOverride'],
+	report: ['portal', 'apiOverride'],
+	reportThread: ['portal', 'apiOverride'],
 	// The content API fills these; an author chooses only which block.
 	sharedBlock: ['widgets', 'unavailable', 'host'],
 }
@@ -134,6 +140,18 @@ const FIELD_OVERRIDES = {
 }
 
 /**
+ * Fields that keep their place among a widget's own props but get a picker
+ * instead of a text input. `recordList` lists the public record lists the
+ * installed apps contribute; choosing one sets both `list` and `app`
+ * (site-member-voting-record-and-confidential-papers, design.md D2).
+ *
+ * @type {Record<string, Record<string, string>>}
+ */
+const KIND_OVERRIDES = {
+	publicRecords: { list: 'recordList' },
+}
+
+/**
  * Components the SITE loads lazily and this designer does not.
  *
  * A `defineAsyncComponent` wrapper carries no `props` until it resolves, so
@@ -153,6 +171,8 @@ const LAZY_ON_THE_SITE = {
 	contactForm: ContactForm,
 	assistant: AssistantBlock,
 	publicRecords: PublicRecordsBlock,
+	report: ReportBlock,
+	reportThread: ReportThreadBlock,
 	sharedBlock: SharedBlock,
 }
 
@@ -306,7 +326,8 @@ export function fieldsFor(key) {
 		.filter((name) => !hidden.includes(name) && !NEVER_EDITABLE.includes(name))
 		.map((name) => ({
 			name,
-			kind: kindFor(name, component.props[name]),
+			kind:
+				KIND_OVERRIDES[key]?.[name] || kindFor(name, component.props[name]),
 			label: humanise(name),
 		}))
 }

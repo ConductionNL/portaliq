@@ -66,6 +66,22 @@ test('introView is null without content, so the form opens at step 1', () => {
 	assert.equal(introView({ lead: 'Vraag informatie.' }).lead, 'Vraag informatie.')
 })
 
+test('introView is null for an introduction switched off on the form settings page', () => {
+	assert.equal(introView({ enabled: false, lead: 'Vraag informatie.' }), null)
+	assert.deepEqual(introView({ enabled: true, lead: 'Vraag informatie.' }), { lead: 'Vraag informatie.', blocks: [] })
+})
+
+test('the form settings page carries the introduction switch and its text', async () => {
+	const { readFileSync } = await import('node:fs')
+	const manifest = JSON.parse(readFileSync(new URL('../src/manifest.json', import.meta.url), 'utf8'))
+	const page = manifest.pages.find((entry) => entry.id === 'FormBindingDetail')
+	const intro = page.config.widgets.find((widget) => widget.id === 'binding-intro')
+	assert.deepEqual(intro.content.fields.map((field) => [field.key, field.type]), [['intro.enabled', 'switch'], ['intro.lead', 'textarea']])
+	assert.equal(intro.content.fields[0].default, true, 'absent reads as on, as the server does')
+	const general = page.config.widgets.find((widget) => widget.id === 'binding-general')
+	assert.ok(general.content.sections.some((section) => section.widgetId === 'binding-intro'))
+})
+
 test('site: the introduction shows Voordat u begint, its blocks and Start', async () => {
 	const html = await renderSfc('src/site/components/forms/FormIntro.vue', {
 		formName: 'Woo-verzoek indienen',
@@ -105,13 +121,13 @@ test('submitIntake sends the ticked statements and returns the confirmation and 
 			json: async () => ({ reference: 'WOO-1', confirmation: { title: 'Bedankt' }, mailedTo: 'sanne@example.nl' }),
 		}
 	}
-	const outcome = await submitIntake('/api', 'woo', { a: 'b' }, '', '', fetchImpl, ['truth', 'privacy'])
+	const outcome = await submitIntake({ base: '/api', portal: '', token: '', fetchImpl }, { route: 'woo', answers: { a: 'b' }, statements: ['truth', 'privacy'] })
 
 	assert.deepEqual(sent.statements, ['truth', 'privacy'])
 	assert.equal(outcome.mailedTo, 'sanne@example.nl')
 	assert.equal(outcome.confirmation.title, 'Bedankt')
 
-	await submitIntake('/api', 'woo', {}, '', '', fetchImpl)
+	await submitIntake({ base: '/api', portal: '', token: '', fetchImpl }, { route: 'woo', answers: {} })
 	assert.equal('statements' in sent, false, 'nothing is sent for a form that asks none')
 })
 

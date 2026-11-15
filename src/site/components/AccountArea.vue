@@ -13,7 +13,10 @@
 	-->
 	<section
 		class="container pq-account"
-		:class="{ 'pq-account--with-menu': withMenu }"
+		:class="{
+			'pq-account--with-menu': withMenu,
+			'pq-account--form': formPage,
+		}"
 		data-testid="site-account">
 		<!-- The resident's own menu, beside the content on every page of this
 		     area once signed in (site-resident-menu REQ-SRM-002). -->
@@ -21,8 +24,8 @@
 			v-if="withMenu"
 			class="pq-account__menu"
 			:groups="menuGroups"
-			:currentRoute="currentRoute"
-			:label="t('My area')"
+			:currentRoute="menuRoute"
+			:label="(portal && portal.accountLabel) || t('My area')"
 			:showLabel="(portal && portal.accountLabel) || t('Menu of my area')"
 			:card="menuCard"
 			:newLabel="t('{count} new')"
@@ -32,12 +35,14 @@
 			<!-- The ask for an e-mail address, in the content column and above
 			     the page heading, so it lines up with the page it is about. -->
 			<slot name="prompt" />
-			<!-- Whom the resident acts for, on every signed-in page while it is
-			     not themselves (site-mijn-omgeving-components REQ-SMO-008). -->
+			<!-- For whom the resident acts, on Mijn overzicht; Mijn zaken
+			     shows its own (site-mijn-omgeving REQ-SMO-008). -->
 			<ActingForBar
-				v-if="session && actingForSomeone"
+				v-if="isHome"
 				:t="t"
-				:locale="locale" />
+				:locale="locale"
+				:name="residentName"
+				:href="mandatesHref" />
 			<p v-if="!sessionKnown" class="utrecht-paragraph" role="status">
 				{{ t('Loading…') }}
 			</p>
@@ -156,14 +161,23 @@
 
 			<template v-else-if="entry">
 				<h1
-					v-if="!ownsHeading"
+					v-if="!ownsHeading && !pageTitled"
 					id="site-account-title"
 					class="utrecht-heading-2"
 					data-testid="site-account-title">
 					{{ entry.label }}
 				</h1>
-				<PageHelp v-if="sectionHelpText" :text="sectionHelpText" />
-				<p v-if="pageLoading" class="utrecht-paragraph" role="status">
+				<PageHelp
+					v-if="sectionHelpText && !pageTitled"
+					:text="sectionHelpText" />
+				<!-- A page the login is too low for: which login reaches it
+				     (site-member-voting-record-and-confidential-papers REQ-SCR-004). -->
+				<StepUpPrompt
+					v-if="entry.stepUp"
+					:stepUp="entry.stepUp"
+					:routes="signInRoutes"
+					:t="t" />
+				<p v-else-if="pageLoading" class="utrecht-paragraph" role="status">
 					{{ t('Loading…') }}
 				</p>
 				<component
@@ -174,6 +188,7 @@
 					@navigate="$emit('navigate', $event)"
 					@unread="$emit('unread', $event)"
 					@refresh="$emit('refresh')"
+					@titled="pageTitled = $event === true"
 					@claimed="$emit('claimed')"
 					@removed="$emit('signout')" />
 			</template>
@@ -186,7 +201,6 @@ import { defineAsyncComponent, markRaw } from 'vue'
 import PlaceholderPage from '../pages/PlaceholderPage.vue'
 import ResidentMenu from './ResidentMenu.vue'
 import WaysIn from './WaysIn.vue'
-import { ACTING_FOR_SELF } from '../../shared/myCases.js'
 import {
 	navKeyFor,
 	OPEN_STORAGE_KEY,
@@ -198,8 +212,9 @@ import {
 	routeForNav,
 } from '../../shared/portalNav.js'
 import { sectionOf } from '../lib/help.js'
-import { pageOwnsHeading, sitePageLoader } from '../pages/registry.js'
-import { actingFor } from './e/actingFor.js'
+import { menuCurrentRoute } from '../lib/residentMenu.js'
+import { isFormPage, pageOwnsHeading, sitePageLoader } from '../pages/registry.js'
+import { personOf } from './chrome/person.js'
 
 // The sign-in links are button links. Without this stylesheet their classes
 // name nothing and the browser draws its own blue link.
@@ -222,7 +237,7 @@ function declaredProps(component) {
 /**
  * The signed-in area of the site renderer.
  *
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export default {
 	name: 'AccountArea',
@@ -237,6 +252,8 @@ export default {
 		WaysIn,
 		// On demand: the form only shows when the instance switch is on.
 		EmailLinkForm: defineAsyncComponent(() => import('./EmailLinkForm.vue')),
+		// Only on a page the login is too low for.
+		StepUpPrompt: defineAsyncComponent(() => import('./mijn/StepUpPrompt.vue')),
 	},
 
 	props: {
@@ -301,10 +318,28 @@ export default {
 			pageLoading: false,
 			// The `/mijn` home, loaded the first time it is opened.
 			homeComponent: null,
+			// Whether the page on screen shows its own h1 (an open item's
+			// title), so the area's heading and help stay out.
+			pageTitled: false,
 		}
 	},
 
 	computed: {
+		/**
+		 * The menu item to mark: the route's own, or on a page one level
+		 * deeper (a case opened from "Mijn zaken") the item it belongs to.
+		 *
+		 * @return {string} The route.
+		 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
+		 */
+		menuRoute() {
+			return menuCurrentRoute(this.currentRoute, {
+				groups: this.menuGroups,
+				nav: this.nav,
+				contributions: this.contributions,
+			})
+		},
+
 		/**
 		 * The help text of the part of Mijn omgeving on screen, or ''.
 		 *
@@ -339,7 +374,7 @@ export default {
 		 *
 		 * @return {object} `authentication.signInPage`.
 		 *
-		 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
+		 * @spec openspec/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
 		 */
 		signInPageText() {
 			return this.portal?.authentication?.signInPage || {}
@@ -351,7 +386,7 @@ export default {
 		 *
 		 * @return {boolean}
 		 *
-		 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
+		 * @spec openspec/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
 		 */
 		signInDesigned() {
 			return (
@@ -366,34 +401,52 @@ export default {
 		 *
 		 * @return {boolean} True when the menu shows.
 		 *
-		 * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
+		 * @spec openspec/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
 		 */
 		withMenu() {
-			return Boolean(this.session) && this.menuGroups.length > 0
+			return (
+				Boolean(this.session) && this.menuGroups.length > 0 && !this.formPage
+			)
+		},
+
+		/**
+		 * Whether the page on screen is one form and nothing else.
+		 *
+		 * @return {boolean}
+		 * @spec exclude layout of a page that is only a form, as the Mijn form boards draw it
+		 */
+		formPage() {
+			return Boolean(this.session) && isFormPage(this.entry)
+		},
+
+		/**
+		 * @return {string} The resident's name, '' when unknown.
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
+		 */
+		residentName() {
+			return personOf(this.session)?.name || ''
+		},
+
+		/**
+		 * @return {string} Where the resident arranges access to cases, '' when the portal names none.
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
+		 */
+		mandatesHref() {
+			return String(this.portal?.myCases?.mandatesHref || '')
 		},
 
 		/**
 		 * @return {boolean} Whether the page on screen shows its own h1.
 		 *
-		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 		 */
 		/**
 		 * Whether `/mijn` itself is on screen, signed in with something to
 		 * show: then the home renders instead of a page.
 		 *
 		 * @return {boolean}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
 		 */
-		/**
-		 * Whether the resident acts for someone else right now.
-		 *
-		 * @return {boolean}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
-		 */
-		actingForSomeone() {
-			return actingFor.id !== ACTING_FOR_SELF
-		},
-
 		isHome() {
 			return (
 				Boolean(this.session)
@@ -412,7 +465,7 @@ export default {
 		 *
 		 * @return {object} The props.
 		 *
-		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 		 */
 		pageProps() {
 			const contract = {
@@ -453,7 +506,7 @@ export default {
 			 *
 			 * @param {boolean} home Whether `/mijn` itself is on screen.
 			 * @return {void}
-			 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
+			 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
 			 */
 			handler(home) {
 				if (home && !this.homeComponent) {
@@ -483,10 +536,17 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when the page is set.
 		 *
-		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 		 */
 		async loadPage() {
 			const entry = this.entry
+			this.pageTitled = false
+			if (entry && entry.stepUp) {
+				// The step-up prompt is the page; nothing to load.
+				this.pageComponent = null
+				this.pageLoading = false
+				return
+			}
 			const loader = sitePageLoader(entry)
 			if (!loader) {
 				this.pageComponent = markRaw(PlaceholderPage)
@@ -516,7 +576,7 @@ export default {
 		 * @param {object} [row] The case row, so a case read under a mandate opens.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-record-link-must-open-its-record-after-sign-in-req-srp-021
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-record-link-must-open-its-record-after-sign-in-req-srp-021
 		 */
 		openCase(target, row) {
 			const route = this.caseRoute(target)
@@ -546,7 +606,7 @@ export default {
 		 * @param {{app: string, collection: string, id: string}} target The case.
 		 * @return {string} The route, or ''.
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-record-link-must-open-its-record-after-sign-in-req-srp-021
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-record-link-must-open-its-record-after-sign-in-req-srp-021
 		 */
 		caseRoute(target) {
 			const key = navKeyFor(this.nav, target)
@@ -564,7 +624,9 @@ export default {
 </script>
 
 <style scoped>
-.pq-account {
+/* The shell only: a page whose own root is a `.pq-account` (AccountPage)
+   carries this component's scope too, and would be inset twice. */
+.container.pq-account {
 	padding-block: 24px;
 }
 
@@ -586,6 +648,12 @@ export default {
 		gap: 40px;
 		align-items: start;
 	}
+}
+
+/* A page that is only a form: one centred reading column. */
+.pq-account--form .pq-account__content {
+	margin-inline: auto;
+	max-inline-size: 55rem;
 }
 
 .pq-account__ways-in {

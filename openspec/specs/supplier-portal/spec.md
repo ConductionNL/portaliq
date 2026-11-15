@@ -546,19 +546,6 @@ gate collections and actions unchanged.
 - **THEN** the first session gets trust `high` and the second gets trust `low` (under-privilege on ambiguity) — never the reverse
 - @e2e exclude trust-mapping invariant — covered by PHPUnit; no UI surface
 
-### Requirement: Dev-login stays debug-gated at trust low
-
-`SessionController::devLogin()` MUST remain debug-gated and MUST issue trust
-`low`. It MUST NOT be reachable on a non-debug production instance, and the SPA
-MUST only surface it on a debug instance. It is unaffected by the OIDC edge.
-
-#### Scenario: Dev-login is unavailable in production
-
-- **GIVEN** a non-debug production instance
-- **WHEN** `POST /portal/api/session/dev-login` is called
-- **THEN** it is refused (debug-gated) and the SPA shows only the configured OIDC login buttons
-- @e2e exclude debug-gating posture — covered by PHPUnit / config assertion; no UI surface
-
 ### Requirement: An account's own channel opt-out gates dispatch
 
 `portalAccount` SHALL carry an optional `notificationChannels` object
@@ -757,3 +744,47 @@ The site's own user-visible words SHALL come from an English-keyed bundle (`src/
 - **GIVEN** the locale is an unsupported value such as `fr`
 - **WHEN** the translator resolves its bundle
 - **THEN** it uses the English bundle, and no word renders empty
+
+### Requirement: A contribution MUST be able to declare an endpoint-forwarding action
+
+A `PortalContributionProvider` SHALL be able to declare an endpoint action `{id, label, endpoint, method?, minTrust?, fields?}` in addition to a create action. `endpoint` is an instance-local absolute path (it starts with `/`, carries no scheme and no protocol-relative `//`). The contributing app is the contribution's own `app` key, which is the `{appId}` segment of the forwarding route `POST /portal/api/actions/{appId}/{actionId}`, not a field on the action. Portaliq SHALL authorise an invocation the same way it authorises a create action: the action MUST appear in the subject's own aggregated contributions, its method MUST be allowed and its `minTrust` MUST be met. When the action declares `fields`, Portaliq SHALL rebuild the forwarded body server-side from only those fields; an action without `fields` relays the request body unchanged. Portaliq SHALL send a short-lived signed assertion (`X-Portal-Subject`, `use: "assertion"`) of the subject's server-derived `subjectRef` and `organisation` with the forward, and SHALL NOT forward any client-supplied `subjectRef` or `organisation`. The public site SHALL run the action through `src/site/lib/residentActions.js` (`postAction`, `forwardApi`) and show the answer of the contributing app, or follow its redirect.
+
+#### Scenario: A supplier invokes a declared endpoint action
+
+- **GIVEN** a contribution of app `procest` declares `{ id: "requestRenewal", label: "Verlenging aanvragen", endpoint: "/apps/procest/api/leverancier-portaal/renewals", method: "POST", fields: ["contractId", "note"] }` for the authenticated subject
+- **WHEN** the subject invokes `requestRenewal` with a `contractId`, a `note` and a smuggled `subjectRef`
+- **THEN** Portaliq forwards only `contractId` and `note`, with its own server-derived `subjectRef` and `organisation` in the signed assertion (never the client value), to the declared endpoint, and the domain app's own bearer-guarded logic decides whether to act on it
+- **AND** the site shows the domain app's answer in a status region, or follows its redirect
+
+#### Scenario: A subject cannot invoke an action outside their own contributions
+
+- **GIVEN** a subject whose aggregated contributions do not declare an action with that `{appId}` and `{actionId}`
+- **WHEN** they call `POST /portal/api/actions/{appId}/{actionId}` for that pair anyway
+- **THEN** the request is rejected with 403 and nothing is forwarded
+
+#### Scenario: The domain app is unreachable or refuses the forward
+
+- **GIVEN** an authorised endpoint action whose target cannot be reached
+- **WHEN** Portaliq forwards the invocation
+- **THEN** the caller receives a `502` with `{error: "forward_failed"}` and no transport detail
+- **AND** a non-2xx answer of a reachable app is relayed with its own status, so the site can show it
+
+### Requirement: The test sign-in opens only on its own switch
+
+`SessionController::devLogin()` MUST answer only when the app config
+`portaliq`/`dev_login_enabled` is `yes`, and MUST issue trust `low`. System
+`debug` MUST NOT open it. Every refusal MUST be a 404 marked for the bruteforce
+throttler. The site MUST offer the test sign-in button only while the switch is
+`yes`. It is unaffected by the OIDC edge.
+
+#### Scenario: Debug mode does not open it
+@e2e exclude PHPUnit: tests/Unit/Controller/SessionControllerTest.php and tests/Unit/Service/PortalRuntimeConfigResolverTest.php
+- **GIVEN** an instance with `debug` on and no `dev_login_enabled`
+- **WHEN** `POST /portal/api/session/dev-login` is called and the sign-in page is served
+- **THEN** the call answers 404 and the page offers no test sign-in
+
+#### Scenario: The switch opens it
+@e2e exclude PHPUnit: tests/Unit/Controller/SessionControllerTest.php
+- **GIVEN** `dev_login_enabled` is `yes`
+- **WHEN** `POST /portal/api/session/dev-login` is called
+- **THEN** a session at trust `low` is issued

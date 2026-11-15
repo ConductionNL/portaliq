@@ -1,0 +1,4 @@
+{
+	"visitorRows": [[],[],[],[{"name":"publicationDate","label":"t:Publication date","value":"2 september 2026","kind":"text"},{"name":"wooCategory","label":"t:Information category","value":"convenant","kind":"text"},{"name":"themes","label":"t:Themes","value":["Wonen"],"kind":"list"}],[],[{"name":"publicationDate","label":"t:Publication date","value":"31 January 2026","kind":"text"}]],
+	"humanSize": ["","","","","","0 B","999 B","1000 B","1 kB","123 kB","1000 kB","1,0 MB","2,4 MB","5,0 MB",""]
+}

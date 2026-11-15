@@ -159,15 +159,9 @@
 							data-testid="federated-search-sort"
 							@change="onSort($event.target.value)">
 							<!--
-								NO "MEEST RELEVANT" OPTION.
-
-								The reference offers one. Nothing in this API
-								implements relevance ordering, so it would be a
-								control that changes the URL and not the list —
-								the same class of defect as a filter that
-								silently returns nothing. Every option below was
-								checked against the live endpoint and returns a
-								different first row.
+								"Beste match" only with a term, and only while
+								the backend proves it ranks: an unranked answer
+								removes it (search-sort-by-relevance D2).
 							-->
 							<option
 								v-for="option in sortOptions"
@@ -196,7 +190,7 @@
 						8px-radius card with a 24px inner and a 12px column gap.
 					-->
 					<li
-						v-for="result in results"
+						v-for="(result, resultIndex) in results"
 						:key="result.key"
 						class="ac-card ac-card--search-result ac-card--padding-md pq-search__result"
 						data-testid="federated-search-result">
@@ -270,9 +264,24 @@
 									links hears eleven distinct ones rather than eleven
 									"Lees meer".
 								-->
+								<!-- How well it matched, for assistive technology
+								     only: the order is what a sighted visitor
+								     reads (search-sort-by-relevance D4). -->
+								<span
+									v-if="matchWords(result)"
+									:id="`pq-search-match-${resultIndex}`"
+									class="sr-only"
+									data-testid="federated-search-match"
+									>{{ matchWords(result) }}</span
+								>
 								<a
 									class="utrecht-link utrecht-link--html-a pq-search__more"
 									:href="detailHref(result)"
+									:aria-describedby="
+										matchWords(result)
+											? `pq-search-match-${resultIndex}`
+											: undefined
+									"
 									data-testid="federated-search-result-link"
 									@click.prevent="openDetail(result)">
 									<span class="sr-only"
@@ -296,6 +305,55 @@
 						</div>
 					</li>
 				</ol>
+
+				<!-- NOTHING FOUND (board ZoekenGeenTreffers): what to try next,
+				     with a way out of the filters when any are on. -->
+				<div
+					v-if="nothingFound"
+					class="pq-search__empty"
+					data-testid="federated-search-empty">
+					<h3 class="utrecht-heading-3">{{ emptyTitle }}</h3>
+					<p class="utrecht-paragraph">{{ emptyText }}</p>
+					<ul class="utrecht-unordered-list pq-search__empty-tips">
+						<li class="utrecht-unordered-list__item">
+							{{ emptySpelling }}
+						</li>
+						<li
+							v-if="fewerWordsTip"
+							class="utrecht-unordered-list__item">
+							{{ fewerWordsTip }}
+						</li>
+						<li
+							v-if="filtersOn"
+							class="utrecht-unordered-list__item">
+							{{ emptyFewerFilters }}
+						</li>
+					</ul>
+					<div
+						v-if="filtersOn || emptyActionHref"
+						class="pq-search__empty-actions">
+						<button
+							v-if="filtersOn"
+							type="button"
+							class="utrecht-button utrecht-button--secondary-action"
+							data-testid="federated-search-clear-filters"
+							@click="clearFilters">
+							{{ clearFiltersLabel }}
+						</button>
+						<a
+							v-if="emptyActionHref && emptyActionLabel"
+							class="utrecht-button-link utrecht-button-link--html-a utrecht-button-link--primary-action"
+							:href="emptyActionAddress"
+							data-testid="federated-search-empty-action">
+							{{ emptyActionLabel }}
+						</a>
+					</div>
+					<p
+						v-if="emptyActionNote"
+						class="utrecht-paragraph pq-search__empty-note">
+						{{ emptyActionNote }}
+					</p>
+				</div>
 
 				<!--
 					PAGINATION IS A NAV OF LINKS, not buttons.
@@ -400,9 +458,11 @@
 									@change="
 										toggleFacet(bucket.value, group.field)
 									" />
-								{{ bucket.label }}
-								<span class="pq-search__facet-count"
-									>({{ bucket.count }})</span
+								<span
+									>{{ bucket.label }}
+									<span class="pq-search__facet-count"
+										>({{ bucket.count }})</span
+									></span
 								>
 							</label>
 						</li>
@@ -481,10 +541,15 @@ import { labelBuckets, pageLocale } from '../lib/facetLabels.js'
 import {
 	buildRequestUrl,
 	lockedFiltersOf,
+	matchDescription,
 	pageWindow,
 	paginationItems,
 	readSearchState,
+	RELEVANCE_SORT,
+	relevanceApplied,
 	searchQuery,
+	sortForNewSearch,
+	sortOptionsFor,
 	toBuckets,
 	toResult,
 	withKindField,
@@ -493,6 +558,31 @@ import {
 } from '../lib/federatedSearch.js'
 import { suggestionRoute } from '../lib/searchSuggestions.js'
 import { addressOfRoute } from '../lib/siteAddress.js'
+
+/** The test id of each chip under a search result. */
+const META_TESTIDS = Object.freeze({
+	date: 'federated-search-date',
+	type: 'federated-search-type',
+	count: 'federated-search-publication-count',
+	publication: 'federated-search-publication',
+	source: 'federated-search-source',
+})
+
+/**
+ * One chip under a search result, or null when it has no text.
+ *
+ * @param {{key: string, text: string, prefix?: string}} chip The chip.
+ * @return {{key: string, text: string, prefix: string, testid: string}|null} The item.
+ */
+function metaChip(chip) {
+	if (!chip.text) {
+		return null
+	}
+	return { key: chip.key, text: chip.text, prefix: chip.prefix || '', testid: META_TESTIDS[chip.key] }
+}
+
+// The button links' classes need their stylesheet, or the browser draws its own blue link.
+import '@utrecht/button-link-css/dist/index.css'
 
 export default {
 	name: 'FederatedSearchBlock',
@@ -592,6 +682,16 @@ export default {
 		 * host sets it from the portal's `searchInsideDocuments`, after the
 		 * authored props.
 		 */
+		/**
+		 * Names the host knows for facet values, by field: the portal's own
+		 * organisation by its id (woo-search-names-the-organisation). Set by
+		 * the host after the authored props.
+		 */
+		facetNames: {
+			type: Object,
+			default: () => ({}),
+		},
+
 		searchInsideDocuments: {
 			type: Boolean,
 			default: true,
@@ -626,6 +726,36 @@ export default {
 			type: String,
 			default: 'De zoekresultaten konden niet worden geladen.',
 		},
+
+		/** The heading when a search finds nothing. */
+		emptyTitle: { type: String, default: 'Niets gevonden' },
+		/** The line under it. */
+		emptyText: {
+			type: String,
+			default: 'Probeer een ander woord of minder filters.',
+		},
+
+		/** The first tip. */
+		emptySpelling: { type: String, default: 'Controleer de spelling.' },
+		/** The tip for a term of several words; `{word}` is its last word. */
+		emptyFewerWords: {
+			type: String,
+			default: 'Gebruik minder woorden, bijvoorbeeld alleen "{word}".',
+		},
+
+		/** The tip while a filter is on. */
+		emptyFewerFilters: {
+			type: String,
+			default: 'Haal een of meer filters weg.',
+		},
+
+		/** The button that takes every filter off. */
+		clearFiltersLabel: { type: String, default: 'Alle filters weghalen' },
+		/** A way on the portal offers when nothing is found, with its address. */
+		emptyActionLabel: { type: String, default: '' },
+		emptyActionHref: { type: String, default: '' },
+		/** The line under that way on. */
+		emptyActionNote: { type: String, default: '' },
 
 		/**
 		 * The endpoint to search.
@@ -792,6 +922,10 @@ export default {
 			// Empty means "no _order at all", which is the backend's own
 			// default rather than a fifth ordering invented here.
 			sort: '',
+			// Set once an answer to a relevance order came back unranked:
+			// the option goes for the rest of the visit (REQ-SSR-002).
+			relevanceUnavailable: false,
+			relevanceNotice: '',
 			facets: {},
 			periodFrom: '',
 			periodTo: '',
@@ -814,12 +948,64 @@ export default {
 
 	computed: {
 		/**
+		 * @return {boolean} Whether a finished search found nothing.
+		 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md
+		 */
+		nothingFound() {
+			return (
+				!this.loading
+				&& !this.error
+				&& this.sequence > 0
+				&& this.total === 0
+			)
+		},
+
+		/**
+		 * @return {boolean} Whether a filter or a period is on.
+		 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md
+		 */
+		filtersOn() {
+			return (
+				Object.values(this.facets).some(
+					(values) => Array.isArray(values) && values.length > 0,
+				)
+				|| this.periodFrom !== ''
+				|| this.periodTo !== ''
+			)
+		},
+
+		/**
+		 * @return {string} The way on's href: a site route in this host's own
+		 *   addressing, anything else as it is.
+		 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md
+		 */
+		emptyActionAddress() {
+			const href = this.emptyActionHref
+			if (!href.startsWith('/') || href.startsWith('//') || typeof window === 'undefined') {
+				return href
+			}
+			return addressOfRoute(href, window.location.href, runtimeConfig()).toString()
+		},
+
+		/**
+		 * @return {string} The fewer-words tip with the term's last word, or ''
+		 *   for a term of one word.
+		 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md
+		 */
+		fewerWordsTip() {
+			const words = String(this.query || '').trim().split(/\s+/).filter(Boolean)
+			return words.length > 1
+				? this.emptyFewerWords.replace('{word}', words[words.length - 1])
+				: ''
+		},
+
+		/**
 		 * The facet fields in effect: the old single field when a placement
 		 * sets it, else the list.
 		 *
 		 * @return {Array<string>} Field names.
 		 *
-		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
 		 */
 		fields() {
 			const own = this.facetField ? [this.facetField] : this.facetFields
@@ -861,7 +1047,7 @@ export default {
 		 *
 		 * @return {boolean} True with facet buckets or the period filter.
 		 *
-		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-a-publication-period-req-wsd-002
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-a-publication-period-req-wsd-002
 		 */
 		hasFilters() {
 			return this.facetGroups.length > 0 || this.hidePeriod === false
@@ -872,7 +1058,7 @@ export default {
 		 *
 		 * @return {object} The query object.
 		 *
-		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-block-must-describe-its-search-as-the-saved-search-query-req-wsd-004
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-block-must-describe-its-search-as-the-saved-search-query-req-wsd-004
 		 */
 		savedQuery() {
 			return searchQuery(this.$data, this.catalog)
@@ -894,6 +1080,28 @@ export default {
 				return this.errorLabel
 			}
 
+			if (this.relevanceNotice !== '') {
+				return `${this.relevanceNotice} ${this.countSentence}`
+			}
+
+			return this.countSentence
+		},
+
+		/**
+		 * @return {(result: object) => string} The visually hidden match words of a result, '' without a score.
+		 * @spec openspec/changes/search-sort-by-relevance/tasks.md#t03
+		 */
+		matchWords() {
+			return (result) => matchDescription(result.relevance ?? null)
+		},
+
+		/**
+		 * The loaded-results sentence of the live region.
+		 *
+		 * @return {string}
+		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+		 */
+		countSentence() {
 			if (this.total === 0) {
 				return 'Zoekresultaten geladen. Geen resultaten gevonden.'
 			}
@@ -956,21 +1164,15 @@ export default {
 		 * The orderings this API actually implements.
 		 *
 		 * Each was checked against the live endpoint on 2026-08-20 and returns
-		 * a different first row. The reference's "Meest relevant" is absent
-		 * because nothing here implements relevance ranking.
+		 * a different first row. "Beste match" joins them with a term.
 		 *
 		 * @return {Array<object>} `{value, label}` options.
 		 *
 		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+		 * @spec openspec/changes/search-sort-by-relevance/tasks.md#t01
 		 */
 		sortOptions() {
-			return [
-				{ value: '', label: 'Standaardvolgorde' },
-				{ value: 'publicationDate:DESC', label: 'Datum - nieuw naar oud' },
-				{ value: 'publicationDate:ASC', label: 'Datum - oud naar nieuw' },
-				{ value: 'title:ASC', label: 'Naam - A naar Z' },
-				{ value: 'title:DESC', label: 'Naam - Z naar A' },
-			]
+			return sortOptionsFor(this.query, this.relevanceUnavailable)
 		},
 	},
 
@@ -983,6 +1185,10 @@ export default {
 	 */
 	mounted() {
 		this.readLocation()
+		// A link that carries a term and no order opens on relevance.
+		if (!new URLSearchParams(window.location.search).has('_sort')) {
+			this.sort = sortForNewSearch(this.query, this.sort, this.relevanceUnavailable)
+		}
 		this.search()
 		window.addEventListener('popstate', this.onPopState)
 	},
@@ -1107,6 +1313,18 @@ export default {
 					return
 				}
 
+				// An unranked answer to a relevance order: the backend ignored
+				// it. Drop the option, say so once, search again in the default
+				// order (REQ-SSR-002).
+				if (this.sort === RELEVANCE_SORT && !relevanceApplied(body.results)) {
+					this.relevanceUnavailable = true
+					this.relevanceNotice = 'Sorteren op relevantie kan hier niet.'
+					this.sort = ''
+					this.writeLocation(false)
+					this.search()
+					return
+				}
+
 				this.results = (body.results || []).map((row) => toResult(row))
 				this.total = body.total || 0
 				this.pages = Math.max(1, body.pages || 1)
@@ -1120,6 +1338,7 @@ export default {
 							toBuckets(body.facets, field),
 							field,
 							pageLocale(),
+							this.facetNames[field],
 						),
 					}))
 					.filter((group) => group.buckets.length > 0)
@@ -1157,7 +1376,7 @@ export default {
 		 * @param {number} total The result count.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-site-search-must-be-reported-by-the-built-in-search-box
+		 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-site-search-must-be-reported-by-the-built-in-search-box
 		 */
 		reportSearch(total) {
 			const term = String(this.query || '').trim()
@@ -1183,6 +1402,8 @@ export default {
 		onSearch(term) {
 			this.query = term || ''
 			this.reported = ''
+			this.relevanceNotice = ''
+			this.sort = sortForNewSearch(this.query, this.sort, this.relevanceUnavailable)
 			// A new query invalidates the page number. Staying on page 7 of a
 			// previous search shows an empty list for a search that has
 			// results, which reads as "nothing found".
@@ -1211,55 +1432,17 @@ export default {
 		 * @spec openspec/changes/search-names-only-a-foreign-source/specs/portal-federated-search/spec.md#requirement-every-result-from-another-catalogue-must-name-that-catalogue-req-snf-001
 		 */
 		metaItems(result) {
-			const items = []
-
-			if (result.date) {
-				items.push({
-					key: 'date',
-					text: result.date,
-					prefix: '',
-					testid: 'federated-search-date',
-				})
-			}
-
-			const type = result.type || this.typeLabel
-			if (type) {
-				items.push({
-					key: 'type',
-					text: type,
-					prefix: '',
-					testid: 'federated-search-type',
-				})
-			}
-
-			if (result.kind === 'subject' && result.publicationCount > 0) {
-				items.push({
-					key: 'count',
-					text: `${result.publicationCount} ${this.publicationsLabel}`,
-					prefix: '',
-					testid: 'federated-search-publication-count',
-				})
-			}
-
-			if (result.kind === 'document' && result.publication) {
-				items.push({
-					key: 'publication',
-					text: `${this.partOfLabel} ${result.publication}`,
-					prefix: '',
-					testid: 'federated-search-publication',
-				})
-			}
-
-			if (result.directory) {
-				items.push({
-					key: 'source',
-					text: result.directory,
-					prefix: this.sourceLabel,
-					testid: 'federated-search-source',
-				})
-			}
-
-			return items
+			const counted = result.kind === 'subject' && result.publicationCount > 0
+			const partOf = result.kind === 'document' && result.publication
+			return [
+				{ key: 'date', text: result.date },
+				{ key: 'type', text: result.type || this.typeLabel },
+				{ key: 'count', text: counted ? `${result.publicationCount} ${this.publicationsLabel}` : '' },
+				{ key: 'publication', text: partOf ? `${this.partOfLabel} ${result.publication}` : '' },
+				{ key: 'source', text: result.directory, prefix: this.sourceLabel },
+			]
+				.map(metaChip)
+				.filter(Boolean)
 		},
 
 		/**
@@ -1272,6 +1455,7 @@ export default {
 		 */
 		onSort(value) {
 			this.sort = value || ''
+			this.relevanceNotice = ''
 			// Page 1, for the same reason a new query resets it: page 7 of the
 			// old ordering is a different set of rows from page 7 of the new
 			// one, and landing there looks like the sort lost the results.
@@ -1379,7 +1563,7 @@ export default {
 		 * @return {string} The href.
 		 *
 		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-every-result-must-name-the-catalogue-it-came-from
-		 * @spec openspec/changes/record-and-search-links-keep-their-portal/specs/site-navigation/spec.md#requirement-a-link-to-a-record-or-a-search-result-keeps-the-portal-and-the-route-req-rsl-001
+		 * @spec openspec/specs/site-navigation/spec.md#requirement-a-link-to-a-record-or-a-search-result-keeps-the-portal-and-the-route-req-rsl-001
 		 */
 		detailHref(result) {
 			if (!result.id && !(result.kind === 'subject' && result.slug)) {
@@ -1428,7 +1612,7 @@ export default {
 		 * @return {void}
 		 *
 		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-facet-buckets-must-be-read-in-both-dialects-the-endpoint-speaks
-		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
 		 */
 		toggleFacet(value, field = this.fields[0]) {
 			const current = this.facets[field] || []
@@ -1450,10 +1634,25 @@ export default {
 		 * @param {string} value The bucket value.
 		 * @return {boolean} True when selected.
 		 *
-		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
 		 */
 		isSelected(field, value) {
 			return (this.facets[field] || []).includes(value)
+		},
+
+		/**
+		 * Take every filter and the period off and search again.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md
+		 */
+		clearFilters() {
+			this.facets = {}
+			this.periodFrom = ''
+			this.periodTo = ''
+			this.page = 1
+			this.writeLocation(true)
+			this.search()
 		},
 
 		/**
@@ -1463,7 +1662,7 @@ export default {
 		 * @param {string} value The date from the input, `YYYY-MM-DD` or ''.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-a-publication-period-req-wsd-002
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-a-publication-period-req-wsd-002
 		 */
 		setPeriod(which, value) {
 			this[which] = value || ''
@@ -1618,6 +1817,39 @@ export default {
 
 /* A filter group: the fieldset carries the legend for assistive tech and no
    frame of its own; the groups are separated by space only. */
+/* Nothing found (board ZoekenGeenTreffers): a card with what to try next. */
+.pq-search__empty {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	padding: 2rem;
+	border: 1px solid
+		var(
+			--nldesign-website-card-border-color,
+			var(--nldesign-color-border, currentcolor)
+		);
+	border-radius: var(--nldesign-website-border-radius-large, 0);
+}
+
+.pq-search__empty > * {
+	margin: 0;
+}
+
+.pq-search__empty-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+	margin-block-start: 0.5rem;
+}
+
+.pq-search__empty-note {
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, currentcolor)
+	);
+	font-size: 0.9375rem;
+}
+
 .pq-search__locked {
 	display: flex;
 	flex-wrap: wrap;

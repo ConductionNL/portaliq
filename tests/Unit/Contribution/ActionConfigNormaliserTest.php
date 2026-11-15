@@ -209,6 +209,55 @@ class ActionConfigNormaliserTest extends TestCase {
 	}//end testACollectionFieldKeepsItsSubsetForTheSiteToFilter()
 
 	/**
+	 * A collection provider keeps a `descriptionField` for the card's second
+	 * line, and drops one that is not a field name.
+	 *
+	 * @return void
+	 */
+	public function testACollectionProviderKeepsItsDescriptionField(): void {
+		$provider = [
+			'type'             => 'collection',
+			'register'         => 'learniq',
+			'schema'           => 'learner-profile',
+			'valueField'       => 'id',
+			'labelField'       => 'givenName',
+			'descriptionField' => 'groupLabel',
+		];
+		$kept     = $this->providerOf($provider);
+		$this->assertSame('groupLabel', $kept['descriptionField']);
+
+		$provider['descriptionField'] = ['groupLabel'];
+		$dropped = $this->providerOf($provider);
+		$this->assertArrayNotHasKey('descriptionField', $dropped);
+		$this->assertSame('givenName', $dropped['labelField'], 'the provider itself stays');
+	}//end testACollectionProviderKeepsItsDescriptionField()
+
+	/**
+	 * The normalised `learnerRef` provider of an absence action.
+	 *
+	 * @param array<string, mixed> $provider The declared provider.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function providerOf(array $provider): array {
+		$out = (new PortalManifestNormaliser($this->schemaReader()))->normalise(
+			[
+				'collections' => [],
+				'actions'     => [
+					[
+						'id'               => 'createExcuseRequest',
+						'type'             => 'create',
+						'schema'           => 'excuse-request',
+						'fields'           => ['learnerRef'],
+						'optionsProviders' => ['learnerRef' => $provider],
+					],
+				],
+			]
+		);
+		return $out['actions'][0]['optionsProviders']['learnerRef'];
+	}//end providerOf()
+
+	/**
 	 * A subset is capped at twenty cards and keeps whole numbers as text.
 	 *
 	 * @return void
@@ -457,7 +506,7 @@ class ActionConfigNormaliserTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/endpoint-action-forms-keep-their-field-shape/specs/site-forms/spec.md#requirement-an-endpoint-action-may-declare-a-fields-input-req-eaf-001
+	 * @spec openspec/specs/site-forms/spec.md#requirement-an-endpoint-action-may-declare-a-fields-input-req-eaf-001
 	 */
 	public function testAnEndpointActionKeepsTheInputItDeclares(): void {
 		$action = $this->wooAction(
@@ -481,7 +530,7 @@ class ActionConfigNormaliserTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/endpoint-action-forms-keep-their-field-shape/specs/site-forms/spec.md#requirement-an-endpoint-action-may-declare-a-fields-input-req-eaf-001
+	 * @spec openspec/specs/site-forms/spec.md#requirement-an-endpoint-action-may-declare-a-fields-input-req-eaf-001
 	 */
 	public function testOnACreateActionTheSchemaDecidesTheInput(): void {
 		$configs = $this->absenceConfigs(['reason' => ['input' => 'date'], 'dateFrom' => ['input' => 'number']]);
@@ -545,6 +594,30 @@ class ActionConfigNormaliserTest extends TestCase {
 
 		return $out['actions'][0];
 	}//end absenceAction()
+
+	/**
+	 * `prefill` survives only as `name` or `email`; any other source, or a
+	 * value that is not a string, is dropped.
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-action-field-may-start-from-the-signed-in-residents-name-or-e-mail-address
+	 *
+	 * @return void
+	 */
+	public function testAPrefillSourceIsKeptOnlyWhenKnown(): void {
+		$configs = $this->absenceConfigs(
+			[
+				'reason'     => ['prefill' => 'name'],
+				'reasonKind' => ['prefill' => 'email'],
+				'dateFrom'   => ['prefill' => 'bsn'],
+				'dateTo'     => ['prefill' => ['name']],
+			]
+		);
+
+		$this->assertSame('name', $configs['reason']['prefill']);
+		$this->assertSame('email', $configs['reasonKind']['prefill']);
+		$this->assertArrayNotHasKey('prefill', $configs['dateFrom']);
+		$this->assertArrayNotHasKey('prefill', $configs['dateTo']);
+	}//end testAPrefillSourceIsKeptOnlyWhenKnown()
 
 	/**
 	 * The normalised field configs of learniq's absence action.

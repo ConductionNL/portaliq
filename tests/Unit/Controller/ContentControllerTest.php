@@ -24,12 +24,16 @@ use OCA\Portaliq\Contribution\PortalContributionFilter;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\ContentController;
 use OCA\Portaliq\Service\Assistant\PublicAssistantChannel;
+use OCA\Portaliq\Service\Cms\MediaReferences;
 use OCA\Portaliq\Service\Cms\PortalShell;
 use OCA\Portaliq\Service\CmsReader;
 use OCA\Portaliq\Service\Identity\NextcloudRegistrationDoor;
 use OCA\Portaliq\Service\PortalNoticeReader;
+use OCA\Portaliq\Service\PortalOrganisationConfigService;
+use OCA\Portaliq\Service\SiteOrganisation;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\PublishedPortals;
 use OCA\Portaliq\Service\TrafficConfigResolver;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Http;
@@ -42,6 +46,7 @@ use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Service\Assistant\PublicSourceScope;
 
 /**
  * The public content API's boundary behaviour.
@@ -101,6 +106,20 @@ class ContentControllerTest extends TestCase {
 	 * @var NextcloudRegistrationDoor|null
 	 */
 	private ?NextcloudRegistrationDoor $registrationDoor = null;
+
+	/**
+	 * Names the portal's organisation, or none.
+	 *
+	 * @var PortalOrganisationConfigService|null
+	 */
+	private ?PortalOrganisationConfigService $organisations = null;
+
+	/**
+	 * Resolves the portal's media:<id> images, or none.
+	 *
+	 * @var MediaReferences|null
+	 */
+	private ?MediaReferences $media = null;
 
 	/**
 	 * The incoming request.
@@ -165,7 +184,9 @@ class ContentControllerTest extends TestCase {
 			notices: ($this->notices ?? $this->createMock(PortalNoticeReader::class)),
 			userSession: ($this->userSession ?? $this->createMock(IUserSession::class)),
 			assistant: $assistant,
-			registrationDoor: $this->registrationDoor
+			registrationDoor: $this->registrationDoor,
+			siteOrganisation: ($this->organisations === null) ? null : new SiteOrganisation(organisations: $this->organisations), publicSourceScope: new PublicSourceScope(),
+			media: $this->media
 		);
 	}//end controller()
 
@@ -264,6 +285,122 @@ class ContentControllerTest extends TestCase {
 
 		$this->assertSame([$notice], $data['notices']);
 	}//end testSiteCarriesActiveNotices()
+
+
+	/**
+	 * woo-search-names-the-organisation: the site names its organisation by
+	 * id and name, so the search's organisation filter reads a name.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-search-names-the-organisation/specs/portal-federated-search/spec.md#requirement-the-organisation-filter-reads-the-organisations-name
+	 */
+	public function testSiteNamesItsOrganisation(): void {
+		$this->resolver->method('resolve')->willReturn([...$this->portal(), 'organisation' => 'zuiddrecht']);
+		$this->organisations = $this->createMock(PortalOrganisationConfigService::class);
+		$this->organisations->expects($this->once())->method('resolve')->with('zuiddrecht')
+			->willReturn(['organisationId' => 'bacda7a4', 'organisationName' => 'Gemeente Zuiddrecht']);
+
+		$data = $this->controller()->site()->getData();
+
+		$this->assertSame(['id' => 'bacda7a4', 'name' => 'Gemeente Zuiddrecht'], $data['organisation']);
+	}//end testSiteNamesItsOrganisation()
+
+
+	/**
+	 * portal-identity-from-the-admin REQ-PIA-001/002: the site sends the
+	 * portal's logo and hero image as public addresses, never as the
+	 * media:<id> reference the site could not load.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+	 */
+	public function testSiteSendsThePortalsImagesAsAddresses(): void {
+		$portal = $this->portal();
+		$this->resolver->method('resolve')->willReturn([...$portal, 'logo' => 'media:logo', 'heroImage' => 'media:hero']);
+		$this->media = $this->createMock(MediaReferences::class);
+		$this->media->expects($this->exactly(2))->method('image')->willReturnCallback(
+			static fn (string $portal, string $value): string => ($value === 'media:hero' ? 'https://x/media/hero?portal=' . $portal : 'https://x/media/logo?portal=' . $portal)
+		);
+
+		$data = $this->controller()->site()->getData();
+
+		$this->assertSame('https://x/media/logo?portal=' . $portal['slug'], $data['logo']);
+		$this->assertSame('https://x/media/hero?portal=' . $portal['slug'], $data['heroImage']);
+	}//end testSiteSendsThePortalsImagesAsAddresses()
+
+
+	/**
+	 * An address logo is sent as stored; a reference that cannot be resolved is sent as nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+	 */
+	public function testSiteNeverSendsAnUnresolvedReference(): void {
+		$this->resolver->method('resolve')->willReturn([...$this->portal(), 'logo' => '/apps/portaliq/logo/zuid.svg', 'heroImage' => 'media:hero']);
+
+		$data = $this->controller()->site()->getData();
+
+		$this->assertSame('/apps/portaliq/logo/zuid.svg', $data['logo']);
+		$this->assertSame('', $data['heroImage']);
+	}//end testSiteNeverSendsAnUnresolvedReference()
+
+
+	/**
+	 * The site names the organisation's kind from the label stored with the
+	 * portal's TOOI organisation type, and gets '' without one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+	 */
+	public function testSiteSendsTheOrganisationTypeLabel(): void {
+		$this->resolver->method('resolve')->willReturnOnConsecutiveCalls(
+			[...$this->portal(), 'organisationType' => 'https://identifier.overheid.nl/tooi/def/ont/Waterschap', 'organisationTypeLabel' => 'waterschap'],
+			$this->portal()
+		);
+
+		$this->assertSame('waterschap', $this->controller()->site()->getData()['organisationTypeLabel']);
+		$this->assertSame('', $this->controller()->site()->getData()['organisationTypeLabel']);
+	}//end testSiteSendsTheOrganisationTypeLabel()
+
+
+	/**
+	 * Without a way to name it, the site names no organisation.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-search-names-the-organisation/specs/portal-federated-search/spec.md#requirement-the-organisation-filter-reads-the-organisations-name
+	 */
+	public function testSiteWithoutAnOrganisationNamesNone(): void {
+		$this->resolver->method('resolve')->willReturn([...$this->portal(), 'organisation' => 'onbekend']);
+		$this->organisations = $this->createMock(PortalOrganisationConfigService::class);
+		// An unknown slug resolves to the neutral default, which has no id.
+		$this->organisations->method('resolve')->willReturn(['organisationId' => '', 'organisationName' => 'Portaliq']);
+
+		$this->assertNull($this->controller()->site()->getData()['organisation']);
+
+		$this->organisations = null;
+		$this->assertNull($this->controller()->site()->getData()['organisation']);
+	}//end testSiteWithoutAnOrganisationNamesNone()
+
+
+	/**
+	 * A portal that names no organisation asks for none.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-search-names-the-organisation/specs/portal-federated-search/spec.md#requirement-the-organisation-filter-reads-the-organisations-name
+	 */
+	public function testAPortalWithoutAnOrganisationSlugAsksForNone(): void {
+		$this->resolver->method('resolve')->willReturn($this->portal());
+		$this->organisations = $this->createMock(PortalOrganisationConfigService::class);
+		$this->organisations->expects($this->never())->method('resolve');
+
+		$this->assertNull($this->controller()->site()->getData()['organisation']);
+	}//end testAPortalWithoutAnOrganisationSlugAsksForNone()
 
 
 	/**
@@ -956,7 +1093,7 @@ class ContentControllerTest extends TestCase {
 			$appConfig,
 			$urls,
 			$this->createMock(IGroupManager::class),
-			$this->createMock(PortalResolver::class)
+			$this->createMock(PublishedPortals::class)
 		);
 	}//end registrationDoor()
 

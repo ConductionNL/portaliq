@@ -176,4 +176,96 @@ class TrafficSegmentsTest extends TestCase {
 		$this->assertSame('ok', $segments[0]['name'], 'the id is the fallback name');
 		$this->assertSame('organic', $segments[0]['conditions'][0]['value'], 'the first declaration of an id wins');
 	}//end testAnUnusableSegmentIsRefusedAtConfigurationTime()
+
+	/**
+	 * Every configured segment and condition is kept, normalised or refused exactly as recorded.
+	 *
+	 * @return void
+	 */
+	public function testEveryDefinitionIsAsRecorded(): void {
+		$t = new TrafficSegments();
+		$c = fn (string $d, string $o, $v) => ['dimension' => $d, 'operator' => $o, 'value' => $v];
+		$rows = [
+			['id' => 'a', 'name' => ' Alpha ', 'conditions' => [$c(' channel ', ' is ', ' /x '), $c('userRef-present', 'is', true), $c('visitorType', 'isNot', false), $c('goal:g1', 'is', 7)]],
+			['id' => 'a', 'name' => 'Duplicate', 'conditions' => [$c('browser', 'is', 'x')]],
+			['id' => 'b', 'conditions' => [$c('browser', 'contains', str_repeat('é', 300))]],
+			['id' => 'bad id', 'conditions' => [$c('browser', 'is', 'x')]],
+			['id' => 'c', 'conditions' => []],
+			['id' => 'd', 'conditions' => 'x'],
+			['id' => 'e', 'conditions' => ['x']],
+			['id' => 'f', 'conditions' => [$c('nope', 'is', 'x')]],
+			['id' => 'g', 'conditions' => [$c('browser', 'equals', 'x')]],
+			['id' => 'h', 'conditions' => [$c('browser', 'is', ['x'])]],
+			['id' => 'i', 'conditions' => [$c('goal:missing', 'is', 'x')]],
+			['id' => 'j', 'conditions' => [['dimension' => 'browser', 'operator' => 'is']]],
+			['id' => 'k', 'conditions' => array_merge(array_fill(0, 10, $c('browser', 'is', 'x')), ['bad'])],
+			'not a row',
+			['name' => 'No id', 'conditions' => [$c('browser', 'is', 'x')]],
+			['id' => 7, 'name' => 'Int id', 'conditions' => [$c('browser', 'startsWith', null)]],
+		];
+
+		$this->assertSame(
+			'[{"id":"a","name":"Alpha","conditions":[{"dimension":"channel","operator":"is","value":"/x"},{"dimension":"userRef-present","operator":"is","value":"true"},{"dimension":"visitorType","operator":"isNot","value":"false"},{"dimension":"goal:g1","operator":"is","value":"7"}]},{"id":"b","name":"b","conditions":[{"dimension":"browser","operator":"contains","value":"éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé"}]},{"id":"j","name":"j","conditions":[{"dimension":"browser","operator":"is","value":""}]},{"id":"k","name":"k","conditions":[{"dimension":"browser","operator":"is","value":"x"},{"dimension":"browser","operator":"is","value":"x"},{"dimension":"browser","operator":"is","value":"x"},{"dimension":"browser","operator":"is","value":"x"},{"dimension":"browser","operator":"is","value":"x"},{"dimension":"browser","operator":"is","value":"x"},{"dimension":"browser","operator":"is","value":"x"},{"dimension":"browser","operator":"is","value":"x"},{"dimension":"browser","operator":"is","value":"x"},{"dimension":"browser","operator":"is","value":"x"}]},{"id":"7","name":"Int id","conditions":[{"dimension":"browser","operator":"startsWith","value":""}]}]',
+			json_encode($t->definitions(value: $rows, goals: [['id' => 'g1'], ['id' => 2], 'x', ['name' => 'no id']]), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+		);
+		$this->assertSame([], $t->definitions(value: 'x'));
+
+		$many = $t->definitions(value: array_map(static fn (int $i): array => ['id' => "s$i", 'conditions' => [$c('browser', 'is', 'x')]], range(1, 25)));
+		$this->assertCount(TrafficSegments::MAX_SEGMENTS, $many);
+		$this->assertSame('s20', $many[19]['id']);
+	}//end testEveryDefinitionIsAsRecorded()
+
+	/**
+	 * The visitor type and a goal met read off every session exactly as recorded.
+	 *
+	 * @return void
+	 */
+	public function testEveryVisitorTypeAndGoalIsAsRecorded(): void {
+		$segments = new TrafficSegments();
+		$typeIs   = static fn (string $value): array => $segments->definitions(value: [['id' => 't', 'conditions' => [['dimension' => 'visitorType', 'operator' => 'is', 'value' => $value]]]])[0];
+		$start    = static fn (array $params): array => ['name' => 'session_start', 'params' => $params];
+		$sessions = [
+			'hashed' => ['visitor' => 'h:x', 'events' => [$start(['visitorType' => 'new'])]],
+			'no visitor' => ['events' => [$start(['visitorType' => 'new'])]],
+			'first flag' => ['visitor' => 'c:x', 'events' => ['x', ['name' => 'page_view'], $start([]), $start(['first' => true])]],
+			'first truthy' => ['visitor' => 'c:x', 'events' => [$start(['first' => 1])]],
+			'returning' => ['visitor' => 'c:x', 'events' => [$start(['visitorType' => 'returning'])]],
+			'other then new' => ['visitor' => 'c:x', 'events' => [$start(['visitorType' => 'other']), $start(['visitorType' => 'new'])]],
+			'returning then new' => ['visitor' => 'c:x', 'events' => [$start(['visitorType' => 'returning']), $start(['visitorType' => 'new'])]],
+			'no events' => ['visitor' => 'c:x'],
+			'no params' => ['visitor' => 'c:x', 'events' => [['name' => 'session_start'], ['name' => 'session_start', 'params' => 'x']]],
+		];
+		$types = [];
+		foreach ($sessions as $name => $session) {
+			foreach (['new', 'returning', ''] as $type) {
+				if ($segments->matches(segment: $typeIs($type), session: $session) === true) {
+					$types[$name] = $type;
+				}
+			}
+		}
+
+		$this->assertSame(
+			[
+				'hashed' => '',
+				'no visitor' => '',
+				'first flag' => 'new',
+				'first truthy' => '',
+				'returning' => 'returning',
+				'other then new' => 'new',
+				'returning then new' => 'returning',
+				'no events' => '',
+				'no params' => '',
+			],
+			$types
+		);
+
+		$goals     = array_merge(
+			[['id' => 'contact', 'type' => 'page_reached']],
+			(new TrafficOutcomeDefinitions())->goals(value: [['id' => 'other', 'type' => 'page_reached', 'match' => ['pathEquals' => '/x']], ['id' => 'contact', 'type' => 'page_reached', 'match' => ['pathEquals' => '/contact']]])
+		);
+		$converted = $segments->definitions(value: [['id' => 'c', 'conditions' => [['dimension' => 'goal:contact', 'operator' => 'is', 'value' => 'true']]]], goals: $goals)[0];
+		$this->assertTrue($segments->matches(segment: $converted, session: $this->session(['x', ['name' => 'page_view', 'pagePath' => '/contact', 'params' => []]]), goals: $goals));
+		$this->assertFalse($segments->matches(segment: $converted, session: $this->session([['name' => 'page_view', 'pagePath' => '/x', 'params' => []]]), goals: $goals));
+		$this->assertFalse($segments->matches(segment: $converted, session: $this->session([]), goals: $goals));
+	}//end testEveryVisitorTypeAndGoalIsAsRecorded()
 }//end class

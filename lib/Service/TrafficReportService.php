@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
  */
 
 declare(strict_types=1);
@@ -22,7 +22,8 @@ namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\TrafficReportServiceInterface;
 use OCA\Portaliq\Service\Traffic\TrafficEventStore;
 use OCA\Portaliq\Service\Traffic\TrafficReportDelivery;
 use OCA\Portaliq\Service\Traffic\TrafficReportNumbers;
@@ -49,9 +50,10 @@ use Psr\Log\LoggerInterface;
  * key is written costs one period's mail; a key written after a mailer
  * that hangs costs a mail per hour until someone notices.
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
  */
-class TrafficReportService {
+class TrafficReportService implements TrafficReportServiceInterface {
+	use PublishedPortalWalk;
 
 	/**
 	 * The app config key prefix of a sent report: `traffic_report_<portal>_<id>`.
@@ -96,19 +98,14 @@ class TrafficReportService {
 	 *
 	 * @return array{reports: int, alerts: int} How many were sent and fired.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-an-alert-must-fire-once-per-period
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-alert-must-fire-once-per-period
 	 */
 	public function run(): array {
 		$now = $this->now();
 		$reports = 0;
 		$alerts = 0;
-		foreach ($this->portals->allPublishedPortals() as $portal) {
-			$slug = trim((string)($portal['slug'] ?? ''));
-			if ($slug === '') {
-				continue;
-			}
-
+		foreach ($this->sluggedPortals() as [$slug, $portal]) {
 			$config = $this->config->resolve(portal: $portal);
 			foreach ($config['reports'] as $report) {
 				$reports += (int)$this->report(portal: $portal, slug: $slug, report: $report, now: $now);
@@ -137,11 +134,11 @@ class TrafficReportService {
 	private function report(array $portal, string $slug, array $report, DateTimeImmutable $now): bool {
 		$period = $this->periods->reportPeriod(cadence: (string)$report['cadence'], now: $now);
 		$key = self::REPORT_PREFIX . $slug . '_' . (string)$report['id'];
-		if ($this->appConfig->getValueString(Application::APP_ID, $key, '') === $period['key']) {
+		if ($this->appConfig->getValueString(AppIdentity::APP_ID, $key, '') === $period['key']) {
 			return false;
 		}
 
-		$this->appConfig->setValueString(Application::APP_ID, $key, $period['key']);
+		$this->appConfig->setValueString(AppIdentity::APP_ID, $key, $period['key']);
 		$current = $this->numbers->fold(records: $this->records(slug: $slug, from: $period['from'], to: $period['to']));
 		$previous = $this->numbers->fold(records: $this->records(slug: $slug, from: $period['previousFrom'], to: $period['previousTo']));
 		$delivered = $this->delivery->sendReport(portal: $portal, report: $report, period: $period, current: $current, previous: $previous);
@@ -167,10 +164,33 @@ class TrafficReportService {
 	private function alert(array $portal, string $slug, array $alert, DateTimeImmutable $now): bool {
 		$period = $this->periods->alertPeriod(period: (string)$alert['period'], comparison: (string)$alert['comparison'], now: $now);
 		$key = self::ALERT_PREFIX . $slug . '_' . (string)$alert['id'];
-		if ($this->appConfig->getValueString(Application::APP_ID, $key, '') === $period['key']) {
+		if ($this->appConfig->getValueString(AppIdentity::APP_ID, $key, '') === $period['key']) {
 			return false;
 		}
 
+		$evaluated = $this->evaluation(slug: $slug, alert: $alert, period: $period);
+		if ($evaluated['fires'] === false) {
+			return false;
+		}
+
+		$this->appConfig->setValueString(AppIdentity::APP_ID, $key, $period['key']);
+		$delivered = $this->delivery->sendAlert(portal: $portal, alert: $alert, period: $period, value: $evaluated['value'], change: $evaluated['change']);
+		$this->logFired(slug: $slug, alert: $alert, period: $period, delivered: $delivered);
+
+		return true;
+	}
+
+	/**
+	 * Whether the alert's condition holds in the period, with the metric's
+	 * value and, for `changeAbove`, its change against the previous period.
+	 *
+	 * @param string               $slug   The portal slug.
+	 * @param array<string, mixed> $alert  The resolved alert.
+	 * @param array<string, mixed> $period The alert period.
+	 *
+	 * @return array{fires: bool, value: float, change: float|null}
+	 */
+	private function evaluation(string $slug, array $alert, array $period): array {
 		$value = $this->numbers->metric(metric: (string)$alert['metric'], records: $this->records(slug: $slug, from: $period['from'], to: $period['to']));
 		$change = null;
 		$threshold = (float)$alert['threshold'];
@@ -180,26 +200,46 @@ class TrafficReportService {
 			default => false,
 		};
 		if ((string)$alert['comparison'] === 'changeAbove') {
-			$before = $this->numbers->metric(
-				metric: (string)$alert['metric'],
-				records: $this->records(slug: $slug, from: $period['previousFrom'], to: $period['previousTo'])
-			);
-			$change = $this->numbers->change(current: $value, previous: $before);
+			$change = $this->changeOf(slug: $slug, alert: $alert, period: $period, value: $value);
 			$fires = ($change !== null && $change > $threshold);
 		}
 
-		if ($fires === false) {
-			return false;
-		}
+		return ['fires' => $fires, 'value' => $value, 'change' => $change];
+	}
 
-		$this->appConfig->setValueString(Application::APP_ID, $key, $period['key']);
-		$delivered = $this->delivery->sendAlert(portal: $portal, alert: $alert, period: $period, value: $value, change: $change);
+	/**
+	 * The metric's change against the previous period.
+	 *
+	 * @param string               $slug   The portal slug.
+	 * @param array<string, mixed> $alert  The resolved alert.
+	 * @param array<string, mixed> $period The alert period.
+	 * @param float                $value  The metric's value in the period.
+	 *
+	 * @return float|null Null when there is no previous value to compare with.
+	 */
+	private function changeOf(string $slug, array $alert, array $period, float $value): float|null {
+		$before = $this->numbers->metric(
+			metric: (string)$alert['metric'],
+			records: $this->records(slug: $slug, from: $period['previousFrom'], to: $period['previousTo'])
+		);
+		return $this->numbers->change(current: $value, previous: $before);
+	}
+
+	/**
+	 * Log a fired alert.
+	 *
+	 * @param string               $slug      The portal slug.
+	 * @param array<string, mixed> $alert     The resolved alert.
+	 * @param array<string, mixed> $period    The alert period.
+	 * @param int                  $delivered The number of deliveries.
+	 *
+	 * @return void
+	 */
+	private function logFired(string $slug, array $alert, array $period, int $delivered): void {
 		$this->logger->info(
 			'Portaliq: traffic alert fired',
 			['portal' => $slug, 'alert' => $alert['id'], 'period' => $period['key'], 'deliveries' => $delivered]
 		);
-
-		return true;
 	}
 
 	/**

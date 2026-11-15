@@ -59,7 +59,7 @@
 					data-testid="collection-table-row"
 					@click="selectable ? select(row) : undefined">
 					<td
-						v-for="(column, columnIndex) in columns"
+						v-for="(column, columnIndex) in rowColumns(row)"
 						:key="column.field"
 						class="utrecht-table__cell">
 						<button
@@ -135,6 +135,7 @@ import {
 	badgeModifier,
 	deriveColumns,
 	formatCell,
+	rowColumn,
 	rowIdOf,
 	safeHref,
 } from './cells.js'
@@ -152,7 +153,7 @@ import {
  * buttons show on the rows `offers` names, and are disabled on the row whose
  * action is running.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-collection-table-must-follow-the-declared-columns-req-srp-015
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-collection-table-must-follow-the-declared-columns-req-srp-015
  */
 export default {
 	name: 'CollectionTable',
@@ -209,6 +210,17 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * The columns as this row reads them, with its case type's settings.
+		 *
+		 * @param {object} row The row.
+		 * @return {Array<object>}
+		 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-case-row-reads-with-its-case-types-columns
+		 */
+		rowColumns(row) {
+			return this.columns.map((column) => rowColumn(column, row))
+		},
+
 		keyOf(row, index) {
 			return rowIdOf(row) || `row-${index}`
 		},
@@ -260,8 +272,18 @@ export default {
 			return badgeModifier(row?.[column.field])
 		},
 
+		/**
+		 * The link of a `link` cell: the column's own value, or the value of
+		 * `hrefField` when the column names one, so the text and the address
+		 * may come from two fields ("Groen dak", `/besluit/1`).
+		 *
+		 * @param {object} row A row.
+		 * @param {object} column A `link` column.
+		 * @return {string} A site path or an http(s) address, or ''.
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+		 */
 		href(row, column) {
-			return safeHref(row?.[column.field])
+			return safeHref(row?.[column.hrefField || column.field])
 		},
 
 		actionsFor(row) {

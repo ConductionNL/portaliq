@@ -54,6 +54,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Repair;
 
 use OCP\DB\Exception;
+use OCP\DB\IPreparedStatement;
 use OCP\IDBConnection;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -131,54 +132,117 @@ class RenameDutchColumns implements IRepairStep {
 			return;
 		}
 
-		$renamed = 0;
-		$copied = 0;
-		$refused = 0;
-
-		foreach ($tables as $table) {
-			$columns = $this->columnsOf(table: $table);
-			$qTable = $this->quote(identifier: $table);
-
-			foreach (self::COLUMN_MAP as $old => $new) {
-				if (in_array($old, $columns, true) === false) {
-					continue;
-				}
-
-				if ($this->hasCollision(columns: $columns, target: $new) === true) {
-					$this->logger->warning(
-						'RenameDutchColumns: two sources target one destination; migrating neither.',
-						['table' => $table, 'source' => $old, 'destination' => $new]
-					);
-					$refused++;
-					continue;
-				}
-
-				if (in_array($new, $columns, true) === false) {
-					$sql = 'ALTER TABLE ' . $qTable . ' RENAME COLUMN '
-						. $this->quote(identifier: $old) . ' TO ' . $this->quote(identifier: $new);
-					if ($this->exec(sql: $sql) === true) {
-						$renamed++;
-					}
-
-					continue;
-				}
-
-				$qNew = $this->quote(identifier: $new);
-				$qOld = $this->quote(identifier: $old);
-				$sql = 'UPDATE ' . $qTable . ' SET ' . $qNew . ' = ' . $qOld
-					. ' WHERE ' . $qNew . ' IS NULL AND ' . $qOld . ' IS NOT NULL';
-				if ($this->exec(sql: $sql) === true) {
-					$copied++;
-				}
-			}//end foreach
-		}//end foreach
-
+		$counts = $this->tally(tables: $tables);
 		$output->info(
-			'RenameDutchColumns: ' . $renamed . ' renamed, ' . $copied . ' back-filled, '
-			. $refused . ' refused, across ' . count($tables) . ' shard table(s).'
+			'RenameDutchColumns: ' . $counts['renamed'] . ' renamed, ' . $counts['copied'] . ' back-filled, '
+			. $counts['refused'] . ' refused, across ' . count($tables) . ' shard table(s).'
 		);
 
 	}//end run()
+
+	/**
+	 * Migrate every table and count the outcomes.
+	 *
+	 * @param array<int, string> $tables The shard tables.
+	 *
+	 * @return array{renamed: int, copied: int, refused: int}
+	 */
+	private function tally(array $tables): array {
+		$counts = ['renamed' => 0, 'copied' => 0, 'refused' => 0];
+		foreach ($tables as $table) {
+			foreach ($this->migrateTable(table: $table) as $outcome) {
+				$counts[$outcome]++;
+			}
+		}
+
+		return $counts;
+	}//end tally()
+
+	/**
+	 * Move every mapped column of one table.
+	 *
+	 * @param string $table Table name.
+	 *
+	 * @return array<int, string> One outcome per column that moved or was refused:
+	 *                            `renamed`, `copied` or `refused`.
+	 */
+	private function migrateTable(string $table): array {
+		$columns  = $this->columnsOf(table: $table);
+		$outcomes = [];
+		foreach (self::COLUMN_MAP as $old => $new) {
+			if (in_array($old, $columns, true) === true) {
+				$outcomes[] = $this->migrateColumn(table: $table, move: ['old' => $old, 'new' => $new, 'columns' => $columns]);
+			}
+		}
+
+		return array_values(array_filter($outcomes, static fn (?string $outcome): bool => $outcome !== null));
+	}//end migrateTable()
+
+	/**
+	 * Rename one column, or back-fill it where the new one already exists.
+	 *
+	 * @param string                                                     $table Table name.
+	 * @param array{old: string, new: string, columns: array<int, string>} $move  The source, the destination and the table's columns.
+	 *
+	 * @return string|null `renamed`, `copied` or `refused`; null when the statement failed.
+	 */
+	private function migrateColumn(string $table, array $move): ?string {
+		if ($this->refuses(table: $table, move: $move) === true) {
+			return 'refused';
+		}
+
+		$rename = (in_array($move['new'], $move['columns'], true) === false);
+		if ($this->exec(sql: $this->moveSql(table: $table, move: ['rename' => $rename] + $move)) === false) {
+			return null;
+		}
+
+		if ($rename === true) {
+			return 'renamed';
+		}
+
+		return 'copied';
+	}//end migrateColumn()
+
+	/**
+	 * Whether a second mapped source competes for the destination; logs the refusal.
+	 *
+	 * @param string                                                     $table Table name.
+	 * @param array{old: string, new: string, columns: array<int, string>} $move  The source, the destination and the table's columns.
+	 *
+	 * @return bool True when neither source is migrated.
+	 */
+	private function refuses(string $table, array $move): bool {
+		if ($this->hasCollision(columns: $move['columns'], target: $move['new']) === false) {
+			return false;
+		}
+
+		$this->logger->warning(
+			'RenameDutchColumns: two sources target one destination; migrating neither.',
+			['table' => $table, 'source' => $move['old'], 'destination' => $move['new']]
+		);
+
+		return true;
+	}//end refuses()
+
+	/**
+	 * The statement that moves one column: a rename, or a back-fill of the
+	 * rows where the new column is still empty.
+	 *
+	 * @param string                                          $table Table name.
+	 * @param array{old: string, new: string, rename: bool} $move  The source, the destination and which statement.
+	 *
+	 * @return string The statement.
+	 */
+	private function moveSql(string $table, array $move): string {
+		$qTable = $this->quote(identifier: $table);
+		$qNew   = $this->quote(identifier: $move['new']);
+		$qOld   = $this->quote(identifier: $move['old']);
+		if ($move['rename'] === true) {
+			return 'ALTER TABLE ' . $qTable . ' RENAME COLUMN ' . $qOld . ' TO ' . $qNew;
+		}
+
+		return 'UPDATE ' . $qTable . ' SET ' . $qNew . ' = ' . $qOld . ' WHERE ' . $qNew . ' IS NULL AND ' . $qOld . ' IS NOT NULL';
+	}//end moveSql()
 
 	/**
 	 * Whether another mapped source already targets the same destination here.
@@ -222,23 +286,45 @@ class RenameDutchColumns implements IRepairStep {
 			return [];
 		}
 
-		$markers = [];
-		foreach ($ids as $id) {
-			$markers[] = 'openregister_table_' . ((int)$id) . '_';
-		}
+		return $this->matching(names: $names, ids: $ids);
+	}
 
-		$tables = [];
+	/**
+	 * The table names that are a shard table of one of the registers.
+	 *
+	 * @param array<int, string> $names Table names.
+	 * @param array<int, mixed>  $ids   Register ids.
+	 *
+	 * @return array<int, string>
+	 */
+	private function matching(array $names, array $ids): array {
+		$markers = array_map(static fn ($id): string => 'openregister_table_' . ((int)$id) . '_', $ids);
+		$tables  = [];
 		foreach ($names as $name) {
 			foreach ($markers as $marker) {
-				$offset = strpos($name, $marker);
-				if ($offset !== false && ctype_digit(substr($name, ($offset + strlen($marker)))) === true) {
+				if ($this->isShardOf(name: $name, marker: $marker) === true) {
 					$tables[] = $name;
 				}
 			}
 		}
 
 		return array_values(array_unique($tables));
-	}
+	}//end matching()
+
+	/**
+	 * Whether a table name is a shard table under one register marker: the
+	 * marker followed by nothing but the schema id.
+	 *
+	 * @param string $name   Table name.
+	 * @param string $marker `openregister_table_{register}_`.
+	 *
+	 * @return bool
+	 */
+	private function isShardOf(string $name, string $marker): bool {
+		$offset = strpos($name, $marker);
+
+		return $offset !== false && ctype_digit(substr($name, ($offset + strlen($marker)))) === true;
+	}//end isShardOf()
 
 	/**
 	 * Ids of every register whose slug starts with the prefix.
@@ -283,15 +369,7 @@ class RenameDutchColumns implements IRepairStep {
 			return [];
 		}
 
-		$names = [];
-		while (($row = $stmt->fetch(\PDO::FETCH_ASSOC)) !== false) {
-			$name = (string)($row['table_name'] ?? '');
-			if ($name !== '') {
-				$names[] = $name;
-			}
-		}
-
-		return $names;
+		return $this->namesOf(stmt: $stmt, column: 'table_name');
 	}//end shardTables()
 
 	/**
@@ -316,16 +394,28 @@ class RenameDutchColumns implements IRepairStep {
 			return [];
 		}
 
-		$columns = [];
+		return $this->namesOf(stmt: $stmt, column: 'column_name');
+	}//end columnsOf()
+
+	/**
+	 * The non-empty values of one column of an executed statement.
+	 *
+	 * @param IPreparedStatement $stmt   The executed statement.
+	 * @param string             $column The column to read.
+	 *
+	 * @return array<int, string>
+	 */
+	private function namesOf(IPreparedStatement $stmt, string $column): array {
+		$names = [];
 		while (($row = $stmt->fetch(\PDO::FETCH_ASSOC)) !== false) {
-			$name = (string)($row['column_name'] ?? '');
+			$name = (string)($row[$column] ?? '');
 			if ($name !== '') {
-				$columns[] = $name;
+				$names[] = $name;
 			}
 		}
 
-		return $columns;
-	}//end columnsOf()
+		return $names;
+	}//end namesOf()
 
 	/**
 	 * Execute one statement, logging and swallowing failure.

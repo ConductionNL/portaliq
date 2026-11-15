@@ -40,7 +40,7 @@
  * Imports only loader maps and shared code, so tests/site-signed-in-shell.spec.mjs
  * runs it as node.
  *
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 
 // Slice c registers its forms and actions in slice b's places on import.
@@ -70,6 +70,7 @@ const BUILT_IN = {
 	account: accountPages.__account__,
 	contacts: accountPages.__contacts__,
 	samenwerken: accountPages.__plans__,
+	acties: accountPages.__actions__,
 	theme: accountPages.__theme__,
 	// Slice d: inbox, my tasks, messages and news.
 	inbox: inboxPages.inbox,
@@ -95,15 +96,33 @@ const OWNS_HEADING = new Set([
 	'details',
 	'contacts',
 	'samenwerken',
+	'acties',
 	'account',
 ])
+
+/**
+ * Whether an entry's page is one form and nothing else: a start point whose
+ * only block is an `action`. Such a page stands on a column of its own,
+ * without the resident menu beside it, so the form has the resident's full
+ * attention.
+ *
+ * @param {object|null} entry A navigation entry.
+ * @return {boolean}
+ * @spec exclude layout of a page that is only a form, as the Mijn form boards draw it
+ */
+export function isFormPage(entry) {
+	const blocks = entry?.page?.blocks
+	return (
+		Array.isArray(blocks) && blocks.length === 1 && blocks[0]?.type === 'action'
+	)
+}
 
 /**
  * Whether the page for an entry titles itself.
  *
  * @param {object|null} entry A navigation entry.
  * @return {boolean}
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export function pageOwnsHeading(entry) {
 	return Boolean(
@@ -121,7 +140,7 @@ export function pageOwnsHeading(entry) {
  * @param {string} key An entry key, a section name or `contribution`.
  * @param {() => Promise<object>} loader Loads the component, e.g. `() => import('./InboxPage.vue')`.
  * @return {void}
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export function registerSitePage(key, loader) {
 	if (typeof key !== 'string' || key === '') {
@@ -138,7 +157,7 @@ export function registerSitePage(key, loader) {
  *
  * @param {object} entry A navigation entry.
  * @return {Array<string>} The keys.
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export function sitePageKeys(entry) {
 	if (!entry) {
@@ -156,7 +175,7 @@ export function sitePageKeys(entry) {
  *
  * @param {object} entry A navigation entry.
  * @return {(() => Promise<object>)|null} The loader.
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export function sitePageLoader(entry) {
 	for (const key of sitePageKeys(entry)) {

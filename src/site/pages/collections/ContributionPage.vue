@@ -198,6 +198,13 @@
 					class="utrecht-heading-3">
 					{{ headingOf(item) }}
 				</component>
+				<!-- The collection's own intro, as plain text (collection-intro). -->
+				<p
+					v-if="introOf(item.collection)"
+					class="utrecht-paragraph pq-contribution-page__intro"
+					data-testid="contribution-page-collection-intro">
+					{{ introOf(item.collection) }}
+				</p>
 				<!-- The list as a PDF, when its collection opted in (cases-export-own-data-pdf). -->
 				<PdfDownloadButton
 					v-if="item.collection.exportPdf === true"
@@ -424,6 +431,20 @@
 				:today="today || undefined"
 				@navigate="$emit('navigate', $event)" />
 
+			<!-- One group per record the subject may read (documents-for-each-record). -->
+			<template v-else-if="item.kind === 'documents' && item.block.eachRecord">
+				<DocumentsBlock
+					v-for="row in loadedOf(item.collection).objects"
+					:key="`${item.index}-${eachRowKey(row)}`"
+					:block="eachRecordBlockOf(item.block, row)"
+					:collection="item.collection"
+					:record="row"
+					:api="api"
+					:level="sectionLevel"
+					:t="tr"
+					:locale="lang" />
+			</template>
+
 			<DocumentsBlock
 				v-else-if="item.kind === 'documents'"
 				:block="item.block"
@@ -443,6 +464,31 @@
 				:level="sectionLevel"
 				:t="tr"
 				:locale="lang" />
+
+			<!-- The messages about the open case, with the question about it
+			     above them (capability-rows-said-and-planned T07). -->
+			<template v-else-if="item.kind === 'messages'">
+				<SlotHost
+					v-if="item.action && askBlock(item)"
+					name="action"
+					:block="withTitle(askBlock(item))"
+					:action="item.action"
+					:contribution="currentContribution"
+					:api="api"
+					:t="tr"
+					:locale="lang"
+					:portalHelp="(portal && portal.help) || null"
+					@created="(object, written) => afterAsk(item, written)" />
+				<MessagesBlock
+					:block="item.block"
+					:collection="item.collection"
+					:record="activeRecord"
+					:api="api"
+					:level="sectionLevel"
+					:t="tr"
+					:locale="lang"
+					:reloadKey="messagesAsked[item.index] || 0" />
+			</template>
 
 			<InboxBlock
 				v-else-if="item.kind === 'inbox'"
@@ -493,6 +539,7 @@
 				:api="api"
 				:t="tr"
 				:locale="lang"
+				:portalHelp="(portal && portal.help) || null"
 				@created="(object, written) => afterWrite(written || item.action)" />
 		</template>
 	</section>
@@ -515,6 +562,7 @@ import {
 	groupLabelCollection,
 	groupRows,
 } from '../../../shared/collectionGroups.js'
+import { introOf } from '../../../shared/collectionIntro.js'
 import {
 	itemsInRange,
 	listOrder,
@@ -540,12 +588,20 @@ import {
 import { isEndpointRowAction, offersRowAction } from '../../../shared/rowAction.js'
 import { dialogFor } from '../../../shared/signing.js'
 import { rowIdOf } from '../../components/collections/cells.js'
+import { askBlockOf } from '../../components/mijn/caseMessages.js'
+import { eachRecordBlock } from '../../components/mijn/documents.js'
 import { blocks as mijnBlocks } from '../../components/mijn/index.js'
 import { mijnTranslator, siteHref } from '../../components/mijn/rows.js'
-import { ctaLabel, fillTemplate } from '../../components/mijn/template.js'
+import { fillTemplate, recordLabel } from '../../components/mijn/template.js'
+import { keepMessageTo } from '../inbox/conversations.js'
 import { keepRecordToOpen, sessionStore as tabStore } from '../inbox/inbox.js'
-import { createCollectionLoader, openRecordState } from './collectionLoader.js'
-import { resolveBlocks } from './pageBlocks.js'
+import {
+	createCollectionLoader,
+	openRecordState,
+	pickedRecord,
+	readUnderMandate,
+} from './collectionLoader.js'
+import { resolveBlocks, withoutRecordWrites } from './pageBlocks.js'
 import { collectionsTranslator, pageLocale } from './translate.js'
 
 /**
@@ -580,7 +636,7 @@ function sessionStore() {
  * that names a collection on this page selects that row, from the resident's
  * own scoped rows only. A record not in that list opens nothing and says so.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-contribution-page-must-render-its-blocks-req-srp-014
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-contribution-page-must-render-its-blocks-req-srp-014
  */
 export default {
 	name: 'ContributionPage',
@@ -610,6 +666,7 @@ export default {
 		ProgressCards: defineAsyncComponent(mijnBlocks.progressCards),
 		DocumentsBlock: defineAsyncComponent(mijnBlocks.documents),
 		TimelineBlock: defineAsyncComponent(mijnBlocks.timeline),
+		MessagesBlock: defineAsyncComponent(mijnBlocks.messages),
 		// site-school-blocks, each on demand as well.
 		DateRows: defineAsyncComponent(mijnBlocks.dateRows),
 		GradeBars: defineAsyncComponent(mijnBlocks.bars),
@@ -635,6 +692,8 @@ export default {
 		page: { type: Object, default: null },
 		/** The contribution, when no entry carries it. */
 		contribution: { type: Object, default: null },
+		/** The portal record, for its `help` on a form. */
+		portal: { type: Object, default: null },
 		/** The shared portal api, bound to the resident's bearer. */
 		api: { type: Object, default: null },
 		/** The contributions aggregate, or its list. */
@@ -672,6 +731,8 @@ export default {
 			// The limited tables a resident asked to see whole, by block index.
 			expanded: {},
 			loader: null,
+			// How often the resident asked about the open record, by messages block index.
+			messagesAsked: {},
 		}
 	},
 
@@ -721,7 +782,7 @@ export default {
 		 * The page's record declaration, or null for an ordinary page.
 		 *
 		 * @return {object|null}
-		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-page-may-be-the-record-page-of-a-collection
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-page-may-be-the-record-page-of-a-collection
 		 */
 		recordPage() {
 			return this.currentPage?.record || this.currentPage?.records || null
@@ -732,7 +793,7 @@ export default {
 		 * always open, the first by default, and a switcher picks another.
 		 *
 		 * @return {boolean}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
 		 */
 		switching() {
 			return Boolean(this.currentPage?.records)
@@ -740,14 +801,14 @@ export default {
 
 		/**
 		 * @return {string} The switcher's name for a screen reader.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
 		 */
 		/**
 		 * The switcher's subtitle per record, from one related record
 		 * (`records.subtitleLookup`, REQ-SMO-026): the child's group.
 		 *
 		 * @return {Record<string, string>}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-the-record-switcher-may-take-its-subtitle-from-a-related-record-req-smo-026
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-the-record-switcher-may-take-its-subtitle-from-a-related-record-req-smo-026
 		 */
 		switcherSubtitles() {
 			const lookup = this.currentPage?.records?.subtitleLookup
@@ -780,11 +841,11 @@ export default {
 		},
 
 		/**
-		 * The open record: the row picked from the subject's own list, or the
-		 * only row there is. A row outside that list never opens.
+		 * The open record: the row picked from the subject's own list, a row
+		 * picked under a mandate (pickedRecord), or the only row there is.
 		 *
 		 * @return {object|null}
-		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-page-may-be-the-record-page-of-a-collection
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-page-may-be-the-record-page-of-a-collection
 		 */
 		activeRecord() {
 			if (!this.recordPage) {
@@ -792,9 +853,8 @@ export default {
 			}
 			const rows = this.recordRows
 			const picked = this.selected[this.recordPage.collection]
-			const id = rowIdOf(picked)
-			if (id) {
-				return rows.find((row) => rowIdOf(row) === id) || null
+			if (rowIdOf(picked)) {
+				return pickedRecord(rows, picked)
 			}
 			const loading = this.store[this.recordPage.collection]?.loading
 			if (this.switching && !loading && !this.target) {
@@ -810,6 +870,16 @@ export default {
 
 		recordName() {
 			return recordTitle(this.activeRecord, this.recordPage?.titleFields)
+		},
+
+		/**
+		 * The open record's title and row, for a cta label.
+		 *
+		 * @return {{title: string, record: object|null}}
+		 * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/portal-contribution-contract/spec.md#requirement-a-cta-label-may-name-any-field-of-the-open-record
+		 */
+		labelRecord() {
+			return { title: this.recordName, record: this.activeRecord }
 		},
 
 		recordHeadingId() {
@@ -853,10 +923,12 @@ export default {
 
 		/**
 		 * The blocks on screen: on a record page the list until a record is
-		 * open, then every other block.
+		 * open, then every other block, without its writes when the record
+		 * was read under a mandate.
 		 *
 		 * @return {Array<object>}
-		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-page-may-be-the-record-page-of-a-collection
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-page-may-be-the-record-page-of-a-collection
+		 * @spec openspec/changes/mandated-case-offers-no-writes/specs/portal-my-cases/spec.md#requirement-a-case-read-under-a-mandate-offers-no-writes
 		 */
 		visibleBlocks() {
 			const record = this.recordPage
@@ -870,7 +942,10 @@ export default {
 					(item) => isList(item) || item.kind === 'richText',
 				)
 			}
-			return this.blocks.filter((item) => !isList(item))
+			const open = this.blocks.filter((item) => !isList(item))
+			return readUnderMandate(this.activeRecord)
+				? withoutRecordWrites(open)
+				: open
 		},
 
 		openRecordGroups() {
@@ -886,7 +961,7 @@ export default {
 		 * every child's.
 		 *
 		 * @return {Array<string>}
-		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-block-on-a-record-page-may-narrow-its-rows-to-the-open-record
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-block-on-a-record-page-may-narrow-its-rows-to-the-open-record
 		 */
 		scopeGroups() {
 			return this.activeRecord
@@ -920,7 +995,7 @@ export default {
 		 * chooses a record opens it.
 		 *
 		 * @return {object|null}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
 		 */
 		targetOnPage() {
 			const target = this.target
@@ -959,16 +1034,24 @@ export default {
 	 * Load the page's collections, and take the record to open from the
 	 * route, else from a record link.
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
+	 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
 	 */
 	mounted() {
 		this.loader = createCollectionLoader({ api: this.api, store: this.store })
 		if (!this.target && this.routeRecordId && this.recordPage) {
-			// The route chooses the record (`/mijn/<app>/<page>/<id>`).
+			// The route chooses the record (`/mijn/<app>/<page>/<id>`). A link
+			// kept for the same record still brings its row, so a case opened
+			// under a mandate opens on its route too.
+			const kept = consumeOpenTarget(
+				window.location,
+				window.history,
+				sessionStore(),
+			)
 			this.target = {
 				app: this.currentContribution?.app || '',
 				collection: this.recordPage.collection,
 				id: this.routeRecordId,
+				row: kept?.id === this.routeRecordId ? kept.row || null : null,
 			}
 		}
 		if (!this.target) {
@@ -1003,7 +1086,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/collection-group-by-field/tasks.md#T3
+		 * @spec openspec/changes/archive/2026-10-07-collection-group-by-field/tasks.md#T3
 		 */
 		loadPage() {
 			if (this.loader && this.currentPage) {
@@ -1019,7 +1102,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/collection-group-by-field/tasks.md#T3
+		 * @spec openspec/changes/archive/2026-10-07-collection-group-by-field/tasks.md#T3
 		 */
 		loadGroupLabels() {
 			const source = groupLabelCollection(this.currentContribution)
@@ -1038,7 +1121,7 @@ export default {
 		 * page narrows the news to one child's groups.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-news-block-must-show-the-subjects-latest-news
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-news-block-must-show-the-subjects-latest-news
 		 */
 		loadRecordGroups() {
 			const groups = this.currentContribution?.guardianAudience?.groups
@@ -1063,7 +1146,7 @@ export default {
 		 *
 		 * @param {object} item The page block.
 		 * @return {Array<object>}
-		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-block-on-a-record-page-may-narrow-its-rows-to-the-open-record
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-block-on-a-record-page-may-narrow-its-rows-to-the-open-record
 		 */
 		rowsOf(item) {
 			const rows = narrowToRecord(
@@ -1085,7 +1168,7 @@ export default {
 		 *
 		 * @param {object} item The kpi block.
 		 * @return {object|null}
-		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-kpi-block-must-show-figure-cards-from-one-row
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-kpi-block-must-show-figure-cards-from-one-row
 		 */
 		kpiRow(item) {
 			return pickRow(this.rowsOf(item), item.block.pick)
@@ -1096,7 +1179,7 @@ export default {
 		 *
 		 * @param {object} item The calendar block.
 		 * @return {Array<object>}
-		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-calendar-block-must-show-dated-rows-as-a-list-and-a-month
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-calendar-block-must-show-dated-rows-as-a-list-and-a-month
 		 */
 		calendarOf(item) {
 			// Only today, this week or this month when the block says so
@@ -1118,7 +1201,7 @@ export default {
 		 *
 		 * @param {object} item The template block.
 		 * @return {Array<string>}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-text-block-on-a-record-page-may-be-filled-from-the-record-req-smo-027
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-text-block-on-a-record-page-may-be-filled-from-the-record-req-smo-027
 		 */
 		templateOf(item) {
 			const collection = (this.currentContribution?.collections || []).find(
@@ -1138,8 +1221,8 @@ export default {
 		 *
 		 * @param {object} block The block.
 		 * @return {object}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
-		 * @spec openspec/changes/endpoint-action-forms-keep-their-field-shape/specs/site-forms/spec.md#requirement-a-form-on-a-page-of-its-own-does-not-repeat-the-page-title-req-eaf-004
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
+		 * @spec openspec/specs/site-forms/spec.md#requirement-a-form-on-a-page-of-its-own-does-not-repeat-the-page-title-req-eaf-004
 		 */
 		withTitle(block) {
 			if (block?.type === 'action') {
@@ -1158,10 +1241,10 @@ export default {
 				block.withRecord === true && this.recordId
 					? { ...block, record: String(this.recordId) }
 					: block
-			if (!String(block.label || '').includes('{title}')) {
+			if (!/\{\w+\}/.test(String(block.label || ''))) {
 				return withRecord
 			}
-			return { ...withRecord, label: ctaLabel(block.label, this.recordName) }
+			return { ...withRecord, label: recordLabel(block, this.labelRecord) }
 		},
 
 		/**
@@ -1169,7 +1252,7 @@ export default {
 		 *
 		 * @param {object} item The tiles item.
 		 * @return {Array<{key: string, label: string, route: string, block: object}>}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
 		 */
 		tilesOf(item) {
 			return item.tiles
@@ -1177,7 +1260,7 @@ export default {
 					const target = this.tileTarget(block)
 					return {
 						key: `${item.index}:${i}`,
-						label: ctaLabel(block.label, this.recordName),
+						label: recordLabel(block, this.labelRecord),
 						route: target.route,
 						carriesRecord: target.carriesRecord,
 						block,
@@ -1202,7 +1285,7 @@ export default {
 		 * @param {object} block The cta block.
 		 * @return {{route: string, carriesRecord: boolean}} The target, route
 		 *         '' when the page is not offered.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
 		 */
 		tileTarget(block) {
 			if (block.route) {
@@ -1239,7 +1322,7 @@ export default {
 		 *
 		 * @param {object} block The cta block.
 		 * @return {string} The route, or '' when the page is not offered.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
 		 */
 		tileRoute(block) {
 			return this.tileTarget(block).route
@@ -1251,7 +1334,7 @@ export default {
 		 *
 		 * @param {object} tile The tile.
 		 * @return {void}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
 		 */
 		openTile(tile) {
 			if (
@@ -1271,7 +1354,26 @@ export default {
 					id: this.recordId,
 				})
 			}
+			this.keepMessageTarget(tile.block)
 			this.$emit('navigate', tile.route)
+		},
+
+		/**
+		 * A cta with `messageTo` keeps the open record and the staff member
+		 * its field names, so the messages page opens its form for them.
+		 *
+		 * @param {object} block The cta block.
+		 * @return {void}
+		 * @spec openspec/changes/guardian-message-to-and-whole-day/specs/portal-contribution-contract/spec.md#requirement-a-message-button-opens-the-form-with-its-teacher-chosen
+		 */
+		keepMessageTarget(block) {
+			if (!block.messageTo || !this.recordId) {
+				return
+			}
+			keepMessageTo(tabStore(), {
+				recordRef: String(this.recordId),
+				staffRef: String(this.activeRecord?.[block.messageTo] ?? ''),
+			})
 		},
 
 		/**
@@ -1280,7 +1382,7 @@ export default {
 		 *
 		 * @param {object} item The table block.
 		 * @return {{rows: Array<object>, more: boolean}}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
 		 */
 		tableWindow(item) {
 			const sort = listOrder(item.block, item.collection)
@@ -1300,7 +1402,7 @@ export default {
 		 *
 		 * @param {object} item The table block.
 		 * @return {string}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
 		 */
 		allRouteOf(item) {
 			const others = (this.nav || []).filter(
@@ -1317,7 +1419,7 @@ export default {
 		/**
 		 * @param {object} item The table block.
 		 * @return {string} "Bekijk alle cijfers".
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
 		 */
 		seeAll(item) {
 			const label = String(item.collection.label || '')
@@ -1329,7 +1431,7 @@ export default {
 		/**
 		 * @param {string} route An in-site route.
 		 * @return {string} Its real address.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
 		 */
 		hrefOf(route) {
 			return siteHref(route)
@@ -1347,7 +1449,7 @@ export default {
 		 *
 		 * @param {object} item The detail block.
 		 * @return {object|null}
-		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-page-may-be-the-record-page-of-a-collection
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-page-may-be-the-record-page-of-a-collection
 		 */
 		detailRow(item) {
 			if (
@@ -1363,7 +1465,7 @@ export default {
 		 * Back to the list of a record page.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-page-may-be-the-record-page-of-a-collection
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-page-may-be-the-record-page-of-a-collection
 		 */
 		closeRecord() {
 			if (this.recordPage) {
@@ -1375,12 +1477,24 @@ export default {
 		},
 
 		/**
+		 * A collection's intro, or '' when it has none.
+		 *
+		 * @param {object} collection The contributed collection.
+		 * @return {string}
+		 *
+		 * @spec openspec/changes/archive/2026-10-30-collection-intro/tasks.md#t2
+		 */
+		introOf(collection) {
+			return introOf(collection)
+		},
+
+		/**
 		 * A table block's rows in groups, or [] to render it as one table.
 		 *
 		 * @param {object} item The page block.
 		 * @return {Array<{value: string, label: string, rows: Array<object>}>}
 		 *
-		 * @spec openspec/changes/collection-group-by-field/tasks.md#T3
+		 * @spec openspec/changes/archive/2026-10-07-collection-group-by-field/tasks.md#T3
 		 */
 		groupsOf(item) {
 			if (this.activeRecord && item.block?.recordField) {
@@ -1405,7 +1519,7 @@ export default {
 		 * @param {object} group The group.
 		 * @return {string}
 		 *
-		 * @spec openspec/changes/collection-group-by-field/tasks.md#T3
+		 * @spec openspec/changes/archive/2026-10-07-collection-group-by-field/tasks.md#T3
 		 */
 		groupHeadingId(item, group) {
 			return `${this.headingId(item)}-group-${group.value ? group.value.replace(/[^A-Za-z0-9_-]/g, '') : 'rest'}`
@@ -1416,10 +1530,31 @@ export default {
 		 *
 		 * @param {object} collection The collection.
 		 * @return {void}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-loading-and-empty-states-must-say-what-is-happening-req-smo-009
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-loading-and-empty-states-must-say-what-is-happening-req-smo-009
 		 */
 		reload(collection) {
 			this.loader?.load(collection)
+		},
+
+		/**
+		 * The block one record of an each-record documents block draws.
+		 *
+		 * @param {object} block The documents block.
+		 * @param {object} row One row of its collection.
+		 * @return {object}
+		 * @spec openspec/changes/documents-for-each-record/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
+		 */
+		eachRecordBlockOf(block, row) {
+			return eachRecordBlock(block, row)
+		},
+
+		/**
+		 * @param {object} row A row.
+		 * @return {string} Its id.
+		 * @spec openspec/changes/documents-for-each-record/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
+		 */
+		eachRowKey(row) {
+			return rowIdOf(row) || ''
 		},
 
 		loadedOf(collection) {
@@ -1442,7 +1577,7 @@ export default {
 		 * @param {object} item The page block.
 		 * @return {boolean}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-contribution-page-must-render-its-blocks-req-srp-014
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-contribution-page-must-render-its-blocks-req-srp-014
 		 */
 		showsHeading(item) {
 			const label = this.headingOf(item)
@@ -1455,7 +1590,7 @@ export default {
 		 *
 		 * @param {object} item The page item.
 		 * @return {string} The heading, or ''.
-		 * @spec openspec/changes/collection-block-label/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-keeps-its-own-heading
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-keeps-its-own-heading
 		 */
 		headingOf(item) {
 			return String(item.block?.label || item.collection?.label || '')
@@ -1468,7 +1603,7 @@ export default {
 		 * @param {object} item The page block.
 		 * @return {string} The id, or ''.
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-contribution-page-must-render-its-blocks-req-srp-014
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-contribution-page-must-render-its-blocks-req-srp-014
 		 */
 		labelOf(item) {
 			if (this.showsHeading(item)) {
@@ -1487,7 +1622,7 @@ export default {
 		 *
 		 * @param {string} id The chosen record's id.
 		 * @return {void}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
 		 */
 		choose(id) {
 			const row = this.recordRows.find(
@@ -1574,6 +1709,34 @@ export default {
 				await this.loader.transition(action, row, item.collection)
 			} finally {
 				this.busyRow = null
+			}
+		},
+
+		/**
+		 * The cta that asks a question about the open record, for a messages block.
+		 *
+		 * @param {object} item The messages item.
+		 * @return {object|null}
+		 * @spec openspec/changes/capability-rows-said-and-planned/tasks.md#t07
+		 */
+		askBlock(item) {
+			return askBlockOf(item.block, this.tr)
+		},
+
+		/**
+		 * After a question was asked: the usual after-write, then the
+		 * messages read again, so the question shows under them.
+		 *
+		 * @param {object} item The messages item.
+		 * @param {object} [written] The action that wrote.
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/capability-rows-said-and-planned/tasks.md#t07
+		 */
+		async afterAsk(item, written) {
+			await this.afterWrite(written || item.action)
+			this.messagesAsked = {
+				...this.messagesAsked,
+				[item.index]: (this.messagesAsked[item.index] || 0) + 1,
 			}
 		},
 

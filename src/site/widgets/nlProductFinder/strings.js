@@ -15,6 +15,8 @@ export default {
 		yes: 'Ja',
 		no: 'Nee',
 		previous: 'Vorige vraag',
+		next: 'Volgende vraag',
+		change: 'Antwoord wijzigen',
 		restart: 'Opnieuw beginnen',
 		notKept:
 			'Wij bewaren uw antwoorden niet. Sluit u deze pagina, dan begint u de volgende keer opnieuw.',
@@ -35,6 +37,8 @@ export default {
 		yes: 'Yes',
 		no: 'No',
 		previous: 'Previous question',
+		next: 'Next question',
+		change: 'Change answer',
 		restart: 'Start again',
 		notKept:
 			'We do not keep your answers. If you close this page, you start again next time.',

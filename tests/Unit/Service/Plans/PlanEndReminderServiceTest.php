@@ -24,10 +24,14 @@ namespace OCA\Portaliq\Tests\Unit\Service\Plans;
 
 use OCA\Portaliq\BackgroundJob\ActionReminderJob;
 use OCA\Portaliq\Service\Plans\PlanEndReminderService;
+use OCA\Portaliq\Service\Plans\PlanEndingMailer;
+use OCA\Portaliq\Service\Plans\PlanRules;
+use OCA\Portaliq\Service\PortalAccountService;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * REQ-SPL-004: one reminder per end date, to every participant.
@@ -46,7 +50,7 @@ class PlanEndReminderServiceTest extends TestCase {
 	 *
 	 * @return array{0: PlanEndReminderService, 1: object}
 	 */
-	private function service(array $plans, array $actions): array {
+	private function service(array $plans, array $actions, ?PlanEndingMailer $mail = null, ?PortalAccountService $accounts = null): array {
 		$store = new class ($plans, $actions) {
 			/**
 			 * @var array<int, array{schema: string, uuid: ?string, object: array<string, mixed>}>
@@ -76,7 +80,10 @@ class PlanEndReminderServiceTest extends TestCase {
 				return $rows;
 			}
 
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved[] = ['schema' => (string)$schema, 'uuid' => $uuid, 'object' => $object];
 				if ($schema === 'portalPlan') {
 					foreach ($this->plans as $i => $plan) {
@@ -92,7 +99,15 @@ class PlanEndReminderServiceTest extends TestCase {
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturnCallback(static fn (string $id) => ($id === self::OS) ? $store : throw new RuntimeException('no service'));
 
-		return [new PlanEndReminderService($container, $this->createMock(LoggerInterface::class)), $store];
+		$service = new PlanEndReminderService(
+			container: $container,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			rules: new PlanRules(),
+			mail: $mail,
+			accounts: $accounts
+		);
+
+		return [$service, $store];
 	}//end service()
 
 	/**
@@ -141,6 +156,65 @@ class PlanEndReminderServiceTest extends TestCase {
 		$this->assertSame(0, $service->remindDue('2026-10-09'), 'one per end date');
 		$this->assertCount(2, array_filter($store->saved, static fn (array $s): bool => $s['schema'] === 'portalMessage'));
 	}//end testEveryParticipantGetsOneReminder()
+
+	/**
+	 * REQ-SPL-004: beside the portal message, every participant gets one mail
+	 * per end date, with the plan, its end date and the open actions.
+	 *
+	 * @return void
+	 */
+	public function testEveryParticipantGetsOneMail(): void {
+		$mails = [];
+		$mail  = $this->createMock(PlanEndingMailer::class);
+		$mail->method('send')->willReturnCallback(
+			static function (string $subjectRef, string $organisation, string $plan, string $endDate, int $open) use (&$mails): bool {
+				$mails[] = [$subjectRef, $organisation, $plan, $endDate, $open];
+				return true;
+			}
+		);
+		[$service] = $this->service([self::plan()], self::actions(), $mail);
+
+		$this->assertSame(1, $service->remindDue('2026-10-08'));
+		$this->assertSame(0, $service->remindDue('2026-10-09'), 'one per end date');
+		$this->assertSame(
+			[
+				['sanne', 'org-1', 'Schuldhulp op orde', '2026-10-20', 3],
+				['mark', 'org-1', 'Schuldhulp op orde', '2026-10-20', 3],
+			],
+			$mails
+		);
+	}//end testEveryParticipantGetsOneMail()
+
+	/**
+	 * A withdrawn (void) participant gets neither the portal message nor the
+	 * mail; the others still do, and the plan is marked reminded.
+	 *
+	 * @return void
+	 */
+	public function testAWithdrawnParticipantGetsNoReminder(): void {
+		$mails = [];
+		$mail  = $this->createMock(originalClassName: PlanEndingMailer::class);
+		$mail->method('send')->willReturnCallback(
+			static function (string $subjectRef) use (&$mails): bool {
+				$mails[] = $subjectRef;
+				return true;
+			}
+		);
+		$accounts = $this->createMock(originalClassName: PortalAccountService::class);
+		$accounts->method('findBySubjectRef')->willReturnCallback(
+			static fn (string $subjectRef): array => match ($subjectRef) {
+				'mark' => ['id' => 'account-mark', 'subjectRef' => 'mark', 'status' => 'void'],
+				default => ['id' => 'account-'.$subjectRef, 'subjectRef' => $subjectRef, 'status' => 'active'],
+			}
+		);
+		[$service, $store] = $this->service(plans: [self::plan()], actions: self::actions(), mail: $mail, accounts: $accounts);
+
+		$this->assertSame(expected: 1, actual: $service->remindDue(today: '2026-10-08'));
+		$messages = array_values(array_filter($store->saved, static fn (array $s): bool => $s['schema'] === 'portalMessage'));
+		$this->assertSame(expected: ['sanne'], actual: array_column(array_column($messages, 'object'), 'subjectRef'));
+		$this->assertSame(expected: ['sanne'], actual: $mails);
+		$this->assertNotEmpty(actual: $store->plans[0]['endReminderSentAt']);
+	}//end testAWithdrawnParticipantGetsNoReminder()
 
 	/**
 	 * A changed end date earns a new reminder once the mark is cleared.

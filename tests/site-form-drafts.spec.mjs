@@ -119,6 +119,9 @@ test('the save button shows with a draft declared, and saves answers and step', 
 	await form.fire(el, 'input', { value: 'Rotonde' })
 	await form.fire(button, 'click')
 	await form.flush()
+	// The save dialog first (REQ-FSR-001), then "Opslaan en stoppen".
+	await form.fire(form.find('form-save-draft-save'), 'click')
+	await form.flush()
 
 	assert.equal(api.calls.saved.length, 1)
 	assert.equal(api.calls.saved[0].app, 'dossiq')
@@ -142,6 +145,8 @@ test('a wrong value is refused on its field and nothing reads as saved', async (
 	await form.flush()
 
 	await form.fire(form.find('schema-form-save-draft'), 'click')
+	await form.flush()
+	await form.fire(form.find('form-save-draft-save'), 'click')
 	await form.flush()
 
 	assert.match(form.text(), /Fill in words, not a number\./)
@@ -171,6 +176,8 @@ test('picked files are uploaded into the draft', async () => {
 	form.vm.files = { bijlage: [{ name: 'plan.pdf', size: 10 }] }
 
 	await form.fire(form.find('schema-form-save-draft'), 'click')
+	await form.flush()
+	await form.fire(form.find('form-save-draft-save'), 'click')
 	await form.flush()
 
 	assert.deepEqual(api.calls.uploaded, [
@@ -220,6 +227,11 @@ test('a resumed draft opens on the step with the gap', async () => {
 		answers: { onderwerp: 'Rotonde' },
 	})
 	const form = await mountSfc(FORM, { action: ACTION, api, locale: 'nl' })
+	await form.flush()
+
+	// The form asks first (REQ-FSR-002), then continues with the answers.
+	assert.ok(form.find('form-resume-draft-dialog'), 'the resume question shows')
+	await form.fire(form.find('form-resume-draft-resume'), 'click')
 	await form.flush()
 
 	assert.match(form.textOf(form.find('schema-form-step-heading')), /2 of 3/)

@@ -6,7 +6,7 @@ namespace OCA\Portaliq\Tests\Unit\Service\Intake;
 
 use OCA\Portaliq\Service\Intake\DutchFormats;
 use OCA\Portaliq\Service\Intake\PortalFamilyMembers;
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -39,8 +39,8 @@ class PortalFamilyMembersTest extends TestCase {
 	}//end record()
 
 	private function members(?array $account = ['identityType' => 'digid', 'identityRef' => '111222333'], ?array $answer = null, ?object &$provider = null): PortalFamilyMembers {
-		$accounts = $this->getMockBuilder(PortalAccountService::class)->disableOriginalConstructor()->onlyMethods(['findBySubjectRef'])->getMock();
-		$accounts->method('findBySubjectRef')->willReturn($account);
+		$accounts = $this->getMockBuilder(PortalAccountLookup::class)->disableOriginalConstructor()->onlyMethods(['bySubjectRef'])->getMock();
+		$accounts->method('bySubjectRef')->willReturn($account);
 		$provider = new class($answer ?? ['results' => [$this->record()]]) {
 			public array $asked = [];
 

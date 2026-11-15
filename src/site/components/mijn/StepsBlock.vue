@@ -74,11 +74,12 @@ import EmptyState from './EmptyState.vue'
 import LoadError from './LoadError.vue'
 import ProcessSteps from './ProcessSteps.vue'
 import Skeleton from './Skeleton.vue'
+import { loadRecordAnswer, recordIdOf } from './recordAnswer.js'
 import { mijnTranslator } from './rows.js'
 import { stepMoment } from './stepMoment.js'
 
 /**
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
  */
 export default {
 	name: 'StepsBlock',
@@ -117,7 +118,7 @@ export default {
 	computed: {
 		/**
 		 * @return {(key: string, vars?: object) => string} The translator.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
 		 */
 		tr() {
 			return mijnTranslator(this.t, this.locale)
@@ -125,16 +126,15 @@ export default {
 
 		/**
 		 * @return {string} The open case's id, or ''.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
 		 */
 		recordId() {
-			const row = this.record
-			return String(row?.id || row?.uuid || row?.['@self']?.id || '')
+			return recordIdOf(this.record)
 		},
 
 		/**
 		 * @return {string} The block's label, else the provider's.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
 		 */
 		heading() {
 			return (
@@ -147,7 +147,7 @@ export default {
 
 		/**
 		 * @return {string} The heading's id.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
 		 */
 		headingId() {
 			return `pq-steps-${String(this.block?.collection || '').replace(/[^A-Za-z0-9_-]/g, '')}`
@@ -155,7 +155,7 @@ export default {
 
 		/**
 		 * @return {Array<object>} The steps.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
 		 */
 		steps() {
 			return Array.isArray(this.answer?.steps) ? this.answer.steps : []
@@ -210,7 +210,7 @@ export default {
 		 * Another case opened: read its steps.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
 		 */
 		recordId() {
 			this.load()
@@ -220,7 +220,7 @@ export default {
 	/**
 	 * Read the open case's steps on arrival.
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
+	 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
 	 */
 	created() {
 		if (this.answer === null) {
@@ -233,26 +233,10 @@ export default {
 		 * Read the steps; a read that fails says so, it is not "no steps".
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
 		 */
-		async load() {
-			const id = this.recordId
-			if (!id || !this.collection) {
-				return
-			}
-			this.answer = null
-			this.failed = false
-			let answer
-			try {
-				answer = await this.api?.fetchSteps?.(this.collection, id)
-			} catch {
-				answer = null
-			}
-			if (id !== this.recordId) {
-				return
-			}
-			this.failed = !answer || !Array.isArray(answer.steps)
-			this.answer = this.failed ? null : answer
+		load() {
+			return loadRecordAnswer(this, { api: this.api, fetch: 'fetchSteps', list: 'steps' })
 		},
 	},
 }

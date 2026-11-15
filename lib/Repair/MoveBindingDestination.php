@@ -34,7 +34,10 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Repair;
 
-use OCA\Portaliq\Service\PortalRegisterContext;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+use OCA\Portaliq\Kernel\Contracts\PortalRegisterContextInterface;
+use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Container\ContainerInterface;
@@ -47,6 +50,9 @@ use Throwable;
  * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#1.1
  */
 class MoveBindingDestination implements IRepairStep {
+	use PagedSchemaRead;
+	use ObjectServiceLookup;
+
 	/**
 	 * The binding schema.
 	 */
@@ -73,6 +79,11 @@ class MoveBindingDestination implements IRepairStep {
 	private const MAX_PAGES = 10000;
 
 	/**
+	 * Logged when the schema cannot be read.
+	 */
+	private const EMPTY_PAGE_LOG = 'Portaliq: no form bindings to repair';
+
+	/**
 	 * The fields the destination replaces.
 	 */
 	private const OLD_FIELDS = ['caseRegister', 'caseSchema', 'deliverTo'];
@@ -81,12 +92,12 @@ class MoveBindingDestination implements IRepairStep {
 	 * Constructor.
 	 *
 	 * @param ContainerInterface    $container The container (OpenRegister is optional).
-	 * @param PortalRegisterContext $context   Points the object service at a portaliq schema.
+	 * @param PortalRegisterContextInterface $context   Points the object service at a portaliq schema.
 	 * @param LoggerInterface       $logger    The logger.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
-		private readonly PortalRegisterContext $context,
+		private readonly PortalRegisterContextInterface $context,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -124,23 +135,58 @@ class MoveBindingDestination implements IRepairStep {
 		do {
 			$pages++;
 			$page    = $this->page(objectService: $objectService, offset: $offset);
-			$read    = count($page);
+			$read    = $page['read'];
 			$offset += $read;
-			foreach ($page as $row) {
-				$outcome = $this->repair(objectService: $objectService, row: $row);
-				$moved  += (int)($outcome === 'moved');
-				if ($outcome === 'without') {
-					$without[] = $this->uuidOf(row: $row);
-				}
-			}
+			$repaired = $this->repairRows(objectService: $objectService, rows: $page['rows']);
+			$moved   += $repaired['moved'];
+			$without  = array_merge($without, $repaired['without']);
 		} while ($read === self::PAGE && $pages < self::MAX_PAGES);
 
+		$this->report(output: $output, moved: $moved, without: $without);
+	}//end run()
+
+	/**
+	 * Repair one page of bindings: how many moved, and the ids of those without a destination.
+	 *
+	 * @param object                           $objectService OpenRegister's ObjectService.
+	 * @param array<int, array<string, mixed>> $rows          The page's bindings.
+	 *
+	 * @return array{moved: int, without: array<int, string>}
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#1.1
+	 */
+	private function repairRows(object $objectService, array $rows): array {
+		$moved   = 0;
+		$without = [];
+		foreach ($rows as $row) {
+			$outcome = $this->repair(objectService: $objectService, row: $row);
+			$moved  += (int)($outcome === 'moved');
+			if ($outcome === 'without') {
+				$without[] = $this->uuidOf(row: $row);
+			}
+		}
+
+		return ['moved' => $moved, 'without' => $without];
+	}//end repairRows()
+
+	/**
+	 * Report how many moved, and warn about the bindings without a destination.
+	 *
+	 * @param IOutput            $output  The output.
+	 * @param int                $moved   How many bindings moved.
+	 * @param array<int, string> $without The ids of the bindings without a destination.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#1.1
+	 */
+	private function report(IOutput $output, int $moved, array $without): void {
 		$output->info('MoveBindingDestination: moved the destination of ' . $moved . ' form bindings.');
 		if ($without !== []) {
 			$this->logger->warning('Portaliq: form bindings without a destination; name one before the form can send', ['bindings' => $without]);
 			$output->warning('MoveBindingDestination: ' . count($without) . ' form bindings name no destination: ' . implode(', ', $without));
 		}
-	}//end run()
+	}//end report()
 
 	/**
 	 * The binding with its destination moved, or null when there is nothing to move.
@@ -244,7 +290,12 @@ class MoveBindingDestination implements IRepairStep {
 		}
 
 		try {
-			$objectService->saveObject(object: $row, register: self::REGISTER, schema: self::SCHEMA, uuid: $uuid, _rbac: false, _multitenancy: false);
+			$objectService->saveObject(
+				object: $row,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: self::REGISTER, schema: self::SCHEMA), uuid: $uuid),
+				_rbac: false,
+				_multitenancy: false
+			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: a form binding could not have its destination moved', ['uuid' => $uuid, 'reason' => $e->getMessage()]);
 
@@ -253,58 +304,4 @@ class MoveBindingDestination implements IRepairStep {
 
 		return true;
 	}//end save()
-
-	/**
-	 * One page of form bindings.
-	 *
-	 * @param object $objectService OpenRegister's object service.
-	 * @param int $offset The offset.
-	 *
-	 * @return array<int, array<string, mixed>>
-	 */
-	private function page(object $objectService, int $offset): array {
-		try {
-			if ($this->context->apply(objectService: $objectService, schemaSlug: self::SCHEMA) === false) {
-				return [];
-			}
-
-			$rows = $objectService->findAll(config: ['limit' => self::PAGE, 'offset' => $offset], _rbac: false, _multitenancy: false);
-		} catch (Throwable $e) {
-			$this->logger->info('Portaliq: no form bindings to repair', ['reason' => $e->getMessage()]);
-
-			return [];
-		}
-
-		$out = [];
-		foreach ((array)$rows as $row) {
-			if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-				$row = $row->jsonSerialize();
-			}
-
-			if (is_array($row) === true) {
-				$out[] = $row;
-			}
-		}
-
-		return $out;
-	}//end page()
-
-	/**
-	 * OpenRegister's object service, or null when it is not installed.
-	 *
-	 * @return object|null
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end objectService()
 }//end class

@@ -29,7 +29,9 @@
 <template>
 	<div class="designer">
 		<header class="designer__bar">
-			<div class="designer__identity">
+			<!-- Embedded in the page's own tab the page header already names
+			     the page, its route and its status. -->
+			<div v-if="!embedded" class="designer__identity">
 				<h2 class="designer__title" data-testid="designer-title">
 					{{ page.title || t('portaliq', 'Page') }}
 				</h2>
@@ -53,56 +55,92 @@
 				</p>
 			</div>
 
+			<div class="designer__toolbar">
+				<div class="designer__actions">
+					<!--
+						A DISCLOSURE, NOT A DIALOG OPENER. The palette is a panel
+						beside the canvas, so this button shows and hides it, and
+						says which it is doing through `aria-expanded`.
+					-->
+					<NcButton
+						variant="primary"
+						data-testid="designer-add-widget"
+						:disabled="state.loading || state.kind !== 'grid'"
+						:aria-expanded="paletteOpen"
+						aria-controls="widget-palette"
+						@click="paletteOpen = !paletteOpen">
+						<template #icon>
+							<Plus :size="20" />
+						</template>
+						{{ t('portaliq', 'Add block') }}
+					</NcButton>
+					<NcButton
+						data-testid="designer-undo"
+						:disabled="!state.canUndo || state.saving"
+						:aria-label="t('portaliq', 'Undo (Ctrl+Z)')"
+						:title="t('portaliq', 'Undo (Ctrl+Z)')"
+						@click="editor.undo()">
+						<template #icon>
+							<Undo :size="20" />
+						</template>
+					</NcButton>
+					<NcButton
+						data-testid="designer-redo"
+						:disabled="!state.canRedo || state.saving"
+						:aria-label="t('portaliq', 'Redo (Ctrl+Shift+Z)')"
+						:title="t('portaliq', 'Redo (Ctrl+Shift+Z)')"
+						@click="editor.redo()">
+						<template #icon>
+							<Redo :size="20" />
+						</template>
+					</NcButton>
+					<NcButton
+						v-if="!isBlock"
+						data-testid="designer-media"
+						:disabled="state.loading"
+						@click="mediaOpen = true">
+						<template #icon>
+							<ImageMultipleOutline :size="20" />
+						</template>
+						{{ t('portaliq', 'Media') }}
+					</NcButton>
+				</div>
+				<p
+					v-if="state.dirty"
+					class="designer__unsaved"
+					role="status"
+					data-testid="designer-unsaved">
+					<AlertCircleOutline :size="18" />
+					{{ t('portaliq', 'Unsaved changes') }}
+				</p>
+			</div>
+
 			<div class="designer__actions">
-				<!--
-					A DISCLOSURE, NOT A DIALOG OPENER. The palette is a panel
-					beside the canvas now, so this button is the control that
-					shows and hides it, and says which it is doing through
-					`aria-expanded`.
-				-->
 				<NcButton
-					data-testid="designer-add-widget"
-					:disabled="state.loading || state.kind !== 'grid'"
-					:aria-expanded="paletteOpen"
-					aria-controls="widget-palette"
-					@click="paletteOpen = !paletteOpen">
-					{{ t('portaliq', 'Add widget') }}
-				</NcButton>
-				<NcButton
-					data-testid="designer-undo"
-					:disabled="!state.canUndo || state.saving"
-					:aria-label="t('portaliq', 'Undo (Ctrl+Z)')"
-					:title="t('portaliq', 'Undo (Ctrl+Z)')"
-					@click="editor.undo()">
-					{{ t('portaliq', 'Undo') }}
-				</NcButton>
-				<NcButton
-					data-testid="designer-redo"
-					:disabled="!state.canRedo || state.saving"
-					:aria-label="t('portaliq', 'Redo (Ctrl+Shift+Z)')"
-					:title="t('portaliq', 'Redo (Ctrl+Shift+Z)')"
-					@click="editor.redo()">
-					{{ t('portaliq', 'Redo') }}
+					v-if="state.hasDraft"
+					data-testid="designer-discard-draft"
+					:disabled="state.loading || state.saving"
+					@click="editor.discard()">
+					<template #icon>
+						<DeleteOutline :size="20" />
+					</template>
+					{{ t('portaliq', 'Discard draft') }}
 				</NcButton>
 				<NcButton
 					data-testid="designer-save-draft"
 					:disabled="state.loading || state.saving"
 					@click="editor.saveDraft()">
+					<template #icon>
+						<ContentSaveOutline :size="20" />
+					</template>
 					{{ t('portaliq', 'Save draft') }}
 				</NcButton>
 				<NcButton
 					variant="primary"
 					data-testid="designer-publish"
 					:disabled="state.loading || state.saving"
-					@click="editor.publish()">
+					@click="isBlock ? editor.publish() : (confirmingPublish = true)">
 					{{ t('portaliq', 'Publish') }}
-				</NcButton>
-				<NcButton
-					v-if="!isBlock"
-					data-testid="designer-media"
-					:disabled="state.loading"
-					@click="mediaOpen = true">
-					{{ t('portaliq', 'Media') }}
 				</NcButton>
 				<NcButton
 					v-if="!isBlock"
@@ -111,20 +149,13 @@
 					@click="historyOpen = true">
 					{{ t('portaliq', 'History') }}
 				</NcButton>
-				<NcButton
-					v-if="state.hasDraft"
-					data-testid="designer-discard-draft"
-					:disabled="state.loading || state.saving"
-					@click="editor.discard()">
-					{{ t('portaliq', 'Discard draft') }}
-				</NcButton>
 				<!--
 					THE WAY BACK. An editor arrives here from a floating control
 					on the page they were reading; the link carries the page's own
 					route, so it returns them to that page.
 				-->
 				<NcButton
-					v-if="page.route"
+					v-if="page.route && !embedded"
 					:href="siteUrl"
 					data-testid="designer-view-on-site">
 					{{ t('portaliq', 'View on the site') }}
@@ -149,12 +180,6 @@
 			data-testid="designer-notice">
 			{{ state.notice }}
 		</NcNoteCard>
-		<NcNoteCard
-			v-else-if="state.dirty"
-			type="warning"
-			data-testid="designer-dirty">
-			{{ t('portaliq', 'Unsaved changes. Save the draft to keep them.') }}
-		</NcNoteCard>
 
 		<div v-if="state.loading" class="designer__loading">
 			<NcLoadingIcon :size="32" />
@@ -164,17 +189,24 @@
 			v-else
 			v-model:paletteOpen="paletteOpen"
 			:editor="editor"
-			:loadBlocks="loadBlocks" />
+			:loadBlocks="loadBlocks"
+			:loadRecordLists="loadRecordLists"
+			:excludedPaths="excludedPaths" />
 
 		<MediaPickerDialog
 			v-model:open="mediaOpen"
 			:portal="page.portal || ''"
+			:pageTitle="page.title || ''"
 			@choose="useMedia" />
 		<PageHistoryDialog
 			v-model:open="historyOpen"
 			:pageId="pageId"
 			:busy="state.saving"
 			@restore="restoreVersion" />
+		<PublishPageDialog
+			v-if="confirmingPublish"
+			:address="siteUrl"
+			@close="publishConfirmed" />
 	</div>
 </template>
 
@@ -183,14 +215,24 @@ import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import { reactive } from 'vue'
+import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue'
+import ContentSaveOutline from 'vue-material-design-icons/ContentSaveOutline.vue'
+import DeleteOutline from 'vue-material-design-icons/DeleteOutline.vue'
+import ImageMultipleOutline from 'vue-material-design-icons/ImageMultipleOutline.vue'
+import Plus from 'vue-material-design-icons/Plus.vue'
+import Redo from 'vue-material-design-icons/Redo.vue'
+import Undo from 'vue-material-design-icons/Undo.vue'
 import MediaPickerDialog from '../dialogs/MediaPickerDialog.vue'
 import PageHistoryDialog from '../dialogs/PageHistoryDialog.vue'
+import PublishPageDialog from '../dialogs/PublishPageDialog.vue'
 import PageGridEditor from '../editor/PageGridEditor.vue'
 import {
 	blockToPage,
 	createPageEditor,
 	createPageSaver,
+	loadExcludedPaths,
 	pageToBlock,
+	recordListsFrom,
 } from '../editor/index.js'
 import { withMedia } from '../lib/mediaLibrary.js'
 import { pageSiteUrl } from '../lib/pageSiteUrl.js'
@@ -200,12 +242,33 @@ export default {
 	name: 'PageLayoutDesigner',
 
 	components: {
+		AlertCircleOutline,
+		ContentSaveOutline,
+		DeleteOutline,
+		ImageMultipleOutline,
 		NcButton,
 		NcLoadingIcon,
 		MediaPickerDialog,
 		NcNoteCard,
 		PageGridEditor,
 		PageHistoryDialog,
+		PublishPageDialog,
+		Plus,
+		Redo,
+		Undo,
+	},
+
+	props: {
+		/**
+		 * Drawn inside the page's own Indeling tab (PageLayoutEditor), where the
+		 * page header already names the page: no title line of its own.
+		 *
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-layout-editor-is-a-tab-of-the-page
+		 */
+		embedded: {
+			type: Boolean,
+			default: false,
+		},
 	},
 
 	data() {
@@ -214,6 +277,15 @@ export default {
 			paletteOpen: false,
 			historyOpen: false,
 			mediaOpen: false,
+			confirmingPublish: false,
+
+			/**
+			 * The page's portal `traffic.excludedPaths`, or null until read
+			 * and when it cannot be read.
+			 *
+			 * @type {Array<string>|null}
+			 */
+			excludedPaths: null,
 		}
 	},
 
@@ -270,11 +342,35 @@ export default {
 		},
 	},
 
-	mounted() {
-		this.editor.load()
+	async mounted() {
+		await this.editor.load()
+		// A shared block has no route of its own, so nothing to warn about.
+		if (!this.isBlock) {
+			this.excludedPaths = await loadExcludedPaths(
+				(url, config) => axios.get(url, config),
+				generateUrl('/apps/openregister/api/objects/portaliq/portal'),
+				this.page.portal,
+			)
+		}
 	},
 
 	methods: {
+		/**
+		 * Publish once the editor confirmed that anyone may read the page;
+		 * cancelled, the page stays as it is.
+		 *
+		 * @param {boolean} confirmed Whether the editor chose Publish.
+		 * @return {Promise<void>} Resolves when published, refused or cancelled.
+		 *
+		 * @spec openspec/changes/page-public-on-purpose/tasks.md#1.1
+		 */
+		async publishConfirmed(confirmed) {
+			this.confirmingPublish = false
+			if (confirmed === true) {
+				await this.editor.publish()
+			}
+		},
+
 		/**
 		 * The shared editor over OpenRegister's object API.
 		 *
@@ -323,6 +419,21 @@ export default {
 					title: String(row.title || ''),
 				}))
 				.filter((block) => block.id !== '')
+		},
+
+		/**
+		 * The public record lists the installed apps contribute to this page's
+		 * portal, read from the same anonymous answer the site reads.
+		 *
+		 * @return {Promise<Array<{app: string, id: string, label: string}>>} The lists.
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+		 */
+		async loadRecordLists() {
+			const { data } = await axios.get(
+				generateUrl('/apps/portaliq/api/content/contributions'),
+				{ params: this.page.portal ? { portal: this.page.portal } : {} },
+			)
+			return recordListsFrom(data)
 		},
 
 		/**
@@ -389,6 +500,25 @@ export default {
 	display: flex;
 	gap: 8px;
 	flex-wrap: wrap;
+}
+
+.designer__toolbar {
+	display: flex;
+	flex: 1 1 100%;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: center;
+	gap: 8px 16px;
+}
+
+.designer__unsaved {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0;
+	color: var(--color-warning-text, var(--color-text-maxcontrast));
+	font-size: 14px;
+	font-weight: 600;
 }
 
 .designer__loading {

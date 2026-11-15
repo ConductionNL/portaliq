@@ -28,7 +28,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Kernel\Contracts\PortalFamilyMembersInterface;
+use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -38,7 +39,7 @@ use Throwable;
  *
  * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t04
  */
-class PortalFamilyMembers {
+class PortalFamilyMembers implements PortalFamilyMembersInterface {
 	/**
 	 * OpenRegister's person lookup.
 	 */
@@ -47,13 +48,13 @@ class PortalFamilyMembers {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalAccountService $accounts  Reads the account's identity.
+	 * @param PortalAccountLookup  $accounts  Reads the account's identity.
 	 * @param ContainerInterface   $container Resolves the BRP provider.
 	 * @param DutchFormats         $formats   Checks the BSN.
 	 * @param LoggerInterface      $logger    Logs a lookup that failed.
 	 */
 	public function __construct(
-		private readonly PortalAccountService $accounts,
+		private readonly PortalAccountLookup $accounts,
 		private readonly ContainerInterface $container,
 		private readonly DutchFormats $formats,
 		private readonly LoggerInterface $logger,
@@ -111,7 +112,24 @@ class PortalFamilyMembers {
 			return null;
 		}
 
-		$home    = $this->addressKey(person: $person);
+		$home = $this->addressKey(person: $person);
+
+		return $this->familyEntries(person: $person, subjectRef: $subjectRef, home: $home, atHomeOnly: $atHomeOnly);
+	}//end membersOf()
+
+	/**
+	 * The person's partners and children, as entries.
+	 *
+	 * @param array<string, mixed> $person     The resident's BRP person.
+	 * @param string               $subjectRef The session's subject.
+	 * @param string               $home       The resident's address key.
+	 * @param bool                 $atHomeOnly Keep only members living at the resident's address.
+	 *
+	 * @return array<int, array{ref: string, name: string, relation: string, birthYear: string}>
+	 *
+	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t04
+	 */
+	private function familyEntries(array $person, string $subjectRef, string $home, bool $atHomeOnly): array {
 		$members = [];
 		foreach (['partners' => 'partner', 'kinderen' => 'child'] as $key => $relation) {
 			foreach ((array)($person[$key] ?? []) as $index => $member) {
@@ -124,7 +142,7 @@ class PortalFamilyMembers {
 		}
 
 		return $members;
-	}//end membersOf()
+	}//end familyEntries()
 
 	/**
 	 * One member as the form offers it, or null when it is not to be offered.
@@ -214,7 +232,7 @@ class PortalFamilyMembers {
 			return null;
 		}
 
-		$account = $this->accounts->findBySubjectRef(subjectRef: $subjectRef);
+		$account = $this->accounts->bySubjectRef(subjectRef: $subjectRef);
 		if ($account === null || in_array(($account['identityType'] ?? ''), ['digid', 'eidas'], true) === false) {
 			return null;
 		}

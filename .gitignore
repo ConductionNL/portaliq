@@ -37,6 +37,8 @@ phpqa_output.log
 
 # Data files
 *.csv
+# Example-set fixtures ship as CSV and are tracked.
+!lib/Settings/example-sets/**/*.csv
 *.xls
 *.xlsx
 
@@ -133,8 +135,7 @@ openspec/test-site-results/**/*.jpeg
 openspec/test-site-results/**/*.gif
 openspec/test-site-results/**/*.webp
 
-# SBOM is published as release asset (see SECURITY.md), not stored in repo
-sbom.cdx.json
+# Intermediate SBOM files. The merged sbom.cdx.json at the root is committed.
 bom-php.cdx.json
 bom-npm.cdx.json
 

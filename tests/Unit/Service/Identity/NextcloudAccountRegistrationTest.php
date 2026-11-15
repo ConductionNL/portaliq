@@ -39,6 +39,7 @@ use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\PublishedPortals;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\RedirectResponse;
@@ -53,6 +54,9 @@ use OCP\IUser;
 use OCP\IUserManager;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Service\Identity\ContactAddressValues;
+use OCA\Portaliq\Service\RequestedPortal;
+use OCA\Portaliq\Service\Signin\SiteReturnAddress;
 
 /**
  * The registration door, the first sign-in and the way back.
@@ -76,11 +80,23 @@ class NextcloudAccountRegistrationTest extends TestCase {
 	];
 
 	/**
+	 * PORTAL with a business group for people who act for a company.
+	 */
+	private const BUSINESS_PORTAL = [
+		'slug'           => 'gemeente',
+		'organisation'   => 'gemeente-org',
+		'authentication' => [
+			'modes'        => ['nextcloud'],
+			'registration' => ['residentGroup' => 'inwoners', 'businessGroup' => 'ondernemers'],
+		],
+	];
+
+	/**
 	 * The groups each user is in.
 	 *
 	 * @var array<string, array<int, string>>
 	 */
-	private array $memberships = ['sanne' => ['inwoners'], 'clerk' => ['medewerkers'], 'admin' => ['admin', 'inwoners']];
+	private array $memberships = ['sanne' => ['inwoners'], 'karin' => ['ondernemers'], 'clerk' => ['medewerkers'], 'admin' => ['admin', 'inwoners']];
 
 	/**
 	 * Whether the registration app is enabled.
@@ -136,7 +152,7 @@ class NextcloudAccountRegistrationTest extends TestCase {
 		$groups->method('isInGroup')->willReturnCallback(fn (string $uid, string $group): bool => in_array($group, ($this->memberships[$uid] ?? []), true));
 		$groups->method('isAdmin')->willReturnCallback(fn (string $uid): bool => in_array('admin', ($this->memberships[$uid] ?? []), true));
 
-		$portals = $this->createMock(PortalResolver::class);
+		$portals = $this->createMock(PublishedPortals::class);
 		$portals->method('allPublishedPortals')->willReturn($published);
 
 		return new NextcloudRegistrationDoor($apps, $appConfig, $urls, $groups, $portals, $provisioner);
@@ -204,7 +220,7 @@ class NextcloudAccountRegistrationTest extends TestCase {
 			$appConfig,
 			$this->createMock(IURLGenerator::class),
 			$this->createMock(IGroupManager::class),
-			$this->createMock(PortalResolver::class)
+			$this->createMock(PublishedPortals::class)
 		);
 
 		$this->assertSame('', $door->registerUrl(portal: self::PORTAL));
@@ -223,6 +239,52 @@ class NextcloudAccountRegistrationTest extends TestCase {
 			$door->residentAudience(portal: self::portalWith(['modes' => ['nextcloud'], 'registration' => ['residentGroup' => 'inwoners', 'residentAudience' => 'inwoner']]))
 		);
 	}//end testTheResidentAudienceDefaultsToCitizen()
+
+	/**
+	 * The business group is read like the resident group, with its own
+	 * audience (default `supplier`), and only on a portal with the account
+	 * route.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/business-audience-group/specs/portal-nextcloud-account-login/spec.md#requirement-a-portal-may-name-a-business-group-with-its-own-audience-req-ncl-008
+	 */
+	public function testTheBusinessGroupCarriesItsOwnAudience(): void {
+		$door = $this->door();
+		$this->assertSame('ondernemers', $door->businessGroup(portal: self::BUSINESS_PORTAL));
+		$this->assertSame('supplier', $door->businessAudience(portal: self::BUSINESS_PORTAL));
+		$this->assertSame(['inwoners' => 'citizen', 'ondernemers' => 'supplier'], $door->portalGroups(portal: self::BUSINESS_PORTAL));
+		$this->assertSame('supplier', $door->audienceOf(portal: self::BUSINESS_PORTAL, uid: 'karin'));
+		$this->assertSame('citizen', $door->audienceOf(portal: self::BUSINESS_PORTAL, uid: 'sanne'));
+		$this->assertSame('', $door->audienceOf(portal: self::BUSINESS_PORTAL, uid: 'clerk'), 'staff are in neither group');
+		$this->assertSame('', $door->audienceOf(portal: self::PORTAL, uid: 'karin'), 'control: a portal without a business group does not know her');
+
+		$named = self::portalWith(['modes' => ['nextcloud'], 'registration' => ['businessGroup' => 'ondernemers', 'businessAudience' => 'business']]);
+		$this->assertSame(['ondernemers' => 'business'], $door->portalGroups(portal: $named));
+
+		$noAccountRoute = self::portalWith(['modes' => ['digid'], 'registration' => ['businessGroup' => 'ondernemers']]);
+		$this->assertSame('', $door->businessGroup(portal: $noAccountRoute));
+		$this->assertSame([], $door->portalGroups(portal: $noAccountRoute));
+
+		$same = self::portalWith(['modes' => ['nextcloud'], 'registration' => ['residentGroup' => 'inwoners', 'businessGroup' => 'inwoners']]);
+		$this->assertSame(['inwoners' => 'citizen'], $door->portalGroups(portal: $same), 'one group is one audience: the resident one');
+	}//end testTheBusinessGroupCarriesItsOwnAudience()
+
+	/**
+	 * The registration app never fills the business group: a registration
+	 * app set to it opens no "Create an account" link.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/business-audience-group/specs/portal-nextcloud-account-login/spec.md#requirement-a-portal-may-name-a-business-group-with-its-own-audience-req-ncl-008
+	 */
+	public function testTheBusinessGroupOpensNoRegistrationLink(): void {
+		$this->registrationGroup = 'ondernemers';
+		$this->assertSame('', $this->door()->registerUrl(portal: self::BUSINESS_PORTAL));
+
+		$this->registrationGroup = 'inwoners';
+		$this->assertSame(self::FORM, $this->door()->registerUrl(portal: self::BUSINESS_PORTAL), 'control: the resident group still opens it');
+	}//end testTheBusinessGroupOpensNoRegistrationLink()
 
 	/**
 	 * The session controller on the real door and the real provisioner.
@@ -244,6 +306,8 @@ class NextcloudAccountRegistrationTest extends TestCase {
 		$resolver = $this->createMock(PortalResolver::class);
 		$resolver->method('resolve')->willReturn($portal);
 		$resolver->method('allPublishedPortals')->willReturn([$portal]);
+		$published = $this->createMock(PublishedPortals::class);
+		$published->method('allPublishedPortals')->willReturn([$portal]);
 
 		$accounts = $this->createMock(PortalAccountService::class);
 		$accounts->method('findBySubjectRef')->willReturnCallback(
@@ -289,8 +353,11 @@ class NextcloudAccountRegistrationTest extends TestCase {
 			$urls,
 			$userSession,
 			$resolver,
+			new ContactAddressValues(),
+			new RequestedPortal(),
+			new SiteReturnAddress(),
 			null,
-			$this->door(published: [$portal], provisioner: new NextcloudAccountProvisioner($reader, $writer, $users, $resolver))
+			$this->door(published: [$portal], provisioner: new NextcloudAccountProvisioner($reader, $writer, $users, $published))
 		);
 	}//end sessionController()
 
@@ -320,6 +387,47 @@ class NextcloudAccountRegistrationTest extends TestCase {
 		$this->assertSame('portaliq', $this->written[0]['provisionedBy']);
 		$this->assertFalse($this->written[0]['verifiedEmail']);
 	}//end testAResidentGetsTheirAccountOnFirstSignIn()
+
+	/**
+	 * A business contact signing in through the account route gets an
+	 * account with the business audience, and a session for it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/business-audience-group/specs/portal-nextcloud-account-login/spec.md#requirement-a-portal-may-name-a-business-group-with-its-own-audience-req-ncl-008
+	 */
+	public function testABusinessContactGetsAnAccountWithTheBusinessAudience(): void {
+		$session = $this->createMock(PortalSessionService::class);
+		$session->expects($this->once())
+			->method('issueSession')
+			->with('karin', 'supplier', 'gemeente-org', 'low', ['supplier:read'])
+			->willReturn(['token' => 'tok']);
+
+		$response = $this->sessionController(uid: 'karin', portal: self::BUSINESS_PORTAL, session: $session)->nextcloud(portal: 'gemeente');
+
+		$this->assertInstanceOf(RedirectResponse::class, $response);
+		$this->assertCount(1, $this->written);
+		$this->assertSame('karin', $this->written[0]['subjectRef']);
+		$this->assertSame('supplier', $this->written[0]['audience']);
+	}//end testABusinessContactGetsAnAccountWithTheBusinessAudience()
+
+	/**
+	 * Control: on a portal that names no business group, the same business
+	 * contact is refused and nothing is written.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/business-audience-group/specs/portal-nextcloud-account-login/spec.md#requirement-a-portal-may-name-a-business-group-with-its-own-audience-req-ncl-008
+	 */
+	public function testABusinessContactIsRefusedWhereNoBusinessGroupIsNamed(): void {
+		$session = $this->createMock(PortalSessionService::class);
+		$session->expects($this->never())->method('issueSession');
+
+		$response = $this->sessionController(uid: 'karin', portal: self::PORTAL, session: $session)->nextcloud(portal: 'gemeente');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame([], $this->written);
+	}//end testABusinessContactIsRefusedWhereNoBusinessGroupIsNamed()
 
 	/**
 	 * A Nextcloud user outside the resident group is still refused, and
@@ -390,11 +498,12 @@ class NextcloudAccountRegistrationTest extends TestCase {
 	/**
 	 * The dashboard controller for a signed-in user.
 	 *
-	 * @param string $uid The user.
+	 * @param string                           $uid       The user.
+	 * @param array<int, array<string, mixed>> $published The published portals.
 	 *
 	 * @return DashboardController
 	 */
-	private function dashboard(string $uid): DashboardController {
+	private function dashboard(string $uid, array $published = [self::PORTAL]): DashboardController {
 		$user = $this->createMock(IUser::class);
 		$user->method('getUID')->willReturn($uid);
 		$userSession = $this->createMock(IUserSession::class);
@@ -409,7 +518,7 @@ class NextcloudAccountRegistrationTest extends TestCase {
 		$access = $this->createMock(AdminMenuAccess::class);
 		$access->method('isStaff')->willReturn(true);
 
-		return new DashboardController($this->createMock(IRequest::class), $access, null, $this->door(), $userSession, $urls);
+		return new DashboardController($this->createMock(IRequest::class), $access, null, $this->door(published: $published), $userSession, $urls);
 	}//end dashboard()
 
 	/**
@@ -425,6 +534,22 @@ class NextcloudAccountRegistrationTest extends TestCase {
 		$this->assertSame('/portaliq.session.nextcloud?portal=gemeente', $response->getRedirectURL());
 		$this->assertInstanceOf(RedirectResponse::class, $this->dashboard(uid: 'sanne')->catchAll());
 	}//end testAResidentOnTheWorkplaceIsSentBackToTheirPortal()
+
+	/**
+	 * A business contact who lands on the workplace is sent to their portal
+	 * too, and only where the portal names the business group.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/business-audience-group/specs/portal-nextcloud-account-login/spec.md#requirement-a-portal-may-name-a-business-group-with-its-own-audience-req-ncl-008
+	 */
+	public function testABusinessContactOnTheWorkplaceIsSentBackToTheirPortal(): void {
+		$response = $this->dashboard(uid: 'karin', published: [self::BUSINESS_PORTAL])->page();
+
+		$this->assertInstanceOf(RedirectResponse::class, $response);
+		$this->assertSame('/portaliq.session.nextcloud?portal=gemeente', $response->getRedirectURL());
+		$this->assertNotInstanceOf(RedirectResponse::class, $this->dashboard(uid: 'karin')->page(), 'control: no business group, no way back');
+	}//end testABusinessContactOnTheWorkplaceIsSentBackToTheirPortal()
 
 	/**
 	 * Staff and administrators keep the app, even an administrator who is

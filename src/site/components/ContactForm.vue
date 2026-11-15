@@ -62,6 +62,7 @@
 			v-else-if="state === 'ready'"
 			:action="resolved"
 			:api="api"
+			:t="translate"
 			@submitted="state = 'sent'" />
 	</div>
 </template>
@@ -75,7 +76,8 @@ import {
 	storeSessionToken,
 } from '../lib/authApi.js'
 import { resolveApiBase, runtimeConfig } from '../lib/contentApi.js'
-import { pageLocale } from '../pages/inbox/translate.js'
+import formStrings from '../pages/c/strings.js'
+import { pageLocale, withBundles } from '../pages/inbox/translate.js'
 
 import '@utrecht/paragraph-css/dist/index.css'
 
@@ -137,6 +139,17 @@ export default {
 		 */
 		words() {
 			return STRINGS[pageLocale(this.locale)] || STRINGS.nl
+		},
+
+		/**
+		 * The form's translator: the schema form's own words in the page's
+		 * language, as the account pages hand it.
+		 *
+		 * @return {(key: string, vars?: object) => string} The translator.
+		 * @spec openspec/changes/contact-question-form-reads-dutch/specs/site-forms/spec.md#requirement-the-contact-question-form-reads-in-the-pages-language
+		 */
+		translate() {
+			return withBundles(formStrings, null, this.locale)
 		},
 
 		/**

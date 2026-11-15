@@ -191,10 +191,13 @@ test('a button link ships its stylesheet, so a sign-in link never falls back to 
 	)
 	const users = [
 		'src/site/components/AccountArea.vue',
+		'src/site/components/FederatedSearchBlock.vue',
 		'src/site/components/FooterColumns.vue',
 		'src/site/components/IntakeFormBlock.vue',
 		'src/site/components/chrome/HeaderTools.vue',
 		'src/site/components/chrome/SignInPage.vue',
+		'src/site/components/forms/DeskApplicant.vue',
+		'src/site/components/mijn/StepUpPrompt.vue',
 		'src/site/pages/inbox/InboxPage.vue',
 		'src/site/widgets/nlAlert/NlAlert.vue',
 	]

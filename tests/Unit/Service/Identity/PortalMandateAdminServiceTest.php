@@ -217,6 +217,184 @@ class PortalMandateAdminServiceTest extends TestCase {
 		$this->assertSame([], $service->held(['kvk:12345678'], 'gemeente-x', $this->now()), 'another company does not carry it');
 	}
 
+	/**
+	 * REQ-SMR-007: the holder reads who gave each mandate and when, from the
+	 * rows the two real writers store, never the account that recorded it.
+	 *
+	 * @covers \OCA\Portaliq\Service\Identity\MandateListing
+	 * @uses   \OCA\Portaliq\Service\Identity\MandateDays
+	 * @uses   \OCA\Portaliq\Service\Identity\MandateParties
+	 * @uses   \OCA\Portaliq\Service\Identity\MandateStore
+	 * @uses   \OCA\Portaliq\Service\Identity\PortalAccessRequestService
+	 * @uses   \OCA\Portaliq\Service\Identity\PortalAccountLookup
+	 * @uses   \OCA\Portaliq\Service\Identity\PortalMandateAdminService
+	 *
+	 * @return void
+	 */
+	public function testTheHolderSeesWhoGaveTheMandateAndWhen(): void {
+		$service = $this->service();
+		$invited = $service->invite(self::COMPANY, 'gemeente-x', 'jan-willem', ['email' => 'tom@example.nl'], $this->now());
+		$service->accept($invited['token'], ['subjectRef' => 'tom', 'provider' => 'digid', 'organisation' => 'gemeente-x'], $this->now());
+
+		$requests = new \OCA\Portaliq\Service\Identity\PortalAccessRequestService($this->fakeReader(), $this->fakeWriter());
+		$request  = $requests->request(subjectRef: 'tom', organisation: 'gemeente-x', onBehalfOf: '87654321', reason: 'Ik doe de boekhouding');
+		$requests->grant(id: $request['uuid'], organisation: 'gemeente-x', decidedBy: 'clerk-anna');
+
+		foreach ($this->storedRows('portalMandate') as $row) {
+			$this->assertSame([], $this->schemaProblems('portalMandate', $row), 'a stored mandate');
+		}
+
+		$held = $service->held(['subject:tom'], 'gemeente-x', $this->now());
+		$this->assertSame(['kvk:12345678' => 'party', 'kvk:87654321' => 'organisation'], array_column($held, 'givenBy', 'onBehalfOf'));
+		$this->assertSame('2026-10-02T10:00:00+02:00', $held[0]['grantedAt']);
+		$this->assertNotSame('', $held[1]['grantedAt']);
+		foreach ($held as $mandate) {
+			$this->assertArrayNotHasKey('grantedBy', $mandate, 'the recording account stays out of the answer');
+		}
+	}
+
+	/**
+	 * REQ-SMR-002: each mandate in the given list names who may act, a company
+	 * holder by the account that accepted for it, an old mandate by its
+	 * subject; an open invitation keeps the address it went to.
+	 *
+	 * @covers \OCA\Portaliq\Controller\MandateController
+	 * @covers \OCA\Portaliq\Service\Identity\MandateListing
+	 * @uses   \OCA\Portaliq\Service\Identity\MandateDays
+	 * @uses   \OCA\Portaliq\Service\Identity\MandateParties
+	 * @uses   \OCA\Portaliq\Service\Identity\MandateStore
+	 * @uses   \OCA\Portaliq\Service\Identity\PortalAccountLookup
+	 * @uses   \OCA\Portaliq\Service\Identity\PortalMandateAdminService
+	 *
+	 * @return void
+	 */
+	public function testTheGivenListNamesWhoMayActForTheParty(): void {
+		$this->seedRow('portalAccount', ['subjectRef' => 'tom', 'organisation' => 'gemeente-x', 'displayName' => 'Tom Visser', 'email' => 't.visser@example.nl']);
+		$this->seedRow('portalAccount', ['subjectRef' => 'anna', 'organisation' => 'gemeente-x', 'displayName' => 'Administratiekantoor Kramer', 'email' => 'anna@kramer.nl']);
+		$this->seedRow('portalAccount', ['subjectRef' => 'petra', 'organisation' => 'gemeente-x', 'displayName' => 'Petra van der Berg', 'email' => '']);
+		$this->seedRow('portalMandate', ['subjectRef' => 'petra', 'organisation' => 'gemeente-x', 'onBehalfOf' => '12345678', 'status' => 'active']);
+		$service = $this->service();
+
+		$tom = $service->invite(self::COMPANY, 'gemeente-x', 'jan-willem', ['email' => 'tom@example.nl'], $this->now());
+		$service->accept($tom['token'], ['subjectRef' => 'tom', 'provider' => 'digid', 'organisation' => 'gemeente-x'], $this->now());
+		$kramer = $service->invite(self::COMPANY, 'gemeente-x', 'jan-willem', ['email' => 'anna@kramer.nl'], $this->now());
+		$service->accept($kramer['token'], self::company(['kvk' => '87654321', 'subjectRef' => 'anna']), $this->now());
+		$service->invite(self::COMPANY, 'gemeente-x', 'jan-willem', ['email' => 'mark@example.nl'], $this->now());
+
+		$session = $this->createMock(PortalSessionService::class);
+		$session->method('resolveFromBearer')->willReturn(self::company());
+		$controller = new MandateController(
+			$this->createMock(IRequest::class),
+			$session,
+			$service,
+			$this->createMock(\OCA\Portaliq\Service\Identity\PortalIdentityMailer::class),
+			new \OCA\Portaliq\Service\Identity\PortalAccountLookup($this->fakeReader()),
+			$this->createMock(\OCA\Portaliq\Service\Intake\PortalCaseTypeChoices::class),
+			$this->createMock(\OCA\Portaliq\Service\PortalResolver::class),
+			new MandateParties()
+		);
+
+		$given    = $controller->given()->getData()['items'];
+		$mandates = array_values(array_filter($given, static fn (array $item): bool => $item['kind'] === 'mandate'));
+
+		$this->assertSame(
+			['subject:petra' => 'Petra van der Berg', 'subject:tom' => 'Tom Visser', 'kvk:87654321' => 'Administratiekantoor Kramer'],
+			array_column($mandates, 'name', 'holder')
+		);
+		$this->assertSame(['subject:petra' => '', 'subject:tom' => 't.visser@example.nl', 'kvk:87654321' => 'anna@kramer.nl'], array_column($mandates, 'email', 'holder'));
+
+		$invitation = array_values(array_filter($given, static fn (array $item): bool => $item['kind'] === 'invitation'))[0];
+		$this->assertSame('mark@example.nl', $invitation['email']);
+		$this->assertArrayNotHasKey('name', $invitation);
+	}
+
+	/**
+	 * REQ-SMR-002: a withdrawn (void) account names nobody, so the giver no
+	 * longer sees the name or address of an account a clerk retired. The
+	 * mandate itself stays in the list.
+	 *
+	 * @covers \OCA\Portaliq\Controller\MandateController
+	 * @covers \OCA\Portaliq\Service\Identity\MandateListing
+	 * @uses   \OCA\Portaliq\Service\Identity\MandateDays
+	 * @uses   \OCA\Portaliq\Service\Identity\MandateParties
+	 * @uses   \OCA\Portaliq\Service\Identity\MandateStore
+	 * @uses   \OCA\Portaliq\Service\Identity\PortalAccountLookup
+	 * @uses   \OCA\Portaliq\Service\Identity\PortalMandateAdminService
+	 *
+	 * @return void
+	 */
+	public function testTheGivenListDoesNotNameAWithdrawnAccount(): void {
+		$this->seedRow('portalAccount', ['subjectRef' => 'wim', 'organisation' => 'gemeente-x', 'displayName' => 'Wim de Groot', 'email' => 'wim@example.nl', 'status' => 'void']);
+		$this->seedRow('portalAccount', ['subjectRef' => 'petra', 'organisation' => 'gemeente-x', 'displayName' => 'Petra van der Berg', 'email' => 'petra@example.nl', 'status' => 'active']);
+		$this->seedRow('portalMandate', ['subjectRef' => 'wim', 'organisation' => 'gemeente-x', 'onBehalfOf' => '12345678', 'status' => 'active']);
+		$this->seedRow('portalMandate', ['subjectRef' => 'petra', 'organisation' => 'gemeente-x', 'onBehalfOf' => '12345678', 'status' => 'active']);
+
+		$given = $this->givenFor(request: $this->createMock(IRequest::class));
+
+		$this->assertSame(['subject:wim' => '', 'subject:petra' => 'Petra van der Berg'], array_column($given, 'name', 'holder'));
+		$this->assertSame(['subject:wim' => '', 'subject:petra' => 'petra@example.nl'], array_column($given, 'email', 'holder'));
+	}
+
+	/**
+	 * REQ-SMR-002: a mandate another party gave is neither listed nor named for
+	 * the caller, not even when the request names that other party.
+	 *
+	 * @covers \OCA\Portaliq\Controller\MandateController
+	 * @covers \OCA\Portaliq\Service\Identity\MandateListing
+	 * @uses   \OCA\Portaliq\Service\Identity\MandateDays
+	 * @uses   \OCA\Portaliq\Service\Identity\MandateParties
+	 * @uses   \OCA\Portaliq\Service\Identity\MandateStore
+	 * @uses   \OCA\Portaliq\Service\Identity\PortalAccountLookup
+	 * @uses   \OCA\Portaliq\Service\Identity\PortalMandateAdminService
+	 *
+	 * @return void
+	 */
+	public function testTheGivenListDoesNotNameAMandateAnotherPartyGave(): void {
+		$this->seedRow('portalAccount', ['subjectRef' => 'eva', 'organisation' => 'gemeente-x', 'displayName' => 'Eva Jansen', 'email' => 'eva@example.nl']);
+		$this->seedRow('portalAccount', ['subjectRef' => 'petra', 'organisation' => 'gemeente-x', 'displayName' => 'Petra van der Berg', 'email' => 'petra@example.nl']);
+		$this->seedRow('portalMandate', ['subjectRef' => 'eva', 'organisation' => 'gemeente-x', 'onBehalfOf' => '87654321', 'status' => 'active']);
+		$this->seedRow('portalMandate', ['subjectRef' => 'eva', 'organisation' => 'gemeente-x', 'holder' => 'subject:eva', 'onBehalfOf' => 'subject:someone-else', 'status' => 'active']);
+		$this->seedRow('portalMandate', ['subjectRef' => 'petra', 'organisation' => 'gemeente-x', 'onBehalfOf' => '12345678', 'status' => 'active']);
+
+		$forged = $this->createMock(IRequest::class);
+		$forged->method('getParam')->willReturn('kvk:87654321');
+		$forged->method('getParams')->willReturn(['party' => 'kvk:87654321', 'onBehalfOf' => '87654321']);
+
+		$given = $this->givenFor(request: $forged);
+
+		$this->assertSame(['subject:petra'], array_column($given, 'holder'));
+		$encoded = (string)json_encode($given);
+		$this->assertStringNotContainsString('Eva Jansen', $encoded);
+		$this->assertStringNotContainsString('eva@example.nl', $encoded);
+	}
+
+	/**
+	 * The given list as the controller answers it to the company session.
+	 *
+	 * @param IRequest $request The incoming request.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function givenFor(IRequest $request): array {
+		$session = $this->createMock(PortalSessionService::class);
+		$session->method('resolveFromBearer')->willReturn(self::company());
+		$controller = new MandateController(
+			$request,
+			$session,
+			$this->service(),
+			$this->createMock(\OCA\Portaliq\Service\Identity\PortalIdentityMailer::class),
+			new \OCA\Portaliq\Service\Identity\PortalAccountLookup($this->fakeReader()),
+			$this->createMock(\OCA\Portaliq\Service\Intake\PortalCaseTypeChoices::class),
+			$this->createMock(\OCA\Portaliq\Service\PortalResolver::class),
+			new MandateParties()
+		);
+
+		$data = $controller->given()->getData();
+		$this->assertSame(self::COMPANY, $data['party'], 'the party is the session\'s, never the request\'s');
+
+		return $data['items'];
+	}
+
 	public function testAMandateWithoutHolderIsHeldByItsSubject(): void {
 		$this->seedRow('portalMandate', ['subjectRef' => 'linda', 'organisation' => 'gemeente-x', 'onBehalfOf' => '87654321', 'status' => 'active']);
 		$service = $this->service();
@@ -290,7 +468,8 @@ class PortalMandateAdminServiceTest extends TestCase {
 			$mailer,
 			$this->createMock(\OCA\Portaliq\Service\Identity\PortalAccountLookup::class),
 			$this->createMock(\OCA\Portaliq\Service\Intake\PortalCaseTypeChoices::class),
-			$this->createMock(\OCA\Portaliq\Service\PortalResolver::class)
+			$this->createMock(\OCA\Portaliq\Service\PortalResolver::class),
+			new MandateParties()
 		);
 
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->given()->getStatus());

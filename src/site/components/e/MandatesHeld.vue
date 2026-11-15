@@ -80,6 +80,7 @@ import ActingForSwitcher from './ActingForSwitcher.vue'
 import { mandatesApi } from '../../../shared/areaApi.js'
 import { ACTING_FOR_SELF } from '../../../shared/myCases.js'
 import { longDate, readerLocale } from '../../pages/e/format.js'
+import { organisationKind } from '../mijn/organisationKind.js'
 import { actingFor, chooseActingFor } from './actingFor.js'
 import { endText, scopeText } from './mandates.js'
 
@@ -87,6 +88,10 @@ export default {
 	name: 'MandatesHeld',
 
 	components: { ActingForSwitcher },
+
+	// The portal's organisation type label, from the site shell (App.vue);
+	// none reads "de organisatie" (portal-identity-from-the-admin REQ-PIA-003).
+	inject: { siteOrganisationType: { default: () => () => '' } },
 
 	props: {
 		/** The portal API adapter (`createPortalApi` shape). */
@@ -139,7 +144,8 @@ export default {
 		},
 
 		/**
-		 * "All cases · given on 12 September 2026 · no end date".
+		 * "All cases · given by het waterschap on 12 September 2026 · no end date".
+		 * The organisation is named by the portal's type (REQ-PIA-003).
 		 *
 		 * @param {object} mandate The mandate.
 		 * @return {string}
@@ -147,15 +153,29 @@ export default {
 		 */
 		line(mandate) {
 			const format = (value) => longDate(value, readerLocale(this.locale))
+			const vars = {
+				party: this.partyOf(mandate),
+				date: mandate.grantedAt ? format(mandate.grantedAt) : '',
+				organisation: organisationKind(
+					typeof this.siteOrganisationType === 'function'
+						? this.siteOrganisationType()
+						: '',
+					readerLocale(this.locale),
+				),
+			}
+			let given = this.t('given by {organisation}', vars)
+			if (mandate.givenBy === 'party') {
+				given = vars.date
+					? this.t('given by {party} on {date}', vars)
+					: this.t('given by {party}', vars)
+			} else if (vars.date) {
+				given = this.t('given by {organisation} on {date}', vars)
+			}
 			const parts = [
 				mandate.label
 					|| scopeText(mandate.caseTypes, this.caseTypes, this.t),
+				given,
 			]
-			if (mandate.grantedAt) {
-				parts.push(
-					this.t('given on {date}', { date: format(mandate.grantedAt) }),
-				)
-			}
 			parts.push(endText(mandate.expiresAt, format, this.t))
 			return parts.join(' · ')
 		},

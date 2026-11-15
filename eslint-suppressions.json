@@ -1,7 +1,1 @@
-{
-  "src/shared/portalApi.js": {
-    "no-unused-vars": {
-      "count": 5
-    }
-  }
-}
+{}

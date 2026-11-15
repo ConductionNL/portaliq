@@ -57,6 +57,13 @@ class PortalIntakeControllerTest extends TestCase {
 	private bool $forbidSubmit = false;
 
 	/**
+	 * The register lookup and the audit trail behind the desk staff mode.
+	 *
+	 * @var array<string, mixed>
+	 */
+	private array $deskDoubles = [];
+
+	/**
 	 * A refused submit stores nothing: OpenRegister's submit service was never asked.
 	 *
 	 * @return void
@@ -128,6 +135,39 @@ class PortalIntakeControllerTest extends TestCase {
 
 	}//end testAnUnsolvedChallengeStopsTheSubmissionBeforeValidation()
 
+	public function testASubmitToAnUnknownPortalIsNotFound(): void {
+		$controller = $this->controller(render: $this->hostedForm(), site: null);
+		$this->forbidSubmit = true;
+
+		$response = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB']);
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+		$this->assertSame(['error' => 'portal_not_found'], $response->getData());
+
+	}//end testASubmitToAnUnknownPortalIsNotFound()
+
+	public function testASolvedChallengeIsCheckedWithWhatWasSentAndTheSubmissionProceeds(): void {
+		$render = $this->hostedForm();
+		$render['settings']['challenge'] = true;
+		$controller = $this->controller(render: $render);
+		$this->doubles['challenge']->expects($this->once())->method('accepts')->with(
+			['slug' => 'gemeente-x', 'organisation' => 'gemeente-x'],
+			'form',
+			['postcode' => '1234 AB'],
+			'nonce-1',
+			'solved',
+			1700000000,
+			'sig-1'
+		)->willReturn(true);
+
+		$data = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB'], nonce: 'nonce-1', solution: 'solved', expiresAt: 1700000000, signature: 'sig-1')->getData();
+
+		$this->assertSame('2026-0042', $data['reference']);
+		$this->assertSame('u-1', $data['id']);
+		$this->assertCount(1, $this->submit->calls);
+
+	}//end testASolvedChallengeIsCheckedWithWhatWasSentAndTheSubmissionProceeds()
+
 	public function testAnUnknownRouteIsNotAForm(): void {
 		$controller = $this->controller(render: $this->hostedForm(), binding: null);
 
@@ -139,11 +179,13 @@ class PortalIntakeControllerTest extends TestCase {
 	public function testTheRenderCarriesThePrefillAndTheFormsFields(): void {
 		$controller = $this->controller(render: $this->hostedForm());
 		$this->doubles['prefill']->method('forSubject')->willReturn(['applicantName' => 'Ans de Vries']);
+		$this->doubles['prefill']->method('yiviRequest')->willReturn(['pbdf.gemeente.personalData.fullname']);
 
 		$data = $controller->form(route: 'aanvragen/verhuizing')->getData();
 
 		$this->assertSame(['postcode'], array_column($data['fields'], 'name'));
 		$this->assertSame(['applicantName' => 'Ans de Vries'], $data['prefill']);
+		$this->assertSame(['pbdf.gemeente.personalData.fullname'], $data['yiviAttributes']);
 
 	}//end testTheRenderCarriesThePrefillAndTheFormsFields()
 
@@ -347,6 +389,8 @@ class PortalIntakeControllerTest extends TestCase {
 	 * @param array<string, mixed>|null $binding The binding found, or null.
 	 * @param array<string, mixed>|null $subject The signed-in subject, or null.
 	 * @param array<string, mixed> $site The portal resolved.
+	 * @param \OCA\Portaliq\Service\Intake\PortalFormAvailability|null $availability Whether the form is open.
+	 * @param \OCA\Portaliq\Service\Intake\OnBehalfFilling|null $onBehalf The desk employee filling the form in.
 	 *
 	 * @return PortalIntakeController
 	 */
@@ -354,7 +398,7 @@ class PortalIntakeControllerTest extends TestCase {
 		array $render,
 		?array $binding = ['portal' => 'gemeente-x', 'route' => 'aanvragen/verhuizing', 'destination' => ['register' => 'dossiq', 'schema' => 'case', 'subjectField' => 'portalSubject']],
 		?array $subject = null,
-		array $site = ['slug' => 'gemeente-x', 'organisation' => 'gemeente-x'],
+		?array $site = ['slug' => 'gemeente-x', 'organisation' => 'gemeente-x'],
 		?\OCA\Portaliq\Service\Intake\PortalAddressLookup $addresses = null,
 		?\OCA\Portaliq\Service\Intake\PortalFamilyMembers $family = null,
 		?\OCA\Portaliq\Service\Intake\FormStatements $statements = null,
@@ -362,6 +406,9 @@ class PortalIntakeControllerTest extends TestCase {
 		?\OCA\Portaliq\Service\Intake\PortalFormCalculator $calculator = null,
 		?\OCA\Portaliq\Service\Intake\PortalFormDecision $decision = null,
 		array $pay = [],
+		?\OCA\Portaliq\Service\Intake\PortalFormAvailability $availability = null,
+		?\OCA\Portaliq\Service\Intake\OnBehalfFilling $onBehalf = null,
+		?\OCA\Portaliq\Service\Intake\PortalCosignFlow $cosign = null,
 	): PortalIntakeController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('');
@@ -382,7 +429,7 @@ class PortalIntakeControllerTest extends TestCase {
 		$this->doubles = [
 			'portals' => $portals,
 			'queue' => $this->double(PortalIntakeQueue::class, ['status']),
-			'prefill' => $this->double(PortalApplicantPrefill::class, ['forSubject']),
+			'prefill' => $this->double(PortalApplicantPrefill::class, ['forSubject', 'yiviRequest']),
 			'challenge' => $this->double(PortalChallengeService::class, ['issue', 'accepts']),
 			'catalogue' => $this->double(PortalCatalogueReader::class, ['topicsFor']),
 		];
@@ -395,7 +442,7 @@ class PortalIntakeControllerTest extends TestCase {
 			'objects' => [],
 		]);
 		$schemas = $this->createMock(PortalSchemaReader::class);
-		$schemas->method('readSchema')->willReturn(['properties' => array_fill_keys(['postcode', 'mail', 'startdatum', 'einddatum', 'soortVergunning', 'statements', 'decisions', 'verifiedEmails', 'fieldMeta', 'portalSubject', 'externalReference'], ['type' => 'string'])]);
+		$schemas->method('readSchema')->willReturn(['properties' => array_fill_keys(['postcode', 'mail', 'startdatum', 'einddatum', 'soortVergunning', 'statements', 'decisions', 'verifiedEmails', 'fieldMeta', 'portalSubject', 'externalReference', 'filledBy', 'applicant'], ['type' => 'string'])]);
 		$intake = new DestinationIntake(
 			submitter: new DestinationSubmit($this->submit->container(), $this->createMock(LoggerInterface::class)),
 			mapping: new DestinationMapping(),
@@ -425,9 +472,205 @@ class PortalIntakeControllerTest extends TestCase {
 			deepLinks: null,
 			emailVerification: $pay['verification'] ?? null,
 			intake: $intake,
-			lookup: $this->doubles['lookup']
+			lookup: $this->doubles['lookup'],
+			destinationMapping: new DestinationMapping(),
+			availability: $availability,
+			onBehalf: $onBehalf,
+			cosign: $cosign
 		);
 	}//end controller()
+
+	/**
+	 * The desk staff mode, built on doubles of the group manager, the user
+	 * manager, the register lookup and the audit trail.
+	 *
+	 * @param bool $inGroup Whether the user is in the desk group.
+	 *
+	 * @return \OCA\Portaliq\Service\Intake\OnBehalfFilling
+	 */
+	private function onBehalf(bool $inGroup = true): \OCA\Portaliq\Service\Intake\OnBehalfFilling {
+		$groups = $this->createMock(\OCP\IGroupManager::class);
+		$groups->method('isInGroup')->willReturnCallback(static fn (string $uid, string $group): bool => $inGroup && $uid === 'balie1' && $group === 'balie');
+		$user = $this->createMock(\OCP\IUser::class);
+		$user->method('getDisplayName')->willReturn('Bart Balie');
+		$users = $this->createMock(\OCP\IUserManager::class);
+		$users->method('get')->willReturn($user);
+		$this->deskDoubles['details'] = $this->createMock(\OCA\Portaliq\Kernel\Contracts\PortalRegisteredDetailsServiceInterface::class);
+		$this->deskDoubles['audit'] = $this->createMock(\OCA\Portaliq\Service\AuditTrailService::class);
+
+		return new \OCA\Portaliq\Service\Intake\OnBehalfFilling(
+			groups: $groups,
+			users: $users,
+			details: $this->deskDoubles['details'],
+			audit: $this->deskDoubles['audit']
+		);
+	}//end onBehalf()
+
+	/**
+	 * The binding and portal of a form that allows staff on a portal with a desk group.
+	 *
+	 * @return array{binding: array<string, mixed>, site: array<string, mixed>, subject: array<string, mixed>}
+	 */
+	private static function deskSetting(): array {
+		return [
+			'binding' => ['portal' => 'gemeente-x', 'route' => 'aanvragen/verhuizing', 'staffMayFill' => true, 'destination' => ['register' => 'dossiq', 'schema' => 'case', 'subjectField' => 'portalSubject']],
+			'site' => ['slug' => 'gemeente-x', 'organisation' => 'gemeente-x', 'authentication' => ['deskGroup' => 'balie']],
+			'subject' => ['subjectRef' => 'balie1', 'trust' => 'low', 'provider' => 'desk'],
+		];
+	}//end deskSetting()
+
+	/**
+	 * resident-identity-in-forms REQ-RIF-005 "At the desk": an employee's
+	 * submission names the resident as applicant and the employee as
+	 * filledBy, without the resident's subject, past the form's DigiD level.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-an-employee-can-fill-in-a-form-for-a-resident-or-company-req-rif-005
+	 */
+	public function testAnEmployeeSendsTheFormForAResidentAndBothAreRecorded(): void {
+		$desk = self::deskSetting();
+		$controller = $this->controller(
+			render: $this->hostedForm() + ['minTrust' => 'substantial'],
+			binding: $desk['binding'],
+			subject: $desk['subject'],
+			site: $desk['site'],
+			onBehalf: $this->onBehalf()
+		);
+
+		$data = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB'], onBehalf: ['kind' => 'bsn', 'value' => '999993653'])->getData();
+
+		$this->assertSame('2026-0042', $data['reference']);
+		$fixed = $this->submit->calls[0]['mapping']['fixed'];
+		$this->assertSame(['uid' => 'balie1', 'displayName' => 'Bart Balie'], $fixed['filledBy']);
+		$this->assertSame(['kind' => 'bsn', 'value' => '999993653'], $fixed['applicant']);
+		// The employee is not the subject of the case.
+		$this->assertArrayNotHasKey('portalSubject', $fixed);
+	}//end testAnEmployeeSendsTheFormForAResidentAndBothAreRecorded()
+
+	/**
+	 * REQ-RIF-005 "Not in the desk group": a desk session of a user taken out
+	 * of the desk group is refused, on the form and on the submit.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-an-employee-can-fill-in-a-form-for-a-resident-or-company-req-rif-005
+	 */
+	public function testADeskSessionOutsideTheDeskGroupIsRefused(): void {
+		$desk = self::deskSetting();
+		$controller = $this->controller(render: $this->hostedForm(), binding: $desk['binding'], subject: $desk['subject'], site: $desk['site'], onBehalf: $this->onBehalf(inGroup: false));
+		$this->forbidSubmit = true;
+
+		$submit = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB'], onBehalf: ['kind' => 'bsn', 'value' => '999993653']);
+		$form = $controller->form(route: 'aanvragen/verhuizing');
+
+		$this->assertSame([Http::STATUS_FORBIDDEN, ['error' => 'staff_mode_refused']], [$submit->getStatus(), $submit->getData()]);
+		$this->assertSame([Http::STATUS_FORBIDDEN, ['error' => 'staff_mode_refused']], [$form->getStatus(), $form->getData()]);
+	}//end testADeskSessionOutsideTheDeskGroupIsRefused()
+
+	/**
+	 * A form that does not allow staff refuses a desk session, even of a user in the desk group.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-an-employee-can-fill-in-a-form-for-a-resident-or-company-req-rif-005
+	 */
+	public function testAFormThatDoesNotAllowStaffRefusesADeskSession(): void {
+		$desk = self::deskSetting();
+		$desk['binding']['staffMayFill'] = false;
+		$controller = $this->controller(render: $this->hostedForm(), binding: $desk['binding'], subject: $desk['subject'], site: $desk['site'], onBehalf: $this->onBehalf());
+		$this->forbidSubmit = true;
+
+		$response = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB'], onBehalf: ['kind' => 'bsn', 'value' => '999993653']);
+
+		$this->assertSame(['error' => 'staff_mode_refused'], $response->getData());
+	}//end testAFormThatDoesNotAllowStaffRefusesADeskSession()
+
+	/**
+	 * A resident who names an applicant is refused, not quietly treated as staff;
+	 * an employee who names no valid applicant is refused too.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-an-employee-can-fill-in-a-form-for-a-resident-or-company-req-rif-005
+	 */
+	public function testOnlyAnEmployeeNamesAnApplicantAndOnlyAValidOne(): void {
+		$desk = self::deskSetting();
+		$resident = $this->controller(render: $this->hostedForm(), binding: $desk['binding'], subject: ['subjectRef' => 'bsn:999993653', 'trust' => 'substantial', 'provider' => 'digid'], site: $desk['site'], onBehalf: $this->onBehalf());
+		$this->forbidSubmit = true;
+
+		$asResident = $resident->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB'], onBehalf: ['kind' => 'bsn', 'value' => '999993653']);
+
+		$employee = $this->controller(render: $this->hostedForm(), binding: $desk['binding'], subject: $desk['subject'], site: $desk['site'], onBehalf: $this->onBehalf());
+		$badBsn = $employee->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB'], onBehalf: ['kind' => 'bsn', 'value' => '123456789']);
+		$none = $employee->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB']);
+
+		$this->assertSame([Http::STATUS_FORBIDDEN, 'staff_mode_refused'], [$asResident->getStatus(), $asResident->getData()['error']]);
+		$this->assertSame([Http::STATUS_BAD_REQUEST, 'invalid_applicant'], [$badBsn->getStatus(), $badBsn->getData()['error']]);
+		$this->assertSame([Http::STATUS_BAD_REQUEST, 'invalid_applicant'], [$none->getStatus(), $none->getData()['error']]);
+	}//end testOnlyAnEmployeeNamesAnApplicantAndOnlyAValidOne()
+
+	/**
+	 * The employee's form render carries the employee and no prefill from
+	 * their own account; the lookup route prefills from the BRP and writes
+	 * the audit line with the employee and the BSN.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-an-employee-can-fill-in-a-form-for-a-resident-or-company-req-rif-005
+	 */
+	public function testTheEmployeeLooksTheResidentUpAndTheLookupIsAudited(): void {
+		$desk = self::deskSetting();
+		$render = $this->hostedForm();
+		$render['fields'][] = ['name' => 'applicantName'];
+		$controller = $this->controller(render: $render, binding: $desk['binding'], subject: $desk['subject'], site: $desk['site'], onBehalf: $this->onBehalf());
+		$this->doubles['prefill']->expects($this->never())->method('forSubject');
+		$this->deskDoubles['details']->expects($this->once())->method('forBsn')->with('999993653')
+			->willReturn(['available' => true, 'kind' => 'person', 'person' => ['name' => 'Sanne de Vries', 'address' => ['postcode' => '1234 AB']]]);
+		$this->deskDoubles['audit']->expects($this->once())->method('record')->with(
+			'desk.lookup',
+			'balie1',
+			'gemeente-x',
+			'brp',
+			'bsn',
+			'',
+			'',
+			\OCA\Portaliq\Kernel\AppIdentity::APP_ID,
+			['employee' => 'balie1', 'kind' => 'bsn', 'value' => '999993653']
+		);
+
+		$form = $controller->form(route: 'aanvragen/verhuizing')->getData();
+		$found = $controller->onBehalf(route: 'aanvragen/verhuizing', kind: 'bsn', value: '999993653')->getData();
+
+		$this->assertSame(['uid' => 'balie1', 'displayName' => 'Bart Balie'], $form['staff']);
+		$this->assertSame([], $form['prefill']);
+		$this->assertTrue($found['available']);
+		$this->assertSame(['applicantName' => 'Sanne de Vries'], $found['prefill']);
+		$this->assertSame(['kind' => 'bsn', 'value' => '999993653'], $found['applicant']);
+	}//end testTheEmployeeLooksTheResidentUpAndTheLookupIsAudited()
+
+	/**
+	 * The lookup route answers only a desk session: a resident gets 403 and no lookup happens.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-an-employee-can-fill-in-a-form-for-a-resident-or-company-req-rif-005
+	 */
+	/**
+	 * The sign-in refusal tells the page what to show beside the choice: the
+	 * Yivi attributes the form asks for and whether staff may fill it in.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-resident-can-sign-in-with-yivi-and-share-only-what-the-form-asks-req-rif-004
+	 */
+	public function testTheSignInRefusalNamesTheYiviAttributesAndTheStaffMode(): void {
+		$desk = self::deskSetting();
+		$controller = $this->controller(render: $this->hostedForm() + ['minTrust' => 'substantial'], binding: $desk['binding'], site: $desk['site']);
+		$this->doubles['prefill']->method('yiviRequest')->willReturn(['pbdf.gemeente.personalData.fullname']);
+
+		$data = $controller->form(route: 'aanvragen/verhuizing')->getData();
+
+		$this->assertSame(['pbdf.gemeente.personalData.fullname'], $data['yiviAttributes']);
+		$this->assertTrue($data['staffMayFill']);
+	}//end testTheSignInRefusalNamesTheYiviAttributesAndTheStaffMode()
+
+	public function testTheLookupRouteRefusesAnyoneButAnEmployee(): void {
+		$desk = self::deskSetting();
+		$controller = $this->controller(render: $this->hostedForm(), binding: $desk['binding'], subject: ['subjectRef' => 'bsn:999993653', 'trust' => 'substantial'], site: $desk['site'], onBehalf: $this->onBehalf());
+		$this->deskDoubles['details']->expects($this->never())->method('forBsn');
+		$this->deskDoubles['audit']->expects($this->never())->method('record');
+
+		$response = $controller->onBehalf(route: 'aanvragen/verhuizing', kind: 'bsn', value: '999993653');
+
+		$this->assertSame([Http::STATUS_FORBIDDEN, ['error' => 'staff_mode_refused']], [$response->getStatus(), $response->getData()]);
+	}//end testTheLookupRouteRefusesAnyoneButAnEmployee()
 
 	/**
 	 * data-lookups-and-checks-in-forms T01: the address route answers street
@@ -466,6 +709,32 @@ class PortalIntakeControllerTest extends TestCase {
 		$this->assertSame('Henk', $ok->getData()['members'][0]['name']);
 		$this->assertSame(Http::STATUS_NOT_FOUND, $this->controller(render: [], subject: $subject)->family()->getStatus());
 	}//end testTheFamilyRouteNeedsASessionAndOffersOnlyWhatTheBrpBacks()
+
+	/**
+	 * `sameAddressOnly` absent or true asks for the members at the resident's
+	 * address, anything the framework casts to false asks for all of them;
+	 * a BRP that cannot answer is 404.
+	 *
+	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t04
+	 */
+	public function testTheFamilyRouteReadsSameAddressOnlyAsABoundBool(): void {
+		$family = $this->double(\OCA\Portaliq\Service\Intake\PortalFamilyMembers::class, ['forSubject', 'allForSubject']);
+		$family->method('forSubject')->willReturnCallback(static fn (string $subjectRef): array => [['ref' => 'same-' . $subjectRef]]);
+		$family->method('allForSubject')->willReturnCallback(static fn (string $subjectRef): array => [['ref' => 'all-' . $subjectRef]]);
+
+		foreach ([[null, 'same'], ['true', 'same'], ['1', 'same'], ['yes', 'same'], ['false', 'all'], ['0', 'all'], ['', 'all']] as [$raw, $which]) {
+			$controller = $this->controller(render: [], subject: ['subjectRef' => 'sub-1'], family: $family);
+			$request    = $this->createMock(IRequest::class);
+			$request->method('getParam')->willReturnCallback(static fn (string $key): mixed => ($key === 'sameAddressOnly' ? $raw : null));
+			(new \ReflectionProperty(\OCP\AppFramework\Controller::class, 'request'))->setValue($controller, $request);
+
+			$this->assertSame(['members' => [['ref' => $which . '-sub-1']]], $controller->family()->getData(), var_export($raw, true));
+		}
+
+		$unanswered = $this->double(\OCA\Portaliq\Service\Intake\PortalFamilyMembers::class, ['forSubject']);
+		$unanswered->method('forSubject')->willReturn(null);
+		$this->assertSame(Http::STATUS_NOT_FOUND, $this->controller(render: [], subject: ['subjectRef' => 'sub-1'], family: $unanswered)->family()->getStatus());
+	}//end testTheFamilyRouteReadsSameAddressOnlyAsABoundBool()
 
 	/**
 	 * A forged family reference stops the submission before anything is recorded.
@@ -781,7 +1050,7 @@ class PortalIntakeControllerTest extends TestCase {
 	 * @return array<string, mixed>
 	 */
 	private function declaredFee(): array {
-		return ['amount' => '45.00', 'currency' => 'EUR', 'description' => 'Parkeervergunning', 'payAction' => 'create-payment'];
+		return ['amount' => '38.50', 'currency' => 'EUR', 'description' => 'Parkeervergunning', 'payAction' => 'create-payment'];
 	}//end declaredFee()
 
 	/**
@@ -824,7 +1093,7 @@ class PortalIntakeControllerTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame(['checkoutUrl' => 'https://www.mollie.com/checkout/abc'], $response->getData());
-		$this->assertSame('45.00', $sent['amount']);
+		$this->assertSame(expected: '38.50', actual: $sent['amount']);
 		$this->assertSame('EUR', $sent['currency']);
 		$this->assertSame('2026-0042', $sent['reference']);
 		$this->assertStringContainsString('reference=2026-0042', $sent['returnUrl']);
@@ -1026,4 +1295,114 @@ class PortalIntakeControllerTest extends TestCase {
 			->getMock();
 	}//end double()
 
+	/**
+	 * A form in maintenance shows that situation instead of the form, and a
+	 * submission to it is refused with nothing written; an open form goes on.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-a-form-opens-and-closes-on-set-dates-and-after-a-set-number-of-submissions-req-fgv-001
+	 */
+	public function testAnUnavailableFormShowsItsSituationAndRefusesSubmissions(): void {
+		$situation    = ['situation' => 'maintenance', 'from' => '2026-10-09T18:00', 'until' => '2026-10-09T22:00', 'text' => ''];
+		$availability = $this->createMock(\OCA\Portaliq\Service\Intake\PortalFormAvailability::class);
+		$availability->method('unavailable')->willReturn($situation);
+		$controller = $this->controller(render: $this->hostedForm(), availability: $availability);
+
+		$form = $controller->form(route: 'aanvragen/verhuizing');
+		$this->assertSame(Http::STATUS_OK, $form->getStatus());
+		$this->assertSame(
+			['kind' => 'hosted', 'resolvesToNoForm' => true, 'reason' => 'unavailable', 'unavailable' => $situation, 'fields' => []],
+			$form->getData()
+		);
+
+		$submit = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB']);
+		$this->assertSame(Http::STATUS_CONFLICT, $submit->getStatus());
+		$this->assertSame(['error' => 'form_unavailable', 'unavailable' => $situation], $submit->getData());
+		$this->assertSame([], $this->submit->calls);
+
+		$open = $this->createMock(\OCA\Portaliq\Service\Intake\PortalFormAvailability::class);
+		$open->method('unavailable')->willReturn(null);
+		$controller = $this->controller(render: $this->hostedForm(), availability: $open);
+		$this->assertSame(Http::STATUS_OK, $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB'])->getStatus());
+		$this->assertCount(1, $this->submit->calls);
+	}//end testAnUnavailableFormShowsItsSituationAndRefusesSubmissions()
+	/**
+	 * resident-identity-in-forms REQ-RIF-003: a form that needs a co-signer
+	 * holds the submission instead of delivering it, and answers the
+	 * reference and the waiting line; a missing co-signer address is the
+	 * field's error and a store that records nothing is a 503.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 */
+	public function testACoSignedFormIsHeldInsteadOfDelivered(): void {
+		$render = $this->hostedForm();
+		$render['fields'][] = ['name' => 'partner', 'type' => 'email', 'cosigner' => true];
+		$flow = $this->createMock(\OCA\Portaliq\Service\Intake\PortalCosignFlow::class);
+		$flow->method('required')->willReturn(true);
+		$flow->expects($this->once())
+			->method('holdAtSubmit')
+			->with(
+				['slug' => 'gemeente-x', 'organisation' => 'gemeente-x'],
+				$this->anything(),
+				$this->anything(),
+				$this->callback(static fn (\OCA\Portaliq\Service\Intake\QueuedSubmission $held): bool => $held->portal === 'gemeente-x'
+					&& $held->route === 'aanvragen/verhuizing'
+					&& $held->answers === ['postcode' => '1234 AB', 'partner' => 'henk@example.nl']
+					&& $held->subjectRef === 'bsn-sanne')
+			)
+			->willReturn(['ok' => true, 'reference' => 'AANVRAAG-1', 'state' => 'awaiting-cosign', 'cosign' => ['state' => 'awaiting', 'name' => 'Henk', 'deadline' => '2026-10-22T10:00:00+00:00'], 'invited' => true]);
+		$controller = $this->controller(render: $render, subject: ['subjectRef' => 'bsn-sanne', 'trust' => 'substantial'], cosign: $flow);
+		$this->forbidSubmit = true;
+
+		$response = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB', 'partner' => 'henk@example.nl']);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(
+			[
+				'reference' => 'AANVRAAG-1',
+				'state' => 'awaiting-cosign',
+				'cosign' => ['state' => 'awaiting', 'name' => 'Henk', 'deadline' => '2026-10-22T10:00:00+00:00'],
+				'confirmationText' => 'Bedankt, u hoort van ons.',
+				'confirmation' => null,
+				'mailedTo' => '',
+			],
+			$response->getData()
+		);
+	}//end testACoSignedFormIsHeldInsteadOfDelivered()
+
+	/**
+	 * A held submission without a co-signer address, or one nothing recorded, is refused and not delivered.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 */
+	public function testAHoldThatFailsIsRefusedAndNotDelivered(): void {
+		$flow = $this->createMock(\OCA\Portaliq\Service\Intake\PortalCosignFlow::class);
+		$flow->method('required')->willReturn(true);
+		$flow->method('holdAtSubmit')->willReturnOnConsecutiveCalls(['ok' => false, 'errors' => ['partner' => 'Fill it in.']], ['ok' => false]);
+		$controller = $this->controller(render: $this->hostedForm(), cosign: $flow);
+		$this->forbidSubmit = true;
+
+		$missing = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB']);
+		$down    = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB']);
+
+		$this->assertSame([Http::STATUS_BAD_REQUEST, ['errors' => ['partner' => 'Fill it in.']]], [$missing->getStatus(), $missing->getData()]);
+		$this->assertSame([Http::STATUS_SERVICE_UNAVAILABLE, ['error' => 'cosign_unavailable']], [$down->getStatus(), $down->getData()]);
+	}//end testAHoldThatFailsIsRefusedAndNotDelivered()
+
+	/**
+	 * A form that needs no co-signer is delivered as before.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 */
+	public function testAFormWithoutCoSigningIsDelivered(): void {
+		$flow = $this->createMock(\OCA\Portaliq\Service\Intake\PortalCosignFlow::class);
+		$flow->method('required')->willReturn(false);
+		$flow->expects($this->never())->method('holdAtSubmit');
+
+		$data = $this->controller(render: $this->hostedForm(), cosign: $flow)->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB'])->getData();
+
+		$this->assertSame(['2026-0042', 'registered'], [$data['reference'], $data['state']]);
+		$this->assertCount(1, $this->submit->calls);
+	}//end testAFormWithoutCoSigningIsDelivered()
 }//end class
