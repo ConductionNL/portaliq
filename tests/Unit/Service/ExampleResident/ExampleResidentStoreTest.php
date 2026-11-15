@@ -15,6 +15,9 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Updating and deleting an example resident's rows: a merge over the stored
@@ -66,11 +69,16 @@ class ExampleResidentStoreTest extends TestCase {
 			public function __construct(private ?array $row, private ?\Throwable $fails, private mixed $deletes) {
 			}
 
-			public function find(string $id, string $register, string $schema, bool $_rbac, bool $_multitenancy): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return $this->row;
 			}
 
-			public function saveObject(array $object, string $register, string $schema, string $uuid, bool $_rbac, bool $_multitenancy): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				if ($this->fails !== null) {
 					throw $this->fails;
 				}
@@ -79,7 +87,10 @@ class ExampleResidentStoreTest extends TestCase {
 				return $object;
 			}
 
-			public function deleteObject(string $uuid, string $register, string $schema, bool $_rbac, bool $_multitenancy): mixed {
+			public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): mixed {
+				$uuid = $deletion->uuid;
+				$register = $deletion->target->register;
+				$schema = $deletion->target->schema;
 				if ($this->fails !== null) {
 					throw $this->fails;
 				}

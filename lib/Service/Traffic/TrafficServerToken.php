@@ -20,6 +20,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\Kernel\Contracts\TrafficServerTokenInterface;
 use OCA\Portaliq\Service\PortalBySlug;
 use OCA\Portaliq\Service\PortalRegisterContext;
@@ -194,9 +196,10 @@ class TrafficServerToken implements TrafficServerTokenInterface {
 
 			$objectService->saveObject(
 				object: $record,
-				register: TrafficEventStore::REGISTER,
-				schema: 'portal',
-				uuid: $uuid,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: TrafficEventStore::REGISTER, schema: 'portal'),
+					uuid: $uuid
+				),
 				_rbac: false,
 				_multitenancy: false
 			);
