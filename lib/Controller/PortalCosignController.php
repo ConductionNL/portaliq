@@ -29,10 +29,10 @@ namespace OCA\Portaliq\Controller;
 use DateTimeImmutable;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalCosignInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Kernel\Support\SessionTrust;
-use OCA\Portaliq\Service\Intake\PortalCosign;
 use OCA\Portaliq\Service\Intake\PortalCosignFlow;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -72,14 +72,14 @@ class PortalCosignController extends Controller implements PortalProtected {
 	 * @param IRequest                      $request The request.
 	 * @param PortalResolverInterface       $portals Resolves the portal being visited.
 	 * @param PortalSessionServiceInterface $session Reads the co-signer's session.
-	 * @param PortalCosign                  $cosign  Opens and signs.
+	 * @param PortalCosignInterface         $cosign  Opens and signs.
 	 * @param PortalCosignFlow              $flow    Refuses and tells the submitter.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalResolverInterface $portals,
 		private readonly PortalSessionServiceInterface $session,
-		private readonly PortalCosign $cosign,
+		private readonly PortalCosignInterface $cosign,
 		private readonly PortalCosignFlow $flow,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
@@ -138,7 +138,7 @@ class PortalCosignController extends Controller implements PortalProtected {
 			now: new DateTimeImmutable()
 		);
 
-		return $this->answered(result: $signed, state: PortalCosign::SIGNED);
+		return $this->answered(result: $signed, state: PortalCosignInterface::SIGNED);
 	}//end sign()
 
 	/**
@@ -162,7 +162,7 @@ class PortalCosignController extends Controller implements PortalProtected {
 
 		$refused = $this->flow->refuse(site: $checked['site'], code: $code, subjectRef: $checked['subjectRef'], now: new DateTimeImmutable());
 
-		return $this->answered(result: $refused, state: PortalCosign::REFUSED);
+		return $this->answered(result: $refused, state: PortalCosignInterface::REFUSED);
 	}//end refuse()
 
 	/**

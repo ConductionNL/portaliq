@@ -48,6 +48,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\AccessibilityFramingInterface;
+use OCA\Portaliq\Kernel\Contracts\PlainPageRendererInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalNoticeReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalRuntimeConfigResolverInterface;
@@ -55,7 +56,6 @@ use OCA\Portaliq\Kernel\Contracts\PortalThemeResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\SiteHeadInterface;
 use OCA\Portaliq\Service\SiteShell;
 use OCA\Portaliq\Service\Cms\PlainAddress;
-use OCA\Portaliq\Service\Cms\PlainPageRenderer;
 use OCA\Portaliq\Service\Cms\SiteIcon;
 use OCA\Portaliq\Kernel\Contracts\SiteOrganisationInterface;
 use OCP\AppFramework\Controller;
@@ -110,7 +110,7 @@ class PortalPageController extends Controller {
 	 * @param PortalNoticeReaderInterface $notices The notices running on the signed-in surface now.
 	 * @param AccessibilityFramingInterface $framing Whether the accessibility measurement may frame this request.
 	 * @param SiteIcon|null $siteIcon The portal's own tab icon.
-	 * @param PlainPageRenderer|null $plainPage The plain version of a page (site-honest-without-javascript).
+	 * @param PlainPageRendererInterface|null $plainPage The plain version of a page (site-honest-without-javascript).
 	 * @param SiteOrganisationInterface|null $siteOrganisation Names the portal's organisation in the head.
 	 */
 	public function __construct(
@@ -123,7 +123,7 @@ class PortalPageController extends Controller {
 		PortalNoticeReaderInterface $notices,
 		private readonly AccessibilityFramingInterface $framing,
 		?SiteIcon $siteIcon=null,
-		private readonly ?PlainPageRenderer $plainPage=null,
+		private readonly ?PlainPageRendererInterface $plainPage=null,
 		?SiteOrganisationInterface $siteOrganisation=null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);

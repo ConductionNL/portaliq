@@ -31,6 +31,7 @@ namespace OCA\Portaliq\Service\Articles;
 
 use DateTimeInterface;
 use OCA\Portaliq\Event\ArticleUsagesRequestedEvent;
+use OCA\Portaliq\Kernel\Contracts\ArticleServiceInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\EventDispatcher\IEventDispatcher;
 use Psr\Log\LoggerInterface;
@@ -44,7 +45,7 @@ use Throwable;
  * @SuppressWarnings(PHPMD.TooManyMethods) The private slug, identity and
  * lifecycle helpers back one surface; splitting them would only relocate them.
  */
-class ArticleService {
+class ArticleService implements ArticleServiceInterface {
 
 	/**
 	 * The statuses an article may hold, as the schema's enum.
@@ -82,11 +83,6 @@ class ArticleService {
 	 * @var array<int, string>
 	 */
 	private const WRITABLE_LISTS = ['links', 'tags'];
-
-	/**
-	 * The error a missing article answers with.
-	 */
-	public const NOT_FOUND = 'not_found';
 
 	/**
 	 * Constructor.
