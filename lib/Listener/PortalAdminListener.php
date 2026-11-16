@@ -32,9 +32,9 @@ use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalAdminWriteGateInterface;
 use OCA\Portaliq\Service\Tenancy\PortalAdminGrants;
 use OCA\Portaliq\Service\Tenancy\PortalAdminScope;
-use OCA\Portaliq\Service\Tenancy\PortalAdminWriteGate;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Container\ContainerInterface;
@@ -63,14 +63,14 @@ class PortalAdminListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param ContainerInterface   $container Resolves OpenRegister's schema mapper.
-	 * @param PortalAdminWriteGate $gate      Refuses a write outside the user's portal.
-	 * @param PortalAdminGrants    $grants    Writes a portal's groups into the rules.
-	 * @param LoggerInterface      $logger    Notes a schema lookup that failed.
+	 * @param ContainerInterface            $container Resolves OpenRegister's schema mapper.
+	 * @param PortalAdminWriteGateInterface $gate      Refuses a write outside the user's portal.
+	 * @param PortalAdminGrants             $grants    Writes a portal's groups into the rules.
+	 * @param LoggerInterface               $logger    Notes a schema lookup that failed.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
-		private readonly PortalAdminWriteGate $gate,
+		private readonly PortalAdminWriteGateInterface $gate,
 		private readonly PortalAdminGrants $grants,
 		private readonly LoggerInterface $logger,
 	) {

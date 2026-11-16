@@ -29,6 +29,7 @@ namespace OCA\Portaliq\Service\Intake;
 
 use DateTimeImmutable;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\Portaliq\Kernel\Contracts\FormBindingCounterInterface;
 use Psr\Container\ContainerInterface;
 use Throwable;
 
@@ -37,7 +38,7 @@ use Throwable;
  *
  * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#scenario-the-admin-sees-the-counter
  */
-class FormBindingCounter {
+class FormBindingCounter implements FormBindingCounterInterface {
 
 	/**
 	 * OpenRegister's object service.
