@@ -314,6 +314,8 @@ OC.L10N.register(
         "Load a small example dataset so the lists, detail pages and dashboards show a working product straight away. The data is obviously sample data, it is safe to run more than once, and it can be removed afterwards. Skip this on a production install.": "Laad een kleine voorbeeldset zodat de lijsten, detailpagina's en dashboards meteen een werkend product laten zien. De data is duidelijk voorbeelddata, veilig om meerdere keren uit te voeren en achteraf te verwijderen. Sla dit over op een productie-installatie.",
         "Locale": "Taalinstelling",
         "Locale of this page's content. Part of the content cache key.": "Taal van de inhoud van deze pagina. Onderdeel van de cachesleutel van de inhoud.",
+        "Locale of this menu, one of its portal's `locales`. Empty: the menu is shown in every language.": "Taal van dit menu, een van de `locales` van zijn portaal. Leeg: het menu staat in elke taal.",
+        "Locale of this term, one of its portal's `locales`. Empty: the term is shown in every language.": "Taal van dit begrip, een van de `locales` van zijn portaal. Leeg: het begrip staat in elke taal.",
         "Locales": "Talen",
         "Locales this site publishes content in. The first entry is the default. Part of the content cache key, so a translated page is never served under the wrong locale.": "Talen waarin deze site inhoud publiceert. De eerste is de standaard. Onderdeel van de cachesleutel van de inhoud, zodat een vertaalde pagina nooit onder de verkeerde taal wordt geserveerd.",
         "Logo": "Logo",
@@ -3588,7 +3590,17 @@ OC.L10N.register(
         "This portal slug is already used by another portal.": "Deze slug wordt al door een ander portaal gebruikt.",
         "This web address is already used by another portal.": "Dit webadres wordt al door een ander portaal gebruikt.",
         "OpenRegister is not available, so nothing was written.": "OpenRegister is niet beschikbaar, dus er is niets opgeslagen.",
-        "The portal could not be written. Nothing else was created.": "Het portaal kon niet worden opgeslagen. Er is verder niets gemaakt."
+        "The portal could not be written. Nothing else was created.": "Het portaal kon niet worden opgeslagen. Er is verder niets gemaakt.",
+        "Would you co-sign a request?": "Wilt u een aanvraag mede-ondertekenen?",
+        "You are asked to co-sign the request \"%1$s\". Your code is %2$s. Do this before %3$s.": "U wordt gevraagd de aanvraag \"%1$s\" mede te ondertekenen. Uw code is %2$s. Doe dit voor %3$s.",
+        "Co-sign a request": "Aanvraag mede-ondertekenen",
+        "Go to the co-sign page of the portal, enter the code and sign in with DigiD. You can read the request before you decide.": "Ga naar de pagina Mede-ondertekenen van het portaal, vul de code in en log in met DigiD. U kunt de aanvraag lezen voordat u beslist.",
+        "Your request %1$s was not co-signed before the deadline, so it was not sent.": "Uw aanvraag %1$s is niet op tijd mede-ondertekend en is daarom niet verstuurd.",
+        "The co-signer refused your request %1$s, so it was not sent.": "De mede-ondertekenaar heeft uw aanvraag %1$s geweigerd. De aanvraag is daarom niet verstuurd.",
+        "Your request was not co-signed": "Uw aanvraag is niet mede-ondertekend",
+        "Not co-signed": "Niet mede-ondertekend",
+        "You can send the request again with another co-signer.": "U kunt de aanvraag opnieuw versturen met een andere mede-ondertekenaar.",
+        "Fill in the e-mail address of the person who co-signs.": "Vul het e-mailadres in van de persoon die mede-ondertekent."
     },
     "nplurals=2; plural=(n != 1);"
 )

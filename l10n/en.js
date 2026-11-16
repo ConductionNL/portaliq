@@ -296,6 +296,8 @@ OC.L10N.register(
         "Listable": "Listable",
         "Locale": "Locale",
         "Locale of this page's content. Part of the content cache key.": "Locale of this page's content. Part of the content cache key.",
+        "Locale of this menu, one of its portal's `locales`. Empty: the menu is shown in every language.": "Locale of this menu, one of its portal's `locales`. Empty: the menu is shown in every language.",
+        "Locale of this term, one of its portal's `locales`. Empty: the term is shown in every language.": "Locale of this term, one of its portal's `locales`. Empty: the term is shown in every language.",
         "Locales": "Locales",
         "Locales this site publishes content in. The first entry is the default. Part of the content cache key, so a translated page is never served under the wrong locale.": "Locales this site publishes content in. The first entry is the default. Part of the content cache key, so a translated page is never served under the wrong locale.",
         "Logo": "Logo",
@@ -3428,7 +3430,17 @@ OC.L10N.register(
         "This portal slug is already used by another portal.": "This portal slug is already used by another portal.",
         "This web address is already used by another portal.": "This web address is already used by another portal.",
         "OpenRegister is not available, so nothing was written.": "OpenRegister is not available, so nothing was written.",
-        "The portal could not be written. Nothing else was created.": "The portal could not be written. Nothing else was created."
+        "The portal could not be written. Nothing else was created.": "The portal could not be written. Nothing else was created.",
+        "Would you co-sign a request?": "Would you co-sign a request?",
+        "You are asked to co-sign the request \"%1$s\". Your code is %2$s. Do this before %3$s.": "You are asked to co-sign the request \"%1$s\". Your code is %2$s. Do this before %3$s.",
+        "Co-sign a request": "Co-sign a request",
+        "Go to the co-sign page of the portal, enter the code and sign in with DigiD. You can read the request before you decide.": "Go to the co-sign page of the portal, enter the code and sign in with DigiD. You can read the request before you decide.",
+        "Your request %1$s was not co-signed before the deadline, so it was not sent.": "Your request %1$s was not co-signed before the deadline, so it was not sent.",
+        "The co-signer refused your request %1$s, so it was not sent.": "The co-signer refused your request %1$s, so it was not sent.",
+        "Your request was not co-signed": "Your request was not co-signed",
+        "Not co-signed": "Not co-signed",
+        "You can send the request again with another co-signer.": "You can send the request again with another co-signer.",
+        "Fill in the e-mail address of the person who co-signs.": "Fill in the e-mail address of the person who co-signs."
     },
     "nplurals=2; plural=(n != 1);"
 )

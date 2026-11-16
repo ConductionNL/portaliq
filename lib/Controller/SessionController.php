@@ -4,11 +4,16 @@
  * Portaliq Session Controller
  *
  * The public auth-edge HTTP surface for the portal SPA. `index()` resolves the
- * caller's bearer to a server-derived subject (fail-closed). `devLogin()` mints
- * a session WITHOUT a real IdP — it is gated behind Nextcloud debug mode or an
- * explicit app flag so it can never issue tokens in production; it exists so the
- * portal is exercisable before the eHerkenning / DigiD broker (dormant, awaiting
- * OpenConnector) is wired. `logout()` ends the client session.
+ * caller's bearer to a server-derived subject (fail-closed). `oidcStart()` and
+ * `oidcCallback()` are the live, routed broker login: a generic OIDC Relying
+ * Party that sends the caller to a DigiD / eHerkenning / eIDAS broker and mints
+ * a portal session from the validated ID token (portal-oidc-broker-login; the
+ * integriq broker route lives in BrokerSessionController). `nextcloud()` signs
+ * in with an existing Nextcloud account for portals that declare that mode.
+ * `devLogin()` mints a session WITHOUT a real IdP — it is gated behind
+ * Nextcloud debug mode or an explicit app flag so it can never issue tokens in
+ * production; it exists so the portal is exercisable without a configured
+ * broker. `refresh()` rotates the bearer and `logout()` ends the client session.
  *
  * @category Controller
  * @package  OCA\Portaliq\Controller
