@@ -15,7 +15,7 @@
   @spec openspec/changes/operate-pages-per-portal-and-client/specs/portal-page-choice/spec.md#requirement-the-administrator-makes-the-portal-choice-on-the-portals-page-req-pgc-003
 -->
 <template>
-	<div class="portal-navigation" data-testid="portal-navigation">
+	<div class="page-choice" data-testid="portal-navigation">
 		<p class="portal-navigation__intro">
 			{{
 				t(
@@ -32,12 +32,12 @@
 		</NcNoteCard>
 
 		<template v-else>
-			<p v-if="audiences.length === 0" class="portal-navigation__empty">
+			<p v-if="items.length === 0" class="portal-navigation__empty">
 				{{ t('portaliq', 'No installed app contributes pages to the portal yet.') }}
 			</p>
 
 			<section
-				v-for="group in audiences"
+				v-for="group in items"
 				:key="group.audience"
 				class="portal-navigation__audience"
 				:data-testid="`portal-navigation-${group.audience}`">
@@ -47,18 +47,18 @@
 				<p v-if="group.pages.length === 0" class="portal-navigation__empty">
 					{{ t('portaliq', 'No page for this audience.') }}
 				</p>
-				<ol v-else class="portal-navigation__list">
+				<ol v-else class="page-choice__list portal-navigation__list">
 					<li
 						v-for="(page, index) in group.pages"
 						:key="page.page"
-						class="portal-navigation__row"
-						:class="{ 'portal-navigation__row--hidden': page.hidden }"
+						class="page-choice__row"
+						:class="{ 'page-choice__row--hidden': page.hidden }"
 						:data-testid="`portal-navigation-page-${page.page}`">
 						<span
 							:id="labelId(group, page)"
-							class="portal-navigation__label">
+							class="page-choice__label">
 							{{ page.label }}
-							<span class="portal-navigation__app">{{ page.appLabel }}</span>
+							<span class="page-choice__app">{{ page.appLabel }}</span>
 						</span>
 						<NcCheckboxRadioSwitch
 							:modelValue="!page.hidden"
@@ -98,7 +98,7 @@
 			</NcNoteCard>
 
 			<NcButton
-				v-if="audiences.length > 0"
+				v-if="items.length > 0"
 				variant="primary"
 				:disabled="saving || !dirty"
 				data-testid="portal-navigation-save"
@@ -110,8 +110,6 @@
 </template>
 
 <script>
-import axios from '@nextcloud/axios'
-import { generateUrl } from '@nextcloud/router'
 import {
 	NcButton,
 	NcCheckboxRadioSwitch,
@@ -126,6 +124,7 @@ import {
 	navigationFrom,
 	navigationUrl,
 } from '../lib/portalNavigation.js'
+import { pageChoiceEditor } from './pageChoiceEditor.js'
 
 export default {
 	name: 'PortalNavigation',
@@ -139,24 +138,16 @@ export default {
 		NcNoteCard,
 	},
 
-	props: {
-		/** The portal the detail page shows. */
-		objectData: {
-			type: Object,
-			default: null,
-		},
-	},
-
-	data() {
-		return {
-			saved: [],
-			audiences: [],
-			loading: true,
-			saving: false,
-			error: '',
-			notice: '',
-		}
-	},
+	mixins: [
+		pageChoiceEditor({
+			key: 'audiences',
+			field: 'navigation',
+			url: navigationUrl,
+			shape: navigationFrom,
+			copy: copyAudiences,
+			loadError: () => t('portaliq', 'The pages of this portal could not be loaded.'),
+		}),
+	],
 
 	computed: {
 		/**
@@ -165,76 +156,12 @@ export default {
 		 * @return {string}
 		 * @spec openspec/changes/operate-pages-per-portal-and-client/specs/portal-page-choice/spec.md#requirement-the-administrator-makes-the-portal-choice-on-the-portals-page-req-pgc-003
 		 */
-		slug() {
+		owner() {
 			return String(this.objectData?.slug || '')
 		},
-
-		/**
-		 * Whether the order or a switch differs from what is stored.
-		 *
-		 * @return {boolean}
-		 * @spec openspec/changes/operate-pages-per-portal-and-client/specs/portal-page-choice/spec.md#requirement-the-administrator-makes-the-portal-choice-on-the-portals-page-req-pgc-003
-		 */
-		dirty() {
-			return (
-				JSON.stringify(navigationFrom(this.audiences))
-				!== JSON.stringify(navigationFrom(this.saved))
-			)
-		},
-	},
-
-	watch: {
-		/**
-		 * Load again when the detail page hands over another portal.
-		 *
-		 * @return {void}
-		 * @spec openspec/changes/operate-pages-per-portal-and-client/specs/portal-page-choice/spec.md#requirement-the-administrator-makes-the-portal-choice-on-the-portals-page-req-pgc-003
-		 */
-		slug() {
-			this.load()
-		},
-	},
-
-	mounted() {
-		this.load()
 	},
 
 	methods: {
-		/**
-		 * Read the portal's navigation.
-		 *
-		 * @return {Promise<void>}
-		 * @spec openspec/changes/operate-pages-per-portal-and-client/specs/portal-page-choice/spec.md#requirement-the-administrator-makes-the-portal-choice-on-the-portals-page-req-pgc-003
-		 */
-		async load() {
-			this.loading = true
-			this.error = ''
-			if (this.slug === '') {
-				this.loading = false
-				return
-			}
-			try {
-				const { data } = await axios.get(navigationUrl(this.slug, generateUrl))
-				this.accept(data.audiences || [])
-			} catch {
-				this.error = t('portaliq', 'The pages of this portal could not be loaded.')
-			} finally {
-				this.loading = false
-			}
-		},
-
-		/**
-		 * Take a list from the server as the stored state.
-		 *
-		 * @param {Array<object>} audiences The audiences with their pages.
-		 * @return {void}
-		 * @spec openspec/changes/operate-pages-per-portal-and-client/specs/portal-page-choice/spec.md#requirement-the-administrator-makes-the-portal-choice-on-the-portals-page-req-pgc-003
-		 */
-		accept(audiences) {
-			this.saved = copyAudiences(audiences)
-			this.audiences = copyAudiences(audiences)
-		},
-
 		/**
 		 * The id of a row's label, for the switch to point at.
 		 *
@@ -257,7 +184,7 @@ export default {
 		 */
 		setShown(page, value) {
 			page.hidden = !value
-			this.notice = ''
+			this.edited()
 		},
 
 		/**
@@ -271,39 +198,15 @@ export default {
 		 */
 		move(group, index, step) {
 			group.pages = movePage(group.pages, index, step)
-			this.notice = ''
-		},
-
-		/**
-		 * Save the navigation.
-		 *
-		 * @return {Promise<void>}
-		 * @spec openspec/changes/operate-pages-per-portal-and-client/specs/portal-page-choice/spec.md#requirement-the-administrator-makes-the-portal-choice-on-the-portals-page-req-pgc-003
-		 */
-		async save() {
-			this.saving = true
-			this.error = ''
-			try {
-				const { data } = await axios.put(navigationUrl(this.slug, generateUrl), {
-					navigation: navigationFrom(this.audiences),
-				})
-				this.accept(data.audiences || [])
-				this.notice = t('portaliq', 'Your choices are saved.')
-			} catch {
-				this.error = t('portaliq', 'Your choices could not be saved. Try again.')
-			} finally {
-				this.saving = false
-			}
+			this.edited()
 		},
 	},
 }
 </script>
 
-<style scoped>
-.portal-navigation {
-	padding: calc(var(--default-grid-baseline) * 2);
-}
+<style scoped src="./pageChoice.css"></style>
 
+<style scoped>
 .portal-navigation__audience {
 	margin: calc(var(--default-grid-baseline) * 4) 0;
 }
@@ -315,34 +218,10 @@ export default {
 }
 
 .portal-navigation__list {
-	list-style: none;
-	padding: 0;
 	margin: 0;
 }
 
-.portal-navigation__row {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	justify-content: space-between;
-	gap: calc(var(--default-grid-baseline) * 4);
-	padding: calc(var(--default-grid-baseline) * 2) 0;
-	border-bottom: 1px solid var(--color-border);
-}
-
-.portal-navigation__row--hidden .portal-navigation__label {
-	color: var(--color-text-maxcontrast);
-}
-
-.portal-navigation__label {
-	display: flex;
-	flex-direction: column;
-	flex: 1 1 200px;
-	font-weight: bold;
-}
-
-.portal-navigation__app {
-	font-weight: normal;
+.page-choice__row--hidden .page-choice__label {
 	color: var(--color-text-maxcontrast);
 }
 

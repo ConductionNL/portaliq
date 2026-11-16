@@ -16,7 +16,7 @@
   @spec openspec/changes/operate-pages-per-portal-and-client/specs/portal-page-choice/spec.md#requirement-a-client-sees-only-the-pages-and-records-left-to-them-req-pgc-002
 -->
 <template>
-	<div class="account-pages" data-testid="portal-account-pages">
+	<div class="page-choice" data-testid="portal-account-pages">
 		<p class="account-pages__intro">
 			{{
 				t(
@@ -33,19 +33,19 @@
 		</NcNoteCard>
 
 		<template v-else>
-			<p v-if="pages.length === 0" class="account-pages__empty">
+			<p v-if="items.length === 0" class="account-pages__empty">
 				{{ t('portaliq', 'No installed app contributes pages for this account.') }}
 			</p>
 
-			<ul v-else class="account-pages__list">
+			<ul v-else class="page-choice__list">
 				<li
-					v-for="page in pages"
+					v-for="page in items"
 					:key="page.page"
-					class="account-pages__row"
+					class="page-choice__row"
 					:data-testid="`account-page-${page.page}`">
-					<span :id="labelId(page)" class="account-pages__label">
+					<span :id="labelId(page)" class="page-choice__label">
 						{{ page.label }}
-						<span class="account-pages__app">
+						<span class="page-choice__app">
 							{{ page.contributed === false ? t('portaliq', '{app}, no longer installed', { app: page.appLabel }) : page.appLabel }}
 						</span>
 					</span>
@@ -64,7 +64,7 @@
 			</NcNoteCard>
 
 			<NcButton
-				v-if="pages.length > 0"
+				v-if="items.length > 0"
 				variant="primary"
 				:disabled="saving || !dirty"
 				data-testid="account-pages-save"
@@ -76,8 +76,6 @@
 </template>
 
 <script>
-import axios from '@nextcloud/axios'
-import { generateUrl } from '@nextcloud/router'
 import {
 	NcButton,
 	NcCheckboxRadioSwitch,
@@ -85,6 +83,7 @@ import {
 	NcNoteCard,
 } from '@nextcloud/vue'
 import { accountPagesUrl, hiddenPagesFrom } from '../lib/portalNavigation.js'
+import { pageChoiceEditor } from './pageChoiceEditor.js'
 
 export default {
 	name: 'PortalAccountPages',
@@ -96,24 +95,16 @@ export default {
 		NcNoteCard,
 	},
 
-	props: {
-		/** The account the detail page shows. */
-		objectData: {
-			type: Object,
-			default: null,
-		},
-	},
-
-	data() {
-		return {
-			saved: [],
-			pages: [],
-			loading: true,
-			saving: false,
-			error: '',
-			notice: '',
-		}
-	},
+	mixins: [
+		pageChoiceEditor({
+			key: 'pages',
+			field: 'hiddenPages',
+			url: accountPagesUrl,
+			shape: hiddenPagesFrom,
+			copy: (pages) => pages.map((page) => ({ ...page })),
+			loadError: () => t('portaliq', 'The pages of this account could not be loaded.'),
+		}),
+	],
 
 	computed: {
 		/**
@@ -122,76 +113,12 @@ export default {
 		 * @return {string}
 		 * @spec openspec/changes/operate-pages-per-portal-and-client/specs/portal-page-choice/spec.md#requirement-a-client-sees-only-the-pages-and-records-left-to-them-req-pgc-002
 		 */
-		subjectRef() {
+		owner() {
 			return String(this.objectData?.subjectRef || '')
 		},
-
-		/**
-		 * Whether the switches differ from what is stored.
-		 *
-		 * @return {boolean}
-		 * @spec openspec/changes/operate-pages-per-portal-and-client/specs/portal-page-choice/spec.md#requirement-a-client-sees-only-the-pages-and-records-left-to-them-req-pgc-002
-		 */
-		dirty() {
-			return (
-				JSON.stringify(hiddenPagesFrom(this.pages))
-				!== JSON.stringify(hiddenPagesFrom(this.saved))
-			)
-		},
-	},
-
-	watch: {
-		/**
-		 * Load again when the detail page hands over another account.
-		 *
-		 * @return {void}
-		 * @spec openspec/changes/operate-pages-per-portal-and-client/specs/portal-page-choice/spec.md#requirement-a-client-sees-only-the-pages-and-records-left-to-them-req-pgc-002
-		 */
-		subjectRef() {
-			this.load()
-		},
-	},
-
-	mounted() {
-		this.load()
 	},
 
 	methods: {
-		/**
-		 * Read the account's pages.
-		 *
-		 * @return {Promise<void>}
-		 * @spec openspec/changes/operate-pages-per-portal-and-client/specs/portal-page-choice/spec.md#requirement-a-client-sees-only-the-pages-and-records-left-to-them-req-pgc-002
-		 */
-		async load() {
-			this.loading = true
-			this.error = ''
-			if (this.subjectRef === '') {
-				this.loading = false
-				return
-			}
-			try {
-				const { data } = await axios.get(accountPagesUrl(this.subjectRef, generateUrl))
-				this.accept(data.pages || [])
-			} catch {
-				this.error = t('portaliq', 'The pages of this account could not be loaded.')
-			} finally {
-				this.loading = false
-			}
-		},
-
-		/**
-		 * Take a list from the server as the stored state.
-		 *
-		 * @param {Array<object>} pages The pages with `hidden`.
-		 * @return {void}
-		 * @spec openspec/changes/operate-pages-per-portal-and-client/specs/portal-page-choice/spec.md#requirement-a-client-sees-only-the-pages-and-records-left-to-them-req-pgc-002
-		 */
-		accept(pages) {
-			this.saved = pages.map((page) => ({ ...page }))
-			this.pages = pages.map((page) => ({ ...page }))
-		},
-
 		/**
 		 * The id of a row's label, for the switch to point at.
 		 *
@@ -213,64 +140,10 @@ export default {
 		 */
 		setHidden(page, value) {
 			page.hidden = Boolean(value)
-			this.notice = ''
-		},
-
-		/**
-		 * Save the hidden list.
-		 *
-		 * @return {Promise<void>}
-		 * @spec openspec/changes/operate-pages-per-portal-and-client/specs/portal-page-choice/spec.md#requirement-a-client-sees-only-the-pages-and-records-left-to-them-req-pgc-002
-		 */
-		async save() {
-			this.saving = true
-			this.error = ''
-			try {
-				const { data } = await axios.put(accountPagesUrl(this.subjectRef, generateUrl), {
-					hiddenPages: hiddenPagesFrom(this.pages),
-				})
-				this.accept(data.pages || [])
-				this.notice = t('portaliq', 'Your choices are saved.')
-			} catch {
-				this.error = t('portaliq', 'Your choices could not be saved. Try again.')
-			} finally {
-				this.saving = false
-			}
+			this.edited()
 		},
 	},
 }
 </script>
 
-<style scoped>
-.account-pages {
-	padding: calc(var(--default-grid-baseline) * 2);
-}
-
-.account-pages__list {
-	list-style: none;
-	padding: 0;
-	margin: calc(var(--default-grid-baseline) * 4) 0;
-}
-
-.account-pages__row {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	justify-content: space-between;
-	gap: calc(var(--default-grid-baseline) * 4);
-	padding: calc(var(--default-grid-baseline) * 2) 0;
-	border-bottom: 1px solid var(--color-border);
-}
-
-.account-pages__label {
-	display: flex;
-	flex-direction: column;
-	flex: 1 1 200px;
-	font-weight: bold;
-}
-
-.account-pages__app {
-	font-weight: normal;
-	color: var(--color-text-maxcontrast);
-}
-</style>
+<style scoped src="./pageChoice.css"></style>
