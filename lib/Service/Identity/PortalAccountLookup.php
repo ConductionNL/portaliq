@@ -33,6 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
+use OCA\Portaliq\Kernel\Contracts\PortalAccountLookupInterface;
 use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 
 /**
@@ -40,7 +41,7 @@ use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
  *
  * @spec openspec/specs/portal-identity-space/spec.md
  */
-class PortalAccountLookup {
+class PortalAccountLookup implements PortalAccountLookupInterface {
 
 	/**
 	 * The OpenRegister register the `portalAccount` schema lives in.
@@ -183,16 +184,29 @@ class PortalAccountLookup {
 		);
 
 		foreach ($rows as $row) {
-			if (($row['identityRef'] ?? '') === $bsn
-				&& in_array(($row['identityType'] ?? ''), ['digid', 'eidas'], true) === true
-				&& ($row['status'] ?? self::STATUS_ACTIVE) === self::STATUS_ACTIVE
-			) {
+			if ($this->isActiveCitizenRow(row: $row, bsn: $bsn) === true) {
 				return $row;
 			}
 		}
 
 		return null;
 	}//end activeByCitizenNumber()
+
+	/**
+	 * Whether a row is the active DigiD or eIDAS account of the citizen number.
+	 *
+	 * @param array<string, mixed> $row The account row.
+	 * @param string               $bsn The citizen number, trimmed.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/portal-account-presence/specs/portal-identity-space/spec.md#requirement-staff-can-ask-whether-a-citizen-has-a-portal-account
+	 */
+	private function isActiveCitizenRow(array $row, string $bsn): bool {
+		return ($row['identityRef'] ?? '') === $bsn
+			&& in_array(($row['identityType'] ?? ''), ['digid', 'eidas'], true) === true
+			&& ($row['status'] ?? self::STATUS_ACTIVE) === self::STATUS_ACTIVE;
+	}//end isActiveCitizenRow()
 
 	/**
 	 * The pending, email-only account for a verified address, or null.
@@ -214,29 +228,63 @@ class PortalAccountLookup {
 			return null;
 		}
 
-		// An address is one address whatever its case (security review L4):
-		// the store is asked for it as written and in lower case, and every
-		// row is compared without regard to case.
-		foreach (array_unique([$email, strtolower($email)]) as $asked) {
-			$rows = $this->reader->readCollection(
-				register: self::REGISTER,
-				schema: self::SCHEMA,
-				scopeField: 'email',
-				subjectRef: $asked,
-				organisation: $organisation,
-				limit: 5,
-				filter: ['status' => self::STATUS_PENDING]
-			);
+		return $this->claimablePending(email: $email, organisation: $organisation);
+	}//end pendingByVerifiedEmail()
 
-			foreach ($rows as $row) {
-				if ($this->isClaimablePendingRow(row: $row, email: $email, organisation: $organisation) === true) {
-					return $row;
-				}
+	/**
+	 * The first claimable pending account holding the address. An address is
+	 * one address whatever its case (security review L4): the store is asked
+	 * for it as written and in lower case, and every row is compared without
+	 * regard to case.
+	 *
+	 * @param string $email        The verified address.
+	 * @param string $organisation The tenant.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 */
+	private function claimablePending(string $email, string $organisation): array|null {
+		foreach (array_unique([$email, strtolower($email)]) as $asked) {
+			$row = $this->claimablePendingAsked(asked: $asked, email: $email, organisation: $organisation);
+			if ($row !== null) {
+				return $row;
 			}
 		}
 
 		return null;
-	}//end pendingByVerifiedEmail()
+	}//end claimablePending()
+
+	/**
+	 * The first claimable pending account the store returns for one spelling of the address.
+	 *
+	 * @param string $asked        The spelling asked for.
+	 * @param string $email        The verified address.
+	 * @param string $organisation The tenant.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 */
+	private function claimablePendingAsked(string $asked, string $email, string $organisation): array|null {
+		$rows = $this->reader->readCollection(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: 'email',
+			subjectRef: $asked,
+			organisation: $organisation,
+			limit: 5,
+			filter: ['status' => self::STATUS_PENDING]
+		);
+
+		foreach ($rows as $row) {
+			if ($this->isClaimablePendingRow(row: $row, email: $email, organisation: $organisation) === true) {
+				return $row;
+			}
+		}
+
+		return null;
+	}//end claimablePendingAsked()
 
 	/**
 	 * A row's identifier, wherever OpenRegister put it.

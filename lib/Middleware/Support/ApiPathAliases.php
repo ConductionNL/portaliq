@@ -143,6 +143,23 @@ final class ApiPathAliases {
 	 * @spec openspec/specs/api-contract/spec.md
 	 */
 	public static function withVersionedAliases(array $routes): array {
+		[$declared, $insertAt] = self::declared(routes: $routes);
+		$aliases = self::aliasesOf(routes: $routes, declared: $declared);
+
+		$original         = array_values($routes['routes'] ?? []);
+		$routes['routes'] = array_merge(array_slice($original, 0, $insertAt), $aliases, array_slice($original, $insertAt));
+
+		return $routes;
+	}//end withVersionedAliases()
+
+	/**
+	 * The keys of the routes already declared, and the position right after the last `/api/v1/` route.
+	 *
+	 * @param array<string,array<array-key,mixed>> $routes The declaration.
+	 *
+	 * @return array{0: array<string, true>, 1: int}
+	 */
+	private static function declared(array $routes): array {
 		$declared = [];
 		$insertAt = 0;
 		foreach (array_values($routes['routes'] ?? []) as $index => $route) {
@@ -152,6 +169,18 @@ final class ApiPathAliases {
 			}
 		}
 
+		return [$declared, $insertAt];
+	}//end declared()
+
+	/**
+	 * The `/api/v1/` alias of every unversioned API route that is not declared already.
+	 *
+	 * @param array<string,array<array-key,mixed>> $routes   The declaration.
+	 * @param array<string, true>                  $declared The keys of the routes already declared.
+	 *
+	 * @return array<int, array<array-key,mixed>>
+	 */
+	private static function aliasesOf(array $routes, array $declared): array {
 		$aliases = [];
 		foreach (($routes['routes'] ?? []) as $route) {
 			$url = '/'.ltrim((string) ($route['url'] ?? ''), '/');
@@ -159,23 +188,32 @@ final class ApiPathAliases {
 				continue;
 			}
 
-			$alias = array_merge(
-				$route,
-				[
-					'url'     => self::versioned(path: self::renamed(path: $url)),
-					'postfix' => ($route['postfix'] ?? '').'v1',
-				]
-			);
+			$alias = self::aliasFor(route: $route, url: $url);
 			if (isset($declared[self::key(route: $alias)]) === false) {
 				$aliases[] = $alias;
 			}
 		}
 
-		$original         = array_values($routes['routes'] ?? []);
-		$routes['routes'] = array_merge(array_slice($original, 0, $insertAt), $aliases, array_slice($original, $insertAt));
+		return $aliases;
+	}//end aliasesOf()
 
-		return $routes;
-	}//end withVersionedAliases()
+	/**
+	 * The route copied onto its versioned path, with a `v1` postfix.
+	 *
+	 * @param array<array-key,mixed> $route The route.
+	 * @param string                 $url   The route's path, with a leading slash.
+	 *
+	 * @return array<array-key,mixed>
+	 */
+	private static function aliasFor(array $route, string $url): array {
+		return array_merge(
+			$route,
+			[
+				'url'     => self::versioned(path: self::renamed(path: $url)),
+				'postfix' => ($route['postfix'] ?? '').'v1',
+			]
+		);
+	}//end aliasFor()
 
 	/**
 	 * Whether a route is the API fallback, a single placeholder after `/api/` that spans segments.

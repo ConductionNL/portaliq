@@ -25,7 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\BackgroundJob;
 
-use OCA\Portaliq\Service\Intake\PortalDraftStore;
+use OCA\Portaliq\Kernel\Contracts\PortalDraftStoreInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
 
@@ -44,11 +44,11 @@ class PortalDraftPurgeJob extends TimedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory $time The scheduler's clock.
-	 * @param PortalDraftStore $drafts The draft store.
+	 * @param PortalDraftStoreInterface $drafts The draft store.
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly PortalDraftStore $drafts,
+		private readonly PortalDraftStoreInterface $drafts,
 	) {
 		parent::__construct(time: $time);
 		$this->setInterval(seconds: self::INTERVAL);

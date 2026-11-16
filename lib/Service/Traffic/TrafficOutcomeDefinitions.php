@@ -123,19 +123,7 @@ class TrafficOutcomeDefinitions {
 				continue;
 			}
 
-			$steps = [];
-			foreach ($this->rows(value: ($row['steps'] ?? null), max: self::MAX_STEPS) as $index => $step) {
-				$match = $this->match->normalise(value: ($step['match'] ?? null));
-				if ($match === null) {
-					continue;
-				}
-
-				$steps[] = [
-					'name' => $this->name(value: ($step['name'] ?? null), fallback: 'Step ' . ($index + 1)),
-					'match' => $match,
-				];
-			}
-
+			$steps = $this->funnelStepsOf(row: $row);
 			if ($steps === []) {
 				continue;
 			}
@@ -144,6 +132,33 @@ class TrafficOutcomeDefinitions {
 		}
 
 		return array_values($out);
+	}
+
+	/**
+	 * A funnel's usable steps, each `{name, match}`; a step is named by its
+	 * place when it has no name.
+	 *
+	 * @param array<string, mixed> $row The configured funnel.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-funnel-steps-must-count-in-order
+	 */
+	private function funnelStepsOf(array $row): array {
+		$steps = [];
+		foreach ($this->rows(value: ($row['steps'] ?? null), max: self::MAX_STEPS) as $index => $step) {
+			$match = $this->match->normalise(value: ($step['match'] ?? null));
+			if ($match === null) {
+				continue;
+			}
+
+			$steps[] = [
+				'name' => $this->name(value: ($step['name'] ?? null), fallback: 'Step ' . ($index + 1)),
+				'match' => $match,
+			];
+		}
+
+		return $steps;
 	}
 
 	/**

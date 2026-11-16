@@ -38,6 +38,7 @@ export default {
 		Attachments: 'Bijlagen',
 		'File {id}': 'Bestand {id}',
 		'What happened': 'Wat er is gebeurd',
+		'Ask a question about this case': 'Stel een vraag over deze zaak',
 		'Nothing has happened yet.': 'Er is nog niets gebeurd.',
 		'This record is not in your list, so nothing of it is shown.':
 			'Dit staat niet in uw lijst, dus we tonen er niets van.',
@@ -93,6 +94,7 @@ export default {
 		Attachments: 'Attachments',
 		'File {id}': 'File {id}',
 		'What happened': 'What happened',
+		'Ask a question about this case': 'Ask a question about this case',
 		'Nothing has happened yet.': 'Nothing has happened yet.',
 		'This record is not in your list, so nothing of it is shown.':
 			'This record is not in your list, so nothing of it is shown.',

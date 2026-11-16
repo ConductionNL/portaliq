@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\GuestActionRegistryInterface;
 use OCP\App\IAppManager;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -35,11 +36,7 @@ use Throwable;
  *
  * @spec openspec/specs/portal-guest-actions/spec.md#requirement-a-signed-link-opens-a-page-for-its-one-act-without-an-account-req-gst-002
  */
-class GuestActionRegistry {
-	/**
-	 * The audience a provider declares to serve guests.
-	 */
-	public const GUEST_AUDIENCE = 'guest';
+class GuestActionRegistry implements GuestActionRegistryInterface {
 
 	/**
 	 * Constructor.
@@ -101,6 +98,19 @@ class GuestActionRegistry {
 			return [];
 		}
 
+		return $this->contributionFrom(provider: $provider, appId: $appId);
+	}//end guestContribution()
+
+	/**
+	 * The normalised contribution a provider gives a guest, or [] when it
+	 * gives none or fails.
+	 *
+	 * @param object $provider The app's provider.
+	 * @param string $appId    The contributing app.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function contributionFrom(object $provider, string $appId): array {
 		try {
 			$contribution = $this->locator->contributionOf(
 				provider: $provider,
@@ -116,7 +126,7 @@ class GuestActionRegistry {
 			$this->logger->error('Portaliq: guest contribution failed', ['app' => $appId, 'reason' => $e->getMessage()]);
 			return [];
 		}
-	}//end guestContribution()
+	}//end contributionFrom()
 
 	/**
 	 * Whether a provider gives contributions and names the guest audience.

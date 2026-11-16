@@ -30,8 +30,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Notification;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\Traffic\TrafficReportDelivery;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\TrafficReportDeliveryInterface;
 use OCP\IURLGenerator;
 use OCP\L10N\IFactory;
 use OCP\Notification\INotification;
@@ -69,7 +69,7 @@ class Notifier implements INotifier {
 	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-alert-must-fire-once-per-period
 	 */
 	public function getID(): string {
-		return Application::APP_ID;
+		return AppIdentity::APP_ID;
 	}//end getID()
 
 
@@ -81,7 +81,7 @@ class Notifier implements INotifier {
 	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-alert-must-fire-once-per-period
 	 */
 	public function getName(): string {
-		return $this->l10n->get(Application::APP_ID)->t('Portaliq');
+		return $this->l10n->get(AppIdentity::APP_ID)->t('Portaliq');
 	}//end getName()
 
 
@@ -98,22 +98,22 @@ class Notifier implements INotifier {
 	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-alert-must-fire-once-per-period
 	 */
 	public function prepare(INotification $notification, string $languageCode): INotification {
-		if ($notification->getApp() !== Application::APP_ID) {
+		if ($notification->getApp() !== AppIdentity::APP_ID) {
 			throw new UnknownNotificationException('Not a Portaliq notification');
 		}
 
-		$l = $this->l10n->get(Application::APP_ID, $languageCode);
+		$l = $this->l10n->get(AppIdentity::APP_ID, $languageCode);
 		$parameters = $notification->getSubjectParameters();
 		$name = (string)($parameters['name'] ?? '');
 		$portal = (string)($parameters['portal'] ?? '');
 		switch ($notification->getSubject()) {
-			case TrafficReportDelivery::SUBJECT_REPORT:
+			case TrafficReportDeliveryInterface::SUBJECT_REPORT:
 				$notification->setParsedSubject($l->t('Traffic report: %1$s (%2$s)', [$name, $portal]));
 				$notification->setParsedMessage(
 					$l->t('The report for %s was sent. Open the Traffic page for the figures.', [(string)($parameters['span'] ?? '')])
 				);
 				break;
-			case TrafficReportDelivery::SUBJECT_ALERT:
+			case TrafficReportDeliveryInterface::SUBJECT_ALERT:
 				$notification->setParsedSubject($l->t('Traffic alert: %1$s (%2$s)', [$name, $portal]));
 				$notification->setParsedMessage((string)($parameters['line'] ?? ''));
 				break;
@@ -121,7 +121,7 @@ class Notifier implements INotifier {
 				throw new UnknownNotificationException('Unknown Portaliq notification subject');
 		}
 
-		$notification->setIcon($this->urls->getAbsoluteURL($this->urls->imagePath(Application::APP_ID, 'app-dark.svg')));
+		$notification->setIcon($this->urls->getAbsoluteURL($this->urls->imagePath(AppIdentity::APP_ID, 'app-dark.svg')));
 
 		return $notification;
 	}//end prepare()

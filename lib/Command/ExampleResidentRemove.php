@@ -26,12 +26,13 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Command;
 
-use OCA\Portaliq\Service\ExampleResident\ExampleResidentRemover;
+use OCA\Portaliq\Kernel\Contracts\ExampleResidentRemoverInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+
 /**
  * Remove an example resident.
  *
@@ -70,12 +71,12 @@ class ExampleResidentRemove extends Command {
 	/**
 	 * Constructor.
 	 *
-	 * @param ExampleResidentRemover $remover Deletes from the install's own record.
+	 * @param ExampleResidentRemoverInterface $remover Deletes from the install's own record.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly ExampleResidentRemover $remover,
+		private readonly ExampleResidentRemoverInterface $remover,
 	) {
 		parent::__construct();
 	}//end __construct()

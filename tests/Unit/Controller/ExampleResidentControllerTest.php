@@ -198,6 +198,9 @@ class ExampleResidentControllerTest extends TestCase {
 
 		$this->assertInstanceOf(expected: RedirectResponse::class, actual: $response);
 		$this->assertSame(expected: 'https://demo.test/apps/portaliq/site?portal=zuiddrecht#token=tok.en', actual: $response->getRedirectURL());
+		// REQ-SEE-003: the bearer is in the fragment only; no query parameter holds it.
+		parse_str((string)parse_url($response->getRedirectURL(), PHP_URL_QUERY), $query);
+		$this->assertArrayNotHasKey('token', $query);
 	}//end testTheOneClickSignInMintsForTheExampleResidentOnly()
 
 

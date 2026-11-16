@@ -25,6 +25,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\ThemeChoiceInterface;
+
 /**
  * A contribution tags a collection or an action with a `theme` slug. The
  * portal decides which slugs exist (`portal.themes`): a tag the portal does not
@@ -33,7 +35,7 @@ namespace OCA\Portaliq\Contribution;
  *
  * @spec openspec/changes/life-domain-theme-pages/specs/life-domain-themes/spec.md
  */
-class ThemeChoice {
+class ThemeChoice implements ThemeChoiceInterface {
 
 	/**
 	 * A theme slug, as it appears in an address.
@@ -53,27 +55,47 @@ class ThemeChoice {
 		$out  = [];
 		$seen = [];
 		foreach ($this->asList(value: $themes) as $theme) {
-			if (is_array($theme) === false) {
+			$entry = $this->themeEntry(theme: $theme, seen: $seen);
+			if ($entry === null) {
 				continue;
 			}
 
-			$slug  = $this->text(value: ($theme['slug'] ?? null));
-			$title = $this->text(value: ($theme['title'] ?? null));
-			if (preg_match(self::SLUG, $slug) !== 1 || $title === '' || isset($seen[$slug]) === true) {
-				continue;
-			}
-
-			$seen[$slug] = true;
-			$out[]       = [
-				'slug'          => $slug,
-				'title'         => $title,
-				'intro'         => $this->text(value: ($theme['intro'] ?? null)),
-				'productsLabel' => $this->text(value: ($theme['productsLabel'] ?? null)),
-			];
+			$seen[$entry['slug']] = true;
+			$out[] = $entry;
 		}
 
 		return $out;
 	}//end declared()
+
+	/**
+	 * One declared theme, or null when it is no array, has a bad slug or no
+	 * title, or its slug was seen already.
+	 *
+	 * @param mixed               $theme The declared theme.
+	 * @param array<string, bool> $seen  The slugs seen so far.
+	 *
+	 * @return array{slug: string, title: string, intro: string, productsLabel: string}|null
+	 *
+	 * @spec openspec/changes/life-domain-theme-pages/tasks.md#t01
+	 */
+	private function themeEntry(mixed $theme, array $seen): array|null {
+		if (is_array($theme) === false) {
+			return null;
+		}
+
+		$slug  = $this->text(value: ($theme['slug'] ?? null));
+		$title = $this->text(value: ($theme['title'] ?? null));
+		if (preg_match(self::SLUG, $slug) !== 1 || $title === '' || isset($seen[$slug]) === true) {
+			return null;
+		}
+
+		return [
+			'slug'          => $slug,
+			'title'         => $title,
+			'intro'         => $this->text(value: ($theme['intro'] ?? null)),
+			'productsLabel' => $this->text(value: ($theme['productsLabel'] ?? null)),
+		];
+	}//end themeEntry()
 
 	/**
 	 * A value as an array, or an empty one.

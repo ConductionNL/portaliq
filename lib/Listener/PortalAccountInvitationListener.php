@@ -27,8 +27,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Listener;
 
 use OCA\Portaliq\Event\PortalAccountInvitationRequestedEvent;
-use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
-use OCA\Portaliq\Service\Identity\WaitingAccountInvitation;
+use OCA\Portaliq\Kernel\Contracts\PortalIdentityMailerInterface;
+use OCA\Portaliq\Kernel\Contracts\WaitingAccountInvitationInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -46,13 +46,13 @@ class PortalAccountInvitationListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param WaitingAccountInvitation $invitations Mints the secret.
-	 * @param PortalIdentityMailer $mailer Mails it inside its link.
+	 * @param WaitingAccountInvitationInterface $invitations Mints the secret.
+	 * @param PortalIdentityMailerInterface $mailer Mails it inside its link.
 	 * @param LoggerInterface $logger Records a refusal's cause, never the secret.
 	 */
 	public function __construct(
-		private readonly WaitingAccountInvitation $invitations,
-		private readonly PortalIdentityMailer $mailer,
+		private readonly WaitingAccountInvitationInterface $invitations,
+		private readonly PortalIdentityMailerInterface $mailer,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -136,7 +136,7 @@ class PortalAccountInvitationListener implements IEventListener {
 	 */
 	private function mailed(array $issued): bool {
 		return $this->mailer->send(
-			template: PortalIdentityMailer::TEMPLATE_ACCOUNT_INVITATION,
+			template: PortalIdentityMailerInterface::TEMPLATE_ACCOUNT_INVITATION,
 			email: $issued['email'],
 			secret: $issued['token'],
 			organisation: $issued['organisation']

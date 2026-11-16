@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\PortalProviderLocatorInterface;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -38,7 +39,7 @@ use Throwable;
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T04
  */
-class PortalProviderLocator {
+class PortalProviderLocator implements PortalProviderLocatorInterface {
 	/**
 	 * FQCN template each contributing app implements its provider at. `%s` is
 	 * the app's namespace (see `namespaceFor()`). Discovering by concrete class

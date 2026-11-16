@@ -44,7 +44,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
@@ -135,6 +135,23 @@ class InstanceLoopback {
 			return $this->sendLoopback(origin: $this->workingRoute, method: $method, absolute: $absolute, options: $options);
 		}
 
+		return $this->sendAbsolute(method: $method, absolute: $absolute, options: $options);
+	}//end request()
+
+	/**
+	 * Send to the absolute URL; a connect-phase failure is retried on the loopback.
+	 *
+	 * @param string               $method   The HTTP method.
+	 * @param string               $absolute The absolute URL.
+	 * @param array<string, mixed> $options  Nextcloud HTTP client options.
+	 *
+	 * @return IResponse
+	 *
+	 * @throws Throwable Any failure that is not a connect-phase one.
+	 *
+	 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-a-transport-failure-on-the-absolute-url-is-retried-once-on-the-loopback
+	 */
+	private function sendAbsolute(string $method, string $absolute, array $options): IResponse {
 		try {
 			$response = $this->send(method: $method, url: $absolute, options: $options);
 		} catch (Throwable $failure) {
@@ -147,7 +164,7 @@ class InstanceLoopback {
 
 		$this->workingRoute = 'absolute';
 		return $response;
-	}//end request()
+	}//end sendAbsolute()
 
 	/**
 	 * The retries on the loopback origins after a transport failure on the
@@ -210,7 +227,7 @@ class InstanceLoopback {
 		$this->logger->info(
 			'[InstanceLoopback] The absolute URL did not answer from inside the server; calls to this instance use ' . $origin . ' for this request.'
 			. ' Set internal_base_url to skip the failed attempt.',
-			['app' => Application::APP_ID, 'reason' => $retry->failure->getMessage(), 'origin' => $origin]
+			['app' => AppIdentity::APP_ID, 'reason' => $retry->failure->getMessage(), 'origin' => $origin]
 		);
 	}//end remember()
 
@@ -228,7 +245,7 @@ class InstanceLoopback {
 			'[InstanceLoopback] This instance could not be reached at its absolute URL nor on the loopback.'
 			. ' Set internal_base_url to the address the server reaches itself on.',
 			[
-				'app' => Application::APP_ID,
+				'app' => AppIdentity::APP_ID,
 				'absolute' => $retry->failure->getMessage(),
 				'loopback' => $retry->failures,
 			]

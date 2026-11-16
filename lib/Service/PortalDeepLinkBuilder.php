@@ -40,6 +40,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\PortalDeepLinkBuilderInterface;
 use OCP\IURLGenerator;
 
 /**
@@ -47,7 +48,7 @@ use OCP\IURLGenerator;
  *
  * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation
  */
-class PortalDeepLinkBuilder {
+class PortalDeepLinkBuilder implements PortalDeepLinkBuilderInterface {
 	/**
 	 * The site's route name (appinfo/routes.php `portalPage#site`), where
 	 * every mail link lands (site-reaches-portal-parity REQ-SRP-049).

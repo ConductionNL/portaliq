@@ -31,12 +31,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\PageChoiceInterface;
+
 /**
  * Applies a portal's page choice and an account's hidden pages to an aggregate.
  *
  * @spec openspec/changes/operate-pages-per-portal-and-client/specs/portal-page-choice/spec.md
  */
-class PageChoice {
+class PageChoice implements PageChoiceInterface {
 	/**
 	 * The key a choice uses for one page.
 	 *
@@ -136,28 +138,50 @@ class PageChoice {
 	 * @return array<string, mixed> The contribution, unchanged when no page of it is hidden.
 	 */
 	private function withoutHiddenPages(array $contribution, array $keys): array {
-		$app     = (string)($contribution['app'] ?? '');
-		$kept    = [];
-		$closing = [];
-		foreach ((array)($contribution['pages'] ?? []) as $page) {
+		$pages = $this->partitionPages(pages: (array)($contribution['pages'] ?? []), app: (string)($contribution['app'] ?? ''), keys: $keys);
+		if (count($pages['kept']) === count((array)($contribution['pages'] ?? []))) {
+			return $contribution;
+		}
+
+		return $this->withClosedCollections(contribution: $contribution, kept: $pages['kept'], hidden: $pages['hidden']);
+	}//end withoutHiddenPages()
+
+	/**
+	 * The pages split into those kept and those hidden, each in order.
+	 *
+	 * @param array<int, mixed>   $pages The contribution's pages.
+	 * @param string              $app   The contributing app.
+	 * @param array<string, int>  $keys  The hidden `<app>:<pageId>` keys, flipped.
+	 *
+	 * @return array{kept: array<int, mixed>, hidden: array<int, mixed>}
+	 */
+	private function partitionPages(array $pages, string $app, array $keys): array {
+		$kept   = [];
+		$hidden = [];
+		foreach ($pages as $page) {
 			if (isset($keys[self::keyOf(app: $app, pageId: (string)($page['id'] ?? ''))]) === true) {
-				$closing = array_merge($closing, $this->collectionsOf(page: $page));
+				$hidden[] = $page;
 				continue;
 			}
 
 			$kept[] = $page;
 		}
 
-		if (count($kept) === count((array)($contribution['pages'] ?? []))) {
-			return $contribution;
-		}
+		return ['kept' => $kept, 'hidden' => $hidden];
+	}//end partitionPages()
 
-		$stillShown = [];
-		foreach ($kept as $page) {
-			$stillShown = array_merge($stillShown, $this->collectionsOf(page: $page));
-		}
-
-		$closed                = array_diff($closing, $stillShown);
+	/**
+	 * The contribution with only the kept pages, and without the collections
+	 * only hidden pages showed.
+	 *
+	 * @param array<string, mixed> $contribution The contribution.
+	 * @param array<int, mixed>    $kept         The kept pages.
+	 * @param array<int, mixed>    $hidden       The hidden pages.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withClosedCollections(array $contribution, array $kept, array $hidden): array {
+		$closed                = array_diff($this->collectionsIn(pages: $hidden), $this->collectionsIn(pages: $kept));
 		$contribution['pages'] = $kept;
 		if ($closed !== [] && is_array($contribution['collections'] ?? null) === true) {
 			$contribution['collections'] = array_values(
@@ -169,7 +193,23 @@ class PageChoice {
 		}
 
 		return $contribution;
-	}//end withoutHiddenPages()
+	}//end withClosedCollections()
+
+	/**
+	 * The collections the pages show, page by page.
+	 *
+	 * @param array<int, mixed> $pages The pages.
+	 *
+	 * @return array<int, string>
+	 */
+	private function collectionsIn(array $pages): array {
+		$ids = [];
+		foreach ($pages as $page) {
+			$ids = array_merge($ids, $this->collectionsOf(page: $page));
+		}
+
+		return $ids;
+	}//end collectionsIn()
 
 	/**
 	 * The collections a page shows: those of its blocks and its record pages.

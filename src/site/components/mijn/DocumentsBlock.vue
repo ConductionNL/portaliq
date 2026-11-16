@@ -124,6 +124,10 @@ export default {
 
 	components: { EmptyState, FileItem, LoadError, Skeleton },
 
+	// The portal's organisation type label, from the site shell (App.vue);
+	// none reads "de organisatie" (portal-identity-from-the-admin REQ-PIA-003).
+	inject: { siteOrganisationType: { default: () => () => '' } },
+
 	props: {
 		/** The normalised block: `collection`, `label?`. */
 		block: { type: Object, required: true },
@@ -292,7 +296,7 @@ export default {
 				return entry.meta
 			}
 			return this.isCase
-				? fileLine(entry, this.tr, this.locale)
+				? fileLine(entry, this.tr, this.locale, this.siteOrganisationType())
 				: paperLine(entry, this.locale)
 		},
 

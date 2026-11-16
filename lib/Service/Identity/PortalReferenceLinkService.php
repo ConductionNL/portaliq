@@ -29,8 +29,9 @@ namespace OCA\Portaliq\Service\Identity;
 
 use DateInterval;
 use DateTimeImmutable;
-use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalReferenceLinkServiceInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCP\Security\ISecureRandom;
 
 /**
@@ -38,7 +39,7 @@ use OCP\Security\ISecureRandom;
  *
  * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
-class PortalReferenceLinkService {
+class PortalReferenceLinkService implements PortalReferenceLinkServiceInterface {
 	/**
 	 * The identity kind this route belongs to.
 	 */
@@ -230,19 +231,52 @@ class PortalReferenceLinkService {
 	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function redeem(string $token, ?DateTimeImmutable $now = null): ?array {
-		if ($token === '') {
-			return null;
-		}
-
 		$moment = ($now ?? new DateTimeImmutable());
-		$row = $this->liveRowFor(hash: hash('sha256', $token), moment: $moment);
+		$row = $this->liveRowForToken(token: $token, moment: $moment);
 		if ($row === null) {
 			return null;
 		}
 
-		$id = TokenRows::identifierOf(row: $row);
+		$id = $this->spentRowId(row: $row, moment: $moment);
 		if ($id === '') {
 			return null;
+		}
+
+		return $this->redeemed(row: $row, id: $id);
+	}//end redeem()
+
+	/**
+	 * The unspent, unexpired link behind a token, or null for an empty token.
+	 *
+	 * @param string            $token  The secret from the mail.
+	 * @param DateTimeImmutable $moment The moment to judge expiry against.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
+	 */
+	private function liveRowForToken(string $token, DateTimeImmutable $moment): array|null {
+		if ($token === '') {
+			return null;
+		}
+
+		return $this->liveRowFor(hash: hash('sha256', $token), moment: $moment);
+	}//end liveRowForToken()
+
+	/**
+	 * Spend the link: the row's id once the `used` write landed, else ''.
+	 *
+	 * @param array<string, mixed> $row    The live link row.
+	 * @param DateTimeImmutable    $moment The moment of use.
+	 *
+	 * @return string The link's id, or '' when it admits nobody.
+	 *
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
+	 */
+	private function spentRowId(array $row, DateTimeImmutable $moment): string {
+		$id = TokenRows::identifierOf(row: $row);
+		if ($id === '') {
+			return '';
 		}
 
 		$spent = $this->writer->updateObject(
@@ -257,9 +291,23 @@ class PortalReferenceLinkService {
 		if ($spent === null) {
 			// The link is spent by the write, so a write that did not land
 			// admits nobody: otherwise the same link would work twice.
-			return null;
+			return '';
 		}
 
+		return $id;
+	}//end spentRowId()
+
+	/**
+	 * The answer to a followed link.
+	 *
+	 * @param array<string, mixed> $row The spent link row.
+	 * @param string               $id  The link's id.
+	 *
+	 * @return array{caseReference: string, organisation: string, register: string, schema: string, linkId: string}
+	 *
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
+	 */
+	private function redeemed(array $row, string $id): array {
 		return [
 			'caseReference' => (string)($row['caseReference'] ?? ''),
 			'organisation' => (string)($row['organisation'] ?? ''),
@@ -267,7 +315,7 @@ class PortalReferenceLinkService {
 			'schema' => (string)($row['caseSchema'] ?? ''),
 			'linkId' => $id,
 		];
-	}//end redeem()
+	}//end redeemed()
 
 	/**
 	 * The expiry a link issued now would carry. The answer to a request that

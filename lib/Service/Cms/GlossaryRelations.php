@@ -22,12 +22,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Cms;
 
+use OCA\Portaliq\Kernel\Contracts\GlossaryRelationsInterface;
+
 /**
  * Decides whether a glossary term's relations stay on its portal.
  *
  * @spec openspec/changes/archive/2026-10-09-portal-cms-content-model/tasks.md#task-3
  */
-class GlossaryRelations {
+class GlossaryRelations implements GlossaryRelationsInterface {
 
 	/**
 	 * Why a term's relations are refused, or null when each one names a term of the same portal.

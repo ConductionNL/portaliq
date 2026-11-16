@@ -29,6 +29,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+use OCA\Portaliq\Kernel\Contracts\NewsReadReceiptServiceInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -36,7 +39,7 @@ use Throwable;
 /**
  * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
  */
-class NewsReadReceiptService {
+class NewsReadReceiptService implements NewsReadReceiptServiceInterface {
 	use ObjectServiceLookup;
 
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
@@ -139,9 +142,10 @@ class NewsReadReceiptService {
 		try {
 			$objectService->saveObject(
 				object: $merged,
-				register: self::REGISTER,
-				schema: self::SCHEMA,
-				uuid: $id,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: self::REGISTER, schema: self::SCHEMA),
+					uuid: $id
+				),
 				_rbac: false,
 				_multitenancy: false
 			);

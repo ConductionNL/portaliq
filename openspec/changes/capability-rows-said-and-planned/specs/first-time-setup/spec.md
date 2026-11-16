@@ -8,7 +8,9 @@ After installing the app, an administrator SHALL be offered a setup wizard that 
 - **GIVEN** a fresh installation
 - **WHEN** an administrator opens the app, chooses to load demo data and finishes the wizard
 - **THEN** the demo portal exists and the wizard is no longer offered
+@e2e tests/e2e/demo-data-setup-step.spec.ts (unit: tests/Unit/Controller/SetupControllerTest.php)
 
 #### Scenario: The wizard resumes
 - **WHEN** an administrator closes the wizard after the demo data choice and opens the app again
 - **THEN** the wizard opens at the step after that choice
+@e2e tests/e2e/demo-data-setup-step.spec.ts (unit: tests/Unit/Controller/SetupControllerTest.php)
