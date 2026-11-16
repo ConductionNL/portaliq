@@ -271,7 +271,8 @@ class ContentController extends Controller {
 						'menus' => $this->reader->menus(
 							portal: (string)$portal['slug'],
 							locale: $this->locale(portal: $portal, requested: $locale),
-							audience: $this->audience()
+							audience: $this->audience(),
+							defaultLocale: $this->defaultLocale(portal: $portal)
 						),
 					]
 				);
@@ -302,7 +303,8 @@ class ContentController extends Controller {
 						'pages' => $this->reader->pages(
 							portal: (string)$portal['slug'],
 							locale: $this->locale(portal: $portal, requested: $locale),
-							audience: $this->audience()
+							audience: $this->audience(),
+							defaultLocale: $this->defaultLocale(portal: $portal)
 						),
 					]
 				);
@@ -335,7 +337,8 @@ class ContentController extends Controller {
 					route: $normalised,
 					locale: $this->locale(portal: $portal, requested: $locale),
 					audience: $this->audience(),
-					organisation: (string)($portal['organisation'] ?? '')
+					organisation: (string)($portal['organisation'] ?? ''),
+					defaultLocale: $this->defaultLocale(portal: $portal)
 				);
 
 				if ($page === null) {
@@ -371,7 +374,8 @@ class ContentController extends Controller {
 						'terms' => $this->reader->glossary(
 							portal: (string)$portal['slug'],
 							locale: $this->locale(portal: $portal, requested: $locale),
-							audience: $this->audience()
+							audience: $this->audience(),
+							defaultLocale: $this->defaultLocale(portal: $portal)
 						),
 					]
 				);
@@ -556,7 +560,7 @@ class ContentController extends Controller {
 	 */
 	private function locale(array $portal, ?string $requested): string {
 		$locales = array_values((array)($portal['locales'] ?? []));
-		$default = (string)($locales[0] ?? 'nl');
+		$default = $this->defaultLocale(portal: $portal);
 
 		if ($requested === null || $requested === '') {
 			return $default;
@@ -568,6 +572,24 @@ class ContentController extends Controller {
 
 		return $default;
 	}//end locale()
+
+	/**
+	 * The portal's default locale: the first it declares, `nl` when none.
+	 *
+	 * Handed to the reader as the fallback for content that has no
+	 * translation in the requested locale.
+	 *
+	 * @param array $portal The resolved portal.
+	 *
+	 * @return string The default locale.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-content-must-be-served-in-the-language-the-visitor-asked-for
+	 */
+	private function defaultLocale(array $portal): string {
+		$locales = array_values((array)($portal['locales'] ?? []));
+
+		return (string)($locales[0] ?? 'nl');
+	}//end defaultLocale()
 
 
 	/**

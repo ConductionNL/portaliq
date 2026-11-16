@@ -33,6 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCA\Portaliq\Kernel\Contracts\CaseTypeReaderInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -114,8 +115,7 @@ class CaseTypeReader implements CaseTypeReaderInterface {
 		try {
 			return $objectService->find(
 				id: $id,
-				register: $register,
-				schema: $schema,
+				options: new ObjectFindOptions(register: $register, schema: $schema),
 				_rbac: false,
 				_multitenancy: false
 			);

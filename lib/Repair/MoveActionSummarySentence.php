@@ -30,6 +30,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Repair;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\Kernel\Contracts\PortalRegisterContextInterface;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCP\Migration\IOutput;
@@ -256,7 +258,12 @@ class MoveActionSummarySentence implements IRepairStep {
 		try {
 			unset($row['@self']);
 			$row['actions'] = $actions;
-			$objectService->saveObject(object: $row, register: self::REGISTER, schema: self::SCHEMA, uuid: $uuid, _rbac: false, _multitenancy: false);
+			$objectService->saveObject(
+				object: $row,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: self::REGISTER, schema: self::SCHEMA), uuid: $uuid),
+				_rbac: false,
+				_multitenancy: false
+			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: a portal page could not have its action sentence moved', ['uuid' => $uuid, 'reason' => $e->getMessage()]);
 

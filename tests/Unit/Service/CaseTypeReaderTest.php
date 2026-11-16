@@ -16,6 +16,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Portaliq\Tests\Support\LegacyObjectArgs;
 
 /**
  * Reading case types from OpenRegister without RBAC or multitenancy, and
@@ -48,6 +49,7 @@ class CaseTypeReaderTest extends TestCase {
 			public array $calls = [];
 
 			public function find(...$args): array {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				$this->calls[] = $args;
 				return ['id' => 'ct-1', 'title' => 'Parking permit'];
 			}
@@ -60,6 +62,7 @@ class CaseTypeReaderTest extends TestCase {
 	public function testAnEntityIsReadThroughJsonSerialize(): void {
 		$service = new class {
 			public function find(...$args): object {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				return new class implements \JsonSerializable {
 					public function jsonSerialize(): array {
 						return ['id' => 'ct-2'];
@@ -74,6 +77,7 @@ class CaseTypeReaderTest extends TestCase {
 	public function testAnUnreadableAnswerIsNull(): void {
 		$service = new class {
 			public function find(...$args): object {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				return new \stdClass();
 			}
 		};
@@ -84,6 +88,7 @@ class CaseTypeReaderTest extends TestCase {
 	public function testMissingCoordinatesAskNothing(): void {
 		$service = new class {
 			public function find(...$args): array {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				throw new \LogicException('must not be asked');
 			}
 		};
@@ -105,6 +110,7 @@ class CaseTypeReaderTest extends TestCase {
 	public function testAFailedReadIsLoggedAndNull(): void {
 		$service = new class {
 			public function find(...$args): array {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				throw new RuntimeException('gone');
 			}
 		};
