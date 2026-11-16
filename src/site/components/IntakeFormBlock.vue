@@ -436,6 +436,7 @@ import { resolveApiBase } from '../lib/contentApi.js'
 import { hasHelp, mergeHelp } from '../lib/help.js'
 import {
 	bindingRouteFrom,
+	challengeProof,
 	decideStep as decideStepOnServer,
 	deskSignInUrl,
 	initialValues,
@@ -1281,6 +1282,7 @@ export default {
 					answers: this.values,
 					statements: this.accepted,
 					onBehalf: this.onBehalf,
+					proof: await challengeProof(this.render.challenge),
 					verifiedEmails: this.verifiedEmails,
 				})
 				if (outcome.unavailable) {

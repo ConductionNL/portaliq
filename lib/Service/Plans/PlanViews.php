@@ -140,6 +140,8 @@ class PlanViews {
 			'endDate'     => substr((string)($action['endDate'] ?? ''), 0, 10),
 			'assignee'    => (string)($action['assignee'] ?? ''),
 			'assigneeName' => $this->nameOf(ref: (string)($action['assignee'] ?? '')),
+			'owner'        => (string)($action['owner'] ?? ''),
+			'fileName'     => (string)($action['fileName'] ?? ''),
 		];
 	}//end action()
 
