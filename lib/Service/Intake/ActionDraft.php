@@ -37,6 +37,7 @@ use DateTimeImmutable;
 use OCA\Portaliq\Contribution\ActionScopeResolver;
 use OCA\Portaliq\Kernel\Contracts\ActionDraftInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
+use OCA\Portaliq\Contribution\FieldMap;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -244,7 +245,7 @@ class ActionDraft implements ActionDraftInterface {
 			scopeField: (string)($action['scopeField'] ?? 'subjectRef'),
 			subjectRef: $stamp,
 			organisation: (string)($subject['organisation'] ?? ''),
-			data: $this->createBody->build(action: $action, whitelisted: $kept)
+			data: (new FieldMap())->apply(action: $action, body: $this->createBody->build(action: $action, whitelisted: $kept))
 		);
 	}//end bodyOf()
 
@@ -309,7 +310,7 @@ class ActionDraft implements ActionDraftInterface {
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
 	 */
 	public function answersOf(array $action, array $draft): array {
-		$data    = (array)($draft['data'] ?? []);
+		$data    = (new FieldMap())->reverse(action: $action, data: (array)($draft['data'] ?? []));
 		$answers = [];
 		foreach ((new ActionAnswerFields())->forAction(action: $action) as $field) {
 			if (array_key_exists($field, $data) === true) {
