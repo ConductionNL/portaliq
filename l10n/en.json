@@ -3460,7 +3460,19 @@
         "Your request was not co-signed": "Your request was not co-signed",
         "Not co-signed": "Not co-signed",
         "You can send the request again with another co-signer.": "You can send the request again with another co-signer.",
-        "Fill in the e-mail address of the person who co-signs.": "Fill in the e-mail address of the person who co-signs."
+        "Fill in the e-mail address of the person who co-signs.": "Fill in the e-mail address of the person who co-signs.",
+        "Hidden pages are left out of this portal's menu. To stop one client reading them, hide them on the client's account.": "Hidden pages are left out of this portal's menu. To stop one client reading them, hide them on the client's account.",
+        "No installed app contributes pages to the portal yet.": "No installed app contributes pages to the portal yet.",
+        "Pages for {audience}": "Pages for {audience}",
+        "No page for this audience.": "No page for this audience.",
+        "Move {page} up": "Move {page} up",
+        "Move {page} down": "Move {page} down",
+        "The pages of this portal could not be loaded.": "The pages of this portal could not be loaded.",
+        "A page hidden for this client is gone from their menu, and the records only that page shows can no longer be read by them.": "A page hidden for this client is gone from their menu, and the records only that page shows can no longer be read by them.",
+        "No installed app contributes pages for this account.": "No installed app contributes pages for this account.",
+        "{app}, no longer installed": "{app}, no longer installed",
+        "Hide for this client": "Hide for this client",
+        "The pages of this account could not be loaded.": "The pages of this account could not be loaded."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"
