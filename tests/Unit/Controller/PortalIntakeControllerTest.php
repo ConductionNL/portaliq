@@ -408,6 +408,7 @@ class PortalIntakeControllerTest extends TestCase {
 		array $pay = [],
 		?\OCA\Portaliq\Service\Intake\PortalFormAvailability $availability = null,
 		?\OCA\Portaliq\Service\Intake\OnBehalfFilling $onBehalf = null,
+		?\OCA\Portaliq\Service\Intake\PortalCosignFlow $cosign = null,
 	): PortalIntakeController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('');
@@ -474,7 +475,8 @@ class PortalIntakeControllerTest extends TestCase {
 			lookup: $this->doubles['lookup'],
 			destinationMapping: new DestinationMapping(),
 			availability: $availability,
-			onBehalf: $onBehalf
+			onBehalf: $onBehalf,
+			cosign: $cosign
 		);
 	}//end controller()
 
@@ -1325,4 +1327,82 @@ class PortalIntakeControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_OK, $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB'])->getStatus());
 		$this->assertCount(1, $this->submit->calls);
 	}//end testAnUnavailableFormShowsItsSituationAndRefusesSubmissions()
+	/**
+	 * resident-identity-in-forms REQ-RIF-003: a form that needs a co-signer
+	 * holds the submission instead of delivering it, and answers the
+	 * reference and the waiting line; a missing co-signer address is the
+	 * field's error and a store that records nothing is a 503.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 */
+	public function testACoSignedFormIsHeldInsteadOfDelivered(): void {
+		$render = $this->hostedForm();
+		$render['fields'][] = ['name' => 'partner', 'type' => 'email', 'cosigner' => true];
+		$flow = $this->createMock(\OCA\Portaliq\Service\Intake\PortalCosignFlow::class);
+		$flow->method('required')->willReturn(true);
+		$flow->expects($this->once())
+			->method('holdAtSubmit')
+			->with(
+				['slug' => 'gemeente-x', 'organisation' => 'gemeente-x'],
+				$this->anything(),
+				$this->anything(),
+				$this->callback(static fn (\OCA\Portaliq\Service\Intake\QueuedSubmission $held): bool => $held->portal === 'gemeente-x'
+					&& $held->route === 'aanvragen/verhuizing'
+					&& $held->answers === ['postcode' => '1234 AB', 'partner' => 'henk@example.nl']
+					&& $held->subjectRef === 'bsn-sanne')
+			)
+			->willReturn(['ok' => true, 'reference' => 'AANVRAAG-1', 'state' => 'awaiting-cosign', 'cosign' => ['state' => 'awaiting', 'name' => 'Henk', 'deadline' => '2026-10-22T10:00:00+00:00'], 'invited' => true]);
+		$controller = $this->controller(render: $render, subject: ['subjectRef' => 'bsn-sanne', 'trust' => 'substantial'], cosign: $flow);
+		$this->forbidSubmit = true;
+
+		$response = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB', 'partner' => 'henk@example.nl']);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(
+			[
+				'reference' => 'AANVRAAG-1',
+				'state' => 'awaiting-cosign',
+				'cosign' => ['state' => 'awaiting', 'name' => 'Henk', 'deadline' => '2026-10-22T10:00:00+00:00'],
+				'confirmationText' => 'Bedankt, u hoort van ons.',
+				'confirmation' => null,
+				'mailedTo' => '',
+			],
+			$response->getData()
+		);
+	}//end testACoSignedFormIsHeldInsteadOfDelivered()
+
+	/**
+	 * A held submission without a co-signer address, or one nothing recorded, is refused and not delivered.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 */
+	public function testAHoldThatFailsIsRefusedAndNotDelivered(): void {
+		$flow = $this->createMock(\OCA\Portaliq\Service\Intake\PortalCosignFlow::class);
+		$flow->method('required')->willReturn(true);
+		$flow->method('holdAtSubmit')->willReturnOnConsecutiveCalls(['ok' => false, 'errors' => ['partner' => 'Fill it in.']], ['ok' => false]);
+		$controller = $this->controller(render: $this->hostedForm(), cosign: $flow);
+		$this->forbidSubmit = true;
+
+		$missing = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB']);
+		$down    = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB']);
+
+		$this->assertSame([Http::STATUS_BAD_REQUEST, ['errors' => ['partner' => 'Fill it in.']]], [$missing->getStatus(), $missing->getData()]);
+		$this->assertSame([Http::STATUS_SERVICE_UNAVAILABLE, ['error' => 'cosign_unavailable']], [$down->getStatus(), $down->getData()]);
+	}//end testAHoldThatFailsIsRefusedAndNotDelivered()
+
+	/**
+	 * A form that needs no co-signer is delivered as before.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 */
+	public function testAFormWithoutCoSigningIsDelivered(): void {
+		$flow = $this->createMock(\OCA\Portaliq\Service\Intake\PortalCosignFlow::class);
+		$flow->method('required')->willReturn(false);
+		$flow->expects($this->never())->method('holdAtSubmit');
+
+		$data = $this->controller(render: $this->hostedForm(), cosign: $flow)->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB'])->getData();
+
+		$this->assertSame(['2026-0042', 'registered'], [$data['reference'], $data['state']]);
+		$this->assertCount(1, $this->submit->calls);
+	}//end testAFormWithoutCoSigningIsDelivered()
 }//end class

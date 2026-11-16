@@ -26,6 +26,7 @@ use OCP\Security\ISecureRandom;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Minting stores a hash and shows the token; verifying accepts the
@@ -58,7 +59,10 @@ class TrafficServerTokenTest extends TestCase {
 			public function __construct(private TrafficServerTokenTest $test) {
 			}
 
-			public function saveObject(array $object, string $register, string $schema, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->test->record(saved: ['uuid' => $uuid, 'schema' => $schema] + $object);
 
 				return $object;

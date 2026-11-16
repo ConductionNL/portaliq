@@ -23,6 +23,10 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Doubles;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+
 /**
  * ObjectService stand-in that acts for organisations.
  *
@@ -141,15 +145,16 @@ class ActingObjectService {
 	 */
 	public function find(
 		int|string $id,
-		?array $_extend = [],
-		bool $files = false,
-		mixed $register = null,
-		mixed $schema = null,
+		?ObjectFindOptions $options = null,
 		bool $_rbac = true,
-		bool $_multitenancy = true,
-		bool $_render = true,
-		bool $_audit = true,
+		bool $_multitenancy = true
 	): mixed {
+		$_extend = $options?->extend ?? [];
+		$files = $options?->files ?? false;
+		$register = $options?->register;
+		$schema = $options?->schema;
+		$_render = $options?->render ?? true;
+		$_audit = $options?->audit ?? true;
 		$this->record(method: 'find');
 		return ($this->found[(string)$id] ?? null);
 	}//end find()
@@ -169,13 +174,14 @@ class ActingObjectService {
 	 */
 	public function saveObject(
 		array $object,
-		?array $extend = [],
-		mixed $register = null,
-		mixed $schema = null,
-		?string $uuid = null,
+		ObjectSaveOptions $options = new ObjectSaveOptions(),
 		bool $_rbac = true,
-		bool $_multitenancy = true,
+		bool $_multitenancy = true
 	): array {
+		$extend = $options->extend ?? [];
+		$register = $options->target->register;
+		$schema = $options->target->schema;
+		$uuid = $options->uuid;
 		$this->record(method: 'saveObject');
 		$this->saves[] = $object;
 		return $object + ['id' => ($uuid ?? 'new-1')];
@@ -193,12 +199,14 @@ class ActingObjectService {
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
 	 */
 	public function deleteObject(
-		string $uuid,
-		mixed $register = null,
-		mixed $schema = null,
+		ObjectDeletion $deletion,
 		bool $_rbac = true,
 		bool $_multitenancy = true,
+		bool $_retentionSweep = false
 	): bool {
+		$uuid = $deletion->uuid;
+		$register = $deletion->target->register;
+		$schema = $deletion->target->schema;
 		$this->record(method: 'deleteObject');
 		return true;
 	}//end deleteObject()

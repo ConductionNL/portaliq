@@ -16,6 +16,8 @@
  * a recorder.
  */
 
+import { solveChallenge } from './waysIn.js'
+
 /**
  * @typedef {object} IntakeConnection
  * @property {string} base The portal API base, e.g. `/apps/portaliq/portal/api`.
@@ -348,6 +350,7 @@ function emptyOrPreset(field) {
  * @param {object} submission.answers The answers, keyed by field name.
  * @param {string[]} [submission.statements] The keys of the statements ticked.
  * @param {Record<string, string>} [submission.verifiedEmails] The proof of each verified e-mail address, by address.
+ * @param {{nonce: string, solution: string, expiresAt: number, signature: string}|null} [submission.proof] The solved challenge, when the form carries one.
  * @return {Promise<{reference: string, confirmationText: string, errors: object, moments?: object, unavailable?: object}>} The outcome.
  *
  * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
@@ -383,12 +386,16 @@ export async function submitIntake(conn, submission) {
  * The body of a submission: the route and answers, and the verified e-mail
  * addresses and ticked statements when there are any.
  *
- * @param {{route: string, answers: object, statements?: string[], verifiedEmails?: Record<string, string>}} submission What is sent.
+ * @param {{route: string, answers: object, statements?: string[], verifiedEmails?: Record<string, string>, proof?: {nonce: string, solution: string, expiresAt: number, signature: string}|null}} submission What is sent.
  * @param {string} [portal] The portal slug, or ''.
  * @return {object} The body.
  */
-function submissionBody({ route, answers, statements = [], verifiedEmails = {}, onBehalf = null }, portal) {
+function submissionBody({ route, answers, statements = [], verifiedEmails = {}, onBehalf = null, proof = null }, portal) {
 	const body = { route, answers: answers || {} }
+	// The solved challenge the form was issued with, checked by the submit route.
+	if (proof && typeof proof.nonce === 'string' && proof.nonce !== '') {
+		Object.assign(body, proof)
+	}
 	if (verifiedEmails && Object.keys(verifiedEmails).length > 0) {
 		body.verifiedEmails = verifiedEmails
 	}
@@ -407,7 +414,7 @@ function submissionBody({ route, answers, statements = [], verifiedEmails = {}, 
  * The outcome of an accepted submission.
  *
  * @param {object} parsed The answer's body.
- * @return {{reference: string, confirmationText: string, confirmation: object|null, mailedTo: string, moments: object, errors: object}} The outcome.
+ * @return {{reference: string, confirmationText: string, confirmation: object|null, mailedTo: string, waiting: string, moments: object, errors: object}} The outcome.
  */
 function submittedOutcome(parsed) {
 	return {
@@ -415,6 +422,8 @@ function submittedOutcome(parsed) {
 		confirmationText: String(parsed.confirmationText || ''),
 		confirmation: parsed.confirmation || null,
 		mailedTo: String(parsed.mailedTo || ''),
+		// A request that waits for its co-signer (resident-identity-in-forms REQ-RIF-003).
+		waiting: cosignWaiting(parsed),
 		moments: {
 			receivedAt: String(parsed.receivedAt || ''),
 			termStartsAt: String(parsed.termStartsAt || ''),
@@ -506,6 +515,14 @@ const STATE_VIEWS = {
 		tone: 'error',
 		sentence: `Uw aanvraag ${reference} is nog niet geregistreerd. Neem contact met ons op en noem uw kenmerk ${reference}.`,
 	}),
+	'awaiting-cosign': (reference, status) => ({
+		tone: 'info',
+		sentence: `Uw aanvraag ${reference} is ontvangen. ${cosignWaiting(status)}`,
+	}),
+	'not-cosigned': (reference) => ({
+		tone: 'error',
+		sentence: `Uw aanvraag ${reference} is niet mede-ondertekend en daarom niet verstuurd.`,
+	}),
 	queued: (reference) => ({
 		tone: 'info',
 		sentence: `Uw aanvraag ${reference} is ontvangen en wordt verwerkt. Kijk later nog eens met hetzelfde kenmerk.`,
@@ -543,7 +560,7 @@ export function statusView(status) {
 	const view = Object.hasOwn(STATE_VIEWS, status.state)
 		? STATE_VIEWS[status.state]
 		: STATE_VIEWS.queued
-	return view(reference)
+	return view(reference, status)
 }
 
 /**
@@ -714,6 +731,25 @@ export async function requestEmailCode(conn, { route, email }) {
 }
 
 /**
+ * The waiting line of a request that waits for its co-signer, or '' for any
+ * other request: "Wacht op mede-ondertekening door {naam}" and the deadline.
+ *
+ * @param {{state?: string, cosign?: {name?: string, deadline?: string}}|null} answer The submit or status answer.
+ * @return {string} The sentence.
+ *
+ * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+ */
+export function cosignWaiting(answer) {
+	if (answer?.state !== 'awaiting-cosign') {
+		return ''
+	}
+	const name = String(answer.cosign?.name || '').trim()
+	const day = readableDate(answer.cosign?.deadline)
+	const waits = name ? `Wacht op mede-ondertekening door ${name}.` : 'Wacht op mede-ondertekening.'
+	return day ? `${waits} Dit kan tot ${day}.` : waits
+}
+
+/**
  * What a code request answered: sent, or refused with its reason, and when
  * the resident may ask again.
  *
@@ -824,4 +860,32 @@ export async function lookUpApplicant(conn, { route, kind, value }) {
  */
 export function deskSignInUrl(base, { portal, route, returnTo }) {
 	return intakeUrl(base, '/session/desk', { portal, route, returnTo })
+}
+
+/**
+ * Solve the challenge a form was issued with, as the submit route checks it
+ * (PortalChallengeService::accepts()): the nonce, its expiry and signature
+ * travel back unchanged with the solution.
+ *
+ * @param {{nonce: string, difficulty: number, expiresAt: number, signature: string}|null|undefined} challenge The issued challenge.
+ * @param {SubtleCrypto} [subtle] The browser's digest.
+ * @return {Promise<{nonce: string, solution: string, expiresAt: number, signature: string}|null>} The proof, or null without a challenge.
+ *
+ * @spec openspec/changes/intake-conditional-questions-and-drafts/specs/portal-intake-form/spec.md#requirement-a-bound-form-can-be-filled-in-on-a-site-page-req-icq-004
+ */
+export async function challengeProof(challenge, subtle = globalThis.crypto?.subtle) {
+	if (!challenge || !challenge.nonce) {
+		return null
+	}
+
+	return {
+		nonce: String(challenge.nonce),
+		solution: await solveChallenge(
+			String(challenge.nonce),
+			Number(challenge.difficulty) || 0,
+			subtle,
+		),
+		expiresAt: Number(challenge.expiresAt) || 0,
+		signature: String(challenge.signature || ''),
+	}
 }

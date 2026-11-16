@@ -18,6 +18,7 @@ use OCP\IUserSession;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use OCA\OpenRegister\Kernel\Contracts\ObjectRef;
 
 /**
  * change-proposal-queue REQ-CPQ-004: what the leaf tells OpenRegister about
@@ -70,7 +71,7 @@ class ChangeProposalsProviderDescriptorTest extends TestCase {
 
 		$this->expectException(InvalidArgumentException::class);
 		$this->expectExceptionMessage('not_authenticated');
-		$provider->create(register: 'dossiq', schema: 'zaak', objectId: 'zaak-1', payload: ['changes' => [['property' => 'applicantPhone']], 'proposable' => ['applicantPhone']]);
+		$provider->create(new ObjectRef(register: 'dossiq', schema: 'zaak', id: 'zaak-1'), payload: ['changes' => [['property' => 'applicantPhone']], 'proposable' => ['applicantPhone']]);
 
 	}//end testNobodySignedInCannotPropose()
 
@@ -91,12 +92,7 @@ class ChangeProposalsProviderDescriptorTest extends TestCase {
 
 		$this->expectException(InvalidArgumentException::class);
 		$this->expectExceptionMessage('nothing_proposed');
-		$provider->create(
-			register: 'dossiq',
-			schema: 'zaak',
-			objectId: 'zaak-1',
-			payload: ['changes' => 'applicantPhone', 'proposable' => ['a' => 7, 'b' => 'applicantPhone']]
-		);
+		$provider->create(new ObjectRef(register: 'dossiq', schema: 'zaak', id: 'zaak-1'), payload: ['changes' => 'applicantPhone', 'proposable' => ['a' => 7, 'b' => 'applicantPhone']]);
 
 	}//end testListsThatAreNotListsArriveEmptyAndKeyedListsArriveRenumbered()
 
@@ -106,7 +102,7 @@ class ChangeProposalsProviderDescriptorTest extends TestCase {
 
 		$this->expectException(InvalidArgumentException::class);
 		$this->expectExceptionMessage('refused');
-		$provider->create(register: 'dossiq', schema: 'zaak', objectId: 'zaak-1', payload: []);
+		$provider->create(new ObjectRef(register: 'dossiq', schema: 'zaak', id: 'zaak-1'), payload: []);
 
 	}//end testARefusalWithoutAReasonIsRefused()
 

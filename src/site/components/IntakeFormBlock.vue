@@ -87,6 +87,12 @@
 				<strong data-testid="intake-form-reference">{{ reference }}</strong>
 			</p>
 			<p
+				v-if="waiting"
+				class="utrecht-paragraph"
+				data-testid="intake-form-cosign-waiting">
+				{{ waiting }}
+			</p>
+			<p
 				v-for="line in confirmationMoments"
 				:key="line"
 				class="utrecht-paragraph"
@@ -430,6 +436,7 @@ import { resolveApiBase } from '../lib/contentApi.js'
 import { hasHelp, mergeHelp } from '../lib/help.js'
 import {
 	bindingRouteFrom,
+	challengeProof,
 	decideStep as decideStepOnServer,
 	deskSignInUrl,
 	initialValues,
@@ -810,6 +817,8 @@ export default {
 			statementErrors: {},
 			confirmation: null,
 			mailedTo: '',
+			/** "Wacht op mede-ondertekening door …" for a request that waits for its co-signer, else ''. */
+			waiting: '',
 			payment: null,
 			paying: false,
 			payFailed: false,
@@ -1273,6 +1282,7 @@ export default {
 					answers: this.values,
 					statements: this.accepted,
 					onBehalf: this.onBehalf,
+					proof: await challengeProof(this.render.challenge),
 					verifiedEmails: this.verifiedEmails,
 				})
 				if (outcome.unavailable) {
@@ -1299,6 +1309,7 @@ export default {
 				this.confirmationText = outcome.confirmationText
 				this.confirmation = outcome.confirmation
 				this.mailedTo = outcome.mailedTo
+				this.waiting = outcome.waiting || ''
 				this.moments = outcome.moments || {}
 				this.state = 'done'
 				this.$nextTick(() => {
