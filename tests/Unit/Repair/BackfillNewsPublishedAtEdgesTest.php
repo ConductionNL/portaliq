@@ -16,6 +16,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Portaliq\Tests\Support\LegacyObjectArgs;
 
 /**
  * news-publish-date T3, the edges: without OpenRegister the step does
@@ -68,6 +69,7 @@ class BackfillNewsPublishedAtEdgesTest extends TestCase {
 			 * @return array<string, mixed>
 			 */
 			public function saveObject(mixed ...$args): array {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				if ($args['uuid'] === 'n-locked') {
 					throw new RuntimeException('object is locked');
 				}
