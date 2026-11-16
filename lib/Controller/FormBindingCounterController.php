@@ -24,7 +24,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\Intake\FormBindingCounter;
+use OCA\Portaliq\Kernel\Contracts\FormBindingCounterInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -40,12 +40,12 @@ class FormBindingCounterController extends Controller {
 	/**
 	 * Wire the controller.
 	 *
-	 * @param IRequest           $request The request.
-	 * @param FormBindingCounter $counter Counts a binding's current period against its limit.
+	 * @param IRequest                    $request The request.
+	 * @param FormBindingCounterInterface $counter Counts a binding's current period against its limit.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly FormBindingCounter $counter,
+		private readonly FormBindingCounterInterface $counter,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()

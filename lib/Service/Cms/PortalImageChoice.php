@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Cms;
 
 use OCA\Portaliq\Kernel\Contracts\PortalFileReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalImageChoiceInterface;
 use OCP\IL10N;
 
 /**
@@ -41,7 +42,7 @@ use OCP\IL10N;
  *
  * @spec openspec/changes/portal-identity-from-the-admin/specs
  */
-class PortalImageChoice {
+class PortalImageChoice implements PortalImageChoiceInterface {
 
 	/**
 	 * The portal properties holding an image.
