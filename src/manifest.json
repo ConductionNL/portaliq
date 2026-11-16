@@ -2043,6 +2043,13 @@
             }
           },
           {
+            "id": "account-hidden-pages",
+            "type": "PortalAccountPages",
+            "title": "Pages hidden for this client",
+            "icon": "EyeLock",
+            "content": {}
+          },
+          {
             "id": "account-withdraw",
             "type": "PortalAccountWithdraw",
             "title": "Account intrekken",
@@ -2197,10 +2204,18 @@
             "gridHeight": 4
           },
           {
+            "id": "account-hidden-pages",
+            "widgetId": "account-hidden-pages",
+            "gridX": 0,
+            "gridY": 4,
+            "gridWidth": 12,
+            "gridHeight": 4
+          },
+          {
             "id": "account-stats-sessions-issued",
             "widgetId": "account-stats-sessions-issued",
             "gridX": 0,
-            "gridY": 4,
+            "gridY": 8,
             "gridWidth": 6,
             "gridHeight": 2
           },
@@ -2208,7 +2223,7 @@
             "id": "account-stats-active-sessions",
             "widgetId": "account-stats-active-sessions",
             "gridX": 6,
-            "gridY": 4,
+            "gridY": 8,
             "gridWidth": 6,
             "gridHeight": 2
           },
@@ -2216,7 +2231,7 @@
             "id": "account-sessions",
             "widgetId": "account-sessions",
             "gridX": 0,
-            "gridY": 6,
+            "gridY": 10,
             "gridWidth": 12,
             "gridHeight": 4
           },
@@ -2224,7 +2239,7 @@
             "id": "account-messages",
             "widgetId": "account-messages",
             "gridX": 0,
-            "gridY": 10,
+            "gridY": 14,
             "gridWidth": 12,
             "gridHeight": 4
           }
@@ -3945,6 +3960,11 @@
                   "widgetId": "portal-settings-case-types"
                 },
                 {
+                  "key": "navigation",
+                  "title": "Navigation",
+                  "widgetId": "portal-settings-navigation"
+                },
+                {
                   "key": "signin",
                   "title": "Sign in",
                   "widgetId": "portal-settings-signin"
@@ -4263,6 +4283,12 @@
             "id": "portal-settings-case-types",
             "type": "PortalCaseTypes",
             "title": "Case types residents see",
+            "content": {}
+          },
+          {
+            "id": "portal-settings-navigation",
+            "type": "PortalNavigation",
+            "title": "Navigation",
             "content": {}
           },
           {

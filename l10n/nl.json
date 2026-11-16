@@ -3620,7 +3620,19 @@
         "Your request was not co-signed": "Uw aanvraag is niet mede-ondertekend",
         "Not co-signed": "Niet mede-ondertekend",
         "You can send the request again with another co-signer.": "U kunt de aanvraag opnieuw versturen met een andere mede-ondertekenaar.",
-        "Fill in the e-mail address of the person who co-signs.": "Vul het e-mailadres in van de persoon die mede-ondertekent."
+        "Fill in the e-mail address of the person who co-signs.": "Vul het e-mailadres in van de persoon die mede-ondertekent.",
+        "Hidden pages are left out of this portal's menu. To stop one client reading them, hide them on the client's account.": "Verborgen pagina's staan niet in het menu van dit portaal. Wilt u voorkomen dat één klant ze leest, verberg ze dan op het account van die klant.",
+        "No installed app contributes pages to the portal yet.": "Nog geen geïnstalleerde app levert pagina's aan het portaal.",
+        "Pages for {audience}": "Pagina's voor {audience}",
+        "No page for this audience.": "Geen pagina voor deze doelgroep.",
+        "Move {page} up": "{page} omhoog verplaatsen",
+        "Move {page} down": "{page} omlaag verplaatsen",
+        "The pages of this portal could not be loaded.": "De pagina's van dit portaal konden niet worden geladen.",
+        "A page hidden for this client is gone from their menu, and the records only that page shows can no longer be read by them.": "Een pagina die voor deze klant verborgen is, staat niet meer in het menu van de klant, en de gegevens die alleen die pagina toont, kan de klant niet meer lezen.",
+        "No installed app contributes pages for this account.": "Geen geïnstalleerde app levert pagina's voor dit account.",
+        "{app}, no longer installed": "{app}, niet meer geïnstalleerd",
+        "Hide for this client": "Verbergen voor deze klant",
+        "The pages of this account could not be loaded.": "De pagina's van dit account konden niet worden geladen."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"
