@@ -31,6 +31,8 @@ namespace OCA\Portaliq\Repair;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\Kernel\Contracts\PortalRegisterContextInterface;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCP\Migration\IOutput;
@@ -174,7 +176,12 @@ class BackfillNewsPublishedAt implements IRepairStep {
 			$moment = (new DateTimeImmutable($created))->setTimezone(new DateTimeZone('UTC'));
 			unset($row['@self']);
 			$row['publishedAt'] = $moment->format(DATE_ATOM);
-			$objectService->saveObject(object: $row, register: self::REGISTER, schema: self::SCHEMA, uuid: $uuid, _rbac: false, _multitenancy: false);
+			$objectService->saveObject(
+				object: $row,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: self::REGISTER, schema: self::SCHEMA), uuid: $uuid),
+				_rbac: false,
+				_multitenancy: false
+			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: a news item could not be given its publish moment', ['uuid' => $uuid, 'reason' => $e->getMessage()]);
 

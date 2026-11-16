@@ -15,6 +15,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Portaliq\Tests\Support\LegacyObjectArgs;
 
 /**
  * marketing-articles-from-pipelinq: the store reads and writes `article`
@@ -73,6 +74,7 @@ class ArticleStoreTest extends TestCase {
 			 * @return mixed
 			 */
 			public function find(mixed ...$args): mixed {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				return $this->answer('find', $args);
 			}
 
@@ -91,6 +93,7 @@ class ArticleStoreTest extends TestCase {
 			 * @return mixed
 			 */
 			public function saveObject(mixed ...$args): mixed {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				return $this->answer('saveObject', $args);
 			}
 

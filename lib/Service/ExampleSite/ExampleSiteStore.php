@@ -26,6 +26,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\ExampleSite;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\Portaliq\Service\ObjectRowNormaliser;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\PortalObjectWriter;
@@ -216,9 +218,10 @@ class ExampleSiteStore {
 
 		try {
 			$deleted = $objectService->deleteObject(
-				uuid: $id,
-				register: PortalRegisterContext::REGISTER,
-				schema: $schema,
+				new ObjectDeletion(
+					uuid: $id,
+					target: new ObjectFindTarget(register: PortalRegisterContext::REGISTER, schema: $schema)
+				),
 				_rbac: false,
 				_multitenancy: false
 			);

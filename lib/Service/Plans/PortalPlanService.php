@@ -603,7 +603,7 @@ class PortalPlanService implements PortalPlanServiceInterface {
 			return self::INVALID;
 		}
 
-		return $this->writeAction(id: $id, actionId: $actionId, organisation: $organisation, clean: $clean);
+		return $this->writeAction(id: $id, actionId: $actionId, organisation: $organisation, clean: $clean, editor: (string)($subject['subjectRef'] ?? ''));
 	}//end updateAction()
 
 	/**
@@ -651,17 +651,18 @@ class PortalPlanService implements PortalPlanServiceInterface {
 	 * @param string               $actionId     The action.
 	 * @param string               $organisation The caller's organisation.
 	 * @param array<string, mixed> $clean        The action's cleaned fields.
+	 * @param string               $editor       The subject reference of whoever writes.
 	 *
 	 * @return string OK or FAILED.
 	 *
 	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
 	 */
-	private function writeAction(string $id, string $actionId, string $organisation, array $clean): string {
+	private function writeAction(string $id, string $actionId, string $organisation, array $clean, string $editor): string {
 		if (array_key_exists('endDate', $clean) === true) {
 			$clean['reminderSentAt'] = null;
 		}
 
-		$written = $this->updateActionRow(id: $id, actionId: $actionId, organisation: $organisation, clean: $clean);
+		$written = $this->updateActionRow(id: $id, actionId: $actionId, organisation: $organisation, clean: $clean, editor: $editor);
 		if ($written === null) {
 			return self::FAILED;
 		}
@@ -676,12 +677,13 @@ class PortalPlanService implements PortalPlanServiceInterface {
 	 * @param string               $actionId     The action.
 	 * @param string               $organisation The caller's organisation.
 	 * @param array<string, mixed> $clean        The action's fields.
+	 * @param string               $editor       The subject reference of whoever writes.
 	 *
 	 * @return array<string, mixed>|null The updated row, or null when the write failed.
 	 *
 	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
 	 */
-	private function updateActionRow(string $id, string $actionId, string $organisation, array $clean): array|null {
+	private function updateActionRow(string $id, string $actionId, string $organisation, array $clean, string $editor): array|null {
 		return $this->writer->updateObject(
 			register: self::REGISTER,
 			schema: 'portalAction',
@@ -689,7 +691,7 @@ class PortalPlanService implements PortalPlanServiceInterface {
 			subjectRef: $id,
 			organisation: $organisation,
 			id: $actionId,
-			data: $clean
+			data: $this->actionFields->stamped(editor: $editor, data: $clean)
 		);
 	}//end updateActionRow()
 
@@ -973,7 +975,7 @@ class PortalPlanService implements PortalPlanServiceInterface {
 			scopeField: 'owner',
 			subjectRef: (string)$subject['subjectRef'],
 			organisation: (string)($subject['organisation'] ?? ''),
-			data: $data + ['plan' => $planId, 'status' => 'todo', 'kind' => 'once']
+			data: $this->actionFields->stamped(editor: (string)$subject['subjectRef'], data: $data + ['plan' => $planId, 'status' => 'todo', 'kind' => 'once'])
 		);
 
 		return $row !== null;

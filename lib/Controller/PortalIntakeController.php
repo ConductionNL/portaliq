@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
+use DateTimeImmutable;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\DestinationIntakeInterface;
@@ -57,11 +58,13 @@ use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSubmissionChecksInterface;
 use OCA\Portaliq\Service\Intake\OnBehalfFilling;
+use OCA\Portaliq\Service\Intake\PortalCosignFlow;
 use OCA\Portaliq\Service\Intake\PortalFormAvailability;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\Intake\PortalIntakeConfirmation;
 use OCA\Portaliq\Service\Intake\PortalIntakePayments;
 use OCA\Portaliq\Service\Intake\PortalSubmissionChecks;
+use OCA\Portaliq\Service\Intake\QueuedSubmission;
 use OCA\Portaliq\Kernel\Support\SessionTrust;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -134,6 +137,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param DestinationLookupInterface|null $lookup Finds the object a reference belongs to.
 	 * @param PortalFormAvailability|null $availability Whether a form takes submissions now (REQ-FGV-001).
 	 * @param OnBehalfFilling|null $onBehalf The desk employee who fills a form in for a resident (resident-identity-in-forms T06).
+	 * @param PortalCosignFlow|null $cosign Holds a submission for its co-signer (resident-identity-in-forms T04).
 	 */
 	public function __construct(
 		IRequest $request,
@@ -161,6 +165,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		private readonly ?DestinationLookupInterface $lookup = null,
 		private readonly ?PortalFormAvailability $availability = null,
 		private readonly ?OnBehalfFilling $onBehalf = null,
+		private readonly ?PortalCosignFlow $cosign = null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 		$this->checks       = new PortalSubmissionChecks(
@@ -652,6 +657,10 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	private function deliver(array $binding, array $render, array $prepared, ?array $subject, array $site, array $extra = []): JSONResponse {
+		if ($this->cosign !== null && $this->cosign->required(binding: $binding) === true) {
+			return $this->heldForCosigner(binding: $binding, render: $render, prepared: $prepared, subject: $subject, site: $site);
+		}
+
 		$submitted = $this->intake?->submit(
 			binding: $binding,
 			render: $render,
@@ -667,6 +676,62 @@ class PortalIntakeController extends Controller implements PortalProtected {
 
 		return $this->acknowledged(submitted: $submitted, site: $site, render: $render, prepared: $prepared);
 	}//end deliver()
+
+	/**
+	 * Hold the submission for its co-signer instead of delivering it, and answer
+	 * with the reference and the waiting line.
+	 *
+	 * @param array<string, mixed>      $binding  The form binding.
+	 * @param array<string, mixed>      $render   The rendered form.
+	 * @param array<string, mixed>      $prepared The checked answers and their server-side companions.
+	 * @param array<string, mixed>|null $subject  The signed-in subject, if any.
+	 * @param array<string, mixed>      $site     The portal.
+	 *
+	 * @return JSONResponse The held acknowledgement, the co-signer field's error, or 503.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 */
+	private function heldForCosigner(array $binding, array $render, array $prepared, ?array $subject, array $site): JSONResponse {
+		$held = $this->cosign->holdAtSubmit(
+			site: $site,
+			binding: $binding,
+			render: $render,
+			submission: new QueuedSubmission(
+				portal: (string)($site['slug'] ?? ''),
+				route: (string)($binding['route'] ?? ''),
+				answers: $prepared['answers'],
+				subjectRef: (string)($subject['subjectRef'] ?? ''),
+				origin: (string)$this->request->getHeader('Origin'),
+				statements: $prepared['statements'],
+				computed: $prepared['computed'],
+				decisions: $prepared['decisions'],
+				verifiedEmails: $prepared['verified']
+			),
+			now: new DateTimeImmutable()
+		);
+		if (isset($held['errors']) === true) {
+			return new JSONResponse(['errors' => $held['errors']], Http::STATUS_BAD_REQUEST);
+		}
+
+		if ($held['ok'] === false) {
+			return new JSONResponse(['error' => 'cosign_unavailable'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
+		$invitee  = PortalCosignFlow::invitee(fields: (array)($render['fields'] ?? []), answers: $prepared['answers']);
+		$answers  = array_diff_key($prepared['answers'], [$invitee['field'] => true]);
+		$mailedTo = $this->confirmation->send(site: $site, render: $render, answers: $answers, reference: $held['reference']);
+
+		return new JSONResponse(
+			[
+				'reference' => $held['reference'],
+				'state' => $held['state'],
+				'cosign' => $held['cosign'],
+				'confirmationText' => (string)($render['settings']['confirmationText'] ?? ''),
+				'confirmation' => ($render['settings']['confirmation'] ?? null),
+				'mailedTo' => $mailedTo,
+			]
+		);
+	}//end heldForCosigner()
 
 	/**
 	 * What the server knows about the submission, for the destination intake.
