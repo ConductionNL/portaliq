@@ -27,6 +27,8 @@ namespace OCA\Portaliq\Service\Plans;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\Kernel\Contracts\PlanEndReminderServiceInterface;
 use OCA\Portaliq\Service\PagedObjectReads;
 use OCA\Portaliq\Service\PortalAccountService;
@@ -261,8 +263,7 @@ class PlanEndReminderService implements PlanEndReminderServiceInterface {
 						'receivedAt' => gmdate('c'),
 						'ruleKey' => self::RULE_KEY,
 					],
-					register: self::REGISTER,
-					schema: 'portalMessage',
+					options: new ObjectSaveOptions(target: new ObjectFindTarget(register: self::REGISTER, schema: 'portalMessage')),
 					_rbac: false,
 					_multitenancy: false
 				);
@@ -277,9 +278,10 @@ class PlanEndReminderService implements PlanEndReminderServiceInterface {
 
 			$objectService->saveObject(
 				object: ['endReminderSentAt' => gmdate('c')],
-				register: self::REGISTER,
-				schema: 'portalPlan',
-				uuid: $id,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: self::REGISTER, schema: 'portalPlan'),
+					uuid: $id
+				),
 				_rbac: false,
 				_multitenancy: false
 			);

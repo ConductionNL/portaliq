@@ -133,12 +133,12 @@ test.describe('traffic KPI cards', () => {
 		expect(await bad.json()).toEqual({ error: 'invalid-period' })
 	})
 
-	test('a measured portal opens with its four cards, and a card keeps its own period', async ({
+	test('a measured portal opens with its four cards, and they follow the page period', async ({
 		page,
 		request,
 	}) => {
 		// @e2e portal-traffic-kpi-cards::a-measured-portal-shows-its-last-30-days
-		// @e2e portal-traffic-kpi-cards::a-cards-period-picker-changes-only-that-card
+		// @e2e portal-page-period::choosing-7-days
 		const id = await portalId(request, ENABLED)
 		const thirty = await summary(request)
 		const seven = await summary(request, '7')
@@ -159,22 +159,17 @@ test.describe('traffic KPI cards', () => {
 			.poll(() => cardValue(page, 'portal-kpi-sessions'), { timeout: 15_000 })
 			.toBe(thirty.sessions)
 
-		await page
-			.getByTestId('portal-kpi-page-views')
-			.getByTestId('cn-stat-widget-range')
-			.selectOption('7')
+		// One period for the page: no card draws a picker of its own.
+		await expect(page.getByTestId('cn-stat-widget-range')).toHaveCount(0)
+		await page.getByTestId('cn-page-filter-period').getByText('7 dagen').click()
 		await expect
 			.poll(() => cardValue(page, 'portal-kpi-page-views'), {
 				timeout: 15_000,
 			})
 			.toBe(seven.pageViews)
-		// The other cards stay on 30 days.
-		await expect(
-			page
-				.getByTestId('portal-kpi-sessions')
-				.getByTestId('cn-stat-widget-range'),
-		).toHaveValue('30')
-		expect(await cardValue(page, 'portal-kpi-sessions')).toBe(thirty.sessions)
+		await expect
+			.poll(() => cardValue(page, 'portal-kpi-sessions'), { timeout: 15_000 })
+			.toBe(seven.sessions)
 	})
 
 	test('an unmeasured portal says so and asks for nothing', async ({

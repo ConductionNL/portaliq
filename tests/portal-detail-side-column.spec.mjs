@@ -5,8 +5,10 @@
 // portal-detail-side-column.spec.mjs: the portal page carries its facts in a
 // side column, as the portaliq/PtPortal and PtPortalInstellingen boards draw
 // it. "Domein en certificaat", "Thema", "Status en laatste publicatie" and
-// "Beheerders" sit beside the content tabs (Overzicht up to Begrippen), not
-// inside Overzicht; "Verkeer meten" sits beside Instellingen and writes
+// "Beheerders" sit beside the content tabs (Overzicht up to Begrippen) and
+// beside Instellingen, above "Verkeer meten" (PtPortalInstellingen, design-
+// system #336), not inside Overzicht; "Verkeer meten" sits beside
+// Instellingen only and writes
 // `traffic.enabled` and `traffic.regionGranularity`. The Pagina's tab shows
 // the board's columns: title with its path under it, status, last change.
 //
@@ -27,12 +29,13 @@ const TABS = widget('portal-tabs').content.tabs
 const tabId = (tab) => tab.id || tab.widgetId
 const SUMMARY = ['portal-side-domain', 'portal-side-theme', 'portal-side-status', 'portal-side-editors']
 
-test('the summary cards are the side column beside the content tabs', () => {
+test('the summary cards are the side column beside the content tabs and Instellingen', () => {
 	assert.deepEqual(CONFIG.sideColumn.slice(0, 4), SUMMARY)
-	const content = TABS.map(tabId).filter((id) => !['portal-settings', 'portal-history'].includes(id))
+	const content = TABS.map(tabId).filter((id) => id !== 'portal-history')
 	assert.equal(content[0], 'overview', 'the Overzicht tab has no stable id for the side column to name')
+	assert.ok(content.includes('portal-settings'))
 	for (const id of SUMMARY) {
-		assert.deepEqual(widget(id).tabs, content, `${id} does not sit beside the content tabs`)
+		assert.deepEqual(widget(id).tabs, content, `${id} does not sit beside the content tabs and Instellingen`)
 	}
 	const overview = TABS.find((tab) => tab.id === 'overview')
 	for (const id of SUMMARY) {

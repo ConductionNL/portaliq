@@ -17,6 +17,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Portaliq\Tests\Support\LegacyObjectArgs;
 
 /**
  * consume-or-audit-trail-proof-records T02, without OpenRegister loaded: the
@@ -113,6 +114,7 @@ class MovePortalAuditEntriesPagingTest extends TestCase {
 			 * @return bool
 			 */
 			public function deleteObject(mixed ...$args): bool {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				if (in_array($args['uuid'], $this->test->undeletable, true) === true) {
 					throw new RuntimeException('delete refused');
 				}

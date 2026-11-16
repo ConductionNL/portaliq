@@ -16,6 +16,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Portaliq\Tests\Support\LegacyObjectArgs;
 
 /**
  * The traffic store's reads of events and daily rollups, deleting a rollup,
@@ -162,6 +163,7 @@ class TrafficEventStoreReadsTest extends TestCase {
 			public array $deleted = [];
 
 			public function deleteObject(...$args): void {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				$this->deleted[] = $args;
 			}
 		};
@@ -179,6 +181,7 @@ class TrafficEventStoreReadsTest extends TestCase {
 			public array $deleted = [];
 
 			public function deleteObject(...$args): void {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				$this->deleted[] = $args;
 			}
 		};
@@ -193,6 +196,7 @@ class TrafficEventStoreReadsTest extends TestCase {
 	public function testAFailedDeleteIsLoggedAndFalse(): void {
 		$service = new class {
 			public function deleteObject(...$args): void {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				throw new RuntimeException('locked');
 			}
 		};
@@ -219,6 +223,7 @@ class TrafficEventStoreReadsTest extends TestCase {
 	public function testASaveThatAnswersNoListCountsTheRecords(): void {
 		$service = new class {
 			public function saveObjects(...$args): ?array {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				return null;
 			}
 		};
@@ -231,6 +236,7 @@ class TrafficEventStoreReadsTest extends TestCase {
 			public array $calls = [];
 
 			public function saveObjects(...$args): array {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				$this->calls[] = $args;
 				return [];
 			}

@@ -15,6 +15,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Portaliq\Tests\Support\LegacyObjectArgs;
 
 /**
  * Accepting a proposal writes as the reviewer: OpenRegister's RBAC and
@@ -56,6 +57,7 @@ class ReviewerObjectWriterTest extends TestCase {
 			}
 
 			public function saveObject(...$args): mixed {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				$this->saved[] = $args;
 				return $this->answer;
 			}
@@ -95,6 +97,7 @@ class ReviewerObjectWriterTest extends TestCase {
 	public function testARefusalIsLoggedAndFalse(): void {
 		$service = new class {
 			public function saveObject(...$args): mixed {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				throw new RuntimeException('not allowed');
 			}
 		};
