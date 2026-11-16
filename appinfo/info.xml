@@ -114,6 +114,7 @@
             <step>OCA\Portaliq\Repair\RenameDutchColumns</step>
             <step>OCA\Portaliq\Repair\MovePortalAuditEntries</step>
             <step>OCA\Portaliq\Repair\BackfillNewsPublishedAt</step>
+            <step>OCA\Portaliq\Repair\BackfillAccessRequestStateRank</step>
             <step>OCA\Portaliq\Repair\BackfillCmsPortalReference</step>
             <step>OCA\Portaliq\Repair\StampMissingOrganisation</step>
             <step>OCA\Portaliq\Repair\MoveActionSummarySentence</step>

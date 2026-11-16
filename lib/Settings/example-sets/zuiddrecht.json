@@ -245,6 +245,7 @@
 				"onBehalfOf": "Bakkerij Lindelaan B.V. (KvK 87654321)",
 				"reason": "Ik doe de administratie van de bakkerij.",
 				"state": "granted",
+				"stateRank": 1,
 				"decidedBy": "example-set",
 				"decidedAt": "{{datetime:-26 09:00}}",
 				"requestedAt": "{{datetime:-26 08:30}}"
@@ -261,6 +262,7 @@
 				"onBehalfOf": "Henk de Vries",
 				"reason": "Ik help mijn buurman met zijn post van de gemeente.",
 				"state": "pending",
+				"stateRank": 0,
 				"requestedAt": "{{datetime:-6 10:00}}"
 			}
 		},
