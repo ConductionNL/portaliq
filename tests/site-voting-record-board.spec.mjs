@@ -46,7 +46,7 @@ test('the figures are the shared figure cards in their list variant', () => {
 })
 
 test('the table has a tinted header row and 12px 16px cells', () => {
-	assert.match(rule('.pq-records__main :deep(th)'), /padding: 12px 16px;/)
+	assert.match(rule('.pq-records__main :deep(th)'), /padding: 12px 16px;\n\tfont-size: 1rem;/)
 	assert.match(rule('.pq-records__main :deep(td)'), /border-block-start: 1px solid/)
 })
 
