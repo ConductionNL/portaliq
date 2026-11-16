@@ -5269,8 +5269,8 @@
       "type": "library",
       "name": "side-navigation",
       "group": "@gemeente-denhaag",
-      "version": "4.2.4",
-      "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/side-navigation@4.2.4",
+      "version": "4.3.0",
+      "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/side-navigation@4.3.0",
       "licenses": [
         {
           "license": {
@@ -5278,15 +5278,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40gemeente-denhaag/side-navigation@4.2.4",
+      "purl": "pkg:npm/%40gemeente-denhaag/side-navigation@4.3.0",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/@gemeente-denhaag/side-navigation/-/side-navigation-4.2.4.tgz",
+          "url": "https://registry.npmjs.org/@gemeente-denhaag/side-navigation/-/side-navigation-4.3.0.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "54b646ab003cd92309978c3854b714d42c299d96b64d29a6b27d32eca06384e4b6307b23e48f6ecccc8dfc1770b29c7b6ad9451e0524d00f448362f631cb1083"
+              "content": "6fa9fcdf8b4ab56e2ed25287f7fd77252383633281bd21f5837642efc089c4d41738461183621327a6fa7c0872ebeeb4772231241b6b5cf19dbcde58c5c45e0a"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
