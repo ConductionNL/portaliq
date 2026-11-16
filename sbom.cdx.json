@@ -3124,8 +3124,8 @@
       "type": "library",
       "name": "runtime",
       "group": "@babel",
-      "version": "8.0.7",
-      "bom-ref": "portaliq@0.1.0|@babel/runtime@8.0.7",
+      "version": "8.1.2",
+      "bom-ref": "portaliq@0.1.0|@babel/runtime@8.1.2",
       "licenses": [
         {
           "license": {
@@ -3133,15 +3133,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40babel/runtime@8.0.7",
+      "purl": "pkg:npm/%40babel/runtime@8.1.2",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/@babel/runtime/-/runtime-8.0.7.tgz",
+          "url": "https://registry.npmjs.org/@babel/runtime/-/runtime-8.1.2.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "93485a8030eaffac38bfed12a78c05bc8cffcacc07e4eed56ba6914e70fb37ad939dba2ba785fe601f87dd751c595491e1a138ed63c45e220865c841b341a662"
+              "content": "032e87744299240786b3a28a27f7b308ae6cb2316692f5224744c41affc1d5a6f28cb5ab436454f8ce74ecfa64d0d8a486f5458651050b5feb1df0a262a49473"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
