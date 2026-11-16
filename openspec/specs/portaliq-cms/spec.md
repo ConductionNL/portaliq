@@ -1231,6 +1231,17 @@ A grid page body MAY declare `aside` with a `width` (160 to 640 pixels) and a `g
 - WHEN it is drawn
 - THEN every run uses the 12-column grid as before
 
+### Requirement: The page answer carries the page's help text
+
+The content API's page answer (`GET /api/content/page`) SHALL carry `helpText`: the page's help text, trimmed and capped
+as the pages list serves it, or an empty string when the page has none.
+
+#### Scenario: PtStemgedrag
+
+- **GIVEN** the published page "Hoe stemden de raadsleden" with a help text
+- **WHEN** the site asks for that page
+- **THEN** the answer carries the help text, and the page shows "Hulp bij deze pagina"
+
 ## Notes
 
 - The "A page may carry a hero image reference" and "A public page may embed
