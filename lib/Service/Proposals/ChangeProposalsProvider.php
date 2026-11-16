@@ -32,7 +32,9 @@ namespace OCA\Portaliq\Service\Proposals;
 
 use InvalidArgumentException;
 use OCA\OpenRegister\Exception\NotImplementedException;
+use OCA\OpenRegister\Kernel\Contracts\ObjectRef;
 use OCA\OpenRegister\Service\Integration\IntegrationProvider;
+use OCA\OpenRegister\Service\Integration\RefIntegrationProvider;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\Tasks\PortalCaseAccessGuard;
 use OCP\IL10N;
@@ -41,7 +43,7 @@ use OCP\IUserSession;
 /**
  * Lists and appends change proposals for one record.
  */
-class ChangeProposalsProvider implements IntegrationProvider {
+class ChangeProposalsProvider implements RefIntegrationProvider {
 
 	/**
 	 * The leaf id, shared by the descriptor and this provider.
@@ -193,9 +195,7 @@ class ChangeProposalsProvider implements IntegrationProvider {
 	 * an empty queue, and a person without the review action learns nothing
 	 * about what others proposed.
 	 *
-	 * @param string               $register The record's register.
-	 * @param string               $schema   The record's schema.
-	 * @param string               $objectId The record.
+	 * @param ObjectRef $ref The register, schema and id of the object.
 	 * @param array<string, mixed> $filters  Ignored.
 	 *
 	 * @return array<int, array<string, mixed>>
@@ -205,7 +205,10 @@ class ChangeProposalsProvider implements IntegrationProvider {
 	 *
 	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
-	public function list(string $register, string $schema, string $objectId, array $filters = []): array {
+	public function list(ObjectRef $ref, array $filters = []): array {
+		$register = (string) $ref->register;
+		$schema = (string) $ref->schema;
+		$objectId = $ref->id;
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return [];
@@ -228,9 +231,7 @@ class ChangeProposalsProvider implements IntegrationProvider {
 	/**
 	 * One proposal is read on the review routes, not through a host.
 	 *
-	 * @param string $register The record's register.
-	 * @param string $schema   The record's schema.
-	 * @param string $objectId The record.
+	 * @param ObjectRef $ref The register, schema and id of the object.
 	 * @param string $entityId The proposal.
 	 *
 	 * @return array<string, mixed>
@@ -241,7 +242,7 @@ class ChangeProposalsProvider implements IntegrationProvider {
 	 *
 	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
-	public function get(string $register, string $schema, string $objectId, string $entityId): array {
+	public function get(ObjectRef $ref, string $entityId): array {
 		throw new NotImplementedException('A change proposal is read on the review routes.');
 	}//end get()
 
@@ -252,9 +253,7 @@ class ChangeProposalsProvider implements IntegrationProvider {
 	 * `proposable` (the properties the host app lets people propose) and an
 	 * optional `note`. The proposer is the signed-in user, never the payload.
 	 *
-	 * @param string               $register The record's register.
-	 * @param string               $schema   The record's schema.
-	 * @param string               $objectId The record.
+	 * @param ObjectRef $ref The register, schema and id of the object.
 	 * @param array<string, mixed> $payload  The proposal.
 	 *
 	 * @return array<string, mixed> The queued proposal.
@@ -263,7 +262,10 @@ class ChangeProposalsProvider implements IntegrationProvider {
 	 *
 	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
-	public function create(string $register, string $schema, string $objectId, array $payload): array {
+	public function create(ObjectRef $ref, array $payload): array {
+		$register = (string) $ref->register;
+		$schema = (string) $ref->schema;
+		$objectId = $ref->id;
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			throw new InvalidArgumentException('not_authenticated');
@@ -292,9 +294,7 @@ class ChangeProposalsProvider implements IntegrationProvider {
 	/**
 	 * A proposal is not edited through a host.
 	 *
-	 * @param string               $register The record's register.
-	 * @param string               $schema   The record's schema.
-	 * @param string               $objectId The record.
+	 * @param ObjectRef $ref The register, schema and id of the object.
 	 * @param string               $entityId The proposal.
 	 * @param array<string, mixed> $payload  Ignored.
 	 *
@@ -306,16 +306,14 @@ class ChangeProposalsProvider implements IntegrationProvider {
 	 *
 	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
-	public function update(string $register, string $schema, string $objectId, string $entityId, array $payload): array {
+	public function update(ObjectRef $ref, string $entityId, array $payload): array {
 		throw new NotImplementedException('A change proposal is decided on the review routes.');
 	}//end update()
 
 	/**
 	 * A proposal is not deleted: it is rejected or withdrawn, and kept.
 	 *
-	 * @param string $register The record's register.
-	 * @param string $schema   The record's schema.
-	 * @param string $objectId The record.
+	 * @param ObjectRef $ref The register, schema and id of the object.
 	 * @param string $entityId The proposal.
 	 *
 	 * @return void
@@ -326,7 +324,7 @@ class ChangeProposalsProvider implements IntegrationProvider {
 	 *
 	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
-	public function delete(string $register, string $schema, string $objectId, string $entityId): void {
+	public function delete(ObjectRef $ref, string $entityId): void {
 		throw new NotImplementedException('A change proposal is rejected or withdrawn, never deleted.');
 	}//end delete()
 

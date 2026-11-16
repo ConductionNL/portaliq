@@ -15,6 +15,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * operate-availability-report: the availability records go through
@@ -35,7 +37,10 @@ class AvailabilityStoreTest extends TestCase {
 		);
 		$deleted = [];
 		$service->method('deleteObject')->willReturnCallback(
-			static function (string $uuid, $register = null, $schema = null, bool $_rbac = true, bool $_multitenancy = true) use (&$deleted): bool {
+			static function (ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true) use (&$deleted): bool {
+				$uuid = $deletion->uuid;
+				$register = $deletion->target->register;
+				$schema = $deletion->target->schema;
 				$deleted[] = [$uuid, $schema, $_rbac];
 				return true;
 			}
@@ -51,7 +56,11 @@ class AvailabilityStoreTest extends TestCase {
 		$service = $this->objectService();
 		$saved = [];
 		$service->method('saveObject')->willReturnCallback(
-			function (array $object, ?array $extend = [], $register = null, $schema = null, ?string $uuid = null, bool $_rbac = true) use (&$saved): object {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true) use (&$saved): object {
+				$extend = $options->extend ?? [];
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$saved[] = [$object, $schema, $uuid, $_rbac];
 				return $this->getMockBuilder('OCA\\OpenRegister\\Db\\ObjectEntity')->disableOriginalConstructor()->getMock();
 			}

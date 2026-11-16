@@ -27,6 +27,7 @@ use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use stdClass;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 
 /**
  * What the traffic event store and the session recording store read, purge
@@ -288,7 +289,10 @@ class TrafficStoresGoldenTest extends TestCase {
 				 *
 				 * @return bool
 				 */
-				public function deleteObject(string $uuid, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): bool {
+				public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): bool {
+					$uuid = $deletion->uuid;
+					$register = $deletion->target->register;
+					$schema = $deletion->target->schema;
 					$this->asked[] = ['deleteObject' => [$uuid, $register, $schema, $_rbac, $_multitenancy]];
 					if (($this->world['delete'] ?? null) instanceof \Throwable) {
 						throw $this->world['delete'];
