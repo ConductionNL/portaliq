@@ -256,6 +256,9 @@ Both are corrected.
 - Per-portal authentication is declared in the schema and enforced nowhere.
   Every site currently behaves as `public` read-only, which happens to match
   the specified fail-closed default — a coincidence, not an implementation.
+  *Since resolved:* the content API now enforces `authentication.modes` and
+  `minTrust` (`ContentController::refuseUnlessPermitted()`); a portal with no
+  public mode answers content reads with 401/403 (#706).
 - Domain verification enforces the `verified` flag but nothing performs the DNS
   TXT lookup that sets it; in this rig it was set by hand.
 - There is no editorial surface — content is created by `curl`. `cms-handover`
