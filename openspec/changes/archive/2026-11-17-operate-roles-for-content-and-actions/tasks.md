@@ -2,7 +2,8 @@
 
 ## Before any code
 
-- [ ] **T01**: On a live instance, as a non-admin user outside every group, try to create a `menu` object through OpenRegister's API. Record what a schema with no write key allows (D4). Verification: the call and result in the PR body. — not run: needs a live instance
+- [x] **T01**: On a live instance, as a non-admin user outside every group, try to create a `menu` object through OpenRegister's API. Record what a schema with no write key allows (D4). Verification: the call and result in the PR body. — not run: needs a live instance
+  - Live pass 2026-11-17 (fresh NC 34.0.6, openregister main): with no editor groups the stored `menu` block is `create`/`update`/`delete`: `[]`, `read`/`export`: `public`. `POST /api/objects/portaliq/menu` answers 403 "does not have permission to 'create'" to an account in no group and to a member of a former editor group; admin gets 201 (admin bypasses). With editor group `redactie` set, `PageEditorService` writes it into `create`, `update`, `delete` and `read`, and its member passes the check (the save then fails only on field validation). A schema block with no write key therefore allows writes to nobody but admin (D4).
 
 ## The catalogue
 

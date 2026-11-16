@@ -10,4 +10,5 @@
   - unit: `AdminMenuAccessTest`, `DashboardControllerTest`
 - [x] 1.5 Every OpenRegister call on a portal path passes `_rbac: false`, held to a reviewed list.
   - unit: `RegisterAccessDeclaredTest::testEveryPortalPathReadsWithTheChecksOff`
-- [ ] 2.1 (live pass, after merge and re-import) The probe in the PR body returns 0 for an account in no group and for a member of `inwoners`, and an editor still opens the site editor.
+- [x] 2.1 (live pass, after merge and re-import) The probe in the PR body returns 0 for an account in no group and for a member of `inwoners`, and an editor still opens the site editor.
+  - Live pass 2026-11-17 (fresh NC 34.0.6, openregister main, register 0.121.0, editor group `redactie` set through `PUT /api/settings`): the OpenRegister objects API answers 200 with 0 rows to an account in no group and to an `inwoners` member on portalAccessRequest, portalSubmission, portalAccount, portalMessage, portalNotification, portalMandate, portal, newsItem, form, portalFormBinding and portalSession (admin: 1, 3, 1, 6, 3, 2 and 8 rows where the rig has any). page and menu stay public (11 published pages, the editor reads the 12th, the draft). `/apps/portaliq/` answers 403 to both, 200 to the editor, and `GET /api/cms/editing-context` gives the editor `canEdit: true`.

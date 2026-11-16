@@ -35,4 +35,5 @@
 
 ## 6. After integriq ships
 
-- [ ] 6.1 Run the e2e spec against an instance with both apps, then archive this change. — not run: needs a live instance with both apps
+- [x] 6.1 Run the e2e spec against an instance with both apps, then archive this change. — not run: needs a live instance with both apps
+  - Live pass 2026-11-17 (portaliq + integriq development, openregister main): `tests/e2e/integrations-page.spec.ts` 3/3 passed. The Add integration test now clicks the header button the page renders and checks the navigation request for `link=1`, which integriq drops from the address once its dialog opens.
