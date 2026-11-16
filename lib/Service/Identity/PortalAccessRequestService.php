@@ -59,6 +59,15 @@ class PortalAccessRequestService implements PortalAccessRequestServiceInterface 
 	private const MANDATE_SCHEMA = 'portalMandate';
 
 	/**
+	 * The sort rank of each state: open requests first, then granted, then
+	 * refused. OpenRegister sorts a field alphabetically, which would put
+	 * `granted` before `pending`, so the list sorts on this rank instead.
+	 *
+	 * @spec openspec/changes/access-requests-open-first/specs/portal-identity/spec.md#requirement-open-access-requests-come-first
+	 */
+	public const STATE_RANKS = ['pending' => 0, 'granted' => 1, 'refused' => 2];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param PortalObjectReader $reader Lists the requests.
@@ -104,6 +113,7 @@ class PortalAccessRequestService implements PortalAccessRequestServiceInterface 
 				'onBehalfOf' => $onBehalfOf,
 				'reason' => $reason,
 				'state' => 'pending',
+				'stateRank' => self::STATE_RANKS['pending'],
 				'requestedAt' => (new DateTimeImmutable())->format(DATE_ATOM),
 			]
 		);
@@ -245,6 +255,7 @@ class PortalAccessRequestService implements PortalAccessRequestServiceInterface 
 			id: $id,
 			data: [
 				'state' => $state,
+				'stateRank' => self::STATE_RANKS[$state],
 				'decidedBy' => $decidedBy,
 				'decidedAt' => (new DateTimeImmutable())->format(DATE_ATOM),
 			]
@@ -398,6 +409,7 @@ class PortalAccessRequestService implements PortalAccessRequestServiceInterface 
 			id: $id,
 			data: [
 				'state' => 'refused',
+				'stateRank' => self::STATE_RANKS['refused'],
 				'decisionReason' => trim($reason),
 				'decidedBy' => $decidedBy,
 				'decidedAt' => (new DateTimeImmutable())->format(DATE_ATOM),

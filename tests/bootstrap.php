@@ -212,6 +212,9 @@ foreach ([
 	'Service\\Form\\FormSubmission' => 'Service/Form/FormSubmission.php',
 	// The concept register's reader (portal-identity-from-the-admin 3.1).
 	'Service\\Vocabulary\\ConceptRepository' => 'Service/Vocabulary/ConceptRepository.php',
+	// What ObjectService::saveObjects() takes (openregister #9108): the defaults first.
+	'Kernel\\Contracts\\Value\\BulkBatchDefaults' => 'Kernel/Contracts/Value/BulkBatchDefaults.php',
+	'Kernel\\Contracts\\Value\\BulkSaveOptions' => 'Kernel/Contracts/Value/BulkSaveOptions.php',
 ] as $orStubClass => $orStubFile) {
 	if (class_exists('\\OCP\\EventDispatcher\\Event') === true
 		&& class_exists('\\OCA\\OpenRegister\\' . $orStubClass) === false

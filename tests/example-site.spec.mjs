@@ -838,7 +838,7 @@ test('the Zuiddrecht site lays out its own area as the MijnMenu and MijnZaken bo
 		'rows',
 		'folders',
 	])
-	assert.equal(portal.version, '0.34.0')
+	assert.equal(portal.version, '0.35.0')
 	// 0.111.0: a form binding's `availability` (form-governance-availability-retention-and-routing).
 	// 0.112.0: a portal's `adminGroups` (operate-portals-per-organisation).
 	// 0.113.0 and 0.114.0: the Yivi identity type and the portal's desk group (resident-identity-in-forms).
@@ -846,9 +846,11 @@ test('the Zuiddrecht site lays out its own area as the MijnMenu and MijnZaken bo
 	// 0.116.0: a portal's `organisationTypeSchemeId` (portal-identity-from-the-admin).
 	// 0.117.0: a collection's `messages` provider and the `messages` block (capability-rows-said-and-planned T07).
 	// 0.118.0: a portal's `traffic.excludedPaths` (intake-report-pages T07, development's 0.115.0), merged with the above; portal 0.34.0.
+	// 0.119.0: a portal's `traffic.allowSlugFallback`; portal 0.35.0.
 	// 0.119.0: a submission's `awaiting-cosign` and `not-cosigned` states (resident-identity-in-forms T04), moved past development's 0.118.0.
 	// 0.120.0: `locale` on menu and glossaryTerm (content in the visitor's language, #703).
-	assert.equal(register.info.version, '0.120.0')
+	// 0.121.0: a portal's `traffic.allowSlugFallback` moved past development's 0.120.0; portal 0.35.0.
+	assert.equal(register.info.version, '0.121.0')
 })
 
 // zuiddrecht-site-details: the portal names the organisation of the example

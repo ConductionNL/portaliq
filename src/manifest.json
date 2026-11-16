@@ -5252,6 +5252,7 @@
           {
             "key": "onBehalfOf",
             "label": "Access requested to",
+            "overlineText": "Cases of",
             "width": "195px"
           },
           {
@@ -5373,7 +5374,8 @@
           "board",
           "map"
         ],
-        "footerNote": "on approval the requester sees the cases at once, on refusal they read your reason"
+        "footerNote": "on approval the requester sees the cases at once, on refusal they read your reason",
+        "defaultOrder": "stateRank,-requestedAt"
       }
     },
     {
@@ -7543,7 +7545,8 @@
         "Change house style": "Huisstijl wijzigen",
         "Hard to read:": "Slecht leesbaar:",
         "the text in the footer does not reach a contrast of 4.5 to 1 with this theme. An editor can still use the theme; that is recorded. You choose the house style at the portal, under Settings.": "de tekst in de voet haalt met dit thema geen contrast van 4,5 op 1. Een redacteur kan het thema toch gebruiken; dat wordt vastgelegd. De huisstijl kiest u bij de portal, onder Instellingen.",
-        "{shown} of {total} requests to see cases on behalf of someone else": "{shown} van {total} verzoeken om zaken van een ander te zien"
+        "{shown} of {total} requests to see cases on behalf of someone else": "{shown} van {total} verzoeken om zaken van een ander te zien",
+        "Cases of": "Zaken van"
       }
     }
   }
