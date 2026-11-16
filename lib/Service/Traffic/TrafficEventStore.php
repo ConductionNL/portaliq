@@ -20,6 +20,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\BulkBatchDefaults;
+use OCA\OpenRegister\Kernel\Contracts\Value\BulkSaveOptions;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
@@ -188,14 +190,14 @@ class TrafficEventStore implements TrafficEventStoreInterface {
 	private function saveRecords(object $objectService, array $records): int {
 		$saved = $objectService->saveObjects(
 			objects: $records,
-			register: self::REGISTER,
-			schema: self::EVENT_SCHEMA,
+			options: new BulkSaveOptions(
+				defaults: new BulkBatchDefaults(register: self::REGISTER, schema: self::EVENT_SCHEMA),
+				validation: false,
+				events: false,
+				audit: false
+			),
 			_rbac: false,
-			_multitenancy: false,
-			validation: false,
-			events: false,
-			enrich: false,
-			_audit: false
+			_multitenancy: false
 		);
 
 		if (is_array($saved) === true) {
