@@ -272,7 +272,7 @@ echo "    e2efixture/signup (the form's destination) imported"
 FORM_ID=$(upsert form pageRoute /campagne/e2e-form-test '{
   "portal":"open-tilburg","pageRoute":"/campagne/e2e-form-test",
   "sourceApp":"e2eFixture","externalReference":"e2e-fixture-1",
-  "destination":{"register":"e2efixture","schema":"signup","fields":{},"fixed":{"source":"landing-page"}},
+  "destination":{"register":"e2efixture","schema":"signup","fixed":{"source":"landing-page"}},
   "campaign":{"campaign":"e2e","source":"playwright","medium":"test"},
   "fields":[{"id":"name","label":"Naam","type":"text","required":true},
             {"id":"email","label":"E-mail","type":"email","required":true}],
