@@ -46,6 +46,7 @@ the date, rig and test counts above are not retroactively theirs.
 | A page body is a grid or markdown | implemented |
 | Unpublished content is indistinguishable from absent | implemented |
 | Reads are cached, keyed by audience | implemented, with event-driven invalidation |
+| Content is served in the requested language | implemented in the content API (#703), unit-tested; the built-in renderer does not yet send a chosen language |
 | Markdown does not execute at a public origin | implemented |
 | Only explicitly public widgets render | implemented — via a local allow-list until nc-vue's registry carries `public` |
 | The renderer does not depend on Nextcloud globals | implemented |
@@ -214,6 +215,50 @@ invalidated on a content write, not by expiry alone.
 - **WHEN** a page is created at that route
 - **THEN** the next request serves it, without waiting for a TTL
 - @e2e `tests/e2e/site-security.spec.ts` (S8b)
+
+### Requirement: Content MUST be served in the language the visitor asked for
+
+A portal declares the `locales` it publishes in; the first is its default. A
+request's locale SHALL be resolved against that list, and an unknown or absent
+one SHALL become the default. A translation is a second content row with the
+same identity and another `locale`; a row without a `locale` is written for
+every language.
+
+One page SHALL be served per route: the page in the requested locale; failing
+that the page in the portal's default locale; failing that a page without a
+locale; and only then whichever page the route has, so a page that exists in
+some language is never answered as absent. The page list SHALL name each route
+once, in the language a read of that route would serve.
+
+Menus and glossary terms SHALL be translated as a set: the rows in the
+requested locale when it has any, otherwise the rows in the default locale,
+and in both cases every row without a locale. The cached response SHALL stay
+keyed by the requested locale, so one language's content never fills
+another's cache slot.
+
+#### Scenario: Two pages at one route each serve their own language
+
+- **GIVEN** a portal with `locales: ["nl", "en"]` and two published pages at
+  `/over-ons`, one `nl` and one `en`
+- **WHEN** the page is requested with `locale=en` and with `locale=nl`
+- **THEN** each request is served the page in its own language
+- **AND** each is cached under its own locale's key
+- @e2e exclude unit-tested — `tests/Unit/Service/CmsReaderTest.php::testEachLocaleGetsItsOwnPageAtTheSameRoute` and `::testEachLocalesPageIsCachedUnderItsOwnKey`; the built-in renderer does not yet send a chosen language, so no browser path reaches the English page
+
+#### Scenario: A language without a translation gets the default
+
+- **GIVEN** a route with a Dutch and an English page, the English one stored first
+- **WHEN** the page is requested in a locale that has no page there
+- **THEN** the Dutch page, in the portal's default locale, is served
+- @e2e exclude unit-tested — `tests/Unit/Service/CmsReaderTest.php::testAnUntranslatedLocaleIsServedThePortalsDefault`
+
+#### Scenario: Content from before a second language keeps being served
+
+- **GIVEN** a page, a menu and a glossary term stored without a `locale`
+- **WHEN** a translation of the page is added in `en`
+- **THEN** the unmarked page is still served in Dutch and the translation in English
+- **AND** the unmarked menu and term are served in both languages
+- @e2e exclude unit-tested — `tests/Unit/Service/CmsReaderTest.php::testAPageWithoutALocaleIsStillServed`, `::testMenusAreServedInTheRequestedLanguage` and `::testGlossaryTermsAreServedInTheRequestedLanguage`
 
 ### Requirement: Markdown MUST NOT execute at a public origin
 

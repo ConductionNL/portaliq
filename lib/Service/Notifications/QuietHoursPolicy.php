@@ -35,6 +35,8 @@ namespace OCA\Portaliq\Service\Notifications;
 use DateInterval;
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\Kernel\Contracts\QuietHoursPolicyInterface;
 use OCA\Portaliq\Service\ObjectRowNormaliser;
 use OCA\Portaliq\Service\ObjectServiceLookup;
@@ -127,7 +129,12 @@ class QuietHoursPolicy implements QuietHoursPolicyInterface {
 	 */
 	private function saveWindow(object $objectService, array $window, string|null $existingId): bool {
 		try {
-			$objectService->saveObject(object: $window, register: self::REGISTER, schema: self::SCHEMA, uuid: $existingId, _rbac: false, _multitenancy: false);
+			$objectService->saveObject(
+				object: $window,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: self::REGISTER, schema: self::SCHEMA), uuid: $existingId),
+				_rbac: false,
+				_multitenancy: false
+			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: quiet hours save failed', ['reason' => $e->getMessage()]);
 			return false;

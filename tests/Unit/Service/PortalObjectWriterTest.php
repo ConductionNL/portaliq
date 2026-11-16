@@ -10,6 +10,8 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Tests the OR writer: it degrades to null without OpenRegister, and — the
@@ -65,13 +67,14 @@ class PortalObjectWriterTest extends TestCase {
 			 */
 			public function saveObject(
 				array $object,
-				?array $extend = null,
-				mixed $register = null,
-				mixed $schema = null,
-				?string $uuid = null,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
 				bool $_rbac = true,
-				bool $_multitenancy = true,
+				bool $_multitenancy = true
 			): array {
+				$extend = $options->extend;
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved = $object;
 				$this->register = $register;
 				$this->schema = $schema;
@@ -434,7 +437,9 @@ class PortalObjectWriterTest extends TestCase {
 			 *
 			 * @return array<string,mixed>|null
 			 */
-			public function find(string $id, string $register = '', string $schema = '', bool $_rbac = true, bool $_multitenancy = true): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				foreach (($this->rows[$schema] ?? []) as $row) {
 					if (in_array($id, [($row['id'] ?? null), ($row['uuid'] ?? null)], true) === true) {
 						return $row;
@@ -451,13 +456,14 @@ class PortalObjectWriterTest extends TestCase {
 			 */
 			public function saveObject(
 				array $object,
-				?array $extend = null,
-				mixed $register = null,
-				mixed $schema = null,
-				?string $uuid = null,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
 				bool $_rbac = true,
-				bool $_multitenancy = true,
+				bool $_multitenancy = true
 			): array {
+				$extend = $options->extend;
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				if ($this->throwOnSave === true) {
 					throw new RuntimeException('OR write failed');
 				}

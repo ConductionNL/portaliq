@@ -6,7 +6,7 @@
 
 On a public record's view the side column SHALL have no border box but a 4px rule in the accent colour above it, the
 record's summary figures SHALL be a two-column list (the label, then the value in bold), and the links SHALL be a list
-without bullets. The record's table SHALL draw its header row on a tinted ground and its cells with 12px 16px of padding
+without bullets. The record's table SHALL draw its header row on a tinted ground at 16px and its cells with 12px 16px of padding
 and a hairline between rows.
 
 #### Scenario: PtStemgedrag

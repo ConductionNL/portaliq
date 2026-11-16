@@ -31,6 +31,7 @@ use OCA\Portaliq\Service\PortalObjectWriter;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * The status panel's counter: the binding read by id, its period counted
@@ -77,7 +78,9 @@ class FormBindingCounterTest extends TestCase {
 			/**
 			 * @return mixed
 			 */
-			public function find(string $id, string $register, string $schema, bool $_rbac = true, bool $_multitenancy = true): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->found[] = ['id' => $id, 'register' => $register, 'schema' => $schema, 'rbac' => $_rbac, 'multitenancy' => $_multitenancy];
 				if ($this->answer instanceof \Throwable) {
 					throw $this->answer;
