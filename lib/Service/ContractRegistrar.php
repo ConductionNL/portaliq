@@ -37,6 +37,7 @@ use OCA\Portaliq\Kernel\Contracts\ActivityRosterInterface;
 use OCA\Portaliq\Kernel\Contracts\ActivitySignupServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\ActivityStoreInterface;
 use OCA\Portaliq\Kernel\Contracts\AdminMenuAccessInterface;
+use OCA\Portaliq\Kernel\Contracts\ArticleServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\AuditTrailServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\AvailabilityProbeInterface;
 use OCA\Portaliq\Kernel\Contracts\AvailabilityReportInterface;
@@ -115,11 +116,14 @@ use OCA\Portaliq\Kernel\Contracts\NotificationDispatchServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\OidcClaimMapperServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\OidcClientServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\OidcStateStoreServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\OnBehalfFillingInterface;
 use OCA\Portaliq\Kernel\Contracts\OrganisationLoginConfigInterface;
+use OCA\Portaliq\Kernel\Contracts\OrganisationTypeOptionsInterface;
 use OCA\Portaliq\Kernel\Contracts\PageEditorServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PageHistoryInterface;
 use OCA\Portaliq\Kernel\Contracts\PartnerAskServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PendingPushServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PlainPageRendererInterface;
 use OCA\Portaliq\Kernel\Contracts\PlanEndReminderServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PlanFilesInterface;
 use OCA\Portaliq\Kernel\Contracts\PollServiceInterface;
@@ -130,6 +134,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalAccountServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalActionForwarderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalActionServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalAddressLookupInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalAdminGrantsInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalAdminWriteGateInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalApplicantPrefillInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalAuditHookInterface;
@@ -144,6 +149,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalChallengeServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalChangeRuleIndexInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalContactAddressServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalContactServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalCosignInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalCrossRefGuardInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalDeepLinkBuilderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalDomainVerifierInterface;
@@ -245,6 +251,7 @@ use OCA\Portaliq\Kernel\Contracts\TrafficBackfillServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\TrafficConfigResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\TrafficEventStoreInterface;
 use OCA\Portaliq\Kernel\Contracts\TrafficEventValidatorInterface;
+use OCA\Portaliq\Kernel\Contracts\TrafficExportInterface;
 use OCA\Portaliq\Kernel\Contracts\TrafficIngestServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\TrafficLogImporterInterface;
 use OCA\Portaliq\Kernel\Contracts\TrafficLogParserInterface;
@@ -266,6 +273,7 @@ use OCA\Portaliq\Kernel\Support\PortalBranchScope;
 use OCA\Portaliq\Kernel\Support\SessionTrust;
 use OCA\Portaliq\Kernel\Support\UploadedFile;
 use OCA\Portaliq\Service\Actions\PortalActionService;
+use OCA\Portaliq\Service\Articles\ArticleService;
 use OCA\Portaliq\Service\Assistant\PublicAssistantChannel;
 use OCA\Portaliq\Service\Assistant\PublicSourceScope;
 use OCA\Portaliq\Service\Availability\AvailabilityProbe;
@@ -285,6 +293,7 @@ use OCA\Portaliq\Service\Cms\MediaFile;
 use OCA\Portaliq\Service\Cms\MediaLibraryReader;
 use OCA\Portaliq\Service\Cms\MediaUsage;
 use OCA\Portaliq\Service\Cms\PageHistory;
+use OCA\Portaliq\Service\Cms\PlainPageRenderer;
 use OCA\Portaliq\Service\Cms\PortalDomainVerifier;
 use OCA\Portaliq\Service\Cms\PortalHomePage;
 use OCA\Portaliq\Service\Cms\PortalImageChoice;
@@ -335,11 +344,13 @@ use OCA\Portaliq\Service\Intake\FormConfirmationMailer;
 use OCA\Portaliq\Service\Intake\FormStatements;
 use OCA\Portaliq\Service\Intake\IntakeQueueDrain;
 use OCA\Portaliq\Service\Intake\LandingSubmissionDrain;
+use OCA\Portaliq\Service\Intake\OnBehalfFilling;
 use OCA\Portaliq\Service\Intake\PortalAddressLookup;
 use OCA\Portaliq\Service\Intake\PortalApplicantPrefill;
 use OCA\Portaliq\Service\Intake\PortalBindingPreview;
 use OCA\Portaliq\Service\Intake\PortalCaseTypeChoices;
 use OCA\Portaliq\Service\Intake\PortalCatalogueReader;
+use OCA\Portaliq\Service\Intake\PortalCosign;
 use OCA\Portaliq\Service\Intake\PortalDraftDrain;
 use OCA\Portaliq\Service\Intake\PortalDraftStore;
 use OCA\Portaliq\Service\Intake\PortalEmailVerification;
@@ -372,6 +383,7 @@ use OCA\Portaliq\Service\Notifications\PortalChangeRuleIndex;
 use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
 use OCA\Portaliq\Service\Notifications\PushDeliveryService;
 use OCA\Portaliq\Service\Notifications\QuietHoursPolicy;
+use OCA\Portaliq\Service\OrganisationTypeOptions;
 use OCA\Portaliq\Service\Overview\PortalOverview;
 use OCA\Portaliq\Service\Plans\PlanEndReminderService;
 use OCA\Portaliq\Service\Plans\PlanFiles;
@@ -388,6 +400,7 @@ use OCA\Portaliq\Service\Signin\PortalSigninSettings;
 use OCA\Portaliq\Service\Signin\SiteReturnAddress;
 use OCA\Portaliq\Service\Tasks\PartnerAskService;
 use OCA\Portaliq\Service\Tasks\PortalCaseAccessGuard;
+use OCA\Portaliq\Service\Tenancy\PortalAdminGrants;
 use OCA\Portaliq\Service\Tenancy\PortalAdminWriteGate;
 use OCA\Portaliq\Service\Tenancy\PortalOrganisationRestamp;
 use OCA\Portaliq\Service\Tenancy\PortalProvisioningService;
@@ -397,6 +410,7 @@ use OCA\Portaliq\Service\Theme\PortalThemeOverview;
 use OCA\Portaliq\Service\Traffic\Geo\GeoRefreshService;
 use OCA\Portaliq\Service\Traffic\RawRequestBody;
 use OCA\Portaliq\Service\Traffic\TrafficEventStore;
+use OCA\Portaliq\Service\Traffic\TrafficExport;
 use OCA\Portaliq\Service\Traffic\TrafficLogImporter;
 use OCA\Portaliq\Service\Traffic\TrafficLogParser;
 use OCA\Portaliq\Service\Traffic\TrafficPagePath;
@@ -442,7 +456,27 @@ final class ContractRegistrar {
 		$this->aliasAccessibilityFramingThroughPortalFamilyMembers(context: $context);
 		$this->aliasPortalFeeThroughWriteRefusal(context: $context);
 		$this->aliasFormBindingCounterToPortalImageChoice(context: $context);
+		$this->aliasArticleServiceToTrafficExport(context: $context);
 	}//end register()
+
+	/**
+	 * Alias the contracts ArticleService to TrafficExport.
+	 *
+	 * @param IRegistrationContext $context Registration context
+	 *
+	 * @return void
+	 *
+	 * @spec exclude Structural contract wiring, no functional requirement.
+	 */
+	private function aliasArticleServiceToTrafficExport(IRegistrationContext $context): void {
+		$context->registerServiceAlias(ArticleServiceInterface::class, ArticleService::class);
+		$context->registerServiceAlias(OnBehalfFillingInterface::class, OnBehalfFilling::class);
+		$context->registerServiceAlias(OrganisationTypeOptionsInterface::class, OrganisationTypeOptions::class);
+		$context->registerServiceAlias(PlainPageRendererInterface::class, PlainPageRenderer::class);
+		$context->registerServiceAlias(PortalAdminGrantsInterface::class, PortalAdminGrants::class);
+		$context->registerServiceAlias(PortalCosignInterface::class, PortalCosign::class);
+		$context->registerServiceAlias(TrafficExportInterface::class, TrafficExport::class);
+	}//end aliasArticleServiceToTrafficExport()
 
 	/**
 	 * Alias the contracts FormBindingCounter to PortalImageChoice.

@@ -28,7 +28,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Kernel\Contracts\ActionAuthServiceInterface;
-use OCA\Portaliq\Service\Articles\ArticleService;
+use OCA\Portaliq\Kernel\Contracts\ArticleServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -62,13 +62,13 @@ class ArticleController extends Controller {
 	 * @param IRequest                   $request     The request.
 	 * @param IUserSession               $userSession The signed-in staff member.
 	 * @param ActionAuthServiceInterface $actionAuth  Decides whether they may write articles (ADR-023).
-	 * @param ArticleService             $articles    The article write path.
+	 * @param ArticleServiceInterface    $articles    The article write path.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly IUserSession $userSession,
 		private readonly ActionAuthServiceInterface $actionAuth,
-		private readonly ArticleService $articles,
+		private readonly ArticleServiceInterface $articles,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -105,7 +105,7 @@ class ArticleController extends Controller {
 
 		$article = $this->articles->getArticle(articleId: $id);
 		if ($article === null) {
-			return new JSONResponse(['error' => ArticleService::NOT_FOUND], Http::STATUS_NOT_FOUND);
+			return new JSONResponse(['error' => ArticleServiceInterface::NOT_FOUND], Http::STATUS_NOT_FOUND);
 		}
 
 		return new JSONResponse(['article' => $article]);
@@ -224,8 +224,8 @@ class ArticleController extends Controller {
 	 * @return JSONResponse
 	 */
 	private function answer(array $result): JSONResponse {
-		if (($result['error'] ?? '') === ArticleService::NOT_FOUND) {
-			return new JSONResponse(['error' => ArticleService::NOT_FOUND], Http::STATUS_NOT_FOUND);
+		if (($result['error'] ?? '') === ArticleServiceInterface::NOT_FOUND) {
+			return new JSONResponse(['error' => ArticleServiceInterface::NOT_FOUND], Http::STATUS_NOT_FOUND);
 		}
 
 		if (isset($result['error']) === true) {

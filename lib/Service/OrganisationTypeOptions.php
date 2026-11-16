@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\OrganisationTypeOptionsInterface;
 use OCP\IAppConfig;
 use OCP\IL10N;
 use Psr\Container\ContainerInterface;
@@ -40,7 +41,7 @@ use Throwable;
  *
  * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
  */
-class OrganisationTypeOptions {
+class OrganisationTypeOptions implements OrganisationTypeOptionsInterface {
 
 	/**
 	 * The app-config key holding the scheme's uri, for an instance whose

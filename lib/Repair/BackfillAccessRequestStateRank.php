@@ -30,8 +30,8 @@ namespace OCA\Portaliq\Repair;
 
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+use OCA\Portaliq\Kernel\Contracts\PortalAccessRequestServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalRegisterContextInterface;
-use OCA\Portaliq\Service\Identity\PortalAccessRequestService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Container\ContainerInterface;
@@ -143,7 +143,7 @@ class BackfillAccessRequestStateRank implements IRepairStep {
 
 		$uuid  = (string)($self['uuid'] ?? $self['id'] ?? $row['id'] ?? '');
 		$state = (string)($row['state'] ?? '');
-		$rank  = PortalAccessRequestService::STATE_RANKS[$state] ?? null;
+		$rank  = PortalAccessRequestServiceInterface::STATE_RANKS[$state] ?? null;
 		if ($uuid === '' || $rank === null || ($row['stateRank'] ?? null) === $rank) {
 			return false;
 		}
