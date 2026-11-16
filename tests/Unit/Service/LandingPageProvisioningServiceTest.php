@@ -292,10 +292,12 @@ class LandingPageProvisioningServiceTest extends TestCase {
 	 * OpenRegister refuses an empty array on the form schema's object
 	 * properties `destination.fields` and `destination.fixed`.
 	 *
+	 * @return void
+	 *
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/landing-page-provisioning/spec.md#requirement-a-landing-pages-form-is-submittable-with-no-portal-session
 	 */
 	public function testADestinationWithoutRenamesOrFixedValuesCarriesNoEmptyMap(): void {
-		$this->willResolvePortal(['slug' => 'open-tilburg', 'status' => 'published', 'domains' => []]);
+		$this->willResolvePortal(portalRow: ['slug' => 'open-tilburg', 'status' => 'published', 'domains' => []]);
 		$forms = [];
 		$this->writer->method('createAnonymousObject')->willReturnCallback(
 			function (string $register, string $schema, array $data) use (&$forms): array {
@@ -312,9 +314,9 @@ class LandingPageProvisioningServiceTest extends TestCase {
 			'submitLabel' => 'Aanmelden',
 			'destination' => ['register' => 'pipelinq', 'schema' => 'lead', 'fields' => ['bad' => 3], 'fixed' => []],
 		];
-		$this->service->provision(event: $this->event(['form' => $form]));
+		$this->service->provision(event: $this->event(overrides: ['form' => $form]));
 
-		$this->assertSame(['register' => 'pipelinq', 'schema' => 'lead'], $forms[0]['destination']);
+		$this->assertSame(expected: ['register' => 'pipelinq', 'schema' => 'lead'], actual: $forms[0]['destination']);
 	}//end testADestinationWithoutRenamesOrFixedValuesCarriesNoEmptyMap()
 
 	public function testCreatedPageIsAlwaysDraft(): void {
