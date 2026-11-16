@@ -30,7 +30,7 @@ namespace OCA\Portaliq\Listener;
 
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
-use OCA\Portaliq\Service\OrganisationTypeOptions;
+use OCA\Portaliq\Kernel\Contracts\OrganisationTypeOptionsInterface;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -54,15 +54,15 @@ class PortalOrganisationTypeListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param ContainerInterface      $container For the lazy schema lookup.
-	 * @param OrganisationTypeOptions $types     The organisation type rules.
-	 * @param LoggerInterface         $logger    Notes an unreadable schema.
+	 * @param ContainerInterface               $container For the lazy schema lookup.
+	 * @param OrganisationTypeOptionsInterface $types     The organisation type rules.
+	 * @param LoggerInterface                  $logger    Notes an unreadable schema.
 	 *
 	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
-		private readonly OrganisationTypeOptions $types,
+		private readonly OrganisationTypeOptionsInterface $types,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

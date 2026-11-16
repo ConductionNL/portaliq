@@ -27,6 +27,7 @@ description:
       eHerkenning, eIDAS), the white-label portal shell, the unified inbox
       and the register of portal contributions. Employees keep working in
       the internal apps.
+      Conduction maintains this component within the Nextcloud ISV programme.
     features:
       - External login with DigiD, eHerkenning and eIDAS
       - White-label portal shell with its own domain and theme
@@ -45,6 +46,7 @@ description:
       verzorgt de externe inlog (DigiD, eHerkenning, eIDAS), de white-label
       portaalschil, de gebundelde berichtenbox en het register van
       portaalbijdragen. Medewerkers blijven werken in de interne apps.
+      Conduction onderhoudt dit component binnen het Nextcloud ISV-programma.
     features:
       - Externe inlog met DigiD, eHerkenning en eIDAS
       - White-label portaalschil met een eigen domein en thema
@@ -58,7 +60,12 @@ legal:
   repoOwner: "ConductionNL"
 
 maintenance:
-  type: internal
+  type: contract
+  contractors:
+    - name: Conduction B.V.
+      until: "2028-12-31"
+      email: info@conduction.nl
+      website: https://conduction.nl
   contacts:
     - name: "Conduction B.V."
       email: "info@conduction.nl"

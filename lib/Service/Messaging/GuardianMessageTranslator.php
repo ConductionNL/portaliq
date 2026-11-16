@@ -28,12 +28,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Messaging;
 
+use OCA\Portaliq\Kernel\Contracts\GuardianMessageTranslatorInterface;
+
 /**
  * Attaches (and stores) AI translations for one reader.
  *
  * @spec openspec/specs/guardian-message-translation/spec.md#requirement-translation-work-per-request-is-bounded-and-skips-what-needs-none
  */
-class GuardianMessageTranslator {
+class GuardianMessageTranslator implements GuardianMessageTranslatorInterface {
 	/**
 	 * The schema the messages live in.
 	 */

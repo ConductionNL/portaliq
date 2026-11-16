@@ -30,8 +30,8 @@ namespace OCA\Portaliq\Repair;
 
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
-use OCA\Portaliq\Service\Identity\PortalAccessRequestService;
-use OCA\Portaliq\Service\PortalRegisterContext;
+use OCA\Portaliq\Kernel\Contracts\PortalAccessRequestServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalRegisterContextInterface;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Container\ContainerInterface;
@@ -73,12 +73,12 @@ class BackfillAccessRequestStateRank implements IRepairStep {
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container Resolves OpenRegister's object service, which may be absent.
-	 * @param PortalRegisterContext $context Points the object service at the access request schema.
+	 * @param PortalRegisterContextInterface $context Points the object service at the access request schema.
 	 * @param LoggerInterface $logger Names a request that could not be ranked.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
-		private readonly PortalRegisterContext $context,
+		private readonly PortalRegisterContextInterface $context,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -143,7 +143,7 @@ class BackfillAccessRequestStateRank implements IRepairStep {
 
 		$uuid  = (string)($self['uuid'] ?? $self['id'] ?? $row['id'] ?? '');
 		$state = (string)($row['state'] ?? '');
-		$rank  = PortalAccessRequestService::STATE_RANKS[$state] ?? null;
+		$rank  = PortalAccessRequestServiceInterface::STATE_RANKS[$state] ?? null;
 		if ($uuid === '' || $rank === null || ($row['stateRank'] ?? null) === $rank) {
 			return false;
 		}

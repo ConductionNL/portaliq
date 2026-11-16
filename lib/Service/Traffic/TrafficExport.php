@@ -20,6 +20,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic;
 
+use OCA\Portaliq\Kernel\Contracts\TrafficExportInterface;
+
 /**
  * The daily records as a file: CSV with one row per portal-day-segment
  * and the scalar metrics, or JSON with the records whole.
@@ -30,7 +32,7 @@ namespace OCA\Portaliq\Service\Traffic;
  *
  * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
  */
-class TrafficExport {
+class TrafficExport implements TrafficExportInterface {
 
 	/**
 	 * The CSV columns, in order.
@@ -54,13 +56,6 @@ class TrafficExport {
 		'searchesWithoutCount',
 		'zeroResultSearches',
 	];
-
-	/**
-	 * The formats.
-	 *
-	 * @var string[]
-	 */
-	public const FORMATS = ['csv', 'json'];
 
 	/**
 	 * The records as CSV.
