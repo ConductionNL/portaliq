@@ -537,5 +537,14 @@
 	"Waiting for co-signature.": "Wacht op mede-ondertekening.",
 	"This is possible until {date}.": "Dit kan tot {date}.",
 	"Not co-signed, so it was not sent.": "Niet mede-ondertekend en daarom niet verstuurd.",
-	"Waiting for co-signature": "Wacht op mede-ondertekening"
+	"Waiting for co-signature": "Wacht op mede-ondertekening",
+	"Details": "Details",
+	"Part of": "Onderdeel van",
+	"the publication": "de publicatie",
+	"Document": "Document",
+	"File type": "Bestandstype",
+	"Size": "Grootte",
+	"Published on": "Gepubliceerd op",
+	"Document type": "Documentsoort",
+	"Created on": "Opgesteld op"
 }

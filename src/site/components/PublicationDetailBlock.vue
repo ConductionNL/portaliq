@@ -183,11 +183,22 @@
 						</a>
 						<span
 							v-if="
-								document.view
+								documentPage(document)
+								|| document.view
 								|| document.metadataUrl
 								|| document.diwooUrl
 							"
 							class="pq-detail__document-links">
+							<!-- The document's own page (REQ-PDC-002). -->
+							<a
+								v-if="documentPage(document)"
+								class="utrecht-link"
+								:href="documentHref(document)"
+								data-testid="publication-document-page"
+								@click.prevent="$emit('navigate', documentPage(document))">
+								{{ t('Details')
+								}}<span class="sr-only">{{ ` ${document.title}` }}</span>
+							</a>
 							<!-- Opens in the browser's viewer (REQ-PDC-001). -->
 							<a
 								v-if="document.view"
@@ -259,11 +270,22 @@
 						</span>
 						<span
 							v-if="
-								document.view
+								documentPage(document)
+								|| document.view
 								|| document.metadataUrl
 								|| document.diwooUrl
 							"
 							class="pq-detail__document-links">
+							<!-- The document's own page (REQ-PDC-002). -->
+							<a
+								v-if="documentPage(document)"
+								class="utrecht-link"
+								:href="documentHref(document)"
+								data-testid="publication-document-page"
+								@click.prevent="$emit('navigate', documentPage(document))">
+								{{ t('Details')
+								}}<span class="sr-only">{{ ` ${document.title}` }}</span>
+							</a>
 							<!-- Opens in the browser's viewer (REQ-PDC-001). -->
 							<a
 								v-if="document.view"
@@ -369,6 +391,8 @@
 <script>
 import { defineAsyncComponent } from 'vue'
 import { createTranslator } from '../../shared/i18n/index.js'
+import { runtimeConfig } from '../lib/contentApi.js'
+import { documentPageRoute } from '../lib/documentRoute.js'
 import { pageLocale } from '../lib/facetLabels.js'
 import {
 	allDetailRows,
@@ -379,6 +403,7 @@ import {
 	toDocuments,
 	visitorRows,
 } from '../lib/publicationDetail.js'
+import { addressOfRoute } from '../lib/siteAddress.js'
 
 /**
  * Whether the pinned `@conduction/nextcloud-vue` offers a public file preview
@@ -478,7 +503,7 @@ export default {
 		},
 	},
 
-	emits: ['subject'],
+	emits: ['navigate', 'subject'],
 
 	data() {
 		return {
@@ -735,6 +760,35 @@ export default {
 			} catch {
 				// Left out: see above.
 			}
+		},
+
+		/**
+		 * The in-site route of a document's own page, or '' without an id.
+		 *
+		 * @param {object} document One row of `documents`.
+		 * @return {string} The route.
+		 *
+		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+		 */
+		documentPage(document) {
+			return documentPageRoute(this.subjectId, (document || {}).id)
+		},
+
+		/**
+		 * The href of a document's own page, in the addressing of this host.
+		 *
+		 * @param {object} document One row of `documents`.
+		 * @return {string} The href.
+		 *
+		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+		 */
+		documentHref(document) {
+			const route = this.documentPage(document)
+			if (typeof window === 'undefined') {
+				return route
+			}
+
+			return addressOfRoute(route, window.location.href, runtimeConfig()).toString()
 		},
 
 		/**

@@ -299,6 +299,19 @@
 							:portal="site.slug || portalSlug"
 							:t="t" />
 
+						<!-- One public document's own page, read through the public read
+				     of its publication (publication-detail-page-complete REQ-PDC-002).
+				     Nothing found renders the not-found page below. -->
+						<DocumentPage
+							v-else-if="documentRoute && !(error && error.status === 404)"
+							:publicationId="documentRoute.publicationId"
+							:documentId="documentRoute.documentId"
+							:hrefForRoute="hrefForRoute"
+							:t="t"
+							@navigate="go"
+							@notfound="onDocumentMissing"
+							@subject="onDocumentSubject" />
+
 						<!-- Every portal's accessibility statement, generated from its
 				     latest measurement (site-accessibility-statement). -->
 						<AccessibilityStatementPage
@@ -587,6 +600,7 @@ import {
 } from './lib/contentApi.js'
 import { isCosignRoute } from './lib/cosign.js'
 import { crumbLabel, signInCrumbs } from './lib/crumbWords.js'
+import { documentRouteOf } from './lib/documentRoute.js'
 import { editorBaseFrom, fetchEditingContext } from './lib/editorApi.js'
 import { asideOf } from './lib/gridPlacement.js'
 import { createIdleTracker, idlePreviewWanted } from './lib/idleTracker.js'
@@ -662,6 +676,9 @@ const SiteNotices = defineAsyncComponent(
 const AccessibilityStatementPage = defineAsyncComponent(
 	() => import('./components/AccessibilityStatementPage.vue'),
 )
+const DocumentPage = defineAsyncComponent(
+	() => import('./components/DocumentPage.vue'),
+)
 const CosignPage = defineAsyncComponent(
 	() => import('./components/CosignPage.vue'),
 )
@@ -707,6 +724,7 @@ export default {
 		NotFoundPage,
 		SharedDossierPage,
 		CosignPage,
+		DocumentPage,
 		AccessibilityStatementPage,
 		SiteEditButton,
 		SiteNotices,
@@ -898,6 +916,21 @@ export default {
 					{
 						route: this.route,
 						label: this.t('Accessibility statement'),
+						href: this.hrefForRoute(this.route),
+					},
+				]
+			}
+			// The ids are not words and no page sits at `/document`.
+			if (this.documentRoute) {
+				return [
+					{
+						route: '/',
+						label: this.t('Home'),
+						href: this.hrefForRoute('/'),
+					},
+					{
+						route: this.route,
+						label: this.subject ? this.subject.title : this.t('Document'),
 						href: this.hrefForRoute(this.route),
 					},
 				]
@@ -1416,6 +1449,15 @@ export default {
 		 */
 		cosignRoute() {
 			return isCosignRoute(this.route)
+		},
+
+		/**
+		 * @return {{publicationId: string, documentId: string}|null} The ids of the
+		 *   document page on screen, or null on any other route.
+		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+		 */
+		documentRoute() {
+			return documentRouteOf(this.route)
 		},
 
 		/**
@@ -2414,6 +2456,31 @@ export default {
 		},
 
 		/**
+		 * A document page found nothing: the not-found page renders, with
+		 * nothing of the document (REQ-PDC-002).
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+		 */
+		onDocumentMissing() {
+			this.subject = null
+			this.error = { status: 404 }
+			this.applyDocumentTitle()
+		},
+
+		/**
+		 * A document page names its document, for the trail and the tab.
+		 *
+		 * @param {{title: string}|null} subject What the page shows.
+		 * @return {void}
+		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+		 */
+		onDocumentSubject(subject) {
+			this.subject = subject
+			this.applyDocumentTitle()
+		},
+
+		/**
 		 * Load one page by route.
 		 *
 		 * @param {string} route The in-portal route.
@@ -2467,6 +2534,13 @@ export default {
 			// The co-sign page works from the code and the co-signer's own
 			// sign-in, so it opens on every portal without a CMS page.
 			if (isCosignRoute(route)) {
+				this.openSharedDossierRoute()
+				return true
+			}
+
+			// A document page renders from opencatalogi's public read, so it
+			// opens on every portal without a CMS page (REQ-PDC-002).
+			if (documentRouteOf(route) !== null) {
 				this.openSharedDossierRoute()
 				return true
 			}

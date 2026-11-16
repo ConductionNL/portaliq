@@ -20,7 +20,7 @@ run on `origin/development` first and seen red.
 
 ## 2. The document page
 
-- [ ] 2.1 Route `/document/{id}` in the site router and a `DocumentPage` component; it reads the
+- [x] 2.1 (`/document/<publicationId>/<documentId>`, matched by `src/site/lib/documentRoute.js` so the shell bundle stays light; `DocumentPage.vue` reads `src/site/lib/documentPage.js::loadDocumentPage()`: the federation read of the publication, then its attachment list, the row whose `documentId` matches; nothing found emits `notfound` and the shell renders `NotFoundPage`; the publication page links each document with an id; `tests/document-page.spec.mjs` in `check:specs`; the e2e spec is left for the live pass) Route `/document/{id}` in the site router and a `DocumentPage` component; it reads the
   document through the public read of its publication and renders not-found with 404 otherwise. The
   publication page links each document to it (REQ-PDC-002).
   - node test `tests/document-page.spec.mjs` (wire into `check:specs`): `the page links back to its
