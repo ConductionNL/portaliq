@@ -27,7 +27,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\ActionAuthService;
+use OCA\Portaliq\Kernel\Contracts\ActionAuthServiceInterface;
 use OCA\Portaliq\Service\Articles\ArticleService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -59,15 +59,15 @@ class ArticleController extends Controller {
 	/**
 	 * Constructor.
 	 *
-	 * @param IRequest          $request     The request.
-	 * @param IUserSession      $userSession The signed-in staff member.
-	 * @param ActionAuthService $actionAuth  Decides whether they may write articles (ADR-023).
-	 * @param ArticleService    $articles    The article write path.
+	 * @param IRequest                   $request     The request.
+	 * @param IUserSession               $userSession The signed-in staff member.
+	 * @param ActionAuthServiceInterface $actionAuth  Decides whether they may write articles (ADR-023).
+	 * @param ArticleService             $articles    The article write path.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly IUserSession $userSession,
-		private readonly ActionAuthService $actionAuth,
+		private readonly ActionAuthServiceInterface $actionAuth,
 		private readonly ArticleService $articles,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);

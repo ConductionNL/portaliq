@@ -28,6 +28,7 @@ namespace OCA\Portaliq\Service\Intake;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\Portaliq\Kernel\Contracts\PortalFormAvailabilityInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use Throwable;
 
@@ -38,7 +39,7 @@ use Throwable;
  * current period (decision 179: a submit writes the destination object
  * directly, there is no portal-side submission store to count).
  */
-class PortalFormAvailability {
+class PortalFormAvailability implements PortalFormAvailabilityInterface {
 	/**
 	 * The zone dates and maintenance windows are written in.
 	 */

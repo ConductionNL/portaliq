@@ -47,6 +47,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalDeepLinkBuilderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalEmailVerificationInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFamilyMembersInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFeeInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFormAvailabilityInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFormBindingResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFormCalculatorInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFormDecisionInterface;
@@ -59,7 +60,6 @@ use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSubmissionChecksInterface;
 use OCA\Portaliq\Service\Intake\OnBehalfFilling;
 use OCA\Portaliq\Service\Intake\PortalCosignFlow;
-use OCA\Portaliq\Service\Intake\PortalFormAvailability;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\Intake\PortalIntakeConfirmation;
 use OCA\Portaliq\Service\Intake\PortalIntakePayments;
@@ -135,7 +135,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param PortalEmailVerificationInterface|null $emailVerification Checks the proof that an e-mail address was verified.
 	 * @param DestinationIntakeInterface|null $intake Submits the answers into the binding's destination (decision 179).
 	 * @param DestinationLookupInterface|null $lookup Finds the object a reference belongs to.
-	 * @param PortalFormAvailability|null $availability Whether a form takes submissions now (REQ-FGV-001).
+	 * @param PortalFormAvailabilityInterface|null $availability Whether a form takes submissions now (REQ-FGV-001).
 	 * @param OnBehalfFilling|null $onBehalf The desk employee who fills a form in for a resident (resident-identity-in-forms T06).
 	 * @param PortalCosignFlow|null $cosign Holds a submission for its co-signer (resident-identity-in-forms T04).
 	 */
@@ -163,7 +163,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		?PortalEmailVerificationInterface $emailVerification = null,
 		private readonly ?DestinationIntakeInterface $intake = null,
 		private readonly ?DestinationLookupInterface $lookup = null,
-		private readonly ?PortalFormAvailability $availability = null,
+		private readonly ?PortalFormAvailabilityInterface $availability = null,
 		private readonly ?OnBehalfFilling $onBehalf = null,
 		private readonly ?PortalCosignFlow $cosign = null,
 	) {
