@@ -2,7 +2,8 @@
 
 ## Before any screen
 
-- [ ] **T01**: On a live instance, as a signed-in Nextcloud user outside every report group, read `portalReporterContact` through OpenRegister's objects API. If it returns rows, narrow the schema's `authorization` in `lib/Settings/portaliq_register.json` and bump the register version (design D7). Verification: the live call and its result in the PR body; `ReportControllerTest` stays green.
+- [x] **T01**: On a live instance, as a signed-in Nextcloud user outside every report group, read `portalReporterContact` through OpenRegister's objects API. If it returns rows, narrow the schema's `authorization` in `lib/Settings/portaliq_register.json` and bump the register version (design D7). Verification: the live call and its result in the PR body; `ReportControllerTest` stays green.
+  - Live pass 2026-11-17 (fresh NC 34.0.6, openregister main, register 0.121.0): with one `portalReporterContact` row written as admin, the OpenRegister objects API answers 200 with total 0 to an account in no group, an `inwoners` member and a page editor, and 404 on a read by id. The schema's `authorization` (`read`/`export`: `admin`) already closes it, so nothing was narrowed and the register version is unchanged.
 
 ## Access
 
