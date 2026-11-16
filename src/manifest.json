@@ -3396,28 +3396,8 @@
               "metric": "pageViews",
               "label": "Page views",
               "testId": "portal-kpi-page-views",
-              "dateRange": {
-                "default": "30",
-                "presets": [
-                  {
-                    "id": "7",
-                    "label": "Last 7 days"
-                  },
-                  {
-                    "id": "30",
-                    "label": "Last 30 days"
-                  },
-                  {
-                    "id": "90",
-                    "label": "Last 90 days"
-                  },
-                  {
-                    "id": "365",
-                    "label": "Last 365 days"
-                  }
-                ]
-              },
-              "variant": "primary"
+              "variant": "primary",
+              "days": "@page.period"
             }
           },
           {
@@ -3427,27 +3407,7 @@
               "metric": "sessions",
               "label": "Sessions",
               "testId": "portal-kpi-sessions",
-              "dateRange": {
-                "default": "30",
-                "presets": [
-                  {
-                    "id": "7",
-                    "label": "Last 7 days"
-                  },
-                  {
-                    "id": "30",
-                    "label": "Last 30 days"
-                  },
-                  {
-                    "id": "90",
-                    "label": "Last 90 days"
-                  },
-                  {
-                    "id": "365",
-                    "label": "Last 365 days"
-                  }
-                ]
-              }
+              "days": "@page.period"
             }
           },
           {
@@ -3457,27 +3417,7 @@
               "metric": "visitors",
               "label": "Visitors",
               "testId": "portal-kpi-visitors",
-              "dateRange": {
-                "default": "30",
-                "presets": [
-                  {
-                    "id": "7",
-                    "label": "Last 7 days"
-                  },
-                  {
-                    "id": "30",
-                    "label": "Last 30 days"
-                  },
-                  {
-                    "id": "90",
-                    "label": "Last 90 days"
-                  },
-                  {
-                    "id": "365",
-                    "label": "Last 365 days"
-                  }
-                ]
-              }
+              "days": "@page.period"
             }
           },
           {
@@ -3487,28 +3427,8 @@
               "metric": "engagedSessions",
               "label": "Engaged sessions",
               "testId": "portal-kpi-engaged",
-              "dateRange": {
-                "default": "30",
-                "presets": [
-                  {
-                    "id": "7",
-                    "label": "Last 7 days"
-                  },
-                  {
-                    "id": "30",
-                    "label": "Last 30 days"
-                  },
-                  {
-                    "id": "90",
-                    "label": "Last 90 days"
-                  },
-                  {
-                    "id": "365",
-                    "label": "Last 365 days"
-                  }
-                ]
-              },
-              "variant": "success"
+              "variant": "success",
+              "days": "@page.period"
             }
           },
           {
@@ -3908,20 +3828,11 @@
                 {
                   "id": "overview",
                   "widgetIds": [
-                    "portal-home-page",
-                    "portal-kpi-page-views",
-                    "portal-kpi-sessions",
-                    "portal-kpi-visitors",
-                    "portal-kpi-engaged",
                     "portal-data"
                   ],
                   "label": "Overzicht",
                   "columns": 4,
                   "layout": [
-                    {
-                      "widgetId": "portal-home-page",
-                      "gridWidth": 12
-                    },
                     {
                       "widgetId": "portal-data",
                       "gridWidth": 12
@@ -4688,6 +4599,54 @@
           "portal-side-status",
           "portal-side-editors",
           "portal-side-traffic"
+        ],
+        "band": [
+          {
+            "widgetId": "portal-kpi-page-views",
+            "span": 3,
+            "chrome": "bare"
+          },
+          {
+            "widgetId": "portal-kpi-sessions",
+            "span": 3,
+            "chrome": "bare"
+          },
+          {
+            "widgetId": "portal-kpi-visitors",
+            "span": 3,
+            "chrome": "bare"
+          },
+          {
+            "widgetId": "portal-kpi-engaged",
+            "span": 3,
+            "chrome": "bare"
+          },
+          {
+            "widgetId": "portal-home-page",
+            "span": 12
+          }
+        ],
+        "pageFilters": [
+          {
+            "key": "period",
+            "label": "Period",
+            "control": "segmented",
+            "options": [
+              {
+                "value": "7",
+                "label": "7 days"
+              },
+              {
+                "value": "30",
+                "label": "30 days"
+              },
+              {
+                "value": "365",
+                "label": "12 months"
+              }
+            ],
+            "default": "30"
+          }
         ],
         "headerActions": [
           {
@@ -7571,6 +7530,11 @@
         "Upload": "Uploaden",
         "{shown} of {total} submissions via the portals · with the proof that the resident received a confirmation": "{shown} van {total} inzendingen via de portals · met het bewijs dat de inwoner een ontvangstbevestiging kreeg",
         "{shown} of {total} accounts · who may sign in, and how": "{shown} van {total} accounts · wie mag inloggen, en hoe",
+        "View website": "Website bekijken",
+        "Period": "Periode",
+        "7 days": "7 dagen",
+        "30 days": "30 dagen",
+        "12 months": "12 maanden",
         "{shown} of {total} sessions · a session starts when someone signs in": "{shown} van {total} sessies · een sessie ontstaat bij het inloggen",
         "Contrast": "Contrast",
         "Readable": "Leesbaar",
