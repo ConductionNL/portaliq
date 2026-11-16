@@ -24245,8 +24245,8 @@
     {
       "type": "library",
       "name": "marked",
-      "version": "18.0.12",
-      "bom-ref": "portaliq@0.1.0|marked@18.0.12",
+      "version": "18.1.2",
+      "bom-ref": "portaliq@0.1.0|marked@18.1.2",
       "licenses": [
         {
           "license": {
@@ -24254,15 +24254,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/marked@18.0.12",
+      "purl": "pkg:npm/marked@18.1.2",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/marked/-/marked-18.0.12.tgz",
+          "url": "https://registry.npmjs.org/marked/-/marked-18.1.2.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "2c49b881ad98788d93dc65478fd6f405a0cf3e4f772cb4c730578cc906cd2333f173cbc2234cbfb1ccb4640eb3ea55cac93f63f4d865fce0ba6582981ae15270"
+              "content": "0df3a7bcb010e9661e5b158ed6ee11c8539eab21eea7a764b393cfaa7a058a8a14ee2a51be274eff68fca658401c8899839ef813d665cd28d488f30b03316482"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
