@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Tenancy;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCA\Portaliq\Kernel\Contracts\PortalOrganisationRestampInterface;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
@@ -327,12 +328,14 @@ class PortalOrganisationRestamp implements PortalOrganisationRestampInterface {
 		try {
 			$entity = $this->objectService()?->find(
 				id: $row['uuid'],
-				register: self::REGISTER,
-				schema: $row['schema'],
+				options: new ObjectFindOptions(
+					register: self::REGISTER,
+					schema: $row['schema'],
+					render: false,
+					audit: false
+				),
 				_rbac: false,
-				_multitenancy: false,
-				_render: false,
-				_audit: false
+				_multitenancy: false
 			);
 			if (is_object($entity) === false) {
 				throw new RuntimeException('the row was not found again');

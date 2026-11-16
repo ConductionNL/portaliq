@@ -29,6 +29,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Notifications;
 
 use DateTimeImmutable;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\Kernel\Contracts\PendingPushServiceInterface;
 use OCA\Portaliq\Service\ObjectRowNormaliser;
 use OCA\Portaliq\Service\ObjectServiceLookup;
@@ -97,8 +99,7 @@ class PendingPushService implements PendingPushServiceInterface {
 					'deliverAfter' => $deliverAfter->format('c'),
 					'delivered' => false,
 				],
-				register: self::REGISTER,
-				schema: self::SCHEMA,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: self::REGISTER, schema: self::SCHEMA)),
 				_rbac: false,
 				_multitenancy: false
 			);
@@ -338,7 +339,12 @@ class PendingPushService implements PendingPushServiceInterface {
 	 */
 	private function saveDelivered(object $objectService, array $merged, string $id): bool {
 		try {
-			$objectService->saveObject(object: $merged, register: self::REGISTER, schema: self::SCHEMA, uuid: $id, _rbac: false, _multitenancy: false);
+			$objectService->saveObject(
+				object: $merged,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: self::REGISTER, schema: self::SCHEMA), uuid: $id),
+				_rbac: false,
+				_multitenancy: false
+			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: pending push mark-delivered failed', ['reason' => $e->getMessage()]);
 			return false;

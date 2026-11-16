@@ -30,6 +30,8 @@ namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\Kernel\Contracts\ActionReminderServiceInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -221,8 +223,7 @@ class ActionReminderService implements ActionReminderServiceInterface {
 	private function tellAssignee(object $objectService, array $action, string $title): void {
 		$objectService->saveObject(
 			object: $this->reminderMessage(action: $action, title: $title),
-			register: self::REGISTER,
-			schema: 'portalMessage',
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: self::REGISTER, schema: 'portalMessage')),
 			_rbac: false,
 			_multitenancy: false
 		);
@@ -270,9 +271,10 @@ class ActionReminderService implements ActionReminderServiceInterface {
 	private function markReminded(object $objectService, array $action, string $id): void {
 		$objectService->saveObject(
 			object: ['reminderSentAt' => gmdate('c'), 'reminderForEndDate' => substr((string)$action['endDate'], 0, 10)],
-			register: self::REGISTER,
-			schema: 'portalAction',
-			uuid: $id,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: self::REGISTER, schema: 'portalAction'),
+				uuid: $id
+			),
 			_rbac: false,
 			_multitenancy: false
 		);
