@@ -3492,6 +3492,7 @@ OC.L10N.register(
         "The opening sentence under the form's heading.": "De openingszin onder de kop van het formulier.",
         "Event to sign up for": "Evenement om je voor aan te melden",
         "No event": "Geen evenement",
+        "Plan templates": "Plansjablonen",
         "You do not look after this portal.": "U beheert dit portaal niet.",
         "Only an instance administrator can change who looks after a portal.": "Alleen een beheerder van de installatie kan wijzigen wie een portaal beheert.",
         "The Nextcloud groups whose members look after this portal: its settings, domains, theme, sign-in, pages, menus and notices. Only an instance administrator changes this list.": "De Nextcloud-groepen waarvan de leden dit portaal beheren: de instellingen, domeinen, het thema, het inloggen, de pagina's, menu's en mededelingen. Alleen een beheerder van de installatie wijzigt deze lijst.",

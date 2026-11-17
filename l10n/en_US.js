@@ -556,6 +556,7 @@ OC.L10N.register(
         "Use a page path of the site, such as /afval.": "Use a page path of the site, such as /afval.",
         "Event to sign up for": "Event to sign up for",
         "No event": "No event",
+        "Plan templates": "Plan templates",
         "You do not look after this portal.": "You do not look after this portal.",
         "Only an instance administrator can change who looks after a portal.": "Only an instance administrator can change who looks after a portal.",
         "Availability": "Availability",
