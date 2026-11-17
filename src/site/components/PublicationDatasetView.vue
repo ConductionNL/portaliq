@@ -20,7 +20,7 @@
 		<p v-if="loading" class="pq-dataset-view__status" role="status">
 			{{ t('Loading…') }}
 		</p>
-		<p v-else-if="error" class="pq-dataset-view__status" role="status">
+		<p v-else-if="error" class="pq-dataset-view__status" role="alert">
 			{{ t('This view could not be loaded.') }}
 		</p>
 
