@@ -34,7 +34,7 @@ use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\PortalCaseAccessGuardInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
-use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\BearerSessionResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\ProposalServiceInterface;
 use OCA\Portaliq\Service\Proposals\DeclaredProposableProperties;
 use OCP\AppFramework\Controller;
@@ -66,7 +66,7 @@ class ProposalController extends Controller {
 	 * @param ProposalServiceInterface $proposals The queue itself.
 	 * @param PortalContributionRegistryInterface $registry The contribution aggregator.
 	 * @param PortalObjectReaderInterface $reader Reads the record being proposed about.
-	 * @param PortalSessionServiceInterface $session Resolves a portal subject.
+	 * @param BearerSessionResolverInterface $session Resolves a portal subject.
 	 * @param PortalCaseAccessGuardInterface $guard Decides who may review.
 	 * @param IUserSession $userSession The staff user, when there is one.
 	 */
@@ -75,7 +75,7 @@ class ProposalController extends Controller {
 		private readonly ProposalServiceInterface $proposals,
 		private readonly PortalContributionRegistryInterface $registry,
 		private readonly PortalObjectReaderInterface $reader,
-		private readonly PortalSessionServiceInterface $session,
+		private readonly BearerSessionResolverInterface $session,
 		private readonly PortalCaseAccessGuardInterface $guard,
 		private readonly IUserSession $userSession,
 	) {

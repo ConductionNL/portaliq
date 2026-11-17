@@ -3476,6 +3476,9 @@ OC.L10N.register(
         "As the case app shows it": "Zoals de zaakapp het toont",
         "The columns are saved.": "De kolommen zijn opgeslagen.",
         "The columns could not be saved. Try again.": "De kolommen konden niet worden opgeslagen. Probeer het opnieuw.",
+        "Site at the root of this domain": "Site direct op dit domein",
+        "Page the bare domain opens": "Pagina die het domein zonder pad opent",
+        "Use a page path of the site, such as /afval.": "Gebruik het pad van een pagina van de site, zoals /afval.",
         "This page is not excluded from visitor statistics. Add it before you publish.": "Deze pagina is niet uitgesloten van de bezoekersstatistieken. Voeg deze toe aan de uitgesloten paden voordat u publiceert.",
         "Excluded paths": "Uitgesloten paden",
         "Pages the collector writes no visitor row for: each path and everything below it. Put every page that takes or shows a report of wrongdoing here, so nothing records that somebody opened the form.": "Pagina's waarvoor de verzamelaar geen bezoekersregel schrijft: elk pad en alles eronder. Zet hier elke pagina die een melding van een misstand ontvangt of toont, zodat nergens wordt vastgelegd dat iemand het formulier opende.",
@@ -3489,6 +3492,7 @@ OC.L10N.register(
         "The opening sentence under the form's heading.": "De openingszin onder de kop van het formulier.",
         "Event to sign up for": "Evenement om je voor aan te melden",
         "No event": "Geen evenement",
+        "Plan templates": "Plansjablonen",
         "You do not look after this portal.": "U beheert dit portaal niet.",
         "Only an instance administrator can change who looks after a portal.": "Alleen een beheerder van de installatie kan wijzigen wie een portaal beheert.",
         "The Nextcloud groups whose members look after this portal: its settings, domains, theme, sign-in, pages, menus and notices. Only an instance administrator changes this list.": "De Nextcloud-groepen waarvan de leden dit portaal beheren: de instellingen, domeinen, het thema, het inloggen, de pagina's, menu's en mededelingen. Alleen een beheerder van de installatie wijzigt deze lijst.",
@@ -3612,7 +3616,17 @@ OC.L10N.register(
         "No installed app contributes pages for this account.": "Geen geïnstalleerde app levert pagina's voor dit account.",
         "{app}, no longer installed": "{app}, niet meer geïnstalleerd",
         "Hide for this client": "Verbergen voor deze klant",
-        "The pages of this account could not be loaded.": "De pagina's van dit account konden niet worden geladen."
+        "The pages of this account could not be loaded.": "De pagina's van dit account konden niet worden geladen.",
+        "How search ranks": "Hoe de zoekfunctie sorteert",
+        "A search with a search term shows the best matches first. The best match is the result whose title is most like the search term.": "Een zoekopdracht met een zoekterm toont de beste resultaten eerst. Het beste resultaat is het resultaat waarvan de titel het meest op de zoekterm lijkt.",
+        "A search with a search term keeps the order the visitor chose.": "Een zoekopdracht met een zoekterm houdt de volgorde aan die de bezoeker koos.",
+        "Titles are found even with a small spelling mistake in the search term.": "Titels worden ook gevonden met een kleine spelfout in de zoekterm.",
+        "Titles are only found when the search term is spelled exactly.": "Titels worden alleen gevonden als de zoekterm precies goed gespeld is.",
+        "Summaries are found even with a small spelling mistake in the search term.": "Samenvattingen worden ook gevonden met een kleine spelfout in de zoekterm.",
+        "Summaries are only found when the search term is spelled exactly.": "Samenvattingen worden alleen gevonden als de zoekterm precies goed gespeld is.",
+        "Text inside documents is found even with a small spelling mistake in the search term.": "Tekst in documenten wordt ook gevonden met een kleine spelfout in de zoekterm.",
+        "Text inside documents is only found when the search term is spelled exactly.": "Tekst in documenten wordt alleen gevonden als de zoekterm precies goed gespeld is.",
+        "Results from other catalogues that carry no score come after the scored results, in the order their catalogue gave them.": "Resultaten uit andere catalogi zonder score komen na de resultaten met een score, in de volgorde die hun catalogus gaf."
     },
     "nplurals=2; plural=(n != 1);"
 )
