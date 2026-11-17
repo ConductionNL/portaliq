@@ -444,8 +444,9 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.109.0 (portalMessage 0.8.0): the read-only x-openregister-mcp dialect on the portal inbox (portaliq-mcp-adoption). Additive.
 		// 0.122.0 (portalSubmission 0.4.0, portalNotification 0.4.0): read-only x-openregister-mcp dialects on the operational records (hermiq-ai-tooling). Additive; written as 0.111.0 on its branch, moved past development's 0.121.0 at merge time.
 		// 0.124.0 (portal 0.36.0): a domain's `reverifyMisses` and `unboundAt`, kept by the periodic re-check that unbinds a domain whose record is gone (portal-scoping-and-auth Task 2). Additive.
-		$this->assertSame(expected: '0.124.0', actual: self::$register['info']['version']);
-		$this->assertSame(expected: '0.124.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		// 0.125.0 (portalOidcState 0.4.0): a login state row names the `portal` the login started on, so the OIDC and broker callbacks bind the session to it (portal-scoping-and-auth Task 4). Additive; a row without it binds the session to no portal.
+		$this->assertSame(expected: '0.125.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.125.0', actual: self::$register['components']['registers']['portaliq']['version']);
 		$domainItem = self::$register['components']['schemas']['portal']['properties']['domains']['items']['properties'];
 		$this->assertSame(expected: 'integer', actual: $domainItem['reverifyMisses']['type']);
 		$this->assertSame(expected: 'date-time', actual: $domainItem['unboundAt']['format']);
@@ -486,7 +487,8 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['activationExpiresAt']['format']);
 		$this->assertSame('0.8.0', self::$register['components']['schemas']['portalMessage']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalMessage']['properties']['ruleKey']['type']);
-		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalOidcState']['version']);
+		$this->assertSame('0.4.0', self::$register['components']['schemas']['portalOidcState']['version']);
+		$this->assertSame('string', self::$register['components']['schemas']['portalOidcState']['properties']['portal']['type']);
 		$this->assertSame('boolean', self::$register['components']['schemas']['portalOidcState']['properties']['silent']['type']);
 		$this->assertSame('0.8.0', self::$register['components']['schemas']['page']['version']);
 		$this->assertSame(70, self::$register['components']['schemas']['page']['properties']['seoTitle']['maxLength']);
@@ -712,7 +714,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 			['state', 'nonce', 'org', 'provider', 'expiresAt'],
 			$state['required']
 		);
-		$this->assertSame('0.3.0', $state['version']);
+		$this->assertSame('0.4.0', $state['version']);
 		$this->assertSame(['oidc', 'broker'], $state['properties']['route']['enum']);
 
 		$account = $schemas['portalAccount'];

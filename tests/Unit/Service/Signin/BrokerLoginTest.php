@@ -374,6 +374,23 @@ class BrokerLoginTest extends TestCase {
 
 
 	/**
+	 * portal-scoping-and-auth Task 4: a broker login started on a portal mints
+	 * a session bound to that portal, carried through the login state.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
+	 */
+	public function testABrokerSessionIsBoundToThePortalTheLoginStartedOn(): void {
+		$login = $this->login($this->routed(), 200, $this->exchangeBody());
+		$state = $this->queryOf((string)$login->start(org: 'gemeente-x', provider: 'digid', returnTo: '/apps/portaliq/portal', callbackUrl: 'https://p/cb', portal: 'portal-a'))['relayState'];
+
+		$this->assertSame(['token' => 'bearer-1', 'returnTo' => '/apps/portaliq/portal'], $login->complete(state: $state, code: 'one-time-code'));
+		$this->assertSame('portal-a', $this->sessionCalls[0][9]);
+	}//end testABrokerSessionIsBoundToThePortalTheLoginStartedOn()
+
+
+	/**
 	 * A Yivi login through the broker signs in a `yivi` account and hands the
 	 * disclosed attributes, and nothing else, to the session.
 	 *

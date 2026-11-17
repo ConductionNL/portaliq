@@ -651,7 +651,10 @@ class SessionController extends Controller {
 			org: $run->org,
 			provider: $run->provider,
 			returnTo: $this->returnAddress(siteReturn: $run->siteReturn, site: $run->site),
-			silent: ($run->prompt === 'none')
+			silent: ($run->prompt === 'none'),
+			// The session the callback mints is bound to this portal
+			// (portal-scoping-and-auth Task 4); only a resolved portal's slug.
+			portal: (string)($run->site['slug'] ?? '')
 		);
 	}//end storeStartState()
 
@@ -892,7 +895,9 @@ class SessionController extends Controller {
 			roles: [$audience . ':read'],
 			branch: (string)($run->mapped['branch'] ?? ''),
 			provider: $run->pending['provider'],
-			kvk: (string)($run->mapped['kvk'] ?? '')
+			kvk: (string)($run->mapped['kvk'] ?? ''),
+			// Bound to the portal the login started on (portal-scoping-and-auth Task 4).
+			portal: (string)($run->pending['portal'] ?? '')
 		);
 	}//end issueOidcSession()
 

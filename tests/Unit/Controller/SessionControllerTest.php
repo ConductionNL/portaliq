@@ -475,9 +475,11 @@ class SessionControllerTest extends TestCase {
 		$oidc->method('buildAuthorizationUrl')->willReturn('https://broker.example/authorize?state=state-1');
 
 		// The state row must carry the ORGANISATION, not the portal slug: the
-		// callback resolves the broker config from what was stored here.
+		// callback resolves the broker config from what was stored here. The
+		// resolved portal's slug rides along separately, so the session the
+		// callback mints is bound to it (portal-scoping-and-auth Task 4).
 		$stateStore = $this->createMock(OidcStateStoreService::class);
-		$stateStore->expects($this->once())->method('create')->with('state-1', 'nonce-1', 'verifier-1', 'gemeente-x', 'eherkenning', $this->anything())->willReturn(true);
+		$stateStore->expects($this->once())->method('create')->with('state-1', 'nonce-1', 'verifier-1', 'gemeente-x', 'eherkenning', $this->anything(), false, 'la-franken')->willReturn(true);
 
 		$controller = $this->controller(session: $this->createMock(PortalSessionService::class), orgConfig: $orgConfig, oidc: $oidc, stateStore: $stateStore, portals: $portals);
 		$response = $this->dispatch(controller: $controller, method: 'oidcStart', params: ['provider' => 'eherkenning', 'portal' => 'la-franken']);
@@ -685,6 +687,59 @@ class SessionControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_FOUND, $response->getStatus());
 
 	}//end testOidcCallbackCarriesTheLoginBranchIntoTheSession()
+
+	/**
+	 * portal-scoping-and-auth Task 4: the OIDC callback binds the session to
+	 * the portal its state row says the login started on.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
+	 */
+	public function testOidcCallbackBindsTheSessionToThePortalTheLoginStartedOn(): void {
+		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
+		$orgConfig->method('isLoginProviderAllowed')->willReturn(true);
+		$mapper = new OidcClaimMapperService();
+		$orgConfig->method('resolveOidcConfig')->willReturn(
+			$mapper->applyPreset('eherkenning', ['issuer' => 'https://broker.example', 'clientId' => 'rp', 'clientSecret' => 'x'])
+		);
+
+		$oidc = $this->createMock(OidcClientService::class);
+		$oidc->method('discover')->willReturn($this->discoveryFixture());
+		$oidc->method('exchangeCode')->willReturn(['id_token' => 'x.y.z']);
+		$oidc->method('verifyIdToken')->willReturn(['sub' => 'kvk-1', 'acr' => 'high-loa']);
+
+		$stateStore = $this->createMock(OidcStateStoreService::class);
+		$stateStore->method('consume')->willReturn($this->pendingFixture() + ['portal' => 'portal-a']);
+
+		$accounts = $this->createMock(PortalAccountService::class);
+		$accounts->method('findOrCreate')->willReturn(['subjectRef' => 'server-derived-subject', 'isNew' => false]);
+
+		$bound   = null;
+		$session = $this->createMock(PortalSessionService::class);
+		$session->expects($this->once())->method('issueSession')->willReturnCallback(
+			function (...$args) use (&$bound): array {
+				$bound = ($args[9] ?? null);
+				return ['token' => 'signed.bearer.jwt', 'jti' => 'jti-1'];
+			}
+		);
+
+		$urlGenerator = $this->createMock(IURLGenerator::class);
+		$urlGenerator->method('getAbsoluteURL')->willReturnCallback(fn (string $url) => 'https://portal.example' . $url);
+
+		$response = $this->controller(
+			session: $session,
+			orgConfig: $orgConfig,
+			oidc: $oidc,
+			claimMapper: $mapper,
+			stateStore: $stateStore,
+			accounts: $accounts,
+			urlGenerator: $urlGenerator
+		)->oidcCallback(state: 's', code: 'c');
+
+		$this->assertSame(Http::STATUS_FOUND, $response->getStatus());
+		$this->assertSame('portal-a', $bound);
+	}//end testOidcCallbackBindsTheSessionToThePortalTheLoginStartedOn()
 
 	public function testIndexReportsTheBranchInEffect(): void {
 		$session = $this->createMock(PortalSessionService::class);

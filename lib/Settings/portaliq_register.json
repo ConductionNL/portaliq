@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.124.0"
+        "version": "0.125.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.124.0",
+                "version": "0.125.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -1809,7 +1809,7 @@
                     ]
                 },
                 "icon": "ShieldLock",
-                "version": "0.3.0",
+                "version": "0.4.0",
                 "title": "Portal OIDC State",
                 "description": "Short-lived, single-use server-side storage for one OIDC authorization-code + PKCE round trip (portal-oidc-broker-login). Written by SessionController::oidcStart(), consumed exactly once by SessionController::oidcCallback(); a reused or expired row fails the callback closed. Never publicly readable — it briefly carries the PKCE code_verifier.",
                 "type": "object",
@@ -1872,6 +1872,13 @@
                         "type": "string",
                         "description": "The portal SPA path to redirect to once the session is minted.",
                         "example": "/portal"
+                    },
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The slug of the portal the login was started on. The minted session is bound to it, so another portal refuses it. Empty for a login started on no portal.",
+                        "maxLength": 63,
+                        "example": "gemeente-zuiddrecht"
                     },
                     "expiresAt": {
                         "title": "Expires at",
