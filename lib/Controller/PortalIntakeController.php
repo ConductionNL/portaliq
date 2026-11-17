@@ -1026,7 +1026,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			return new JSONResponse($body, Http::STATUS_UNAUTHORIZED);
 		}
 
-		if (SessionTrust::trustSatisfies(subjectTrust: ($subject['trust'] ?? ''), minTrust: $required) === false) {
+		if ((new SessionTrust())->trustSatisfies(subjectTrust: ($subject['trust'] ?? ''), minTrust: $required) === false) {
 			return new JSONResponse($body, Http::STATUS_FORBIDDEN);
 		}
 

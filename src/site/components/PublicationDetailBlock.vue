@@ -86,6 +86,25 @@
 			</dl>
 
 			<!--
+				THE REACTION PERIOD (REQ-PDC-005): the state opencatalogi
+				reports, never one computed here. The form only while open.
+			-->
+			<p
+				v-if="period"
+				class="utrecht-paragraph pq-detail__period"
+				:data-state="period.state"
+				data-testid="publication-comment-period">
+				{{ period.text }}
+				<a
+					v-if="period.formUrl"
+					class="utrecht-link pq-detail__period-form"
+					:href="period.formUrl"
+					data-testid="publication-comment-period-form">
+					{{ t('Go to the reaction form') }}
+				</a>
+			</p>
+
+			<!--
 				THE DOCUMENTS (woo-search-and-detail, REQ-WSD-005). Rendered
 				once the attachment call answered; a failed call leaves the
 				section out rather than putting an error over a publication
@@ -96,6 +115,19 @@
 				class="pq-detail__documents"
 				data-testid="publication-documents">
 				<h2 class="utrecht-heading-2">{{ t('Documents') }}</h2>
+				<!-- One archive of every document (REQ-PDC-003). -->
+				<a
+					v-if="downloadAll"
+					class="utrecht-link pq-detail__download-all"
+					:href="downloadAll.href"
+					download
+					data-testid="publication-download-all">
+					{{
+						t('Download all ({count} documents)', {
+							count: downloadAll.count,
+						})
+					}}
+				</a>
 				<p
 					v-if="documents.length === 0"
 					class="utrecht-paragraph"
@@ -149,6 +181,63 @@
 							{{ t('Download')
 							}}<span class="sr-only">{{ ` ${document.title}` }}</span>
 						</a>
+						<span
+							v-if="
+								documentPage(document)
+								|| document.view
+								|| document.metadataUrl
+								|| document.diwooUrl
+							"
+							class="pq-detail__document-links">
+							<!-- The document's own page (REQ-PDC-002). -->
+							<a
+								v-if="documentPage(document)"
+								class="utrecht-link"
+								:href="documentHref(document)"
+								data-testid="publication-document-page"
+								@click.prevent="$emit('navigate', documentPage(document))">
+								{{ t('Details')
+								}}<span class="sr-only">{{ ` ${document.title}` }}</span>
+							</a>
+							<!-- Opens in the browser's viewer (REQ-PDC-001). -->
+							<a
+								v-if="document.view"
+								class="utrecht-link"
+								:href="document.view"
+								target="_blank"
+								rel="noopener noreferrer"
+								data-testid="publication-document-view">
+								{{ t('View')
+								}}<span class="sr-only">{{
+									` ${document.title}, ${t('opens in a new tab')}`
+								}}</span>
+							</a>
+							<!-- Only the metadata links the read carries (REQ-PDC-004). -->
+							<a
+								v-if="document.metadataUrl"
+								class="utrecht-link"
+								:href="document.metadataUrl"
+								:aria-label="
+									t('Metadata of {title} as JSON', {
+										title: document.title,
+									})
+								"
+								data-testid="publication-document-metadata">
+								{{ t('Metadata (JSON)') }}
+							</a>
+							<a
+								v-if="document.diwooUrl"
+								class="utrecht-link"
+								:href="document.diwooUrl"
+								:aria-label="
+									t('Metadata of {title} as DiWoo XML', {
+										title: document.title,
+									})
+								"
+								data-testid="publication-document-diwoo">
+								{{ t('Metadata (DiWoo XML)') }}
+							</a>
+						</span>
 						<SaveToDossier
 							v-if="signedIn && document.id"
 							:publication="subjectId"
@@ -178,6 +267,63 @@
 									.filter(Boolean)
 									.join(', ')
 							}})
+						</span>
+						<span
+							v-if="
+								documentPage(document)
+								|| document.view
+								|| document.metadataUrl
+								|| document.diwooUrl
+							"
+							class="pq-detail__document-links">
+							<!-- The document's own page (REQ-PDC-002). -->
+							<a
+								v-if="documentPage(document)"
+								class="utrecht-link"
+								:href="documentHref(document)"
+								data-testid="publication-document-page"
+								@click.prevent="$emit('navigate', documentPage(document))">
+								{{ t('Details')
+								}}<span class="sr-only">{{ ` ${document.title}` }}</span>
+							</a>
+							<!-- Opens in the browser's viewer (REQ-PDC-001). -->
+							<a
+								v-if="document.view"
+								class="utrecht-link"
+								:href="document.view"
+								target="_blank"
+								rel="noopener noreferrer"
+								data-testid="publication-document-view">
+								{{ t('View')
+								}}<span class="sr-only">{{
+									` ${document.title}, ${t('opens in a new tab')}`
+								}}</span>
+							</a>
+							<!-- Only the metadata links the read carries (REQ-PDC-004). -->
+							<a
+								v-if="document.metadataUrl"
+								class="utrecht-link"
+								:href="document.metadataUrl"
+								:aria-label="
+									t('Metadata of {title} as JSON', {
+										title: document.title,
+									})
+								"
+								data-testid="publication-document-metadata">
+								{{ t('Metadata (JSON)') }}
+							</a>
+							<a
+								v-if="document.diwooUrl"
+								class="utrecht-link"
+								:href="document.diwooUrl"
+								:aria-label="
+									t('Metadata of {title} as DiWoo XML', {
+										title: document.title,
+									})
+								"
+								data-testid="publication-document-diwoo">
+								{{ t('Metadata (DiWoo XML)') }}
+							</a>
 						</span>
 						<SaveToDossier
 							v-if="signedIn && document.id"
@@ -245,14 +391,27 @@
 <script>
 import { defineAsyncComponent } from 'vue'
 import { createTranslator } from '../../shared/i18n/index.js'
+import { runtimeConfig } from '../lib/contentApi.js'
+import { documentPageRoute } from '../lib/documentRoute.js'
 import { pageLocale } from '../lib/facetLabels.js'
 import {
 	allDetailRows,
+	commentPeriodLine,
+	downloadAllLink,
 	publicationSummary,
 	themeIdsOf,
 	toDocuments,
 	visitorRows,
 } from '../lib/publicationDetail.js'
+import { addressOfRoute } from '../lib/siteAddress.js'
+
+/**
+ * Whether the pinned `@conduction/nextcloud-vue` offers a public file preview
+ * for data files (its `files-preview-in-place` change). 2.180.0 does not: its
+ * `CnFilePreview` is an admin dialog outside the `./public` entry. Until it
+ * does, CSV, TSV, JSON and XML stay downloads (REQ-PDC-001).
+ */
+const PUBLIC_PREVIEW = false
 
 /**
  * One publication, as a visitor reads it: title, summary, date, category and
@@ -331,9 +490,20 @@ export default {
 			type: String,
 			default: '/index.php/apps/opencatalogi/api/themes',
 		},
+
+		/**
+		 * The catalogue's slug, for opencatalogi's catalogue ZIP route. Empty
+		 * links the ZIP route beside the publication read instead.
+		 *
+		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-the-publication-downloads-as-one-archive-req-pdc-003
+		 */
+		catalogSlug: {
+			type: String,
+			default: '',
+		},
 	},
 
-	emits: ['subject'],
+	emits: ['navigate', 'subject'],
 
 	data() {
 		return {
@@ -405,6 +575,29 @@ export default {
 		categoryName() {
 			const row = this.fields.find((field) => field.name === 'wooCategory')
 			return row ? String(row.value) : ''
+		},
+
+		/**
+		 * @return {{href: string, count: number}|null} The "download all" link.
+		 *
+		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-the-publication-downloads-as-one-archive-req-pdc-003
+		 */
+		downloadAll() {
+			return downloadAllLink({
+				id: this.subjectId,
+				count: Array.isArray(this.documents) ? this.documents.length : 0,
+				catalogSlug: this.catalogSlug,
+				endpoint: this.endpoint,
+			})
+		},
+
+		/**
+		 * @return {{state: string, text: string, formUrl: string}|null} The reaction period line.
+		 *
+		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-the-page-states-the-reaction-period-req-pdc-005
+		 */
+		period() {
+			return commentPeriodLine(this.publication, this.t)
 		},
 
 		/**
@@ -562,11 +755,40 @@ export default {
 
 				const body = await response.json()
 				if (asked === this.subjectId) {
-					this.documents = toDocuments(body)
+					this.documents = toDocuments(body, { preview: PUBLIC_PREVIEW })
 				}
 			} catch {
 				// Left out: see above.
 			}
+		},
+
+		/**
+		 * The in-site route of a document's own page, or '' without an id.
+		 *
+		 * @param {object} document One row of `documents`.
+		 * @return {string} The route.
+		 *
+		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+		 */
+		documentPage(document) {
+			return documentPageRoute(this.subjectId, (document || {}).id)
+		},
+
+		/**
+		 * The href of a document's own page, in the addressing of this host.
+		 *
+		 * @param {object} document One row of `documents`.
+		 * @return {string} The href.
+		 *
+		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+		 */
+		documentHref(document) {
+			const route = this.documentPage(document)
+			if (typeof window === 'undefined') {
+				return route
+			}
+
+			return addressOfRoute(route, window.location.href, runtimeConfig()).toString()
 		},
 
 		/**
@@ -665,6 +887,26 @@ export default {
 
 .pq-detail__documents {
 	margin-block-start: 24px;
+}
+
+.pq-detail__period {
+	margin-block-start: 16px;
+}
+
+.pq-detail__period-form {
+	margin-inline-start: 4px;
+}
+
+.pq-detail__download-all {
+	display: inline-block;
+	margin-block-end: 8px;
+}
+
+.pq-detail__document-links {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: 0.25rem 0.75rem;
+	margin-inline-start: 8px;
 }
 
 .pq-detail__document-list {
