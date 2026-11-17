@@ -581,7 +581,7 @@ class ContributionController extends Controller implements PortalProtected {
 		}
 
 		$collection = $match['collection'];
-		if (SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
+		if ((new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
