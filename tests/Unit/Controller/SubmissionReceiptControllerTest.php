@@ -12,7 +12,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Controller\SubmissionReceiptController;
 use OCA\Portaliq\Http\PdfDownloadResponse;
-use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\BearerSessionResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\SubmissionReceiptServiceInterface;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
@@ -36,7 +36,7 @@ class SubmissionReceiptControllerTest extends TestCase {
 	private function controller(?array $subject, SubmissionReceiptServiceInterface $receipts): SubmissionReceiptController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturnCallback(static fn (string $name): string => ($name === 'Authorization' ? 'Bearer t' : ''));
-		$session = $this->createMock(PortalSessionServiceInterface::class);
+		$session = $this->createMock(BearerSessionResolverInterface::class);
 		$session->method('resolveFromBearer')->with('Bearer t')->willReturn($subject);
 
 		return new SubmissionReceiptController($request, $session, $receipts);
