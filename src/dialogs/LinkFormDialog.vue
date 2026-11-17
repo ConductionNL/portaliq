@@ -95,6 +95,8 @@ export default {
 		/**
 		 * Close with the chosen form's id, or say that one is needed.
 		 *
+		 * @spec openspec/changes/submission-row-actions/specs/supplier-portal/spec.md#requirement-an-employee-can-link-a-submission-to-the-request-form-it-came-through
+		 *
 		 * @return {void}
 		 */
 		confirm() {
