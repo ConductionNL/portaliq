@@ -14,6 +14,6 @@
 
 ## Proof
 
-- [ ] **T07**: Playwright `tests/e2e/change-proposals-reach-the-case-page.spec.ts`: a colleague proposes, a handler accepts, the case carries the value and its audit trail names the handler. Live check against PtVoorstelBeoordelen and ZaakWijzigingVoorstellen; screenshots in the build PR.
+- [ ] **T07**: Playwright `tests/e2e/change-proposals-reach-the-case-page.spec.ts`: a colleague proposes, a handler accepts, the case carries the value and its audit trail names the handler. Live check against PtVoorstelBeoordelen and ZaakWijzigingVoorstellen; screenshots in the build PR. (Spec written: `tests/e2e/change-proposals-reach-the-case-page.spec.ts`, five tests: the colleague's context and the handler's, the colleague's proposal on `description` of a dossiq case with a request-supplied list ignored, the widget for each in its own empty-storage context, and the accept with the value and the handler in the audit trail. Listed by Playwright and eslint-clean; the live run against a dossiq instance and the screenshots are still to do.)
 - [ ] **T08**: Move `act-propose-colleague`, `act-staff-review-queue` and `sib-dossiq-2-21` to built in `openspec/parity/capabilities.json` once T06 and T07 pass.
 - [x] **T09**: `openspec validate change-proposals-reach-the-case-page --strict`. (Valid after REQ-CPC-001's text was shortened, its detail moved into two scenarios, its heading and so every `@spec` anchor unchanged.)
