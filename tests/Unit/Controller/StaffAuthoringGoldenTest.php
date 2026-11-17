@@ -41,6 +41,7 @@ use ReflectionClass;
 use ReflectionMethod;
 use ReflectionNamedType;
 use Throwable;
+use OCA\Portaliq\Tests\Support\LegacyObjectArgs;
 
 /**
  * The staff authoring routes for events, news, newsletters and activities
@@ -231,6 +232,7 @@ class StaffAuthoringGoldenTest extends TestCase {
 			}
 
 			public function __call(string $name, array $args): mixed {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				$this->test->note([$name => $args]);
 				if (in_array('missing', $args, true) === true) {
 					throw new DoesNotExistException('Object not found');

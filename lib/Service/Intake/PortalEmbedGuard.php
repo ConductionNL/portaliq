@@ -180,6 +180,17 @@ class PortalEmbedGuard implements PortalEmbedGuardInterface {
 			return '';
 		}
 
+		return $this->originOf(parts: $parts);
+	}//end normalise()
+
+	/**
+	 * `scheme://host[:port]` in lower case from parsed URL parts, or '' without scheme or host.
+	 *
+	 * @param array<string, mixed> $parts The parsed origin.
+	 *
+	 * @return string
+	 */
+	private function originOf(array $parts): string {
 		$scheme = strtolower((string)($parts['scheme'] ?? ''));
 		$host = strtolower((string)($parts['host'] ?? ''));
 		if ($scheme === '' || $host === '') {
@@ -192,5 +203,5 @@ class PortalEmbedGuard implements PortalEmbedGuardInterface {
 		}
 
 		return $scheme . '://' . $host . ':' . (int)$port;
-	}//end normalise()
+	}//end originOf()
 }//end class

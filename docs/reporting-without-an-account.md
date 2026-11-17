@@ -58,6 +58,7 @@ Put a `portalReportDeclaration` on the case type:
 | Field | What it does |
 |---|---|
 | `custodianGroup` | The Nextcloud group whose members may allow a reveal |
+| `handlerGroup` | The Nextcloud group whose members read and answer the reports. Optional |
 | `acknowledgementDays` | Days to acknowledge the report, shown to the reporter |
 | `feedbackDays` | Days to give feedback, shown to the reporter |
 | `excludeFromAnalytics` | Keeps the reporting pages out of visitor statistics |
@@ -68,6 +69,26 @@ never promised.
 
 A case type that names no custodian group has nobody who may reveal. That
 refuses; it does not fall back to an administrator.
+
+Only members of the handler group and of the custodian group see a report.
+Everyone else signed in to Nextcloud gets the same answer as for a report that
+does not exist. Name no handler group and only the custodian group handles the
+reports: fewer people, never more.
+
+## Setting up the channel
+
+1. Declare `portalReportDeclaration` on the case type, with at least a
+   `custodianGroup`, and a `handlerGroup` when the people who answer reports
+   are not the people who may reveal.
+2. Add the reporting pages to the portal's `traffic.excludedPaths`, for
+   example `/meldpunt`. A path excludes itself and every page below it, so
+   `/meldpunt` also covers `/meldpunt/gesprek`.
+3. Place the `report` widget on the reporting page and the `reportThread`
+   widget on the follow-up page. The page designer warns "This page is not
+   excluded from visitor statistics. Add it before you publish." while a page
+   with either widget is outside `traffic.excludedPaths`.
+4. Handlers find the reports under "Reports of wrongdoing" in the app's menu,
+   and custodians answer reveal requests under "Reveal requests".
 
 ## What the channel does not record
 

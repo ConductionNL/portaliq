@@ -38,6 +38,7 @@ use InvalidArgumentException;
 use OCA\Portaliq\Kernel\Contracts\PortalJwtServiceInterface;
 use RuntimeException;
 use OCA\Portaliq\Kernel\ScopeClaims;
+use OCA\Portaliq\Service\Signin\YiviAttributes;
 
 /**
  * HMAC-based JWT minting + validation for Portaliq's audience-agnostic auth edge.
@@ -177,7 +178,13 @@ class PortalJwtService implements PortalJwtServiceInterface {
 		];
 
 		return $this->signed(
-			claims: array_replace($claims, $this->branchClaims(context: $context), $this->providerClaim(context: $context), $this->kvkClaim(context: $context))
+			claims: array_replace(
+				$claims,
+				$this->branchClaims(context: $context),
+				$this->providerClaim(context: $context),
+				$this->kvkClaim(context: $context),
+				$this->attributesClaim(context: $context)
+			)
 		);
 	}//end createSession()
 
@@ -231,12 +238,32 @@ class PortalJwtService implements PortalJwtServiceInterface {
 	 */
 	private function kvkClaim(array $context): array {
 		$kvk = (string)($context['kvk'] ?? '');
-		if (preg_match('/^\d{8}$/', $kvk) !== 1) {
+		if (preg_match('/^\d{8}$/D', $kvk) !== 1) {
 			return [];
 		}
 
 		return ['kvk' => $kvk];
 	}//end kvkClaim()
+
+	/**
+	 * Change resident-identity-in-forms T05: the attributes a resident
+	 * disclosed in Yivi, so a form can prefill from them. Signed only when
+	 * set: every other way in carries none.
+	 *
+	 * @param array{attributes?: array<string, string>} $context The login's context.
+	 *
+	 * @return array<string, array<string, string>>
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#T05
+	 */
+	private function attributesClaim(array $context): array {
+		$attributes = (new YiviAttributes())->disclosed(claim: ($context['attributes'] ?? null));
+		if ($attributes === []) {
+			return [];
+		}
+
+		return ['attributes' => $attributes];
+	}//end attributesClaim()
 
 	/**
 	 * Mint a short-lived `X-Portal-Subject` assertion (contract v2, A6).
@@ -451,16 +478,50 @@ class PortalJwtService implements PortalJwtServiceInterface {
 
 		[$hPart, $cPart, $sPart] = $parts;
 
-		$expected = $this->b64UrlEncode(bytes: $this->signRaw(input: $hPart . '.' . $cPart));
-		if (hash_equals($expected, $sPart) === false) {
-			throw new RuntimeException('Invalid portal JWT signature');
-		}
+		$this->assertSigned(header: $hPart, claims: $cPart, signature: $sPart);
 
 		$claims = json_decode($this->b64UrlDecode(encoded: $cPart), true);
 		if (is_array($claims) === false) {
 			throw new RuntimeException('Malformed portal JWT claims');
 		}
 
+		$this->assertCurrent(claims: $claims);
+
+		return $claims;
+	}//end validate()
+
+	/**
+	 * Throw unless the signature is this service's over the header and claims.
+	 *
+	 * @param string $header    The encoded header.
+	 * @param string $claims    The encoded claims.
+	 * @param string $signature The encoded signature.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When the signature does not match.
+	 *
+	 * @spec openspec/changes/supplier-portal/tasks.md#T02
+	 */
+	private function assertSigned(string $header, string $claims, string $signature): void {
+		$expected = $this->b64UrlEncode(bytes: $this->signRaw(input: $header . '.' . $claims));
+		if (hash_equals($expected, $signature) === false) {
+			throw new RuntimeException('Invalid portal JWT signature');
+		}
+	}//end assertSigned()
+
+	/**
+	 * Throw unless the claims name this issuer and have not expired.
+	 *
+	 * @param array<string, mixed> $claims The decoded claims.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When the issuer is wrong or the token expired.
+	 *
+	 * @spec openspec/changes/supplier-portal/tasks.md#T02
+	 */
+	private function assertCurrent(array $claims): void {
 		if (($claims['iss'] ?? '') !== self::ISSUER) {
 			throw new RuntimeException('Unexpected portal JWT issuer');
 		}
@@ -468,9 +529,7 @@ class PortalJwtService implements PortalJwtServiceInterface {
 		if (isset($claims['exp']) === true && (int)$claims['exp'] < time()) {
 			throw new RuntimeException('Expired portal JWT');
 		}
-
-		return $claims;
-	}//end validate()
+	}//end assertCurrent()
 
 	/**
 	 * Raw HMAC of the signing input.

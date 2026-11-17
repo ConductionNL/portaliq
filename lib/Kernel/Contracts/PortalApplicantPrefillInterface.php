@@ -42,11 +42,24 @@ interface PortalApplicantPrefillInterface {
 	 *
 	 * @param array<string, mixed>|null $subject The resolved subject, or null.
 	 * @param array<int, array<string, mixed>> $fields The form's fields.
+	 * @param array<string, mixed> $binding The form binding, for its `yiviAttributes`.
 	 *
 	 * @return array<string, mixed> Field name to value. Empty for a visitor
 	 *         with no session.
 	 *
 	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
-	public function forSubject(?array $subject, array $fields): array;
+	public function forSubject(?array $subject, array $fields, array $binding = []): array;
+
+	/**
+	 * The Yivi attribute ids a form asks for, for the form to list before the
+	 * Yivi app opens.
+	 *
+	 * @param array<string, mixed> $binding The form binding.
+	 *
+	 * @return list<string>
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#T05
+	 */
+	public function yiviRequest(array $binding): array;
 }//end interface

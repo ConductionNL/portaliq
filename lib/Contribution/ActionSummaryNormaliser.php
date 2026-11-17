@@ -69,6 +69,34 @@ class ActionSummaryNormaliser {
 	 * @spec openspec/changes/action-summary-sentence/specs/portal-contribution-contract/spec.md#requirement-an-action-may-sum-up-the-answers-in-one-sentence
 	 */
 	public function summary(mixed $summary, array $whitelist): ?array {
+		$parts = $this->templateAndFields(summary: $summary, whitelist: $whitelist);
+		if ($parts === null) {
+			return null;
+		}
+
+		[$template, $named] = $parts;
+
+		$out     = ['template' => trim($template)] + $this->labelOf(summary: $summary);
+		$phrases = $this->phrases(declared: ($summary['phrases'] ?? null), fields: $named);
+		if ($phrases !== []) {
+			$out['phrases'] = $phrases;
+		}
+
+		return $out;
+	}//end summary()
+
+	/**
+	 * The summary's template and the fields it names, or null when the
+	 * summary, its template or a named field is unusable.
+	 *
+	 * @param mixed              $summary   The declared summary.
+	 * @param array<int, string> $whitelist The action's fields.
+	 *
+	 * @return array{0: string, 1: array<int, string>}|null
+	 *
+	 * @spec openspec/changes/action-summary-sentence/specs/portal-contribution-contract/spec.md#requirement-an-action-may-sum-up-the-answers-in-one-sentence
+	 */
+	private function templateAndFields(mixed $summary, array $whitelist): array|null {
 		if (is_array($summary) === false) {
 			return null;
 		}
@@ -83,14 +111,8 @@ class ActionSummaryNormaliser {
 			return null;
 		}
 
-		$out     = ['template' => trim($template)] + $this->labelOf(summary: $summary);
-		$phrases = $this->phrases(declared: ($summary['phrases'] ?? null), fields: $named);
-		if ($phrases !== []) {
-			$out['phrases'] = $phrases;
-		}
-
-		return $out;
-	}//end summary()
+		return [$template, $named];
+	}//end templateAndFields()
 
 	/**
 	 * The declared template when it is a non-blank string of at most
@@ -159,21 +181,38 @@ class ActionSummaryNormaliser {
 
 		$out = [];
 		foreach ($fields as $field) {
-			$map = ($declared[$field] ?? null);
-			if (is_array($map) === false) {
-				continue;
-			}
-
-			foreach ($map as $answer => $words) {
-				$text = $this->text(value: $words);
-				if ($text !== '') {
-					$out[$field][(string)$answer] = $text;
-				}
+			$phrases = $this->fieldPhrases(map: ($declared[$field] ?? null));
+			if ($phrases !== []) {
+				$out[$field] = $phrases;
 			}
 		}
 
 		return $out;
 	}//end phrases()
+
+	/**
+	 * One field's phrases that are short texts: `{answer: words}`; none when
+	 * the field declares no map.
+	 *
+	 * @param mixed $map The declared phrases of the field.
+	 *
+	 * @return array<string, string>
+	 */
+	private function fieldPhrases(mixed $map): array {
+		if (is_array($map) === false) {
+			return [];
+		}
+
+		$out = [];
+		foreach ($map as $answer => $words) {
+			$text = $this->text(value: $words);
+			if ($text !== '') {
+				$out[(string)$answer] = $text;
+			}
+		}
+
+		return $out;
+	}//end fieldPhrases()
 
 	/**
 	 * A trimmed text of at most MAX_TEXT characters, else ''.

@@ -14,6 +14,17 @@
   },
   "paths": {},
   "components": {
+    "registers": {
+      "e2efixture": {
+        "slug": "e2efixture",
+        "title": "E2E fixture register",
+        "description": "Holds the sign-ups the landing-page form fixture creates.",
+        "version": "0.1.0",
+        "schemas": [
+          "signup"
+        ]
+      }
+    },
     "schemas": {
       "signup": {
         "slug": "signup",

@@ -101,6 +101,22 @@ class SeedStaffGroup implements IRepairStep {
 			return;
 		}
 
+		$added = $this->addSourceMembers(group: $group);
+
+		$this->appConfig->setValueBool(AppIdentity::APP_ID, self::MARKER, true);
+		$output->info('Staff group: '.$added.' people added to "'.AdminMenuAccessInterface::STAFF_GROUP.'".');
+	}//end run()
+
+	/**
+	 * Add every member of the source groups to the staff group.
+	 *
+	 * @param IGroup $group The staff group.
+	 *
+	 * @return int How many people were added.
+	 *
+	 * @spec openspec/changes/close-portaliq-register-to-staff/specs/admin-ui/spec.md#requirement-the-staff-group-exists-and-keeps-everybody-who-already-worked-in-portaliq
+	 */
+	private function addSourceMembers(IGroup $group): int {
 		$added = 0;
 		foreach ($this->sourceGroups() as $gid) {
 			$source = $this->groupManager->get($gid);
@@ -108,19 +124,35 @@ class SeedStaffGroup implements IRepairStep {
 				continue;
 			}
 
-			foreach ($source->getUsers() as $user) {
-				if ($group->inGroup($user) === true) {
-					continue;
-				}
-
-				$group->addUser($user);
-				$added++;
-			}
+			$added += $this->addMembersOf(source: $source, group: $group);
 		}
 
-		$this->appConfig->setValueBool(AppIdentity::APP_ID, self::MARKER, true);
-		$output->info('Staff group: '.$added.' people added to "'.AdminMenuAccessInterface::STAFF_GROUP.'".');
-	}//end run()
+		return $added;
+	}//end addSourceMembers()
+
+	/**
+	 * Add the members of one source group who are not in the staff group yet.
+	 *
+	 * @param IGroup $source The source group.
+	 * @param IGroup $group  The staff group.
+	 *
+	 * @return int How many people were added.
+	 *
+	 * @spec openspec/changes/close-portaliq-register-to-staff/specs/admin-ui/spec.md#requirement-the-staff-group-exists-and-keeps-everybody-who-already-worked-in-portaliq
+	 */
+	private function addMembersOf(IGroup $source, IGroup $group): int {
+		$added = 0;
+		foreach ($source->getUsers() as $user) {
+			if ($group->inGroup($user) === true) {
+				continue;
+			}
+
+			$group->addUser($user);
+			$added++;
+		}
+
+		return $added;
+	}//end addMembersOf()
 
 	/**
 	 * The staff group, created when it does not exist yet.

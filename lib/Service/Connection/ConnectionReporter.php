@@ -325,32 +325,7 @@ class ConnectionReporter {
 		}
 
 		try {
-			$observed = $observe();
-			if ($observed === null) {
-				return false;
-			}
-
-			[$status, $message] = $observed;
-
-			$now = $this->timeFactory->getTime();
-			if ($throttled === true && $this->isDue(key: $key, status: $status, now: $now) === false) {
-				return false;
-			}
-
-			$sent = $this->send(
-				key: $key,
-				build: static fn (): object => new $eventClass(
-					app: self::APP_ID,
-					key: $key,
-					status: $status,
-					message: $message,
-				)
-			);
-			if ($sent === true) {
-				$this->appConfig->setValueString(self::APP_ID, self::MEMORY_KEY_PREFIX . $key, $status . '|' . $now);
-			}
-
-			return $sent;
+			return $this->observedReport(key: $key, observe: $observe, throttled: $throttled, eventClass: $eventClass);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Portaliq: could not report a connection to integriq',
@@ -359,6 +334,56 @@ class ConnectionReporter {
 			return false;
 		}//end try
 	}//end observeAndSend()
+
+	/**
+	 * Observe, optionally throttle, then send and record one status report.
+	 *
+	 * @param string                                          $key        One of {@see self::KEYS}.
+	 * @param callable(): (array{0: string, 1: string}|null) $observe    Works out the status and message, or null to report nothing.
+	 * @param bool                                            $throttled  Whether the report memory may hold it back.
+	 * @param string                                          $eventClass The integriq status event class.
+	 *
+	 * @return bool True when a report was sent.
+	 */
+	private function observedReport(string $key, callable $observe, bool $throttled, string $eventClass): bool {
+		$observed = $observe();
+		if ($observed === null) {
+			return false;
+		}
+
+		[$status] = $observed;
+
+		$now = $this->timeFactory->getTime();
+		if ($throttled === true && $this->isDue(key: $key, status: $status, now: $now) === false) {
+			return false;
+		}
+
+		return $this->sendReport(key: $key, eventClass: $eventClass, observed: $observed, now: $now);
+	}//end observedReport()
+
+	/**
+	 * Send one status report and remember it.
+	 *
+	 * @param string                      $key        One of {@see self::KEYS}.
+	 * @param string                      $eventClass The integriq status event class.
+	 * @param array{0: string, 1: string} $observed   The status and message.
+	 * @param int                         $now        The current Unix time.
+	 *
+	 * @return bool True when a report was sent.
+	 */
+	private function sendReport(string $key, string $eventClass, array $observed, int $now): bool {
+		[$status, $message] = $observed;
+
+		$sent = $this->send(
+			key: $key,
+			build: static fn (): object => new $eventClass(app: self::APP_ID, key: $key, status: $status, message: $message)
+		);
+		if ($sent === true) {
+			$this->appConfig->setValueString(self::APP_ID, self::MEMORY_KEY_PREFIX . $key, $status . '|' . $now);
+		}
+
+		return $sent;
+	}//end sendReport()
 
 	/**
 	 * Whether the report memory allows a report with this status now.

@@ -170,4 +170,31 @@ class PortalAccessRequestServiceTest extends TestCase {
 		return new PortalAccessRequestService($this->fakeReader(), $this->fakeWriter());
 	}//end service()
 
+	/**
+	 * access-requests-open-first: every write of the state writes its sort
+	 * rank, so the list sorts open requests first.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/access-requests-open-first/specs/portal-identity/spec.md#requirement-open-access-requests-come-first
+	 */
+	public function testEveryStateWriteCarriesItsRank(): void {
+		$service = $this->service();
+		$open = $service->request(subjectRef: 'subject-1', organisation: 'gemeente-x', onBehalfOf: '111', reason: 'omdat');
+		$granted = $service->request(subjectRef: 'subject-2', organisation: 'gemeente-x', onBehalfOf: '222', reason: 'omdat');
+		$refused = $service->request(subjectRef: 'subject-3', organisation: 'gemeente-x', onBehalfOf: '333', reason: 'omdat');
+		$decided = $service->request(subjectRef: 'subject-4', organisation: 'gemeente-x', onBehalfOf: '444', reason: 'omdat');
+
+		$service->grant(id: $granted['uuid'], organisation: 'gemeente-x', decidedBy: 'clerk-anna');
+		$service->refuse(id: $refused['uuid'], organisation: 'gemeente-x', reason: 'Niet gemachtigd', decidedBy: 'clerk-anna');
+		$service->decide(id: $decided['uuid'], organisation: 'gemeente-x', granted: false, decidedBy: 'clerk-anna');
+
+		$ranks = array_column($this->storedRows('portalAccessRequest'), 'stateRank', 'uuid');
+		$this->assertSame(0, $ranks[$open['uuid']]);
+		$this->assertSame(1, $ranks[$granted['uuid']]);
+		$this->assertSame(2, $ranks[$refused['uuid']]);
+		$this->assertSame(2, $ranks[$decided['uuid']]);
+
+	}//end testEveryStateWriteCarriesItsRank()
+
 }//end class

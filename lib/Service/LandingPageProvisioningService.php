@@ -319,14 +319,17 @@ class LandingPageProvisioningService implements LandingPageProvisioningServiceIn
 			return [];
 		}
 
-		return [
-			'destination' => [
-				'register' => $register,
-				'schema' => $schema,
+		// OpenRegister refuses an empty array where the schema declares an
+		// object, so an empty map is left out rather than written as [].
+		$maps = array_filter(
+			[
 				'fields' => array_filter((array)($destination['fields'] ?? []), 'is_string'),
 				'fixed' => (array)($destination['fixed'] ?? []),
 			],
-		];
+			static fn (array $map): bool => $map !== []
+		);
+
+		return ['destination' => ['register' => $register, 'schema' => $schema] + $maps];
 	}//end destinationOf()
 
 	/**
@@ -437,28 +440,50 @@ class LandingPageProvisioningService implements LandingPageProvisioningServiceIn
 		$row = $this->resolvePublishedPortal(portal: $portal);
 		$domains = (array)($row['domains'] ?? []);
 
-		$hostname = null;
-		foreach ($domains as $domain) {
-			if (is_array($domain) === false) {
-				continue;
-			}
-
-			if (($domain['verified'] ?? false) === true) {
-				$hostname = (string)($domain['hostname'] ?? '');
-				break;
-			}
-		}
-
-		if ($hostname === null && count($domains) > 0 && is_array($domains[0]) === true) {
-			$hostname = (string)($domains[0]['hostname'] ?? '');
-		}
-
+		$hostname = $this->hostnameOf(domains: $domains);
 		if ($hostname === null || $hostname === '') {
 			return null;
 		}
 
 		return 'https://' . $hostname . $route;
 	}//end publicUrlFor()
+
+	/**
+	 * The first verified domain's hostname, else the first domain's.
+	 *
+	 * @param array<mixed> $domains The portal's domains.
+	 *
+	 * @return string|null Null when there is no domain to take it from.
+	 */
+	private function hostnameOf(array $domains): string|null {
+		$hostname = $this->verifiedHostname(domains: $domains);
+		if ($hostname === null && count($domains) > 0 && is_array($domains[0]) === true) {
+			$hostname = (string)($domains[0]['hostname'] ?? '');
+		}
+
+		return $hostname;
+	}//end hostnameOf()
+
+	/**
+	 * The first verified domain's hostname.
+	 *
+	 * @param array<mixed> $domains The portal's domains.
+	 *
+	 * @return string|null Null when no domain is verified.
+	 */
+	private function verifiedHostname(array $domains): string|null {
+		foreach ($domains as $domain) {
+			if (is_array($domain) === false) {
+				continue;
+			}
+
+			if (($domain['verified'] ?? false) === true) {
+				return (string)($domain['hostname'] ?? '');
+			}
+		}
+
+		return null;
+	}//end verifiedHostname()
 
 	/**
 	 * Extract a written row's identifier (`id`/`uuid`, flat or `@self`).

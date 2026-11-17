@@ -110,7 +110,7 @@ class DutchFormats {
 	 * @return string|null
 	 */
 	private function digits(string $value, int $length): ?string {
-		if (preg_match('/^\d{' . $length . '}$/', $value) !== 1) {
+		if (preg_match('/^\d{' . $length . '}$/D', $value) !== 1) {
 			return null;
 		}
 
@@ -125,7 +125,7 @@ class DutchFormats {
 	 * @return string|null
 	 */
 	private function bsn(string $value): ?string {
-		if (preg_match('/^\d{9}$/', $value) !== 1 || $value === '000000000' || ($this->elfproefSum(digits: $value) % 11) !== 0) {
+		if (preg_match('/^\d{9}$/D', $value) !== 1 || $value === '000000000' || ($this->elfproefSum(digits: $value) % 11) !== 0) {
 			return null;
 		}
 
@@ -178,7 +178,7 @@ class DutchFormats {
 	 * @return bool
 	 */
 	private function hasIbanShape(string $iban): bool {
-		if (preg_match('/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/', $iban) !== 1) {
+		if (preg_match('/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/D', $iban) !== 1) {
 			return false;
 		}
 
@@ -216,7 +216,7 @@ class DutchFormats {
 	 */
 	private function plate(string $value): ?string {
 		$plate = strtoupper((string)preg_replace('/[\s-]+/', '', $value));
-		if (preg_match('/^[A-Z0-9]{6}$/', $plate) !== 1) {
+		if (preg_match('/^[A-Z0-9]{6}$/D', $plate) !== 1) {
 			return null;
 		}
 
@@ -254,7 +254,7 @@ class DutchFormats {
 	 */
 	private function phoneNl(string $value): ?string {
 		$number = (string)preg_replace('/[\s\-()]+/', '', $value);
-		if (preg_match('/^(0[1-9]\d{8}|(\+|00)31[1-9]\d{8})$/', $number) !== 1) {
+		if (preg_match('/^(0[1-9]\d{8}|(\+|00)31[1-9]\d{8})$/D', $number) !== 1) {
 			return null;
 		}
 
@@ -270,7 +270,7 @@ class DutchFormats {
 	 */
 	private function phoneInternational(string $value): ?string {
 		$number = (string)preg_replace('/[\s\-()]+/', '', $value);
-		if (preg_match('/^\+[1-9]\d{6,14}$/', $number) !== 1) {
+		if (preg_match('/^\+[1-9]\d{6,14}$/D', $number) !== 1) {
 			return null;
 		}
 
@@ -285,7 +285,7 @@ class DutchFormats {
 	 * @return string|null "1234 AB".
 	 */
 	private function postcode(string $value): ?string {
-		if (preg_match('/^([1-9]\d{3})\s?([A-Za-z]{2})$/', $value, $match) !== 1) {
+		if (preg_match('/^([1-9]\d{3})\s?([A-Za-z]{2})$/D', $value, $match) !== 1) {
 			return null;
 		}
 

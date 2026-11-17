@@ -32,6 +32,8 @@ use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
 use RuntimeException;
 use stdClass;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Portaliq\Service\Tenancy\PortalTenantContext
@@ -78,7 +80,7 @@ class PortalTenantContextTest extends TestCase {
 		$objectService = new ActingObjectService();
 		$scoped = $this->context(objectService: $objectService)->objectServiceFor(organisation: 'gemeente-a');
 
-		$saved = $scoped->saveObject(object: ['title' => 'X'], register: 'portaliq', schema: 'portalMessage', uuid: 'row-1', _rbac: false);
+		$saved = $scoped->saveObject(object: ['title' => 'X'], options: new ObjectSaveOptions(target: new ObjectFindTarget(register: 'portaliq', schema: 'portalMessage'), uuid: 'row-1'), _rbac: false);
 		$positional = $scoped->saveObject(['title' => 'Y']);
 
 		$this->assertSame(expected: ['title' => 'X', 'id' => 'row-1'], actual: $saved);

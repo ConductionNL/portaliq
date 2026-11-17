@@ -22,12 +22,15 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Plans;
 
+use DateTimeImmutable;
+use DateTimeInterface;
 use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use OCA\Portaliq\Service\Identity\PortalContactService;
 use OCA\Portaliq\Service\Plans\PortalPlanService;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\IL10N;
+use PHPUnit\Framework\Constraint\Callback;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -168,7 +171,10 @@ class PortalPlanServiceRefusalTest extends TestCase {
 			'owner',
 			'sanne',
 			'org-1',
-			['title' => 'Bellen met de bank', 'assignee' => 'sanne', 'plan' => 'p1', 'status' => 'todo', 'kind' => 'once']
+			self::stampedBy(
+				editor: 'sanne',
+				fields: ['title' => 'Bellen met de bank', 'assignee' => 'sanne', 'plan' => 'p1', 'status' => 'todo', 'kind' => 'once']
+			)
 		);
 
 		$this->assertSame(PortalPlanService::FAILED, $service->addAction(self::sanne(), 'p1', ['title' => 'Bellen met de bank']));
@@ -184,8 +190,29 @@ class PortalPlanServiceRefusalTest extends TestCase {
 	public function testAnActionChangeTheStoreRefusesFailsAndANewEndDateClearsTheReminder(): void {
 		$service = $this->service([self::plan()], [['id' => 'a1', 'plan' => 'p1']]);
 		$this->writer->expects($this->once())->method('updateObject')
-			->with('portaliq', 'portalAction', 'plan', 'p1', 'org-1', 'a1', ['endDate' => '2026-10-01', 'reminderSentAt' => null]);
+			->with('portaliq', 'portalAction', 'plan', 'p1', 'org-1', 'a1', self::stampedBy(editor: 'sanne', fields: ['endDate' => '2026-10-01', 'reminderSentAt' => null]));
 
 		$this->assertSame(PortalPlanService::FAILED, $service->updateAction(self::sanne(), 'p1', 'a1', ['endDate' => '2026-10-01']));
+	}
+
+	/**
+	 * The fields followed by who wrote them and a written-at timestamp.
+	 *
+	 * @param string               $editor The subject reference of the writer.
+	 * @param array<string, mixed> $fields The fields before the stamp.
+	 *
+	 * @return Callback<array<string, mixed>>
+	 */
+	private static function stampedBy(string $editor, array $fields): Callback {
+		return new Callback(static function (mixed $data) use ($editor, $fields): bool {
+			if (is_array($data) === false || is_string($data['editedAt'] ?? null) === false) {
+				return false;
+			}
+
+			$at = DateTimeImmutable::createFromFormat(DateTimeInterface::ATOM, $data['editedAt']);
+			unset($data['editedAt']);
+
+			return $at !== false && $data === $fields + ['editedBy' => $editor];
+		});
 	}
 }

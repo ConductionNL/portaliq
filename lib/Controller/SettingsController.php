@@ -149,7 +149,26 @@ class SettingsController extends Controller {
 	public function update(): JSONResponse {
 		$data = $this->request->getParams();
 		$config = $this->settingsService->updateSettings($data);
+		$config = $this->withInternalBaseUrl(config: $config, data: $data);
+		$config = $this->withEmailLinks(config: $config, data: $data);
 
+		return new JSONResponse(
+			[
+				'success' => true,
+				'config' => $config,
+			]
+		);
+	}//end update()
+
+	/**
+	 * Store the internal address for calls to this instance when one is sent, and answer what is stored.
+	 *
+	 * @param array<string, mixed> $config The updated settings.
+	 * @param array<string, mixed> $data   The request parameters.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withInternalBaseUrl(array $config, array $data): array {
 		// The internal address for calls to this instance
 		// (instance-loopback-self-calls): validated before it is stored; an
 		// invalid one is refused and the stored address stays.
@@ -161,19 +180,26 @@ class SettingsController extends Controller {
 			$config[InternalBaseUrlInterface::CONFIG_KEY] = $this->internalBaseUrl->stored();
 		}
 
+		return $config;
+	}//end withInternalBaseUrl()
+
+	/**
+	 * Switch the e-mail link sign-in when a real boolean is sent, and answer whether it is on.
+	 *
+	 * @param array<string, mixed> $config The updated settings.
+	 * @param array<string, mixed> $data   The request parameters.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withEmailLinks(array $config, array $data): array {
 		// Only a real boolean switches the e-mail link sign-in.
 		if ($this->emailLinks !== null && is_bool($data[EmailLinkSettingInterface::SETTINGS_KEY] ?? null) === true) {
 			$this->emailLinks->setEnabled(enabled: $data[EmailLinkSettingInterface::SETTINGS_KEY]);
 			$config[EmailLinkSettingInterface::SETTINGS_KEY] = $this->emailLinks->isEnabled();
 		}
 
-		return new JSONResponse(
-			[
-				'success' => true,
-				'config' => $config,
-			]
-		);
-	}//end update()
+		return $config;
+	}//end withEmailLinks()
 
 	/**
 	 * Legacy alias for {@see update()} — `POST /api/settings`.
