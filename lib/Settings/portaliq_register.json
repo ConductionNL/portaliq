@@ -12535,8 +12535,37 @@
                         "title": "Contact e-mail",
                         "type": "string",
                         "format": "email",
-                        "description": "An address for a reply, when the visitor gave one. Erased 30 days after the report is closed.",
-                        "default": ""
+                        "description": "An address for a reply, when the visitor gave one. Read only by the report's owner (the user, or a member of the group, in reportOwner) and administrators. Erased 30 days after the report is closed.",
+                        "default": "",
+                        "authorization": {
+                            "read": [
+                                {
+                                    "group": "portaliq-medewerkers",
+                                    "match": {
+                                        "reportOwner": "$userId"
+                                    }
+                                },
+                                {
+                                    "group": "portaliq-medewerkers",
+                                    "match": {
+                                        "reportOwner": {
+                                            "$in": "$user.groups"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "reportOwner": {
+                        "title": "Report owner",
+                        "type": "string",
+                        "description": "The portal's owner of error reports (a Nextcloud user or group) when the report came in, stamped by the server. Only this owner reads the contact e-mail.",
+                        "default": "",
+                        "authorization": {
+                            "update": [
+                                "admin"
+                            ]
+                        }
                     },
                     "status": {
                         "title": "Status",

@@ -242,10 +242,29 @@ class PublicationReportControllerTest extends TestCase {
 			->create(portal: 'zuiddrecht', publication: self::PUBLISHED, description: 'Naam niet gelakt', contactEmail: 'h.bakker@example.nl');
 
 		$this->assertSame(
-			expected: ['portal', 'publication', 'publicationTitle', 'document', 'description', 'contactEmail', 'status', 'receivedAt'],
+			expected: ['portal', 'publication', 'publicationTitle', 'document', 'description', 'contactEmail', 'reportOwner', 'status', 'receivedAt'],
 			actual: array_keys($this->fixture->created[0][2])
 		);
 	}//end testNoIpAddressIsStored()
+
+	/**
+	 * A report carries the portal's owner of error reports as it came in, the
+	 * one the contact e-mail's read rule admits: a group owner here, and a
+	 * user owner as the user (REQ-PER-002, visible to the owner only).
+	 *
+	 * @return void
+	 */
+	public function testAReportIsStampedWithItsOwner(): void {
+		$this->controller(portal: PublicationReportFixture::portal())
+			->create(portal: 'zuiddrecht', publication: self::PUBLISHED, description: 'Bijlage 2 is de conceptversie', contactEmail: 'h.bakker@example.nl');
+		$this->assertSame(expected: 'woo-redactie', actual: $this->fixture->created[0][2]['reportOwner']);
+		$this->assertSame(expected: 'h.bakker@example.nl', actual: $this->fixture->created[0][2]['contactEmail']);
+
+		$this->controller(portal: PublicationReportFixture::portal(overrides: ['publicationErrorReportOwner' => 'carla']))
+			->create(portal: 'zuiddrecht', publication: self::PUBLISHED, description: 'Fout');
+		$last = $this->fixture->created[array_key_last($this->fixture->created)];
+		$this->assertSame(expected: 'carla', actual: $last[2]['reportOwner']);
+	}//end testAReportIsStampedWithItsOwner()
 
 	/**
 	 * One publication takes ten reports an hour from all addresses; the

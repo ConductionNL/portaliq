@@ -451,6 +451,17 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(expected: ['new', 'handled', 'not-applicable'], actual: self::$register['components']['schemas']['publicationErrorReport']['properties']['status']['enum']);
 		$this->assertSame(expected: 2000, actual: self::$register['components']['schemas']['publicationErrorReport']['properties']['description']['maxLength']);
 		$this->assertContains(needle: 'publicationErrorReport', haystack: self::$register['components']['registers']['portaliq']['schemas']);
+		// The contact e-mail is read by the report's owner only (REQ-PER-002): the owner user, or a member of the owner
+		// group, stamped on the report as `reportOwner`, which only an administrator may change. Staff read the rest.
+		$report = self::$register['components']['schemas']['publicationErrorReport']['properties'];
+		$this->assertSame(
+			expected: [
+				['group' => 'portaliq-medewerkers', 'match' => ['reportOwner' => '$userId']],
+				['group' => 'portaliq-medewerkers', 'match' => ['reportOwner' => ['$in' => '$user.groups']]],
+			],
+			actual: $report['contactEmail']['authorization']['read']
+		);
+		$this->assertSame(expected: ['update' => ['admin']], actual: $report['reportOwner']['authorization']);
 		// Written as 0.111.0 (portal 0.30.0) on its branch; moved past development's 0.121.0 (portal 0.35.0) at merge time, so an install already on it imports these.
 		$this->assertSame(expected: '0.122.0', actual: self::$register['info']['version']);
 		$this->assertSame(expected: '0.122.0', actual: self::$register['components']['registers']['portaliq']['version']);

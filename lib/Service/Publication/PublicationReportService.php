@@ -203,6 +203,7 @@ class PublicationReportService {
 				'document'         => mb_substr(trim(self::text(value: ($input['document'] ?? ''))), 0, 255),
 				'description'      => $description,
 				'contactEmail'     => $email,
+				'reportOwner'      => $this->ownerOf(portal: $portal),
 				'status'           => 'new',
 				'receivedAt'       => $this->now()->format(DateTimeInterface::ATOM),
 			]
