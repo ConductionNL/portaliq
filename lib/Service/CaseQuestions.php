@@ -146,7 +146,7 @@ class CaseQuestions {
 	private function isQuestionCollection(array $subject, array $collection): bool {
 		return ($collection['schema'] ?? null) === self::QUESTION_SCHEMA
 			&& is_string($collection['register'] ?? null) === true
-			&& SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === true;
+			&& (new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === true;
 	}//end isQuestionCollection()
 
 	/**
