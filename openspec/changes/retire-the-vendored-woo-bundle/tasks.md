@@ -23,8 +23,12 @@
   - One `portal` row carries the domain, theme, locales and publication status; the home, themes, search and publication pages exist as `page` rows with grid bodies built only from the public block vocabulary
   - The navigation is a `menu` row, so an editor changes it without a deploy
   - No block on any of these pages is one this repo would have to invent: every widget key used is already in the public catalogue
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test
+  - Built as a generic example site, `lib/Settings/sites/open-publicaties.json` (`occ portaliq:example-site:install open-publicaties`): one `portal` row, a `Hoofdmenu` menu row, and pages for home, search, one publication, themes (`/onderwerpen` and `/onderwerp`) and GEMMA. A municipality sets its own domain, theme and organisation on the portal row; nothing names a real organisation.
+  - Finding: `section`, `cardGrid`, `search`, `card` and `markdown` are not blocks the public site renders (`publicWidgetFor` in `src/site/components/WidgetGrid.vue`), so the pages use `hero`, `federatedSearch`, `publicationDetail`, `nlFeaturedSubjects`, `nlSubjectLanding`, `nlLinkList`, `nlHeading` and `nlParagraph`. The proposal's mapping table is wrong on that point.
+  - Test: `tests/example-site.spec.mjs` holds every shipped site against the register schemas, the public widget map with each widget's props, and its own links (21 pass). `ExampleSiteCommandsTest` now lists both sites.
+
 
 ### Task 3: Route the authenticated surface at the capabilities that own it
 - **spec_ref**: `openspec/changes/retire-the-vendored-woo-bundle/specs/portaliq-cms/spec.md#requirement-the-bundled-auth-and-forms-screens-must-not-be-reimplemented-as-content`
@@ -33,8 +37,11 @@
   - Sign-in from the site enters the existing OIDC edge (DigiD, eHerkenning, eIDAS) rather than a bundled login screen, and the bundled `/login`, `/register`, `/reminder` and `/authorization` screens are reproduced nowhere
   - "Mijn omgeving" resolves to the authenticated portal and its contribution aggregate, not to a new page type
   - Each `/forms/*` route is expressed as a portal-contribution action, or is explicitly recorded as out of scope with a reason, so none is silently dropped
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test
+  - `openspec/changes/retire-the-vendored-woo-bundle/bundle-routes.json` records all 47 routes the bundle answers, read out of `build/woo/static/js`. `/login`, `/register`, `/reminder`, `/authorization` and `/logout` go to the portal's own auth edge (DigiD, eHerkenning on the portal row), and no page reproduces them. `/mijn-omgeving` and `/mijn-account` go to `/mijn`, which the menu links. Every `/forms/*` and `/beheer/*` route has a written out-of-scope reason: stackiq's portal contribution declares read collections only and defers its create-actions, and administration stays behind Nextcloud sign-in. `src/site/App.vue` and `SiteMenu.vue` needed no change.
+  - Test: `tests/woo-bundle-routes.spec.mjs` (`check:woo-bundle-routes`, in `check:specs`) extracts the route set from the build and fails on a route the record misses or invents.
+
 
 ### Task 4: Serve the authored portal on the WOO paths
 - **spec_ref**: `openspec/changes/retire-the-vendored-woo-bundle/specs/portaliq-cms/spec.md#requirement-the-authored-portal-must-answer-on-the-paths-the-bundle-answered-on`
