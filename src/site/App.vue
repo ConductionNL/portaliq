@@ -2502,11 +2502,12 @@ export default {
 		},
 
 		/**
-		 * Open a route that renders without a CMS page: the signed-in area or
-		 * a shared dossier.
+		 * Open a route that renders without a CMS page: the signed-in area, a
+		 * shared dossier, the co-sign page or a document page.
 		 *
 		 * @param {string} route The in-portal route.
 		 * @return {boolean} Whether the route was one of them.
+		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
 		 */
 		openPagelessRoute(route) {
 			// The signed-in area renders from the session, not from a CMS
