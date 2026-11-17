@@ -595,7 +595,7 @@ class SessionController extends Controller {
 		}
 
 		$provider = $this->discoveredProvider(org: $run->org, provider: $run->provider);
-		if ($provider === null) {
+		if ($provider === null || $this->portalAcceptsProvider(site: $run->site, config: $provider['config']) === false) {
 			return $this->oidcGenericError();
 		}
 
@@ -776,7 +776,7 @@ class SessionController extends Controller {
 	 */
 	private function withOidcProvider(OidcLoginRun $run): ?OidcLoginRun {
 		$provider = $this->discoveredProvider(org: $run->pending['org'], provider: $run->pending['provider']);
-		if ($provider === null) {
+		if ($provider === null || $this->startPortalAcceptsProvider(pending: $run->pending, config: $provider['config']) === false) {
 			return null;
 		}
 
@@ -784,6 +784,53 @@ class SessionController extends Controller {
 		$run->endpoints = $provider['endpoints'];
 		return $run;
 	}//end withOidcProvider()
+
+	/**
+	 * Whether the serving portal accepts the organisation's resolved OIDC
+	 * provider: a portal that names its provider accepts only a provider
+	 * that matches it (portal-scoping-and-auth Task 4). No portal: the
+	 * organisation's provider, as before.
+	 *
+	 * @param array<string, mixed>|null $site   The serving portal, or null.
+	 * @param array<string, mixed>      $config The resolved provider settings.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 */
+	private function portalAcceptsProvider(?array $site, array $config): bool {
+		if ($site === null) {
+			return true;
+		}
+
+		return PortalAuthConfig::fromPortal(portal: $site)->acceptsOidcProvider(config: $config);
+	}//end portalAcceptsProvider()
+
+	/**
+	 * Whether the portal the login started on still accepts the provider the
+	 * callback completes with. The portal is looked up by the slug the state
+	 * row kept; a portal that no longer resolves accepts nothing.
+	 *
+	 * @param array<string, mixed> $pending The consumed state row.
+	 * @param array<string, mixed> $config  The resolved provider settings.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 */
+	private function startPortalAcceptsProvider(array $pending, array $config): bool {
+		$slug = (string)($pending['portal'] ?? '');
+		if ($slug === '') {
+			return true;
+		}
+
+		$site = $this->portals->resolve(request: $this->request, portalSlug: $slug);
+		if ($site === null) {
+			return false;
+		}
+
+		return PortalAuthConfig::fromPortal(portal: $site)->acceptsOidcProvider(config: $config);
+	}//end startPortalAcceptsProvider()
 
 	/**
 	 * The portal session the callback mints: the verified claims, mapped onto

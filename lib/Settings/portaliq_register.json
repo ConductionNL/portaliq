@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.125.0"
+        "version": "0.126.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.125.0",
+                "version": "0.126.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -2836,7 +2836,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.36.0",
+                "version": "0.37.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -3681,7 +3681,11 @@
                             "oidc": {
                                 "title": "OIDC configuration",
                                 "type": "object",
-                                "description": "Provider configuration when `oidc` is enabled: issuer, client id and the scopes requested. The client secret is held in the credential broker, never here.",
+                                "description": "Provider configuration when `oidc` is enabled. `issuer` (and optionally `clientId`) names the one provider this portal accepts: a login through any other provider is refused. Absent, the organisation's provider is accepted. The client secret is held in the credential broker, never here.",
+                                "properties": {
+                                    "issuer": {"title": "Issuer", "type": "string", "description": "The issuer of the only OIDC provider this portal accepts.", "example": "https://login.example.nl"},
+                                    "clientId": {"title": "Client id", "type": "string", "description": "The client id that provider must use, when pinned.", "example": "portal-client"}
+                                },
                                 "additionalProperties": true
                             },
                             "registration": {

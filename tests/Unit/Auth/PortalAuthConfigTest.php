@@ -78,6 +78,11 @@ class PortalAuthConfigTest extends TestCase {
 			'a mode outside the set' => [['modes' => ['nextcloud', 'google']]],
 			'a mode that is not a string' => [['modes' => ['nextcloud', 1]]],
 			'a floor outside the levels' => [['modes' => ['digid'], 'minTrust' => 'hgh']],
+			'oidc not an object' => [['modes' => ['oidc'], 'oidc' => 'https://idp.example']],
+			'oidc a list' => [['modes' => ['oidc'], 'oidc' => ['https://idp.example']]],
+			'an issuer that is not a string' => [['modes' => ['oidc'], 'oidc' => ['issuer' => 7]]],
+			'an empty issuer' => [['modes' => ['oidc'], 'oidc' => ['issuer' => ' / ']]],
+			'an empty client id' => [['modes' => ['oidc'], 'oidc' => ['clientId' => '']]],
 		];
 	}//end malformedBlocks()
 
@@ -98,7 +103,55 @@ class PortalAuthConfigTest extends TestCase {
 		foreach (PortalAuthConfig::MODES as $mode) {
 			$this->assertFalse($config->offers(mode: $mode), $mode);
 		}
+
+		$this->assertFalse($config->acceptsOidcProvider(config: ['issuer' => 'https://idp.example', 'clientId' => 'rp']));
 	}//end testAMalformedBlockOffersNoWayIn()
+
+	/**
+	 * A portal that names its OIDC provider accepts only that provider: the
+	 * issuer must match (a trailing slash aside) and, when named, the client id.
+	 *
+	 * @return void
+	 */
+	public function testAPortalThatNamesItsProviderAcceptsOnlyThatProvider(): void {
+		$config = PortalAuthConfig::fromPortal(
+			portal: ['authentication' => ['modes' => ['oidc'], 'oidc' => ['issuer' => 'https://idp-a.example/', 'clientId' => 'rp-a']]]
+		);
+
+		$this->assertFalse($config->isMalformed());
+		$this->assertTrue($config->namesOidcProvider());
+		$this->assertTrue($config->acceptsOidcProvider(config: ['issuer' => 'https://idp-a.example', 'clientId' => 'rp-a']));
+		$this->assertFalse($config->acceptsOidcProvider(config: ['issuer' => 'https://idp-b.example', 'clientId' => 'rp-a']));
+		$this->assertFalse($config->acceptsOidcProvider(config: ['issuer' => 'https://idp-a.example', 'clientId' => 'rp-b']));
+		$this->assertFalse($config->acceptsOidcProvider(config: ['clientId' => 'rp-a']));
+	}//end testAPortalThatNamesItsProviderAcceptsOnlyThatProvider()
+
+	/**
+	 * A portal that names only an issuer accepts any client of that issuer.
+	 *
+	 * @return void
+	 */
+	public function testAnIssuerAloneDoesNotPinTheClient(): void {
+		$config = PortalAuthConfig::fromPortal(portal: ['authentication' => ['modes' => ['oidc'], 'oidc' => ['issuer' => 'https://idp-a.example']]]);
+
+		$this->assertTrue($config->acceptsOidcProvider(config: ['issuer' => 'https://idp-a.example/', 'clientId' => 'any']));
+		$this->assertFalse($config->acceptsOidcProvider(config: ['issuer' => 'https://idp-a.example.evil', 'clientId' => 'any']));
+	}//end testAnIssuerAloneDoesNotPinTheClient()
+
+	/**
+	 * A portal that names no provider (no `oidc`, or an empty one) accepts
+	 * the organisation's provider, as before.
+	 *
+	 * @return void
+	 */
+	public function testAPortalThatNamesNoProviderAcceptsTheOrganisations(): void {
+		foreach ([['modes' => ['oidc']], ['modes' => ['oidc'], 'oidc' => []], ['modes' => ['oidc'], 'oidc' => ['scopes' => ['openid']]]] as $block) {
+			$config = PortalAuthConfig::fromPortal(portal: ['authentication' => $block]);
+			$this->assertFalse($config->isMalformed());
+			$this->assertFalse($config->namesOidcProvider());
+			$this->assertTrue($config->acceptsOidcProvider(config: ['issuer' => 'https://idp-b.example', 'clientId' => 'rp']));
+		}
+	}//end testAPortalThatNamesNoProviderAcceptsTheOrganisations()
 
 	/**
 	 * The closed set is the portal schema's own enum, so neither can drift.
@@ -111,5 +164,7 @@ class PortalAuthConfigTest extends TestCase {
 
 		$this->assertSame($auth['modes']['items']['enum'], PortalAuthConfig::MODES);
 		$this->assertSame($auth['minTrust']['enum'], PortalAuthConfig::TRUST_LEVELS);
+		$this->assertSame('string', $auth['oidc']['properties']['issuer']['type']);
+		$this->assertSame('string', $auth['oidc']['properties']['clientId']['type']);
 	}//end testTheClosedSetIsTheSchemasEnum()
 }//end class

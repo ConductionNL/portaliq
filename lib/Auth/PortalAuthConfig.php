@@ -35,6 +35,14 @@ namespace OCA\Portaliq\Auth;
  * it, so nothing can be written through it. An absent block, or one without
  * modes, is a public portal that offers no sign-in either.
  *
+ * The `oidc` sub-block names the one provider the portal accepts (its
+ * `issuer`, and optionally its `clientId`). The provider's settings and
+ * secret stay with the organisation; a portal that names a provider only
+ * accepts a login through a provider that matches it, so an assertion from a
+ * different provider is refused. A portal that names none accepts the
+ * organisation's provider as before. An `oidc` value that is not an object,
+ * or an `issuer`/`clientId` that is not a non-empty string, is malformed.
+ *
  * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
  */
 final class PortalAuthConfig {
@@ -60,6 +68,7 @@ final class PortalAuthConfig {
 	 * @param array<int, string> $modes     The declared modes; [] when malformed.
 	 * @param string|null        $minTrust  The declared assurance floor, or null.
 	 * @param bool               $malformed Whether the block could not be read as declared.
+	 * @param array{issuer: string|null, clientId: string|null} $oidc The provider the portal names, nulls for none.
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- one recorded fact of the parse, set only by fromPortal().
 	 */
@@ -67,6 +76,7 @@ final class PortalAuthConfig {
 		private readonly array $modes,
 		private readonly ?string $minTrust,
 		private readonly bool $malformed,
+		private readonly array $oidc = ['issuer' => null, 'clientId' => null],
 	) {
 	}//end __construct()
 
@@ -91,11 +101,12 @@ final class PortalAuthConfig {
 
 		$modes = self::declaredModes(value: ($auth['modes'] ?? []));
 		$trust = ($auth['minTrust'] ?? null);
-		if ($modes === null || ($trust !== null && in_array($trust, self::TRUST_LEVELS, true) === false)) {
+		$oidc  = self::declaredOidc(value: ($auth['oidc'] ?? null));
+		if ($modes === null || $oidc === null || ($trust !== null && in_array($trust, self::TRUST_LEVELS, true) === false)) {
 			return self::malformed();
 		}
 
-		return new self(modes: $modes, minTrust: $trust, malformed: false);
+		return new self(modes: $modes, minTrust: $trust, malformed: false, oidc: $oidc);
 	}//end fromPortal()
 
 	/**
@@ -145,6 +156,43 @@ final class PortalAuthConfig {
 	}//end minTrust()
 
 	/**
+	 * Whether a login through this OIDC provider may complete on the portal:
+	 * the organisation's resolved provider settings must match the issuer
+	 * (and client id) the portal names. A portal that names no provider
+	 * accepts the organisation's; a malformed block accepts none.
+	 *
+	 * @param array<string, mixed> $config The organisation's resolved provider settings.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 */
+	public function acceptsOidcProvider(array $config): bool {
+		if ($this->malformed === true) {
+			return false;
+		}
+
+		$issuer = $this->oidc['issuer'];
+		if ($issuer !== null && self::normalIssuer(value: ($config['issuer'] ?? null)) !== $issuer) {
+			return false;
+		}
+
+		$clientId = $this->oidc['clientId'];
+		return $clientId === null || ($config['clientId'] ?? null) === $clientId;
+	}//end acceptsOidcProvider()
+
+	/**
+	 * Whether the portal names the OIDC provider it accepts.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 */
+	public function namesOidcProvider(): bool {
+		return $this->oidc['issuer'] !== null || $this->oidc['clientId'] !== null;
+	}//end namesOidcProvider()
+
+	/**
 	 * A block that offers nothing.
 	 *
 	 * @return self
@@ -174,4 +222,56 @@ final class PortalAuthConfig {
 
 		return array_values(array_unique($value));
 	}//end declaredModes()
+
+	/**
+	 * The provider the `oidc` sub-block names, or null when it cannot be read.
+	 *
+	 * @param mixed $value The stored `oidc`.
+	 *
+	 * @return array{issuer: string|null, clientId: string|null}|null
+	 */
+	private static function declaredOidc(mixed $value): ?array {
+		if ($value === null) {
+			return ['issuer' => null, 'clientId' => null];
+		}
+
+		if (is_array($value) === false || ($value !== [] && array_is_list($value) === true)) {
+			return null;
+		}
+
+		$named = [];
+		foreach (['issuer', 'clientId'] as $field) {
+			$given = ($value[$field] ?? null);
+			if ($given !== null && (is_string($given) === false || trim($given) === '')) {
+				return null;
+			}
+
+			$named[$field] = $given;
+		}
+
+		if ($named['issuer'] !== null) {
+			$named['issuer'] = self::normalIssuer(value: $named['issuer']);
+			if ($named['issuer'] === '') {
+				return null;
+			}
+		}
+
+		return ['issuer' => $named['issuer'], 'clientId' => $named['clientId']];
+	}//end declaredOidc()
+
+	/**
+	 * An issuer compared without surrounding space or a trailing slash, or ''
+	 * for a value that is not a string.
+	 *
+	 * @param mixed $value The issuer.
+	 *
+	 * @return string
+	 */
+	private static function normalIssuer(mixed $value): string {
+		if (is_string($value) === false) {
+			return '';
+		}
+
+		return rtrim(trim($value), '/');
+	}//end normalIssuer()
 }//end class

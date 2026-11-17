@@ -727,6 +727,10 @@ class SessionControllerTest extends TestCase {
 		$urlGenerator = $this->createMock(IURLGenerator::class);
 		$urlGenerator->method('getAbsoluteURL')->willReturnCallback(fn (string $url) => 'https://portal.example' . $url);
 
+		// The callback looks the start portal up by the slug the state row kept.
+		$portals = $this->createMock(PortalResolver::class);
+		$portals->expects($this->once())->method('resolve')->with($this->anything(), 'portal-a')->willReturn(['slug' => 'portal-a', 'authentication' => ['modes' => ['eherkenning']]]);
+
 		$response = $this->controller(
 			session: $session,
 			orgConfig: $orgConfig,
@@ -734,12 +738,132 @@ class SessionControllerTest extends TestCase {
 			claimMapper: $mapper,
 			stateStore: $stateStore,
 			accounts: $accounts,
-			urlGenerator: $urlGenerator
+			urlGenerator: $urlGenerator,
+			portals: $portals
 		)->oidcCallback(state: 's', code: 'c');
 
 		$this->assertSame(Http::STATUS_FOUND, $response->getStatus());
 		$this->assertSame('portal-a', $bound);
 	}//end testOidcCallbackBindsTheSessionToThePortalTheLoginStartedOn()
+
+	/**
+	 * The start portal, as the callback looks it up, decides which provider
+	 * may complete the login: a provider other than the one the portal names
+	 * is refused before any code is exchanged, with the generic error and no
+	 * session; the named one, a trailing slash aside, completes.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 */
+	public function testOidcCallbackAcceptsOnlyTheProviderTheStartPortalNames(): void {
+		$cases = [
+			'another provider' => [['issuer' => 'https://other-broker.example'], false],
+			'another client' => [['issuer' => 'https://broker.example', 'clientId' => 'someone-else'], false],
+			'the named provider' => [['issuer' => 'https://broker.example/', 'clientId' => 'rp'], true],
+		];
+		foreach ($cases as $label => [$named, $accepted]) {
+			$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
+			$mapper    = new OidcClaimMapperService();
+			$orgConfig->method('resolveOidcConfig')->willReturn(
+				$mapper->applyPreset('eherkenning', ['issuer' => 'https://broker.example', 'clientId' => 'rp', 'clientSecret' => 'x'])
+			);
+
+			$oidc = $this->createMock(OidcClientService::class);
+			$oidc->method('discover')->willReturn($this->discoveryFixture());
+			$oidc->expects($accepted ? $this->once() : $this->never())->method('exchangeCode')->willReturn(['id_token' => 'x.y.z']);
+			$oidc->method('verifyIdToken')->willReturn(['sub' => 'kvk-1', 'acr' => 'high-loa']);
+
+			$stateStore = $this->createMock(OidcStateStoreService::class);
+			$stateStore->method('consume')->willReturn($this->pendingFixture() + ['portal' => 'portal-a']);
+
+			$accounts = $this->createMock(PortalAccountService::class);
+			$accounts->method('findOrCreate')->willReturn(['subjectRef' => 'server-derived-subject', 'isNew' => false]);
+
+			$session = $this->createMock(PortalSessionService::class);
+			$session->expects($accepted ? $this->once() : $this->never())->method('issueSession')->willReturn(['token' => 'signed.bearer.jwt', 'jti' => 'jti-1']);
+
+			$urlGenerator = $this->createMock(IURLGenerator::class);
+			$urlGenerator->method('getAbsoluteURL')->willReturnCallback(fn (string $url) => 'https://portal.example' . $url);
+
+			$portals = $this->createMock(PortalResolver::class);
+			$portals->method('resolve')->willReturn(['slug' => 'portal-a', 'authentication' => ['modes' => ['eherkenning'], 'oidc' => $named]]);
+
+			$response = $this->controller(
+				session: $session,
+				orgConfig: $orgConfig,
+				oidc: $oidc,
+				claimMapper: $mapper,
+				stateStore: $stateStore,
+				accounts: $accounts,
+				urlGenerator: $urlGenerator,
+				portals: $portals
+			)->oidcCallback(state: 's', code: 'c');
+
+			$this->assertSame($accepted ? Http::STATUS_FOUND : Http::STATUS_BAD_REQUEST, $response->getStatus(), $label);
+		}
+	}//end testOidcCallbackAcceptsOnlyTheProviderTheStartPortalNames()
+
+	/**
+	 * A login whose start portal no longer resolves completes nothing: the
+	 * session would be bound to a portal that is gone.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 */
+	public function testOidcCallbackRefusesWhenTheStartPortalIsGone(): void {
+		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
+		$orgConfig->method('resolveOidcConfig')->willReturn($this->oidcConfigFixture());
+
+		$oidc = $this->createMock(OidcClientService::class);
+		$oidc->method('discover')->willReturn($this->discoveryFixture());
+		$oidc->expects($this->never())->method('exchangeCode');
+
+		$stateStore = $this->createMock(OidcStateStoreService::class);
+		$stateStore->method('consume')->willReturn($this->pendingFixture() + ['portal' => 'portal-a']);
+
+		$session = $this->createMock(PortalSessionService::class);
+		$session->expects($this->never())->method('issueSession');
+
+		$portals = $this->createMock(PortalResolver::class);
+		$portals->method('resolve')->willReturn(null);
+
+		$response = $this->controller(session: $session, orgConfig: $orgConfig, oidc: $oidc, stateStore: $stateStore, portals: $portals)
+			->oidcCallback(state: 's', code: 'c');
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+	}//end testOidcCallbackRefusesWhenTheStartPortalIsGone()
+
+	/**
+	 * A start on a portal that names a different provider than the one its
+	 * organisation resolves is the generic error, and no state is stored.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 */
+	public function testOidcStartRefusesAProviderThePortalDoesNotName(): void {
+		$portals = $this->createMock(originalClassName: PortalResolver::class);
+		$portals->method('resolve')->willReturn(
+			['slug' => 'la-franken', 'organisation' => 'gemeente-x', 'authentication' => ['modes' => ['eherkenning'], 'oidc' => ['issuer' => 'https://other-broker.example']]]
+		);
+
+		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
+		$orgConfig->method('isLoginProviderAllowed')->willReturn(true);
+		$orgConfig->method('resolveOidcConfig')->willReturn($this->oidcConfigFixture());
+
+		$oidc = $this->createMock(OidcClientService::class);
+		$oidc->method('discover')->willReturn($this->discoveryFixture());
+
+		$stateStore = $this->createMock(OidcStateStoreService::class);
+		$stateStore->expects($this->never())->method('create');
+
+		$controller = $this->controller(session: $this->createMock(PortalSessionService::class), orgConfig: $orgConfig, oidc: $oidc, stateStore: $stateStore, portals: $portals);
+		$response   = $this->dispatch(controller: $controller, method: 'oidcStart', params: ['provider' => 'eherkenning', 'portal' => 'la-franken']);
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+	}//end testOidcStartRefusesAProviderThePortalDoesNotName()
 
 	public function testIndexReportsTheBranchInEffect(): void {
 		$session = $this->createMock(PortalSessionService::class);
