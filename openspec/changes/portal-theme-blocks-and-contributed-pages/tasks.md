@@ -123,8 +123,8 @@ that touches the shell ends with `node tests/shell-snapshot.mjs compare <dir>`.
   - GIVEN an entry without a page WHEN rendered THEN it is plain text
   - GIVEN an unknown page WHEN opened THEN the 404 state renders
 - Reference: 547fb33
-- [ ] Implement — not run in this batch: left for a later pass
-- [ ] Test — not run in this batch
+- [x] Implement (`src/site/lib/contributionApi.js` `resolveContributionPage()` / `entryRoute()`, `ContributionPage.vue` loaded on demand, `ContributionsBlock.vue` links only entries with a page, `App.vue` opens `/diensten/{app}/{page}` without a CMS request and shows the not-found page for an unknown one)
+- [ ] Test — partly: `tests/site-contribution.spec.mjs` (`npm run check:site-contribution`) pins the route, the resolution, the not-found case and the entry-is-text case; the rendered page in a browser (both blocks on La Franken) is not run: needs a browser and a provisioned portal
 
 ### Task 10: Contributed actions, anonymous ownership and the AA check
 
