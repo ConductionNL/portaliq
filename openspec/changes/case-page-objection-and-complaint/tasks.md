@@ -16,13 +16,13 @@ Board: `Zaak` on the Zuiddrecht canvas (`5NkFW28vZUUij43xzxHg5a`). New frontend 
 ## The case screen
 
 - [x] **T06**: `src/site/components/e/CitizenCase.vue`: a group with `role="group"` and `aria-label` "Meer acties voor deze zaak" holding the `caseActions` buttons before the change-proposal and withdraw controls; a closed action shows its sentence (REQ-COC-002)
-- [ ] **T07**: `src/site/components/e/CaseActionForm.vue`: the action's fields minus the crossRef field, heading focused on open, cancel sends nothing, submit through `src/site/lib/` portal API with `onCase`; success notice with the reference and the Mijn zaken line; a 409 shows the server's sentence (REQ-COC-004, REQ-COC-005)
-  - Playwright `tests/e2e/case-page-objection-and-complaint.spec.ts`: Bezwaar maken on a decided case, the bezwaar stored with the case id, the receipt shown; a case past 42 days shows the closed sentence
-- [ ] **T08**: Update `tests/zuiddrecht-resident-boards.spec.mjs`: with `onCase` declared, Bezwaar maken and Klacht indienen are on the case page, not on the overview
+- [x] **T07**: `src/site/components/e/CaseActionForm.vue`: the action's fields minus the crossRef field, heading focused on open, cancel sends nothing, submit through `src/site/lib/` portal API with `onCase`; success notice with the reference and the Mijn zaken line; a 409 shows the server's sentence (REQ-COC-004, REQ-COC-005)
+  - Playwright `tests/e2e/case-page-objection-and-complaint.spec.ts`: Bezwaar maken on a decided case, the bezwaar stored with the case id, the receipt shown; a case past 42 days shows the closed sentence (written, not run: needs a live instance)
+- [x] **T08**: Update `tests/zuiddrecht-resident-boards.spec.mjs`: with `onCase` declared, Bezwaar maken and Klacht indienen are on the case page, not on the overview
 
 ## Strings, docs and the sibling
 
 - [x] **T09**: Dutch and English strings: the group name, the default closed sentence, the success notice per kind; `l10n/` updated
-- [ ] **T10**: Docs page `docs/features/objection-and-complaint-on-the-case.md` with the `onCase` key and an example
+- [x] **T10**: Docs page `docs/features/objection-and-complaint-on-the-case.md` (written at `docs/operations/objection-and-complaint-on-the-case.md`, where this repo keeps its feature pages) with the `onCase` key and an example
 - [ ] **T11**: Open the dossiq issue for its half: `onCase` on `createBezwaar` (window 42 days from the decision sent date) and `createKlacht`, and both removed from the overview page
 - [ ] **T12**: `openspec validate case-page-objection-and-complaint --strict`
