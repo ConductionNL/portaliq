@@ -49,8 +49,10 @@
 - **acceptance_criteria**:
   - Every path the bundle served that carries a public surface resolves to the authored portal, or redirects to where that surface now lives
   - No path that used to render silently 404s: the set of previously-served public paths is enumerated in the test, not sampled
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test
+  - `lib/Service/RetiredBundleAddress.php` maps a bundle path to its site route: a public page keeps its route (`/publicatie/<id>` resolves to the `/publicatie` page with the id as its parameter), the own-area and sign-in screens go to `/mijn` (the site's own area, which shows its sign-in page to a visitor who is not signed in), and `/forms/*` and `/beheer/*` land on the site's home. `BundledSiteController` redirects every `/woo` path there with 302, keeping the query and adding `portal=<slug>`, once an administrator names the portal: `occ config:app:set portaliq bundled_site_portal_woo --value=open-publicaties`. Until then the bundle keeps serving, so the switch is a setting, not a deploy, and comes after the parity walk of task 5. `appinfo/routes.php` and `PortalPageController` needed no change: the existing `/woo` routes and `/site/{path}` carry it.
+  - Test: `RetiredBundleAddressTest` runs all 47 routes of `bundle-routes.json` (enumerated, not sampled) and checks each lands where its record says and that every page target is a page of `open-publicaties`. `BundledSiteControllerAuthoredSiteTest` checks the bundle still serves without the setting, and the redirects, query and portal once it is set.
 
 ### Task 5: Prove parity before anything is deleted
 - **spec_ref**: `openspec/changes/retire-the-vendored-woo-bundle/specs/portaliq-cms/spec.md#requirement-parity-must-be-demonstrated-before-the-bundle-is-removed`
