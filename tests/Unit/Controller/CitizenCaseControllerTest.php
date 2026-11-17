@@ -979,7 +979,14 @@ class CitizenCaseControllerTest extends TestCase {
 		)->show('zaken', 'zaak', self::CASE_ID)->getData();
 
 		$this->assertSame(
-			[['app' => 'dossiq', 'action' => 'createBezwaar', 'label' => 'Bezwaar maken', 'open' => true, 'closesOn' => '2026-11-13']],
+			[[
+				'app' => 'dossiq',
+				'action' => 'createBezwaar',
+				'label' => 'Bezwaar maken',
+				'open' => true,
+				'closesOn' => '2026-11-13',
+				'form' => ['id' => 'createBezwaar', 'type' => 'create', 'label' => 'Bezwaar maken', 'crossRefs' => []],
+			]],
 			$data['caseActions']
 		);
 	}//end testTheCaseAnswersTheActionsPlacedOnIt()

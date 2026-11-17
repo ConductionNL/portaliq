@@ -200,10 +200,36 @@ class CaseActionsResolver {
 
 		if ($window['open'] === false) {
 			$entry['closedText'] = $this->closedText(action: $action);
+			return $entry;
 		}
+
+		$entry['form'] = $this->formOf(action: $action);
 
 		return $entry;
 	}//end entry()
+
+	/**
+	 * The action as the case page's form asks it: without the cross-reference field the server
+	 * fills in, and without the placement itself.
+	 *
+	 * @param array<string,mixed> $action The action.
+	 *
+	 * @return array<string,mixed> The form's action.
+	 *
+	 * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-server-fills-in-the-case-and-the-guard-still-runs-req-coc-004
+	 */
+	private function formOf(array $action): array {
+		$field = (string)($action[OnCaseConfigNormaliser::KEY]['crossRef'] ?? '');
+		foreach (['fields', 'requiredFields'] as $list) {
+			if (is_array($action[$list] ?? null) === true) {
+				$action[$list] = array_values(array_diff($action[$list], [$field]));
+			}
+		}
+
+		unset($action[OnCaseConfigNormaliser::KEY], $action['crossRefs'][$field], $action['fieldConfigs'][$field]);
+
+		return $action;
+	}//end formOf()
 
 	/**
 	 * The calendar day of a date or date-time value in Europe/Amsterdam, or null when it is

@@ -1522,6 +1522,35 @@ export function createPortalApi(config, store = {}) {
 		},
 
 		/**
+		 * Create through a create action filed from a case page: `onCase`
+		 * names the case (`<register>/<schema>/<id>`) and the server writes it
+		 * into the action's cross-reference field. A closed window answers 409
+		 * with the server's sentence in `message`.
+		 *
+		 * @param {object} action Manifest action: `{ id, register, schema }`.
+		 * @param {object} data The answers, without the cross-reference field.
+		 * @param {string} onCase The case, `<register>/<schema>/<id>`.
+		 * @return {Promise<object>} `{ ok, status, object, error, message }`.
+		 *
+		 * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-server-fills-in-the-case-and-the-guard-still-runs-req-coc-004
+		 */
+		async createObjectOnCase(action, data, onCase) {
+			const query = `?actionId=${encodeURIComponent(action.id || '')}&onCase=${encodeURIComponent(onCase)}`
+			const res = await fetch(
+				`${base}${col(action.register, action.schema)}${query}`,
+				jsonInit('POST', data || {}),
+			)
+			const json = await res.json().catch(() => ({}))
+			if (!res.ok) {
+				return {
+					...writeRefusal(res.status, json),
+					message: typeof json?.message === 'string' ? json.message : '',
+				}
+			}
+			return { ok: true, status: res.status, object: json.object || json }
+		},
+
+		/**
 		 * Update an object via a declared `type: update` action (portal-scoped-crud,
 		 * PR #25). Ownership is re-verified server-side; the id is never trusted.
 		 *

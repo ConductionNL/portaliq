@@ -3471,7 +3471,8 @@ OC.L10N.register(
         "Summaries are only found when the search term is spelled exactly.": "Summaries are only found when the search term is spelled exactly.",
         "Text inside documents is found even with a small spelling mistake in the search term.": "Text inside documents is found even with a small spelling mistake in the search term.",
         "Text inside documents is only found when the search term is spelled exactly.": "Text inside documents is only found when the search term is spelled exactly.",
-        "Results from other catalogues that carry no score come after the scored results, in the order their catalogue gave them.": "Results from other catalogues that carry no score come after the scored results, in the order their catalogue gave them."
+        "Results from other catalogues that carry no score come after the scored results, in the order their catalogue gave them.": "Results from other catalogues that carry no score come after the scored results, in the order their catalogue gave them.",
+        "You can no longer do this on this case.": "You can no longer do this on this case."
     },
     "nplurals=2; plural=(n != 1);"
 )

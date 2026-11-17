@@ -9,6 +9,11 @@
 
 export default {
 	nl: {
+		'More actions for this case': 'Meer acties voor deze zaak',
+		'You can no longer do this on this case.': 'Dit kan niet meer bij deze zaak.',
+		'We have received it.': 'Wij hebben het ontvangen.',
+		'We have received it. Reference {reference}.': 'Wij hebben het ontvangen. Kenmerk {reference}.',
+		'You will find it as a case of its own in My cases.': 'U vindt het als eigen zaak in Mijn zaken.',
 		'How you are signed in, how we reach you and what we let you know about.':
 			'Hoe u bent ingelogd, hoe wij u bereiken en waarover wij u laten weten.',
 		'Contact preferences': 'Contactvoorkeuren',
@@ -304,6 +309,11 @@ export default {
 		'{name} has been added to your case.': '{name} is aan uw zaak toegevoegd.',
 	},
 	en: {
+		'More actions for this case': 'More actions for this case',
+		'You can no longer do this on this case.': 'You can no longer do this on this case.',
+		'We have received it.': 'We have received it.',
+		'We have received it. Reference {reference}.': 'We have received it. Reference {reference}.',
+		'You will find it as a case of its own in My cases.': 'You will find it as a case of its own in My cases.',
 		'How you are signed in, how we reach you and what we let you know about.':
 			'How you are signed in, how we reach you and what we let you know about.',
 		'Contact preferences': 'Contact preferences',

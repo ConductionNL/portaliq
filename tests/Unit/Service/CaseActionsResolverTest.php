@@ -141,7 +141,13 @@ class CaseActionsResolverTest extends TestCase {
 		self::assertSame(
 			[
 				['app' => 'dossiq', 'action' => 'createBezwaar', 'label' => 'createBezwaar label', 'open' => false, 'closesOn' => '2026-11-13', 'closedText' => 'De termijn voor bezwaar is voorbij.'],
-				['app' => 'dossiq', 'action' => 'createKlacht', 'label' => 'createKlacht label', 'open' => true],
+				[
+					'app' => 'dossiq',
+					'action' => 'createKlacht',
+					'label' => 'createKlacht label',
+					'open' => true,
+					'form' => ['id' => 'createKlacht', 'type' => 'create', 'label' => 'createKlacht label', 'crossRefs' => []],
+				],
 			],
 			$listed
 		);
@@ -159,6 +165,30 @@ class CaseActionsResolverTest extends TestCase {
 
 		self::assertSame('You can no longer do this on this case.', $listed[0]['closedText']);
 	}//end testAClosedActionWithoutItsOwnSentenceGetsTheDefault()
+
+	public function testTheFormLeavesOutTheFieldTheServerFillsIn(): void {
+		$action = array_merge(
+			$this->action(id: 'createBezwaar', order: 1),
+			[
+				'fields' => ['grounds', 'againstCaseId'],
+				'requiredFields' => ['grounds', 'againstCaseId'],
+				'fieldConfigs' => ['againstCaseId' => ['label' => 'Zaak'], 'grounds' => ['label' => 'Gronden']],
+			]
+		);
+
+		$form = $this->resolver(now: '2026-10-20 10:00:00')->forCase(
+			contributions: [['app' => 'dossiq', 'actions' => [$action]]],
+			register: 'dossiq',
+			schema: 'zaak',
+			case: []
+		)[0]['form'];
+
+		self::assertSame(['grounds'], $form['fields']);
+		self::assertSame(['grounds'], $form['requiredFields']);
+		self::assertSame(['grounds' => ['label' => 'Gronden']], $form['fieldConfigs']);
+		self::assertSame([], $form['crossRefs']);
+		self::assertArrayNotHasKey('onCase', $form);
+	}//end testTheFormLeavesOutTheFieldTheServerFillsIn()
 
 	public function testAContributionWithoutOnCaseListsNothing(): void {
 		$action = $this->action(id: 'createBezwaar', order: 1);
