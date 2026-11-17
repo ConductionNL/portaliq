@@ -95,11 +95,7 @@ class ValueLabelsNormaliser {
 		$labels = [];
 		foreach ($value as $raw => $label) {
 			$key = (string) $raw;
-			if ($key === '' || mb_strlen($key) > self::MAX_VALUE_LENGTH) {
-				continue;
-			}
-
-			if (is_string($label) === false || trim($label) === '' || mb_strlen($label) > self::MAX_LABEL_LENGTH) {
+			if ($this->skips(key: $key, label: $label) === true) {
 				continue;
 			}
 
@@ -111,4 +107,22 @@ class ValueLabelsNormaliser {
 
 		return $labels;
 	}//end normalise()
+
+	/**
+	 * Whether an entry is dropped: an empty or too long value, or a label that is no short, non-blank string.
+	 *
+	 * @param string $key   The value.
+	 * @param mixed  $label The label.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-column-and-a-form-field-may-declare-how-their-values-read
+	 */
+	private function skips(string $key, mixed $label): bool {
+		if ($key === '' || mb_strlen($key) > self::MAX_VALUE_LENGTH) {
+			return true;
+		}
+
+		return is_string($label) === false || trim($label) === '' || mb_strlen($label) > self::MAX_LABEL_LENGTH;
+	}//end skips()
 }//end class

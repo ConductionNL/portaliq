@@ -114,6 +114,8 @@ class CollectionConfigNormaliser {
 		$collection = $this->normaliseDetail(collection: $collection);
 		$collection = (new CollectionFieldConfigNormaliser())->normalise(collection: $collection);
 		$collection = (new TimelineProviderMethod())->normaliseTimeline(collection: $collection);
+		// The messages about one record, both ways (capability-rows-said-and-planned T07).
+		$collection = (new CaseMessagesProviderMethod())->normalise(collection: $collection);
 		$collection = (new DocumentsProviderMethod())->normalise(collection: $collection);
 		$collection = $this->normaliseDefaults(collection: $collection);
 		$collection = $this->normaliseFileFlags(collection: $collection);
@@ -260,23 +262,7 @@ class CollectionConfigNormaliser {
 			return $collection;
 		}
 
-		$outcome = $collection['outcome'];
-		if (is_array($outcome) === false) {
-			unset($collection['outcome']);
-			return $collection;
-		}
-
-		$fields = ($collection['fields'] ?? null);
-		$kept = [];
-		foreach (['labelField', 'descriptionField'] as $key) {
-			$field = ($outcome[$key] ?? null);
-			if (is_string($field) === true && $field !== ''
-				&& (is_array($fields) === false || in_array($field, $fields, true) === true)
-			) {
-				$kept[$key] = $field;
-			}
-		}
-
+		$kept = $this->keptOutcome(outcome: $collection['outcome'], fields: ($collection['fields'] ?? null));
 		if ($kept === []) {
 			unset($collection['outcome']);
 			return $collection;
@@ -285,6 +271,49 @@ class CollectionConfigNormaliser {
 		$collection['outcome'] = $kept;
 		return $collection;
 	}//end normaliseOutcome()
+
+	/**
+	 * The outcome's `labelField` and `descriptionField` that name a projected
+	 * field; none when the outcome is not a block.
+	 *
+	 * @param mixed $outcome The declared outcome.
+	 * @param mixed $fields  The collection's projected fields.
+	 *
+	 * @return array<string, string>
+	 *
+	 * @spec openspec/changes/case-outcome-on-the-case-page/specs/portal-contribution-contract/spec.md
+	 */
+	private function keptOutcome(mixed $outcome, mixed $fields): array {
+		if (is_array($outcome) === false) {
+			return [];
+		}
+
+		$kept = [];
+		foreach (['labelField', 'descriptionField'] as $key) {
+			$field = ($outcome[$key] ?? null);
+			if ($this->namesProjected(field: $field, fields: $fields) === true) {
+				$kept[$key] = $field;
+			}
+		}
+
+		return $kept;
+	}//end keptOutcome()
+
+	/**
+	 * Whether a value is a non-empty field name the collection projects, or
+	 * any one when it projects none.
+	 *
+	 * @param mixed $field  The declared field.
+	 * @param mixed $fields The collection's projected fields.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/case-outcome-on-the-case-page/specs/portal-contribution-contract/spec.md
+	 */
+	private function namesProjected(mixed $field, mixed $fields): bool {
+		return is_string($field) === true && $field !== ''
+			&& (is_array($fields) === false || in_array($field, $fields, true) === true);
+	}//end namesProjected()
 
 	/**
 	 * Keep `groupByField` only when it names a field the collection projects.

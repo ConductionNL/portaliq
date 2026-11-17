@@ -72,12 +72,14 @@ interface CmsReaderInterface {
 	 * @param string $portal  The portal slug.
 	 * @param string $locale   The locale.
 	 * @param string $audience The requesting audience.
+	 * @param string $defaultLocale The portal's default locale (its first), '' when unknown.
 	 *
 	 * @return array The glossary terms, alphabetical.
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-portal
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-content-must-be-served-in-the-language-the-visitor-asked-for
 	 */
-	public function glossary(string $portal, string $locale, string $audience): array;
+	public function glossary(string $portal, string $locale, string $audience, string $defaultLocale=''): array;
 
 	/**
 	 * Resolve the stored identifier of a page at a route, published or not.
@@ -120,12 +122,14 @@ interface CmsReaderInterface {
 	 * @param string $portal  The portal slug.
 	 * @param string $locale   The locale.
 	 * @param string $audience The requesting audience.
+	 * @param string $defaultLocale The portal's default locale (its first), '' when unknown.
 	 *
 	 * @return array The menus, ordered by position.
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-portal
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-content-must-be-served-in-the-language-the-visitor-asked-for
 	 */
-	public function menus(string $portal, string $locale, string $audience): array;
+	public function menus(string $portal, string $locale, string $audience, string $defaultLocale=''): array;
 
 	/**
 	 * Read one published page by route.
@@ -135,13 +139,15 @@ interface CmsReaderInterface {
 	 * @param string $locale   The locale.
 	 * @param string $audience The requesting audience.
 	 * @param string $organisation The serving portal's organisation, for shared blocks; '' leaves them unexpanded.
+	 * @param string $defaultLocale The portal's default locale (its first), '' when unknown.
 	 *
 	 * @return array|null The page, or null when there is no published page there.
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
 	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t02
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-content-must-be-served-in-the-language-the-visitor-asked-for
 	 */
-	public function page(string $portal, string $route, string $locale, string $audience, string $organisation=''): ?array;
+	public function page(string $portal, string $route, string $locale, string $audience, string $organisation='', string $defaultLocale=''): ?array;
 
 	/**
 	 * Read the published pages of a portal, without their bodies.
@@ -149,12 +155,14 @@ interface CmsReaderInterface {
 	 * @param string $portal  The portal slug.
 	 * @param string $locale   The locale.
 	 * @param string $audience The requesting audience.
+	 * @param string $defaultLocale The portal's default locale (its first), '' when unknown.
 	 *
 	 * @return array The page summaries.
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-portal
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-content-must-be-served-in-the-language-the-visitor-asked-for
 	 */
-	public function pages(string $portal, string $locale, string $audience): array;
+	public function pages(string $portal, string $locale, string $audience, string $defaultLocale=''): array;
 
 	/**
 	 * Every row of one schema for a portal, drafts included, for the editor's

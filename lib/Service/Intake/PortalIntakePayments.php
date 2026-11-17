@@ -76,7 +76,7 @@ class PortalIntakePayments implements PortalIntakePaymentsInterface {
 	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t04
 	 */
 	public function start(array $subject, ?array $site, string $reference): JSONResponse {
-		if ($site === null || $this->fees === null || $this->forwarder === null || $this->lookup === null || $this->registry === null) {
+		if ($this->isWired(site: $site) === false) {
 			return new JSONResponse(['error' => 'payment_unavailable'], Http::STATUS_BAD_GATEWAY);
 		}
 
@@ -85,6 +85,51 @@ class PortalIntakePayments implements PortalIntakePaymentsInterface {
 			return new JSONResponse(['error' => 'reference_not_found'], Http::STATUS_NOT_FOUND);
 		}
 
+		return $this->payFound(subject: $subject, site: $site, found: $found, reference: $reference);
+	}//end start()
+
+	/**
+	 * Whether there is a portal and every service a payment needs.
+	 *
+	 * @param array<string, mixed>|null $site The resolved portal, or null.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t04
+	 */
+	private function isWired(array|null $site): bool {
+		return $site !== null && $this->servicesWired() === true;
+	}//end isWired()
+
+	/**
+	 * Whether every service a payment needs is there.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t04
+	 */
+	private function servicesWired(): bool {
+		if ($this->fees === null || $this->forwarder === null || $this->lookup === null || $this->registry === null) {
+			return false;
+		}
+
+		return true;
+	}//end servicesWired()
+
+	/**
+	 * Forward the pay action for the found request, unless nothing is due or
+	 * the subject may not pay it.
+	 *
+	 * @param array<string, mixed> $subject   The signed-in subject.
+	 * @param array<string, mixed> $site      The resolved portal.
+	 * @param array<string, mixed> $found     The request's object, binding and schema.
+	 * @param string               $reference The request's reference.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t04
+	 */
+	private function payFound(array $subject, array $site, array $found, string $reference): JSONResponse {
 		$fee = $this->feeToPay(fees: $this->fees, found: $found);
 		if ($fee === null) {
 			return new JSONResponse(['error' => 'nothing_to_pay'], Http::STATUS_CONFLICT);
@@ -100,7 +145,7 @@ class PortalIntakePayments implements PortalIntakePaymentsInterface {
 			fees: $this->fees,
 			context: ['action' => $action, 'subject' => $subject, 'site' => $site, 'binding' => $found['binding'], 'fee' => $fee, 'reference' => $reference]
 		);
-	}//end start()
+	}//end payFound()
 
 	/**
 	 * The fee the object's case type declares, or null when there is none or it is paid.

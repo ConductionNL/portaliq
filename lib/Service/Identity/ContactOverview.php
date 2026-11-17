@@ -53,31 +53,62 @@ class ContactOverview {
 	public function overview(string $owner, string $organisation): array {
 		$overview = ['incoming' => [], 'outgoing' => [], 'contacts' => [], 'counts' => ['all' => 0, 'begeleider' => 0, 'contact' => 0, 'organisatie' => 0]];
 		foreach ($this->rows->rowsOf(owner: $owner, organisation: $organisation) as $row) {
-			$shown = $this->rows->shown(row: $row);
-			switch ((string)($row['state'] ?? '')) {
-				case 'requested':
-					$overview['incoming'][] = $shown;
-					break;
-				case 'invited':
-				case 'declined':
-					$overview['outgoing'][] = $shown;
-					break;
-				case 'approved':
-					$overview['contacts'][] = $shown;
-					$overview['counts']['all']++;
-					$role = $shown['role'];
-					if (isset($overview['counts'][$role]) === true) {
-						$overview['counts'][$role]++;
-					}
-
-					break;
-				default:
-					break;
-			}
+			$overview = $this->withRow(overview: $overview, state: (string)($row['state'] ?? ''), shown: $this->rows->shown(row: $row));
 		}
 
 		return $overview;
 	}//end overview()
+
+	/**
+	 * The overview with one row placed by its state.
+	 *
+	 * @param array<string, mixed> $overview The overview so far.
+	 * @param string               $state    The row's state.
+	 * @param array<string, mixed> $shown    The row as shown.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 */
+	private function withRow(array $overview, string $state, array $shown): array {
+		switch ($state) {
+			case 'requested':
+				$overview['incoming'][] = $shown;
+				break;
+			case 'invited':
+			case 'declined':
+				$overview['outgoing'][] = $shown;
+				break;
+			case 'approved':
+				$overview = $this->withContact(overview: $overview, shown: $shown);
+				break;
+			default:
+				break;
+		}
+
+		return $overview;
+	}//end withRow()
+
+	/**
+	 * The overview with one approved contact listed and counted.
+	 *
+	 * @param array<string, mixed> $overview The overview so far.
+	 * @param array<string, mixed> $shown    The contact as shown.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 */
+	private function withContact(array $overview, array $shown): array {
+		$overview['contacts'][] = $shown;
+		$overview['counts']['all']++;
+		$role = $shown['role'];
+		if (isset($overview['counts'][$role]) === true) {
+			$overview['counts'][$role]++;
+		}
+
+		return $overview;
+	}//end withContact()
 
 	/**
 	 * The approved contacts of a resident, each with the other account's

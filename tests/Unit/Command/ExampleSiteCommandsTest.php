@@ -49,6 +49,7 @@ class ExampleSiteCommandsTest extends TestCase {
 
 		$this->assertSame(0, $code);
 		$this->assertStringContainsString('Pages: 33 declared, 33 created, 0 already there, 33 found afterwards', $text);
+		$this->assertStringContainsString(needle: 'Forms: 1 declared, 1 created, 0 already there, 1 found afterwards', haystack: $text);
 		$this->assertStringContainsString('/index.php/apps/portaliq/site?portal=zuiddrecht', $text);
 		$this->assertStringNotContainsString('house style', $text);
 	}//end testInstallReportsWhatArrived()
@@ -133,6 +134,7 @@ class ExampleSiteCommandsTest extends TestCase {
 		$this->assertSame(0, $command->run(new ArrayInput(['site' => 'zuiddrecht']), $output));
 		$text = $output->fetch();
 		$this->assertStringContainsString('Pages: 33 deleted, 0 already gone', $text);
+		$this->assertStringContainsString(needle: 'Forms: 1 deleted, 0 already gone', haystack: $text);
 		$this->assertStringContainsString('Glossary terms: 5 deleted, 0 already gone', $text);
 		$this->assertStringContainsString('Portal: deleted', $text);
 
@@ -190,6 +192,7 @@ class ExampleSiteCommandsTest extends TestCase {
 			'themeOffered' => true,
 			'types' => [
 				'portal' => ['declared' => 1, 'created' => 1, 'kept' => 0, 'arrived' => 1],
+				'form' => ['declared' => 1, 'created' => 1, 'kept' => 0, 'arrived' => 1],
 				'menu' => ['declared' => 3, 'created' => 3, 'kept' => 0, 'arrived' => 3],
 				'page' => ['declared' => 33, 'created' => 33, 'kept' => 0, 'arrived' => 33],
 				'newsItem' => ['declared' => 4, 'created' => 4, 'kept' => 0, 'arrived' => 4],

@@ -44,9 +44,13 @@ class PortalBlockResolverTest extends TestCase {
 						'steps'  => ['label' => 'Stappen', 'provider' => 'caseSteps'],
 						'documents' => ['label' => 'Documenten', 'provider' => 'caseDocuments'],
 						'timeline'  => ['label' => 'Wat er is gebeurd', 'provider' => 'caseTimeline'],
+						'messages'  => ['label' => 'Berichten', 'provider' => 'caseMessages'],
 					],
 				],
-				'actions'     => [['id' => 'createExcuseRequest', 'type' => 'create', 'schema' => 'excuse']],
+				'actions'     => [
+					['id' => 'createExcuseRequest', 'type' => 'create', 'schema' => 'excuse'],
+					['id' => 'askAboutCase', 'type' => 'create', 'schema' => 'message', 'recordField' => 'caseId'],
+				],
 				'pages'       => [
 					[
 						'id'     => 'overzicht',
@@ -287,6 +291,32 @@ class PortalBlockResolverTest extends TestCase {
 			$this->assertSame([], $this->blocks(blocks: [['type' => $type, 'collection' => 'vragenAanU']], record: 'vragenAanU'), $type.': no provider');
 		}
 	}//end testADocumentsAndATimelineBlockStayOnlyOnTheirRecordPage()
+
+	/**
+	 * A messages block reads its collection's `messages` provider on that
+	 * collection's record page, and keeps an `askAction` only when it names
+	 * an action of the same contribution (capability-rows-said-and-planned T07).
+	 *
+	 * @spec openspec/changes/capability-rows-said-and-planned/tasks.md#t07
+	 *
+	 * @return void
+	 */
+	public function testAMessagesBlockKeepsItsAskActionOnlyWhenItIsAnActionOfTheContribution(): void {
+		$this->assertSame(
+			[['type' => 'messages', 'collection' => 'zaken', 'label' => 'Berichten', 'askAction' => 'askAboutCase', 'askLabel' => 'Stel een vraag over deze zaak']],
+			$this->blocks(
+				blocks: [['type' => 'messages', 'collection' => 'zaken', 'label' => 'Berichten', 'askAction' => 'askAboutCase', 'askLabel' => '  Stel een vraag over deze zaak ']],
+				record: 'zaken'
+			)
+		);
+		$this->assertSame(
+			[['type' => 'messages', 'collection' => 'zaken']],
+			$this->blocks(blocks: [['type' => 'messages', 'collection' => 'zaken', 'askAction' => 'elsewhere', 'askLabel' => 'Vraag']], record: 'zaken'),
+			'an unknown action drops the ask button and its label'
+		);
+		$this->assertSame([], $this->blocks(blocks: [['type' => 'messages', 'collection' => 'zaken']]), 'not a record page');
+		$this->assertSame([], $this->blocks(blocks: [['type' => 'messages', 'collection' => 'vragenAanU']], record: 'vragenAanU'), 'no provider');
+	}//end testAMessagesBlockKeepsItsAskActionOnlyWhenItIsAnActionOfTheContribution()
 
 	/**
 	 * A documents block with `eachRecord: true` reads every record of its

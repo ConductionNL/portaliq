@@ -16,6 +16,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Portaliq\Tests\Support\LegacyObjectArgs;
 
 /**
  * portal-cms-content-model task 4, the edges: without OpenRegister nothing is
@@ -123,6 +124,7 @@ class BackfillCmsPortalReferenceEdgesTest extends TestCase {
 			 * @return array<string, mixed>
 			 */
 			public function saveObject(mixed ...$args): array {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				if (in_array($args['uuid'], $this->test->failingSaves, true) === true) {
 					throw new RuntimeException('save refused');
 				}

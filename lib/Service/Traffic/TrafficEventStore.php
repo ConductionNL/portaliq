@@ -20,6 +20,11 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\BulkBatchDefaults;
+use OCA\OpenRegister\Kernel\Contracts\Value\BulkSaveOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\Kernel\Contracts\TrafficEventStoreInterface;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\PortalRegisterContext;
@@ -139,39 +144,67 @@ class TrafficEventStore implements TrafficEventStoreInterface {
 		}
 
 		try {
-			if (method_exists($objectService, 'appendObjectsRaw') === true) {
-				$this->logPath(path: 'appendObjectsRaw');
-
-				return (int)$objectService->appendObjectsRaw($records, self::REGISTER, self::EVENT_SCHEMA);
-			}
-
-			$this->logPath(path: 'saveObjects');
-			if ($this->context->apply(objectService: $objectService, schemaSlug: self::EVENT_SCHEMA) === false) {
-				return 0;
-			}
-
-			$saved = $objectService->saveObjects(
-				objects: $records,
-				register: self::REGISTER,
-				schema: self::EVENT_SCHEMA,
-				_rbac: false,
-				_multitenancy: false,
-				validation: false,
-				events: false,
-				enrich: false,
-				_audit: false
-			);
-
-			if (is_array($saved) === true) {
-				return count($saved);
-			}
-
-			return count($records);
+			return $this->writeRecords(objectService: $objectService, records: $records);
 		} catch (Throwable $e) {
 			$this->logger->error('Portaliq: traffic append failed', ['reason' => $e->getMessage()]);
 
 			return 0;
 		}
+	}
+
+	/**
+	 * Write the events through the raw append when the platform has it, else through saveObjects.
+	 *
+	 * @param object                           $objectService OpenRegister's ObjectService.
+	 * @param array<int, array<string, mixed>> $records       The normalised events.
+	 *
+	 * @return int How many were written.
+	 *
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-page-view-must-be-reported-by-the-client-never-inferred-from-a-server-side-read
+	 */
+	private function writeRecords(object $objectService, array $records): int {
+		if (method_exists($objectService, 'appendObjectsRaw') === true) {
+			$this->logPath(path: 'appendObjectsRaw');
+
+			return (int)$objectService->appendObjectsRaw($records, self::REGISTER, self::EVENT_SCHEMA);
+		}
+
+		$this->logPath(path: 'saveObjects');
+		if ($this->context->apply(objectService: $objectService, schemaSlug: self::EVENT_SCHEMA) === false) {
+			return 0;
+		}
+
+		return $this->saveRecords(objectService: $objectService, records: $records);
+	}
+
+	/**
+	 * Save the events through saveObjects with every side path off.
+	 *
+	 * @param object                           $objectService OpenRegister's ObjectService.
+	 * @param array<int, array<string, mixed>> $records       The normalised events.
+	 *
+	 * @return int How many were written.
+	 *
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-page-view-must-be-reported-by-the-client-never-inferred-from-a-server-side-read
+	 */
+	private function saveRecords(object $objectService, array $records): int {
+		$saved = $objectService->saveObjects(
+			objects: $records,
+			options: new BulkSaveOptions(
+				defaults: new BulkBatchDefaults(register: self::REGISTER, schema: self::EVENT_SCHEMA),
+				validation: false,
+				events: false,
+				audit: false
+			),
+			_rbac: false,
+			_multitenancy: false
+		);
+
+		if (is_array($saved) === true) {
+			return count($saved);
+		}
+
+		return count($records);
 	}
 
 	/**
@@ -207,9 +240,10 @@ class TrafficEventStore implements TrafficEventStoreInterface {
 			}
 
 			$objectService->deleteObject(
-				uuid: $uuid,
-				register: self::REGISTER,
-				schema: self::EVENT_SCHEMA,
+				new ObjectDeletion(
+					uuid: $uuid,
+					target: new ObjectFindTarget(register: self::REGISTER, schema: self::EVENT_SCHEMA)
+				),
 				_rbac: false,
 				_multitenancy: false
 			);
@@ -389,9 +423,10 @@ class TrafficEventStore implements TrafficEventStoreInterface {
 			}
 
 			$objectService->deleteObject(
-				uuid: $uuid,
-				register: self::REGISTER,
-				schema: self::DAILY_SCHEMA,
+				new ObjectDeletion(
+					uuid: $uuid,
+					target: new ObjectFindTarget(register: self::REGISTER, schema: self::DAILY_SCHEMA)
+				),
 				_rbac: false,
 				_multitenancy: false
 			);
@@ -430,9 +465,10 @@ class TrafficEventStore implements TrafficEventStoreInterface {
 
 			$objectService->saveObject(
 				object: $rollup,
-				register: self::REGISTER,
-				schema: self::DAILY_SCHEMA,
-				uuid: $uuid,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: self::REGISTER, schema: self::DAILY_SCHEMA),
+					uuid: $uuid
+				),
 				_rbac: false,
 				_multitenancy: false
 			);
@@ -490,33 +526,81 @@ class TrafficEventStore implements TrafficEventStoreInterface {
 	private function pages(object $objectService, string $schema, array $filters, int $limit, array $order, ?\Closure $shape = null): array {
 		$out = [];
 		for ($offset = 0; $offset < $limit; $offset += self::PAGE) {
-			$config = ['filters' => $filters, 'limit' => min(self::PAGE, $limit - $offset), 'offset' => $offset];
-			if ($order !== []) {
-				$config['sort'] = $order;
-			}
-
-			// The shared service's schema ref is re-applied before EVERY
-			// page: a nested read elsewhere in the process may have moved
-			// it, and a page read against the wrong schema is an empty
-			// page, not an error.
-			$this->context->apply(objectService: $objectService, schemaSlug: $schema);
-			$rows = $objectService->findAll(config: $config, _rbac: false, _multitenancy: false);
-			if (is_array($rows) === false || $rows === []) {
+			$config = $this->pageConfig(filters: $filters, limit: $limit, offset: $offset, order: $order);
+			$rows   = $this->page(objectService: $objectService, schema: $schema, config: $config);
+			if ($rows === []) {
 				break;
 			}
 
-			foreach ($rows as $row) {
-				$shaped = $this->asArray(row: $row);
-				if ($shape !== null) {
-					$shaped = $shape($shaped);
-				}
-
-				$out[] = $shaped;
-			}
+			array_push($out, ...$this->shapedRows(rows: $rows, shape: $shape));
 
 			if (count($rows) < self::PAGE) {
 				break;
 			}
+		}
+
+		return $out;
+	}
+
+	/**
+	 * The findAll config of the page at an offset.
+	 *
+	 * @param array<string, mixed>  $filters The filters.
+	 * @param int                   $limit   The most rows wanted.
+	 * @param int                   $offset  The page's offset.
+	 * @param array<string, string> $order   Sort, field => ASC|DESC.
+	 *
+	 * @return array<string, mixed> The config.
+	 */
+	private function pageConfig(array $filters, int $limit, int $offset, array $order): array {
+		$config = ['filters' => $filters, 'limit' => min(self::PAGE, $limit - $offset), 'offset' => $offset];
+		if ($order !== []) {
+			$config['sort'] = $order;
+		}
+
+		return $config;
+	}
+
+	/**
+	 * Read one page, or [] when the read returned no list.
+	 *
+	 * @param object               $objectService OpenRegister's object service.
+	 * @param string               $schema        The schema slug.
+	 * @param array<string, mixed> $config        The page's findAll config.
+	 *
+	 * @return array<int, mixed> The page's raw rows.
+	 */
+	private function page(object $objectService, string $schema, array $config): array {
+		// The shared service's schema ref is re-applied before EVERY
+		// page: a nested read elsewhere in the process may have moved
+		// it, and a page read against the wrong schema is an empty
+		// page, not an error.
+		$this->context->apply(objectService: $objectService, schemaSlug: $schema);
+		$rows = $objectService->findAll(config: $config, _rbac: false, _multitenancy: false);
+		if (is_array($rows) === false) {
+			return [];
+		}
+
+		return $rows;
+	}
+
+	/**
+	 * The page's rows as arrays, each reshaped when a shape is given.
+	 *
+	 * @param array<int, mixed> $rows  The page's raw rows.
+	 * @param \Closure|null     $shape Reshapes each row, or null to keep it.
+	 *
+	 * @return array<int, array<string, mixed>> The rows, as arrays.
+	 */
+	private function shapedRows(array $rows, \Closure|null $shape): array {
+		$out = [];
+		foreach ($rows as $row) {
+			$shaped = $this->asArray(row: $row);
+			if ($shape !== null) {
+				$shaped = $shape($shaped);
+			}
+
+			$out[] = $shaped;
 		}
 
 		return $out;

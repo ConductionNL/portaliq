@@ -39,7 +39,6 @@ use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Assigns the only portal to content that has none.
@@ -48,6 +47,7 @@ use Throwable;
  */
 class BackfillCmsPortalReference implements IRepairStep {
 	use ObjectServiceLookup;
+	use SchemaRowAccess;
 
 	/**
 	 * The schemas whose objects must name a portal.
@@ -75,6 +75,16 @@ class BackfillCmsPortalReference implements IRepairStep {
 	 * A bound on the pages read per schema.
 	 */
 	private const MAX_PAGES = 10000;
+
+	/**
+	 * Logged when a schema cannot be read.
+	 */
+	private const ROWS_UNREADABLE_LOG = 'Portaliq: no content to place';
+
+	/**
+	 * Logged when an object cannot be written.
+	 */
+	private const WRITE_FAILED_LOG = 'Portaliq: content could not be given its portal';
 
 	/**
 	 * Constructor.
@@ -118,34 +128,91 @@ class BackfillCmsPortalReference implements IRepairStep {
 			return;
 		}
 
+		$target = $this->soleTarget(objectService: $objectService);
+		[$changed, $orphans] = $this->tally(objectService: $objectService, target: $target);
+		$this->report(output: $output, changed: $changed, orphans: $orphans);
+	}//end run()
+
+	/**
+	 * The one portal to assign, or null when there is not exactly one.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 *
+	 * @return string|null
+	 */
+	private function soleTarget(object $objectService): string|null {
 		$slugs  = $this->portalSlugs(objectService: $objectService);
 		$target = null;
 		if (count($slugs) === 1) {
 			$target = $slugs[0];
 		}
 
+		return $target;
+	}//end soleTarget()
+
+	/**
+	 * Assign the target to every content object without a portal.
+	 *
+	 * @param object      $objectService OpenRegister's object service.
+	 * @param string|null $target        The portal to assign, or null for none.
+	 *
+	 * @return array{0: int, 1: int} The objects assigned and those still without a portal.
+	 */
+	private function tally(object $objectService, string|null $target): array {
 		$changed = 0;
 		$orphans = 0;
 		foreach (self::CONTENT_SCHEMAS as $schema) {
-			foreach ($this->rows(objectService: $objectService, schema: $schema) as $row) {
-				if ($this->hasPortal(row: $row) === true) {
-					continue;
-				}
-
-				if ($target !== null && $this->assign(objectService: $objectService, schema: $schema, row: $row, portal: $target) === true) {
-					$changed++;
-					continue;
-				}
-
-				$orphans++;
-			}
+			[$schemaChanged, $schemaOrphans] = $this->tallySchema(objectService: $objectService, schema: $schema, target: $target);
+			$changed += $schemaChanged;
+			$orphans += $schemaOrphans;
 		}
 
+		return [$changed, $orphans];
+	}//end tally()
+
+	/**
+	 * Assign the target to every object of one schema without a portal.
+	 *
+	 * @param object      $objectService OpenRegister's object service.
+	 * @param string      $schema        The schema slug.
+	 * @param string|null $target        The portal to assign, or null for none.
+	 *
+	 * @return array{0: int, 1: int} The objects assigned and those still without a portal.
+	 */
+	private function tallySchema(object $objectService, string $schema, string|null $target): array {
+		$changed = 0;
+		$orphans = 0;
+		foreach ($this->rows(objectService: $objectService, schema: $schema) as $row) {
+			if ($this->hasPortal(row: $row) === true) {
+				continue;
+			}
+
+			if ($target !== null && $this->assign(objectService: $objectService, schema: $schema, row: $row, portal: $target) === true) {
+				$changed++;
+				continue;
+			}
+
+			$orphans++;
+		}
+
+		return [$changed, $orphans];
+	}//end tallySchema()
+
+	/**
+	 * Report what was assigned and what is left.
+	 *
+	 * @param IOutput $output  The repair output.
+	 * @param int     $changed The objects assigned a portal.
+	 * @param int     $orphans The objects still without one.
+	 *
+	 * @return void
+	 */
+	private function report(IOutput $output, int $changed, int $orphans): void {
 		$output->info('BackfillCmsPortalReference: assigned a portal to ' . $changed . ' objects, ' . $orphans . ' still without one.');
 		if ($orphans > 0) {
 			$output->warning('BackfillCmsPortalReference: ' . $orphans . ' objects have no portal and are not served. Assign them in the admin.');
 		}
-	}//end run()
+	}//end report()
 
 	/**
 	 * Whether a stored object names a portal.
@@ -169,31 +236,7 @@ class BackfillCmsPortalReference implements IRepairStep {
 	 * @return bool True when the object was written.
 	 */
 	private function assign(object $objectService, string $schema, array $row, string $portal): bool {
-		$self = [];
-		if (is_array($row['@self'] ?? null) === true) {
-			$self = $row['@self'];
-		}
-
-		$uuid = (string)($self['uuid'] ?? $self['id'] ?? $row['id'] ?? '');
-		if ($uuid === '') {
-			return false;
-		}
-
-		try {
-			if ($this->context->apply(objectService: $objectService, schemaSlug: $schema) === false) {
-				return false;
-			}
-
-			unset($row['@self']);
-			$row['portal'] = $portal;
-			$objectService->saveObject(object: $row, register: self::REGISTER, schema: $schema, uuid: $uuid, _rbac: false, _multitenancy: false);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: content could not be given its portal', ['uuid' => $uuid, 'schema' => $schema, 'reason' => $e->getMessage()]);
-
-			return false;
-		}
-
-		return true;
+		return $this->writeFields(objectService: $objectService, schema: $schema, row: $row, fields: ['portal' => $portal]);
 	}//end assign()
 
 	/**
@@ -215,45 +258,4 @@ class BackfillCmsPortalReference implements IRepairStep {
 		return $slugs;
 	}//end portalSlugs()
 
-	/**
-	 * Every stored object of a schema, a page at a time.
-	 *
-	 * @param object $objectService OpenRegister's object service.
-	 * @param string $schema        The schema slug.
-	 *
-	 * @return list<array<string, mixed>>
-	 */
-	private function rows(object $objectService, string $schema): array {
-		$out    = [];
-		$offset = 0;
-		$pages  = 0;
-		do {
-			$pages++;
-			try {
-				if ($this->context->apply(objectService: $objectService, schemaSlug: $schema) === false) {
-					return $out;
-				}
-
-				$page = (array)$objectService->findAll(config: ['limit' => self::PAGE, 'offset' => $offset], _rbac: false, _multitenancy: false);
-			} catch (Throwable $e) {
-				$this->logger->info('Portaliq: no content to place', ['schema' => $schema, 'reason' => $e->getMessage()]);
-
-				return $out;
-			}
-
-			$read    = count($page);
-			$offset += $read;
-			foreach ($page as $row) {
-				if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-					$row = $row->jsonSerialize();
-				}
-
-				if (is_array($row) === true) {
-					$out[] = $row;
-				}
-			}
-		} while ($read === self::PAGE && $pages < self::MAX_PAGES);
-
-		return $out;
-	}//end rows()
 }//end class

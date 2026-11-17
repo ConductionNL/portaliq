@@ -29,6 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Messaging;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\Service\ObjectRowNormaliser;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\PagedObjectReads;
@@ -79,19 +81,7 @@ class MessageStore {
 			return null;
 		}
 
-		try {
-			$saved = $objectService->saveObject(
-				object: $object,
-				register: self::REGISTER,
-				schema: $schema,
-				uuid: $uuid,
-				_rbac: false,
-				_multitenancy: false
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: messaging save failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
-			return null;
-		}
+		$saved = $this->savedRow(objectService: $objectService, schema: $schema, object: $object, uuid: $uuid);
 
 		$normalised = $this->normalise(row: $saved);
 		if ($normalised === null) {
@@ -100,6 +90,35 @@ class MessageStore {
 
 		return $this->rowId(row: $normalised);
 	}//end save()
+
+	/**
+	 * The row OpenRegister answers a save with, or null when the save fails.
+	 *
+	 * @param object               $objectService OpenRegister's ObjectService.
+	 * @param string               $schema        The schema slug.
+	 * @param array<string, mixed> $object        The object to save.
+	 * @param string|null          $uuid          The existing id to update, or null to create.
+	 *
+	 * @return mixed
+	 *
+	 * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#messaging-leaf-interface
+	 */
+	private function savedRow(object $objectService, string $schema, array $object, string|null $uuid): mixed {
+		try {
+			return $objectService->saveObject(
+				object: $object,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: self::REGISTER, schema: $schema),
+					uuid: $uuid
+				),
+				_rbac: false,
+				_multitenancy: false
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: messaging save failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
+			return null;
+		}
+	}//end savedRow()
 
 	/**
 	 * Fetch every row of a schema that matches the plain filters, every page
@@ -119,17 +138,45 @@ class MessageStore {
 			return [];
 		}
 
-		try {
-			$rows = $this->readEveryPage(objectService: $objectService, register: self::REGISTER, schema: $schema, filters: $filters, ids: $ids);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: messaging read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
-			return [];
-		}
-
+		$rows = $this->messagingRows(objectService: $objectService, schema: $schema, filters: $filters, ids: $ids);
 		if (is_array($rows) === false) {
 			return [];
 		}
 
+		return $this->normalisedMessagingRows(rows: $rows);
+	}//end findAll()
+
+	/**
+	 * Every page of a schema's matching rows, or null when the read fails.
+	 *
+	 * @param object                  $objectService OpenRegister's ObjectService.
+	 * @param string                  $schema        The schema slug.
+	 * @param array<string, mixed>    $filters       Plain equality filters.
+	 * @param array<int, string>|null $ids           Only these object ids, or null for any.
+	 *
+	 * @return array<int, mixed>|null
+	 *
+	 * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#messaging-leaf-interface
+	 */
+	private function messagingRows(object $objectService, string $schema, array $filters, array|null $ids): array|null {
+		try {
+			return $this->readEveryPage(objectService: $objectService, register: self::REGISTER, schema: $schema, filters: $filters, ids: $ids);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: messaging read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
+			return null;
+		}
+	}//end messagingRows()
+
+	/**
+	 * The rows normalised, leaving out what does not normalise.
+	 *
+	 * @param array<int, mixed> $rows The rows read.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#messaging-leaf-interface
+	 */
+	private function normalisedMessagingRows(array $rows): array {
 		$normalised = [];
 		foreach ($rows as $row) {
 			$row = $this->normalise(row: $row);
@@ -139,7 +186,7 @@ class MessageStore {
 		}
 
 		return $normalised;
-	}//end findAll()
+	}//end normalisedMessagingRows()
 
 	/**
 	 * The row's id/uuid, from a flat property or its `@self` envelope.

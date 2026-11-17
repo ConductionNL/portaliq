@@ -48,14 +48,16 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\AccessibilityFramingInterface;
+use OCA\Portaliq\Kernel\Contracts\PlainPageRendererInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalNoticeReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalRuntimeConfigResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalThemeResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\SiteHeadInterface;
-use OCA\Portaliq\Kernel\Contracts\SiteShellInterface;
 use OCA\Portaliq\Service\SiteShell;
+use OCA\Portaliq\Service\Cms\PlainAddress;
 use OCA\Portaliq\Service\Cms\SiteIcon;
+use OCA\Portaliq\Kernel\Contracts\SiteOrganisationInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -86,9 +88,9 @@ class PortalPageController extends Controller {
 	/**
 	 * Builds what the site shell template renders.
 	 *
-	 * @var SiteShellInterface
+	 * @var SiteShell
 	 */
-	private readonly SiteShellInterface $shell;
+	private readonly SiteShell $shell;
 
 	/**
 	 * Constructor.
@@ -108,6 +110,8 @@ class PortalPageController extends Controller {
 	 * @param PortalNoticeReaderInterface $notices The notices running on the signed-in surface now.
 	 * @param AccessibilityFramingInterface $framing Whether the accessibility measurement may frame this request.
 	 * @param SiteIcon|null $siteIcon The portal's own tab icon.
+	 * @param PlainPageRendererInterface|null $plainPage The plain version of a page (site-honest-without-javascript).
+	 * @param SiteOrganisationInterface|null $siteOrganisation Names the portal's organisation in the head.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -119,6 +123,8 @@ class PortalPageController extends Controller {
 		PortalNoticeReaderInterface $notices,
 		private readonly AccessibilityFramingInterface $framing,
 		?SiteIcon $siteIcon=null,
+		private readonly ?PlainPageRendererInterface $plainPage=null,
+		?SiteOrganisationInterface $siteOrganisation=null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 		$this->shell = new SiteShell(
@@ -129,7 +135,8 @@ class PortalPageController extends Controller {
 			siteHead: $siteHead,
 			notices: $notices,
 			configResolver: $configResolver,
-			siteIcon: $siteIcon
+			siteIcon: $siteIcon,
+			siteOrganisation: $siteOrganisation
 		);
 	}//end __construct()
 
@@ -290,6 +297,57 @@ class PortalPageController extends Controller {
 
 		return $response;
 	}//end shellResponse()
+
+	/**
+	 * The plain version of a site page, for a browser without JavaScript
+	 * (site-honest-without-javascript REQ-SHJ-002).
+	 *
+	 * The same portal and route as `/site` (`?portal=`, `?org=` or the host,
+	 * and `?route=`), the same stylesheets and the same security policy, and
+	 * no script at all. Every page and menu is read as an ANONYMOUS visitor,
+	 * also when the request carries a session: this HTML must never hold a
+	 * resident's data. A route without a published page, and a publication
+	 * that is missing or withheld, answer 404.
+	 *
+	 * @return TemplateResponse The plain page.
+	 *
+	 * @spec openspec/changes/site-honest-without-javascript/specs/site-without-javascript/spec.md#requirement-the-server-renders-a-plain-version-of-every-public-page-req-shj-002
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[NoAdminRequired]
+	#[AnonRateLimit(limit: 120, period: 60)]
+	public function plain(): TemplateResponse {
+		$asked = $this->shell->plainRequest();
+		$address = new PlainAddress(
+			siteBase: $this->urlGenerator->linkToRoute('portaliq.portalPage.site'),
+			portalSlug: $asked['slug']
+		);
+		// Without the renderer (never so through the container) the page
+		// answers as a route that does not exist, never with content.
+		$view = ['status' => self::STATUS_NOT_FOUND, 'title' => '', 'summary' => '', 'blocks' => [], 'menu' => []];
+		if ($this->plainPage !== null) {
+			$view = $this->plainPage->render(
+				portal: $asked['portal'],
+				route: $asked['route'],
+				locale: $asked['locale'],
+				query: $asked['query'],
+				page: $asked['page'],
+				address: $address
+			);
+		}
+
+		$params = $this->shell->templateParams(path: '');
+		$params['plain'] = $view;
+		$response = new TemplateResponse(AppIdentity::APP_ID, 'site-plain', $params, TemplateResponse::RENDER_AS_BLANK);
+		$response->setContentSecurityPolicy($this->framing->sitePolicy(request: $this->request));
+		if ($view['status'] === self::STATUS_NOT_FOUND || $this->shell->servesAPortal() === false) {
+			$response->setStatus(self::STATUS_NOT_FOUND);
+		}
+
+		return $response;
+	}//end plain()
+
 
 	/**
 	 * A site page named by its path: `/site/afval` is the route `/afval`.

@@ -53,6 +53,15 @@ interface PortalAccessRequestServiceInterface {
 	public const OUTCOME_MANDATE_FAILED = 'mandate_failed';
 
 	/**
+	 * The sort rank of each state: open requests first, then granted, then
+	 * refused. OpenRegister sorts a field alphabetically, which would put
+	 * `granted` before `pending`, so the list sorts on this rank instead.
+	 *
+	 * @spec openspec/changes/access-requests-open-first/specs/portal-identity/spec.md#requirement-open-access-requests-come-first
+	 */
+	public const STATE_RANKS = ['pending' => 0, 'granted' => 1, 'refused' => 2];
+
+	/**
 	 * The requests an owner has to answer, for their tenant.
 	 *
 	 * @param string $organisation The tenant.
