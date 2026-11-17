@@ -19,7 +19,7 @@ import {
 	isAccountRoute,
 	routeForNav,
 } from '../../shared/portalNav.js'
-import { themeCaseCollections } from '../pages/e/themes.js'
+import { themeCaseCollections } from '../pages/e/themeCases.js'
 
 /** Shell sections about cases, in "Mijn zaken en verzoeken". */
 const CASE_SECTIONS = ['cases', 'tasks', 'access']

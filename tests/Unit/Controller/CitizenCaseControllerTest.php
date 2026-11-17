@@ -16,6 +16,9 @@ use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\CitizenCaseController;
 use OCA\Portaliq\Event\PortalClientWriteEvent;
 use OCA\Portaliq\Service\AuditTrailService;
+use OCA\Portaliq\Kernel\Support\PortalBranchScope;
+use OCA\Portaliq\Service\CaseQuestions;
+use OCA\Portaliq\Service\CaseResultLink;
 use OCA\Portaliq\Service\CaseTypeReader;
 use OCA\Portaliq\Service\CitizenWritableSetResolver;
 use OCA\Portaliq\Service\CitizenWriteRecorder;
@@ -23,6 +26,7 @@ use OCA\Portaliq\Service\CitizenCaseDocuments;
 use OCA\Portaliq\Service\CitizenWriteThrottle;
 use OCA\Portaliq\Service\MandatedCaseReader;
 use OCA\Portaliq\Contribution\PortalProviderLocator;
+use OCA\Portaliq\Contribution\RowActionResolver;
 use OCA\Portaliq\Service\PortalAuditHook;
 use OCA\Portaliq\Service\PortalCaseDocumentReader;
 use OCP\AppFramework\Http\StreamResponse;
@@ -66,6 +70,9 @@ use OCA\Portaliq\Contribution\TimelineProviderMethod;
  * @uses   \OCA\Portaliq\Service\Identity\MandateParties
  * @uses   \OCA\Portaliq\Service\Branch\BranchNumber
  * @uses   \OCA\Portaliq\Kernel\Support\PortalBranchScope
+ * @uses   \OCA\Portaliq\Service\CaseResultLink
+ * @uses   \OCA\Portaliq\Service\CaseQuestions
+ * @uses   \OCA\Portaliq\Contribution\RowActionResolver
  * @uses   \OCA\Portaliq\Service\CitizenCaseDocuments
  * @uses   \OCA\Portaliq\Service\PortalCaseDocumentReader
  * @uses   \OCA\Portaliq\Service\MandatedCaseReader
@@ -154,6 +161,13 @@ class CitizenCaseControllerTest extends TestCase {
 	 * @var array<int, string>
 	 */
 	private array $readScopes = [];
+
+	/**
+	 * The (register, schema, scopeField, subjectRef) every question read used.
+	 *
+	 * @var array<int, array<int, string>>
+	 */
+	private array $questionScopes = [];
 
 	/**
 	 * Files the fake file writer attached, by name.
@@ -534,6 +548,33 @@ class CitizenCaseControllerTest extends TestCase {
 	}//end testPastTheThrottleTheWriteIsRefused()
 
 	/**
+	 * woo-dossier-in-my-cases REQ-WDM-003: the case reaches the resident with
+	 * its result link only when that link is https on a trusted domain; the
+	 * term note passes as written.
+	 *
+	 * @return void
+	 */
+	public function testTheResultLinkIsShownOnlyOnATrustedDomain(): void {
+		$config = $this->createMock(\OCP\IConfig::class);
+		$config->method('getSystemValue')->with('trusted_domains', [])->willReturn(['zuiddrecht.nl']);
+		$links = new CaseResultLink(config: $config, logger: $this->createMock(LoggerInterface::class));
+		$note  = 'De termijn staat stil sinds 6 oktober 2026.';
+
+		$trusted = $this->controller(resultLinks: $links, caseExtra: ['termNote' => $note, 'resultLink' => ['label' => 'Bekijk wat openbaar is gemaakt', 'url' => 'https://zuiddrecht.nl/woo/publicaties/2026-0087']])
+			->show('zaken', 'zaak', self::CASE_ID)->getData()['case'];
+		$this->assertSame(['label' => 'Bekijk wat openbaar is gemaakt', 'url' => 'https://zuiddrecht.nl/woo/publicaties/2026-0087'], $trusted['resultLink']);
+		$this->assertSame($note, $trusted['termNote']);
+
+		$foreign = $this->controller(resultLinks: $links, caseExtra: ['resultLink' => ['label' => 'x', 'url' => 'http://example.com/x']])
+			->show('zaken', 'zaak', self::CASE_ID)->getData()['case'];
+		$this->assertArrayNotHasKey('resultLink', $foreign);
+
+		$unfiltered = $this->controller(caseExtra: ['resultLink' => ['label' => 'x', 'url' => 'https://zuiddrecht.nl/x']])
+			->show('zaken', 'zaak', self::CASE_ID)->getData()['case'];
+		$this->assertArrayNotHasKey('resultLink', $unfiltered, 'without the filter no link is shown');
+	}//end testTheResultLinkIsShownOnlyOnATrustedDomain()
+
+	/**
 	 * Past the throttle a withdrawal and an added document are refused with
 	 * 429 `too-many-writes` and the sentence, and neither the case writer nor
 	 * the file writer is called (REQ-CWL-001).
@@ -771,9 +812,14 @@ class CitizenCaseControllerTest extends TestCase {
 		array $published = [],
 		?MandatedCaseReader $mandatedCases = null,
 		?array $actingMandate = null,
+		?CaseResultLink $resultLinks = null,
+		array $caseExtra = [],
+		?CaseQuestions $questions = null,
+		array $extraActions = [],
 	): CitizenCaseController {
 		$action = ($action ?? $this->action());
 		$cases = $this->cases();
+		$cases[self::CASE_ID] = array_merge($cases[self::CASE_ID], $caseExtra);
 
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('Bearer token');
@@ -797,7 +843,7 @@ class CitizenCaseControllerTest extends TestCase {
 
 		$registry = $this->createMock(PortalContributionRegistry::class);
 		$registry->method('aggregateFor')->willReturn([
-			'contributions' => [['app' => 'dossiq', 'actions' => [$action], 'collections' => $collections]],
+			'contributions' => [['app' => 'dossiq', 'actions' => array_merge([$action], $extraActions), 'collections' => $collections]],
 		]);
 
 		$reader = $this->createMock(PortalObjectReader::class);
@@ -895,9 +941,123 @@ class CitizenCaseControllerTest extends TestCase {
 			$this->createMock(LoggerInterface::class),
 			$this->documents(fileReader: $fileReader, published: $published),
 			new MandateParties(),
-			$mandatedCases
+			$mandatedCases,
+			new PortalBranchScope(),
+			$resultLinks,
+			$questions
 		);
 	}//end controller()
+
+	/**
+	 * The `vragenAanU` collection dossiq declares, and its answer action.
+	 *
+	 * @return array{collection: array<string, mixed>, action: array<string, mixed>}
+	 */
+	private function questionDeclaration(): array {
+		return [
+			'collection' => [
+				'id' => 'vragenAanU',
+				'register' => 'zaken',
+				'schema' => CaseQuestions::QUESTION_SCHEMA,
+				'scopeField' => 'portalSubject',
+				'minTrust' => 'low',
+				'rowActions' => ['beantwoordVraag'],
+			],
+			'action' => [
+				'id' => 'beantwoordVraag',
+				'label' => 'Beantwoorden',
+				'endpoint' => '/index.php/apps/dossiq/api/portal/vragen/antwoord',
+				'method' => 'POST',
+				'rowField' => 'requestId',
+				'rowWhen' => ['field' => 'state', 'in' => ['open']],
+				'fields' => ['antwoord'],
+				'requiredFields' => ['antwoord'],
+			],
+		];
+	}//end questionDeclaration()
+
+	/**
+	 * A question reader over the given rows, recording the scope it read under.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The rows the collection holds for the subject.
+	 *
+	 * @return CaseQuestions
+	 */
+	private function questionReader(array $rows): CaseQuestions {
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readCollection')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef) use ($rows): array {
+				$this->questionScopes[] = [$register, $schema, $scopeField, $subjectRef];
+				return $rows;
+			}
+		);
+
+		return new CaseQuestions(
+			reader: $reader,
+			rowAction: new RowActionResolver(),
+			branches: new PortalBranchScope(),
+			logger: $this->createMock(LoggerInterface::class)
+		);
+	}//end questionReader()
+
+	/**
+	 * woo-dossier-in-my-cases REQ-WDM-001: the case answers its own open
+	 * questions, read under the collection's scope, each with the action
+	 * that answers it; answered ones and those on another case are left out.
+	 *
+	 * @return void
+	 */
+	public function testOpenQuestionsOfThisCaseAreListed(): void {
+		$declaration = $this->questionDeclaration();
+		$open = [
+			'id' => 'vraag-1',
+			'case' => self::CASE_ID,
+			'state' => 'open',
+			'summary' => 'Over welke speeltuinen en welke jaren gaat uw verzoek?',
+			'hersteltermijn' => '2026-11-28',
+			'portalSubject' => 'bsn-hash-1',
+		];
+		$questions = $this->questionReader(rows: [
+			$open,
+			['id' => 'vraag-2', 'case' => self::CASE_ID, 'state' => 'answered', 'summary' => 'Al beantwoord'],
+			['id' => 'vraag-3', 'case' => self::OTHER_CASE_ID, 'state' => 'open', 'summary' => 'Andere zaak'],
+		]);
+
+		$data = $this->controller(collections: [$declaration['collection']], questions: $questions, extraActions: [$declaration['action']])
+			->show('zaken', 'zaak', self::CASE_ID)->getData();
+
+		$this->assertSame(
+			[
+				[
+					'id' => 'vraag-1',
+					'collection' => ['id' => 'vragenAanU', 'register' => 'zaken', 'schema' => 'aanvullingsverzoek'],
+					'summary' => 'Over welke speeltuinen en welke jaren gaat uw verzoek?',
+					'action' => $declaration['action'],
+					'hersteltermijn' => '2026-11-28',
+				],
+			],
+			$data['questions']
+		);
+		$this->assertSame([['zaken', 'aanvullingsverzoek', 'portalSubject', 'bsn-hash-1']], $this->questionScopes);
+	}//end testOpenQuestionsOfThisCaseAreListed()
+
+	/**
+	 * woo-dossier-in-my-cases REQ-WDM-001: an open question on another case
+	 * of the same resident is not answered on this one.
+	 *
+	 * @return void
+	 */
+	public function testQuestionsOfAnotherCaseAreNotAnswered(): void {
+		$declaration = $this->questionDeclaration();
+		$questions = $this->questionReader(rows: [
+			['id' => 'vraag-3', 'case' => self::OTHER_CASE_ID, 'state' => 'open', 'summary' => 'Andere zaak'],
+		]);
+
+		$data = $this->controller(collections: [$declaration['collection']], questions: $questions, extraActions: [$declaration['action']])
+			->show('zaken', 'zaak', self::CASE_ID)->getData();
+
+		$this->assertSame([], $data['questions']);
+	}//end testQuestionsOfAnotherCaseAreNotAnswered()
 
 	/**
 	 * The REAL documents service over the file reader double, a case app
