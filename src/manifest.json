@@ -4001,6 +4001,11 @@
                   "widgetId": "portal-settings-section-help"
                 },
                 {
+                  "key": "search-ranking",
+                  "title": "How search ranks",
+                  "widgetId": "portal-settings-search-ranking"
+                },
+                {
                   "key": "editors",
                   "title": "Administrators",
                   "widgetId": "portal-editors"
@@ -4318,6 +4323,12 @@
             "id": "portal-settings-accessibility",
             "type": "PortalAccessibility",
             "title": "Accessibility",
+            "content": {}
+          },
+          {
+            "id": "portal-settings-search-ranking",
+            "type": "PortalSearchRanking",
+            "title": "How search ranks",
             "content": {}
           },
           {
