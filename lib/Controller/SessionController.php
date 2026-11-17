@@ -39,6 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
+use OCA\Portaliq\Auth\PortalAuthConfig;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\EmailLinkSettingInterface;
 use OCA\Portaliq\Kernel\Contracts\NextcloudRegistrationDoorInterface;
@@ -1088,8 +1089,7 @@ class SessionController extends Controller {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$modes = ($site['authentication']['modes'] ?? []);
-		if (is_array($modes) === false || in_array('nextcloud', $modes, true) === false) {
+		if (PortalAuthConfig::fromPortal(portal: $site)->offers(mode: 'nextcloud') === false) {
 			// Refused with the same shape as an unknown portal: which modes a
 			// portal offers is not something an anonymous prober should be able
 			// to enumerate one 403 at a time.

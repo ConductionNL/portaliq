@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
+use OCA\Portaliq\Auth\PortalAuthConfig;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\ExampleResidentSignInInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalAccountLookupInterface;
@@ -232,8 +233,6 @@ class ExampleResidentController extends Controller {
 			return false;
 		}
 
-		$modes = ($site['authentication']['modes'] ?? []);
-
-		return is_array($modes) === true && in_array(needle: 'nextcloud', haystack: $modes, strict: true) === true;
+		return PortalAuthConfig::fromPortal(portal: $site)->offers(mode: 'nextcloud');
 	}//end offersNextcloud()
 }//end class
