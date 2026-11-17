@@ -2064,6 +2064,24 @@ class ContributionControllerTest extends TestCase {
 	}//end testMessageBelowMinTrustIs403()
 
 	/**
+	 * An inbox collection that declares no scopeField, scopeClaim or via is
+	 * refused with the same 404 before any read, as the inbox list refuses it.
+	 *
+	 * @spec openspec/changes/a-resident-opens-one-message/tasks.md#T02
+	 */
+	public function testMessageOfAnUnscopedInboxIs404(): void {
+		$aggregate = $this->aggregate(collections: [['id' => 'inbox', 'kind' => 'inbox', 'register' => 'portaliq', 'schema' => 'portalMessage', 'scopeField' => '']]);
+
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('resolveScopeValue')->willReturn('s1');
+		$reader->expects($this->never())->method('readObject');
+
+		$response = $this->controller(aggregate: $aggregate, reader: $reader)->message('portaliq', 'portalMessage', 'm-1');
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+		$this->assertSame(['error' => 'not_found'], $response->getData());
+	}//end testMessageOfAnUnscopedInboxIs404()
+
+	/**
 	 * A scope claim that does not resolve answers 404 before any read, and a
 	 * passing request reads once and answers the projected message, writing
 	 * nothing.

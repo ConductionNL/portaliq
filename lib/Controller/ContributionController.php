@@ -585,6 +585,12 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
+		// An inbox collection that declares no scopeField, scopeClaim or via is
+		// refused, as the inbox list refuses it: a message is subject data.
+		if (self::inboxDeclaresNoScope(collection: $collection) === true) {
+			return $notFound;
+		}
+
 		$scopeValue = $this->reader->resolveScopeValue(
 			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
 			contributingApp: $match['app'],
@@ -626,6 +632,24 @@ class ContributionController extends Controller implements PortalProtected {
 
 		return new JSONResponse(['message' => $message]);
 	}//end message()
+
+	/**
+	 * Whether an inbox collection declares no way to scope a read to the
+	 * subject: no scopeField, no scopeClaim and no via. The inbox list
+	 * (PortalInboxReader::readInboxCollection) refuses such a collection; the
+	 * single message read refuses it the same way.
+	 *
+	 * @param array<string, mixed> $collection The inbox collection.
+	 *
+	 * @return bool True when the collection carries no subject scope.
+	 *
+	 * @spec openspec/changes/a-resident-opens-one-message/tasks.md#T02
+	 */
+	private static function inboxDeclaresNoScope(array $collection): bool {
+		return (string)($collection['scopeField'] ?? 'subjectRef') === ''
+			&& (string)($collection['scopeClaim'] ?? '') === ''
+			&& ($collection['via'] ?? null) === null;
+	}//end inboxDeclaresNoScope()
 
 	/**
 	 * The subject's own contribution of one app, for the message's provenance
