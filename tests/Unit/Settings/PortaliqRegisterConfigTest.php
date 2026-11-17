@@ -447,6 +447,12 @@ class PortaliqRegisterConfigTest extends TestCase {
 			$this->assertSame(expected: '0.2.0', actual: self::$register['components']['schemas'][$translatable]['version']);
 			$this->assertSame(expected: 'string', actual: self::$register['components']['schemas'][$translatable]['properties']['locale']['type']);
 		}
+		// 0.123.0 (portalCase 0.3.0): the case app's `termNote` and `resultLink` (woo-dossier-in-my-cases). Additive; written as 0.110.0 on its branch, moved past development's 0.122.0 at merge time.
+		$case = self::$register['components']['schemas']['portalCase'];
+		$this->assertSame(expected: '0.3.0', actual: $case['version']);
+		$this->assertSame(expected: ['type' => 'string', 'maxLength' => 200], actual: array_intersect_key($case['properties']['termNote'], ['type' => 1, 'maxLength' => 1]));
+		$this->assertSame(expected: 80, actual: $case['properties']['resultLink']['properties']['label']['maxLength']);
+		$this->assertSame(expected: 'uri', actual: $case['properties']['resultLink']['properties']['url']['format']);
 		// 0.122.0 (portal 0.36.0): the portal's `publicationErrorReports`, `publicationErrorReportOwner` and `showWithheldNotices`, all off by default (publication-error-reports-and-withheld-notices REQ-PER-001, REQ-PER-003). Additive.
 		$this->assertSame(expected: false, actual: self::$register['components']['schemas']['portal']['properties']['showWithheldNotices']['default']);
 		// 0.122.0 also adds `publicationErrorReport`, a visitor's report with no address or user agent (REQ-PER-002).
@@ -464,9 +470,9 @@ class PortaliqRegisterConfigTest extends TestCase {
 			actual: $report['contactEmail']['authorization']['read']
 		);
 		$this->assertSame(expected: ['update' => ['admin']], actual: $report['reportOwner']['authorization']);
-		// Written as 0.111.0 (portal 0.30.0) on its branch; moved past development's 0.121.0 (portal 0.35.0) at merge time, then to 0.123.0 past development's 0.122.0 (the x-openregister-mcp dialects above), so an install already on it imports these.
-		$this->assertSame(expected: '0.123.0', actual: self::$register['info']['version']);
-		$this->assertSame(expected: '0.123.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		// Written as 0.111.0 (portal 0.30.0) on its branch; moved past development's 0.121.0 (portal 0.35.0) at merge time, then to 0.123.0 past development's 0.122.0 (the x-openregister-mcp dialects above), then to 0.124.0 past development's 0.123.0 (woo-dossier-in-my-cases above), so an install already on it imports these.
+		$this->assertSame(expected: '0.124.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.124.0', actual: self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portalPage']['properties']['pages']['items']['properties']['blocks']['items']['properties']['messageTo']['type']);
 		$this->assertContains(needle: 'yivi', haystack: self::$register['components']['schemas']['portalAccount']['properties']['identityType']['enum']);
 		$this->assertSame(expected: 'date-time', actual: self::$register['components']['schemas']['guardianMessage']['properties']['readAt']['format']);
@@ -531,7 +537,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['admin'], self::$register['components']['schemas']['activityAttendance']['authorization']['read']);
 		$this->assertArrayNotHasKey('fee', self::$register['components']['schemas']['activityOffer']['properties'], 'D19: an activity holds no amount');
 		$this->assertArrayNotHasKey('amount', self::$register['components']['schemas']['activityOffer']['properties'], 'D19: an activity holds no amount');
-		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalCase']['version']);
+		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalCase']['version']);
 		$this->assertSame(['portaliq-medewerkers'], self::$register['components']['schemas']['portalCase']['authorization']['read']);
 		$this->assertSame('0.7.0', self::$register['components']['schemas']['portalTrafficDaily']['version']);
 		$this->assertSame('0.4.0', self::$register['components']['schemas']['portalTrafficEvent']['version']);
