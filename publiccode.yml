@@ -2,17 +2,35 @@ publiccodeYmlVersion: "0.3"
 
 name: "Portaliq"
 url: "https://github.com/ConductionNL/portaliq"
-softwareVersion: "0.1.2"
-releaseDate: "2026-01-01"
+landingURL: "https://portaliq.conduction.nl"
+roadmap: "https://github.com/ConductionNL/portaliq/blob/main/openspec/ROADMAP.md"
+softwareVersion: "0.2.12-beta.20261114061151"
+releaseDate: "2026-11-14"
+logo: img/app-store.svg
 softwareType: "addon"
 
 platforms:
-  - nextcloud
+  - web
 
 categories:
   - content-management
+  - communications
 
-developmentStatus: development
+developmentStatus: beta
+
+dependsOn:
+  open:
+    - name: Nextcloud
+      versionMin: "32"
+      versionMax: "35"
+    - name: OpenRegister
+      optional: false
+
+intendedAudience:
+  countries:
+    - nl
+  scope:
+    - government
 
 description:
   en:
@@ -28,12 +46,17 @@ description:
       and the register of portal contributions. Employees keep working in
       the internal apps.
       Conduction maintains this component within the Nextcloud ISV programme.
+      Install it from the Nextcloud App Store at
+      https://apps.nextcloud.com/apps/portaliq.
     features:
       - External login with DigiD, eHerkenning and eIDAS
       - White-label portal shell with its own domain and theme
       - Unified inbox for clients and suppliers
       - Portal contributions from every app in the suite
       - Data read and written through OpenRegister
+    screenshots:
+      - docs/static/screenshots/tutorials/user/01-first-launch.png
+      - docs/static/screenshots/tutorials/admin/01-admin-settings.png
   nl:
     localisedName: "Portaliq"
     shortDescription: "Eén gedeeld extern portaal voor klanten en leveranciers"
@@ -47,12 +70,17 @@ description:
       portaalschil, de gebundelde berichtenbox en het register van
       portaalbijdragen. Medewerkers blijven werken in de interne apps.
       Conduction onderhoudt dit component binnen het Nextcloud ISV-programma.
+      Installeer het via de Nextcloud App Store op
+      https://apps.nextcloud.com/apps/portaliq.
     features:
       - Externe inlog met DigiD, eHerkenning en eIDAS
       - White-label portaalschil met een eigen domein en thema
       - Gebundelde berichtenbox voor klanten en leveranciers
       - Portaalbijdragen van elke app in de suite
       - Gegevens lezen en schrijven via OpenRegister
+    screenshots:
+      - docs/static/screenshots/tutorials/user/01-first-launch.png
+      - docs/static/screenshots/tutorials/admin/01-admin-settings.png
 
 legal:
   license: EUPL-1.2
