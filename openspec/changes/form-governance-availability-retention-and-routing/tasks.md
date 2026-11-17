@@ -6,12 +6,19 @@
   - Called from the intake controller's form and submit routes rather than inside `render()`, so the background drains are not refused. The count is the destination's objects of the period (decision 179: no portal-side submission store).
 - [x] **T03**: `src/site/components/forms/FormUnavailable.vue` with the three situations of the FormulierNietBeschikbaar board and the not-yet-open text; node test (REQ-FGV-001)
 - [ ] **T04**: `lib/Service/Intake/PortalDeliveryRouter.php`: default plus rules, kinds `caseType`, `email` (Nextcloud mailer, template `form-delivery-mail`), `integriq` (integriq's call API); `PortalIntakeQueue` uses it; PHPUnit per kind and for rule order (REQ-FGV-002)
+  - Not built: decision 179 removed routing (REQ-FGV-002 amended: the binding names its `destination`, no routing step after the submit).
 - [ ] **T05**: `lib/BackgroundJob/IntakeRetryJob.php` with the 5 min, 1 h, 6 h schedule; retry routes for the resident (own submission, by reference and session) and for staff; evidence log line per attempt; IDOR gate green; PHPUnit (REQ-FGV-003)
+  - Not built: decision 179 removed REQ-FGV-003; nothing is queued, so nothing is retried.
 - [ ] **T06**: FormulierVerwerken situation 2 on the reference page: text, kept-until date, "Opnieuw proberen", error code `OF-xxxx` (REQ-FGV-003)
+  - Not built: decision 179 removed REQ-FGV-003 (a refused submit answers 422 on its field, an unreachable destination 503 with the answers kept).
 - [ ] **T07**: `lib/BackgroundJob/FormFailureDigestJob.php` at 07:00, template `form-failure-digest` listed in the mail templates screen; no mail when empty; PHPUnit (REQ-FGV-003)
+  - Not built: decision 179 removed REQ-FGV-003, so there are no failures to digest.
 - [ ] **T08**: `lib/BackgroundJob/IntakeRetentionJob.php`: expiry per state, delete through OpenRegister or anonymise; PHPUnit for both methods and the defaults (REQ-FGV-004)
+  - Not built in portaliq: decision 179 moved retention to the destination objects, by the destination app's own rules.
 - [ ] **T09**: export route and "Inzendingen downloaden" under "Meer" on the form settings page, built on OpenRegister's object export filtered on the binding; audit line; PtInzendingen "Downloaden" without answers; PHPUnit for the rights check (REQ-FGV-005)
+  - Not built in portaliq: decision 179 moved export to the destination objects, by the destination app's own rules.
 - [x] **T10**: admin tabs Beschikbaarheid, Bewaartermijn and Doorsturen and the status panel on the form settings page, per PtFormulierInstellingen; strings in nl, en, en_US
   - Tab Beschikbaarheid (manifest settings form over `availability`) with the status panel, a stat tile over `GET /api/form-bindings/{id}/counter` (`FormBindingCounter`, the same count the submit path's limit check uses). Bewaartermijn and Doorsturen are not built: decision 179 removed routing and moved retention to the destination objects, so the binding holds neither setting.
 - [ ] **T11**: Playwright: a form at its limit shows situation 3 (cites REQ-FGV-001); a retry from the reference page (cites REQ-FGV-003)
+  - Spec written: `tests/e2e/form-availability-limit.spec.ts` (situation 3 on a seeded site page, and the 409 on submit). The retry half is gone with REQ-FGV-003. Not ticked: not yet run against a live instance.
 - [ ] **T12**: Live check against PtFormulierInstellingen, FormulierNietBeschikbaar, FormulierVerwerken and PtInzendingen; screenshots in the build PR
