@@ -274,6 +274,7 @@ export default {
 		'Your answer could not be sent. Please try again.': 'Uw antwoord kon niet worden verstuurd. Probeer het opnieuw.',
 		'This question has already been dealt with.': 'Deze vraag is al afgehandeld.',
 		'Next step: {step}': 'Volgende stap: {step}',
+		Outcome: 'Uitkomst',
 		'Yes, remove my account': 'Ja, verwijder mijn account',
 		'You have no e-mail address on your account.':
 			'Er staat geen e-mailadres bij uw account.',
@@ -567,6 +568,7 @@ export default {
 		'Your answer could not be sent. Please try again.': 'Your answer could not be sent. Please try again.',
 		'This question has already been dealt with.': 'This question has already been dealt with.',
 		'Next step: {step}': 'Next step: {step}',
+		Outcome: 'Outcome',
 		'Yes, remove my account': 'Yes, remove my account',
 		'You have no e-mail address on your account.':
 			'You have no e-mail address on your account.',

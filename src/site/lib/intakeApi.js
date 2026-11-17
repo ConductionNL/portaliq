@@ -428,6 +428,8 @@ function submittedOutcome(parsed) {
 			receivedAt: String(parsed.receivedAt || ''),
 			termStartsAt: String(parsed.termStartsAt || ''),
 			deadline: String(parsed.deadline || ''),
+			// Stamped on the case at create; the confirmation explains a later start from it.
+			receivedOutsideWorkingHours: parsed.receivedOutsideWorkingHours === true,
 		},
 		errors: {},
 	}

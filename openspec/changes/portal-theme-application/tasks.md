@@ -23,8 +23,8 @@
   - Heading, links, paragraphs and table carry NL Design component classes; the count is currently ZERO, so any non-zero result is a change in behaviour rather than a restatement
   - No `*-react` design-system package is added (ADR-086 §7; `@utrecht` ships 95 CSS packages to 17 React ones)
   - `appinfo/info.xml` declares the theming dependency, and a missing install is reported
-- [ ] Implement — partial: the site components carry the `utrecht-*` classes (118 files) and no React design-system package is used; `appinfo/info.xml` does not declare the theme app because the resolver treats a missing install as a normal, unthemed deployment: not run, that needs a decision
-- [ ] Test — not run: counting the NL Design classes in the rendered DOM needs a browser
+- [ ] Implement — partial: markdown tables now carry `utrecht-table` and its part classes (`MarkdownBlock.vue`, `tests/markdown-block-classes.spec.mjs`); the site components carry the `utrecht-*` classes (118 files) and no React design-system package is used; `appinfo/info.xml` does not declare the theme app because the resolver treats a missing install as a normal, unthemed deployment: not run, that needs a decision
+- [ ] Test — not run: counting the NL Design classes in the rendered DOM needs a browser; written as the last test of `tests/e2e/site-theme.spec.ts` (heading, paragraph, link and table classes on a seeded page)
 
 ### Task 3: The assertion that would have caught this
 - **spec_ref**: `openspec/changes/portal-theme-application/specs/portaliq-cms/spec.md#requirement-a-sites-theme-must-change-its-rendered-appearance`
@@ -34,5 +34,5 @@
   - Explicitly does NOT assert on the class name, the token file's presence, or the API's theme string: all three pass right now while both sites render `rgb(26,26,26)`
   - Asserts a theme token resolves to a value that is not the component's hard-coded fallback
   - Run FIRST against the current build and observed FAILING, before the implementation lands — a theming test written after the fix proves only that the fix is present today
-- [ ] Implement — not run: needs a live instance and a browser
+- [ ] Implement — written: `tests/e2e/site-theme.spec.ts` (two themes compute different colours for the same elements, a token resolves and differs from the unthemed fallback, only the active token set is fetched, an unresolvable theme stays unthemed); not ticked: it has not been run, and the acceptance asks to see it fail first on a build without theming, which needs a live instance
 - [ ] Test — not run: needs a live instance and a browser

@@ -248,6 +248,7 @@ export const DUTCH = Object.freeze({
 	signInFirst: 'Log eerst in.',
 	receivedOn: 'Ontvangen op {date}.',
 	termStartsOn: 'De termijn begint op {date}.',
+	firstWorkingDay: 'Uw aanvraag kwam binnen buiten onze openingstijden, daarom start de termijn op de eerstvolgende werkdag.',
 	decisionBy: 'U krijgt uiterlijk {date} een besluit.',
 })
 

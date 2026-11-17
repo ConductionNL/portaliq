@@ -5,4 +5,4 @@
 - [x] **T3** rows display: `statusNoteAtField` in `DisplayKeys` and `dateRows()`; `decidedInWords()` draws the line. Tests: `tests/site-school-displays.spec.mjs`, `SchoolBlockKeysTest::testRowsKeepTheMomentTheStatusWasSet`.
 - [x] **T4** choice cards: `descriptionField` on a collection provider (`ActionOptionsNormaliser`, `optionOf()`), a second line on `ChoiceCards`; `namedDays()` returns a name and a date. Tests: `tests/site-form-widgets.spec.mjs`, `ActionConfigNormaliserTest::testACollectionProviderKeepsItsDescriptionField`.
 - [x] **T5** register 0.105.0, portalPage 0.9.0: `statusNoteAtField`, `labelWhenEmpty`.
-- [ ] **T6** learniq (its own repo): declare the menu layout in `po.json`, the child-page ctas, `statusNoteAtField` on the absence rows and `descriptionField: groupLabel` on the child provider.
+- [x] **T6** learniq (its own repo, landed with learniq#2087): declare the menu layout in `po.json`, the child-page ctas, `statusNoteAtField` on the absence rows and `descriptionField: groupLabel` on the child provider.
