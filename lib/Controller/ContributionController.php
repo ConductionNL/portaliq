@@ -79,6 +79,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalTaskGatewayInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalUserDisplayNamesInterface;
 use OCA\Portaliq\Kernel\Contracts\SubmissionReceiptServiceInterface;
 use OCA\Portaliq\Kernel\Support\PortalBranchScope;
+use OCA\Portaliq\Service\OnCaseCreate;
 use OCA\Portaliq\Service\CaseTypeColumns\ColumnOverrides;
 use OCA\Portaliq\Service\PortalCrossRefGuard;
 use OCA\Portaliq\Service\PortalUserDisplayNames;
@@ -218,6 +219,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *                                 Absent writes a new object as before.
 	 * @param DestinationDraftInterface|null $destinations Sends that draft through OpenRegister's submit service.
 	 * @param DestinationIntakeInterface|null $intake Submits a landing-page form straight into its destination
+	 * @param OnCaseCreate|null $onCase The case a create filed from a case page is about (REQ-COC-004).
 	 *                                       (decision 179). Absent answers 503 for such a form.
 	 */
 	public function __construct(
@@ -260,6 +262,7 @@ class ContributionController extends Controller implements PortalProtected {
 		private readonly ?ActionDraftInterface $drafts = null,
 		private readonly ?DestinationDraftInterface $destinations = null,
 		private readonly ?DestinationIntakeInterface $intake = null,
+		private readonly ?OnCaseCreate $onCase = null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
@@ -1961,8 +1964,40 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		return $this->createFrom(subject: $subject, match: $match, register: $register, schema: $schema);
+		// Filed from a case page: the server names the case, over the body
+		// (case-page-objection-and-complaint REQ-COC-003/004).
+		$carried = $this->onCaseFields(subject: $subject, match: $match);
+		if ($carried instanceof JSONResponse) {
+			return $carried;
+		}
+
+		return $this->createFrom(subject: $subject, match: $match, register: $register, schema: $schema, carried: $carried);
 	}//end create()
+
+	/**
+	 * The fields a create filed from a case page sets on the server: none
+	 * without `onCase`, else the case id in the action's cross-reference
+	 * field, or the refusal.
+	 *
+	 * @param array<string, mixed>                             $subject The resolved subject.
+	 * @param array{action: array<string, mixed>, app: string} $match   The matched create action.
+	 *
+	 * @return array<string, string>|JSONResponse
+	 *
+	 * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-server-fills-in-the-case-and-the-guard-still-runs-req-coc-004
+	 */
+	private function onCaseFields(array $subject, array $match): array|JSONResponse {
+		$target = (string)$this->request->getParam('onCase', '');
+		if ($target === '') {
+			return [];
+		}
+
+		if ($this->onCase === null) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		return $this->onCase->carried(target: $target, action: $match['action'], subject: $subject, app: $match['app']);
+	}//end onCaseFields()
 
 	/**
 	 * Run the create pipeline for a matched create action: the whitelist, the

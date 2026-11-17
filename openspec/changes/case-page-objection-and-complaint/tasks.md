@@ -10,7 +10,7 @@ Board: `Zaak` on the Zuiddrecht canvas (`5NkFW28vZUUij43xzxHg5a`). New frontend 
 - [x] **T03**: `lib/Service/CaseActionsResolver.php`: list the resident's create actions whose `onCase.crossRef` targets this case's collection, sorted by `order`, each `{app, action, label, open, closesOn?, closedText?}`; window from the day after `from` through `days` days, end of day Europe/Amsterdam, missing date is closed (REQ-COC-002, REQ-COC-003)
   - Unit `tests/Unit/Service/CaseActionsResolverTest.php`: open on day 1 and day 42, closed on day 43, closed without a date, empty for a contribution without `onCase`
 - [x] **T04**: `CitizenCaseController::show()` answers `caseActions` from the resolver (REQ-COC-002)
-- [ ] **T05**: `ContributionController::create()` accepts `onCase=<register>/<schema>/<id>`: scoped re-read of the case, window re-check (409 `case_action_closed`), case id written into the crossRef field over the body, then `PortalCrossRefGuard` as before (REQ-COC-003, REQ-COC-004)
+- [x] **T05**: `ContributionController::create()` accepts `onCase=<register>/<schema>/<id>`: scoped re-read of the case, window re-check (409 `case_action_closed`), case id written into the crossRef field over the body, then `PortalCrossRefGuard` as before (REQ-COC-003, REQ-COC-004)
   - Unit `tests/Unit/Controller/ContributionControllerOnCaseTest.php`: forged body overwritten, foreign case 403, closed window 409, nothing stored on a refusal
 
 ## The case screen
