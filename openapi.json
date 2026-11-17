@@ -144,6 +144,10 @@
             "description": "Reads a page's history for a page editor."
         },
         {
+            "name": "shared-block",
+            "description": "The pages that place a shared block, for its detail page."
+        },
+        {
             "name": "partner-task",
             "description": "Raises a partner ask from a case."
         },
@@ -4337,6 +4341,51 @@
                     },
                     "403": {
                         "$ref": "#/components/responses/Problem403"
+                    }
+                }
+            }
+        },
+        "/shared-blocks/{id}/pages": {
+            "get": {
+                "operationId": "shared-block-pages",
+                "summary": "The pages whose published layout places a shared block",
+                "description": "The pages of the shared block's organisation whose published layout places it, ordered by portal and route. Page editors only. Needs a signed-in Nextcloud user.",
+                "tags": [
+                    "shared-block"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "The shared block object's id or uuid.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Problem404"
                     }
                 }
             }
