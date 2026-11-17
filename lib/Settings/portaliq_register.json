@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.123.0"
+        "version": "0.124.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.123.0",
+                "version": "0.124.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -2829,7 +2829,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.35.0",
+                "version": "0.36.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -3414,6 +3414,20 @@
                                     "description": "The site page the bare address of this host opens, as a route with a leading slash. Empty means the home page. A host for the signed-in area names that area here. Read only from a verified domain.",
                                     "maxLength": 512,
                                     "example": "/mijn"
+                                },
+                                "reverifyMisses": {
+                                    "title": "Missed re-checks",
+                                    "type": "integer",
+                                    "description": "How many periodic re-checks in a row found the verification record gone from a verified domain. A lookup that fails counts for nothing; a re-check that finds the record resets it. At the third miss the domain is unbound.",
+                                    "minimum": 0,
+                                    "example": 0
+                                },
+                                "unboundAt": {
+                                    "title": "Unbound at",
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "description": "When the periodic re-check last unbound this domain because its verification record was gone. Verifying it again binds it again.",
+                                    "example": "2026-11-17T09:00:00+00:00"
                                 }
                             }
                         }

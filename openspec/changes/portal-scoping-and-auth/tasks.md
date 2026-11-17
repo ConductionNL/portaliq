@@ -14,8 +14,9 @@
   - The host comes from the trusted proxy configuration; a forged `Host` header does not select a portal
   - There is NO default/first/fallback portal — asserted by a test with exactly one portal configured and a request for a different host
   - Two portals sharing a route stay separate under every request parameter
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test
+- **built** (under portaliq-cms): `lib/Service/PortalResolver.php` resolves the verified host (taken from `IRequest::getServerHost()`, which honours forwarded hosts only from trusted proxies) with no default portal; controllers turn a miss into the shared 404. There is no separate `PortalResolutionMiddleware`: each served route calls the resolver. Tests: `PortalResolverTest` (`testASingleConfiguredSiteIsStillNotADefault`, `testEachHostResolvesToItsOwnSite`, `testAForgedHostHeaderSelectsNoDomainAndNoPortal`, `testANamedPortalOnAnotherPortalsHostGetsNoDomain`, `testAnUnknownSlugDoesNotFallThroughToTheHost`).
 
 ### Task 2: Domain binding and DNS verification
 - **spec_ref**: `openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-custom-domain-must-be-verified-before-it-serves`
@@ -25,8 +26,9 @@
   - BOTH directions are tested: verification SUCCEEDS with the record present and FAILS without it — a verifier that always fails looks identical to one that works if only the failure case is exercised
   - A per-portal nonce is used, so a record published for portal A does not verify portal B
   - Re-verification runs periodically; a removed record eventually unbinds
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test
+- **built**: the TXT check with a per-portal token is `lib/Service/Cms/PortalDomainVerifier.php` (portal-cms-admin-ui), tested in both directions (`PortalDomainVerifierTest::testAnotherPortalsTokenDoesNotVerify`, `testNoPropagationYetIsPendingAndCanBeRunAgain`, `testAVerifiedDomainStoresTheEndOfItsCertificate`). This change adds the periodic re-check: `PortalDomainVerifier::reverify()` and `lib/BackgroundJob/DomainReverificationJob.php` (every 12 hours) unbind a verified domain whose record is gone three re-checks in a row; a failed lookup counts for nothing, a found record resets the count. Domain fields `reverifyMisses` and `unboundAt` (register 0.124.0, portal 0.36.0). Tests: `tests/Unit/Service/Cms/PortalDomainReverifyTest.php`, `tests/Unit/BackgroundJob/DomainReverificationJobTest.php`.
 
 ### Task 3: Per-portal presentation resolved at runtime
 - **spec_ref**: `openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-presentation-must-resolve-per-portal-at-runtime`
@@ -36,8 +38,9 @@
   - An Organisation with exactly one portal renders byte-identically to before — asserted against a recorded pre-change response, because "still works" is the claim most easily assumed
   - Two portals of the SAME Organisation produce two different responses; this is the capability that does not exist today
   - An unresolvable theme reference names the missing theme rather than rendering unthemed
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test
+- **built** (under portaliq-cms): `lib/Service/PortalRuntimeConfigResolver.php` resolves name, logo, theme, locales, feature flags and embed origins from the serving portal (`PortalRuntimeConfigResolverTest::testAResolvedPortalSuppliesItsOwnName`, `testAResolvableThemeIsReported`). One criterion was decided differently in the canonical spec (`openspec/specs/portaliq-cms/spec.md`, "A portal's theme MUST change what a visitor sees"): an unresolvable theme renders unstyled rather than naming the missing theme (`testAnUnresolvableThemeIsNotReportedAsResolved`). The byte-identical single-portal comparison applied to the moment of migration, which has passed.
 
 ### Task 4: Per-portal authentication and scoped sessions
 - **spec_ref**: `openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed`
@@ -49,6 +52,8 @@
   - `minTrust` is enforced for the government modes
 - [ ] Implement
 - [ ] Test
+- **progress** (this change): a session minted on a portal is bound to it. `PortalJwtService` signs a `portal` claim, `PortalSessionService::issueSession(portal:)` takes it and every refresh or rebranch carries it, and `BearerSessionResolver` refuses a portal-bound session through `lib/Auth/PortalSessionScope.php` when the request is served by another portal (verified host first, a named `portal` only when the host resolves none), exactly as an invalid bearer. The Nextcloud way in (`SessionController::nextcloudSession`) and the desk session (`DeskSessionController`) bind their sessions to their portal. Already enforced elsewhere: content reads per portal mode and `minTrust` (`PublicContentGate`), and each way in refuses a portal that does not offer its mode. Tests: `tests/Unit/Auth/PortalSessionScopeTest.php`, `BearerSessionResolverTest`, `PortalSessionServiceTest::testAPortalSessionStaysOnItsPortalThroughARefresh`, `SessionClaimsTest::testThePortalClaimReadsBackOnlyAsASlug`.
+- **left**: bind the sessions of the OIDC, broker (DigiD/eHerkenning/Yivi), e-mail link and example-resident ways in to their portal (each mints per organisation today and needs the portal threaded through its login state); a `PortalAuthConfig` value object replacing the per-call-site reads of `authentication.modes`; OIDC provider configuration still comes from the organisation, not the portal.
 
 ### Task 5: Per-portal CSP
 - **spec_ref**: `openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-frame-ancestors-must-be-derived-per-portal`
@@ -57,5 +62,7 @@
   - `frame-ancestors` is built from the resolved PORTAL's origins instead of the Organisation's; the existing deny-by-default (clearing the `'self'` default first) is preserved, not re-derived
   - Two portals of one Organisation can permit different embedders — the capability this task adds
   - A test asserts no served response ever emits `frame-ancestors: *`. The wildcard is already gone from `lib/`; the test exists so it cannot come back unnoticed, which is a different job from removing it
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test
+- **built**: the site page is never framed (`frame-ancestors 'none'`, `PortalPageControllerTest::testOnlyTheMeasurementMayFrameTheSiteAndOnlyFromItsOwnOrigin`, which also asserts no wildcard); embedding is per form binding through `PortalEmbedGuard` (`PortalEmbedGuardTest::testOnlyTheDeclaredOriginMayFrameTheForm`, `testFrameAncestorsIsNeverAWildcard`), so two portals of one organisation permit different embedders.
+

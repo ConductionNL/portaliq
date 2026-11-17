@@ -425,7 +425,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.115.0 (portal 0.32.0): a portal's `organisationType` and `organisationTypeLabel` (portal-identity-from-the-admin REQ-PIA-003), with the marketing articles above. Additive; moved past development's 0.114.0 at merge time.
 		// 0.116.0 (portal 0.33.0): a portal's `organisationTypeSchemeId`, the scheme uuid the type picker filters on (portal-identity-from-the-admin REQ-PIA-003). Additive.
 		$this->assertSame(expected: 'uuid', actual: self::$register['components']['schemas']['portal']['properties']['organisationTypeSchemeId']['format']);
-		$this->assertSame(expected: '0.35.0', actual: self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame(expected: '0.36.0', actual: self::$register['components']['schemas']['portal']['version']);
 		// 0.117.0 (portalPage 0.11.0): a collection's `messages` provider and the `messages` block with its `askAction` and `askLabel` (capability-rows-said-and-planned T07). Additive; moved past 0.116.0 (portal-identity-from-the-admin) at merge time.
 		$this->assertContains(needle: 'messages', haystack: self::$register['components']['schemas']['portalPage']['properties']['pages']['items']['properties']['blocks']['items']['properties']['type']['enum']);
 		// development's 0.115.0 (portal 0.32.0): `traffic.excludedPaths`, the pages the collector writes no visitor row for (intake-report-pages T07). Additive; moved past development's 0.114.0 and portal 0.31.0 at merge time.
@@ -443,8 +443,12 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.121.0 (portal 0.35.0): this branch's `traffic.allowSlugFallback` (0.119.0 above, portal 0.35.0) moved past development's 0.120.0 at merge time. Additive; both sides kept.
 		// 0.109.0 (portalMessage 0.8.0): the read-only x-openregister-mcp dialect on the portal inbox (portaliq-mcp-adoption). Additive.
 		// 0.122.0 (portalSubmission 0.4.0, portalNotification 0.4.0): read-only x-openregister-mcp dialects on the operational records (hermiq-ai-tooling). Additive; written as 0.111.0 on its branch, moved past development's 0.121.0 at merge time.
-		$this->assertSame(expected: '0.123.0', actual: self::$register['info']['version']);
-		$this->assertSame(expected: '0.123.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		// 0.124.0 (portal 0.36.0): a domain's `reverifyMisses` and `unboundAt`, kept by the periodic re-check that unbinds a domain whose record is gone (portal-scoping-and-auth Task 2). Additive.
+		$this->assertSame(expected: '0.124.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.124.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		$domainItem = self::$register['components']['schemas']['portal']['properties']['domains']['items']['properties'];
+		$this->assertSame(expected: 'integer', actual: $domainItem['reverifyMisses']['type']);
+		$this->assertSame(expected: 'date-time', actual: $domainItem['unboundAt']['format']);
 		foreach (['menu', 'glossaryTerm'] as $translatable) {
 			$this->assertSame(expected: '0.2.0', actual: self::$register['components']['schemas'][$translatable]['version']);
 			$this->assertSame(expected: 'string', actual: self::$register['components']['schemas'][$translatable]['properties']['locale']['type']);
@@ -527,7 +531,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.8.0', self::$register['components']['schemas']['page']['version']);
-		$this->assertSame('0.35.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('0.36.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portal']['properties']['authentication']['properties']['registration']['properties']['businessGroup']['type']);
 		$this->assertSame('string', self::$register['components']['schemas']['portal']['properties']['tokens']['additionalProperties']['type']);
 		$this->assertTrue(self::$register['components']['schemas']['portal']['properties']['searchInsideDocuments']['default']);
