@@ -10,10 +10,10 @@
 
 ## Dossiq (built there, ConductionNL/dossiq#3215)
 
-- [ ] **T06**: Dossiq case detail page config places `{type: integration, integrationId: portaliq-change-proposal-queue}`; its `mijnZaken` contribution declares a `propose-change` action with the proposable applicant contact fields. PR on dossiq `development`, linked here.
+- [x] **T06**: Dossiq case detail page config places `{type: integration, integrationId: portaliq-change-proposal-queue}`; its `mijnZaken` contribution declares a `propose-change` action with the proposable applicant contact fields. PR on dossiq `development`, linked here. (On dossiq development: ConductionNL/dossiq#3215 places `case-change-proposals` with `integrationId: portaliq-change-proposal-queue` in `src/manifest.json`, and `lib/Portal/CitizenManifest.php` declares the `propose-change` action with `proposable`.)
 
 ## Proof
 
 - [ ] **T07**: Playwright `tests/e2e/change-proposals-reach-the-case-page.spec.ts`: a colleague proposes, a handler accepts, the case carries the value and its audit trail names the handler. Live check against PtVoorstelBeoordelen and ZaakWijzigingVoorstellen; screenshots in the build PR.
 - [ ] **T08**: Move `act-propose-colleague`, `act-staff-review-queue` and `sib-dossiq-2-21` to built in `openspec/parity/capabilities.json` once T06 and T07 pass.
-- [ ] **T09**: `openspec validate change-proposals-reach-the-case-page --strict`.
+- [x] **T09**: `openspec validate change-proposals-reach-the-case-page --strict`. (Valid after REQ-CPC-001's text was shortened, its detail moved into two scenarios, its heading and so every `@spec` anchor unchanged.)
