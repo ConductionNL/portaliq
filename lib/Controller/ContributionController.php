@@ -219,8 +219,8 @@ class ContributionController extends Controller implements PortalProtected {
 	 *                                 Absent writes a new object as before.
 	 * @param DestinationDraftInterface|null $destinations Sends that draft through OpenRegister's submit service.
 	 * @param DestinationIntakeInterface|null $intake Submits a landing-page form straight into its destination
-	 * @param OnCaseCreate|null $onCase The case a create filed from a case page is about (REQ-COC-004).
 	 *                                       (decision 179). Absent answers 503 for such a form.
+	 * @param OnCaseCreate|null $onCase The case a create filed from a case page is about (REQ-COC-004).
 	 */
 	public function __construct(
 		IRequest $request,
