@@ -29,19 +29,21 @@
 			</select>
 
 			<template v-if="kind && widgetKey === 'nlEventList' && kind.categories.length > 0">
-				<p class="public-source-picker__legend">
-					{{ t('portaliq', 'Categories') }}
-				</p>
-				<label
-					v-for="category in kind.categories"
-					:key="category"
-					class="public-source-picker__check">
-					<input
-						type="checkbox"
-						:checked="(source.categories || []).includes(category)"
-						@change="emitSource(withCategory(source, kind, category, $event.target.checked))">
-					{{ category }}
-				</label>
+				<fieldset class="public-source-picker__group">
+					<legend class="public-source-picker__legend">
+						{{ t('portaliq', 'Categories') }}
+					</legend>
+					<label
+						v-for="category in kind.categories"
+						:key="category"
+						class="public-source-picker__check">
+						<input
+							type="checkbox"
+							:checked="(source.categories || []).includes(category)"
+							@change="emitSource(withCategory(source, kind, category, $event.target.checked))">
+						{{ category }}
+					</label>
+				</fieldset>
 			</template>
 
 			<template v-if="kind && widgetKey === 'nlPublicTable'">
@@ -73,19 +75,21 @@
 		</template>
 
 		<template v-else-if="picker === 'columns' && kind && kind.columns.length > 0">
-			<p class="public-source-picker__legend">
-				{{ t('portaliq', 'Columns') }}
-			</p>
-			<label
-				v-for="column in kind.columns"
-				:key="column.key"
-				class="public-source-picker__check">
-				<input
-					type="checkbox"
-					:checked="hasColumn(blockProps.columns, column.key)"
-					@change="$emit('set', 'columns', withColumn(blockProps.columns, kind, column.key, $event.target.checked))">
-				{{ column.label }}
-			</label>
+			<fieldset class="public-source-picker__group">
+				<legend class="public-source-picker__legend">
+					{{ t('portaliq', 'Columns') }}
+				</legend>
+				<label
+					v-for="column in kind.columns"
+					:key="column.key"
+					class="public-source-picker__check">
+					<input
+						type="checkbox"
+						:checked="hasColumn(blockProps.columns, column.key)"
+						@change="$emit('set', 'columns', withColumn(blockProps.columns, kind, column.key, $event.target.checked))">
+					{{ column.label }}
+				</label>
+			</fieldset>
 		</template>
 	</fieldset>
 </template>
@@ -125,18 +129,27 @@ export default {
 	},
 
 	computed: {
-		/** @return {object} The block's source. */
+		/**
+		 * @return {object} The block's source.
+		 * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-4
+		 */
 		source() {
 			const source = this.blockProps.source
 			return source && typeof source === 'object' && !Array.isArray(source) ? source : {}
 		},
 
-		/** @return {object|null} The declared kind the block reads. */
+		/**
+		 * @return {object|null} The declared kind the block reads.
+		 * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-4
+		 */
 		kind() {
 			return kindFor(this.kinds, this.source)
 		},
 
-		/** @return {string} The prefix of this picker's control ids. */
+		/**
+		 * @return {string} The prefix of this picker's control ids.
+		 * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-4
+		 */
 		idPrefix() {
 			return `picker-${this.picker}`
 		},
@@ -173,8 +186,18 @@ export default {
 	gap: 4px;
 }
 
+.public-source-picker__group {
+	border: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
 .public-source-picker__legend {
 	margin: 4px 0 0;
+	padding: 0;
 	font-weight: bold;
 }
 
