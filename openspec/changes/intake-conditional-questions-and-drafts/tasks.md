@@ -19,4 +19,4 @@
 ## Docs, strings and validation
 
 - [ ] **T08**: English and Dutch strings ("Save and continue later", "We saved your answers. Open this form again to continue. We keep them until {date}.", "Keep this code to continue. We keep your answers until {date}.", "You have unsent answers from {date}. Continue or start again.", "We could not find answers for this code.", "This form uses a condition the portal cannot check. Change it to a condition on another answer."); a docs page for form authors on which conditions a public form supports. — not run: the strings belong to the draft tasks T06 and T07, which wait on openregister Verification: `npm run lint`, `test:l10n`.
-- [ ] **T09**: `openspec validate intake-conditional-questions-and-drafts --strict` — not run: openspec CLI not installed here.
+- [x] **T09**: `openspec validate intake-conditional-questions-and-drafts --strict` — valid, after the delta spec lost the frontmatter, title and Purpose above `## ADDED Requirements` (the main spec keeps its own Purpose; the matrix rows are in proposal.md). Run again when T06 to T08 land.

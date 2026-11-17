@@ -178,6 +178,37 @@ test('the confirmation names when the request arrived, its term starts and a dec
 			'U krijgt uiterlijk 24 november 2026 een besluit.',
 		],
 	)
+	assert.deepEqual(
+		momentLines(
+			{
+				receivedAt: '2026-03-08T20:14:00+01:00',
+				termStartsAt: '2026-03-09T09:00:00+01:00',
+				deadline: '2026-05-04',
+				receivedOutsideWorkingHours: true,
+			},
+			{ ...text, firstWorkingDay: 'Buiten openingstijden, dus de eerstvolgende werkdag.' },
+		),
+		[
+			'Ontvangen op 8 maart 2026.',
+			'De termijn begint op 9 maart 2026.',
+			'Buiten openingstijden, dus de eerstvolgende werkdag.',
+			'U krijgt uiterlijk 4 mei 2026 een besluit.',
+		],
+		'a Sunday filing explains why the term starts on Monday',
+	)
+	assert.deepEqual(
+		momentLines(
+			{ receivedAt: '2026-03-10T10:00:00+01:00', termStartsAt: '2026-03-10T10:00:00+01:00', receivedOutsideWorkingHours: false },
+			{ ...text, firstWorkingDay: 'Buiten openingstijden, dus de eerstvolgende werkdag.' },
+		),
+		['Ontvangen op 10 maart 2026.', 'De termijn begint op 10 maart 2026.'],
+		'a filing inside the working week carries no explanation',
+	)
+	assert.deepEqual(
+		momentLines({ receivedOutsideWorkingHours: true }, { ...text, firstWorkingDay: 'Uitleg.' }),
+		[],
+		'no explanation without a term start to explain',
+	)
 	assert.deepEqual(momentLines({ deadline: 'geen datum' }, text), [])
 	assert.deepEqual(momentLines({}, text), [])
 	assert.equal(readableDay(''), '')
