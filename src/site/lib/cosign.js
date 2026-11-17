@@ -10,12 +10,13 @@
 // the DigiD round trip, never in the address bar, so it does not end up in the
 // history or a referrer.
 //
-// Imports nothing, so tests/site-cosign.spec.mjs runs it as node.
+// Imports only cosignRoute.js, so tests/site-cosign.spec.mjs runs it as node.
 //
 // @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
 
-/** The in-site route of the co-sign page. */
-export const COSIGN_ROUTE = '/mede-ondertekenen'
+import { COSIGN_ROUTE, isCosignRoute } from './cosignRoute.js'
+
+export { COSIGN_ROUTE, isCosignRoute }
 
 /** Where the code waits during the DigiD round trip. */
 export const CODE_KEY = 'portaliq.cosign.code'
@@ -31,18 +32,6 @@ const REFUSALS = {
 	expired: 'expired',
 	same_subject: 'sameSubject',
 	not_confirmed: 'notConfirmed',
-}
-
-/**
- * Whether a route is the co-sign page.
- *
- * @param {string} route The in-site route.
- * @return {boolean}
- * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
- */
-export function isCosignRoute(route) {
-	const value = String(route || '').replace(/\/$/, '')
-	return value === COSIGN_ROUTE
 }
 
 /**

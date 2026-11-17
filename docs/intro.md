@@ -22,8 +22,10 @@ ships:
   pages without per-page Vue files.
 - **Admin settings** — a settings panel wired through
   `NcAppSettingsDialog`, backed by an OpenRegister settings register.
-- **An MCP tool provider** — `ExampleToolProvider` exposes the app's
-  capabilities to the in-app AI Chat Companion over MCP.
+- **Read-only MCP tools** — the portal inbox (`portalMessage`) declares
+  `search` and `get` in the `x-openregister-mcp` dialect, so OpenRegister
+  derives two read-only tools for the AI Chat Companion. Portaliq ships no
+  hand-written tool provider.
 - **OpenRegister integration** — `manifest.dependencies` lists
   `openregister`, so the dependency-check phase ensures it is installed
   before the UI mounts. Remove the entry if your app does not need it.
