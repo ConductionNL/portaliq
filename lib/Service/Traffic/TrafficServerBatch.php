@@ -20,6 +20,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic;
 
+use OCA\Portaliq\Kernel\Contracts\TrafficServerBatchInterface;
+
 /**
  * A server-side batch (portal-traffic-reporting) regrouped by the visitor
  * each event belongs to, so the ingest step sees one address and agent
@@ -30,7 +32,7 @@ namespace OCA\Portaliq\Service\Traffic;
  *
  * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
  */
-class TrafficServerBatch {
+class TrafficServerBatch implements TrafficServerBatchInterface {
 
 	/**
 	 * The batch's events grouped by the visitor they belong to, each

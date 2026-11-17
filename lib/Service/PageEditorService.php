@@ -26,7 +26,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PageEditorServiceInterface;
+use OCA\Portaliq\Service\Tenancy\PortalAdminGrants;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
 use OCP\IUser;
@@ -52,20 +54,13 @@ use Throwable;
  *
  * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
  */
-class PageEditorService {
+class PageEditorService implements PageEditorServiceInterface {
 	/**
 	 * OpenRegister's schema mapper, resolved lazily from the container.
 	 *
 	 * @var string
 	 */
 	private const SCHEMA_MAPPER = 'OCA\\OpenRegister\\Db\\SchemaMapper';
-
-	/**
-	 * The app config key holding the editor groups, as a JSON array of gids.
-	 *
-	 * @var string
-	 */
-	public const CONFIG_KEY = 'editor_groups';
 
 	/**
 	 * The slug of the schema whose write rules this service governs.
@@ -123,7 +118,6 @@ class PageEditorService {
 		'delete',
 	];
 
-
 	/**
 	 * Constructor.
 	 *
@@ -144,7 +138,6 @@ class PageEditorService {
 	) {
 	}//end __construct()
 
-
 	/**
 	 * The configured editor groups.
 	 *
@@ -153,7 +146,7 @@ class PageEditorService {
 	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
 	 */
 	public function getEditorGroups(): array {
-		$raw = $this->appConfig->getValueString(Application::APP_ID, self::CONFIG_KEY, '');
+		$raw = $this->appConfig->getValueString(AppIdentity::APP_ID, self::CONFIG_KEY, '');
 		if ($raw === '') {
 			return [];
 		}
@@ -167,7 +160,6 @@ class PageEditorService {
 
 		return $this->normalise(groups: $decoded);
 	}//end getEditorGroups()
-
 
 	/**
 	 * Configure the editor groups and push them into the schema.
@@ -187,7 +179,7 @@ class PageEditorService {
 		$normalised = $this->normalise(groups: $groups);
 		$previous   = $this->getEditorGroups();
 		$this->appConfig->setValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			self::CONFIG_KEY,
 			json_encode(array_values($normalised))
 		);
@@ -196,7 +188,6 @@ class PageEditorService {
 
 		return $normalised;
 	}//end setEditorGroups()
-
 
 	/**
 	 * Whether a user may edit portal pages.
@@ -232,7 +223,6 @@ class PageEditorService {
 		return false;
 	}//end mayEdit()
 
-
 	/**
 	 * Every group on the instance, for the admin settings picker.
 	 *
@@ -253,7 +243,6 @@ class PageEditorService {
 
 		return $groups;
 	}//end availableGroups()
-
 
 	/**
 	 * Write the configured groups into the `page` schema's write rules.
@@ -286,34 +275,64 @@ class PageEditorService {
 		}
 
 		try {
-			$schema = $mapper->findByApplicationAndSlug(slug: self::PAGE_SLUG, application: Application::APP_ID);
-			if ($schema === null) {
-				$this->logger->warning('Portaliq: editor groups saved but the page schema is not imported yet');
-				return false;
-			}
-
-			$this->grantWrites(mapper: $mapper, schema: $schema, groups: $groups, previous: $previous);
-
-			// The media library, the menus and the notices follow the pages. Any
-			// of them is absent on an instance whose register predates it, which
-			// leaves the pages governed.
-			foreach ([self::MEDIA_SLUG, self::MENU_SLUG, self::NOTICE_SLUG, self::SHARED_BLOCK_SLUG] as $slug) {
-				$follower = $mapper->findByApplicationAndSlug(slug: $slug, application: Application::APP_ID);
-				if ($follower !== null) {
-					$this->grantWrites(mapper: $mapper, schema: $follower, groups: $groups, previous: $previous);
-				}
-			}
+			return $this->governSchemas(mapper: $mapper, groups: $groups, previous: $previous);
 		} catch (Throwable $e) {
-			$this->logger->error(
-				'Portaliq: failed to write the page schema authorization',
-				['reason' => $e->getMessage()]
-			);
+			$this->logger->error('Portaliq: failed to write the page schema authorization', ['reason' => $e->getMessage()]);
 			return false;
-		}//end try
-
-		return true;
+		}
 	}//end applyToSchema()
 
+	/**
+	 * Write the editor groups into the page schema and the schemas that follow it.
+	 *
+	 * @param object        $mapper   The schema mapper.
+	 * @param array<string> $groups   The normalised group ids.
+	 * @param array<string> $previous The groups configured before, which leave the read rule.
+	 *
+	 * @return bool False when the page schema is not imported yet.
+	 *
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-writes-to-the-menu-must-be-governed-by-the-editor-groups-req-pie-012
+	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t07
+	 */
+	private function governSchemas(object $mapper, array $groups, array $previous): bool {
+		$schema = $mapper->findByApplicationAndSlug(slug: self::PAGE_SLUG, application: AppIdentity::APP_ID);
+		if ($schema === null) {
+			$this->logger->warning('Portaliq: editor groups saved but the page schema is not imported yet');
+			return false;
+		}
+
+		$this->grantWrites(mapper: $mapper, schema: $schema, groups: $groups, previous: $previous);
+		$this->governFollowers(mapper: $mapper, groups: $groups, previous: $previous);
+
+		return true;
+	}//end governSchemas()
+
+	/**
+	 * Write the editor groups into the schemas that follow the pages.
+	 *
+	 * The media library, the menus and the notices follow the pages. Any
+	 * of them is absent on an instance whose register predates it, which
+	 * leaves the pages governed.
+	 *
+	 * @param object        $mapper   The schema mapper.
+	 * @param array<string> $groups   The normalised group ids.
+	 * @param array<string> $previous The groups configured before, which leave the read rule.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
+	 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-writes-to-the-menu-must-be-governed-by-the-editor-groups-req-pie-012
+	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t07
+	 */
+	private function governFollowers(object $mapper, array $groups, array $previous): void {
+		foreach ([self::MEDIA_SLUG, self::MENU_SLUG, self::NOTICE_SLUG, self::SHARED_BLOCK_SLUG] as $slug) {
+			$follower = $mapper->findByApplicationAndSlug(slug: $slug, application: AppIdentity::APP_ID);
+			if ($follower !== null) {
+				$this->grantWrites(mapper: $mapper, schema: $follower, groups: $groups, previous: $previous);
+			}
+		}
+	}//end governFollowers()
 
 	/**
 	 * Write the editor groups into one schema's write rules, and add them to `read`.
@@ -333,17 +352,60 @@ class PageEditorService {
 			$authorization = [];
 		}
 
+		// A portal's own administrators keep their grants on that portal's rows
+		// (operate-portals-per-organisation REQ-OPO-005).
 		foreach (self::WRITE_ACTIONS as $action) {
-			$authorization[$action] = array_values($groups);
+			$authorization[$action] = array_merge(array_values($groups), PortalAdminGrants::grantsIn(rules: ($authorization[$action] ?? [])));
 		}
 
-		// The editor groups also read the schema. The register names only the
-		// staff group, so an editor outside it would otherwise be granted the
-		// write and refused the draft it edits. Groups the setting no longer
-		// names leave the read rule; every other rule (the public rule on
-		// published pages, the staff group) stays as it is.
+		$authorization['read'] = $this->readRule(rules: (array)($authorization['read'] ?? []), groups: $groups, previous: $previous);
+
+		$schema->setAuthorization($authorization);
+		$mapper->update($schema);
+	}//end grantWrites()
+
+	/**
+	 * The read rule with the editor groups in it.
+	 *
+	 * The editor groups also read the schema. The register names only the
+	 * staff group, so an editor outside it would otherwise be granted the
+	 * write and refused the draft it edits. Groups the setting no longer
+	 * names leave the read rule; every other rule (the public rule on
+	 * published pages, the staff group) stays as it is.
+	 *
+	 * @param array         $rules    The schema's read rules.
+	 * @param array<string> $groups   The normalised group ids.
+	 * @param array<string> $previous The groups configured before, which leave the read rule.
+	 *
+	 * @return array
+	 *
+	 * @spec openspec/changes/close-portaliq-register-to-staff/specs/admin-ui/spec.md#requirement-only-staff-may-open-portaliqs-nextcloud-app-and-read-its-register
+	 */
+	private function readRule(array $rules, array $groups, array $previous): array {
+		$read = $this->keptReads(rules: $rules, groups: $groups, previous: $previous);
+		foreach ($groups as $gid) {
+			if (in_array($gid, $read, true) === false) {
+				$read[] = $gid;
+			}
+		}
+
+		return $read;
+	}//end readRule()
+
+	/**
+	 * The read rules that stay: all but the groups the setting no longer names.
+	 *
+	 * @param array         $rules    The schema's read rules.
+	 * @param array<string> $groups   The normalised group ids.
+	 * @param array<string> $previous The groups configured before.
+	 *
+	 * @return array
+	 *
+	 * @spec openspec/changes/close-portaliq-register-to-staff/specs/admin-ui/spec.md#requirement-only-staff-may-open-portaliqs-nextcloud-app-and-read-its-register
+	 */
+	private function keptReads(array $rules, array $groups, array $previous): array {
 		$read = [];
-		foreach ((array)($authorization['read'] ?? []) as $rule) {
+		foreach ($rules as $rule) {
 			if (is_string($rule) === true && in_array($rule, $previous, true) === true && in_array($rule, $groups, true) === false) {
 				continue;
 			}
@@ -351,18 +413,8 @@ class PageEditorService {
 			$read[] = $rule;
 		}
 
-		foreach ($groups as $gid) {
-			if (in_array($gid, $read, true) === false) {
-				$read[] = $gid;
-			}
-		}
-
-		$authorization['read'] = $read;
-
-		$schema->setAuthorization($authorization);
-		$mapper->update($schema);
-	}//end grantWrites()
-
+		return $read;
+	}//end keptReads()
 
 	/**
 	 * Normalise a requested group list to unique, non-empty group ids.
@@ -393,7 +445,6 @@ class PageEditorService {
 
 		return $ids;
 	}//end normalise()
-
 
 	/**
 	 * Resolve OpenRegister's SchemaMapper, or null when unavailable.

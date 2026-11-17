@@ -22,6 +22,7 @@ use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Service\RequestedPortal;
 
 /**
  * The wire contract of the reporting endpoints: what each route answers, and
@@ -506,7 +507,8 @@ class ReportControllerTest extends TestCase {
 			new ReportProjection(),
 			$this->doubles['reader'],
 			$caseTypes,
-			$session
+			$session,
+			new RequestedPortal()
 		);
 	}//end controller()
 

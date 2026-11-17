@@ -22,6 +22,7 @@ namespace OCA\Portaliq\Service\Traffic\Geo;
 
 use MaxMind\Db\Reader;
 use OCA\Portaliq\BackgroundJob\TrafficGeoFirstDownloadJob;
+use OCA\Portaliq\Kernel\Contracts\GeoRefreshServiceInterface;
 use OCA\Portaliq\Service\Connection\ConnectionReporter;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
@@ -50,7 +51,7 @@ use Throwable;
  * the optional ConnectionReporter (adopt-connection-registry). Reporting here
  * covers all three callers at once, where three caller-side reports could drift.
  */
-class GeoRefreshService {
+class GeoRefreshService implements GeoRefreshServiceInterface {
 
 	/**
 	 * The outcome when the provider is none.

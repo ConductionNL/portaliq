@@ -8,7 +8,9 @@ Staff who may manage portal accounts SHALL be able to withdraw an account that i
 - **GIVEN** a pending portal account issued to the wrong e-mail address
 - **WHEN** a staff member chooses "Withdraw this account" and gives the reason "wrong address"
 - **THEN** the account is withdrawn with that reason, and its activation link answers that it no longer works
+@e2e tests/e2e/identity-staff-account-screens.spec.ts (unit: tests/Unit/Controller/PortalAccountAdminControllerTest.php; the link refusal: PortalAccountLookup skips void rows)
 
 #### Scenario: An active account offers no withdraw
 - **WHEN** a staff member opens an account that is already active
 - **THEN** no "Withdraw this account" action is offered
+@e2e tests/e2e/identity-staff-account-screens.spec.ts (node: tests/staff-account-screens.spec.mjs)

@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCP\IAppConfig;
 
 /**
@@ -62,7 +62,7 @@ class PortalNameSetting {
 	 * @spec openspec/specs/portal-name/spec.md#requirement-the-portal-has-a-name-other-apps-can-read
 	 */
 	public function name(): string {
-		return trim($this->appConfig->getValueString(app: Application::APP_ID, key: self::KEY, default: ''));
+		return trim($this->appConfig->getValueString(app: AppIdentity::APP_ID, key: self::KEY, default: ''));
 	}//end name()
 
 	/**
@@ -80,6 +80,6 @@ class PortalNameSetting {
 			return;
 		}
 
-		$this->appConfig->setValueString(app: Application::APP_ID, key: self::KEY, value: $label);
+		$this->appConfig->setValueString(app: AppIdentity::APP_ID, key: self::KEY, value: $label);
 	}//end fillFrom()
 }//end class

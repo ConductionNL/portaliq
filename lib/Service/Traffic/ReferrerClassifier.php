@@ -185,6 +185,22 @@ class ReferrerClassifier {
 	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-derived-dimensions-must-be-computed-on-the-server-and-never-accepted-from-the-client
 	 */
 	public function channel(string $referrerHost, string $pageHost, array $campaign): string {
+		$byCampaign = $this->campaignChannel(campaign: $campaign);
+		if ($byCampaign !== null) {
+			return $byCampaign;
+		}
+
+		return $this->hostChannel(referrerHost: $referrerHost, pageHost: $pageHost);
+	}
+
+	/**
+	 * The channel the campaign fields name: e-mail, or any other campaign.
+	 *
+	 * @param array<string, string> $campaign The campaign fields, if any.
+	 *
+	 * @return string|null Null without campaign fields.
+	 */
+	private function campaignChannel(array $campaign): string|null {
 		$medium = strtolower($campaign['medium'] ?? '');
 		$source = strtolower($campaign['source'] ?? '');
 		if (in_array($medium, ['email', 'e-mail', 'newsletter'], true) === true || $source === 'email') {
@@ -195,6 +211,18 @@ class ReferrerClassifier {
 			return 'campaign';
 		}
 
+		return null;
+	}
+
+	/**
+	 * The channel the referrer's host gives: direct, internal, or an outside one.
+	 *
+	 * @param string $referrerHost The referrer's host, or ''.
+	 * @param string $pageHost     The page's own host, or ''.
+	 *
+	 * @return string
+	 */
+	private function hostChannel(string $referrerHost, string $pageHost): string {
 		if ($referrerHost === '') {
 			return 'direct';
 		}
@@ -203,6 +231,17 @@ class ReferrerClassifier {
 			return 'internal';
 		}
 
+		return $this->outsideChannel(referrerHost: $referrerHost);
+	}
+
+	/**
+	 * The channel of an outside referrer: organic search, social, or referral.
+	 *
+	 * @param string $referrerHost The referrer's host.
+	 *
+	 * @return string
+	 */
+	private function outsideChannel(string $referrerHost): string {
 		if ($this->matches(host: $referrerHost, suffixes: self::SEARCH_HOSTS) === true) {
 			return 'organic search';
 		}

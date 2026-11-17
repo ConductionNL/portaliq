@@ -30,14 +30,15 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
-use OCA\Portaliq\Service\UploadedFile;
+use OCA\Portaliq\Kernel\Contracts\CitizenDocumentUploadInterface;
+use OCA\Portaliq\Kernel\Support\UploadedFile;
 
 /**
  * Reads the citizen's upload and names it so it adds rather than replaces.
  *
  * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
-class CitizenDocumentUpload {
+class CitizenDocumentUpload implements CitizenDocumentUploadInterface {
 
 	/**
 	 * Read the multipart upload into a {name, content} pair, or null when
@@ -65,6 +66,24 @@ class CitizenDocumentUpload {
 	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	public function uniqueName(array $existing, string $fileName): string {
+		$taken = $this->takenNames(existing: $existing);
+		if (in_array($fileName, $taken, true) === false) {
+			return $fileName;
+		}
+
+		return $this->numberedName(fileName: $fileName, taken: $taken);
+	}//end uniqueName()
+
+	/**
+	 * The names the files already on the case use.
+	 *
+	 * @param array<int, array<string, mixed>> $existing The files already on the case.
+	 *
+	 * @return array<int, string>
+	 *
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	private function takenNames(array $existing): array {
 		$taken = [];
 		foreach ($existing as $file) {
 			$name = ($file['name'] ?? null);
@@ -73,10 +92,20 @@ class CitizenDocumentUpload {
 			}
 		}
 
-		if (in_array($fileName, $taken, true) === false) {
-			return $fileName;
-		}
+		return $taken;
+	}//end takenNames()
 
+	/**
+	 * The name with the first free `-N` before its extension, from 2.
+	 *
+	 * @param string             $fileName The sanitised upload name.
+	 * @param array<int, string> $taken    The names in use.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	private function numberedName(string $fileName, array $taken): string {
 		$extension = pathinfo($fileName, PATHINFO_EXTENSION);
 		$stem = pathinfo($fileName, PATHINFO_FILENAME);
 		$suffix = '';
@@ -90,5 +119,5 @@ class CitizenDocumentUpload {
 		}
 
 		return $stem . '-' . $counter . $suffix;
-	}//end uniqueName()
+	}//end numberedName()
 }//end class

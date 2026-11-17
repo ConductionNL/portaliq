@@ -184,3 +184,55 @@ test('both blocks are public widgets the host hands the portal, and the designer
 	assert.match(labels, /report: 'Misstand melden'/)
 	assert.match(labels, /reportThread: 'Uw melding met meldcode'/)
 })
+
+// REQ-IRP-003: the designer warns on a report page that is still counted. ----
+
+test('a report widget on a page outside the excluded paths is counted; one inside, or below one, is not', async () => {
+	const { reportPageIsCounted, isExcludedPath, holdsReportWidget } = await import('../src/editor/reportExclusion.js')
+	const report = [{ id: 'a', widgetKey: 'text' }, { id: 'b', widgetKey: 'report' }]
+	const thread = [{ id: 'c', widgetKey: 'reportThread' }]
+
+	assert.equal(reportPageIsCounted(report, '/meldpunt', []), true)
+	assert.equal(reportPageIsCounted(report, '/meldpunt', ['/nieuws']), true)
+	assert.equal(reportPageIsCounted(report, '/meldpunt/', ['meldpunt']), false, 'the collector normalises both sides')
+	assert.equal(reportPageIsCounted(thread, '/meldpunt/gesprek', ['/meldpunt']), false, 'a path below an excluded one is excluded')
+	assert.equal(reportPageIsCounted(thread, '/meldpuntje', ['/meldpunt']), true, 'a prefix is a path segment, not a string prefix')
+	assert.equal(reportPageIsCounted([{ widgetKey: 'text' }], '/meldpunt', []), false, 'a page without a report widget is not warned about')
+	assert.equal(reportPageIsCounted(report, '/meldpunt', null), false, 'an unreadable portal gives no warning')
+
+	assert.equal(isExcludedPath('', ['/']), true, 'an empty route is the root')
+	assert.equal(isExcludedPath('/x', [' ', 7, '']), false)
+	assert.equal(holdsReportWidget(null), false)
+})
+
+test('the excluded paths are read from the page\'s own portal, and an unreadable portal reads as unknown', async () => {
+	const { loadExcludedPaths } = await import('../src/editor/reportExclusion.js')
+	const calls = []
+	const get = async (url, config) => {
+		calls.push({ url, config })
+		return { data: { results: [{ slug: 'other', traffic: { excludedPaths: ['/no'] } }, { slug: 'zuid', traffic: { excludedPaths: ['/meldpunt', 3] } }] } }
+	}
+
+	assert.deepEqual(await loadExcludedPaths(get, '/portal-objects', 'zuid'), ['/meldpunt'])
+	assert.deepEqual(calls[0], { url: '/portal-objects', config: { params: { slug: 'zuid', _limit: 1 } } })
+	assert.deepEqual(
+		await loadExcludedPaths(async () => ({ data: { results: [{ slug: 'zuid', traffic: {} }] } }), '/p', 'zuid'),
+		[],
+		'a portal without the list excludes nothing, so the warning shows',
+	)
+	assert.equal(await loadExcludedPaths(get, '/p', ''), null)
+	assert.equal(await loadExcludedPaths(get, '/p', 'nowhere'), null)
+	assert.equal(await loadExcludedPaths(async () => { throw new Error('403') }, '/p', 'zuid'), null)
+})
+
+test('both editor hosts hand the portal\'s excluded paths to the one editor, which shows the warning', () => {
+	const editor = readFileSync('src/editor/PageGridEditor.vue', 'utf8')
+	assert.match(editor, /v-if="reportCounted"/)
+	assert.match(editor, /This page is not excluded from visitor statistics\. Add it before you publish\./)
+	assert.match(editor, /reportPageIsCounted\(/)
+	for (const host of ['src/views/PageLayoutDesigner.vue', 'src/editor/SiteEditMode.vue']) {
+		const source = readFileSync(host, 'utf8')
+		assert.match(source, /:excludedPaths="excludedPaths"/, host)
+		assert.match(source, /loadExcludedPaths\(/, host)
+	}
+})

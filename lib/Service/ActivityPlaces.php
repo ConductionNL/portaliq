@@ -28,12 +28,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\ActivityPlacesInterface;
+
 /**
  * Counts places, holders and the waiting list of one activity.
  *
  * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-term-long-activity-must-be-offered-with-places-set-by-capacity-and-supervision
  */
-class ActivityPlaces {
+class ActivityPlaces implements ActivityPlacesInterface {
 	/**
 	 * A sign-up with a place.
 	 */

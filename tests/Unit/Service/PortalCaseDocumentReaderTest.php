@@ -9,6 +9,7 @@ use OCA\Portaliq\Service\PortalCaseDocumentReader;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Portaliq\Contribution\TimelineProviderMethod;
 
 /**
  * The documents a case app publishes on one case, as its declared method
@@ -52,7 +53,7 @@ class PortalCaseDocumentReaderTest extends TestCase {
 		$locator = $this->createMock(PortalProviderLocator::class);
 		$locator->method('locate')->willReturnCallback(static fn (string $app): ?object => ($app === 'dossiq' ? $provider : null));
 
-		return new PortalCaseDocumentReader(locator: $locator, logger: $this->createMock(LoggerInterface::class));
+		return new PortalCaseDocumentReader(locator: $locator, logger: $this->createMock(LoggerInterface::class), timelineProviderMethod: new TimelineProviderMethod());
 	}//end reader()
 
 	/**

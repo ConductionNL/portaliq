@@ -34,6 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\ActivitySignupServiceInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 
 /**
@@ -41,36 +42,7 @@ use OCP\AppFramework\Utility\ITimeFactory;
  *
  * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-guardian-must-be-able-to-sign-up-one-of-their-own-children-with-a-waiting-list-when-full
  */
-class ActivitySignupService {
-	/**
-	 * Refusal: the activity is out of reach, or the child is not the guardian's (404).
-	 */
-	public const REASON_NOT_FOUND = 'not_found';
-
-	/**
-	 * Refusal: the activity is closed or its deadline passed (422).
-	 */
-	public const REASON_CLOSED = 'signup_closed';
-
-	/**
-	 * Refusal: no place and no waiting list (422).
-	 */
-	public const REASON_FULL = 'activity_full';
-
-	/**
-	 * Refusal: the child already has a sign-up that counts (409).
-	 */
-	public const REASON_DUPLICATE = 'already_signed_up';
-
-	/**
-	 * Refusal: the sign-ups could not be read or written, so no place can be promised (502).
-	 */
-	public const REASON_UNAVAILABLE = 'activity_unavailable';
-
-	/**
-	 * Refusal: the activity needs consent and the current consent text was not accepted (422).
-	 */
-	public const REASON_CONSENT_REQUIRED = 'consent_required';
+class ActivitySignupService implements ActivitySignupServiceInterface {
 
 	/**
 	 * Constructor.
@@ -144,6 +116,24 @@ class ActivitySignupService {
 			return self::REASON_NOT_FOUND;
 		}
 
+		$refusal = $this->openRefusal(activity: $activity, acceptedStatement: $acceptedStatement);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		return $this->placeFor(activity: $activity, childRef: $childRef);
+	}//end checkedSignup()
+
+	/**
+	 * Why the activity takes no sign-up from this guardian now: closed, or
+	 * consent not accepted; null when it does.
+	 *
+	 * @param array<string, mixed> $activity          The activity row.
+	 * @param string               $acceptedStatement The consent text the guardian agreed to.
+	 *
+	 * @return string|null A REASON_* constant, or null.
+	 */
+	private function openRefusal(array $activity, string $acceptedStatement): string|null {
 		if ($this->acceptsSignups(activity: $activity) === false) {
 			return self::REASON_CLOSED;
 		}
@@ -152,6 +142,20 @@ class ActivitySignupService {
 			return self::REASON_CONSENT_REQUIRED;
 		}
 
+		return null;
+	}//end openRefusal()
+
+	/**
+	 * The sign-up context with the status a new sign-up gets, or why there is
+	 * no place: sign-ups unreadable, already signed up, or full.
+	 *
+	 * @param array<string, mixed> $activity The activity row.
+	 * @param string               $childRef The child.
+	 *
+	 * @return array{activity: array<string, mixed>, signups: array<int, array<string, mixed>>, status: string}|string
+	 *         The context, or a REASON_* constant.
+	 */
+	private function placeFor(array $activity, string $childRef): array|string {
 		$signups = $this->signupsOf(activity: $activity);
 		if ($signups === null) {
 			return self::REASON_UNAVAILABLE;
@@ -167,7 +171,7 @@ class ActivitySignupService {
 		}
 
 		return ['activity' => $activity, 'signups' => $signups, 'status' => $status];
-	}//end checkedSignup()
+	}//end placeFor()
 
 	/**
 	 * Write a new sign-up with the status the checks decided.
@@ -249,6 +253,20 @@ class ActivitySignupService {
 			return self::REASON_NOT_FOUND;
 		}
 
+		return $this->withdrawSignup(activity: $activity, signup: $signup);
+	}//end withdraw()
+
+	/**
+	 * Mark the sign-up withdrawn; a freed confirmed place goes to the waiting list.
+	 *
+	 * @param array<string, mixed> $activity The activity row.
+	 * @param array<string, mixed> $signup   The child's sign-up that still counts.
+	 *
+	 * @return string|null A REASON_* constant, or null on success.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
+	 */
+	private function withdrawSignup(array $activity, array $signup): string|null {
 		$saved = $this->store->save(
 			schema: ActivityStore::SIGNUP,
 			data: array_merge($signup, ['status' => ActivityPlaces::WITHDRAWN, 'withdrawnAt' => $this->now()]),
@@ -263,7 +281,7 @@ class ActivitySignupService {
 		}
 
 		return null;
-	}//end withdraw()
+	}//end withdrawSignup()
 
 	/**
 	 * Confirm waitlisted children, longest waiting first, until the places

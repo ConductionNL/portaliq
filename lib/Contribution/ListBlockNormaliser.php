@@ -41,7 +41,7 @@ class ListBlockNormaliser {
 	 * The blocks that read one open record through a provider of the same
 	 * name on its collection.
 	 */
-	public const RECORD_BLOCKS = ['steps', 'documents', 'timeline'];
+	public const RECORD_BLOCKS = ['steps', 'documents', 'timeline', 'messages'];
 
 	/**
 	 * The most rows a list block may ask for.
@@ -75,6 +75,25 @@ class ListBlockNormaliser {
 
 		$entry = ['type' => 'tasks', 'collection' => $collection['id']];
 
+		[$entry, $collection] = $this->scopedEntry(block: $block, entry: $entry, collection: $collection, collections: $collections);
+		$entry = $this->withTaskFields(block: $block, entry: $entry, collection: $collection);
+
+		// The highlight card (site-school-blocks).
+		return $entry + $this->common(block: $block) + (new SchoolBlockKeys())->tasksKeys(block: $block, collection: $collection)
+			+ (new BoardKeys())->tasksKeys(block: $block);
+	}//end tasksBlock()
+
+	/**
+	 * The entry with the record scope, the lookups and `excludeWhen`, and the collection with the looked-up fields.
+	 *
+	 * @param array<string, mixed>             $block       The declared block.
+	 * @param array<string, mixed>             $entry       The entry so far.
+	 * @param array<string, mixed>             $collection  The block's collection.
+	 * @param array<int, array<string, mixed>> $collections The contribution's sanitised collections.
+	 *
+	 * @return array{0: array<string, mixed>, 1: array<string, mixed>}
+	 */
+	private function scopedEntry(array $block, array $entry, array $collection, array $collections): array {
 		// The record scope and lookups a collection block takes, plus
 		// excludeWhen over a declared lookup (REQ-SMO-025). First, so a
 		// looked-up value may name a task (lookup-by-row-field).
@@ -84,6 +103,19 @@ class ListBlockNormaliser {
 		$entry += $this->excludeWhen(declared: ($block['excludeWhen'] ?? null), lookups: ($entry['lookups'] ?? []));
 		$collection = ($scopes->withLookupFields(collection: $collection, entry: $entry) ?? $collection);
 
+		return [$entry, $collection];
+	}//end scopedEntry()
+
+	/**
+	 * The entry with the due field, the title fields and the title template the collection projects.
+	 *
+	 * @param array<string, mixed> $block      The declared block.
+	 * @param array<string, mixed> $entry      The entry so far.
+	 * @param array<string, mixed> $collection The block's collection, with its looked-up fields.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withTaskFields(array $block, array $entry, array $collection): array {
 		$due = ($block['dueField'] ?? null);
 		if (is_string($due) === true && (new CollectionProjection())->projects(collection: $collection, field: $due) === true) {
 			$entry['dueField'] = $due;
@@ -96,10 +128,8 @@ class ListBlockNormaliser {
 
 		$entry += (new TaskTitleTemplate())->keys(declared: ($block['titleTemplate'] ?? null), collection: $collection);
 
-		// The highlight card (site-school-blocks).
-		return $entry + $this->common(block: $block) + (new SchoolBlockKeys())->tasksKeys(block: $block, collection: $collection)
-			+ (new BoardKeys())->tasksKeys(block: $block);
-	}//end tasksBlock()
+		return $entry;
+	}//end withTaskFields()
 
 	/**
 	 * A tasks block's `excludeWhen: {lookup, in}`, kept only when it names a

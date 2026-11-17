@@ -26,6 +26,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Kernel\Contracts\IntakeQueueDrainInterface;
+
 /**
  * Drains `queued` and `failed` queue entries into their destinations.
  *
@@ -36,7 +38,7 @@ namespace OCA\Portaliq\Service\Intake;
  *
  * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#4.1
  */
-class IntakeQueueDrain {
+class IntakeQueueDrain implements IntakeQueueDrainInterface {
 	/**
 	 * Constructor.
 	 *
@@ -185,8 +187,32 @@ class IntakeQueueDrain {
 			'decisions' => (array)($entry['decisions'] ?? []),
 			'verifiedEmails' => (array)($entry['verifiedEmails'] ?? []),
 			'fieldMeta' => (new DestinationMapping())->fieldMeta(computed: (array)($entry['computed'] ?? [])),
-		];
+		] + $this->cosignValues(entry: $entry);
 	}//end serverValues()
+
+	/**
+	 * The co-signature a released submission carries to its destination: who, when, at what assurance.
+	 *
+	 * @param array<string, mixed> $entry The submission.
+	 *
+	 * @return array<string, array<string, string>>
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 */
+	private function cosignValues(array $entry): array {
+		$cosign = $entry['cosign'] ?? null;
+		if (is_array($cosign) === false || ($cosign['state'] ?? '') !== PortalCosign::SIGNED) {
+			return [];
+		}
+
+		return [
+			'cosign' => [
+				'cosignerSubject' => (string)($cosign['cosignerSubject'] ?? ''),
+				'signedAt' => (string)($cosign['signedAt'] ?? ''),
+				'levelOfAssurance' => (string)($cosign['levelOfAssurance'] ?? ''),
+			],
+		];
+	}//end cosignValues()
 
 	/**
 	 * Why the destination refused: its message, and its errors when it named any.

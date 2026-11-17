@@ -34,6 +34,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Reports;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\ReportIntakeServiceInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\Security\ISecureRandom;
 
@@ -42,7 +43,7 @@ use OCP\Security\ISecureRandom;
  *
  * @spec openspec/specs/report-without-an-account/spec.md
  */
-class ReportIntakeService {
+class ReportIntakeService implements ReportIntakeServiceInterface {
 	/**
 	 * The register the report lives in.
 	 */
@@ -292,14 +293,7 @@ class ReportIntakeService {
 	 * @return string The contact record's id, or '' when they gave nothing.
 	 */
 	private function storeContact(string $reportId, array $contact): string {
-		$values = [];
-		foreach (self::CONTACT_FIELDS as $field) {
-			$value = trim((string)($contact[$field] ?? ''));
-			if ($value !== '') {
-				$values[$field] = $value;
-			}
-		}
-
+		$values = $this->contactValues(contact: $contact);
 		if ($values === [] || $reportId === '') {
 			return '';
 		}
@@ -318,4 +312,23 @@ class ReportIntakeService {
 
 		return ReportRowId::of(row: $created);
 	}//end storeContact()
+
+	/**
+	 * The contact fields they filled, trimmed.
+	 *
+	 * @param array<string, mixed> $contact What they gave.
+	 *
+	 * @return array<string, string>
+	 */
+	private function contactValues(array $contact): array {
+		$values = [];
+		foreach (self::CONTACT_FIELDS as $field) {
+			$value = trim((string)($contact[$field] ?? ''));
+			if ($value !== '') {
+				$values[$field] = $value;
+			}
+		}
+
+		return $values;
+	}//end contactValues()
 }//end class

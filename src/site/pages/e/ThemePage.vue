@@ -5,8 +5,8 @@
 
 <!--
 	One life domain of the resident (life-domain-theme-pages, board
-	ThemaOverzicht): what to arrange (open tasks), what can be arranged
-	(actions, by rules on the products held) and the products held, with their
+	ThemaOverzicht): what to arrange (open tasks), the running cases, what can
+	be arranged (actions, by rules on the products held) and the products held, with their
 	validity and an update action per row. The shell shows the heading; this
 	page shows the intro and the blocks. Everything is gathered from the
 	contributions tagged with the theme and read through their scoped reads.
@@ -67,6 +67,32 @@
 					data-testid="theme-all-tasks"
 					@click="navigate('__tasks__')">
 					{{ t('View all tasks ({count})', { count: tasks.length }) }}
+				</button>
+			</section>
+
+			<section
+				v-if="cases.length > 0 && !allProducts"
+				aria-labelledby="pq-theme-cases"
+				data-testid="theme-cases">
+				<h2 id="pq-theme-cases" class="utrecht-heading-2">
+					{{ t('My cases') }}
+				</h2>
+				<ul class="utrecht-unordered-list pq-theme__list">
+					<li
+						v-for="item in cases"
+						:key="item.key"
+						class="utrecht-unordered-list__item"
+						data-testid="theme-case">
+						<strong>{{ item.title }}</strong>
+						<span v-if="item.status">{{ item.status }}</span>
+					</li>
+				</ul>
+				<button
+					type="button"
+					class="utrecht-link utrecht-link--button pq-theme__link"
+					data-testid="theme-all-cases"
+					@click="navigate('__cases__')">
+					{{ t('View all my cases') }}
 				</button>
 			</section>
 
@@ -184,6 +210,7 @@ import {
 	PRODUCT_LIMIT,
 	productView,
 	rowActions,
+	runningCases,
 	sortedProducts,
 } from './themes.js'
 
@@ -304,6 +331,21 @@ export default {
 		},
 
 		/**
+		 * @return {Array<{key: string, id: string, title: string, status: string}>} The running cases of the theme's cases collections.
+		 * @spec openspec/changes/life-domain-theme-pages/tasks.md#t10
+		 */
+		cases() {
+			return this.gathered.cases.flatMap((entry) =>
+				runningCases(this.rows[this.keyOf(entry)], entry.collection).map(
+					(item, index) => ({
+						...item,
+						key: `${this.keyOf(entry)}:${item.id || index}`,
+					}),
+				),
+			)
+		},
+
+		/**
 		 * @return {Array<object>} The actions to offer: a `when` must hold for a product held.
 		 * @spec openspec/changes/life-domain-theme-pages/tasks.md#t06
 		 */
@@ -322,6 +364,7 @@ export default {
 			}
 			return (
 				this.tasks.length === 0
+				&& this.cases.length === 0
 				&& this.offered.length === 0
 				&& this.products.length === 0
 			)
@@ -362,7 +405,11 @@ export default {
 		 * @spec openspec/changes/life-domain-theme-pages/tasks.md#t03
 		 */
 		async load() {
-			const wanted = [...this.gathered.tasks, ...this.gathered.products]
+			const wanted = [
+				...this.gathered.tasks,
+				...this.gathered.cases,
+				...this.gathered.products,
+			]
 			const rows = {}
 			await Promise.all(
 				wanted.map(async (entry) => {

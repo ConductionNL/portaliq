@@ -54,6 +54,24 @@
 							class="utrecht-paragraph pq-intake-catalogue__summary">
 							{{ entry.summary }}
 						</p>
+						<p
+							v-if="costLine(entry, locale)"
+							class="utrecht-paragraph pq-intake-catalogue__cost"
+							data-testid="intake-entry-cost">
+							{{ costLine(entry, locale) }}
+						</p>
+						<ul
+							v-if="entryConditions(entry).length"
+							class="utrecht-unordered-list pq-intake-catalogue__conditions"
+							:aria-label="words.conditions"
+							data-testid="intake-entry-conditions">
+							<li
+								v-for="line in entryConditions(entry)"
+								:key="line"
+								class="utrecht-unordered-list__item">
+								{{ line }}
+							</li>
+						</ul>
 					</li>
 				</ul>
 			</section>
@@ -66,6 +84,7 @@ import { authBaseFrom } from '../lib/authApi.js'
 import { resolveApiBase, runtimeConfig } from '../lib/contentApi.js'
 import { fetchCatalogue, formRouteFor } from '../lib/intakeApi.js'
 import { addressOfRoute } from '../lib/siteAddress.js'
+import { catalogueWords, costLine, entryConditions } from './catalogueCosts.js'
 
 /**
  * The requests a visitor can start, by topic, as the published catalogue
@@ -131,7 +150,24 @@ export default {
 			topics: [],
 			loading: true,
 			failed: false,
+			locale:
+				typeof document === 'undefined'
+					? 'nl'
+					: document.documentElement?.lang || 'nl',
 		}
+	},
+
+	computed: {
+		/**
+		 * The block's own words in the page language.
+		 *
+		 * @return {{cost: string, conditions: string}} The words.
+		 *
+		 * @spec openspec/changes/catalogue-entry-shows-costs-and-conditions/specs/portal-intake-form/spec.md#requirement-a-catalogue-entry-shows-what-it-costs-and-what-it-asks-of-you-req-csc-001
+		 */
+		words() {
+			return catalogueWords(this.locale)
+		},
 	},
 
 	/**
@@ -155,6 +191,9 @@ export default {
 	},
 
 	methods: {
+		costLine,
+		entryConditions,
+
 		/**
 		 * A real href for an entry, so a new tab and a failed bundle still work.
 		 *
@@ -192,7 +231,9 @@ export default {
 	margin-block-start: var(--utrecht-space-block-lg, 1.5rem);
 }
 
-.pq-intake-catalogue__summary {
+.pq-intake-catalogue__summary,
+.pq-intake-catalogue__cost,
+.pq-intake-catalogue__conditions {
 	margin-block-start: var(--utrecht-space-block-xs, 0.25rem);
 }
 </style>

@@ -29,13 +29,14 @@ namespace OCA\Portaliq\Service\Identity;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\ContactAddressValuesInterface;
 
 /**
  * The values around a person's own addresses.
  *
  * @spec openspec/changes/archive/2026-09-30-identity-profile-page/specs/portal-profile/spec.md
  */
-class ContactAddressValues {
+class ContactAddressValues implements ContactAddressValuesInterface {
 	/**
 	 * The ways the organisation may contact the person (REQ-IPP-004).
 	 */
@@ -62,17 +63,55 @@ class ContactAddressValues {
 	public function normalise(string $kind, string $value): ?string {
 		$value = trim($value);
 		if ($kind === 'email') {
-			if (filter_var($value, FILTER_VALIDATE_EMAIL) === false) {
-				return null;
-			}
-
-			return $value;
+			return $this->email(value: $value);
 		}
 
 		if ($kind !== 'phone' || preg_match('/^[0-9+()\s.\-]+$/', $value) !== 1) {
 			return null;
 		}
 
+		return $this->phone(value: $value);
+	}//end normalise()
+
+	/**
+	 * The e-mail address, or null when it is not one.
+	 *
+	 * @param string $value The trimmed address.
+	 *
+	 * @return string|null
+	 */
+	private function email(string $value): string|null {
+		if (filter_var($value, FILTER_VALIDATE_EMAIL) === false) {
+			return null;
+		}
+
+		return $value;
+	}//end email()
+
+	/**
+	 * The phone number in international form, or null when it is no number.
+	 *
+	 * @param string $value The trimmed number, of digits, `+`, brackets, spaces, dots and dashes.
+	 *
+	 * @return string|null
+	 */
+	private function phone(string $value): string|null {
+		$digits = $this->phoneDigits(value: $value);
+		if (preg_match('/^\+?[0-9]{6,15}$/', $digits) !== 1) {
+			return null;
+		}
+
+		return $digits;
+	}//end phone()
+
+	/**
+	 * The number's digits, with a `00` or Dutch `0` prefix made international.
+	 *
+	 * @param string $value The trimmed number.
+	 *
+	 * @return string
+	 */
+	private function phoneDigits(string $value): string {
 		$digits = (string)preg_replace('/[^0-9+]/', '', $value);
 		if (str_starts_with($digits, '00') === true) {
 			$digits = '+' . substr($digits, 2);
@@ -82,12 +121,8 @@ class ContactAddressValues {
 			$digits = '+31' . substr($digits, 1);
 		}
 
-		if (preg_match('/^\+?[0-9]{6,15}$/', $digits) !== 1) {
-			return null;
-		}
-
 		return $digits;
-	}//end normalise()
+	}//end phoneDigits()
 
 	/**
 	 * The fields that park an e-mail address until its link is followed.

@@ -42,7 +42,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Kernel\Contracts\NewsAudienceOptionsInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -51,8 +52,10 @@ use Throwable;
  * Resolves the school and group choices for a news item's audience.
  *
  * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T2
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
-class NewsAudienceOptions {
+class NewsAudienceOptions implements NewsAudienceOptionsInterface {
 	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
 
@@ -71,12 +74,12 @@ class NewsAudienceOptions {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalContributionRegistry $registry The contributions for the parent audience.
+	 * @param PortalContributionRegistryInterface $registry The contributions for the parent audience.
 	 * @param ContainerInterface $container For resolving OpenRegister services.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
-		private readonly PortalContributionRegistry $registry,
+		private readonly PortalContributionRegistryInterface $registry,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 	) {
@@ -223,6 +226,24 @@ class NewsAudienceOptions {
 			return null;
 		}
 
+		$entity = $this->schemaEntity(objectService: $objectService, register: $register, schema: $schema);
+		if ($entity === null) {
+			return null;
+		}
+
+		return $this->referencedSlug(entity: $entity, field: $field);
+	}//end referencedSchema()
+
+	/**
+	 * The schema entity, or null when it cannot be read or lists no properties.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $register      The register slug.
+	 * @param string $schema        The schema slug.
+	 *
+	 * @return object|null
+	 */
+	private function schemaEntity(object $objectService, string $register, string $schema): object|null {
 		// An OpenRegister without getCurrentSchemaEntity() throws an Error,
 		// caught below like any other failed lookup.
 		try {
@@ -238,6 +259,18 @@ class NewsAudienceOptions {
 			return null;
 		}
 
+		return $entity;
+	}//end schemaEntity()
+
+	/**
+	 * The slug of the schema a field's `$ref` names, or null when it names none.
+	 *
+	 * @param object $entity The schema entity.
+	 * @param string $field  The field.
+	 *
+	 * @return string|null
+	 */
+	private function referencedSlug(object $entity, string $field): string|null {
 		$properties = $entity->getProperties();
 		$ref = ($properties[$field]['$ref'] ?? null);
 		if (is_string($ref) === false || $ref === '') {
@@ -246,7 +279,7 @@ class NewsAudienceOptions {
 
 		$name = basename(str_replace('#/components/schemas/', '', $ref));
 		return strtolower((string)preg_replace('/(?<=[a-z0-9])(?=[A-Z])/', '-', $name));
-	}//end referencedSchema()
+	}//end referencedSlug()
 
 	/**
 	 * The `{id, label}` options of one source, read as the signed-in user.

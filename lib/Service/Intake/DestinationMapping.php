@@ -27,6 +27,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Kernel\Contracts\DestinationMappingInterface;
+
 /**
  * Builds a binding's mapping onto its destination.
  *
@@ -35,20 +37,16 @@ namespace OCA\Portaliq\Service\Intake;
  * binding's configuration.
  *
  * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
-class DestinationMapping {
+class DestinationMapping implements DestinationMappingInterface {
 	/**
 	 * The campaign fields a landing-page form always whitelists. They travel only
 	 * to a destination that declares them: another destination would refuse each
 	 * as a property it does not have, and the whole submission with it.
 	 */
 	public const TRACKING_FIELDS = ['utmFirstTouch', 'utmLastTouch', 'referrer'];
-
-	/**
-	 * What a binding check puts in the subject property, standing in for the
-	 * subject reference only a submit knows.
-	 */
-	public const SUBJECT_PLACEHOLDER = 'subject';
 
 	/**
 	 * The key a finding without a field of its own is filed under.
@@ -135,6 +133,30 @@ class DestinationMapping {
 		$destination = (array)($binding['destination'] ?? []);
 		$properties  = (array)($schema['properties'] ?? []);
 
+		$fixed = $this->fixedValues(binding: $binding, properties: $properties, subjectRef: $subjectRef, server: $server);
+
+		$fields = $this->destinationFields(fields: $fields, properties: $properties);
+
+		return ['fields' => $this->fieldsOf(fields: $fields, renames: (array)($destination['fields'] ?? [])), 'fixed' => $fixed];
+	}//end mappingFor()
+
+	/**
+	 * The values the server sets on the destination: the declared server
+	 * values, the type id, the subject reference and the binding's
+	 * `destination.fixed` values, later ones winning.
+	 *
+	 * @param array<string, mixed> $binding    The binding.
+	 * @param array<string, mixed> $properties The destination schema's properties.
+	 * @param string               $subjectRef The subject reference, or '' when anonymous.
+	 * @param array<string, mixed> $server     Values the server knows, by name.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-submission-is-validated-against-its-destinations-schema-before-anything-is-stored-req-pifo-004
+	 */
+	private function fixedValues(array $binding, array $properties, string $subjectRef, array $server): array {
+		$destination = (array)($binding['destination'] ?? []);
+
 		$fixed = $this->declaredOnly(values: $server, properties: $properties);
 
 		$typeProperty = $this->typeProperty(binding: $binding, properties: $properties);
@@ -151,7 +173,21 @@ class DestinationMapping {
 			$fixed[(string)$property] = $value;
 		}
 
-		$fields = array_values(
+		return $fixed;
+	}//end fixedValues()
+
+	/**
+	 * The form's fields without the tracking fields the destination does not declare.
+	 *
+	 * @param array<int, mixed>    $fields     The form's fields.
+	 * @param array<string, mixed> $properties The destination schema's properties.
+	 *
+	 * @return array<int, mixed>
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-submission-is-validated-against-its-destinations-schema-before-anything-is-stored-req-pifo-004
+	 */
+	private function destinationFields(array $fields, array $properties): array {
+		return array_values(
 			array_filter(
 				$fields,
 				static fn (mixed $field): bool => is_array($field) === false
@@ -160,9 +196,7 @@ class DestinationMapping {
 					|| array_key_exists((string)$field['name'], $properties) === true
 			)
 		);
-
-		return ['fields' => $this->fieldsOf(fields: $fields, renames: (array)($destination['fields'] ?? [])), 'fixed' => $fixed];
-	}//end mappingFor()
+	}//end destinationFields()
 
 	/**
 	 * `fieldMeta` marking each field the portal worked out or a decision

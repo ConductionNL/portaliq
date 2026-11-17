@@ -37,6 +37,7 @@ use OCP\Security\RateLimiting\ILimiter;
 use OCP\Security\RateLimiting\IRateLimitExceededException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Service\RequestedPortal;
 
 /**
  * The request endpoint, the link page's describe call and the redeem.
@@ -468,7 +469,8 @@ class EmailLinkControllerTest extends TestCase {
 			$cacheFactory,
 			$sessions,
 			$mailer,
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(LoggerInterface::class),
+			new RequestedPortal()
 		);
 	}//end controller()
 }//end class

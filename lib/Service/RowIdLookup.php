@@ -24,6 +24,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\RowIdLookupInterface;
+
 /**
  * The first non-empty string or integer id of a row, in one of two orders:
  * uuid first (the flat `uuid`, the flat `id`, then `@self.uuid` and
@@ -32,7 +34,7 @@ namespace OCA\Portaliq\Service;
  *
  * @spec exclude Shared row helper; the @spec of each calling method covers the behaviour it reads for.
  */
-final class RowIdLookup {
+final class RowIdLookup implements RowIdLookupInterface {
 	/**
 	 * Extract a row's identifier (`id`/`uuid`, flat or in `@self`), or null.
 	 *

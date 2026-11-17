@@ -24,8 +24,15 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Kernel\Contracts\PortalSubmissionChecksInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
+use OCA\Portaliq\Kernel\Contracts\PortalFormValidatorInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFamilyMembersInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalEmailVerificationInterface;
+use OCA\Portaliq\Kernel\Contracts\FormStatementsInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFormCalculatorInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFormDecisionInterface;
 
 /**
  * The checks between a validated form and a recorded submission: validation,
@@ -33,24 +40,24 @@ use OCP\AppFramework\Http\JSONResponse;
  *
  * @spec openspec/specs/portal-intake-form/spec.md
  */
-class PortalSubmissionChecks {
+class PortalSubmissionChecks implements PortalSubmissionChecksInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalFormValidator $validator Validates a submission.
-	 * @param PortalFamilyMembers|null $family Lists and re-checks the resident's family from the BRP.
-	 * @param FormStatements|null $statements Resolves and checks the statements a form asks.
-	 * @param PortalFormCalculator|null $calculator Works out the form's calculated fields again on submit.
-	 * @param PortalFormDecision|null $decision Asks the rule engine for the decisions a form's steps declare.
-	 * @param PortalEmailVerification|null $emailVerification Checks the proof that an e-mail address was verified.
+	 * @param PortalFormValidatorInterface $validator Validates a submission.
+	 * @param PortalFamilyMembersInterface|null $family Lists and re-checks the resident's family from the BRP.
+	 * @param FormStatementsInterface|null $statements Resolves and checks the statements a form asks.
+	 * @param PortalFormCalculatorInterface|null $calculator Works out the form's calculated fields again on submit.
+	 * @param PortalFormDecisionInterface|null $decision Asks the rule engine for the decisions a form's steps declare.
+	 * @param PortalEmailVerificationInterface|null $emailVerification Checks the proof that an e-mail address was verified.
 	 */
 	public function __construct(
-		private readonly PortalFormValidator $validator,
-		private readonly ?PortalFamilyMembers $family = null,
-		private readonly ?FormStatements $statements = null,
-		private readonly ?PortalFormCalculator $calculator = null,
-		private readonly ?PortalFormDecision $decision = null,
-		private readonly ?PortalEmailVerification $emailVerification = null,
+		private readonly PortalFormValidatorInterface $validator,
+		private readonly ?PortalFamilyMembersInterface $family = null,
+		private readonly ?FormStatementsInterface $statements = null,
+		private readonly ?PortalFormCalculatorInterface $calculator = null,
+		private readonly ?PortalFormDecisionInterface $decision = null,
+		private readonly ?PortalEmailVerificationInterface $emailVerification = null,
 	) {
 	}//end __construct()
 
@@ -84,6 +91,33 @@ class PortalSubmissionChecks {
 		array $statements,
 		array $verifiedEmails
 	): array|JSONResponse {
+		$validated = $this->checkedAnswers(render: $render, answers: $answers, subject: $subject);
+		if ($validated instanceof JSONResponse) {
+			return $validated;
+		}
+
+		// An address the form asks to verify is refused without the proof of its code
+		// (resident-identity-in-forms REQ-RIF-002).
+		$unverified = $this->unverifiedEmails(render: $render, answers: $validated, proofs: $verifiedEmails, site: $site, route: $route);
+		if ($unverified !== []) {
+			return new JSONResponse(['errors' => $unverified], Http::STATUS_BAD_REQUEST);
+		}
+
+		return $this->workedSubmission(render: $render, site: $site, answers: $validated, statements: $statements);
+	}//end prepare()
+
+	/**
+	 * The validated answers, or the refusal when a field or a chosen family member fails.
+	 *
+	 * @param array<string, mixed>      $render  What render() returned for the form.
+	 * @param array<string, mixed>      $answers What the citizen answered.
+	 * @param array<string, mixed>|null $subject The session's subject.
+	 *
+	 * @return array<string, mixed>|JSONResponse
+	 *
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 */
+	private function checkedAnswers(array $render, array $answers, array|null $subject): array|JSONResponse {
 		// Validation happens here, before anything is recorded and long before
 		// any case app is called: an invalid submission never reaches one.
 		$validated = $this->validator->validate(fields: (array)($render['fields'] ?? []), answers: $answers);
@@ -99,17 +133,27 @@ class PortalSubmissionChecks {
 			return new JSONResponse(['errors' => $familyErrors], Http::STATUS_BAD_REQUEST);
 		}
 
-		// An address the form asks to verify is refused without the proof of its code
-		// (resident-identity-in-forms REQ-RIF-002).
-		$unverified = $this->unverifiedEmails(render: $render, answers: $validated['answers'], proofs: $verifiedEmails, site: $site, route: $route);
-		if ($unverified !== []) {
-			return new JSONResponse(['errors' => $unverified], Http::STATUS_BAD_REQUEST);
-		}
+		return $validated['answers'];
+	}//end checkedAnswers()
 
+	/**
+	 * The answers with their calculated values and decisions worked out again,
+	 * and the checked statements, or the refusal.
+	 *
+	 * @param array<string, mixed> $render     What render() returned for the form.
+	 * @param array<string, mixed> $site       The resolved portal.
+	 * @param array<string, mixed> $answers    The validated answers.
+	 * @param array<int, string>   $statements The keys of the statements the citizen ticked.
+	 *
+	 * @return array<string, mixed>|JSONResponse
+	 *
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 */
+	private function workedSubmission(array $render, array $site, array $answers, array $statements): array|JSONResponse {
 		// A calculated value is worked out again here and a decision is asked of the
 		// rule engine again, whatever the browser sent (form-flow-repeating-groups-
 		// calculations-and-decisions REQ-FFL-002, REQ-FFL-003).
-		$worked = $this->decisions()->workedOut(render: $render, answers: $validated['answers']);
+		$worked = $this->decisions()->workedOut(render: $render, answers: $answers);
 		if ($worked === null) {
 			return new JSONResponse(['error' => 'decision_unavailable'], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
@@ -119,6 +163,21 @@ class PortalSubmissionChecks {
 			return $checked;
 		}
 
+		return $this->submissionRecord(render: $render, worked: $worked, checked: $checked);
+	}//end workedSubmission()
+
+	/**
+	 * The checked submission: answers, what was worked out, statements and verified addresses.
+	 *
+	 * @param array<string, mixed>              $render  What render() returned for the form.
+	 * @param array<string, mixed>              $worked  The worked-out answers, computed fields and decisions.
+	 * @param array<int, array<string, string>> $checked The checked statements.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 */
+	private function submissionRecord(array $render, array $worked, array $checked): array {
 		return [
 			'answers' => $worked['answers'],
 			'computed' => $worked['computed'],
@@ -126,7 +185,7 @@ class PortalSubmissionChecks {
 			'statements' => $checked,
 			'verified' => $this->verifiedRecord(render: $render, answers: $worked['answers']),
 		];
-	}//end prepare()
+	}//end submissionRecord()
 
 	/**
 	 * Decide one step at the step change: ask the rule engine on the server.

@@ -27,11 +27,11 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\ExampleResident\ExampleResidentSignIn;
-use OCA\Portaliq\Service\Identity\PortalAccountLookup;
-use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\ExampleResidentSignInInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalAccountLookupInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -55,21 +55,21 @@ class ExampleResidentController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest              $request      The request object.
-	 * @param PortalSessionService  $session      Mints the portal session.
-	 * @param PortalAccountLookup   $accounts     Finds the resident's `portalAccount`.
+	 * @param PortalSessionServiceInterface  $session      Mints the portal session.
+	 * @param PortalAccountLookupInterface   $accounts     Finds the resident's `portalAccount`.
 	 * @param IURLGenerator         $urlGenerator Builds the final SPA redirect.
-	 * @param PortalResolver        $portals      Resolves the portal being signed in to.
-	 * @param ExampleResidentSignIn $signIns      The demo switch and the installed resident of a portal.
+	 * @param PortalResolverInterface        $portals      Resolves the portal being signed in to.
+	 * @param ExampleResidentSignInInterface $signIns      The demo switch and the installed resident of a portal.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
-		private readonly PortalAccountLookup $accounts,
+		private readonly PortalSessionServiceInterface $session,
+		private readonly PortalAccountLookupInterface $accounts,
 		private readonly IURLGenerator $urlGenerator,
-		private readonly PortalResolver $portals,
-		private readonly ExampleResidentSignIn $signIns,
+		private readonly PortalResolverInterface $portals,
+		private readonly ExampleResidentSignInInterface $signIns,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

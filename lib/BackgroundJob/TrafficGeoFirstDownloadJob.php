@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\BackgroundJob;
 
-use OCA\Portaliq\Service\Traffic\Geo\GeoRefreshService;
+use OCA\Portaliq\Kernel\Contracts\GeoRefreshServiceInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\QueuedJob;
 use Psr\Log\LoggerInterface;
@@ -45,14 +45,14 @@ class TrafficGeoFirstDownloadJob extends QueuedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory      $time    Testable clock (job base class).
-	 * @param GeoRefreshService $refresh Does the work.
+	 * @param GeoRefreshServiceInterface $refresh Does the work.
 	 * @param LoggerInterface   $logger  The logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly GeoRefreshService $refresh,
+		private readonly GeoRefreshServiceInterface $refresh,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(time: $time);
