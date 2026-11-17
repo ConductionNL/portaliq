@@ -16,4 +16,5 @@
 - [x] **T08**: Reply form and action button on the page when declared, reusing `InboxReply` and `actionOf()` (REQ-ROM-006)
 - [x] **T09**: Strings in `src/site/pages/inbox/strings.js` and `l10n/` (en, nl): "Terug naar berichten", "Ontvangen op {date} om {time}", "Over dit bericht", "Bijlagen", "Naar uw zaak", "Gelezen", "Dit bericht bestaat niet of is niet voor u."
 - [ ] **T10**: Playwright on the example resident: Sanne opens the Woo decision from Berichten, sees "Gelezen" and both attachments, follows "Naar uw zaak"; a foreign id shows the not-found text (REQ-ROM-001 to REQ-ROM-005)
+  - Spec written: `tests/e2e/site-message-page.spec.ts` (seeds its own contribution, case, message with two files and a foreign message). Not ticked: not yet run against a live instance with dev-login.
 - [ ] **T11**: Add the BerichtDetail row to the PT measurement set once the page is live, and pixel-compare it with the board
