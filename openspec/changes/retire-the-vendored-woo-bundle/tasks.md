@@ -61,6 +61,7 @@
   - This task is the gate on Task 6; the deletion does not land while it is unticked
 - [ ] Implement
 - [ ] Test
+  - Spec written: `tests/e2e/woo-parity.spec.ts` walks `open-publicaties` anonymously (home, `/onderwerpen`, `/zoeken`, a publication opened from a search result, and an unknown publication id), and fails with what is missing when the portal, a page or the publications are absent. It records the number of publications the search showed as a test annotation. Left unticked until it has run against a live instance with a filled publication register.
 
 ### Task 6: Delete the bundle, the controller and the routes
 - **spec_ref**: `openspec/changes/retire-the-vendored-woo-bundle/specs/portaliq-cms/spec.md#requirement-the-vendored-bundle-must-leave-the-repository`
