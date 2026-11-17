@@ -542,12 +542,6 @@ import IdleWarningDialog from './components/IdleWarningDialog.vue'
 import MarkdownBlock from './components/MarkdownBlock.vue'
 import PageArticleBlock from './components/PageArticleBlock.vue'
 import WidgetGrid from './components/WidgetGrid.vue'
-import {
-	codeOutcome,
-	forgetClaimSecret,
-	keepClaimSecret,
-	redeemKeptClaim,
-} from '../shared/claimInvitation.js'
 import { createTranslator } from '../shared/i18n/index.js'
 import { logoutTarget, silentSignInUrl } from '../shared/idleSession.js'
 import { noticesFor } from '../shared/notices.js'
@@ -598,7 +592,7 @@ import {
 	fetchSite,
 	resolveApiBase,
 } from './lib/contentApi.js'
-import { isCosignRoute } from './lib/cosign.js'
+import { isCosignRoute } from './lib/cosignRoute.js'
 import { crumbLabel, signInCrumbs } from './lib/crumbWords.js'
 import { documentRouteOf } from './lib/documentRoute.js'
 import { editorBaseFrom, fetchEditingContext } from './lib/editorApi.js'
@@ -642,7 +636,7 @@ import { menuRouteOf, subjectCrumbs, subjectOf } from './lib/subjectTrail.js'
 import { hasWayInLink, waysInFrom, waysInTranslator } from './lib/waysIn.js'
 import { openRecordEntry } from './pages/collections/index.js'
 import { confirmEmailFromLink, contactPromptWanted } from './pages/e/index.js'
-import { themeCaseCounts } from './pages/e/themes.js'
+import { themeCaseCounts } from './pages/e/themeCases.js'
 import { TASK_STORAGE_KEY } from './pages/inbox/taskStorage.js'
 
 /**
@@ -658,6 +652,12 @@ import { TASK_STORAGE_KEY } from './pages/inbox/taskStorage.js'
  * It is imported only once the probe has said this session may edit, so a
  * reader never downloads it at all.
  */
+/**
+ * Where claimInvitation.js keeps an invitation's secret (its CLAIM_STORAGE_KEY).
+ * The shell reads it to load that module only when a claim was kept.
+ */
+const CLAIM_STORAGE_KEY = 'portaliq.claimInvitation'
+
 const NotFoundPage = defineAsyncComponent(
 	() => import('./components/NotFoundPage.vue'),
 )
@@ -1653,8 +1653,14 @@ export default {
 		// it survives the sign-in and opens once the navigation has loaded.
 		this.keepOpenTarget()
 		// An invitation's secret (`#claim=<secret>`) is kept the same way,
-		// and handed back once the visitor is signed in.
-		keepClaimSecret(window.location, window.history, this.claimStorage())
+		// and handed back once the visitor is signed in. Like the mandate and
+		// contact invitations below, its module loads only when the mail
+		// left one, so the visitor's entry does not carry it
+		// (public-bundle-budget).
+		if (window.location.hash.includes('#claim=')) {
+			const { keepClaimSecret } = await import('../shared/claimInvitation.js')
+			keepClaimSecret(window.location, window.history, this.claimStorage())
+		}
 		if (window.location.hash.includes('#mandate-invitation=')) {
 			const { keepMandateInvitation } =
 				await import('../shared/mandateInvitation.js')
@@ -1845,6 +1851,11 @@ export default {
 		 * @return {Promise<void>} Resolves when redeemed.
 		 */
 		async handBackKeptClaim() {
+			if (!this.claimStorage()?.getItem(CLAIM_STORAGE_KEY)) {
+				this.claimMessage = null
+				return
+			}
+			const { redeemKeptClaim } = await import('../shared/claimInvitation.js')
 			this.claimMessage = await redeemKeptClaim({
 				api: this.api,
 				session: this.session,
@@ -1903,6 +1914,7 @@ export default {
 		 * @spec openspec/specs/portal-identity-space/spec.md
 		 */
 		async onCodeClaimed() {
+			const { codeOutcome } = await import('../shared/claimInvitation.js')
 			this.claimMessage = {
 				role: 'status',
 				text: this.t(codeOutcome({ ok: true }).text),
@@ -2037,7 +2049,11 @@ export default {
 			this.openTasks = 0
 			this.contactPrompt = false
 			forgetActingFor()
-			forgetClaimSecret(this.claimStorage())
+			try {
+				this.claimStorage()?.removeItem(CLAIM_STORAGE_KEY)
+			} catch {
+				// Without storage nothing was kept.
+			}
 			try {
 				window.sessionStorage.removeItem(OPEN_STORAGE_KEY)
 				window.sessionStorage.removeItem(TASK_STORAGE_KEY)
