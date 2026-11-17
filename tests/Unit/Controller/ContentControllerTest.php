@@ -349,6 +349,25 @@ class ContentControllerTest extends TestCase {
 
 
 	/**
+	 * The site names the organisation's kind from the label stored with the
+	 * portal's TOOI organisation type, and gets '' without one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+	 */
+	public function testSiteSendsTheOrganisationTypeLabel(): void {
+		$this->resolver->method('resolve')->willReturnOnConsecutiveCalls(
+			[...$this->portal(), 'organisationType' => 'https://identifier.overheid.nl/tooi/def/ont/Waterschap', 'organisationTypeLabel' => 'waterschap'],
+			$this->portal()
+		);
+
+		$this->assertSame('waterschap', $this->controller()->site()->getData()['organisationTypeLabel']);
+		$this->assertSame('', $this->controller()->site()->getData()['organisationTypeLabel']);
+	}//end testSiteSendsTheOrganisationTypeLabel()
+
+
+	/**
 	 * Without a way to name it, the site names no organisation.
 	 *
 	 * @return void
@@ -602,6 +621,24 @@ class ContentControllerTest extends TestCase {
 
 		$this->controller()->menus(portal: 'open-tilburg', locale: 'en');
 	}//end testASupportedLocaleIsHonoured()
+
+
+	/**
+	 * The page read is told both the requested locale and the portal's
+	 * default, so a route with no English page falls back to the Dutch one
+	 * rather than to whichever row comes first (#703).
+	 *
+	 * @return void
+	 */
+	public function testThePageReadKnowsThePortalsDefaultLocale(): void {
+		$this->resolver->method('resolve')->willReturn($this->portal());
+		$this->reader->expects($this->once())
+			->method('page')
+			->with('open-tilburg', '/over', 'en', 'anonymous', '', 'nl')
+			->willReturn(['route' => '/over']);
+
+		$this->controller()->page(route: 'over', portal: 'open-tilburg', locale: 'en');
+	}//end testThePageReadKnowsThePortalsDefaultLocale()
 
 
 	/**

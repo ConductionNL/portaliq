@@ -114,6 +114,22 @@ class PortalDomainVerifier implements PortalDomainVerifierInterface {
 			return null;
 		}
 
+		[$domains, $changed] = $this->tokened(portal: $portal);
+		if ($changed === true && $this->save(portal: $portal, domains: $domains) === false) {
+			return null;
+		}
+
+		return $this->recordViews(domains: $domains);
+	}//end records()
+
+	/**
+	 * The portal's domains, each with a verification token; a domain without one gets one now.
+	 *
+	 * @param array<string, mixed> $portal The portal row.
+	 *
+	 * @return array{0: array<int, array<string, mixed>>, 1: bool} The domains, and whether a token was added.
+	 */
+	private function tokened(array $portal): array {
 		$domains = $this->domains(portal: $portal);
 		$changed = false;
 		foreach ($domains as $i => $domain) {
@@ -123,10 +139,17 @@ class PortalDomainVerifier implements PortalDomainVerifierInterface {
 			}
 		}
 
-		if ($changed === true && $this->save(portal: $portal, domains: $domains) === false) {
-			return null;
-		}
+		return [$domains, $changed];
+	}//end tokened()
 
+	/**
+	 * The record each domain must publish, with its verification and certificate state.
+	 *
+	 * @param array<int, array<string, mixed>> $domains The domains.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function recordViews(array $domains): array {
 		return array_map(
 			static fn (array $domain): array => [
 				'hostname' => (string)$domain['hostname'],
@@ -138,7 +161,7 @@ class PortalDomainVerifier implements PortalDomainVerifierInterface {
 			],
 			$domains
 		);
-	}//end records()
+	}//end recordViews()
 
 	/**
 	 * Check one domain's record. A record that is not there yet leaves the
@@ -164,23 +187,36 @@ class PortalDomainVerifier implements PortalDomainVerifierInterface {
 				continue;
 			}
 
-			if ($this->published(domain: $domain) === false) {
-				return self::PENDING;
-			}
-
-			$domains[$i]['verified']   = true;
-			$domains[$i]['verifiedAt'] = gmdate('c');
-			$domains[$i]            = $this->withCertificate(domain: $domains[$i]);
-
-			if ($portal === null || $this->save(portal: $portal, domains: $domains) === false) {
-				return null;
-			}
-
-			return self::VERIFIED;
+			return $this->verifyDomain(portal: $portal, domains: $domains, index: $i);
 		}
 
 		return self::NOT_FOUND;
 	}//end verify()
+
+	/**
+	 * Mark one listed domain verified when its record is published, and save.
+	 *
+	 * @param array<string, mixed>|null        $portal  The portal row.
+	 * @param array<int, array<string, mixed>> $domains The portal's domains.
+	 * @param int                              $index   The position of the domain to check.
+	 *
+	 * @return string|null `verified` or `pending`; null when the save failed.
+	 */
+	private function verifyDomain(array|null $portal, array $domains, int $index): string|null {
+		if ($this->published(domain: $domains[$index]) === false) {
+			return self::PENDING;
+		}
+
+		$domains[$index]['verified']   = true;
+		$domains[$index]['verifiedAt'] = gmdate('c');
+		$domains[$index]            = $this->withCertificate(domain: $domains[$index]);
+
+		if ($portal === null || $this->save(portal: $portal, domains: $domains) === false) {
+			return null;
+		}
+
+		return self::VERIFIED;
+	}//end verifyDomain()
 
 	/**
 	 * The domain with the end of its certificate and the moment it was looked

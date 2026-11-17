@@ -8,3 +8,4 @@ The page a shared dossier link opens SHALL list only the documents in that dossi
 - **GIVEN** a shared dossier with three documents, one of which becomes public next week
 - **WHEN** a visitor opens the link today
 - **THEN** they see two documents, and the third cannot be reached through the link
+@e2e exclude the public-now filter is opencatalogi's shared collection read; node: tests/site-shared-dossier.spec.mjs

@@ -343,9 +343,12 @@ test.describe('site renderer — accessibility statement', () => {
 
 		await page.goto(SITE)
 		await expect(page.getByTestId('site-title')).toBeVisible()
+		// The href is the site's own address for the route: `/toegankelijkheid`
+		// in the path on a portal host, `?route=%2Ftoegankelijkheid` on the
+		// app path (siteAddress.js), so the link is found by its name.
 		const link = page
 			.getByTestId('site-subfooter-menu')
-			.locator('a[href$="/toegankelijkheid"]')
+			.getByRole('link', { name: 'Toegankelijkheid', exact: true })
 		await expect(link).toHaveCount(1)
 		await link.click()
 

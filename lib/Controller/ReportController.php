@@ -383,27 +383,64 @@ class ReportController extends Controller {
 				continue;
 			}
 
-			$rows = $this->reader->readCollection(
-				register: self::REGISTER,
-				schema: self::SCHEMA,
-				scopeField: 'portal',
-				subjectRef: $slug,
-				limit: self::LIST_LIMIT
-			);
-			foreach ($rows as $row) {
-				$caseType = $this->declarationFor(report: $row);
-				if ($this->reveals->mayHandle(user: $user, caseType: $caseType) === false) {
-					continue;
-				}
-
-				$results[] = $this->projection->one(report: $row) + ['terms' => $this->terms->forReport(caseType: $caseType, report: $row)];
-			}
+			$results = $this->withHandled(results: $results, user: $user, slug: $slug);
 		}
 
+		return $this->newestFirst(results: $results);
+	}//end index()
+
+	/**
+	 * The list with the reports of one portal this user may handle added, each through the projection and with its terms.
+	 *
+	 * @param array<int, array<string, mixed>> $results The list so far.
+	 * @param IUser                            $user    The handler.
+	 * @param string                           $slug    The portal slug.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function withHandled(array $results, IUser $user, string $slug): array {
+		$rows = $this->portalReports(slug: $slug);
+		foreach ($rows as $row) {
+			$caseType = $this->declarationFor(report: $row);
+			if ($this->reveals->mayHandle(user: $user, caseType: $caseType) === false) {
+				continue;
+			}
+
+			$results[] = $this->projection->one(report: $row) + ['terms' => $this->terms->forReport(caseType: $caseType, report: $row)];
+		}
+
+		return $results;
+	}//end withHandled()
+
+	/**
+	 * One portal's reports.
+	 *
+	 * @param string $slug The portal slug.
+	 *
+	 * @return array<int|string, mixed>
+	 */
+	private function portalReports(string $slug): array {
+		return $this->reader->readCollection(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: 'portal',
+			subjectRef: $slug,
+			limit: self::LIST_LIMIT
+		);
+	}//end portalReports()
+
+	/**
+	 * The list answer, newest first.
+	 *
+	 * @param array<int, array<string, mixed>> $results The reports.
+	 *
+	 * @return JSONResponse `{results, total}`.
+	 */
+	private function newestFirst(array $results): JSONResponse {
 		usort($results, static fn (array $one, array $two): int => strcmp((string)($two['receivedAt'] ?? ''), (string)($one['receivedAt'] ?? '')));
 
 		return new JSONResponse(['results' => $results, 'total' => count($results)]);
-	}//end index()
+	}//end newestFirst()
 
 	/**
 	 * The reveal requests waiting for this user's answer: those on reports of

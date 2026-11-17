@@ -84,13 +84,8 @@ class PublicAssistantController extends Controller {
 			return new JSONResponse(['error' => 'bearer_not_accepted'], Http::STATUS_BAD_REQUEST);
 		}
 
-		$slug = null;
-		if ($portal !== '') {
-			$slug = $portal;
-		}
-
-		$site = $this->portals->resolve(request: $this->request, portalSlug: $slug);
-		if ($site === null || $this->scope->enabledFor(portal: $site) === false) {
+		$site = $this->assistantSite(portal: $portal);
+		if ($site === null) {
 			return new JSONResponse(['error' => 'assistant_off'], Http::STATUS_NOT_FOUND);
 		}
 
@@ -98,11 +93,50 @@ class PublicAssistantController extends Controller {
 			return new JSONResponse(['error' => 'question_required'], Http::STATUS_BAD_REQUEST);
 		}
 
+		return $this->answer(site: $site, question: $question, locale: $locale, conversationId: $conversationId);
+	}//end ask()
+
+	/**
+	 * The portal, when it has the assistant switched on.
+	 *
+	 * @param string $portal The portal's slug; empty resolves it from the host.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/search-assistant-from-public-content/tasks.md#t04
+	 */
+	private function assistantSite(string $portal): array|null {
+		$slug = null;
+		if ($portal !== '') {
+			$slug = $portal;
+		}
+
+		$site = $this->portals->resolve(request: $this->request, portalSlug: $slug);
+		if ($site === null || $this->scope->enabledFor(portal: $site) === false) {
+			return null;
+		}
+
+		return $site;
+	}//end assistantSite()
+
+	/**
+	 * The assistant's answer, or 503 when it is unavailable.
+	 *
+	 * @param array<string, mixed> $site           The portal.
+	 * @param string               $question       The question.
+	 * @param string               $locale         The visitor's locale.
+	 * @param string               $conversationId A conversation id issued earlier in this visit.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/search-assistant-from-public-content/tasks.md#t04
+	 */
+	private function answer(array $site, string $question, string $locale, string $conversationId): JSONResponse {
 		$answer = $this->channel->ask(portal: $site, question: $question, locale: $locale, conversationId: $conversationId);
 		if ($answer['status'] === 'unavailable') {
 			return new JSONResponse(['error' => 'assistant_unavailable'], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
 
 		return new JSONResponse($answer);
-	}//end ask()
+	}//end answer()
 }//end class

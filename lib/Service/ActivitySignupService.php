@@ -116,6 +116,24 @@ class ActivitySignupService implements ActivitySignupServiceInterface {
 			return self::REASON_NOT_FOUND;
 		}
 
+		$refusal = $this->openRefusal(activity: $activity, acceptedStatement: $acceptedStatement);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		return $this->placeFor(activity: $activity, childRef: $childRef);
+	}//end checkedSignup()
+
+	/**
+	 * Why the activity takes no sign-up from this guardian now: closed, or
+	 * consent not accepted; null when it does.
+	 *
+	 * @param array<string, mixed> $activity          The activity row.
+	 * @param string               $acceptedStatement The consent text the guardian agreed to.
+	 *
+	 * @return string|null A REASON_* constant, or null.
+	 */
+	private function openRefusal(array $activity, string $acceptedStatement): string|null {
 		if ($this->acceptsSignups(activity: $activity) === false) {
 			return self::REASON_CLOSED;
 		}
@@ -124,6 +142,20 @@ class ActivitySignupService implements ActivitySignupServiceInterface {
 			return self::REASON_CONSENT_REQUIRED;
 		}
 
+		return null;
+	}//end openRefusal()
+
+	/**
+	 * The sign-up context with the status a new sign-up gets, or why there is
+	 * no place: sign-ups unreadable, already signed up, or full.
+	 *
+	 * @param array<string, mixed> $activity The activity row.
+	 * @param string               $childRef The child.
+	 *
+	 * @return array{activity: array<string, mixed>, signups: array<int, array<string, mixed>>, status: string}|string
+	 *         The context, or a REASON_* constant.
+	 */
+	private function placeFor(array $activity, string $childRef): array|string {
 		$signups = $this->signupsOf(activity: $activity);
 		if ($signups === null) {
 			return self::REASON_UNAVAILABLE;
@@ -139,7 +171,7 @@ class ActivitySignupService implements ActivitySignupServiceInterface {
 		}
 
 		return ['activity' => $activity, 'signups' => $signups, 'status' => $status];
-	}//end checkedSignup()
+	}//end placeFor()
 
 	/**
 	 * Write a new sign-up with the status the checks decided.
@@ -221,6 +253,20 @@ class ActivitySignupService implements ActivitySignupServiceInterface {
 			return self::REASON_NOT_FOUND;
 		}
 
+		return $this->withdrawSignup(activity: $activity, signup: $signup);
+	}//end withdraw()
+
+	/**
+	 * Mark the sign-up withdrawn; a freed confirmed place goes to the waiting list.
+	 *
+	 * @param array<string, mixed> $activity The activity row.
+	 * @param array<string, mixed> $signup   The child's sign-up that still counts.
+	 *
+	 * @return string|null A REASON_* constant, or null on success.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
+	 */
+	private function withdrawSignup(array $activity, array $signup): string|null {
 		$saved = $this->store->save(
 			schema: ActivityStore::SIGNUP,
 			data: array_merge($signup, ['status' => ActivityPlaces::WITHDRAWN, 'withdrawnAt' => $this->now()]),
@@ -235,7 +281,7 @@ class ActivitySignupService implements ActivitySignupServiceInterface {
 		}
 
 		return null;
-	}//end withdraw()
+	}//end withdrawSignup()
 
 	/**
 	 * Confirm waitlisted children, longest waiting first, until the places

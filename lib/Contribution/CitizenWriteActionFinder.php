@@ -75,28 +75,58 @@ class CitizenWriteActionFinder {
 		$aggregate = $this->registry->aggregateFor($subject);
 		foreach (($aggregate['contributions'] ?? []) as $contribution) {
 			foreach (($contribution['actions'] ?? []) as $action) {
-				if (($action['type'] ?? '') !== 'update'
-					|| ($action['register'] ?? '') !== $register
-					|| ($action['schema'] ?? '') !== $schema
-					|| is_array(($action[CitizenWriteConfigNormaliser::KEY] ?? null)) === false
-				) {
+				if ($this->isOtherAction(action: $action, register: $register, schema: $schema) === true) {
 					continue;
 				}
 
-				return [
-					'action' => $action,
-					'app' => (string)($contribution['app'] ?? ''),
-					'filesDownload' => $this->filesDownload(contribution: $contribution, register: $register, schema: $schema),
-					'documents' => $this->documents(contribution: $contribution, register: $register, schema: $schema),
-					'fields' => $this->caseFields(contribution: $contribution, register: $register, schema: $schema),
-					'closedField' => $this->closedField(contribution: $contribution, register: $register, schema: $schema),
-					'outcome' => $this->outcome(contribution: $contribution, register: $register, schema: $schema),
-				];
+				return $this->found(contribution: $contribution, action: $action, register: $register, schema: $schema);
 			}
 		}
 
 		return null;
 	}//end forSubject()
+
+	/**
+	 * Whether an action is not the citizen-write update of this register and schema.
+	 *
+	 * @param mixed  $action   The action.
+	 * @param string $register The register.
+	 * @param string $schema   The schema.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	private function isOtherAction(mixed $action, string $register, string $schema): bool {
+		return ($action['type'] ?? '') !== 'update'
+			|| ($action['register'] ?? '') !== $register
+			|| ($action['schema'] ?? '') !== $schema
+			|| is_array(($action[CitizenWriteConfigNormaliser::KEY] ?? null)) === false;
+	}//end isOtherAction()
+
+	/**
+	 * The found citizen-write action with what its contribution declares for the collection.
+	 *
+	 * @param mixed  $contribution The contribution.
+	 * @param mixed  $action       The action.
+	 * @param string $register     The register.
+	 * @param string $schema       The schema.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	private function found(mixed $contribution, mixed $action, string $register, string $schema): array {
+		return [
+			'action' => $action,
+			'app' => (string)($contribution['app'] ?? ''),
+			'filesDownload' => $this->filesDownload(contribution: $contribution, register: $register, schema: $schema),
+			'documents' => $this->documents(contribution: $contribution, register: $register, schema: $schema),
+			'fields' => $this->caseFields(contribution: $contribution, register: $register, schema: $schema),
+			'closedField' => $this->closedField(contribution: $contribution, register: $register, schema: $schema),
+			'outcome' => $this->outcome(contribution: $contribution, register: $register, schema: $schema),
+		];
+	}//end found()
 
 	/**
 	 * Whether the contribution opts a collection on this register and schema

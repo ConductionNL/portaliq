@@ -382,16 +382,45 @@ class TrafficEventValidator implements TrafficEventValidatorInterface {
 	 */
 	private function occurredAt(mixed $value, DateTimeImmutable $now, int $maxAge = self::MAX_AGE_SECONDS): ?DateTimeImmutable {
 		$now = $now->setTimezone(new DateTimeZone('UTC'));
-		if (is_string($value) === false || trim($value) === '') {
+		$parsed = $this->parsedMoment(value: $value);
+		if ($parsed === null) {
 			return $now;
+		}
+
+		return $this->clamped(parsed: $parsed, now: $now, maxAge: $maxAge);
+	}
+
+	/**
+	 * The posted timestamp in UTC, or null when it is missing or unparseable.
+	 *
+	 * @param mixed $value The posted timestamp.
+	 *
+	 * @return DateTimeImmutable|null
+	 */
+	private function parsedMoment(mixed $value): DateTimeImmutable|null {
+		if (is_string($value) === false || trim($value) === '') {
+			return null;
 		}
 
 		try {
 			$parsed = (new DateTimeImmutable(trim($value)))->setTimezone(new DateTimeZone('UTC'));
 		} catch (Throwable) {
-			return $now;
+			return null;
 		}
 
+		return $parsed;
+	}
+
+	/**
+	 * The moment clamped to now when slightly ahead; null when far ahead or older than the age kept.
+	 *
+	 * @param DateTimeImmutable $parsed The posted moment, in UTC.
+	 * @param DateTimeImmutable $now    The server clock, in UTC.
+	 * @param int               $maxAge The oldest age kept, in seconds.
+	 *
+	 * @return DateTimeImmutable|null
+	 */
+	private function clamped(DateTimeImmutable $parsed, DateTimeImmutable $now, int $maxAge): DateTimeImmutable|null {
 		$delta = $parsed->getTimestamp() - $now->getTimestamp();
 		if ($delta > self::MAX_FUTURE_SECONDS || -$delta > $maxAge) {
 			return null;

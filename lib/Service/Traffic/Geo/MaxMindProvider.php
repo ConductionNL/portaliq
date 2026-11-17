@@ -111,31 +111,11 @@ class MaxMindProvider implements GeoDatabaseProvider {
 	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
 	 */
 	public function fetch(string $targetPath): string {
-		$accountId = $this->settings->maxMindAccountId();
-		$licenseKey = $this->settings->maxMindLicenseKey();
-		if ($accountId === '' || $licenseKey === '') {
-			throw new RuntimeException('MaxMind needs an account id and a licence key in the Portaliq settings.');
-		}
-
-		$archive = $this->temp->getTemporaryFile('.tar.gz');
-		if ($archive === false) {
-			throw new RuntimeException('No temporary file could be created for the download.');
-		}
+		$credentials = $this->credentials();
+		$archive     = $this->archiveFile();
 
 		try {
-			$response = $this->clients->newClient()->get(
-				$this->url(),
-				[
-					'sink' => $archive,
-					'timeout' => self::TIMEOUT,
-					'headers' => ['Authorization' => 'Basic ' . base64_encode($accountId . ':' . $licenseKey)],
-				]
-			);
-			if ($response->getStatusCode() !== 200) {
-				throw new RuntimeException('MaxMind answered ' . $response->getStatusCode() . ' for ' . $this->settings->maxMindEdition());
-			}
-
-			$member = $this->gzip->extractTarMember(source: $archive, suffix: '.mmdb', target: $targetPath);
+			$member = $this->download(archive: $archive, targetPath: $targetPath, credentials: $credentials);
 		} catch (RuntimeException $e) {
 			throw $e;
 		} catch (Throwable $e) {
@@ -147,5 +127,66 @@ class MaxMindProvider implements GeoDatabaseProvider {
 		}
 
 		return $this->settings->maxMindEdition() . ' (' . $member . ')';
+	}
+
+	/**
+	 * The account id and licence key from the settings.
+	 *
+	 * @return array{0: string, 1: string} The account id and the licence key.
+	 *
+	 * @throws RuntimeException When either is missing.
+	 */
+	private function credentials(): array {
+		$accountId = $this->settings->maxMindAccountId();
+		$licenseKey = $this->settings->maxMindLicenseKey();
+		if ($accountId === '' || $licenseKey === '') {
+			throw new RuntimeException('MaxMind needs an account id and a licence key in the Portaliq settings.');
+		}
+
+		return [$accountId, $licenseKey];
+	}
+
+	/**
+	 * A temporary file the download lands in.
+	 *
+	 * @return string The file's path.
+	 *
+	 * @throws RuntimeException When no temporary file can be created.
+	 */
+	private function archiveFile(): string {
+		$archive = $this->temp->getTemporaryFile('.tar.gz');
+		if ($archive === false) {
+			throw new RuntimeException('No temporary file could be created for the download.');
+		}
+
+		return $archive;
+	}
+
+	/**
+	 * Download the tarball into the archive and extract the database member.
+	 *
+	 * @param string                      $archive     The temporary file the download lands in.
+	 * @param string                      $targetPath  Where the MMDB file must end up.
+	 * @param array{0: string, 1: string} $credentials The account id and the licence key.
+	 *
+	 * @return string The member that was extracted.
+	 *
+	 * @throws RuntimeException When MaxMind does not answer 200.
+	 */
+	private function download(string $archive, string $targetPath, array $credentials): string {
+		[$accountId, $licenseKey] = $credentials;
+		$response = $this->clients->newClient()->get(
+			$this->url(),
+			[
+				'sink' => $archive,
+				'timeout' => self::TIMEOUT,
+				'headers' => ['Authorization' => 'Basic ' . base64_encode($accountId . ':' . $licenseKey)],
+			]
+		);
+		if ($response->getStatusCode() !== 200) {
+			throw new RuntimeException('MaxMind answered ' . $response->getStatusCode() . ' for ' . $this->settings->maxMindEdition());
+		}
+
+		return $this->gzip->extractTarMember(source: $archive, suffix: '.mmdb', target: $targetPath);
 	}
 }
