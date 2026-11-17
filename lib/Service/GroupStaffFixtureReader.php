@@ -78,30 +78,55 @@ class GroupStaffFixtureReader {
 			return [];
 		}
 
-		try {
-			$objectService->setRegister(register: self::REGISTER);
-			$objectService->setSchema(schema: self::SCHEMA);
-			$rows = $objectService->findAll(
-				config: ['filters' => ['groupRef' => $groupRef], 'limit' => 1, 'offset' => 0],
-				_rbac: false,
-				_multitenancy: false
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: group staff fixture read failed', ['reason' => $e->getMessage()]);
-			return [];
-		}
-
-		if (is_array($rows) === false || count($rows) === 0) {
-			return [];
-		}
-
-		$row = $this->normalise(row: $rows[0]);
+		$row = $this->firstRow(objectService: $objectService, groupRef: $groupRef);
 		if ($row === null) {
 			return [];
 		}
 
 		return (new NonEmptyStrings())->from(value: $row['staffRefs'] ?? []);
 	}//end staffForGroup()
+
+	/**
+	 * The group's fixture row, or null when there is none or the read failed.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $groupRef      The group.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function firstRow(object $objectService, string $groupRef): array|null {
+		try {
+			$rows = $this->query(objectService: $objectService, groupRef: $groupRef);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: group staff fixture read failed', ['reason' => $e->getMessage()]);
+			return null;
+		}
+
+		if (is_array($rows) === false || count($rows) === 0) {
+			return null;
+		}
+
+		return $this->normalise(row: $rows[0]);
+	}//end firstRow()
+
+	/**
+	 * Read the group's fixture row.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 * @param string $groupRef      The group.
+	 *
+	 * @return mixed
+	 */
+	private function query(object $objectService, string $groupRef): mixed {
+		$objectService->setRegister(register: self::REGISTER);
+		$objectService->setSchema(schema: self::SCHEMA);
+
+		return $objectService->findAll(
+			config: ['filters' => ['groupRef' => $groupRef], 'limit' => 1, 'offset' => 0],
+			_rbac: false,
+			_multitenancy: false
+		);
+	}//end query()
 
 	/**
 	 * Whether a staff member teaches a group.

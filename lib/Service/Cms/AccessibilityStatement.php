@@ -220,6 +220,26 @@ class AccessibilityStatement implements AccessibilityStatementInterface {
 			return null;
 		}
 
+		[$measured, $skipped] = $this->pageCounts(measurement: $measurement);
+
+		return [
+			'measuredAt' => (string)($measurement['measuredAt'] ?? ''),
+			'axeVersion' => (string)($measurement['axeVersion'] ?? ''),
+			'tags' => array_values(array_filter((array)($measurement['tags'] ?? []), 'is_string')),
+			'theme' => (string)($measurement['theme'] ?? ''),
+			'pagesMeasured' => $measured,
+			'pagesNotMeasured' => $skipped,
+		];
+	}//end summary()
+
+	/**
+	 * How many pages the measurement measured, and how many it did not.
+	 *
+	 * @param array<string, mixed> $measurement The measurement.
+	 *
+	 * @return array{0: int, 1: int}
+	 */
+	private function pageCounts(array $measurement): array {
 		$measured = 0;
 		$skipped  = 0;
 		foreach ($this->pagesOf(measurement: $measurement) as $page) {
@@ -231,15 +251,8 @@ class AccessibilityStatement implements AccessibilityStatementInterface {
 			$skipped++;
 		}
 
-		return [
-			'measuredAt' => (string)($measurement['measuredAt'] ?? ''),
-			'axeVersion' => (string)($measurement['axeVersion'] ?? ''),
-			'tags' => array_values(array_filter((array)($measurement['tags'] ?? []), 'is_string')),
-			'theme' => (string)($measurement['theme'] ?? ''),
-			'pagesMeasured' => $measured,
-			'pagesNotMeasured' => $skipped,
-		];
-	}//end summary()
+		return [$measured, $skipped];
+	}//end pageCounts()
 
 	/**
 	 * Per violated rule: the sentence, the worst impact and the number of
@@ -255,6 +268,21 @@ class AccessibilityStatement implements AccessibilityStatementInterface {
 			return [];
 		}
 
+		$issues = $this->issueRows(byRule: $this->violationsByRule(measurement: $measurement), locale: $locale);
+
+		usort($issues, static fn (array $one, array $two): int => (self::rank(issue: $one) <=> self::rank(issue: $two)));
+
+		return $issues;
+	}//end issues()
+
+	/**
+	 * The violations of every measured page, merged per rule.
+	 *
+	 * @param array<string, mixed> $measurement The measurement.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function violationsByRule(array $measurement): array {
 		$byRule = [];
 		foreach ($this->pagesOf(measurement: $measurement) as $page) {
 			if (($page['measured'] ?? false) !== true) {
@@ -266,6 +294,18 @@ class AccessibilityStatement implements AccessibilityStatementInterface {
 			}
 		}
 
+		return $byRule;
+	}//end violationsByRule()
+
+	/**
+	 * One issue per violated rule, with its sentence in the language.
+	 *
+	 * @param array<string, array<string, mixed>> $byRule The violations merged per rule.
+	 * @param string                              $locale The language.
+	 *
+	 * @return list<array<string, mixed>>
+	 */
+	private function issueRows(array $byRule, string $locale): array {
 		$issues = [];
 		foreach ($byRule as $rule => $entry) {
 			$issues[] = [
@@ -277,10 +317,8 @@ class AccessibilityStatement implements AccessibilityStatementInterface {
 			];
 		}
 
-		usort($issues, static fn (array $one, array $two): int => (self::rank(issue: $one) <=> self::rank(issue: $two)));
-
 		return $issues;
-	}//end issues()
+	}//end issueRows()
 
 	/**
 	 * The well-formed violations of one page, one per rule.

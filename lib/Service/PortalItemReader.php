@@ -69,17 +69,45 @@ class PortalItemReader implements PortalItemReaderInterface {
 			return null;
 		}
 
-		try {
-			$items = $provider->{$method}($id);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: item list provider failed', ['app' => $appId, 'method' => $method, 'reason' => $e->getMessage()]);
-			return null;
-		}
-
+		$items = $this->providedItems(provider: $provider, appId: $appId, method: $method, id: $id);
 		if (is_array($items) === false) {
 			return null;
 		}
 
+		return $this->itemsOf(items: $items);
+	}//end items()
+
+	/**
+	 * What the provider's item method answers, or null when it fails (logged).
+	 *
+	 * @param object $provider The app's provider.
+	 * @param string $appId    The app.
+	 * @param string $method   The item list method.
+	 * @param string $id       The record's id.
+	 *
+	 * @return mixed
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-an-item-list-read-from-its-app-req-myd-001
+	 */
+	private function providedItems(object $provider, string $appId, string $method, string $id): mixed {
+		try {
+			return $provider->{$method}($id);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: item list provider failed', ['app' => $appId, 'method' => $method, 'reason' => $e->getMessage()]);
+			return null;
+		}
+	}//end providedItems()
+
+	/**
+	 * The listed items that are arrays, shaped.
+	 *
+	 * @param array<int|string, mixed> $items The provider's items.
+	 *
+	 * @return array<int, array{id: string, title: string, url: string, note: string, public: bool, addedAt: string}>
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-an-item-list-read-from-its-app-req-myd-001
+	 */
+	private function itemsOf(array $items): array {
 		$out = [];
 		foreach ($items as $item) {
 			if (is_array($item) === true) {
@@ -88,7 +116,7 @@ class PortalItemReader implements PortalItemReaderInterface {
 		}
 
 		return $out;
-	}//end items()
+	}//end itemsOf()
 
 	/**
 	 * One item, reduced to the keys the portal shows.

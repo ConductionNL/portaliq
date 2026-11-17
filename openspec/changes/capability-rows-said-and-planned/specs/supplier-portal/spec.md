@@ -7,3 +7,4 @@ The portal audit trail SHALL also record what staff did to portal subjects: with
 #### Scenario: An administrator revokes an organisation's sessions
 - **WHEN** an administrator revokes every session of one organisation
 - **THEN** the audit trail holds a row naming that administrator, the organisation and the revocation
+@e2e exclude Unit: tests/Unit/Service/PortalSessionRevokerTest.php (admin-revoke rows naming the admin). Not built: withdrawing an account, moving an account to another audience and an emergency message write no audit row

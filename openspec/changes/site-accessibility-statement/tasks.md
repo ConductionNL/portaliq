@@ -38,11 +38,12 @@ A test marked **fails today** must be run on `origin/development` first and seen
     `testKnownIssuesFollowTheMeasurement`, `testANewerMeasurementReplacesTheIssues`,
     `testNoAuditMeansAtMostC`, `testAnAuditSupportsB`, `testAnAuditOlderThanThreeYearsSupportsNothing`.
   - Built with `AccessibilityRuleSentences` (28 rules, nl and en); red before: build-round/red-sas-statement.txt. The organisation is the portal's `organisation` value until `portal-identity-from-the-admin` lands.
-- [ ] 2.2 (not run: the e2e needs a live instance; the page, the route, the footer link and `tests/site-accessibility-statement.spec.mjs` (6 tests) are built, and the e2e test is written) Serve it at `/toegankelijkheid` on every portal through the site router as a system page,
+- [x] 2.2 (not run: the e2e needs a live instance; the page, the route, the footer link and `tests/site-accessibility-statement.spec.mjs` (6 tests) are built, and the e2e test is written) Serve it at `/toegankelijkheid` on every portal through the site router as a system page,
   public, and add the footer link (REQ-SAS-002).
   - Through the caller: e2e `tests/e2e/site-accessibility.spec.ts` gains
     `the statement is linked from the footer and lists the measurement date`, and the page itself
     passes the same axe check. Cite REQ-SAS-002.
+  - Live pass 2026-11-17: `tests/e2e/site-accessibility.spec.ts` 10/10 passed, the statement test included. It now finds the footer link by its name: on the app path the href is `?route=%2Ftoegankelijkheid`, not a path ending in `/toegankelijkheid`.
 - [x] 2.3 The admin form records the audit and the register URL (REQ-SAS-003).
   - node test `the admin refuses an A or B claim without an audit`.
 

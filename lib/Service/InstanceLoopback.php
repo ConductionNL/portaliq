@@ -135,6 +135,23 @@ class InstanceLoopback {
 			return $this->sendLoopback(origin: $this->workingRoute, method: $method, absolute: $absolute, options: $options);
 		}
 
+		return $this->sendAbsolute(method: $method, absolute: $absolute, options: $options);
+	}//end request()
+
+	/**
+	 * Send to the absolute URL; a connect-phase failure is retried on the loopback.
+	 *
+	 * @param string               $method   The HTTP method.
+	 * @param string               $absolute The absolute URL.
+	 * @param array<string, mixed> $options  Nextcloud HTTP client options.
+	 *
+	 * @return IResponse
+	 *
+	 * @throws Throwable Any failure that is not a connect-phase one.
+	 *
+	 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-a-transport-failure-on-the-absolute-url-is-retried-once-on-the-loopback
+	 */
+	private function sendAbsolute(string $method, string $absolute, array $options): IResponse {
 		try {
 			$response = $this->send(method: $method, url: $absolute, options: $options);
 		} catch (Throwable $failure) {
@@ -147,7 +164,7 @@ class InstanceLoopback {
 
 		$this->workingRoute = 'absolute';
 		return $response;
-	}//end request()
+	}//end sendAbsolute()
 
 	/**
 	 * The retries on the loopback origins after a transport failure on the

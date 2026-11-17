@@ -47,22 +47,48 @@ trait NormalisedRowReads {
 	 * @spec exclude Shared read helper; the @spec of each calling method covers the behaviour it reads for.
 	 */
 	private function findAll(string $schema, array $filters = []): array {
+		$rows = $this->readSchemaRows(schema: $schema, filters: $filters);
+		if (is_array($rows) === false) {
+			return [];
+		}
+
+		return $this->keepNormalised(rows: $rows);
+	}//end findAll()
+
+	/**
+	 * Every page of a schema's matching rows, or [] when the read failed.
+	 *
+	 * @param string               $schema  The schema slug.
+	 * @param array<string, mixed> $filters Plain equality filters.
+	 *
+	 * @return mixed
+	 *
+	 * @spec exclude Shared read helper; the @spec of each calling method covers the behaviour it reads for.
+	 */
+	private function readSchemaRows(string $schema, array $filters): mixed {
 		$objectService = $this->objectService();
 		if ($objectService === null) {
 			return [];
 		}
 
 		try {
-			$rows = $this->readEveryPage(objectService: $objectService, register: self::REGISTER, schema: $schema, filters: $filters);
+			return $this->readEveryPage(objectService: $objectService, register: self::REGISTER, schema: $schema, filters: $filters);
 		} catch (Throwable $e) {
 			$this->logger->warning(self::READ_FAILED, ['schema' => $schema, 'reason' => $e->getMessage()]);
 			return [];
 		}
+	}//end readSchemaRows()
 
-		if (is_array($rows) === false) {
-			return [];
-		}
-
+	/**
+	 * The rows that normalise.
+	 *
+	 * @param array $rows The rows as read.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec exclude Shared read helper; the @spec of each calling method covers the behaviour it reads for.
+	 */
+	private function keepNormalised(array $rows): array {
 		$normalised = [];
 		foreach ($rows as $row) {
 			$row = $this->normalise(row: $row);
@@ -72,7 +98,7 @@ trait NormalisedRowReads {
 		}
 
 		return $normalised;
-	}//end findAll()
+	}//end keepNormalised()
 
 	/**
 	 * The row's id/uuid, from a flat property or its `@self` envelope.

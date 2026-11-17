@@ -64,6 +64,8 @@ use OCA\Portaliq\Kernel\Contracts\RowIdentifierInterface;
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- one collaborator per step
  * of the forward (who, which row action, whose row, send, record) plus the
  * framework attributes every portal endpoint carries.
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class PortalRowActionController extends Controller implements PortalProtected {
 	/**
@@ -316,38 +318,70 @@ class PortalRowActionController extends Controller implements PortalProtected {
 	 * @return array{collection: array<string, mixed>, action: array<string, mixed>, app: string, rowApp?: string}|null
 	 */
 	private function authorisedRowAction(array $subject, string $register, string $schema, string $actionId): ?array {
-		$collectionId = (string)$this->request->getParam('collection', '');
 		$contributions = ($this->registry->aggregateFor($subject)['contributions'] ?? []);
+		$match = $this->firstRequested(contributions: $contributions, register: $register, schema: $schema);
+		if ($match === null) {
+			return null;
+		}
+
+		[$contribution, $collection] = $match;
+
+		// An action attached to this collection (woo-journey-entry-points
+		// D3): `?actionApp=` names its app. That may be the collection's
+		// own app, for an action it attaches to one of its own
+		// collections (attach-to-own-collection); the lookup then still
+		// requires the attachment, never a row action of the same id.
+		$actionApp = (string)$this->request->getParam('actionApp', '');
+		if ($actionApp !== '') {
+			$target = ['collection' => $collection, 'app' => (string)($contribution['app'] ?? '')];
+			return $this->attachedMatch(contributions: $contributions, subject: $subject, target: $target, actionApp: $actionApp, actionId: $actionId);
+		}
+
+		return $this->ownRowAction(contribution: $contribution, collection: $collection, subject: $subject, actionId: $actionId);
+	}//end authorisedRowAction()
+
+	/**
+	 * The first collection on this register and schema, with its contribution; `?collection=` picks another.
+	 *
+	 * @param array<int, array<string, mixed>> $contributions The subject's contributions.
+	 * @param string                           $register      The requested register.
+	 * @param string                           $schema        The requested schema.
+	 *
+	 * @return array{0: array<string, mixed>, 1: array<string, mixed>}|null The contribution and the collection.
+	 */
+	private function firstRequested(array $contributions, string $register, string $schema): array|null {
+		$collectionId = (string)$this->request->getParam('collection', '');
 		foreach ($contributions as $contribution) {
 			foreach (($contribution['collections'] ?? []) as $collection) {
-				if ($this->isRequested(collection: $collection, requested: [$register, $schema, $collectionId]) === false) {
-					continue;
+				if ($this->isRequested(collection: $collection, requested: [$register, $schema, $collectionId]) === true) {
+					return [$contribution, $collection];
 				}
-
-				// An action attached to this collection (woo-journey-entry-points
-				// D3): `?actionApp=` names its app. That may be the collection's
-				// own app, for an action it attaches to one of its own
-				// collections (attach-to-own-collection); the lookup then still
-				// requires the attachment, never a row action of the same id.
-				$actionApp = (string)$this->request->getParam('actionApp', '');
-				if ($actionApp !== '') {
-					$target = ['collection' => $collection, 'app' => (string)($contribution['app'] ?? '')];
-					return $this->attachedMatch(contributions: $contributions, subject: $subject, target: $target, actionApp: $actionApp, actionId: $actionId);
-				}
-
-				// The first collection on this register and schema decides, as
-				// on the object read; `?collection=` picks another.
-				$action = $this->offeredAction(contribution: $contribution, collection: $collection, actionId: $actionId);
-				if ($action === null || $this->trustAndEndpointHold(subject: $subject, collection: $collection, action: $action) === false) {
-					return null;
-				}
-
-				return ['collection' => $collection, 'action' => $action, 'app' => (string)($contribution['app'] ?? '')];
-			}//end foreach
-		}//end foreach
+			}
+		}
 
 		return null;
-	}//end authorisedRowAction()
+	}//end firstRequested()
+
+	/**
+	 * The collection's own row action, when the subject's trust and the endpoint hold.
+	 *
+	 * @param array<string, mixed> $contribution The contribution holding the collection.
+	 * @param array<string, mixed> $collection   The requested collection.
+	 * @param array<string, mixed> $subject      The resolved subject.
+	 * @param string               $actionId     The requested action.
+	 *
+	 * @return array{collection: array<string, mixed>, action: array<string, mixed>, app: string}|null
+	 */
+	private function ownRowAction(array $contribution, array $collection, array $subject, string $actionId): array|null {
+		// The first collection on this register and schema decides, as
+		// on the object read; `?collection=` picks another.
+		$action = $this->offeredAction(contribution: $contribution, collection: $collection, actionId: $actionId);
+		if ($action === null || $this->trustAndEndpointHold(subject: $subject, collection: $collection, action: $action) === false) {
+			return null;
+		}
+
+		return ['collection' => $collection, 'action' => $action, 'app' => (string)($contribution['app'] ?? '')];
+	}//end ownRowAction()
 
 	/**
 	 * Whether a collection is the one the route names: its register and

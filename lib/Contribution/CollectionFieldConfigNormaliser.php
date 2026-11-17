@@ -67,7 +67,25 @@ class CollectionFieldConfigNormaliser {
 			return $collection;
 		}
 
-		$projected = ($collection['fields'] ?? null);
+		$configs = $this->configsOf(declared: $declared, projected: ($collection['fields'] ?? null));
+		if ($configs !== []) {
+			$collection[self::KEY] = $configs;
+		}
+
+		return $collection;
+	}//end normalise()
+
+	/**
+	 * The declared field configs that hold, by field.
+	 *
+	 * @param array<mixed, mixed> $declared  The declared configs.
+	 * @param mixed               $projected The collection's projected `fields`, or null.
+	 *
+	 * @return array<mixed, mixed>
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-collection-may-say-how-the-values-of-any-of-its-fields-read
+	 */
+	private function configsOf(array $declared, mixed $projected): array {
 		$configs = [];
 		foreach ($declared as $field => $config) {
 			$entry = $this->fieldEntry(field: $field, config: $config, projected: $projected);
@@ -76,12 +94,8 @@ class CollectionFieldConfigNormaliser {
 			}
 		}
 
-		if ($configs !== []) {
-			$collection[self::KEY] = $configs;
-		}
-
-		return $collection;
-	}//end normalise()
+		return $configs;
+	}//end configsOf()
 
 	/**
 	 * The usable config of one declared field, or [] when the field is no

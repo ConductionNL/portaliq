@@ -25,6 +25,9 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Kernel\Contracts\SiteShellInterface;
+use OCA\Portaliq\Service\Cms\SiteCreator;
+use OCA\Portaliq\Service\Cms\SiteIcon;
+use OCA\Portaliq\Kernel\Contracts\SiteOrganisationInterface;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
@@ -70,6 +73,8 @@ class SiteShell implements SiteShellInterface {
 	 * @param SiteHeadInterface                    $siteHead       The head of the page a site request asks for.
 	 * @param PortalNoticeReaderInterface          $notices        The notices running on the signed-in surface now.
 	 * @param PortalRuntimeConfigResolverInterface $configResolver Resolves the runtime config built from the portal.
+	 * @param SiteIcon|null               $siteIcon       The portal's own tab icon; null leaves it to the theme.
+	 * @param SiteOrganisationInterface|null $siteOrganisation Names the portal's organisation in the head's creator.
 	 */
 	public function __construct(
 		private readonly IRequest $request,
@@ -79,6 +84,8 @@ class SiteShell implements SiteShellInterface {
 		private readonly SiteHeadInterface $siteHead,
 		private readonly PortalNoticeReaderInterface $notices,
 		private readonly PortalRuntimeConfigResolverInterface $configResolver,
+		private readonly ?SiteIcon $siteIcon=null,
+		private readonly ?SiteOrganisationInterface $siteOrganisation=null,
 	) {
 		$this->addressing = new SiteAddressing(portalResolver: $portalResolver, urlGenerator: $urlGenerator);
 	}//end __construct()
@@ -154,8 +161,112 @@ class SiteShell implements SiteShellInterface {
 			// carrying no Accept-Language would otherwise produce.
 			'locale'          => $this->siteLocale(),
 			'head'            => $this->siteHead(path: $path),
+			// The plain version of this page, for the notice a browser
+			// without JavaScript shows (site-honest-without-javascript).
+			'plainUrl'        => $this->plainUrl(path: $path),
+			// The portal's favicon, else its logo (portal-identity-from-the-admin
+			// REQ-PIA-002). The template falls back to the theme's icon, then
+			// this app's own mark.
+			'portalIcon'      => $this->sitePortalIcon(),
+			// Who made the pages, with the organisation's kind (REQ-PIA-003).
+			'creator'         => $this->siteCreator(),
 		];
 	}//end templateParams()
+
+	/**
+	 * The address of the plain version of the page this request asks for:
+	 * `/site/plain` with the route, the portal, the search and the page carried
+	 * over. The route is the path under the site route, else the request's
+	 * `route`; the portal is the slug the request names (never a raw `?org=`).
+	 * A `/` in a value stays readable, every other reserved character is
+	 * encoded.
+	 *
+	 * @param string $path The path under the site route, or ''.
+	 *
+	 * @return string The address.
+	 *
+	 * @spec openspec/changes/site-honest-without-javascript/specs/site-without-javascript/spec.md#requirement-every-site-page-says-so-when-javascript-is-off-req-shj-001
+	 */
+	public function plainUrl(string $path = ''): string {
+		$route = trim($path, '/');
+		if ($route !== '') {
+			$route = '/' . $route;
+		} else {
+			$route = trim((string)$this->request->getParam('route', ''));
+		}
+
+		$query = [];
+		$values = [
+			'route'   => $route,
+			'portal'  => $this->requestedPortalSlug(),
+			'_search' => $this->stringParam(name: '_search'),
+			'_page'   => $this->stringParam(name: '_page'),
+		];
+		foreach ($values as $name => $value) {
+			if ($value !== '') {
+				$query[] = $name . '=' . str_replace('%2F', '/', rawurlencode($value));
+			}
+		}
+
+		$plain = $this->urlGenerator->linkToRoute('portaliq.portalPage.site') . '/plain';
+		if ($query === []) {
+			return $plain;
+		}
+
+		return $plain . '?' . implode('&', $query);
+	}//end plainUrl()
+
+	/**
+	 * What the plain version of the page this request asks for is built from:
+	 * the serving portal, resolved the way the head resolves it, the route
+	 * (`?route=`, else the landing page of the host), the document language,
+	 * the slug the request names, and the search term and page number.
+	 *
+	 * @return array{portal: array<string, mixed>|null, route: string, locale: string, slug: string, query: string, page: int}
+	 *
+	 * @spec openspec/changes/site-honest-without-javascript/specs/site-without-javascript/spec.md#requirement-the-server-renders-a-plain-version-of-every-public-page-req-shj-002
+	 */
+	public function plainRequest(): array {
+		$slug = $this->requestedPortalSlug();
+		try {
+			$portal = $this->portalResolver->resolve(request: $this->request, portalSlug: $slug);
+		} catch (\Throwable) {
+			$portal = null;
+		}
+
+		$page = 1;
+		if (ctype_digit($this->stringParam(name: '_page')) === true) {
+			$page = max(1, (int)$this->stringParam(name: '_page'));
+		}
+
+		return [
+			'portal' => $portal,
+			'route'  => $this->addressing->route(request: $this->request, portalSlug: $slug, path: ''),
+			'locale' => $this->siteLocale(),
+			'slug'   => $slug,
+			'query'  => $this->stringParam(name: '_search'),
+			'page'   => $page,
+		];
+	}//end plainRequest()
+
+	/**
+	 * A request parameter as a trimmed string; anything that is not a string or
+	 * a number (an array from `?x[]=`) is ''.
+	 *
+	 * @param string $name The parameter.
+	 *
+	 * @return string The value, or ''.
+	 *
+	 * @spec openspec/changes/site-honest-without-javascript/specs/site-without-javascript/spec.md#requirement-every-site-page-says-so-when-javascript-is-off-req-shj-001
+	 */
+	private function stringParam(string $name): string {
+		$value = $this->request->getParam($name, '');
+		if (is_string($value) === false && is_int($value) === false) {
+			return '';
+		}
+
+		return trim((string)$value);
+	}//end stringParam()
 
 	/**
 	 * Whether this request resolves to a portal at all: by the slug it names
@@ -299,6 +410,46 @@ class SiteShell implements SiteShellInterface {
 			canonical: $this->addressing->canonical(request: $this->request, portalSlug: $portalSlug, route: $route)
 		);
 	}//end siteHead()
+
+	/**
+	 * The serving portal's own tab icon, or '' when it sets none that resolves.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+	 */
+	private function sitePortalIcon(): string {
+		if ($this->siteIcon === null) {
+			return '';
+		}
+
+		try {
+			$portal = $this->portalResolver->resolve(request: $this->request, portalSlug: $this->requestedPortalSlug());
+			return $this->siteIcon->forPortal(portal: $portal);
+		} catch (\Throwable) {
+			return '';
+		}
+	}//end sitePortalIcon()
+
+	/**
+	 * The head's `DCTERMS.creator`: the portal's organisation and its type, or ''.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+	 */
+	private function siteCreator(): string {
+		try {
+			$portal = $this->portalResolver->resolve(request: $this->request, portalSlug: $this->requestedPortalSlug());
+			if ($portal === null) {
+				return '';
+			}
+
+			return SiteCreator::content(portal: $portal, organisation: $this->siteOrganisation?->forPortal(portal: $portal));
+		} catch (\Throwable) {
+			return '';
+		}
+	}//end siteCreator()
 
 	/**
 	 * The sign-in settings the site needs at boot, from the same resolver

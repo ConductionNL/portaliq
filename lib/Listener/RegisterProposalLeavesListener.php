@@ -104,41 +104,8 @@ class RegisterProposalLeavesListener implements IEventListener {
 		}
 
 		try {
-			$event->registerLeaf(
-				new LeafDescriptor(
-					identity: new LeafIdentity(
-						id: ChangeProposalsProvider::ID,
-						label: $this->l10n->t('Change proposals'),
-						icon: ChangeProposalsProvider::ICON,
-						group: ChangeProposalsProvider::GROUP,
-					),
-					kinds: [LeafDescriptor::KIND_DATA_PROVIDER],
-					availability: new LeafAvailability(requiredApp: AppIdentity::APP_ID),
-				),
-				$this->provider
-			);
-
-			$event->registerLeaf(
-				new LeafDescriptor(
-					identity: new LeafIdentity(
-						id: self::QUEUE_LEAF_ID,
-						label: $this->l10n->t('Change proposals'),
-						icon: ChangeProposalsProvider::ICON,
-						group: ChangeProposalsProvider::GROUP,
-					),
-					kinds: [LeafDescriptor::KIND_RENDER_SURFACE],
-					availability: new LeafAvailability(requiredApp: AppIdentity::APP_ID),
-					// Portaliq is Vue 3 and a host may be Vue 2.7: the JS half
-					// roots its own app on a bare element. Both halves name the
-					// same mode, or the host renders the leaf the wrong way.
-					rendering: new LeafRendering(
-						surfaces: self::QUEUE_SURFACES,
-						renderMode: LeafDescriptor::RENDER_MODE_MOUNT,
-						loadStrategy: LeafDescriptor::LOADS_VIA_SHARED_ENTRY,
-					),
-				),
-				null
-			);
+			$event->registerLeaf($this->dataLeaf(), $this->provider);
+			$event->registerLeaf($this->queueLeaf(), null);
 		} catch (Throwable $e) {
 			// Never take the leaf catalogue down: log, and lose only these.
 			$this->logger->warning(
@@ -147,4 +114,62 @@ class RegisterProposalLeavesListener implements IEventListener {
 			);
 		}//end try
 	}//end handle()
+
+	/**
+	 * The data provider leaf.
+	 *
+	 * @return LeafDescriptor
+	 *
+	 * @spec openspec/specs/change-proposal-queue/spec.md
+	 */
+	private function dataLeaf(): LeafDescriptor {
+		return new LeafDescriptor(
+			identity: new LeafIdentity(
+				id: ChangeProposalsProvider::ID,
+				label: $this->l10n->t('Change proposals'),
+				icon: ChangeProposalsProvider::ICON,
+				group: ChangeProposalsProvider::GROUP,
+			),
+			kinds: [LeafDescriptor::KIND_DATA_PROVIDER],
+			availability: new LeafAvailability(requiredApp: AppIdentity::APP_ID),
+		);
+	}//end dataLeaf()
+
+	/**
+	 * The review queue's render surface leaf.
+	 *
+	 * @return LeafDescriptor
+	 *
+	 * @spec openspec/specs/change-proposal-queue/spec.md
+	 */
+	private function queueLeaf(): LeafDescriptor {
+		return new LeafDescriptor(
+			identity: new LeafIdentity(
+				id: self::QUEUE_LEAF_ID,
+				label: $this->l10n->t('Change proposals'),
+				icon: ChangeProposalsProvider::ICON,
+				group: ChangeProposalsProvider::GROUP,
+			),
+			kinds: [LeafDescriptor::KIND_RENDER_SURFACE],
+			availability: new LeafAvailability(requiredApp: AppIdentity::APP_ID),
+			rendering: $this->queueRendering(),
+		);
+	}//end queueLeaf()
+
+	/**
+	 * How the queue leaf renders. Portaliq is Vue 3 and a host may be Vue
+	 * 2.7: the JS half roots its own app on a bare element. Both halves name
+	 * the same mode, or the host renders the leaf the wrong way.
+	 *
+	 * @return LeafRendering
+	 *
+	 * @spec openspec/specs/change-proposal-queue/spec.md
+	 */
+	private function queueRendering(): LeafRendering {
+		return new LeafRendering(
+			surfaces: self::QUEUE_SURFACES,
+			renderMode: LeafDescriptor::RENDER_MODE_MOUNT,
+			loadStrategy: LeafDescriptor::LOADS_VIA_SHARED_ENTRY,
+		);
+	}//end queueRendering()
 }//end class

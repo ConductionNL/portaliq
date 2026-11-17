@@ -14,11 +14,13 @@
  * `/api/content/site`, so every consumer learns which sign-in routes a portal
  * offers from the public API. Only the act of using them lives here.
  *
- * WHAT THIS FILE DOES NOT DO — stated because the gap is easy to mistake for a
- * bug: it does not ENFORCE anything. Per-portal authentication is declared in
- * the schema and enforced nowhere yet; every portal behaves as `public`
- * read-only. This module offers the door and reports who came through it. It
- * does not guard any content, and no code here should be read as if it did.
+ * WHAT THIS FILE DOES NOT DO: it does not ENFORCE anything. Per-portal
+ * authentication is enforced on the server — the content API refuses a read
+ * the portal's `authentication.modes` / `minTrust` do not allow (401 without a
+ * session, 403 when its trust level is too low; see
+ * `ContentController::refuseUnlessPermitted()`). This module only offers the
+ * door and reports who came through it. Hiding content here would guard
+ * nothing, and no code here should be read as if it did.
  */
 
 /**
@@ -375,6 +377,7 @@ function dutchLabel(key, vars = {}) {
 		'Log in as {name}': 'Inloggen als {name}',
 		'Log in as the example resident': 'Inloggen als voorbeeldinwoner',
 		'Example resident': 'Voorbeeldinwoner',
+		'Share only the details this form needs.': 'Deel alleen de gegevens die dit formulier nodig heeft.',
 	}
 	return (nl[key] || key).replace(/\{(\w+)\}/g, (_, name) =>
 		String(vars[name] ?? ''),
@@ -449,6 +452,8 @@ function modeLabels(t, emailLink) {
 		digid: t('Log in with {provider}', { provider: 'DigiD' }),
 		eherkenning: t('Log in with {provider}', { provider: 'eHerkenning' }),
 		eidas: t('Log in with {provider}', { provider: 'eIDAS' }),
+		// Yivi through the broker, sharing only what a form asks (resident-identity-in-forms REQ-RIF-004).
+		yivi: t('Log in with {provider}', { provider: 'Yivi' }),
 	}
 	if (emailLink === true) {
 		labels['email-link'] = t('Send me a sign-in link')
@@ -498,13 +503,13 @@ const PROVIDER_OF_MODE = { local: 'generic', oidc: 'generic' }
  * @param {{site: object, authBase: string, slug: string, query: string, label: string}} ctx The portal, the auth edge base, the query and the standard label.
  * @return {object} The route.
  */
-function modeRoute(mode, { site, authBase, slug, query, label }) {
+function modeRoute(mode, { site, authBase, slug, query, label, t = dutchLabel }) {
 	const cards = site?.authentication?.modeLabels || {}
 	return {
 		key: mode,
 		mode,
 		label: cards[mode]?.button || label,
-		...(cards[mode] ? { card: cards[mode] } : {}),
+		...(cards[mode] ? { card: cards[mode] } : defaultCard(mode, t)),
 		// Nextcloud's own reset, reached from the account route's card
 		// (password-reset-from-the-sign-in-page REQ-PWR-001).
 		...(mode === 'nextcloud' && site?.lostPasswordUrl
@@ -523,6 +528,23 @@ function modeRoute(mode, { site, authBase, slug, query, label }) {
 			: {}),
 		href: modeHref(mode, { authBase, query }),
 	}
+}
+
+/**
+ * The card of a way in whose portal wrote none: Yivi says that it shares
+ * only what the form needs (resident-identity-in-forms, design "Yivi"); the
+ * other ways have no card of their own.
+ *
+ * @param {string} mode The mode.
+ * @param {(key: string, vars?: object) => string} t The translator.
+ * @return {{card?: {text: string}}} The card, or nothing.
+ * @spec openspec/changes/resident-identity-in-forms/tasks.md#T05
+ */
+function defaultCard(mode, t) {
+	if (mode !== 'yivi') {
+		return {}
+	}
+	return { card: { text: t('Share only the details this form needs.') } }
 }
 
 /**

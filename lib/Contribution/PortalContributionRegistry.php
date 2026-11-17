@@ -339,28 +339,65 @@ class PortalContributionRegistry implements PortalContributionRegistryInterface 
 				continue;
 			}
 
-			$served = (new ProviderAudiences())->served(provider: $provider);
-			foreach ($served as $audience) {
-				try {
-					$contribution = $this->locator->contributionOf(provider: $provider, subject: ['audience' => $audience]);
-					if (is_array($contribution) === false) {
-						continue;
-					}
-
-					$contribution['servedAudiences'] = $served;
-					$contribution = $this->normaliser->normalise(contribution: $contribution);
-				} catch (Throwable $e) {
-					$this->logger->error('Portaliq: contribution provider failed (start tiles)', ['app' => $appId, 'reason' => $e->getMessage()]);
-					continue;
-				}
-
-				$contribution['app'] = (string)$appId;
-				$tiles->add(contribution: $contribution);
-			}
-		}//end foreach
+			$this->addStartTiles(tiles: $tiles, provider: $provider, appId: (string)$appId);
+		}
 
 		return $tiles->all();
 	}//end startTiles()
+
+	/**
+	 * Add the start tiles of one provider, one contribution per audience it serves.
+	 *
+	 * @param StartTileCollector $tiles    The tiles so far.
+	 * @param object             $provider The app's contribution provider.
+	 * @param string             $appId    The app.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-contribution-contract/spec.md#requirement-an-action-may-offer-itself-as-a-start-tile-with-a-summary-and-its-audiences-req-snw-020
+	 */
+	private function addStartTiles(StartTileCollector $tiles, object $provider, string $appId): void {
+		$served = (new ProviderAudiences())->served(provider: $provider);
+		foreach ($served as $audience) {
+			$contribution = $this->servedContribution(provider: $provider, audience: $audience, served: $served, appId: $appId);
+			if ($contribution === null) {
+				continue;
+			}
+
+			$contribution['app'] = $appId;
+			$tiles->add(contribution: $contribution);
+		}
+	}//end addStartTiles()
+
+	/**
+	 * The provider's normalised contribution for one audience, or null when
+	 * it gives none or fails (logged).
+	 *
+	 * @param object             $provider The app's contribution provider.
+	 * @param mixed              $audience The audience.
+	 * @param array<int, string> $served   Every audience the provider serves.
+	 * @param string             $appId    The app.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-contribution-contract/spec.md#requirement-an-action-may-offer-itself-as-a-start-tile-with-a-summary-and-its-audiences-req-snw-020
+	 */
+	private function servedContribution(object $provider, mixed $audience, array $served, string $appId): array|null {
+		try {
+			$contribution = $this->locator->contributionOf(provider: $provider, subject: ['audience' => $audience]);
+			if (is_array($contribution) === false) {
+				return null;
+			}
+
+			$contribution['servedAudiences'] = $served;
+			$contribution = $this->normaliser->normalise(contribution: $contribution);
+		} catch (Throwable $e) {
+			$this->logger->error('Portaliq: contribution provider failed (start tiles)', ['app' => $appId, 'reason' => $e->getMessage()]);
+			return null;
+		}
+
+		return $contribution;
+	}//end servedContribution()
 
 	/**
 	 * Drop every collection and action whose `minTrust` the subject does not

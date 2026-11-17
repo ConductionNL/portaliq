@@ -31,6 +31,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * REQ-SPL-004: one reminder per end date, to every participant.
@@ -79,7 +80,10 @@ class PlanEndReminderServiceTest extends TestCase {
 				return $rows;
 			}
 
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved[] = ['schema' => (string)$schema, 'uuid' => $uuid, 'object' => $object];
 				if ($schema === 'portalPlan') {
 					foreach ($this->plans as $i => $plan) {

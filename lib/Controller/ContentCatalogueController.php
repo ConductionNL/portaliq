@@ -347,7 +347,6 @@ class ContentCatalogueController extends Controller {
 	 * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-3
 	 */
 	private function withVisitorValues(string $portal, string $app, array $filters): array {
-		$subject  = null;
 		$resolved = null;
 		foreach ($filters as $label => $values) {
 			$values = array_values(array_filter((array)$values, 'is_string'));
@@ -357,11 +356,7 @@ class ContentCatalogueController extends Controller {
 
 			$values = array_values(array_filter($values, static fn (string $value): bool => $value !== self::VISITOR));
 			if ($resolved === null) {
-				$subject  = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
-				$resolved = [];
-				if ($subject !== null && $app !== '') {
-					$resolved = $this->catalogue->visitorValuesFor(portal: $portal, appId: $app, subject: $subject);
-				}
+				$resolved = $this->visitorValues(portal: $portal, app: $app);
 			}
 
 			$values = array_merge($values, ($resolved[$label] ?? []));
@@ -375,4 +370,24 @@ class ContentCatalogueController extends Controller {
 
 		return $filters;
 	}//end withVisitorValues()
+
+	/**
+	 * The signed-in visitor's own values from the app, per filter label; none for an anonymous visitor.
+	 *
+	 * @param string $portal The portal slug.
+	 * @param string $app    The app whose index is read.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-3
+	 */
+	private function visitorValues(string $portal, string $app): array {
+		$subject  = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
+		$resolved = [];
+		if ($subject !== null && $app !== '') {
+			$resolved = $this->catalogue->visitorValuesFor(portal: $portal, appId: $app, subject: $subject);
+		}
+
+		return $resolved;
+	}//end visitorValues()
 }//end class

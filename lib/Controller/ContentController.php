@@ -39,6 +39,7 @@ use OCA\Portaliq\Kernel\Contracts\PublicAssistantChannelInterface;
 use OCA\Portaliq\Kernel\Contracts\PublicSourceScopeInterface;
 use OCA\Portaliq\Kernel\Contracts\SiteOrganisationInterface;
 use OCA\Portaliq\Kernel\Contracts\TrafficConfigResolverInterface;
+use OCA\Portaliq\Service\Cms\MediaReferences;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -100,6 +101,7 @@ class ContentController extends Controller {
 	 * @param PublicSourceScopeInterface|null     $assistantScope What the public assistant may read.
 	 * @param NextcloudRegistrationDoorInterface|null $registrationDoor Where "Create an account" leads (REQ-NCL-005).
 	 * @param SiteOrganisationInterface|null      $siteOrganisation Names the portal's organisation.
+	 * @param MediaReferences|null       $media        Resolves the portal's media:<id> images.
 	 *
 	 * @return void
 	 */
@@ -121,10 +123,40 @@ class ContentController extends Controller {
 		private readonly ?PublicSourceScopeInterface $assistantScope = null,
 		private readonly ?NextcloudRegistrationDoorInterface $registrationDoor = null,
 		private readonly ?SiteOrganisationInterface $siteOrganisation = null,
+		private readonly ?MediaReferences $media = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
 
+
+	/**
+	 * A portal image field as the address the site can load: a media:<id>
+	 * reference becomes the published item's public address of this portal,
+	 * '' when it does not resolve; any other value is sent as it is stored.
+	 *
+	 * @param array<string, mixed> $portal The serving portal.
+	 * @param string               $field  The image field.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+	 */
+	private function portalImage(array $portal, string $field): string {
+		$value = $portal[$field] ?? '';
+		if (is_string($value) === false) {
+			return '';
+		}
+
+		if (MediaReferences::isReference(value: $value) === false) {
+			return $value;
+		}
+
+		if ($this->media === null) {
+			return '';
+		}
+
+		return $this->media->image(portal: (string)($portal['slug'] ?? ''), value: $value);
+	}//end portalImage()
 
 	/**
 	 * The resolved site's own presentation record.
@@ -152,7 +184,15 @@ class ContentController extends Controller {
 				'title'   => (string)($portal['title'] ?? ''),
 				'slug'    => (string)($portal['slug'] ?? ''),
 				'theme'   => (string)($portal['theme'] ?? ''),
-				'logo'    => (string)($portal['logo'] ?? ''),
+				// The logo and the hero image may be items of the portal's
+				// media library (portal-identity-from-the-admin REQ-PIA-001):
+				// sent as their public address, never as the reference.
+				'logo'    => $this->portalImage(portal: $portal, field: 'logo'),
+				'heroImage' => $this->portalImage(portal: $portal, field: 'heroImage'),
+				// The organisation type's label, stored from the TOOI concept on
+				// save: the site names the organisation's kind with it, and says
+				// "de organisatie" without it (REQ-PIA-003).
+				'organisationTypeLabel' => (string)($portal['organisationTypeLabel'] ?? ''),
 				// The line under the name in the footer's logo block. The
 				// reference carries one ("Één plek voor alle publicaties van
 				// Gemeente Tilburg") and this app had no field for it at all,
@@ -231,7 +271,8 @@ class ContentController extends Controller {
 						'menus' => $this->reader->menus(
 							portal: (string)$portal['slug'],
 							locale: $this->locale(portal: $portal, requested: $locale),
-							audience: $this->audience()
+							audience: $this->audience(),
+							defaultLocale: $this->defaultLocale(portal: $portal)
 						),
 					]
 				);
@@ -262,7 +303,8 @@ class ContentController extends Controller {
 						'pages' => $this->reader->pages(
 							portal: (string)$portal['slug'],
 							locale: $this->locale(portal: $portal, requested: $locale),
-							audience: $this->audience()
+							audience: $this->audience(),
+							defaultLocale: $this->defaultLocale(portal: $portal)
 						),
 					]
 				);
@@ -295,7 +337,8 @@ class ContentController extends Controller {
 					route: $normalised,
 					locale: $this->locale(portal: $portal, requested: $locale),
 					audience: $this->audience(),
-					organisation: (string)($portal['organisation'] ?? '')
+					organisation: (string)($portal['organisation'] ?? ''),
+					defaultLocale: $this->defaultLocale(portal: $portal)
 				);
 
 				if ($page === null) {
@@ -331,7 +374,8 @@ class ContentController extends Controller {
 						'terms' => $this->reader->glossary(
 							portal: (string)$portal['slug'],
 							locale: $this->locale(portal: $portal, requested: $locale),
-							audience: $this->audience()
+							audience: $this->audience(),
+							defaultLocale: $this->defaultLocale(portal: $portal)
 						),
 					]
 				);
@@ -516,7 +560,7 @@ class ContentController extends Controller {
 	 */
 	private function locale(array $portal, ?string $requested): string {
 		$locales = array_values((array)($portal['locales'] ?? []));
-		$default = (string)($locales[0] ?? 'nl');
+		$default = $this->defaultLocale(portal: $portal);
 
 		if ($requested === null || $requested === '') {
 			return $default;
@@ -528,6 +572,24 @@ class ContentController extends Controller {
 
 		return $default;
 	}//end locale()
+
+	/**
+	 * The portal's default locale: the first it declares, `nl` when none.
+	 *
+	 * Handed to the reader as the fallback for content that has no
+	 * translation in the requested locale.
+	 *
+	 * @param array $portal The resolved portal.
+	 *
+	 * @return string The default locale.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-content-must-be-served-in-the-language-the-visitor-asked-for
+	 */
+	private function defaultLocale(array $portal): string {
+		$locales = array_values((array)($portal['locales'] ?? []));
+
+		return (string)($locales[0] ?? 'nl');
+	}//end defaultLocale()
 
 
 	/**

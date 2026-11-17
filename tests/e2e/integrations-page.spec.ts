@@ -220,18 +220,15 @@ test.describe('Integrations over the connection registry', () => {
 		// No generic Add button: a row nothing declared has nothing to check.
 		await expect(page.locator('[data-testid="cn-cta-primary"]')).toHaveCount(0)
 
-		// The action lives in the overflow menu. English and Dutch are the two
-		// catalogues this change ships, and nothing forces the E2E locale.
-		await page.locator('[data-testid="cn-actions"] button').first().click()
+		// The action is a header button. The request carries `link=1`; integriq
+		// opens its link-a-source dialog and drops the flag from the address,
+		// so the navigation request is what proves where the button sends.
 		await Promise.all([
-			page.waitForURL(/\/apps\/integriq\/connections\?app=portaliq&link=1$/, {
+			page.waitForRequest(/\/apps\/integriq\/connections\?app=portaliq&link=1$/, {
 				timeout: 30_000,
 			}),
-			page
-				.getByRole('menuitem', {
-					name: /Add integration|Integratie toevoegen/i,
-				})
-				.click(),
+			page.getByTestId('cn-index-header-button-add-integration').click(),
 		])
+		await page.waitForURL(/\/apps\/integriq\/connections\?app=portaliq/, { timeout: 30_000 })
 	})
 })

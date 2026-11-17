@@ -1334,6 +1334,27 @@ export function createPortalApi(config, store = {}) {
 		},
 
 		/**
+		 * The messages about one object the subject owns, both ways, newest
+		 * first (capability-rows-said-and-planned T07): `{ label, messages }`
+		 * from the app's `messages` provider, read only after the server
+		 * proved the object is the subject's. Null when the collection
+		 * declares none, the object is not the subject's, or the messages
+		 * could not be read.
+		 *
+		 * @param {object} collection Manifest collection: `{ id, register, schema }`.
+		 * @param {string} id The object id.
+		 * @param {string} [mandateId] The mandate a case listed under one is read under.
+		 * @return {Promise<object|null>} The messages, or null.
+		 * @spec openspec/changes/capability-rows-said-and-planned/tasks.md#t07
+		 */
+		async fetchCaseMessages(collection, id, mandateId = '') {
+			const body = await get(
+				`${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/messages?collection=${encodeURIComponent(collection.id)}${mandateQuery(mandateId)}`,
+			).catch(() => null)
+			return body && Array.isArray(body.messages) ? body : null
+		},
+
+		/**
 		 * The items of one object the subject owns (my-dossiers): `{ label,
 		 * items, removeAction }` from the app's `itemList` provider, read only
 		 * after the server proved the object is the subject's. Null when the
@@ -1426,6 +1447,29 @@ export function createPortalApi(config, store = {}) {
 				}
 				const body = await res.json()
 				return Array.isArray(body?.drafts) ? body.drafts : []
+			} catch {
+				return []
+			}
+		},
+
+		/**
+		 * The resident's own requests that wait for a co-signer or were not
+		 * co-signed; an empty list when there is none or it cannot be read.
+		 *
+		 * @return {Promise<Array<{reference: string, route: string, submittedAt: string, state: string, cosign: {state: string, name: string, deadline: string}}>>}
+		 *
+		 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+		 */
+		async listHeldRequests() {
+			try {
+				const res = await fetch(`${base}/cosign/held`, {
+					headers: { Accept: 'application/json', ...portalHeader, ...authHeaders() },
+				})
+				if (!res.ok) {
+					return []
+				}
+				const body = await res.json()
+				return Array.isArray(body?.requests) ? body.requests : []
 			} catch {
 				return []
 			}

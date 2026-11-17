@@ -122,10 +122,7 @@ class ActivityContributionService implements ActivityContributionServiceInterfac
 			return null;
 		}
 
-		$description = trim((string)($params['description'] ?? ''));
-		if ($description === '') {
-			$description = (string)($activity['title'] ?? '');
-		}
+		$description = $this->descriptionOf(activity: $activity, params: $params);
 
 		$charge = [
 			'chargeable' => [
@@ -141,6 +138,36 @@ class ActivityContributionService implements ActivityContributionServiceInterfac
 			'voluntary' => $params['voluntary'],
 			'administrationId' => trim((string)$params['administrationId']),
 		];
+
+		return $this->withOptionalKeys(charge: $charge, params: $params);
+	}//end charge()
+
+	/**
+	 * The charge's description: the one asked for, else the activity's title.
+	 *
+	 * @param array<string, mixed> $activity The activity.
+	 * @param array<string, mixed> $params The request.
+	 *
+	 * @return string
+	 */
+	private function descriptionOf(array $activity, array $params): string {
+		$description = trim((string)($params['description'] ?? ''));
+		if ($description === '') {
+			$description = (string)($activity['title'] ?? '');
+		}
+
+		return $description;
+	}//end descriptionOf()
+
+	/**
+	 * The charge with each optional key the request fills.
+	 *
+	 * @param array<string, mixed> $charge The charge part of the payload.
+	 * @param array<string, mixed> $params The request.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withOptionalKeys(array $charge, array $params): array {
 		foreach (self::OPTIONAL_KEYS as $key) {
 			if (is_string($params[$key] ?? null) === true && $params[$key] !== '') {
 				$charge[$key] = $params[$key];
@@ -148,7 +175,7 @@ class ActivityContributionService implements ActivityContributionServiceInterfac
 		}
 
 		return $charge;
-	}//end charge()
+	}//end withOptionalKeys()
 
 	/**
 	 * Whether the request carries an amount above zero, a boolean `voluntary`
@@ -176,6 +203,20 @@ class ActivityContributionService implements ActivityContributionServiceInterfac
 	 * @return array<string, mixed>
 	 */
 	private function raiseFor(array $signups, array $charge): array {
+		$prepared = $this->prepared(signups: $signups);
+
+		return $this->raiseChunks(sendable: $prepared['sendable'], charge: $charge, results: $prepared['results']);
+	}//end raiseFor()
+
+	/**
+	 * The sign-ups split into those with a debtor, as recipients, and the
+	 * failed entries of those without contact details.
+	 *
+	 * @param array<int, array<string, mixed>> $signups The unbilled confirmed sign-ups.
+	 *
+	 * @return array{results: array<int, array<string, mixed>>, sendable: array<int, array<string, mixed>>}
+	 */
+	private function prepared(array $signups): array {
 		$results = [];
 		$sendable = [];
 		foreach ($signups as $signup) {
@@ -191,6 +232,19 @@ class ActivityContributionService implements ActivityContributionServiceInterfac
 			];
 		}
 
+		return ['results' => $results, 'sendable' => $sendable];
+	}//end prepared()
+
+	/**
+	 * Raise the recipients in chunks and write the references.
+	 *
+	 * @param array<int, array<string, mixed>> $sendable The sign-ups with their recipients.
+	 * @param array<string, mixed> $charge The charge part of the payload.
+	 * @param array<int, array<string, mixed>> $results The entries so far.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function raiseChunks(array $sendable, array $charge, array $results): array {
 		foreach (array_chunk($sendable, self::CHUNK) as $chunk) {
 			$answer = $this->raiser->raise(payload: $charge + ['recipients' => array_column($chunk, 'recipient')]);
 			if (isset($answer['error']) === true) {
@@ -203,7 +257,7 @@ class ActivityContributionService implements ActivityContributionServiceInterfac
 		}
 
 		return $this->summary(results: $results);
-	}//end raiseFor()
+	}//end raiseChunks()
 
 	/**
 	 * The debtor for a guardian's portal account, or null without a name or

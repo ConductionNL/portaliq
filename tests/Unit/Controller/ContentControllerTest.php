@@ -24,6 +24,7 @@ use OCA\Portaliq\Contribution\PortalContributionFilter;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\ContentController;
 use OCA\Portaliq\Service\Assistant\PublicAssistantChannel;
+use OCA\Portaliq\Service\Cms\MediaReferences;
 use OCA\Portaliq\Service\Cms\PortalShell;
 use OCA\Portaliq\Service\CmsReader;
 use OCA\Portaliq\Service\Identity\NextcloudRegistrationDoor;
@@ -114,6 +115,13 @@ class ContentControllerTest extends TestCase {
 	private ?PortalOrganisationConfigService $organisations = null;
 
 	/**
+	 * Resolves the portal's media:<id> images, or none.
+	 *
+	 * @var MediaReferences|null
+	 */
+	private ?MediaReferences $media = null;
+
+	/**
 	 * The incoming request.
 	 *
 	 * @var IRequest&MockObject
@@ -177,7 +185,8 @@ class ContentControllerTest extends TestCase {
 			userSession: ($this->userSession ?? $this->createMock(IUserSession::class)),
 			assistant: $assistant,
 			registrationDoor: $this->registrationDoor,
-			siteOrganisation: ($this->organisations === null) ? null : new SiteOrganisation(organisations: $this->organisations), publicSourceScope: new PublicSourceScope()
+			siteOrganisation: ($this->organisations === null) ? null : new SiteOrganisation(organisations: $this->organisations), publicSourceScope: new PublicSourceScope(),
+			media: $this->media
 		);
 	}//end controller()
 
@@ -296,6 +305,66 @@ class ContentControllerTest extends TestCase {
 
 		$this->assertSame(['id' => 'bacda7a4', 'name' => 'Gemeente Zuiddrecht'], $data['organisation']);
 	}//end testSiteNamesItsOrganisation()
+
+
+	/**
+	 * portal-identity-from-the-admin REQ-PIA-001/002: the site sends the
+	 * portal's logo and hero image as public addresses, never as the
+	 * media:<id> reference the site could not load.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+	 */
+	public function testSiteSendsThePortalsImagesAsAddresses(): void {
+		$portal = $this->portal();
+		$this->resolver->method('resolve')->willReturn([...$portal, 'logo' => 'media:logo', 'heroImage' => 'media:hero']);
+		$this->media = $this->createMock(MediaReferences::class);
+		$this->media->expects($this->exactly(2))->method('image')->willReturnCallback(
+			static fn (string $portal, string $value): string => ($value === 'media:hero' ? 'https://x/media/hero?portal=' . $portal : 'https://x/media/logo?portal=' . $portal)
+		);
+
+		$data = $this->controller()->site()->getData();
+
+		$this->assertSame('https://x/media/logo?portal=' . $portal['slug'], $data['logo']);
+		$this->assertSame('https://x/media/hero?portal=' . $portal['slug'], $data['heroImage']);
+	}//end testSiteSendsThePortalsImagesAsAddresses()
+
+
+	/**
+	 * An address logo is sent as stored; a reference that cannot be resolved is sent as nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+	 */
+	public function testSiteNeverSendsAnUnresolvedReference(): void {
+		$this->resolver->method('resolve')->willReturn([...$this->portal(), 'logo' => '/apps/portaliq/logo/zuid.svg', 'heroImage' => 'media:hero']);
+
+		$data = $this->controller()->site()->getData();
+
+		$this->assertSame('/apps/portaliq/logo/zuid.svg', $data['logo']);
+		$this->assertSame('', $data['heroImage']);
+	}//end testSiteNeverSendsAnUnresolvedReference()
+
+
+	/**
+	 * The site names the organisation's kind from the label stored with the
+	 * portal's TOOI organisation type, and gets '' without one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+	 */
+	public function testSiteSendsTheOrganisationTypeLabel(): void {
+		$this->resolver->method('resolve')->willReturnOnConsecutiveCalls(
+			[...$this->portal(), 'organisationType' => 'https://identifier.overheid.nl/tooi/def/ont/Waterschap', 'organisationTypeLabel' => 'waterschap'],
+			$this->portal()
+		);
+
+		$this->assertSame('waterschap', $this->controller()->site()->getData()['organisationTypeLabel']);
+		$this->assertSame('', $this->controller()->site()->getData()['organisationTypeLabel']);
+	}//end testSiteSendsTheOrganisationTypeLabel()
 
 
 	/**
@@ -552,6 +621,24 @@ class ContentControllerTest extends TestCase {
 
 		$this->controller()->menus(portal: 'open-tilburg', locale: 'en');
 	}//end testASupportedLocaleIsHonoured()
+
+
+	/**
+	 * The page read is told both the requested locale and the portal's
+	 * default, so a route with no English page falls back to the Dutch one
+	 * rather than to whichever row comes first (#703).
+	 *
+	 * @return void
+	 */
+	public function testThePageReadKnowsThePortalsDefaultLocale(): void {
+		$this->resolver->method('resolve')->willReturn($this->portal());
+		$this->reader->expects($this->once())
+			->method('page')
+			->with('open-tilburg', '/over', 'en', 'anonymous', '', 'nl')
+			->willReturn(['route' => '/over']);
+
+		$this->controller()->page(route: 'over', portal: 'open-tilburg', locale: 'en');
+	}//end testThePageReadKnowsThePortalsDefaultLocale()
 
 
 	/**

@@ -24,8 +24,10 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\PortalThemeChoiceInterface;
+use OCA\Portaliq\Service\Tenancy\PortalAdminScope;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 
@@ -39,10 +41,12 @@ class PortalThemeController extends Controller {
 	 *
 	 * @param IRequest          $request The request.
 	 * @param PortalThemeChoiceInterface $choice  The sets and the choice.
+	 * @param PortalAdminScope  $scope   Who may administer which portal.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalThemeChoiceInterface $choice,
+		private readonly PortalAdminScope $scope,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
@@ -54,15 +58,19 @@ class PortalThemeController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @auth admin-only A portal's house style is an administrator's choice.
-	 *       Nextcloud expresses admin-only as the ABSENCE of an opt-out
-	 *       attribute, so this tag is the declaration.
+	 * @auth portal-admin A portal's house style is its administrators' choice:
+	 *       an instance administrator, or a member of the portal's own
+	 *       `adminGroups`; any other caller gets the unknown-portal 404
+	 *       (PortalAdminScope).
+	 *
+	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t11
 	 *
 	 * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
 	 */
+	#[NoAdminRequired]
 	public function index(string $slug): JSONResponse {
 		$portal = $this->choice->portalBySlug(slug: $slug);
-		if ($portal === null) {
+		if ($portal === null || $this->scope->mayAdminister(portal: $portal) === false) {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
 		}
 
@@ -82,15 +90,19 @@ class PortalThemeController extends Controller {
 	 *                      for a set that does not resolve, or one that fails
 	 *                      contrast without confirmation; 502 when the write failed.
 	 *
-	 * @auth admin-only A portal's house style is an administrator's choice.
-	 *       Nextcloud expresses admin-only as the ABSENCE of an opt-out
-	 *       attribute, so this tag is the declaration.
+	 * @auth portal-admin A portal's house style is its administrators' choice:
+	 *       an instance administrator, or a member of the portal's own
+	 *       `adminGroups`; any other caller gets the unknown-portal 404
+	 *       (PortalAdminScope).
+	 *
+	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t11
 	 *
 	 * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
 	 */
+	#[NoAdminRequired]
 	public function update(string $slug, string $theme = ''): JSONResponse {
 		$portal = $this->choice->portalBySlug(slug: $slug);
-		if ($portal === null) {
+		if ($portal === null || $this->scope->mayAdminister(portal: $portal) === false) {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
 		}
 

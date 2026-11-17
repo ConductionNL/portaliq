@@ -111,28 +111,54 @@ class MessageTranslationClient {
 	 * @return array<string, mixed>|null The entry, or null when the answer is not a labelled translation.
 	 */
 	private function entryFrom(mixed $answer, string $targetLanguage): ?array {
-		if (is_array($answer) === false
-			|| ($answer['available'] ?? false) !== true
-			|| ($answer['translatedByAi'] ?? null) !== true
-			|| is_string($answer['translatedText'] ?? null) === false
-			|| $answer['translatedText'] === ''
-		) {
+		if ($this->isUnlabelled(answer: $answer) === true) {
 			return null;
 		}
 
-		$entry = [
-			'targetLanguage' => $targetLanguage,
-			'text'           => $answer['translatedText'],
-			'translatedByAi' => true,
-		];
-		foreach (self::PROVENANCE_FIELDS as $field) {
-			$entry[$field] = $answer[$field] ?? null;
-		}
+		$entry = $this->withProvenance(
+			entry: [
+				'targetLanguage' => $targetLanguage,
+				'text'           => $answer['translatedText'],
+				'translatedByAi' => true,
+			],
+			answer: $answer
+		);
 
 		$entry['sourceLanguage'] = (string)($entry['sourceLanguage'] ?? 'und');
 		$entry['translatedAt']   = gmdate('c');
 		return $entry;
 	}//end entryFrom()
+
+	/**
+	 * Whether hermiq's answer is not an available, AI-labelled, non-empty translation.
+	 *
+	 * @param mixed $answer hermiq's answer.
+	 *
+	 * @return bool
+	 */
+	private function isUnlabelled(mixed $answer): bool {
+		return is_array($answer) === false
+			|| ($answer['available'] ?? false) !== true
+			|| ($answer['translatedByAi'] ?? null) !== true
+			|| is_string($answer['translatedText'] ?? null) === false
+			|| $answer['translatedText'] === '';
+	}//end isUnlabelled()
+
+	/**
+	 * The entry with each provenance field of the answer, null when absent.
+	 *
+	 * @param array<string, mixed> $entry  The entry so far.
+	 * @param array<string, mixed> $answer hermiq's answer.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withProvenance(array $entry, array $answer): array {
+		foreach (self::PROVENANCE_FIELDS as $field) {
+			$entry[$field] = $answer[$field] ?? null;
+		}
+
+		return $entry;
+	}//end withProvenance()
 
 	/**
 	 * hermiq's engine, or null when hermiq is not enabled or cannot be built.

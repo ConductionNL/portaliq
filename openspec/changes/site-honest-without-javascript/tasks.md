@@ -9,24 +9,25 @@ each test carries the `@e2e portaliq site-without-javascript::<scenario>` tag of
 
 ## 1. The notice on every page (REQ-SHJ-001)
 
-- [ ] 1.1 In `templates/site.php`, directly after the skip link, emit `<noscript><main id="pq-main">` with the notice
+- [x] 1.1 In `templates/site.php`, directly after the skip link, emit `<noscript><main id="pq-main">` with the notice
   and a link to `/site/plain` carrying `route`, `portal`, `_search` and `_page` from the request (built by
   `PortalPageController::site()` as `plainUrl`, escaped with `p()`). Strings through `IL10N`, Dutch and English in
   `l10n/`; `npm run check:l10n-js` stays green.
   - **fails today**: e2e `a visitor without JavaScript is told and given a way on` (notice text, link href, skip link
     focus) and `a visitor with JavaScript sees no notice` (exactly one `#pq-main`, notice hidden).
   - unit `tests/Unit/Controller/PortalPageControllerTest.php::testThePlainUrlCarriesTheRouteAndTheSearch`.
+  - done: `SiteShell::plainUrl()` (in the shell's template params as `plainUrl`, for `site()` and `sitePath()` alike) carries `route` (the path under the site route, else `?route=`), the named portal slug, `_search` and `_page`, keeping `/` readable; `templates/site.php` emits the `<noscript><main id="pq-main">` notice after the skip link, strings in `l10n/en.json` and `nl.json` with the `.js` rebuilt. The link points at `/site/plain` under the site route, so it is right once 2.1 adds that route. Unit test added; the two e2e tests are browser tests and were not run.
 
 ## 2. The plain version (REQ-SHJ-002)
 
-- [ ] 2.1 Route `portalPage#plain` at `GET /site/plain`, `PortalPageController::plain()` with `#[PublicPage]`,
+- [x] 2.1 Route `portalPage#plain` at `GET /site/plain`, `PortalPageController::plain()` with `#[PublicPage]`,
   `#[NoCSRFRequired]`, `#[NoAdminRequired]` and the same `#[AnonRateLimit]` as `site()`, rendering
   `templates/site-plain.php` with `RENDER_AS_BLANK` and the same CSP as `site()`. Resolve the portal as `site()`
   does; read every page and menu through `CmsReader` with audience `anonymous`, never the session's.
   - **fails today**: `tests/Unit/Controller/PortalPageControllerPlainTest.php::testThePlainPageIsPublicAndRateLimited`,
     `testItReadsAsAnonymousEvenWithASession`, `testAnUnknownOrDraftRouteIs404`.
   - Gates route-auth and semantic-auth must pass.
-- [ ] 2.2 Move the stylesheet list and the theme `<style>` lines out of `templates/site.php` into one shared partial
+- [x] 2.2 Move the stylesheet list and the theme `<style>` lines out of `templates/site.php` into one shared partial
   `templates/parts/site-stylesheets.php`, included by both templates, so the plain page wears the same theme.
   - node test `tests/site-plain.spec.mjs` (new, wired into `check:specs` as `check:site-plain`):
     `both templates include the same stylesheet partial` and `the plain template contains no script element`.
@@ -35,7 +36,7 @@ each test carries the `@e2e portaliq site-without-javascript::<scenario>` tag of
   `https`, `mailto` and relative paths (others are rendered as text).
   - **fails today**: `tests/Unit/Service/Cms/PlainMarkdownTest.php::testTheSubsetRenders`,
     `testScriptIsEscaped`, `testAJavascriptLinkLosesItsTarget`, `testRawHtmlIsEscaped`.
-- [ ] 2.4 `lib/Service/Cms/PlainPageRenderer.php` builds the view model: title, summary, menu links into
+- [x] 2.4 `lib/Service/Cms/PlainPageRenderer.php` builds the view model: title, summary, menu links into
   `/site/plain`, a markdown body through `PlainMarkdown`, and per grid widget (in grid order) the text of `markdown`,
   `nlHeading` (level clamped 1 to 6), `nlParagraph`, `nlList` and `nlLinkList` (read each widget's props from its
   component in `src/site/widgets/` first), the publication widgets from section 3, and for every other widget the
@@ -45,7 +46,7 @@ each test carries the `@e2e portaliq site-without-javascript::<scenario>` tag of
     `testAnInteractiveWidgetSaysItNeedsJavascript`, `testNoWidgetPlaceIsLeftEmpty`.
   - node test in `tests/site-plain.spec.mjs`: `every widget key the site registers has a plain rendering or a label`
     (reads `src/site/components/WidgetGrid.vue`'s map and `src/site/widgets/index.js`).
-- [ ] 2.5 The plain page carries `<link rel="canonical">` to the `/site` address of the same route and the robots
+- [x] 2.5 The plain page carries `<link rel="canonical">` to the `/site` address of the same route and the robots
   value `SiteHead` gives that route.
   - unit `PortalPageControllerPlainTest::testTheCanonicalIsTheSiteAddress`.
   - e2e `a text page reads the same without JavaScript`, `a part that needs JavaScript says so` and
@@ -53,7 +54,7 @@ each test carries the `@e2e portaliq site-without-javascript::<scenario>` tag of
 
 ## 3. Publications without JavaScript (REQ-SHJ-003, REQ-SHJ-004, REQ-SHJ-005)
 
-- [ ] 3.1 `lib/Service/Cms/PlainPublicationReader.php`: `search(string $endpoint, string $query, int $page, int $pageSize): array{state: 'ok'|'unavailable', total: int, results: list<array{id: string, title: string, date: string, summary: string}>}`,
+- [x] 3.1 `lib/Service/Cms/PlainPublicationReader.php`: `search(string $endpoint, string $query, int $page, int $pageSize): array{state: 'ok'|'unavailable', total: int, results: list<array{id: string, title: string, date: string, summary: string}>}`,
   `publication(string $endpoint, string $id): array{state: 'ok'|'not-found'|'unavailable', publication?: array, documents?: list<array{name: string, type: string, size: int, href: string}>}`.
   Calls go through `InstanceLoopback::request('GET', $path, ...)` with no cookie and no `Authorization` header and a
   five second timeout. Only a relative endpoint path is called; an absolute URL, opencatalogi disabled
@@ -66,12 +67,12 @@ each test carries the `@e2e portaliq site-without-javascript::<scenario>` tag of
     `testAForeignEndpointIsNeverCalled`, `testAnAbsentAppIsUnavailableNotEmpty`, `testAServerErrorIsUnavailable`,
     `testMissingAndForbiddenAreBothNotFound`, `testFieldsAreReadTheWayTheBlockReadsThem`.
     Double `InstanceLoopback` with `environmentAwareDouble` against the real class signature.
-- [ ] 3.2 The plain search on a `federatedSearch` widget: the GET form (labelled field `_search`, hidden `route`,
+- [x] 3.2 The plain search on a `federatedSearch` widget: the GET form (labelled field `_search`, hidden `route`,
   submit button), the results, the total, and previous and next links with `_page`; `unavailable` renders the
   REQ-SHJ-005 sentence and never a zero total.
   - **fails today**: `tests/Unit/Service/Cms/PlainPublicationSearchTest.php::testTheFormSubmitsToThePlainRoute`,
     `testPageTwoOfTwentyFive`, `testUnavailableIsNotNothingFound`.
-- [ ] 3.3 The plain detail on a `publicationDetail` widget with a trailing segment (resolve the parent route the way
+- [x] 3.3 The plain detail on a `publicationDetail` widget with a trailing segment (resolve the parent route the way
   `src/site/App.vue::parentRoute()` does): title, summary, date, category and themes by name, documents as download
   links; `not-found` answers 404 with one body for both causes.
   - **fails today**: `tests/Unit/Service/Cms/PlainPublicationDetailTest.php::testThePublicationAndItsDocuments`,
