@@ -22,7 +22,7 @@ import {
 	themeProductsRoute,
 } from '../src/shared/portalNav.js'
 import { accountRedirect } from '../src/site/lib/accountArea.js'
-import { residentMenuGroups } from '../src/site/lib/residentMenu.js'
+import { loadPerRecordRows, residentMenuGroups } from '../src/site/lib/residentMenu.js'
 import {
 	countLine,
 	gather,
@@ -30,7 +30,10 @@ import {
 	productState,
 	productView,
 	rowActions,
+	runningCases,
 	sortedProducts,
+	themeCaseCollections,
+	themeCaseCounts,
 	themesToList,
 	whenHolds,
 } from '../src/site/pages/e/themes.js'
@@ -74,8 +77,9 @@ test('a theme gathers the collections and actions of every contribution tagged w
 	assert.deepEqual(parkeren.products.map((p) => [p.app, p.collection.id]), [['dossiq', 'permits']])
 	assert.deepEqual(parkeren.tasks.map((p) => p.collection.id), ['parkingTasks'])
 	assert.deepEqual(parkeren.actions.map((a) => [a.app, a.action.id]), [['dossiq', 'plate'], ['dossiq', 'visitor'], ['wegiq', 'report']], 'two apps on one page')
-	assert.deepEqual(gather('inkomen', CONTRIBUTIONS), { tasks: [], products: [], actions: [] })
-	assert.deepEqual(gather('parkeren', null), { tasks: [], products: [], actions: [] })
+	assert.deepEqual(parkeren.cases, [], 'no cases collection is tagged')
+	assert.deepEqual(gather('inkomen', CONTRIBUTIONS), { tasks: [], products: [], cases: [], actions: [] })
+	assert.deepEqual(gather('parkeren', null), { tasks: [], products: [], cases: [], actions: [] })
 })
 
 test('a product is valid, expired or not yet in effect by its dates', () => {
@@ -191,7 +195,9 @@ test('the page lists its blocks and says so when a theme has nothing for the res
 	assert.deepEqual(vm.tasks, [], 'tasks with no rows list nothing')
 	vm.offered = page.computed.offered.call(vm)
 	assert.deepEqual(vm.offered.map((a) => a.action.id), ['plate', 'report'])
-	assert.equal(page.computed.isEmpty.call({ tasks: [], offered: [], products: [] }), true)
+	vm.cases = page.computed.cases.call(vm)
+	assert.deepEqual(vm.cases, [], 'no cases collection is tagged')
+	assert.equal(page.computed.isEmpty.call({ tasks: [], cases: [], offered: [], products: [] }), true)
 	assert.equal(page.computed.isEmpty.call(vm), false)
 
 	vm.t = t
@@ -334,4 +340,93 @@ test('the full list of a resident without products says so with the same empty t
 
 	assert.match(page.textOf(page.find('theme-empty')), /Nothing for you at Parkeren right now\./)
 	assert.equal(page.find('theme-tasks'), null)
+})
+
+// T10 (REQ-LDT-005): the running cases of a cases collection tagged with the theme.
+const PERMIT_REQUESTS = {
+	id: 'permitRequests', register: 'dossiq', schema: 'zaak', kind: 'cases', theme: 'parkeren', closedField: 'closedAt',
+}
+const CASE_CONTRIBUTIONS = [
+	{
+		app: 'dossiq',
+		collections: [
+			PERMIT_REQUESTS,
+			{ id: 'otherCases', register: 'dossiq', schema: 'zaak', kind: 'cases' },
+			{ id: 'taxCases', register: 'dossiq', schema: 'zaak', kind: 'cases', theme: 'belasting' },
+		],
+		actions: [],
+	},
+]
+const CASE_ROWS = [
+	{ id: 'z1', title: 'Aanvraag bewonersvergunning', statusLabel: 'In behandeling' },
+	{ id: 'z2', title: 'Aanvraag bezoekersvergunning', closedAt: '2026-09-01', status: 'afgerond' },
+	{ id: 'z3', title: 'Ontheffing laden en lossen', _closed: false, status: '3f2b8c1e-1d2a-4b5c-9d8e-0a1b2c3d4e5f' },
+]
+
+test('a theme gathers its cases collections apart from its tasks, and lists only running cases', () => {
+	const parkeren = gather('parkeren', CASE_CONTRIBUTIONS)
+	assert.deepEqual(parkeren.cases.map((c) => [c.app, c.collection.id]), [['dossiq', 'permitRequests']])
+	assert.deepEqual(parkeren.tasks, [], 'a cases collection never lists as tasks')
+	assert.deepEqual(runningCases(CASE_ROWS, PERMIT_REQUESTS), [
+		{ id: 'z1', title: 'Aanvraag bewonersvergunning', status: 'In behandeling' },
+		{ id: 'z3', title: 'Ontheffing laden en lossen', status: '' },
+	], 'the closed request stays out, a status code reads as no status')
+	assert.deepEqual(runningCases(null, PERMIT_REQUESTS), [])
+})
+
+test('the running cases of a theme are counted for the menu, per theme', () => {
+	assert.deepEqual(
+		themeCaseCollections(CASE_CONTRIBUTIONS).map((c) => [c.key, c.slug]),
+		[['dossiq:permitRequests', 'parkeren'], ['dossiq:taxCases', 'belasting']],
+		'an untagged cases collection is not a theme\'s',
+	)
+	const rows = { 'dossiq:permitRequests': CASE_ROWS, 'dossiq:taxCases': [{ id: 't1', closedAt: '' }], 'dossiq:otherCases': [{ id: 'o1' }] }
+	assert.deepEqual(themeCaseCounts(CASE_CONTRIBUTIONS, rows), { parkeren: 2, belasting: 1 })
+	assert.deepEqual(themeCaseCounts(CASE_CONTRIBUTIONS, {}), {}, 'unread collections count nothing')
+	assert.deepEqual(themeCaseCounts(null, rows), {})
+})
+
+test('the shell reads the theme\'s cases collections and the menu shows the count beside the theme', async () => {
+	const read = []
+	const known = await loadPerRecordRows(CASE_CONTRIBUTIONS, {
+		fetchCollection: async (collection) => {
+			read.push(collection.id)
+			return collection.id === 'permitRequests' ? CASE_ROWS : null
+		},
+	})
+	assert.deepEqual(read.sort(), ['permitRequests', 'taxCases'])
+	assert.deepEqual(Object.keys(known), ['dossiq:permitRequests'], 'a collection that cannot be read is left out')
+
+	const themes = [{ slug: 'parkeren', title: 'Parkeren', intro: '', productsLabel: '' }]
+	const nav = buildNav([], t, shellSections({ session: { subjectRef: 'a' }, contributions: { contributions: [], themes }, threads: [], news: [] }))
+	const menu = (themeCases) => residentMenuGroups(nav, { t, unread: 0, hrefFor: (r) => r, themeCases })
+		.find((g) => g.key === 'themes').items[0]
+	const counted = menu(themeCaseCounts(CASE_CONTRIBUTIONS, known))
+	assert.equal(counted.badge, '2')
+	assert.equal(counted.badgeLabel, '2 running')
+	assert.equal(menu({}).badge, undefined, 'no running case, no count')
+})
+
+test('the theme page lists the running cases and is not empty with only a case', async () => {
+	const page = await loadSfc('src/site/pages/e/ThemePage.vue')
+	const calls = []
+	const vm = {
+		entry: { theme: { slug: 'parkeren', title: 'Parkeren', intro: '', productsLabel: '' } },
+		contributions: { contributions: CASE_CONTRIBUTIONS },
+		api: { fetchCollection: async (collection) => (calls.push(collection.id), collection.id === 'permitRequests' ? CASE_ROWS : []) },
+		rows: {},
+		loading: true,
+	}
+	vm.theme = page.computed.theme.call(vm)
+	vm.gathered = page.computed.gathered.call(vm)
+	vm.keyOf = page.methods.keyOf
+	await page.methods.load.call(vm)
+	assert.deepEqual(calls, ['permitRequests'])
+	vm.cases = page.computed.cases.call(vm)
+	assert.deepEqual(vm.cases.map((c) => [c.key, c.title]), [
+		['dossiq:permitRequests:z1', 'Aanvraag bewonersvergunning'],
+		['dossiq:permitRequests:z3', 'Ontheffing laden en lossen'],
+	])
+	assert.equal(page.computed.isEmpty.call({ allProducts: false, tasks: [], cases: vm.cases, offered: [], products: [] }), false)
+	assert.equal(page.computed.isEmpty.call({ allProducts: false, tasks: [], cases: [], offered: [], products: [] }), true)
 })

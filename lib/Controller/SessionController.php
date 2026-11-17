@@ -4,11 +4,16 @@
  * Portaliq Session Controller
  *
  * The public auth-edge HTTP surface for the portal SPA. `index()` resolves the
- * caller's bearer to a server-derived subject (fail-closed). `devLogin()` mints
- * a session WITHOUT a real IdP — it is gated behind Nextcloud debug mode or an
- * explicit app flag so it can never issue tokens in production; it exists so the
- * portal is exercisable before the eHerkenning / DigiD broker (dormant, awaiting
- * OpenConnector) is wired. `logout()` ends the client session.
+ * caller's bearer to a server-derived subject (fail-closed). `oidcStart()` and
+ * `oidcCallback()` are the live, routed broker login: a generic OIDC Relying
+ * Party that sends the caller to a DigiD / eHerkenning / eIDAS broker and mints
+ * a portal session from the validated ID token (portal-oidc-broker-login; the
+ * integriq broker route lives in BrokerSessionController). `nextcloud()` signs
+ * in with an existing Nextcloud account for portals that declare that mode.
+ * `devLogin()` mints a session WITHOUT a real IdP — it is gated behind
+ * Nextcloud debug mode or an explicit app flag so it can never issue tokens in
+ * production; it exists so the portal is exercisable without a configured
+ * broker. `refresh()` rotates the bearer and `logout()` ends the client session.
  *
  * @category Controller
  * @package  OCA\Portaliq\Controller
@@ -34,20 +39,17 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\Identity\EmailLink\EmailLinkSetting;
-use OCA\Portaliq\Service\OidcClaimMapperService;
-use OCA\Portaliq\Service\OidcClientService;
-use OCA\Portaliq\Service\OidcStateStoreService;
-use OCA\Portaliq\Service\Identity\ContactAddressValues;
-use OCA\Portaliq\Service\Identity\NextcloudRegistrationDoor;
-use OCA\Portaliq\Service\PortalAccountService;
-use OCA\Portaliq\Service\PortalOrganisationConfigService;
-use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
-use OCA\Portaliq\Service\RequestedPortal;
-use OCA\Portaliq\Service\Signin\OrganisationLoginConfig;
-use OCA\Portaliq\Service\Signin\SiteReturnAddress;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\EmailLinkSettingInterface;
+use OCA\Portaliq\Kernel\Contracts\NextcloudRegistrationDoorInterface;
+use OCA\Portaliq\Kernel\Contracts\OidcClaimMapperServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\OidcClientServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\OidcStateStoreServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\OrganisationLoginConfigInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalAccountServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalOrganisationConfigServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -62,6 +64,9 @@ use OCP\IConfig;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 use OCP\IUserSession;
+use OCA\Portaliq\Kernel\Contracts\ContactAddressValuesInterface;
+use OCA\Portaliq\Kernel\Contracts\RequestedPortalInterface;
+use OCA\Portaliq\Kernel\Contracts\SiteReturnAddressInterface;
 
 /**
  * Public auth-edge endpoints for the portal SPA.
@@ -113,7 +118,7 @@ class SessionController extends Controller {
 	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-server-must-link-to-the-site-directly-req-srp-049
 	 */
 	private function portalReturnTo(): string {
-		return $this->urlGenerator->linkToRoute(Application::APP_ID . '.portalPage.site');
+		return $this->urlGenerator->linkToRoute(AppIdentity::APP_ID . '.portalPage.site');
 	}//end portalReturnTo()
 
 	/**
@@ -148,9 +153,9 @@ class SessionController extends Controller {
 	 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 	 */
 	private function siteReturn(string $returnTo): string {
-		return (new SiteReturnAddress())->accept(
+		return $this->siteReturnAddress->accept(
 			candidate: $returnTo,
-			sitePath: $this->urlGenerator->linkToRoute(Application::APP_ID . '.portalPage.site')
+			sitePath: $this->urlGenerator->linkToRoute(AppIdentity::APP_ID . '.portalPage.site')
 		);
 	}//end siteReturn()
 
@@ -200,7 +205,7 @@ class SessionController extends Controller {
 		}
 
 		return new RedirectResponse(
-			$this->urlGenerator->linkToRoute(Application::APP_ID . '.brokerSession.start', $params),
+			$this->urlGenerator->linkToRoute(AppIdentity::APP_ID . '.brokerSession.start', $params),
 			Http::STATUS_FOUND
 		);
 	}//end toBroker()
@@ -215,7 +220,7 @@ class SessionController extends Controller {
 	 * @spec openspec/changes/archive/2026-10-07-portal-signin-on-its-own-address/tasks.md#T3
 	 */
 	private function siteFor(string $portal): ?array {
-		if (((new RequestedPortal())->slug(request: $this->request) ?? $portal) === '') {
+		if (($this->requestedPortal->slug(request: $this->request) ?? $portal) === '') {
 			return null;
 		}
 
@@ -242,46 +247,52 @@ class SessionController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request object.
-	 * @param PortalSessionService $session The session service.
+	 * @param PortalSessionServiceInterface $session The session service.
 	 * @param IConfig $config For the dev-login gate.
-	 * @param PortalOrganisationConfigService $orgConfig Resolves per-org OIDC
+	 * @param PortalOrganisationConfigServiceInterface $orgConfig Resolves per-org OIDC
 	 *                                                   broker config
 	 *                                                   (portal-oidc-broker-login).
-	 * @param OidcClientService $oidc OIDC protocol mechanics
+	 * @param OidcClientServiceInterface $oidc OIDC protocol mechanics
 	 *                                (discovery, PKCE, token
 	 *                                exchange, ID-token
 	 *                                validation).
-	 * @param OidcClaimMapperService $claimMapper Claim → identity + LoA →
+	 * @param OidcClaimMapperServiceInterface $claimMapper Claim → identity + LoA →
 	 *                                            trust mapping.
-	 * @param OidcStateStoreService $stateStore Single-use state/nonce/PKCE storage.
-	 * @param PortalAccountService $accounts Find-or-create `portalAccount`.
+	 * @param OidcStateStoreServiceInterface $stateStore Single-use state/nonce/PKCE storage.
+	 * @param PortalAccountServiceInterface $accounts Find-or-create `portalAccount`.
 	 * @param IURLGenerator $urlGenerator Builds the callback redirect_uri
 	 *                                    + the final SPA redirect.
 	 * @param IUserSession $userSession The Nextcloud session, which IS the
 	 *                                  credential for the `nextcloud` mode.
-	 * @param PortalResolver $portals Resolves which portal is being signed
+	 * @param PortalResolverInterface $portals Resolves which portal is being signed
 	 *                                into, so a mode it does not declare
 	 *                                cannot be used against it.
-	 * @param OrganisationLoginConfig|null $loginConfig The route per provider
+	 * @param ContactAddressValuesInterface $contactAddressValues The ContactAddressValues helper.
+	 * @param RequestedPortalInterface $requestedPortal The RequestedPortal helper.
+	 * @param SiteReturnAddressInterface $siteReturnAddress The SiteReturnAddress helper.
+	 * @param OrganisationLoginConfigInterface|null $loginConfig The route per provider
 	 *                                                  (signin-integriq-broker-login).
-	 * @param NextcloudRegistrationDoor|null $residents Admits a resident's first account (REQ-NCL-003).
+	 * @param NextcloudRegistrationDoorInterface|null $residents Admits a resident's first account (REQ-NCL-003).
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
+		private readonly PortalSessionServiceInterface $session,
 		private readonly IConfig $config,
-		private readonly PortalOrganisationConfigService $orgConfig,
-		private readonly OidcClientService $oidc,
-		private readonly OidcClaimMapperService $claimMapper,
-		private readonly OidcStateStoreService $stateStore,
-		private readonly PortalAccountService $accounts,
+		private readonly PortalOrganisationConfigServiceInterface $orgConfig,
+		private readonly OidcClientServiceInterface $oidc,
+		private readonly OidcClaimMapperServiceInterface $claimMapper,
+		private readonly OidcStateStoreServiceInterface $stateStore,
+		private readonly PortalAccountServiceInterface $accounts,
 		private readonly IURLGenerator $urlGenerator,
 		private readonly IUserSession $userSession,
-		private readonly PortalResolver $portals,
-		private readonly ?OrganisationLoginConfig $loginConfig = null,
-		private readonly ?NextcloudRegistrationDoor $residents = null,
+		private readonly PortalResolverInterface $portals,
+		private readonly ContactAddressValuesInterface $contactAddressValues,
+		private readonly RequestedPortalInterface $requestedPortal,
+		private readonly SiteReturnAddressInterface $siteReturnAddress,
+		private readonly ?OrganisationLoginConfigInterface $loginConfig = null,
+		private readonly ?NextcloudRegistrationDoorInterface $residents = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -343,7 +354,7 @@ class SessionController extends Controller {
 				'branch' => (string)($subject['branch'] ?? ''),
 				'branchRestricted' => (($subject['branchRestricted'] ?? false) === true),
 				// Change identity-profile-page T06: ask for an e-mail address when none is in use.
-				'contactPrompt' => (new ContactAddressValues())->needsContactPrompt(account: $account),
+				'contactPrompt' => $this->contactAddressValues->needsContactPrompt(account: $account),
 				// Change the-account-names-the-audience-and-the-company: the company the person acts for.
 				'organisationName' => $this->organisationNameOf(account: $account),
 			] + $this->session->sessionTimes(subject: $subject)
@@ -880,7 +891,8 @@ class SessionController extends Controller {
 			trust: $trust,
 			roles: [$audience . ':read'],
 			branch: (string)($run->mapped['branch'] ?? ''),
-			provider: $run->pending['provider']
+			provider: $run->pending['provider'],
+			kvk: (string)($run->mapped['kvk'] ?? '')
 		);
 	}//end issueOidcSession()
 
@@ -970,7 +982,7 @@ class SessionController extends Controller {
 	 * @return string
 	 */
 	private function oidcRedirectUri(): string {
-		return $this->urlGenerator->linkToRouteAbsolute(Application::APP_ID . '.session.oidcCallback');
+		return $this->urlGenerator->linkToRouteAbsolute(AppIdentity::APP_ID . '.session.oidcCallback');
 	}//end oidcRedirectUri()
 
 	/**
@@ -1194,7 +1206,7 @@ class SessionController extends Controller {
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
 	 */
 	private function portalFor(string $slug): ?array {
-		return $this->portals->resolve(request: $this->request, portalSlug: (new RequestedPortal())->slug(request: $this->request) ?? $slug);
+		return $this->portals->resolve(request: $this->request, portalSlug: $this->requestedPortal->slug(request: $this->request) ?? $slug);
 	}//end portalFor()
 
 	/**
@@ -1249,13 +1261,7 @@ class SessionController extends Controller {
 	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#8
 	 */
 	private function brokerLogoutUrl(array $subject): string {
-		$provider = (string)($subject['provider'] ?? '');
-		// An e-mail link session has no broker to sign out of (REQ-IWI-011).
-		if ($provider === '' || $provider === EmailLinkSetting::MODE) {
-			return '';
-		}
-
-		$config = $this->orgConfig->resolveOidcConfig(orgSlug: (string)($subject['organisation'] ?? ''), provider: $provider);
+		$config = $this->brokerConfig(subject: $subject);
 		if ($config === null) {
 			return '';
 		}
@@ -1270,7 +1276,41 @@ class SessionController extends Controller {
 			$separator = '&';
 		}
 
-		$query = http_build_query(
+		return $endSession . $separator . $this->logoutQuery(config: $config);
+	}//end brokerLogoutUrl()
+
+	/**
+	 * The OIDC config of the broker the session was minted through, or null.
+	 *
+	 * @param array<string, mixed> $subject The resolved session.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
+	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#8
+	 */
+	private function brokerConfig(array $subject): array|null {
+		$provider = (string)($subject['provider'] ?? '');
+		// An e-mail link session has no broker to sign out of (REQ-IWI-011).
+		if ($provider === '' || $provider === EmailLinkSettingInterface::MODE) {
+			return null;
+		}
+
+		return $this->orgConfig->resolveOidcConfig(orgSlug: (string)($subject['organisation'] ?? ''), provider: $provider);
+	}//end brokerConfig()
+
+	/**
+	 * The sign-out query: `client_id` and `post_logout_redirect_uri`.
+	 *
+	 * @param array<string, mixed> $config The broker's OIDC config.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
+	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#8
+	 */
+	private function logoutQuery(array $config): string {
+		return http_build_query(
 			[
 				'client_id' => (string)$config['clientId'],
 				'post_logout_redirect_uri' => $this->urlGenerator->getAbsoluteURL($this->portalReturnTo()),
@@ -1279,9 +1319,7 @@ class SessionController extends Controller {
 			'&',
 			PHP_QUERY_RFC3986
 		);
-
-		return $endSession . $separator . $query;
-	}//end brokerLogoutUrl()
+	}//end logoutQuery()
 
 	/**
 	 * Rotate the caller's bearer within the absolute session lifetime cap
@@ -1325,6 +1363,6 @@ class SessionController extends Controller {
 	 * @spec openspec/specs/supplier-portal/spec.md#requirement-the-test-sign-in-opens-only-on-its-own-switch
 	 */
 	private function isDevLoginEnabled(): bool {
-		return $this->config->getAppValue(Application::APP_ID, 'dev_login_enabled', 'no') === 'yes';
+		return $this->config->getAppValue(AppIdentity::APP_ID, 'dev_login_enabled', 'no') === 'yes';
 	}//end isDevLoginEnabled()
 }//end class

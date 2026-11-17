@@ -28,8 +28,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Listener;
 
 use OCA\Portaliq\Event\PortalAccountProvisionRequestedEvent;
-use OCA\Portaliq\Service\Identity\NextcloudAccountProvisioner;
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Kernel\Contracts\NextcloudAccountProvisionerInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalAccountServiceInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -47,15 +47,15 @@ class PortalAccountProvisionListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalAccountService $accounts Provisions the account.
+	 * @param PortalAccountServiceInterface $accounts Provisions the account.
 	 * @param LoggerInterface $logger Records a refusal's cause.
-	 * @param NextcloudAccountProvisioner|null $nextcloud Writes an active
+	 * @param NextcloudAccountProvisionerInterface|null $nextcloud Writes an active
 	 *        `nextcloud`-mode account (an-app-provisions-a-nextcloud-account).
 	 */
 	public function __construct(
-		private readonly PortalAccountService $accounts,
+		private readonly PortalAccountServiceInterface $accounts,
 		private readonly LoggerInterface $logger,
-		private readonly ?NextcloudAccountProvisioner $nextcloud = null,
+		private readonly ?NextcloudAccountProvisionerInterface $nextcloud = null,
 	) {
 	}//end __construct()
 
@@ -168,12 +168,12 @@ class PortalAccountProvisionListener implements IEventListener {
 	/**
 	 * Ask the Nextcloud provisioner for the requested account.
 	 *
-	 * @param NextcloudAccountProvisioner          $provisioner The provisioner.
+	 * @param NextcloudAccountProvisionerInterface          $provisioner The provisioner.
 	 * @param PortalAccountProvisionRequestedEvent $event       The request.
 	 *
 	 * @return array<string, mixed>|string The account, or why it was refused.
 	 */
-	private function nextcloudAnswer(NextcloudAccountProvisioner $provisioner, PortalAccountProvisionRequestedEvent $event): array|string {
+	private function nextcloudAnswer(NextcloudAccountProvisionerInterface $provisioner, PortalAccountProvisionRequestedEvent $event): array|string {
 		return $provisioner->provision(
 			appId: $event->getAppId(),
 			uid: $event->getNextcloudUid(),

@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
 
 /**
  * Resolves the subject's scope an endpoint action declares it needs.
@@ -39,10 +39,10 @@ class ActionScopeResolver {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Resolves a scope claim for a subject.
+	 * @param PortalObjectReaderInterface $reader Resolves a scope claim for a subject.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly PortalObjectReaderInterface $reader,
 	) {
 	}//end __construct()
 
@@ -64,16 +64,53 @@ class ActionScopeResolver {
 	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
 	 */
 	public function prepare(array $action, array $subject, string $appId, ?array $body): ?array {
+		$body = $this->stampedBody(action: $action, subject: $subject, appId: $appId, body: $body);
+		if ($body === false) {
+			return null;
+		}
+
+		$scopeValue = $this->scopeValueOf(action: $action, subject: $subject, appId: $appId);
+		if ($scopeValue === null) {
+			return null;
+		}
+
+		return ['body' => $body, 'scopeValue' => $scopeValue];
+	}//end prepare()
+
+	/**
+	 * The body with the declared `subjectField` stamped over any client value.
+	 *
+	 * @param array<string, mixed>      $action  The authorised endpoint action.
+	 * @param array<string, mixed>      $subject The resolved subject.
+	 * @param string                    $appId   The contributing app (the claim namespace).
+	 * @param array<string, mixed>|null $body    The whitelisted body, or null to relay raw.
+	 *
+	 * @return array<string, mixed>|false|null The body, or false when the stamp does not resolve.
+	 */
+	private function stampedBody(array $action, array $subject, string $appId, array|null $body): array|false|null {
 		if (is_string($action['subjectField'] ?? null) === true) {
 			$stamp = $this->resolve(scopeClaim: (string)($action['scopeClaim'] ?? ''), appId: $appId, subject: $subject);
 			if ($stamp === null) {
-				return null;
+				return false;
 			}
 
 			$body = ($body ?? []);
 			$body[$action['subjectField']] = $stamp;
 		}
 
+		return $body;
+	}//end stampedBody()
+
+	/**
+	 * The assertion scope value: '' without a `scopeClaim`, else the claim resolved.
+	 *
+	 * @param array<string, mixed> $action  The authorised endpoint action.
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param string               $appId   The contributing app (the claim namespace).
+	 *
+	 * @return string|null Null when the declared claim does not resolve.
+	 */
+	private function scopeValueOf(array $action, array $subject, string $appId): string|null {
 		$scopeValue = '';
 		$scopeClaim = ($action['scopeClaim'] ?? '');
 		if (is_string($scopeClaim) === true && $scopeClaim !== '') {
@@ -83,8 +120,8 @@ class ActionScopeResolver {
 			}
 		}
 
-		return ['body' => $body, 'scopeValue' => $scopeValue];
-	}//end prepare()
+		return $scopeValue;
+	}//end scopeValueOf()
 
 	/**
 	 * What a create action stamps into its scope field: the declared

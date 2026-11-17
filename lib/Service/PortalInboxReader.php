@@ -34,38 +34,24 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Contribution\InboxMessageFields;
+use OCA\Portaliq\Kernel\Contracts\PortalInboxReaderInterface;
 use OCA\Portaliq\Service\Notifications\MessageBoxDeliveries;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Kernel\InboxDeletion;
 
 /**
  * Aggregates every inbox collection across a subject's contributions.
  *
  * @spec openspec/changes/archive/2026-07-23-portal-inbox-v2/tasks.md#T01
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
-class PortalInboxReader {
+class PortalInboxReader implements PortalInboxReaderInterface {
 	/**
 	 * Row cap per inbox collection — bounds a single subject's aggregated
 	 * inbox read while comfortably covering portal-scale message volumes.
 	 */
 	private const ROW_LIMIT = 200;
-
-	/**
-	 * The notices portaliq writes itself (an answered question, a matched
-	 * saved search, a published decision, a submission receipt, a delivered
-	 * task) as one built-in inbox source. Every resident's inbox reads it,
-	 * whether or not a contribution declares an inbox over `portalMessage`,
-	 * through the same scoped read as a declared source: on `subjectRef`, with
-	 * the subject's own reference and organisation.
-	 *
-	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-portaliqs-own-notices-reach-the-residents-inbox-req-nap-009
-	 */
-	public const OWN_MESSAGES = [
-		'id' => 'portalMessages',
-		'kind' => 'inbox',
-		'register' => 'portaliq',
-		'schema' => 'portalMessage',
-		'scopeField' => 'subjectRef',
-	];
 
 	/**
 	 * Constructor.
@@ -121,20 +107,7 @@ class PortalInboxReader {
 	 * @spec openspec/specs/portal-inbox-reply/spec.md#requirement-files-that-came-with-a-message-open-req-ira-004
 	 */
 	public function aggregateInbox(array $subject, array $aggregate): array {
-		$rows = [];
-		foreach (($aggregate['contributions'] ?? []) as $contribution) {
-			if (is_array($contribution) === false) {
-				continue;
-			}
-
-			foreach (($contribution['collections'] ?? []) as $collection) {
-				if (is_array($collection) === false || ($collection['kind'] ?? '') !== 'inbox') {
-					continue;
-				}
-
-				$rows = array_merge($rows, $this->collectionRows(subject: $subject, collection: $collection, contribution: $contribution));
-			}//end foreach
-		}//end foreach
+		$rows = $this->declaredRows(subject: $subject, aggregate: $aggregate);
 
 		$rows = array_merge($rows, $this->ownMessages(subject: $subject, declared: $rows));
 
@@ -151,6 +124,52 @@ class PortalInboxReader {
 
 		return $rows;
 	}//end aggregateInbox()
+
+	/**
+	 * The rows of every inbox collection the subject's contributions declare.
+	 *
+	 * @param array<string, mixed> $subject   The resolved subject.
+	 * @param array<string, mixed> $aggregate The subject's aggregated contribution manifest.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/archive/2026-07-23-portal-inbox-v2/tasks.md#T01
+	 */
+	private function declaredRows(array $subject, array $aggregate): array {
+		$rows = [];
+		foreach (($aggregate['contributions'] ?? []) as $contribution) {
+			if (is_array($contribution) === false) {
+				continue;
+			}
+
+			$rows = array_merge($rows, $this->contributionInboxRows(subject: $subject, contribution: $contribution));
+		}
+
+		return $rows;
+	}//end declaredRows()
+
+	/**
+	 * The rows of the inbox collections one contribution declares.
+	 *
+	 * @param array<string, mixed> $subject      The resolved subject.
+	 * @param array<string, mixed> $contribution The contribution.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/archive/2026-07-23-portal-inbox-v2/tasks.md#T01
+	 */
+	private function contributionInboxRows(array $subject, array $contribution): array {
+		$rows = [];
+		foreach (($contribution['collections'] ?? []) as $collection) {
+			if (is_array($collection) === false || ($collection['kind'] ?? '') !== 'inbox') {
+				continue;
+			}
+
+			$rows = array_merge($rows, $this->collectionRows(subject: $subject, collection: $collection, contribution: $contribution));
+		}
+
+		return $rows;
+	}//end contributionInboxRows()
 
 	/**
 	 * The rows of one inbox collection, in the inbox's field names and with
@@ -221,32 +240,79 @@ class PortalInboxReader {
 			return null;
 		}
 
+		$action = $this->declaredReplyAction(contribution: $contribution, declared: $declared);
+		if ($action === null) {
+			return null;
+		}
+
+		return $this->replyFor(action: $action, declared: $declared);
+	}//end replyOf()
+
+	/**
+	 * The contribution's create action a reply declaration names, or null.
+	 *
+	 * @param array<string, mixed> $contribution The contribution.
+	 * @param array<string, mixed> $declared     The collection's `reply` declaration.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t05
+	 */
+	private function declaredReplyAction(array $contribution, array $declared): array|null {
 		foreach (($contribution['actions'] ?? []) as $action) {
 			if (is_array($action) === false || ($action['id'] ?? null) !== ($declared['action'] ?? '') || ($action['type'] ?? '') !== 'create') {
 				continue;
 			}
 
-			$reply = [
-				'action' => [
-					'id' => (string)$action['id'],
-					'label' => (string)($action['label'] ?? ''),
-					'register' => (string)($action['register'] ?? ''),
-					'schema' => (string)($action['schema'] ?? ''),
-					'fields' => array_values((array)($action['fields'] ?? [])),
-					'fieldConfigs' => (object)(array)($action['fieldConfigs'] ?? []),
-					'submitLabel' => (string)($action['submitLabel'] ?? ''),
-				],
-				'carried' => array_keys((array)($declared['carry'] ?? [])),
-			];
-			if (is_string($declared['subjectFrom'] ?? null) === true) {
-				$reply['subjectFrom'] = $declared['subjectFrom'];
-			}
-
-			return $reply;
+			return $action;
 		}
 
 		return null;
-	}//end replyOf()
+	}//end declaredReplyAction()
+
+	/**
+	 * The reply the screen offers: the action, the carried fields and the
+	 * field that prefills the subject.
+	 *
+	 * @param array<string, mixed> $action   The reply's create action.
+	 * @param array<string, mixed> $declared The collection's `reply` declaration.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t05
+	 */
+	private function replyFor(array $action, array $declared): array {
+		$reply = [
+			'action' => $this->replyActionShape(action: $action),
+			'carried' => array_keys((array)($declared['carry'] ?? [])),
+		];
+		if (is_string($declared['subjectFrom'] ?? null) === true) {
+			$reply['subjectFrom'] = $declared['subjectFrom'];
+		}
+
+		return $reply;
+	}//end replyFor()
+
+	/**
+	 * The reply action as the screen needs it: its fields and file fields.
+	 *
+	 * @param array<string, mixed> $action The reply's create action.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t05
+	 */
+	private function replyActionShape(array $action): array {
+		return [
+			'id' => (string)$action['id'],
+			'label' => (string)($action['label'] ?? ''),
+			'register' => (string)($action['register'] ?? ''),
+			'schema' => (string)($action['schema'] ?? ''),
+			'fields' => array_values((array)($action['fields'] ?? [])),
+			'fieldConfigs' => (object)(array)($action['fieldConfigs'] ?? []),
+			'submitLabel' => (string)($action['submitLabel'] ?? ''),
+		];
+	}//end replyActionShape()
 
 	/**
 	 * Whether a resident may delete their own messages from an inbox
@@ -261,13 +327,7 @@ class PortalInboxReader {
 	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
 	 */
 	public static function residentMayDelete(array $collection): bool {
-		$register = ($collection['register'] ?? '');
-		$schema   = ($collection['schema'] ?? '');
-		if ($register === self::OWN_MESSAGES['register'] && $schema === self::OWN_MESSAGES['schema']) {
-			return true;
-		}
-
-		return ($collection['deletable'] ?? false) === true;
+		return InboxDeletion::residentMayDelete(collection: $collection);
 	}//end residentMayDelete()
 
 	/**
@@ -310,12 +370,7 @@ class PortalInboxReader {
 	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-portaliqs-own-notices-reach-the-residents-inbox-req-nap-009
 	 */
 	private function ownMessages(array $subject, array $declared): array {
-		$seen = [];
-		foreach ($declared as $row) {
-			if (($row['_source']['register'] ?? '') === self::OWN_MESSAGES['register'] && ($row['_source']['schema'] ?? '') === self::OWN_MESSAGES['schema']) {
-				$seen[$this->rowId(row: $row)] = true;
-			}
-		}
+		$seen = $this->declaredOwnIds(declared: $declared);
 
 		$rows = [];
 		foreach ($this->readInboxCollection(subject: $subject, collection: self::OWN_MESSAGES, contributingApp: 'portaliq') as $row) {
@@ -324,19 +379,50 @@ class PortalInboxReader {
 				continue;
 			}
 
-			$row['_source'] = [
-				'appId' => 'portaliq',
-				'label' => '',
-				'register' => self::OWN_MESSAGES['register'],
-				'schema' => self::OWN_MESSAGES['schema'],
-				'collection' => self::OWN_MESSAGES['id'],
-				'deletable' => true,
-			];
+			$row['_source'] = $this->ownSource();
 			$rows[] = $row;
 		}
 
 		return $rows;
 	}//end ownMessages()
+
+	/**
+	 * The ids of the declared rows that are portaliq's own notices.
+	 *
+	 * @param array<int, array<string, mixed>> $declared The rows the declared collections returned.
+	 *
+	 * @return array<string, true>
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-portaliqs-own-notices-reach-the-residents-inbox-req-nap-009
+	 */
+	private function declaredOwnIds(array $declared): array {
+		$seen = [];
+		foreach ($declared as $row) {
+			if (($row['_source']['register'] ?? '') === self::OWN_MESSAGES['register'] && ($row['_source']['schema'] ?? '') === self::OWN_MESSAGES['schema']) {
+				$seen[$this->rowId(row: $row)] = true;
+			}
+		}
+
+		return $seen;
+	}//end declaredOwnIds()
+
+	/**
+	 * The provenance envelope of portaliq's own notices.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-portaliqs-own-notices-reach-the-residents-inbox-req-nap-009
+	 */
+	private function ownSource(): array {
+		return [
+			'appId' => 'portaliq',
+			'label' => '',
+			'register' => self::OWN_MESSAGES['register'],
+			'schema' => self::OWN_MESSAGES['schema'],
+			'collection' => self::OWN_MESSAGES['id'],
+			'deletable' => true,
+		];
+	}//end ownSource()
 
 	/**
 	 * Add the message's files when its collection declares `filesDownload`,

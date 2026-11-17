@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Mail;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\MailLogInterface;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 
@@ -35,7 +36,7 @@ use OCA\Portaliq\Service\PortalObjectWriter;
  *
  * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t03
  */
-class MailLog {
+class MailLog implements MailLogInterface {
 	public const REGISTER = 'portaliq';
 
 	public const SCHEMA = 'portalMailLog';

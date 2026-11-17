@@ -26,7 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
-use OCA\Portaliq\Contribution\FileFieldConfigNormaliser;
+use OCA\Portaliq\Kernel\Contracts\FileFieldConfigNormaliserInterface;
 
 /**
  * Lists a create action's answer fields.
@@ -65,7 +65,7 @@ class ActionAnswerFields {
 	private function fileFields(array $action): array {
 		$files = [];
 		foreach ((array)($action['fieldConfigs'] ?? []) as $field => $config) {
-			if (is_array($config) === true && ($config['type'] ?? null) === FileFieldConfigNormaliser::TYPE_FILE) {
+			if (is_array($config) === true && ($config['type'] ?? null) === FileFieldConfigNormaliserInterface::TYPE_FILE) {
 				$files[] = (string)$field;
 			}
 		}

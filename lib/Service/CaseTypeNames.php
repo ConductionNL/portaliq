@@ -29,12 +29,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\CaseTypeNamesInterface;
+
 /**
  * Stamps `_caseTypeName` on a case row from its collection's case type source.
  *
  * @spec openspec/specs/portal-my-cases/spec.md#requirement-my-cases-must-name-each-cases-type-req-smo-030
  */
-class CaseTypeNames {
+class CaseTypeNames implements CaseTypeNamesInterface {
 	use CaseTypeLabel;
 
 	/**

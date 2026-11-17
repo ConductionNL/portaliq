@@ -22,6 +22,7 @@ namespace OCA\Portaliq\Service\Traffic;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\Portaliq\Kernel\Contracts\TrafficLogParserInterface;
 use Throwable;
 
 /**
@@ -38,14 +39,7 @@ use Throwable;
  *
  * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
  */
-class TrafficLogParser {
-
-	/**
-	 * The formats.
-	 *
-	 * @var string[]
-	 */
-	public const FORMATS = ['combined', 'json'];
+class TrafficLogParser implements TrafficLogParserInterface {
 
 	/**
 	 * Path extensions that are assets, not pages.
@@ -97,6 +91,19 @@ class TrafficLogParser {
 			return null;
 		}
 
+		return $this->pageView(fields: $fields, path: $path, timestamp: $timestamp);
+	}
+
+	/**
+	 * The page view a line's fields describe; a `-` referrer is none.
+	 *
+	 * @param array<string, mixed> $fields    The fields.
+	 * @param string               $path      The request path.
+	 * @param string               $timestamp The view's moment.
+	 *
+	 * @return array{ip: string, userAgent: string, timestamp: string, path: string, referrer: string}
+	 */
+	private function pageView(array $fields, string $path, string $timestamp): array {
 		$referrer = $fields['referrer'];
 		if ($referrer === '-') {
 			$referrer = '';
@@ -191,24 +198,68 @@ class TrafficLogParser {
 			return null;
 		}
 
+		[$method, $target] = $this->methodAndTarget(row: $row);
+
+		return $this->jsonFields(row: $row, method: $method, target: $target);
+	}
+
+	/**
+	 * The method and target of a JSON line: their own keys, else the
+	 * `request` line; a line without a method is a GET.
+	 *
+	 * @param array<string, mixed> $row The decoded line.
+	 *
+	 * @return array{0: string, 1: string} The method and the target.
+	 */
+	private function methodAndTarget(array $row): array {
 		$request = trim((string)$this->first(row: $row, keys: ['request']));
 		$method = strtoupper(trim((string)$this->first(row: $row, keys: ['method', 'request_method'])));
 		$target = trim((string)$this->first(row: $row, keys: ['path', 'uri', 'request_uri', 'url']));
-		if ($request !== '') {
-			$parts = explode(' ', $request);
-			if ($method === '') {
-				$method = strtoupper($parts[0] ?? '');
-			}
-
-			if ($target === '') {
-				$target = $parts[1] ?? '';
-			}
-		}
+		[$method, $target] = $this->fromRequestLine(request: $request, method: $method, target: $target);
 
 		if ($method === '') {
 			$method = 'GET';
 		}
 
+		return [$method, $target];
+	}
+
+	/**
+	 * The method and target, each filled from the request line when it is empty.
+	 *
+	 * @param string $request The request line, or ''.
+	 * @param string $method  The method so far.
+	 * @param string $target  The target so far.
+	 *
+	 * @return array{0: string, 1: string} The method and the target.
+	 */
+	private function fromRequestLine(string $request, string $method, string $target): array {
+		if ($request === '') {
+			return [$method, $target];
+		}
+
+		$parts = explode(' ', $request);
+		if ($method === '') {
+			$method = strtoupper($parts[0] ?? '');
+		}
+
+		if ($target === '') {
+			$target = $parts[1] ?? '';
+		}
+
+		return [$method, $target];
+	}
+
+	/**
+	 * The fields of a JSON line, under the names the common shippers use.
+	 *
+	 * @param array<string, mixed> $row    The decoded line.
+	 * @param string               $method The method.
+	 * @param string               $target The target.
+	 *
+	 * @return array{ip: string, time: string, method: string, target: string, status: int, referrer: string, agent: string}
+	 */
+	private function jsonFields(array $row, string $method, string $target): array {
 		return [
 			'ip' => trim((string)$this->first(row: $row, keys: ['remote_addr', 'remoteAddress', 'ip', 'client_ip', 'clientip'])),
 			'time' => trim((string)$this->first(row: $row, keys: ['time_local', 'time_iso8601', 'timestamp', 'time', '@timestamp'])),

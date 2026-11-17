@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Intake;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\PortalIntakeQueueInterface;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\Security\ISecureRandom;
@@ -40,21 +41,30 @@ use OCP\Security\ISecureRandom;
  *
  * @spec openspec/specs/portal-intake-form/spec.md
  */
-class PortalIntakeQueue {
+class PortalIntakeQueue implements PortalIntakeQueueInterface {
 	/**
 	 * A submission recorded but not yet registered as a case.
 	 */
 	public const STATE_QUEUED = 'queued';
 
 	/**
-	 * A submission whose case exists.
-	 */
-	public const STATE_REGISTERED = 'registered';
-
-	/**
 	 * A submission whose create failed. Shown, never hidden.
 	 */
 	public const STATE_FAILED = 'failed';
+
+	/**
+	 * Held until a second person co-signs; never delivered in this state.
+	 *
+	 * @var string
+	 */
+	public const STATE_AWAITING_COSIGN = 'awaiting-cosign';
+
+	/**
+	 * The co-signer refused or the deadline passed; never delivered.
+	 *
+	 * @var string
+	 */
+	public const STATE_NOT_COSIGNED = 'not-cosigned';
 
 	/**
 	 * The register the submission lives in.
@@ -157,6 +167,138 @@ class PortalIntakeQueue {
 	}//end acceptSubmission()
 
 	/**
+	 * Record a submission that waits for a co-signer, with its co-sign block.
+	 *
+	 * The row is written in `awaiting-cosign`, which the drain never reads, so
+	 * nothing is delivered until the co-signer signs.
+	 *
+	 * @param QueuedSubmission     $submission The checked submission.
+	 * @param array<string, mixed> $cosign     The co-sign block: state, email, code hash, deadline.
+	 *
+	 * @return array{reference: string, state: string}|null The reference, or null when it could not be recorded.
+	 *
+ * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 */
+	public function hold(QueuedSubmission $submission, array $cosign): ?array {
+		if ($submission->portal === '') {
+			return null;
+		}
+
+		$reference = 'AANVRAAG-' . strtoupper($this->random->generate(8, (ISecureRandom::CHAR_UPPER . ISecureRandom::CHAR_DIGITS)));
+		$data      = $this->submissionRow(submission: $submission, reference: $reference);
+		$data['state']  = self::STATE_AWAITING_COSIGN;
+		$data['cosign'] = $cosign;
+		$created        = $this->writer->createObject(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: '',
+			subjectRef: '',
+			organisation: '',
+			data: $data
+		);
+		if ($created === null) {
+			return null;
+		}
+
+		return ['reference' => $reference, 'state' => self::STATE_AWAITING_COSIGN];
+	}//end hold()
+
+	/**
+	 * The submissions waiting for a co-signer.
+	 *
+	 * @param int $limit At most this many.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+ * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 */
+	public function awaitingCosign(int $limit = 500): array {
+		$rows = $this->reader->readCollection(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: 'state',
+			subjectRef: self::STATE_AWAITING_COSIGN,
+			organisation: '',
+			limit: $limit
+		);
+
+		return array_values(
+			array_filter($rows, static fn (mixed $row): bool => is_array($row) === true && ($row['state'] ?? '') === self::STATE_AWAITING_COSIGN)
+		);
+	}//end awaitingCosign()
+
+	/**
+	 * The requests a resident submitted on a portal that wait for a co-signer or were not co-signed, newest first.
+	 *
+	 * These have no case yet (the case is created at delivery), so Mijn zaken
+	 * lists them from here to say who they wait for and until when.
+	 *
+	 * @param string $subjectRef The resident's own portal identity.
+	 * @param string $portal     The portal, re-checked against every row.
+	 * @param int    $limit      At most this many rows are read.
+	 *
+	 * @return array<int, array<string, mixed>> Each with reference, route, submittedAt, state and the cosign line.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 */
+	public function heldFor(string $subjectRef, string $portal, int $limit = 50): array {
+		if ($subjectRef === '' || $portal === '') {
+			return [];
+		}
+
+		$rows = $this->reader->readCollection(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: 'subjectRef',
+			subjectRef: $subjectRef,
+			organisation: '',
+			limit: $limit
+		);
+
+		$held = [];
+		foreach ($rows as $row) {
+			if (is_array($row) === false
+				|| ($row['subjectRef'] ?? '') !== $subjectRef
+				|| ($row['portal'] ?? '') !== $portal
+				|| in_array(($row['state'] ?? ''), [self::STATE_AWAITING_COSIGN, self::STATE_NOT_COSIGNED], true) === false
+			) {
+				continue;
+			}
+
+			$held[] = [
+				'reference' => (string)($row['reference'] ?? ''),
+				'route' => (string)($row['route'] ?? ''),
+				'submittedAt' => (string)($row['submittedAt'] ?? ''),
+				'state' => (string)$row['state'],
+				'cosign' => ($this->cosignStatus(row: $row)['cosign'] ?? ['state' => '', 'name' => '', 'deadline' => '']),
+			];
+		}
+
+		usort($held, static fn (array $a, array $b): int => strcmp($b['submittedAt'], $a['submittedAt']));
+
+		return $held;
+	}//end heldFor()
+
+	/**
+	 * Store the co-signer's answer: signed releases the submission to the drain, anything else stops it.
+	 *
+	 * @param array<string, mixed> $submission The held submission.
+	 * @param array<string, mixed> $cosign     The updated co-sign block.
+	 *
+	 * @return bool Whether it was written.
+	 *
+ * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 */
+	public function answerCosign(array $submission, array $cosign): bool {
+		$state = self::STATE_NOT_COSIGNED;
+		if (($cosign['state'] ?? '') === 'signed') {
+			$state = self::STATE_QUEUED;
+		}
+
+		return $this->write(submission: $submission, data: ['state' => $state, 'cosign' => $cosign]);
+	}//end answerCosign()
+
+	/**
 	 * The fields of a newly queued submission.
 	 *
 	 * @param QueuedSubmission $submission The submission.
@@ -248,8 +390,32 @@ class PortalIntakeQueue {
 			'dueAt' => (string)($registered['dueAt'] ?? ''),
 			'failureReason' => $failureReason,
 			'submittedAt' => (string)($row['submittedAt'] ?? ''),
-		];
+		] + $this->cosignStatus(row: $row);
 	}//end status()
+
+	/**
+	 * The co-sign line of a status answer: state, the co-signer's name and the deadline. Empty without co-signing.
+	 *
+	 * @param array<string, mixed> $row The submission.
+	 *
+	 * @return array<string, array<string, string>>
+	 *
+ * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 */
+	private function cosignStatus(array $row): array {
+		$cosign = $row['cosign'] ?? null;
+		if (is_array($cosign) === false || $cosign === []) {
+			return [];
+		}
+
+		return [
+			'cosign' => [
+				'state' => (string)($cosign['state'] ?? ''),
+				'name' => (string)($cosign['name'] ?? ''),
+				'deadline' => (string)($cosign['deadline'] ?? ''),
+			],
+		];
+	}//end cosignStatus()
 
 	/**
 	 * The submissions still waiting for their case.
@@ -379,6 +545,19 @@ class PortalIntakeQueue {
 			filter: ['portal' => $portal]
 		);
 
+		return $this->firstSubmission(rows: $rows, reference: $reference, portal: $portal);
+	}//end byReference()
+
+	/**
+	 * The first row that is the submission with this reference on this portal, or null.
+	 *
+	 * @param array<int, mixed> $rows      The rows read.
+	 * @param string            $reference The reference.
+	 * @param string            $portal    The portal.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function firstSubmission(array $rows, string $reference, string $portal): array|null {
 		foreach ($rows as $row) {
 			if (is_array($row) === true && ($row['reference'] ?? '') === $reference && ($row['portal'] ?? '') === $portal) {
 				return $row;
@@ -386,7 +565,7 @@ class PortalIntakeQueue {
 		}
 
 		return null;
-	}//end byReference()
+	}//end firstSubmission()
 
 	/**
 	 * A submission by its reference, as the portal stored it.

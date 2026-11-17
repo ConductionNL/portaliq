@@ -39,7 +39,7 @@ namespace OCA\Portaliq\Service\Notifications;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use OCA\Portaliq\Contribution\NoticeRecipientNormaliser;
+use OCA\Portaliq\Kernel\Contracts\NoticeRecipientNormaliserInterface;
 use OCP\IDateTimeZone;
 use Throwable;
 
@@ -124,7 +124,7 @@ class ChangeNoticeText {
 	 */
 	private function fill(string $text, array $row): string {
 		return (string)preg_replace_callback(
-			NoticeRecipientNormaliser::PLACEHOLDER,
+			NoticeRecipientNormaliserInterface::PLACEHOLDER,
 			function (array $match) use ($row): string {
 				$value = ($row[$match[1]] ?? null);
 				if (is_string($value) === false && is_int($value) === false && is_float($value) === false) {

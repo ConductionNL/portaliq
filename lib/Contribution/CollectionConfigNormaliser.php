@@ -33,7 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
-use OCA\Portaliq\Service\Branch\PortalBranchScope;
+use OCA\Portaliq\Kernel\Support\PortalBranchScope;
 
 /**
  * Validates and sanitises the v3 collection presentation config, fail-closed.
@@ -114,6 +114,8 @@ class CollectionConfigNormaliser {
 		$collection = $this->normaliseDetail(collection: $collection);
 		$collection = (new CollectionFieldConfigNormaliser())->normalise(collection: $collection);
 		$collection = (new TimelineProviderMethod())->normaliseTimeline(collection: $collection);
+		// The messages about one record, both ways (capability-rows-said-and-planned T07).
+		$collection = (new CaseMessagesProviderMethod())->normalise(collection: $collection);
 		$collection = (new DocumentsProviderMethod())->normalise(collection: $collection);
 		$collection = $this->normaliseDefaults(collection: $collection);
 		$collection = $this->normaliseFileFlags(collection: $collection);
@@ -138,6 +140,7 @@ class CollectionConfigNormaliser {
 		// Who a resident may write to about each row (site-messages-per-record).
 		$collection = (new MessageContactsKeys())->normalise(collection: $collection);
 		$collection = $this->normaliseClosedField(collection: $collection);
+		$collection = $this->normaliseOutcome(collection: $collection);
 		// The field holding the case a task belongs to (case-page-tasks-decision-dates-and-next-step).
 		$collection = (new CaseFieldKey())->normalise(collection: $collection);
 		$collection = (new CaseStatusLabelField())->normalise(collection: $collection);
@@ -237,6 +240,80 @@ class CollectionConfigNormaliser {
 
 		return $collection;
 	}//end normaliseClosedField()
+
+	/**
+	 * Keep an `outcome` block's `labelField` and `descriptionField` only when
+	 * each names a field the collection projects.
+	 *
+	 * The outcome tells the case page which field holds the public result label
+	 * and which its explanation, the same `fields`-membership rule the closed
+	 * marker obeys: a field the row never carries would read as a blank outcome.
+	 * A field that is absent or does not name a projected field is dropped; when
+	 * neither survives, the whole `outcome` key goes.
+	 *
+	 * @param array<string, mixed> $collection The collection.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/case-outcome-on-the-case-page/specs/portal-contribution-contract/spec.md
+	 */
+	private function normaliseOutcome(array $collection): array {
+		if (array_key_exists('outcome', $collection) === false) {
+			return $collection;
+		}
+
+		$kept = $this->keptOutcome(outcome: $collection['outcome'], fields: ($collection['fields'] ?? null));
+		if ($kept === []) {
+			unset($collection['outcome']);
+			return $collection;
+		}
+
+		$collection['outcome'] = $kept;
+		return $collection;
+	}//end normaliseOutcome()
+
+	/**
+	 * The outcome's `labelField` and `descriptionField` that name a projected
+	 * field; none when the outcome is not a block.
+	 *
+	 * @param mixed $outcome The declared outcome.
+	 * @param mixed $fields  The collection's projected fields.
+	 *
+	 * @return array<string, string>
+	 *
+	 * @spec openspec/changes/case-outcome-on-the-case-page/specs/portal-contribution-contract/spec.md
+	 */
+	private function keptOutcome(mixed $outcome, mixed $fields): array {
+		if (is_array($outcome) === false) {
+			return [];
+		}
+
+		$kept = [];
+		foreach (['labelField', 'descriptionField'] as $key) {
+			$field = ($outcome[$key] ?? null);
+			if ($this->namesProjected(field: $field, fields: $fields) === true) {
+				$kept[$key] = $field;
+			}
+		}
+
+		return $kept;
+	}//end keptOutcome()
+
+	/**
+	 * Whether a value is a non-empty field name the collection projects, or
+	 * any one when it projects none.
+	 *
+	 * @param mixed $field  The declared field.
+	 * @param mixed $fields The collection's projected fields.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/case-outcome-on-the-case-page/specs/portal-contribution-contract/spec.md
+	 */
+	private function namesProjected(mixed $field, mixed $fields): bool {
+		return is_string($field) === true && $field !== ''
+			&& (is_array($fields) === false || in_array($field, $fields, true) === true);
+	}//end namesProjected()
 
 	/**
 	 * Keep `groupByField` only when it names a field the collection projects.

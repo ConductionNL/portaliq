@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity\EmailLink;
 
+use OCA\Portaliq\Kernel\Contracts\EmailLinkLimitsInterface;
 use OCP\Security\RateLimiting\ILimiter;
 use OCP\Security\RateLimiting\IRateLimitExceededException;
 
@@ -35,7 +36,7 @@ use OCP\Security\RateLimiting\IRateLimitExceededException;
  *
  * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#6
  */
-class EmailLinkLimits {
+class EmailLinkLimits implements EmailLinkLimitsInterface {
 	/**
 	 * Links per address per hour.
 	 */

@@ -30,10 +30,12 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\NewsletterPreflightServiceInterface;
+
 /**
  * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
  */
-class NewsletterPreflightService {
+class NewsletterPreflightService implements NewsletterPreflightServiceInterface {
 	/**
 	 * Constructor.
 	 *

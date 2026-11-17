@@ -27,7 +27,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Listener;
 
 use OCA\Portaliq\Event\PortalAccountClaimRequestedEvent;
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Kernel\Contracts\PortalAccountServiceInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -45,11 +45,11 @@ class PortalAccountClaimListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalAccountService $accounts Writes the claim.
+	 * @param PortalAccountServiceInterface $accounts Writes the claim.
 	 * @param LoggerInterface $logger Records a refusal's cause.
 	 */
 	public function __construct(
-		private readonly PortalAccountService $accounts,
+		private readonly PortalAccountServiceInterface $accounts,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

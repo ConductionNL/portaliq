@@ -38,6 +38,17 @@ use OCA\Portaliq\Tests\Unit\Service\Intake\Fakes\FormSubmitFake;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Service\CaseRowMarker;
+use OCA\Portaliq\Contribution\CreateActionMatcher;
+use OCA\Portaliq\Contribution\CreateBody;
+use OCA\Portaliq\Contribution\InboxMessageFields;
+use OCA\Portaliq\Contribution\PageChoice;
+use OCA\Portaliq\Service\RequestedPortal;
+use OCA\Portaliq\Service\RequiredFieldsGuard;
+use OCA\Portaliq\Contribution\RowIdentifier;
+use OCA\Portaliq\Contribution\ThemeChoice;
+use OCA\Portaliq\Service\VisibleFromGate;
+use OCA\Portaliq\Service\WriteRefusal;
 
 /**
  * Landing-page forms into their destination.
@@ -51,6 +62,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Portaliq\Contribution\ActionOptionsNormaliser
  * @uses \OCA\Portaliq\Contribution\ActionSummaryNormaliser
  * @uses \OCA\Portaliq\Contribution\CitizenWriteConfigNormaliser
+ * @uses \OCA\Portaliq\Contribution\CaseFieldDisplayHints
  * @uses \OCA\Portaliq\Contribution\CollectionConfigNormaliser
  * @uses \OCA\Portaliq\Contribution\CollectionSchemaLabels
  * @uses \OCA\Portaliq\Contribution\ConfirmationMailKeys
@@ -183,7 +195,7 @@ class ContributionControllerLandingDestinationTest extends TestCase {
 			receiptService: $this->createMock(SubmissionReceiptService::class),
 			notificationDispatch: $this->createMock(NotificationDispatchService::class),
 			logger: $this->createMock(LoggerInterface::class),
-			intake: $intake
+			intake: $intake, caseRowMarker: new CaseRowMarker(), createActionMatcher: new CreateActionMatcher(), createBody: new CreateBody(), inboxMessageFields: new InboxMessageFields(), pageChoice: new PageChoice(), requestedPortal: new RequestedPortal(), requiredFieldsGuard: new RequiredFieldsGuard(), rowIdentifier: new RowIdentifier(), themeChoice: new ThemeChoice(), visibleFromGate: new VisibleFromGate(), writeRefusal: new WriteRefusal()
 		);
 	}//end controller()
 }//end class

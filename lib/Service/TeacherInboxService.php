@@ -29,12 +29,13 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\TeacherInboxServiceInterface;
 use OCA\Portaliq\Service\Messaging\GuardianMessagingLeafInterface;
 
 /**
  * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-a-staff-members-inbox-is-bucketed-by-group-with-an-unread-count
  */
-class TeacherInboxService {
+class TeacherInboxService implements TeacherInboxServiceInterface {
 	private const DIRECT_BUCKET = 'direct';
 
 	/**
@@ -94,6 +95,18 @@ class TeacherInboxService {
 			return 0;
 		}
 
+		return $this->unreadIn(messages: $messages, staffRef: $staffRef);
+	}//end unreadCount()
+
+	/**
+	 * How many of the messages the staff member has not read.
+	 *
+	 * @param array<int, array<string, mixed>> $messages The thread's messages.
+	 * @param string                           $staffRef The calling staff member's own subjectRef.
+	 *
+	 * @return int
+	 */
+	private function unreadIn(array $messages, string $staffRef): int {
 		$unread = 0;
 		foreach ($messages as $message) {
 			$readBy = [];
@@ -107,7 +120,7 @@ class TeacherInboxService {
 		}
 
 		return $unread;
-	}//end unreadCount()
+	}//end unreadIn()
 
 	/**
 	 * The row's id/uuid, from a flat property or its `@self` envelope.

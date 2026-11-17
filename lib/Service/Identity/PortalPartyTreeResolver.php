@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
+use OCA\Portaliq\Kernel\Contracts\PortalPartyTreeResolverInterface;
 use OCA\Portaliq\Service\PortalObjectReader;
 
 /**
@@ -43,7 +44,7 @@ use OCA\Portaliq\Service\PortalObjectReader;
  *
  * @spec openspec/specs/portal-visibility-and-the-party-tree/spec.md
  */
-class PortalPartyTreeResolver {
+class PortalPartyTreeResolver implements PortalPartyTreeResolverInterface {
 	/**
 	 * The default maximum depth of the walk.
 	 */
@@ -134,32 +135,74 @@ class PortalPartyTreeResolver {
 				return null;
 			}
 
-			$next = [];
-			foreach ($frontier as $parent) {
-				$children = $this->childrenOf(parent: $parent, pageSize: $pageSize);
-				if (count($children) >= $pageSize) {
-					// More children than one page: the level is not fully
-					// read, so the answer would be partial.
-					return null;
-				}
-
-				foreach ($children as $child) {
-					if ($child === '' || isset($entities[$child]) === true) {
-						// A cycle in the recorded relations would otherwise
-						// walk forever; a seen entity is not walked again.
-						continue;
-					}
-
-					$entities[$child] = true;
-					$next[] = $child;
-				}
+			$level = $this->nextLevel(frontier: $frontier, entities: $entities, pageSize: $pageSize);
+			if ($level === null) {
+				return null;
 			}
 
-			$frontier = $next;
+			$entities = $level['entities'];
+			$frontier = $level['next'];
 		}//end while
 
 		return array_keys($entities);
 	}//end walkDown()
+
+	/**
+	 * The entities seen after one more level and that level's new entities,
+	 * or null when a parent has more children than one page holds.
+	 *
+	 * @param array<int, string>  $frontier The level's parents.
+	 * @param array<string, bool> $entities The entities seen so far.
+	 * @param int                 $pageSize How many children one level may hold.
+	 *
+	 * @return array{entities: array<string, bool>, next: array<int, string>}|null
+	 *
+	 * @spec openspec/specs/portal-visibility-and-the-party-tree/spec.md
+	 */
+	private function nextLevel(array $frontier, array $entities, int $pageSize): array|null {
+		$next = [];
+		foreach ($frontier as $parent) {
+			$children = $this->childrenOf(parent: $parent, pageSize: $pageSize);
+			if (count($children) >= $pageSize) {
+				// More children than one page: the level is not fully
+				// read, so the answer would be partial.
+				return null;
+			}
+
+			foreach ($this->unseen(children: $children, entities: $entities) as $child) {
+				$entities[$child] = true;
+				$next[] = $child;
+			}
+		}
+
+		return ['entities' => $entities, 'next' => $next];
+	}//end nextLevel()
+
+	/**
+	 * The children not seen yet, each once.
+	 *
+	 * @param array<int, string>  $children The children read.
+	 * @param array<string, bool> $entities The entities seen so far.
+	 *
+	 * @return array<int, string>
+	 *
+	 * @spec openspec/specs/portal-visibility-and-the-party-tree/spec.md
+	 */
+	private function unseen(array $children, array $entities): array {
+		$unseen = [];
+		foreach ($children as $child) {
+			if ($child === '' || isset($entities[$child]) === true) {
+				// A cycle in the recorded relations would otherwise
+				// walk forever; a seen entity is not walked again.
+				continue;
+			}
+
+			$entities[$child] = true;
+			$unseen[] = $child;
+		}
+
+		return $unseen;
+	}//end unseen()
 
 	/**
 	 * The entities recorded directly below one entity.

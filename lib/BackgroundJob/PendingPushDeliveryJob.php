@@ -28,7 +28,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\BackgroundJob;
 
 use DateTimeImmutable;
-use OCA\Portaliq\Service\Notifications\PendingPushService;
+use OCA\Portaliq\Kernel\Contracts\PendingPushServiceInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJob;
 use OCP\BackgroundJob\TimedJob;
@@ -51,12 +51,12 @@ class PendingPushDeliveryJob extends TimedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory $time Testable clock (job base class).
-	 * @param PendingPushService $pending Does the work.
+	 * @param PendingPushServiceInterface $pending Does the work.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly PendingPushService $pending,
+		private readonly PendingPushServiceInterface $pending,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(time: $time);

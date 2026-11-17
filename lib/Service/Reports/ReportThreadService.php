@@ -34,8 +34,9 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Reports;
 
 use DateTimeImmutable;
-use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\ReportThreadServiceInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCP\Security\Bruteforce\IThrottler;
 
 /**
@@ -43,7 +44,7 @@ use OCP\Security\Bruteforce\IThrottler;
  *
  * @spec openspec/specs/report-without-an-account/spec.md
  */
-class ReportThreadService {
+class ReportThreadService implements ReportThreadServiceInterface {
 	/**
 	 * The throttler action a failed code attempt is registered under.
 	 */
@@ -95,20 +96,9 @@ class ReportThreadService {
 			return null;
 		}
 
-		$hash = hash('sha256', $code);
-		$rows = $this->reader->readCollection(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: 'codeHash',
-			subjectRef: $hash,
-			organisation: '',
-			limit: 5
-		);
-
-		foreach ($rows as $row) {
-			if (is_array($row) === true && hash_equals((string)($row['codeHash'] ?? ''), $hash) === true) {
-				return $row;
-			}
+		$row = $this->rowWithCode(hash: hash('sha256', $code));
+		if ($row !== null) {
+			return $row;
 		}
 
 		// Every failed attempt costs, and a lost code is not recoverable: there
@@ -117,6 +107,41 @@ class ReportThreadService {
 
 		return null;
 	}//end openByCode()
+
+	/**
+	 * The report whose stored code hash equals this one, compared in constant time.
+	 *
+	 * @param string $hash The code's hash.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function rowWithCode(string $hash): array|null {
+		foreach ($this->codeRows(hash: $hash) as $row) {
+			if (is_array($row) === true && hash_equals((string)($row['codeHash'] ?? ''), $hash) === true) {
+				return $row;
+			}
+		}
+
+		return null;
+	}//end rowWithCode()
+
+	/**
+	 * The reports scoped to the code's hash.
+	 *
+	 * @param string $hash The code's hash.
+	 *
+	 * @return array<int|string, mixed>
+	 */
+	private function codeRows(string $hash): array {
+		return $this->reader->readCollection(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: 'codeHash',
+			subjectRef: $hash,
+			organisation: '',
+			limit: 5
+		);
+	}//end codeRows()
 
 	/**
 	 * The thread as the reporter may read it.

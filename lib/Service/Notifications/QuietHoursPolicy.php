@@ -32,11 +32,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Notifications;
 
-use OCA\Portaliq\Service\ObjectRowNormaliser;
-use OCA\Portaliq\Service\ObjectServiceLookup;
 use DateInterval;
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+use OCA\Portaliq\Kernel\Contracts\QuietHoursPolicyInterface;
+use OCA\Portaliq\Service\ObjectRowNormaliser;
+use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCP\IConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -45,7 +48,7 @@ use Throwable;
 /**
  * @spec openspec/specs/guardian-push-notifications/spec.md#requirement-a-non-emergency-push-during-quiet-hours-is-deferred-not-dropped
  */
-class QuietHoursPolicy {
+class QuietHoursPolicy implements QuietHoursPolicyInterface {
 	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
 
@@ -109,12 +112,26 @@ class QuietHoursPolicy {
 
 		$existingId = $this->findExistingId(objectService: $objectService, subjectRef: $subjectRef);
 
+		$window = ['subjectRef' => $subjectRef, 'startTime' => $start, 'endTime' => $end];
+		return $this->saveWindow(objectService: $objectService, window: $window, existingId: $existingId);
+	}//end setWindow()
+
+	/**
+	 * Save the window over the subject's existing row, if any.
+	 *
+	 * @param object               $objectService OpenRegister's ObjectService.
+	 * @param array<string, mixed> $window        The window row.
+	 * @param string|null          $existingId    The subject's existing row, or null.
+	 *
+	 * @return bool False when the save failed.
+	 *
+	 * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#api-design
+	 */
+	private function saveWindow(object $objectService, array $window, string|null $existingId): bool {
 		try {
 			$objectService->saveObject(
-				object: ['subjectRef' => $subjectRef, 'startTime' => $start, 'endTime' => $end],
-				register: self::REGISTER,
-				schema: self::SCHEMA,
-				uuid: $existingId,
+				object: $window,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: self::REGISTER, schema: self::SCHEMA), uuid: $existingId),
 				_rbac: false,
 				_multitenancy: false
 			);
@@ -124,7 +141,7 @@ class QuietHoursPolicy {
 		}
 
 		return true;
-	}//end setWindow()
+	}//end saveWindow()
 
 	/**
 	 * A subject's own configured window, or the documented default.

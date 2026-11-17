@@ -45,6 +45,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\PortalFileReaderInterface;
 use OCP\AppFramework\Http\StreamResponse;
 use OCP\Files\File;
 use Psr\Container\ContainerInterface;
@@ -56,7 +57,7 @@ use Throwable;
  *
  * @spec openspec/specs/supplier-portal/spec.md#scoped-file-download-re-verifies-ownership-before-serving-a-byte
  */
-class PortalFileReader {
+class PortalFileReader implements PortalFileReaderInterface {
 	use ObjectFileLookup;
 
 	/**
@@ -200,6 +201,19 @@ class PortalFileReader {
 			return [];
 		}
 
+		return $this->listedFiles(fileService: $fileService, entity: $entity, sharedFilesOnly: $sharedFilesOnly);
+	}//end listing()
+
+	/**
+	 * The entity's files from OpenRegister, normalised; [] when the list fails.
+	 *
+	 * @param object $fileService     OpenRegister's file service.
+	 * @param object $entity          The owned object's entity.
+	 * @param bool   $sharedFilesOnly Handed to OpenRegister unchanged.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function listedFiles(object $fileService, object $entity, bool $sharedFilesOnly): array {
 		try {
 			$files = $fileService->getFiles(object: $entity, sharedFilesOnly: $sharedFilesOnly);
 		} catch (Throwable $e) {
@@ -217,7 +231,7 @@ class PortalFileReader {
 		}
 
 		return $out;
-	}//end listing()
+	}//end listedFiles()
 
 	/**
 	 * Stream a file attached to an object the subject already owns.
@@ -252,6 +266,21 @@ class PortalFileReader {
 			return null;
 		}
 
+		return $this->streamOf(fileService: $fileService, entity: $entity, fileId: $fileId);
+	}//end streamFile()
+
+	/**
+	 * The stream of one of the entity's files, or null when it is not a file or cannot be resolved.
+	 *
+	 * @param object $fileService OpenRegister's file service.
+	 * @param object $entity      The owned object's entity.
+	 * @param string $fileId      The requested file's id.
+	 *
+	 * @return StreamResponse|null
+	 *
+	 * @spec openspec/specs/supplier-portal/spec.md#scoped-file-download-re-verifies-ownership-before-serving-a-byte
+	 */
+	private function streamOf(object $fileService, object $entity, string $fileId): StreamResponse|null {
 		try {
 			$file = $fileService->getFile(object: $entity, file: $fileId);
 			if ($file instanceof File === false) {
@@ -263,5 +292,5 @@ class PortalFileReader {
 			$this->logger->warning('Portaliq: OR file resolve failed', ['reason' => $e->getMessage()]);
 			return null;
 		}
-	}//end streamFile()
+	}//end streamOf()
 }//end class

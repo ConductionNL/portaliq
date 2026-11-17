@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\BackgroundJob;
 
-use OCA\Portaliq\Service\TrafficReportService;
+use OCA\Portaliq\Kernel\Contracts\TrafficReportServiceInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJob;
 use OCP\BackgroundJob\TimedJob;
@@ -56,14 +56,14 @@ class TrafficReportJob extends TimedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory         $time    Testable clock (job base class).
-	 * @param TrafficReportService $reports Does the work.
+	 * @param TrafficReportServiceInterface $reports Does the work.
 	 * @param LoggerInterface      $logger  The logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly TrafficReportService $reports,
+		private readonly TrafficReportServiceInterface $reports,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(time: $time);

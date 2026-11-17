@@ -29,15 +29,16 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Branch;
 
-use OCA\Portaliq\Service\Identity\PortalRegisteredDetailsService;
+use OCA\Portaliq\Kernel\Contracts\BranchChoiceInterface;
 use OCA\Portaliq\Service\Identity\PortalAccountLookup;
+use OCA\Portaliq\Service\Identity\PortalRegisteredDetailsService;
 
 /**
  * The branches a session may choose.
  *
  * @spec openspec/specs/portal-branch-scope/spec.md#requirement-a-whole-company-user-can-narrow-to-a-branch-req-seb-003
  */
-class BranchChoice {
+class BranchChoice implements BranchChoiceInterface {
 
 	/**
 	 * Constructor.

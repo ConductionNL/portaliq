@@ -97,14 +97,17 @@ export function missingStatements(asked, accepted) {
 }
 
 /**
- * The introduction page's content, or null when the form opens at step 1.
+ * The introduction page's content, or null when the form opens at step 1:
+ * without content, or switched off on the form settings page (`enabled`
+ * false).
  *
  * @param {object|null} intro The binding's `intro`.
  * @return {{lead: string, blocks: Array<{title: string, text: string, items: string[]}>}|null} The page.
  * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t02
+ * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t06
  */
 export function introView(intro) {
-	if (!intro || typeof intro !== 'object') {
+	if (!intro || typeof intro !== 'object' || intro.enabled === false) {
 		return null
 	}
 	const blocks = (Array.isArray(intro.blocks) ? intro.blocks : [])

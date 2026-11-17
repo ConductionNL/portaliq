@@ -158,18 +158,8 @@ class RecordScopeNormaliser {
 	 * @return array<string, mixed>
 	 */
 	private function optionalKeys(array $lookup): array {
-		$out = [];
-		foreach (['recordField', 'rowField'] as $key) {
-			if ($this->isName(value: ($lookup[$key] ?? null)) === true) {
-				$out[$key] = $lookup[$key];
-			}
-		}
-
-		$values = array_filter(
-			(array)($lookup['values'] ?? []),
-			fn ($label, $value): bool => is_string($value) === true && $this->isName(value: $label),
-			ARRAY_FILTER_USE_BOTH
-		);
+		$out    = $this->fieldKeys(lookup: $lookup);
+		$values = $this->namedValues(lookup: $lookup);
 		if ($values !== []) {
 			$out['values'] = $values;
 		}
@@ -180,6 +170,39 @@ class RecordScopeNormaliser {
 
 		return $out;
 	}//end optionalKeys()
+
+	/**
+	 * The lookup's `recordField` and `rowField` that are names.
+	 *
+	 * @param array<string, mixed> $lookup The declared lookup.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function fieldKeys(array $lookup): array {
+		$out = [];
+		foreach (['recordField', 'rowField'] as $key) {
+			if ($this->isName(value: ($lookup[$key] ?? null)) === true) {
+				$out[$key] = $lookup[$key];
+			}
+		}
+
+		return $out;
+	}//end fieldKeys()
+
+	/**
+	 * The lookup's `values` with a string value and a name as label.
+	 *
+	 * @param array<string, mixed> $lookup The declared lookup.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function namedValues(array $lookup): array {
+		return array_filter(
+			(array)($lookup['values'] ?? []),
+			fn ($label, $value): bool => is_string($value) === true && $this->isName(value: $label),
+			ARRAY_FILTER_USE_BOTH
+		);
+	}//end namedValues()
 
 	/**
 	 * Whether a value is a non-empty string.

@@ -59,6 +59,13 @@ class ExampleSiteInstallerTest extends TestCase {
 	private array $refusedRoutes = [];
 
 	/**
+	 * Ids the fake store refuses to delete, per schema.
+	 *
+	 * @var array<string, array<int, string>>
+	 */
+	private array $refusedDeletes = [];
+
+	/**
 	 * Whether the fake store hands over every row, whatever the filter.
 	 *
 	 * @var bool
@@ -88,6 +95,7 @@ class ExampleSiteInstallerTest extends TestCase {
 		$this->rows = ['portal' => [], 'form' => [], 'menu' => [], 'page' => [], 'newsItem' => [], 'glossaryTerm' => []];
 		$this->unknownKeys = [];
 		$this->refusedRoutes = [];
+		$this->refusedDeletes = [];
 		$this->ignoreFilters = false;
 		$this->config = [];
 	}//end setUp()
@@ -414,6 +422,61 @@ class ExampleSiteInstallerTest extends TestCase {
 	}//end testAnotherPortalUnderTheSameSlugIsKept()
 
 	/**
+	 * A page the store refuses to delete is named as failed, keeps the
+	 * portal around it, and stays in the record so a later run can finish.
+	 *
+	 * @return void
+	 */
+	public function testARefusedDeleteIsNamedAndStaysRecorded(): void {
+		$installer = $this->installer();
+		$installer->install(site: $this->zuiddrecht());
+		$stuck = $this->idOfPage(route: '/afval');
+		$this->refusedDeletes = ['page' => [$stuck]];
+
+		$report = $this->remover->remove(site: 'zuiddrecht', slug: 'zuiddrecht');
+
+		$this->assertSame(49, $report['deleted']['page']);
+		$this->assertSame(0, $report['gone']['page']);
+		$this->assertSame(['page ' . $stuck], $report['failed']);
+		$this->assertSame('kept-content', $report['portal']);
+		$this->assertSame([$stuck], array_keys($this->rows['page']));
+		$this->assertCount(1, $this->rows['portal']);
+
+		$this->refusedDeletes = [];
+		$again = $this->remover->remove(site: 'zuiddrecht', slug: 'zuiddrecht');
+		$this->assertSame(1, $again['deleted']['page']);
+		$this->assertSame([], $again['failed']);
+		$this->assertSame('deleted', $again['portal']);
+		$this->assertSame([], $this->rows['page']);
+		$this->assertArrayNotHasKey('example_site_zuiddrecht', $this->config);
+	}//end testARefusedDeleteIsNamedAndStaysRecorded()
+
+	/**
+	 * An emptied portal the store refuses to delete is reported as failed
+	 * and stays in the record, so a later run deletes it.
+	 *
+	 * @return void
+	 */
+	public function testARefusedPortalDeleteIsReportedAndStaysRecorded(): void {
+		$installer = $this->installer();
+		$installer->install(site: $this->zuiddrecht());
+		$this->refusedDeletes = ['portal' => array_keys($this->rows['portal'])];
+
+		$report = $this->remover->remove(site: 'zuiddrecht', slug: 'zuiddrecht');
+
+		$this->assertSame('failed', $report['portal']);
+		$this->assertSame([], $report['failed']);
+		$this->assertSame([], $this->rows['page']);
+		$this->assertCount(1, $this->rows['portal']);
+		$this->assertArrayHasKey('example_site_zuiddrecht', $this->config);
+
+		$this->refusedDeletes = [];
+		$this->assertSame('deleted', $this->remover->remove(site: 'zuiddrecht', slug: 'zuiddrecht')['portal']);
+		$this->assertSame([], $this->rows['portal']);
+		$this->assertArrayNotHasKey('example_site_zuiddrecht', $this->config);
+	}//end testARefusedPortalDeleteIsReportedAndStaysRecorded()
+
+	/**
 	 * Remove without a record does nothing.
 	 *
 	 * @return void
@@ -566,7 +629,9 @@ class ExampleSiteInstallerTest extends TestCase {
 		);
 		$store->method('delete')->willReturnCallback(
 			function (string $schema, string $id): bool {
-				if (isset($this->rows[$schema][$id]) === false) {
+				if (isset($this->rows[$schema][$id]) === false
+					|| in_array($id, ($this->refusedDeletes[$schema] ?? []), true) === true
+				) {
 					return false;
 				}
 

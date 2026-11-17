@@ -33,12 +33,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\FormStepsNormaliserInterface;
+
 /**
  * Sanitises steps, a draft declaration and a confirmation.
  *
  * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-create-or-endpoint-action-may-run-in-steps-with-a-review-a-draft-and-a-confirmation-req-smf-020
  */
-class FormStepsNormaliser {
+class FormStepsNormaliser implements FormStepsNormaliserInterface {
 	/**
 	 * The id of the step that collects fields no kept step names.
 	 */

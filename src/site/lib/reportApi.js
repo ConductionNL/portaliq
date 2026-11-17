@@ -19,7 +19,7 @@ const WORDS = {
 		optional: '(niet verplicht)',
 		contactTitle: 'Wilt u dat wij weten wie u bent?',
 		contactHint:
-			'Uw gegevens bewaren wij apart van de melding. Alleen de vertrouwenspersoon van de gemeente kan ze inzien, met een reden die wordt vastgelegd.',
+			'Uw gegevens bewaren wij apart van de melding. Alleen de vertrouwenspersoon van de organisatie kan ze inzien, met een reden die wordt vastgelegd.',
 		name: 'Naam',
 		reach: 'E-mailadres of telefoonnummer',
 		send: 'Melding versturen',
@@ -45,11 +45,11 @@ const WORDS = {
 		wrongCode: 'Wij konden geen melding openen met deze code.',
 		yourReport: 'Uw melding',
 		hereWithCode:
-			'U bent hier met uw meldcode. Lees wat de gemeente schreef en antwoord als u wilt.',
+			'U bent hier met uw meldcode. Lees wat de organisatie schreef en antwoord als u wilt.',
 		receivedOn: 'Ontvangen op {date}',
 		conversation: 'Het gesprek',
 		you: 'U',
-		organisation: 'De gemeente',
+		organisation: 'De organisatie',
 		answer: 'Uw antwoord',
 		answerHint:
 			'Uw naam staat niet bij uw bericht. Noem geen namen als dat niet nodig is.',
