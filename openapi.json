@@ -196,6 +196,10 @@
             "description": "Serves public record lists and records without a session."
         },
         {
+            "name": "publication-report",
+            "description": "Takes error reports on public publications and lets the portal's report owners close them."
+        },
+        {
             "name": "push-subscription",
             "description": "The push subscription endpoints."
         },
