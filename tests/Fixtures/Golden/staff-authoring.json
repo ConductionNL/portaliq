@@ -1295,7 +1295,7 @@
                         ]
                     },
                     {
-                        "NewsAudienceOptions.options": []
+                        "NewsAudienceOptionsInterface.options": []
                     }
                 ]
             }
@@ -1827,7 +1827,7 @@
                         }
                     },
                     {
-                        "NewsletterPreflightService.countRecipients": {
+                        "NewsletterPreflightServiceInterface.countRecipients": {
                             "target": []
                         }
                     }
@@ -1942,7 +1942,7 @@
                         }
                     },
                     {
-                        "NewsletterPreflightService.sendIsRefused": {
+                        "NewsletterPreflightServiceInterface.sendIsRefused": {
                             "target": []
                         }
                     }
@@ -2050,7 +2050,7 @@
                         "IRequest.getParams": []
                     },
                     {
-                        "ActivityDraft.build": {
+                        "ActivityDraftInterface.build": {
                             "required": {
                                 "title": "Chess",
                                 "kind": "club",
@@ -2104,7 +2104,7 @@
                         ]
                     },
                     {
-                        "ActivityStore.lookup": {
+                        "ActivityStoreInterface.lookup": {
                             "schema": "activityOffer",
                             "id": "a-1"
                         }
@@ -2149,7 +2149,7 @@
                         ]
                     },
                     {
-                        "ActivityStore.lookup": {
+                        "ActivityStoreInterface.lookup": {
                             "schema": "activityOffer",
                             "id": "a-1"
                         }
@@ -2194,7 +2194,7 @@
                         ]
                     },
                     {
-                        "ActivitySignupService.setSupervisors": {
+                        "ActivitySignupServiceInterface.setSupervisors": {
                             "activityId": "a-1",
                             "supervisorRefs": [
                                 "u-1"
@@ -2241,7 +2241,7 @@
                         ]
                     },
                     {
-                        "ActivityRoster.roster": {
+                        "ActivityRosterInterface.roster": {
                             "activityId": "a-1"
                         }
                     }
@@ -2283,7 +2283,7 @@
                         ]
                     },
                     {
-                        "ActivityAttendanceService.mark": {
+                        "ActivityAttendanceServiceInterface.mark": {
                             "activityId": "a-1",
                             "sessionId": "s-1",
                             "childRef": "c-1",
@@ -2332,7 +2332,7 @@
                         "IRequest.getParams": []
                     },
                     {
-                        "ActivityContributionService.raise": {
+                        "ActivityContributionServiceInterface.raise": {
                             "activityId": "a-1",
                             "params": []
                         }

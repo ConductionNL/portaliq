@@ -370,6 +370,23 @@ function resolveCollectionView(spot, contribution) {
 }
 
 /**
+ * A messages block on its collection, with the ask action it names when that
+ * action is the contribution's (capability-rows-said-and-planned T07).
+ *
+ * @param {{index: number, block: object}} spot The block and its place.
+ * @param {object} contribution The contribution it belongs to.
+ * @return {object}
+ * @spec openspec/changes/capability-rows-said-and-planned/tasks.md#t07
+ */
+function resolveMessages(spot, contribution) {
+	const view = resolveCollectionView(spot, contribution)
+	const ask = view.kind === 'messages' && spot.block.askAction
+		? findAction(contribution, spot.block.askAction)
+		: null
+	return ask ? { ...view, action: ask } : view
+}
+
+/**
  * A calendar over the sources whose collection exists.
  *
  * @param {{index: number, block: object}} spot The block and its place.
@@ -447,6 +464,7 @@ const BLOCK_RESOLVERS = new Map([
 	['steps', resolveCollectionView],
 	['documents', resolveCollectionView],
 	['timeline', resolveCollectionView],
+	['messages', resolveMessages],
 	['greeting', resolveGreeting],
 	['cta', resolveAction],
 	['action', resolveAction],

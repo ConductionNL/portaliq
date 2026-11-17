@@ -30,11 +30,12 @@ decidiq's half is `decidiq/portal-voting-record-and-confidential-papers`. Tasks 
   - Done when: the hook runs once before streaming with the session's subjectRef, trust, identity type and audience; false, null or a throw gives 503 "The paper cannot be opened right now" and no bytes
   - Test: PHPUnit `CollectionDocumentsTest` with a provider fixture that returns true, false and throws
 
-- [ ] **T6**: asking for a higher login (REQ-SCR-004)
+- [x] **T6**: asking for a higher login (REQ-SCR-004)
   - Files: `lib/Controller/ContributionController.php` (`stepUp` in the aggregate), `lib/Contribution/PortalContributionRegistry.php` (collections dropped for trust alone), the contributed page in `src/site` (prompt with the Inloggen board's cards from `LoginProviders`), the return-to-route after sign-in, `l10n/*.json`
   - Done when: `stepUp` holds label and minTrust only; the page shows the prompt with the routes that reach the trust, or "Inloggen met DigiD is hier nog niet beschikbaar" when none does; after signing in the resident lands on the same page
   - Test: PHPUnit on the aggregate, `tests/e2e/confidential-papers.spec.ts`
-  - Built: `stepUp` in the subject aggregate (`testACollectionDroppedForTrustIsNamedUnderStepUp`). — not run: the sign-in prompt on the contributed page, the return to the same page and `tests/e2e/confidential-papers.spec.ts`.
+  - Built: `stepUp` in the subject aggregate (`testACollectionDroppedForTrustIsNamedUnderStepUp`). The prompt on the contributed page and the return to it (#1587): a `stepUp` collection becomes a page in the signed-in area at the route its page would have had (`stepUpEntries` in `src/shared/portalNav.js`), which shows `src/site/components/mijn/StepUpPrompt.vue` with only the DigiD, eHerkenning and eIDAS cards that reach the level, or "Inloggen met DigiD is hier nog niet beschikbaar" when none does; each sign-in link carries the page as its return route (`withReturnTo` in `src/site/lib/stepUp.js`); test `tests/step-up-prompt.spec.mjs` (10 tests). — not run: `tests/e2e/confidential-papers.spec.ts`, which needs a live instance and the stub envelope.
+  - Live pass 2026-11-17: `tests/e2e/confidential-papers.spec.ts` 2/2 passed once the rig had the `dev-org` and `e2e-org` organisations (ci-seed now creates them) and the URL check accepted the encoded `?route=` address.
 
 - [x] **T7**: example site (REQ-SCR-005)
   - Files: `lib/Service/ExampleSite/ExampleSiteCatalogue.php`

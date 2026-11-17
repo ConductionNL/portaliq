@@ -26,7 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Middleware;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Middleware\Support\ApiPathAliases;
 use OCA\Portaliq\Middleware\Support\StandardProtocolPaths;
 use OCP\App\IAppManager;
@@ -155,7 +155,7 @@ class ApiContractMiddleware extends Middleware {
 			return $response;
 		}
 
-		$response->addHeader(name: 'API-Version', value: $this->appManager->getAppVersion(appId: Application::APP_ID));
+		$response->addHeader(name: 'API-Version', value: $this->appManager->getAppVersion(appId: AppIdentity::APP_ID));
 		if ($response instanceof JSONResponse) {
 			$this->decorateError(response: $response);
 		}

@@ -29,6 +29,7 @@ namespace OCA\Portaliq\Service\Availability;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\Portaliq\Kernel\Contracts\AvailabilityRollupInterface;
 use Throwable;
 
 /**
@@ -42,11 +43,7 @@ use Throwable;
  *
  * @spec openspec/specs/portal-availability/spec.md#requirement-an-interval-without-a-check-counts-as-down-req-oar-002
  */
-class AvailabilityRollup {
-	/**
-	 * The check interval, in seconds.
-	 */
-	public const INTERVAL = 300;
+class AvailabilityRollup implements AvailabilityRollupInterface {
 
 	public const AVAILABLE = 'available';
 
@@ -167,7 +164,65 @@ class AvailabilityRollup {
 	 */
 	private function fold(array $state, string $portal, DateTimeImmutable $start, string $status, string $cause): array {
 		$date = $start->format('Y-m-d');
-		$day = ($state['days'][$date] ?? ['portal' => $portal, 'date' => $date]);
+		$day = $this->countedDay(day: ($state['days'][$date] ?? ['portal' => $portal, 'date' => $date]), status: $status, cause: $cause);
+
+		$state['days'][$date] = $day;
+
+		if ($status === self::AVAILABLE) {
+			return $this->closedOutage(state: $state, start: $start);
+		}
+
+		return $this->openedOutage(state: $state, portal: $portal, start: $start, cause: $cause);
+	}//end fold()
+
+	/**
+	 * The state with its open outage closed at the interval's start, if any.
+	 *
+	 * @param array<string, mixed> $state The state so far: `days`, `open`, `closed`.
+	 * @param DateTimeImmutable    $start The interval's start.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function closedOutage(array $state, DateTimeImmutable $start): array {
+		if ($state['open'] !== null) {
+			$closed = $state['open'];
+			$closed['endedAt'] = $start->format(DATE_ATOM);
+			$closed['durationMinutes'] = $this->minutesBetween(from: (string)$closed['startedAt'], to: $start);
+			$state['closed'][] = $closed;
+			$state['open'] = null;
+		}
+
+		return $state;
+	}//end closedOutage()
+
+	/**
+	 * The state with an outage open from the interval's start, unless one is.
+	 *
+	 * @param array<string, mixed> $state  The state so far: `days`, `open`, `closed`.
+	 * @param string               $portal The portal slug.
+	 * @param DateTimeImmutable    $start  The interval's start.
+	 * @param string               $cause  Why it was not available.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function openedOutage(array $state, string $portal, DateTimeImmutable $start, string $cause): array {
+		if ($state['open'] === null) {
+			$state['open'] = ['portal' => $portal, 'startedAt' => $start->format(DATE_ATOM), 'cause' => $cause, 'durationMinutes' => 0];
+		}
+
+		return $state;
+	}//end openedOutage()
+
+	/**
+	 * A day's counters with one interval counted.
+	 *
+	 * @param array<string, mixed> $day    The day so far.
+	 * @param string               $status AVAILABLE, DEGRADED or DOWN.
+	 * @param string               $cause  Why it was not available.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function countedDay(array $day, string $status, string $cause): array {
 		foreach (['intervals', self::AVAILABLE, self::DEGRADED, self::DOWN, 'noCheck'] as $counter) {
 			$day[$counter] = (int)($day[$counter] ?? 0);
 		}
@@ -178,26 +233,8 @@ class AvailabilityRollup {
 			$day['noCheck']++;
 		}
 
-		$state['days'][$date] = $day;
-
-		if ($status === self::AVAILABLE) {
-			if ($state['open'] !== null) {
-				$closed = $state['open'];
-				$closed['endedAt'] = $start->format(DATE_ATOM);
-				$closed['durationMinutes'] = $this->minutesBetween(from: (string)$closed['startedAt'], to: $start);
-				$state['closed'][] = $closed;
-				$state['open'] = null;
-			}
-
-			return $state;
-		}
-
-		if ($state['open'] === null) {
-			$state['open'] = ['portal' => $portal, 'startedAt' => $start->format(DATE_ATOM), 'cause' => $cause, 'durationMinutes' => 0];
-		}
-
-		return $state;
-	}//end fold()
+		return $day;
+	}//end countedDay()
 
 	/**
 	 * Whole minutes from an ISO timestamp to a moment.

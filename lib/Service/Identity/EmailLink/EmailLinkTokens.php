@@ -30,10 +30,11 @@ namespace OCA\Portaliq\Service\Identity\EmailLink;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\EmailLinkTokensInterface;
 use OCA\Portaliq\Service\Identity\ClaimLock;
 use OCA\Portaliq\Service\Identity\TokenRows;
-use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCP\Security\ISecureRandom;
 
 /**
@@ -41,36 +42,7 @@ use OCP\Security\ISecureRandom;
  *
  * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#4
  */
-class EmailLinkTokens {
-	/**
-	 * The spend went through: this caller signs in.
-	 */
-	public const SPENT = 'spent';
-
-	/**
-	 * The link was spent before.
-	 */
-	public const USED = 'used';
-
-	/**
-	 * Unknown, expired, voided by a newer link or by staff.
-	 */
-	public const NOT_VALID = 'not_valid';
-
-	/**
-	 * Opened without the request cookie and without the typed address.
-	 */
-	public const ADDRESS_NEEDED = 'address_needed';
-
-	/**
-	 * The typed address is not the one the link was sent to.
-	 */
-	public const ADDRESS_WRONG = 'address_wrong';
-
-	/**
-	 * Another redeem holds the lock.
-	 */
-	public const BUSY = 'busy';
+class EmailLinkTokens implements EmailLinkTokensInterface {
 
 	/**
 	 * Token length; 48 characters over 36 symbols is about 248 bits.
@@ -127,44 +99,122 @@ class EmailLinkTokens {
 	 * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-the-e-mail-link-token-is-strong-stored-as-a-hash-and-spent-once-req-iwi-009
 	 */
 	public function issue(array $account, string $portal, string $cookieHash, string $addressHash, ?DateTimeImmutable $now = null): ?string {
+		$seed = $this->linkSeed(account: $account, addressHash: $addressHash);
+		if ($seed === null) {
+			return null;
+		}
+
+		$token = $seed['token'];
+		$data  = $seed['owner'] + ['portal' => $portal, 'tokenHash' => hash('sha256', $token), 'cookieHash' => $cookieHash, 'addressHash' => $addressHash];
+		if ($this->replaceLinks(data: $data, now: $now) === false) {
+			return null;
+		}
+
+		return $token;
+	}//end issue()
+
+	/**
+	 * The link's owner and a new plain token, or null when the account or
+	 * address is incomplete or the generator returned too few characters.
+	 *
+	 * @param array<string, mixed> $account     The eligible account.
+	 * @param string               $addressHash SHA-256 of the normalised address.
+	 *
+	 * @return array{owner: array{subjectRef: string, organisation: string}, token: string}|null
+	 *
+	 * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-the-e-mail-link-token-is-strong-stored-as-a-hash-and-spent-once-req-iwi-009
+	 */
+	private function linkSeed(array $account, string $addressHash): array|null {
+		$owner = $this->linkOwner(account: $account, addressHash: $addressHash);
+		if ($owner === null) {
+			return null;
+		}
+
+		$token = $this->newToken();
+		if ($token === null) {
+			return null;
+		}
+
+		return ['owner' => $owner, 'token' => $token];
+	}//end linkSeed()
+
+	/**
+	 * The account's subjectRef and organisation, or null when either or the address hash is empty.
+	 *
+	 * @param array<string, mixed> $account     The eligible account.
+	 * @param string               $addressHash SHA-256 of the normalised address.
+	 *
+	 * @return array{subjectRef: string, organisation: string}|null
+	 *
+	 * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-the-e-mail-link-token-is-strong-stored-as-a-hash-and-spent-once-req-iwi-009
+	 */
+	private function linkOwner(array $account, string $addressHash): array|null {
 		$subjectRef   = (string)($account['subjectRef'] ?? '');
 		$organisation = (string)($account['organisation'] ?? '');
 		if ($subjectRef === '' || $organisation === '' || $addressHash === '') {
 			return null;
 		}
 
+		return ['subjectRef' => $subjectRef, 'organisation' => $organisation];
+	}//end linkOwner()
+
+	/**
+	 * A new plain token, or null when the generator returned too few characters.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-the-e-mail-link-token-is-strong-stored-as-a-hash-and-spent-once-req-iwi-009
+	 */
+	private function newToken(): string|null {
 		$token = $this->random->generate(self::TOKEN_LENGTH, (ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS));
 		if (strlen($token) < self::TOKEN_LENGTH) {
 			return null;
 		}
 
-		$this->voidFor(subjectRef: $subjectRef, organisation: $organisation);
+		return $token;
+	}//end newToken()
 
-		$moment  = ($now ?? new DateTimeImmutable());
-		$created = $this->writer->createObject(
+	/**
+	 * Void the account's earlier unspent links, then store the new one.
+	 *
+	 * @param array<string, string>  $data The link's owner, portal and hashes.
+	 * @param DateTimeImmutable|null $now  The moment of issue.
+	 *
+	 * @return bool Whether the link was stored.
+	 *
+	 * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-the-e-mail-link-token-is-strong-stored-as-a-hash-and-spent-once-req-iwi-009
+	 */
+	private function replaceLinks(array $data, DateTimeImmutable|null $now): bool {
+		$this->voidFor(subjectRef: $data['subjectRef'], organisation: $data['organisation']);
+
+		$moment = ($now ?? new DateTimeImmutable());
+		$row    = $data + [
+			'state'     => 'sent',
+			'issuedAt'  => $moment->format(DATE_ATOM),
+			'expiresAt' => $moment->add(new DateInterval(self::TTL))->format(DATE_ATOM),
+		];
+		return $this->createLink(row: $row) !== null;
+	}//end replaceLinks()
+
+	/**
+	 * Write the link row.
+	 *
+	 * @param array<string, string> $row The link row.
+	 *
+	 * @return array<string, mixed>|null The created row, or null when the write failed.
+	 *
+	 * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-the-e-mail-link-token-is-strong-stored-as-a-hash-and-spent-once-req-iwi-009
+	 */
+	private function createLink(array $row): array|null {
+		return $this->writer->createObject(
 			register: self::REGISTER,
 			schema: self::SCHEMA,
 			scopeField: '',
 			subjectRef: '',
-			organisation: $organisation,
-			data: [
-				'subjectRef'   => $subjectRef,
-				'organisation' => $organisation,
-				'portal'       => $portal,
-				'tokenHash'    => hash('sha256', $token),
-				'cookieHash'   => $cookieHash,
-				'addressHash'  => $addressHash,
-				'state'        => 'sent',
-				'issuedAt'     => $moment->format(DATE_ATOM),
-				'expiresAt'    => $moment->add(new DateInterval(self::TTL))->format(DATE_ATOM),
-			]
+			organisation: $row['organisation'],
+			data: $row
 		);
-		if ($created === null) {
-			return null;
-		}
-
-		return $token;
-	}//end issue()
+	}//end createLink()
 
 	/**
 	 * What a link is, without spending it: the row and one of SPENT's

@@ -37,7 +37,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Contribution\CitizenWriteConfigNormaliser;
+use OCA\Portaliq\Contribution\CaseFieldDisplayHints;
+use OCA\Portaliq\Kernel\Contracts\CitizenWritableSetResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\CitizenWriteConfigNormaliserInterface;
 use OCP\IL10N;
 
 /**
@@ -45,8 +47,10 @@ use OCP\IL10N;
  * for one case.
  *
  * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
-class CitizenWritableSetResolver {
+class CitizenWritableSetResolver implements CitizenWritableSetResolverInterface {
 	/**
 	 * The property on the case type listing the fields a portal audience may
 	 * change. Each entry IS the field's flag (D16).
@@ -112,10 +116,13 @@ class CitizenWritableSetResolver {
 	 *
 	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 * @spec openspec/changes/archive/2026-10-07-citizen-case-ended-shows-only-its-state/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-case-that-has-ended-offers-nothing-and-explains-nothing
+	 * @spec openspec/changes/personal-data-left-untranslated/tasks.md#t03
 	 */
 	public function resolve(array $action, array $case, string $audience, string $closedField = ''): array {
-		$set = $this->resolveOpen(action: $action, case: $case, audience: $audience);
+		$set   = $this->resolveOpen(action: $action, case: $case, audience: $audience);
+		$hints = ($action[CitizenWriteConfigNormaliserInterface::KEY]['fields'] ?? null);
 		if ((new CaseRowMarker())->hasEnded(row: $case, closedField: $closedField) === false) {
+			$set['fields'] = CaseFieldDisplayHints::apply(fields: (array)($set['fields'] ?? []), hints: $hints);
 			return array_merge($set, ['ended' => false]);
 		}
 
@@ -135,7 +142,7 @@ class CitizenWritableSetResolver {
 		return array_merge(
 			$set,
 			[
-				'fields' => $fields,
+				'fields' => CaseFieldDisplayHints::apply(fields: $fields, hints: $hints),
 				'writable' => [],
 				'window' => $closed,
 				'documents' => $closed,
@@ -143,7 +150,6 @@ class CitizenWritableSetResolver {
 			]
 		);
 	}//end resolve()
-
 
 	/**
 	 * The writable set as the case type declares it for the case's status.
@@ -317,7 +323,7 @@ class CitizenWritableSetResolver {
 	 * @return array<string, mixed>|null
 	 */
 	private function actionCaseType(array $action, array $caseRow): ?array {
-		$config = ($action[CitizenWriteConfigNormaliser::KEY] ?? null);
+		$config = ($action[CitizenWriteConfigNormaliserInterface::KEY] ?? null);
 		if (is_array($config) === false) {
 			return null;
 		}
@@ -339,7 +345,7 @@ class CitizenWritableSetResolver {
 	 * @return string
 	 */
 	private function caseStatusOf(array $action, array $caseRow): string {
-		$config = (array)$action[CitizenWriteConfigNormaliser::KEY];
+		$config = (array)$action[CitizenWriteConfigNormaliserInterface::KEY];
 		return (string)($caseRow[$config['statusField']] ?? '');
 	}//end caseStatusOf()
 
@@ -394,12 +400,8 @@ class CitizenWritableSetResolver {
 		}
 
 		foreach ($declared as $entry) {
-			$field = null;
-			if (is_array($entry) === true) {
-				$field = ($entry['field'] ?? null);
-			}
-
-			if (is_string($field) === false || $field === '' || in_array($field, $whitelist, true) === false) {
+			$field = $this->whitelistedField(entry: $entry, whitelist: $whitelist);
+			if ($field === null) {
 				continue;
 			}
 
@@ -413,6 +415,27 @@ class CitizenWritableSetResolver {
 
 		return $fields;
 	}//end fields()
+
+	/**
+	 * The field a declared flag names, when the action's whitelist has it.
+	 *
+	 * @param mixed              $entry     The declared flag.
+	 * @param array<int, string> $whitelist The action's `fields`.
+	 *
+	 * @return string|null
+	 */
+	private function whitelistedField(mixed $entry, array $whitelist): string|null {
+		$field = null;
+		if (is_array($entry) === true) {
+			$field = ($entry['field'] ?? null);
+		}
+
+		if (is_string($field) === false || $field === '' || in_array($field, $whitelist, true) === false) {
+			return null;
+		}
+
+		return $field;
+	}//end whitelistedField()
 
 	/**
 	 * One field flag's state. A flag that does not name this audience is not a

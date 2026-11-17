@@ -34,6 +34,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Proposals;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\ProposalServiceInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 
 /**
@@ -41,11 +42,7 @@ use OCA\Portaliq\Service\PortalObjectWriter;
  *
  * @spec openspec/specs/change-proposal-queue/spec.md
  */
-class ProposalService {
-	/**
-	 * A proposal waiting for a reviewer.
-	 */
-	public const STATE_QUEUED = 'queued';
+class ProposalService implements ProposalServiceInterface {
 
 	/**
 	 * A proposal whose values are on the record.
@@ -399,18 +396,7 @@ class ProposalService {
 	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	private function applyProposal(array $proposal, string $reviewer): array {
-		$values = [];
-		foreach ((array)($proposal['changes'] ?? []) as $change) {
-			if (is_array($change) === false) {
-				continue;
-			}
-
-			$property = (string)($change['property'] ?? '');
-			if ($property !== '') {
-				$values[$property] = ($change['proposedValue'] ?? null);
-			}
-		}
-
+		$values = $this->proposedValues(proposal: $proposal);
 		if ($values === []) {
 			return ['error' => 'nothing_to_apply'];
 		}
@@ -432,6 +418,31 @@ class ProposalService {
 
 		return ['accepted' => true];
 	}//end applyProposal()
+
+	/**
+	 * The proposed value of each property the proposal changes.
+	 *
+	 * @param array<string, mixed> $proposal The proposal.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/change-proposal-queue/spec.md
+	 */
+	private function proposedValues(array $proposal): array {
+		$values = [];
+		foreach ((array)($proposal['changes'] ?? []) as $change) {
+			if (is_array($change) === false) {
+				continue;
+			}
+
+			$property = (string)($change['property'] ?? '');
+			if ($property !== '') {
+				$values[$property] = ($change['proposedValue'] ?? null);
+			}
+		}
+
+		return $values;
+	}//end proposedValues()
 
 	/**
 	 * Reject a proposal, with a reason, touching only the proposal.

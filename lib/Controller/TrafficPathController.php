@@ -26,8 +26,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\Service\Traffic\TrafficPaths;
-use OCA\Portaliq\Service\Traffic\TrafficPathService;
+use OCA\Portaliq\Kernel\Contracts\TrafficPathServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\TrafficPathsInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -63,14 +63,14 @@ class TrafficPathController extends Controller {
 	 *
 	 * @param string             $appName The app id.
 	 * @param IRequest           $request The request.
-	 * @param TrafficPathService $paths   Reads and counts the paths.
+	 * @param TrafficPathServiceInterface $paths   Reads and counts the paths.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly TrafficPathService $paths,
+		private readonly TrafficPathServiceInterface $paths,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -243,7 +243,7 @@ class TrafficPathController extends Controller {
 	 * @return string|null The reason.
 	 */
 	private function explorerRefusal(PathQuery $query): ?string {
-		if (in_array($query->mode, TrafficPaths::MODES, true) === false) {
+		if (in_array($query->mode, TrafficPathsInterface::MODES, true) === false) {
 			return 'invalid-mode';
 		}
 
@@ -251,7 +251,7 @@ class TrafficPathController extends Controller {
 			return 'invalid-anchor';
 		}
 
-		if (preg_match('/^\d{1,2}$/', $query->steps) !== 1 || (int)$query->steps < 1 || (int)$query->steps > TrafficPaths::MAX_STEPS) {
+		if (preg_match('/^\d{1,2}$/', $query->steps) !== 1 || (int)$query->steps < 1 || (int)$query->steps > TrafficPathsInterface::MAX_STEPS) {
 			return 'invalid-steps';
 		}
 

@@ -81,22 +81,63 @@ class OnCaseConfigNormaliser {
 			return null;
 		}
 
-		$crossRef = ($declared['crossRef'] ?? null);
-		if (is_string($crossRef) === false || is_array($crossRefs) === false || array_key_exists($crossRef, $crossRefs) === false) {
+		$crossRef = $this->crossRefOf(declared: $declared, crossRefs: $crossRefs);
+		if ($crossRef === null) {
 			return null;
 		}
 
-		if (is_int($declared['order'] ?? null) === false) {
-			return null;
-		}
-
-		$window = $this->window(declared: ($declared['window'] ?? null));
+		$window = $this->orderedWindow(declared: $declared);
 		if ($window === null) {
 			return null;
 		}
 
 		$config = ['crossRef' => $crossRef, 'order' => $declared['order'], 'window' => $window];
 
+		return $this->withClosedText(config: $config, declared: $declared);
+	}//end config()
+
+	/**
+	 * The cross-reference the declaration names, when the action has it.
+	 *
+	 * @param array<string, mixed> $declared  The declaration as authored.
+	 * @param mixed                $crossRefs The action's normalised cross-references.
+	 *
+	 * @return string|null
+	 */
+	private function crossRefOf(array $declared, mixed $crossRefs): string|null {
+		$crossRef = ($declared['crossRef'] ?? null);
+		if (is_string($crossRef) === false || is_array($crossRefs) === false || array_key_exists($crossRef, $crossRefs) === false) {
+			return null;
+		}
+
+		return $crossRef;
+	}//end crossRefOf()
+
+	/**
+	 * The declaration's window, when it also declares a whole-number order.
+	 *
+	 * @param array<string, mixed> $declared The declaration as authored.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function orderedWindow(array $declared): array|null {
+		if (is_int($declared['order'] ?? null) === false) {
+			return null;
+		}
+
+		return $this->window(declared: ($declared['window'] ?? null));
+	}//end orderedWindow()
+
+	/**
+	 * The configuration with the declared closed text, or null when that text
+	 * is not a string.
+	 *
+	 * @param array<string, mixed> $config   The configuration so far.
+	 * @param array<string, mixed> $declared The declaration as authored.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function withClosedText(array $config, array $declared): array|null {
 		$closedText = ($declared['closedText'] ?? null);
 		if ($closedText !== null) {
 			if (is_string($closedText) === false) {
@@ -107,7 +148,7 @@ class OnCaseConfigNormaliser {
 		}
 
 		return $config;
-	}//end config()
+	}//end withClosedText()
 
 	/**
 	 * The sanitised window: a field name to count from and a positive number of

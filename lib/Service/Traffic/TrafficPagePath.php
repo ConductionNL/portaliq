@@ -20,6 +20,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic;
 
+use OCA\Portaliq\Kernel\Contracts\TrafficPagePathInterface;
+
 /**
  * The in-site route a page view belongs to, so a page and its traffic
  * meet on one string.
@@ -35,7 +37,7 @@ namespace OCA\Portaliq\Service\Traffic;
  *
  * @spec openspec/specs/portal-page-traffic/spec.md#requirement-a-pages-traffic-must-be-counted-by-its-in-site-route
  */
-class TrafficPagePath {
+class TrafficPagePath implements TrafficPagePathInterface {
 
 	/**
 	 * The longest route kept, like the stored path.

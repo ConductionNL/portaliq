@@ -144,9 +144,9 @@ class FakeLedger {
  * @covers \OCA\Portaliq\BackgroundJob\PortalTaskDeliveryJob
  * @uses \OCA\Portaliq\Service\PortalDeepLinkBuilder
  * @uses \OCA\Portaliq\Service\Notifications\PortalNoticeLanguage
- * @uses   \OCA\Portaliq\BackgroundJob\TaskDelivery
+ * @covers \OCA\Portaliq\BackgroundJob\TaskDelivery
  * @uses   \OCA\Portaliq\BackgroundJob\TaskNoticeBody
- * @uses \OCA\Portaliq\BackgroundJob\TaskMail
+ * @covers \OCA\Portaliq\BackgroundJob\TaskMail
  *
  * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation
  */
@@ -814,6 +814,91 @@ class PortalTaskDeliveryJobTest extends TestCase {
 		// was still processed and delivered.
 		$this->assertSame(['d-2'], $ledger->delivered);
 	}//end testASettleFailureIsAbsorbed()
+
+	/**
+	 * A kind the job does not know fails the row with its reason even on a
+	 * duck-typed row: nothing is read, written or mailed.
+	 *
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-an-unknown-kind-fails-honestly-req-trd-003
+	 */
+	public function testAnUnknownKindOnAnyRowFailsBeforeAnyWrite(): void {
+		$ledger = new FakeLedger(rows: [new FakeDeliveryRow(uuid: 'd-1', party: 'party:s1', channel: 'portal-inbox', kind: 'summons', message: self::MESSAGE)]);
+
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->expects($this->never())->method('readCollection');
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->never())->method('createObject');
+
+		$this->runJob(ledger: $ledger, reader: $reader, writer: $writer);
+
+		$this->assertSame([], $ledger->delivered);
+		$this->assertSame(['d-1' => 'unknown delivery kind: summons'], $ledger->failed);
+	}//end testAnUnknownKindOnAnyRowFailsBeforeAnyWrite()
+
+	/**
+	 * A row whose payload is not an array is delivered as an empty payload:
+	 * no task uuid or title, but still the row's own delivery uuid.
+	 */
+	public function testANonArrayPayloadIsReadAsEmpty(): void {
+		$row = new class {
+			public function getUuid(): string {
+				return 'd-1';
+			}//end getUuid()
+
+			public function getPartyReference(): string {
+				return 'party:s1';
+			}//end getPartyReference()
+
+			public function getChannel(): string {
+				return 'portal-inbox';
+			}//end getChannel()
+
+			public function getKind(): string {
+				return 'ask';
+			}//end getKind()
+
+			public function getMessage(): string {
+				return 'not-a-payload';
+			}//end getMessage()
+		};
+		$ledger = new FakeLedger(rows: [$row]);
+
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readCollection')->willReturn([]);
+
+		$captured = [];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->once())->method('createObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data) use (&$captured) {
+				$captured = $data;
+
+				return ['id' => 'm-1'];
+			}
+		);
+
+		$this->runJob(ledger: $ledger, reader: $reader, writer: $writer);
+
+		$this->assertSame(['d-1'], $ledger->delivered);
+		$this->assertSame('d-1', $captured['deliveryUuid']);
+		$this->assertSame('', $captured['taskUuid']);
+		$this->assertSame('[nl] You have a new task: ', $captured['subject']);
+	}//end testANonArrayPayloadIsReadAsEmpty()
+
+	/**
+	 * A failing row without a uuid cannot be settled: the ledger is never
+	 * asked to mark an empty uuid failed.
+	 */
+	public function testARowWithoutAUuidIsNeverMarkedFailed(): void {
+		$ledger = new FakeLedger(rows: [new FakeDeliveryRow(uuid: '', party: 'no-prefix', channel: 'portal-inbox')]);
+
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->never())->method('createObject');
+
+		$this->runJob(ledger: $ledger, reader: $this->createMock(PortalObjectReader::class), writer: $writer);
+
+		$this->assertSame([], $ledger->delivered);
+		$this->assertSame([], $ledger->failed);
+	}//end testARowWithoutAUuidIsNeverMarkedFailed()
 
 	/**
 	 * A container that answers with a non-object for the seam name reads as

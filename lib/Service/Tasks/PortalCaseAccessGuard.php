@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Tasks;
 
+use OCA\Portaliq\Kernel\Contracts\PortalCaseAccessGuardInterface;
 use OCA\Portaliq\Service\ActionAuthService;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IUser;
@@ -46,18 +47,11 @@ use Throwable;
  *
  * @spec openspec/specs/partner-tasks-in-the-portal/spec.md
  */
-class PortalCaseAccessGuard {
+class PortalCaseAccessGuard implements PortalCaseAccessGuardInterface {
 	/**
 	 * The ADR-023 action raising an ask is gated by.
 	 */
 	public const ACTION = 'portal.ask-partner';
-
-	/**
-	 * The ADR-023 action reviewing a change proposal is gated by.
-	 *
-	 * @spec openspec/specs/change-proposal-queue/spec.md
-	 */
-	public const ACTION_REVIEW_PROPOSAL = 'portal.review-proposal';
 
 	/**
 	 * OpenRegister's object service, resolved lazily so portaliq still boots

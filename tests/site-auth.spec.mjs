@@ -18,6 +18,7 @@
 // tests/manifest-v2.spec.js — this app has no JS test runner, and adding one
 // for three functions would be a bigger change than the thing being tested.
 
+import { consumeOidcCallbackFragment, getToken } from '../src/shared/portalApi.js'
 import {
 	adoptLegacyToken,
 	adoptSessionToken,
@@ -320,6 +321,54 @@ assertEqual(
 	adoptLegacyToken(),
 	'',
 )
+delete globalThis.window
+
+// signin-eherkenning-eidas-and-the-token-fragment REQ-SEE-003: the shared
+// portal client reads `#token=` once, keeps the bearer, and replaces the
+// address with one without the fragment; a load without it adopts nothing.
+console.log('consumeOidcCallbackFragment')
+
+/**
+ * Install a minimal browser window at the given address for the portal client.
+ *
+ * @param {string} href The full address, fragment included.
+ * @return {{store: Map, replaced: Array}} What the window recorded.
+ */
+function fakePortalWindow(href) {
+	const store = new Map()
+	const replaced = []
+	const url = new URL(href)
+	globalThis.window = {
+		location: { href, hash: url.hash },
+		localStorage: {
+			getItem: (k) => (store.has(k) ? store.get(k) : null),
+			setItem: (k, v) => store.set(k, v),
+			removeItem: (k) => store.delete(k),
+		},
+		history: {
+			replaceState: (_s, _t, next) => {
+				replaced.push(next)
+				window.location.href = next
+				window.location.hash = new URL(next).hash
+			},
+		},
+	}
+	return { store, replaced }
+}
+
+const portalSignedIn = fakePortalWindow('https://portal.example/apps/portaliq/site?portal=zuiddrecht#token=abc%2F123')
+assertEqual('a bearer in the fragment is adopted', consumeOidcCallbackFragment(), true)
+assertEqual('and kept', getToken(), 'abc/123')
+assertEqual('and the address loses the fragment, keeping its query', portalSignedIn.replaced, [
+	'https://portal.example/apps/portaliq/site?portal=zuiddrecht',
+])
+assertEqual('a second read adopts nothing more', consumeOidcCallbackFragment(), false)
+assertEqual('and leaves the address alone', portalSignedIn.replaced.length, 1)
+
+const portalNoToken = fakePortalWindow('https://portal.example/apps/portaliq/site?portal=zuiddrecht&token=leaked#section-2')
+assertEqual('a load without a #token= fragment adopts nothing', consumeOidcCallbackFragment(), false)
+assertEqual('not even a token in the query string', getToken(), null)
+assertEqual('and the address is not rewritten', portalNoToken.replaced, [])
 delete globalThis.window
 
 if (failures > 0) {

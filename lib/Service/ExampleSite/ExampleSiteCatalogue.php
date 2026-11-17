@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\ExampleSite;
 
+use OCA\Portaliq\Kernel\Contracts\ExampleSiteCatalogueInterface;
 use OCP\App\IAppManager;
 
 /**
@@ -34,7 +35,7 @@ use OCP\App\IAppManager;
  *
  * @spec openspec/changes/example-site-zuiddrecht/specs/example-site/spec.md#requirement-an-administrator-must-be-able-to-install-an-example-site-with-one-command
  */
-class ExampleSiteCatalogue {
+class ExampleSiteCatalogue implements ExampleSiteCatalogueInterface {
 	/**
 	 * The object lists a declaration holds besides its portal, by key.
 	 */

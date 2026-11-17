@@ -34,20 +34,15 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\ActionScopeResolver;
-use OCA\Portaliq\Contribution\AttachedActionResolver;
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
-use OCA\Portaliq\Contribution\RowActionFiles;
-use OCA\Portaliq\Contribution\RowActionResolver;
-use OCA\Portaliq\Contribution\RowIdentifier;
-use OCA\Portaliq\Service\AuditTrailService;
-use OCA\Portaliq\Service\PortalActionForwarder;
-use OCA\Portaliq\Service\PortalObjectReader;
-use OCA\Portaliq\Service\PortalSessionService;
-use OCA\Portaliq\Service\Session\SessionTrust;
-use OCA\Portaliq\Service\RequiredFieldsGuard;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\AuditTrailServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalActionForwarderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
+use OCA\Portaliq\Kernel\Support\SessionTrust;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -55,6 +50,11 @@ use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCA\Portaliq\Kernel\Contracts\AttachedActionResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\RequiredFieldsGuardInterface;
+use OCA\Portaliq\Kernel\Contracts\RowActionFilesInterface;
+use OCA\Portaliq\Kernel\Contracts\RowActionResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\RowIdentifierInterface;
 
 /**
  * Serves the row-scoped endpoint action forward.
@@ -66,27 +66,39 @@ use OCP\IRequest;
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- one collaborator per step
  * of the forward (who, which row action, whose row, send, record) plus the
  * framework attributes every portal endpoint carries.
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class PortalRowActionController extends Controller implements PortalProtected {
 	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalContributionRegistry $registry The subject's contributions.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param PortalObjectReader $reader The scoped single-object read.
-	 * @param PortalActionForwarder $forwarder The signed server-to-server forward.
-	 * @param AuditTrailService $auditor Records the forward.
+	 * @param PortalContributionRegistryInterface $registry The subject's contributions.
+	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
+	 * @param PortalObjectReaderInterface $reader The scoped single-object read.
+	 * @param PortalActionForwarderInterface $forwarder The signed server-to-server forward.
+	 * @param AuditTrailServiceInterface $auditor Records the forward.
+	 * @param AttachedActionResolverInterface $attachedActionResolver The AttachedActionResolver helper.
+	 * @param RequiredFieldsGuardInterface $requiredFieldsGuard The RequiredFieldsGuard helper.
+	 * @param RowActionFilesInterface $rowActionFiles The RowActionFiles helper.
+	 * @param RowActionResolverInterface $rowActionResolver The RowActionResolver helper.
+	 * @param RowIdentifierInterface $rowIdentifier The RowIdentifier helper.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalContributionRegistry $registry,
-		private readonly PortalSessionService $session,
-		private readonly PortalObjectReader $reader,
-		private readonly PortalActionForwarder $forwarder,
-		private readonly AuditTrailService $auditor,
+		private readonly PortalContributionRegistryInterface $registry,
+		private readonly PortalSessionServiceInterface $session,
+		private readonly PortalObjectReaderInterface $reader,
+		private readonly PortalActionForwarderInterface $forwarder,
+		private readonly AuditTrailServiceInterface $auditor,
+		private readonly AttachedActionResolverInterface $attachedActionResolver,
+		private readonly RequiredFieldsGuardInterface $requiredFieldsGuard,
+		private readonly RowActionFilesInterface $rowActionFiles,
+		private readonly RowActionResolverInterface $rowActionResolver,
+		private readonly RowIdentifierInterface $rowIdentifier,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -150,7 +162,7 @@ class PortalRowActionController extends Controller implements PortalProtected {
 			return $refusal;
 		}
 
-		$run->rowId = (new RowIdentifier())->idFor(row: $run->row, fallback: $run->requestedId);
+		$run->rowId = $this->rowIdentifier->idFor(row: $run->row, fallback: $run->requestedId);
 		$body       = $this->forwardBody(run: $run);
 		if ($body === null) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
@@ -174,7 +186,7 @@ class PortalRowActionController extends Controller implements PortalProtected {
 	 * @return JSONResponse The relayed answer, or 422 / 502.
 	 */
 	private function relayWithFiles(RowForwardRun $run, array $body): JSONResponse {
-		$files = (new RowActionFiles())->collect(action: $run->authorised['action'], request: $this->request);
+		$files = $this->rowActionFiles->collect(action: $run->authorised['action'], request: $this->request);
 		if ($files['error'] !== null) {
 			return new JSONResponse(['error' => $files['error']], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
@@ -196,7 +208,7 @@ class PortalRowActionController extends Controller implements PortalProtected {
 	private function relay(RowForwardRun $run, array $body): JSONResponse {
 		// The action's required fields (REQ-SMF-024): refused before the audit
 		// and the forward.
-		$missing = (new RequiredFieldsGuard())->refusal(action: $run->authorised['action'], body: $body['body']);
+		$missing = $this->requiredFieldsGuard->refusal(action: $run->authorised['action'], body: $body['body']);
 		if ($missing !== null) {
 			return $missing;
 		}
@@ -254,7 +266,7 @@ class PortalRowActionController extends Controller implements PortalProtected {
 	 * @return JSONResponse|null The 409, or null when the row offers the action.
 	 */
 	private function notOffered(RowForwardRun $run): ?JSONResponse {
-		if ((new RowActionResolver())->rowMatches(action: $run->authorised['action'], row: $run->row) === false) {
+		if ($this->rowActionResolver->rowMatches(action: $run->authorised['action'], row: $run->row) === false) {
 			return new JSONResponse(['error' => 'not_offered'], Http::STATUS_CONFLICT);
 		}
 
@@ -308,38 +320,70 @@ class PortalRowActionController extends Controller implements PortalProtected {
 	 * @return array{collection: array<string, mixed>, action: array<string, mixed>, app: string, rowApp?: string}|null
 	 */
 	private function authorisedRowAction(array $subject, string $register, string $schema, string $actionId): ?array {
-		$collectionId = (string)$this->request->getParam('collection', '');
 		$contributions = ($this->registry->aggregateFor($subject)['contributions'] ?? []);
+		$match = $this->firstRequested(contributions: $contributions, register: $register, schema: $schema);
+		if ($match === null) {
+			return null;
+		}
+
+		[$contribution, $collection] = $match;
+
+		// An action attached to this collection (woo-journey-entry-points
+		// D3): `?actionApp=` names its app. That may be the collection's
+		// own app, for an action it attaches to one of its own
+		// collections (attach-to-own-collection); the lookup then still
+		// requires the attachment, never a row action of the same id.
+		$actionApp = (string)$this->request->getParam('actionApp', '');
+		if ($actionApp !== '') {
+			$target = ['collection' => $collection, 'app' => (string)($contribution['app'] ?? '')];
+			return $this->attachedMatch(contributions: $contributions, subject: $subject, target: $target, actionApp: $actionApp, actionId: $actionId);
+		}
+
+		return $this->ownRowAction(contribution: $contribution, collection: $collection, subject: $subject, actionId: $actionId);
+	}//end authorisedRowAction()
+
+	/**
+	 * The first collection on this register and schema, with its contribution; `?collection=` picks another.
+	 *
+	 * @param array<int, array<string, mixed>> $contributions The subject's contributions.
+	 * @param string                           $register      The requested register.
+	 * @param string                           $schema        The requested schema.
+	 *
+	 * @return array{0: array<string, mixed>, 1: array<string, mixed>}|null The contribution and the collection.
+	 */
+	private function firstRequested(array $contributions, string $register, string $schema): array|null {
+		$collectionId = (string)$this->request->getParam('collection', '');
 		foreach ($contributions as $contribution) {
 			foreach (($contribution['collections'] ?? []) as $collection) {
-				if ($this->isRequested(collection: $collection, requested: [$register, $schema, $collectionId]) === false) {
-					continue;
+				if ($this->isRequested(collection: $collection, requested: [$register, $schema, $collectionId]) === true) {
+					return [$contribution, $collection];
 				}
-
-				// An action attached to this collection (woo-journey-entry-points
-				// D3): `?actionApp=` names its app. That may be the collection's
-				// own app, for an action it attaches to one of its own
-				// collections (attach-to-own-collection); the lookup then still
-				// requires the attachment, never a row action of the same id.
-				$actionApp = (string)$this->request->getParam('actionApp', '');
-				if ($actionApp !== '') {
-					$target = ['collection' => $collection, 'app' => (string)($contribution['app'] ?? '')];
-					return $this->attachedMatch(contributions: $contributions, subject: $subject, target: $target, actionApp: $actionApp, actionId: $actionId);
-				}
-
-				// The first collection on this register and schema decides, as
-				// on the object read; `?collection=` picks another.
-				$action = $this->offeredAction(contribution: $contribution, collection: $collection, actionId: $actionId);
-				if ($action === null || $this->trustAndEndpointHold(subject: $subject, collection: $collection, action: $action) === false) {
-					return null;
-				}
-
-				return ['collection' => $collection, 'action' => $action, 'app' => (string)($contribution['app'] ?? '')];
-			}//end foreach
-		}//end foreach
+			}
+		}
 
 		return null;
-	}//end authorisedRowAction()
+	}//end firstRequested()
+
+	/**
+	 * The collection's own row action, when the subject's trust and the endpoint hold.
+	 *
+	 * @param array<string, mixed> $contribution The contribution holding the collection.
+	 * @param array<string, mixed> $collection   The requested collection.
+	 * @param array<string, mixed> $subject      The resolved subject.
+	 * @param string               $actionId     The requested action.
+	 *
+	 * @return array{collection: array<string, mixed>, action: array<string, mixed>, app: string}|null
+	 */
+	private function ownRowAction(array $contribution, array $collection, array $subject, string $actionId): array|null {
+		// The first collection on this register and schema decides, as
+		// on the object read; `?collection=` picks another.
+		$action = $this->offeredAction(contribution: $contribution, collection: $collection, actionId: $actionId);
+		if ($action === null || $this->trustAndEndpointHold(subject: $subject, collection: $collection, action: $action) === false) {
+			return null;
+		}
+
+		return ['collection' => $collection, 'action' => $action, 'app' => (string)($contribution['app'] ?? '')];
+	}//end ownRowAction()
 
 	/**
 	 * Whether a collection is the one the route names: its register and
@@ -377,7 +421,7 @@ class PortalRowActionController extends Controller implements PortalProtected {
 	private function attachedMatch(array $contributions, array $subject, array $target, string $actionApp, string $actionId): ?array {
 		$collection = $target['collection'];
 		$collectionApp = $target['app'];
-		$action = (new AttachedActionResolver())->attachedAction(
+		$action = $this->attachedActionResolver->attachedAction(
 			contributions: $contributions,
 			collectionApp: $collectionApp,
 			collection: $collection,
@@ -405,7 +449,7 @@ class PortalRowActionController extends Controller implements PortalProtected {
 			return null;
 		}
 
-		$resolver = new RowActionResolver();
+		$resolver = $this->rowActionResolver;
 		foreach (($contribution['actions'] ?? []) as $action) {
 			if (is_array($action) === true && ($action['id'] ?? '') === $actionId && $resolver->isEndpointRowAction(action: $action) === true) {
 				return $action;

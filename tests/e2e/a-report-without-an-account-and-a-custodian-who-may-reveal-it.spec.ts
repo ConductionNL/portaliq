@@ -82,12 +82,15 @@ async function seed(
  * A case type declaring the custodian group and the two statutory terms. The
  * group deliberately does not exist on the dev instance, so nobody on it is a
  * custodian and every reveal is refused: that is the state this file asserts.
+ * The handler group is `admin`, so the dev admin reads, answers and asks as a
+ * handler (REQ-IRP-005) without being the custodian.
  */
 async function seedCaseType(request: APIRequestContext): Promise<string> {
 	return seed(request, 'portalCaseType', {
-		label: 'Misstandmelding',
+		title: 'Misstandmelding',
 		portalReportDeclaration: {
 			custodianGroup: 'vertrouwenspersonen',
+			handlerGroup: 'admin',
 			acknowledgementDays: 7,
 			feedbackDays: 90,
 			excludeFromAnalytics: true,

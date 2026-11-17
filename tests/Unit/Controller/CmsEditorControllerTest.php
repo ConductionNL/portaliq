@@ -21,9 +21,11 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\CmsEditorController;
+use OCA\Portaliq\Service\Cms\CmsPublishValidator;
 use OCA\Portaliq\Service\CmsReader;
 use OCA\Portaliq\Service\PageEditorService;
 use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\Tenancy\PortalAdminScope;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;
@@ -47,7 +49,7 @@ class CmsEditorControllerTest extends TestCase {
 	 *
 	 * @return CmsEditorController The controller.
 	 */
-	private function controller(bool $mayEdit, ?array $portal = ['slug' => 'open-tilburg'], ?string $pageId = 'page-1'): CmsEditorController {
+	private function controller(bool $mayEdit, ?array $portal = ['slug' => 'open-tilburg'], ?string $pageId = 'page-1', ?array $administers = null): CmsEditorController {
 		$editor = $this->createMock(PageEditorService::class);
 		$editor->method('mayEdit')->willReturn($mayEdit);
 
@@ -56,6 +58,12 @@ class CmsEditorControllerTest extends TestCase {
 
 		$reader = $this->createMock(CmsReader::class);
 		$reader->method('identify')->willReturn($pageId);
+
+		$scope = null;
+		if ($administers !== null) {
+			$scope = $this->createMock(PortalAdminScope::class);
+			$scope->method('mayAdministerSlug')->willReturnCallback(static fn (string $slug): bool => in_array($slug, $administers, true));
+		}
 
 		$urls = $this->createMock(IURLGenerator::class);
 		$urls->method('linkToRoute')->willReturnCallback(
@@ -68,7 +76,9 @@ class CmsEditorControllerTest extends TestCase {
 			$resolver,
 			$reader,
 			$editor,
-			$urls
+			$urls,
+			new CmsPublishValidator(),
+			$scope
 		);
 	}//end controller()
 
@@ -88,6 +98,42 @@ class CmsEditorControllerTest extends TestCase {
 		$this->assertArrayNotHasKey('pageId', $data, 'A refusal must not disclose whether a page exists at the route.');
 		$this->assertArrayNotHasKey('designerUrl', $data);
 	}//end testARefusalNamesNoPage()
+
+
+	/**
+	 * A portal's own administrator edits the portal that serves the request,
+	 * and is told only "no" on another (operate-portals-per-organisation
+	 * REQ-OPO-005).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t11
+	 */
+	public function testAPortalAdministratorEditsOnlyTheirOwnPortal(): void {
+		$own = $this->controller(mayEdit: false, portal: ['slug' => 'zeist'], administers: ['zeist'])->editingContext('/afval')->getData();
+		$other = $this->controller(mayEdit: false, portal: ['slug' => 'utrecht'], administers: ['zeist'])->editingContext('/afval')->getData();
+		$none = $this->controller(mayEdit: false, portal: null, administers: ['zeist'])->editingContext('/afval')->getData();
+
+		$this->assertTrue($own['canEdit']);
+		$this->assertSame('page-1', $own['pageId']);
+		$this->assertSame(['canEdit' => false], $other);
+		$this->assertSame(['canEdit' => false], $none);
+	}//end testAPortalAdministratorEditsOnlyTheirOwnPortal()
+
+
+	/**
+	 * The publish check answers a portal's own administrator for that portal only.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t11
+	 */
+	public function testThePublishCheckIsOpenToThePortalsOwnAdministratorOnly(): void {
+		$controller = $this->controller(mayEdit: false, administers: ['zeist']);
+
+		$this->assertSame(200, $controller->publishCheck('zeist')->getStatus());
+		$this->assertSame(403, $controller->publishCheck('utrecht')->getStatus());
+	}//end testThePublishCheckIsOpenToThePortalsOwnAdministratorOnly()
 
 
 	/**

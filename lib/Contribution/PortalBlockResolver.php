@@ -56,6 +56,7 @@ class PortalBlockResolver {
 		'steps',
 		'documents',
 		'timeline',
+		'messages',
 		'greeting',
 	];
 
@@ -71,7 +72,7 @@ class PortalBlockResolver {
 	/**
 	 * The block types a normaliser of their own resolves.
 	 */
-	private const OWN_RULES_BLOCK_TYPES = ['kpi', 'calendar', 'news', 'tasks', 'inbox', 'cases', 'steps', 'documents', 'timeline'];
+	private const OWN_RULES_BLOCK_TYPES = ['kpi', 'calendar', 'news', 'tasks', 'inbox', 'cases', 'steps', 'documents', 'timeline', 'messages'];
 
 	/**
 	 * Filter a page's blocks to the registry with resolvable references.
@@ -288,29 +289,91 @@ class PortalBlockResolver {
 	 */
 	private function ownRulesBlock(BlockResolveRun $run, array $block): ?array {
 		$type = $block['type'];
-		$collections = $run->collections;
 		$lists = new ListBlockNormaliser();
-		$builders = [
-			'tasks' => static fn (): ?array => $lists->tasksBlock(block: $block, collections: $collections),
-			'inbox' => static fn (): ?array => $lists->inboxBlock(block: $block, collections: $collections),
-			'cases' => static fn (): ?array => $lists->casesBlock(block: $block, collections: $collections),
-		];
+		$builders = $this->listBuilders(lists: $lists, block: $block, collections: $run->collections);
 		if (isset($builders[$type]) === true) {
 			return $builders[$type]();
 		}
 
 		if (in_array($type, ListBlockNormaliser::RECORD_BLOCKS, true) === true) {
-			$entry = $lists->recordBlock(type: $type, block: $block, collections: $collections);
-			// The step that matters now as a highlight (steps-highlight).
-			if ($entry !== null && $type === 'steps') {
-				$entry = (new StepsHighlightKeys())->keys(block: $block, pageIds: $run->pageIds) + $entry;
-			}
-
-			return $entry;
+			return $this->recordListBlock(run: $run, lists: $lists, block: $block);
 		}
 
 		return $this->recordPageBlock(block: $block, collectionIds: $run->collectionIds);
 	}//end ownRulesBlock()
+
+	/**
+	 * The builders of the tasks, inbox and cases blocks, by type.
+	 *
+	 * @param ListBlockNormaliser                 $lists       The list block normaliser.
+	 * @param array<string, mixed>                $block       The block.
+	 * @param array<int, array<string, mixed>>    $collections The contribution's collections.
+	 *
+	 * @return array<string, \Closure>
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 */
+	private function listBuilders(ListBlockNormaliser $lists, array $block, array $collections): array {
+		return [
+			'tasks' => static fn (): ?array => $lists->tasksBlock(block: $block, collections: $collections),
+			'inbox' => static fn (): ?array => $lists->inboxBlock(block: $block, collections: $collections),
+			'cases' => static fn (): ?array => $lists->casesBlock(block: $block, collections: $collections),
+		];
+	}//end listBuilders()
+
+	/**
+	 * A steps, documents or timeline block; the steps block carries the step that matters now as a highlight.
+	 *
+	 * @param BlockResolveRun      $run   The resolve run.
+	 * @param ListBlockNormaliser  $lists The list block normaliser.
+	 * @param array<string, mixed> $block The block.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 */
+	private function recordListBlock(BlockResolveRun $run, ListBlockNormaliser $lists, array $block): array|null {
+		$type = $block['type'];
+		$entry = $lists->recordBlock(type: $type, block: $block, collections: $run->collections);
+		// The step that matters now as a highlight (steps-highlight).
+		if ($entry !== null && $type === 'steps') {
+			$entry = (new StepsHighlightKeys())->keys(block: $block, pageIds: $run->pageIds) + $entry;
+		}
+
+		// The question a resident asks about the open record, above its
+		// messages (capability-rows-said-and-planned T07).
+		if ($entry !== null && $type === 'messages') {
+			$entry += $this->askActionKey(block: $block, actionIds: $run->actionIds);
+		}
+
+		return $entry;
+	}//end recordListBlock()
+
+	/**
+	 * A messages block's `askAction`, kept only when it names an action of
+	 * the same contribution, with its `askLabel` when that is text.
+	 *
+	 * @param array<string, mixed> $block     The declared block.
+	 * @param array<int, string>   $actionIds The valid action ids.
+	 *
+	 * @return array<string, string>
+	 *
+	 * @spec openspec/changes/capability-rows-said-and-planned/tasks.md#t07
+	 */
+	private function askActionKey(array $block, array $actionIds): array {
+		$action = ($block['askAction'] ?? null);
+		if (is_string($action) === false || in_array($action, $actionIds, true) === false) {
+			return [];
+		}
+
+		$out   = ['askAction' => $action];
+		$label = ($block['askLabel'] ?? null);
+		if (is_string($label) === true && trim($label) !== '') {
+			$out['askLabel'] = mb_substr(trim($label), 0, 120);
+		}
+
+		return $out;
+	}//end askActionKey()
 
 	/**
 	 * A `kpi`, `calendar` or `news` block (contribution-record-page), or null
@@ -362,25 +425,46 @@ class PortalBlockResolver {
 			return ['type' => 'richText', 'markdown' => $markdown];
 		}
 
-		// A text filled from the open record (REQ-SMO-027): `template` with
-		// `{field}` placeholders, and `whenEmpty` per field.
+		return $this->templateBlock(block: $block);
+	}//end richTextBlock()
+
+	/**
+	 * A text filled from the open record (REQ-SMO-027): `template` with
+	 * `{field}` placeholders, and `whenEmpty` per field; null without a template.
+	 *
+	 * @param array<string, mixed> $block The block.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function templateBlock(array $block): array|null {
 		$template = ($block['template'] ?? null);
 		if (is_string($template) === false || trim($template) === '') {
 			return null;
 		}
 
 		$entry = ['type' => 'richText', 'template' => $template];
-		$whenEmpty = array_filter(
-			(array)($block['whenEmpty'] ?? []),
-			static fn ($text, $field): bool => is_string($field) === true && is_string($text) === true && $text !== '',
-			ARRAY_FILTER_USE_BOTH
-		);
+		$whenEmpty = $this->whenEmptyOf(block: $block);
 		if ($whenEmpty !== []) {
 			$entry['whenEmpty'] = $whenEmpty;
 		}
 
 		return $entry;
-	}//end richTextBlock()
+	}//end templateBlock()
+
+	/**
+	 * The block's non-empty `whenEmpty` texts, by field.
+	 *
+	 * @param array<string, mixed> $block The block.
+	 *
+	 * @return array<string, string>
+	 */
+	private function whenEmptyOf(array $block): array {
+		return array_filter(
+			(array)($block['whenEmpty'] ?? []),
+			static fn ($text, $field): bool => is_string($field) === true && is_string($text) === true && $text !== '',
+			ARRAY_FILTER_USE_BOTH
+		);
+	}//end whenEmptyOf()
 
 	/**
 	 * A block that is nothing but a resolvable reference, or null when the

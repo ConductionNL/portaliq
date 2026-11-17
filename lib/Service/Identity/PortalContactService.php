@@ -27,8 +27,9 @@ namespace OCA\Portaliq\Service\Identity;
 
 use DateInterval;
 use DateTimeImmutable;
-use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContactServiceInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCP\Security\ISecureRandom;
 
 /**
@@ -39,24 +40,15 @@ use OCP\Security\ISecureRandom;
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- reader, writer, mailer and the random source.
  * @SuppressWarnings(PHPMD.TooManyPublicMethods) -- one method per action a resident takes on a contact.
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- The total is the sum of small private steps; each method stays under the method thresholds.
  *
  * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
  */
-class PortalContactService {
+class PortalContactService implements PortalContactServiceInterface {
 
 	public const REGISTER = 'portaliq';
 
 	public const SCHEMA = 'portalContact';
-
-	public const SENT = 'sent';
-
-	public const INVALID = 'invalid';
-
-	public const LIMIT = 'limit';
-
-	public const DUPLICATE = 'duplicate';
-
-	public const NOT_FOUND = 'not_found';
 
 	public const FAILED = 'failed';
 
@@ -148,27 +140,50 @@ class PortalContactService {
 			return self::INVALID;
 		}
 
-		$now  = ($now ?? new DateTimeImmutable());
-		$rows = $this->rows->rowsOf(owner: $owner, organisation: $organisation);
-		if ($this->rows->sentToday(rows: $rows, now: $now) >= self::DAILY_LIMIT) {
-			return self::LIMIT;
+		$now     = ($now ?? new DateTimeImmutable());
+		$rows    = $this->rows->rowsOf(owner: $owner, organisation: $organisation);
+		$checked = $this->inviteRefusal(subject: $subject, rows: $rows, email: $email, now: $now);
+		if ($checked['refusal'] !== '') {
+			return $checked['refusal'];
 		}
 
-		$account = $this->rows->accountByEmail(email: $email, organisation: $organisation);
-		if ($account !== null && (string)($account['subjectRef'] ?? '') === $owner) {
-			return self::INVALID;
-		}
-
-		if ($this->rows->alreadyOpenOrLinked(rows: $rows, email: $email, account: $account) === true) {
-			return self::DUPLICATE;
-		}
-
-		if ($account !== null) {
-			return $this->request(subject: $subject, account: $account, message: $message, now: $now);
+		if ($checked['account'] !== null) {
+			return $this->request(subject: $subject, account: $checked['account'], message: $message, now: $now);
 		}
 
 		return $this->mailInvitation(subject: $subject, email: $email, message: $message, now: $now, row: null);
 	}//end invite()
+
+	/**
+	 * The refusal of an invitation past the daily limit, to the resident's own
+	 * account or to someone already invited or linked; else '' with the
+	 * account the address has, if any.
+	 *
+	 * @param array<string, mixed>             $subject The resident's session subject.
+	 * @param array<int, array<string, mixed>> $rows    The resident's contact rows.
+	 * @param string                           $email   The normalised address.
+	 * @param DateTimeImmutable                $now     The moment, for the daily limit.
+	 *
+	 * @return array{refusal: string, account: array<string, mixed>|null}
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 */
+	private function inviteRefusal(array $subject, array $rows, string $email, DateTimeImmutable $now): array {
+		if ($this->rows->sentToday(rows: $rows, now: $now) >= self::DAILY_LIMIT) {
+			return ['refusal' => self::LIMIT, 'account' => null];
+		}
+
+		$account = $this->rows->accountByEmail(email: $email, organisation: (string)($subject['organisation'] ?? ''));
+		if ($account !== null && (string)($account['subjectRef'] ?? '') === (string)($subject['subjectRef'] ?? '')) {
+			return ['refusal' => self::INVALID, 'account' => null];
+		}
+
+		if ($this->rows->alreadyOpenOrLinked(rows: $rows, email: $email, account: $account) === true) {
+			return ['refusal' => self::DUPLICATE, 'account' => null];
+		}
+
+		return ['refusal' => '', 'account' => $account];
+	}//end inviteRefusal()
 
 	/**
 	 * Send an invitation again with a new link and a new 14 days.
@@ -310,11 +325,6 @@ class PortalContactService {
 		return $this->link->invitationEmail(token: $token, organisation: $organisation, now: $now);
 	}//end invitationEmail()
 
-
-
-
-
-
 	/**
 	 * The resident's contacts, and what waits for an answer.
 	 *
@@ -400,17 +410,32 @@ class PortalContactService {
 	 * @return string SENT or FAILED.
 	 */
 	private function request(array $subject, array $account, string $message, DateTimeImmutable $now): string {
-		$owner        = (string)$subject['subjectRef'];
-		$organisation = (string)$subject['organisation'];
-		$theirs       = (string)$account['subjectRef'];
-		$mine         = $this->writer->createObject(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: 'owner',
-			subjectRef: $owner,
-			organisation: $organisation,
+		$mine = $this->createMine(subject: $subject, account: $account, message: $message, now: $now);
+		if ($mine === null) {
+			return self::FAILED;
+		}
+
+		$this->createTheirs(subject: $subject, account: $account, message: $message, now: $now);
+
+		return self::SENT;
+	}//end request()
+
+	/**
+	 * The inviter's row: the other account, invited.
+	 *
+	 * @param array<string, mixed> $subject The inviter.
+	 * @param array<string, mixed> $account The other account.
+	 * @param string               $message The message.
+	 * @param DateTimeImmutable    $now     The moment.
+	 *
+	 * @return array<string, mixed>|null The created row, or null when the write failed.
+	 */
+	private function createMine(array $subject, array $account, string $message, DateTimeImmutable $now): array|null {
+		return $this->createSide(
+			owner: (string)$subject['subjectRef'],
+			organisation: (string)$subject['organisation'],
 			data: [
-				'contactRef'  => $theirs,
+				'contactRef'  => (string)$account['subjectRef'],
 				'role'        => 'contact',
 				'displayName' => (string)($account['displayName'] ?? ''),
 				'state'       => 'invited',
@@ -418,18 +443,24 @@ class PortalContactService {
 				'sentAt'      => $now->format(DATE_ATOM),
 			]
 		);
-		if ($mine === null) {
-			return self::FAILED;
-		}
+	}//end createMine()
 
-		$this->writer->createObject(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: 'owner',
-			subjectRef: $theirs,
-			organisation: $organisation,
+	/**
+	 * The other account's row: the inviter, requested.
+	 *
+	 * @param array<string, mixed> $subject The inviter.
+	 * @param array<string, mixed> $account The other account.
+	 * @param string               $message The message.
+	 * @param DateTimeImmutable    $now     The moment.
+	 *
+	 * @return void
+	 */
+	private function createTheirs(array $subject, array $account, string $message, DateTimeImmutable $now): void {
+		$this->createSide(
+			owner: (string)$account['subjectRef'],
+			organisation: (string)$subject['organisation'],
 			data: [
-				'contactRef'  => $owner,
+				'contactRef'  => (string)$subject['subjectRef'],
 				'role'        => 'contact',
 				'displayName' => (string)($subject['displayName'] ?? ''),
 				'state'       => 'requested',
@@ -437,9 +468,27 @@ class PortalContactService {
 				'sentAt'      => $now->format(DATE_ATOM),
 			]
 		);
+	}//end createTheirs()
 
-		return self::SENT;
-	}//end request()
+	/**
+	 * Write one side's contact row.
+	 *
+	 * @param string               $owner        The row's owner.
+	 * @param string               $organisation The tenant.
+	 * @param array<string, mixed> $data         The row.
+	 *
+	 * @return array<string, mixed>|null The created row, or null when the write failed.
+	 */
+	private function createSide(string $owner, string $organisation, array $data): array|null {
+		return $this->writer->createObject(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: 'owner',
+			subjectRef: $owner,
+			organisation: $organisation,
+			data: $data
+		);
+	}//end createSide()
 
 	/**
 	 * Mint a link, store its hash and mail it. A mail that did not leave
@@ -552,26 +601,68 @@ class PortalContactService {
 			$theirTo = $to;
 		}
 
-		if ($other === '') {
-			return self::SENT;
-		}
-
-		foreach ($this->rows->rowsOf(owner: $other, organisation: (string)$subject['organisation']) as $counterpart) {
-			if ((string)($counterpart['contactRef'] ?? '') === (string)$subject['subjectRef'] && (string)($counterpart['state'] ?? '') === $theirs) {
-				$this->writer->updateObject(
-					register: self::REGISTER,
-					schema: self::SCHEMA,
-					scopeField: 'owner',
-					subjectRef: $other,
-					organisation: (string)$subject['organisation'],
-					id: $this->rows->idOf(row: $counterpart),
-					data: ['state' => $theirTo]
-				);
-			}
-		}
+		$this->endCounterparts(subject: $subject, other: $other, theirs: $theirs, theirTo: $theirTo);
 
 		return self::SENT;
 	}//end endLink()
+
+	/**
+	 * Move the other side's rows about the resident from `$theirs` to `$theirTo`;
+	 * nothing when there is no other side.
+	 *
+	 * @param array<string, mixed> $subject The resident.
+	 * @param string               $other   The other side, or ''.
+	 * @param string               $theirs  The state the other side's row is expected to hold.
+	 * @param string               $theirTo The state the other side's row ends in.
+	 *
+	 * @return void
+	 */
+	private function endCounterparts(array $subject, string $other, string $theirs, string $theirTo): void {
+		if ($other === '') {
+			return;
+		}
+
+		foreach ($this->rows->rowsOf(owner: $other, organisation: (string)$subject['organisation']) as $counterpart) {
+			if ($this->isCounterpart(counterpart: $counterpart, subject: $subject, theirs: $theirs) === true) {
+				$this->setCounterpart(subject: $subject, other: $other, counterpart: $counterpart, theirTo: $theirTo);
+			}
+		}
+	}//end endCounterparts()
+
+	/**
+	 * Whether the other side's row is about the resident and holds `$theirs`.
+	 *
+	 * @param array<string, mixed> $counterpart The other side's row.
+	 * @param array<string, mixed> $subject     The resident.
+	 * @param string               $theirs      The state the row is expected to hold.
+	 *
+	 * @return bool
+	 */
+	private function isCounterpart(array $counterpart, array $subject, string $theirs): bool {
+		return (string)($counterpart['contactRef'] ?? '') === (string)$subject['subjectRef'] && (string)($counterpart['state'] ?? '') === $theirs;
+	}//end isCounterpart()
+
+	/**
+	 * Write the other side's row in its new state.
+	 *
+	 * @param array<string, mixed> $subject     The resident.
+	 * @param string               $other       The other side.
+	 * @param array<string, mixed> $counterpart The other side's row.
+	 * @param string               $theirTo     The state it ends in.
+	 *
+	 * @return void
+	 */
+	private function setCounterpart(array $subject, string $other, array $counterpart, string $theirTo): void {
+		$this->writer->updateObject(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: 'owner',
+			subjectRef: $other,
+			organisation: (string)$subject['organisation'],
+			id: $this->rows->idOf(row: $counterpart),
+			data: ['state' => $theirTo]
+		);
+	}//end setCounterpart()
 
 	/**
 	 * Write fields on one of the resident's own rows.

@@ -33,12 +33,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\VisibleFromGateInterface;
+
 /**
  * Leaves out the rows whose moment has not come.
  *
  * @spec openspec/changes/site-school-blocks/specs/portal-contribution-contract/spec.md#requirement-a-collection-may-keep-a-row-back-until-its-moment-has-passed
  */
-class VisibleFromGate {
+class VisibleFromGate implements VisibleFromGateInterface {
 	/**
 	 * The rows the subject may see now, in order.
 	 *

@@ -21,6 +21,7 @@ use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Service\RequestedPortal;
 
 /**
  * portal-identity-and-the-organisations-cases, the refusals: a portal with
@@ -849,6 +850,7 @@ class PortalIdentityControllerTest extends TestCase {
 			$this->doubles['referenceCases'],
 			$this->doubles['sessions'],
 			$this->doubles['activation'],
+			new RequestedPortal(),
 			$this->doubles['contacts']
 		);
 	}//end controller()

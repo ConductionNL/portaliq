@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
-use OCA\Portaliq\Service\Session\SessionTrust;
+use OCA\Portaliq\Kernel\Support\SessionTrust;
 
 /**
  * The account side of taking on an invitation's audience.

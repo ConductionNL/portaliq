@@ -233,27 +233,40 @@ class PortalPageResolver {
 				continue;
 			}
 
-			$blocks = [];
-			$createRef = $this->createActionFor(schema: (string)($collection['schema'] ?? ''), actions: $actions);
-			if ($createRef !== null) {
-				$blocks[] = ['type' => 'action', 'action' => $createRef];
-			}
-
-			$blocks[] = ['type' => 'collection', 'collection' => $id];
-			// The selected row needs somewhere to render, or a resident can
-			// pick their own case and see nothing (portaliq#723).
-			$blocks[] = ['type' => 'detail', 'collection' => $id];
-
-			$page = ['id' => $id, 'blocks' => $blocks];
-			if (isset($collection['label']) === true && is_string($collection['label']) === true) {
-				$page['label'] = $collection['label'];
-			}
-
-			$pages[] = $page;
-		}//end foreach
+			$pages[] = $this->defaultPage(collection: $collection, id: $id, actions: $actions);
+		}
 
 		return $pages;
 	}//end synthesiseDefaultPages()
+
+	/**
+	 * One collection's default page: its create action, its table and the detail of the selected row.
+	 *
+	 * @param array<string, mixed>             $collection The listable collection.
+	 * @param string                           $id         The collection id.
+	 * @param array<int, array<string, mixed>> $actions    The sanitised actions.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function defaultPage(array $collection, string $id, array $actions): array {
+		$blocks = [];
+		$createRef = $this->createActionFor(schema: (string)($collection['schema'] ?? ''), actions: $actions);
+		if ($createRef !== null) {
+			$blocks[] = ['type' => 'action', 'action' => $createRef];
+		}
+
+		$blocks[] = ['type' => 'collection', 'collection' => $id];
+		// The selected row needs somewhere to render, or a resident can
+		// pick their own case and see nothing (portaliq#723).
+		$blocks[] = ['type' => 'detail', 'collection' => $id];
+
+		$page = ['id' => $id, 'blocks' => $blocks];
+		if (isset($collection['label']) === true && is_string($collection['label']) === true) {
+			$page['label'] = $collection['label'];
+		}
+
+		return $page;
+	}//end defaultPage()
 
 	/**
 	 * Find the id of a `type: create` action for a schema, or null.

@@ -32,6 +32,8 @@ namespace OCA\Portaliq\Service\Messaging;
 
 /**
  * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-a-guardian-may-start-a-direct-thread-with-a-teacher-who-teaches-their-childs-group
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class InAppMessagingLeaf implements GuardianMessagingLeafInterface {
 	private const THREAD_SCHEMA = 'messageThread';
@@ -67,28 +69,78 @@ class InAppMessagingLeaf implements GuardianMessagingLeafInterface {
 	 * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-a-guardian-may-start-a-direct-thread-with-a-teacher-who-teaches-their-childs-group
 	 */
 	public function createThread(string $kind, array $participantRefs, ?string $groupRef, string $createdBy): ?string {
-		if ($kind === self::KIND_DIRECT && $this->access->canCreateDirect(participantRefs: $participantRefs, createdBy: $createdBy) === true) {
-			return $this->store->save(schema: self::THREAD_SCHEMA, object: [
-				'kind' => self::KIND_DIRECT,
-				'participantRefs' => $participantRefs,
-				'groupRef' => null,
-				'createdBy' => $createdBy,
-				'createdAt' => gmdate('c'),
-			]);
+		if ($this->mayCreateDirect(kind: $kind, participantRefs: $participantRefs, createdBy: $createdBy) === true) {
+			return $this->saveDirect(participantRefs: $participantRefs, createdBy: $createdBy);
 		}
 
-		if ($kind === self::KIND_GROUP && $this->access->canCreateGroup(groupRef: (string)$groupRef, createdBy: $createdBy) === true) {
-			return $this->store->save(schema: self::THREAD_SCHEMA, object: [
-				'kind' => self::KIND_GROUP,
-				'participantRefs' => [],
-				'groupRef' => $groupRef,
-				'createdBy' => $createdBy,
-				'createdAt' => gmdate('c'),
-			]);
+		if ($this->mayCreateGroup(kind: $kind, groupRef: $groupRef, createdBy: $createdBy) === true) {
+			return $this->saveGroup(groupRef: $groupRef, createdBy: $createdBy);
 		}
 
 		return null;
 	}//end createThread()
+
+	/**
+	 * Whether this is a direct thread the creator may start.
+	 *
+	 * @param string             $kind            `direct` or `group`.
+	 * @param array<int, string> $participantRefs Explicit participants.
+	 * @param string             $createdBy       The creating subject's own subjectRef.
+	 *
+	 * @return bool
+	 */
+	private function mayCreateDirect(string $kind, array $participantRefs, string $createdBy): bool {
+		return $kind === self::KIND_DIRECT && $this->access->canCreateDirect(participantRefs: $participantRefs, createdBy: $createdBy) === true;
+	}//end mayCreateDirect()
+
+	/**
+	 * Whether this is a group thread the creator may start.
+	 *
+	 * @param string      $kind      `direct` or `group`.
+	 * @param string|null $groupRef  The scoping group.
+	 * @param string      $createdBy The creating subject's own subjectRef.
+	 *
+	 * @return bool
+	 */
+	private function mayCreateGroup(string $kind, string|null $groupRef, string $createdBy): bool {
+		return $kind === self::KIND_GROUP && $this->access->canCreateGroup(groupRef: (string)$groupRef, createdBy: $createdBy) === true;
+	}//end mayCreateGroup()
+
+	/**
+	 * Save a direct thread.
+	 *
+	 * @param array<int, string> $participantRefs Explicit participants.
+	 * @param string             $createdBy       The creating subject's own subjectRef.
+	 *
+	 * @return string|null
+	 */
+	private function saveDirect(array $participantRefs, string $createdBy): string|null {
+		return $this->store->save(schema: self::THREAD_SCHEMA, object: [
+			'kind' => self::KIND_DIRECT,
+			'participantRefs' => $participantRefs,
+			'groupRef' => null,
+			'createdBy' => $createdBy,
+			'createdAt' => gmdate('c'),
+		]);
+	}//end saveDirect()
+
+	/**
+	 * Save a group thread.
+	 *
+	 * @param string|null $groupRef  The scoping group.
+	 * @param string      $createdBy The creating subject's own subjectRef.
+	 *
+	 * @return string|null
+	 */
+	private function saveGroup(string|null $groupRef, string $createdBy): string|null {
+		return $this->store->save(schema: self::THREAD_SCHEMA, object: [
+			'kind' => self::KIND_GROUP,
+			'participantRefs' => [],
+			'groupRef' => $groupRef,
+			'createdBy' => $createdBy,
+			'createdAt' => gmdate('c'),
+		]);
+	}//end saveGroup()
 
 	/**
 	 * {@inheritDoc}
@@ -104,13 +156,50 @@ class InAppMessagingLeaf implements GuardianMessagingLeafInterface {
 	 */
 	public function createContactThread(string $subjectRef, array $contact, string $title, string $body): ?string {
 		$staffRef = (string)($contact['staffRef'] ?? '');
-		if ($subjectRef === '' || $staffRef === '' || $staffRef === $subjectRef || trim($body) === '') {
+		if ($this->mayStartWith(subjectRef: $subjectRef, staffRef: $staffRef, body: $body) === false) {
 			return null;
 		}
 
-		$id = $this->store->save(schema: self::THREAD_SCHEMA, object: [
+		$id = $this->saveContactThread(subjectRef: $subjectRef, contact: $contact, title: $title);
+		if ($id === null) {
+			return null;
+		}
+
+		$this->saveFirstMessage(id: $id, subjectRef: $subjectRef, body: $body);
+
+		return $id;
+	}//end createContactThread()
+
+	/**
+	 * Whether a resident may start this conversation: both sides known, not with themselves, and something said.
+	 *
+	 * @param string $subjectRef The resident's own subjectRef.
+	 * @param string $staffRef   The contact's subjectRef.
+	 * @param string $body       The first message.
+	 *
+	 * @return bool
+	 */
+	private function mayStartWith(string $subjectRef, string $staffRef, string $body): bool {
+		if ($subjectRef === '' || $staffRef === '' || $staffRef === $subjectRef || trim($body) === '') {
+			return false;
+		}
+
+		return true;
+	}//end mayStartWith()
+
+	/**
+	 * Save the direct thread with the contact, on the record it is about.
+	 *
+	 * @param string                $subjectRef The resident's own subjectRef.
+	 * @param array<string, string> $contact    The proven contact.
+	 * @param string                $title      The subject line.
+	 *
+	 * @return string|null
+	 */
+	private function saveContactThread(string $subjectRef, array $contact, string $title): string|null {
+		return $this->store->save(schema: self::THREAD_SCHEMA, object: [
 			'kind' => self::KIND_DIRECT,
-			'participantRefs' => [$subjectRef, $staffRef],
+			'participantRefs' => [$subjectRef, (string)($contact['staffRef'] ?? '')],
 			'groupRef' => null,
 			'createdBy' => $subjectRef,
 			'createdAt' => gmdate('c'),
@@ -120,10 +209,18 @@ class InAppMessagingLeaf implements GuardianMessagingLeafInterface {
 			'staffName' => (string)($contact['name'] ?? ''),
 			'staffRole' => (string)($contact['role'] ?? ''),
 		]);
-		if ($id === null) {
-			return null;
-		}
+	}//end saveContactThread()
 
+	/**
+	 * Save the resident's first message, read by them.
+	 *
+	 * @param string $id         The thread id.
+	 * @param string $subjectRef The resident's own subjectRef.
+	 * @param string $body       The first message.
+	 *
+	 * @return void
+	 */
+	private function saveFirstMessage(string $id, string $subjectRef, string $body): void {
 		$this->store->save(schema: self::MESSAGE_SCHEMA, object: [
 			'threadRef' => $id,
 			'senderRef' => $subjectRef,
@@ -131,9 +228,7 @@ class InAppMessagingLeaf implements GuardianMessagingLeafInterface {
 			'sentAt' => gmdate('c'),
 			'readBy' => [$subjectRef],
 		]);
-
-		return $id;
-	}//end createContactThread()
+	}//end saveFirstMessage()
 
 	/**
 	 * {@inheritDoc}

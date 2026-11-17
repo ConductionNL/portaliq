@@ -39,12 +39,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\NoticeRecipientNormaliserInterface;
+
 /**
  * Validates and shapes a change rule's recipients and message texts.
  *
  * @spec openspec/specs/portal-notifications-and-preferences/spec.md
  */
-class NoticeRecipientNormaliser {
+class NoticeRecipientNormaliser implements NoticeRecipientNormaliserInterface {
 
 	/**
 	 * A field or claim name.
@@ -52,13 +54,6 @@ class NoticeRecipientNormaliser {
 	 * @var string
 	 */
 	private const NAME = '/^[A-Za-z_][A-Za-z0-9_-]*$/';
-
-	/**
-	 * A placeholder in a message text: `{field}` or `{field|datetime}`.
-	 *
-	 * @var string
-	 */
-	public const PLACEHOLDER = '/\{([A-Za-z_][A-Za-z0-9_-]*)(\|datetime)?\}/';
 
 	/**
 	 * Why the rule's recipients or messages cannot be kept, or null.

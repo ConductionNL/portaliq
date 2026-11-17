@@ -17,12 +17,12 @@ import {
 } from '../../../shared/openRecord.js'
 import { routeForNav } from '../../../shared/portalNav.js'
 import { DAY_AND_MINUTE } from '../../lib/dayAndMinute.js'
+import { TASK_STORAGE_KEY } from './taskStorage.js'
 
 /** The site route of "My tasks" in the signed-in area, as the shell builds it. */
 export const TASKS_ROUTE = routeForNav({ special: 'tasks' })
 
-/** Where the inbox leaves the task "My tasks" opens on arrival. */
-export const TASK_STORAGE_KEY = 'portaliq.openTask'
+export { TASK_STORAGE_KEY }
 
 /**
  * A row's id: its own, else its `@self` id, else the fallback.
