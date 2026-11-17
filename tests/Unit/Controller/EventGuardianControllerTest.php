@@ -26,7 +26,7 @@ use OCA\Portaliq\Controller\EventGuardianController;
 use OCA\Portaliq\Service\EventFeedReader;
 use OCA\Portaliq\Service\EventRsvpService;
 use OCA\Portaliq\Service\EventSignupService;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
@@ -45,7 +45,7 @@ class EventGuardianControllerTest extends TestCase {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('Bearer token');
 
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
 
 		return new EventGuardianController(

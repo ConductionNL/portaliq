@@ -312,6 +312,17 @@
       }
     },
     {
+      "id": "PlanTemplatesMenu",
+      "label": "Plan templates",
+      "icon": "ClipboardListOutline",
+      "route": "PlanTemplates",
+      "section": "settings",
+      "order": 94,
+      "visibleIf": {
+        "access.admin": true
+      }
+    },
+    {
       "id": "FindersMenu",
       "label": "Product finders",
       "icon": "FileFindOutline",
@@ -3990,6 +4001,11 @@
                   "widgetId": "portal-settings-section-help"
                 },
                 {
+                  "key": "search-ranking",
+                  "title": "How search ranks",
+                  "widgetId": "portal-settings-search-ranking"
+                },
+                {
                   "key": "editors",
                   "title": "Administrators",
                   "widgetId": "portal-editors"
@@ -4310,6 +4326,12 @@
             "content": {}
           },
           {
+            "id": "portal-settings-search-ranking",
+            "type": "PortalSearchRanking",
+            "title": "How search ranks",
+            "content": {}
+          },
+          {
             "id": "portal-domains",
             "type": "field-list",
             "title": "Domains",
@@ -4335,6 +4357,16 @@
                   "prefix": "valid until",
                   "fallback": "not checked yet"
                 },
+                "meta": [
+                  {
+                    "path": "servedAtRoot",
+                    "map": {
+                      "true": "Site at the root of this domain",
+                      "false": ""
+                    }
+                  },
+                  "landingRoute"
+                ],
                 "detail": {
                   "template": "Publish this TXT record: {name} = {value}",
                   "when": {
@@ -4365,6 +4397,17 @@
                     "required": true,
                     "pattern": "^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,63}$",
                     "patternMessage": "Use a plain host name, such as portal.example.nl, without https:// or a path."
+                  },
+                  {
+                    "key": "servedAtRoot",
+                    "label": "Site at the root of this domain",
+                    "type": "checkbox"
+                  },
+                  {
+                    "key": "landingRoute",
+                    "label": "Page the bare domain opens",
+                    "pattern": "^/[^/\\\\?#:\\s]([^\\\\?#:\\s]*[^/\\\\?#:\\s])?$",
+                    "patternMessage": "Use a page path of the site, such as /afval."
                   }
                 ]
               },
@@ -7107,6 +7150,56 @@
               }
             }
           }
+        ],
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true
+        }
+      }
+    },
+    {
+      "id": "PlanTemplates",
+      "route": "/plan-templates",
+      "type": "index",
+      "title": "Plan templates",
+      "config": {
+        "register": "portaliq",
+        "schema": "portalPlanTemplate",
+        "_note": "Where a resident's shared plan can begin (shared-plans-with-a-caseworker T07, board PtPlansjablonen). An editor lists, writes and publishes a portal's templates through the object form; only a published template is offered to residents.",
+        "columns": [
+          {
+            "key": "title",
+            "label": "Template title"
+          },
+          {
+            "key": "summary",
+            "label": "Template summary"
+          },
+          {
+            "key": "portal",
+            "label": "Portal"
+          },
+          {
+            "key": "durationDays",
+            "label": "Duration in days"
+          },
+          {
+            "key": "published",
+            "label": "Published",
+            "widget": "badge",
+            "widgetProps": {
+              "colorMap": {
+                "true": "success",
+                "false": "warning"
+              }
+            }
+          }
+        ],
+        "showTitle": true,
+        "showTitleIcon": false,
+        "actions": [
+          "builtin:view",
+          "builtin:edit"
         ],
         "sidebar": {
           "enabled": true,
