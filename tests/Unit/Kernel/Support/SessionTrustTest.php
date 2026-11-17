@@ -40,7 +40,7 @@ class SessionTrustTest extends TestCase {
 
 	#[DataProvider('trusts')]
 	public function testNormaliseTrust(mixed $trust, string $expected): void {
-		$this->assertSame($expected, SessionTrust::normaliseTrust(trust: $trust));
+		$this->assertSame($expected, (new SessionTrust())->normaliseTrust(trust: $trust));
 	}//end testNormaliseTrust()
 
 	/**
@@ -65,6 +65,6 @@ class SessionTrustTest extends TestCase {
 
 	#[DataProvider('minimums')]
 	public function testTrustSatisfies(mixed $subject, mixed $minimum, bool $expected): void {
-		$this->assertSame($expected, SessionTrust::trustSatisfies(subjectTrust: $subject, minTrust: $minimum));
+		$this->assertSame($expected, (new SessionTrust())->trustSatisfies(subjectTrust: $subject, minTrust: $minimum));
 	}//end testTrustSatisfies()
 }//end class

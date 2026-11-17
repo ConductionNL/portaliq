@@ -3314,6 +3314,9 @@ OC.L10N.register(
         "As the case app shows it": "As the case app shows it",
         "The columns are saved.": "The columns are saved.",
         "The columns could not be saved. Try again.": "The columns could not be saved. Try again.",
+        "Site at the root of this domain": "Site at the root of this domain",
+        "Page the bare domain opens": "Page the bare domain opens",
+        "Use a page path of the site, such as /afval.": "Use a page path of the site, such as /afval.",
         "This page is not excluded from visitor statistics. Add it before you publish.": "This page is not excluded from visitor statistics. Add it before you publish.",
         "Excluded paths": "Excluded paths",
         "Pages the collector writes no visitor row for: each path and everything below it. Put every page that takes or shows a report of wrongdoing here, so nothing records that somebody opened the form.": "Pages the collector writes no visitor row for: each path and everything below it. Put every page that takes or shows a report of wrongdoing here, so nothing records that somebody opened the form.",
@@ -3327,6 +3330,7 @@ OC.L10N.register(
         "The opening sentence under the form's heading.": "The opening sentence under the form's heading.",
         "Event to sign up for": "Event to sign up for",
         "No event": "No event",
+        "Plan templates": "Plan templates",
         "You do not look after this portal.": "You do not look after this portal.",
         "Only an instance administrator can change who looks after a portal.": "Only an instance administrator can change who looks after a portal.",
         "The Nextcloud groups whose members look after this portal: its settings, domains, theme, sign-in, pages, menus and notices. Only an instance administrator changes this list.": "The Nextcloud groups whose members look after this portal: its settings, domains, theme, sign-in, pages, menus and notices. Only an instance administrator changes this list.",
@@ -3458,7 +3462,17 @@ OC.L10N.register(
         "From {sender}, about case {number}": "From {sender}, about case {number}",
         "About this message": "About this message",
         "Go to your case": "Go to your case",
-        "This message does not exist or is not for you.": "This message does not exist or is not for you."
+        "This message does not exist or is not for you.": "This message does not exist or is not for you.",
+        "How search ranks": "How search ranks",
+        "A search with a search term shows the best matches first. The best match is the result whose title is most like the search term.": "A search with a search term shows the best matches first. The best match is the result whose title is most like the search term.",
+        "A search with a search term keeps the order the visitor chose.": "A search with a search term keeps the order the visitor chose.",
+        "Titles are found even with a small spelling mistake in the search term.": "Titles are found even with a small spelling mistake in the search term.",
+        "Titles are only found when the search term is spelled exactly.": "Titles are only found when the search term is spelled exactly.",
+        "Summaries are found even with a small spelling mistake in the search term.": "Summaries are found even with a small spelling mistake in the search term.",
+        "Summaries are only found when the search term is spelled exactly.": "Summaries are only found when the search term is spelled exactly.",
+        "Text inside documents is found even with a small spelling mistake in the search term.": "Text inside documents is found even with a small spelling mistake in the search term.",
+        "Text inside documents is only found when the search term is spelled exactly.": "Text inside documents is only found when the search term is spelled exactly.",
+        "Results from other catalogues that carry no score come after the scored results, in the order their catalogue gave them.": "Results from other catalogues that carry no score come after the scored results, in the order their catalogue gave them."
     },
     "nplurals=2; plural=(n != 1);"
 )

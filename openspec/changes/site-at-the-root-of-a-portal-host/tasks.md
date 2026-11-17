@@ -14,3 +14,4 @@ One PR. Built from `origin/development`.
 - [x] **T6**: `docs/operations/custom-domains.md` gives the proxy rule (Envoy Gateway, nginx) and the session consequence (design D5, D6).
 - [ ] **T7** (platform lane): the gateway rule on the demo hosts, then a live check: `/`, `/afval`, an asset, a content API call, a reload on a deep page, the second host, the workplace host. Not run: needs the gateway.
 - [ ] **T8** (follow-up): the two settings in the Domeinen field-list; short return addresses after sign-in.
+  - Done: `servedAtRoot` (checkbox) and `landingRoute` (page path) on the Domains add form and shown on each row; `PortalDomainVerifier::records()` returns both. No edit in place: the field list writes an edited entry back from its defaults, which would make a verified domain unverified. Open: short return addresses after sign-in.

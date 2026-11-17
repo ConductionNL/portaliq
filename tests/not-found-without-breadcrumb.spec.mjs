@@ -15,8 +15,23 @@ import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 
 const app = readFileSync(new URL('../src/site/App.vue', import.meta.url), 'utf8')
-const start = app.indexOf('\t\tbreadcrumbs() {')
-const body = app.slice(app.indexOf('{', start) + 1, app.indexOf('\n\t\t},\n', start))
+
+/**
+ * The body of one of the shell's methods or computeds, read from App.vue.
+ *
+ * @param {string} signature Its first line, e.g. `breadcrumbs()`.
+ * @return {string} The body.
+ */
+function bodyOf(signature) {
+	const start = app.indexOf(`\t\t${signature} {`)
+	assert.notEqual(start, -1, `${signature} is in App.vue`)
+	return app.slice(app.indexOf('{', start) + 1, app.indexOf('\n\t\t},\n', start))
+}
+
+const body = bodyOf('breadcrumbs()')
+// The trail's two-crumb routes go through these two methods of the shell.
+const ownRouteCrumbLabel = new Function(bodyOf('ownRouteCrumbLabel()'))
+const homeAndHereCrumbs = new Function('label', bodyOf('homeAndHereCrumbs(label)'))
 
 /**
  * The shell's breadcrumbs computed, run on a stand-in for the component.
@@ -26,7 +41,7 @@ const body = app.slice(app.indexOf('{', start) + 1, app.indexOf('\n\t\t},\n', st
  */
 function breadcrumbsOf(self) {
 	return new Function('crumbLabel', 'menuLabelFor', 'subjectCrumbs', 'signInCrumbs', 'accountCrumbs', body).call(
-		self,
+		{ ownRouteCrumbLabel, homeAndHereCrumbs, ...self },
 		({ fromMenu, fromRoute }) => fromMenu || fromRoute,
 		() => '',
 		(crumbs) => crumbs,
@@ -47,6 +62,26 @@ const shell = {
 
 test('a 404 has no breadcrumb', () => {
 	assert.deepEqual(breadcrumbsOf({ ...shell, error: { status: 404 } }), [])
+})
+
+test('a shared dossier trails home and its own title', () => {
+	const crumbs = breadcrumbsOf({
+		...shell,
+		route: '/gedeeld/abc',
+		error: null,
+		sharedDossierRoute: true,
+		sharedDossierTitle: 'Bouwdossier',
+	})
+	assert.deepEqual(crumbs, [
+		{ route: '/', label: 'Home', href: '/' },
+		{ route: '/gedeeld/abc', label: 'Bouwdossier', href: '/gedeeld/abc' },
+	])
+})
+
+test('a document page trails home and the document, "Document" until it loads', () => {
+	const route = { ...shell, route: '/document/p1/d1', error: null, documentRoute: { publicationId: 'p1', documentId: 'd1' } }
+	assert.deepEqual(breadcrumbsOf(route).map((c) => c.label), ['Home', 'Document'])
+	assert.deepEqual(breadcrumbsOf({ ...route, subject: { title: 'Besluit.pdf' } }).map((c) => c.label), ['Home', 'Besluit.pdf'])
 })
 
 test('a page that is there keeps its trail', () => {
