@@ -66,24 +66,47 @@ export default {
 	emits: ['update', 'pick'],
 
 	computed: {
+		/**
+		 * @return {string} The prefix of every input id.
+		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-fields-it-declares-req-rai-001
+		 */
 		base() {
 			return this.idBase !== '' ? this.idBase : `f-${this.action.id}`
 		},
 
+		/**
+		 * @return {string[]} The fields drawn: the ones given, else every field the action declares.
+		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-fields-it-declares-req-rai-001
+		 */
 		shown() {
 			return Array.isArray(this.fields) ? this.fields : formFields(this.action)
 		},
 	},
 
 	methods: {
+		/**
+		 * @param {string} field The field.
+		 * @return {string} Its label.
+		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-fields-it-declares-req-rai-001
+		 */
 		labelOf(field) {
 			return fieldLabel(this.action, field)
 		},
 
+		/**
+		 * @param {string} field The field.
+		 * @return {object} Its declared field config.
+		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-fields-it-declares-req-rai-001
+		 */
 		configOf(field) {
 			return fieldConfig(this.action, field)
 		},
 
+		/**
+		 * @param {string} field The field.
+		 * @return {string} The input it is drawn as.
+		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-fields-it-declares-req-rai-001
+		 */
 		inputOf(field) {
 			return fieldInput(this.action, field, this.options[field])
 		},
