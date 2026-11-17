@@ -109,6 +109,7 @@
     "check:notices": "node --test tests/notices.spec.mjs",
     "check:inbox-unread": "node --test tests/inbox-unread.spec.mjs",
     "check:inbox-attachments": "node --test tests/inbox-attachments.spec.mjs",
+    "check:site-message-page": "node --test tests/site-message-page.spec.mjs",
     "check:inbox-open-link": "node --test tests/inbox-open-link.spec.mjs",
     "check:inbox-delete": "node --test tests/inbox-delete.spec.mjs",
     "check:branch-in-effect": "node --test tests/branch-in-effect.spec.mjs",
