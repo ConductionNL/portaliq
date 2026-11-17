@@ -41,6 +41,7 @@ export const metaOf = {
 		{
 			name: 'source',
 			kind: 'json',
+			picker: 'source',
 			label: 'Uit het aanbod in plaats van de data: {"types": ["event"]}, of uit een app: {"app": "learniq", "kind": "schoolDay", "categories": ["holiday"], "range": "schoolYear"}',
 		},
 	],
