@@ -191,6 +191,7 @@
 			:editor="editor"
 			:loadBlocks="loadBlocks"
 			:loadRecordLists="loadRecordLists"
+			:loadCatalogueKinds="loadCatalogueKinds"
 			:excludedPaths="excludedPaths" />
 
 		<MediaPickerDialog
@@ -230,6 +231,7 @@ import {
 	blockToPage,
 	createPageEditor,
 	createPageSaver,
+	kindsFrom,
 	loadExcludedPaths,
 	pageToBlock,
 	recordListsFrom,
@@ -434,6 +436,21 @@ export default {
 				{ params: this.page.portal ? { portal: this.page.portal } : {} },
 			)
 			return recordListsFrom(data)
+		},
+
+		/**
+		 * The kinds the installed apps declare for their public index on this
+		 * page's portal, for the blocks that read one.
+		 *
+		 * @return {Promise<Array<object>>} The kinds.
+		 * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-4
+		 */
+		async loadCatalogueKinds() {
+			const { data } = await axios.get(
+				generateUrl('/apps/portaliq/api/content/catalogue/kinds'),
+				{ params: this.page.portal ? { portal: this.page.portal } : {} },
+			)
+			return kindsFrom(data)
 		},
 
 		/**
