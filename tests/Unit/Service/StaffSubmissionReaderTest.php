@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCA\Portaliq\Service\StaffSubmissionReader;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -56,7 +57,13 @@ class StaffSubmissionReaderTest extends TestCase {
 		$row = $this->reader(objects: $objects)->find(id: 'sub-1');
 
 		$this->assertSame(['id' => 'sub-1', 'deliveryStatus' => 'failed'], $row);
-		$this->assertSame(['id' => 'sub-1', 'register' => 'portaliq', 'schema' => 'portalSubmission', '_rbac' => true, '_multitenancy' => true], $objects->asked);
+		$this->assertSame('sub-1', $objects->asked['id']);
+		$this->assertInstanceOf(ObjectFindOptions::class, $objects->asked['options']);
+		$this->assertSame('portaliq', $objects->asked['options']->register);
+		$this->assertSame('portalSubmission', $objects->asked['options']->schema);
+		$this->assertTrue($objects->asked['_rbac']);
+		$this->assertTrue($objects->asked['_multitenancy']);
+		$this->assertSame(['id', 'options', '_rbac', '_multitenancy'], array_keys($objects->asked));
 	}//end testTheRecordIsReadAsTheCaller()
 
 

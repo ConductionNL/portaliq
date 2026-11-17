@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -90,8 +91,7 @@ class StaffSubmissionReader {
 		try {
 			$entity = $objectService->find(
 				id: $id,
-				register: self::REGISTER,
-				schema: self::SCHEMA,
+				options: new ObjectFindOptions(register: self::REGISTER, schema: self::SCHEMA),
 				_rbac: true,
 				_multitenancy: true
 			);
