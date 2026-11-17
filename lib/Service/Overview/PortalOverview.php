@@ -29,6 +29,7 @@ namespace OCA\Portaliq\Service\Overview;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\Portaliq\Kernel\Contracts\PortalOverviewInterface;
 use OCA\Portaliq\Service\Availability\AvailabilityReport;
 use OCA\Portaliq\Service\PublishedPortals;
 use OCA\Portaliq\Service\Traffic\TrafficEventStore;
@@ -39,7 +40,7 @@ use OCA\Portaliq\Service\Traffic\TrafficReportNumbers;
  *
  * @spec openspec/changes/dashboard-figures-across-portals/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
  */
-class PortalOverview {
+class PortalOverview implements PortalOverviewInterface {
 	/**
 	 * How many pages the traffic overview names.
 	 */

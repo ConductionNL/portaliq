@@ -31,6 +31,8 @@ use stdClass;
  * The portal record is not anonymously readable; the content API serves a
  * curated projection of it. This class decides the shell part of that
  * projection, so nothing the record holds reaches the public by accident.
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class PortalShell {
 
@@ -265,32 +267,62 @@ class PortalShell {
 			return null;
 		}
 
-		$lines = [];
-		foreach ((array)($contact['lines'] ?? []) as $line) {
-			if (is_array($line) === false) {
-				continue;
-			}
-
-			$text = $this->text(value: ($line['text'] ?? ''));
-			if ($text === '') {
-				continue;
-			}
-
-			$kept = ['text' => $text];
-			$href = $this->text(value: ($line['href'] ?? ''));
-			if ($this->followable(href: $href) === true) {
-				$kept['href'] = $href;
-			}
-
-			$lines[] = $kept;
-		}
-
+		$lines = $this->contactLines(contact: $contact);
 		if ($lines === []) {
 			return null;
 		}
 
 		return ['title' => $this->text(value: ($contact['title'] ?? '')), 'lines' => $lines];
 	}//end contact()
+
+	/**
+	 * The contact column's lines that carry text.
+	 *
+	 * @param array<string, mixed> $contact The authored column.
+	 *
+	 * @return list<array<string, string>>
+	 *
+	 * @spec openspec/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
+	 */
+	private function contactLines(array $contact): array {
+		$lines = [];
+		foreach ((array)($contact['lines'] ?? []) as $line) {
+			$kept = $this->contactLine(line: $line);
+			if ($kept !== null) {
+				$lines[] = $kept;
+			}
+		}
+
+		return $lines;
+	}//end contactLines()
+
+	/**
+	 * One contact line: its text, and its `href` when followable. Null without text.
+	 *
+	 * @param mixed $line The authored line.
+	 *
+	 * @return array<string, string>|null
+	 *
+	 * @spec openspec/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
+	 */
+	private function contactLine(mixed $line): array|null {
+		if (is_array($line) === false) {
+			return null;
+		}
+
+		$text = $this->text(value: ($line['text'] ?? ''));
+		if ($text === '') {
+			return null;
+		}
+
+		$kept = ['text' => $text];
+		$href = $this->text(value: ($line['href'] ?? ''));
+		if ($this->followable(href: $href) === true) {
+			$kept['href'] = $href;
+		}
+
+		return $kept;
+	}//end contactLine()
 
 	/**
 	 * The portal's own region contents, the middle step of resolution.
@@ -370,26 +402,58 @@ class PortalShell {
 		}
 
 		foreach ($entries as $entry) {
-			if (is_array($entry) === false) {
-				continue;
+			$link = $this->linkOf(entry: $entry, extra: $extra);
+			if ($link !== null) {
+				$kept[] = $link;
 			}
-
-			$label = $this->text(value: ($entry['label'] ?? ''));
-			$href  = $this->text(value: ($entry['href'] ?? ''));
-			if ($label === '' || $this->followable(href: $href) === false) {
-				continue;
-			}
-
-			$link = ['label' => $label, 'href' => $href];
-			if ($extra !== null && $this->text(value: ($entry[$extra] ?? '')) !== '') {
-				$link[$extra] = $this->text(value: $entry[$extra]);
-			}
-
-			$kept[] = $link;
 		}
 
 		return $kept;
 	}//end links()
+
+	/**
+	 * One entry's `{label, href}`, plus `$extra` when set; null without a
+	 * label or a followable destination.
+	 *
+	 * @param mixed       $entry The authored entry.
+	 * @param string|null $extra One more text key an entry may carry.
+	 *
+	 * @return array<string, string>|null
+	 *
+	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-footer-must-be-a-block-whose-bands-are-styled-by-role-req-ptb-005
+	 */
+	private function linkOf(mixed $entry, string|null $extra): array|null {
+		if (is_array($entry) === false) {
+			return null;
+		}
+
+		$label = $this->text(value: ($entry['label'] ?? ''));
+		$href  = $this->text(value: ($entry['href'] ?? ''));
+		if ($label === '' || $this->followable(href: $href) === false) {
+			return null;
+		}
+
+		return $this->withExtra(link: ['label' => $label, 'href' => $href], entry: $entry, extra: $extra);
+	}//end linkOf()
+
+	/**
+	 * The link with the entry's `$extra` text when set.
+	 *
+	 * @param array<string, string> $link  The link.
+	 * @param array<string, mixed>  $entry The authored entry.
+	 * @param string|null           $extra One more text key an entry may carry.
+	 *
+	 * @return array<string, string>
+	 *
+	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-footer-must-be-a-block-whose-bands-are-styled-by-role-req-ptb-005
+	 */
+	private function withExtra(array $link, array $entry, string|null $extra): array {
+		if ($extra !== null && $this->text(value: ($entry[$extra] ?? '')) !== '') {
+			$link[$extra] = $this->text(value: $entry[$extra]);
+		}
+
+		return $link;
+	}//end withExtra()
 
 	/**
 	 * Whether a visitor can follow this destination: an in-site route or a

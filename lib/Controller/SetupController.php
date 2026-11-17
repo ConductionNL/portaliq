@@ -27,16 +27,16 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\DemoDataServiceInterface;
 use OCA\Portaliq\Settings\PortaliqAdmin;
 use OCP\AppFramework\Controller;
-use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IAppConfig;
 use OCP\IRequest;
 use Psr\Log\LoggerInterface;
-use OCA\Portaliq\Service\DemoDataService;
 
 /**
  * First-time setup wizard endpoints.
@@ -83,7 +83,7 @@ class SetupController extends Controller {
 	 * @param IRequest        $request         The request.
 	 * @param IAppConfig      $appConfig       Records the demo-data decision.
 	 * @param LoggerInterface $logger          Records a failed import.
-	 * @param DemoDataService $demoDataService Imports the shipped demo dataset.
+	 * @param DemoDataServiceInterface $demoDataService Imports the shipped demo dataset.
 	 *
 	 * @return void
 	 */
@@ -91,9 +91,9 @@ class SetupController extends Controller {
 		IRequest $request,
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
-		private readonly DemoDataService $demoDataService,
+		private readonly DemoDataServiceInterface $demoDataService,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 
 	}//end __construct()
 
@@ -122,8 +122,8 @@ class SetupController extends Controller {
 	 */
 	#[AuthorizedAdminSetting(PortaliqAdmin::class)]
 	public function status(): JSONResponse {
-		$demoDecided = $this->appConfig->getValueString(Application::APP_ID, self::DEMO_DECIDED_KEY, '') !== '';
-		$picked      = $this->appConfig->getValueString(Application::APP_ID, self::DATASET_KEY, '');
+		$demoDecided = $this->appConfig->getValueString(AppIdentity::APP_ID, self::DEMO_DECIDED_KEY, '') !== '';
+		$picked      = $this->appConfig->getValueString(AppIdentity::APP_ID, self::DATASET_KEY, '');
 
 		return new JSONResponse(
 			data: [
@@ -181,7 +181,7 @@ class SetupController extends Controller {
 		}
 
 		$datasetId = (string)$submitted;
-		$this->appConfig->setValueString(Application::APP_ID, self::DATASET_KEY, $datasetId);
+		$this->appConfig->setValueString(AppIdentity::APP_ID, self::DATASET_KEY, $datasetId);
 
 		return new JSONResponse(data: ['success' => true, 'config' => [self::DATASET_KEY => $datasetId]]);
 
@@ -246,7 +246,7 @@ class SetupController extends Controller {
 	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	private function pickedDataset(string $actionId): string|JSONResponse {
-		$picked = $this->appConfig->getValueString(Application::APP_ID, self::DATASET_KEY, '');
+		$picked = $this->appConfig->getValueString(AppIdentity::APP_ID, self::DATASET_KEY, '');
 
 		// The card's Load button names its dataset in the body. An older wizard
 		// posts nothing and relies on the choice stored a step earlier. Nothing
@@ -269,7 +269,7 @@ class SetupController extends Controller {
 		// wizard, and the demo-data spec then installs deliberately. Only the
 		// choice step's own run action honours the choice.
 		if ($actionId === 'install-demo-data') {
-			$picked = DemoDataService::DEMO_DATASET;
+			$picked = DemoDataServiceInterface::DEMO_DATASET;
 		}
 
 		return $picked;
@@ -306,7 +306,7 @@ class SetupController extends Controller {
 			);
 		}
 
-		if ($picked === DemoDataService::NONE_DATASET) {
+		if ($picked === DemoDataServiceInterface::NONE_DATASET) {
 			return $this->skipped();
 		}
 
@@ -316,8 +316,8 @@ class SetupController extends Controller {
 		}
 
 		// Loading IS choosing the set, so the pick is recorded too.
-		$this->appConfig->setValueString(Application::APP_ID, self::DATASET_KEY, $picked);
-		$this->appConfig->setValueString(Application::APP_ID, self::DEMO_DECIDED_KEY, 'installed');
+		$this->appConfig->setValueString(AppIdentity::APP_ID, self::DATASET_KEY, $picked);
+		$this->appConfig->setValueString(AppIdentity::APP_ID, self::DEMO_DECIDED_KEY, 'installed');
 
 		return new JSONResponse(data: ['success' => true, 'message' => self::importedMessage(imported: $imported)]);
 	}//end loadDataset()
@@ -328,8 +328,8 @@ class SetupController extends Controller {
 	 * @return JSONResponse `{ success, message }`.
 	 */
 	private function skipped(): JSONResponse {
-		$this->appConfig->setValueString(Application::APP_ID, self::DATASET_KEY, DemoDataService::NONE_DATASET);
-		$this->appConfig->setValueString(Application::APP_ID, self::DEMO_DECIDED_KEY, 'skipped');
+		$this->appConfig->setValueString(AppIdentity::APP_ID, self::DATASET_KEY, DemoDataServiceInterface::NONE_DATASET);
+		$this->appConfig->setValueString(AppIdentity::APP_ID, self::DEMO_DECIDED_KEY, 'skipped');
 
 		return new JSONResponse(data: ['success' => true, 'message' => 'No example data was loaded.']);
 	}//end skipped()
@@ -345,7 +345,7 @@ class SetupController extends Controller {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Setup install-demo-data failed: ' . $e->getMessage(),
-				['app' => Application::APP_ID, 'exception' => $e]
+				['app' => AppIdentity::APP_ID, 'exception' => $e]
 			);
 
 			return new JSONResponse(

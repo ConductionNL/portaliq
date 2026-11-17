@@ -40,7 +40,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\BackgroundJob\NotificationDispatchJob;
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Kernel\Contracts\NotificationDispatchServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use OCP\BackgroundJob\IJobList;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -51,23 +52,12 @@ use Throwable;
  *
  * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
  */
-class NotificationDispatchService {
-	/**
-	 * Rule key for a `portalMessage` create (SubmissionReceiptService's WMEBV
-	 * receipt, or any other message-create path).
-	 */
-	public const RULE_MESSAGE_CREATED = 'message.created';
-
-	/**
-	 * Rule key for a successful status-transition update
-	 * (`ContributionController::update()`).
-	 */
-	public const RULE_STATUS_CHANGED = 'status.changed';
+class NotificationDispatchService implements NotificationDispatchServiceInterface {
 
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalContributionRegistry $registry Aggregates a subject's manifest,
+	 * @param PortalContributionRegistryInterface $registry Aggregates a subject's manifest,
 	 *                                             the SAME path every authorisation
 	 *                                             lookup flows through.
 	 * @param IJobList $jobList Enqueues the async dispatch job —
@@ -75,7 +65,7 @@ class NotificationDispatchService {
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
-		private readonly PortalContributionRegistry $registry,
+		private readonly PortalContributionRegistryInterface $registry,
 		private readonly IJobList $jobList,
 		private readonly LoggerInterface $logger,
 	) {

@@ -31,15 +31,16 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Intake;
 
 use DateTimeImmutable;
-use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalDraftDrainInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 
 /**
  * Drains `portalDraft` rows into OpenRegister drafts.
  *
  * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#5.3
  */
-class PortalDraftDrain {
+class PortalDraftDrain implements PortalDraftDrainInterface {
 	/**
 	 * Where portaliq kept its drafts.
 	 */

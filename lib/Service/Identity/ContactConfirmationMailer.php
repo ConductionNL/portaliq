@@ -22,13 +22,15 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Contribution\ConfirmationMailKeys;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\ConfirmationMailKeysInterface;
+use OCA\Portaliq\Kernel\Contracts\ContactConfirmationMailerInterface;
 use OCA\Portaliq\Service\Mail\MailLog;
+use OCA\Portaliq\Service\Mail\MailSite;
 use OCA\Portaliq\Service\Mail\MailTemplateRenderer;
 use OCA\Portaliq\Service\PortalAccountService;
-use OCA\Portaliq\Service\Mail\MailSite;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
+use OCP\IL10N;
 use OCP\L10N\IFactory;
 use OCP\Mail\IMailer;
 use Psr\Log\LoggerInterface;
@@ -44,7 +46,7 @@ use Throwable;
  *
  * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t02
  */
-class ContactConfirmationMailer {
+class ContactConfirmationMailer implements ContactConfirmationMailerInterface {
 	/**
 	 * Constructor.
 	 *
@@ -84,7 +86,7 @@ class ContactConfirmationMailer {
 	 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t02
 	 */
 	public function afterCreate(array $subject, array $action, array $data): bool {
-		if (in_array(($action['confirmationMail'] ?? null), ConfirmationMailKeys::TEMPLATES, true) === false) {
+		if (in_array(($action['confirmationMail'] ?? null), ConfirmationMailKeysInterface::TEMPLATES, true) === false) {
 			return false;
 		}
 
@@ -161,15 +163,29 @@ class ContactConfirmationMailer {
 		$portal = $this->site->portal(organisation: $organisation);
 		$name   = $this->site->name(portal: $portal, organisation: $organisation);
 		$link   = $this->deepLinks->forSite(portalSlug: trim((string)($portal['slug'] ?? '')), organisation: $organisation);
-		$l10n   = $this->l10nFactory->get(Application::APP_ID, $this->site->language(portal: $portal));
-
-		$subject = $l10n->t('We have received your question');
-		$body    = $l10n->t('Your question has reached %1$s. You find it back under My questions.', [$name]);
-		if ($topic !== '') {
-			$body = $l10n->t('Your question about %1$s has reached %2$s. You find it back under My questions.', [$topic, $name]);
-		}
+		$l10n   = $this->l10nFactory->get(AppIdentity::APP_ID, $this->site->language(portal: $portal));
 
 		$slug = trim((string)($portal['slug'] ?? ''));
+		$text = $this->confirmationText(l10n: $l10n, name: $name, topic: $topic, slug: $slug);
+		$sent = $this->sendMail(l10n: $l10n, text: $text, link: $link, email: $email);
+		$this->logSend(slug: $slug, email: $email, sent: $sent);
+
+		return $sent;
+	}//end send()
+
+	/**
+	 * The confirmation's subject and body, through the portal's mail template when one renders.
+	 *
+	 * @param IL10N  $l10n  The portal's language.
+	 * @param string $name  The organisation's name.
+	 * @param string $topic The chosen subject, or ''.
+	 * @param string $slug  The portal slug.
+	 *
+	 * @return array{subject: string, body: string}
+	 */
+	private function confirmationText(IL10N $l10n, string $name, string $topic, string $slug): array {
+		$subject = $l10n->t('We have received your question');
+		$body    = $this->confirmationBody(l10n: $l10n, name: $name, topic: $topic);
 		if ($this->renderer !== null) {
 			$text    = $this->renderer->render(
 				portal: $slug,
@@ -182,11 +198,43 @@ class ContactConfirmationMailer {
 			$body    = $text['body'];
 		}
 
+		return ['subject' => $subject, 'body' => $body];
+	}//end confirmationText()
+
+	/**
+	 * The confirmation's default body, naming the topic when there is one.
+	 *
+	 * @param IL10N  $l10n  The portal's language.
+	 * @param string $name  The organisation's name.
+	 * @param string $topic The chosen subject, or ''.
+	 *
+	 * @return string
+	 */
+	private function confirmationBody(IL10N $l10n, string $name, string $topic): string {
+		$body = $l10n->t('Your question has reached %1$s. You find it back under My questions.', [$name]);
+		if ($topic !== '') {
+			$body = $l10n->t('Your question about %1$s has reached %2$s. You find it back under My questions.', [$topic, $name]);
+		}
+
+		return $body;
+	}//end confirmationBody()
+
+	/**
+	 * Write and send the confirmation mail.
+	 *
+	 * @param IL10N                                $l10n  The portal's language.
+	 * @param array{subject: string, body: string} $text  The subject and body.
+	 * @param string                               $link  The link to My questions.
+	 * @param string                               $email The confirmed address.
+	 *
+	 * @return bool True when the mail server took it.
+	 */
+	private function sendMail(IL10N $l10n, array $text, string $link, string $email): bool {
 		$mail = $this->mailer->createEMailTemplate('portaliq.contact.confirmation', []);
-		$mail->setSubject($subject);
+		$mail->setSubject($text['subject']);
 		$mail->addHeader();
 		$mail->addHeading($l10n->t('We have received your question'));
-		$mail->addBodyText($body);
+		$mail->addBodyText($text['body']);
 
 		$mail->addBodyButton($l10n->t('Open My questions'), $link);
 		$mail->addFooter();
@@ -195,7 +243,19 @@ class ContactConfirmationMailer {
 		$message->setTo([$email]);
 		$message->useTemplate($mail);
 
-		$sent = (count($this->mailer->send($message)) === 0);
+		return (count($this->mailer->send($message)) === 0);
+	}//end sendMail()
+
+	/**
+	 * Log the send, when there is a mail log.
+	 *
+	 * @param string $slug  The portal slug.
+	 * @param string $email The confirmed address.
+	 * @param bool   $sent  Whether the mail server took it.
+	 *
+	 * @return void
+	 */
+	private function logSend(string $slug, string $email, bool $sent): void {
 		if ($this->mailLog !== null) {
 			$status = 'failed';
 			if ($sent === true) {
@@ -204,7 +264,5 @@ class ContactConfirmationMailer {
 
 			$this->mailLog->record(portal: $slug, templateKey: 'contact-confirmation', email: $email, status: $status);
 		}
-
-		return $sent;
-	}//end send()
+	}//end logSend()
 }//end class

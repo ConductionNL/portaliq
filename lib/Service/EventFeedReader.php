@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\EventFeedReaderInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
@@ -40,7 +41,7 @@ use Psr\Log\LoggerInterface;
  * the sibling news-and-newsletter-authoring change), so the two features'
  * audience rules can never fork.
  */
-class EventFeedReader {
+class EventFeedReader implements EventFeedReaderInterface {
 	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
 	use PagedObjectReads;
@@ -110,8 +111,9 @@ class EventFeedReader {
 	}//end isListedEvent()
 
 	/**
-	 * The event with the guardian's own RSVP and, when it asks for seats,
-	 * the seats taken.
+	 * The event with the guardian's own RSVP, whether the caller may answer
+	 * for herself (with the answer given for her) and, when it asks for
+	 * seats, the seats taken.
 	 *
 	 * @param EventFeedRun         $run The feed.
 	 * @param array<string, mixed> $row The event.
@@ -120,6 +122,13 @@ class EventFeedReader {
 	 */
 	private function withRsvpState(EventFeedRun $run, array $row): array {
 		$row['myRsvp'] = $this->myRsvp(eventId: $this->rowId(row: $row), subjectRef: $run->subjectRef, rsvps: $run->rsvps);
+		$row['mayAnswerSelf'] = EventRsvpEligibility::learnersMayAnswer(event: $row);
+		if ($row['mayAnswerSelf'] === true) {
+			// The site answers for her under her own reference.
+			$row['selfRef']   = $run->subjectRef;
+			$row['ownAnswer'] = $this->ownAnswer(eventId: $this->rowId(row: $row), subjectRef: $run->subjectRef, rsvps: $run->rsvps);
+		}
+
 		if (($row['askSeats'] ?? false) === true) {
 			$row['seatsTaken'] = EventRsvpService::seatsTaken(answers: $this->answersTo(run: $run, eventId: $this->rowId(row: $row)));
 		}
@@ -212,6 +221,33 @@ class EventFeedReader {
 		$audience = $this->audienceReader->resolveAudience(subjectRef: $subjectRef);
 		return in_array($childRef, $audience['childRefs'], true);
 	}//end isOwnChild()
+
+	/**
+	 * The answer given for the calling person herself, by whoever gave it,
+	 * or null.
+	 *
+	 * @param string                           $eventId    The event id.
+	 * @param string                           $subjectRef The calling person.
+	 * @param array<int, array<string, mixed>> $rsvps      The RSVPs given by or for them.
+	 *
+	 * @return array{response: string, seats: int|null}|null
+	 *
+	 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-pupil-may-answer-an-event-for-herself-with-the-number-of-seats
+	 */
+	private function ownAnswer(string $eventId, string $subjectRef, array $rsvps): ?array {
+		foreach ($rsvps as $rsvp) {
+			if ((string)($rsvp['eventRef'] ?? '') === $eventId && (string)($rsvp['childRef'] ?? '') === $subjectRef) {
+				$seats = null;
+				if (is_int($rsvp['seats'] ?? null) === true) {
+					$seats = $rsvp['seats'];
+				}
+
+				return ['response' => (string)($rsvp['response'] ?? ''), 'seats' => $seats];
+			}
+		}
+
+		return null;
+	}//end ownAnswer()
 
 	/**
 	 * The guardian's own RSVP response for one event, or null.

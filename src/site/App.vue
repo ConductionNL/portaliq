@@ -290,6 +290,15 @@
 							:t="t"
 							@loaded="onSharedDossierLoaded" />
 
+						<!-- The co-signer's page of a form that needs a second signature
+				     (resident-identity-in-forms REQ-RIF-003). -->
+						<CosignPage
+							v-else-if="cosignRoute"
+							:token="cosignToken"
+							:authBase="guestAuthBase"
+							:portal="site.slug || portalSlug"
+							:t="t" />
+
 						<!-- Every portal's accessibility statement, generated from its
 				     latest measurement (site-accessibility-statement). -->
 						<AccessibilityStatementPage
@@ -419,6 +428,9 @@
 									:source="
 										(page.body && page.body.markdown) || ''
 									" />
+								<PageArticleBlock
+									v-if="page.body && page.body.article"
+									:article="page.body.article" />
 							</div>
 						</article>
 					</div>
@@ -515,6 +527,7 @@ import BrandHeader from './components/BrandHeader.vue'
 import FooterColumns from './components/FooterColumns.vue'
 import IdleWarningDialog from './components/IdleWarningDialog.vue'
 import MarkdownBlock from './components/MarkdownBlock.vue'
+import PageArticleBlock from './components/PageArticleBlock.vue'
 import WidgetGrid from './components/WidgetGrid.vue'
 import {
 	codeOutcome,
@@ -572,6 +585,7 @@ import {
 	fetchSite,
 	resolveApiBase,
 } from './lib/contentApi.js'
+import { isCosignRoute } from './lib/cosign.js'
 import { crumbLabel, signInCrumbs } from './lib/crumbWords.js'
 import { editorBaseFrom, fetchEditingContext } from './lib/editorApi.js'
 import { asideOf } from './lib/gridPlacement.js'
@@ -614,7 +628,8 @@ import { menuRouteOf, subjectCrumbs, subjectOf } from './lib/subjectTrail.js'
 import { hasWayInLink, waysInFrom, waysInTranslator } from './lib/waysIn.js'
 import { openRecordEntry } from './pages/collections/index.js'
 import { confirmEmailFromLink, contactPromptWanted } from './pages/e/index.js'
-import { TASK_STORAGE_KEY } from './pages/inbox/inbox.js'
+import { themeCaseCounts } from './pages/e/themes.js'
+import { TASK_STORAGE_KEY } from './pages/inbox/taskStorage.js'
 
 /**
  * LOADED ON DEMAND, and the budget is why — the same reason the detail and
@@ -646,6 +661,9 @@ const SiteNotices = defineAsyncComponent(
 // visitor pays nothing for it in the site bundle (site-shared-dossier).
 const AccessibilityStatementPage = defineAsyncComponent(
 	() => import('./components/AccessibilityStatementPage.vue'),
+)
+const CosignPage = defineAsyncComponent(
+	() => import('./components/CosignPage.vue'),
 )
 const SharedDossierPage = defineAsyncComponent(
 	() => import('./components/SharedDossierPage.vue'),
@@ -685,8 +703,10 @@ export default {
 		IdleWarningDialog,
 		InstallBanner,
 		MarkdownBlock,
+		PageArticleBlock,
 		NotFoundPage,
 		SharedDossierPage,
+		CosignPage,
 		AccessibilityStatementPage,
 		SiteEditButton,
 		SiteNotices,
@@ -702,7 +722,12 @@ export default {
 	 * @spec openspec/changes/site-dates-in-content-language/specs/site-look/spec.md#requirement-a-date-inside-page-content-must-read-in-the-content-language
 	 */
 	provide() {
-		return { siteContentLocale: () => this.contentLocale }
+		return {
+			siteContentLocale: () => this.contentLocale,
+			// The portal's organisation type label, so a line names the kind of
+			// organisation that runs it (portal-identity-from-the-admin REQ-PIA-003).
+			siteOrganisationType: () => this.site?.organisationTypeLabel || '',
+		}
 	},
 
 	props: {
@@ -1022,6 +1047,9 @@ export default {
 				signInRoutes: this.signInRoutes,
 				// The help details every form offers (help-texts-and-form-help).
 				portalHelp: this.site.help || null,
+				// The portal's hero image, for a hero without its own
+				// (portal-identity-from-the-admin REQ-PIA-002).
+				heroImage: this.site.heroImage || '',
 				// A fixed-width aside column (site-aside-column).
 				aside: asideOf(this.page && this.page.body),
 			}
@@ -1075,7 +1103,8 @@ export default {
 		 * What the resident menu is built from: the translator, the unread
 		 * count, the address of a route, the known rows, the portal's own
 		 * groups (zuiddrecht-resident-pages-match-the-boards), the items it
-		 * leaves out (resident-menu-leave-out) and the open tasks.
+		 * leaves out (resident-menu-leave-out), the open tasks and the
+		 * running cases per theme (life-domain-theme-pages T10).
 		 *
 		 * @return {object} The second argument of residentMenuGroups().
 		 */
@@ -1088,6 +1117,7 @@ export default {
 				layout: this.site?.residentMenu?.groups,
 				leaveOut: this.site?.residentMenu?.leaveOut,
 				openTasks: this.openTasks,
+				themeCases: themeCaseCounts(this.account?.contributions?.contributions, this.recordRows),
 				area: this.site?.accountLabel || '',
 			}
 		},
@@ -1174,6 +1204,7 @@ export default {
 				this.guestLink
 				|| this.wayInLink
 				|| this.sharedDossierRoute
+				|| this.cosignRoute
 				|| this.statementRoute,
 			)
 		},
@@ -1376,6 +1407,22 @@ export default {
 		 */
 		sharedDossierRoute() {
 			return isSharedDossierRoute(this.route)
+		},
+
+		/**
+		 * @return {boolean} Whether the co-sign page is on screen.
+		 *
+		 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+		 */
+		cosignRoute() {
+			return isCosignRoute(this.route)
+		},
+
+		/**
+		 * @return {string} The co-signer's bearer once a session is known, else ''.
+		 */
+		cosignToken() {
+			return this.session ? adoptSessionToken() || '' : ''
 		},
 
 		/**
@@ -2413,6 +2460,13 @@ export default {
 			// A shared dossier link renders from opencatalogi's answer, not
 			// from a CMS page, so it opens on every portal without one.
 			if (isSharedDossierRoute(route)) {
+				this.openSharedDossierRoute()
+				return true
+			}
+
+			// The co-sign page works from the code and the co-signer's own
+			// sign-in, so it opens on every portal without a CMS page.
+			if (isCosignRoute(route)) {
 				this.openSharedDossierRoute()
 				return true
 			}

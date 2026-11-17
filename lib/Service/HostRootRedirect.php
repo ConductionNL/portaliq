@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\HostRootRedirectInterface;
 use OCP\IRequest;
 use Throwable;
 
@@ -44,7 +45,7 @@ use Throwable;
  *
  * @spec openspec/changes/portal-host-root-redirect/specs/portal-settings/spec.md#requirement-the-bare-address-of-a-portal-host-must-lead-to-its-site-req-hrr-001
  */
-class HostRootRedirect {
+class HostRootRedirect implements HostRootRedirectInterface {
 	/**
 	 * Constructor.
 	 *

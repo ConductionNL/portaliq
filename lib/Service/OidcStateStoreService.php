@@ -36,6 +36,7 @@ namespace OCA\Portaliq\Service;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\OidcStateStoreServiceInterface;
 use Throwable;
 
 /**
@@ -43,7 +44,7 @@ use Throwable;
  *
  * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T02
  */
-class OidcStateStoreService {
+class OidcStateStoreService implements OidcStateStoreServiceInterface {
 	/**
 	 * The OpenRegister register the `portalOidcState` schema lives in.
 	 */
@@ -190,6 +191,28 @@ class OidcStateStoreService {
 	 * @spec openspec/specs/supplier-portal/spec.md#every-validation-failure-is-an-identical-generic-error
 	 */
 	public function consume(string $state): ?array {
+		$row = $this->unusedRow(state: $state);
+		if ($row === null) {
+			return null;
+		}
+
+		if ($this->markUsed(row: $row) === false) {
+			return null;
+		}
+
+		return $this->consumedState(row: $row);
+	}//end consume()
+
+	/**
+	 * The state's row when it exists, was never used and has not expired, else null.
+	 *
+	 * @param string $state The OIDC `state` parameter.
+	 *
+	 * @return array<string, mixed>|null The row, or null.
+	 *
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T02
+	 */
+	private function unusedRow(string $state): array|null {
 		if ($state === '') {
 			return null;
 		}
@@ -199,18 +222,44 @@ class OidcStateStoreService {
 			return null;
 		}
 
+		if ($this->stillLive(row: $row) === false) {
+			return null;
+		}
+
+		return $row;
+	}//end unusedRow()
+
+	/**
+	 * Whether a state row is neither used (a replay) nor expired.
+	 *
+	 * @param array<string, mixed> $row The state row.
+	 *
+	 * @return bool True when the row may be consumed.
+	 *
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T02
+	 */
+	private function stillLive(array $row): bool {
 		if (($row['used'] ?? false) === true) {
 			// Replay — a state can only ever be consumed once.
-			return null;
+			return false;
 		}
 
-		if ($this->isExpired(row: $row) === true) {
-			return null;
-		}
+		return $this->isExpired(row: $row) === false;
+	}//end stillLive()
 
+	/**
+	 * Mark the row used; false when it has no id or the write failed.
+	 *
+	 * @param array<string, mixed> $row The state row.
+	 *
+	 * @return bool True when the row is marked used.
+	 *
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T02
+	 */
+	private function markUsed(array $row): bool {
 		$uuid = (new RowIdLookup())->firstUuidOrId(row: $row);
 		if ($uuid === null) {
-			return null;
+			return false;
 		}
 
 		// Mark used BEFORE returning — a concurrent replay of the same state
@@ -224,10 +273,21 @@ class OidcStateStoreService {
 			id: $uuid,
 			data: ['used' => true]
 		);
-		if ($marked === null) {
-			return null;
-		}
 
+		return $marked !== null;
+	}//end markUsed()
+
+	/**
+	 * The consumed state's values, read from its row.
+	 *
+	 * @param array<string, mixed> $row The state row.
+	 *
+	 * @return array{nonce: string, codeVerifier: string, org: string, provider: string, returnTo: string, route: string, silent: bool}
+	 *
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T08
+	 */
+	private function consumedState(array $row): array {
 		return [
 			'nonce' => (string)($row['nonce'] ?? ''),
 			'codeVerifier' => (string)($row['codeVerifier'] ?? ''),
@@ -239,7 +299,7 @@ class OidcStateStoreService {
 			// A silent start (signin-session-idle-warning-and-sso D5); absent is false.
 			'silent' => (($row['silent'] ?? false) === true),
 		];
-	}//end consume()
+	}//end consumedState()
 
 	/**
 	 * Whether a row's `expiresAt` has passed. A missing/unparseable

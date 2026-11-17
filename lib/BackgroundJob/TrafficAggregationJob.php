@@ -27,8 +27,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\BackgroundJob;
 
-use OCA\Portaliq\Service\TrafficAggregationService;
-use OCA\Portaliq\Service\TrafficBackfillService;
+use OCA\Portaliq\Kernel\Contracts\TrafficAggregationServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\TrafficBackfillServiceInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJob;
 use OCP\BackgroundJob\TimedJob;
@@ -56,17 +56,17 @@ class TrafficAggregationJob extends TimedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory              $time        Testable clock (job base class).
-	 * @param TrafficAggregationService $aggregation Does the work.
+	 * @param TrafficAggregationServiceInterface $aggregation Does the work.
 	 * @param LoggerInterface           $logger      The logger.
-	 * @param TrafficBackfillService    $backfill    Rebuilds the retained days once after an upgrade (portal-page-traffic).
+	 * @param TrafficBackfillServiceInterface    $backfill    Rebuilds the retained days once after an upgrade (portal-page-traffic).
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly TrafficAggregationService $aggregation,
+		private readonly TrafficAggregationServiceInterface $aggregation,
 		private readonly LoggerInterface $logger,
-		private readonly ?TrafficBackfillService $backfill = null,
+		private readonly ?TrafficBackfillServiceInterface $backfill = null,
 	) {
 		parent::__construct(time: $time);
 		$this->setInterval(seconds: self::INTERVAL);

@@ -46,18 +46,22 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\AccessibilityFramingInterface;
+use OCA\Portaliq\Kernel\Contracts\PlainPageRendererInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalNoticeReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalRuntimeConfigResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalThemeResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\SiteHeadInterface;
 use OCA\Portaliq\Service\SiteShell;
-use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
-use OCA\Portaliq\Service\PortalThemeResolver;
-use OCA\Portaliq\Service\PortalNoticeReader;
-use OCA\Portaliq\Service\Cms\AccessibilityFraming;
-use OCA\Portaliq\Service\Cms\SiteHead;
+use OCA\Portaliq\Service\Cms\PlainAddress;
+use OCA\Portaliq\Service\Cms\SiteIcon;
+use OCA\Portaliq\Kernel\Contracts\SiteOrganisationInterface;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
-use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\RedirectResponse;
 use OCP\AppFramework\Http\TemplateResponse;
@@ -92,31 +96,37 @@ class PortalPageController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request
-	 * @param PortalRuntimeConfigResolver $configResolver Resolves the serving
+	 * @param PortalRuntimeConfigResolverInterface $configResolver Resolves the serving
 	 *                                                    portal and the runtime
 	 *                                                    config built from it.
 	 * @param IURLGenerator $urlGenerator Builds the content API base handed to
 	 *                                    the site renderer.
-	 * @param PortalResolver $portalResolver Resolves the serving portal, so the
+	 * @param PortalResolverInterface $portalResolver Resolves the serving portal, so the
 	 *                                       shell knows whose theme to load.
-	 * @param PortalThemeResolver $themeResolver Maps that portal's theme
+	 * @param PortalThemeResolverInterface $themeResolver Maps that portal's theme
 	 *                                           reference to a real themiq
 	 *                                           token stylesheet.
-	 * @param SiteHead $siteHead The head of the page a site request asks for.
-	 * @param PortalNoticeReader $notices The notices running on the signed-in surface now.
-	 * @param AccessibilityFraming $framing Whether the accessibility measurement may frame this request.
+	 * @param SiteHeadInterface $siteHead The head of the page a site request asks for.
+	 * @param PortalNoticeReaderInterface $notices The notices running on the signed-in surface now.
+	 * @param AccessibilityFramingInterface $framing Whether the accessibility measurement may frame this request.
+	 * @param SiteIcon|null $siteIcon The portal's own tab icon.
+	 * @param PlainPageRendererInterface|null $plainPage The plain version of a page (site-honest-without-javascript).
+	 * @param SiteOrganisationInterface|null $siteOrganisation Names the portal's organisation in the head.
 	 */
 	public function __construct(
 		IRequest $request,
-		PortalRuntimeConfigResolver $configResolver,
+		PortalRuntimeConfigResolverInterface $configResolver,
 		private readonly IURLGenerator $urlGenerator,
-		PortalResolver $portalResolver,
-		PortalThemeResolver $themeResolver,
-		SiteHead $siteHead,
-		PortalNoticeReader $notices,
-		private readonly AccessibilityFraming $framing,
+		PortalResolverInterface $portalResolver,
+		PortalThemeResolverInterface $themeResolver,
+		SiteHeadInterface $siteHead,
+		PortalNoticeReaderInterface $notices,
+		private readonly AccessibilityFramingInterface $framing,
+		?SiteIcon $siteIcon=null,
+		private readonly ?PlainPageRendererInterface $plainPage=null,
+		?SiteOrganisationInterface $siteOrganisation=null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 		$this->shell = new SiteShell(
 			request: $request,
 			portalResolver: $portalResolver,
@@ -124,7 +134,9 @@ class PortalPageController extends Controller {
 			urlGenerator: $urlGenerator,
 			siteHead: $siteHead,
 			notices: $notices,
-			configResolver: $configResolver
+			configResolver: $configResolver,
+			siteIcon: $siteIcon,
+			siteOrganisation: $siteOrganisation
 		);
 	}//end __construct()
 
@@ -233,7 +245,7 @@ class PortalPageController extends Controller {
 	 */
 	private function shellResponse(string $path): TemplateResponse {
 		$response = new TemplateResponse(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			'site',
 			$this->shell->templateParams(path: $path),
 			// BASE, NOT PUBLIC — a white-label site may not wear Nextcloud's
@@ -285,6 +297,57 @@ class PortalPageController extends Controller {
 
 		return $response;
 	}//end shellResponse()
+
+	/**
+	 * The plain version of a site page, for a browser without JavaScript
+	 * (site-honest-without-javascript REQ-SHJ-002).
+	 *
+	 * The same portal and route as `/site` (`?portal=`, `?org=` or the host,
+	 * and `?route=`), the same stylesheets and the same security policy, and
+	 * no script at all. Every page and menu is read as an ANONYMOUS visitor,
+	 * also when the request carries a session: this HTML must never hold a
+	 * resident's data. A route without a published page, and a publication
+	 * that is missing or withheld, answer 404.
+	 *
+	 * @return TemplateResponse The plain page.
+	 *
+	 * @spec openspec/changes/site-honest-without-javascript/specs/site-without-javascript/spec.md#requirement-the-server-renders-a-plain-version-of-every-public-page-req-shj-002
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[NoAdminRequired]
+	#[AnonRateLimit(limit: 120, period: 60)]
+	public function plain(): TemplateResponse {
+		$asked = $this->shell->plainRequest();
+		$address = new PlainAddress(
+			siteBase: $this->urlGenerator->linkToRoute('portaliq.portalPage.site'),
+			portalSlug: $asked['slug']
+		);
+		// Without the renderer (never so through the container) the page
+		// answers as a route that does not exist, never with content.
+		$view = ['status' => self::STATUS_NOT_FOUND, 'title' => '', 'summary' => '', 'blocks' => [], 'menu' => []];
+		if ($this->plainPage !== null) {
+			$view = $this->plainPage->render(
+				portal: $asked['portal'],
+				route: $asked['route'],
+				locale: $asked['locale'],
+				query: $asked['query'],
+				page: $asked['page'],
+				address: $address
+			);
+		}
+
+		$params = $this->shell->templateParams(path: '');
+		$params['plain'] = $view;
+		$response = new TemplateResponse(AppIdentity::APP_ID, 'site-plain', $params, TemplateResponse::RENDER_AS_BLANK);
+		$response->setContentSecurityPolicy($this->framing->sitePolicy(request: $this->request));
+		if ($view['status'] === self::STATUS_NOT_FOUND || $this->shell->servesAPortal() === false) {
+			$response->setStatus(self::STATUS_NOT_FOUND);
+		}
+
+		return $response;
+	}//end plain()
+
 
 	/**
 	 * A site page named by its path: `/site/afval` is the route `/afval`.

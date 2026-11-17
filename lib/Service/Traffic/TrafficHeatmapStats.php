@@ -76,24 +76,7 @@ class TrafficHeatmapStats {
 	public function rows(array $sessions): array {
 		$pages = [];
 		foreach ($sessions as $session) {
-			foreach (($session['events'] ?? []) as $event) {
-				if (is_array($event) === false) {
-					continue;
-				}
-
-				$name = (string)($event['name'] ?? '');
-				if ($name !== self::CLICK && $name !== self::SCROLL) {
-					continue;
-				}
-
-				$path = trim((string)($event['pagePath'] ?? ''));
-				if ($path === '') {
-					continue;
-				}
-
-				$pages[$path] ??= ['path' => $path, 'samples' => 0, 'cells' => [], 'scroll' => array_fill(0, self::DECILES, 0)];
-				$pages[$path] = $this->add(page: $pages[$path], name: $name, params: $this->params(event: $event));
-			}
+			$pages = $this->counted(pages: $pages, session: $session);
 		}
 
 		$out = [];
@@ -104,6 +87,49 @@ class TrafficHeatmapStats {
 		usort($out, static fn (array $a, array $b): int => [$b['samples'], $a['path']] <=> [$a['samples'], $b['path']]);
 
 		return array_slice($out, 0, self::TOP);
+	}
+
+	/**
+	 * The pages with one session's click and scroll events counted in.
+	 *
+	 * @param array<string, array<string, mixed>> $pages   The page accumulators by path.
+	 * @param array<string, mixed>                $session The session.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function counted(array $pages, array $session): array {
+		foreach (($session['events'] ?? []) as $event) {
+			if (is_array($event) === false) {
+				continue;
+			}
+
+			$name = (string)($event['name'] ?? '');
+			$path = trim((string)($event['pagePath'] ?? ''));
+			if ($this->counts(name: $name, path: $path) === false) {
+				continue;
+			}
+
+			$pages[$path] ??= ['path' => $path, 'samples' => 0, 'cells' => [], 'scroll' => array_fill(0, self::DECILES, 0)];
+			$pages[$path] = $this->add(page: $pages[$path], name: $name, params: $this->params(event: $event));
+		}
+
+		return $pages;
+	}
+
+	/**
+	 * Whether an event counts: a click or a scroll on a known page.
+	 *
+	 * @param string $name The event name.
+	 * @param string $path The page path.
+	 *
+	 * @return bool
+	 */
+	private function counts(string $name, string $path): bool {
+		if ($name !== self::CLICK && $name !== self::SCROLL) {
+			return false;
+		}
+
+		return $path !== '';
 	}
 
 	/**

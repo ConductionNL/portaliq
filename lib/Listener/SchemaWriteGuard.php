@@ -22,7 +22,7 @@ namespace OCA\Portaliq\Listener;
 
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCP\EventDispatcher\Event;
 use Throwable;
 
@@ -68,7 +68,7 @@ trait SchemaWriteGuard {
 	private function guardsSchema(string $schema): bool {
 		try {
 			$guarded = $this->container->get('OCA\\OpenRegister\\Db\\SchemaMapper')
-				->findByApplicationAndSlug(slug: self::GUARDED_SCHEMA, application: Application::APP_ID);
+				->findByApplicationAndSlug(slug: self::GUARDED_SCHEMA, application: AppIdentity::APP_ID);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: ' . self::GUARD_NAME . ' could not read the schema', ['reason' => $e->getMessage()]);
 			return false;

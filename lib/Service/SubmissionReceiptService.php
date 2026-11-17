@@ -47,6 +47,7 @@ namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\Portaliq\Kernel\Contracts\SubmissionReceiptServiceInterface;
 use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IDateTimeZone;
@@ -59,7 +60,7 @@ use Throwable;
  *
  * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
  */
-class SubmissionReceiptService {
+class SubmissionReceiptService implements SubmissionReceiptServiceInterface {
 	/**
 	 * The register every portal-owned schema lives in.
 	 */
@@ -593,6 +594,5 @@ class SubmissionReceiptService {
 
 		return $recorded;
 	}//end recordedOutcome()
-
 
 }//end class

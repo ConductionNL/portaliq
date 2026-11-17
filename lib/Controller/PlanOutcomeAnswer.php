@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\Service\Plans\PortalPlanService;
+use OCA\Portaliq\Kernel\Contracts\PortalPlanServiceInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 
@@ -45,10 +45,10 @@ final class PlanOutcomeAnswer {
 	 */
 	public function for(string $result): JSONResponse {
 		$status = match ($result) {
-			PortalPlanService::OK => Http::STATUS_OK,
-			PortalPlanService::NOT_FOUND => Http::STATUS_NOT_FOUND,
-			PortalPlanService::FORBIDDEN => Http::STATUS_FORBIDDEN,
-			PortalPlanService::INVALID => Http::STATUS_BAD_REQUEST,
+			PortalPlanServiceInterface::OK => Http::STATUS_OK,
+			PortalPlanServiceInterface::NOT_FOUND => Http::STATUS_NOT_FOUND,
+			PortalPlanServiceInterface::FORBIDDEN => Http::STATUS_FORBIDDEN,
+			PortalPlanServiceInterface::INVALID => Http::STATUS_BAD_REQUEST,
 			default => Http::STATUS_INTERNAL_SERVER_ERROR,
 		};
 		if ($status === Http::STATUS_OK) {

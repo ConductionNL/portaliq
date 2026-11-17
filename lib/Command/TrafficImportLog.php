@@ -26,8 +26,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Command;
 
-use OCA\Portaliq\Service\Traffic\TrafficLogImporter;
-use OCA\Portaliq\Service\Traffic\TrafficLogParser;
+use OCA\Portaliq\Kernel\Contracts\TrafficLogImporterInterface;
+use OCA\Portaliq\Kernel\Contracts\TrafficLogParserInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -44,12 +44,12 @@ class TrafficImportLog extends Command {
 	/**
 	 * Constructor.
 	 *
-	 * @param TrafficLogImporter $importer Does the work.
+	 * @param TrafficLogImporterInterface $importer Does the work.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly TrafficLogImporter $importer,
+		private readonly TrafficLogImporterInterface $importer,
 	) {
 		parent::__construct();
 	}//end __construct()
@@ -94,7 +94,7 @@ class TrafficImportLog extends Command {
 	 */
 	protected function execute(InputInterface $input, OutputInterface $output): int {
 		$format = (string)$input->getOption('format');
-		if (in_array($format, TrafficLogParser::FORMATS, true) === false) {
+		if (in_array($format, TrafficLogParserInterface::FORMATS, true) === false) {
 			$output->writeln('<error>Unknown format "' . $format . '"; use combined or json.</error>');
 
 			return 1;

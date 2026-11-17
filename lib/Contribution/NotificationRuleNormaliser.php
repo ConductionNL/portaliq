@@ -59,15 +59,18 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
-use OCA\Portaliq\Service\NotificationDispatchService;
+use OCA\Portaliq\Kernel\Contracts\NotificationDispatchServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\NotificationRuleNormaliserInterface;
 use Psr\Log\LoggerInterface;
 
 /**
  * Keeps the plain rule keys and the change rules the listener can act on.
  *
  * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-case-app-declares-which-change-a-resident-hears-about-req-nap-001
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- The total is the sum of small private steps; each method stays under the method thresholds.
  */
-class NotificationRuleNormaliser {
+class NotificationRuleNormaliser implements NotificationRuleNormaliserInterface {
 
 	/**
 	 * The only operator a change rule may use.
@@ -77,22 +80,13 @@ class NotificationRuleNormaliser {
 	public const OPERATOR_CHANGED = 'changed';
 
 	/**
-	 * The shape of a rule key an app sends on a portalMessage it writes: the
-	 * app id, a dot, the app's own key. The app is the part before the first
-	 * dot (PortalRecordChangeListener::onForeignMessage).
-	 *
-	 * @var string
-	 */
-	public const APP_RULE_KEY_PATTERN = '/^([a-z][a-z0-9_-]*)\.[A-Za-z0-9_.-]+$/';
-
-	/**
 	 * The plain rule keys portaliq fires itself.
 	 *
 	 * @var array<int, string>
 	 */
 	private const BUILT_IN_RULE_KEYS = [
-		NotificationDispatchService::RULE_MESSAGE_CREATED,
-		NotificationDispatchService::RULE_STATUS_CHANGED,
+		NotificationDispatchServiceInterface::RULE_MESSAGE_CREATED,
+		NotificationDispatchServiceInterface::RULE_STATUS_CHANGED,
 	];
 
 	/**
@@ -223,28 +217,73 @@ class NotificationRuleNormaliser {
 			return null;
 		}
 
+		return $this->unfiredReason(key: $key, appId: $appId, namespace: $this->namespaceOf(appId: $appId));
+	}//end keyRefusal()
+
+	/**
+	 * The app's rule key namespace, `<appId>` when the app is unknown.
+	 *
+	 * @param string $appId The contributing app.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-case-app-declares-which-change-a-resident-hears-about-req-nap-001
+	 */
+	private function namespaceOf(string $appId): string {
 		$namespace = $appId;
 		if ($namespace === '') {
 			$namespace = '<appId>';
 		}
 
-		if (preg_match(self::APP_RULE_KEY_PATTERN, $key, $match) === 1) {
-			if ($match[1] === $appId) {
-				return null;
-			}
+		return $namespace;
+	}//end namespaceOf()
 
-			return sprintf('key %s: a portalMessage with it is sent for app "%s", never for this one; use %s.<key>', $key, $match[1], $namespace);
+	/**
+	 * Why a key no built-in or change rule fires can never fire, or null
+	 * when it is this app's own message rule.
+	 *
+	 * @param string $key       The plain rule key.
+	 * @param string $appId     The contributing app.
+	 * @param string $namespace The app's rule key namespace.
+	 *
+	 * @return string|null The reason.
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-case-app-declares-which-change-a-resident-hears-about-req-nap-001
+	 */
+	private function unfiredReason(string $key, string $appId, string $namespace): string|null {
+		if (preg_match(self::APP_RULE_KEY_PATTERN, $key, $found) === 1) {
+			return $this->foreignAppReason(key: $key, keyApp: $found[1], appId: $appId, namespace: $namespace);
 		}
 
 		return sprintf(
 			'key %s: nothing fires it; declare %s, %s, a change rule with this ruleKey, or %s.%s sent on a portalMessage',
 			$key,
-			NotificationDispatchService::RULE_MESSAGE_CREATED,
-			NotificationDispatchService::RULE_STATUS_CHANGED,
+			NotificationDispatchServiceInterface::RULE_MESSAGE_CREATED,
+			NotificationDispatchServiceInterface::RULE_STATUS_CHANGED,
 			$namespace,
 			$key
 		);
-	}//end keyRefusal()
+	}//end unfiredReason()
+
+	/**
+	 * Why an app message rule key of another app never fires here, or null for this app's own.
+	 *
+	 * @param string $key       The plain rule key.
+	 * @param string $keyApp    The app the key names.
+	 * @param string $appId     The contributing app.
+	 * @param string $namespace The app's rule key namespace.
+	 *
+	 * @return string|null The reason.
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-case-app-declares-which-change-a-resident-hears-about-req-nap-001
+	 */
+	private function foreignAppReason(string $key, string $keyApp, string $appId, string $namespace): string|null {
+		if ($keyApp === $appId) {
+			return null;
+		}
+
+		return sprintf('key %s: a portalMessage with it is sent for app "%s", never for this one; use %s.<key>', $key, $keyApp, $namespace);
+	}//end foreignAppReason()
 
 	/**
 	 * Why a rule cannot be kept, or null when it can.

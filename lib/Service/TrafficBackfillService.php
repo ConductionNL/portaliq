@@ -22,7 +22,8 @@ namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\TrafficBackfillServiceInterface;
 use OCA\Portaliq\Service\Traffic\TrafficDayGuard;
 use OCA\Portaliq\Service\Traffic\TrafficEventStore;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -46,7 +47,7 @@ use OCP\IAppConfig;
  *
  * @spec openspec/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
  */
-class TrafficBackfillService {
+class TrafficBackfillService implements TrafficBackfillServiceInterface {
 	use PublishedPortalWalk;
 
 	/**
@@ -93,12 +94,12 @@ class TrafficBackfillService {
 	 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
 	 */
 	public function runOnce(): int {
-		if ($this->appConfig->getValueString(Application::APP_ID, self::DONE_KEY, '') === self::VERSION) {
+		if ($this->appConfig->getValueString(AppIdentity::APP_ID, self::DONE_KEY, '') === self::VERSION) {
 			return 0;
 		}
 
 		$days = $this->backfill()['days'];
-		$this->appConfig->setValueString(Application::APP_ID, self::DONE_KEY, self::VERSION);
+		$this->appConfig->setValueString(AppIdentity::APP_ID, self::DONE_KEY, self::VERSION);
 
 		return $days;
 	}

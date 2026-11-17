@@ -24,8 +24,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Listener;
 
-use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
-use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Kernel\Contracts\PortalNoticeLanguageInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectWriterInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -38,13 +38,13 @@ final class ChangeMessageWriter {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectWriter   $writer   Writes the inbox message.
-	 * @param PortalNoticeLanguage $language The message text, in the portal's language.
+	 * @param PortalObjectWriterInterface   $writer   Writes the inbox message.
+	 * @param PortalNoticeLanguageInterface $language The message text, in the portal's language.
 	 * @param LoggerInterface      $logger   Records a message that was not written.
 	 */
 	public function __construct(
-		private readonly PortalObjectWriter $writer,
-		private readonly PortalNoticeLanguage $language,
+		private readonly PortalObjectWriterInterface $writer,
+		private readonly PortalNoticeLanguageInterface $language,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

@@ -22,6 +22,7 @@ namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\Portaliq\Kernel\Contracts\TrafficIngestServiceInterface;
 use OCA\Portaliq\Service\Traffic\TrafficIngestPipeline;
 use OCA\Portaliq\Service\Traffic\TrafficMetrics;
 use OCA\Portaliq\Service\Traffic\TrafficRecordDerivers;
@@ -62,7 +63,7 @@ use OCP\AppFramework\Utility\ITimeFactory;
  *     derived?: array<string, string>
  * }
  */
-class TrafficIngestService {
+class TrafficIngestService implements TrafficIngestServiceInterface {
 
 	/**
 	 * Constructor.

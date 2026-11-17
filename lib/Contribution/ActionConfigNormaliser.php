@@ -35,7 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
-use OCA\Portaliq\Service\PortalSchemaReader;
+use OCA\Portaliq\Kernel\Contracts\PortalSchemaReaderInterface;
 
 /**
  * Validates and sanitises the v3 action form config, fail-closed.
@@ -63,7 +63,7 @@ class ActionConfigNormaliser {
 	 *
 	 * @param ManifestValueNormaliser $values The shared value-level primitives.
 	 * @param ActionOptionsNormaliser $options The option-provider validator.
-	 * @param PortalSchemaReader|null $schemaReader Resolves an action's schema
+	 * @param PortalSchemaReaderInterface|null $schemaReader Resolves an action's schema
 	 *                                              `required` set for the WMEBV
 	 *                                              data-minimisation guard. A
 	 *                                              null reader means the guard
@@ -93,7 +93,7 @@ class ActionConfigNormaliser {
 	public function __construct(
 		private readonly ManifestValueNormaliser $values,
 		private readonly ActionOptionsNormaliser $options,
-		private readonly ?PortalSchemaReader $schemaReader = null,
+		private readonly ?PortalSchemaReaderInterface $schemaReader = null,
 		private readonly ?CitizenWriteConfigNormaliser $citizenWrite = null,
 		private readonly ?CrossRefConfigNormaliser $crossRefs = null,
 	) {
@@ -301,6 +301,20 @@ class ActionConfigNormaliser {
 			return $action;
 		}
 
+		$action['fieldConfigs'] = $this->whitelistedConfigs(action: $action, whitelist: $whitelist, mandatory: $mandatory);
+		return $action;
+	}//end normaliseFieldConfigs()
+
+	/**
+	 * The sanitised configs of the whitelisted fields.
+	 *
+	 * @param array<string, mixed> $action    The action, its `fieldConfigs` an array.
+	 * @param array<int, string>   $whitelist The action's `fields` whitelist.
+	 * @param array<int, string>   $mandatory The action's schema `required` set.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function whitelistedConfigs(array $action, array $whitelist, array $mandatory): array {
 		$configs = [];
 		foreach ($action['fieldConfigs'] as $field => $config) {
 			// A field config may only ever describe a whitelisted field — this is
@@ -317,9 +331,8 @@ class ActionConfigNormaliser {
 			);
 		}
 
-		$action['fieldConfigs'] = $configs;
-		return $action;
-	}//end normaliseFieldConfigs()
+		return $configs;
+	}//end whitelistedConfigs()
 
 	/**
 	 * Build ONE sanitised field-config entry: the string labels, the boolean

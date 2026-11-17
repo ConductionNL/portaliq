@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Kernel\Contracts\PortalFormValidatorInterface;
 use OCP\IL10N;
 
 /**
@@ -35,7 +36,7 @@ use OCP\IL10N;
  *
  * @spec openspec/specs/portal-intake-form/spec.md
  */
-class PortalFormValidator {
+class PortalFormValidator implements PortalFormValidatorInterface {
 	/**
 	 * The largest signature image accepted, in bytes.
 	 *
@@ -238,10 +239,7 @@ class PortalFormValidator {
 	 */
 	private function group(array $field, string $name, mixed $value): array {
 		$repeat = (array)($field['repeat'] ?? []);
-		$min    = (int)($repeat['min'] ?? 0);
-		if (($field['required'] ?? false) === true) {
-			$min = max($min, 1);
-		}
+		$min    = $this->groupMin(field: $field, repeat: $repeat);
 
 		$max    = (int)($repeat['max'] ?? 0);
 		$items  = [];
@@ -251,16 +249,57 @@ class PortalFormValidator {
 			return ['errors' => [$name => $this->l10n->t('This answer must be a list.')], 'items' => null];
 		}
 
-		if (count($items) < $min) {
-			return ['errors' => [$name => $this->l10n->t('Add at least %s.', [(string)$min])], 'items' => null];
-		}
-
-		if ($max > 0 && count($items) > $max) {
-			return ['errors' => [$name => $this->l10n->t('You can add at most %s.', [(string)$max])], 'items' => null];
+		$refusal = $this->groupCountRefusal(name: $name, given: count($items), min: $min, max: $max);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		return $this->groupItems(field: $field, name: $name, items: $items);
 	}//end group()
+
+	/**
+	 * The fewest items a group takes: `repeat.min`, and at least one when the
+	 * group is required.
+	 *
+	 * @param array<string, mixed> $field  The group's declaration.
+	 * @param array<string, mixed> $repeat The group's `repeat`.
+	 *
+	 * @return int
+	 *
+	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t01
+	 */
+	private function groupMin(array $field, array $repeat): int {
+		$min = (int)($repeat['min'] ?? 0);
+		if (($field['required'] ?? false) === true) {
+			$min = max($min, 1);
+		}
+
+		return $min;
+	}//end groupMin()
+
+	/**
+	 * The refusal of a group with too few or too many items, or null.
+	 *
+	 * @param string $name  The group's name.
+	 * @param int    $given How many items were sent.
+	 * @param int    $min   The fewest items it takes.
+	 * @param int    $max   The most items it takes, 0 for no limit.
+	 *
+	 * @return array{errors: array<string, string>, items: null}|null
+	 *
+	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t01
+	 */
+	private function groupCountRefusal(string $name, int $given, int $min, int $max): array|null {
+		if ($given < $min) {
+			return ['errors' => [$name => $this->l10n->t('Add at least %s.', [(string)$min])], 'items' => null];
+		}
+
+		if ($max > 0 && $given > $max) {
+			return ['errors' => [$name => $this->l10n->t('You can add at most %s.', [(string)$max])], 'items' => null];
+		}
+
+		return null;
+	}//end groupCountRefusal()
 
 	/**
 	 * Validate the items of a repeating group against its sub-fields.

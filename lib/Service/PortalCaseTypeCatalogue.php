@@ -28,7 +28,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Kernel\Contracts\PortalCaseTypeCatalogueInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use OCA\Portaliq\Service\CaseTypeColumns\CasesCollections;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 
@@ -42,7 +43,7 @@ use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
  *
  * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
  */
-class PortalCaseTypeCatalogue {
+class PortalCaseTypeCatalogue implements PortalCaseTypeCatalogueInterface {
 	use CaseTypeLabel;
 
 	/**
@@ -68,7 +69,7 @@ class PortalCaseTypeCatalogue {
 	 * @param PortalFormBindingResolver $bindings The portal's published bindings.
 	 * @param CaseTypeReader $caseTypes Reads case types for their names.
 	 * @param CaseTypeVisibility $visibility Reads the portal's hidden list.
-	 * @param PortalContributionRegistry $registry The case apps' declarations.
+	 * @param PortalContributionRegistryInterface $registry The case apps' declarations.
 	 */
 	public function __construct(
 		private readonly ScopedCollectionReaderInterface $reader,
@@ -76,7 +77,7 @@ class PortalCaseTypeCatalogue {
 		private readonly PortalFormBindingResolver $bindings,
 		private readonly CaseTypeReader $caseTypes,
 		private readonly CaseTypeVisibility $visibility,
-		private readonly PortalContributionRegistry $registry,
+		private readonly PortalContributionRegistryInterface $registry,
 	) {
 	}//end __construct()
 

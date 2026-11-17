@@ -208,7 +208,7 @@ class PortalChangeRuleIndexTest extends TestCase {
 	 * @return PortalChangeRuleIndex
 	 */
 	private function index(): PortalChangeRuleIndex {
-		return new PortalChangeRuleIndex(registry: $this->registry, container: $this->container, logger: $this->logger);
+		return new PortalChangeRuleIndex(registry: $this->registry, container: $this->container, logger: $this->logger, notificationRuleNormaliser: new NotificationRuleNormaliser());
 	}//end index()
 
 	/**

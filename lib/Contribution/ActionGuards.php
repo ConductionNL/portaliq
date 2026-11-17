@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
-use OCA\Portaliq\Service\PortalJwtService;
+use OCA\Portaliq\Kernel\ScopeClaims;
 
 /**
  * Removes an action whose guard cannot be honoured. Built by
@@ -70,7 +70,7 @@ final class ActionGuards {
 		// A declared scope claim rides in the signed assertion; one that
 		// names a frozen assertion claim (`sub`, `iss`, ...) is removed with
 		// its action, so it can never stand in for that claim.
-		if (PortalJwtService::isReservedScopeClaim(scopeClaim: ($action['scopeClaim'] ?? null)) === true) {
+		if (ScopeClaims::isReserved(scopeClaim: ($action['scopeClaim'] ?? null)) === true) {
 			return null;
 		}
 

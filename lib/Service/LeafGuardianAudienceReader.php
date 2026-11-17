@@ -41,7 +41,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -67,12 +67,12 @@ class LeafGuardianAudienceReader {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalContributionRegistry $registry The contributions for the parent audience.
+	 * @param PortalContributionRegistryInterface $registry The contributions for the parent audience.
 	 * @param ScopedCollectionReaderInterface $reader The subject-scoped collection reader.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
-		private readonly PortalContributionRegistry $registry,
+		private readonly PortalContributionRegistryInterface $registry,
 		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly LoggerInterface $logger,
 	) {
