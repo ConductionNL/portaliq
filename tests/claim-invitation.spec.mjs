@@ -279,10 +279,15 @@ test('every sentence is in both site bundles, without an em-dash', () => {
 test('the shell keeps the secret at boot, redeems it before the account loads and forgets it at sign-out', () => {
 	const shell = readFileSync('src/site/App.vue', 'utf8')
 	assert.match(shell, /keepClaimSecret\(window\.location, window\.history/)
+	// The module loads on demand (public-bundle-budget): only for a mail's
+	// fragment, a kept secret or a claimed code, under the key it keeps.
+	assert.doesNotMatch(shell, /^import[^;]*from '\.\.\/shared\/claimInvitation\.js'/m)
+	assert.match(shell, /if \(window\.location\.hash\.includes\('#claim='\)\) \{\s*const \{ keepClaimSecret \} = await import\('\.\.\/shared\/claimInvitation\.js'\)/)
+	assert.match(shell, new RegExp(`const CLAIM_STORAGE_KEY = '${CLAIM_STORAGE_KEY.replace('.', '\\.')}'`))
 	const redeem = shell.indexOf('this.claimMessage = await redeemKeptClaim(')
 	const load = shell.indexOf('await this.loadAccount()', redeem)
 	assert.ok(redeem > 0 && load > redeem)
-	assert.match(shell, /forgetClaimSecret\(this\.claimStorage\(\)\)/)
+	assert.match(shell, /this\.claimStorage\(\)\?\.removeItem\(CLAIM_STORAGE_KEY\)/)
 	assert.match(shell, /data-testid="site-claim-invitation"/)
 })
 
