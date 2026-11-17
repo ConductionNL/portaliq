@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Tenancy;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCA\Portaliq\Kernel\Contracts\PortalOrganisationRestampInterface;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
@@ -155,24 +156,37 @@ class PortalOrganisationRestamp implements PortalOrganisationRestampInterface {
 				continue;
 			}
 
-			try {
-				$rows = $this->rowsOf(objectService: $objectService, schema: $schema);
-			} catch (Throwable $e) {
-				$tally->unreadable(schema: $schema, reason: $e->getMessage());
-				continue;
-			}
-
-			if (count($rows) >= (self::PAGE * self::MAX_PAGES)) {
-				$tally->unreadable(schema: $schema, reason: 'More than '.(self::PAGE * self::MAX_PAGES).' rows: only the first were handled.');
-			}
-
-			foreach ($rows as $row) {
-				$this->settle(row: ['schema' => $schema] + $this->facts(row: $row), tally: $tally);
-			}
-		}//end foreach
+			$this->walkSchema(objectService: $objectService, schema: $schema, tally: $tally);
+		}
 
 		return $tally->report();
 	}//end walk()
+
+	/**
+	 * List one schema completely, then settle each of its rows.
+	 *
+	 * @param object       $objectService OpenRegister's ObjectService.
+	 * @param string       $schema        The schema slug.
+	 * @param RestampTally $tally         The run.
+	 *
+	 * @return void
+	 */
+	private function walkSchema(object $objectService, string $schema, RestampTally $tally): void {
+		try {
+			$rows = $this->rowsOf(objectService: $objectService, schema: $schema);
+		} catch (Throwable $e) {
+			$tally->unreadable(schema: $schema, reason: $e->getMessage());
+			return;
+		}
+
+		if (count($rows) >= (self::PAGE * self::MAX_PAGES)) {
+			$tally->unreadable(schema: $schema, reason: 'More than '.(self::PAGE * self::MAX_PAGES).' rows: only the first were handled.');
+		}
+
+		foreach ($rows as $row) {
+			$this->settle(row: ['schema' => $schema] + $this->facts(row: $row), tally: $tally);
+		}
+	}//end walkSchema()
 
 	/**
 	 * Every row of a schema, page by page.
@@ -233,17 +247,43 @@ class PortalOrganisationRestamp implements PortalOrganisationRestampInterface {
 	 * @return void
 	 */
 	private function settle(array $row, RestampTally $tally): void {
+		$uuid = $this->resolvedUuid(row: $row);
+		if ($uuid === '') {
+			$tally->unresolved(row: ['schema' => $row['schema'], 'uuid' => $row['uuid'], 'organisation' => $this->shown(value: $row['slug'])]);
+			return;
+		}
+
+		$this->settleResolved(row: $row, uuid: $uuid, tally: $tally);
+	}//end settle()
+
+	/**
+	 * The uuid of the row's organisation, or '' when it names none or has no uuid itself.
+	 *
+	 * @param array{schema: string, uuid: string, slug: mixed, stored: string} $row The row's facts.
+	 *
+	 * @return string
+	 */
+	private function resolvedUuid(array $row): string {
 		$slug = $row['slug'];
 		$uuid = '';
 		if (is_string($slug) === true && $slug !== '' && $row['uuid'] !== '') {
 			$uuid = $this->uuidFor(slug: $slug);
 		}
 
-		if ($uuid === '') {
-			$tally->unresolved(row: ['schema' => $row['schema'], 'uuid' => $row['uuid'], 'organisation' => $this->shown(value: $slug)]);
-			return;
-		}
+		return $uuid;
+	}//end resolvedUuid()
 
+	/**
+	 * Count, restamp or list one row whose organisation resolved.
+	 *
+	 * @param array{schema: string, uuid: string, slug: mixed, stored: string} $row   The row's facts.
+	 * @param string                                                           $uuid  The organisation uuid.
+	 * @param RestampTally                                                     $tally The run.
+	 *
+	 * @return void
+	 */
+	private function settleResolved(array $row, string $uuid, RestampTally $tally): void {
+		$slug = $row['slug'];
 		$organisation = ['slug' => $slug, 'uuid' => $uuid];
 		if ($row['stored'] === $uuid) {
 			$tally->count(organisation: $organisation, outcome: RestampTally::ALREADY);
@@ -255,13 +295,26 @@ class PortalOrganisationRestamp implements PortalOrganisationRestampInterface {
 			return;
 		}
 
+		$this->settleMovable(row: $row, organisation: $organisation, tally: $tally);
+	}//end settleResolved()
+
+	/**
+	 * Count a movable row, restamping it when the run applies.
+	 *
+	 * @param array{schema: string, uuid: string, slug: mixed, stored: string} $row          The row's facts.
+	 * @param array{slug: mixed, uuid: string}                                 $organisation The organisation.
+	 * @param RestampTally                                                     $tally        The run.
+	 *
+	 * @return void
+	 */
+	private function settleMovable(array $row, array $organisation, RestampTally $tally): void {
 		if ($tally->apply === false) {
 			$tally->count(organisation: $organisation, outcome: RestampTally::TO_RESTAMP);
 			return;
 		}
 
-		$tally->count(organisation: $organisation, outcome: $this->restamp(row: $row, uuid: $uuid));
-	}//end settle()
+		$tally->count(organisation: $organisation, outcome: $this->restamp(row: $row, uuid: $organisation['uuid']));
+	}//end settleMovable()
 
 	/**
 	 * Write the organisation on one row.
@@ -275,12 +328,14 @@ class PortalOrganisationRestamp implements PortalOrganisationRestampInterface {
 		try {
 			$entity = $this->objectService()?->find(
 				id: $row['uuid'],
-				register: self::REGISTER,
-				schema: $row['schema'],
+				options: new ObjectFindOptions(
+					register: self::REGISTER,
+					schema: $row['schema'],
+					render: false,
+					audit: false
+				),
 				_rbac: false,
-				_multitenancy: false,
-				_render: false,
-				_audit: false
+				_multitenancy: false
 			);
 			if (is_object($entity) === false) {
 				throw new RuntimeException('the row was not found again');

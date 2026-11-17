@@ -347,7 +347,7 @@ class PortalPageControllerHostRootTest extends TestCase {
 			$head,
 			$this->createMock(PortalNoticeReader::class),
 			$framing,
-			($withdrawnRead === null ? null : new WithdrawnPublication(publications: $withdrawnRead, portals: $resolver))
+			withdrawn: ($withdrawnRead === null ? null : new WithdrawnPublication(publications: $withdrawnRead, portals: $resolver))
 		);
 	}//end controller()
 }//end class

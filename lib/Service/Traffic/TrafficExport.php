@@ -20,6 +20,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic;
 
+use OCA\Portaliq\Kernel\Contracts\TrafficExportInterface;
+
 /**
  * The daily records as a file: CSV with one row per portal-day-segment
  * and the scalar metrics, or JSON with the records whole.
@@ -30,7 +32,7 @@ namespace OCA\Portaliq\Service\Traffic;
  *
  * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
  */
-class TrafficExport {
+class TrafficExport implements TrafficExportInterface {
 
 	/**
 	 * The CSV columns, in order.
@@ -54,13 +56,6 @@ class TrafficExport {
 		'searchesWithoutCount',
 		'zeroResultSearches',
 	];
-
-	/**
-	 * The formats.
-	 *
-	 * @var string[]
-	 */
-	public const FORMATS = ['csv', 'json'];
 
 	/**
 	 * The records as CSV.
@@ -160,11 +155,12 @@ class TrafficExport {
 			$parts[] = $row['term'] . ' (' . (int)($row['count'] ?? 0) . ')';
 		}
 
-		return implode('; ', $parts);
+		return $this->neutralised(cell: implode('; ', $parts));
 	}
 
 	/**
-	 * A scalar as a CSV field: a boolean as 1 or 0, the rest as is.
+	 * A scalar as a CSV field: a boolean as 1 or 0, a number as is, a
+	 * string neutralised.
 	 *
 	 * @param int|float|string|bool $value The value.
 	 *
@@ -179,7 +175,28 @@ class TrafficExport {
 			return '0';
 		}
 
+		if (is_string($value) === true) {
+			return $this->neutralised(cell: $value);
+		}
+
 		return (string)$value;
+	}
+
+	/**
+	 * A text cell a spreadsheet will read as text: a cell that starts with
+	 * = + - @, a tab or a carriage return gets a leading apostrophe, as the
+	 * OWASP CSV guidance recommends.
+	 *
+	 * @param string $cell The cell.
+	 *
+	 * @return string The cell, prefixed when it would start a formula.
+	 */
+	private function neutralised(string $cell): string {
+		if ($cell !== '' && str_contains("=+-@\t\r", $cell[0]) === true) {
+			return "'" . $cell;
+		}
+
+		return $cell;
 	}
 
 	/**

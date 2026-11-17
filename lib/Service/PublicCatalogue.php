@@ -127,26 +127,39 @@ class PublicCatalogue implements PublicCatalogueInterface {
 				continue;
 			}
 
-			$item = ['id' => 'news:' . $id, 'newsId' => $id, 'type' => self::TYPE_NEWS, 'kind' => '', 'title' => $title];
-			if (trim((string)($row['intro'] ?? '')) !== '') {
-				$item['summary'] = trim((string)$row['intro']);
-			}
-
-			if ((string)($row['publishedAt'] ?? '') !== '') {
-				$item['date'] = (string)$row['publishedAt'];
-			}
-
-			if (trim((string)($row['audienceLabel'] ?? '')) !== '') {
-				$item['meta'] = [trim((string)$row['audienceLabel'])];
-				// The audience as a facet, when a block asks for one (site-catalogue-follows-the-school-boards).
-				$item['audience'] = trim((string)$row['audienceLabel']);
-			}
-
-			$out[] = $item;
-		}//end foreach
+			$out[] = $this->newsItem(row: $row, id: $id, title: $title);
+		}
 
 		return $out;
 	}//end newsItems()
+
+	/**
+	 * One news item as a catalogue item.
+	 *
+	 * @param array<string, mixed> $row   The news row.
+	 * @param string               $id    The news id.
+	 * @param string               $title The trimmed title.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function newsItem(array $row, string $id, string $title): array {
+		$item = ['id' => 'news:' . $id, 'newsId' => $id, 'type' => self::TYPE_NEWS, 'kind' => '', 'title' => $title];
+		if (trim((string)($row['intro'] ?? '')) !== '') {
+			$item['summary'] = trim((string)$row['intro']);
+		}
+
+		if ((string)($row['publishedAt'] ?? '') !== '') {
+			$item['date'] = (string)$row['publishedAt'];
+		}
+
+		if (trim((string)($row['audienceLabel'] ?? '')) !== '') {
+			$item['meta'] = [trim((string)$row['audienceLabel'])];
+			// The audience as a facet, when a block asks for one (site-catalogue-follows-the-school-boards).
+			$item['audience'] = trim((string)$row['audienceLabel']);
+		}
+
+		return $item;
+	}//end newsItem()
 
 	/**
 	 * Every installed app's public index for the portal, each answer held to
@@ -260,15 +273,47 @@ class PublicCatalogue implements PublicCatalogueInterface {
 	 * @spec openspec/changes/public-detail-page-for-a-provider-item/tasks.md#task-2
 	 */
 	public function detailFor(string $portal, string $appId, string $kind, string $slug): ?array {
-		if ($slug === '' || preg_match('/^[a-z][a-z0-9_]{0,63}$/', $appId) !== 1) {
-			return null;
-		}
-
-		$found = $this->itemOf(portal: $portal, appId: $appId, kind: $kind, slug: $slug);
+		$found = $this->itemFor(portal: $portal, appId: $appId, kind: $kind, slug: $slug);
 		if ($found === null) {
 			return null;
 		}
 
+		$detail = $this->detailOf(portal: $portal, appId: $appId, found: $found);
+		if ($detail === null) {
+			return null;
+		}
+
+		return ['item' => $found, 'detail' => $detail];
+	}//end detailFor()
+
+	/**
+	 * The item when the slug and the app id are well formed and the app's index holds it.
+	 *
+	 * @param string $portal The portal slug.
+	 * @param string $appId  The app whose index holds the item.
+	 * @param string $kind   The item's `type` in the index.
+	 * @param string $slug   The item's slug.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function itemFor(string $portal, string $appId, string $kind, string $slug): array|null {
+		if ($slug === '' || preg_match('/^[a-z][a-z0-9_]{0,63}$/', $appId) !== 1) {
+			return null;
+		}
+
+		return $this->itemOf(portal: $portal, appId: $appId, kind: $kind, slug: $slug);
+	}//end itemFor()
+
+	/**
+	 * The item's detail as the app's provider gives it, or null when it gives none.
+	 *
+	 * @param string               $portal The portal slug.
+	 * @param string               $appId  The app whose index holds the item.
+	 * @param array<string, mixed> $found  The item.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function detailOf(string $portal, string $appId, array $found): array|null {
 		$provider = $this->locator->locate(appId: $appId);
 		if ($provider === null || method_exists($provider, PublicDetailShapeInterface::METHOD) === false) {
 			return null;
@@ -281,13 +326,8 @@ class PublicCatalogue implements PublicCatalogueInterface {
 			return null;
 		}
 
-		$detail = $this->publicDetailShape->detail(answer: $answer);
-		if ($detail === null) {
-			return null;
-		}
-
-		return ['item' => $found, 'detail' => $detail];
-	}//end detailFor()
+		return $this->publicDetailShape->detail(answer: $answer);
+	}//end detailOf()
 
 	/**
 	 * The item the app's index returns for this portal, of this kind, with this slug.

@@ -67,6 +67,7 @@ test('each flag opens its own pages', () => {
 		// The error reports on publications (publication-error-reports-and-withheld-notices).
 		'PublicationReportsMenu',
 		'NewsMenu',
+		'ArticlesMenu',
 		'Documentation',
 	])
 	assert.deepEqual(visibleMenu({ ...NONE, accounts: true }), [

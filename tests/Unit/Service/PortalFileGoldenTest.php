@@ -29,6 +29,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * The file reader and writer answer every way OpenRegister can be missing or
@@ -157,7 +158,9 @@ class PortalFileGoldenTest extends TestCase {
 			public function __construct(private PortalFileGoldenTest $test, private string $situation) {
 			}
 
-			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->test->note(['find' => compact('id', 'register', 'schema', '_rbac', '_multitenancy')]);
 				if ($this->situation === 'objectMissing') {
 					throw new DoesNotExistException('Object not found');

@@ -80,6 +80,21 @@ class ExampleResidentRecord {
 			return $record;
 		}
 
+		$record = $this->withAccount(record: $record, decoded: $decoded);
+		$record['objects'] = $this->objectsOf(objects: $record['objects'], decoded: $decoded);
+
+		return $record;
+	}//end read()
+
+	/**
+	 * The record with the user, the account and the sign-in it was given.
+	 *
+	 * @param array<string, mixed> $record  The blank record.
+	 * @param array<mixed>         $decoded The stored record.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withAccount(array $record, array $decoded): array {
 		$record['userId']      = (string)($decoded['userId'] ?? '');
 		$record['userCreated'] = (($decoded['userCreated'] ?? false) === true);
 		$record['account']     = (string)($decoded['account'] ?? '');
@@ -87,12 +102,25 @@ class ExampleResidentRecord {
 			'mode'  => (string)($decoded['signIn']['mode'] ?? ''),
 			'label' => (($decoded['signIn']['label'] ?? false) === true),
 		];
+
+		return $record;
+	}//end withAccount()
+
+	/**
+	 * The objects with every well-formed stored object added, by key.
+	 *
+	 * @param array<string, array<string, string>> $objects The objects so far.
+	 * @param array<mixed>                         $decoded The stored record.
+	 *
+	 * @return array<string, array{register: string, schema: string, id: string, subject: string}>
+	 */
+	private function objectsOf(array $objects, array $decoded): array {
 		foreach ((array)($decoded['objects'] ?? []) as $key => $object) {
 			if (is_array($object) === false || is_string($object['id'] ?? null) === false || $object['id'] === '') {
 				continue;
 			}
 
-			$record['objects'][(string)$key] = [
+			$objects[(string)$key] = [
 				'register' => (string)($object['register'] ?? ''),
 				'schema'   => (string)($object['schema'] ?? ''),
 				'id'       => $object['id'],
@@ -100,8 +128,8 @@ class ExampleResidentRecord {
 			];
 		}
 
-		return $record;
-	}//end read()
+		return $objects;
+	}//end objectsOf()
 
 	/**
 	 * Whether a record names nothing.

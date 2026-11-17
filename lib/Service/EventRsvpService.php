@@ -29,6 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\Kernel\Contracts\EventRsvpServiceInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -192,9 +194,10 @@ class EventRsvpService implements EventRsvpServiceInterface {
 		try {
 			$objectService->saveObject(
 				object: $object,
-				register: self::REGISTER,
-				schema: self::SCHEMA,
-				uuid: $existingId,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: self::REGISTER, schema: self::SCHEMA),
+					uuid: $existingId
+				),
 				_rbac: false,
 				_multitenancy: false
 			);
@@ -224,6 +227,23 @@ class EventRsvpService implements EventRsvpServiceInterface {
 			return false;
 		}
 
+		$taken = $this->seatsOfOthers(objectService: $objectService, eventId: $eventId, asked: $asked, existing: $existing);
+
+		return ($taken + ($asked ?? 1)) > $capacity;
+	}//end passesCapacity()
+
+	/**
+	 * The seats the event's other yes answers take; the child's own earlier
+	 * answer is not counted.
+	 *
+	 * @param object     $objectService OpenRegister's ObjectService.
+	 * @param string     $eventId       The event id.
+	 * @param int|null   $asked         The seats this answer takes; null counts one per answer.
+	 * @param array|null $existing      The child's earlier answer.
+	 *
+	 * @return int
+	 */
+	private function seatsOfOthers(object $objectService, string $eventId, int|null $asked, array|null $existing): int {
 		$taken = 0;
 		foreach ($this->answersOf(objectService: $objectService, eventId: $eventId) as $row) {
 			if ($existing !== null && $this->rowId(row: $row) === $this->rowId(row: $existing)) {
@@ -234,16 +254,28 @@ class EventRsvpService implements EventRsvpServiceInterface {
 				continue;
 			}
 
-			$rowSeats = 1;
-			if ($asked !== null) {
-				$rowSeats = max(1, (int)($row['seats'] ?? 1));
-			}
-
-			$taken += $rowSeats;
+			$taken += $this->rowSeats(row: $row, asked: $asked);
 		}
 
-		return ($taken + ($asked ?? 1)) > $capacity;
-	}//end passesCapacity()
+		return $taken;
+	}//end seatsOfOthers()
+
+	/**
+	 * The seats one yes answer takes: its own seats when seats are asked, else one.
+	 *
+	 * @param array<string, mixed> $row   The answer.
+	 * @param int|null             $asked The seats this answer takes; null counts one per answer.
+	 *
+	 * @return int
+	 */
+	private function rowSeats(array $row, int|null $asked): int {
+		$rowSeats = 1;
+		if ($asked !== null) {
+			$rowSeats = max(1, (int)($row['seats'] ?? 1));
+		}
+
+		return $rowSeats;
+	}//end rowSeats()
 
 	/**
 	 * The seats taken on an event: the seats of every yes, or one per yes

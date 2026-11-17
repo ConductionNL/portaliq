@@ -22,6 +22,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 class ActionReminderServiceTest extends TestCase {
 
@@ -59,7 +60,10 @@ class ActionReminderServiceTest extends TestCase {
 				return $this->actions;
 			}
 
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved[] = ['schema' => (string)$schema, 'uuid' => $uuid, 'object' => $object];
 				if ($schema === 'portalAction') {
 					foreach ($this->actions as $i => $action) {

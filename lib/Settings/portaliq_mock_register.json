@@ -788,6 +788,7 @@
         "organisation": "Bakkerij de Korenaar",
         "reason": "Neemt de vergunningaanvragen over van de eigenaar.",
         "state": "pending",
+        "stateRank": 0,
         "requestedAt": "2026-03-06T09:05:00+00:00"
       },
       {
@@ -802,6 +803,7 @@
         "onBehalfOf": "Installatiebedrijf Veldhuis Noord",
         "reason": "Werkvoorbereider, volgt de lopende meldingen.",
         "state": "granted",
+        "stateRank": 1,
         "decidedBy": "persoon-1003",
         "decidedAt": "2026-03-07T11:30:00+00:00",
         "requestedAt": "2026-03-06T16:20:00+00:00"
@@ -817,6 +819,7 @@
         "organisation": "Zorggroep Nieuwe Maas",
         "reason": "Vraagt toegang tot dossiers van een andere vestiging.",
         "state": "refused",
+        "stateRank": 2,
         "decidedBy": "persoon-1005",
         "decidedAt": "2026-02-18T10:00:00+00:00",
         "requestedAt": "2026-02-17T13:45:00+00:00"

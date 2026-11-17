@@ -46,7 +46,7 @@ class ExampleSiteRemove extends Command {
 	/**
 	 * The word the output uses for each schema.
 	 */
-	private const WORDS = ['menu' => 'Menus', 'page' => 'Pages', 'newsItem' => 'News items', 'glossaryTerm' => 'Glossary terms'];
+	private const WORDS = ['menu' => 'Menus', 'page' => 'Pages', 'newsItem' => 'News items', 'glossaryTerm' => 'Glossary terms', 'form' => 'Forms'];
 
 	/**
 	 * What the output says about the portal, per outcome.

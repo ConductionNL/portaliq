@@ -73,23 +73,48 @@ class PortalSchemaReader implements PortalSchemaReaderInterface {
 			return null;
 		}
 
+		$matches = $this->matchesFor(slug: $slug);
+		if (is_array($matches) === false || count($matches) === 0) {
+			return null;
+		}
+
+		return $this->serialised(schema: $matches[0]);
+	}//end readSchema()
+
+	/**
+	 * What the schema mapper finds for the slug, or null when it is
+	 * unavailable or the lookup failed.
+	 *
+	 * @param string $slug The schema slug.
+	 *
+	 * @return mixed
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#scoped-schema-introspection
+	 */
+	private function matchesFor(string $slug): mixed {
 		$mapper = $this->schemaMapper();
 		if ($mapper === null) {
 			return null;
 		}
 
 		try {
-			$matches = $mapper->findBySlug(slug: $slug, limit: 1, offset: 0, _rbac: false, _multitenancy: false);
+			return $mapper->findBySlug(slug: $slug, limit: 1, offset: 0, _rbac: false, _multitenancy: false);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: OR schema lookup failed', ['slug' => $slug, 'reason' => $e->getMessage()]);
 			return null;
 		}
+	}//end matchesFor()
 
-		if (is_array($matches) === false || count($matches) === 0) {
-			return null;
-		}
-
-		$schema = $matches[0];
+	/**
+	 * The schema as an array, or null when it does not serialise to one.
+	 *
+	 * @param mixed $schema The schema entity.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#scoped-schema-introspection
+	 */
+	private function serialised(mixed $schema): array|null {
 		if (is_object($schema) === true && method_exists($schema, 'jsonSerialize') === true) {
 			$data = $schema->jsonSerialize();
 			if (is_array($data) === true) {
@@ -98,7 +123,7 @@ class PortalSchemaReader implements PortalSchemaReaderInterface {
 		}
 
 		return null;
-	}//end readSchema()
+	}//end serialised()
 
 	/**
 	 * Resolve OpenRegister's SchemaMapper, or null when unavailable.

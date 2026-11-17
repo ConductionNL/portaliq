@@ -170,6 +170,24 @@ class GeoSettings {
 	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-maxmind-credentials-must-never-be-echoed-back
 	 */
 	public function update(array $data): void {
+		$this->storeChoices(data: $data);
+
+		$accountId = $data['maxmindAccountId'] ?? null;
+		if (is_string($accountId) === true) {
+			$this->config->setValueString(AppIdentity::APP_ID, self::KEY_ACCOUNT_ID, trim($accountId));
+		}
+
+		$this->storeLicenseKey(data: $data);
+	}
+
+	/**
+	 * Store the provider and the edition when they are known ones.
+	 *
+	 * @param array<string, mixed> $data The admin panel write.
+	 *
+	 * @return void
+	 */
+	private function storeChoices(array $data): void {
 		$provider = $data['provider'] ?? null;
 		if (is_string($provider) === true && in_array($provider, self::PROVIDERS, true) === true) {
 			$this->config->setValueString(AppIdentity::APP_ID, self::KEY_PROVIDER, $provider);
@@ -179,12 +197,17 @@ class GeoSettings {
 		if (is_string($edition) === true && in_array($edition, self::EDITIONS, true) === true) {
 			$this->config->setValueString(AppIdentity::APP_ID, self::KEY_EDITION, $edition);
 		}
+	}
 
-		$accountId = $data['maxmindAccountId'] ?? null;
-		if (is_string($accountId) === true) {
-			$this->config->setValueString(AppIdentity::APP_ID, self::KEY_ACCOUNT_ID, trim($accountId));
-		}
-
+	/**
+	 * Store the licence key, kept sensitive; an empty string removes it and
+	 * an absent key leaves the stored one alone.
+	 *
+	 * @param array<string, mixed> $data The admin panel write.
+	 *
+	 * @return void
+	 */
+	private function storeLicenseKey(array $data): void {
 		$key = $data['maxmindLicenseKey'] ?? null;
 		if (is_string($key) === false) {
 			return;

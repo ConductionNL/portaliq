@@ -465,6 +465,31 @@
 				:t="tr"
 				:locale="lang" />
 
+			<!-- The messages about the open case, with the question about it
+			     above them (capability-rows-said-and-planned T07). -->
+			<template v-else-if="item.kind === 'messages'">
+				<SlotHost
+					v-if="item.action && askBlock(item)"
+					name="action"
+					:block="withTitle(askBlock(item))"
+					:action="item.action"
+					:contribution="currentContribution"
+					:api="api"
+					:t="tr"
+					:locale="lang"
+					:portalHelp="(portal && portal.help) || null"
+					@created="(object, written) => afterAsk(item, written)" />
+				<MessagesBlock
+					:block="item.block"
+					:collection="item.collection"
+					:record="activeRecord"
+					:api="api"
+					:level="sectionLevel"
+					:t="tr"
+					:locale="lang"
+					:reloadKey="messagesAsked[item.index] || 0" />
+			</template>
+
 			<InboxBlock
 				v-else-if="item.kind === 'inbox'"
 				:block="item.block"
@@ -563,6 +588,7 @@ import {
 import { isEndpointRowAction, offersRowAction } from '../../../shared/rowAction.js'
 import { dialogFor } from '../../../shared/signing.js'
 import { rowIdOf } from '../../components/collections/cells.js'
+import { askBlockOf } from '../../components/mijn/caseMessages.js'
 import { eachRecordBlock } from '../../components/mijn/documents.js'
 import { blocks as mijnBlocks } from '../../components/mijn/index.js'
 import { mijnTranslator, siteHref } from '../../components/mijn/rows.js'
@@ -640,6 +666,7 @@ export default {
 		ProgressCards: defineAsyncComponent(mijnBlocks.progressCards),
 		DocumentsBlock: defineAsyncComponent(mijnBlocks.documents),
 		TimelineBlock: defineAsyncComponent(mijnBlocks.timeline),
+		MessagesBlock: defineAsyncComponent(mijnBlocks.messages),
 		// site-school-blocks, each on demand as well.
 		DateRows: defineAsyncComponent(mijnBlocks.dateRows),
 		GradeBars: defineAsyncComponent(mijnBlocks.bars),
@@ -704,6 +731,8 @@ export default {
 			// The limited tables a resident asked to see whole, by block index.
 			expanded: {},
 			loader: null,
+			// How often the resident asked about the open record, by messages block index.
+			messagesAsked: {},
 		}
 	},
 
@@ -1680,6 +1709,34 @@ export default {
 				await this.loader.transition(action, row, item.collection)
 			} finally {
 				this.busyRow = null
+			}
+		},
+
+		/**
+		 * The cta that asks a question about the open record, for a messages block.
+		 *
+		 * @param {object} item The messages item.
+		 * @return {object|null}
+		 * @spec openspec/changes/capability-rows-said-and-planned/tasks.md#t07
+		 */
+		askBlock(item) {
+			return askBlockOf(item.block, this.tr)
+		},
+
+		/**
+		 * After a question was asked: the usual after-write, then the
+		 * messages read again, so the question shows under them.
+		 *
+		 * @param {object} item The messages item.
+		 * @param {object} [written] The action that wrote.
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/capability-rows-said-and-planned/tasks.md#t07
+		 */
+		async afterAsk(item, written) {
+			await this.afterWrite(written || item.action)
+			this.messagesAsked = {
+				...this.messagesAsked,
+				[item.index]: (this.messagesAsked[item.index] || 0) + 1,
 			}
 		},
 

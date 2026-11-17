@@ -31,6 +31,7 @@ use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectLeavingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
+use OCA\Portaliq\Event\ArticleUsagesRequestedEvent;
 use OCA\Portaliq\Event\LandingPageRequestedEvent;
 use OCA\Portaliq\Event\PortalAccountClaimRequestedEvent;
 use OCA\Portaliq\Event\PortalAccountInvitationRequestedEvent;
@@ -117,6 +118,9 @@ final class ListenerRegistrar {
 	 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
 	 */
 	private function registerCmsListeners(IRegistrationContext $context): void {
+		// The pages that name an article answer where it is used (marketing-articles-from-pipelinq).
+		$context->registerEventListener(ArticleUsagesRequestedEvent::class, ArticlePageUsagesListener::class);
+
 		foreach ([ObjectCreatedEvent::class, ObjectUpdatedEvent::class, ObjectDeletedEvent::class] as $event) {
 			$context->registerEventListener($event, CmsCacheInvalidationListener::class);
 		}
@@ -130,6 +134,12 @@ final class ListenerRegistrar {
 		// favicon that is a PNG, SVG or ICO (portal-identity-from-the-admin).
 		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $event) {
 			$context->registerEventListener($event, PortalImagesGuardListener::class);
+		}
+
+		// A portal's organisation type: a concept of the TOOI scheme, its label
+		// stored beside it (portal-identity-from-the-admin REQ-PIA-003).
+		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $event) {
+			$context->registerEventListener($event, PortalOrganisationTypeListener::class);
 		}
 
 		// A glossary term relates only to terms of its own portal (portal-cms-content-model).
@@ -151,6 +161,21 @@ final class ListenerRegistrar {
 		// (publication-error-reports-and-withheld-notices REQ-PER-001).
 		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $event) {
 			$context->registerEventListener($event, PortalReportOwnerGuardListener::class);
+		}
+
+		// A portal's administrators write only that portal's content, and its
+		// `adminGroups` enter the content rules (operate-portals-per-organisation REQ-OPO-005).
+		$portalAdminEvents = [
+			ObjectCreatingEvent::class,
+			ObjectUpdatingEvent::class,
+			ObjectDeletingEvent::class,
+			ObjectLeavingEvent::class,
+			ObjectCreatedEvent::class,
+			ObjectUpdatedEvent::class,
+			ObjectDeletedEvent::class,
+		];
+		foreach ($portalAdminEvents as $event) {
+			$context->registerEventListener($event, PortalAdminListener::class);
 		}
 	}//end registerCmsListeners()
 
