@@ -850,9 +850,10 @@ test('the Zuiddrecht site lays out its own area as the MijnMenu and MijnZaken bo
 	// 0.119.0: a submission's `awaiting-cosign` and `not-cosigned` states (resident-identity-in-forms T04), moved past development's 0.118.0.
 	// 0.120.0: `locale` on menu and glossaryTerm (content in the visitor's language, #703).
 	// 0.121.0: a portal's `traffic.allowSlugFallback` moved past development's 0.120.0; portal 0.35.0.
-	// 0.122.0: the publication features (publication-error-reports-and-withheld-notices),
-	// written as 0.111.0 on its branch, moved past development's 0.121.0; portal 0.36.0.
-	assert.equal(register.info.version, '0.122.0')
+	// 0.122.0: read-only x-openregister-mcp dialects on portalMessage, portalSubmission and portalNotification (portaliq-mcp-adoption, hermiq-ai-tooling), moved past development's 0.121.0.
+	// 0.123.0: the publication features (publication-error-reports-and-withheld-notices),
+	// written as 0.111.0 on its branch, moved past development's 0.122.0; portal 0.36.0.
+	assert.equal(register.info.version, '0.123.0')
 })
 
 // zuiddrecht-site-details: the portal names the organisation of the example

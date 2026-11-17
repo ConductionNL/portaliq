@@ -103,6 +103,8 @@
         <!-- media-usage-count: hourly, how many records of its portal use each media item. -->
         <job>OCA\Portaliq\BackgroundJob\MediaUsageJob</job>
         <job>OCA\Portaliq\BackgroundJob\MailLogRetentionJob</job>
+        <!-- search-sort-by-relevance: daily, the did-you-mean word list of every published portal. -->
+        <job>OCA\Portaliq\BackgroundJob\SuggestionWordListJob</job>
         <!-- publication-error-reports-and-withheld-notices: daily, erases the
              contact address of an error report closed 30 days ago. -->
         <job>OCA\Portaliq\BackgroundJob\EraseReportContactJob</job>

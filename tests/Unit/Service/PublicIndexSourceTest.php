@@ -20,10 +20,10 @@ use OCA\Portaliq\Contribution\PublicIndexItems;
 use OCA\Portaliq\Contribution\PublicIndexKinds;
 use OCA\Portaliq\Controller\ContentCatalogueController;
 use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PublicCatalogue;
 use OCA\Portaliq\Service\PublicCatalogueQuery;
 use OCA\Portaliq\Service\PublicNewsReader;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\App\IAppManager;
 use OCP\ICache;
 use OCP\ICacheFactory;
@@ -145,7 +145,7 @@ class PublicIndexSourceTest extends TestCase {
 		$request->method('getHeader')->willReturn($subject === null ? '' : 'Bearer x');
 		$resolver = $this->createMock(PortalResolver::class);
 		$resolver->method('resolve')->willReturn(['slug' => 'vaartveld', 'authentication' => ['modes' => ['public']]]);
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
 
 		return new ContentCatalogueController('portaliq', $request, $resolver, $session, $catalogue, new PublicCatalogueQuery());

@@ -20,7 +20,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\TrafficController;
 use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCA\Portaliq\Service\Traffic\RawRequestBody;
 use OCA\Portaliq\Service\Traffic\TrafficRecordingService;
 use OCA\Portaliq\Service\Traffic\TrafficServerToken;
@@ -66,9 +66,9 @@ class TrafficControllerTest extends TestCase {
 	 * The session service double a test installs, or null for one that
 	 * resolves nothing.
 	 *
-	 * @var PortalSessionService|null
+	 * @var BearerSessionResolver|null
 	 */
-	private ?PortalSessionService $session = null;
+	private ?BearerSessionResolver $session = null;
 
 	/**
 	 * The recording chunks the recording double received, as [slug, body, context]
@@ -174,7 +174,7 @@ class TrafficControllerTest extends TestCase {
 			$ingest,
 			$raw,
 			$appManager,
-			$this->session ?? $this->createMock(PortalSessionService::class),
+			$this->session ?? $this->createMock(BearerSessionResolver::class),
 			$tokens,
 			$recordings,
 			new TrafficServerBatch()
@@ -525,7 +525,7 @@ class TrafficControllerTest extends TestCase {
 	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-account-linking-must-attach-only-a-pseudonymous-reference
 	 */
 	public function testABearerBecomesTheSubjectReferenceInTheContext(): void {
-		$this->session = $this->createMock(PortalSessionService::class);
+		$this->session = $this->createMock(BearerSessionResolver::class);
 		$this->session->method('resolveFromBearer')->willReturnCallback(
 			static fn (?string $header): ?array => ($header === 'Bearer good') ? ['subjectRef' => 'subj-42', 'organisation' => 'dev-org'] : null
 		);

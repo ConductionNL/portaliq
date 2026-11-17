@@ -330,7 +330,7 @@ class PortalTimelineController extends Controller implements PortalProtected {
 	 */
 	private function trustedCollection(array $subject, string $register, string $schema): array|null {
 		$match = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema);
-		if ($match === null || SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
+		if ($match === null || (new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
 			return null;
 		}
 

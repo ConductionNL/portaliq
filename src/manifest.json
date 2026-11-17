@@ -330,6 +330,17 @@
       }
     },
     {
+      "id": "PlanTemplatesMenu",
+      "label": "Plan templates",
+      "icon": "ClipboardListOutline",
+      "route": "PlanTemplates",
+      "section": "settings",
+      "order": 94,
+      "visibleIf": {
+        "access.admin": true
+      }
+    },
+    {
       "id": "FindersMenu",
       "label": "Product finders",
       "icon": "FileFindOutline",
@@ -4008,6 +4019,11 @@
                   "widgetId": "portal-settings-section-help"
                 },
                 {
+                  "key": "search-ranking",
+                  "title": "How search ranks",
+                  "widgetId": "portal-settings-search-ranking"
+                },
+                {
                   "key": "editors",
                   "title": "Administrators",
                   "widgetId": "portal-editors"
@@ -4325,6 +4341,12 @@
             "id": "portal-settings-accessibility",
             "type": "PortalAccessibility",
             "title": "Accessibility",
+            "content": {}
+          },
+          {
+            "id": "portal-settings-search-ranking",
+            "type": "PortalSearchRanking",
+            "title": "How search ranks",
             "content": {}
           },
           {
@@ -7326,6 +7348,56 @@
               }
             }
           }
+        ],
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true
+        }
+      }
+    },
+    {
+      "id": "PlanTemplates",
+      "route": "/plan-templates",
+      "type": "index",
+      "title": "Plan templates",
+      "config": {
+        "register": "portaliq",
+        "schema": "portalPlanTemplate",
+        "_note": "Where a resident's shared plan can begin (shared-plans-with-a-caseworker T07, board PtPlansjablonen). An editor lists, writes and publishes a portal's templates through the object form; only a published template is offered to residents.",
+        "columns": [
+          {
+            "key": "title",
+            "label": "Template title"
+          },
+          {
+            "key": "summary",
+            "label": "Template summary"
+          },
+          {
+            "key": "portal",
+            "label": "Portal"
+          },
+          {
+            "key": "durationDays",
+            "label": "Duration in days"
+          },
+          {
+            "key": "published",
+            "label": "Published",
+            "widget": "badge",
+            "widgetProps": {
+              "colorMap": {
+                "true": "success",
+                "false": "warning"
+              }
+            }
+          }
+        ],
+        "showTitle": true,
+        "showTitleIcon": false,
+        "actions": [
+          "builtin:view",
+          "builtin:edit"
         ],
         "sidebar": {
           "enabled": true,

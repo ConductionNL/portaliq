@@ -23,7 +23,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\PlanOutcomeAnswer;
 use OCA\Portaliq\Controller\SignedInSubject;
-use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\BearerSessionResolverInterface;
 use OCP\IRequest;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -42,7 +42,7 @@ class SignedInSubjectTest extends TestCase {
 	private function resolve(?array $answer): ?array {
 		$request = $this->createMock(originalClassName: IRequest::class);
 		$request->method('getHeader')->with('Authorization')->willReturn('Bearer abc');
-		$session = $this->createMock(originalClassName: PortalSessionServiceInterface::class);
+		$session = $this->createMock(originalClassName: BearerSessionResolverInterface::class);
 		$session->expects($this->once())->method('resolveFromBearer')->with('Bearer abc')->willReturn($answer);
 		return (new SignedInSubject())->resolve(session: $session, request: $request);
 	}//end resolve()
