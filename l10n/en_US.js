@@ -553,6 +553,8 @@ OC.L10N.register(
         "The columns could not be saved. Try again.": "The columns could not be saved. Try again.",
         "Event to sign up for": "Event to sign up for",
         "No event": "No event",
+        "You do not look after this portal.": "You do not look after this portal.",
+        "Only an instance administrator can change who looks after a portal.": "Only an instance administrator can change who looks after a portal.",
         "Availability": "Availability",
         "Beschikbaarheid": "Beschikbaarheid",
         "Status": "Status",
@@ -579,7 +581,17 @@ OC.L10N.register(
         "Maintenance text": "Maintenance text",
         "Shown to the resident during maintenance.": "Shown to the resident during maintenance.",
         "Submissions in this period": "Submissions in this period",
-        "No limit set": "No limit set"
+        "No limit set": "No limit set",
+        "Would you co-sign a request?": "Would you co-sign a request?",
+        "You are asked to co-sign the request \"%1$s\". Your code is %2$s. Do this before %3$s.": "You are asked to co-sign the request \"%1$s\". Your code is %2$s. Do this before %3$s.",
+        "Co-sign a request": "Co-sign a request",
+        "Go to the co-sign page of the portal, enter the code and sign in with DigiD. You can read the request before you decide.": "Go to the co-sign page of the portal, enter the code and sign in with DigiD. You can read the request before you decide.",
+        "Your request %1$s was not co-signed before the deadline, so it was not sent.": "Your request %1$s was not co-signed before the deadline, so it was not sent.",
+        "The co-signer refused your request %1$s, so it was not sent.": "The co-signer refused your request %1$s, so it was not sent.",
+        "Your request was not co-signed": "Your request was not co-signed",
+        "Not co-signed": "Not co-signed",
+        "You can send the request again with another co-signer.": "You can send the request again with another co-signer.",
+        "Fill in the e-mail address of the person who co-signs.": "Fill in the e-mail address of the person who co-signs."
     },
     "nplurals=2; plural=(n != 1);"
 )

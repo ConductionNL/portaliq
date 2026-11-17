@@ -92,16 +92,47 @@ class PortalMandateService implements PortalMandateServiceInterface {
 		$candidates = $this->candidates(subjectRef: $subjectRef, organisation: $organisation, holders: $holders);
 		$moment = ($now ?? new DateTimeImmutable());
 		$live   = [];
-		$seen   = [];
 		foreach ($candidates as $row) {
-			if ($organisation !== '' && ($row['organisation'] ?? '') !== $organisation) {
-				continue;
+			if ($this->isLive(row: $row, organisation: $organisation, moment: $moment) === true) {
+				$live[] = $row;
 			}
+		}
 
-			if (($row['status'] ?? 'active') !== 'active' || $this->hasExpired(row: $row, now: $moment) === true) {
-				continue;
-			}
+		return $this->distinctMandates(rows: $live);
+	}//end mandatesFor()
 
+	/**
+	 * Whether a mandate row is in the tenant, active and not expired.
+	 *
+	 * @param array<string, mixed> $row          The mandate row.
+	 * @param string               $organisation The tenant, or '' for every tenant.
+	 * @param DateTimeImmutable    $moment       The moment to judge expiry against.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
+	 */
+	private function isLive(array $row, string $organisation, DateTimeImmutable $moment): bool {
+		if ($organisation !== '' && ($row['organisation'] ?? '') !== $organisation) {
+			return false;
+		}
+
+		return ($row['status'] ?? 'active') === 'active' && $this->hasExpired(row: $row, now: $moment) === false;
+	}//end isLive()
+
+	/**
+	 * The mandate rows with each mandate once, first one kept.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The live mandate rows.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
+	 */
+	private function distinctMandates(array $rows): array {
+		$live = [];
+		$seen = [];
+		foreach ($rows as $row) {
 			$id = $this->mandateId(mandate: $row);
 			if ($id !== '' && isset($seen[$id]) === true) {
 				continue;
@@ -112,7 +143,7 @@ class PortalMandateService implements PortalMandateServiceInterface {
 		}
 
 		return $live;
-	}//end mandatesFor()
+	}//end distinctMandates()
 
 	/**
 	 * The rows that may be this identity's mandates: its own, and the ones a

@@ -28,6 +28,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Intake;
 
 use DateTimeImmutable;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\Portaliq\Kernel\Contracts\FormBindingCounterInterface;
 use Psr\Container\ContainerInterface;
 use Throwable;
 
@@ -36,7 +38,7 @@ use Throwable;
  *
  * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#scenario-the-admin-sees-the-counter
  */
-class FormBindingCounter {
+class FormBindingCounter implements FormBindingCounterInterface {
 
 	/**
 	 * OpenRegister's object service.
@@ -103,11 +105,23 @@ class FormBindingCounter {
 			return null;
 		}
 
+		$entity = $this->found(id: $id);
+
+		return $this->rowOf(entity: $entity);
+	}//end binding()
+
+	/**
+	 * The binding entity, or null when it cannot be read.
+	 *
+	 * @param string $id The binding's id.
+	 *
+	 * @return mixed
+	 */
+	private function found(string $id): mixed {
 		try {
 			$entity = $this->container->get(self::OBJECT_SERVICE)->find(
 				id: $id,
-				register: self::REGISTER,
-				schema: self::SCHEMA,
+				options: new ObjectFindOptions(register: self::REGISTER, schema: self::SCHEMA),
 				_rbac: false,
 				_multitenancy: false
 			);
@@ -115,6 +129,17 @@ class FormBindingCounter {
 			return null;
 		}
 
+		return $entity;
+	}//end found()
+
+	/**
+	 * The entity as a row, or null when it is empty.
+	 *
+	 * @param mixed $entity The binding entity.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function rowOf(mixed $entity): array|null {
 		// An entity serialises to its row; a row stays a row.
 		$row = json_decode((string)json_encode($entity), true);
 		if (is_array($row) === true && $row !== []) {
@@ -122,5 +147,5 @@ class FormBindingCounter {
 		}
 
 		return null;
-	}//end binding()
+	}//end rowOf()
 }//end class

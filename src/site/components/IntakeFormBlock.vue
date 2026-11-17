@@ -34,6 +34,18 @@
 			<p class="utrecht-paragraph">
 				{{ feeAmountText ? text.signInFirst : signInLabel }}
 			</p>
+			<!-- What a Yivi sign-in shares, listed before the Yivi app opens (REQ-RIF-004). -->
+			<div v-if="yiviAttributes.length" data-testid="intake-form-yivi-attributes">
+				<p class="utrecht-paragraph">
+					{{ identity.yiviAsks }}
+				</p>
+				<ul class="utrecht-unordered-list">
+					<li v-for="attribute in yiviAttributes" :key="attribute" class="utrecht-unordered-list__item">
+						{{ yiviAttributeName(attribute) }}
+					</li>
+				</ul>
+			</div>
+			<DeskApplicant v-if="render.staffMayFill === true" :signInHref="deskSignInHref" />
 		</div>
 
 		<div v-else-if="state === 'external'" data-testid="intake-form-external">
@@ -73,6 +85,12 @@
 			<p class="utrecht-paragraph" role="status">
 				{{ referenceLabel }}
 				<strong data-testid="intake-form-reference">{{ reference }}</strong>
+			</p>
+			<p
+				v-if="waiting"
+				class="utrecht-paragraph"
+				data-testid="intake-form-cosign-waiting">
+				{{ waiting }}
 			</p>
 			<p
 				v-for="line in confirmationMoments"
@@ -147,6 +165,13 @@
 			class="pq-intake-form__form"
 			novalidate
 			@submit.prevent="onSubmit">
+			<!-- An employee fills it in for a resident (REQ-RIF-005): signed in, whom for; else the way in. -->
+			<DeskApplicant
+				v-if="render.staff || render.settings?.staffMayFill === true"
+				:staff="render.staff || null"
+				:signInHref="deskSignInHref"
+				:lookUp="lookUpApplicant"
+				@applicant="onApplicant" />
 			<!-- The form's title with "Hulp nodig?" to its right (board FormulierHulp). -->
 			<div
 				v-if="(render.formName && !hideFormName) || offersHelp"
@@ -394,6 +419,7 @@ import { evaluateVisibleWhenLocal } from '@conduction/nextcloud-vue/src/utils/vi
 import { defineAsyncComponent } from 'vue'
 import AddressNL from './forms/AddressNL.vue'
 import DateInputGroup from './forms/DateInputGroup.vue'
+import DeskApplicant from './forms/DeskApplicant.vue'
 import EmailCodeField from './forms/EmailCodeField.vue'
 import ErrorSummary from './forms/ErrorSummary.vue'
 import FamilyMembers from './forms/FamilyMembers.vue'
@@ -410,9 +436,12 @@ import { resolveApiBase } from '../lib/contentApi.js'
 import { hasHelp, mergeHelp } from '../lib/help.js'
 import {
 	bindingRouteFrom,
+	challengeProof,
 	decideStep as decideStepOnServer,
+	deskSignInUrl,
 	initialValues,
 	loadForm,
+	lookUpApplicant as lookUpApplicantOnServer,
 	lookUpStatus,
 	payIntake,
 	submitIntake,
@@ -434,7 +463,7 @@ import {
 	summaryHeadingOf,
 } from './forms/fields.js'
 import { groupCountErrors, itemLines } from './forms/group.js'
-import { identityWords } from './forms/identityWords.js'
+import { identityWords, yiviAttributeName } from './forms/identityWords.js'
 import { feeAmount, paymentView, returnedReference } from './forms/payment.js'
 import stepFlow from './forms/stepFlow.js'
 import { stepHeading } from './forms/steps.js'
@@ -647,6 +676,7 @@ export default {
 		ReviewList,
 		SignatureField,
 		EmailCodeField,
+		DeskApplicant,
 		FormHelp: defineAsyncComponent(() => import('./FormHelp.vue')),
 	},
 
@@ -782,9 +812,13 @@ export default {
 			confirmationText: '',
 			accepted: [],
 			verifiedEmails: {},
+			/** The applicant a desk employee fills the form in for, `{kind, value}`; null otherwise. */
+			onBehalf: null,
 			statementErrors: {},
 			confirmation: null,
 			mailedTo: '',
+			/** "Wacht op mede-ondertekening door …" for a request that waits for its co-signer, else ''. */
+			waiting: '',
 			payment: null,
 			paying: false,
 			payFailed: false,
@@ -792,6 +826,39 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * @return {Record<string, string>} The signature, e-mail, desk and Yivi words in the page language.
+		 * @spec openspec/changes/resident-identity-in-forms/tasks.md#T06
+		 */
+		identity() {
+			return identityWords(typeof document !== 'undefined' ? document.documentElement?.lang : '')
+		},
+
+		/**
+		 * @return {string[]} The Yivi attributes the form asks for (REQ-RIF-004).
+		 * @spec openspec/changes/resident-identity-in-forms/tasks.md#T05
+		 */
+		yiviAttributes() {
+			const asked = this.render?.yiviAttributes
+			return Array.isArray(asked) ? asked.filter((id) => typeof id === 'string' && id !== '') : []
+		},
+
+		/**
+		 * @return {string} Where "Inloggen met werkaccount" starts, back to this page.
+		 * @spec openspec/changes/resident-identity-in-forms/tasks.md#T06
+		 */
+		deskSignInHref() {
+			const here =
+				typeof window !== 'undefined' && window.location
+					? window.location.pathname + window.location.search
+					: ''
+			return deskSignInUrl(authBaseFrom(resolveApiBase()), {
+				portal: this.portal,
+				route: this.bindingRoute,
+				returnTo: here,
+			})
+		},
+
 		/**
 		 * @return {boolean} Whether the portal or the form has help details to offer.
 		 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
@@ -1110,6 +1177,41 @@ export default {
 	},
 
 	methods: {
+		yiviAttributeName,
+
+		/**
+		 * Look up the applicant the employee named.
+		 *
+		 * @param {string} kind `bsn`, `kvk` or `named`.
+		 * @param {string} value The number or the name.
+		 * @return {Promise<object>} The lookup's outcome.
+		 * @spec openspec/changes/resident-identity-in-forms/tasks.md#T06
+		 */
+		lookUpApplicant(kind, value) {
+			return lookUpApplicantOnServer(intakeConnection(this.portal), {
+				route: this.bindingRoute,
+				kind,
+				value,
+			})
+		},
+
+		/**
+		 * The employee chose an applicant: remember them for the submit and
+		 * fill the fields the registers answered, never over what was typed.
+		 *
+		 * @param {{applicant: object|null, prefill: object}} chosen The applicant and the prefill.
+		 * @return {void}
+		 * @spec openspec/changes/resident-identity-in-forms/tasks.md#T06
+		 */
+		onApplicant({ applicant, prefill }) {
+			this.onBehalf = applicant
+			for (const [name, value] of Object.entries(prefill || {})) {
+				if (Object.hasOwn(this.values, name) && (this.values[name] === '' || this.values[name] === undefined)) {
+					this.values[name] = String(value)
+				}
+			}
+		},
+
 		/**
 		 * Load the form the binding route resolves to right now.
 		 *
@@ -1161,6 +1263,10 @@ export default {
 				return
 			}
 			this.errors = {}
+			if (this.render.staff && !this.onBehalf) {
+				this.formError = this.identity.deskChooseFirst
+				return
+			}
 			const missing = missingStatements(this.render.statements, this.accepted)
 			this.statementErrors = Object.fromEntries(
 				missing.map((key) => [key, this.text.statementRequired]),
@@ -1175,6 +1281,8 @@ export default {
 					route: this.bindingRoute,
 					answers: this.values,
 					statements: this.accepted,
+					onBehalf: this.onBehalf,
+					proof: await challengeProof(this.render.challenge),
 					verifiedEmails: this.verifiedEmails,
 				})
 				if (outcome.unavailable) {
@@ -1201,6 +1309,7 @@ export default {
 				this.confirmationText = outcome.confirmationText
 				this.confirmation = outcome.confirmation
 				this.mailedTo = outcome.mailedTo
+				this.waiting = outcome.waiting || ''
 				this.moments = outcome.moments || {}
 				this.state = 'done'
 				this.$nextTick(() => {

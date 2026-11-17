@@ -30,6 +30,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Repair;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\Kernel\Contracts\PortalRegisterContextInterface;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCP\Migration\IOutput;
@@ -117,6 +119,21 @@ class MoveActionSummarySentence implements IRepairStep {
 			return;
 		}
 
+		$moved = $this->moveEveryPage(objectService: $objectService);
+
+		$output->info('MoveActionSummarySentence: moved the answer sentence on ' . $moved . ' portal pages.');
+	}//end run()
+
+	/**
+	 * Move the summaries page by page, up to the page cap.
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 *
+	 * @return int How many records were moved.
+	 *
+	 * @spec openspec/changes/action-summary-sentence/specs/portal-contribution-contract/spec.md#requirement-an-action-may-sum-up-the-answers-in-one-sentence
+	 */
+	private function moveEveryPage(object $objectService): int {
 		$moved  = 0;
 		$offset = 0;
 		$pages  = 0;
@@ -125,15 +142,32 @@ class MoveActionSummarySentence implements IRepairStep {
 			$page    = $this->page(objectService: $objectService, offset: $offset);
 			$read    = $page['read'];
 			$offset += $read;
-			foreach ($page['rows'] as $row) {
-				if ($this->move(objectService: $objectService, row: $row) === true) {
-					$moved++;
-				}
-			}
+			$moved  += $this->moveRows(objectService: $objectService, rows: $page['rows']);
 		} while ($read === self::PAGE && $pages < self::MAX_PAGES);
 
-		$output->info('MoveActionSummarySentence: moved the answer sentence on ' . $moved . ' portal pages.');
-	}//end run()
+		return $moved;
+	}//end moveEveryPage()
+
+	/**
+	 * Move the summaries of one page of records.
+	 *
+	 * @param object                           $objectService OpenRegister's object service.
+	 * @param array<int, array<string, mixed>> $rows          The page's records.
+	 *
+	 * @return int How many records were moved.
+	 *
+	 * @spec openspec/changes/action-summary-sentence/specs/portal-contribution-contract/spec.md#requirement-an-action-may-sum-up-the-answers-in-one-sentence
+	 */
+	private function moveRows(object $objectService, array $rows): int {
+		$moved = 0;
+		foreach ($rows as $row) {
+			if ($this->move(objectService: $objectService, row: $row) === true) {
+				$moved++;
+			}
+		}
+
+		return $moved;
+	}//end moveRows()
 
 	/**
 	 * The record's actions with every old object summary moved, or null when
@@ -150,27 +184,56 @@ class MoveActionSummarySentence implements IRepairStep {
 			return null;
 		}
 
-		$changed = false;
-		$actions = [];
-		foreach ($row['actions'] as $action) {
-			if (is_array($action) === true && is_array(($action['summary'] ?? null)) === true) {
-				if (array_key_exists('answerSummary', $action) === false) {
-					$action['answerSummary'] = $action['summary'];
-				}
-
-				unset($action['summary']);
-				$changed = true;
-			}
-
-			$actions[] = $action;
-		}
-
+		[$actions, $changed] = $this->actionsWithSummariesMoved(actions: $row['actions']);
 		if ($changed === false) {
 			return null;
 		}
 
 		return $actions;
 	}//end movedActions()
+
+	/**
+	 * The actions with every old object summary moved, and whether any was.
+	 *
+	 * @param array<int, mixed> $actions The stored actions.
+	 *
+	 * @return array{0: array<int, mixed>, 1: bool}
+	 *
+	 * @spec openspec/changes/action-summary-sentence/specs/portal-contribution-contract/spec.md#requirement-an-action-may-sum-up-the-answers-in-one-sentence
+	 */
+	private function actionsWithSummariesMoved(array $actions): array {
+		$changed = false;
+		$moved   = [];
+		foreach ($actions as $action) {
+			if (is_array($action) === true && is_array(($action['summary'] ?? null)) === true) {
+				$action  = $this->summaryMoved(action: $action);
+				$changed = true;
+			}
+
+			$moved[] = $action;
+		}
+
+		return [$moved, $changed];
+	}//end actionsWithSummariesMoved()
+
+	/**
+	 * One action with its old object summary moved to `answerSummary`,
+	 * unless that is already set.
+	 *
+	 * @param array<string, mixed> $action The action.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/action-summary-sentence/specs/portal-contribution-contract/spec.md#requirement-an-action-may-sum-up-the-answers-in-one-sentence
+	 */
+	private function summaryMoved(array $action): array {
+		if (array_key_exists('answerSummary', $action) === false) {
+			$action['answerSummary'] = $action['summary'];
+		}
+
+		unset($action['summary']);
+		return $action;
+	}//end summaryMoved()
 
 	/**
 	 * Save one record with its sentences moved.
@@ -195,7 +258,12 @@ class MoveActionSummarySentence implements IRepairStep {
 		try {
 			unset($row['@self']);
 			$row['actions'] = $actions;
-			$objectService->saveObject(object: $row, register: self::REGISTER, schema: self::SCHEMA, uuid: $uuid, _rbac: false, _multitenancy: false);
+			$objectService->saveObject(
+				object: $row,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: self::REGISTER, schema: self::SCHEMA), uuid: $uuid),
+				_rbac: false,
+				_multitenancy: false
+			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: a portal page could not have its action sentence moved', ['uuid' => $uuid, 'reason' => $e->getMessage()]);
 

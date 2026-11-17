@@ -49,11 +49,40 @@ class PortalThemeParents {
 	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-a-theme-that-extends-another-must-load-its-parent-first-req-ptb-003
 	 */
 	public function stylesheetsFor(string $theme): array {
+		$byId = $this->catalogueById();
+
+		$parents = $this->parentChain(theme: $theme, byId: $byId);
+
+		return $this->stylesheetsOf(parents: $parents);
+	}//end stylesheetsFor()
+
+	/**
+	 * The theme catalogue, by id.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-a-theme-that-extends-another-must-load-its-parent-first-req-ptb-003
+	 */
+	private function catalogueById(): array {
 		$byId = [];
 		foreach ($this->resolver->catalogue() as $entry) {
 			$byId[(string)$entry['id']] = $entry;
 		}
 
+		return $byId;
+	}//end catalogueById()
+
+	/**
+	 * The sets a theme extends, parent first, at most four hops and each once.
+	 *
+	 * @param string                              $theme The portal's theme reference.
+	 * @param array<string, array<string, mixed>> $byId  The catalogue, by id.
+	 *
+	 * @return array<int, string>
+	 *
+	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-a-theme-that-extends-another-must-load-its-parent-first-req-ptb-003
+	 */
+	private function parentChain(string $theme, array $byId): array {
 		$seen = [$theme => true];
 		$parents = [];
 		$current = $theme;
@@ -68,6 +97,19 @@ class PortalThemeParents {
 			$current = $parent;
 		}
 
+		return $parents;
+	}//end parentChain()
+
+	/**
+	 * The stylesheets of the sets that resolve, in order.
+	 *
+	 * @param array<int, string> $parents The sets, parent first.
+	 *
+	 * @return array<int, string>
+	 *
+	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-a-theme-that-extends-another-must-load-its-parent-first-req-ptb-003
+	 */
+	private function stylesheetsOf(array $parents): array {
 		$sheets = [];
 		foreach ($parents as $parent) {
 			$sheet = $this->resolver->stylesheetFor(theme: $parent);
@@ -77,5 +119,5 @@ class PortalThemeParents {
 		}
 
 		return $sheets;
-	}//end stylesheetsFor()
+	}//end stylesheetsOf()
 }//end class

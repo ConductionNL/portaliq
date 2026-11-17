@@ -14,7 +14,7 @@ that is not in `check:specs` does not run in CI.
   register version. `npm run check:register` exits 0 (REQ-PIA-001).
   - unit `tests/Unit/Settings/PortaliqRegisterConfigTest.php`
     `testThePortalDeclaresFaviconAndHeroImage`.
-- [ ] 1.2 The portal settings form gets three media pickers using the media library's existing
+- [x] 1.2 The portal settings form gets three media pickers using the media library's existing
   picker and upload. The save path refuses a favicon type other than PNG, SVG or ICO and a media
   object of another portal (REQ-PIA-001).
   - **fails today**: `tests/Unit/Service/PortalSettingsServiceTest.php` (or the service the form
@@ -25,7 +25,12 @@ that is not in `check:specs` does not run in CI.
     OpenRegister, so the rules run on OpenRegister's creating/updating events
     (`PortalImagesGuardListener` over `lib/Service/Cms/PortalImageChoice.php`): a `media:<id>` must be a
     published item of this portal's own library, and a favicon's newest file a PNG, SVG or ICO.
-    Tests in `tests/Unit/Service/Cms/PortalImageChoiceTest.php`. The three pickers in the form are left.
+    Tests in `tests/Unit/Service/Cms/PortalImageChoiceTest.php`.
+  - Pickers built: the portal details form (`portal-settings-details` in `src/manifest.json`) keeps its
+    logo picker and gains `favicon` and `heroImage` reference pickers over this portal's published
+    images, stored as `media:<id>`; node test `tests/portal-details.spec.mjs`. The settings-form
+    reference field has no upload of its own: an image is uploaded on the portal's Media page and then
+    picked here.
 
 ## 2. The head and the hero
 
@@ -46,13 +51,33 @@ that is not in `check:specs` does not run in CI.
 
 ## 3. The organisation type
 
-- [ ] 3.1 Declare `organisationType` and `organisationTypeLabel` on `#portal`. The settings picker reads
+- [x] 3.1 Declare `organisationType` and `organisationTypeLabel` on `#portal`. The settings picker reads
   the TOOI organisation type scheme from OpenRegister's concept register through OpenRegister's
   public PHP API; read the real class on openregister `development` first and name it in the PR
   body. When the scheme is missing it shows a sentence and offers nothing (REQ-PIA-003).
   - **fails today**: `tests/Unit/Service/OrganisationTypeOptionsTest.php`
     `testTheOptionsComeFromTheConceptRegister`, `testAMissingSchemeOffersNothing`. Build the
     OpenRegister double from the real class signature, not from a local stub.
+  - Built (server half): `#portal.organisationType` (uri) and `organisationTypeLabel` (register 0.112.0,
+    portal 0.30.0); `lib/Service/OrganisationTypeOptions.php` reads the scheme through OpenRegister's
+    `OCA\OpenRegister\Service\Vocabulary\ConceptRepository` (`scheme()`, `conceptsOf()`; the bound
+    `ConceptRepositoryInterface` declares only `schemeByReference()`), looked up lazily. The scheme uri is
+    `OrganisationTypeOptions::DEFAULT_SCHEME`, overridable by the app-config key `organisationTypeScheme`
+    because no TOOI organisation type scheme is in OpenRegister's or OpenCatalogi's bundled lists yet.
+    `PortalOrganisationTypeListener` settles every portal save: a concept of the scheme stores its label,
+    anything else is refused, and without the list only the stored type is kept.
+  - Left: the picker in the portal details form. The settings-form widget reads choices only from an
+    OpenRegister register and schema, and a concept's `inScheme` holds the scheme's uuid, which differs per
+    instance, so it cannot list one scheme's concepts; it needs a choices source in the widget library.
+  - 2026-11-15 built (the picker): every portal save also stores the installed scheme's uuid as
+    `#portal.organisationTypeSchemeId` (register 0.116.0, portal 0.33.0;
+    `OrganisationTypeOptions::settle()`, removed when the scheme is missing or unreadable), and the
+    details form's `organisationType` field is a reference over OpenRegister's `vocabulary` register,
+    schema `concept`, filtered `inScheme: @object.organisationTypeSchemeId` (the widget's own record
+    token), labelled `prefLabel.nl`, storing the concept's `uri`. Without the scheme the filter stays
+    unresolved, the picker offers nothing and its hint says why. Tests: `OrganisationTypeOptionsTest`
+    (`testASaveStoresTheInstalledSchemesUuid`, `testAnUnreadableSchemeStoresNoUuid`) and
+    `tests/portal-details.spec.mjs`. A portal saved before this change gets the uuid on its next save.
 - [ ] 3.2 Replace "Van de gemeente" in `src/site/components/mijn/strings.js` and every other place
   the site names the organisation's kind with the label and its article; add the footer line and
   `DCTERMS.creator` (REQ-PIA-003).
@@ -61,6 +86,17 @@ that is not in `check:specs` does not run in CI.
   - `grep -rn -i "de gemeente" src/site` answers nothing that is not inside a test or a
     portal-authored string; put the grep output in the PR body.
   - Strings in nl, en and en_US; `npm run check:l10n-js` exits 0.
+  - Built: `src/site/components/mijn/organisationKind.js` names the kind with its article ("het
+    waterschap", "de gemeente", "de organisatie" without a type); the documents' "Van ..." line
+    (`fileLine`) and a mandate's "gegeven door ..." line read the portal's `organisationTypeLabel`, which
+    `ContentController::site()` sends and `App.vue` provides; the report pages say "de organisatie".
+    Node tests in `tests/mijn-components.spec.mjs`.
+  - Built: `<meta name="DCTERMS.creator">` in `templates/site.php` from `SiteShell`'s `creator`
+    (`lib/Service/Cms/SiteCreator.php`: the organisation's name, else the portal's title, with the type
+    label), tests in `tests/Unit/Service/Cms/SiteCreatorTest.php`, `SiteShellTest` and
+    `tests/site-head.spec.mjs`.
+  - Left: the footer line. The proposal does not say what the footer line reads or where it sits in the
+    footer's named keys, so it waits for that wording.
 
 ## 4. Live
 

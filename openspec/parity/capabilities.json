@@ -8775,8 +8775,8 @@
 				"open-forms": "src/openforms/analytics_tools/models.py:144-308 one installation-wide configuration switches each tool on or off (enable_google_analytics, enable_matomo_site_analytics, enable_govmetric_analytics, ...); not per form [reached on Admin, Configuratie, analytics tools] [read 2026-10-08 at 4.0.1]"
 			},
 			"built": {
-				"state": "built",
-				"evidence": "lib/Service/TrafficConfigResolver.php:290-380 resolves traffic.{enabled, events[], dimensions[], sessionTimeoutMinutes, retentionDays, consent, regionGranularity} per portal; lib/Service/TrafficEventValidator.php refuses events the portal did not enable",
+				"state": "specified",
+				"evidence": "Not built: REQ-RSP-010 says the site loads no measuring script while measurement is off; templates/site.php emits the traffic client for every portal, and the client stays idle when /api/content/site says traffic.enabled is not true (src/traffic/client.js). The collector half is met: TrafficConfigResolver::acceptsEvent() refuses events of a disabled portal (checked 2026-11-15). lib/Service/TrafficConfigResolver.php:290-380 resolves traffic.{enabled, events[], dimensions[], sessionTimeoutMinutes, retentionDays, consent, regionGranularity} per portal; lib/Service/TrafficEventValidator.php refuses events the portal did not enable",
 				"reachedOn": "the resolved config is served over the public content contract to the client (src/traffic/client.js:145 reads site.traffic.*), and openspec/changes/portal-traffic-analytics/tasks.md 2.3-2.4 assert the collector's behaviour actually changes with the config, not just stores it",
 				"owner": "ConductionNL/portaliq",
 				"note": "A config field that is declaratively stored but unread is this codebase's own named worst-case (tasks.md 2.4); the tests cited assert the collector's behaviour, not just storage.",
@@ -9837,8 +9837,8 @@
 				"open-forms": "src/openforms/logging/models.py:45 TimelineLogProxy records what residents, staff and plugins did per submission and form [reached on Admin, Logs and the submission's log tab] [read 2026-10-08 at 4.0.1]"
 			},
 			"built": {
-				"state": "built",
-				"evidence": "lib/Service/AuditTrailService.php writes every portal proof record (sign-in, sign-out, refresh, create, update, forward, download, task completion) as one row in OpenRegister's audit trail (AuditTrailMapper::insertAuditTrails, action portaliq.<verb>); called from ContributionController, PortalSessionService, CitizenWriteRecorder, PortalTaskProxyController, PortalAuditHook; MetricsController counts the rows. lib/Repair/MovePortalAuditEntries.php moves the old portalAuditEntry objects on upgrade.",
+				"state": "specified",
+				"evidence": "Not built: REQ-RSP-013 asks for staff actions on portal subjects in the trail; only session revocation writes one (lib/Service/PortalSessionRevoker.php admin-revoke rows naming the admin). Withdrawing an account (PortalAccountService::voidPending stores voidedBy on the account only), moving an account to another audience and an emergency message (lib/Controller/EmergencyPushController.php logs to the Nextcloud log) write no audit row (checked 2026-11-15). lib/Service/AuditTrailService.php writes every portal proof record (sign-in, sign-out, refresh, create, update, forward, download, task completion) as one row in OpenRegister's audit trail (AuditTrailMapper::insertAuditTrails, action portaliq.<verb>); called from ContributionController, PortalSessionService, CitizenWriteRecorder, PortalTaskProxyController, PortalAuditHook; MetricsController counts the rows. lib/Repair/MovePortalAuditEntries.php moves the old portalAuditEntry objects on upgrade.",
 				"reachedOn": "every contribution write, portal session event, download and task completion; administrators read the rows in OpenRegister's audit trail",
 				"owner": "ConductionNL/portaliq",
 				"note": "This is not a guard-with-no-caller: multiple real call sites confirmed across controllers and services.",
@@ -10279,8 +10279,8 @@
 				"open-forms": "src/openforms/logging/models.py:45 TimelineLogProxy [reached on Admin, Logs] [read 2026-10-08 at 4.0.1]"
 			},
 			"built": {
-				"state": "built",
-				"evidence": "lib/Service/AuditTrailService.php writes every portal proof record (sign-in, sign-out, refresh, create, update, forward, download, task completion) as one row in OpenRegister's audit trail (AuditTrailMapper::insertAuditTrails, action portaliq.<verb>); called from ContributionController, PortalSessionService, CitizenWriteRecorder, PortalTaskProxyController, PortalAuditHook; MetricsController counts the rows. lib/Repair/MovePortalAuditEntries.php moves the old portalAuditEntry objects on upgrade.",
+				"state": "specified",
+				"evidence": "Not built: REQ-RSP-013 asks for staff actions on portal subjects in the trail; only session revocation writes one (lib/Service/PortalSessionRevoker.php admin-revoke rows naming the admin). Withdrawing an account, moving an account to another audience and an emergency message write no audit row (checked 2026-11-15). lib/Service/AuditTrailService.php writes every portal proof record (sign-in, sign-out, refresh, create, update, forward, download, task completion) as one row in OpenRegister's audit trail (AuditTrailMapper::insertAuditTrails, action portaliq.<verb>); called from ContributionController, PortalSessionService, CitizenWriteRecorder, PortalTaskProxyController, PortalAuditHook; MetricsController counts the rows. lib/Repair/MovePortalAuditEntries.php moves the old portalAuditEntry objects on upgrade.",
 				"reachedOn": "every contribution write, portal session event, download and task completion; administrators read the rows in OpenRegister's audit trail",
 				"owner": "ConductionNL/portaliq",
 				"note": "Not rated only from a class existing: multiple independent real callers were confirmed.",

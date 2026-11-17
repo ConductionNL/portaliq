@@ -366,10 +366,43 @@ class BrokerLoginTest extends TestCase {
 		// subjectRef, audience, organisation, trust, roles, and no branch:
 		// integriq's envelope carries none yet (signin-eherkenning-branch),
 		// and no OIDC provider: integriq's route has no broker sign-out
-		// (signin-session-idle-warning-and-sso D6), and no company KVK number
-		// (site-mandates-the-represented-manage D8).
-		$this->assertSame(['subject-9', 'client', 'gemeente-x', 'substantial', ['client:read'], '', '', ''], $this->sessionCalls[0]);
+		// (signin-session-idle-warning-and-sso D6), no company KVK number
+		// (site-mandates-the-represented-manage D8), and a DigiD envelope carries
+		// no disclosed attributes (resident-identity-in-forms T05).
+		$this->assertSame(['subject-9', 'client', 'gemeente-x', 'substantial', ['client:read'], '', '', '', []], $this->sessionCalls[0]);
 	}//end testEnvelopeMintsASessionWithItsTrust()
+
+
+	/**
+	 * A Yivi login through the broker signs in a `yivi` account and hands the
+	 * disclosed attributes, and nothing else, to the session.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#T05
+	 */
+	public function testAYiviEnvelopeMintsASessionWithTheDisclosedAttributes(): void {
+		$routed = $this->routed();
+		$routed['loginRoutes'] = ['yivi' => 'broker'];
+		$body = $this->exchangeBody(
+			[
+				'provider' => 'yivi',
+				'trust' => 'low',
+				'attributes' => ['pbdf.gemeente.personalData.fullname' => 'Sanne de Vries', 'nickname' => 'S'],
+			]
+		);
+		$login = $this->login($routed, 200, $body);
+		$query = $this->queryOf((string)$login->start(org: 'gemeente-x', provider: 'yivi', returnTo: '/apps/portaliq/portal', callbackUrl: 'https://p/cb'));
+		$this->assertSame('yivi', $query['provider']);
+
+		$this->assertSame(['token' => 'bearer-1', 'returnTo' => '/apps/portaliq/portal'], $login->complete(state: $query['relayState'], code: 'one-time-code'));
+
+		$this->assertSame(['yivi', 'pseudonym-3f2a', 'gemeente-x', 'client', null, ''], $this->accountCalls[0]);
+		$this->assertSame(
+			['subject-9', 'client', 'gemeente-x', 'low', ['client:read'], '', '', '', ['pbdf.gemeente.personalData.fullname' => 'Sanne de Vries']],
+			$this->sessionCalls[0]
+		);
+	}//end testAYiviEnvelopeMintsASessionWithTheDisclosedAttributes()
 
 
 	/**

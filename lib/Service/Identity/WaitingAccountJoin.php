@@ -146,6 +146,35 @@ class WaitingAccountJoin {
 		bool $addressProven = true,
 		?UnboundAccount $unbound = null,
 	): ?string {
+		$plan = $this->joinPlan(account: $account, waiting: $waiting, unbound: $unbound);
+		if ($plan === null) {
+			return null;
+		}
+
+		$data = $this->withAudience(
+			data: $this->joinData(account: $account, waiting: $waiting, addressProven: $addressProven),
+			audience: $plan['audience']
+		);
+		if ($this->wroteJoin(plan: $plan, data: $data, reason: $reason) === false) {
+			return null;
+		}
+
+		return $plan['waitingId'];
+	}//end joinWaiting()
+
+	/**
+	 * The audience after the join and the two accounts' ids, or null when
+	 * the join may not happen or either account has no id.
+	 *
+	 * @param array<string, mixed> $account The receiving account.
+	 * @param array<string, mixed> $waiting The waiting account.
+	 * @param UnboundAccount|null  $unbound The redeemed link's facts, or null.
+	 *
+	 * @return array{audience: string, accountId: string, waitingId: string}|null
+	 *
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 */
+	private function joinPlan(array $account, array $waiting, UnboundAccount|null $unbound): array|null {
 		$audience = $this->audienceAfterJoin(account: $account, waiting: $waiting, unbound: $unbound);
 		if ($audience === null) {
 			return null;
@@ -157,21 +186,45 @@ class WaitingAccountJoin {
 			return null;
 		}
 
-		$data = $this->joinData(account: $account, waiting: $waiting, addressProven: $addressProven);
+		return ['audience' => $audience, 'accountId' => $accountId, 'waitingId' => $waitingId];
+	}//end joinPlan()
+
+	/**
+	 * The join's write with the audience the account takes on, when it changes.
+	 *
+	 * @param array<string, mixed> $data     The join's write.
+	 * @param string               $audience The audience after the join, or '' to keep it.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 */
+	private function withAudience(array $data, string $audience): array {
 		if ($audience !== '') {
 			$data['audience'] = $audience;
 		}
 
-		if ($data !== [] && $this->write(id: $accountId, data: $data) === false) {
-			return null;
+		return $data;
+	}//end withAudience()
+
+	/**
+	 * Write the join onto the receiving account, then withdraw the waiting one.
+	 *
+	 * @param array{audience: string, accountId: string, waitingId: string} $plan   The join's ids.
+	 * @param array<string, mixed>                                         $data   The join's write.
+	 * @param string                                                       $reason Why the waiting account is withdrawn.
+	 *
+	 * @return bool True when both writes landed.
+	 *
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 */
+	private function wroteJoin(array $plan, array $data, string $reason): bool {
+		if ($data !== [] && $this->write(id: $plan['accountId'], data: $data) === false) {
+			return false;
 		}
 
-		if ($this->write(id: $waitingId, data: ['status' => PortalAccountLookup::STATUS_VOID, 'voidReason' => $reason]) === false) {
-			return null;
-		}
-
-		return $waitingId;
-	}//end joinWaiting()
+		return $this->write(id: $plan['waitingId'], data: ['status' => PortalAccountLookup::STATUS_VOID, 'voidReason' => $reason]);
+	}//end wroteJoin()
 
 	/**
 	 * Whether one account may take over the claims of another: the other is

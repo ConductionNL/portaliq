@@ -82,23 +82,53 @@ class RowActionFiles implements RowActionFilesInterface {
 			return $action;
 		}
 
+		$field = $this->fileField(declared: $declared, action: $action, whitelist: $whitelist);
+		if ($field === null) {
+			return $action;
+		}
+
+		$action['files'] = $this->filesOf(declared: $declared, field: $field);
+
+		return $action;
+	}//end normalise()
+
+	/**
+	 * The declared file field when it is a plain name that is neither a text field nor the row field.
+	 *
+	 * @param array<string, mixed> $declared  The declared `files`.
+	 * @param array<string, mixed> $action    The action, without `files`.
+	 * @param list<string>         $whitelist The action's text fields.
+	 *
+	 * @return string|null
+	 */
+	private function fileField(array $declared, array $action, array $whitelist): string|null {
 		$field = ($declared['field'] ?? null);
 		if (is_string($field) === false
 			|| preg_match(self::FIELD_NAME, $field) !== 1
 			|| in_array($field, $whitelist, true) === true
 			|| $field === ($action['rowField'] ?? null)
 		) {
-			return $action;
+			return null;
 		}
 
-		$action['files'] = [
+		return $field;
+	}//end fileField()
+
+	/**
+	 * The `files` declaration: the field and its bounded count and size.
+	 *
+	 * @param array<string, mixed> $declared The declared `files`.
+	 * @param string               $field    The file field.
+	 *
+	 * @return array{field: string, max: int, maxBytes: int}
+	 */
+	private function filesOf(array $declared, string $field): array {
+		return [
 			'field' => $field,
 			'max' => $this->bounded(value: ($declared['max'] ?? null), default: self::DEFAULT_MAX, ceiling: self::HARD_MAX),
 			'maxBytes' => $this->bounded(value: ($declared['maxBytes'] ?? null), default: self::DEFAULT_MAX_BYTES, ceiling: self::HARD_MAX_BYTES),
 		];
-
-		return $action;
-	}//end normalise()
+	}//end filesOf()
 
 	/**
 	 * The uploads under the declared field, or the reason they are refused.

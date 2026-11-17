@@ -38,16 +38,21 @@
 // See: https://github.com/ConductionNL/hydra → openspec/architecture/adr-036-universal-widget-manifest.md
 
 import StatusBadge from './cellRenderers/StatusBadge.vue'
+import ArticleContentSection from './components/articles/ArticleContentSection.vue'
+import ArticleUsageSection from './components/articles/ArticleUsageSection.vue'
 import EmailField from './formFields/EmailField.vue'
 import ExampleModal from './modals/ExampleModal.vue'
+import ArticleFormView from './views/articles/ArticleFormView.vue'
 import FlowDetailSidebar from './views/flows/FlowDetailSidebar.vue'
 import PageLayoutDesigner from './views/PageLayoutDesigner.vue'
 import PageLayoutEditor from './widgets/PageLayoutEditor.vue'
 import PageTrafficFlow from './widgets/PageTrafficFlow.vue'
 import PortalAccessibility from './widgets/PortalAccessibility.vue'
+import PortalAccountPages from './widgets/PortalAccountPages.vue'
 import PortalAccountWithdraw from './widgets/PortalAccountWithdraw.vue'
 import PortalCaseTypes from './widgets/PortalCaseTypes.vue'
 import PortalHomePage from './widgets/PortalHomePage.vue'
+import PortalNavigation from './widgets/PortalNavigation.vue'
 import PortalRegistration from './widgets/PortalRegistration.vue'
 import PortalSignin from './widgets/PortalSignin.vue'
 import PortalSummaryCard from './widgets/PortalSummaryCard.vue'
@@ -218,6 +223,28 @@ export default {
 		propsSchema: null,
 		_note: "The portal's case types, each with a \"Show in this portal\" switch (operate-show-per-case-type). Custom because the list is the union of the portal's published forms, the case apps' caseTypeSource and its own hidden list, read and saved through PortalCaseTypesController, and because hiding must warn before it saves.",
 	},
+	// @custom-widget-ratchet exclude per audience a show switch and up and down buttons over the pages the installed apps contribute, saved into the portal's navigation through an admin controller, which no built-in widget reads or reorders
+	PortalNavigation: {
+		kind: 'widget',
+		component: PortalNavigation,
+		defaultSize: { w: 12, h: 6 },
+		minSize: { w: 6, h: 3 },
+		maxSize: { w: 12, h: 12 },
+		allowedSlots: ['body'],
+		propsSchema: null,
+		_note: "The pages one portal's menu shows, per audience and in order (operate-pages-per-portal-and-client REQ-PGC-003). Custom because the list is the installed apps' contributed pages merged with the portal's stored navigation, read and saved through PortalNavigationController, and because the order is set with up and down buttons.",
+	},
+	// @custom-widget-ratchet exclude a hide switch per contributed page of the account's audience, saved into the account's hiddenPages through a staff-guarded controller, which no built-in widget reads
+	PortalAccountPages: {
+		kind: 'widget',
+		component: PortalAccountPages,
+		defaultSize: { w: 12, h: 5 },
+		minSize: { w: 6, h: 3 },
+		maxSize: { w: 12, h: 10 },
+		allowedSlots: ['body'],
+		propsSchema: null,
+		_note: 'The pages hidden for one client account (operate-pages-per-portal-and-client REQ-PGC-002). Custom because the list is the contributed pages of the account\'s audience, read and saved through PortalAccountPagesController behind portal.provision.',
+	},
 	// @custom-widget-ratchet exclude the button shows only on a pending account and asks a required reason before posting the guarded void route, which no built-in widget or detail header action can do in nc-vue 2.57
 	PortalAccountWithdraw: {
 		kind: 'widget',
@@ -283,6 +310,28 @@ export default {
 		allowedSlots: ['body'],
 		propsSchema: null,
 		_note: 'The page layout editor as the Indeling tab of a page (page-editor-in-the-page, PtPagina). The same PageLayoutDesigner the standalone /pages/:id/layout route shows, embedded: the page header above it names the page, so it draws no title line.',
+	},
+	// @custom-widget-ratchet exclude the body renders as formatted markdown with its hero image and agent mark, and every lifecycle move goes through ArticleController, which a data or text widget cannot do
+	ArticleContentSection: {
+		kind: 'widget',
+		component: ArticleContentSection,
+		defaultSize: { w: 12, h: 10 },
+		minSize: { w: 6, h: 4 },
+		maxSize: { w: 12, h: 40 },
+		allowedSlots: ['body'],
+		propsSchema: null,
+		_note: 'One article: its rendered body, hero image, agent mark, Edit and the lifecycle moves (marketing-articles-from-pipelinq). Custom because the moves go through ArticleController (first-publish moment, the agent mark), not the object form.',
+	},
+	// @custom-widget-ratchet exclude the usages come from several apps through ArticleUsagesRequestedEvent, which no object list over one schema can show
+	ArticleUsageSection: {
+		kind: 'widget',
+		component: ArticleUsageSection,
+		defaultSize: { w: 12, h: 4 },
+		minSize: { w: 6, h: 2 },
+		maxSize: { w: 12, h: 12 },
+		allowedSlots: ['body'],
+		propsSchema: null,
+		_note: 'Where an article is used, asked from every app at read time (marketing-articles-from-pipelinq): portaliq answers for its pages, pipelinq for its templates and mailings.',
 	},
 	// @custom-widget-ratchet exclude the three states are a classification over the portal's pages read through an admin controller, and a built-in widget has no way to say "no page at the root" rather than show an empty list
 	PortalHomePage: {
@@ -352,6 +401,16 @@ export default {
 	PageLayoutDesigner: {
 		kind: 'page',
 		component: PageLayoutDesigner,
+	},
+
+	/**
+	 * New article (marketing-articles-from-pipelinq): mounts ArticleEditModal,
+	 * whose markdown editor and Files picker a declarative dialog cannot host,
+	 * and whose create goes through ArticleController.
+	 */
+	ArticleFormView: {
+		kind: 'page',
+		component: ArticleFormView,
 	},
 
 	// -------------------------------------------------------------------------

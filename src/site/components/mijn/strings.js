@@ -14,6 +14,17 @@
 
 export default {
 	nl: {
+		// capability-rows-said-and-planned T07: the messages on a case
+		Messages: 'Berichten',
+		'The messages could not be loaded.':
+			'De berichten konden niet worden geladen.',
+		'There are no messages about this case yet.':
+			'Er zijn nog geen berichten over deze zaak.',
+		'Ask a question about this case': 'Stel een vraag over deze zaak',
+		'You wrote': 'U schreef',
+		'{name} wrote': '{name} schreef',
+		'The organisation wrote': 'De organisatie schreef',
+		Unread: 'Ongelezen',
 		// calendar-timetable-display
 		'Choose a day': 'Kies een dag',
 		'Nothing on the timetable this day.':
@@ -91,7 +102,7 @@ export default {
 		'New messages': 'Nieuwe berichten',
 		'Choose for whom': 'Kies voor wie',
 		'From you': 'Van u',
-		'From the municipality': 'Van de gemeente',
+		'From {organisation}': 'Van {organisation}',
 		Documents: 'Documenten',
 		'What happened': 'Wat er is gebeurd',
 		'The documents could not be loaded.':
@@ -116,6 +127,16 @@ export default {
 		'{value} of {total} {label}': '{value} van {total} {label}',
 	},
 	en: {
+		// capability-rows-said-and-planned T07: the messages on a case
+		Messages: 'Messages',
+		'The messages could not be loaded.': 'The messages could not be loaded.',
+		'There are no messages about this case yet.':
+			'There are no messages about this case yet.',
+		'Ask a question about this case': 'Ask a question about this case',
+		'You wrote': 'You wrote',
+		'{name} wrote': '{name} wrote',
+		'The organisation wrote': 'The organisation wrote',
+		Unread: 'Unread',
 		// calendar-timetable-display
 		'Choose a day': 'Choose a day',
 		'Nothing on the timetable this day.': 'Nothing on the timetable this day.',
@@ -191,7 +212,7 @@ export default {
 		'New messages': 'New messages',
 		'Choose for whom': 'Choose for whom',
 		'From you': 'From you',
-		'From the municipality': 'From the municipality',
+		'From {organisation}': 'From {organisation}',
 		Documents: 'Documents',
 		'What happened': 'What happened',
 		'The documents could not be loaded.': 'The documents could not be loaded.',
