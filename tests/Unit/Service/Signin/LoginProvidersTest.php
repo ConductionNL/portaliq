@@ -86,6 +86,8 @@ class LoginProvidersTest extends TestCase {
 			[
 				['provider' => 'digid', 'label' => 'DigiD', 'route' => 'broker'],
 				['provider' => 'eherkenning', 'label' => 'EHERKENNING', 'route' => 'oidc'],
+				// Yivi (resident-identity-in-forms T05) is a known provider too; configured over OIDC here.
+				['provider' => 'yivi', 'label' => 'YIVI', 'route' => 'oidc'],
 				['provider' => 'generic', 'label' => 'GENERIC', 'route' => 'oidc'],
 			],
 			$this->providers->list($this->brokered, 'secret', [self::class, 'oidc'])
@@ -100,7 +102,7 @@ class LoginProvidersTest extends TestCase {
 	 */
 	public function testABrokeredProviderWithoutItsBrokerIsNotOffered(): void {
 		$listed = array_column($this->providers->list($this->brokered, '', [self::class, 'oidc']), 'provider');
-		$this->assertSame(['eherkenning', 'generic'], $listed);
+		$this->assertSame(['eherkenning', 'yivi', 'generic'], $listed);
 
 		$plain = $this->brokered;
 		$plain['broker']['startUrl'] = 'http://broker.example/start';

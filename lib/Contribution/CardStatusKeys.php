@@ -74,27 +74,86 @@ class CardStatusKeys {
 	 * @spec openspec/changes/card-status-today/specs/portal-contribution-contract/spec.md#requirement-a-card-may-say-where-its-record-stands-today
 	 */
 	public function keys(array $block, array $collectionIds, array $collections): array {
+		$status = $this->declaredStatus(block: $block, collectionIds: $collectionIds);
+		if ($status === null) {
+			return [];
+		}
+
+		$collection = $status['collection'];
+		$out = $this->requiredKeys(status: $status, collection: $collection, collections: $collections);
+		if ($out === null) {
+			return [];
+		}
+
+		$out = $this->optionalKeys(out: $out, status: $status, collections: $collections, collection: $collection);
+
+		return ['status' => $out];
+	}//end keys()
+
+	/**
+	 * The declared status of a cards block naming one of this contribution's
+	 * collections, or null.
+	 *
+	 * @param array<string, mixed> $block         The declared block.
+	 * @param array<int, string>   $collectionIds The collections of this contribution.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/card-status-today/specs/portal-contribution-contract/spec.md#requirement-a-card-may-say-where-its-record-stands-today
+	 */
+	private function declaredStatus(array $block, array $collectionIds): array|null {
 		$status = ($block['status'] ?? null);
 		if (($block['display'] ?? null) !== 'cards' || is_array($status) === false) {
-			return [];
+			return null;
 		}
 
 		$collection = ($status['collection'] ?? null);
 		if (is_string($collection) === false || in_array($collection, $collectionIds, true) === false) {
-			return [];
+			return null;
 		}
 
+		return $status;
+	}//end declaredStatus()
+
+	/**
+	 * The collection, the three field names, the label and the tone, or null
+	 * when a field or the label is malformed.
+	 *
+	 * @param array<string, mixed>             $status      The declared status.
+	 * @param string                           $collection  The status's collection.
+	 * @param array<int, array<string, mixed>> $collections The sanitised collections.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/card-status-today/specs/portal-contribution-contract/spec.md#requirement-a-card-may-say-where-its-record-stands-today
+	 */
+	private function requiredKeys(array $status, string $collection, array $collections): array|null {
 		$fields = $this->fields(status: $status, projected: $this->projected(collections: $collections, id: $collection));
 		$label = $this->label(value: ($status['label'] ?? null));
 		if ($fields === null || $label === null) {
-			return [];
+			return null;
 		}
 
-		$out = ['collection' => $collection] + $fields + [
+		return ['collection' => $collection] + $fields + [
 			'label' => $label,
 			'tone'  => $this->tone(value: ($status['tone'] ?? null)),
 		];
+	}//end requiredKeys()
 
+	/**
+	 * The status with its other label and tone, its `only` filter and
+	 * `schoolDaysOnly` added.
+	 *
+	 * @param array<string, mixed>             $out         The required keys.
+	 * @param array<string, mixed>             $status      The declared status.
+	 * @param array<int, array<string, mixed>> $collections The sanitised collections.
+	 * @param string                           $collection  The status's collection.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/card-status-today/specs/portal-contribution-contract/spec.md#requirement-a-card-may-say-where-its-record-stands-today
+	 */
+	private function optionalKeys(array $out, array $status, array $collections, string $collection): array {
 		$other = $this->label(value: ($status['otherLabel'] ?? null));
 		if ($other !== null) {
 			$out['otherLabel'] = $other;
@@ -108,8 +167,8 @@ class CardStatusKeys {
 
 		$out['schoolDaysOnly'] = (($status['schoolDaysOnly'] ?? false) === true);
 
-		return ['status' => $out];
-	}//end keys()
+		return $out;
+	}//end optionalKeys()
 
 	/**
 	 * The three field names, each a name the collection projects, or null.

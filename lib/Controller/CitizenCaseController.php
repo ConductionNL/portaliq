@@ -820,22 +820,23 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			return $match;
 		}
 
-		$action = $match['action'];
+		return $this->ownedCaseContext(subject: $subject, writable: $match, target: ['register' => $register, 'schema' => $schema, 'id' => $id]);
+	}//end context()
 
-		// The ownership boundary. A case that is not the citizen's and a case
-		// that does not exist answer identically, so the portal never confirms
-		// that someone else's case number is real.
-		$case = $this->reader->readObject(
-			register: $register,
-			schema: $schema,
-			scopeField: (string)($action['scopeField'] ?? 'subjectRef'),
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			id: $id,
-			organisation: (string)($subject['organisation'] ?? ''),
-			scopeClaim: (string)($action['scopeClaim'] ?? ''),
-			contributingApp: $match['app'],
-			audience: (string)($subject['audience'] ?? '')
-		);
+	/**
+	 * The write context of a case the subject owns, or the refusal when the
+	 * case is not theirs, does not exist, or lies outside their branch.
+	 *
+	 * @param array<string, mixed>                                $subject  The resolved subject, acting as.
+	 * @param array<string, mixed>                                $writable The citizen write action and its app.
+	 * @param array{register: string, schema: string, id: string} $target   The case.
+	 *
+	 * @return array<string, mixed>|JSONResponse
+	 */
+	private function ownedCaseContext(array $subject, array $writable, array $target): array|JSONResponse {
+		$action = $writable['action'];
+
+		$case = $this->readOwnCase(subject: $subject, writable: $writable, target: $target);
 		// Change signin-eherkenning-branch D2: a branch session changes only its
 		// branch's cases, and answers the same as for a case not its own.
 		if ($case === null || $this->branches->admits(subject: $subject, collection: $action, row: $case) === false) {
@@ -846,8 +847,36 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			);
 		}
 
-		return $this->writeContext(subject: $subject, match: $match, case: $case);
-	}//end context()
+		return $this->writeContext(subject: $subject, match: $writable, case: $case);
+	}//end ownedCaseContext()
+
+	/**
+	 * The case read through the write action's scope, or null.
+	 *
+	 * The ownership boundary. A case that is not the citizen's and a case
+	 * that does not exist answer identically, so the portal never confirms
+	 * that someone else's case number is real.
+	 *
+	 * @param array<string, mixed>                                $subject  The resolved subject, acting as.
+	 * @param array<string, mixed>                                $writable The citizen write action and its app.
+	 * @param array{register: string, schema: string, id: string} $target   The case.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function readOwnCase(array $subject, array $writable, array $target): array|null {
+		$action = $writable['action'];
+		return $this->reader->readObject(
+			register: $target['register'],
+			schema: $target['schema'],
+			scopeField: (string)($action['scopeField'] ?? 'subjectRef'),
+			subjectRef: (string)($subject['subjectRef'] ?? ''),
+			id: $target['id'],
+			organisation: (string)($subject['organisation'] ?? ''),
+			scopeClaim: (string)($action['scopeClaim'] ?? ''),
+			contributingApp: $writable['app'],
+			audience: (string)($subject['audience'] ?? '')
+		);
+	}//end readOwnCase()
 
 	/**
 	 * The write context of an owned case: the subject, the matched action and

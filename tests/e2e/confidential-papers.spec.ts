@@ -59,7 +59,8 @@ test.describe('confidential papers ask for a higher login', () => {
 		await expect(page.getByTestId('site-signout')).toBeVisible()
 
 		await page.getByRole('link', { name: 'Vertrouwelijke stukken' }).click()
-		await expect(page).toHaveURL(/decidiq\/confidentialPapers/)
+		// On the app path the route travels encoded in `?route=` (siteAddress.js).
+		await expect(page).toHaveURL(/decidiq(\/|%2F)confidentialPapers/)
 		await expect(page.getByTestId('site-step-up-text')).toHaveText(
 			/Voor deze stukken moet u inloggen met DigiD of eHerkenning\.|For these papers you must log in with DigiD or eHerkenning\./,
 		)

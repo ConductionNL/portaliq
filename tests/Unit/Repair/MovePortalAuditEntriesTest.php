@@ -13,6 +13,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 
 /**
  * consume-or-audit-trail-proof-records T02: the old `portalAuditEntry`
@@ -142,7 +143,10 @@ class FakeOldRecordStore {
 		return array_slice($this->rows, (int)($config['offset'] ?? 0), (int)($config['limit'] ?? 100));
 	}
 
-	public function deleteObject(string $uuid, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): bool {
+	public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): bool {
+		$uuid = $deletion->uuid;
+		$register = $deletion->target->register;
+		$schema = $deletion->target->schema;
 		if ($this->refuseDelete === true) {
 			throw new RuntimeException('delete refused');
 		}

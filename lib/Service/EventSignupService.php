@@ -30,6 +30,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\Kernel\Contracts\EventSignupServiceInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -97,18 +99,33 @@ class EventSignupService implements EventSignupServiceInterface {
 			return self::REASON_ROLE_FULL;
 		}
 
+		$signup = [
+			'eventRef' => $eventId,
+			'roleId' => $roleId,
+			'guardianRef' => $subjectRef,
+			'childRef' => $childRef,
+			'note' => $note,
+			'signedUpAt' => gmdate('c'),
+		];
+
+		return $this->saveSignup(objectService: $objectService, signup: $signup);
+	}//end attemptSignup()
+
+	/**
+	 * Save one sign-up; a failed save is logged and refused as not found.
+	 *
+	 * @param object               $objectService OpenRegister's ObjectService.
+	 * @param array<string, mixed> $signup        The sign-up row.
+	 *
+	 * @return string|null The refusal reason, or null on success.
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-sign-up-role-enforces-its-capacity-server-side
+	 */
+	private function saveSignup(object $objectService, array $signup): string|null {
 		try {
 			$objectService->saveObject(
-				object: [
-					'eventRef' => $eventId,
-					'roleId' => $roleId,
-					'guardianRef' => $subjectRef,
-					'childRef' => $childRef,
-					'note' => $note,
-					'signedUpAt' => gmdate('c'),
-				],
-				register: self::REGISTER,
-				schema: self::SCHEMA,
+				object: $signup,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: self::REGISTER, schema: self::SCHEMA)),
 				_rbac: false,
 				_multitenancy: false
 			);
@@ -118,7 +135,7 @@ class EventSignupService implements EventSignupServiceInterface {
 		}
 
 		return null;
-	}//end attemptSignup()
+	}//end saveSignup()
 
 	/**
 	 * The role this guardian may sign up for, or null: an event in their own
@@ -195,8 +212,29 @@ class EventSignupService implements EventSignupServiceInterface {
 	 * @return int
 	 */
 	private function countSignups(object $objectService, string $eventId, string $roleId): int {
+		// A count that cannot be read fails closed to "no room" rather than
+		// allowing an unbounded signup when the count itself cannot be trusted.
+		$rows = $this->signupRows(objectService: $objectService, eventId: $eventId, roleId: $roleId);
+		if (is_array($rows) === false) {
+			return PHP_INT_MAX;
+		}
+
+		return $this->matchingSignups(rows: $rows, eventId: $eventId, roleId: $roleId);
+	}//end countSignups()
+
+	/**
+	 * Every stored sign-up for one role on one event, or null when the read
+	 * fails.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $eventId       The event id.
+	 * @param string $roleId        The role id.
+	 *
+	 * @return mixed The rows, or null.
+	 */
+	private function signupRows(object $objectService, string $eventId, string $roleId): mixed {
 		try {
-			$rows = $this->readEveryPage(
+			return $this->readEveryPage(
 				objectService: $objectService,
 				register: self::REGISTER,
 				schema: self::SCHEMA,
@@ -204,15 +242,20 @@ class EventSignupService implements EventSignupServiceInterface {
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: event signup count failed', ['reason' => $e->getMessage()]);
-			// Fail closed to "no room" rather than allowing an unbounded
-			// signup when the count itself cannot be trusted.
-			return PHP_INT_MAX;
+			return null;
 		}
+	}//end signupRows()
 
-		if (is_array($rows) === false) {
-			return PHP_INT_MAX;
-		}
-
+	/**
+	 * How many rows are sign-ups for exactly this role on this event.
+	 *
+	 * @param array<int|string, mixed> $rows    The rows read.
+	 * @param string                   $eventId The event id.
+	 * @param string                   $roleId  The role id.
+	 *
+	 * @return int
+	 */
+	private function matchingSignups(array $rows, string $eventId, string $roleId): int {
 		$count = 0;
 		foreach ($rows as $row) {
 			$normalised = $this->normalise(row: $row);
@@ -226,5 +269,5 @@ class EventSignupService implements EventSignupServiceInterface {
 		}
 
 		return $count;
-	}//end countSignups()
+	}//end matchingSignups()
 }//end class

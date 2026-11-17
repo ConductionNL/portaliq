@@ -38,9 +38,9 @@ export default {
 			'Kiest u een bedrijf of persoon? Dan ziet u bij Mijn zaken hun zaken.',
 		'Your mandate for {party}': 'Uw machtiging voor {party}',
 		'given by {party} on {date}': 'gegeven door {party} op {date}',
-		'given by the municipality on {date}': 'gegeven door de gemeente op {date}',
+		'given by {organisation} on {date}': 'gegeven door {organisation} op {date}',
 		'given by {party}': 'gegeven door {party}',
-		'given by the municipality': 'gegeven door de gemeente',
+		'given by {organisation}': 'gegeven door {organisation}',
 		'Stop mandate': 'Machtiging stoppen',
 		'Stop this mandate? You can no longer act for them.':
 			'Deze machtiging stoppen? U kunt dan niet meer namens hen handelen.',
@@ -333,9 +333,9 @@ export default {
 			'Do you choose a company or person? Then My cases shows their cases.',
 		'Your mandate for {party}': 'Your mandate for {party}',
 		'given by {party} on {date}': 'given by {party} on {date}',
-		'given by the municipality on {date}': 'given by the municipality on {date}',
+		'given by {organisation} on {date}': 'given by {organisation} on {date}',
 		'given by {party}': 'given by {party}',
-		'given by the municipality': 'given by the municipality',
+		'given by {organisation}': 'given by {organisation}',
 		'Stop mandate': 'Stop mandate',
 		'Stop this mandate? You can no longer act for them.':
 			'Stop this mandate? You can no longer act for them.',

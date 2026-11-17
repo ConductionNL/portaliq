@@ -96,6 +96,25 @@ class GlossaryRelationGuardListener implements IEventListener {
 			return;
 		}
 
+		$foreign = $this->foreignRelations(term: $term, relations: $relations);
+		if ($foreign !== []) {
+			$event->stopPropagation();
+			$message = $this->l10n->t('A term can only relate to terms on its own portal. Not found there: %s.', [implode(', ', $foreign)]);
+			$event->setErrors(['message' => $message]);
+		}
+	}//end check()
+
+	/**
+	 * The relations that name no term on the term's own portal; every one when the term names no portal.
+	 *
+	 * @param array<string, mixed> $term      The term.
+	 * @param array<int, mixed>    $relations The term's relations.
+	 *
+	 * @return array<int, string>
+	 *
+	 * @spec openspec/changes/archive/2026-10-09-portal-cms-content-model/tasks.md#task-3
+	 */
+	private function foreignRelations(array $term, array $relations): array {
 		$portal  = (string)($term['portal'] ?? '');
 		$foreign = [];
 		if ($portal === '') {
@@ -110,10 +129,6 @@ class GlossaryRelationGuardListener implements IEventListener {
 			);
 		}
 
-		if ($foreign !== []) {
-			$event->stopPropagation();
-			$message = $this->l10n->t('A term can only relate to terms on its own portal. Not found there: %s.', [implode(', ', $foreign)]);
-			$event->setErrors(['message' => $message]);
-		}
-	}//end check()
+		return $foreign;
+	}//end foreignRelations()
 }//end class

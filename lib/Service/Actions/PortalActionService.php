@@ -26,8 +26,6 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Actions;
 
-use DateTimeImmutable;
-use DateTimeInterface;
 use OCA\Portaliq\Kernel\Contracts\CitizenDocumentUploadInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalActionServiceInterface;
 use OCA\Portaliq\Service\Identity\PortalAccountLookup;
@@ -167,7 +165,7 @@ class PortalActionService implements PortalActionServiceInterface {
 			scopeField: 'owner',
 			subjectRef: $ref,
 			organisation: (string)($subject['organisation'] ?? ''),
-			data: $this->stamped(subject: $subject, data: $clean + ['assignee' => $ref, 'status' => 'todo', 'kind' => 'once'])
+			data: $this->fields->stamped(editor: $ref, data: $clean + ['assignee' => $ref, 'status' => 'todo', 'kind' => 'once'])
 		);
 		if ($row === null) {
 			return ['status' => PortalPlanService::FAILED, 'id' => ''];
@@ -282,6 +280,34 @@ class PortalActionService implements PortalActionServiceInterface {
 	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-a-resident-keeps-a-list-of-own-actions-req-ral-001
 	 */
 	public function attach(array $subject, string $id, ?array $uploaded, string $planId=''): string {
+		$access = $this->writable(subject: $subject, id: $id, planId: $planId);
+		if (is_string($access) === true) {
+			return $access;
+		}
+
+		$file = $this->acceptedFile(uploaded: $uploaded);
+		if ($file === null) {
+			return PortalPlanService::INVALID;
+		}
+
+		$fileId = $this->attachUpload(id: $id, file: $file);
+		if ($fileId === '') {
+			return PortalPlanService::FAILED;
+		}
+
+		return $this->write(subject: $subject, id: $id, access: $access, data: ['file' => $fileId, 'fileName' => $file['name']]);
+	}//end attach()
+
+	/**
+	 * The viewer's access to an action they may change.
+	 *
+	 * @param array<string, mixed> $subject The session subject.
+	 * @param string               $id      The action.
+	 * @param string               $planId  The plan the action is in, for a participant.
+	 *
+	 * @return array<string, mixed>|string The access, or NOT_FOUND, FORBIDDEN (read only).
+	 */
+	private function writable(array $subject, string $id, string $planId): array|string {
 		$found = $this->find(subject: $subject, id: $id, planId: $planId);
 		if ($found === null) {
 			return PortalPlanService::NOT_FOUND;
@@ -292,11 +318,34 @@ class PortalActionService implements PortalActionServiceInterface {
 			return PortalPlanService::FORBIDDEN;
 		}
 
+		return $access;
+	}//end writable()
+
+	/**
+	 * The upload when it is a PDF, JPG or PNG within the limit.
+	 *
+	 * @param array<string, mixed>|null $uploaded The multipart entry.
+	 *
+	 * @return array{name: string, content: string}|null
+	 */
+	private function acceptedFile(array|null $uploaded): array|null {
 		$file = $this->upload->read($uploaded);
 		if ($file === null || $this->types->accepts(name: $file['name'], content: $file['content']) === false) {
-			return PortalPlanService::INVALID;
+			return null;
 		}
 
+		return $file;
+	}//end acceptedFile()
+
+	/**
+	 * Attach the upload to the action object under a unique stored name.
+	 *
+	 * @param string                               $id   The action.
+	 * @param array{name: string, content: string} $file The upload.
+	 *
+	 * @return string The attached file's id, or '' when attaching failed.
+	 */
+	private function attachUpload(string $id, array $file): string {
 		$attached = $this->fileWriter->attachFile(
 			register: PortalPlanService::REGISTER,
 			schema: self::SCHEMA,
@@ -307,13 +356,9 @@ class PortalActionService implements PortalActionServiceInterface {
 			),
 			content: $file['content']
 		);
-		$fileId = (string)($attached['id'] ?? '');
-		if ($fileId === '') {
-			return PortalPlanService::FAILED;
-		}
 
-		return $this->write(subject: $subject, id: $id, access: $access, data: ['file' => $fileId, 'fileName' => $file['name']]);
-	}//end attach()
+		return (string)($attached['id'] ?? '');
+	}//end attachUpload()
 
 	/**
 	 * The action's file, or null for a stranger or an action without one.
@@ -350,6 +395,27 @@ class PortalActionService implements PortalActionServiceInterface {
 			return null;
 		}
 
+		$rows = $this->rowsFor(subject: $subject, planId: $planId);
+		foreach ($rows as $row) {
+			if ($this->idOf(row: $row) !== $id) {
+				continue;
+			}
+
+			return $this->withAccess(subject: $subject, row: $row);
+		}
+
+		return null;
+	}//end find()
+
+	/**
+	 * The rows an action is looked up in: the subject's own, or the plan's.
+	 *
+	 * @param array<string, mixed> $subject The session subject.
+	 * @param string               $planId  The plan, for an action read through a plan.
+	 *
+	 * @return array<int|string, mixed>
+	 */
+	private function rowsFor(array $subject, string $planId): array {
 		$rows = $this->ownRows(subject: $subject);
 		if ($planId !== '') {
 			$rows = $this->reader->readCollection(
@@ -361,27 +427,31 @@ class PortalActionService implements PortalActionServiceInterface {
 			);
 		}
 
-		foreach ($rows as $row) {
-			if ($this->idOf(row: $row) !== $id) {
-				continue;
-			}
+		return $rows;
+	}//end rowsFor()
 
-			$rowPlan    = (string)($row['plan'] ?? '');
-			$membership = null;
-			if ($rowPlan !== '') {
-				$membership = $this->plans->membership(subject: $subject, id: $rowPlan);
-			}
-
-			$access = $this->access->forAction(subject: $subject, row: $row, membership: $membership);
-			if ($access === null) {
-				return null;
-			}
-
-			return [$row, $access];
+	/**
+	 * The row with what the viewer may do with it, or null when the viewer may not see it.
+	 *
+	 * @param array<string, mixed> $subject The session subject.
+	 * @param array<string, mixed> $row     The action.
+	 *
+	 * @return array{0: array<string, mixed>, 1: array<string, mixed>}|null The row and the access.
+	 */
+	private function withAccess(array $subject, array $row): array|null {
+		$rowPlan    = (string)($row['plan'] ?? '');
+		$membership = null;
+		if ($rowPlan !== '') {
+			$membership = $this->plans->membership(subject: $subject, id: $rowPlan);
 		}
 
-		return null;
-	}//end find()
+		$access = $this->access->forAction(subject: $subject, row: $row, membership: $membership);
+		if ($access === null) {
+			return null;
+		}
+
+		return [$row, $access];
+	}//end withAccess()
 
 	/**
 	 * The fields to write for a change, or null when any is not allowed or nothing changes.
@@ -425,7 +495,7 @@ class PortalActionService implements PortalActionServiceInterface {
 			subjectRef: $access['scopeValue'],
 			organisation: (string)($subject['organisation'] ?? ''),
 			id: $id,
-			data: $this->stamped(subject: $subject, data: $data)
+			data: $this->fields->stamped(editor: (string)($subject['subjectRef'] ?? ''), data: $data)
 		);
 
 		if ($written === null) {
@@ -434,21 +504,6 @@ class PortalActionService implements PortalActionServiceInterface {
 
 		return PortalPlanService::OK;
 	}//end write()
-
-	/**
-	 * The fields with who wrote them and when.
-	 *
-	 * @param array<string, mixed> $subject The session subject.
-	 * @param array<string, mixed> $data The fields.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function stamped(array $subject, array $data): array {
-		return $data + [
-			'editedBy' => (string)($subject['subjectRef'] ?? ''),
-			'editedAt' => (new DateTimeImmutable())->format(DateTimeInterface::ATOM),
-		];
-	}//end stamped()
 
 	/**
 	 * Taking the file off: `file` sent as '' clears the file and its name.

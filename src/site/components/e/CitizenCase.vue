@@ -395,6 +395,10 @@ export default {
 
 	components: { CaseField, FileItem, WithdrawCaseConfirm },
 
+	// The portal's organisation type label, from the site shell (App.vue);
+	// none reads "de organisatie" (portal-identity-from-the-admin REQ-PIA-003).
+	inject: { siteOrganisationType: { default: () => () => '' } },
+
 	props: {
 		/** The manifest collection the case lives in (`{id, register, schema, ...}`). */
 		collection: { type: Object, required: true },
@@ -857,6 +861,7 @@ export default {
 				entry,
 				mijnTranslator(this.t, readerLocale(this.locale)),
 				readerLocale(this.locale),
+				this.siteOrganisationType(),
 			)
 		},
 

@@ -28,8 +28,8 @@ namespace OCA\Portaliq\Controller;
 use DateTimeImmutable;
 use DateTimeZone;
 use OCA\Portaliq\Kernel\Contracts\TrafficEventStoreInterface;
+use OCA\Portaliq\Kernel\Contracts\TrafficExportInterface;
 use OCA\Portaliq\Kernel\Contracts\TrafficReportNumbersInterface;
-use OCA\Portaliq\Service\Traffic\TrafficExport;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -68,7 +68,7 @@ class TrafficReportController extends Controller {
 	 * @param string            $appName The app id.
 	 * @param IRequest          $request The request.
 	 * @param TrafficEventStoreInterface $store   Reads the daily records.
-	 * @param TrafficExport     $export  Renders the file.
+	 * @param TrafficExportInterface     $export  Renders the file.
 	 * @param TrafficReportNumbersInterface $numbers Folds the records into totals.
 	 *
 	 * @return void
@@ -77,7 +77,7 @@ class TrafficReportController extends Controller {
 		string $appName,
 		IRequest $request,
 		private readonly TrafficEventStoreInterface $store,
-		private readonly TrafficExport $export,
+		private readonly TrafficExportInterface $export,
 		private readonly TrafficReportNumbersInterface $numbers,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -259,7 +259,7 @@ class TrafficReportController extends Controller {
 			return 'invalid-segment';
 		}
 
-		if (in_array($export->format, TrafficExport::FORMATS, true) === false) {
+		if (in_array($export->format, TrafficExportInterface::FORMATS, true) === false) {
 			return 'invalid-format';
 		}
 

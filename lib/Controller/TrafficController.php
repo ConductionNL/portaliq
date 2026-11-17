@@ -74,6 +74,7 @@ use OCA\Portaliq\Kernel\Contracts\TrafficServerBatchInterface;
  * threshold are what account linking (portal-traffic-visitors-and-geo),
  * the server API (portal-traffic-reporting) and session recording
  * (portal-traffic-experiments) each need.
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class TrafficController extends Controller {
 
@@ -372,6 +373,24 @@ class TrafficController extends Controller {
 	#[AnonRateLimit(limit: 600, period: 60)]
 	#[UserRateLimit(limit: 600, period: 60)]
 	public function pixel(?string $portal = null, ?string $e = null, ?string $l = null): DataDisplayResponse {
+		$this->ingestFor(slug: $portal, events: [$this->pixelEvent(e: $e, l: $l)], consent: false);
+
+		$this->stateless();
+		return $this->pixelResponse();
+	}//end pixel()
+
+
+	/**
+	 * The one event an image request records.
+	 *
+	 * @param string|null $e The event name; page_view when absent.
+	 * @param string|null $l The page location; the referer when absent.
+	 *
+	 * @return array{name: string, sequence: int, pageLocation: mixed}
+	 *
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
+	 */
+	private function pixelEvent(string|null $e, string|null $l): array {
 		$location = $l;
 		if (is_string($location) === false || trim($location) === '') {
 			$location = $this->request->getHeader('Referer');
@@ -382,14 +401,22 @@ class TrafficController extends Controller {
 			$name = 'page_view';
 		}
 
-		$event = [
+		return [
 			'name' => $name,
 			'sequence' => 0,
 			'pageLocation' => $location,
 		];
-		$this->ingestFor(slug: $portal, events: [$event], consent: false);
+	}//end pixelEvent()
 
-		$this->stateless();
+
+	/**
+	 * The 1x1 GIF, never cached.
+	 *
+	 * @return DataDisplayResponse
+	 *
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
+	 */
+	private function pixelResponse(): DataDisplayResponse {
 		$response = new DataDisplayResponse(
 			(string)base64_decode(self::PIXEL, true),
 			Http::STATUS_OK,
@@ -398,7 +425,7 @@ class TrafficController extends Controller {
 		$response->addHeader('Cache-Control', 'private, no-store');
 
 		return $response;
-	}//end pixel()
+	}//end pixelResponse()
 
 
 	/**

@@ -99,6 +99,24 @@ interface MailTemplateRendererInterface {
 				'code' => '482915',
 			],
 		],
+		'form-cosign-invite' => [
+			'label' => 'Invitation to co-sign a request',
+			'variables' => ['portal', 'code', 'deadline', 'formName'],
+			'sample' => [
+				'portal' => 'Gemeente Voorbeeld',
+				'code' => '7RQ-K2M',
+				'deadline' => '2026-10-22',
+				'formName' => 'Woo-verzoek',
+			],
+		],
+		'form-cosign-ended' => [
+			'label' => 'A request was not co-signed',
+			'variables' => ['portal', 'reference'],
+			'sample' => [
+				'portal' => 'Gemeente Voorbeeld',
+				'reference' => 'AANVRAAG-7',
+			],
+		],
 		'form-confirmation' => [
 			'label' => 'Confirmation of a request',
 			'variables' => ['portal', 'reference', 'formName'],
@@ -116,6 +134,15 @@ interface MailTemplateRendererInterface {
 				'plan' => 'Schuldhulp op orde',
 				'date' => '2026-10-20',
 				'open' => '3',
+			],
+		],
+		'action-due' => [
+			'label' => 'An action is nearly due',
+			'variables' => ['portal', 'action', 'date'],
+			'sample' => [
+				'portal' => 'Gemeente Voorbeeld',
+				'action' => 'Formulier inleveren',
+				'date' => '2026-10-14',
 			],
 		],
 	];
