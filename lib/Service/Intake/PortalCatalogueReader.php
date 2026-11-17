@@ -237,26 +237,55 @@ class PortalCatalogueReader implements PortalCatalogueReaderInterface {
 			return null;
 		}
 
+		$binding = $this->bindingFor(route: $route, bindings: $bindings);
+		if ($binding === null) {
+			return null;
+		}
+
+		return $this->feeOf(fees: $this->fees, binding: $binding);
+	}//end feeFor()
+
+	/**
+	 * The first published binding for the route.
+	 *
+	 * @param string                           $route    The entry's route.
+	 * @param array<int, array<string, mixed>> $bindings The portal's published bindings.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function bindingFor(string $route, array $bindings): array|null {
 		foreach ($bindings as $binding) {
 			if ((string)($binding['route'] ?? '') !== $route) {
 				continue;
 			}
 
-			try {
-				$fee = $this->fees->forBinding(binding: $binding);
-			} catch (Throwable) {
-				return null;
-			}
-
-			if ($fee === null) {
-				return null;
-			}
-
-			return ['amount' => $fee['amount'], 'currency' => $fee['currency'], 'description' => $fee['description']];
+			return $binding;
 		}
 
 		return null;
-	}//end feeFor()
+	}//end bindingFor()
+
+	/**
+	 * The fee the binding's case type declares, or null when it declares none or cannot be read.
+	 *
+	 * @param PortalFee            $fees    The fee reader.
+	 * @param array<string, mixed> $binding The binding.
+	 *
+	 * @return array{amount: string, currency: string, description: string}|null
+	 */
+	private function feeOf(PortalFee $fees, array $binding): array|null {
+		try {
+			$fee = $fees->forBinding(binding: $binding);
+		} catch (Throwable) {
+			return null;
+		}
+
+		if ($fee === null) {
+			return null;
+		}
+
+		return ['amount' => $fee['amount'], 'currency' => $fee['currency'], 'description' => $fee['description']];
+	}//end feeOf()
 
 	/**
 	 * A publication's conditions when they are a list of non-empty strings,

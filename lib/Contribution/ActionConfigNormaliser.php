@@ -301,6 +301,20 @@ class ActionConfigNormaliser {
 			return $action;
 		}
 
+		$action['fieldConfigs'] = $this->whitelistedConfigs(action: $action, whitelist: $whitelist, mandatory: $mandatory);
+		return $action;
+	}//end normaliseFieldConfigs()
+
+	/**
+	 * The sanitised configs of the whitelisted fields.
+	 *
+	 * @param array<string, mixed> $action    The action, its `fieldConfigs` an array.
+	 * @param array<int, string>   $whitelist The action's `fields` whitelist.
+	 * @param array<int, string>   $mandatory The action's schema `required` set.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function whitelistedConfigs(array $action, array $whitelist, array $mandatory): array {
 		$configs = [];
 		foreach ($action['fieldConfigs'] as $field => $config) {
 			// A field config may only ever describe a whitelisted field — this is
@@ -317,9 +331,8 @@ class ActionConfigNormaliser {
 			);
 		}
 
-		$action['fieldConfigs'] = $configs;
-		return $action;
-	}//end normaliseFieldConfigs()
+		return $configs;
+	}//end whitelistedConfigs()
 
 	/**
 	 * Build ONE sanitised field-config entry: the string labels, the boolean

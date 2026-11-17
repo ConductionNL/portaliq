@@ -89,3 +89,32 @@ test('the embed form shows a question only while its condition holds and sends n
 	await form.fire(form.find('embed-form'), 'submit')
 	assert.deepEqual(form.emitted.submit.at(-1)[0], { soort: 'Tuinafval' })
 })
+
+test('a form with a challenge sends the solved challenge with its answers (REQ-ICQ-004)', async () => {
+	const { challengeProof, submitIntake } = await import('../src/site/lib/intakeApi.js')
+
+	assert.equal(await challengeProof(null), null)
+	assert.equal(await challengeProof({}), null)
+
+	const issued = { nonce: 'n-1', difficulty: 0, expiresAt: 1900000000, signature: 'sig' }
+	const proof = await challengeProof(issued)
+	assert.equal(proof.nonce, 'n-1')
+	assert.equal(proof.expiresAt, 1900000000)
+	assert.equal(proof.signature, 'sig')
+	assert.equal(typeof proof.solution, 'string')
+
+	let sent = null
+	const fetchImpl = async (url, init) => {
+		sent = JSON.parse(init.body)
+		return { ok: true, status: 200, json: async () => ({ reference: 'REQ-1' }) }
+	}
+	const conn = { base: '/api', portal: '', token: '', fetchImpl }
+	await submitIntake(conn, { route: 'afval', answers: { soort: 'Glas' }, proof })
+	assert.equal(sent.nonce, 'n-1')
+	assert.equal(sent.solution, proof.solution)
+	assert.equal(sent.expiresAt, 1900000000)
+	assert.equal(sent.signature, 'sig')
+
+	await submitIntake(conn, { route: 'afval', answers: { soort: 'Glas' }, proof: null })
+	assert.equal('nonce' in sent, false)
+})

@@ -111,34 +111,58 @@ class ActionHistory {
 				continue;
 			}
 
-			$from = self::text(value: ($changed[$field]['old'] ?? ''));
-			$to   = self::text(value: ($changed[$field]['new'] ?? ''));
-			if ($field === 'assignee') {
-				$from = $nameOf($from);
-				$to   = $nameOf($to);
-			}
-
-			$kind = 'field';
-			if ($field === 'status') {
-				$kind = 'status';
-			}
-
-			$lines[] = ['kind' => $kind, 'field' => $field, 'from' => $from, 'to' => $to];
+			$lines[] = $this->fieldLine(field: $field, change: $changed[$field], nameOf: $nameOf);
 		}
 
 		if (is_array($changed['fileName'] ?? null) === true) {
-			$from    = self::text(value: ($changed['fileName']['old'] ?? ''));
-			$to      = self::text(value: ($changed['fileName']['new'] ?? ''));
-			$kind    = 'file';
-			if ($to === '') {
-				$kind = 'fileRemoved';
-			}
-
-			$lines[] = ['kind' => $kind, 'field' => 'file', 'from' => $from, 'to' => $to];
+			$lines[] = $this->fileLine(change: $changed['fileName']);
 		}
 
 		return $lines;
 	}//end rowLines()
+
+	/**
+	 * The line one changed field makes; an assignee is shown by name.
+	 *
+	 * @param string                   $field  The field.
+	 * @param array<string, mixed>     $change The field's `{old, new}`.
+	 * @param callable(string): string $nameOf A person's name by subject reference.
+	 *
+	 * @return array{kind: string, field: string, from: string, to: string}
+	 */
+	private function fieldLine(string $field, array $change, callable $nameOf): array {
+		$from = self::text(value: ($change['old'] ?? ''));
+		$to   = self::text(value: ($change['new'] ?? ''));
+		if ($field === 'assignee') {
+			$from = $nameOf($from);
+			$to   = $nameOf($to);
+		}
+
+		$kind = 'field';
+		if ($field === 'status') {
+			$kind = 'status';
+		}
+
+		return ['kind' => $kind, 'field' => $field, 'from' => $from, 'to' => $to];
+	}//end fieldLine()
+
+	/**
+	 * The line a changed file makes.
+	 *
+	 * @param array<string, mixed> $change The file name's `{old, new}`.
+	 *
+	 * @return array{kind: string, field: string, from: string, to: string}
+	 */
+	private function fileLine(array $change): array {
+		$from    = self::text(value: ($change['old'] ?? ''));
+		$to      = self::text(value: ($change['new'] ?? ''));
+		$kind    = 'file';
+		if ($to === '') {
+			$kind = 'fileRemoved';
+		}
+
+		return ['kind' => $kind, 'field' => 'file', 'from' => $from, 'to' => $to];
+	}//end fileLine()
 
 	/**
 	 * The audit rows of the object, oldest first, or none when the trail

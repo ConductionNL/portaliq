@@ -8,3 +8,4 @@ When a portal persists a client id, the visits of one client id SHALL count as o
 - **GIVEN** a portal that persists a client id, and a visitor who came on Monday
 - **WHEN** the same browser visits again on Tuesday
 - **THEN** Tuesday counts that visitor as returning, not as new
+@e2e exclude a second day is not reachable within a run; node: tests/traffic-client.spec.mjs, the new/returning split in lib/Service/Traffic/TrafficSegments.php

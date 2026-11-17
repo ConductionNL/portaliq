@@ -75,7 +75,7 @@ import { defineAsyncComponent } from 'vue'
 import HeroBlock from './HeroBlock.vue'
 import MarkdownBlock from './MarkdownBlock.vue'
 import { assistantAvailable } from '../lib/assistantAvailable.js'
-import { withoutStyling } from '../lib/blockProps.js'
+import { heroWithPortalImage, withoutStyling } from '../lib/blockProps.js'
 import {
 	asideCellStyle,
 	cellStyle,
@@ -320,6 +320,15 @@ export default {
 	},
 
 	props: {
+		/**
+		 * The portal's hero image, resolved to its public address by the
+		 * content API: a hero block without its own image shows it.
+		 */
+		heroImage: {
+			type: String,
+			default: '',
+		},
+
 		/**
 		 * The page's aside column (`asideOf(page.body)`): a run of a main
 		 * column beside an aside then gives the aside this fixed width.
@@ -740,8 +749,10 @@ export default {
 
 			// The hero hands the portal on to the list beside it, which reads
 			// this portal's catalogue or news (hero-on-the-school-boards).
+			// A hero without its own image shows the portal's
+			// (portal-identity-from-the-admin REQ-PIA-002).
 			if (widget.widgetKey === 'hero') {
-				return { ...props, portal: this.portal }
+				return { ...heroWithPortalImage(props, this.heroImage), portal: this.portal }
 			}
 
 			// The host names the portal, the session and the ways in; the

@@ -86,8 +86,6 @@ class Application extends App implements IBootstrap {
 	 *
 	 * @return void
 	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-	 *
 	 * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-a-contributing-app-requests-a-landing-page-via-a-typed-event
 	 */
 	public function register(IRegistrationContext $context): void {

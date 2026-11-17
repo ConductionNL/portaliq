@@ -124,10 +124,20 @@ if [ -n "$OCC" ]; then
 	# Enabled BEST-EFFORT and reported either way: a runner without the app
 	# checked out should say so here, once, rather than surface as a wall of
 	# style assertions in the suite.
-	if $OCC app:enable nldesign >/dev/null 2>&1; then
-		echo "[ci-seed] nldesign enabled (design tokens available)"
+	#
+	# The theme app's id is `thematiq` (formerly `nldesign`); the first id that
+	# enables wins, the same order `PortalThemeResolver::THEME_APP_IDS` reads.
+	THEME_APP=""
+	for candidate in thematiq nldesign; do
+		if $OCC app:enable "$candidate" >/dev/null 2>&1; then
+			THEME_APP="$candidate"
+			break
+		fi
+	done
+	if [ -n "$THEME_APP" ]; then
+		echo "[ci-seed] ${THEME_APP} enabled (design tokens available)"
 	else
-		echo "[ci-seed] WARNING: could not enable nldesign — the portal will render"
+		echo "[ci-seed] WARNING: could not enable thematiq or nldesign — the portal will render"
 		echo "[ci-seed]          UNSTYLED and the design-system specs will fail."
 		echo "[ci-seed]          portaliq ships no tokens of its own since css/themes/ was removed."
 	fi
@@ -404,6 +414,38 @@ if [ "$SECRET_LEN" -lt 32 ] 2>/dev/null; then
 	echo "::error::wrong cause."
 	exit 1
 fi
+
+# ── 5b. The organisations the specs sign in as ───────────────────────────────
+# A portal session reads and writes as its organisation, and an organisation
+# OpenRegister does not know reads and writes nothing (REQ-PAO-002): dev-login
+# still mints a token, but the next `GET /portal/api/session` answers 401 and
+# every signed-in spec fails on a missing sign-out button. The site's dev-login
+# button signs in as `dev-org`, the specs mostly as `e2e-org`.
+for ORG_SLUG in dev-org e2e-org; do
+	ORG_CODE="$(curl -sS -o /dev/null -w '%{http_code}' -u "${USER_NAME}:${USER_PASS}" \
+		-X POST -H 'Content-Type: application/json' -H 'OCS-APIRequest: true' \
+		--data "{\"name\":\"${ORG_SLUG}\",\"slug\":\"${ORG_SLUG}\",\"description\":\"E2E fixture organisation\"}" \
+		"${BASE}/index.php/apps/openregister/api/organisations" || echo 000)"
+	echo "[ci-seed] organisation ${ORG_SLUG} -> HTTP ${ORG_CODE}"
+done
+ORGS_BODY="$(mktemp)"
+curl -sS -o "$ORGS_BODY" -u "${USER_NAME}:${USER_PASS}" -H 'OCS-APIRequest: true' \
+	"${BASE}/index.php/apps/openregister/api/organisations?_limit=200" || true
+python3 - "$ORGS_BODY" <<'PY'
+import json, sys
+try:
+    body = json.load(open(sys.argv[1]))
+except (OSError, json.JSONDecodeError):
+    body = {}
+items = body.get('results', []) if isinstance(body, dict) else body
+slugs = {str(o.get('slug')) for o in items if isinstance(o, dict)}
+missing = [s for s in ('dev-org', 'e2e-org') if s not in slugs]
+if missing:
+    print(f'::error::OpenRegister organisations missing after create: {missing}.')
+    print('::error::A session for them is minted but never read back, so every signed-in spec would fail.')
+    sys.exit(1)
+print('[ci-seed] organisations OK: dev-org, e2e-org')
+PY
 
 # Probe the endpoint the specs actually depend on, so its failure has a name
 # here rather than eleven names later.
