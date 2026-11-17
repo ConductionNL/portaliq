@@ -30,6 +30,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Mcp;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -90,8 +93,7 @@ class StaffObjectStore {
 		try {
 			$entity = $objectService->find(
 				id: $id,
-				register: self::REGISTER,
-				schema: $schema,
+				options: new ObjectFindOptions(register: self::REGISTER, schema: $schema),
 				_rbac: true,
 				_multitenancy: true
 			);
@@ -124,9 +126,10 @@ class StaffObjectStore {
 		try {
 			$saved = $objectService->saveObject(
 				object: $object,
-				register: self::REGISTER,
-				schema: $schema,
-				uuid: $id,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: self::REGISTER, schema: $schema),
+					uuid: $id
+				),
 				_rbac: true,
 				_multitenancy: true
 			);

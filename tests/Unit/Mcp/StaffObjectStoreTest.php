@@ -22,6 +22,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Mcp;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\Mcp\StaffObjectStore;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -53,16 +55,26 @@ class StaffObjectStoreFakeObjectService {
 	/**
 	 * Record a find.
 	 *
-	 * @param string $id            The id.
-	 * @param string $register      The register.
-	 * @param string $schema        The schema.
-	 * @param bool   $_rbac         Whether RBAC applies.
-	 * @param bool   $_multitenancy Whether multitenancy applies.
+	 * @param string                 $id            The id.
+	 * @param ObjectFindOptions|null $options       The register and schema.
+	 * @param bool                   $_rbac         Whether RBAC applies.
+	 * @param bool                   $_multitenancy Whether multitenancy applies.
 	 *
 	 * @return mixed
 	 */
-	public function find(string $id, string $register, string $schema, bool $_rbac = true, bool $_multitenancy = true): mixed {
-		$this->calls['find'] = ['id' => $id, 'register' => $register, 'schema' => $schema, 'rbac' => $_rbac, 'multitenancy' => $_multitenancy];
+	public function find(
+		string $id,
+		?ObjectFindOptions $options = null,
+		bool $_rbac = true,
+		bool $_multitenancy = true
+	): mixed {
+		$this->calls['find'] = [
+			'id' => $id,
+			'register' => $options?->register,
+			'schema' => $options?->schema,
+			'rbac' => $_rbac,
+			'multitenancy' => $_multitenancy,
+		];
 		return $this->respond();
 	}//end find()
 
@@ -70,16 +82,26 @@ class StaffObjectStoreFakeObjectService {
 	 * Record a save.
 	 *
 	 * @param array<string, mixed> $object        The object.
-	 * @param string               $register      The register.
-	 * @param string               $schema        The schema.
-	 * @param string|null          $uuid          The id to update.
+	 * @param ObjectSaveOptions    $options       The register, schema and id to update.
 	 * @param bool                 $_rbac         Whether RBAC applies.
 	 * @param bool                 $_multitenancy Whether multitenancy applies.
 	 *
 	 * @return mixed
 	 */
-	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
-		$this->calls['saveObject'] = ['object' => $object, 'register' => $register, 'schema' => $schema, 'uuid' => $uuid, 'rbac' => $_rbac, 'multitenancy' => $_multitenancy];
+	public function saveObject(
+		array $object,
+		ObjectSaveOptions $options = new ObjectSaveOptions(),
+		bool $_rbac = true,
+		bool $_multitenancy = true
+	): mixed {
+		$this->calls['saveObject'] = [
+			'object' => $object,
+			'register' => $options->target->register,
+			'schema' => $options->target->schema,
+			'uuid' => $options->uuid,
+			'rbac' => $_rbac,
+			'multitenancy' => $_multitenancy,
+		];
 		return $this->respond();
 	}//end saveObject()
 
