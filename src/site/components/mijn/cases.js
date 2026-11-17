@@ -9,39 +9,12 @@
 
 import { dueValueOf } from '../../../shared/casePage.js'
 import { caseStatus, caseTitle } from '../../../shared/myCases.js'
+import { isClosedCase } from './closedCase.js'
+
+export { isClosedCase }
 
 /** How many cases a `cases` block shows when it declares no limit (design D4). */
 export const DEFAULT_CASE_LIMIT = 4
-
-/**
- * Whether a collection row is a closed case: its `_closed` mark when the
- * server stamped one, else a value in the collection's `closedField`.
- *
- * @param {object} row The case row.
- * @param {object} collection The `cases` collection.
- * @return {boolean}
- * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
- */
-export function isClosedCase(row, collection) {
-	if (typeof row?._closed === 'boolean') {
-		return row._closed
-	}
-	const field = collection?.closedField
-	if (!field) {
-		return false
-	}
-	return isFilledMark(row?.[field])
-}
-
-/**
- * Whether a closed field holds a mark: anything but nothing, '' or false.
- *
- * @param {unknown} value The field's value.
- * @return {boolean}
- */
-function isFilledMark(value) {
-	return value !== undefined && value !== null && value !== '' && value !== false
-}
 
 /**
  * The cases a `cases` block shows: open ones only when it says `open`, at
