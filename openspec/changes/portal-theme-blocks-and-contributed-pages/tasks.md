@@ -135,8 +135,8 @@ that touches the shell ends with `node tests/shell-snapshot.mjs compare <dir>`.
   - GIVEN a browser with an admin Nextcloud cookie WHEN it submits the same form THEN `_owner` is not `admin`; the OpenRegister version guard is tested both ways
   - GIVEN `npm run check:surfaces` WHEN it runs on both demo portals at 1440px and 390px THEN it self-tests, then reports zero contrast failures, one `h1` per page, no skipped level and no overflow
 - Reference: 4200fd7, a485fad, f1b4294, 9901229
-- [ ] Implement — not run in this batch: left for a later pass
-- [ ] Test — not run in this batch
+- [x] Implement (`contributionApi.js` posts a create to its collection with `actionId` and every other type to the forward route; `PortalObjectWriter::createAnonymousObject()` passes `SaveActor(unowned: true)`, guarded on an OpenRegister whose save actor takes it; `src/site/lib/contrast.js` holds the one AA rule, 3:1 for large text; `tests/site-surfaces.spec.mjs` / `npm run check:surfaces` self-tests, then checks contrast, one `h1`, heading order and overflow at 1440px and 390px)
+- [ ] Test — partly: `tests/site-contribution.spec.mjs` (one request, no `Authorization` header, collection route), `PortalObjectWriterUnownedTest` (the actor asks for the system owner; a subject's create does not), `tests/site-contrast.spec.mjs` (compositing, backdrop, large text; mutation-checked); the surface check's self-test and findings were run against a static stand-in page. Not run: `npm run check:surfaces` on both demo portals, and the admin-cookie submission reading back `_owner`, both need a provisioned instance
 
 ## Verification
 
