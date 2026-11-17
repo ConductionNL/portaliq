@@ -65,6 +65,20 @@ interface PortalSubmissionChecksInterface {
 	public function decideStep(array $render, string $step, array $answers): JSONResponse;
 
 	/**
+	 * Run one fetch a step declares, at the step change, from the server.
+	 *
+	 * @param array<string, mixed> $render  What render() returned for the form.
+	 * @param string               $step    The id of the step that declares the fetch.
+	 * @param string               $fetch   The id of the fetch.
+	 * @param array<string, mixed> $answers The answers so far.
+	 *
+	 * @return JSONResponse `{fetch, values, check, fetchedAt}`, 503 when the fetch does not answer, or 404.
+	 *
+	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t05
+	 */
+	public function fetchStep(array $render, string $step, string $fetch, array $answers): JSONResponse;
+
+	/**
 	 * Check a submission; the checked answers and what to record, or the refusal.
 	 *
 	 * @param array<string, mixed>      $render         What render() returned for the form.

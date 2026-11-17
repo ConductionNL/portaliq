@@ -667,6 +667,37 @@ export async function decideStep(conn, { route, step, answers }) {
 }
 
 /**
+ * Run one fetch a step declares, on the server: integriq asks the connection
+ * and the answer is the fields it fills and its check line. A refusal or a
+ * connection that is down throws, so the form shows that it cannot fetch now.
+ *
+ * @param {object} conn The intake connection.
+ * @param {object} ask The fetch to run.
+ * @param {string} ask.route The form page.
+ * @param {string} ask.step The step that declares the fetch.
+ * @param {string} ask.fetch The fetch's id.
+ * @param {object} ask.answers The answers so far.
+ * @return {Promise<{values: object, check: string}>} What the fetch filled in.
+ *
+ * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t05
+ */
+export async function fetchStep(conn, { route, step, fetch, answers }) {
+	const response = await postIntake(conn, {
+		path: '/intake/fetch',
+		body: withPortal({ route, step, fetch, answers: answers || {} }, conn.portal),
+	})
+	const parsed = await response.json().catch(() => ({}))
+	if (!response.ok) {
+		throw intakeError('intake fetch', response)
+	}
+
+	return {
+		values: parsed.values && typeof parsed.values === 'object' ? parsed.values : {},
+		check: typeof parsed.check === 'string' ? parsed.check : '',
+	}
+}
+
+/**
  * A decision as the form reads it.
  *
  * @param {object} parsed The decide answer.

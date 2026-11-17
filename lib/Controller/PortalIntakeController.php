@@ -52,6 +52,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalFormAvailabilityInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFormBindingResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFormCalculatorInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFormDecisionInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFormFetchInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFormValidatorInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalIntakeConfirmationInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalIntakePaymentsInterface;
@@ -137,6 +138,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param PortalFormAvailabilityInterface|null $availability Whether a form takes submissions now (REQ-FGV-001).
 	 * @param OnBehalfFillingInterface|null $onBehalf The desk employee who fills a form in for a resident (resident-identity-in-forms T06).
 	 * @param PortalCosignFlow|null $cosign Holds a submission for its co-signer (resident-identity-in-forms T04).
+	 * @param PortalFormFetchInterface|null $fetches Runs the fetches a form step declares through integriq (data-lookups-and-checks-in-forms T05).
 	 */
 	public function __construct(
 		IRequest $request,
@@ -165,6 +167,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		private readonly ?PortalFormAvailabilityInterface $availability = null,
 		private readonly ?OnBehalfFillingInterface $onBehalf = null,
 		private readonly ?PortalCosignFlow $cosign = null,
+		?PortalFormFetchInterface $fetches = null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 		$this->checks       = new PortalSubmissionChecks(
@@ -173,7 +176,8 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			statements: $statements,
 			calculator: $calculator,
 			decision: $decision,
-			emailVerification: $emailVerification
+			emailVerification: $emailVerification,
+			fetches: $fetches
 		);
 		$this->payments     = new PortalIntakePayments(
 			lookup: $lookup,
@@ -839,6 +843,46 @@ class PortalIntakeController extends Controller implements PortalProtected {
 
 		return $this->checks->decideStep(render: $render, step: $step, answers: $answers);
 	}//end decide()
+
+	/**
+	 * Run one fetch a step declares, at the step change: integriq asks the
+	 * connection from the server and the step gets the fields it fills and
+	 * its check line. The source, its credential and its raw answer never
+	 * reach the browser; a fetch that does not answer is a 503, so the step
+	 * shows that the data cannot be fetched now and the draft stays.
+	 *
+	 * @param string $route The form page.
+	 * @param string $step The id of the step that declares the fetch.
+	 * @param string $fetch The id of the fetch.
+	 * @param array<string, mixed> $answers The answers so far.
+	 * @param string $portal The portal's slug; empty resolves it from the host.
+	 *
+	 * @return JSONResponse `{fetch, values, check, fetchedAt}`, 503 when the fetch does not answer, or 404.
+	 *
+	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t05
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 30, period: 60)]
+	public function fetch(string $route, string $step, string $fetch, array $answers = [], string $portal = ''): JSONResponse {
+		$site = $this->site(portal: $portal);
+		if ($site === null) {
+			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$binding = $this->bindings->bindingFor(portal: (string)($site['slug'] ?? ''), route: $route);
+		if ($binding === null) {
+			return new JSONResponse(['error' => 'form_not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$render  = $this->bindings->render(binding: $binding);
+		$refusal = $this->signInRefusal(site: $site, binding: $binding, render: $render, subject: $this->subject());
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		return $this->checks->fetchStep(render: $render, step: $step, fetch: $fetch, answers: $answers);
+	}//end fetch()
 
 	/**
 	 * The resident's partner and children to choose from, DigiD only.
