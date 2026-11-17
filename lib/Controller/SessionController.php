@@ -1109,7 +1109,7 @@ class SessionController extends Controller {
 			return new JSONResponse(['error' => 'no_portal_account'], Http::STATUS_FORBIDDEN);
 		}
 
-		$issued = $this->issueNextcloudSession(uid: $uid, account: $account);
+		$issued = $this->issueNextcloudSession(uid: $uid, account: $account, portal: (string)($site['slug'] ?? ''));
 		if ($issued === null) {
 			return new JSONResponse(['error' => 'not_configured'], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
@@ -1122,10 +1122,13 @@ class SessionController extends Controller {
 	 *
 	 * @param string               $uid     The signed-in Nextcloud user.
 	 * @param array<string, mixed> $account The user's active portal account.
+	 * @param string               $portal  The portal the user signs in on; the session is bound to it.
 	 *
 	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
 	 */
-	private function issueNextcloudSession(string $uid, array $account): ?array {
+	private function issueNextcloudSession(string $uid, array $account, string $portal = ''): ?array {
 		$audience = (string)($account['audience'] ?? 'client');
 		return $this->session->issueSession(
 			subjectRef: $uid,
@@ -1136,7 +1139,8 @@ class SessionController extends Controller {
 			// a portal gating on trust must not be fooled by the fact that
 			// this login felt more effortful.
 			trust: 'low',
-			roles: [$audience . ':read']
+			roles: [$audience . ':read'],
+			portal: $portal
 		);
 	}//end issueNextcloudSession()
 

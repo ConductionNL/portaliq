@@ -369,7 +369,7 @@ class BrokerLoginTest extends TestCase {
 		// (signin-session-idle-warning-and-sso D6), no company KVK number
 		// (site-mandates-the-represented-manage D8), and a DigiD envelope carries
 		// no disclosed attributes (resident-identity-in-forms T05).
-		$this->assertSame(['subject-9', 'client', 'gemeente-x', 'substantial', ['client:read'], '', '', '', []], $this->sessionCalls[0]);
+		$this->assertSame(['subject-9', 'client', 'gemeente-x', 'substantial', ['client:read'], '', '', '', [], ''], $this->sessionCalls[0]);
 	}//end testEnvelopeMintsASessionWithItsTrust()
 
 
@@ -399,7 +399,7 @@ class BrokerLoginTest extends TestCase {
 
 		$this->assertSame(['yivi', 'pseudonym-3f2a', 'gemeente-x', 'client', null, ''], $this->accountCalls[0]);
 		$this->assertSame(
-			['subject-9', 'client', 'gemeente-x', 'low', ['client:read'], '', '', '', ['pbdf.gemeente.personalData.fullname' => 'Sanne de Vries']],
+			['subject-9', 'client', 'gemeente-x', 'low', ['client:read'], '', '', '', ['pbdf.gemeente.personalData.fullname' => 'Sanne de Vries'], ''],
 			$this->sessionCalls[0]
 		);
 	}//end testAYiviEnvelopeMintsASessionWithTheDisclosedAttributes()
