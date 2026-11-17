@@ -42,12 +42,6 @@ use OCA\Portaliq\Kernel\Support\SessionTrust;
  * Merges every `kind: cases` collection into the subject's own case list.
  *
  * @spec openspec/specs/portal-identity-space/spec.md
- *
- * @SuppressWarnings(PHPMD.StaticAccess)             -- SessionTrust::trustSatisfies
- * is deliberately THE single trust comparator (contract-v2 design decision);
- * every re-check calls it statically so the ordering can never fork. Same
- * reasoning, and the same suppression, as ContentController and
- * ContributionController.
  */
 class PortalCaseListReader implements PortalCaseListReaderInterface {
 	/**
@@ -150,7 +144,7 @@ class PortalCaseListReader implements PortalCaseListReaderInterface {
 			return false;
 		}
 
-		return SessionTrust::trustSatisfies((string)($run->subject['trust'] ?? ''), ($collection['minTrust'] ?? null));
+		return (new SessionTrust())->trustSatisfies((string)($run->subject['trust'] ?? ''), ($collection['minTrust'] ?? null));
 	}//end isListedCollection()
 
 	/**

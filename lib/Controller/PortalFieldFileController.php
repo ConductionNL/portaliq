@@ -201,7 +201,7 @@ class PortalFieldFileController extends Controller implements PortalProtected {
 	private function mayUpload(array $subject, array|null $granted, array|null $config): bool {
 		return ($granted === null
 			|| $config === null
-			|| SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($granted['action']['minTrust'] ?? null)) === false) === false;
+			|| (new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($granted['action']['minTrust'] ?? null)) === false) === false;
 	}//end mayUpload()
 
 	/**

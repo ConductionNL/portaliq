@@ -20,10 +20,10 @@ use OCA\Portaliq\Contribution\PortalProviderLocator;
 use OCA\Portaliq\Contribution\PublicIndexItems;
 use OCA\Portaliq\Controller\ContentCatalogueController;
 use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PublicCatalogue;
 use OCA\Portaliq\Service\PublicCatalogueQuery;
 use OCA\Portaliq\Service\PublicNewsReader;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Http;
 use OCP\ICache;
@@ -220,7 +220,7 @@ class PublicCatalogueTest extends TestCase {
 		$request->method('getHeader')->willReturn('');
 		$resolver = $this->createMock(PortalResolver::class);
 		$resolver->method('resolve')->willReturn($modes === null ? null : ['slug' => 'warmtepompacademie', 'authentication' => ['modes' => $modes]]);
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn(null);
 
 		return new ContentCatalogueController('portaliq', $request, $resolver, $session, $this->catalogue(answer: self::courses()), new PublicCatalogueQuery());

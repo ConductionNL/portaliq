@@ -12,7 +12,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Controller\PortalActionsController;
 use OCA\Portaliq\Service\Actions\PortalActionService;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 
@@ -27,7 +27,7 @@ class PortalActionsControllerTest extends TestCase {
 	private function controller(?array $subject, PortalActionService $actions, array $params=[]): PortalActionsController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParams')->willReturn($params);
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
 
 		return new PortalActionsController($request, $session, $actions);
