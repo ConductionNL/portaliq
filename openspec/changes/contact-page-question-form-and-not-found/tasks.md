@@ -6,7 +6,7 @@
 - [x] **T04**: `src/site/components/NotFoundPage.vue` per the NietGevonden board, used by the 404 branch of `src/site/App.vue`; `portal.contactRoute` optional, default `/contact` (REQ-SCN-004)
 - [x] **T05**: node tests `tests/contact-form.spec.mjs` and `tests/not-found-page.spec.mjs`; the existing unpublished-equals-missing test stays green
 - [ ] **T06**: Playwright: open a missing route, follow Contact, send a question signed in — not run: needs a live instance
-- [ ] **T07**: Ask pipelinq in its tracker for a `citizen` create action on `ticket` (ticketType question) with a subject enum, and a questions collection for residents — not run: needs pipelinq
+- [x] **T07**: Ask pipelinq in its tracker for a `citizen` create action on `ticket` (ticketType question) with a subject enum, and a questions collection for residents — done on pipelinq `development`: `PortalQuestionActions::ask()` declares `askQuestion` (a `create` on `ticket`, `ticketType: request`, `channel: portal`, `confirmationMail: contact-confirmation`, `topicField: title`) and residents list their questions in `myQuestions`; the subject is a free-text `title` ("Onderwerp"), not an enum. The `/contact/vraag` block in `zuiddrecht.json` already names `askQuestion`.
 - [ ] **T08**: Live check against the Contact and NietGevonden boards; screenshots in the build PR — not run: needs a live instance
 
 ## Build notes
