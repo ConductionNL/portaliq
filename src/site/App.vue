@@ -906,49 +906,11 @@ export default {
 				}
 				return accountCrumbs(this.accountEntry, this.t, this.hrefForRoute)
 			}
-			if (this.statementRoute) {
-				return [
-					{
-						route: '/',
-						label: this.t('Home'),
-						href: this.hrefForRoute('/'),
-					},
-					{
-						route: this.route,
-						label: this.t('Accessibility statement'),
-						href: this.hrefForRoute(this.route),
-					},
-				]
-			}
-			// The ids are not words and no page sits at `/document`.
-			if (this.documentRoute) {
-				return [
-					{
-						route: '/',
-						label: this.t('Home'),
-						href: this.hrefForRoute('/'),
-					},
-					{
-						route: this.route,
-						label: this.subject ? this.subject.title : this.t('Document'),
-						href: this.hrefForRoute(this.route),
-					},
-				]
-			}
-			// The token is not a word and no page sits at its parent.
-			if (this.sharedDossierRoute) {
-				return [
-					{
-						route: '/',
-						label: this.t('Home'),
-						href: this.hrefForRoute('/'),
-					},
-					{
-						route: this.route,
-						label: this.sharedDossierTitle || this.t('Shared dossier'),
-						href: this.hrefForRoute(this.route),
-					},
-				]
+			// The statement, a document page and a shared dossier: no page sits
+			// at their parents and their ids or tokens are not words.
+			const ownLabel = this.ownRouteCrumbLabel()
+			if (ownLabel !== null) {
+				return this.homeAndHereCrumbs(ownLabel)
 			}
 			const crumbs = [
 				{ route: '/', label: this.t('Home'), href: this.hrefForRoute('/') },
@@ -2453,6 +2415,36 @@ export default {
 		onSharedDossierLoaded(title) {
 			this.sharedDossierTitle = title || ''
 			this.applyDocumentTitle()
+		},
+
+		/**
+		 * The last crumb's label on a route whose trail is only home and itself,
+		 * or null on any other route.
+		 *
+		 * @return {string|null} The label.
+		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+		 */
+		ownRouteCrumbLabel() {
+			const own = [
+				{ on: this.statementRoute, label: () => this.t('Accessibility statement') },
+				{ on: this.documentRoute, label: () => (this.subject ? this.subject.title : this.t('Document')) },
+				{ on: this.sharedDossierRoute, label: () => this.sharedDossierTitle || this.t('Shared dossier') },
+			].find((row) => Boolean(row.on))
+			return own === undefined ? null : own.label()
+		},
+
+		/**
+		 * A two-crumb trail: home, then the current route under the given label.
+		 *
+		 * @param {string} label The current route's label.
+		 * @return {Array<object>} `{route, label, href}` crumbs, home first.
+		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+		 */
+		homeAndHereCrumbs(label) {
+			return [
+				{ route: '/', label: this.t('Home'), href: this.hrefForRoute('/') },
+				{ route: this.route, label, href: this.hrefForRoute(this.route) },
+			]
 		},
 
 		/**

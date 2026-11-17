@@ -17,7 +17,7 @@
 
 import { PUBLICATION_ENDPOINT, publicationPageRoute } from './documentRoute.js'
 import { formatDutchDate } from './federatedSearch.js'
-import { toDocuments } from './publicationDetail.js'
+import { attachmentId, attachmentRows, toDocuments } from './publicationDetail.js'
 
 export {
 	DOCUMENT_ROUTE,
@@ -46,6 +46,17 @@ function isPublication(publication, publicationId) {
 }
 
 /**
+ * A value as trimmed text, '' for nothing.
+ *
+ * @param {unknown} value The value.
+ * @return {string} The text.
+ * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+ */
+function trimmed(value) {
+	return String(value || '').trim()
+}
+
+/**
  * The rows of a document's metadata list, in the order a reader takes them:
  * type, size, date, document kind, creation date. Only what the read carries.
  *
@@ -56,17 +67,31 @@ function isPublication(publication, publicationId) {
  */
 export function documentFacts(file, t) {
 	const row = file || {}
-	const view = toDocuments([row])[0] || {}
-	const format = String(row.format || '').trim()
+	const view = toDocuments([row])[0]
 	const facts = [
-		{ label: t('File type'), value: view.type || format.toUpperCase() },
-		{ label: t('Size'), value: view.size || '' },
+		{
+			label: t('File type'),
+			value: view.type || trimmed(row.format).toUpperCase(),
+		},
+		{ label: t('Size'), value: view.size },
 		{ label: t('Published on'), value: formatDutchDate(row.published) },
-		{ label: t('Document type'), value: String(row.documentsoort || '').trim() },
+		{ label: t('Document type'), value: trimmed(row.documentsoort) },
 		{ label: t('Created on'), value: formatDutchDate(row.creationDate) },
 	]
 
 	return facts.filter((fact) => fact.value !== '')
+}
+
+/**
+ * A publication's title, from its own fields or its metadata.
+ *
+ * @param {object} publication The publication read.
+ * @return {string} The title, '' without one.
+ * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+ */
+function publicationTitle(publication) {
+	const self = publication['@self'] || {}
+	return String(publication.title || self.name || publication.name || '')
 }
 
 /**
@@ -97,32 +122,37 @@ export function documentPageOf({
 		return null
 	}
 
-	let files = []
-	if (Array.isArray(attachments) === true) {
-		files = attachments
-	} else if (attachments && Array.isArray(attachments.results) === true) {
-		files = attachments.results
-	}
-
-	const file = files.find(
-		(row) =>
-			row
-			&& typeof row === 'object'
-			&& String(row.documentId ?? row.id ?? '') === documentId,
+	const file = attachmentRows(attachments).find(
+		(row) => row && typeof row === 'object' && attachmentId(row) === documentId,
 	)
 	if (file === undefined) {
 		return null
 	}
 
-	const self = publication['@self'] || {}
 	return {
 		document: toDocuments([file], { preview })[0],
 		facts: documentFacts(file, t),
 		publication: {
 			id: publicationId,
-			title: String(publication.title || self.name || publication.name || ''),
+			title: publicationTitle(publication),
 			route: publicationPageRoute(publicationId),
 		},
+	}
+}
+
+/**
+ * A reader that answers a URL's JSON, or null for a failed response.
+ *
+ * @param {(url: string, init: object) => Promise<object>} fetcher `fetch` or a stand-in.
+ * @return {(url: string) => Promise<object|null>} The reader.
+ * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+ */
+function jsonReader(fetcher) {
+	return async (url) => {
+		const response = await fetcher(url, {
+			headers: { Accept: 'application/json' },
+		})
+		return response.ok === true ? response.json() : null
 	}
 }
 
@@ -146,17 +176,12 @@ export async function loadDocumentPage({
 	publicationId,
 	documentId,
 	t,
-	preview = false,
+	preview,
 	endpoint = PUBLICATION_ENDPOINT,
 	fetcher = globalThis.fetch,
 }) {
 	const base = `${String(endpoint).replace(/\/+$/, '')}/${encodeURIComponent(publicationId)}`
-	const read = async (url) => {
-		const response = await fetcher(url, {
-			headers: { Accept: 'application/json' },
-		})
-		return response.ok === true ? response.json() : null
-	}
+	const read = jsonReader(fetcher)
 
 	try {
 		const publication = await read(base)

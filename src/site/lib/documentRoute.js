@@ -19,6 +19,21 @@ export const PUBLICATION_ENDPOINT =
 	'/index.php/apps/opencatalogi/api/federation/publications'
 
 /**
+ * One id of a route, decoded and trimmed; '' when it does not decode.
+ *
+ * @param {string} part The route segment.
+ * @return {string} The id.
+ * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+ */
+function decodedId(part) {
+	try {
+		return decodeURIComponent(part).trim()
+	} catch {
+		return ''
+	}
+}
+
+/**
  * The two ids a document route names, or null when the route is not a
  * document page.
  *
@@ -35,16 +50,12 @@ export function documentRouteOf(route) {
 		return null
 	}
 
-	try {
-		const publicationId = decodeURIComponent(match[1]).trim()
-		const documentId = decodeURIComponent(match[2]).trim()
-		if (publicationId === '' || documentId === '') {
-			return null
-		}
-		return { publicationId, documentId }
-	} catch {
+	const publicationId = decodedId(match[1])
+	const documentId = decodedId(match[2])
+	if (publicationId === '' || documentId === '') {
 		return null
 	}
+	return { publicationId, documentId }
 }
 
 /**

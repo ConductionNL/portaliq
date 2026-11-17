@@ -211,6 +211,25 @@ function safeLink(value) {
 }
 
 /**
+ * The path of a safe link: its own text when it is a path, the URL's path
+ * when it is absolute, '' when that URL cannot be read.
+ *
+ * @param {string} link A link `safeLink` accepted.
+ * @return {string} The path.
+ * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-a-document-opens-in-the-browser-req-pdc-001
+ */
+function linkPath(link) {
+	if (/^https?:\/\//i.test(link) === false) {
+		return link
+	}
+	try {
+		return new URL(link).pathname
+	} catch {
+		return ''
+	}
+}
+
+/**
  * A link to one of opencatalogi's public files: a Nextcloud public share
  * (`/s/<token>`) or opencatalogi's own api, on this instance or a federated
  * one. Anything else, a foreign host's file or another app's path, is not
@@ -227,17 +246,8 @@ function publicFileLink(value) {
 		return ''
 	}
 
-	let path = link
-	if (/^https?:\/\//i.test(link) === true) {
-		try {
-			path = new URL(link).pathname
-		} catch {
-			return ''
-		}
-	}
-
 	return /^(\/index\.php)?\/(s\/[A-Za-z0-9]+(\/|$)|apps\/opencatalogi\/api\/)/.test(
-		path,
+		linkPath(link),
 	) === true
 		? link
 		: ''
@@ -268,6 +278,47 @@ function viewLink(file, type, preview) {
 }
 
 /**
+ * Whether a value is a non-empty id.
+ *
+ * @param {unknown} id The candidate.
+ * @return {boolean} True for a non-empty string.
+ * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-the-publication-downloads-as-one-archive-req-pdc-003
+ */
+function isId(id) {
+	return typeof id === 'string' && id !== ''
+}
+
+/**
+ * Whether a number counts at least one document.
+ *
+ * @param {number} total The count.
+ * @return {boolean} True for a whole number of 1 or more.
+ * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-the-publication-downloads-as-one-archive-req-pdc-003
+ */
+function isDocumentCount(total) {
+	return Number.isInteger(total) === true && total >= 1
+}
+
+/**
+ * The base the ZIP route sits under: the catalogue's route with a valid slug,
+ * else the publication read's own base; '' when neither is usable.
+ *
+ * @param {string} [slug] The catalogue's slug, empty without one.
+ * @param {string} [endpoint] The publication read's base.
+ * @return {string} The base, without a trailing slash.
+ * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-the-publication-downloads-as-one-archive-req-pdc-003
+ */
+function downloadBase(slug, endpoint) {
+	const name = String(slug || '')
+	if (name === '') {
+		return safeLink(String(endpoint || '')).replace(/\/+$/, '')
+	}
+	return /^[A-Za-z0-9-]+$/.test(name) === true
+		? `/index.php/apps/opencatalogi/api/${name}`
+		: ''
+}
+
+/**
  * The "download everything" link of a publication, or null without documents.
  *
  * With the catalogue's slug it is opencatalogi's catalogue ZIP route;
@@ -282,31 +333,30 @@ function viewLink(file, type, preview) {
  *
  * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-the-publication-downloads-as-one-archive-req-pdc-003
  */
-export function downloadAllLink({ id, count, catalogSlug = '', endpoint = '' }) {
+export function downloadAllLink({ id, count, catalogSlug, endpoint }) {
 	const total = Number(count)
-	if (
-		typeof id !== 'string'
-		|| id === ''
-		|| Number.isInteger(total) === false
-		|| total < 1
-	) {
-		return null
-	}
-
-	const slug = String(catalogSlug || '')
-	if (slug !== '' && /^[A-Za-z0-9-]+$/.test(slug) === false) {
-		return null
-	}
-
-	const base =
-		slug !== ''
-			? `/index.php/apps/opencatalogi/api/${slug}`
-			: safeLink(String(endpoint || '')).replace(/\/+$/, '')
-	if (base === '') {
+	const base = isDocumentCount(total) === true ? downloadBase(catalogSlug, endpoint) : ''
+	if (isId(id) === false || base === '') {
 		return null
 	}
 
 	return { href: `${base}/${encodeURIComponent(id)}/download`, count: total }
+}
+
+/**
+ * The line a reaction period's reported state reads as, or null for no
+ * period or a state the portal does not know.
+ *
+ * @param {unknown} period The publication's `commentPeriod`.
+ * @return {{state: string, text: string, date: string}|null} The state, the line and its date field.
+ * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-the-page-states-the-reaction-period-req-pdc-005
+ */
+function periodWords(period) {
+	if (!period || typeof period !== 'object') {
+		return null
+	}
+	const state = String(period.state || '')
+	return Object.hasOwn(PERIOD_LINES, state) ? { state, ...PERIOD_LINES[state] } : null
 }
 
 /**
@@ -323,21 +373,16 @@ export function downloadAllLink({ id, count, catalogSlug = '', endpoint = '' }) 
  */
 export function commentPeriodLine(publication, t) {
 	const period = (publication || {}).commentPeriod
-	if (!period || typeof period !== 'object') {
-		return null
-	}
-
-	const state = String(period.state || '')
-	const line = Object.hasOwn(PERIOD_LINES, state) ? PERIOD_LINES[state] : null
+	const line = periodWords(period)
 	const date = line === null ? '' : formatDutchDate(period[line.date])
-	if (line === null || date === '') {
+	if (date === '') {
 		return null
 	}
 
 	return {
-		state,
+		state: line.state,
 		text: t(line.text, { date }),
-		formUrl: state === 'open' ? safeLink(period.reactionFormUrl) : '',
+		formUrl: line.state === 'open' ? safeLink(period.reactionFormUrl) : '',
 	}
 }
 
@@ -397,6 +442,56 @@ function fileType(file) {
 }
 
 /**
+ * The rows of an attachment list's answer: a bare array or `{results}`.
+ *
+ * @param {object|Array|null} attachments The attachment list's answer.
+ * @return {Array} The rows, empty for anything else.
+ * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+ */
+export function attachmentRows(attachments) {
+	if (Array.isArray(attachments) === true) {
+		return attachments
+	}
+	if (attachments && Array.isArray(attachments.results) === true) {
+		return attachments.results
+	}
+	return []
+}
+
+/**
+ * The document id of one attachment row.
+ *
+ * @param {object} file An attachment row.
+ * @return {string} The stable `documentId`, else the file id, else ''.
+ * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+ */
+export function attachmentId(file) {
+	return String(file.documentId ?? file.id ?? '')
+}
+
+/**
+ * One document as the page shows it.
+ *
+ * @param {object} file An attachment row.
+ * @param {boolean} preview Whether a public data-file preview is available.
+ * @return {object} `{id, title, type, size, href, view, metadataUrl, diwooUrl}`.
+ * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-a-document-opens-in-the-browser-req-pdc-001
+ */
+function documentRow(file, preview) {
+	const type = fileType(file)
+	return {
+		id: attachmentId(file),
+		title: String(file.title || file.name || 'Document'),
+		type,
+		size: humanSize(file.size),
+		href: safeLink(file.downloadUrl) || safeLink(file.accessUrl),
+		view: viewLink(file, type, preview),
+		metadataUrl: safeLink(file.metadataUrl),
+		diwooUrl: safeLink(file.diwooUrl),
+	}
+}
+
+/**
  * The documents of a publication, from opencatalogi's attachment envelope.
  *
  * The envelope is OpenRegister's file listing, `{results: [...], total}`; a
@@ -416,28 +511,9 @@ function fileType(file) {
  * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-list-and-offer-every-document-for-download-req-wsd-005
  */
 export function toDocuments(envelope, { preview = false } = {}) {
-	let files = []
-	if (Array.isArray(envelope) === true) {
-		files = envelope
-	} else if (envelope && Array.isArray(envelope.results) === true) {
-		files = envelope.results
-	}
-
-	return files
+	return attachmentRows(envelope)
 		.filter((file) => file && typeof file === 'object')
-		.map((file) => {
-			const type = fileType(file)
-			return {
-				id: String(file.documentId ?? file.id ?? ''),
-				title: String(file.title || file.name || 'Document'),
-				type,
-				size: humanSize(file.size),
-				href: safeLink(file.downloadUrl) || safeLink(file.accessUrl),
-				view: viewLink(file, type, preview),
-				metadataUrl: safeLink(file.metadataUrl),
-				diwooUrl: safeLink(file.diwooUrl),
-			}
-		})
+		.map((file) => documentRow(file, preview))
 }
 
 /**
