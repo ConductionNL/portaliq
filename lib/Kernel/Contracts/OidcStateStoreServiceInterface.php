@@ -47,7 +47,8 @@ interface OidcStateStoreServiceInterface {
 	 *
 	 * @param string $state The OIDC `state` parameter to consume.
 	 *
-	 * @return array{nonce: string, codeVerifier: string, org: string, provider: string, returnTo: string, route: string, silent: bool}|null
+	 * @return array{nonce: string, codeVerifier: string, org: string, provider: string, returnTo: string, route: string, silent: bool,
+	 *               portal: string}|null
 	 *
 	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T02
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T08
@@ -66,6 +67,7 @@ interface OidcStateStoreServiceInterface {
 	 * @param string $returnTo The SPA path to redirect to once minted.
 	 * @param bool $silent Whether the start asked the broker for no prompt
 	 *                     (signin-session-idle-warning-and-sso D5).
+	 * @param string $portal The slug of the portal the login was started on, or ''.
 	 *
 	 * @return bool True when the row was written; false on any write failure
 	 *              (the caller — `oidcStart()` — fails the whole request
@@ -86,5 +88,6 @@ interface OidcStateStoreServiceInterface {
 		string $provider,
 		string $returnTo,
 		bool $silent = false,
+		string $portal = '',
 	): bool;
 }//end interface
