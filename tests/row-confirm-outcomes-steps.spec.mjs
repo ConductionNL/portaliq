@@ -24,7 +24,15 @@ function dialog(result, state = {}) {
 		translate: (key) => `[${key}]`,
 		navigate: (url) => calls.navigated.push(url),
 		$emit: (name) => calls.emitted.push(name),
+		// The declared fields (REQ-RAI-001): none on these actions, so the
+		// required-field check passes and nothing is added to the answers.
+		fieldValues: {},
+		fieldOptions: {},
+		t: (key) => key,
 		...state,
+	}
+	if (!('fieldAction' in state)) {
+		vm.fieldAction = step.computed.fieldAction.call(vm)
 	}
 	return { vm, calls, run: () => step.methods.confirm.call(vm) }
 }

@@ -24,6 +24,17 @@
 			data-testid="rowaction-confirm-text">
 			{{ action.confirmText }}
 		</p>
+		<!-- The fields the action declares (REQ-RAI-001), with the same
+		     renderer as the schema form. -->
+		<ActionFields
+			v-if="shownFields.length > 0"
+			:action="fieldAction"
+			:values="fieldValues"
+			:options="fieldOptions"
+			:errors="errors"
+			:idBase="`rowaction-field-${action.id}`"
+			:t="t"
+			@update="setField" />
 		<div
 			v-for="input in shownInputs"
 			:key="input.name"
@@ -133,8 +144,18 @@
 </template>
 
 <script>
+import ActionFields from '../../components/c/ActionFields.vue'
+import { fileFields } from '../../../shared/fileFieldSubmit.js'
 import { rowInputsOf, rowNotice, runRowAction } from '../../../shared/rowAction.js'
-import { translatorOr } from '../../components/c/forms.js'
+import {
+	fieldConfig,
+	fieldErrors,
+	formBody,
+	formFields,
+	staticOptions,
+	translatorOr,
+	withSingleOptions,
+} from '../../components/c/forms.js'
 
 /**
  * What the confirm step sends: the row, the action, the answers and, with a
@@ -190,6 +211,8 @@ function goTo(url) {
 export default {
 	name: 'RowActionConfirm',
 
+	components: { ActionFields },
+
 	props: {
 		/** The resolved endpoint row action. */
 		action: { type: Object, required: true },
@@ -208,7 +231,10 @@ export default {
 	emits: ['done', 'close'],
 
 	data() {
+		const options = staticOptions(this.action)
 		return {
+			fieldOptions: options,
+			fieldValues: withSingleOptions(this.action, {}, options),
 			busy: false,
 			message: '',
 			link: '',
@@ -230,6 +256,33 @@ export default {
 
 		notice() {
 			return rowNotice(this.collection, this.row)
+		},
+
+		/**
+		 * @return {object} The action narrowed to the fields this dialog asks:
+		 *                  its declared `fields` without file fields (a row
+		 *                  action carries files through `files`) and without
+		 *                  hidden ones.
+		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-fields-it-declares-req-rai-001
+		 */
+		fieldAction() {
+			const files = fileFields(this.action)
+			return {
+				...this.action,
+				fields: formFields(this.action).filter(
+					(field) =>
+						!files.includes(field)
+						&& fieldConfig(this.action, field).visible !== false,
+				),
+			}
+		},
+
+		/**
+		 * @return {string[]} The declared fields on screen: none once the action has run.
+		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-fields-it-declares-req-rai-001
+		 */
+		shownFields() {
+			return this.message === '' ? this.fieldAction.fields : []
 		},
 
 		/**
@@ -287,6 +340,13 @@ export default {
 			if (this.fileSlot && this.checkFiles() === false) {
 				return
 			}
+			// A required declared field left empty is said under it, and
+			// nothing is sent (REQ-RAI-001).
+			const missing = fieldErrors(this.fieldAction, this.fieldValues, {}, this.t)
+			if (Object.keys(missing).length > 0) {
+				this.errors = missing
+				return
+			}
 			this.busy = true
 			this.errors = {}
 			const outcome = await runRowAction(this.api, rowRequest(this))
@@ -342,12 +402,51 @@ export default {
 		},
 
 		/**
-		 * What the resident typed, under the body key the action declares.
+		 * Keep one typed value of a declared field.
+		 *
+		 * @param {string} field The field.
+		 * @param {string} value The value.
+		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-fields-it-declares-req-rai-001
+		 */
+		setField(field, value) {
+			this.fieldValues = { ...this.fieldValues, [field]: value }
+		},
+
+		/**
+		 * The declared fields the resident filled in, each in the type its
+		 * field declares; a field left empty is absent, never sent as ''.
+		 *
+		 * @return {object} Field to value.
+		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-fields-it-declares-req-rai-001
+		 */
+		fieldAnswers() {
+			const body = formBody(this.fieldAction, this.fieldValues, this.fieldOptions)
+			return Object.fromEntries(
+				Object.entries(body).filter(
+					([, value]) => !(typeof value === 'string' && value.trim() === ''),
+				),
+			)
+		},
+
+		/**
+		 * What the resident filled in: the declared fields, and what they
+		 * typed into the row's inputs under the body key the action declares.
+		 *
+		 * @return {object} `{}` for an action without fields or row inputs.
+		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-inputs-its-row-declares-req-rai-002
+		 */
+		answers() {
+			return { ...this.fieldAnswers(), ...this.rowInputAnswers() }
+		},
+
+		/**
+		 * What the resident typed into the row's inputs, under the body key
+		 * the action declares.
 		 *
 		 * @return {object} `{}` for an action without row inputs.
 		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-inputs-its-row-declares-req-rai-002
 		 */
-		answers() {
+		rowInputAnswers() {
 			const into = this.action.rowInputs?.into
 			if (!into || this.inputs.length === 0) {
 				return {}
