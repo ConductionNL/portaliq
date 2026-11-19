@@ -369,8 +369,25 @@ class BrokerLoginTest extends TestCase {
 		// (signin-session-idle-warning-and-sso D6), no company KVK number
 		// (site-mandates-the-represented-manage D8), and a DigiD envelope carries
 		// no disclosed attributes (resident-identity-in-forms T05).
-		$this->assertSame(['subject-9', 'client', 'gemeente-x', 'substantial', ['client:read'], '', '', '', []], $this->sessionCalls[0]);
+		$this->assertSame(['subject-9', 'client', 'gemeente-x', 'substantial', ['client:read'], '', '', '', [], ''], $this->sessionCalls[0]);
 	}//end testEnvelopeMintsASessionWithItsTrust()
+
+
+	/**
+	 * portal-scoping-and-auth Task 4: a broker login started on a portal mints
+	 * a session bound to that portal, carried through the login state.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
+	 */
+	public function testABrokerSessionIsBoundToThePortalTheLoginStartedOn(): void {
+		$login = $this->login($this->routed(), 200, $this->exchangeBody());
+		$state = $this->queryOf((string)$login->start(org: 'gemeente-x', provider: 'digid', returnTo: '/apps/portaliq/portal', callbackUrl: 'https://p/cb', portal: 'portal-a'))['relayState'];
+
+		$this->assertSame(['token' => 'bearer-1', 'returnTo' => '/apps/portaliq/portal'], $login->complete(state: $state, code: 'one-time-code'));
+		$this->assertSame('portal-a', $this->sessionCalls[0][9]);
+	}//end testABrokerSessionIsBoundToThePortalTheLoginStartedOn()
 
 
 	/**
@@ -399,7 +416,7 @@ class BrokerLoginTest extends TestCase {
 
 		$this->assertSame(['yivi', 'pseudonym-3f2a', 'gemeente-x', 'client', null, ''], $this->accountCalls[0]);
 		$this->assertSame(
-			['subject-9', 'client', 'gemeente-x', 'low', ['client:read'], '', '', '', ['pbdf.gemeente.personalData.fullname' => 'Sanne de Vries']],
+			['subject-9', 'client', 'gemeente-x', 'low', ['client:read'], '', '', '', ['pbdf.gemeente.personalData.fullname' => 'Sanne de Vries'], ''],
 			$this->sessionCalls[0]
 		);
 	}//end testAYiviEnvelopeMintsASessionWithTheDisclosedAttributes()

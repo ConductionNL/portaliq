@@ -87,7 +87,9 @@ class BrokerSessionControllerTest extends TestCase {
 		$portals->method('resolve')->willReturn(['slug' => 'venray', 'organisation' => 'gemeente-x']);
 		$login = $this->getMockBuilder(BrokerLogin::class)->disableOriginalConstructor()->onlyMethods(['start', 'complete'])->getMock();
 		$login->expects($this->once())->method('start')
-			->with('gemeente-x', 'digid', '/apps/portaliq/site?portal=venray', 'https://portal.example/apps/portaliq/portal/api/session/broker/callback')
+			// The resolved portal's slug binds the session the callback mints
+			// (portal-scoping-and-auth Task 4).
+			->with('gemeente-x', 'digid', '/apps/portaliq/site?portal=venray', 'https://portal.example/apps/portaliq/portal/api/session/broker/callback', 'venray')
 			->willReturn('https://integriq.example/idp/start?state=s');
 
 		$response = $this->controller(login: $login, portals: $portals)->start(provider: 'digid', portal: 'venray');
