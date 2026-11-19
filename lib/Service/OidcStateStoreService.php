@@ -84,6 +84,7 @@ class OidcStateStoreService implements OidcStateStoreServiceInterface {
 	 * @param string $returnTo The SPA path to redirect to once minted.
 	 * @param bool $silent Whether the start asked the broker for no prompt
 	 *                     (signin-session-idle-warning-and-sso D5).
+	 * @param string $portal The slug of the portal the login was started on, or ''.
 	 *
 	 * @return bool True when the row was written; false on any write failure
 	 *              (the caller — `oidcStart()` — fails the whole request
@@ -91,6 +92,7 @@ class OidcStateStoreService implements OidcStateStoreServiceInterface {
 	 *
 	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T02
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T07
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- `silent` is one recorded
 	 * fact of the round trip, stored as-is on the row; the method does the
@@ -104,6 +106,7 @@ class OidcStateStoreService implements OidcStateStoreServiceInterface {
 		string $provider,
 		string $returnTo,
 		bool $silent = false,
+		string $portal = '',
 	): bool {
 		if ($state === '') {
 			return false;
@@ -126,6 +129,9 @@ class OidcStateStoreService implements OidcStateStoreServiceInterface {
 				'expiresAt' => $now->add(new DateInterval('PT' . self::TTL_SECONDS . 'S'))->format(DATE_ATOM),
 				'used' => false,
 				'silent' => $silent,
+				// The portal the login started on; the session is bound to it
+				// (portal-scoping-and-auth Task 4).
+				'portal' => $portal,
 			]
 		);
 
@@ -143,12 +149,14 @@ class OidcStateStoreService implements OidcStateStoreServiceInterface {
 	 * @param string $org      The organisation slug the login was started for.
 	 * @param string $provider The provider.
 	 * @param string $returnTo The SPA path to return to once minted.
+	 * @param string $portal   The slug of the portal the login was started on, or ''.
 	 *
 	 * @return bool True when the row was written.
 	 *
 	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-broker-start-binds-the-login-to-one-organisation-and-one-provider-req-bel-002
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
 	 */
-	public function createBroker(string $state, string $org, string $provider, string $returnTo): bool {
+	public function createBroker(string $state, string $org, string $provider, string $returnTo, string $portal = ''): bool {
 		if ($state === '') {
 			return false;
 		}
@@ -168,6 +176,7 @@ class OidcStateStoreService implements OidcStateStoreServiceInterface {
 				'returnTo' => $returnTo,
 				'expiresAt' => (new DateTimeImmutable())->add(new DateInterval('PT' . self::TTL_SECONDS . 'S'))->format(DATE_ATOM),
 				'used' => false,
+				'portal' => $portal,
 			]
 		);
 
@@ -184,7 +193,8 @@ class OidcStateStoreService implements OidcStateStoreServiceInterface {
 	 *
 	 * @param string $state The OIDC `state` parameter to consume.
 	 *
-	 * @return array{nonce: string, codeVerifier: string, org: string, provider: string, returnTo: string, route: string, silent: bool}|null
+	 * @return array{nonce: string, codeVerifier: string, org: string, provider: string, returnTo: string, route: string, silent: bool,
+	 *               portal: string}|null
 	 *
 	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T02
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T08
@@ -282,7 +292,7 @@ class OidcStateStoreService implements OidcStateStoreServiceInterface {
 	 *
 	 * @param array<string, mixed> $row The state row.
 	 *
-	 * @return array{nonce: string, codeVerifier: string, org: string, provider: string, returnTo: string, route: string, silent: bool}
+	 * @return array{nonce: string, codeVerifier: string, org: string, provider: string, returnTo: string, route: string, silent: bool, portal: string}
 	 *
 	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T02
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T08
@@ -298,6 +308,9 @@ class OidcStateStoreService implements OidcStateStoreServiceInterface {
 			'route' => (string)($row['route'] ?? 'oidc'),
 			// A silent start (signin-session-idle-warning-and-sso D5); absent is false.
 			'silent' => (($row['silent'] ?? false) === true),
+			// The portal the login started on; absent on rows written before
+			// portal-scoping-and-auth, which bind the session to no portal.
+			'portal' => (string)($row['portal'] ?? ''),
 		];
 	}//end consumedState()
 
