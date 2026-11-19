@@ -95,7 +95,12 @@ class DeskSessionControllerTest extends TestCase {
 			'low',
 			[OnBehalfFillingInterface::AUDIENCE . ':fill'],
 			'',
-			OnBehalfFillingInterface::PROVIDER
+			OnBehalfFillingInterface::PROVIDER,
+			'',
+			[],
+			// The desk session is bound to the portal it was started on
+			// (portal-scoping-and-auth Task 4).
+			'gemeente-x'
 		)->willReturn(['token' => 'tok']);
 
 		$response = $this->controller()->start(portal: 'gemeente-x', route: 'woo', returnTo: '');
