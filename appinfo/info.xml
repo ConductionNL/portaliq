@@ -102,6 +102,9 @@
         <job>OCA\Portaliq\BackgroundJob\CosignDeadlineJob</job>
         <!-- media-usage-count: hourly, how many records of its portal use each media item. -->
         <job>OCA\Portaliq\BackgroundJob\MediaUsageJob</job>
+        <!-- portal-scoping-and-auth: twice a day, re-checks the record of every
+             verified domain; a record gone three times in a row unbinds it. -->
+        <job>OCA\Portaliq\BackgroundJob\DomainReverificationJob</job>
         <job>OCA\Portaliq\BackgroundJob\MailLogRetentionJob</job>
         <!-- search-sort-by-relevance: daily, the did-you-mean word list of every published portal. -->
         <job>OCA\Portaliq\BackgroundJob\SuggestionWordListJob</job>

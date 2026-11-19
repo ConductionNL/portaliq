@@ -130,7 +130,9 @@ class DeskSessionController extends Controller {
 			organisation: (string)($site['organisation'] ?? ''),
 			trust: 'low',
 			roles: [OnBehalfFillingInterface::AUDIENCE . ':fill'],
-			provider: OnBehalfFillingInterface::PROVIDER
+			provider: OnBehalfFillingInterface::PROVIDER,
+			// The desk session works on this portal only (portal-scoping-and-auth Task 4).
+			portal: (string)($site['slug'] ?? '')
 		);
 		if ($issued === null) {
 			return new JSONResponse(['error' => 'not_configured'], Http::STATUS_SERVICE_UNAVAILABLE);
