@@ -669,7 +669,8 @@ OC.L10N.register(
         "The report is marked handled.": "The report is marked handled.",
         "The report is marked not applicable.": "The report is marked not applicable.",
         "Only the owner of this portal's error reports can close them.": "Only the owner of this portal's error reports can close them.",
-        "The report could not be closed. Try again.": "The report could not be closed. Try again."
+        "The report could not be closed. Try again.": "The report could not be closed. Try again.",
+        "{read} of {total} read": "{read} of {total} read"
     },
     "nplurals=2; plural=(n != 1);"
 )

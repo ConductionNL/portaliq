@@ -2552,6 +2552,15 @@
           },
           "receivedAt"
         ],
+        "countTextFiltered": "{read} of {total} read",
+        "countValues": {
+          "read": {
+            "metric": "count",
+            "filter": {
+              "read": true
+            }
+          }
+        },
         "sidebar": {
           "enabled": true,
           "showMetadata": true
