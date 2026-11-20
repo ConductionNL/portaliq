@@ -159,6 +159,7 @@ export default {
 	computed: {
 		/**
 		 * @return {Array} The page's blocks, always an array.
+		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-a-contributed-action-must-post-where-its-type-is-honoured-req-ptb-012
 		 */
 		blocks() {
 			return Array.isArray(this.page.blocks) ? this.page.blocks : []
@@ -216,6 +217,7 @@ export default {
 		 * @param {string} action The action id.
 		 * @param {string} field  The field name.
 		 * @return {string} The id.
+		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-a-contributed-action-must-post-where-its-type-is-honoured-req-ptb-012
 		 */
 		fieldId(action, field) {
 			return `pq-${action}-${field}`.replace(/[^a-zA-Z0-9-]/g, '-')
@@ -235,11 +237,7 @@ export default {
 				return
 			}
 
-			const payload = {}
-			for (const field of this.fieldsOf(id)) {
-				payload[field] = this.values[`${id}:${field}`] || ''
-			}
-
+			const payload = this.payloadFor(id)
 			this.busy = id
 			try {
 				await submitAction({
@@ -250,33 +248,80 @@ export default {
 					// The anonymous path sends no bearer at all (REQ-PTB-012).
 					token: this.session ? adoptSessionToken() : '',
 				})
-				this.result = {
-					...this.result,
-					// An unowned submission gets no receipt: there is no
-					// subject to send one to.
-					[id]: {
-						ok: true,
-						message: this.session
-							? this.t('Sent. You will receive a confirmation.')
-							: this.t('Sent anonymously. It is not linked to an account.'),
-					},
-				}
-				for (const field of this.fieldsOf(id)) {
-					this.values[`${id}:${field}`] = ''
-				}
+				this.report(id, true, this.sentMessage())
+				this.clearFields(id)
 			} catch (error) {
-				this.result = {
-					...this.result,
-					[id]: {
-						ok: false,
-						message: error.status
-							? this.t('Sending did not work ({status}). Try again later.', { status: error.status })
-							: this.t('Sending did not work. Try again later.'),
-					},
-				}
+				this.report(id, false, this.failedMessage(error))
 			} finally {
 				this.busy = ''
 			}
+		},
+
+		/**
+		 * The values of the fields one action declares, keyed by field name.
+		 *
+		 * @param {string} id The action id.
+		 * @return {object} The payload.
+		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-a-contributed-action-must-post-where-its-type-is-honoured-req-ptb-012
+		 */
+		payloadFor(id) {
+			const payload = {}
+			for (const field of this.fieldsOf(id)) {
+				payload[field] = this.values[`${id}:${field}`] || ''
+			}
+			return payload
+		},
+
+		/**
+		 * Empty the fields of one action after it was sent.
+		 *
+		 * @param {string} id The action id.
+		 * @return {void}
+		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-a-contributed-action-must-post-where-its-type-is-honoured-req-ptb-012
+		 */
+		clearFields(id) {
+			for (const field of this.fieldsOf(id)) {
+				this.values[`${id}:${field}`] = ''
+			}
+		},
+
+		/**
+		 * Record the outcome of one action's submission.
+		 *
+		 * @param {string} id The action id.
+		 * @param {boolean} ok Whether it was sent.
+		 * @param {string} message What to tell the visitor.
+		 * @return {void}
+		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-a-contributed-action-must-post-where-its-type-is-honoured-req-ptb-012
+		 */
+		report(id, ok, message) {
+			this.result = { ...this.result, [id]: { ok, message } }
+		},
+
+		/**
+		 * The confirmation after a send. An unowned submission gets no
+		 * receipt: there is no subject to send one to.
+		 *
+		 * @return {string} The message.
+		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-a-contributed-action-must-post-where-its-type-is-honoured-req-ptb-012
+		 */
+		sentMessage() {
+			return this.session
+				? this.t('Sent. You will receive a confirmation.')
+				: this.t('Sent anonymously. It is not linked to an account.')
+		},
+
+		/**
+		 * The message after a failed send.
+		 *
+		 * @param {Error} error The failure, with an HTTP status when there was one.
+		 * @return {string} The message.
+		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-a-contributed-action-must-post-where-its-type-is-honoured-req-ptb-012
+		 */
+		failedMessage(error) {
+			return error.status
+				? this.t('Sending did not work ({status}). Try again later.', { status: error.status })
+				: this.t('Sending did not work. Try again later.')
 		},
 	},
 }

@@ -25,6 +25,7 @@ namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\UnownedSaveOptions;
 use OCA\Portaliq\Tests\Doubles\TenantHarness;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -116,7 +117,7 @@ class PortalObjectWriterUnownedTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheUnownedOptionsNameTheTarget(): void {
-		$options = PortalObjectWriter::unownedSaveOptions(register: 'r', schema: 's');
+		$options = UnownedSaveOptions::forTarget(register: 'r', schema: 's');
 
 		$this->assertSame(expected: 'r', actual: $options->target->register);
 		$this->assertSame(expected: 's', actual: $options->target->schema);

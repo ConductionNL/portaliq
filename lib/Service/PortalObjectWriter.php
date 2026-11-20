@@ -39,7 +39,6 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
-use OCA\OpenRegister\Kernel\Contracts\Value\SaveActor;
 use OCA\Portaliq\Kernel\Contracts\PortalObjectWriterInterface;
 use OCA\Portaliq\Service\Tenancy\ActsForTheOrganisation;
 use Psr\Container\ContainerInterface;
@@ -172,7 +171,7 @@ class PortalObjectWriter implements PortalObjectWriterInterface {
 			return null;
 		}
 
-		$options = self::unownedSaveOptions(register: $register, schema: $schema);
+		$options = UnownedSaveOptions::forTarget(register: $register, schema: $schema);
 		try {
 			$saved = $this->insideWriteContext(write: static fn () => $objectService->saveObject(
 				object: $data,
@@ -187,70 +186,6 @@ class PortalObjectWriter implements PortalObjectWriterInterface {
 
 		return $this->normalise(row: $saved);
 	}//end createAnonymousObject()
-
-	/**
-	 * The save options of an anonymous create: the target, and an actor that
-	 * stamps the system identity as owner where the installed OpenRegister
-	 * offers that (REQ-PTB-012).
-	 *
-	 * GUARDED ON THE INSTALLED OPENREGISTER. An OpenRegister without
-	 * `SaveActor::$unowned` would fail the save on an unknown named argument,
-	 * so the actor is only passed when its constructor takes `unowned`; an
-	 * older install writes the row as it always did.
-	 *
-	 * @param string $register The register slug/id.
-	 * @param string $schema   The schema slug.
-	 *
-	 * @return ObjectSaveOptions The options.
-	 *
-	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-a-contributed-action-must-post-where-its-type-is-honoured-req-ptb-012
-	 */
-	public static function unownedSaveOptions(string $register, string $schema): ObjectSaveOptions {
-		$target = new ObjectFindTarget(register: $register, schema: $schema);
-		if (self::openRegisterStampsUnowned() === false) {
-			return new ObjectSaveOptions(target: $target);
-		}
-
-		return new ObjectSaveOptions(target: $target, actor: new SaveActor(unowned: true));
-	}//end unownedSaveOptions()
-
-	/**
-	 * Whether the installed OpenRegister takes `unowned` on its save actor
-	 * and `actor` on its save options.
-	 *
-	 * @return bool
-	 */
-	private static function openRegisterStampsUnowned(): bool {
-		if (class_exists(SaveActor::class) === false) {
-			return false;
-		}
-
-		return self::constructorTakes(class: SaveActor::class, parameter: 'unowned')
-			&& self::constructorTakes(class: ObjectSaveOptions::class, parameter: 'actor');
-	}//end openRegisterStampsUnowned()
-
-	/**
-	 * Whether a class's constructor declares a parameter of that name.
-	 *
-	 * @param class-string $class     The class.
-	 * @param string       $parameter The parameter name.
-	 *
-	 * @return bool
-	 */
-	private static function constructorTakes(string $class, string $parameter): bool {
-		$constructor = (new \ReflectionClass(objectOrClass: $class))->getConstructor();
-		if ($constructor === null) {
-			return false;
-		}
-
-		foreach ($constructor->getParameters() as $declared) {
-			if ($declared->getName() === $parameter) {
-				return true;
-			}
-		}
-
-		return false;
-	}//end constructorTakes()
 
 	/**
 	 * Count objects in a register/schema matching a set of property filters
