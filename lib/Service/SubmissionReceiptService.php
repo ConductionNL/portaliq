@@ -47,8 +47,6 @@ namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
-use OCA\Portaliq\Kernel\Contracts\PortalPdfExportInterface;
 use OCA\Portaliq\Kernel\Contracts\SubmissionReceiptServiceInterface;
 use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -115,8 +113,7 @@ class SubmissionReceiptService implements SubmissionReceiptServiceInterface {
 	 *                                                          on a successful receipt write; itself
 	 *                                                          fail-safe, never affects this call.
 	 * @param IDateTimeZone|null $timeZone The instance's time zone, in which the receipt names the moment.
-	 * @param PortalObjectReaderInterface|null $reader Reads one receipt back for its own subject only.
-	 * @param PortalPdfExportInterface|null $pdf Renders the receipt's PDF through OpenRegister.
+	 * @param SubmissionReceiptPdf|null $pdfs Reads a receipt back and renders its PDF (REQ-CRG-005).
 	 *
 	 * @spec openspec/changes/receipt-date-reads-in-the-portals-language/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-names-the-moment-in-words-of-the-portals-language
 	 */
@@ -127,8 +124,7 @@ class SubmissionReceiptService implements SubmissionReceiptServiceInterface {
 		private readonly LoggerInterface $logger,
 		private readonly NotificationDispatchService $notificationDispatch,
 		private readonly ?IDateTimeZone $timeZone = null,
-		private readonly ?PortalObjectReaderInterface $reader = null,
-		private readonly ?PortalPdfExportInterface $pdf = null,
+		private readonly ?SubmissionReceiptPdf $pdfs = null,
 	) {
 	}//end __construct()
 
@@ -704,12 +700,12 @@ class SubmissionReceiptService implements SubmissionReceiptServiceInterface {
 	 * @spec openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
 	 */
 	public function receiptPdf(array $subject, string $id): array {
-		$message = $this->ownReceipt(subject: $subject, id: $id);
-		if ($message === null) {
+		$message = $this->pdfs?->ownReceipt(subject: $subject, id: $id);
+		if ($message === null || $this->pdfs === null) {
 			return ['status' => self::RECEIPT_NOT_FOUND];
 		}
 
-		if ($this->pdf === null || $this->pdf->available() === false) {
+		if ($this->pdfs->available() === false) {
 			return ['status' => self::RECEIPT_PDF_UNAVAILABLE];
 		}
 
@@ -717,8 +713,8 @@ class SubmissionReceiptService implements SubmissionReceiptServiceInterface {
 			message: $message,
 			l10n: $this->language->forOrganisation(organisation: (string)($subject['organisation'] ?? ''))
 		);
-		$bytes    = $this->pdf->render(title: $document['title'], columns: $document['columns'], rows: $document['rows']);
-		if ($bytes === null || $bytes === PortalPdfExportInterface::TOO_LARGE) {
+		$bytes    = $this->pdfs->render(document: $document);
+		if ($bytes === null) {
 			return ['status' => self::RECEIPT_PDF_FAILED];
 		}
 
@@ -742,8 +738,9 @@ class SubmissionReceiptService implements SubmissionReceiptServiceInterface {
 			['part' => $l10n->t('Reference'), 'content' => $reference],
 			['part' => $l10n->t('Received'), 'content' => $this->readable(l10n: $l10n, moment: (string)($message['receivedAt'] ?? ''))],
 		];
+		$answers   = ($this->pdfs ?? new SubmissionReceiptPdf(logger: $this->logger));
 		foreach ((array)$message['dataCopy'] as $field => $answer) {
-			$rows[] = ['part' => (string)$field, 'content' => $this->answerText(answer: $answer)];
+			$rows[] = ['part' => (string)$field, 'content' => $answers->answerText(answer: $answer)];
 		}
 
 		return [
@@ -752,77 +749,4 @@ class SubmissionReceiptService implements SubmissionReceiptServiceInterface {
 			'rows'    => $rows,
 		];
 	}//end receiptDocument()
-
-	/**
-	 * The subject's own receipt message, or null: read on `subjectRef` with
-	 * the subject's own reference and organisation, as the inbox reads it,
-	 * and only a message that carries a reference and a data copy.
-	 *
-	 * @param array<string, mixed> $subject The resolved session subject.
-	 * @param string $id The message id.
-	 *
-	 * @return array<string, mixed>|null The receipt.
-	 */
-	private function ownReceipt(array $subject, string $id): ?array {
-		$subjectRef = (string)($subject['subjectRef'] ?? '');
-		if ($this->reader === null || $subjectRef === '' || $id === '') {
-			return null;
-		}
-
-		try {
-			$message = $this->reader->readObject(
-				register: self::REGISTER,
-				schema: self::MESSAGE_SCHEMA,
-				scopeField: 'subjectRef',
-				subjectRef: $subjectRef,
-				id: $id,
-				organisation: (string)($subject['organisation'] ?? ''),
-				audience: (string)($subject['audience'] ?? '')
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: a receipt could not be read for its PDF', ['reason' => $e->getMessage()]);
-			return null;
-		}
-
-		if (is_array($message) === false
-			|| ($message['subjectRef'] ?? null) !== $subjectRef
-			|| is_string($message['referenceId'] ?? null) === false
-			|| $message['referenceId'] === ''
-			|| is_array($message['dataCopy'] ?? null) === false
-		) {
-			return null;
-		}
-
-		return $message;
-	}//end ownReceipt()
-
-	/**
-	 * One answer as text: a list joined by commas, a yes/no as `true`/`false`,
-	 * anything else that is no scalar as nothing.
-	 *
-	 * @param mixed $answer The submitted answer.
-	 *
-	 * @return string The text.
-	 */
-	private function answerText(mixed $answer): string {
-		if ($answer === true) {
-			return 'true';
-		}
-
-		if ($answer === false) {
-			return 'false';
-		}
-
-		if (is_array($answer) === true) {
-			$parts = array_map(fn ($item): string => $this->answerText(answer: $item), $answer);
-
-			return implode(', ', array_filter($parts, static fn (string $part): bool => $part !== ''));
-		}
-
-		if (is_scalar($answer) === false) {
-			return '';
-		}
-
-		return (string)$answer;
-	}//end answerText()
 }//end class

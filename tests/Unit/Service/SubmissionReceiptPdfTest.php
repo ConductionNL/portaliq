@@ -16,6 +16,7 @@ use OCA\Portaliq\Service\NotificationDispatchService;
 use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\SubmissionReceiptPdf;
 use OCA\Portaliq\Service\SubmissionReceiptService;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IL10N;
@@ -78,8 +79,7 @@ class SubmissionReceiptPdfTest extends TestCase {
 			$this->createMock(LoggerInterface::class),
 			$this->createMock(NotificationDispatchService::class),
 			null,
-			$reader,
-			$pdf
+			new SubmissionReceiptPdf(logger: $this->createMock(LoggerInterface::class), reader: $reader, pdf: $pdf)
 		);
 	}//end service()
 
