@@ -53,6 +53,17 @@ const DESIGN_SYSTEM_CLASSES = {
 	PRE: 'utrecht-code-block',
 	HR: 'utrecht-separator',
 	IMG: 'utrecht-img',
+	// portal-theme-application Task 2: a markdown table rendered bare, so the
+	// design system's table styles never reached it. The parts carry the
+	// same classes the collection table uses.
+	TABLE: 'utrecht-table',
+	CAPTION: 'utrecht-table__caption',
+	THEAD: 'utrecht-table__header',
+	TBODY: 'utrecht-table__body',
+	TFOOT: 'utrecht-table__footer',
+	TR: 'utrecht-table__row',
+	TH: 'utrecht-table__header-cell',
+	TD: 'utrecht-table__cell',
 }
 
 /**
@@ -134,6 +145,7 @@ export default {
 		 * @return {string} The same HTML, with typography classes applied.
 		 *
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+		 * @spec openspec/changes/portal-theme-application/specs/portaliq-cms/spec.md#requirement-markup-must-carry-nl-design-component-classes
 		 */
 		withDesignSystemClasses(html) {
 			const body = new DOMParser().parseFromString(html, 'text/html').body

@@ -47,6 +47,9 @@ use OCA\Portaliq\Kernel\Contracts\MandatePartiesInterface;
  * Manage who may act for the session's party, and stop a mandate held.
  *
  * @spec openspec/changes/site-mandates-the-represented-manage/design.md#d5-routes-and-checks
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the count includes the route attributes
+ *   (NoAdminRequired, NoCSRFRequired, ...) a controller declares.
  */
 class MandateController extends Controller implements PortalProtected {
 	/**
