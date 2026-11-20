@@ -4,8 +4,8 @@ name: "Portaliq"
 url: "https://github.com/ConductionNL/portaliq"
 landingURL: "https://portaliq.conduction.nl"
 roadmap: "https://github.com/ConductionNL/portaliq/blob/main/openspec/ROADMAP.md"
-softwareVersion: "0.2.12-beta.20261114061151"
-releaseDate: "2026-11-14"
+softwareVersion: "0.2.8"
+releaseDate: "2026-10-08"
 logo: img/app-store.svg
 softwareType: "addon"
 
