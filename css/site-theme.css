@@ -257,6 +257,19 @@
 }
 
 /*
+ * ON HOVER THE OUTLINED BUTTON TAKES THE SECONDARY HOVER TOKENS. The rule
+ * above has to be !important to beat nlds-app.css, so it also beat the
+ * Utrecht hover rule, and the button kept its rest colour on hover. The
+ * private `--_utrecht-button-hover-*` values resolve the danger hint, then
+ * `--utrecht-button-secondary-action-hover-*`, then the rest colour.
+ */
+.pq-site .utrecht-button--secondary-action:hover:not(:disabled, [aria-disabled='true'], .utrecht-button--disabled),
+.pq-site .utrecht-button--secondary-action.utrecht-button--hover:not(:disabled, .utrecht-button--disabled) {
+	border-color: var(--_utrecht-button-hover-border-color) !important;
+	color: var(--_utrecht-button-hover-color) !important;
+}
+
+/*
  * A SELECT IS A FORM CONTROL TOO. The vendored stylesheets style the Utrecht
  * text box but carry no select rules, so every `utrecht-select` on the site
  * ("Namens", "Iedereen voor wie ik werk") drew as the browser's 25px grey
