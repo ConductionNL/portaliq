@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Kernel\Contracts;
 
 use OCA\Portaliq\Service\Cms\PlainAddress;
+use OCA\Portaliq\Service\Cms\PlainQuery;
 
 /**
  * Contract of PlainPageRenderer.
@@ -45,14 +46,12 @@ interface PlainPageRendererInterface {
 	 * @param array<string, mixed>|null $portal  The serving portal, or null.
 	 * @param string                    $route   The route asked for.
 	 * @param string                    $locale  The document language.
-	 * @param string                    $query   The request's `_search`.
-	 * @param int                       $page    The request's `_page`.
+	 * @param PlainQuery                $asked   The request's `_search`, `_page` and `record`.
 	 * @param PlainAddress              $address The addresses of this request.
-	 * @param string                    $record  The request's `record`, the id a public records block shows; else ''.
 	 *
 	 * @return array<string, mixed> `status` (200 or 404), `portalTitle`, `menu`, `title`, `summary`, `blocks`, `fullUrl`.
 	 *
 	 * @spec openspec/changes/site-honest-without-javascript/tasks.md#2.4
 	 */
-	public function render(?array $portal, string $route, string $locale, string $query, int $page, PlainAddress $address, string $record = ''): array;
+	public function render(?array $portal, string $route, string $locale, PlainQuery $asked, PlainAddress $address): array;
 }//end interface

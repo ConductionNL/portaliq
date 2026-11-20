@@ -38,6 +38,7 @@ use OCA\Portaliq\Service\Cms\PlainPublicationDetail;
 use OCA\Portaliq\Service\Cms\PlainPublicationReader;
 use OCA\Portaliq\Service\Cms\PlainPublicationSearch;
 use OCA\Portaliq\Service\Cms\PlainPublicRecords;
+use OCA\Portaliq\Service\Cms\PlainReadWidgets;
 use OCA\Portaliq\Service\Cms\PlainTextBlocks;
 use OCA\Portaliq\Service\Cms\PlainWidgetLabels;
 use OCA\Portaliq\Service\Cms\SiteHead;
@@ -237,13 +238,9 @@ class PortalPageControllerPlainTest extends TestCase {
 		string $record = ''
 	): PortalPageController {
 		$request = $this->createMock(IRequest::class);
+		$params = array_filter(['route' => $route, 'portal' => $portalParam, 'record' => $record], static fn (string $value): bool => $value !== '');
 		$request->method('getParam')->willReturnCallback(
-			static fn (string $key, $default = null) => match ($key) {
-				'route' => ($route !== '' ? $route : $default),
-				'portal' => ($portalParam !== '' ? $portalParam : $default),
-				'record' => ($record !== '' ? $record : $default),
-				default => $default,
-			}
+			static fn (string $key, $default = null) => ($params[$key] ?? $default)
 		);
 		$request->method('getHeader')->willReturn('');
 		$request->method('getCookie')->willReturnCallback(static fn (string $name) => ($cookies[$name] ?? null));
@@ -299,9 +296,11 @@ class PortalPageControllerPlainTest extends TestCase {
 			new PlainMarkdown(),
 			new PlainWidgetLabels(),
 			new PlainTextBlocks(new PlainMarkdown()),
-			new PlainPublicationSearch($publications, $words, new PlainDates()),
-			new PlainPublicationDetail($publications, $words, new PlainDates(), new PlainCategoryNames()),
-			new PlainPublicRecords($recordReader, $words)
+			new PlainReadWidgets(
+				new PlainPublicationSearch($publications, $words, new PlainDates()),
+				new PlainPublicationDetail($publications, $words, new PlainDates(), new PlainCategoryNames()),
+				new PlainPublicRecords($recordReader, $words)
+			)
 		);
 
 		return new PortalPageController(

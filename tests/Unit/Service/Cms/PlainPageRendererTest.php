@@ -37,6 +37,8 @@ use OCA\Portaliq\Service\Cms\PlainPublicationDetail;
 use OCA\Portaliq\Service\Cms\PlainPublicationReader;
 use OCA\Portaliq\Service\Cms\PlainPublicationSearch;
 use OCA\Portaliq\Service\Cms\PlainPublicRecords;
+use OCA\Portaliq\Service\Cms\PlainQuery;
+use OCA\Portaliq\Service\Cms\PlainReadWidgets;
 use OCA\Portaliq\Service\Cms\PlainRecordPager;
 use OCA\Portaliq\Kernel\Contracts\PublicRecordReaderInterface;
 use OCA\Portaliq\Service\Cms\PlainTextBlocks;
@@ -59,6 +61,8 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(PlainCategoryNames::class)]
 #[UsesClass(PlainPublicRecords::class)]
 #[UsesClass(PlainRecordPager::class)]
+#[UsesClass(PlainQuery::class)]
+#[UsesClass(PlainReadWidgets::class)]
 class PlainPageRendererTest extends TestCase {
 
 	/**
@@ -94,7 +98,7 @@ class PlainPageRendererTest extends TestCase {
 			['widgetKey' => 'markdown', 'props' => ['markdown' => "## Let op\n\n<script>alert(1)</script>"]],
 		]);
 
-		$view = $this->renderer(pages: ['/afval' => $page])->render(self::PORTAL, '/afval', 'nl', '', 1, $this->address());
+		$view = $this->renderer(pages: ['/afval' => $page])->render(self::PORTAL, '/afval', 'nl', new PlainQuery('', 1), $this->address());
 
 		$this->assertSame(200, $view['status']);
 		$this->assertSame('Afval', $view['title']);
@@ -133,7 +137,7 @@ class PlainPageRendererTest extends TestCase {
 	public function testAnInteractiveWidgetSaysItNeedsJavascript(): void {
 		$page = $this->gridPage(widgets: [['widgetKey' => 'intakeForm', 'props' => ['formId' => 'f1']]]);
 
-		$view = $this->renderer(pages: ['/aanvragen' => $page])->render(self::PORTAL, '/aanvragen', 'nl', 'paspoort', 1, $this->address());
+		$view = $this->renderer(pages: ['/aanvragen' => $page])->render(self::PORTAL, '/aanvragen', 'nl', new PlainQuery('paspoort', 1), $this->address());
 
 		$this->assertSame([
 			'kind' => 'needsJs',
@@ -165,7 +169,7 @@ class PlainPageRendererTest extends TestCase {
 			'not a widget',
 		];
 
-		$view = $this->renderer(pages: ['/' => $this->gridPage(widgets: $widgets)])->render(self::PORTAL, '/', 'nl', '', 1, $this->address());
+		$view = $this->renderer(pages: ['/' => $this->gridPage(widgets: $widgets)])->render(self::PORTAL, '/', 'nl', new PlainQuery('', 1), $this->address());
 
 		$this->assertCount(7, $view['blocks']);
 		$labels = [];
@@ -187,7 +191,7 @@ class PlainPageRendererTest extends TestCase {
 	public function testTheMenuBlockShowsTheMainMenu(): void {
 		$page = $this->gridPage(widgets: [['widgetKey' => 'siteNavigation', 'props' => ['label' => 'Menu']]]);
 
-		$view = $this->renderer(pages: ['/' => $page])->render(self::PORTAL, '/', 'nl', '', 1, $this->address());
+		$view = $this->renderer(pages: ['/' => $page])->render(self::PORTAL, '/', 'nl', new PlainQuery('', 1), $this->address());
 
 		$this->assertSame(['kind' => 'links', 'heading' => '', 'intro' => '', 'links' => [
 			['label' => 'Home', 'href' => '/index.php/apps/portaliq/site/plain?route=/&portal=demo', 'description' => ''],
@@ -213,9 +217,9 @@ class PlainPageRendererTest extends TestCase {
 		);
 		$renderer = $this->renderer(pages: ['/publicatie' => $page], keepReader: true);
 
-		$found = $renderer->render(self::PORTAL, '/publicatie/p1', 'nl', '', 1, $this->address());
-		$missing = $renderer->render(self::PORTAL, '/publicatie/nope', 'nl', '', 1, $this->address());
-		$deeper = $renderer->render(self::PORTAL, '/publicatie/a/b', 'nl', '', 1, $this->address());
+		$found = $renderer->render(self::PORTAL, '/publicatie/p1', 'nl', new PlainQuery('', 1), $this->address());
+		$missing = $renderer->render(self::PORTAL, '/publicatie/nope', 'nl', new PlainQuery('', 1), $this->address());
+		$deeper = $renderer->render(self::PORTAL, '/publicatie/a/b', 'nl', new PlainQuery('', 1), $this->address());
 
 		$this->assertSame(200, $found['status']);
 		$this->assertSame('Woo-besluit', $found['blocks'][0]['title']);
@@ -236,9 +240,9 @@ class PlainPageRendererTest extends TestCase {
 		$markdown = ['title' => 'Over ons', 'summary' => 'Wie wij zijn.', 'body' => ['type' => 'markdown', 'markdown' => 'Wij zijn **de gemeente**.']];
 		$renderer = $this->renderer(pages: ['/over-ons' => $markdown]);
 
-		$about = $renderer->render(self::PORTAL, 'over-ons/', 'nl', '', 1, $this->address());
-		$draft = $renderer->render(self::PORTAL, '/concept', 'nl', '', 1, $this->address());
-		$nobody = $renderer->render(null, '/over-ons', 'nl', '', 1, $this->address());
+		$about = $renderer->render(self::PORTAL, 'over-ons/', 'nl', new PlainQuery('', 1), $this->address());
+		$draft = $renderer->render(self::PORTAL, '/concept', 'nl', new PlainQuery('', 1), $this->address());
+		$nobody = $renderer->render(null, '/over-ons', 'nl', new PlainQuery('', 1), $this->address());
 
 		$this->assertSame(200, $about['status']);
 		$this->assertSame('Wie wij zijn.', $about['summary']);
@@ -316,9 +320,11 @@ class PlainPageRendererTest extends TestCase {
 			new PlainMarkdown(),
 			new PlainWidgetLabels(),
 			new PlainTextBlocks(new PlainMarkdown()),
-			new PlainPublicationSearch($this->publications, $words, new PlainDates()),
-			new PlainPublicationDetail($this->publications, $words, new PlainDates(), new PlainCategoryNames()),
-			new PlainPublicRecords($this->createMock(PublicRecordReaderInterface::class), $words)
+			new PlainReadWidgets(
+				new PlainPublicationSearch($this->publications, $words, new PlainDates()),
+				new PlainPublicationDetail($this->publications, $words, new PlainDates(), new PlainCategoryNames()),
+				new PlainPublicRecords($this->createMock(PublicRecordReaderInterface::class), $words)
+			)
 		);
 	}//end renderer()
 }//end class

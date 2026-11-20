@@ -30,6 +30,7 @@ use OCA\Portaliq\Kernel\Contracts\PublicRecordReaderInterface;
 use OCA\Portaliq\Service\Cms\PlainAddress;
 use OCA\Portaliq\Service\Cms\PlainContext;
 use OCA\Portaliq\Service\Cms\PlainPublicRecords;
+use OCA\Portaliq\Service\Cms\PlainQuery;
 use OCA\Portaliq\Service\Cms\PlainRecordPager;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -39,6 +40,7 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(PlainAddress::class)]
 #[UsesClass(PlainContext::class)]
 #[UsesClass(PlainRecordPager::class)]
+#[UsesClass(PlainQuery::class)]
 class PlainPublicRecordsTest extends TestCase {
 
 	/**
@@ -261,11 +263,9 @@ class PlainPublicRecordsTest extends TestCase {
 		return new PlainContext(
 			route: '/raad',
 			routeParam: '',
-			query: $query,
-			page: $page,
+			asked: new PlainQuery(query: $query, page: $page, record: $record),
 			address: new PlainAddress('/index.php/apps/portaliq/site', 'demo'),
-			locale: 'nl',
-			record: $record
+			locale: 'nl'
 		);
 	}//end context()
 }//end class

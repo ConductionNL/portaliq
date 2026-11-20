@@ -32,27 +32,47 @@ namespace OCA\Portaliq\Service\Cms;
 class PlainContext {
 
 	/**
+	 * The request's `_search`.
+	 *
+	 * @var string
+	 */
+	public readonly string $query;
+
+	/**
+	 * The request's `_page`, from 1.
+	 *
+	 * @var int
+	 */
+	public readonly int $page;
+
+	/**
+	 * The request's `record`: the id a public records block shows; else ''.
+	 *
+	 * @var string
+	 */
+	public readonly string $record;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param string       $route      The route asked for.
 	 * @param string       $routeParam The trailing segment, when a parent page answers; else ''.
-	 * @param string       $query      The request's `_search`.
-	 * @param int          $page       The request's `_page`, from 1.
+	 * @param PlainQuery   $asked      The request's search, page and record.
 	 * @param PlainAddress $address    The addresses.
 	 * @param string       $locale     The document language.
 	 * @param list<array{label: string, href: string, items: list<array{label: string, href: string}>}> $menu The main menu as plain links.
-	 * @param string       $record     The request's `record`: the id a public records block shows; else ''.
 	 */
 	public function __construct(
 		public readonly string $route,
 		public readonly string $routeParam,
-		public readonly string $query,
-		public readonly int $page,
+		private readonly PlainQuery $asked,
 		public readonly PlainAddress $address,
 		public readonly string $locale,
 		public readonly array $menu = [],
-		public readonly string $record = '',
 	) {
+		$this->query = $asked->query;
+		$this->page = $asked->page;
+		$this->record = $asked->record;
 	}//end __construct()
 
 	/**
@@ -64,19 +84,6 @@ class PlainContext {
 	 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
 	 */
 	public function fullUrl(): string {
-		$extra = [];
-		if ($this->record !== '') {
-			$extra['record'] = $this->record;
-		}
-
-		if ($this->query !== '') {
-			$extra['_search'] = $this->query;
-		}
-
-		if ($this->page > 1) {
-			$extra['_page'] = (string)$this->page;
-		}
-
-		return $this->address->full(route: $this->route, extra: $extra);
+		return $this->address->full(route: $this->route, extra: $this->asked->params());
 	}//end fullUrl()
 }//end class

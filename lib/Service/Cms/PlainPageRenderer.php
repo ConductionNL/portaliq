@@ -84,9 +84,7 @@ class PlainPageRenderer implements PlainPageRendererInterface {
 	 * @param PlainMarkdown          $markdown The markdown subset.
 	 * @param PlainWidgetLabels      $labels   The widgets' names.
 	 * @param PlainTextBlocks        $text     The text widgets.
-	 * @param PlainPublicationSearch $search   The publication search.
-	 * @param PlainPublicationDetail $detail   The publication detail.
-	 * @param PlainPublicRecords     $records  The public records block.
+	 * @param PlainReadWidgets       $reads    The widgets that read public data.
 	 */
 	public function __construct(
 		private readonly CmsReader $reader,
@@ -94,9 +92,7 @@ class PlainPageRenderer implements PlainPageRendererInterface {
 		private readonly PlainMarkdown $markdown,
 		private readonly PlainWidgetLabels $labels,
 		private readonly PlainTextBlocks $text,
-		private readonly PlainPublicationSearch $search,
-		private readonly PlainPublicationDetail $detail,
-		private readonly PlainPublicRecords $records,
+		private readonly PlainReadWidgets $reads,
 	) {
 	}//end __construct()
 
@@ -106,17 +102,15 @@ class PlainPageRenderer implements PlainPageRendererInterface {
 	 * @param array<string, mixed>|null $portal  The serving portal, or null.
 	 * @param string                    $route   The route asked for.
 	 * @param string                    $locale  The document language.
-	 * @param string                    $query   The request's `_search`.
-	 * @param int                       $page    The request's `_page`.
+	 * @param PlainQuery                $asked   The request's `_search`, `_page` and `record`.
 	 * @param PlainAddress              $address The addresses of this request.
-	 * @param string                    $record  The request's `record`, the id a public records block shows; else ''.
 	 *
 	 * @return array<string, mixed> `status` (200 or 404), `portalTitle`, `menu`, `title`, `summary`, `blocks`, `fullUrl`.
 	 *
 	 * @spec openspec/changes/site-honest-without-javascript/tasks.md#2.4
 	 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
 	 */
-	public function render(?array $portal, string $route, string $locale, string $query, int $page, PlainAddress $address, string $record = ''): array {
+	public function render(?array $portal, string $route, string $locale, PlainQuery $asked, PlainAddress $address): array {
 		$route = '/' . trim($route, '/');
 		$slug = (string)($portal['slug'] ?? '');
 		$view = [
@@ -125,7 +119,7 @@ class PlainPageRenderer implements PlainPageRendererInterface {
 			'homeUrl' => $address->plain(route: '/'),
 			'menuLabel' => $this->l10n->t('Main menu'),
 			'menu' => [],
-			'fullUrl' => $address->full(route: $route, extra: $this->recordParam(record: $record) + $this->searchParams(query: $query, page: $page)),
+			'fullUrl' => $address->full(route: $route, extra: $asked->params()),
 			'fullLabel' => $this->l10n->t('Open the full page'),
 			'plainNote' => $this->l10n->t('This is the plain version of this page.'),
 		];
@@ -142,12 +136,10 @@ class PlainPageRenderer implements PlainPageRendererInterface {
 		$context = new PlainContext(
 			route: $route,
 			routeParam: $routeParam,
-			query: $query,
-			page: $page,
+			asked: $asked,
 			address: $address,
 			locale: $locale,
-			menu: $view['menu'],
-			record: $record
+			menu: $view['menu']
 		);
 		$blocks = $this->blocks(page: $found, context: $context);
 		foreach ($blocks as $block) {
@@ -319,17 +311,7 @@ class PlainPageRenderer implements PlainPageRendererInterface {
 			'nlList' => $this->text->listBlock(props: $props),
 			'nlLinkList' => $this->text->linksBlock(props: $props, address: $context->address),
 			'siteNavigation' => $this->navigationBlock(context: $context),
-			'federatedSearch' => $this->search->build(
-				props: $props,
-				route: $context->route,
-				query: $context->query,
-				page: $context->page,
-				address: $context->address,
-				locale: $context->locale
-			),
-			'publicationDetail' => $this->detailBlock(props: $props, context: $context),
-			'publicRecords' => $this->records->build(props: $props, context: $context),
-			default => null,
+			default => $this->reads->block(key: $key, props: $props, context: $context),
 		};
 
 		if ($block === null) {
@@ -382,59 +364,5 @@ class PlainPageRenderer implements PlainPageRendererInterface {
 
 		return ['kind' => 'links', 'heading' => '', 'intro' => '', 'links' => $links];
 	}//end navigationBlock()
-
-	/**
-	 * The publication detail widget, for the route's trailing segment. On the
-	 * detail page itself, with no id, there is nothing to read and the widget
-	 * says it needs JavaScript.
-	 *
-	 * @param array<string, mixed> $props   The props.
-	 * @param PlainContext         $context The request.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function detailBlock(array $props, PlainContext $context): ?array {
-		if ($context->routeParam === '') {
-			return null;
-		}
-
-		return $this->detail->build(props: $props, id: $context->routeParam, fullUrl: $context->fullUrl(), locale: $context->locale);
-	}//end detailBlock()
-
-	/**
-	 * The `record` of an address; none without one.
-	 *
-	 * @param string $record The record id.
-	 *
-	 * @return array<string, string>
-	 */
-	private function recordParam(string $record): array {
-		if ($record === '') {
-			return [];
-		}
-
-		return ['record' => $record];
-	}//end recordParam()
-
-	/**
-	 * `_search` and `_page` of an address; page 1 left out.
-	 *
-	 * @param string $query The term.
-	 * @param int    $page  The page.
-	 *
-	 * @return array<string, string>
-	 */
-	private function searchParams(string $query, int $page): array {
-		$params = [];
-		if ($query !== '') {
-			$params['_search'] = $query;
-		}
-
-		if ($page > 1) {
-			$params['_page'] = (string)$page;
-		}
-
-		return $params;
-	}//end searchParams()
 
 }//end class
