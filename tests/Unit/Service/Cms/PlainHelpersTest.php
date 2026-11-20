@@ -87,7 +87,8 @@ class PlainHelpersTest extends TestCase {
 	public function testTheContextNamesItsFullPage(): void {
 		$address = new PlainAddress('/site', '');
 
-		$this->assertSame('/site?route=/zoeken&_search=afval&_page=3', (new PlainContext('/zoeken', '', new PlainQuery('afval', 3), $address, 'nl'))->fullUrl());
+		$searched = new PlainContext('/zoeken', '', new PlainQuery('afval', 3), $address, 'nl');
+		$this->assertSame('/site?route=/zoeken&_search=afval&_page=3', $searched->fullUrl());
 		$this->assertSame('/site?route=/zoeken', (new PlainContext('/zoeken', 'x', new PlainQuery(), $address, 'nl'))->fullUrl());
 	}//end testTheContextNamesItsFullPage()
 

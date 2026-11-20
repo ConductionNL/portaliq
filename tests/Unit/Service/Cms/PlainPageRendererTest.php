@@ -169,7 +169,8 @@ class PlainPageRendererTest extends TestCase {
 			'not a widget',
 		];
 
-		$view = $this->renderer(pages: ['/' => $this->gridPage(widgets: $widgets)])->render(self::PORTAL, '/', 'nl', new PlainQuery('', 1), $this->address());
+		$renderer = $this->renderer(pages: ['/' => $this->gridPage(widgets: $widgets)]);
+		$view = $renderer->render(self::PORTAL, '/', 'nl', new PlainQuery('', 1), $this->address());
 
 		$this->assertCount(7, $view['blocks']);
 		$labels = [];
