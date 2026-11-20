@@ -243,3 +243,123 @@ test('the multipart body carries the answers as fields and the files under the d
 	assert.equal(form.get('fields[iban]'), 'NL91')
 	assert.equal(form.get('attachments[]').name, 'scan.pdf')
 })
+
+// REQ-RAI-001: an endpoint row action that declares `fields` asks for them
+// in the dialog, with the schema form's own field renderer (ActionFields),
+// and sends only what was filled in.
+// @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-fields-it-declares-req-rai-001
+
+const cancel = {
+	id: 'cancel-subscription',
+	label: 'Cancel subscription',
+	type: 'endpoint-forward',
+	endpoint: '/apps/shillinq/api/portal/subscriptions/cancel',
+	rowField: 'subscriptionId',
+	fields: ['reasonCode'],
+	fieldConfigs: { reasonCode: { label: 'Reason' } },
+	optionsProviders: {
+		reasonCode: {
+			type: 'static',
+			options: [
+				{ value: 'too-expensive', label: 'Too expensive' },
+				{ value: 'switched-provider', label: 'Switched provider' },
+			],
+		},
+	},
+}
+
+const subscription = { id: 'sub-7' }
+
+/**
+ * The select of one declared field in the dialog.
+ *
+ * @param {object} step The mounted dialog.
+ * @param {string} field The field.
+ * @return {object|undefined} The select element.
+ */
+function selectOf(step, field) {
+	return step.findAll((n) => n.tag === 'select' && n.props.id === `rowaction-field-cancel-subscription-${field}`)[0]
+}
+
+test('a declared field with a static options provider is a select of those options', async () => {
+	const step = await mountSfc(VUE_CONFIRM, { action: cancel, collection, row: subscription, api: forwardingApi({ ok: true, status: 200, body: {} }), t })
+
+	const select = selectOf(step, 'reasonCode')
+	assert.ok(select, 'the reason is a select')
+	assert.deepEqual(
+		select.children.filter((n) => n.tag === 'option').map((n) => step.textOf(n)),
+		['[Choose an option]', 'Too expensive', 'Switched provider'],
+	)
+	assert.match(step.textOf(step.find('schema-field-reasonCode')), /Reason/)
+})
+
+test('a member cancels and says why: the picked reason is forwarded', async () => {
+	const api = forwardingApi({ ok: true, status: 200, body: { message: 'Your subscription ends on 31 October 2026.' } })
+	const step = await mountSfc(VUE_CONFIRM, { action: cancel, collection, row: subscription, api, t })
+
+	await step.fire(selectOf(step, 'reasonCode'), 'change', { value: 'switched-provider' })
+	await step.fire(step.find('rowaction-continue'), 'click')
+
+	assert.deepEqual(api.calls, [{ rowId: 'sub-7', actionId: 'cancel-subscription', answers: { reasonCode: 'switched-provider' } }])
+	assert.equal(step.textOf(step.find('rowaction-status')), 'Your subscription ends on 31 October 2026.')
+	assert.equal(selectOf(step, 'reasonCode'), undefined, 'the form is gone once the action ran')
+})
+
+test('a member cancels without a reason: the forward carries no reasonCode', async () => {
+	const api = forwardingApi({ ok: true, status: 200, body: {} })
+	const step = await mountSfc(VUE_CONFIRM, { action: cancel, collection, row: subscription, api, t })
+
+	await step.fire(step.find('rowaction-continue'), 'click')
+
+	assert.deepEqual(api.calls, [{ rowId: 'sub-7', actionId: 'cancel-subscription', answers: {} }])
+	assert.equal(step.emitted.done.length, 1)
+})
+
+test('a required declared field left empty is said under it and nothing is sent', async () => {
+	const required = { ...cancel, fieldConfigs: { reasonCode: { label: 'Reason', required: true } } }
+	const api = forwardingApi({ ok: true, status: 200, body: {} })
+	const step = await mountSfc(VUE_CONFIRM, { action: required, collection, row: subscription, api, t })
+
+	await step.fire(step.find('rowaction-continue'), 'click')
+
+	assert.equal(api.calls.length, 0)
+	assert.ok(step.find('schema-field-error-reasonCode'), 'the error shows under the field')
+	assert.equal(step.emitted.done, undefined)
+
+	await step.fire(selectOf(step, 'reasonCode'), 'change', { value: 'too-expensive' })
+	await step.fire(step.find('rowaction-continue'), 'click')
+	assert.deepEqual(api.calls[0].answers, { reasonCode: 'too-expensive' })
+})
+
+test('the target\'s refusal of a declared field shows under it and the dialog stays open', async () => {
+	const api = forwardingApi({ ok: false, status: 422, body: { error: 'invalid', errors: { reasonCode: 'Pick another reason.' } } })
+	const step = await mountSfc(VUE_CONFIRM, { action: cancel, collection, row: subscription, api, t })
+
+	await step.fire(selectOf(step, 'reasonCode'), 'change', { value: 'too-expensive' })
+	await step.fire(step.find('rowaction-continue'), 'click')
+
+	assert.match(step.textOf(step.find('schema-field-error-reasonCode')), /Pick another reason\./)
+	assert.ok(step.find('rowaction-continue'), 'the dialog stays open')
+})
+
+test('declared fields and row inputs travel together; file and hidden fields are not asked', async () => {
+	const both = {
+		...sign,
+		id: 'confirm-signing',
+		fields: ['note', 'scan', 'secret'],
+		fieldConfigs: { note: { label: 'Note' }, scan: { type: 'file' }, secret: { visible: false } },
+	}
+	const api = forwardingApi({ ok: true, status: 200, body: {} })
+	const step = await mountSfc(VUE_CONFIRM, { action: both, collection, row, api, t })
+
+	assert.ok(step.find('schema-field-note'))
+	assert.equal(step.find('schema-field-scan'), null)
+	assert.equal(step.find('schema-field-secret'), null)
+
+	const note = step.findAll((n) => n.props && n.props.id === 'rowaction-field-confirm-signing-note')[0]
+	await step.fire(note, 'input', { value: 'Signed at the office' })
+	await step.fire(step.find('rowaction-input-iban'), 'input', { value: 'NL91ABNA0417164300' })
+	await step.fire(step.find('rowaction-continue'), 'click')
+
+	assert.deepEqual(api.calls[0].answers, { note: 'Signed at the office', fields: { iban: 'NL91ABNA0417164300' } })
+})

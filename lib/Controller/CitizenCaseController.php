@@ -212,6 +212,10 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			// The create actions a contribution places on this case, open or closed
 			// as the server reckons it (case-page-objection-and-complaint REQ-COC-002).
 			'caseActions' => $this->caseActionsFor(context: $context, register: $register, schema: $schema),
+			// Which projected fields hold the public outcome and its explanation
+			// (case-outcome-on-the-case-page REQ-COC-001); the page shows them
+			// only once the case has ended.
+			'outcome' => ($context['outcome'] ?? null),
 		]);
 	}//end show()
 
@@ -929,6 +933,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			'documents' => ($match['documents'] ?? null),
 			'fields' => ($match['fields'] ?? null),
 			'closedField' => (string)($match['closedField'] ?? ''),
+			'outcome' => ($match['outcome'] ?? null),
 			'case' => $case,
 			'set' => $this->writableSet->resolve(
 				action: $action,

@@ -93,6 +93,46 @@ whether the transition is allowed, so refuse it there too. A key other than
 `field` and `in` is dropped, and a malformed condition is dropped whole, both
 with a warning in the Nextcloud log (`Portaliq: row condition dropped`).
 
+### Asking for input, and offering the action on some rows only
+
+An endpoint row action can ask the person for something before it runs, be
+offered only on the rows where it applies, and use your own words.
+
+```php
+[
+	'id' => 'cancel-subscription',
+	'label' => 'Cancel subscription',
+	'type' => 'endpoint-forward',
+	'endpoint' => '/apps/shillinq/api/portal/subscriptions/cancel',
+	'rowField' => 'subscriptionId',
+	'fields' => ['reasonCode'],
+	'fieldConfigs' => ['reasonCode' => ['label' => 'Reason']],
+	'optionsProviders' => [
+		'reasonCode' => ['type' => 'static', 'options' => [
+			['value' => 'too-expensive', 'label' => 'Too expensive'],
+			['value' => 'switched-provider', 'label' => 'Switched provider'],
+		]],
+	],
+	'rowInputs' => ['from' => 'cancelInputs', 'into' => 'inputs'],
+	'availableWhen' => ['field' => 'cancellable', 'equals' => true],
+	'unavailableReasonField' => 'cancelBlockedReason',
+	'confirmText' => 'You cancel this subscription. This cannot be undone.',
+	'successText' => 'Your subscription is cancelled.',
+],
+```
+
+| Key | What it does |
+| --- | --- |
+| `fields` with `fieldConfigs` and `optionsProviders` | The confirm step shows a form of these fields, drawn the same way as a create form (a static options provider is a select). A field marked `required` must be filled in before anything is sent; any other field may stay empty and is then left out of the body. File fields are not asked here; use `files` for those. |
+| `rowInputs` | `from` names a row field that holds a list of `{name, label, required, type}` (`type` is `text` or `date`); the confirm step shows one input per entry of the row the person picked. The values go under the body key `into`, only for the names that row lists. A required one left empty is refused with 422 and nothing is sent. `from` must be a field the collection projects, and `into` a plain key that is not one of the action's `fields`. |
+| `availableWhen` | `{field, equals}` with a scalar `equals`: the button shows only on rows where that field equals the value, and the portal refuses the action on other rows with 409. |
+| `unavailableReasonField` | A row field whose text shows where the button would be, on the rows `availableWhen` leaves out. |
+| `confirmText` | The sentence of the confirm step. Shown as you wrote it; translate it in your own app. |
+| `successText` | What the person reads after a 2xx answer without a `message` of its own. |
+
+A key that is not well formed is dropped, so the action runs without it
+rather than with half of it.
+
 ### What your endpoint receives
 
 A `POST` to your `endpoint` with the signed `X-Portal-Subject` assertion and a
@@ -112,7 +152,9 @@ side anyway: the assertion tells you who they are.
 | --- | --- |
 | 2xx with `redirectUrl` or `checkoutUrl`, an absolute `https:` URL | Sends the browser there. |
 | 2xx with any other URL | Stays, and says the next page could not be opened. |
-| 2xx without a URL | Says it worked and reloads the list. |
+| 2xx with a `message` string | Shows that sentence and reloads the list. |
+| 2xx without a URL | Shows your `successText`, else says it worked, and reloads the list. |
+| 422 with `errors`, an object keyed by field or input name | Shows each message under its field or input and keeps the step open. |
 | 403, 404 or 409 | Says it can no longer be done for this item. |
 | 502, 503 | Says it is not available right now. |
 

@@ -159,9 +159,17 @@ const site = {
 		// address bar before anything renders and writes every link in the
 		// addressing of this host, and the registration link sits on the
 		// sign-in screen a visitor sees first.
+		//
+		// 433 KiB, up from 431, on 2026-11-17 with dataset-views-on-the-public-page.
+		// Development measured 440,961 B, 383 B under 431 KiB; the views add
+		// 1,044 B (442,005 B). The views, their charts and the map load on
+		// demand, only for a publication whose tables carry views; what stays
+		// in the entry is the check that decides to load them and the views'
+		// strings in the en and nl bundles the translator reads. The budget is
+		// the next whole KiB above the measurement plus 1 KiB.
 		hints: isDev ? false : 'error',
-		maxAssetSize: 431 * 1024,
-		maxEntrypointSize: 431 * 1024,
+		maxAssetSize: 433 * 1024,
+		maxEntrypointSize: 433 * 1024,
 	},
 }
 
