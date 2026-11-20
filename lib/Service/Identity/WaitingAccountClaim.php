@@ -30,6 +30,7 @@ namespace OCA\Portaliq\Service\Identity;
 
 use DateTimeImmutable;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use SensitiveParameter;
 
 /**
  * Joins the waiting account a secret opened.
@@ -82,7 +83,7 @@ class WaitingAccountClaim {
 	public function claim(
 		array $account,
 		string $waitingId,
-		#[\SensitiveParameter] string $secret,
+		#[SensitiveParameter] string $secret,
 		DateTimeImmutable $moment,
 		PortalAccountLookup $lookup,
 		array $subject,
@@ -158,7 +159,7 @@ class WaitingAccountClaim {
 	 *
 	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
-	private function moveRules(bool $moving, #[\SensitiveParameter] string $secret, array $account, array $subject): ?UnboundAccount {
+	private function moveRules(bool $moving, #[SensitiveParameter] string $secret, array $account, array $subject): ?UnboundAccount {
 		if ($moving === false || $this->secrets->isCode(secret: $secret) === true) {
 			return null;
 		}
@@ -179,7 +180,7 @@ class WaitingAccountClaim {
 	 * @return array<string, mixed>|null
 	 */
 	private function reread(
-		#[\SensitiveParameter] string $secret,
+		#[SensitiveParameter] string $secret,
 		array $account,
 		DateTimeImmutable $moment,
 		PortalAccountLookup $lookup,

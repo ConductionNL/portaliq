@@ -160,21 +160,18 @@
 			@edit="editStep" />
 
 		<template v-else>
-			<SchemaField
-				v-for="field in shownFields"
-				:id="inputId(field)"
-				:key="field"
-				v-model="values[field]"
-				:field="field"
-				:label="labelOf(field)"
-				:config="configOf(field)"
-				:input="inputOf(field)"
-				:options="options[field] || []"
-				:files="files[field] || []"
+			<ActionFields
+				:action="action"
+				:fields="shownFields"
+				:values="values"
+				:options="options"
+				:files="files"
 				:fileKey="fileKey"
-				:error="errors[field] || ''"
+				:errors="errors"
+				:idBase="`f-${action.id}`"
 				:t="t"
-				@pick="(picked) => pick(field, picked)" />
+				@update="(field, value) => (values[field] = value)"
+				@pick="pick" />
 			<!-- What the resident may want to know before going on, after
 			     the step's questions (the step's `note`). -->
 			<div
@@ -325,7 +322,7 @@ import FormHelp from '../FormHelp.vue'
 import ErrorSummary from '../forms/ErrorSummary.vue'
 import FormProgress from '../forms/FormProgress.vue'
 import ReviewList from '../forms/ReviewList.vue'
-import SchemaField from './SchemaField.vue'
+import ActionFields from './ActionFields.vue'
 import {
 	oversizedFiles,
 	submitWithFiles,
@@ -393,7 +390,7 @@ export default {
 		ResumeDraftModal,
 		ReviewList,
 		SaveDraftModal,
-		SchemaField,
+		ActionFields,
 	},
 
 	mixins: [stepFlow],

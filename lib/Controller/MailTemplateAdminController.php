@@ -42,6 +42,9 @@ use Psr\Log\LoggerInterface;
  * resend of a failed mail.
  *
  * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t04
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the count includes the route attributes
+ *   (NoAdminRequired, NoCSRFRequired, ...) a controller declares.
  */
 class MailTemplateAdminController extends Controller {
 	/**
