@@ -48,6 +48,9 @@ use Throwable;
 
 /**
  * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#api-design
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the count includes the route attributes
+ *   (NoAdminRequired, NoCSRFRequired, ...) a controller declares.
  */
 class PushSubscriptionController extends Controller implements PortalProtected {
 	use ObjectRowNormaliser;
