@@ -449,6 +449,12 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$domainItem = self::$register['components']['schemas']['portal']['properties']['domains']['items']['properties'];
 		$this->assertSame(expected: 'integer', actual: $domainItem['reverifyMisses']['type']);
 		$this->assertSame(expected: 'date-time', actual: $domainItem['unboundAt']['format']);
+		// 0.122.0 (portalSubmission 0.4.0): the optional `formBinding`, the request form a submission came through (submission-row-actions). Additive; written as 0.111.0 on its branch, moved past development's 0.121.0 at merge time, then to 0.127.0 (portalSubmission 0.5.0) past development's 0.126.0 (portalSubmission 0.4.0 is hermiq-ai-tooling's); the register is 0.128.0 since publication-error-reports-and-withheld-notices merged after it.
+		$this->assertSame(expected: '0.128.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.128.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame(expected: '0.5.0', actual: self::$register['components']['schemas']['portalSubmission']['version']);
+		$this->assertSame(expected: 'uuid', actual: self::$register['components']['schemas']['portalSubmission']['properties']['formBinding']['format']);
+		$this->assertNotContains(needle: 'formBinding', haystack: self::$register['components']['schemas']['portalSubmission']['required']);
 		foreach (['menu', 'glossaryTerm'] as $translatable) {
 			$this->assertSame(expected: '0.2.0', actual: self::$register['components']['schemas'][$translatable]['version']);
 			$this->assertSame(expected: 'string', actual: self::$register['components']['schemas'][$translatable]['properties']['locale']['type']);
@@ -476,9 +482,9 @@ class PortaliqRegisterConfigTest extends TestCase {
 			actual: $report['contactEmail']['authorization']['read']
 		);
 		$this->assertSame(expected: ['update' => ['admin']], actual: $report['reportOwner']['authorization']);
-		// Written as 0.111.0 (portal 0.30.0) on its branch; moved past development's 0.121.0 (portal 0.35.0) at merge time, then to 0.123.0 past development's 0.122.0 (the x-openregister-mcp dialects above), then to 0.124.0 past development's 0.123.0 (woo-dossier-in-my-cases above), then to 0.127.0 (portal 0.38.0) past development's 0.126.0 (portal 0.37.0, portal-scoping-and-auth above), so an install already on it imports these.
-		$this->assertSame(expected: '0.127.0', actual: self::$register['info']['version']);
-		$this->assertSame(expected: '0.127.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		// Written as 0.111.0 (portal 0.30.0) on its branch; moved past development's 0.121.0 (portal 0.35.0) at merge time, then to 0.123.0 past development's 0.122.0 (the x-openregister-mcp dialects above), then to 0.124.0 past development's 0.123.0 (woo-dossier-in-my-cases above), then to 0.127.0 (portal 0.38.0) past development's 0.126.0 (portal 0.37.0, portal-scoping-and-auth above), then to 0.128.0 past development's 0.127.0 (submission-row-actions above), so an install already on it imports these.
+		$this->assertSame(expected: '0.128.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.128.0', actual: self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portalPage']['properties']['pages']['items']['properties']['blocks']['items']['properties']['messageTo']['type']);
 		$this->assertContains(needle: 'yivi', haystack: self::$register['components']['schemas']['portalAccount']['properties']['identityType']['enum']);
 		$this->assertSame(expected: 'date-time', actual: self::$register['components']['schemas']['guardianMessage']['properties']['readAt']['format']);

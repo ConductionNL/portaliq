@@ -852,9 +852,11 @@ test('the Zuiddrecht site lays out its own area as the MijnMenu and MijnZaken bo
 	// 0.121.0: a portal's `traffic.allowSlugFallback` moved past development's 0.120.0; portal 0.35.0.
 	// 0.122.0: read-only x-openregister-mcp dialects on portalMessage, portalSubmission and portalNotification (portaliq-mcp-adoption, hermiq-ai-tooling), moved past development's 0.121.0.
 	// 0.123.0: the case app's `termNote` and `resultLink` (woo-dossier-in-my-cases), moved past development's 0.122.0.
+	// 0.127.0: a submission's `formBinding` (submission-row-actions), moved past development's 0.126.0.
 	// 0.124.0: the publication features (publication-error-reports-and-withheld-notices),
 	// written as 0.111.0 on its branch, moved past development's 0.123.0; portal 0.36.0.
-	assert.equal(register.info.version, '0.124.0')
+	// 0.128.0: moved past development's 0.127.0 (submission-row-actions); portal 0.38.0.
+	assert.equal(register.info.version, '0.128.0')
 })
 
 // zuiddrecht-site-details: the portal names the organisation of the example

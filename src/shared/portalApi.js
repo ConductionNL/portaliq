@@ -826,6 +826,18 @@ export function createPortalApi(config, store = {}) {
 		},
 
 		/**
+		 * Download a submission receipt as a PDF: its reference, moment and
+		 * answers. The server answers only for the resident's own receipt.
+		 *
+		 * @param {{id: string, name: string}} receipt What receiptPdfOf() gave.
+		 * @return {Promise<object>} `{ ok }`, or `{ ok: false, status }`.
+		 * @spec openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+		 */
+		async downloadReceiptPdf(receipt) {
+			return saveDownload(`${base}/receipts/${encodeURIComponent(receipt.id)}/pdf`, receipt.name)
+		},
+
+		/**
 		 * Read ONE of the resident's inbox messages, for its own page
 		 * (a-resident-opens-one-message REQ-ROM-002). The server proves it is
 		 * theirs before it reads it; another resident's message and a missing

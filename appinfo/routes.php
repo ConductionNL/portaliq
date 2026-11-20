@@ -108,6 +108,8 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         ['name' => 'accessibility#store', 'url' => '/api/portals/{slug}/accessibility/measurements', 'verb' => 'POST'],
         ['name' => 'accessRequestAdmin#grant', 'url' => '/api/access-requests/{id}/grant', 'verb' => 'POST'],
         ['name' => 'accessRequestAdmin#refuse', 'url' => '/api/access-requests/{id}/refuse', 'verb' => 'POST'],
+        // Staff register a failed or pending submission receipt again (submission-row-actions).
+        ['name' => 'submissionAdmin#registerAgain', 'url' => '/api/submissions/{id}/register-again', 'verb' => 'POST'],
 
         // The identity space (portal-identity-space). Staff acts, gated by
         // the ADR-023 action `portal.provision`; a citizen never reaches them.
@@ -502,6 +504,8 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         ['name' => 'portalPlans#update', 'url' => '/portal/api/plans/{id}', 'verb' => 'PATCH'],
         ['name' => 'portalPlans#destroy', 'url' => '/portal/api/plans/{id}', 'verb' => 'DELETE'],
         ['name' => 'portalPlans#pdf', 'url' => '/portal/api/plans/{id}/pdf', 'verb' => 'GET'],
+        // capability-rows-without-a-requirement (REQ-CRG-005): a receipt's answers as a PDF, for its own subject only.
+        ['name' => 'submissionReceipt#pdf', 'url' => '/portal/api/receipts/{id}/pdf', 'verb' => 'GET'],
         ['name' => 'portalPlans#addFile', 'url' => '/portal/api/plans/{id}/files', 'verb' => 'POST'],
         ['name' => 'portalPlans#file', 'url' => '/portal/api/plans/{id}/files/{fileId}', 'verb' => 'GET'],
         ['name' => 'portalPlans#addParticipants', 'url' => '/portal/api/plans/{id}/participants', 'verb' => 'POST'],
