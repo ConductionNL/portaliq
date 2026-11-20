@@ -56,15 +56,25 @@ captureEmailLink(window.location, window.history)
 //      bundle from 203KB to 696KB and blew the public first-load budget that
 //      e2e S18 enforces at 400KB — for two themes a given visitor will never
 //      both need.
+//
+//      THREE COMPONENT PACKAGES ARE NOT IMPORTED ANY MORE, AND THAT IS
+//      MEASURED (portal-theme-blocks-and-contributed-pages task 1).
+//      `@utrecht/nav-list-css`, `page-header-css` and `page-footer-css` style
+//      `.utrecht-nav-list*`, `.utrecht-page-header*` and
+//      `.utrecht-page-footer*`, and no element of the site carries one of
+//      those classes since the header and footer became BrandHeader and
+//      FooterColumns: `grep` over `src/site`, `src/shared` and the
+//      component library's dist finds none. Their rules matched nothing.
+//      The other packages stay: the vendored `nlds-app.css` restates the
+//      heading and paragraph selectors with different values, and the
+//      injected rules, which come later, are what paints today, so dropping
+//      those needs a computed-style comparison in a browser first.
 import '@utrecht/skip-link-css/dist/index.css'
 import '@utrecht/heading-1-css/dist/index.css'
 import '@utrecht/heading-2-css/dist/index.css'
 import '@utrecht/heading-3-css/dist/index.css'
 import '@utrecht/paragraph-css/dist/index.css'
 import '@utrecht/link-css/dist/index.css'
-import '@utrecht/nav-list-css/dist/index.css'
-import '@utrecht/page-header-css/dist/index.css'
-import '@utrecht/page-footer-css/dist/index.css'
 import '@utrecht/article-css/dist/index.css'
 
 const MOUNT_ID = 'portaliq-site'
