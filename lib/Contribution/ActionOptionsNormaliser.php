@@ -192,7 +192,7 @@ class ActionOptionsNormaliser {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/site-forms/spec.md#requirement-a-choice-card-may-carry-a-second-line
+	 * @spec openspec/specs/site-forms/spec.md#requirement-a-choice-card-may-carry-a-second-line
 	 */
 	private function normaliseCollectionProvider(array $provider): ?array {
 		$out = ['type' => 'collection'];
@@ -215,7 +215,7 @@ class ActionOptionsNormaliser {
 	 *
 	 * @return array<string, string>
 	 *
-	 * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/site-forms/spec.md#requirement-a-choice-card-may-carry-a-second-line
+	 * @spec openspec/specs/site-forms/spec.md#requirement-a-choice-card-may-carry-a-second-line
 	 */
 	private function descriptionFieldOf(array $provider): array {
 		$field = ($provider['descriptionField'] ?? null);

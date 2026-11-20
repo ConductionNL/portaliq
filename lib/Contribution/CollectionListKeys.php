@@ -94,7 +94,7 @@ class CollectionListKeys {
 	 *
 	 * @return array<string, int> `['skip' => n]` or [].
 	 *
-	 * @spec openspec/changes/collection-skip/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-may-leave-out-its-first-rows
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-may-leave-out-its-first-rows
 	 */
 	private function skip(array $block): array {
 		$skip = ($block['skip'] ?? null);

@@ -203,7 +203,7 @@ export default {
 		/**
 		 * @return {string} The heading's id.
 		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
-		 * @spec openspec/changes/documents-for-each-record/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
 		 */
 		headingId() {
 			// One block per record draws several headings: each its own id.
@@ -287,7 +287,7 @@ export default {
 		 * @param {object} entry A document.
 		 * @return {string} Who added it, when, its type and size.
 		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
-		 * @spec openspec/changes/documents-for-each-record/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
 		 */
 		lineOf(entry) {
 			// The provider's own line is shown as written; a paper that is not

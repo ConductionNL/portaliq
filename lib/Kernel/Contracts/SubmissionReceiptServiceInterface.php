@@ -148,7 +148,7 @@ interface SubmissionReceiptServiceInterface {
 	 *
 	 * @return array{status: string, bytes?: string, name?: string}
 	 *
-	 * @spec openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
 	 */
 	public function receiptPdf(array $subject, string $id): array;
 }//end interface

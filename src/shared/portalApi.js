@@ -364,7 +364,7 @@ function objectsIn(body, orNull) {
  * @param {object} row The row.
  * @param {object} provider The provider.
  * @return {{value: unknown, label: unknown, description?: string}} The option.
- * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/site-forms/spec.md#requirement-a-choice-card-may-carry-a-second-line
+ * @spec openspec/specs/site-forms/spec.md#requirement-a-choice-card-may-carry-a-second-line
  */
 export function optionOf(row, provider) {
 	const option = { value: optionValue(row, provider), label: optionLabel(row, provider) }
@@ -831,7 +831,7 @@ export function createPortalApi(config, store = {}) {
 		 *
 		 * @param {{id: string, name: string}} receipt What receiptPdfOf() gave.
 		 * @return {Promise<object>} `{ ok }`, or `{ ok: false, status }`.
-		 * @spec openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+		 * @spec openspec/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
 		 */
 		async downloadReceiptPdf(receipt) {
 			return saveDownload(`${base}/receipts/${encodeURIComponent(receipt.id)}/pdf`, receipt.name)
@@ -2010,7 +2010,7 @@ export function createPortalApi(config, store = {}) {
 		 *
 		 * @param {object} provider optionsProvider: `{ register, schema, valueField, labelField, descriptionField? }`.
 		 * @return {Promise<Array<object>>} `{ value, label, description? }`; the description is a choice card's second line.
-		 * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/site-forms/spec.md#requirement-a-choice-card-may-carry-a-second-line
+		 * @spec openspec/specs/site-forms/spec.md#requirement-a-choice-card-may-carry-a-second-line
 		 */
 		async fetchOptions(provider) {
 			const body = await get(`${col(provider.register, provider.schema)}`)

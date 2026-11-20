@@ -201,7 +201,7 @@ export function statusState(entry) {
  * @param {object} entry The document (`date?`, `mimeType?`, `size?`, `title`).
  * @param {string} [locale] The page language.
  * @return {string}
- * @spec openspec/changes/documents-for-each-record/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
  */
 export function paperLine(entry, locale = 'nl') {
 	const facts = [fileType(entry), sizeInWords(entry?.size, locale)]
@@ -218,7 +218,7 @@ export function paperLine(entry, locale = 'nl') {
  * @param {object} block The normalised documents block.
  * @param {object} row One row of its collection.
  * @return {object} The block for that row.
- * @spec openspec/changes/documents-for-each-record/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
  */
 export function eachRecordBlock(block, row) {
 	const words = (fields) =>

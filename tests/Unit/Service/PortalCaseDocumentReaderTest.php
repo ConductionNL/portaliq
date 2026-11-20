@@ -120,7 +120,7 @@ class PortalCaseDocumentReaderTest extends TestCase {
 	 * The site's extras travel on: the provider's own line, the new mark and a
 	 * status pill; a value of the wrong type stays behind.
 	 *
-	 * @spec openspec/changes/documents-for-each-record/specs/portal-contribution-contract/spec.md#requirement-a-documents-entry-may-carry-its-own-line-a-new-mark-and-a-status
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-documents-entry-may-carry-its-own-line-a-new-mark-and-a-status
 	 *
 	 * @return void
 	 */

@@ -718,7 +718,7 @@ export function laidOut(groups, { layout, t, hrefFor }) {
  *
  * @param {Array<{items: Array<object>}>} groups The site's own groups.
  * @return {Map<string, Array<object>>} The items by name.
- * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/site-resident-menu/spec.md#requirement-a-portals-layout-may-place-a-per-record-page-with-all-its-rows
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-a-portals-layout-may-place-a-per-record-page-with-all-its-rows
  */
 function itemsByName(groups) {
 	const byName = new Map()
@@ -750,7 +750,7 @@ function plainItem(item) {
  * @param {{byName: Map<string, Array<object>>, placed: Set<object>, t: (key: string, vars?: object) => string, hrefFor: (route: string) => string}} found The items by name, the items placed so far (changed in place), the translator and the address of a route.
  * @return {Array<object>} The items.
  * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
- * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/site-resident-menu/spec.md#requirement-a-portals-layout-may-place-a-per-record-page-with-all-its-rows
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-a-portals-layout-may-place-a-per-record-page-with-all-its-rows
  */
 function declaredItems(group, found) {
 	const { byName, placed, t, hrefFor } = found
@@ -917,7 +917,7 @@ function rowId(row) {
  * @param {{groups: Array<object>, entry: object, grouped?: boolean, row: {row: object, id: string, title: string}}} target Where it goes and the row with its id and name.
  * @param {MenuContext} ctx What the items are built from.
  * @return {void}
- * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/site-resident-menu/spec.md#requirement-a-portals-layout-may-place-a-per-record-page-with-all-its-rows
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-a-portals-layout-may-place-a-per-record-page-with-all-its-rows
  */
 function addRowItem({ groups, entry, grouped = false, row: { row, id, title } }, ctx) {
 	const app = entry.contribution?.app || ''

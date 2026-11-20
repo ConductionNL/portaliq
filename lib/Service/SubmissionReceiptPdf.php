@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+ * @spec openspec/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ use Throwable;
 /**
  * The read and the render behind a receipt's PDF.
  *
- * @spec openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+ * @spec openspec/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
  */
 final class SubmissionReceiptPdf {
 
@@ -81,7 +81,7 @@ final class SubmissionReceiptPdf {
 	 *
 	 * @return array{status: string, bytes?: string, name?: string}
 	 *
-	 * @spec openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
 	 */
 	public function pdfFor(array $subject, string $id, IL10N $l10n, string $subjectKey, Closure $readable): array {
 		$message = $this->ownReceipt(subject: $subject, id: $id);
@@ -118,7 +118,7 @@ final class SubmissionReceiptPdf {
 	 *
 	 * @return array{title: string, columns: array<int, array{key: string, label: string}>, rows: array<int, array<string, string>>}
 	 *
-	 * @spec openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
 	 */
 	public function document(array $message, IL10N $l10n, string $title, string $received): array {
 		$rows = [
@@ -141,7 +141,7 @@ final class SubmissionReceiptPdf {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
 	 */
 	public function available(): bool {
 		return $this->pdf !== null && $this->pdf->available() === true;
@@ -155,7 +155,7 @@ final class SubmissionReceiptPdf {
 	 *
 	 * @return string|null The bytes.
 	 *
-	 * @spec openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
 	 */
 	public function render(array $document): ?string {
 		if ($this->pdf === null) {
@@ -180,7 +180,7 @@ final class SubmissionReceiptPdf {
 	 *
 	 * @return array<string, mixed>|null The receipt.
 	 *
-	 * @spec openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
 	 */
 	public function ownReceipt(array $subject, string $id): ?array {
 		$subjectRef = (string)($subject['subjectRef'] ?? '');
@@ -223,7 +223,7 @@ final class SubmissionReceiptPdf {
 	 *
 	 * @return string The text.
 	 *
-	 * @spec openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
 	 */
 	public function answerText(mixed $answer): string {
 		if ($answer === true) {

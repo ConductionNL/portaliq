@@ -697,7 +697,7 @@ class SubmissionReceiptService implements SubmissionReceiptServiceInterface {
 	 * @return array{status: string, bytes?: string, name?: string} `status` is
 	 *         RECEIPT_PDF, RECEIPT_NOT_FOUND, RECEIPT_PDF_UNAVAILABLE or RECEIPT_PDF_FAILED.
 	 *
-	 * @spec openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
 	 */
 	public function receiptPdf(array $subject, string $id): array {
 		if ($this->pdfs === null) {

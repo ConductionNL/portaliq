@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/capability-rows-without-a-requirement/tasks.md#t04
+ * @spec openspec/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use OCP\IRequest;
  * Answers only for a receipt of the bearer's own subject: someone else's
  * receipt and an unknown id answer the same 404, and nothing is rendered.
  *
- * @spec openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+ * @spec openspec/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
  */
 class SubmissionReceiptController extends Controller implements PortalProtected {
 
@@ -68,7 +68,7 @@ class SubmissionReceiptController extends Controller implements PortalProtected 
 	 *
 	 * @return Response The file, or 401, 404, 503 when OpenRegister cannot render, 502 when the render failed.
 	 *
-	 * @spec openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

@@ -6,7 +6,7 @@
 // reference, shows "Download as PDF" in the inbox; the file comes from the
 // receipt route, which answers only for the resident's own receipt.
 //
-// @spec openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+// @spec openspec/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
 
 import assert from 'node:assert/strict'
 import { test } from 'node:test'

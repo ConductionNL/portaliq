@@ -768,7 +768,7 @@ export default {
 		 *
 		 * @param {object} message The message.
 		 * @return {{id: string, name: string}|null} The receipt.
-		 * @spec openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+		 * @spec openspec/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
 		 */
 		receiptPdf(message) {
 			return receiptPdfOf(message)
@@ -779,7 +779,7 @@ export default {
 		 *
 		 * @param {object} message The receipt message.
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+		 * @spec openspec/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
 		 */
 		async downloadReceipt(message) {
 			const receipt = receiptPdfOf(message)

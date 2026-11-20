@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-account-presence/specs/portal-identity-space/spec.md#requirement-staff-can-ask-whether-a-citizen-has-a-portal-account
+ * @spec openspec/specs/portal-identity-space/spec.md#requirement-staff-can-ask-whether-a-citizen-has-a-portal-account
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use OCP\IUserSession;
  * that calls this decides whether its user may see the person at all, as
  * dossiq does by reading the person record under the user's own rights.
  *
- * @spec openspec/changes/portal-account-presence/specs/portal-identity-space/spec.md#requirement-staff-can-ask-whether-a-citizen-has-a-portal-account
+ * @spec openspec/specs/portal-identity-space/spec.md#requirement-staff-can-ask-whether-a-citizen-has-a-portal-account
  */
 class PortalAccountPresence {
 
@@ -66,7 +66,7 @@ class PortalAccountPresence {
 	 *
 	 * @return array{allowed: bool, hasAccount: bool, portalName: string} `allowed` false when the caller may not ask.
 	 *
-	 * @spec openspec/changes/portal-account-presence/specs/portal-identity-space/spec.md#requirement-staff-can-ask-whether-a-citizen-has-a-portal-account
+	 * @spec openspec/specs/portal-identity-space/spec.md#requirement-staff-can-ask-whether-a-citizen-has-a-portal-account
 	 */
 	public function forCitizen(string $bsn): array {
 		$lookup = new PortalAccountLookup(reader: $this->reader);

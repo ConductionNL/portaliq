@@ -112,7 +112,7 @@ export function ctaLabel(label, title) {
  * @param {{label?: string, labelWhenEmpty?: string}} block The cta block.
  * @param {{title: string, record: object|null}} open The open record's title and row.
  * @return {string}
- * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/portal-contribution-contract/spec.md#requirement-a-cta-label-may-name-any-field-of-the-open-record
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-cta-label-may-name-any-field-of-the-open-record
  */
 export function recordLabel(block, open) {
 	const label = ctaLabel(block?.label, open.title)

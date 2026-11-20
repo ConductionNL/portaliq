@@ -243,7 +243,7 @@ class ListBlockNormaliser {
 	 *
 	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
 	 * @spec openspec/changes/steps-as-bars/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-as-a-row-of-bars
-	 * @spec openspec/changes/documents-for-each-record/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
 	 */
 	public function recordBlock(string $type, array $block, array $collections): ?array {
 		$collection = $this->collection(id: ($block['collection'] ?? null), collections: $collections);
@@ -277,7 +277,7 @@ class ListBlockNormaliser {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/documents-for-each-record/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
 	 */
 	private function documentsKeys(array $block, array $collection): array {
 		// The upload button beside the heading (zuiddrecht-resident-pages-match-the-boards).
@@ -308,7 +308,7 @@ class ListBlockNormaliser {
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
-	 * @spec openspec/changes/documents-for-each-record/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
 	 */
 	public function recordPageOnly(array $blocks, array $recordCollections): array {
 		return array_values(
