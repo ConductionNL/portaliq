@@ -134,23 +134,8 @@ class PublicationReportService {
 	 * @spec openspec/changes/publication-error-reports-and-withheld-notices/specs/portal-federated-search/spec.md#requirement-error-reports-are-opt-in-and-need-a-named-owner-req-per-001
 	 */
 	public function isOn(array $portal): bool {
-		return self::switchedOn(portal: $portal);
+		return (new PublicationReportSwitch())->isOn(portal: $portal);
 	}//end isOn()
-
-	/**
-	 * The same answer without an instance, for the public site record.
-	 *
-	 * @param array<string, mixed> $portal The portal record.
-	 *
-	 * @return bool
-	 *
-	 * @spec openspec/changes/publication-error-reports-and-withheld-notices/specs/portal-federated-search/spec.md#requirement-error-reports-are-opt-in-and-need-a-named-owner-req-per-001
-	 */
-	public static function switchedOn(array $portal): bool {
-		$owner = $portal[PortalReportOwnerCheck::OWNER] ?? '';
-
-		return ($portal[PortalReportOwnerCheck::SWITCH] ?? false) === true && is_string($owner) === true && trim($owner) !== '';
-	}//end switchedOn()
 
 	/**
 	 * Receive one report.

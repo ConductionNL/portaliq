@@ -41,7 +41,7 @@ use OCA\Portaliq\Kernel\Contracts\PublicSourceScopeInterface;
 use OCA\Portaliq\Kernel\Contracts\SiteOrganisationInterface;
 use OCA\Portaliq\Kernel\Contracts\TrafficConfigResolverInterface;
 use OCA\Portaliq\Service\Cms\MediaReferences;
-use OCA\Portaliq\Service\Publication\PublicationReportService;
+use OCA\Portaliq\Service\Publication\PublicationReportSwitch;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -239,7 +239,7 @@ class ContentController extends Controller {
 				// REQ-PER-001, REQ-PER-003). Never the owner: who receives the
 				// reports is not the visitor's business.
 				'publications' => [
-					'errorReports'    => PublicationReportService::switchedOn(portal: $portal),
+					'errorReports'    => (new PublicationReportSwitch())->isOn(portal: $portal),
 					'withheldNotices' => (($portal['showWithheldNotices'] ?? false) === true),
 				],
 				// Whether the "Ask a question" widget is offered: the portal turned it on
