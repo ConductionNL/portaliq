@@ -312,6 +312,17 @@
       }
     },
     {
+      "id": "PlanTemplatesMenu",
+      "label": "Plan templates",
+      "icon": "ClipboardListOutline",
+      "route": "PlanTemplates",
+      "section": "settings",
+      "order": 94,
+      "visibleIf": {
+        "access.admin": true
+      }
+    },
+    {
       "id": "FindersMenu",
       "label": "Product finders",
       "icon": "FileFindOutline",
@@ -2043,6 +2054,13 @@
             }
           },
           {
+            "id": "account-hidden-pages",
+            "type": "PortalAccountPages",
+            "title": "Pages hidden for this client",
+            "icon": "EyeLock",
+            "content": {}
+          },
+          {
             "id": "account-withdraw",
             "type": "PortalAccountWithdraw",
             "title": "Account intrekken",
@@ -2197,10 +2215,18 @@
             "gridHeight": 4
           },
           {
+            "id": "account-hidden-pages",
+            "widgetId": "account-hidden-pages",
+            "gridX": 0,
+            "gridY": 4,
+            "gridWidth": 12,
+            "gridHeight": 4
+          },
+          {
             "id": "account-stats-sessions-issued",
             "widgetId": "account-stats-sessions-issued",
             "gridX": 0,
-            "gridY": 4,
+            "gridY": 8,
             "gridWidth": 6,
             "gridHeight": 2
           },
@@ -2208,7 +2234,7 @@
             "id": "account-stats-active-sessions",
             "widgetId": "account-stats-active-sessions",
             "gridX": 6,
-            "gridY": 4,
+            "gridY": 8,
             "gridWidth": 6,
             "gridHeight": 2
           },
@@ -2216,7 +2242,7 @@
             "id": "account-sessions",
             "widgetId": "account-sessions",
             "gridX": 0,
-            "gridY": 6,
+            "gridY": 10,
             "gridWidth": 12,
             "gridHeight": 4
           },
@@ -2224,7 +2250,7 @@
             "id": "account-messages",
             "widgetId": "account-messages",
             "gridX": 0,
-            "gridY": 10,
+            "gridY": 14,
             "gridWidth": 12,
             "gridHeight": 4
           }
@@ -3945,6 +3971,11 @@
                   "widgetId": "portal-settings-case-types"
                 },
                 {
+                  "key": "navigation",
+                  "title": "Navigation",
+                  "widgetId": "portal-settings-navigation"
+                },
+                {
                   "key": "signin",
                   "title": "Sign in",
                   "widgetId": "portal-settings-signin"
@@ -3968,6 +3999,11 @@
                   "key": "section-help",
                   "title": "Help per part of Mijn omgeving",
                   "widgetId": "portal-settings-section-help"
+                },
+                {
+                  "key": "search-ranking",
+                  "title": "How search ranks",
+                  "widgetId": "portal-settings-search-ranking"
                 },
                 {
                   "key": "editors",
@@ -4266,6 +4302,12 @@
             "content": {}
           },
           {
+            "id": "portal-settings-navigation",
+            "type": "PortalNavigation",
+            "title": "Navigation",
+            "content": {}
+          },
+          {
             "id": "portal-settings-signin",
             "type": "PortalSignin",
             "title": "Sign in",
@@ -4281,6 +4323,12 @@
             "id": "portal-settings-accessibility",
             "type": "PortalAccessibility",
             "title": "Accessibility",
+            "content": {}
+          },
+          {
+            "id": "portal-settings-search-ranking",
+            "type": "PortalSearchRanking",
+            "title": "How search ranks",
             "content": {}
           },
           {
@@ -4309,6 +4357,16 @@
                   "prefix": "valid until",
                   "fallback": "not checked yet"
                 },
+                "meta": [
+                  {
+                    "path": "servedAtRoot",
+                    "map": {
+                      "true": "Site at the root of this domain",
+                      "false": ""
+                    }
+                  },
+                  "landingRoute"
+                ],
                 "detail": {
                   "template": "Publish this TXT record: {name} = {value}",
                   "when": {
@@ -4339,6 +4397,17 @@
                     "required": true,
                     "pattern": "^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,63}$",
                     "patternMessage": "Use a plain host name, such as portal.example.nl, without https:// or a path."
+                  },
+                  {
+                    "key": "servedAtRoot",
+                    "label": "Site at the root of this domain",
+                    "type": "checkbox"
+                  },
+                  {
+                    "key": "landingRoute",
+                    "label": "Page the bare domain opens",
+                    "pattern": "^/[^/\\\\?#:\\s]([^\\\\?#:\\s]*[^/\\\\?#:\\s])?$",
+                    "patternMessage": "Use a page path of the site, such as /afval."
                   }
                 ]
               },
@@ -5252,6 +5321,7 @@
           {
             "key": "onBehalfOf",
             "label": "Access requested to",
+            "overlineText": "Cases of",
             "width": "195px"
           },
           {
@@ -5373,7 +5443,8 @@
           "board",
           "map"
         ],
-        "footerNote": "on approval the requester sees the cases at once, on refusal they read your reason"
+        "footerNote": "on approval the requester sees the cases at once, on refusal they read your reason",
+        "defaultOrder": "stateRank,-requestedAt"
       }
     },
     {
@@ -7087,6 +7158,56 @@
       }
     },
     {
+      "id": "PlanTemplates",
+      "route": "/plan-templates",
+      "type": "index",
+      "title": "Plan templates",
+      "config": {
+        "register": "portaliq",
+        "schema": "portalPlanTemplate",
+        "_note": "Where a resident's shared plan can begin (shared-plans-with-a-caseworker T07, board PtPlansjablonen). An editor lists, writes and publishes a portal's templates through the object form; only a published template is offered to residents.",
+        "columns": [
+          {
+            "key": "title",
+            "label": "Template title"
+          },
+          {
+            "key": "summary",
+            "label": "Template summary"
+          },
+          {
+            "key": "portal",
+            "label": "Portal"
+          },
+          {
+            "key": "durationDays",
+            "label": "Duration in days"
+          },
+          {
+            "key": "published",
+            "label": "Published",
+            "widget": "badge",
+            "widgetProps": {
+              "colorMap": {
+                "true": "success",
+                "false": "warning"
+              }
+            }
+          }
+        ],
+        "showTitle": true,
+        "showTitleIcon": false,
+        "actions": [
+          "builtin:view",
+          "builtin:edit"
+        ],
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true
+        }
+      }
+    },
+    {
       "id": "Finders",
       "route": "/finders",
       "type": "index",
@@ -7543,7 +7664,8 @@
         "Change house style": "Huisstijl wijzigen",
         "Hard to read:": "Slecht leesbaar:",
         "the text in the footer does not reach a contrast of 4.5 to 1 with this theme. An editor can still use the theme; that is recorded. You choose the house style at the portal, under Settings.": "de tekst in de voet haalt met dit thema geen contrast van 4,5 op 1. Een redacteur kan het thema toch gebruiken; dat wordt vastgelegd. De huisstijl kiest u bij de portal, onder Instellingen.",
-        "{shown} of {total} requests to see cases on behalf of someone else": "{shown} van {total} verzoeken om zaken van een ander te zien"
+        "{shown} of {total} requests to see cases on behalf of someone else": "{shown} van {total} verzoeken om zaken van een ander te zien",
+        "Cases of": "Zaken van"
       }
     }
   }

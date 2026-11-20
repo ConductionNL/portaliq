@@ -24,7 +24,7 @@ use OCA\Portaliq\Controller\PortalRegisteredDetailsController;
 use OCA\Portaliq\Service\CaseTypeVisibility;
 use OCA\Portaliq\Service\Identity\PortalRegisteredDetailsLinks;
 use OCA\Portaliq\Service\Identity\PortalRegisteredDetailsService;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
@@ -80,7 +80,7 @@ class PortalRegisteredDetailsControllerTest extends TestCase {
 		$request->method('getParams')->willReturn($params);
 		$request->method('getParam')->willReturnCallback(static fn (string $key, mixed $default = null): mixed => ($params[$key] ?? $default));
 
-		$session = $this->double(PortalSessionService::class, ['resolveFromBearer']);
+		$session = $this->double(BearerSessionResolver::class, ['resolveFromBearer']);
 		$session->method('resolveFromBearer')->willReturn($subject);
 
 		$portal = ['slug' => 'mijn-gemeente'];

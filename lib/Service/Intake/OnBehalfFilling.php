@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Kernel\Contracts\OnBehalfFillingInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalRegisteredDetailsServiceInterface;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCP\IGroupManager;
@@ -40,22 +41,7 @@ use OCP\IUserManager;
  *
  * @spec openspec/changes/resident-identity-in-forms/tasks.md#T06
  */
-class OnBehalfFilling {
-
-	/**
-	 * The provider a desk session carries, telling it from a resident's.
-	 */
-	public const PROVIDER = 'desk';
-
-	/**
-	 * The audience of a desk session.
-	 */
-	public const AUDIENCE = 'desk';
-
-	/**
-	 * The audit verb of a BSN or KvK lookup by an employee.
-	 */
-	public const LOOKUP_VERB = 'desk.lookup';
+class OnBehalfFilling implements OnBehalfFillingInterface {
 
 	/**
 	 * The longest applicant name an employee may note.

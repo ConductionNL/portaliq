@@ -85,4 +85,41 @@ class MediaUsageTest extends TestCase {
 		$this->assertSame(expected: ['m-2' => ['usedOn' => 0], 'm-3' => ['usedOn' => 1]], actual: $written);
 		$this->assertContains(needle: ['media', 'portal', 'zuiddrecht'], haystack: $asked);
 	}//end testTheRecountWritesWhatChanged()
+
+	/**
+	 * An item OpenRegister reads with `usedOn: null` has never been counted:
+	 * an unused one gets 0, so the "Nergens gebruikt" filter lists it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/media-usage-count/specs/site-page-seo-history-and-media/spec.md#requirement-a-media-item-knows-how-many-records-use-it-req-mu-001
+	 */
+	public function testAnUncountedUnusedItemGetsZero(): void {
+		$portals = $this->createMock(originalClassName: PublishedPortals::class);
+		$portals->method('allPublishedPortals')->willReturn(value: [['slug' => 'zuiddrecht']]);
+
+		$rows   = [
+			'page' => [],
+			'newsItem' => [],
+			'media' => [['uuid' => 'm-9', 'portal' => 'zuiddrecht', 'usedOn' => null]],
+		];
+		$reader = $this->createMock(originalClassName: PortalObjectReader::class);
+		$reader->method('readCollection')->willReturnCallback(
+			fn (string $register, string $schema): array => $rows[$schema]
+		);
+
+		$written = [];
+		$writer  = $this->createMock(originalClassName: PortalObjectWriter::class);
+		$writer->method('updateObject')->willReturnCallback(
+			function (...$args) use (&$written): array {
+				$written[$args[5]] = $args[6];
+				return $args[6];
+			}
+		);
+
+		$usage = new MediaUsage(portals: $portals, reader: $reader, writer: $writer);
+
+		$this->assertSame(expected: 1, actual: $usage->refresh());
+		$this->assertSame(expected: ['m-9' => ['usedOn' => 0]], actual: $written);
+	}//end testAnUncountedUnusedItemGetsZero()
 }//end class

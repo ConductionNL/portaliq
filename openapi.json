@@ -2,7 +2,7 @@
     "openapi": "3.0.3",
     "info": {
         "title": "Portaliq",
-        "version": "0.2.5-unstable.20261021030000",
+        "version": "0.2.13-unstable.20261120011006",
         "description": "The JSON API of Portaliq, the portal app for Nextcloud: portals and their pages, content, news, events and activities, messages and newsletters, proposals and polls, invitations and access requests, staff tools, traffic insight and the settings behind them. The records themselves are stored in OpenRegister and read and written through its API; this document covers the endpoints Portaliq adds on top.\n\nEvery path is served under `/api/v1/`, the version this document describes. The unversioned `/api/` paths keep working, are deprecated, and name their `/api/v1/` successor in a `Link` header next to a `Deprecation` header. Errors are RFC 9457 problem details (`application/problem+json`), and every response carries an `API-Version` header. Paths that implement an external standard keep the formats of that standard and are not described here.",
         "contact": {
             "name": "Conduction B.V.",
@@ -212,6 +212,10 @@
             "description": "Files a report, runs its thread, and gates the reveal."
         },
         {
+            "name": "search-suggest",
+            "description": "The did-you-mean suggestion of the public search."
+        },
+        {
             "name": "session-admin",
             "description": "Admin-only session revocation for the portal auth edge."
         },
@@ -250,6 +254,14 @@
         {
             "name": "article",
             "description": "Marketing articles, reused by newsletters, posts and pages."
+        },
+        {
+            "name": "portal-navigation",
+            "description": "Which contributed pages a portal menu shows, per audience and in order."
+        },
+        {
+            "name": "portal-account-pages",
+            "description": "The pages hidden for one client account."
         }
     ],
     "paths": {
@@ -7310,6 +7322,72 @@
                 }
             }
         },
+        "/site/search/suggest": {
+            "get": {
+                "operationId": "search-suggest-suggest",
+                "summary": "A checked spelling suggestion for a public search",
+                "description": "A checked spelling suggestion for a public search that found fewer than three results. Public: it needs no login. The suggestion is offered only when the corrected search finds results.",
+                "tags": [
+                    "search-suggest"
+                ],
+                "security": [],
+                "parameters": [
+                    {
+                        "name": "portal",
+                        "in": "query",
+                        "required": false,
+                        "description": "The portal's slug; empty resolves it from the host.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "required": false,
+                        "description": "The term the visitor searched for.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "suggestion": {
+                                            "type": "string",
+                                            "nullable": true,
+                                            "description": "The corrected term, or null."
+                                        },
+                                        "results": {
+                                            "type": "integer",
+                                            "description": "How many results the corrected term finds; 0 without a suggestion."
+                                        }
+                                    },
+                                    "required": [
+                                        "suggestion",
+                                        "results"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Problem404"
+                    }
+                }
+            }
+        },
         "/staff/emergency-push": {
             "post": {
                 "operationId": "emergency-push-send",
@@ -8246,6 +8324,231 @@
                     },
                     "403": {
                         "$ref": "#/components/responses/Problem403"
+                    }
+                }
+            }
+        },
+        "/portals/{slug}/navigation": {
+            "get": {
+                "operationId": "portal-navigation-index",
+                "summary": "Per audience, the pages the installed apps contribute, in the portal's order, each with whether the portal hides it",
+                "description": "Per audience, the pages the installed apps contribute, in the portal's order, each with whether the portal hides it. Needs a Nextcloud administrator.",
+                "tags": [
+                    "portal-navigation"
+                ],
+                "parameters": [
+                    {
+                        "name": "slug",
+                        "in": "path",
+                        "required": true,
+                        "description": "The portal slug.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Problem404"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "portal-navigation-update",
+                "summary": "Save the portal's navigation: per audience, the pages in the chosen order with whether each is hidden",
+                "description": "Save the portal's navigation: per audience, the pages in the chosen order with whether each is hidden. Needs a Nextcloud administrator.",
+                "tags": [
+                    "portal-navigation"
+                ],
+                "parameters": [
+                    {
+                        "name": "slug",
+                        "in": "path",
+                        "required": true,
+                        "description": "The portal slug.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "navigation": {
+                                        "type": "object",
+                                        "description": "Per audience, a list of {page, hidden}, page as app:pageId."
+                                    }
+                                },
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/Problem400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Problem404"
+                    },
+                    "502": {
+                        "$ref": "#/components/responses/Problem502"
+                    }
+                }
+            }
+        },
+        "/accounts/{subjectRef}/pages": {
+            "get": {
+                "operationId": "portal-account-pages-index",
+                "summary": "The pages the installed apps contribute for the account's audience, each with whether it is hidden for this account",
+                "description": "The pages the installed apps contribute for the account's audience, each with whether it is hidden for this account. Needs a signed-in Nextcloud user allowed to manage portal accounts.",
+                "tags": [
+                    "portal-account-pages"
+                ],
+                "parameters": [
+                    {
+                        "name": "subjectRef",
+                        "in": "path",
+                        "required": true,
+                        "description": "The account.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Problem404"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "portal-account-pages-update",
+                "summary": "Save the pages hidden for the account",
+                "description": "Save the pages hidden for the account. Needs a signed-in Nextcloud user allowed to manage portal accounts.",
+                "tags": [
+                    "portal-account-pages"
+                ],
+                "parameters": [
+                    {
+                        "name": "subjectRef",
+                        "in": "path",
+                        "required": true,
+                        "description": "The account.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "hiddenPages": {
+                                        "type": "array",
+                                        "description": "The hidden pages, each as app:pageId.",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                },
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/Problem400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Problem404"
+                    },
+                    "502": {
+                        "$ref": "#/components/responses/Problem502"
                     }
                 }
             }

@@ -27,10 +27,10 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\OnBehalfFillingInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFormBindingResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
-use OCA\Portaliq\Service\Intake\OnBehalfFilling;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -58,7 +58,7 @@ class DeskSessionController extends Controller {
 	 * @param PortalResolverInterface            $portals      Resolves the portal.
 	 * @param PortalFormBindingResolverInterface $bindings     Resolves the form.
 	 * @param PortalSessionServiceInterface      $session      Mints the portal session.
-	 * @param OnBehalfFilling                    $onBehalf     The desk group and form checks.
+	 * @param OnBehalfFillingInterface           $onBehalf     The desk group and form checks.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -67,7 +67,7 @@ class DeskSessionController extends Controller {
 		private readonly PortalResolverInterface $portals,
 		private readonly PortalFormBindingResolverInterface $bindings,
 		private readonly PortalSessionServiceInterface $session,
-		private readonly OnBehalfFilling $onBehalf,
+		private readonly OnBehalfFillingInterface $onBehalf,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
@@ -126,11 +126,13 @@ class DeskSessionController extends Controller {
 
 		$issued = $this->session->issueSession(
 			subjectRef: $employee['uid'],
-			audience: OnBehalfFilling::AUDIENCE,
+			audience: OnBehalfFillingInterface::AUDIENCE,
 			organisation: (string)($site['organisation'] ?? ''),
 			trust: 'low',
-			roles: [OnBehalfFilling::AUDIENCE . ':fill'],
-			provider: OnBehalfFilling::PROVIDER
+			roles: [OnBehalfFillingInterface::AUDIENCE . ':fill'],
+			provider: OnBehalfFillingInterface::PROVIDER,
+			// The desk session works on this portal only (portal-scoping-and-auth Task 4).
+			portal: (string)($site['slug'] ?? '')
 		);
 		if ($issued === null) {
 			return new JSONResponse(['error' => 'not_configured'], Http::STATUS_SERVICE_UNAVAILABLE);

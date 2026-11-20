@@ -38,6 +38,11 @@ namespace OCA\Portaliq\Kernel\Contracts;
 interface PortalFormBindingResolverInterface {
 
 	/**
+	 * A binding whose form is rendered by the portal itself.
+	 */
+	public const KIND_HOSTED = 'hosted';
+
+	/**
 	 * A binding naming a start form on another host.
 	 */
 	public const KIND_EXTERNAL = 'external';

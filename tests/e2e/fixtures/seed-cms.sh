@@ -272,7 +272,7 @@ echo "    e2efixture/signup (the form's destination) imported"
 FORM_ID=$(upsert form pageRoute /campagne/e2e-form-test '{
   "portal":"open-tilburg","pageRoute":"/campagne/e2e-form-test",
   "sourceApp":"e2eFixture","externalReference":"e2e-fixture-1",
-  "destination":{"register":"e2efixture","schema":"signup","fields":{},"fixed":{"source":"landing-page"}},
+  "destination":{"register":"e2efixture","schema":"signup","fixed":{"source":"landing-page"}},
   "campaign":{"campaign":"e2e","source":"playwright","medium":"test"},
   "fields":[{"id":"name","label":"Naam","type":"text","required":true},
             {"id":"email","label":"E-mail","type":"email","required":true}],
@@ -296,6 +296,36 @@ upsert page route /campagne/e2e-form-test '{
   ]}
 }' >/dev/null
 echo "    /campagne/e2e-form-test (grid: markdown + form widget)"
+
+# The reading room (public-site-meets-wcag-aa): a search page and a
+# publication page, so the accessibility suite checks the two blocks a
+# visitor reads Woo publications through. Both read opencatalogi's
+# `@PublicPage` federation endpoint; this fixture installs no catalogue, so
+# tests/e2e/site-accessibility.spec.ts answers those reads in the browser and
+# the PAGES are what is seeded here. On an instance with opencatalogi the
+# same pages show its real publications. The detail page takes the
+# publication id as the trailing route segment: /publicatie/<id>.
+upsert page route /zoeken '{
+  "title":"Zoeken in publicaties","route":"/zoeken","portal":"open-tilburg","status":"published","locale":"nl",
+  "summary":"Zoek in besluiten, rapporten en antwoorden op Woo-verzoeken.",
+  "body":{"type":"grid","widgets":[
+    {"id":"search","widgetKey":"federatedSearch","slot":"body","gridX":0,"gridY":0,"gridWidth":12,"gridHeight":8,
+     "props":{"variant":"plain","inputLabel":"Zoekterm","placeholder":"Bijvoorbeeld: fietspad",
+              "submitLabel":"Zoeken","facetLabel":"Filters","periodLabel":"Periode",
+              "periodFromLabel":"Vanaf","periodToLabel":"Tot en met","sortLabel":"Sorteren"}}
+  ]}
+}' >/dev/null
+echo "    /zoeken (grid: federated search block)"
+
+upsert page route /publicatie '{
+  "title":"Publicatie","route":"/publicatie","portal":"open-tilburg","status":"published","locale":"nl",
+  "summary":"Details van een publicatie.",
+  "body":{"type":"grid","widgets":[
+    {"id":"publication","widgetKey":"publicationDetail","slot":"body","gridX":0,"gridY":0,"gridWidth":12,"gridHeight":8,
+     "props":{"endpoint":"/index.php/apps/opencatalogi/api/federation/publications","variant":"cards"}}
+  ]}
+}' >/dev/null
+echo "    /publicatie (grid: publication detail block; /publicatie/<id>)"
 
 # A draft page proves the published filter does something. Without it, the
 # "unpublished pages are not served" scenario passes vacuously.

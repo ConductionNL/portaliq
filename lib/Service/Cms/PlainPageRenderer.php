@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Cms;
 
+use OCA\Portaliq\Kernel\Contracts\PlainPageRendererInterface;
 use OCA\Portaliq\Service\CmsReader;
 use OCP\IL10N;
 
@@ -45,7 +46,7 @@ use OCP\IL10N;
  *
  * @spec openspec/changes/site-honest-without-javascript/specs/site-without-javascript/spec.md#requirement-the-server-renders-a-plain-version-of-every-public-page-req-shj-002
  */
-class PlainPageRenderer {
+class PlainPageRenderer implements PlainPageRendererInterface {
 
 	/**
 	 * The only audience this page reads as.

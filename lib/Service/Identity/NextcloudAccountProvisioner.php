@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Auth\PortalAuthConfig;
 use OCA\Portaliq\Kernel\Contracts\NextcloudAccountProvisionerInterface;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
@@ -247,7 +248,7 @@ class NextcloudAccountProvisioner implements NextcloudAccountProvisionerInterfac
 			return 'portal_mismatch';
 		}
 
-		if (in_array(self::MODE, (array)($portal['authentication']['modes'] ?? []), true) === false) {
+		if (PortalAuthConfig::fromPortal(portal: $portal)->offers(mode: self::MODE) === false) {
 			return 'mode_not_offered';
 		}
 

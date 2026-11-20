@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Tenancy;
 
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalAdminGrantsInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -48,20 +49,7 @@ use Throwable;
  *
  * @spec openspec/changes/operate-portals-per-organisation/specs/portal-tenancy/spec.md#requirement-each-organisation-looks-after-its-own-portal-on-a-shared-installation-req-opo-005
  */
-class PortalAdminGrants {
-
-	/**
-	 * The content schemas a portal owns, keyed by slug, with the field naming the portal.
-	 *
-	 * @var array<string, string>
-	 */
-	public const SCHEMAS = [
-		'page'         => 'portal',
-		'menu'         => 'portal',
-		'portalNotice' => 'portal',
-		'media'        => 'portal',
-		'portal'       => 'slug',
-	];
+class PortalAdminGrants implements PortalAdminGrantsInterface {
 
 	/**
 	 * The actions a portal's administrators are granted on its content.

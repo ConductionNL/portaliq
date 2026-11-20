@@ -4,11 +4,17 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Auth\PortalSessionScope;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalJwtService;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\PortalSessionRevoker;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
+use OCA\Portaliq\Kernel\Support\SessionRecords;
+use OCA\Portaliq\Kernel\Support\SessionSigningKey;
+use OCA\Portaliq\Kernel\Support\SubjectAssertionIssuer;
 use OCP\IAppConfig;
 use OCP\IConfig;
 use OCP\Security\ISecureRandom;
@@ -107,8 +113,7 @@ class PortalSessionServiceTest extends TestCase {
 	}//end testUnrecognisedMinTrustIsUnsatisfiableForEveryone()
 
 	public function testAssertionCarriesUseClaimSessionJtiAndShortTtl(): void {
-		$service = $this->service();
-		$assertion = $service->issueAssertion(
+		$assertion = $this->assertions()->issueAssertion(
 			[
 				'subjectRef' => 's1',
 				'audience' => 'supplier',
@@ -141,7 +146,7 @@ class PortalSessionServiceTest extends TestCase {
 	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
 	 */
 	public function testAssertionCarriesTheSessionBranchOnlyWhenThereIsOne(): void {
-		$service = $this->service();
+		$assertions = $this->assertions();
 		$subject = [
 			'subjectRef' => 's1',
 			'audience' => 'business',
@@ -151,18 +156,18 @@ class PortalSessionServiceTest extends TestCase {
 		];
 
 		$withBranch = (new PortalJwtService(self::SECRET))->validate(
-			$service->issueAssertion(array_merge($subject, ['branch' => '000012345678']))
+			$assertions->issueAssertion(array_merge($subject, ['branch' => '000012345678']))
 		);
 		$this->assertSame('000012345678', $withBranch['branch']);
 
-		$without = (new PortalJwtService(self::SECRET))->validate($service->issueAssertion($subject));
+		$without = (new PortalJwtService(self::SECRET))->validate($assertions->issueAssertion($subject));
 		$this->assertArrayNotHasKey('branch', $without);
 
 	}//end testAssertionCarriesTheSessionBranchOnlyWhenThereIsOne()
 
 	public function testAssertionPresentedAsBearerFailsClosed(): void {
 		$service = $this->service();
-		$assertion = $service->issueAssertion(
+		$assertion = $this->assertions()->issueAssertion(
 			[
 				'subjectRef' => 's1',
 				'audience' => 'supplier',
@@ -216,6 +221,35 @@ class PortalSessionServiceTest extends TestCase {
 	}//end testAMalformedOrForgedBearerResolvesToNoSubject()
 
 	/**
+	 * A session minted on a portal is bound to it and stays bound through a
+	 * refresh; another portal refuses it, and its refresh, as invalid.
+	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
+	 */
+	public function testAPortalSessionStaysOnItsPortalThroughARefresh(): void {
+		$store = [];
+		$home  = $this->createMock(PortalSessionScope::class);
+		$home->method('admits')->willReturnCallback(fn (string $portal): bool => $portal === 'portal-a');
+		$service = $this->service(store: $store, scope: $home);
+
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'client', organisation: 'org-1', portal: 'portal-a');
+		$this->assertSame('portal-a', $service->resolveFromBearer('Bearer ' . $issued['token'])['portal']);
+
+		$refreshed = $service->refreshSession('Bearer ' . $issued['token']);
+		$this->assertNotNull($refreshed);
+		$this->assertSame('portal-a', $service->resolveFromBearer('Bearer ' . $refreshed['token'])['portal']);
+
+		$other = $this->createMock(PortalSessionScope::class);
+		$other->method('admits')->willReturn(false);
+		$elsewhere = $this->service(store: $store, scope: $other);
+		$this->assertNull($elsewhere->resolveFromBearer('Bearer ' . $refreshed['token']));
+		$this->assertNull($elsewhere->refreshSession('Bearer ' . $refreshed['token']));
+
+		$unbound = $service->issueSession(subjectRef: 's2', audience: 'client', organisation: 'org-1');
+		$this->assertSame('', $elsewhere->resolveFromBearer('Bearer ' . $unbound['token'])['portal']);
+	}//end testAPortalSessionStaysOnItsPortalThroughARefresh()
+
+	/**
 	 * The company's KVK number is signed on the session and survives a
 	 * refresh; a session without one, or with a malformed one, carries none.
 	 *
@@ -245,7 +279,7 @@ class PortalSessionServiceTest extends TestCase {
 		$subject = $service->resolveFromBearer('Bearer ' . $issued['token']);
 
 		$this->assertSame(
-			['subjectRef', 'audience', 'organisation', 'trust', 'roles', 'jti', 'authTime', 'branch', 'branchRestricted', 'provider', 'expiresAt', 'kvk', 'attributes'],
+			['subjectRef', 'audience', 'organisation', 'trust', 'roles', 'jti', 'authTime', 'branch', 'branchRestricted', 'provider', 'expiresAt', 'kvk', 'attributes', 'portal'],
 			array_keys($subject)
 		);
 		$this->assertSame('s1', $subject['subjectRef']);
@@ -267,7 +301,7 @@ class PortalSessionServiceTest extends TestCase {
 		// (portal-auth-edge-session-hardening) — the edge fails closed.
 		$service = $this->service(secret: '');
 
-		$this->assertFalse($service->isConfigured());
+		$this->assertFalse($this->signingKey(secret: '')->isConfigured());
 		$this->assertNull($service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1'));
 		$this->assertNull($service->resolveFromBearer('Bearer whatever'));
 
@@ -275,7 +309,7 @@ class PortalSessionServiceTest extends TestCase {
 
 	public function testShortSecretAlsoRefusesFailClosed(): void {
 		$service = $this->service(secret: 'too-short');
-		$this->assertFalse($service->isConfigured());
+		$this->assertFalse($this->signingKey(secret: 'too-short')->isConfigured());
 		$this->assertNull($service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1'));
 
 	}//end testShortSecretAlsoRefusesFailClosed()
@@ -1215,13 +1249,11 @@ class PortalSessionServiceTest extends TestCase {
 		?callable $onCreate = null,
 		bool $orDown = false,
 		?string $idlePreview = null,
+		?PortalSessionScope $scope = null,
 	): PortalSessionService {
 		// The signing secret lives in IAppConfig, flagged sensitive (review S4);
 		// IConfig answers the other session settings only.
-		$appConfig = $this->createMock(IAppConfig::class);
-		$appConfig->method('getValueString')->willReturnCallback(
-			fn (string $app, string $key, string $default = '') => ($key === 'jwt_signing_secret' ? ($secret ?? '') : $default)
-		);
+		$signingKey = $this->signingKey(secret: $secret);
 		$config = $this->createMock(IConfig::class);
 		$config->method('getAppValue')->willReturnCallback(
 			function (string $appId, string $key, string $default = '') use ($secret, $maxLifetime, $idleTimeout, $idlePreview) {
@@ -1303,16 +1335,48 @@ class PortalSessionServiceTest extends TestCase {
 			}
 		);
 
+		$logger = $this->createMock(LoggerInterface::class);
+		$auditor = ($auditor ?? $this->createMock(AuditTrailService::class));
+		$records = new SessionRecords($reader, new PortalSessionRevoker($reader, $writer, $auditor, $logger));
+
 		return new PortalSessionService(
 			$config,
 			$random,
-			$this->createMock(LoggerInterface::class),
+			$logger,
 			$writer,
 			$reader,
-			($auditor ?? $this->createMock(AuditTrailService::class)),
-			$appConfig
+			$auditor,
+			$signingKey,
+			new BearerSessionResolver($signingKey, $records, $logger, $scope)
 		);
 
 	}//end service()
+
+	/**
+	 * The signing key over an app config holding the given secret.
+	 *
+	 * @param string|null $secret The configured `jwt_signing_secret`.
+	 *
+	 * @return SessionSigningKey
+	 */
+	private function signingKey(?string $secret): SessionSigningKey {
+		$appConfig = $this->createMock(IAppConfig::class);
+		$appConfig->method('getValueString')->willReturnCallback(
+			fn (string $app, string $key, string $default = '') => ($key === 'jwt_signing_secret' ? ($secret ?? '') : $default)
+		);
+
+		return new SessionSigningKey($appConfig);
+
+	}//end signingKey()
+
+	/**
+	 * The assertion issuer over the test secret.
+	 *
+	 * @return SubjectAssertionIssuer
+	 */
+	private function assertions(): SubjectAssertionIssuer {
+		return new SubjectAssertionIssuer($this->signingKey(secret: self::SECRET));
+
+	}//end assertions()
 
 }//end class

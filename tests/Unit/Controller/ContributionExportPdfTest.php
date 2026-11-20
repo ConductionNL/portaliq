@@ -21,6 +21,7 @@ use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalPdfExport;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Support\SubjectAssertionIssuer;
 use OCA\Portaliq\Service\SubmissionReceiptService;
 use OCP\AppFramework\Http;
 use OCP\Http\Client\IClientService;
@@ -143,7 +144,7 @@ class ContributionExportPdfTest extends TestCase {
 			$this->createMock(PortalSchemaReader::class),
 			$this->createMock(PortalInboxReader::class),
 			$this->audit,
-			new PortalActionForwarder($request, new InstanceLoopback($this->createMock(IClientService::class), $urls, $this->createMock(InternalBaseUrl::class), $this->createMock(LoggerInterface::class)), $session),
+			new PortalActionForwarder($request, new InstanceLoopback($this->createMock(IClientService::class), $urls, $this->createMock(InternalBaseUrl::class), $this->createMock(LoggerInterface::class)), $this->createMock(SubjectAssertionIssuer::class)),
 			$this->createMock(AuditTrailService::class),
 			$this->createMock(SubmissionReceiptService::class),
 			$this->createMock(NotificationDispatchService::class),
