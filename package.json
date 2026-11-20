@@ -332,7 +332,7 @@
     "@vueuse/core": "^14.3.0",
     "axios": "^1.21.1",
     "babel-loader": "^10.1.1",
-    "dexie": "^4.4.6",
+    "dexie": "^4.4.7",
     "dompurify": "^3.4.15",
     "gridstack": "^13.3.0",
     "marked": "^18.1.2",
