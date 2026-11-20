@@ -9,6 +9,11 @@
 
 export default {
 	nl: {
+		'More actions for this case': 'Meer acties voor deze zaak',
+		'You can no longer do this on this case.': 'Dit kan niet meer bij deze zaak.',
+		'We have received it.': 'Wij hebben het ontvangen.',
+		'We have received it. Reference {reference}.': 'Wij hebben het ontvangen. Kenmerk {reference}.',
+		'You will find it as a case of its own in My cases.': 'U vindt het als eigen zaak in Mijn zaken.',
 		'How you are signed in, how we reach you and what we let you know about.':
 			'Hoe u bent ingelogd, hoe wij u bereiken en waarover wij u laten weten.',
 		'Contact preferences': 'Contactvoorkeuren',
@@ -274,6 +279,7 @@ export default {
 		'Your answer could not be sent. Please try again.': 'Uw antwoord kon niet worden verstuurd. Probeer het opnieuw.',
 		'This question has already been dealt with.': 'Deze vraag is al afgehandeld.',
 		'Next step: {step}': 'Volgende stap: {step}',
+		Outcome: 'Uitkomst',
 		'Yes, remove my account': 'Ja, verwijder mijn account',
 		'You have no e-mail address on your account.':
 			'Er staat geen e-mailadres bij uw account.',
@@ -304,6 +310,11 @@ export default {
 		'{name} has been added to your case.': '{name} is aan uw zaak toegevoegd.',
 	},
 	en: {
+		'More actions for this case': 'More actions for this case',
+		'You can no longer do this on this case.': 'You can no longer do this on this case.',
+		'We have received it.': 'We have received it.',
+		'We have received it. Reference {reference}.': 'We have received it. Reference {reference}.',
+		'You will find it as a case of its own in My cases.': 'You will find it as a case of its own in My cases.',
 		'How you are signed in, how we reach you and what we let you know about.':
 			'How you are signed in, how we reach you and what we let you know about.',
 		'Contact preferences': 'Contact preferences',
@@ -567,6 +578,7 @@ export default {
 		'Your answer could not be sent. Please try again.': 'Your answer could not be sent. Please try again.',
 		'This question has already been dealt with.': 'This question has already been dealt with.',
 		'Next step: {step}': 'Next step: {step}',
+		Outcome: 'Outcome',
 		'Yes, remove my account': 'Yes, remove my account',
 		'You have no e-mail address on your account.':
 			'You have no e-mail address on your account.',

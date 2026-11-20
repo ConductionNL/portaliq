@@ -363,6 +363,17 @@
 			</section>
 
 			<!--
+				DATASET VIEWS (dataset-views-on-the-public-page, REQ-DSV-003):
+				each published table's views under its title. A chart or map
+				always offers the same data as a table.
+			-->
+			<PublicationDatasetViews
+				v-if="hasDatasetViews"
+				:publication="publication"
+				:t="t"
+				:locale="locale" />
+
+			<!--
 				ALL DETAILS (publication-page-all-details): every stored
 				property below the worded part, with a readable label. The
 				object's own metadata and empty values are left out, and a
@@ -503,9 +514,8 @@ export default {
 
 	components: {
 		SaveToDossier: defineAsyncComponent(() => import('./SaveToDossier.vue')),
-		PublicationReport: defineAsyncComponent(
-			() => import('./PublicationReport.vue'),
-		),
+		PublicationReport: defineAsyncComponent(() => import('./PublicationReport.vue')),
+		PublicationDatasetViews: defineAsyncComponent(() => import('./PublicationDatasetViews.vue')),
 	},
 
 	props: {
@@ -724,6 +734,18 @@ export default {
 			return (this.documents || [])
 				.map((document) => String(document?.title || ''))
 				.filter((name) => name !== '')
+		},
+
+		/**
+		 * Whether a published table carries a view. The views and their
+		 * drawing load on demand, only then (REQ-DSV-003).
+		 *
+		 * @return {boolean} Whether the data section is drawn.
+		 * @spec openspec/changes/dataset-views-on-the-public-page/specs/open-data-tables/spec.md#requirement-the-public-page-draws-each-view-and-offers-its-data-as-a-table-req-dsv-003
+		 */
+		hasDatasetViews() {
+			const tables = this.publication?.tables
+			return Array.isArray(tables) && tables.some((table) => Array.isArray(table?.views) && table.views.length > 0)
 		},
 
 		fields() {

@@ -229,7 +229,7 @@ test('a valid submission answers with a reference, an invalid one with the field
 		confirmation: null,
 		mailedTo: '',
 		waiting: '',
-		moments: { receivedAt: '', termStartsAt: '', deadline: '' },
+		moments: { receivedAt: '', termStartsAt: '', deadline: '', receivedOutsideWorkingHours: false },
 		errors: {},
 	})
 	assert.equal(calls[0].init.method, 'POST')
@@ -260,6 +260,7 @@ test('a submit creates the case: the moments come back, and a destination refusa
 				receivedAt: '2026-10-11T09:00:00+00:00',
 				termStartsAt: '2026-10-13T09:00:00+02:00',
 				deadline: '2026-11-24',
+				receivedOutsideWorkingHours: true,
 			},
 		},
 		{
@@ -276,6 +277,7 @@ test('a submit creates the case: the moments come back, and a destination refusa
 		receivedAt: '2026-10-11T09:00:00+00:00',
 		termStartsAt: '2026-10-13T09:00:00+02:00',
 		deadline: '2026-11-24',
+		receivedOutsideWorkingHours: true,
 	})
 
 	const refused = await submitIntake({ base: BASE, portal: '', token: '', fetchImpl }, { route: 'bezwaar', answers: { postcode: 'x' } })

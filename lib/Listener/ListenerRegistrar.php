@@ -152,6 +152,11 @@ final class ListenerRegistrar {
 			$context->registerEventListener($event, BindingDestinationGuardListener::class);
 		}
 
+		// A page takes no route its portal already has in that language (portal-cms-admin-ui).
+		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $event) {
+			$context->registerEventListener($event, PageRouteGuardListener::class);
+		}
+
 		// A notice ends after it starts (operate-maintenance-notice REQ-OMN-003).
 		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $event) {
 			$context->registerEventListener($event, NoticeWriteGuardListener::class);

@@ -98,4 +98,24 @@ interface PortalInboxReaderInterface {
 	 * @spec openspec/changes/archive/2026-07-23-portal-inbox-v2/tasks.md#T04
 	 */
 	public function unreadCount(array $subject, array $aggregate): int;
+
+	/**
+	 * One inbox message, projected exactly as its row in the merged inbox.
+	 *
+	 * The caller has ALREADY proven the row the subject's own: it read it
+	 * through the scoped single-object read after the inbox collection, trust
+	 * and scope checks. This adds no authorisation and reads no other row; it
+	 * only holds back a message whose moment has not passed (the same gate as
+	 * the list) and projects it.
+	 *
+	 * @param array<string, mixed> $subject      The resolved subject.
+	 * @param array<string, mixed> $row          The verified row.
+	 * @param array<string, mixed> $collection   The inbox collection it was read from.
+	 * @param array<string, mixed> $contribution The contribution the collection belongs to.
+	 *
+	 * @return array<string, mixed>|null The message, or null while it is still held back.
+	 *
+	 * @spec openspec/changes/a-resident-opens-one-message/tasks.md#T03
+	 */
+	public function oneMessage(array $subject, array $row, array $collection, array $contribution): ?array;
 }//end interface

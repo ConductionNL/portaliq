@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Auth\PortalSessionScope;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalJwtService;
 use OCA\Portaliq\Service\PortalObjectReader;
@@ -220,6 +221,35 @@ class PortalSessionServiceTest extends TestCase {
 	}//end testAMalformedOrForgedBearerResolvesToNoSubject()
 
 	/**
+	 * A session minted on a portal is bound to it and stays bound through a
+	 * refresh; another portal refuses it, and its refresh, as invalid.
+	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
+	 */
+	public function testAPortalSessionStaysOnItsPortalThroughARefresh(): void {
+		$store = [];
+		$home  = $this->createMock(PortalSessionScope::class);
+		$home->method('admits')->willReturnCallback(fn (string $portal): bool => $portal === 'portal-a');
+		$service = $this->service(store: $store, scope: $home);
+
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'client', organisation: 'org-1', portal: 'portal-a');
+		$this->assertSame('portal-a', $service->resolveFromBearer('Bearer ' . $issued['token'])['portal']);
+
+		$refreshed = $service->refreshSession('Bearer ' . $issued['token']);
+		$this->assertNotNull($refreshed);
+		$this->assertSame('portal-a', $service->resolveFromBearer('Bearer ' . $refreshed['token'])['portal']);
+
+		$other = $this->createMock(PortalSessionScope::class);
+		$other->method('admits')->willReturn(false);
+		$elsewhere = $this->service(store: $store, scope: $other);
+		$this->assertNull($elsewhere->resolveFromBearer('Bearer ' . $refreshed['token']));
+		$this->assertNull($elsewhere->refreshSession('Bearer ' . $refreshed['token']));
+
+		$unbound = $service->issueSession(subjectRef: 's2', audience: 'client', organisation: 'org-1');
+		$this->assertSame('', $elsewhere->resolveFromBearer('Bearer ' . $unbound['token'])['portal']);
+	}//end testAPortalSessionStaysOnItsPortalThroughARefresh()
+
+	/**
 	 * The company's KVK number is signed on the session and survives a
 	 * refresh; a session without one, or with a malformed one, carries none.
 	 *
@@ -249,7 +279,7 @@ class PortalSessionServiceTest extends TestCase {
 		$subject = $service->resolveFromBearer('Bearer ' . $issued['token']);
 
 		$this->assertSame(
-			['subjectRef', 'audience', 'organisation', 'trust', 'roles', 'jti', 'authTime', 'branch', 'branchRestricted', 'provider', 'expiresAt', 'kvk', 'attributes'],
+			['subjectRef', 'audience', 'organisation', 'trust', 'roles', 'jti', 'authTime', 'branch', 'branchRestricted', 'provider', 'expiresAt', 'kvk', 'attributes', 'portal'],
 			array_keys($subject)
 		);
 		$this->assertSame('s1', $subject['subjectRef']);
@@ -1219,6 +1249,7 @@ class PortalSessionServiceTest extends TestCase {
 		?callable $onCreate = null,
 		bool $orDown = false,
 		?string $idlePreview = null,
+		?PortalSessionScope $scope = null,
 	): PortalSessionService {
 		// The signing secret lives in IAppConfig, flagged sensitive (review S4);
 		// IConfig answers the other session settings only.
@@ -1316,7 +1347,7 @@ class PortalSessionServiceTest extends TestCase {
 			$reader,
 			$auditor,
 			$signingKey,
-			new BearerSessionResolver($signingKey, $records, $logger)
+			new BearerSessionResolver($signingKey, $records, $logger, $scope)
 		);
 
 	}//end service()

@@ -57,6 +57,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalObjectWriterInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalPartyTreeResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Kernel\Support\PortalBranchScope;
+use OCA\Portaliq\Service\CaseActionsResolver;
 use OCA\Portaliq\Service\CaseQuestions;
 use OCA\Portaliq\Service\CaseResultLink;
 use OCA\Portaliq\Service\CitizenCaseProjection;
@@ -132,6 +133,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 * @param PortalBranchScopeInterface $branches The branch filter of signin-eherkenning-branch.
 	 * @param CaseResultLink|null $resultLinks Keeps a case's result link only on a trusted domain (woo-dossier-in-my-cases).
 	 * @param CaseQuestions|null $questions Reads the open questions of the case's app on this case (woo-dossier-in-my-cases).
+	 * @param CaseActionsResolver|null $caseActions The create actions placed on the case page (REQ-COC-002).
 	 */
 	public function __construct(
 		IRequest $request,
@@ -155,6 +157,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		private readonly PortalBranchScopeInterface $branches = new PortalBranchScope(),
 		private readonly ?CaseResultLink $resultLinks = null,
 		private readonly ?CaseQuestions $questions = null,
+		private readonly ?CaseActionsResolver $caseActions = null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
@@ -206,8 +209,39 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			// The open questions of the case's app on this case, each with the
 			// row action that answers it (woo-dossier-in-my-cases REQ-WDM-001).
 			'questions' => $this->openQuestions(context: $context),
+			// The create actions a contribution places on this case, open or closed
+			// as the server reckons it (case-page-objection-and-complaint REQ-COC-002).
+			'caseActions' => $this->caseActionsFor(context: $context, register: $register, schema: $schema),
+			// Which projected fields hold the public outcome and its explanation
+			// (case-outcome-on-the-case-page REQ-COC-001); the page shows them
+			// only once the case has ended.
+			'outcome' => ($context['outcome'] ?? null),
 		]);
 	}//end show()
+
+	/**
+	 * The create actions placed on this case's page; none without the resolver.
+	 *
+	 * @param array<string, mixed> $context  The resolved case context.
+	 * @param string               $register The case's register.
+	 * @param string               $schema   The case's schema.
+	 *
+	 * @return list<array<string, mixed>>
+	 *
+	 * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-case-page-offers-the-actions-the-server-lists-req-coc-002
+	 */
+	private function caseActionsFor(array $context, string $register, string $schema): array {
+		if ($this->caseActions === null) {
+			return [];
+		}
+
+		return $this->caseActions->forCase(
+			contributions: (array)($this->registry->aggregateFor($context['subject'])['contributions'] ?? []),
+			register: $register,
+			schema: $schema,
+			case: $context['case']
+		);
+	}//end caseActionsFor()
 
 	/**
 	 * The open questions on the case, each with its answer action; none without the reader.
@@ -899,6 +933,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			'documents' => ($match['documents'] ?? null),
 			'fields' => ($match['fields'] ?? null),
 			'closedField' => (string)($match['closedField'] ?? ''),
+			'outcome' => ($match['outcome'] ?? null),
 			'case' => $case,
 			'set' => $this->writableSet->resolve(
 				action: $action,

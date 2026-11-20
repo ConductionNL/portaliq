@@ -32,6 +32,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalDomainVerifierInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -47,6 +48,14 @@ class PortalDomainVerifier implements PortalDomainVerifierInterface {
 	private const SCHEMA = 'portal';
 
 	public const PREFIX = '_portaliq-verify.';
+
+	/**
+	 * How many re-checks in a row must find the record gone before a
+	 * verified domain is unbound (portal-scoping-and-auth Task 2).
+	 *
+	 * @var int
+	 */
+	public const UNBIND_AFTER = 3;
 
 	/**
 	 * The TXT lookup: a record name in, the record values out.
@@ -89,8 +98,10 @@ class PortalDomainVerifier implements PortalDomainVerifierInterface {
 				restore_error_handler();
 			}
 
+			// A lookup that failed is not an answer: it throws, so a periodic
+			// re-check never reads a resolver outage as a removed record.
 			if (is_array($records) === false) {
-				return [];
+				throw new RuntimeException('TXT lookup failed for ' . $name);
 			}
 
 			return array_map(static fn (array $record): string => (string)($record['txt'] ?? ''), $records);
@@ -380,15 +391,109 @@ class PortalDomainVerifier implements PortalDomainVerifierInterface {
 	 * @return bool
 	 */
 	private function published(array $domain): bool {
+		return $this->recordState(domain: $domain) === true;
+	}//end published()
+
+	/**
+	 * Whether the domain's record is published with this portal's token, or
+	 * null when the lookup itself failed and so says nothing either way.
+	 *
+	 * @param array<string, mixed> $domain The domain entry.
+	 *
+	 * @return bool|null
+	 */
+	private function recordState(array $domain): ?bool {
 		try {
 			$values = ($this->lookup)(self::PREFIX . $domain['hostname']);
 		} catch (Throwable $e) {
 			$this->logger->info('Portaliq: domain record lookup failed', ['reason' => $e->getMessage()]);
-			return false;
+			return null;
 		}
 
 		return in_array((string)$domain['verificationToken'], array_map('trim', $values), true);
-	}//end published()
+	}//end recordState()
+
+	/**
+	 * Re-check every verified domain of a portal, and unbind the ones whose
+	 * record has been gone for UNBIND_AFTER re-checks in a row.
+	 *
+	 * Only a domain verified through its record (one that carries a token) is
+	 * re-checked; a domain an administrator marked verified without one is
+	 * left as it is. A failed lookup changes nothing, so a resolver outage
+	 * never unbinds a domain. A re-check that finds the record resets the
+	 * count. Nothing is written when nothing changed.
+	 *
+	 * @param string $slug The portal slug.
+	 *
+	 * @return array{unbound: array<int, string>, missing: array<int, string>}|null The hostnames unbound now and the ones
+	 *                                                                             found missing but not yet unbound;
+	 *                                                                             null for an unknown portal or a failed save.
+	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-custom-domain-must-be-verified-before-it-serves
+	 */
+	public function reverify(string $slug): ?array {
+		$portal = $this->portal(slug: $slug);
+		if ($portal === null) {
+			return null;
+		}
+
+		$domains = $this->domains(portal: $portal);
+		$result  = ['unbound' => [], 'missing' => []];
+		$changed = false;
+		foreach ($domains as $i => $domain) {
+			if (($domain['verified'] ?? false) !== true || trim((string)($domain['verificationToken'] ?? '')) === '') {
+				continue;
+			}
+
+			[$domains[$i], $outcome] = $this->rechecked(domain: $domain);
+			if ($outcome !== null) {
+				$result[$outcome][] = (string)$domain['hostname'];
+			}
+
+			$changed = ($changed === true || $domains[$i] !== $domain);
+		}
+
+		if ($changed === true && $this->save(portal: $portal, domains: $domains) === false) {
+			return null;
+		}
+
+		return $result;
+	}//end reverify()
+
+	/**
+	 * One verified domain after a re-check, and what the re-check found.
+	 *
+	 * @param array<string, mixed> $domain The verified domain entry.
+	 *
+	 * @return array{0: array<string, mixed>, 1: string|null} The entry, and `unbound`, `missing` or null (found, or no answer).
+	 */
+	private function rechecked(array $domain): array {
+		$state  = $this->recordState(domain: $domain);
+		$misses = (int)($domain['reverifyMisses'] ?? 0);
+		if ($state === null) {
+			return [$domain, null];
+		}
+
+		if ($state === true) {
+			if ($misses !== 0) {
+				$domain['reverifyMisses'] = 0;
+			}
+
+			return [$domain, null];
+		}
+
+		$misses++;
+		if ($misses < self::UNBIND_AFTER) {
+			$domain['reverifyMisses'] = $misses;
+			return [$domain, 'missing'];
+		}
+
+		$domain['verified']       = false;
+		$domain['reverifyMisses'] = 0;
+		$domain['unboundAt']      = gmdate('c');
+
+		return [$domain, 'unbound'];
+	}//end rechecked()
 
 	/**
 	 * The portal row by slug.

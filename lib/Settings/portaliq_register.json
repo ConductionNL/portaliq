@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.124.0"
+        "version": "0.127.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.124.0",
+                "version": "0.127.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -1810,7 +1810,7 @@
                     ]
                 },
                 "icon": "ShieldLock",
-                "version": "0.3.0",
+                "version": "0.4.0",
                 "title": "Portal OIDC State",
                 "description": "Short-lived, single-use server-side storage for one OIDC authorization-code + PKCE round trip (portal-oidc-broker-login). Written by SessionController::oidcStart(), consumed exactly once by SessionController::oidcCallback(); a reused or expired row fails the callback closed. Never publicly readable — it briefly carries the PKCE code_verifier.",
                 "type": "object",
@@ -1873,6 +1873,13 @@
                         "type": "string",
                         "description": "The portal SPA path to redirect to once the session is minted.",
                         "example": "/portal"
+                    },
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The slug of the portal the login was started on. The minted session is bound to it, so another portal refuses it. Empty for a login started on no portal.",
+                        "maxLength": 63,
+                        "example": "gemeente-zuiddrecht"
                     },
                     "expiresAt": {
                         "title": "Expires at",
@@ -2830,7 +2837,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.36.0",
+                "version": "0.38.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -3415,6 +3422,20 @@
                                     "description": "The site page the bare address of this host opens, as a route with a leading slash. Empty means the home page. A host for the signed-in area names that area here. Read only from a verified domain.",
                                     "maxLength": 512,
                                     "example": "/mijn"
+                                },
+                                "reverifyMisses": {
+                                    "title": "Missed re-checks",
+                                    "type": "integer",
+                                    "description": "How many periodic re-checks in a row found the verification record gone from a verified domain. A lookup that fails counts for nothing; a re-check that finds the record resets it. At the third miss the domain is unbound.",
+                                    "minimum": 0,
+                                    "example": 0
+                                },
+                                "unboundAt": {
+                                    "title": "Unbound at",
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "description": "When the periodic re-check last unbound this domain because its verification record was gone. Verifying it again binds it again.",
+                                    "example": "2026-11-17T09:00:00+00:00"
                                 }
                             }
                         }
@@ -3661,7 +3682,11 @@
                             "oidc": {
                                 "title": "OIDC configuration",
                                 "type": "object",
-                                "description": "Provider configuration when `oidc` is enabled: issuer, client id and the scopes requested. The client secret is held in the credential broker, never here.",
+                                "description": "Provider configuration when `oidc` is enabled. `issuer` (and optionally `clientId`) names the one provider this portal accepts: a login through any other provider is refused. Absent, the organisation's provider is accepted. The client secret is held in the credential broker, never here.",
+                                "properties": {
+                                    "issuer": {"title": "Issuer", "type": "string", "description": "The issuer of the only OIDC provider this portal accepts.", "example": "https://login.example.nl"},
+                                    "clientId": {"title": "Client id", "type": "string", "description": "The client id that provider must use, when pinned.", "example": "portal-client"}
+                                },
                                 "additionalProperties": true
                             },
                             "registration": {

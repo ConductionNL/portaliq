@@ -63,6 +63,11 @@
  *   `{type: collection, register, schema, labelField, valueField}` — a collection
  *   dropdown is populated through the SUBJECT-SCOPED collection endpoint, so it can
  *   only offer values the subject may already read), `submitLabel`, `successMessage`.
+ * - Create actions: `onCase` (`{crossRef, order, window?: {from, days}, closedText?}`) places
+ *   the action on the page of the case its `crossRefs[crossRef]` points at, in `order`; the
+ *   window opens the day after the case's `from` date and lasts `days` days, Europe/Amsterdam.
+ *   The server fills the cross-reference field in. A malformed `onCase` is dropped, the action
+ *   kept (case-page-objection-and-complaint REQ-COC-001).
  * - Contributions: `pages` (`[{id, label?, icon?, group?, blocks[]}]`) composing typed
  *   blocks (`collection`/`action`/`detail`/`richText`/`cta`) whose references
  *   resolve within the SAME contribution; absent → one default page per listable

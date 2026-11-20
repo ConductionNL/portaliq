@@ -39,6 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
+use OCA\Portaliq\Auth\PortalAuthConfig;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\EmailLinkSettingInterface;
 use OCA\Portaliq\Kernel\Contracts\NextcloudRegistrationDoorInterface;
@@ -594,7 +595,7 @@ class SessionController extends Controller {
 		}
 
 		$provider = $this->discoveredProvider(org: $run->org, provider: $run->provider);
-		if ($provider === null) {
+		if ($provider === null || $this->portalAcceptsProvider(site: $run->site, config: $provider['config']) === false) {
 			return $this->oidcGenericError();
 		}
 
@@ -651,7 +652,10 @@ class SessionController extends Controller {
 			org: $run->org,
 			provider: $run->provider,
 			returnTo: $this->returnAddress(siteReturn: $run->siteReturn, site: $run->site),
-			silent: ($run->prompt === 'none')
+			silent: ($run->prompt === 'none'),
+			// The session the callback mints is bound to this portal
+			// (portal-scoping-and-auth Task 4); only a resolved portal's slug.
+			portal: (string)($run->site['slug'] ?? '')
 		);
 	}//end storeStartState()
 
@@ -772,7 +776,7 @@ class SessionController extends Controller {
 	 */
 	private function withOidcProvider(OidcLoginRun $run): ?OidcLoginRun {
 		$provider = $this->discoveredProvider(org: $run->pending['org'], provider: $run->pending['provider']);
-		if ($provider === null) {
+		if ($provider === null || $this->startPortalAcceptsProvider(pending: $run->pending, config: $provider['config']) === false) {
 			return null;
 		}
 
@@ -780,6 +784,53 @@ class SessionController extends Controller {
 		$run->endpoints = $provider['endpoints'];
 		return $run;
 	}//end withOidcProvider()
+
+	/**
+	 * Whether the serving portal accepts the organisation's resolved OIDC
+	 * provider: a portal that names its provider accepts only a provider
+	 * that matches it (portal-scoping-and-auth Task 4). No portal: the
+	 * organisation's provider, as before.
+	 *
+	 * @param array<string, mixed>|null $site   The serving portal, or null.
+	 * @param array<string, mixed>      $config The resolved provider settings.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 */
+	private function portalAcceptsProvider(?array $site, array $config): bool {
+		if ($site === null) {
+			return true;
+		}
+
+		return PortalAuthConfig::fromPortal(portal: $site)->acceptsOidcProvider(config: $config);
+	}//end portalAcceptsProvider()
+
+	/**
+	 * Whether the portal the login started on still accepts the provider the
+	 * callback completes with. The portal is looked up by the slug the state
+	 * row kept; a portal that no longer resolves accepts nothing.
+	 *
+	 * @param array<string, mixed> $pending The consumed state row.
+	 * @param array<string, mixed> $config  The resolved provider settings.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 */
+	private function startPortalAcceptsProvider(array $pending, array $config): bool {
+		$slug = (string)($pending['portal'] ?? '');
+		if ($slug === '') {
+			return true;
+		}
+
+		$site = $this->portals->resolve(request: $this->request, portalSlug: $slug);
+		if ($site === null) {
+			return false;
+		}
+
+		return PortalAuthConfig::fromPortal(portal: $site)->acceptsOidcProvider(config: $config);
+	}//end startPortalAcceptsProvider()
 
 	/**
 	 * The portal session the callback mints: the verified claims, mapped onto
@@ -892,7 +943,9 @@ class SessionController extends Controller {
 			roles: [$audience . ':read'],
 			branch: (string)($run->mapped['branch'] ?? ''),
 			provider: $run->pending['provider'],
-			kvk: (string)($run->mapped['kvk'] ?? '')
+			kvk: (string)($run->mapped['kvk'] ?? ''),
+			// Bound to the portal the login started on (portal-scoping-and-auth Task 4).
+			portal: (string)($run->pending['portal'] ?? '')
 		);
 	}//end issueOidcSession()
 
@@ -1083,8 +1136,7 @@ class SessionController extends Controller {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$modes = ($site['authentication']['modes'] ?? []);
-		if (is_array($modes) === false || in_array('nextcloud', $modes, true) === false) {
+		if (PortalAuthConfig::fromPortal(portal: $site)->offers(mode: 'nextcloud') === false) {
 			// Refused with the same shape as an unknown portal: which modes a
 			// portal offers is not something an anonymous prober should be able
 			// to enumerate one 403 at a time.
@@ -1109,7 +1161,7 @@ class SessionController extends Controller {
 			return new JSONResponse(['error' => 'no_portal_account'], Http::STATUS_FORBIDDEN);
 		}
 
-		$issued = $this->issueNextcloudSession(uid: $uid, account: $account);
+		$issued = $this->issueNextcloudSession(uid: $uid, account: $account, portal: (string)($site['slug'] ?? ''));
 		if ($issued === null) {
 			return new JSONResponse(['error' => 'not_configured'], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
@@ -1122,10 +1174,13 @@ class SessionController extends Controller {
 	 *
 	 * @param string               $uid     The signed-in Nextcloud user.
 	 * @param array<string, mixed> $account The user's active portal account.
+	 * @param string               $portal  The portal the user signs in on; the session is bound to it.
 	 *
 	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
 	 */
-	private function issueNextcloudSession(string $uid, array $account): ?array {
+	private function issueNextcloudSession(string $uid, array $account, string $portal = ''): ?array {
 		$audience = (string)($account['audience'] ?? 'client');
 		return $this->session->issueSession(
 			subjectRef: $uid,
@@ -1136,7 +1191,8 @@ class SessionController extends Controller {
 			// a portal gating on trust must not be fooled by the fact that
 			// this login felt more effortful.
 			trust: 'low',
-			roles: [$audience . ':read']
+			roles: [$audience . ':read'],
+			portal: $portal
 		);
 	}//end issueNextcloudSession()
 

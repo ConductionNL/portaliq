@@ -7475,6 +7475,109 @@
       }
     },
     {
+      "id": "SharedBlockDetail",
+      "route": "/shared-blocks/:id",
+      "type": "detail",
+      "title": "Shared block",
+      "config": {
+        "register": "portaliq",
+        "schema": "sharedBlock",
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true
+        },
+        "headerActions": [
+          {
+            "id": "open-layout",
+            "label": "Layout",
+            "icon": "ViewDashboardOutline",
+            "type": "open-page",
+            "target": "SharedBlockLayout"
+          }
+        ],
+        "widgets": [
+          {
+            "id": "shared-block-data",
+            "type": "data",
+            "title": "Gegevens",
+            "icon": "InformationOutline",
+            "content": {
+              "columns": 2
+            }
+          },
+          {
+            "id": "shared-block-pages",
+            "type": "record-list",
+            "title": "Pages that place this block",
+            "icon": "FileDocumentOutline",
+            "content": {
+              "endpointSource": {
+                "url": "/apps/portaliq/api/shared-blocks/@objectId/pages",
+                "method": "GET",
+                "responsePath": "results"
+              },
+              "presentation": "rows",
+              "title": "{title}",
+              "meta": "{portalTitle} · {route}",
+              "pill": {
+                "field": "status",
+                "labels": {
+                  "published": "Published",
+                  "draft": "Draft"
+                },
+                "colorMap": {
+                  "published": "success",
+                  "draft": "warning"
+                }
+              },
+              "rowRoute": "PageDetail",
+              "emptyText": "No page places this block yet."
+            }
+          },
+          {
+            "id": "shared-block-history",
+            "type": "audit-trail",
+            "title": "Historie",
+            "icon": "History"
+          },
+          {
+            "id": "shared-block-tabs",
+            "type": "tabs",
+            "title": "Onderdelen van het blok",
+            "content": {
+              "ariaLabel": "Onderdelen van het blok",
+              "tabs": [
+                {
+                  "widgetId": "shared-block-data",
+                  "label": "Overzicht"
+                },
+                {
+                  "widgetId": "shared-block-pages",
+                  "label": "Pagina's"
+                },
+                {
+                  "widgetId": "shared-block-history",
+                  "label": "Historie"
+                }
+              ]
+            }
+          }
+        ],
+        "layout": [
+          {
+            "id": "shared-block-tabs",
+            "widgetId": "shared-block-tabs",
+            "gridX": 0,
+            "gridY": 0,
+            "gridWidth": 12,
+            "gridHeight": 8
+          }
+        ],
+        "tabsLabel": "Onderdelen van het blok",
+        "_note": "The block's detail (site-shared-page-blocks REQ-SPB-005, T06). Pagina's lists the pages of the block's organisation whose published layout places it, from GET /api/shared-blocks/{id}/pages (page editors only), so an editor sees every page a change reaches before publishing it. A placement that is only in a page's draft is not listed."
+      }
+    },
+    {
       "id": "SharedBlockLayout",
       "route": "/shared-blocks/:id/layout",
       "type": "custom",

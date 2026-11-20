@@ -93,7 +93,7 @@ class ExampleSiteCommandsTest extends TestCase {
 		$output = new BufferedOutput();
 		$command = new ExampleSiteInstall(new ExampleSiteCatalogue(), $installer);
 		$this->assertSame(1, $command->run(new ArrayInput(['site' => 'nergens']), $output));
-		$this->assertStringContainsString('Sites you can install: zuiddrecht', $output->fetch());
+		$this->assertStringContainsString('Sites you can install: open-publicaties, zuiddrecht', $output->fetch());
 
 		$this->assertSame(1, $command->run(new ArrayInput(['site' => 'zuiddrecht']), $output));
 		$text = $output->fetch();
@@ -151,7 +151,7 @@ class ExampleSiteCommandsTest extends TestCase {
 		$this->assertStringContainsString('OpenRegister is not available, so nothing was deleted', $output->fetch());
 
 		$this->assertSame(1, $command->run(new ArrayInput(['site' => 'nergens']), $output));
-		$this->assertStringContainsString('Sites this app ships: zuiddrecht', $output->fetch());
+		$this->assertStringContainsString('Sites this app ships: open-publicaties, zuiddrecht', $output->fetch());
 	}//end testRemoveReportsWhatWasDeleted()
 
 	/**

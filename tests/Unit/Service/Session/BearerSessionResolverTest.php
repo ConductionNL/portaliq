@@ -21,6 +21,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Session;
 
+use OCA\Portaliq\Auth\PortalSessionScope;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalJwtService;
 use OCA\Portaliq\Service\PortalObjectReader;
@@ -75,6 +76,61 @@ class BearerSessionResolverTest extends TestCase {
 	}//end testEveryOtherBearerIsRefused()
 
 	/**
+	 * A session minted on portal A resolves where the scope admits portal A,
+	 * and is refused, exactly as an invalid bearer, where it does not.
+	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
+	 */
+	public function testAPortalBoundSessionResolvesOnlyWhereItsPortalIsAdmitted(): void {
+		$token = (new PortalJwtService(signingSecret: self::SECRET))->createSession(
+			subjectRef: 's1',
+			audience: 'client',
+			organisation: 'org-1',
+			jti: 'live',
+			context: ['portal' => 'portal-a']
+		);
+		$rows = ['live' => ['jti' => 'live', 'revoked' => false]];
+
+		$asked = [];
+		$scope = $this->createMock(PortalSessionScope::class);
+		$scope->method('admits')->willReturnCallback(function (string $portal) use (&$asked): bool {
+			$asked[] = $portal;
+			return false;
+		});
+		$this->assertNull($this->resolver(rows: $rows, scope: $scope)->resolveFromBearer('Bearer ' . $token));
+		$this->assertSame(['portal-a'], $asked);
+
+		$home = $this->createMock(PortalSessionScope::class);
+		$home->method('admits')->willReturn(true);
+		$subject = $this->resolver(rows: $rows, scope: $home)->resolveFromBearer('Bearer ' . $token);
+		$this->assertSame('portal-a', $subject['portal']);
+		$this->assertSame('s1', $subject['subjectRef']);
+
+	}//end testAPortalBoundSessionResolvesOnlyWhereItsPortalIsAdmitted()
+
+	/**
+	 * Without a scope to ask, a portal-bound session is refused, while a
+	 * session bound to no portal is not asked about at all.
+	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
+	 */
+	public function testAPortalBoundSessionWithoutAScopeIsRefusedAndAnUnboundOneIsNotAsked(): void {
+		$jwt   = new PortalJwtService(signingSecret: self::SECRET);
+		$bound = $jwt->createSession(subjectRef: 's1', audience: 'client', organisation: 'org-1', jti: 'bound', context: ['portal' => 'portal-a']);
+		$free  = $jwt->createSession(subjectRef: 's2', audience: 'client', organisation: 'org-1', jti: 'free');
+		$rows  = ['bound' => ['jti' => 'bound'], 'free' => ['jti' => 'free']];
+
+		$this->assertNull($this->resolver(rows: $rows)->resolveFromBearer('Bearer ' . $bound));
+
+		$scope = $this->createMock(PortalSessionScope::class);
+		$scope->expects($this->never())->method('admits');
+		$subject = $this->resolver(rows: $rows, scope: $scope)->resolveFromBearer('Bearer ' . $free);
+		$this->assertSame('s2', $subject['subjectRef']);
+		$this->assertSame('', $subject['portal']);
+
+	}//end testAPortalBoundSessionWithoutAScopeIsRefusedAndAnUnboundOneIsNotAsked()
+
+	/**
 	 * A resolver over recorded session rows, keyed by jti.
 	 *
 	 * @param array<string, array<string, mixed>> $rows   The recorded sessions.
@@ -82,7 +138,7 @@ class BearerSessionResolverTest extends TestCase {
 	 *
 	 * @return BearerSessionResolver
 	 */
-	private function resolver(array $rows, string $secret = self::SECRET): BearerSessionResolver {
+	private function resolver(array $rows, string $secret = self::SECRET, ?PortalSessionScope $scope = null): BearerSessionResolver {
 		$appConfig = $this->createMock(IAppConfig::class);
 		$appConfig->method('getValueString')->willReturnCallback(
 			fn (string $app, string $key, string $default = '') => ($key === 'jwt_signing_secret' ? $secret : $default)
@@ -94,7 +150,7 @@ class BearerSessionResolverTest extends TestCase {
 		$logger = $this->createMock(LoggerInterface::class);
 		$revoker = new PortalSessionRevoker($reader, $this->createMock(PortalObjectWriter::class), $this->createMock(AuditTrailService::class), $logger);
 
-		return new BearerSessionResolver(new SessionSigningKey($appConfig), new SessionRecords($reader, $revoker), $logger);
+		return new BearerSessionResolver(new SessionSigningKey($appConfig), new SessionRecords($reader, $revoker), $logger, $scope);
 
 	}//end resolver()
 }//end class

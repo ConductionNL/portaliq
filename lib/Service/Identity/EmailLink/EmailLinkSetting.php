@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity\EmailLink;
 
+use OCA\Portaliq\Auth\PortalAuthConfig;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\EmailLinkSettingInterface;
 use OCP\IAppConfig;
@@ -99,8 +100,8 @@ class EmailLinkSetting implements EmailLinkSettingInterface {
 			return false;
 		}
 
-		$modes = (((array)($portal['authentication'] ?? []))['modes'] ?? []);
-
-		return is_array($modes) === true && in_array(self::MODE, $modes, true) === true;
+		// Read against the closed set: a malformed block offers no way in
+		// (portal-scoping-and-auth Task 4).
+		return PortalAuthConfig::fromPortal(portal: $portal)->offers(mode: self::MODE);
 	}//end offeredBy()
 }//end class
