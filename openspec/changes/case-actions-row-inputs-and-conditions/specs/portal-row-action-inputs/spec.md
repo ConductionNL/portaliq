@@ -1,9 +1,3 @@
----
-status: proposed
----
-
-# Spec: portal-row-action-inputs
-
 ## Purpose
 
 A button on a resident's own row can ask for input, can be offered only on

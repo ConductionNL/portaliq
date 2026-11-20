@@ -36,6 +36,13 @@ use OCA\Portaliq\Service\Signin\YiviAttributes;
  * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T1
  */
 final class SessionClaims {
+
+	/**
+	 * The shape of a portal slug a session may be bound to (portal-scoping-and-auth Task 4).
+	 *
+	 * @var string
+	 */
+	public const PORTAL_SLUG = '/^[a-z0-9][a-z0-9-]{0,62}$/D';
 	/**
 	 * The server-derived subject of a live session's claims.
 	 *
@@ -69,8 +76,29 @@ final class SessionClaims {
 			// Change resident-identity-in-forms T05: what a Yivi login
 			// disclosed, re-read through the same filter it was signed with.
 			'attributes' => (new YiviAttributes())->disclosed(claim: ($claims['attributes'] ?? null)),
+			// Change portal-scoping-and-auth Task 4: the portal the session
+			// was minted on ('' for a session bound to no portal).
+			'portal' => $this->portal(claims: $claims),
 		];
 	}//end subject()
+
+	/**
+	 * The signed portal slug, or '' when absent or malformed.
+	 *
+	 * @param array<string, mixed> $claims The live session's claims.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
+	 */
+	private function portal(array $claims): string {
+		$portal = ($claims['portal'] ?? '');
+		if (is_string($portal) === false || preg_match(self::PORTAL_SLUG, $portal) !== 1) {
+			return '';
+		}
+
+		return $portal;
+	}//end portal()
 
 	/**
 	 * The signed KVK number, or '' when absent or not eight digits.

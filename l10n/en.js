@@ -2509,6 +2509,7 @@ OC.L10N.register(
         "Whether the page is left out of the navigation.": "Whether the page is left out of the navigation.",
         "Which pages of the installed apps this portal shows, and in which order, per audience. Each audience maps to a list of pages as app:pageId with hidden true or false. A page not in the list stays visible after the listed ones, so a newly installed app is never hidden by an older choice. Hiding a page here is not access control: the records stay readable by an account that may see them on another portal.": "Which pages of the installed apps this portal shows, and in which order, per audience. Each audience maps to a list of pages as app:pageId with hidden true or false. A page not in the list stays visible after the listed ones, so a newly installed app is never hidden by an older choice. Hiding a page here is not access control: the records stay readable by an account that may see them on another portal.",
         "A term can only relate to terms on its own portal. Not found there: %s.": "A term can only relate to terms on its own portal. Not found there: %s.",
+        "Another page of this portal already has the route %s.": "Another page of this portal already has the route %s.",
         "A picture in the help dialog: a path in the site or an https address.": "A picture in the help dialog: a path in the site or an https address.",
         "A short help text for each part of Mijn omgeving, keyed by overview, cases, tasks, messages and contacts. A part with a text shows \"Hulp bij deze pagina\"; a part without shows nothing.": "A short help text for each part of Mijn omgeving, keyed by overview, cases, tasks, messages and contacts. A part with a text shows \"Hulp bij deze pagina\"; a part without shows nothing.",
         "A short help text for this page. When set, the page shows \"Hulp bij deze pagina\" under its heading.": "A short help text for this page. When set, the page shows \"Hulp bij deze pagina\" under its heading.",
@@ -3471,7 +3472,10 @@ OC.L10N.register(
         "Summaries are only found when the search term is spelled exactly.": "Summaries are only found when the search term is spelled exactly.",
         "Text inside documents is found even with a small spelling mistake in the search term.": "Text inside documents is found even with a small spelling mistake in the search term.",
         "Text inside documents is only found when the search term is spelled exactly.": "Text inside documents is only found when the search term is spelled exactly.",
-        "Results from other catalogues that carry no score come after the scored results, in the order their catalogue gave them.": "Results from other catalogues that carry no score come after the scored results, in the order their catalogue gave them."
+        "Results from other catalogues that carry no score come after the scored results, in the order their catalogue gave them.": "Results from other catalogues that carry no score come after the scored results, in the order their catalogue gave them.",
+        "Pages that place this block": "Pages that place this block",
+        "No page places this block yet.": "No page places this block yet.",
+        "Onderdelen van het blok": "Onderdelen van het blok"
     },
     "nplurals=2; plural=(n != 1);"
 )

@@ -84,10 +84,13 @@ interface PortalSessionServiceInterface {
 	 * @param string $branch The vestigingsnummer the login was restricted to, or ''.
 	 * @param string $provider The OIDC provider the login came through, or '' (dev-login, Nextcloud mode, integriq route).
 	 * @param string $kvk The KVK number of the company an eHerkenning login signs in for, or ''.
+	 * @param array<string, string> $attributes The attributes a Yivi login disclosed, or [].
+	 * @param string $portal The slug of the portal the login happened on, binding the session to it; '' binds it to none.
 	 *
 	 * @return array{token: string, jti: string, expiresAt: int, hardExpiresAt: int, idleTimeout: int}|null The minted
 	 *         bearer token, its id and the session's times, or null when the edge is not yet configured.
 	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
 	 * @spec openspec/changes/archive/2026-09-30-signin-eherkenning-branch/tasks.md#T02
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
@@ -105,6 +108,8 @@ interface PortalSessionServiceInterface {
 		string $branch = '',
 		string $provider = '',
 		string $kvk = '',
+		array $attributes = [],
+		string $portal = '',
 	): ?array;
 
 	/**

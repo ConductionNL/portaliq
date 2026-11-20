@@ -261,7 +261,7 @@ class EmailLinkController extends Controller {
 			return $this->refusal(outcome: EmailLinkTokensInterface::NOT_VALID);
 		}
 
-		$session = $this->sessionFor(account: $account, organisation: $organisation);
+		$session = $this->sessionFor(account: $account, organisation: $organisation, portal: (string)($row['portal'] ?? ''));
 		if ($session === null) {
 			return new JSONResponse(['error' => 'session_unavailable'], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
@@ -276,10 +276,13 @@ class EmailLinkController extends Controller {
 	 *
 	 * @param array<string, mixed> $account      The account, still eligible.
 	 * @param string               $organisation The link's organisation.
+	 * @param string               $portal       The portal the link was asked on; the session is bound to it.
 	 *
 	 * @return array<string, mixed>|null The session, or null when none could be made.
+	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
 	 */
-	private function sessionFor(array $account, string $organisation): ?array {
+	private function sessionFor(array $account, string $organisation, string $portal): ?array {
 		$audience = (string)($account['audience'] ?? 'client');
 
 		return $this->sessions->issueSession(
@@ -288,7 +291,8 @@ class EmailLinkController extends Controller {
 			organisation: $organisation,
 			trust: 'low',
 			roles: [$audience . ':read'],
-			provider: EmailLinkSettingInterface::MODE
+			provider: EmailLinkSettingInterface::MODE,
+			portal: $portal
 		);
 	}//end sessionFor()
 
