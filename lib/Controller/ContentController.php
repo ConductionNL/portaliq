@@ -28,13 +28,14 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use Closure;
+use OCA\Portaliq\Auth\PortalAuthConfig;
 use OCA\Portaliq\Kernel\Contracts\CmsReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\NextcloudRegistrationDoorInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalContributionFilterInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalNoticeReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
-use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\BearerSessionResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PublicAssistantChannelInterface;
 use OCA\Portaliq\Kernel\Contracts\PublicSourceScopeInterface;
 use OCA\Portaliq\Kernel\Contracts\SiteOrganisationInterface;
@@ -91,7 +92,7 @@ class ContentController extends Controller {
 	 * @param PortalContributionRegistryInterface $registry     Aggregates leaf apps' contributions.
 	 * @param PortalContributionFilterInterface   $contribFilter Scopes that aggregate to one portal.
 	 * @param LoggerInterface            $logger       Records a provider failure the visitor never sees.
-	 * @param PortalSessionServiceInterface       $session      Resolves the caller's portal session for the content gate.
+	 * @param BearerSessionResolverInterface       $session      Resolves the caller's portal session for the content gate.
 	 * @param TrafficConfigResolverInterface      $traffic      Resolves the portal's measurement configuration.
 	 * @param IURLGenerator              $urlGenerator Builds the absolute collector URL.
 	 * @param PortalNoticeReaderInterface         $notices      The notices running on the site now.
@@ -113,7 +114,7 @@ class ContentController extends Controller {
 		private readonly PortalContributionRegistryInterface $registry,
 		private readonly PortalContributionFilterInterface $contribFilter,
 		private readonly LoggerInterface $logger,
-		private readonly PortalSessionServiceInterface $session,
+		private readonly BearerSessionResolverInterface $session,
 		private readonly TrafficConfigResolverInterface $traffic,
 		private readonly IURLGenerator $urlGenerator,
 		private readonly PortalNoticeReaderInterface $notices,
@@ -637,8 +638,7 @@ class ContentController extends Controller {
 	 * @spec openspec/changes/password-reset-from-the-sign-in-page/specs/portal-ways-in/spec.md#requirement-the-sign-in-page-leads-to-nextclouds-own-password-reset-req-pwr-001
 	 */
 	private function lostPasswordUrl(array $portal): string {
-		$modes = ($portal['authentication']['modes'] ?? []);
-		if (is_array($modes) === false || in_array('nextcloud', $modes, true) === false) {
+		if (PortalAuthConfig::fromPortal(portal: $portal)->offers(mode: 'nextcloud') === false) {
 			return '';
 		}
 

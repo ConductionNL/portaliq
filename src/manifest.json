@@ -312,6 +312,17 @@
       }
     },
     {
+      "id": "PlanTemplatesMenu",
+      "label": "Plan templates",
+      "icon": "ClipboardListOutline",
+      "route": "PlanTemplates",
+      "section": "settings",
+      "order": 94,
+      "visibleIf": {
+        "access.admin": true
+      }
+    },
+    {
       "id": "FindersMenu",
       "label": "Product finders",
       "icon": "FileFindOutline",
@@ -4032,6 +4043,11 @@
                   "widgetId": "portal-settings-section-help"
                 },
                 {
+                  "key": "search-ranking",
+                  "title": "How search ranks",
+                  "widgetId": "portal-settings-search-ranking"
+                },
+                {
                   "key": "editors",
                   "title": "Administrators",
                   "widgetId": "portal-editors"
@@ -4349,6 +4365,12 @@
             "id": "portal-settings-accessibility",
             "type": "PortalAccessibility",
             "title": "Accessibility",
+            "content": {}
+          },
+          {
+            "id": "portal-settings-search-ranking",
+            "type": "PortalSearchRanking",
+            "title": "How search ranks",
             "content": {}
           },
           {
@@ -7178,6 +7200,56 @@
       }
     },
     {
+      "id": "PlanTemplates",
+      "route": "/plan-templates",
+      "type": "index",
+      "title": "Plan templates",
+      "config": {
+        "register": "portaliq",
+        "schema": "portalPlanTemplate",
+        "_note": "Where a resident's shared plan can begin (shared-plans-with-a-caseworker T07, board PtPlansjablonen). An editor lists, writes and publishes a portal's templates through the object form; only a published template is offered to residents.",
+        "columns": [
+          {
+            "key": "title",
+            "label": "Template title"
+          },
+          {
+            "key": "summary",
+            "label": "Template summary"
+          },
+          {
+            "key": "portal",
+            "label": "Portal"
+          },
+          {
+            "key": "durationDays",
+            "label": "Duration in days"
+          },
+          {
+            "key": "published",
+            "label": "Published",
+            "widget": "badge",
+            "widgetProps": {
+              "colorMap": {
+                "true": "success",
+                "false": "warning"
+              }
+            }
+          }
+        ],
+        "showTitle": true,
+        "showTitleIcon": false,
+        "actions": [
+          "builtin:view",
+          "builtin:edit"
+        ],
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true
+        }
+      }
+    },
+    {
       "id": "Finders",
       "route": "/finders",
       "type": "index",
@@ -7244,6 +7316,109 @@
           "enabled": true,
           "showMetadata": true
         }
+      }
+    },
+    {
+      "id": "SharedBlockDetail",
+      "route": "/shared-blocks/:id",
+      "type": "detail",
+      "title": "Shared block",
+      "config": {
+        "register": "portaliq",
+        "schema": "sharedBlock",
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true
+        },
+        "headerActions": [
+          {
+            "id": "open-layout",
+            "label": "Layout",
+            "icon": "ViewDashboardOutline",
+            "type": "open-page",
+            "target": "SharedBlockLayout"
+          }
+        ],
+        "widgets": [
+          {
+            "id": "shared-block-data",
+            "type": "data",
+            "title": "Gegevens",
+            "icon": "InformationOutline",
+            "content": {
+              "columns": 2
+            }
+          },
+          {
+            "id": "shared-block-pages",
+            "type": "record-list",
+            "title": "Pages that place this block",
+            "icon": "FileDocumentOutline",
+            "content": {
+              "endpointSource": {
+                "url": "/apps/portaliq/api/shared-blocks/@objectId/pages",
+                "method": "GET",
+                "responsePath": "results"
+              },
+              "presentation": "rows",
+              "title": "{title}",
+              "meta": "{portalTitle} · {route}",
+              "pill": {
+                "field": "status",
+                "labels": {
+                  "published": "Published",
+                  "draft": "Draft"
+                },
+                "colorMap": {
+                  "published": "success",
+                  "draft": "warning"
+                }
+              },
+              "rowRoute": "PageDetail",
+              "emptyText": "No page places this block yet."
+            }
+          },
+          {
+            "id": "shared-block-history",
+            "type": "audit-trail",
+            "title": "Historie",
+            "icon": "History"
+          },
+          {
+            "id": "shared-block-tabs",
+            "type": "tabs",
+            "title": "Onderdelen van het blok",
+            "content": {
+              "ariaLabel": "Onderdelen van het blok",
+              "tabs": [
+                {
+                  "widgetId": "shared-block-data",
+                  "label": "Overzicht"
+                },
+                {
+                  "widgetId": "shared-block-pages",
+                  "label": "Pagina's"
+                },
+                {
+                  "widgetId": "shared-block-history",
+                  "label": "Historie"
+                }
+              ]
+            }
+          }
+        ],
+        "layout": [
+          {
+            "id": "shared-block-tabs",
+            "widgetId": "shared-block-tabs",
+            "gridX": 0,
+            "gridY": 0,
+            "gridWidth": 12,
+            "gridHeight": 8
+          }
+        ],
+        "tabsLabel": "Onderdelen van het blok",
+        "_note": "The block's detail (site-shared-page-blocks REQ-SPB-005, T06). Pagina's lists the pages of the block's organisation whose published layout places it, from GET /api/shared-blocks/{id}/pages (page editors only), so an editor sees every page a change reaches before publishing it. A placement that is only in a page's draft is not listed."
       }
     },
     {

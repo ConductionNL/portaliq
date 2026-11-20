@@ -321,6 +321,17 @@
 							:locale="chosenLocale"
 							:t="t" />
 
+						<!-- A page a contributing app publishes on this portal
+				     (portal-theme-blocks-and-contributed-pages REQ-PTB-011).
+				     An unknown one renders the not-found page below. -->
+						<ContributionPage
+							v-else-if="contributionPage"
+							:page="contributionPage.page"
+							:contribution="contributionPage.contribution"
+							:session="session"
+							:apiBase="guestAuthBase"
+							:t="t" />
+
 						<p
 							v-else-if="loading"
 							class="container"
@@ -542,12 +553,6 @@ import IdleWarningDialog from './components/IdleWarningDialog.vue'
 import MarkdownBlock from './components/MarkdownBlock.vue'
 import PageArticleBlock from './components/PageArticleBlock.vue'
 import WidgetGrid from './components/WidgetGrid.vue'
-import {
-	codeOutcome,
-	forgetClaimSecret,
-	keepClaimSecret,
-	redeemKeptClaim,
-} from '../shared/claimInvitation.js'
 import { createTranslator } from '../shared/i18n/index.js'
 import { logoutTarget, silentSignInUrl } from '../shared/idleSession.js'
 import { noticesFor } from '../shared/notices.js'
@@ -598,7 +603,11 @@ import {
 	fetchSite,
 	resolveApiBase,
 } from './lib/contentApi.js'
-import { isCosignRoute } from './lib/cosign.js'
+import {
+	parseContributionRoute,
+	resolveContributionPage,
+} from './lib/contributionApi.js'
+import { isCosignRoute } from './lib/cosignRoute.js'
 import { crumbLabel, signInCrumbs } from './lib/crumbWords.js'
 import { documentRouteOf } from './lib/documentRoute.js'
 import { editorBaseFrom, fetchEditingContext } from './lib/editorApi.js'
@@ -642,7 +651,7 @@ import { menuRouteOf, subjectCrumbs, subjectOf } from './lib/subjectTrail.js'
 import { hasWayInLink, waysInFrom, waysInTranslator } from './lib/waysIn.js'
 import { openRecordEntry } from './pages/collections/index.js'
 import { confirmEmailFromLink, contactPromptWanted } from './pages/e/index.js'
-import { themeCaseCounts } from './pages/e/themes.js'
+import { themeCaseCounts } from './pages/e/themeCases.js'
 import { TASK_STORAGE_KEY } from './pages/inbox/taskStorage.js'
 
 /**
@@ -658,8 +667,19 @@ import { TASK_STORAGE_KEY } from './pages/inbox/taskStorage.js'
  * It is imported only once the probe has said this session may edit, so a
  * reader never downloads it at all.
  */
+/**
+ * Where claimInvitation.js keeps an invitation's secret (its CLAIM_STORAGE_KEY).
+ * The shell reads it to load that module only when a claim was kept.
+ */
+const CLAIM_STORAGE_KEY = 'portaliq.claimInvitation'
+
 const NotFoundPage = defineAsyncComponent(
 	() => import('./components/NotFoundPage.vue'),
+)
+// A contributed page (`/diensten/{app}/{page}`) loads on demand: few visits
+// open one, and the site entry has a size budget (REQ-PTB-011).
+const ContributionPage = defineAsyncComponent(
+	() => import('./components/ContributionPage.vue'),
 )
 const SiteEditButton = defineAsyncComponent(
 	() => import('./components/SiteEditButton.vue'),
@@ -722,6 +742,7 @@ export default {
 		MarkdownBlock,
 		PageArticleBlock,
 		NotFoundPage,
+		ContributionPage,
 		SharedDossierPage,
 		CosignPage,
 		DocumentPage,
@@ -1423,6 +1444,21 @@ export default {
 		},
 
 		/**
+		 * The contributed page on screen, resolved from the contributions
+		 * already loaded rather than a second request: the public contract
+		 * carries every page a contributing app publishes, so asking the CMS
+		 * for a `/diensten/…` route would be a guaranteed 404.
+		 *
+		 * @return {{page: object, contribution: object}|null} The page and the
+		 *   contribution whose actions it names, or null.
+		 *
+		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-a-contributed-page-must-be-reachable-at-its-own-route-req-ptb-011
+		 */
+		contributionPage() {
+			return resolveContributionPage(this.contributions, this.route)
+		},
+
+		/**
 		 * @return {string} The co-signer's bearer once a session is known, else ''.
 		 */
 		cosignToken() {
@@ -1653,8 +1689,14 @@ export default {
 		// it survives the sign-in and opens once the navigation has loaded.
 		this.keepOpenTarget()
 		// An invitation's secret (`#claim=<secret>`) is kept the same way,
-		// and handed back once the visitor is signed in.
-		keepClaimSecret(window.location, window.history, this.claimStorage())
+		// and handed back once the visitor is signed in. Like the mandate and
+		// contact invitations below, its module loads only when the mail
+		// left one, so the visitor's entry does not carry it
+		// (public-bundle-budget).
+		if (window.location.hash.includes('#claim=')) {
+			const { keepClaimSecret } = await import('../shared/claimInvitation.js')
+			keepClaimSecret(window.location, window.history, this.claimStorage())
+		}
 		if (window.location.hash.includes('#mandate-invitation=')) {
 			const { keepMandateInvitation } =
 				await import('../shared/mandateInvitation.js')
@@ -1845,6 +1887,11 @@ export default {
 		 * @return {Promise<void>} Resolves when redeemed.
 		 */
 		async handBackKeptClaim() {
+			if (!this.claimStorage()?.getItem(CLAIM_STORAGE_KEY)) {
+				this.claimMessage = null
+				return
+			}
+			const { redeemKeptClaim } = await import('../shared/claimInvitation.js')
 			this.claimMessage = await redeemKeptClaim({
 				api: this.api,
 				session: this.session,
@@ -1903,6 +1950,7 @@ export default {
 		 * @spec openspec/specs/portal-identity-space/spec.md
 		 */
 		async onCodeClaimed() {
+			const { codeOutcome } = await import('../shared/claimInvitation.js')
 			this.claimMessage = {
 				role: 'status',
 				text: this.t(codeOutcome({ ok: true }).text),
@@ -2037,7 +2085,11 @@ export default {
 			this.openTasks = 0
 			this.contactPrompt = false
 			forgetActingFor()
-			forgetClaimSecret(this.claimStorage())
+			try {
+				this.claimStorage()?.removeItem(CLAIM_STORAGE_KEY)
+			} catch {
+				// Without storage nothing was kept.
+			}
 			try {
 				window.sessionStorage.removeItem(OPEN_STORAGE_KEY)
 				window.sessionStorage.removeItem(TASK_STORAGE_KEY)
@@ -2535,6 +2587,17 @@ export default {
 			// opens on every portal without a CMS page (REQ-PDC-002).
 			if (documentRouteOf(route) !== null) {
 				this.openSharedDossierRoute()
+				return true
+			}
+
+			// A contributed page renders from the contributions already
+			// loaded; an unknown app or page is the site's not-found state
+			// (REQ-PTB-011).
+			if (parseContributionRoute(route) !== null) {
+				this.openSharedDossierRoute()
+				this.error = resolveContributionPage(this.contributions, route) === null
+					? { status: 404 }
+					: null
 				return true
 			}
 			return false

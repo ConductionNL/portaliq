@@ -35,7 +35,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalCaseListReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalMandateServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalPartyTreeResolverInterface;
-use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\BearerSessionResolverInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -49,6 +49,9 @@ use OCA\Portaliq\Kernel\Contracts\MandatePartiesInterface;
  * Serves the subject's own case list.
  *
  * @spec openspec/specs/portal-identity-space/spec.md
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the count includes the route attributes
+ *   (NoAdminRequired, NoCSRFRequired, ...) a controller declares.
  */
 class MyCasesController extends Controller implements PortalProtected {
 	/**
@@ -64,7 +67,7 @@ class MyCasesController extends Controller implements PortalProtected {
 	 *
 	 * @param IRequest $request The request.
 	 * @param PortalContributionRegistryInterface $registry The contribution aggregator.
-	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
+	 * @param BearerSessionResolverInterface $session Resolves the subject from the bearer.
 	 * @param PortalCaseListReaderInterface $cases Merges every case collection.
 	 * @param PortalMandateServiceInterface $mandates The mandates the identity holds.
 	 * @param PortalPartyTreeResolverInterface $tree Resolves how far a mandate reaches.
@@ -77,7 +80,7 @@ class MyCasesController extends Controller implements PortalProtected {
 	public function __construct(
 		IRequest $request,
 		private readonly PortalContributionRegistryInterface $registry,
-		private readonly PortalSessionServiceInterface $session,
+		private readonly BearerSessionResolverInterface $session,
 		private readonly PortalCaseListReaderInterface $cases,
 		private readonly PortalMandateServiceInterface $mandates,
 		private readonly PortalPartyTreeResolverInterface $tree,

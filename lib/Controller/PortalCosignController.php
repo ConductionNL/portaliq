@@ -221,8 +221,8 @@ class PortalCosignController extends Controller implements PortalProtected {
 		}
 
 		$subject = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
-		$trust   = SessionTrust::normaliseTrust(trust: ($subject['trust'] ?? ''));
-		if ($subject === null || SessionTrust::trustSatisfies(subjectTrust: $trust, minTrust: self::MIN_TRUST) === false) {
+		$trust   = (new SessionTrust())->normaliseTrust(trust: ($subject['trust'] ?? ''));
+		if ($subject === null || (new SessionTrust())->trustSatisfies(subjectTrust: $trust, minTrust: self::MIN_TRUST) === false) {
 			return new JSONResponse(['error' => 'sign_in_required', 'minTrust' => self::MIN_TRUST], Http::STATUS_UNAUTHORIZED);
 		}
 

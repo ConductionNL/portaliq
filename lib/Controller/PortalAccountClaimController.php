@@ -43,6 +43,7 @@ use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use Psr\Log\LoggerInterface;
+use SensitiveParameter;
 use Throwable;
 
 /**
@@ -94,7 +95,7 @@ class PortalAccountClaimController extends Controller implements PortalProtected
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 10, period: 60)]
-	public function redeem(#[\SensitiveParameter] string $secret = ''): JSONResponse {
+	public function redeem(#[SensitiveParameter] string $secret = ''): JSONResponse {
 		$subject = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
 		if ($subject === null) {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
@@ -102,7 +103,7 @@ class PortalAccountClaimController extends Controller implements PortalProtected
 
 		// About the session, not the secret: it is checked before the secret
 		// is looked at, so it tells the caller nothing about any invitation.
-		if (SessionTrust::trustSatisfies(subjectTrust: ($subject['trust'] ?? ''), minTrust: self::MIN_TRUST) === false) {
+		if ((new SessionTrust())->trustSatisfies(subjectTrust: ($subject['trust'] ?? ''), minTrust: self::MIN_TRUST) === false) {
 			return new JSONResponse(['error' => 'trust_too_low'], Http::STATUS_FORBIDDEN);
 		}
 

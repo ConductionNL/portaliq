@@ -46,6 +46,9 @@ use OCP\IUserSession;
  * Nextcloud checks the password; this only checks the desk group and the form.
  *
  * @spec openspec/changes/resident-identity-in-forms/tasks.md#T06
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the count includes the route attributes
+ *   (NoAdminRequired, NoCSRFRequired, ...) a controller declares.
  */
 class DeskSessionController extends Controller {
 
@@ -130,7 +133,9 @@ class DeskSessionController extends Controller {
 			organisation: (string)($site['organisation'] ?? ''),
 			trust: 'low',
 			roles: [OnBehalfFillingInterface::AUDIENCE . ':fill'],
-			provider: OnBehalfFillingInterface::PROVIDER
+			provider: OnBehalfFillingInterface::PROVIDER,
+			// The desk session works on this portal only (portal-scoping-and-auth Task 4).
+			portal: (string)($site['slug'] ?? '')
 		);
 		if ($issued === null) {
 			return new JSONResponse(['error' => 'not_configured'], Http::STATUS_SERVICE_UNAVAILABLE);

@@ -261,6 +261,8 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         ['name' => 'publicRecord#record', 'url' => '/api/public-records/{app}/{list}/{id}', 'verb' => 'GET'],
         // search-assistant-from-public-content: the anonymous, tool-free assistant.
         ['name' => 'publicAssistant#ask', 'url' => '/api/assistant/ask', 'verb' => 'POST'],
+        // search-sort-by-relevance REQ-SSR-005: the checked did-you-mean suggestion, public and rate limited.
+        ['name' => 'searchSuggest#suggest', 'url' => '/api/site/search/suggest', 'verb' => 'GET'],
         ['name' => 'traffic#collect', 'url' => '/api/traffic', 'verb' => 'POST'],
         ['name' => 'traffic#pixel', 'url' => '/api/traffic/pixel.gif', 'verb' => 'GET'],
         ['name' => 'traffic#client', 'url' => '/api/traffic-client.js', 'verb' => 'GET'],
@@ -302,6 +304,9 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         // A page's published versions for the designer's History dialog
         // (site-page-seo-history-and-media REQ-SPH-003), page editors only.
         ['name' => 'pageHistory#index', 'url' => '/api/pages/{id}/history', 'verb' => 'GET'],
+        // The pages that place a shared block, for its detail page
+        // (site-shared-page-blocks REQ-SPB-005), page editors only.
+        ['name' => 'sharedBlock#pages', 'url' => '/api/shared-blocks/{id}/pages', 'verb' => 'GET'],
 
         // Public portal SPA (external clients + suppliers) — served with public
         // chrome via #[PublicPage]. The portalPage#catchAll route handles
@@ -390,6 +395,9 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         // re-verified before any write; only `read` is ever set (portal-inbox-v2
         // T03). The {register}/{schema}/{id} segments distinguish it from the
         // plain GET above.
+        // a-resident-opens-one-message: read ONE inbox message for its own page;
+        // the same ownership, tenant and trust checks as mark-read, before any read.
+        ['name' => 'contribution#message', 'url' => '/portal/api/inbox/{register}/{schema}/{id}', 'verb' => 'GET'],
         ['name' => 'contribution#markRead', 'url' => '/portal/api/inbox/{register}/{schema}/{id}/read', 'verb' => 'PATCH'],
         // Delete ONE of the resident's own inbox messages: portaliq's own notices,
         // or an app's inbox that declares `deletable: true`; ownership and tenant

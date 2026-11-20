@@ -51,6 +51,9 @@ use OCP\IRequest;
  * stream. No refusal carries more than its status.
  *
  * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t4
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the count includes the route attributes
+ *   (NoAdminRequired, NoCSRFRequired, ...) a controller declares.
  */
 class PortalCollectionDocumentsController extends Controller implements PortalProtected {
 
@@ -204,7 +207,7 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 	 */
 	private function trustedCollection(array $subject, string $register, string $schema): array|null {
 		$match = $this->collectionOf(subject: $subject, register: $register, schema: $schema);
-		if ($match === null || SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
+		if ($match === null || (new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
 			return null;
 		}
 

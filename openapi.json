@@ -2,7 +2,7 @@
     "openapi": "3.0.3",
     "info": {
         "title": "Portaliq",
-        "version": "0.2.5-unstable.20261021030000",
+        "version": "0.2.13-unstable.20261120011006",
         "description": "The JSON API of Portaliq, the portal app for Nextcloud: portals and their pages, content, news, events and activities, messages and newsletters, proposals and polls, invitations and access requests, staff tools, traffic insight and the settings behind them. The records themselves are stored in OpenRegister and read and written through its API; this document covers the endpoints Portaliq adds on top.\n\nEvery path is served under `/api/v1/`, the version this document describes. The unversioned `/api/` paths keep working, are deprecated, and name their `/api/v1/` successor in a `Link` header next to a `Deprecation` header. Errors are RFC 9457 problem details (`application/problem+json`), and every response carries an `API-Version` header. Paths that implement an external standard keep the formats of that standard and are not described here.",
         "contact": {
             "name": "Conduction B.V.",
@@ -144,6 +144,10 @@
             "description": "Reads a page's history for a page editor."
         },
         {
+            "name": "shared-block",
+            "description": "The pages that place a shared block, for its detail page."
+        },
+        {
             "name": "partner-task",
             "description": "Raises a partner ask from a case."
         },
@@ -210,6 +214,10 @@
         {
             "name": "report",
             "description": "Files a report, runs its thread, and gates the reveal."
+        },
+        {
+            "name": "search-suggest",
+            "description": "The did-you-mean suggestion of the public search."
         },
         {
             "name": "session-admin",
@@ -4341,6 +4349,51 @@
                 }
             }
         },
+        "/shared-blocks/{id}/pages": {
+            "get": {
+                "operationId": "shared-block-pages",
+                "summary": "The pages whose published layout places a shared block",
+                "description": "The pages of the shared block's organisation whose published layout places it, ordered by portal and route. Page editors only. Needs a signed-in Nextcloud user.",
+                "tags": [
+                    "shared-block"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "The shared block object's id or uuid.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Problem404"
+                    }
+                }
+            }
+        },
         "/partner-tasks/ask": {
             "post": {
                 "operationId": "partner-task-ask",
@@ -7318,6 +7371,72 @@
                     },
                     "403": {
                         "$ref": "#/components/responses/Problem403"
+                    }
+                }
+            }
+        },
+        "/site/search/suggest": {
+            "get": {
+                "operationId": "search-suggest-suggest",
+                "summary": "A checked spelling suggestion for a public search",
+                "description": "A checked spelling suggestion for a public search that found fewer than three results. Public: it needs no login. The suggestion is offered only when the corrected search finds results.",
+                "tags": [
+                    "search-suggest"
+                ],
+                "security": [],
+                "parameters": [
+                    {
+                        "name": "portal",
+                        "in": "query",
+                        "required": false,
+                        "description": "The portal's slug; empty resolves it from the host.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "required": false,
+                        "description": "The term the visitor searched for.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "suggestion": {
+                                            "type": "string",
+                                            "nullable": true,
+                                            "description": "The corrected term, or null."
+                                        },
+                                        "results": {
+                                            "type": "integer",
+                                            "description": "How many results the corrected term finds; 0 without a suggestion."
+                                        }
+                                    },
+                                    "required": [
+                                        "suggestion",
+                                        "results"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Problem404"
                     }
                 }
             }

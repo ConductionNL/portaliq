@@ -25,7 +25,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Settings;
 
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
+use OCA\Portaliq\Kernel\Support\SessionSigningKey;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\Settings\ISettings;
@@ -47,11 +47,11 @@ class AdminSettings implements ISettings {
 	 * Constructor.
 	 *
 	 * @param IAppManager $appManager The app manager.
-	 * @param PortalSessionServiceInterface $session Reports the signing-secret state.
+	 * @param SessionSigningKey $session Reports the signing-secret state.
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
-		private readonly PortalSessionServiceInterface $session,
+		private readonly SessionSigningKey $session,
 	) {
 	}//end __construct()
 

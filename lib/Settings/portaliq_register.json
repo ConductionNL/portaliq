@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.122.0"
+        "version": "0.127.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.122.0",
+                "version": "0.127.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -1364,7 +1364,7 @@
                     ]
                 },
                 "icon": "EmailOutline",
-                "version": "0.7.0",
+                "version": "0.8.0",
                 "configuration": {
                     "linkedTypes": [
                         "talk"
@@ -1512,6 +1512,26 @@
                         "description": "An id the sending app chooses, shared by every copy of one sending, so the readers of one letter can be listed together.",
                         "example": "brief-groep-5b-2026-10-07"
                     }
+                },
+                "x-openregister-mcp": {
+                    "enabled": true,
+                    "tools": {
+                        "search": {
+                            "description": "Search messages in portal inboxes: what the organisation sent a resident or supplier through the portal. Filter by subjectRef to list one recipient's inbox, by read to find the messages still unread, or by organisation. Results are limited to the messages the caller may already see; this tool never marks a message read.",
+                            "scope": "read",
+                            "readOnlyHint": true,
+                            "filters": [
+                                "read",
+                                "organisation",
+                                "subjectRef"
+                            ]
+                        },
+                        "get": {
+                            "description": "Fetch one portal inbox message by id: its subject line, body, when it was received, whether and when it was read, and the record or case it links to. Use to answer what a specific message says. Reading it through this tool does not mark it read.",
+                            "scope": "read",
+                            "readOnlyHint": true
+                        }
+                    }
                 }
             },
             "portalSubmission": {
@@ -1525,7 +1545,7 @@
                     ]
                 },
                 "icon": "FileCheckOutline",
-                "version": "0.4.0",
+                "version": "0.5.0",
                 "configuration": {
                     "linkedTypes": [
                         "forms"
@@ -1611,6 +1631,27 @@
                         "description": "The request form (`portalFormBinding`) this submission came through. Linked by an employee from the Submissions list; the only field besides the delivery state that changes after the write.",
                         "example": "00000000-0000-0000-0000-000000000000"
                     }
+                },
+                "x-openregister-mcp": {
+                    "enabled": true,
+                    "tools": {
+                        "search": {
+                            "description": "Search what residents and suppliers submitted through the portal: one row per submitted action, with its proof of receipt and whether it reached the contributing app. Filter by deliveryStatus to find submissions that failed delivery, by organisation, by appId or by actionId. Results are limited to the submissions the caller may already see.",
+                            "scope": "read",
+                            "readOnlyHint": true,
+                            "filters": [
+                                "deliveryStatus",
+                                "organisation",
+                                "appId",
+                                "actionId"
+                            ]
+                        },
+                        "get": {
+                            "description": "Fetch one portal submission by id: which action was submitted, by which subject, when, the receipt message it produced and its delivery status. Use to answer what happened to one specific submission.",
+                            "scope": "read",
+                            "readOnlyHint": true
+                        }
+                    }
                 }
             },
             "portalNotification": {
@@ -1624,7 +1665,7 @@
                     ]
                 },
                 "icon": "BellOutline",
-                "version": "0.3.0",
+                "version": "0.4.0",
                 "title": "Portal Notification",
                 "description": "Append-only per-attempt log of an out-of-band (email) nudge dispatched by NotificationDispatchJob when a contributing app's manifest `notifications` rule key matches a portalMessage create or a successful status transition (portal-notifications-dispatch). One row per attempt, so the burden-of-proof/audit trail is complete. The one exception is a `messageBox` row: integriq reports what became of the letter later, and that status is written onto the row the send created (inbox-berichtenbox-channel). Never publicly readable; recipients are never exposed via metrics.",
                 "type": "object",
@@ -1741,6 +1782,27 @@
                         "description": "For a failed `messageBox` row: why no letter left. `not_installed` when integriq is absent, `unhandled` when nothing answered, `empty_body` when the message held no text, or the code integriq's refusal carried.",
                         "example": "not_installed"
                     }
+                },
+                "x-openregister-mcp": {
+                    "enabled": true,
+                    "tools": {
+                        "search": {
+                            "description": "Search the portal's outgoing notification bookkeeping: one row per notification sent or attempted to a portal account, with its channel, status, attempts and last attempt time. Filter by status to find failed or pending deliveries, by channel, by appId or by organisation. Results are limited to the rows the caller may already see.",
+                            "scope": "read",
+                            "readOnlyHint": true,
+                            "filters": [
+                                "status",
+                                "channel",
+                                "appId",
+                                "organisation"
+                            ]
+                        },
+                        "get": {
+                            "description": "Fetch one portal notification row by id: the rule that triggered it, the channel, its delivery status, how many attempts were made and why a channel refused it. Use to explain why one notification did or did not arrive.",
+                            "scope": "read",
+                            "readOnlyHint": true
+                        }
+                    }
                 }
             },
             "portalOidcState": {
@@ -1754,7 +1816,7 @@
                     ]
                 },
                 "icon": "ShieldLock",
-                "version": "0.3.0",
+                "version": "0.4.0",
                 "title": "Portal OIDC State",
                 "description": "Short-lived, single-use server-side storage for one OIDC authorization-code + PKCE round trip (portal-oidc-broker-login). Written by SessionController::oidcStart(), consumed exactly once by SessionController::oidcCallback(); a reused or expired row fails the callback closed. Never publicly readable — it briefly carries the PKCE code_verifier.",
                 "type": "object",
@@ -1817,6 +1879,13 @@
                         "type": "string",
                         "description": "The portal SPA path to redirect to once the session is minted.",
                         "example": "/portal"
+                    },
+                    "portal": {
+                        "title": "Portal",
+                        "type": "string",
+                        "description": "The slug of the portal the login was started on. The minted session is bound to it, so another portal refuses it. Empty for a login started on no portal.",
+                        "maxLength": 63,
+                        "example": "gemeente-zuiddrecht"
                     },
                     "expiresAt": {
                         "title": "Expires at",
@@ -2774,7 +2843,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.35.0",
+                "version": "0.37.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -3359,6 +3428,20 @@
                                     "description": "The site page the bare address of this host opens, as a route with a leading slash. Empty means the home page. A host for the signed-in area names that area here. Read only from a verified domain.",
                                     "maxLength": 512,
                                     "example": "/mijn"
+                                },
+                                "reverifyMisses": {
+                                    "title": "Missed re-checks",
+                                    "type": "integer",
+                                    "description": "How many periodic re-checks in a row found the verification record gone from a verified domain. A lookup that fails counts for nothing; a re-check that finds the record resets it. At the third miss the domain is unbound.",
+                                    "minimum": 0,
+                                    "example": 0
+                                },
+                                "unboundAt": {
+                                    "title": "Unbound at",
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "description": "When the periodic re-check last unbound this domain because its verification record was gone. Verifying it again binds it again.",
+                                    "example": "2026-11-17T09:00:00+00:00"
                                 }
                             }
                         }
@@ -3605,7 +3688,11 @@
                             "oidc": {
                                 "title": "OIDC configuration",
                                 "type": "object",
-                                "description": "Provider configuration when `oidc` is enabled: issuer, client id and the scopes requested. The client secret is held in the credential broker, never here.",
+                                "description": "Provider configuration when `oidc` is enabled. `issuer` (and optionally `clientId`) names the one provider this portal accepts: a login through any other provider is refused. Absent, the organisation's provider is accepted. The client secret is held in the credential broker, never here.",
+                                "properties": {
+                                    "issuer": {"title": "Issuer", "type": "string", "description": "The issuer of the only OIDC provider this portal accepts.", "example": "https://login.example.nl"},
+                                    "clientId": {"title": "Client id", "type": "string", "description": "The client id that provider must use, when pinned.", "example": "portal-client"}
+                                },
                                 "additionalProperties": true
                             },
                             "registration": {
@@ -7831,7 +7918,7 @@
                     ]
                 },
                 "icon": "FolderOutline",
-                "version": "0.2.0",
+                "version": "0.3.0",
                 "title": "Portal Case",
                 "description": "A citizen's own case as the portal sees it: scoped by subjectRef, pointing at its case type, carrying its status and the answers the citizen gave. `portalWrites` is the append-only record of what the citizen changed, naming the identity and the mandate each change acted under.",
                 "type": "object",
@@ -7915,6 +8002,32 @@
                         "format": "date",
                         "description": "The last day the law allows for the decision. Written by the case app. The case page shows it as Uiterlijk klaar op, and the case card takes it as its due day.",
                         "example": "2026-11-01"
+                    },
+                    "termNote": {
+                        "title": "Term note",
+                        "type": "string",
+                        "maxLength": 200,
+                        "description": "A plain sentence the case app writes about the term: why it stands still or moved. The case page shows it under Uiterlijk klaar op, or in its place when no date is set, as text and with no words of the portal's own.",
+                        "example": "De termijn staat stil sinds 6 oktober 2026. Hij loopt weer zodra wij uw antwoord hebben."
+                    },
+                    "resultLink": {
+                        "title": "Result link",
+                        "type": "object",
+                        "description": "Where the case's result is public, written by the case app. The case page shows it under the steps only when the url is https on one of the instance's trusted domains.",
+                        "properties": {
+                            "label": {
+                                "title": "Label",
+                                "type": "string",
+                                "maxLength": 80,
+                                "description": "The link's words. Empty shows Bekijk het resultaat."
+                            },
+                            "url": {
+                                "title": "URL",
+                                "type": "string",
+                                "format": "uri",
+                                "description": "The public address of the result."
+                            }
+                        }
                     }
                 }
             },
