@@ -56,7 +56,6 @@ use OCA\Portaliq\Kernel\Contracts\PortalThemeResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\SiteHeadInterface;
 use OCA\Portaliq\Service\SiteShell;
 use OCA\Portaliq\Service\Cms\PlainAddress;
-use OCA\Portaliq\Service\Cms\PlainQuery;
 use OCA\Portaliq\Service\Cms\SiteIcon;
 use OCA\Portaliq\Service\Publication\WithdrawnPublication;
 use OCA\Portaliq\Kernel\Contracts\SiteOrganisationInterface;
@@ -343,7 +342,7 @@ class PortalPageController extends Controller {
 				portal: $asked['portal'],
 				route: $asked['route'],
 				locale: $asked['locale'],
-				asked: new PlainQuery(query: $asked['query'], page: $asked['page'], record: $asked['record']),
+				asked: $asked,
 				address: $address
 			);
 		}

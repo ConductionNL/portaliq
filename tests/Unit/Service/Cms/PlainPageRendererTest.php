@@ -98,7 +98,7 @@ class PlainPageRendererTest extends TestCase {
 			['widgetKey' => 'markdown', 'props' => ['markdown' => "## Let op\n\n<script>alert(1)</script>"]],
 		]);
 
-		$view = $this->renderer(pages: ['/afval' => $page])->render(self::PORTAL, '/afval', 'nl', new PlainQuery('', 1), $this->address());
+		$view = $this->renderer(pages: ['/afval' => $page])->render(self::PORTAL, '/afval', 'nl', ['query' => '', 'page' => 1], $this->address());
 
 		$this->assertSame(200, $view['status']);
 		$this->assertSame('Afval', $view['title']);
@@ -137,7 +137,7 @@ class PlainPageRendererTest extends TestCase {
 	public function testAnInteractiveWidgetSaysItNeedsJavascript(): void {
 		$page = $this->gridPage(widgets: [['widgetKey' => 'intakeForm', 'props' => ['formId' => 'f1']]]);
 
-		$view = $this->renderer(pages: ['/aanvragen' => $page])->render(self::PORTAL, '/aanvragen', 'nl', new PlainQuery('paspoort', 1), $this->address());
+		$view = $this->renderer(pages: ['/aanvragen' => $page])->render(self::PORTAL, '/aanvragen', 'nl', ['query' => 'paspoort', 'page' => 1], $this->address());
 
 		$this->assertSame([
 			'kind' => 'needsJs',
@@ -170,7 +170,7 @@ class PlainPageRendererTest extends TestCase {
 		];
 
 		$renderer = $this->renderer(pages: ['/' => $this->gridPage(widgets: $widgets)]);
-		$view = $renderer->render(self::PORTAL, '/', 'nl', new PlainQuery('', 1), $this->address());
+		$view = $renderer->render(self::PORTAL, '/', 'nl', ['query' => '', 'page' => 1], $this->address());
 
 		$this->assertCount(7, $view['blocks']);
 		$labels = [];
@@ -192,7 +192,7 @@ class PlainPageRendererTest extends TestCase {
 	public function testTheMenuBlockShowsTheMainMenu(): void {
 		$page = $this->gridPage(widgets: [['widgetKey' => 'siteNavigation', 'props' => ['label' => 'Menu']]]);
 
-		$view = $this->renderer(pages: ['/' => $page])->render(self::PORTAL, '/', 'nl', new PlainQuery('', 1), $this->address());
+		$view = $this->renderer(pages: ['/' => $page])->render(self::PORTAL, '/', 'nl', ['query' => '', 'page' => 1], $this->address());
 
 		$this->assertSame(['kind' => 'links', 'heading' => '', 'intro' => '', 'links' => [
 			['label' => 'Home', 'href' => '/index.php/apps/portaliq/site/plain?route=/&portal=demo', 'description' => ''],
@@ -218,9 +218,9 @@ class PlainPageRendererTest extends TestCase {
 		);
 		$renderer = $this->renderer(pages: ['/publicatie' => $page], keepReader: true);
 
-		$found = $renderer->render(self::PORTAL, '/publicatie/p1', 'nl', new PlainQuery('', 1), $this->address());
-		$missing = $renderer->render(self::PORTAL, '/publicatie/nope', 'nl', new PlainQuery('', 1), $this->address());
-		$deeper = $renderer->render(self::PORTAL, '/publicatie/a/b', 'nl', new PlainQuery('', 1), $this->address());
+		$found = $renderer->render(self::PORTAL, '/publicatie/p1', 'nl', ['query' => '', 'page' => 1], $this->address());
+		$missing = $renderer->render(self::PORTAL, '/publicatie/nope', 'nl', ['query' => '', 'page' => 1], $this->address());
+		$deeper = $renderer->render(self::PORTAL, '/publicatie/a/b', 'nl', ['query' => '', 'page' => 1], $this->address());
 
 		$this->assertSame(200, $found['status']);
 		$this->assertSame('Woo-besluit', $found['blocks'][0]['title']);
@@ -241,9 +241,9 @@ class PlainPageRendererTest extends TestCase {
 		$markdown = ['title' => 'Over ons', 'summary' => 'Wie wij zijn.', 'body' => ['type' => 'markdown', 'markdown' => 'Wij zijn **de gemeente**.']];
 		$renderer = $this->renderer(pages: ['/over-ons' => $markdown]);
 
-		$about = $renderer->render(self::PORTAL, 'over-ons/', 'nl', new PlainQuery('', 1), $this->address());
-		$draft = $renderer->render(self::PORTAL, '/concept', 'nl', new PlainQuery('', 1), $this->address());
-		$nobody = $renderer->render(null, '/over-ons', 'nl', new PlainQuery('', 1), $this->address());
+		$about = $renderer->render(self::PORTAL, 'over-ons/', 'nl', ['query' => '', 'page' => 1], $this->address());
+		$draft = $renderer->render(self::PORTAL, '/concept', 'nl', ['query' => '', 'page' => 1], $this->address());
+		$nobody = $renderer->render(null, '/over-ons', 'nl', ['query' => '', 'page' => 1], $this->address());
 
 		$this->assertSame(200, $about['status']);
 		$this->assertSame('Wie wij zijn.', $about['summary']);

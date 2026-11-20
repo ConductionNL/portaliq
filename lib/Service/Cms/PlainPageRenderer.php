@@ -102,7 +102,7 @@ class PlainPageRenderer implements PlainPageRendererInterface {
 	 * @param array<string, mixed>|null $portal  The serving portal, or null.
 	 * @param string                    $route   The route asked for.
 	 * @param string                    $locale  The document language.
-	 * @param PlainQuery                $asked   The request's `_search`, `_page` and `record`.
+	 * @param array<string, mixed>      $asked   The request's `query`, `page` and `record`, as `SiteShell::plainRequest()` reads them.
 	 * @param PlainAddress              $address The addresses of this request.
 	 *
 	 * @return array<string, mixed> `status` (200 or 404), `portalTitle`, `menu`, `title`, `summary`, `blocks`, `fullUrl`.
@@ -110,7 +110,12 @@ class PlainPageRenderer implements PlainPageRendererInterface {
 	 * @spec openspec/changes/site-honest-without-javascript/tasks.md#2.4
 	 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
 	 */
-	public function render(?array $portal, string $route, string $locale, PlainQuery $asked, PlainAddress $address): array {
+	public function render(?array $portal, string $route, string $locale, array $asked, PlainAddress $address): array {
+		$asked = new PlainQuery(
+			query: (string)($asked['query'] ?? ''),
+			page: (int)($asked['page'] ?? 1),
+			record: (string)($asked['record'] ?? '')
+		);
 		$route = '/' . trim($route, '/');
 		$slug = (string)($portal['slug'] ?? '');
 		$view = [
