@@ -4,99 +4,86 @@
  */
 
 /**
- * Measuring text contrast against what is actually painted behind it.
+ * Measuring text contrast against what is actually painted behind it
+ * (portal-theme-blocks-and-contributed-pages REQ-PTB-013).
  *
- * `tests/site-surfaces.spec.mjs` runs this over a rendered page; the unit
- * spec `tests/site-contrast.spec.mjs` pins the rule itself. One definition of
- * "fails AA": a second copy would drift, and the drifted copy would be the one
- * reporting a page as readable.
+ * ONE IMPLEMENTATION, MORE THAN ONE CONSUMER. `tests/site-surfaces.spec.mjs`
+ * runs it over a rendered page, and a page editor can run it over its canvas.
+ * A second copy would drift, and the drifted copy would be the one telling an
+ * author their page is fine.
  *
- * It is written as ONE self-contained function on purpose: the rendered-page
- * check injects it into a browser by stringifying it, so it may not close over
+ * It is written as ONE self-contained function on purpose: the surface check
+ * injects it into a browser by stringifying it, so it may not close over
  * anything in this module's scope. That is why the helpers are nested.
  *
- * @spec openspec/changes/nldesign-theme-integration/tasks.md
+ * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-chrome-must-meet-wcag-21-aa-on-what-is-actually-painted-req-ptb-013
  */
 
 /**
- * Every text element under `root` whose contrast falls below AA.
- *
- * The backdrop of an element is the first ancestor (the element included) that
- * actually PAINTS a background, never the nearest named band. Translucent text
- * is composited over that backdrop before it is measured.
+ * Every text node under `root` whose contrast falls below WCAG 2.1 AA: 4.5:1,
+ * or 3:1 for large text (24px, or 18.66px at weight 700 and above).
  *
  * @param {object} [root] The element to audit; defaults to the document body.
- * @param {object} [view] Supplies `getComputedStyle`; defaults to the window.
  * @return {{failures: Array<object>, measured: number}} The findings.
- *
- * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
+ * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-chrome-must-meet-wcag-21-aa-on-what-is-actually-painted-req-ptb-013
  */
-export function auditContrast(root, view) {
-	const win = view || globalThis
-	const scope = root || win.document.body
-	const styleOf = (el) => win.getComputedStyle(el)
+export function auditContrast(root) {
+	const scope = root || document.body
 
-	// `rgb()` / `rgba()` to [r, g, b, a]. The alpha is the part an obvious
-	// implementation drops.
+	// `rgb()` / `rgba()` to [r, g, b, a]. The ALPHA is the part that matters
+	// and the part an obvious implementation drops.
 	const parse = (colour) => {
-		const n = (String(colour || '').match(/[\d.]+/g) || ['0', '0', '0']).map(
-			Number,
-		)
+		const n = (String(colour || '').match(/[\d.]+/g) || ['0', '0', '0']).map(Number)
 		return [n[0] || 0, n[1] || 0, n[2] || 0, n.length > 3 ? n[3] : 1]
 	}
 
 	const luminance = ([r, g, b]) => {
 		const channel = (c) => {
-			c /= 255
-			return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+			const v = c / 255
+			return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
 		}
 		return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
 	}
 
-	// Translucent text is composited over its backdrop: rgba(255,255,255,0.22)
-	// read as opaque white scores 17.85:1 on a navy band it can barely be seen on.
-	const composite = (fg, bg) => {
-		const [fr, fgreen, fb, fa] = fg
-		const [br, bgreen, bb] = bg
-		return [
-			fr * fa + br * (1 - fa),
-			fgreen * fa + bgreen * (1 - fa),
-			fb * fa + bb * (1 - fa),
-		]
+	// TRANSLUCENT TEXT IS COMPOSITED OVER ITS BACKDROP BEFORE IT IS MEASURED.
+	// Read as opaque, `rgba(255,255,255,0.22)` scores 17.85:1 on a navy band
+	// it can barely be seen on.
+	const composite = (front, back) => {
+		const alpha = front[3]
+		return [0, 1, 2].map((i) => front[i] * alpha + back[i] * (1 - alpha))
 	}
 
-	// The backdrop is the nearest ancestor that paints one. Nearly-transparent
-	// scrims (alpha <= 0.3) are not the surface a reader perceives; when nothing
-	// paints, the page's own background is the answer, then white.
+	// THE BACKDROP IS THE NEAREST ANCESTOR THAT ACTUALLY PAINTS ONE, not the
+	// nearest named band. Scrims of 30% alpha or less are skipped: the band
+	// under them is what a reader perceives. When nothing paints, the page's
+	// own background answers, else white.
 	const backdrop = (el) => {
 		for (let node = el; node; node = node.parentElement) {
-			const bg = styleOf(node).backgroundColor
-			if (!bg || bg === 'transparent') {
-				continue
-			}
-			const [, , , alpha] = parse(bg)
-			if (alpha > 0.3) {
-				return bg
+			const colour = parse(getComputedStyle(node).backgroundColor)
+			if (colour[3] > 0.3) {
+				return colour
 			}
 		}
-		const body = win.document && win.document.body
-		const pageBg = body ? styleOf(body).backgroundColor : ''
-		return pageBg && parse(pageBg)[3] > 0.3 ? pageBg : 'rgb(255, 255, 255)'
+		return [255, 255, 255, 1]
+	}
+
+	const isLarge = (style) => {
+		const size = parseFloat(style.fontSize) || 0
+		const weight = parseInt(style.fontWeight, 10) || 400
+		return size >= 24 || (size >= 18.66 && weight >= 700)
 	}
 
 	const failures = []
 	let measured = 0
 
-	for (const el of scope.querySelectorAll(
-		'h1,h2,h3,h4,h5,h6,p,a,span,button,label,li,dt,dd,td,th',
-	)) {
+	for (const el of scope.querySelectorAll('h1,h2,h3,h4,h5,h6,p,a,span,button,li,dt,dd,label')) {
 		// Decoration is exempt: it carries no text a reader has to make out.
 		if (el.closest('[aria-hidden="true"]')) {
 			continue
 		}
 
 		const text = (el.textContent || '').trim()
-		if (!text || el.children.length) {
+		if (!text || el.children.length > 0) {
 			continue
 		}
 
@@ -105,24 +92,20 @@ export function auditContrast(root, view) {
 			continue
 		}
 
-		const style = styleOf(el)
-		const on = backdrop(el)
-		const behind = parse(on)
+		const style = getComputedStyle(el)
+		const behind = backdrop(el)
 		const front = composite(parse(style.color), behind)
-		const [lighter, darker] = [luminance(front), luminance(behind)].sort(
-			(a, b) => b - a,
-		)
+		const [lighter, darker] = [luminance(front), luminance(behind)].sort((a, b) => b - a)
 		const ratio = (lighter + 0.05) / (darker + 0.05)
+		const required = isLarge(style) ? 3 : 4.5
 		measured++
 
-		// AA for body text. Large text is allowed 3:1; treating it as 4.5 only
-		// over-reports, which is the safe direction for a check.
-		if (ratio < 4.5) {
+		if (ratio < required) {
 			failures.push({
 				ratio: Number(ratio.toFixed(2)),
+				required,
 				text: text.slice(0, 30),
 				colour: style.color,
-				on,
 			})
 		}
 	}

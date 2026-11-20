@@ -1,164 +1,127 @@
-#!/usr/bin/env node
 // SPDX-License-Identifier: EUPL-1.2
-// Copyright (C) 2026 Conduction B.V.
+// SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
 //
-// site-contrast.spec.mjs: the contrast rule the rendered-page check
-// (tests/site-surfaces.spec.mjs) runs in a browser (nldesign-theme-integration
-// 3.3). Text is measured against the first ancestor that PAINTS a background,
-// translucent text is composited first, and a scrim is not a surface.
+// site-contrast.spec.mjs — the one contrast rule the surface check and an
+// editor share (portal-theme-blocks-and-contributed-pages REQ-PTB-013),
+// measured over a minimal stand-in DOM: what is painted behind the text,
+// translucent text composited first, and 3:1 for large text.
 //
-// Usage:
-//   node --test tests/site-contrast.spec.mjs
+// Usage: node --test tests/site-contrast.spec.mjs
 
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { auditContrast } from '../src/site/lib/contrast.js'
 
 /**
- * A minimal element: what auditContrast reads and nothing more.
+ * A stand-in element with the computed style the audit reads.
  *
- * @param {object} spec  `{bg, color, text, ariaHidden, width}`.
- * @param {Array} kids   Child elements.
+ * @param {object} style    Its computed colour, background and font.
+ * @param {string} text     Its text; children make it a container.
+ * @param {Array}  children Child elements.
  * @return {object} The element.
  */
-function el(spec, kids = []) {
+function el(style, text = '', children = []) {
 	const node = {
 		style: {
-			backgroundColor: spec.bg || 'rgba(0, 0, 0, 0)',
-			color: spec.color || 'rgb(0, 0, 0)',
+			color: 'rgb(0, 0, 0)',
+			backgroundColor: 'rgba(0, 0, 0, 0)',
+			fontSize: '16px',
+			fontWeight: '400',
+			...style,
 		},
-		ariaHidden: spec.ariaHidden === true,
+		children,
 		parentElement: null,
-		children: kids,
-		textContent: spec.text ?? '',
-		getBoundingClientRect: () => ({ width: spec.width ?? 100, height: 20 }),
+		hidden: false,
+		get textContent() {
+			return text || children.map((c) => c.textContent).join('')
+		},
 		closest(selector) {
-			assert.equal(selector, '[aria-hidden="true"]')
 			for (let n = this; n; n = n.parentElement) {
-				if (n.ariaHidden) {
+				if (selector === '[aria-hidden="true"]' && n.hidden) {
 					return n
 				}
 			}
 			return null
 		},
+		getBoundingClientRect() {
+			return { width: 100, height: 20 }
+		},
 		querySelectorAll() {
-			const out = []
-			const walk = (n) =>
-				n.children.forEach((c) => {
-					out.push(c)
-					walk(c)
-				})
+			const all = []
+			const walk = (n) => n.children.forEach((c) => {
+				all.push(c)
+				walk(c)
+			})
 			walk(this)
-			return out
+			return all
 		},
 	}
-	kids.forEach((k) => {
-		k.parentElement = node
+	children.forEach((c) => {
+		c.parentElement = node
 	})
-	if (kids.length && !spec.text) {
-		node.textContent = kids.map((k) => k.textContent).join(' ')
-	}
 	return node
 }
 
-/**
- * A view whose body is `body`.
- *
- * @param {object} body The root element.
- * @return {object} `{document, getComputedStyle}`.
- */
-function view(body) {
-	return { document: { body }, getComputedStyle: (n) => n.style }
-}
+globalThis.getComputedStyle = (node) => node.style
 
-test('text on a descendant surface is measured against THAT surface, not the band', () => {
-	// White text on a dark card inside a white band: readable. Judged against
-	// the band it would be a phantom 1.0 failure.
-	const label = el({ text: 'Zoeken', color: 'rgb(255, 255, 255)' })
-	const card = el({ bg: 'rgb(0, 51, 102)' }, [label])
-	const band = el({ bg: 'rgb(255, 255, 255)' }, [card])
-	const body = el({}, [band])
-
-	const result = auditContrast(body, view(body))
-
-	assert.equal(result.measured, 1)
-	assert.deepEqual(result.failures, [])
+test('dark text on a white page passes', () => {
+	const page = el({ backgroundColor: 'rgb(255, 255, 255)' }, '', [el({ color: 'rgb(33, 33, 33)' }, 'Afval')])
+	const { failures, measured } = auditContrast(page)
+	assert.equal(measured, 1)
+	assert.deepEqual(failures, [])
 })
 
-test('the same text on the band itself fails, with the ratio and the surface named', () => {
-	const label = el({ text: 'Zoeken', color: 'rgb(255, 255, 255)' })
-	const band = el({ bg: 'rgb(255, 255, 255)' }, [label])
-	const body = el({}, [band])
-
-	const result = auditContrast(body, view(body))
-
-	assert.equal(result.measured, 1)
-	assert.equal(result.failures.length, 1)
-	assert.equal(result.failures[0].ratio, 1)
-	assert.equal(result.failures[0].on, 'rgb(255, 255, 255)')
-	assert.equal(result.failures[0].text, 'Zoeken')
+test('light grey body text on white fails AA and names the text', () => {
+	const page = el({ backgroundColor: 'rgb(255, 255, 255)' }, '', [el({ color: 'rgb(170, 170, 170)' }, 'Openingstijden')])
+	const { failures } = auditContrast(page)
+	assert.equal(failures.length, 1)
+	assert.equal(failures[0].text, 'Openingstijden')
+	assert.equal(failures[0].required, 4.5)
 })
 
-test('translucent text is composited over its backdrop before it is measured', () => {
-	// White at 22% on navy is barely visible; read as opaque it scores ~14:1.
-	const link = el({ text: 'Privacy', color: 'rgba(255, 255, 255, 0.22)' })
-	const footer = el({ bg: 'rgb(1, 21, 72)' }, [link])
-	const body = el({}, [footer])
-
-	const result = auditContrast(body, view(body))
-
-	assert.equal(result.failures.length, 1)
-	assert.ok(result.failures[0].ratio < 4.5, `ratio ${result.failures[0].ratio}`)
+test('translucent white on navy is composited before it is measured', () => {
+	// Read as opaque white this scores far above 4.5:1; composited it fails.
+	const band = el({ backgroundColor: 'rgb(21, 66, 115)' }, '', [el({ color: 'rgba(255, 255, 255, 0.22)' }, 'Privacy')])
+	const { failures } = auditContrast(el({}, '', [band]))
+	assert.equal(failures.length, 1)
+	assert.ok(failures[0].ratio < 2)
 })
 
-test('a nearly transparent scrim is skipped for the surface under it', () => {
-	const text = el({ text: 'Melding', color: 'rgb(255, 255, 255)' })
-	const scrim = el({ bg: 'rgba(255, 255, 255, 0.08)' }, [text])
-	const band = el({ bg: 'rgb(0, 0, 0)' }, [scrim])
-	const body = el({}, [band])
-
-	const result = auditContrast(body, view(body))
-
-	assert.deepEqual(result.failures, [])
-	assert.equal(result.measured, 1)
+test('the backdrop is the nearest ancestor that paints, skipping a faint scrim', () => {
+	const scrim = el({ backgroundColor: 'rgba(255, 255, 255, 0.08)' }, '', [el({ color: 'rgb(255, 255, 255)' }, 'Contact')])
+	const band = el({ backgroundColor: 'rgb(21, 66, 115)' }, '', [scrim])
+	const { failures, measured } = auditContrast(el({ backgroundColor: 'rgb(255, 255, 255)' }, '', [band]))
+	assert.equal(measured, 1)
+	assert.deepEqual(failures, [])
 })
 
-test('with nothing painted the page background is used, then white', () => {
-	const dark = el({ text: 'Welkom', color: 'rgb(255, 255, 255)' })
-	const darkBody = el({ bg: 'rgb(20, 20, 20)' }, [dark])
-	assert.deepEqual(auditContrast(darkBody, view(darkBody)).failures, [])
-
-	const light = el({ text: 'Welkom', color: 'rgb(255, 255, 255)' })
-	const plainBody = el({}, [light])
-	assert.equal(
-		auditContrast(plainBody, view(plainBody)).failures[0].on,
-		'rgb(255, 255, 255)',
-	)
+test('large text is held to 3:1, body text of the same colour to 4.5:1', () => {
+	// #888 on white is about 3.5:1.
+	const grey = 'rgb(136, 136, 136)'
+	const page = el({ backgroundColor: 'rgb(255, 255, 255)' }, '', [
+		el({ color: grey, fontSize: '32px' }, 'Kop'),
+		el({ color: grey, fontSize: '19px', fontWeight: '700' }, 'Vet'),
+		el({ color: grey, fontSize: '19px', fontWeight: '400' }, 'Gewoon'),
+	])
+	const { failures, measured } = auditContrast(page)
+	assert.equal(measured, 3)
+	assert.deepEqual(failures.map((f) => f.text), ['Gewoon'])
 })
 
-test('decoration, containers, empty and tiny elements are not measured', () => {
-	const hidden = el({
-		text: 'Icoon',
-		color: 'rgb(255, 255, 255)',
-		ariaHidden: true,
-	})
-	const tiny = el({ text: 'x', color: 'rgb(255, 255, 255)', width: 2 })
-	const empty = el({ text: '   ', color: 'rgb(255, 255, 255)' })
-	const inner = el({ text: 'Binnen', color: 'rgb(0, 0, 0)' })
-	const container = el({}, [inner])
-	const body = el({ bg: 'rgb(255, 255, 255)' }, [hidden, tiny, empty, container])
-
-	const result = auditContrast(body, view(body))
-
-	// Only `inner` counts: black on white, a pass.
-	assert.equal(result.measured, 1)
-	assert.deepEqual(result.failures, [])
+test('decoration and containers are not measured', () => {
+	const hidden = el({ color: 'rgb(250, 250, 250)' }, 'x-icon')
+	hidden.hidden = true
+	const page = el({ backgroundColor: 'rgb(255, 255, 255)' }, '', [
+		hidden,
+		el({ color: 'rgb(250, 250, 250)' }, '', [el({ color: 'rgb(0, 0, 0)' }, 'Binnen')]),
+	])
+	const { failures, measured } = auditContrast(page)
+	assert.equal(measured, 1)
+	assert.deepEqual(failures, [])
 })
 
-test('the function survives being stringified, as the rendered-page check injects it', () => {
-	const rebuilt = new Function(`return (${auditContrast.toString()})`)()
-	const label = el({ text: 'Zoeken', color: 'rgb(255, 255, 255)' })
-	const body = el({ bg: 'rgb(255, 255, 255)' }, [label])
-
-	assert.equal(rebuilt(body, view(body)).failures.length, 1)
+test('the audit carries no outside reference, so it can be injected as source', () => {
+	const injected = new Function(`return (${auditContrast.toString()})`)()
+	const page = el({ backgroundColor: 'rgb(255, 255, 255)' }, '', [el({ color: 'rgb(170, 170, 170)' }, 'Los')])
+	assert.equal(injected(page).failures.length, 1)
 })

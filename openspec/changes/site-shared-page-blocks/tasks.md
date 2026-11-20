@@ -13,7 +13,7 @@
 
 - [x] **T04**: `WidgetGrid.vue` renders `sharedBlock` as a nested grid over `props.widgets`, and nothing for an unavailable one (REQ-SPB-002). Verification: Vitest `WidgetGrid.spec.js` with an expanded and an unavailable placement. (`SharedBlock.vue`, loaded on demand; checked in `tests/shared-page-blocks.spec.mjs` from the source, not Vitest, which this repo does not use)
 - [x] **T05**: "Shared blocks" index and detail in `src/manifest.json`, the designer on `/shared-blocks/:id/layout`, and the "Shared block" palette entry (REQ-SPB-005). Verification: Playwright `tests/e2e/site-shared-page-blocks.spec.ts` edits the seeded block and sees the change on both seeded portals. (index page, the designer on `/shared-blocks/:id/layout` through `src/editor/blockSaver.js`, and a block picker in the placement's inspector; the Playwright spec is not run)
-- [ ] **T06**: The block detail lists the pages that place it (REQ-SPB-005). Verification: the same Playwright spec reads two pages in the list. — not run: the block detail page that lists the pages placing a block is not built
+- [x] **T06**: The block detail lists the pages that place it (REQ-SPB-005). Verification: the same Playwright spec reads two pages in the list. (`SharedBlockDetail` in `src/manifest.json`, its Pagina's tab a record-list over `GET /api/shared-blocks/{id}/pages`: `SharedBlockController::pages()`, page editors only, and `SharedBlockPlacements`, which reads the block as the user and lists the pages of its organisation's portals whose published body places it; a draft placement is not listed. Tests: `SharedBlockPlacementsTest`, `SharedBlockControllerTest`. The Playwright spec is not run: it needs a live instance)
 
 ## Rights, strings and validation
 

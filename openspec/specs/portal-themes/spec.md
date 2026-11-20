@@ -35,3 +35,19 @@ warning note SHALL explain a poor theme while `poorCount` is above 0.
 - **GIVEN** three portals, one with a theme whose footer text fails
 - **THEN** that row's pill reads "Slecht leesbaar" and the note under the table explains what that means and where to
   change the house style
+
+### Requirement: A secondary button on a portal site takes the hover step on hover
+
+On a portal site an outlined (secondary) Utrecht button SHALL use the secondary hover tokens on hover:
+`--utrecht-button-secondary-action-hover-color` for its text and `--utrecht-button-secondary-action-hover-border-color`
+for its border, through the component's private `--_utrecht-button-hover-*` values, so a danger hint still wins. At rest
+it SHALL keep its rest colours. The site theme's rest rule carries `!important` to beat the vendored stylesheets, so the
+hover rule SHALL carry the same weight.
+
+#### Scenario: a secondary button on hover
+@e2e exclude the hover colour only differs from the rest colour when a theme set from the theme app is active on the portal, which the e2e instance does not install; pinned by tests/site-secondary-button-hover.spec.mjs, which reads the site stylesheet
+
+- **GIVEN** a portal whose theme defines a hover step for the secondary button
+- **WHEN** a visitor points at a secondary button such as "Aanvraag intrekken"
+- **THEN** its text and border take the secondary hover colour
+- **AND** when the pointer leaves, they return to the rest colour

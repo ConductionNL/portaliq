@@ -50,6 +50,9 @@ use Throwable;
  *
  * @spec openspec/changes/site-multi-step-forms/tasks.md#T8
  * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the count includes the route attributes
+ *   (NoAdminRequired, NoCSRFRequired, ...) a controller declares.
  */
 class PortalDraftController extends Controller {
 

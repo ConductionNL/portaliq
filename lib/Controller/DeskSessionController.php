@@ -46,6 +46,9 @@ use OCP\IUserSession;
  * Nextcloud checks the password; this only checks the desk group and the form.
  *
  * @spec openspec/changes/resident-identity-in-forms/tasks.md#T06
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the count includes the route attributes
+ *   (NoAdminRequired, NoCSRFRequired, ...) a controller declares.
  */
 class DeskSessionController extends Controller {
 
