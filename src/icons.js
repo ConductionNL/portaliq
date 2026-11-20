@@ -36,6 +36,9 @@ import BullhornOutline from 'vue-material-design-icons/BullhornOutline.vue'
 import Calendar from 'vue-material-design-icons/Calendar.vue'
 import ChartBoxOutline from 'vue-material-design-icons/ChartBoxOutline.vue'
 import ChartLine from 'vue-material-design-icons/ChartLine.vue'
+// The Submissions row actions (submission-row-actions): Conversation in Talk,
+// Link a form and Register again.
+import Chat from 'vue-material-design-icons/Chat.vue'
 import ChatOutline from 'vue-material-design-icons/ChatOutline.vue'
 import Check from 'vue-material-design-icons/Check.vue'
 import CheckboxMarkedOutline from 'vue-material-design-icons/CheckboxMarkedOutline.vue'
@@ -63,6 +66,7 @@ import FileDocumentEdit from 'vue-material-design-icons/FileDocumentEdit.vue'
 import FileDocumentMultipleOutline from 'vue-material-design-icons/FileDocumentMultipleOutline.vue'
 import FileDocumentOutline from 'vue-material-design-icons/FileDocumentOutline.vue'
 import FileFindOutline from 'vue-material-design-icons/FileFindOutline.vue'
+import FileLinkOutline from 'vue-material-design-icons/FileLinkOutline.vue'
 import FileTreeOutline from 'vue-material-design-icons/FileTreeOutline.vue'
 import FolderOutline from 'vue-material-design-icons/FolderOutline.vue'
 import FormSelect from 'vue-material-design-icons/FormSelect.vue'
@@ -87,6 +91,7 @@ import Pencil from 'vue-material-design-icons/Pencil.vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 import PowerPlugOutline from 'vue-material-design-icons/PowerPlugOutline.vue'
 import Pulse from 'vue-material-design-icons/Pulse.vue'
+import Refresh from 'vue-material-design-icons/Refresh.vue'
 import Restore from 'vue-material-design-icons/Restore.vue'
 import ShieldAccount from 'vue-material-design-icons/ShieldAccount.vue'
 import ShieldCheckOutline from 'vue-material-design-icons/ShieldCheckOutline.vue'
@@ -195,4 +200,8 @@ export default {
 	ViewDashboardOutline,
 	Web,
 	WebBox,
+	// The Submissions row actions (submission-row-actions).
+	Chat,
+	FileLinkOutline,
+	Refresh,
 }

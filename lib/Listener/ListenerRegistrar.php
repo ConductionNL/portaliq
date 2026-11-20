@@ -176,6 +176,9 @@ final class ListenerRegistrar {
 		foreach ($portalAdminEvents as $event) {
 			$context->registerEventListener($event, PortalAdminListener::class);
 		}
+
+		// A submission's proof fields never change after the write (submission-row-actions).
+		$context->registerEventListener(ObjectUpdatingEvent::class, SubmissionWriteGuardListener::class);
 	}//end registerCmsListeners()
 
 	/**
