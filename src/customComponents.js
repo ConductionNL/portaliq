@@ -44,11 +44,14 @@ import { generateUrl } from '@nextcloud/router'
 import FormEmbedDialog from './dialogs/FormEmbedDialog.vue'
 import InviteDialog from './dialogs/InviteDialog.vue'
 import IssueAccountDialog from './dialogs/IssueAccountDialog.vue'
+import LinkFormDialog from './dialogs/LinkFormDialog.vue'
 import MailTemplateDialog from './dialogs/MailTemplateDialog.vue'
+import NewPortalDialog from './dialogs/NewPortalDialog.vue'
 import NewsItemDialog from './dialogs/NewsItemDialog.vue'
 import RefuseAccessRequestDialog from './dialogs/RefuseAccessRequestDialog.vue'
 import RevealDecisionDialog from './dialogs/RevealDecisionDialog.vue'
 import RevealedContactDialog from './dialogs/RevealedContactDialog.vue'
+import { createPageSaver } from './editor/pageSaver.js'
 import { createAccessRequestHandlers } from './lib/accessRequestActions.js'
 import { createConnectionHandlers } from './lib/connectionRegistry.js'
 import { spawnLookDialog } from './lib/dialogLook.js'
@@ -58,12 +61,16 @@ import { refreshList } from './lib/listRefresh.js'
 import { createMailTemplateApi, createMailTemplateHandlers } from './lib/mailTemplateEditing.js'
 import { createNewsApi, createNewsHandlers, NEWS_LIST } from './lib/newsAuthoring.js'
 import { createOpenPortalSite } from './lib/openPortalSite.js'
+import { createPageVisibilityHandlers } from './lib/pageVisibility.js'
+import { createPortalProvisioning, createPortalProvisioningHandlers } from './lib/portalProvisioning.js'
+import { createPublicationReportHandlers } from './lib/publicationReportActions.js'
 import { createRevealHandlers } from './lib/revealActions.js'
 import { createSessionHandlers } from './lib/sessionActions.js'
 import {
 	createStaffAccountActions,
 	createStaffAccountHandlers,
 } from './lib/staffAccountActions.js'
+import { createSubmissionHandlers } from './lib/submissionActions.js'
 
 /**
  * The `Open portal` row action, wired to Nextcloud's URL generator, toast and
@@ -101,6 +108,20 @@ const accessRequestHandlers = createAccessRequestHandlers({
 	translate: (text) => t('portaliq', text),
 	// A row handler gets no handle on the list, so the page reloads to show
 	// the answered request in its new state.
+	reload: () => window.location.reload(),
+})
+
+/**
+ * The Handled and Not applicable row actions on the Error reports page
+ * (publication-error-reports-and-withheld-notices REQ-PER-002). See
+ * src/lib/publicationReportActions.js.
+ */
+const publicationReportHandlers = createPublicationReportHandlers({
+	post: (url, body) => axios.post(url, body),
+	generateUrl,
+	notify: showSuccess,
+	notifyError: showError,
+	translate: (text) => t('portaliq', text),
 	reload: () => window.location.reload(),
 })
 
@@ -185,6 +206,24 @@ const sessionHandlers = createSessionHandlers({
 	open: (url) => window.location.assign(url),
 })
 /**
+ * `Gesprek in Talk` and `Formulier koppelen` on a Submissions row
+ * (submission-row-actions). Talk goes through OpenRegister's Talk links on
+ * the submission; the form link writes `formBinding` only, and the write guard
+ * refuses any change to a proof field. See src/lib/submissionActions.js.
+ */
+const submissionHandlers = createSubmissionHandlers({
+	get: (url) => axios.get(url),
+	post: (url, body) => axios.post(url, body),
+	patch: (url, body) => axios.patch(url, body),
+	generateUrl,
+	open: (url) => window.open(url, '_blank', 'noopener'),
+	chooseForm: (options, current) => spawnLookDialog(LinkFormDialog, { options, current }),
+	notify: showSuccess,
+	notifyError: showError,
+	translate: (text) => t('portaliq', text),
+	reload: () => refreshList('portaliq-portalSubmission') || window.location.reload(),
+})
+/**
  * `Toestaan` and `Weigeren` on the Reveal requests page
  * (intake-report-pages T09). Each asks the reason and posts the custodian's
  * decision; an allowed reveal shows the contact once, in its own dialog.
@@ -220,6 +259,40 @@ const newsHandlers = createNewsHandlers({
 	// the page, sort and filters it had (news-list-keeps-its-page). Only a
 	// list that was never fetched here falls back to reloading the page.
 	reload: () => refreshList(NEWS_LIST) || window.location.reload(),
+})
+
+/**
+ * `Take back to draft` on the Pages list (page-public-on-purpose): the page's
+ * route then answers as one that does not exist. Version-checked like the
+ * page designer's own writes; see src/lib/pageVisibility.js.
+ */
+const pageVisibilityHandlers = createPageVisibilityHandlers({
+	saver: createPageSaver({
+		get: (url) => axios.get(url),
+		put: (url, payload, config) => axios.put(url, payload, config),
+		url: (id) =>
+			generateUrl(`/apps/openregister/api/objects/portaliq/page/${encodeURIComponent(id)}`),
+	}),
+	translate: (text) => t('portaliq', text),
+	notify: showSuccess,
+	notifyError: showError,
+	reload: () => window.location.reload(),
+})
+
+/**
+ * `New portal` on the Portals page (operate-portals-per-organisation T07):
+ * a draft portal for an organisation through PortalProvisionController,
+ * instance administrators only; see src/lib/portalProvisioning.js.
+ */
+const portalProvisioningHandlers = createPortalProvisioningHandlers({
+	provisioning: createPortalProvisioning({
+		post: (url, body) => axios.post(url, body),
+		generateUrl,
+		translate: (text, vars) => t('portaliq', text, vars),
+	}),
+	openDialog: (submit) => spawnLookDialog(NewPortalDialog, { submit }),
+	notify: showSuccess,
+	reload: () => window.location.reload(),
 })
 
 /**
@@ -275,6 +348,7 @@ export default {
 	 * AccessRequestAdminController, and a grant also records the mandate.
 	 */
 	...accessRequestHandlers,
+	...publicationReportHandlers,
 	/**
 	 * `Check form` row action on the Request forms index page.
 	 */
@@ -293,12 +367,24 @@ export default {
 	 */
 	...newsHandlers,
 	/**
+	 * The Pages list's `Take back to draft` (page-public-on-purpose).
+	 */
+	...pageVisibilityHandlers,
+	/**
 	 * The Sessions list's row actions (staff-revoke-one-session).
 	 */
 	...sessionHandlers,
+	/**
+	 * The Submissions list's Talk and form-link row actions (submission-row-actions).
+	 */
+	...submissionHandlers,
 	/**
 	 * The Reveal requests page's row actions (intake-report-pages T09).
 	 */
 	...revealHandlers,
 	...mailTemplateHandlers,
+	/**
+	 * The Portals page's `New portal` (operate-portals-per-organisation T07).
+	 */
+	...portalProvisioningHandlers,
 }

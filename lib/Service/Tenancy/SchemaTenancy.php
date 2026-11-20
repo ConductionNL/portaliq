@@ -25,6 +25,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Tenancy;
 
+use OCA\Portaliq\Kernel\Contracts\SchemaTenancyInterface;
+
 /**
  * Every schema is scoped by `organisation`, by `portal`, by `subject`, through
  * its `parent`, or is `global` with a reason a reviewer can check. A census test
@@ -33,7 +35,7 @@ namespace OCA\Portaliq\Service\Tenancy;
  *
  * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t01
  */
-final class SchemaTenancy {
+final class SchemaTenancy implements SchemaTenancyInterface {
 
 	public const ORGANISATION = 'organisation';
 
@@ -87,11 +89,14 @@ final class SchemaTenancy {
 		'portalFaq'               => ['scope' => self::PORTAL],
 		'portalFinder'            => ['scope' => self::PORTAL],
 		'sharedBlock'             => ['scope' => self::ORGANISATION],
+		// A marketing article belongs to the organisation and to no single portal (marketing-articles-from-pipelinq).
+		'article'                 => ['scope' => self::ORGANISATION],
 		'portalReport'            => ['scope' => self::PORTAL],
 		'newsItem'                => ['scope' => self::PORTAL],
 		'portalAvailabilityDaily' => ['scope' => self::PORTAL],
 		'portalAvailabilityOutage' => ['scope' => self::PORTAL],
 		'portalNotice'            => ['scope' => self::PORTAL],
+		'publicationErrorReport'  => ['scope' => self::PORTAL],
 		'portalPollResponse'      => ['scope' => self::SUBJECT],
 		'pushSubscription'        => ['scope' => self::SUBJECT],
 		'notificationQuietHours'  => ['scope' => self::SUBJECT],

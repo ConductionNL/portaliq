@@ -34,15 +34,16 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
-use OCA\Portaliq\Service\AuditTrailService;
-use OCA\Portaliq\Service\PortalFileFieldPolicy;
-use OCA\Portaliq\Service\PortalFileWriter;
-use OCA\Portaliq\Service\PortalObjectReader;
-use OCA\Portaliq\Service\PortalObjectWriter;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\AuditTrailServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFileFieldPolicyInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFileWriterInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectWriterInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
+use OCA\Portaliq\Kernel\Support\SessionTrust;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -70,35 +71,35 @@ class PortalFieldFileController extends Controller implements PortalProtected {
 	 * HTTP status per policy refusal.
 	 */
 	private const REFUSAL_STATUS = [
-		PortalFileFieldPolicy::ERROR_TOO_LARGE => Http::STATUS_REQUEST_ENTITY_TOO_LARGE,
-		PortalFileFieldPolicy::ERROR_TYPE_REFUSED => Http::STATUS_UNSUPPORTED_MEDIA_TYPE,
+		PortalFileFieldPolicyInterface::ERROR_TOO_LARGE => Http::STATUS_REQUEST_ENTITY_TOO_LARGE,
+		PortalFileFieldPolicyInterface::ERROR_TYPE_REFUSED => Http::STATUS_UNSUPPORTED_MEDIA_TYPE,
 	];
 
 	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalContributionRegistry $registry The subject's contributions.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param PortalObjectReader $reader The scoped single-object read.
-	 * @param PortalObjectWriter $writer The ownership-checking writer.
-	 * @param PortalFileWriter $fileWriter Attaches the file through OpenRegister.
-	 * @param PortalFileFieldPolicy $policy The upload rules.
-	 * @param AuditTrailService $auditor Records the write.
+	 * @param PortalContributionRegistryInterface $registry The subject's contributions.
+	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
+	 * @param PortalObjectReaderInterface $reader The scoped single-object read.
+	 * @param PortalObjectWriterInterface $writer The ownership-checking writer.
+	 * @param PortalFileWriterInterface $fileWriter Attaches the file through OpenRegister.
+	 * @param PortalFileFieldPolicyInterface $policy The upload rules.
+	 * @param AuditTrailServiceInterface $auditor Records the write.
 	 * @param LoggerInterface $logger Records the cause of a failed write.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalContributionRegistry $registry,
-		private readonly PortalSessionService $session,
-		private readonly PortalObjectReader $reader,
-		private readonly PortalObjectWriter $writer,
-		private readonly PortalFileWriter $fileWriter,
-		private readonly PortalFileFieldPolicy $policy,
-		private readonly AuditTrailService $auditor,
+		private readonly PortalContributionRegistryInterface $registry,
+		private readonly PortalSessionServiceInterface $session,
+		private readonly PortalObjectReaderInterface $reader,
+		private readonly PortalObjectWriterInterface $writer,
+		private readonly PortalFileWriterInterface $fileWriter,
+		private readonly PortalFileFieldPolicyInterface $policy,
+		private readonly AuditTrailServiceInterface $auditor,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -158,30 +159,77 @@ class PortalFieldFileController extends Controller implements PortalProtected {
 	 */
 	private function authorise(array $subject, array $target): array|JSONResponse {
 		$match = $this->authorisedAction(subject: $subject, register: $target['register'], schema: $target['schema']);
-		$config = null;
-		if ($match !== null) {
-			$config = $this->policy->fileConfig(action: $match['action'], field: $target['field']);
-		}
-
-		if ($match === null
-			|| $config === null
-			|| PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($match['action']['minTrust'] ?? null)) === false
-		) {
+		$config = $this->declaredFileConfig(granted: $match, field: $target['field']);
+		if ($this->mayUpload(subject: $subject, granted: $match, config: $config) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		$scope = $this->ownershipScope(action: $match['action'], app: $match['app'], subject: $subject);
+		return $this->ownedUploadContext(subject: $subject, target: $target, granted: $match, config: $config);
+	}//end authorise()
+
+	/**
+	 * The file config the action declares for the field, or null.
+	 *
+	 * @param array<string, mixed>|null $granted The subject's own action and its app, or null.
+	 * @param string                    $field   The field.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+	 */
+	private function declaredFileConfig(array|null $granted, string $field): array|null {
+		$config = null;
+		if ($granted !== null) {
+			$config = $this->policy->fileConfig(action: $granted['action'], field: $field);
+		}
+
+		return $config;
+	}//end declaredFileConfig()
+
+	/**
+	 * Whether the action is the subject's, the field a declared file field of
+	 * it, and the subject's trust at least the action's.
+	 *
+	 * @param array<string, mixed>      $subject The resolved subject.
+	 * @param array<string, mixed>|null $granted The subject's own action and its app, or null.
+	 * @param array<string, mixed>|null $config  The field's file config, or null.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+	 */
+	private function mayUpload(array $subject, array|null $granted, array|null $config): bool {
+		return ($granted === null
+			|| $config === null
+			|| (new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($granted['action']['minTrust'] ?? null)) === false) === false;
+	}//end mayUpload()
+
+	/**
+	 * The upload context once the object is proven the subject's and the
+	 * window is open, or the refusal.
+	 *
+	 * @param array<string, mixed>                                               $subject The resolved subject.
+	 * @param array{register: string, schema: string, id: string, field: string} $target  The route parameters.
+	 * @param array<string, mixed>                                               $granted The subject's own action and its app.
+	 * @param array<string, mixed>                                               $config  The field's file config.
+	 *
+	 * @return array<string, mixed>|JSONResponse
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+	 */
+	private function ownedUploadContext(array $subject, array $target, array $granted, array $config): array|JSONResponse {
+		$scope = $this->ownershipScope(action: $granted['action'], app: $granted['app'], subject: $subject);
 		$owned = $this->ownedObject(target: $target, scope: $scope, subject: $subject);
 		if ($scope === null || $owned === null) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		if ($this->policy->windowOpen(actionType: (string)($match['action']['type'] ?? ''), row: $owned) === false) {
+		if ($this->policy->windowOpen(actionType: (string)($granted['action']['type'] ?? ''), row: $owned) === false) {
 			return new JSONResponse(['error' => 'upload_window_closed'], Http::STATUS_FORBIDDEN);
 		}
 
 		return $target + ['subject' => $subject, 'config' => $config, 'scope' => $scope, 'current' => ($owned[$target['field']] ?? null)];
-	}//end authorise()
+	}//end ownedUploadContext()
 
 	/**
 	 * Read the file and check it fits the field, before anything is attached.

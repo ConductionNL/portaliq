@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\PortalPdfExportInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -35,14 +36,7 @@ use Throwable;
  *
  * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t04
  */
-class PortalPdfExport {
-
-	/**
-	 * What render() answers when OpenRegister refuses the row count.
-	 *
-	 * @var string
-	 */
-	public const TOO_LARGE = 'too_large';
+class PortalPdfExport implements PortalPdfExportInterface {
 
 	/**
 	 * OpenRegister's export service, by name only.

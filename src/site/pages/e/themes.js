@@ -3,37 +3,40 @@
 //
 // The plain rules of a theme page (life-domain-theme-pages): what a theme
 // gathers from the contributions, the validity of a product a resident holds,
-// and when an action is offered. Imports nothing, so the node specs run it as
-// a plain script.
+// the running cases of the theme, and when an action is offered. No Vue, so
+// the node specs run it as a plain script.
 //
 // @spec openspec/changes/life-domain-theme-pages/specs/life-domain-themes/spec.md
+
+export { runningCases, themeCaseCollections, themeCaseCounts } from './themeCases.js'
 
 /** The most products the theme page shows before it links to the full list. */
 export const PRODUCT_LIMIT = 3
 
+/** Where a tagged collection goes on the theme page, by its kind; any other kind lists as tasks. */
+const BUCKETS = { products: 'products', cases: 'cases' }
+
 /**
- * What a theme gathers: the tasks, products and actions of every contribution
- * that tagged themselves with its slug. The server already dropped tags the
- * portal does not declare.
+ * What a theme gathers: the tasks, products, cases and actions of every
+ * contribution that tagged themselves with its slug. The server already
+ * dropped tags the portal does not declare.
  *
  * @param {string} slug The theme.
  * @param {Array<object>} contributions The aggregate's contributions.
- * @return {{tasks: Array<object>, products: Array<object>, actions: Array<object>}} Each entry carries its `app`.
+ * @return {{tasks: Array<object>, products: Array<object>, cases: Array<object>, actions: Array<object>}} Each entry carries its `app`.
  *
  * @spec openspec/changes/life-domain-theme-pages/tasks.md#t03
+ * @spec openspec/changes/life-domain-theme-pages/tasks.md#t10
  */
 export function gather(slug, contributions) {
-	const out = { tasks: [], products: [], actions: [] }
+	const out = { tasks: [], products: [], cases: [], actions: [] }
 	for (const contribution of Array.isArray(contributions) ? contributions : []) {
 		const app = String(contribution?.app || '')
 		for (const collection of contribution?.collections || []) {
 			if (collection?.theme !== slug) {
 				continue
 			}
-			out[collection.kind === 'products' ? 'products' : 'tasks'].push({
-				app,
-				collection,
-			})
+			out[BUCKETS[collection.kind] || 'tasks'].push({ app, collection })
 		}
 		for (const action of contribution?.actions || []) {
 			if (action?.theme === slug) {

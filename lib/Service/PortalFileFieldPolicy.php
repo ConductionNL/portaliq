@@ -34,26 +34,19 @@ namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
 use finfo;
-use OCA\Portaliq\Contribution\FileFieldConfigNormaliser;
+use OCA\Portaliq\Kernel\Contracts\FileFieldConfigNormaliserInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFileFieldPolicyInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IRequest;
 use Throwable;
+use OCA\Portaliq\Kernel\Support\UploadedFile;
 
 /**
  * Decides the checks of one upload into a declared file field.
  *
  * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
  */
-class PortalFileFieldPolicy {
-	/**
-	 * Refusal: the file is larger than the field allows (HTTP 413).
-	 */
-	public const ERROR_TOO_LARGE = 'file_too_large';
-
-	/**
-	 * Refusal: the file matches none of the field's `accept` entries (HTTP 415).
-	 */
-	public const ERROR_TYPE_REFUSED = 'file_type_refused';
+class PortalFileFieldPolicy implements PortalFileFieldPolicyInterface {
 
 	/**
 	 * How long after its creation a create action may still add files, in seconds.
@@ -142,7 +135,7 @@ class PortalFileFieldPolicy {
 		}
 
 		$config = ($action['fieldConfigs'][$field] ?? null);
-		if (is_array($config) === false || ($config['type'] ?? null) !== FileFieldConfigNormaliser::TYPE_FILE) {
+		if (is_array($config) === false || ($config['type'] ?? null) !== FileFieldConfigNormaliserInterface::TYPE_FILE) {
 			return null;
 		}
 
@@ -203,8 +196,8 @@ class PortalFileFieldPolicy {
 	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
 	 */
 	public function refusal(array $config, string $fileName, string $content): ?string {
-		$limitMb = ($config['maxSizeMb'] ?? FileFieldConfigNormaliser::DEFAULT_SIZE_MB);
-		$limitMb = max(1, min(FileFieldConfigNormaliser::MAX_SIZE_MB, (int)$limitMb));
+		$limitMb = ($config['maxSizeMb'] ?? FileFieldConfigNormaliserInterface::DEFAULT_SIZE_MB);
+		$limitMb = max(1, min(FileFieldConfigNormaliserInterface::MAX_SIZE_MB, (int)$limitMb));
 		if (strlen($content) > ($limitMb * 1024 * 1024)) {
 			return self::ERROR_TOO_LARGE;
 		}

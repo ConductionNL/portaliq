@@ -199,6 +199,62 @@ function myCasesAnswer(res, json) {
 }
 
 /**
+ * Where one of the resident's inbox messages lives, with an action suffix
+ * (`/read`, `/reply`, or none), or null when the message does not name its
+ * id, register and schema.
+ *
+ * @param {object} message An inbox row, carrying its `_source` provenance tag.
+ * @param {string} suffix The action's path suffix.
+ * @return {string|null} The path.
+ */
+function inboxMessagePath(message, suffix) {
+	const source = message._source || {}
+	const id = inboxIdOf(message)
+	if (!id || !source.register || !source.schema) {
+		return null
+	}
+	return `/inbox/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}/${encodeURIComponent(id)}${suffix}?collection=${encodeURIComponent(source.collection || '')}`
+}
+
+/**
+ * An inbox message's id, wherever the row keeps it.
+ *
+ * @param {object} message An inbox row.
+ * @return {string|undefined} The id.
+ */
+function inboxIdOf(message) {
+	return message.id || message['@self']?.id
+}
+
+/**
+ * The bearer a session answer issues, or '' when it issues none.
+ *
+ * @param {{json: () => Promise<object>}} res The response.
+ * @return {Promise<string>} The bearer.
+ */
+async function issuedToken(res) {
+	const body = await res.json().catch(() => null)
+	return body && body.token ? body.token : ''
+}
+
+/**
+ * The dev-login request: JSON, for one audience, without a bearer.
+ *
+ * @param {string} audience The session audience.
+ * @return {object} The request init.
+ */
+function devLoginRequest(audience) {
+	return {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			Accept: 'application/json',
+		},
+		body: JSON.stringify({ audience }),
+	}
+}
+
+/**
  * A list an answer's body carries under a key, or none.
  *
  * @param {object|null} json The body.
@@ -762,13 +818,59 @@ export function createPortalApi(config, store = {}) {
 		 * @return {Promise<object>} `{ ok, status }` result envelope.
 		 */
 		async markMessageRead(message) {
-			const source = message._source || {}
-			const id = message.id || message['@self']?.id
-			if (!id || !source.register || !source.schema) {
+			const path = inboxMessagePath(message, '/read')
+			if (path === null) {
 				return { ok: false, status: 0 }
 			}
-			const path = `/inbox/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}/${encodeURIComponent(id)}/read?collection=${encodeURIComponent(source.collection || '')}`
 			return send('PATCH', path, {})
+		},
+
+		/**
+		 * Download a submission receipt as a PDF: its reference, moment and
+		 * answers. The server answers only for the resident's own receipt.
+		 *
+		 * @param {{id: string, name: string}} receipt What receiptPdfOf() gave.
+		 * @return {Promise<object>} `{ ok }`, or `{ ok: false, status }`.
+		 * @spec openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+		 */
+		async downloadReceiptPdf(receipt) {
+			return saveDownload(`${base}/receipts/${encodeURIComponent(receipt.id)}/pdf`, receipt.name)
+		},
+
+		/**
+		 * Read ONE of the resident's inbox messages, for its own page
+		 * (a-resident-opens-one-message REQ-ROM-002). The server proves it is
+		 * theirs before it reads it; another resident's message and a missing
+		 * one both answer 404.
+		 *
+		 * @param {{register: string, schema: string, collection: string}} source The inbox collection.
+		 * @param {string} id The message id.
+		 * @return {Promise<{ok: boolean, status: number, message: object|null}>}
+		 * @spec openspec/changes/a-resident-opens-one-message/tasks.md#T05
+		 */
+		async fetchMessage(source, id) {
+			if (!id || !source?.register || !source?.schema) {
+				return { ok: false, status: 404, message: null }
+			}
+			const path = `/inbox/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}/${encodeURIComponent(id)}?collection=${encodeURIComponent(source.collection || '')}`
+			let res
+			try {
+				res = await fetch(`${base}${path}`, {
+					headers: {
+						Accept: 'application/json',
+						...portalHeader,
+						...authHeaders(),
+					},
+				})
+			} catch {
+				return { ok: false, status: 0, message: null }
+			}
+			if (!res.ok) {
+				return { ok: false, status: res.status, message: null }
+			}
+			const body = await res.json().catch(() => null)
+			const message = body && typeof body.message === 'object' ? body.message : null
+			return { ok: message !== null, status: res.status, message }
 		},
 
 		/**
@@ -779,12 +881,10 @@ export function createPortalApi(config, store = {}) {
 		 * @return {Promise<{ok: boolean, status: number}>}
 		 */
 		async deleteMessage(message) {
-			const source = message._source || {}
-			const id = message.id || message['@self']?.id
-			if (!id || !source.register || !source.schema) {
+			const path = inboxMessagePath(message, '')
+			if (path === null) {
 				return { ok: false, status: 0 }
 			}
-			const path = `/inbox/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}/${encodeURIComponent(id)}?collection=${encodeURIComponent(source.collection || '')}`
 			return send('DELETE', path, {})
 		},
 
@@ -799,12 +899,10 @@ export function createPortalApi(config, store = {}) {
 		 * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t05
 		 */
 		async replyToMessage(message, data) {
-			const source = message._source || {}
-			const id = message.id || message['@self']?.id
-			if (!id || !source.register || !source.schema) {
+			const path = inboxMessagePath(message, '/reply')
+			if (path === null) {
 				return { ok: false, status: 0, object: null, error: '', errors: {} }
 			}
-			const path = `/inbox/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}/${encodeURIComponent(id)}/reply?collection=${encodeURIComponent(source.collection || '')}`
 			return send('POST', path, data)
 		},
 
@@ -1284,6 +1382,27 @@ export function createPortalApi(config, store = {}) {
 		},
 
 		/**
+		 * The messages about one object the subject owns, both ways, newest
+		 * first (capability-rows-said-and-planned T07): `{ label, messages }`
+		 * from the app's `messages` provider, read only after the server
+		 * proved the object is the subject's. Null when the collection
+		 * declares none, the object is not the subject's, or the messages
+		 * could not be read.
+		 *
+		 * @param {object} collection Manifest collection: `{ id, register, schema }`.
+		 * @param {string} id The object id.
+		 * @param {string} [mandateId] The mandate a case listed under one is read under.
+		 * @return {Promise<object|null>} The messages, or null.
+		 * @spec openspec/changes/capability-rows-said-and-planned/tasks.md#t07
+		 */
+		async fetchCaseMessages(collection, id, mandateId = '') {
+			const body = await get(
+				`${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/messages?collection=${encodeURIComponent(collection.id)}${mandateQuery(mandateId)}`,
+			).catch(() => null)
+			return body && Array.isArray(body.messages) ? body : null
+		},
+
+		/**
 		 * The items of one object the subject owns (my-dossiers): `{ label,
 		 * items, removeAction }` from the app's `itemList` provider, read only
 		 * after the server proved the object is the subject's. Null when the
@@ -1382,6 +1501,29 @@ export function createPortalApi(config, store = {}) {
 		},
 
 		/**
+		 * The resident's own requests that wait for a co-signer or were not
+		 * co-signed; an empty list when there is none or it cannot be read.
+		 *
+		 * @return {Promise<Array<{reference: string, route: string, submittedAt: string, state: string, cosign: {state: string, name: string, deadline: string}}>>}
+		 *
+		 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+		 */
+		async listHeldRequests() {
+			try {
+				const res = await fetch(`${base}/cosign/held`, {
+					headers: { Accept: 'application/json', ...portalHeader, ...authHeaders() },
+				})
+				if (!res.ok) {
+					return []
+				}
+				const body = await res.json()
+				return Array.isArray(body?.requests) ? body.requests : []
+			} catch {
+				return []
+			}
+		},
+
+		/**
 		 * Delete the draft once the action was sent.
 		 *
 		 * @param {string} app The contributing app, or the action's register.
@@ -1425,6 +1567,35 @@ export function createPortalApi(config, store = {}) {
 				`${col(action.register, action.schema)}${query}`,
 				data,
 			)
+		},
+
+		/**
+		 * Create through a create action filed from a case page: `onCase`
+		 * names the case (`<register>/<schema>/<id>`) and the server writes it
+		 * into the action's cross-reference field. A closed window answers 409
+		 * with the server's sentence in `message`.
+		 *
+		 * @param {object} action Manifest action: `{ id, register, schema }`.
+		 * @param {object} data The answers, without the cross-reference field.
+		 * @param {string} onCase The case, `<register>/<schema>/<id>`.
+		 * @return {Promise<object>} `{ ok, status, object, error, message }`.
+		 *
+		 * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-server-fills-in-the-case-and-the-guard-still-runs-req-coc-004
+		 */
+		async createObjectOnCase(action, data, onCase) {
+			const query = `?actionId=${encodeURIComponent(action.id || '')}&onCase=${encodeURIComponent(onCase)}`
+			const res = await fetch(
+				`${base}${col(action.register, action.schema)}${query}`,
+				jsonInit('POST', data || {}),
+			)
+			const json = await res.json().catch(() => ({}))
+			if (!res.ok) {
+				return {
+					...writeRefusal(res.status, json),
+					message: typeof json?.message === 'string' ? json.message : '',
+				}
+			}
+			return { ok: true, status: res.status, object: json.object || json }
 		},
 
 		/**
@@ -1880,23 +2051,18 @@ export function createPortalApi(config, store = {}) {
 		 * @spec openspec/specs/portal-branch-scope/spec.md#requirement-a-whole-company-user-can-narrow-to-a-branch-req-seb-003
 		 */
 		async chooseBranch(branch) {
-			const res = await fetch(`${base}/session/branch`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					Accept: 'application/json',
-					...authHeaders(),
-				},
-				body: JSON.stringify({ branch: branch || '' }),
-			})
+			const res = await fetch(
+				`${base}/session/branch`,
+				jsonInit('POST', { branch: branch || '' }),
+			)
 			if (!res.ok) {
 				return { ok: false }
 			}
-			const body = await res.json().catch(() => null)
-			if (!body || !body.token) {
+			const token = await issuedToken(res)
+			if (!token) {
 				return { ok: false }
 			}
-			writeToken(body.token)
+			writeToken(token)
 			return { ok: true }
 		},
 
@@ -1935,25 +2101,19 @@ export function createPortalApi(config, store = {}) {
 		 * @return {Promise<string|null>} The minted bearer, or null.
 		 */
 		async devLogin(audience) {
-			const res = await fetch(`${base}/session/dev-login`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					Accept: 'application/json',
-				},
-				body: JSON.stringify({
-					audience: audience || config.audience || 'supplier',
-				}),
-			})
+			const res = await fetch(
+				`${base}/session/dev-login`,
+				devLoginRequest(audience || config.audience || 'supplier'),
+			)
 			if (!res.ok) {
 				return null
 			}
-			const body = await res.json().catch(() => null)
-			if (body && body.token) {
-				writeToken(body.token)
-				return body.token
+			const token = await issuedToken(res)
+			if (!token) {
+				return null
 			}
-			return null
+			writeToken(token)
+			return token
 		},
 
 		/**
@@ -2004,6 +2164,7 @@ export function createPortalApi(config, store = {}) {
  * A no-op (returns false) when there is no `#token=` fragment.
  *
  * @return {boolean} Whether a token was picked up.
+ * @spec openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md#requirement-the-bearer-reaches-the-browser-in-the-fragment-and-leaves-the-address-req-see-003
  */
 export function consumeOidcCallbackFragment() {
 	const hash = window.location.hash || ''

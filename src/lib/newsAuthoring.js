@@ -99,6 +99,7 @@ export function emptyForm() {
 		schoolRef: '',
 		groupRefs: [],
 		childRefs: [],
+		eventRef: '',
 	}
 }
 
@@ -122,6 +123,7 @@ export function formFromItem(item) {
 		schoolRef: text(target.schoolRef),
 		groupRefs,
 		childRefs,
+		eventRef: text(item?.eventRef),
 	}
 }
 
@@ -236,7 +238,20 @@ function newsBody(form) {
 		title: text(form.title),
 		body: form.body.trim(),
 		target: targetFromForm(form),
+		eventRef: text(form.eventRef),
 	}
+}
+
+/**
+ * How an event reads in the picker: its title, and the day it starts.
+ *
+ * @param {object} event An event from GET /api/events.
+ * @return {string} The label.
+ */
+function eventLabel(event) {
+	const title = text(event.title) || text(event.id)
+	const day = text(event.start).slice(0, 10)
+	return day === '' ? title : `${title} (${day})`
 }
 
 /**
@@ -267,6 +282,19 @@ export function createNewsApi({ get, post, put, generateUrl }) {
 				schools: Array.isArray(data?.schools) ? data.schools : [],
 				groups: Array.isArray(data?.groups) ? data.groups : [],
 			}
+		},
+
+		/**
+		 * The events an item may carry the sign-up of, latest start first.
+		 *
+		 * @return {Promise<Array<{id: string, label: string}>>} The choices.
+		 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/tasks.md#task-4
+		 */
+		async events() {
+			const { data } = await get(route('/apps/portaliq/api/events'))
+			return (Array.isArray(data?.events) ? data.events : [])
+				.filter((event) => text(event?.id) !== '')
+				.map((event) => ({ id: text(event.id), label: eventLabel(event) }))
 		},
 
 		/**
@@ -361,6 +389,7 @@ export function createNewsHandlers({
 		const message = await openDialog({
 			item,
 			options: await audienceChoices(),
+			events: await eventChoices(),
 			submit: (form) => saveFromDialog(item, form),
 		})
 		if (typeof message !== 'string' || message === '') {
@@ -382,6 +411,20 @@ export function createNewsHandlers({
 		} catch {
 			// No choices: the dialog asks for a reference instead.
 			return { schools: [], groups: [] }
+		}
+	}
+
+	/**
+	 * The events an item may carry the sign-up of, or none when they cannot be read.
+	 *
+	 * @return {Promise<Array<{id: string, label: string}>>} The choices.
+	 */
+	async function eventChoices() {
+		try {
+			return await api.events()
+		} catch {
+			// No choices: the dialog offers no event.
+			return []
 		}
 	}
 

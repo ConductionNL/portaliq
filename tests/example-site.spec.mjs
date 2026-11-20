@@ -211,6 +211,23 @@ const { default: taskIcons } = await import(
  * @return {Array<{href: string, where: string}>} The links.
  */
 function linksOf(site) {
+	return [
+		...menuLinksOf(site),
+		...footerLinksOf(site.portal.footer || {}),
+		...headerLinksOf(site.portal),
+		...site.pages.flatMap((page) =>
+			(page.body.widgets || []).flatMap((widget) => widgetLinksOf(page, widget)),
+		),
+	]
+}
+
+/**
+ * The links in the declaration's menus, one level of children deep.
+ *
+ * @param {object} site The declaration.
+ * @return {Array<{href: string, where: string}>} The links.
+ */
+function menuLinksOf(site) {
 	const links = []
 	for (const menu of site.menus) {
 		for (const item of menu.items || []) {
@@ -226,7 +243,17 @@ function linksOf(site) {
 			}
 		}
 	}
-	const footer = site.portal.footer || {}
+	return links
+}
+
+/**
+ * The links in the portal footer.
+ *
+ * @param {object} footer The portal's footer declaration.
+ * @return {Array<{href: string, where: string}>} The links.
+ */
+function footerLinksOf(footer) {
+	const links = []
 	if (footer.cta) {
 		links.push({ href: footer.cta.href, where: 'footer button' })
 	}
@@ -240,59 +267,74 @@ function linksOf(site) {
 			links.push({ href: entry.href, where: `footer ${key} "${entry.label}"` })
 		}
 	}
-	if (site.portal.headerSearch) {
-		links.push({
-			href: site.portal.headerSearch.route || '/zoeken',
-			where: 'header search',
-		})
+	return links
+}
+
+/**
+ * The link of the header search, when the portal has one.
+ *
+ * @param {object} portal The portal declaration.
+ * @return {Array<{href: string, where: string}>} The links.
+ */
+function headerLinksOf(portal) {
+	if (!portal.headerSearch) {
+		return []
 	}
-	for (const page of site.pages) {
-		for (const widget of page.body.widgets || []) {
-			const props = widget.props || {}
-			const where = `page ${page.route} widget ${widget.id}`
-			for (const key of [
-				'href',
-				'moreHref',
-				'articleRoute',
-				'signInHref',
-				'linkHref',
-			]) {
-				if (props[key]) {
-					links.push({ href: props[key], where: `${where} ${key}` })
-				}
-			}
-			for (const key of [
-				'items',
-				'links',
-				'actions',
-				'buttons',
-				'popularLinks',
-			]) {
-				for (const entry of Array.isArray(props[key]) ? props[key] : []) {
-					if (entry && entry.href) {
-						links.push({
-							href: entry.href,
-							where: `${where} ${key} "${entry.label}"`,
-						})
-					}
-				}
-			}
-			// The link columns' links (site-matches-the-zuiddrecht-boards).
-			for (const column of Array.isArray(props.columns) ? props.columns : []) {
-				for (const entry of Array.isArray(column?.links)
-					? column.links
-					: []) {
-					if (entry && entry.href) {
-						links.push({
-							href: entry.href,
-							where: `${where} column "${column.title}" "${entry.label}"`,
-						})
-					}
-				}
-			}
+	return [{
+		href: portal.headerSearch.route || '/zoeken',
+		where: 'header search',
+	}]
+}
+
+/**
+ * The links one page widget declares in its props.
+ *
+ * @param {object} page The page holding the widget.
+ * @param {object} widget The widget.
+ * @return {Array<{href: string, where: string}>} The links.
+ */
+function widgetLinksOf(page, widget) {
+	const props = widget.props || {}
+	const where = `page ${page.route} widget ${widget.id}`
+	const links = []
+	for (const key of [
+		'href',
+		'moreHref',
+		'articleRoute',
+		'signInHref',
+		'linkHref',
+	]) {
+		if (props[key]) {
+			links.push({ href: props[key], where: `${where} ${key}` })
 		}
 	}
+	for (const key of [
+		'items',
+		'links',
+		'actions',
+		'buttons',
+		'popularLinks',
+	]) {
+		links.push(...entryLinksOf(props[key], (entry) => `${where} ${key} "${entry.label}"`))
+	}
+	// The link columns' links (site-matches-the-zuiddrecht-boards).
+	for (const column of Array.isArray(props.columns) ? props.columns : []) {
+		links.push(...entryLinksOf(column?.links, (entry) => `${where} column "${column.title}" "${entry.label}"`))
+	}
 	return links
+}
+
+/**
+ * The entries of a list that carry an href, as links.
+ *
+ * @param {*} list A list of entries, or anything else (read as empty).
+ * @param {Function} whereOf Describes where an entry stands.
+ * @return {Array<{href: string, where: string}>} The links.
+ */
+function entryLinksOf(list, whereOf) {
+	return (Array.isArray(list) ? list : [])
+		.filter((entry) => entry && entry.href)
+		.map((entry) => ({ href: entry.href, where: whereOf(entry) }))
 }
 
 /**
@@ -796,8 +838,25 @@ test('the Zuiddrecht site lays out its own area as the MijnMenu and MijnZaken bo
 		'rows',
 		'folders',
 	])
-	assert.equal(portal.version, '0.28.0')
-	assert.equal(register.info.version, '0.108.0')
+	assert.equal(portal.version, '0.36.0')
+	// 0.111.0: a form binding's `availability` (form-governance-availability-retention-and-routing).
+	// 0.112.0: a portal's `adminGroups` (operate-portals-per-organisation).
+	// 0.113.0 and 0.114.0: the Yivi identity type and the portal's desk group (resident-identity-in-forms).
+	// 0.115.0: marketing articles (marketing-articles-from-pipelinq) and a portal's `organisationType` and its label (portal-identity-from-the-admin).
+	// 0.116.0: a portal's `organisationTypeSchemeId` (portal-identity-from-the-admin).
+	// 0.117.0: a collection's `messages` provider and the `messages` block (capability-rows-said-and-planned T07).
+	// 0.118.0: a portal's `traffic.excludedPaths` (intake-report-pages T07, development's 0.115.0), merged with the above; portal 0.34.0.
+	// 0.119.0: a portal's `traffic.allowSlugFallback`; portal 0.35.0.
+	// 0.119.0: a submission's `awaiting-cosign` and `not-cosigned` states (resident-identity-in-forms T04), moved past development's 0.118.0.
+	// 0.120.0: `locale` on menu and glossaryTerm (content in the visitor's language, #703).
+	// 0.121.0: a portal's `traffic.allowSlugFallback` moved past development's 0.120.0; portal 0.35.0.
+	// 0.122.0: read-only x-openregister-mcp dialects on portalMessage, portalSubmission and portalNotification (portaliq-mcp-adoption, hermiq-ai-tooling), moved past development's 0.121.0.
+	// 0.123.0: the case app's `termNote` and `resultLink` (woo-dossier-in-my-cases), moved past development's 0.122.0.
+	// 0.127.0: a submission's `formBinding` (submission-row-actions), moved past development's 0.126.0.
+	// 0.124.0: the publication features (publication-error-reports-and-withheld-notices),
+	// written as 0.111.0 on its branch, moved past development's 0.123.0; portal 0.36.0.
+	// 0.128.0: moved past development's 0.127.0 (submission-row-actions); portal 0.38.0.
+	assert.equal(register.info.version, '0.128.0')
 })
 
 // zuiddrecht-site-details: the portal names the organisation of the example

@@ -36,6 +36,7 @@ namespace OCA\Portaliq\Service;
 
 use DateInterval;
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\OidcStateStoreServiceInterface;
 use Throwable;
 
 /**
@@ -43,7 +44,7 @@ use Throwable;
  *
  * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T02
  */
-class OidcStateStoreService {
+class OidcStateStoreService implements OidcStateStoreServiceInterface {
 	/**
 	 * The OpenRegister register the `portalOidcState` schema lives in.
 	 */
@@ -83,6 +84,7 @@ class OidcStateStoreService {
 	 * @param string $returnTo The SPA path to redirect to once minted.
 	 * @param bool $silent Whether the start asked the broker for no prompt
 	 *                     (signin-session-idle-warning-and-sso D5).
+	 * @param string $portal The slug of the portal the login was started on, or ''.
 	 *
 	 * @return bool True when the row was written; false on any write failure
 	 *              (the caller — `oidcStart()` — fails the whole request
@@ -90,6 +92,7 @@ class OidcStateStoreService {
 	 *
 	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T02
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T07
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- `silent` is one recorded
 	 * fact of the round trip, stored as-is on the row; the method does the
@@ -103,6 +106,7 @@ class OidcStateStoreService {
 		string $provider,
 		string $returnTo,
 		bool $silent = false,
+		string $portal = '',
 	): bool {
 		if ($state === '') {
 			return false;
@@ -125,6 +129,9 @@ class OidcStateStoreService {
 				'expiresAt' => $now->add(new DateInterval('PT' . self::TTL_SECONDS . 'S'))->format(DATE_ATOM),
 				'used' => false,
 				'silent' => $silent,
+				// The portal the login started on; the session is bound to it
+				// (portal-scoping-and-auth Task 4).
+				'portal' => $portal,
 			]
 		);
 
@@ -142,12 +149,14 @@ class OidcStateStoreService {
 	 * @param string $org      The organisation slug the login was started for.
 	 * @param string $provider The provider.
 	 * @param string $returnTo The SPA path to return to once minted.
+	 * @param string $portal   The slug of the portal the login was started on, or ''.
 	 *
 	 * @return bool True when the row was written.
 	 *
 	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-broker-start-binds-the-login-to-one-organisation-and-one-provider-req-bel-002
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
 	 */
-	public function createBroker(string $state, string $org, string $provider, string $returnTo): bool {
+	public function createBroker(string $state, string $org, string $provider, string $returnTo, string $portal = ''): bool {
 		if ($state === '') {
 			return false;
 		}
@@ -167,6 +176,7 @@ class OidcStateStoreService {
 				'returnTo' => $returnTo,
 				'expiresAt' => (new DateTimeImmutable())->add(new DateInterval('PT' . self::TTL_SECONDS . 'S'))->format(DATE_ATOM),
 				'used' => false,
+				'portal' => $portal,
 			]
 		);
 
@@ -183,13 +193,36 @@ class OidcStateStoreService {
 	 *
 	 * @param string $state The OIDC `state` parameter to consume.
 	 *
-	 * @return array{nonce: string, codeVerifier: string, org: string, provider: string, returnTo: string, route: string, silent: bool}|null
+	 * @return array{nonce: string, codeVerifier: string, org: string, provider: string, returnTo: string, route: string, silent: bool,
+	 *               portal: string}|null
 	 *
 	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T02
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T08
 	 * @spec openspec/specs/supplier-portal/spec.md#every-validation-failure-is-an-identical-generic-error
 	 */
 	public function consume(string $state): ?array {
+		$row = $this->unusedRow(state: $state);
+		if ($row === null) {
+			return null;
+		}
+
+		if ($this->markUsed(row: $row) === false) {
+			return null;
+		}
+
+		return $this->consumedState(row: $row);
+	}//end consume()
+
+	/**
+	 * The state's row when it exists, was never used and has not expired, else null.
+	 *
+	 * @param string $state The OIDC `state` parameter.
+	 *
+	 * @return array<string, mixed>|null The row, or null.
+	 *
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T02
+	 */
+	private function unusedRow(string $state): array|null {
 		if ($state === '') {
 			return null;
 		}
@@ -199,18 +232,44 @@ class OidcStateStoreService {
 			return null;
 		}
 
+		if ($this->stillLive(row: $row) === false) {
+			return null;
+		}
+
+		return $row;
+	}//end unusedRow()
+
+	/**
+	 * Whether a state row is neither used (a replay) nor expired.
+	 *
+	 * @param array<string, mixed> $row The state row.
+	 *
+	 * @return bool True when the row may be consumed.
+	 *
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T02
+	 */
+	private function stillLive(array $row): bool {
 		if (($row['used'] ?? false) === true) {
 			// Replay — a state can only ever be consumed once.
-			return null;
+			return false;
 		}
 
-		if ($this->isExpired(row: $row) === true) {
-			return null;
-		}
+		return $this->isExpired(row: $row) === false;
+	}//end stillLive()
 
+	/**
+	 * Mark the row used; false when it has no id or the write failed.
+	 *
+	 * @param array<string, mixed> $row The state row.
+	 *
+	 * @return bool True when the row is marked used.
+	 *
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T02
+	 */
+	private function markUsed(array $row): bool {
 		$uuid = (new RowIdLookup())->firstUuidOrId(row: $row);
 		if ($uuid === null) {
-			return null;
+			return false;
 		}
 
 		// Mark used BEFORE returning — a concurrent replay of the same state
@@ -224,10 +283,21 @@ class OidcStateStoreService {
 			id: $uuid,
 			data: ['used' => true]
 		);
-		if ($marked === null) {
-			return null;
-		}
 
+		return $marked !== null;
+	}//end markUsed()
+
+	/**
+	 * The consumed state's values, read from its row.
+	 *
+	 * @param array<string, mixed> $row The state row.
+	 *
+	 * @return array{nonce: string, codeVerifier: string, org: string, provider: string, returnTo: string, route: string, silent: bool, portal: string}
+	 *
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T08
+	 */
+	private function consumedState(array $row): array {
 		return [
 			'nonce' => (string)($row['nonce'] ?? ''),
 			'codeVerifier' => (string)($row['codeVerifier'] ?? ''),
@@ -238,8 +308,11 @@ class OidcStateStoreService {
 			'route' => (string)($row['route'] ?? 'oidc'),
 			// A silent start (signin-session-idle-warning-and-sso D5); absent is false.
 			'silent' => (($row['silent'] ?? false) === true),
+			// The portal the login started on; absent on rows written before
+			// portal-scoping-and-auth, which bind the session to no portal.
+			'portal' => (string)($row['portal'] ?? ''),
 		];
-	}//end consume()
+	}//end consumedState()
 
 	/**
 	 * Whether a row's `expiresAt` has passed. A missing/unparseable

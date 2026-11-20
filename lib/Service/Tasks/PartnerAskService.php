@@ -31,6 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Tasks;
 
+use OCA\Portaliq\Kernel\Contracts\PartnerAskServiceInterface;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalTaskGateway;
 
@@ -39,7 +40,7 @@ use OCA\Portaliq\Service\PortalTaskGateway;
  *
  * @spec openspec/specs/partner-tasks-in-the-portal/spec.md
  */
-class PartnerAskService {
+class PartnerAskService implements PartnerAskServiceInterface {
 	/**
 	 * The audience a partner account carries.
 	 */
@@ -300,7 +301,6 @@ class PartnerAskService {
 	private function isLive(?array $account): bool {
 		return $account !== null && $this->isVoid(account: $account) === false;
 	}//end isLive()
-
 
 	/**
 	 * Whether an account was withdrawn.

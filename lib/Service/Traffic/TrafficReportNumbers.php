@@ -20,6 +20,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic;
 
+use OCA\Portaliq\Kernel\Contracts\TrafficReportNumbersInterface;
+
 /**
  * Folds a period's daily records into the numbers a report or an alert
  * reads. Pure, and deliberately the same arithmetic the Traffic page's
@@ -28,7 +30,7 @@ namespace OCA\Portaliq\Service\Traffic;
  *
  * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
  */
-class TrafficReportNumbers {
+class TrafficReportNumbers implements TrafficReportNumbersInterface {
 
 	/**
 	 * How many rows a ranked list keeps.

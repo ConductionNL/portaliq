@@ -20,6 +20,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCA\Portaliq\Service\RowAsArray;
@@ -125,9 +128,10 @@ class TrafficRecordingStore {
 
 			$objectService->saveObject(
 				object: $recording,
-				register: self::REGISTER,
-				schema: self::SCHEMA,
-				uuid: $uuid,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: self::REGISTER, schema: self::SCHEMA),
+					uuid: $uuid
+				),
 				_rbac: false,
 				_multitenancy: false
 			);
@@ -169,7 +173,11 @@ class TrafficRecordingStore {
 				continue;
 			}
 
-			$objectService->deleteObject(uuid: $uuid, register: self::REGISTER, schema: self::SCHEMA, _rbac: false, _multitenancy: false);
+			$objectService->deleteObject(
+				new ObjectDeletion(uuid: $uuid, target: new ObjectFindTarget(register: self::REGISTER, schema: self::SCHEMA)),
+				_rbac: false,
+				_multitenancy: false
+			);
 			$removed++;
 		}
 
@@ -204,25 +212,38 @@ class TrafficRecordingStore {
 		}
 
 		try {
-			if ($this->context->apply(objectService: $objectService, schemaSlug: self::SCHEMA) === false) {
-				return [];
-			}
-
-			$rows = $objectService->findAll(config: ['filters' => $filters, 'limit' => $limit, 'offset' => 0], _rbac: false, _multitenancy: false);
-			if (is_array($rows) === false) {
-				return [];
-			}
-
-			$out = [];
-			foreach ($rows as $row) {
-				$out[] = $this->asArray(row: $row);
-			}
-
-			return $out;
+			return $this->readRows(objectService: $objectService, filters: $filters, limit: $limit);
 		} catch (Throwable $e) {
 			$this->logger->error('Portaliq: traffic recording read failed', ['reason' => $e->getMessage()]);
 
 			return [];
 		}
+	}
+
+	/**
+	 * The recording rows matching the filters, as arrays.
+	 *
+	 * @param object               $objectService OpenRegister's ObjectService.
+	 * @param array<string, mixed> $filters       The filters.
+	 * @param int                  $limit         The most rows.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function readRows(object $objectService, array $filters, int $limit): array {
+		if ($this->context->apply(objectService: $objectService, schemaSlug: self::SCHEMA) === false) {
+			return [];
+		}
+
+		$rows = $objectService->findAll(config: ['filters' => $filters, 'limit' => $limit, 'offset' => 0], _rbac: false, _multitenancy: false);
+		if (is_array($rows) === false) {
+			return [];
+		}
+
+		$out = [];
+		foreach ($rows as $row) {
+			$out[] = $this->asArray(row: $row);
+		}
+
+		return $out;
 	}
 }

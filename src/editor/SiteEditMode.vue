@@ -76,7 +76,7 @@
 					variant="primary"
 					data-testid="site-edit-publish"
 					:disabled="state.loading || state.saving"
-					@click="publish">
+					@click="confirmingPublish = true">
 					{{ t('portaliq', 'Publish') }}
 				</NcButton>
 				<NcButton
@@ -156,6 +156,8 @@
 			v-else
 			v-model:paletteOpen="paletteOpen"
 			:editor="editor"
+			:loadCatalogueKinds="loadCatalogueKinds"
+			:excludedPaths="excludedPaths"
 			publicOnly />
 
 		<PageHistoryDialog
@@ -163,6 +165,10 @@
 			:pageId="pageId"
 			:busy="state.saving"
 			@restore="restore" />
+		<PublishPageDialog
+			v-if="confirmingPublish"
+			:address="publicAddress"
+			@close="publish" />
 	</section>
 </template>
 
@@ -172,12 +178,15 @@ import { register, translate } from '@nextcloud/l10n'
 import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import { reactive } from 'vue'
 import PageHistoryDialog from '../dialogs/PageHistoryDialog.vue'
+import PublishPageDialog from '../dialogs/PublishPageDialog.vue'
 import PageGridEditor from './PageGridEditor.vue'
 import SiteMenuPanel from './SiteMenuPanel.vue'
 import SitePagesPanel from './SitePagesPanel.vue'
 import { defaultSizeFor } from '../lib/pageWidgetCatalogue.js'
-import { createPageEditor, createPageSaver } from './index.js'
+import { fetchCatalogueKinds } from '../site/lib/publicCatalogue.js'
+import { createPageEditor, createPageSaver, kindsFrom } from './index.js'
 import { instanceUrl } from './instanceUrl.js'
+import { loadExcludedPaths } from './reportExclusion.js'
 
 import 'gridstack/dist/gridstack.css'
 import '@conduction/nextcloud-vue/css/index.css'
@@ -213,6 +222,7 @@ export default {
 		NcNoteCard,
 		PageGridEditor,
 		PageHistoryDialog,
+		PublishPageDialog,
 		SiteMenuPanel,
 		SitePagesPanel,
 	},
@@ -253,12 +263,34 @@ export default {
 			ready: false,
 			paletteOpen: false,
 			historyOpen: false,
+			confirmingPublish: false,
 			leaving: false,
 			panel: '',
+
+			/**
+			 * The portal's `traffic.excludedPaths`, or null until read and
+			 * when it cannot be read.
+			 *
+			 * @type {Array<string>|null}
+			 */
+			excludedPaths: null,
 		}
 	},
 
 	computed: {
+		/**
+		 * The address the edited page is served at: the page the editor is on.
+		 *
+		 * @return {string} The address, without a fragment.
+		 *
+		 * @spec openspec/changes/page-public-on-purpose/tasks.md#1.1
+		 */
+		publicAddress() {
+			return typeof window === 'undefined'
+				? ''
+				: String(window.location.href).split('#')[0]
+		},
+
 		/**
 		 * @return {object} The editor's state.
 		 *
@@ -285,9 +317,25 @@ export default {
 		}
 		this.ready = true
 		await this.editor.load()
+		this.excludedPaths = await loadExcludedPaths(
+			(url, config) => axios.get(url, config),
+			instanceUrl('/apps/openregister/api/objects/portaliq/portal'),
+			this.portal || this.state.page?.portal,
+		)
 	},
 
 	methods: {
+		/**
+		 * The kinds the apps declare for this portal's public index, for the
+		 * blocks that read one.
+		 *
+		 * @return {Promise<Array<object>>} The kinds.
+		 * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-4
+		 */
+		async loadCatalogueKinds() {
+			return kindsFrom(await fetchCatalogueKinds(this.portal))
+		},
+
 		/**
 		 * Translate.
 		 *
@@ -315,13 +363,22 @@ export default {
 		},
 
 		/**
-		 * Publish, and tell the site to show the published page again.
+		 * Publish once the editor confirmed that anyone may read the page,
+		 * and tell the site to show the published page again. Cancelled, the
+		 * page stays as it is.
 		 *
-		 * @return {Promise<void>} Resolves when published or refused.
+		 * @param {boolean} confirmed Whether the editor chose Publish.
+		 * @return {Promise<void>} Resolves when published, refused or cancelled.
+		 *
+		 * @spec openspec/changes/page-public-on-purpose/tasks.md#1.1
 		 *
 		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
 		 */
-		async publish() {
+		async publish(confirmed) {
+			this.confirmingPublish = false
+			if (confirmed !== true) {
+				return
+			}
 			await this.editor.publish()
 			if (!this.state.error) {
 				this.$emit('saved')

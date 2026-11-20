@@ -94,21 +94,59 @@ class TrafficOutcomeParams {
 	 */
 	private function kept(string $key, string|int|float|bool $value, array $rules): string|int|float|bool|null {
 		if (str_starts_with($key, TrafficConfigResolver::CUSTOM_DIMENSION_PREFIX) === true) {
-			if (isset($rules['declared'][$key]) === true) {
-				return $value;
-			}
-
-			return null;
+			return $this->keptIfDeclared(key: $key, value: $value, rules: $rules);
 		}
 
 		if (in_array($key, TrafficConfigResolver::EXPERIMENT_PARAMS, true) === true) {
-			if ($rules['tagged'] === true) {
-				return $value;
-			}
-
-			return null;
+			return $this->keptIfTagged(value: $value, rules: $rules);
 		}
 
+		return $this->keptEventParam(key: $key, value: $value, rules: $rules);
+	}
+
+	/**
+	 * A custom dimension's value when the dimension is declared, else null.
+	 *
+	 * @param string                $key   The param key.
+	 * @param string|int|float|bool $value The bounded value.
+	 * @param array<string, mixed>  $rules The keep rules.
+	 *
+	 * @return string|int|float|bool|null
+	 */
+	private function keptIfDeclared(string $key, string|int|float|bool $value, array $rules): string|int|float|bool|null {
+		if (isset($rules['declared'][$key]) === true) {
+			return $value;
+		}
+
+		return null;
+	}
+
+	/**
+	 * An experiment param's value when the page is tagged, else null.
+	 *
+	 * @param string|int|float|bool $value The bounded value.
+	 * @param array<string, mixed>  $rules The keep rules.
+	 *
+	 * @return string|int|float|bool|null
+	 */
+	private function keptIfTagged(string|int|float|bool $value, array $rules): string|int|float|bool|null {
+		if ($rules['tagged'] === true) {
+			return $value;
+		}
+
+		return null;
+	}
+
+	/**
+	 * Any other param's value, narrowed for a form event and bucketed for a heat event.
+	 *
+	 * @param string                $key   The param key.
+	 * @param string|int|float|bool $value The bounded value.
+	 * @param array<string, mixed>  $rules The keep rules.
+	 *
+	 * @return string|int|float|bool|null
+	 */
+	private function keptEventParam(string $key, string|int|float|bool $value, array $rules): string|int|float|bool|null {
 		if ($rules['form'] === true && in_array($key, TrafficConfigResolver::FORM_EVENT_PARAMS, true) === false) {
 			return null;
 		}

@@ -27,12 +27,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\Portaliq\Auth\PortalProtected;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\BearerSessionResolverInterface;
 use OCA\Portaliq\Service\ObjectRowNormaliser;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\PagedObjectReads;
-use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -46,6 +48,9 @@ use Throwable;
 
 /**
  * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#api-design
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the count includes the route attributes
+ *   (NoAdminRequired, NoCSRFRequired, ...) a controller declares.
  */
 class PushSubscriptionController extends Controller implements PortalProtected {
 	use ObjectRowNormaliser;
@@ -75,17 +80,17 @@ class PushSubscriptionController extends Controller implements PortalProtected {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
+	 * @param BearerSessionResolverInterface $session Resolves the subject from the bearer.
 	 * @param ContainerInterface $container For resolving OpenRegister services.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
+		private readonly BearerSessionResolverInterface $session,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -132,9 +137,10 @@ class PushSubscriptionController extends Controller implements PortalProtected {
 					'createdAt' => gmdate('c'),
 					'active' => true,
 				],
-				register: self::REGISTER,
-				schema: self::SCHEMA,
-				uuid: $existingId,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: self::REGISTER, schema: self::SCHEMA),
+					uuid: $existingId
+				),
 				_rbac: false,
 				_multitenancy: false
 			);
@@ -182,9 +188,10 @@ class PushSubscriptionController extends Controller implements PortalProtected {
 		try {
 			$objectService->saveObject(
 				object: ['subjectRef' => $subjectRef, 'endpoint' => $endpoint, 'active' => false],
-				register: self::REGISTER,
-				schema: self::SCHEMA,
-				uuid: $existingId,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: self::REGISTER, schema: self::SCHEMA),
+					uuid: $existingId
+				),
 				_rbac: false,
 				_multitenancy: false
 			);
@@ -229,6 +236,24 @@ class PushSubscriptionController extends Controller implements PortalProtected {
 	 * @return string|null
 	 */
 	private function findExistingId(object $objectService, string $subjectRef, string $endpoint): ?string {
+		$rows = $this->subscriptionRows(objectService: $objectService, subjectRef: $subjectRef, endpoint: $endpoint);
+		if (is_array($rows) === false) {
+			return null;
+		}
+
+		return $this->matchingId(rows: $rows, subjectRef: $subjectRef, endpoint: $endpoint);
+	}//end findExistingId()
+
+	/**
+	 * The subscription rows filtered on subject and endpoint, or null when the lookup failed.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $subjectRef    The subject's own subjectRef.
+	 * @param string $endpoint      The push endpoint URL.
+	 *
+	 * @return array<int, mixed>|null
+	 */
+	private function subscriptionRows(object $objectService, string $subjectRef, string $endpoint): array|null {
 		try {
 			$rows = $this->readEveryPage(
 				objectService: $objectService,
@@ -241,24 +266,45 @@ class PushSubscriptionController extends Controller implements PortalProtected {
 			return null;
 		}
 
-		if (is_array($rows) === false) {
-			return null;
-		}
+		return $rows;
+	}//end subscriptionRows()
 
+	/**
+	 * The id of the first row that really is this subject's subscription for this endpoint.
+	 *
+	 * @param array<mixed> $rows       The filtered rows.
+	 * @param string       $subjectRef The subject's own subjectRef.
+	 * @param string       $endpoint   The push endpoint URL.
+	 *
+	 * @return string|null
+	 */
+	private function matchingId(array $rows, string $subjectRef, string $endpoint): string|null {
 		foreach ($rows as $row) {
 			$normalised = $this->normalise(row: $row);
 			if ($normalised === null) {
 				continue;
 			}
 
-			$matches = (string)($normalised['subjectRef'] ?? '') === $subjectRef && (string)($normalised['endpoint'] ?? '') === $endpoint;
-			if ($matches === true) {
+			if ($this->isSubscriptionOf(row: $normalised, subjectRef: $subjectRef, endpoint: $endpoint) === true) {
 				return $this->rowId(row: $normalised);
 			}
 		}
 
 		return null;
-	}//end findExistingId()
+	}//end matchingId()
+
+	/**
+	 * Whether the row is the subject's subscription for the endpoint.
+	 *
+	 * @param array<string, mixed> $row        The normalised row.
+	 * @param string               $subjectRef The subject's own subjectRef.
+	 * @param string               $endpoint   The push endpoint URL.
+	 *
+	 * @return bool
+	 */
+	private function isSubscriptionOf(array $row, string $subjectRef, string $endpoint): bool {
+		return (string)($row['subjectRef'] ?? '') === $subjectRef && (string)($row['endpoint'] ?? '') === $endpoint;
+	}//end isSubscriptionOf()
 
 	/**
 	 * The row's id/uuid, from a flat property or its `@self` envelope.

@@ -32,12 +32,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\StepsProviderMethodInterface;
+
 /**
  * Keeps a cases collection's progress keys, and the provider's steps, in shape.
  *
  * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-cases-collection-may-supply-steps-an-answer-date-and-whose-turn-it-is-req-smo-022
  */
-class StepsProviderMethod {
+class StepsProviderMethod implements StepsProviderMethodInterface {
 	/**
 	 * The states a step may be in.
 	 */
@@ -65,7 +67,20 @@ class StepsProviderMethod {
 			return $collection;
 		}
 
-		$steps = $declared['steps'];
+		$collection = $this->withSteps(collection: $collection, steps: $declared['steps']);
+
+		return $this->withFields(collection: $collection, declared: $declared);
+	}//end normalise()
+
+	/**
+	 * The collection with its `steps` when they name an accepted provider.
+	 *
+	 * @param array<string, mixed> $collection The collection.
+	 * @param mixed                $steps      The declared `steps`.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withSteps(array $collection, mixed $steps): array {
 		if (is_array($steps) === true && (new TimelineProviderMethod())->accepts(name: ($steps['provider'] ?? null)) === true) {
 			$label = ($steps['label'] ?? '');
 			if (is_string($label) === false) {
@@ -75,6 +90,18 @@ class StepsProviderMethod {
 			$collection['steps'] = ['label' => $label, 'provider' => $steps['provider']];
 		}
 
+		return $collection;
+	}//end withSteps()
+
+	/**
+	 * The collection with its `dueField` and `turnField` when the collection projects them.
+	 *
+	 * @param array<string, mixed> $collection The collection.
+	 * @param array<string, mixed> $declared   The declared `steps`, `dueField` and `turnField`.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withFields(array $collection, array $declared): array {
 		foreach (['dueField', 'turnField'] as $key) {
 			if ($this->projects(collection: $collection, field: $declared[$key]) === true) {
 				$collection[$key] = $declared[$key];
@@ -82,7 +109,7 @@ class StepsProviderMethod {
 		}
 
 		return $collection;
-	}//end normalise()
+	}//end withFields()
 
 	/**
 	 * The steps of a provider answer that fit `{label, description?, state,

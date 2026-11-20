@@ -46,6 +46,86 @@
 		     blocks' (zuiddrecht-resident-pages-match-the-boards): this screen
 		     keeps the closed window sentence as a notice, the fields, save
 		     and withdraw. -->
+		<!-- The questions the case app asks on this case, each answered
+		     here through the row forward (woo-dossier-in-my-cases REQ-WDM-001).
+		     The portal keeps no term state and never says the term runs again. -->
+		<p
+			v-if="!actionsOnly && questionNotice"
+			class="utrecht-paragraph pq-case-question__notice"
+			role="status"
+			data-testid="case-question-notice">
+			{{ questionNotice }}
+		</p>
+		<template v-if="!actionsOnly">
+			<div
+				v-for="question in questions"
+				:key="question.id"
+				class="utrecht-alert utrecht-alert--warning pq-case-question"
+				data-testid="case-question">
+				<p class="utrecht-paragraph pq-case-question__summary">{{ question.summary }}</p>
+				<p
+					v-if="question.hersteltermijn"
+					class="utrecht-paragraph pq-case-question__term"
+					data-testid="case-question-term">
+					{{ t('Please answer before {date}', { date: questionTerm(question) }) }}
+				</p>
+				<p
+					v-if="questionStates[question.id] === 'sent'"
+					class="utrecht-paragraph"
+					role="status"
+					data-testid="case-question-sent">
+					{{ t('We have your answer. The handler is looking at it.') }}
+				</p>
+				<form
+					v-else
+					class="pq-case-question__form"
+					data-testid="case-question-form"
+					@submit.prevent="sendAnswer(question)">
+					<div
+						v-for="field in questionFieldsOf(question)"
+						:key="field.name"
+						class="utrecht-form-field">
+						<label class="utrecht-form-label" :for="questionInputId(question, field)">{{
+							field.label
+						}}</label>
+						<textarea
+							:id="questionInputId(question, field)"
+							class="utrecht-textarea"
+							:name="field.name"
+							:maxlength="field.maxLength || undefined"
+							:required="field.required"
+							:value="questionValue(question, field)"
+							:data-testid="`case-question-input-${field.name}`"
+							@input="setQuestionValue(question, field, $event.target.value)" />
+					</div>
+					<div v-if="question.action.files && question.action.files.field" class="utrecht-form-field">
+						<label class="utrecht-form-label" :for="questionInputId(question, { name: 'files' })">{{
+							t('Add documents')
+						}}</label>
+						<input
+							:id="questionInputId(question, { name: 'files' })"
+							type="file"
+							multiple
+							data-testid="case-question-files"
+							@change="setQuestionFiles(question, $event.target.files)">
+					</div>
+					<p
+						v-if="questionStates[question.id] === 'failed'"
+						class="utrecht-paragraph pq-case-question__error"
+						role="alert"
+						data-testid="case-question-failed">
+						{{ t('Your answer could not be sent. Please try again.') }}
+					</p>
+					<button
+						type="submit"
+						class="utrecht-button utrecht-button--primary-action"
+						:disabled="questionBusy === question.id"
+						data-testid="case-question-send">
+						{{ question.action.submitLabel || t('Send answer') }}
+					</button>
+				</form>
+			</div>
+		</template>
 		<!-- What the case still needs from the resident
 		     (case-page-tasks-decision-dates-and-next-step). A failed read says
 		     so; it never reads as "nothing to do". -->
@@ -75,6 +155,24 @@
 		</p>
 
 		<div
+			v-if="!actionsOnly && outcome"
+			class="pq-case-outcome"
+			data-testid="case-outcome">
+			<h3 class="utrecht-heading-3">
+				{{ t('Outcome') }}
+			</h3>
+			<p class="utrecht-paragraph pq-case-outcome-label" data-testid="case-outcome-label">
+				<strong>{{ outcome.label }}</strong>
+			</p>
+			<p
+				v-if="outcome.description"
+				class="utrecht-paragraph"
+				data-testid="case-outcome-description">
+				{{ outcome.description }}
+			</p>
+		</div>
+
+		<div
 			v-if="!actionsOnly && writableSet.status && writableSet.status.label"
 			class="pq-case-status"
 			data-testid="case-status">
@@ -99,6 +197,15 @@
 				{{ t('Next step: {step}', { step: nextStep.next }) }}
 			</p>
 		</div>
+
+		<p
+			v-if="!actionsOnly && resultLink"
+			class="utrecht-paragraph pq-case-result"
+			data-testid="case-result-link">
+			<a class="utrecht-link" :href="resultLink.url" rel="noopener noreferrer">{{
+				resultLink.label
+			}}</a>
+		</p>
 
 		<dl
 			v-if="!actionsOnly && dateRows.length > 0"
@@ -140,6 +247,44 @@
 			{{ windowReason }}
 		</p>
 
+		<!-- The create actions a contribution places on this case, before the
+		     change proposal and the withdrawal: an open one a button that opens
+		     its form here, a closed one its sentence. The server decides which
+		     (case-page-objection-and-complaint REQ-COC-002). -->
+		<div
+			v-if="caseActions.length > 0"
+			class="pq-case-actions"
+			role="group"
+			:aria-label="t('More actions for this case')"
+			data-testid="case-actions">
+			<template v-for="entry in caseActions" :key="entry.key">
+				<button
+					v-if="entry.open"
+					type="button"
+					class="utrecht-button utrecht-button--secondary-action pq-case-action"
+					:aria-expanded="String(openCaseAction === entry.key)"
+					:data-testid="`case-action-${entry.key}`"
+					@click="toggleCaseAction(entry.key)">
+					{{ entry.label }}
+				</button>
+				<p
+					v-else
+					class="utrecht-paragraph pq-case-reason"
+					:data-testid="`case-action-closed-${entry.key}`">
+					{{ entry.closedText || t('You can no longer do this on this case.') }}
+				</p>
+			</template>
+		</div>
+		<CaseActionForm
+			v-if="openCaseActionEntry"
+			:key="openCaseActionEntry.key"
+			:form="openCaseActionEntry.form"
+			:label="openCaseActionEntry.label"
+			:target="caseActionTarget"
+			:api="api"
+			:t="t"
+			@cancel="openCaseAction = ''" />
+
 		<div class="pq-case-fields">
 			<CaseField
 				v-for="field in fields"
@@ -147,6 +292,8 @@
 				:field="field"
 				:state="fieldStates[field] || null"
 				:value="draft[field] !== undefined ? draft[field] : caseRow[field]"
+				:format="fieldStates[field]?.format || ''"
+				:personal="fieldStates[field]?.personal === true"
 				:quiet="ended"
 				:t="t"
 				@change="onFieldChange" />
@@ -269,14 +416,24 @@
 <script>
 import WithdrawCaseConfirm from '../../modals/e/WithdrawCaseConfirm.vue'
 import FileItem from '../mijn/FileItem.vue'
+import CaseActionForm from './CaseActionForm.vue'
 import CaseField from './CaseField.vue'
 import { groupDocuments } from '../../../shared/caseDocuments.js'
+import { caseOutcome } from '../../../shared/caseOutcome.js'
 import {
 	bannerSentence,
 	decisionDateRows,
 	nextStepView,
+	resultLinkOf,
 	tasksOfCase,
 } from '../../../shared/casePage.js'
+import {
+	answerQuestion,
+	caseQuestions,
+	QUESTION_CLOSED,
+	questionComplete,
+	questionFields,
+} from '../../../shared/caseQuestions.js'
 import {
 	caseFieldNames,
 	caseHasEnded,
@@ -290,11 +447,16 @@ import {
 } from '../../pages/inbox/inbox.js'
 import { fileLine } from '../mijn/documents.js'
 import { mijnTranslator, siteHref } from '../mijn/rows.js'
+import { caseActionsView, onCaseTarget } from './caseActions.js'
 
 export default {
 	name: 'CitizenCase',
 
-	components: { CaseField, FileItem, WithdrawCaseConfirm },
+	components: { CaseActionForm, CaseField, FileItem, WithdrawCaseConfirm },
+
+	// The portal's organisation type label, from the site shell (App.vue);
+	// none reads "de organisatie" (portal-identity-from-the-admin REQ-PIA-003).
+	inject: { siteOrganisationType: { default: () => () => '' } },
 
 	props: {
 		/** The manifest collection the case lives in (`{id, register, schema, ...}`). */
@@ -325,6 +487,8 @@ export default {
 		initialTaskReads: { type: Array, default: null },
 		/** Show the task read as failed (test seam). */
 		initialTasksFailed: { type: Boolean, default: false },
+		/** The state of each question by id, `sent` or `failed` (test seam). */
+		initialQuestionStates: { type: Object, default: null },
 	},
 
 	emits: ['navigate'],
@@ -339,10 +503,45 @@ export default {
 			confirming: this.initialConfirming,
 			taskReads: this.initialTaskReads || [],
 			tasksFailed: this.initialTasksFailed,
+			questionStates: { ...(this.initialQuestionStates || {}) },
+			questionValues: {},
+			questionBusy: '',
+			questionNotice: '',
+			questionFiles: {},
+			openCaseAction: '',
 		}
 	},
 
 	computed: {
+		/**
+		 * The create actions the server places on this case (REQ-COC-002).
+		 *
+		 * @return {Array<object>}
+		 *
+		 * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-case-page-offers-the-actions-the-server-lists-req-coc-002
+		 */
+		caseActions() {
+			return caseActionsView(this.data)
+		},
+
+		/**
+		 * The open case action whose form is shown, or null.
+		 *
+		 * @return {object|null}
+		 */
+		openCaseActionEntry() {
+			return this.caseActions.find((entry) => entry.open && entry.key === this.openCaseAction) || null
+		},
+
+		/**
+		 * The case a case action's submit names (REQ-COC-004).
+		 *
+		 * @return {string}
+		 */
+		caseActionTarget() {
+			return onCaseTarget(this.collection, this.caseId)
+		},
+
 		caseId() {
 			return (this.row && (this.row.id || this.row['@self']?.id)) || ''
 		},
@@ -443,6 +642,18 @@ export default {
 		},
 
 		/**
+		 * @return {{label: string, url: string}|null} Where the case's result is public.
+		 * @spec openspec/changes/woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-case-links-to-where-its-result-is-public-req-wdm-003
+		 */
+		questions() {
+			return caseQuestions(this.data)
+		},
+
+		resultLink() {
+			return resultLinkOf(this.caseRow, this.t)
+		},
+
+		/**
 		 * @spec openspec/changes/case-page-tasks-decision-dates-and-next-step/tasks.md#t03
 		 */
 		nextStep() {
@@ -454,6 +665,11 @@ export default {
 		/** Withdrawn or closed: the screen shows the state, not why a window shut. */
 		ended() {
 			return caseHasEnded(this.writableSet, this.withdrawal)
+		},
+
+		/** The ended case's outcome label and explanation, or null (REQ-COC-001). */
+		outcome() {
+			return caseOutcome(this.caseRow, this.data?.outcome, this.ended)
 		},
 
 		groups() {
@@ -488,6 +704,103 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * Open a case action's form, or close it when it is open.
+		 *
+		 * @param {string} key The entry's key.
+		 */
+		toggleCaseAction(key) {
+			this.openCaseAction = this.openCaseAction === key ? '' : key
+		},
+
+		/**
+		 * The fields of a question's answer form.
+		 *
+		 * @param {object} question The question.
+		 * @return {Array<object>} The fields.
+		 */
+		questionFieldsOf(question) {
+			return questionFields(question.action, this.t)
+		},
+
+		/**
+		 * The term the case app gave, as a short date.
+		 *
+		 * @param {object} question The question.
+		 * @return {string} The date.
+		 */
+		questionTerm(question) {
+			return shortDate(question.hersteltermijn, readerLocale(this.locale))
+		},
+
+		/**
+		 * A stable id for one input of one question's form.
+		 *
+		 * @param {object} question The question.
+		 * @param {{name: string}} field The field.
+		 * @return {string} The id.
+		 */
+		questionInputId(question, field) {
+			return `pq-question-${question.id}-${field.name}`
+		},
+
+		/**
+		 * @param {object} question The question.
+		 * @param {{name: string}} field The field.
+		 * @return {string} What the resident typed.
+		 */
+		questionValue(question, field) {
+			return this.questionValues[question.id]?.[field.name] || ''
+		},
+
+		/**
+		 * @param {object} question The question.
+		 * @param {{name: string}} field The field.
+		 * @param {string} value What the resident typed.
+		 */
+		setQuestionValue(question, field, value) {
+			this.questionValues = {
+				...this.questionValues,
+				[question.id]: { ...(this.questionValues[question.id] || {}), [field.name]: value },
+			}
+		},
+
+		/**
+		 * @param {object} question The question.
+		 * @param {FileList|null} files The chosen files.
+		 */
+		setQuestionFiles(question, files) {
+			this.questionFiles = { ...this.questionFiles, [question.id]: Array.from(files || []) }
+		},
+
+		/**
+		 * Send the answer to one question. A sent question reads the sentence
+		 * and offers no second form; a question the handler closed in the
+		 * meantime says so and the case is read again.
+		 *
+		 * @param {object} question The question.
+		 * @return {Promise<void>} Resolves when answered.
+		 *
+		 * @spec openspec/changes/woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-open-question-is-answered-on-the-case-page-req-wdm-001
+		 */
+		async sendAnswer(question) {
+			const values = this.questionValues[question.id] || {}
+			if (this.questionBusy !== '' || !questionComplete(question.action, values)) {
+				return
+			}
+			this.questionBusy = question.id
+			this.questionNotice = ''
+			const files = this.questionFiles[question.id] || []
+			const state = await answerQuestion(this.api, question, values, files)
+			this.questionBusy = ''
+			if (state === QUESTION_CLOSED) {
+				this.questionNotice = this.t('This question has already been dealt with.')
+				await this.load()
+				return
+			}
+			this.questionStates = { ...this.questionStates, [question.id]: state }
+		},
+
 		/**
 		 * Read the case, its writable set, documents and withdrawal.
 		 *
@@ -651,6 +964,7 @@ export default {
 				entry,
 				mijnTranslator(this.t, readerLocale(this.locale)),
 				readerLocale(this.locale),
+				this.siteOrganisationType(),
 			)
 		},
 
@@ -814,6 +1128,19 @@ export default {
 </script>
 
 <style scoped>
+.pq-case-question {
+	margin-block-end: var(--utrecht-space-block-md, 1rem);
+}
+
+.pq-case-question__form {
+	display: grid;
+	gap: var(--utrecht-space-block-sm, 0.5rem);
+}
+
+.pq-case-question__error {
+	color: var(--utrecht-feedback-danger-color, var(--color-error));
+}
+
 .pq-case-tasks {
 	margin-block-end: var(--utrecht-space-block-md, 1rem);
 }

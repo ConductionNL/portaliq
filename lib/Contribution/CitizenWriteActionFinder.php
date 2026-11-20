@@ -31,6 +31,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
+
 /**
  * Finds the contributed action a citizen write runs under.
  *
@@ -41,10 +43,10 @@ class CitizenWriteActionFinder {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalContributionRegistry $registry What the subject's apps contribute.
+	 * @param PortalContributionRegistryInterface $registry What the subject's apps contribute.
 	 */
 	public function __construct(
-		private readonly PortalContributionRegistry $registry,
+		private readonly PortalContributionRegistryInterface $registry,
 	) {
 	}//end __construct()
 
@@ -73,27 +75,58 @@ class CitizenWriteActionFinder {
 		$aggregate = $this->registry->aggregateFor($subject);
 		foreach (($aggregate['contributions'] ?? []) as $contribution) {
 			foreach (($contribution['actions'] ?? []) as $action) {
-				if (($action['type'] ?? '') !== 'update'
-					|| ($action['register'] ?? '') !== $register
-					|| ($action['schema'] ?? '') !== $schema
-					|| is_array(($action[CitizenWriteConfigNormaliser::KEY] ?? null)) === false
-				) {
+				if ($this->isOtherAction(action: $action, register: $register, schema: $schema) === true) {
 					continue;
 				}
 
-				return [
-					'action' => $action,
-					'app' => (string)($contribution['app'] ?? ''),
-					'filesDownload' => $this->filesDownload(contribution: $contribution, register: $register, schema: $schema),
-					'documents' => $this->documents(contribution: $contribution, register: $register, schema: $schema),
-					'fields' => $this->caseFields(contribution: $contribution, register: $register, schema: $schema),
-					'closedField' => $this->closedField(contribution: $contribution, register: $register, schema: $schema),
-				];
+				return $this->found(contribution: $contribution, action: $action, register: $register, schema: $schema);
 			}
 		}
 
 		return null;
 	}//end forSubject()
+
+	/**
+	 * Whether an action is not the citizen-write update of this register and schema.
+	 *
+	 * @param mixed  $action   The action.
+	 * @param string $register The register.
+	 * @param string $schema   The schema.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	private function isOtherAction(mixed $action, string $register, string $schema): bool {
+		return ($action['type'] ?? '') !== 'update'
+			|| ($action['register'] ?? '') !== $register
+			|| ($action['schema'] ?? '') !== $schema
+			|| is_array(($action[CitizenWriteConfigNormaliser::KEY] ?? null)) === false;
+	}//end isOtherAction()
+
+	/**
+	 * The found citizen-write action with what its contribution declares for the collection.
+	 *
+	 * @param mixed  $contribution The contribution.
+	 * @param mixed  $action       The action.
+	 * @param string $register     The register.
+	 * @param string $schema       The schema.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
+	 */
+	private function found(mixed $contribution, mixed $action, string $register, string $schema): array {
+		return [
+			'action' => $action,
+			'app' => (string)($contribution['app'] ?? ''),
+			'filesDownload' => $this->filesDownload(contribution: $contribution, register: $register, schema: $schema),
+			'documents' => $this->documents(contribution: $contribution, register: $register, schema: $schema),
+			'fields' => $this->caseFields(contribution: $contribution, register: $register, schema: $schema),
+			'closedField' => $this->closedField(contribution: $contribution, register: $register, schema: $schema),
+			'outcome' => $this->outcome(contribution: $contribution, register: $register, schema: $schema),
+		];
+	}//end found()
 
 	/**
 	 * Whether the contribution opts a collection on this register and schema
@@ -215,4 +248,45 @@ class CitizenWriteActionFinder {
 
 		return '';
 	}//end closedField()
+	/**
+	 * The outcome declaration of the contribution's case collection on this
+	 * register and schema: which field holds the public result label and which
+	 * its explanation, or null when none declares one.
+	 *
+	 * The contribution is already normalised, so a field the collection does
+	 * not project is gone by now; only non-empty string names are passed on.
+	 *
+	 * @param array<string, mixed> $contribution One app's contribution.
+	 * @param string               $register     The case's register.
+	 * @param string               $schema       The case's schema.
+	 *
+	 * @return array{labelField?: string, descriptionField?: string}|null
+	 *
+	 * @spec openspec/changes/case-outcome-on-the-case-page/specs/portal-contribution-contract/spec.md
+	 */
+	private function outcome(array $contribution, string $register, string $schema): ?array {
+		foreach (($contribution['collections'] ?? []) as $collection) {
+			if (is_array($collection) === false
+				|| ($collection['register'] ?? '') !== $register
+				|| ($collection['schema'] ?? '') !== $schema
+				|| is_array(($collection['outcome'] ?? null)) === false
+			) {
+				continue;
+			}
+
+			$kept = [];
+			foreach (['labelField', 'descriptionField'] as $key) {
+				$field = ($collection['outcome'][$key] ?? null);
+				if (is_string($field) === true && $field !== '') {
+					$kept[$key] = $field;
+				}
+			}
+
+			if (isset($kept['labelField']) === true) {
+				return $kept;
+			}
+		}
+
+		return null;
+	}//end outcome()
 }//end class

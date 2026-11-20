@@ -32,10 +32,10 @@ namespace OCA\Portaliq\Controller;
 
 use Closure;
 use DateTimeImmutable;
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\Intake\ActionDraft;
-use OCA\Portaliq\Service\Intake\DestinationDraft;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\ActionDraftInterface;
+use OCA\Portaliq\Kernel\Contracts\DestinationDraftInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -50,6 +50,9 @@ use Throwable;
  *
  * @spec openspec/changes/site-multi-step-forms/tasks.md#T8
  * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the count includes the route attributes
+ *   (NoAdminRequired, NoCSRFRequired, ...) a controller declares.
  */
 class PortalDraftController extends Controller {
 
@@ -57,17 +60,17 @@ class PortalDraftController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest             $request The request.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param ActionDraft          $actions Resolves the action, its draft body and its retention.
-	 * @param DestinationDraft     $drafts  Saves and discards drafts in OpenRegister.
+	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
+	 * @param ActionDraftInterface          $actions Resolves the action, its draft body and its retention.
+	 * @param DestinationDraftInterface     $drafts  Saves and discards drafts in OpenRegister.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
-		private readonly ActionDraft $actions,
-		private readonly DestinationDraft $drafts,
+		private readonly PortalSessionServiceInterface $session,
+		private readonly ActionDraftInterface $actions,
+		private readonly DestinationDraftInterface $drafts,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

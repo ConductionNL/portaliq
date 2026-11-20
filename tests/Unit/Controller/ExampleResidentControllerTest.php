@@ -182,7 +182,8 @@ class ExampleResidentControllerTest extends TestCase {
 		$parts   = $this->demoParts(switch: 'yes');
 		$session = $this->createMock(originalClassName: PortalSessionService::class);
 		$session->expects($this->once())->method('issueSession')
-			->with('sanne.devries', 'citizen', 'zuiddrecht', 'low', ['citizen:read'])
+			// Bound to the portal the resident signed in on (portal-scoping-and-auth Task 4).
+			->with('sanne.devries', 'citizen', 'zuiddrecht', 'low', ['citizen:read'], '', '', '', [], 'zuiddrecht')
 			->willReturn(['token' => 'tok.en', 'expiresAt' => 1]);
 		$urlGenerator = $this->createMock(originalClassName: IURLGenerator::class);
 		$urlGenerator->method('getAbsoluteURL')->willReturnCallback(static fn (string $url): string => 'https://demo.test' . $url);
@@ -198,6 +199,9 @@ class ExampleResidentControllerTest extends TestCase {
 
 		$this->assertInstanceOf(expected: RedirectResponse::class, actual: $response);
 		$this->assertSame(expected: 'https://demo.test/apps/portaliq/site?portal=zuiddrecht#token=tok.en', actual: $response->getRedirectURL());
+		// REQ-SEE-003: the bearer is in the fragment only; no query parameter holds it.
+		parse_str((string)parse_url($response->getRedirectURL(), PHP_URL_QUERY), $query);
+		$this->assertArrayNotHasKey('token', $query);
 	}//end testTheOneClickSignInMintsForTheExampleResidentOnly()
 
 

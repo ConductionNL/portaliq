@@ -38,6 +38,13 @@
 			:t="t"
 			:locale="locale || 'nl'" />
 
+		<!-- Requests that wait for a co-signer have no case yet (REQ-RIF-003). -->
+		<HeldRequests
+			v-if="session"
+			:api="api"
+			:t="t"
+			:locale="locale || 'nl'" />
+
 		<!-- What the case apps say above the list, as plain text (collection-intro). -->
 		<p
 			v-for="(intro, i) in intros"
@@ -189,6 +196,7 @@
 
 <script>
 import { defineAsyncComponent } from 'vue'
+import HeldRequests from '../../components/forms/HeldRequests.vue'
 import UnfinishedForms from '../../components/forms/UnfinishedForms.vue'
 import ActingForBar from '../../components/mijn/ActingForBar.vue'
 import CaseCard from '../../components/mijn/CaseCard.vue'
@@ -223,6 +231,7 @@ export default {
 		),
 
 		CaseCard,
+		HeldRequests,
 		LoadError,
 		UnfinishedForms,
 	},

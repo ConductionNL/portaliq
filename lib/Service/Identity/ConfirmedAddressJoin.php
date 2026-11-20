@@ -32,13 +32,10 @@ use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
-use OCA\Portaliq\Service\Session\SessionTrust;
+use OCA\Portaliq\Kernel\Support\SessionTrust;
 
 /**
  * Joins the waiting account for an address its holder just confirmed.
- *
- * @SuppressWarnings(PHPMD.StaticAccess) -- SessionTrust::trustSatisfies
- * is the one trust comparison every portal surface uses.
  *
  * @spec openspec/specs/portal-identity-space/spec.md
  */
@@ -110,11 +107,7 @@ class ConfirmedAddressJoin {
 	 */
 	public function join(array $account, string $email, ?array $session = null): bool {
 		$organisation = (string)($account['organisation'] ?? '');
-		if ($this->isHoldersOwnSession(account: $account, session: $session) === false
-			|| ($account['status'] ?? '') !== PortalAccountService::STATUS_ACTIVE
-			|| (string)($account['identityRef'] ?? '') === ''
-			|| $this->holdsConfirmed(account: $account, email: $email) === false
-		) {
+		if ($this->mayJoin(account: $account, email: $email, session: $session) === false) {
 			return false;
 		}
 
@@ -123,6 +116,43 @@ class ConfirmedAddressJoin {
 			return false;
 		}
 
+		$this->recordJoin(account: $account, organisation: $organisation, joined: $joined);
+
+		return true;
+	}//end join()
+
+	/**
+	 * Whether the confirmation may join a waiting account: the holder's own session, an active
+	 * account with an identity, holding the confirmed address.
+	 *
+	 * @param array<string, mixed>      $account The account as it stands after the confirmation.
+	 * @param string                    $email   The address that was confirmed.
+	 * @param array<string, mixed>|null $session The session the confirmation arrived in, or null.
+	 *
+	 * @return bool
+	 */
+	private function mayJoin(array $account, string $email, array|null $session): bool {
+		if ($this->isHoldersOwnSession(account: $account, session: $session) === false
+			|| ($account['status'] ?? '') !== PortalAccountService::STATUS_ACTIVE
+			|| (string)($account['identityRef'] ?? '') === ''
+			|| $this->holdsConfirmed(account: $account, email: $email) === false
+		) {
+			return false;
+		}
+
+		return true;
+	}//end mayJoin()
+
+	/**
+	 * Audit the join.
+	 *
+	 * @param array<string, mixed> $account      The confirming account.
+	 * @param string               $organisation The tenant slug.
+	 * @param string               $joined       The identifier of the waiting account joined.
+	 *
+	 * @return void
+	 */
+	private function recordJoin(array $account, string $organisation, string $joined): void {
 		// Who took over which waiting account, and when: the row's user is
 		// the account that confirmed, its target the account withdrawn.
 		$this->auditor?->record(
@@ -133,9 +163,7 @@ class ConfirmedAddressJoin {
 			schema: self::SCHEMA,
 			id: $joined
 		);
-
-		return true;
-	}//end join()
+	}//end recordJoin()
 
 	/**
 	 * Find the waiting account for the address, lock it, read it again and
@@ -189,7 +217,7 @@ class ConfirmedAddressJoin {
 			&& (string)($session['subjectRef'] ?? '') === $subjectRef
 			&& $organisation !== ''
 			&& (string)($session['organisation'] ?? '') === $organisation
-			&& SessionTrust::trustSatisfies(subjectTrust: ($session['trust'] ?? ''), minTrust: self::MIN_TRUST) === true;
+			&& (new SessionTrust())->trustSatisfies(subjectTrust: ($session['trust'] ?? ''), minTrust: self::MIN_TRUST) === true;
 	}//end isHoldersOwnSession()
 
 	/**

@@ -713,3 +713,78 @@ test('the moved controls keep their place: Bezwaar maken, Klacht indienen, save 
 	)
 	assert.match(cta, /this\.block\.withRecord === true/, 'a cta on the case page carries the open case')
 })
+
+test('with onCase declared, Bezwaar maken and Klacht indienen are in the case screen group, not on the overview', async () => {
+	// case-page-objection-and-complaint T08: the server lists the actions a
+	// contribution places on the case (`caseActions`); the case screen draws
+	// them in "Meer acties voor deze zaak", before save and withdraw. A closed
+	// one is its sentence, without a button.
+	const data = {
+		case: { id: 'c-82', title: 'Verlichting fietspad Lindelaan', toelichting: '' },
+		writableSet: {
+			window: { open: true },
+			fields: { toelichting: { writable: true } },
+			documents: { open: true },
+		},
+		documents: [],
+		withdrawal: { declared: true, open: true },
+		caseActions: [
+			{
+				app: 'dossiq',
+				action: 'createBezwaar',
+				label: 'Bezwaar maken',
+				open: true,
+				closesOn: '2026-11-13',
+				form: { id: 'createBezwaar', type: 'create', fields: ['grounds'] },
+			},
+			{
+				app: 'dossiq',
+				action: 'createKlacht',
+				label: 'Klacht indienen',
+				open: true,
+				form: { id: 'createKlacht', type: 'create', fields: ['toelichting'] },
+			},
+		],
+	}
+	const html = await renderComponent(CitizenCase, {
+		collection: ZAKEN,
+		row: WOO,
+		api: {},
+		t: nl,
+		initialData: data,
+		block: { type: 'citizenCase', collection: 'mijnZaken', display: 'actions' },
+	})
+	assert.match(html, /role="group" aria-label="Meer acties voor deze zaak"/)
+	assert.match(html, /data-testid="case-action-dossiq:createBezwaar"[^>]*>Bezwaar maken</)
+	assert.match(html, /data-testid="case-action-dossiq:createKlacht"[^>]*>Klacht indienen</)
+	// Both before save and withdraw.
+	assert.ok(html.indexOf('Bezwaar maken') < html.indexOf('data-testid="case-save"'))
+	assert.ok(html.indexOf('Klacht indienen') < html.indexOf('data-testid="case-withdraw"'))
+	// The form does not open before the button is pressed.
+	assert.doesNotMatch(html, /case-action-form-/)
+
+	const closed = await renderComponent(CitizenCase, {
+		collection: ZAKEN,
+		row: WOO,
+		api: {},
+		t: nl,
+		initialData: {
+			...data,
+			caseActions: [
+				{ app: 'dossiq', action: 'createBezwaar', label: 'Bezwaar maken', open: false, closedText: 'De termijn voor bezwaar is voorbij.' },
+			],
+		},
+	})
+	assert.doesNotMatch(closed, /data-testid="case-action-dossiq:createBezwaar"/)
+	assert.match(closed, /De termijn voor bezwaar is voorbij\./)
+
+	// A contribution that declares no onCase: no group at all.
+	const none = await renderComponent(CitizenCase, {
+		collection: ZAKEN,
+		row: WOO,
+		api: {},
+		t: nl,
+		initialData: { ...data, caseActions: [] },
+	})
+	assert.doesNotMatch(none, /Meer acties voor deze zaak/)
+})

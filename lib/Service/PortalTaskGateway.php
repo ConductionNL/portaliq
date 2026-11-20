@@ -32,6 +32,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Support\SubjectAssertionIssuer;
+use OCA\Portaliq\Kernel\Contracts\PortalTaskGatewayInterface;
 use OCP\App\IAppManager;
 use OCP\Http\Client\IResponse;
 use OCP\IURLGenerator;
@@ -44,7 +46,7 @@ use Throwable;
  *
  * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
  */
-class PortalTaskGateway {
+class PortalTaskGateway implements PortalTaskGatewayInterface {
 	/**
 	 * The seam's routes on the co-installed openregister, BY NAME. The URL is
 	 * built from the route table (`linkToRoute()` + `getAbsoluteURL()`), never
@@ -78,14 +80,14 @@ class PortalTaskGateway {
 	 *
 	 * @param InstanceLoopback $loopback Sends the server-to-server forward to this instance.
 	 * @param IURLGenerator $urlGenerator Resolves the instance-local seam path.
-	 * @param PortalSessionService $session Mints the signed `X-Portal-Subject` assertion.
+	 * @param SubjectAssertionIssuer $session Mints the signed `X-Portal-Subject` assertion.
 	 * @param IAppManager $appManager Answers whether openregister is installed at all.
 	 * @param LoggerInterface $logger Where transport failures are reported.
 	 */
 	public function __construct(
 		private readonly InstanceLoopback $loopback,
 		private readonly IURLGenerator $urlGenerator,
-		private readonly PortalSessionService $session,
+		private readonly SubjectAssertionIssuer $session,
 		private readonly IAppManager $appManager,
 		private readonly LoggerInterface $logger,
 	) {

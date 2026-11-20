@@ -75,7 +75,7 @@ import { defineAsyncComponent } from 'vue'
 import HeroBlock from './HeroBlock.vue'
 import MarkdownBlock from './MarkdownBlock.vue'
 import { assistantAvailable } from '../lib/assistantAvailable.js'
-import { withoutStyling } from '../lib/blockProps.js'
+import { heroWithPortalImage, withoutStyling } from '../lib/blockProps.js'
 import {
 	asideCellStyle,
 	cellStyle,
@@ -321,6 +321,15 @@ export default {
 
 	props: {
 		/**
+		 * The portal's hero image, resolved to its public address by the
+		 * content API: a hero block without its own image shows it.
+		 */
+		heroImage: {
+			type: String,
+			default: '',
+		},
+
+		/**
 		 * The page's aside column (`asideOf(page.body)`): a run of a main
 		 * column beside an aside then gives the aside this fixed width.
 		 */
@@ -386,6 +395,15 @@ export default {
 		signedIn: {
 			type: Boolean,
 			default: false,
+		},
+
+		/**
+		 * The site record's `publications`, `{errorReports, withheldNotices}`
+		 * (publication-error-reports-and-withheld-notices).
+		 */
+		publications: {
+			type: Object,
+			default: null,
 		},
 
 		/** The portal's help details, offered as "Hulp nodig?" on a form. */
@@ -606,6 +624,11 @@ export default {
 					...props,
 					subjectId: this.routeParam,
 					signedIn: this.signedIn === true,
+					// The two opt-in publication features, from the site
+					// record, after the authored props so a page cannot
+					// switch them on (publication-error-reports-and-withheld-notices).
+					publications: this.publications,
+					portal: this.portal,
 				}
 			}
 
@@ -740,8 +763,10 @@ export default {
 
 			// The hero hands the portal on to the list beside it, which reads
 			// this portal's catalogue or news (hero-on-the-school-boards).
+			// A hero without its own image shows the portal's
+			// (portal-identity-from-the-admin REQ-PIA-002).
 			if (widget.widgetKey === 'hero') {
-				return { ...props, portal: this.portal }
+				return { ...heroWithPortalImage(props, this.heroImage), portal: this.portal }
 			}
 
 			// The host names the portal, the session and the ways in; the

@@ -17,12 +17,12 @@ import {
 } from '../../../shared/openRecord.js'
 import { routeForNav } from '../../../shared/portalNav.js'
 import { DAY_AND_MINUTE } from '../../lib/dayAndMinute.js'
+import { TASK_STORAGE_KEY } from './taskStorage.js'
 
 /** The site route of "My tasks" in the signed-in area, as the shell builds it. */
 export const TASKS_ROUTE = routeForNav({ special: 'tasks' })
 
-/** Where the inbox leaves the task "My tasks" opens on arrival. */
-export const TASK_STORAGE_KEY = 'portaliq.openTask'
+export { TASK_STORAGE_KEY }
 
 /**
  * A row's id: its own, else its `@self` id, else the fallback.
@@ -287,6 +287,31 @@ export function attachmentsOf(message) {
 			&& (typeof file.id === 'string' || typeof file.id === 'number')
 			&& String(file.id) !== '',
 	)
+}
+
+/**
+ * The PDF a submission receipt offers: portaliq's own receipt message, the
+ * one carrying a reference, downloads its reference, moment and answers. Any
+ * other message offers none.
+ *
+ * @param {object} message The message.
+ * @return {{id: string, name: string}|null} The receipt's id and file name, or null.
+ * @spec openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+ */
+export function receiptPdfOf(message) {
+	const source = message?._source || {}
+	const reference = message?.referenceId
+	const id = rowId(message)
+	if (
+		source.register !== 'portaliq'
+		|| source.schema !== 'portalMessage'
+		|| typeof reference !== 'string'
+		|| reference === ''
+		|| !id
+	) {
+		return null
+	}
+	return { id: String(id), name: `${reference.replace(/[^A-Za-z0-9-]+/g, '-')}.pdf` }
 }
 
 /**

@@ -32,23 +32,18 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Service\Session\SessionTrust;
 use OCA\Portaliq\Contribution\CaseStatusLabelField;
-use OCA\Portaliq\Service\Branch\PortalBranchScope;
+use OCA\Portaliq\Kernel\Contracts\PortalCaseListReaderInterface;
+use OCA\Portaliq\Kernel\Support\PortalBranchScope;
 use OCA\Portaliq\Service\Identity\MandateParties;
+use OCA\Portaliq\Kernel\Support\SessionTrust;
 
 /**
  * Merges every `kind: cases` collection into the subject's own case list.
  *
  * @spec openspec/specs/portal-identity-space/spec.md
- *
- * @SuppressWarnings(PHPMD.StaticAccess)             -- SessionTrust::trustSatisfies
- * is deliberately THE single trust comparator (contract-v2 design decision);
- * every re-check calls it statically so the ordering can never fork. Same
- * reasoning, and the same suppression, as ContentController and
- * ContributionController.
  */
-class PortalCaseListReader {
+class PortalCaseListReader implements PortalCaseListReaderInterface {
 	/**
 	 * The collection kind this reader fans out over.
 	 */
@@ -149,7 +144,7 @@ class PortalCaseListReader {
 			return false;
 		}
 
-		return SessionTrust::trustSatisfies((string)($run->subject['trust'] ?? ''), ($collection['minTrust'] ?? null));
+		return (new SessionTrust())->trustSatisfies((string)($run->subject['trust'] ?? ''), ($collection['minTrust'] ?? null));
 	}//end isListedCollection()
 
 	/**

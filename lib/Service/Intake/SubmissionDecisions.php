@@ -25,6 +25,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Kernel\Contracts\PortalFormCalculatorInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFormDecisionInterface;
+
 /**
  * Works out a submission's calculated fields and asks the rule engine for
  * the decisions its steps declare. Built by PortalSubmissionChecks.
@@ -35,12 +38,12 @@ final class SubmissionDecisions {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalFormCalculator|null $calculator Works out the form's calculated fields.
-	 * @param PortalFormDecision|null   $decision   Asks the rule engine for the decisions a form's steps declare.
+	 * @param PortalFormCalculatorInterface|null $calculator Works out the form's calculated fields.
+	 * @param PortalFormDecisionInterface|null   $decision   Asks the rule engine for the decisions a form's steps declare.
 	 */
 	public function __construct(
-		private readonly ?PortalFormCalculator $calculator,
-		private readonly ?PortalFormDecision $decision,
+		private readonly ?PortalFormCalculatorInterface $calculator,
+		private readonly ?PortalFormDecisionInterface $decision,
 	) {
 	}//end __construct()
 

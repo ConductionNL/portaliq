@@ -25,12 +25,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\ProviderAudiencesInterface;
+
 /**
  * Which audiences a contribution provider serves, read by duck typing.
  *
  * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T2
  */
-final class ProviderAudiences {
+final class ProviderAudiences implements ProviderAudiencesInterface {
 	/**
 	 * The full set of audiences a provider serves (contract v2, A2 duck
 	 * typing — same preference order as `serves()`): `getAudiences()`

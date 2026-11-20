@@ -35,6 +35,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Support\SubjectAssertionIssuer;
+use OCA\Portaliq\Kernel\Contracts\PortalActionForwarderInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\Http\Client\IResponse;
@@ -46,7 +48,7 @@ use Throwable;
  *
  * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T8
  */
-class PortalActionForwarder {
+class PortalActionForwarder implements PortalActionForwarderInterface {
 	/**
 	 * Timeout (seconds) for the server-to-server action forward.
 	 *
@@ -85,12 +87,12 @@ class PortalActionForwarder {
 	 *
 	 * @param IRequest $request The request (source of the raw relayed body).
 	 * @param InstanceLoopback $loopback Sends the A6 action forward to this instance.
-	 * @param PortalSessionService $session Mints the signed `X-Portal-Subject` assertion.
+	 * @param SubjectAssertionIssuer $session Mints the signed `X-Portal-Subject` assertion.
 	 */
 	public function __construct(
 		private readonly IRequest $request,
 		private readonly InstanceLoopback $loopback,
-		private readonly PortalSessionService $session,
+		private readonly SubjectAssertionIssuer $session,
 	) {
 	}//end __construct()
 

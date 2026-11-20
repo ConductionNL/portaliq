@@ -20,16 +20,17 @@ use OCA\Portaliq\Contribution\PublicIndexItems;
 use OCA\Portaliq\Contribution\PublicIndexKinds;
 use OCA\Portaliq\Controller\ContentCatalogueController;
 use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PublicCatalogue;
 use OCA\Portaliq\Service\PublicCatalogueQuery;
 use OCA\Portaliq\Service\PublicNewsReader;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\App\IAppManager;
 use OCP\ICache;
 use OCP\ICacheFactory;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Contribution\PublicDetailShape;
 
 class PublicIndexSourceTest extends TestCase {
 
@@ -137,16 +138,16 @@ class PublicIndexSourceTest extends TestCase {
 		$cache->method('get')->willReturn(null);
 		$caches = $this->createMock(ICacheFactory::class);
 		$caches->method('createDistributed')->willReturn($cache);
-		$catalogue = new PublicCatalogue($apps, $locator, $reader, $caches, $this->createMock(LoggerInterface::class));
+		$catalogue = new PublicCatalogue($apps, $locator, $reader, $caches, $this->createMock(LoggerInterface::class), new PublicDetailShape(), new PublicIndexKinds());
 
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParam')->willReturnCallback(static fn (string $key, mixed $default = null): mixed => ($query[$key] ?? $default));
 		$request->method('getHeader')->willReturn($subject === null ? '' : 'Bearer x');
 		$resolver = $this->createMock(PortalResolver::class);
 		$resolver->method('resolve')->willReturn(['slug' => 'vaartveld', 'authentication' => ['modes' => ['public']]]);
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
 
-		return new ContentCatalogueController('portaliq', $request, $resolver, $session, $catalogue);
+		return new ContentCatalogueController('portaliq', $request, $resolver, $session, $catalogue, new PublicCatalogueQuery());
 	}//end controller()
 }

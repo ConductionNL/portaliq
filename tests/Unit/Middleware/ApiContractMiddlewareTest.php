@@ -235,6 +235,28 @@ class ApiContractMiddlewareTest extends TestCase {
 	 *
 	 * @return array<string,string> The headers by name.
 	 */
+	/**
+	 * When the request URI does not contain the path info, the successor link
+	 * is announced without a front-controller prefix.
+	 *
+	 * @return void
+	 */
+	public function testASuccessorLinkWithoutAFrontControllerPrefix(): void {
+		$request = $this->createMock(IRequest::class);
+		$request->method('getPathInfo')->willReturn('/apps/portaliq/api/things/7');
+		// A request URI that does not contain the path info: the prefix is empty.
+		$request->method('getRequestUri')->willReturn('/something/else');
+		$appManager = $this->createMock(IAppManager::class);
+		$appManager->method('getAppVersion')->willReturn('1.2.3');
+
+		$response = (new ApiContractMiddleware(request: $request, appManager: $appManager))
+			->afterController(controller: null, methodName: 'any', response: new JSONResponse(data: ['id' => 7]));
+		$headers = $this->headersOf(response: $response);
+
+		$this->assertSame('</apps/portaliq/api/v1/things/7>; rel="successor-version"', $headers['Link']);
+		$this->assertSame('@1794441600', $headers['Deprecation']);
+	}//end testASuccessorLinkWithoutAFrontControllerPrefix()
+
 	private function headersOf(Response $response): array {
 		$property = new ReflectionProperty(Response::class, 'headers');
 

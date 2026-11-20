@@ -269,7 +269,7 @@ jobs:
       # on `ConductionNL/integriq@development` the id is `integriq`. The PHPUnit
       # event stubs in tests/bootstrap.php load only when integriq's real event
       # classes are absent, so its presence here does not redeclare them.
-      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"development"},{"repo":"ConductionNL/thematiq","app":"thematiq","ref":"development"},{"repo":"ConductionNL/integriq","app":"integriq","ref":"development"}]'
+      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"main"},{"repo":"ConductionNL/thematiq","app":"thematiq","ref":"development"},{"repo":"ConductionNL/integriq","app":"integriq","ref":"development"}]'
       e2e-additional-apps: '[{"repo":"ConductionNL/dossiq","app":"dossiq","ref":"development"}]'
       enable-sbom: true
 

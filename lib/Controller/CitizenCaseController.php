@@ -36,28 +36,32 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
-use OCA\Portaliq\Contribution\CitizenDocumentUpload;
 use OCA\Portaliq\Contribution\CitizenWriteActionFinder;
-use OCA\Portaliq\Contribution\CitizenWriteConfigNormaliser;
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Event\PortalClientWriteEvent;
-use OCA\Portaliq\Service\Branch\PortalBranchScope;
-use OCA\Portaliq\Service\CitizenCaseDocuments;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\CitizenCaseDocumentsInterface;
+use OCA\Portaliq\Kernel\Contracts\CitizenDocumentUploadInterface;
+use OCA\Portaliq\Kernel\Contracts\CitizenWritableSetResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\CitizenWriteConfigNormaliserInterface;
+use OCA\Portaliq\Kernel\Contracts\CitizenWriteRecorderInterface;
+use OCA\Portaliq\Kernel\Contracts\CitizenWriteThrottleInterface;
+use OCA\Portaliq\Kernel\Contracts\MandatedCaseReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalBranchScopeInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFileReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFileWriterInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalMandateServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectWriterInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalPartyTreeResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
+use OCA\Portaliq\Kernel\Support\PortalBranchScope;
+use OCA\Portaliq\Service\CaseActionsResolver;
+use OCA\Portaliq\Service\CaseQuestions;
+use OCA\Portaliq\Service\CaseResultLink;
 use OCA\Portaliq\Service\CitizenCaseProjection;
-use OCA\Portaliq\Service\CitizenWritableSetResolver;
-use OCA\Portaliq\Service\CitizenWriteRecorder;
-use OCA\Portaliq\Service\CitizenWriteThrottle;
-use OCA\Portaliq\Service\Identity\MandateParties;
-use OCA\Portaliq\Service\Identity\PortalMandateService;
-use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
-use OCA\Portaliq\Service\MandatedCaseReader;
-use OCA\Portaliq\Service\PortalFileReader;
-use OCA\Portaliq\Service\PortalFileWriter;
-use OCA\Portaliq\Service\PortalObjectReader;
-use OCA\Portaliq\Service\PortalObjectWriter;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Support\SessionTrust;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -68,6 +72,7 @@ use OCP\AppFramework\Http\Response;
 use OCP\IL10N;
 use OCP\IRequest;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Kernel\Contracts\MandatePartiesInterface;
 
 /**
  * Serves and accepts the writes a citizen may make on their own case.
@@ -106,47 +111,55 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalContributionRegistry $registry The contribution aggregator.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param PortalObjectReader $reader Subject-scoped OpenRegister reader.
-	 * @param PortalObjectWriter $writer Subject-scoped OpenRegister writer.
-	 * @param PortalFileReader $fileReader Lists what is already on the case.
-	 * @param PortalFileWriter $fileWriter Adds the citizen's document.
-	 * @param CitizenWritableSetResolver $writableSet Reads the case type's flags.
-	 * @param CitizenWriteRecorder $recorder Records and announces the write.
-	 * @param CitizenWriteThrottle $throttle Counts writes per identity and per case.
-	 * @param CitizenDocumentUpload $upload Reads and names the citizen's document.
-	 * @param PortalMandateService $mandates The mandates the identity holds.
-	 * @param PortalPartyTreeResolver $tree How far a mandate reaches.
+	 * @param PortalContributionRegistryInterface $registry The contribution aggregator.
+	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
+	 * @param PortalObjectReaderInterface $reader Subject-scoped OpenRegister reader.
+	 * @param PortalObjectWriterInterface $writer Subject-scoped OpenRegister writer.
+	 * @param PortalFileReaderInterface $fileReader Lists what is already on the case.
+	 * @param PortalFileWriterInterface $fileWriter Adds the citizen's document.
+	 * @param CitizenWritableSetResolverInterface $writableSet Reads the case type's flags.
+	 * @param CitizenWriteRecorderInterface $recorder Records and announces the write.
+	 * @param CitizenWriteThrottleInterface $throttle Counts writes per identity and per case.
+	 * @param CitizenDocumentUploadInterface $upload Reads and names the citizen's document.
+	 * @param PortalMandateServiceInterface $mandates The mandates the identity holds.
+	 * @param PortalPartyTreeResolverInterface $tree How far a mandate reaches.
 	 * @param IL10N $l10n The sentences a refusal is given with.
 	 * @param LoggerInterface $logger Records the cause of a translated failure.
-	 * @param CitizenCaseDocuments $documents Lists and opens the documents on the case.
-	 * @param MandatedCaseReader|null $mandatedCases Reads a case listed under a
+	 * @param CitizenCaseDocumentsInterface $documents Lists and opens the documents on the case.
+	 * @param MandatePartiesInterface $mandateParties The MandateParties helper.
+	 * @param MandatedCaseReaderInterface|null $mandatedCases Reads a case listed under a
 	 *                                               mandate (cases-my-cases-page).
 	 *                                               Absent opens only own cases.
-	 * @param PortalBranchScope $branches The branch filter of signin-eherkenning-branch.
+	 * @param PortalBranchScopeInterface $branches The branch filter of signin-eherkenning-branch.
+	 * @param CaseResultLink|null $resultLinks Keeps a case's result link only on a trusted domain (woo-dossier-in-my-cases).
+	 * @param CaseQuestions|null $questions Reads the open questions of the case's app on this case (woo-dossier-in-my-cases).
+	 * @param CaseActionsResolver|null $caseActions The create actions placed on the case page (REQ-COC-002).
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalContributionRegistry $registry,
-		private readonly PortalSessionService $session,
-		private readonly PortalObjectReader $reader,
-		private readonly PortalObjectWriter $writer,
-		private readonly PortalFileReader $fileReader,
-		private readonly PortalFileWriter $fileWriter,
-		private readonly CitizenWritableSetResolver $writableSet,
-		private readonly CitizenWriteRecorder $recorder,
-		private readonly CitizenWriteThrottle $throttle,
-		private readonly CitizenDocumentUpload $upload,
-		private readonly PortalMandateService $mandates,
-		private readonly PortalPartyTreeResolver $tree,
+		private readonly PortalContributionRegistryInterface $registry,
+		private readonly PortalSessionServiceInterface $session,
+		private readonly PortalObjectReaderInterface $reader,
+		private readonly PortalObjectWriterInterface $writer,
+		private readonly PortalFileReaderInterface $fileReader,
+		private readonly PortalFileWriterInterface $fileWriter,
+		private readonly CitizenWritableSetResolverInterface $writableSet,
+		private readonly CitizenWriteRecorderInterface $recorder,
+		private readonly CitizenWriteThrottleInterface $throttle,
+		private readonly CitizenDocumentUploadInterface $upload,
+		private readonly PortalMandateServiceInterface $mandates,
+		private readonly PortalPartyTreeResolverInterface $tree,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
-		private readonly CitizenCaseDocuments $documents,
-		private readonly ?MandatedCaseReader $mandatedCases = null,
-		private readonly PortalBranchScope $branches = new PortalBranchScope(),
+		private readonly CitizenCaseDocumentsInterface $documents,
+		private readonly MandatePartiesInterface $mandateParties,
+		private readonly ?MandatedCaseReaderInterface $mandatedCases = null,
+		private readonly PortalBranchScopeInterface $branches = new PortalBranchScope(),
+		private readonly ?CaseResultLink $resultLinks = null,
+		private readonly ?CaseQuestions $questions = null,
+		private readonly ?CaseActionsResolver $caseActions = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -181,7 +194,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		}
 
 		return new JSONResponse([
-			'case' => (new CitizenCaseProjection(logger: $this->logger))->visible(context: $context, case: $context['case']),
+			'case' => $this->projected(context: $context, case: $context['case']),
 			'writableSet' => $context['set'],
 			// What the portal may offer about ending this request, resolved
 			// from the case type rather than from any list the portal keeps
@@ -193,8 +206,64 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			),
 			'documents' => $this->documents->listFor(context: $context, register: $register, schema: $schema, id: $id),
 			'documentsLabel' => (string)($context['documents']['label'] ?? ''),
+			// The open questions of the case's app on this case, each with the
+			// row action that answers it (woo-dossier-in-my-cases REQ-WDM-001).
+			'questions' => $this->openQuestions(context: $context),
+			// The create actions a contribution places on this case, open or closed
+			// as the server reckons it (case-page-objection-and-complaint REQ-COC-002).
+			'caseActions' => $this->caseActionsFor(context: $context, register: $register, schema: $schema),
+			// Which projected fields hold the public outcome and its explanation
+			// (case-outcome-on-the-case-page REQ-COC-001); the page shows them
+			// only once the case has ended.
+			'outcome' => ($context['outcome'] ?? null),
 		]);
 	}//end show()
+
+	/**
+	 * The create actions placed on this case's page; none without the resolver.
+	 *
+	 * @param array<string, mixed> $context  The resolved case context.
+	 * @param string               $register The case's register.
+	 * @param string               $schema   The case's schema.
+	 *
+	 * @return list<array<string, mixed>>
+	 *
+	 * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-case-page-offers-the-actions-the-server-lists-req-coc-002
+	 */
+	private function caseActionsFor(array $context, string $register, string $schema): array {
+		if ($this->caseActions === null) {
+			return [];
+		}
+
+		return $this->caseActions->forCase(
+			contributions: (array)($this->registry->aggregateFor($context['subject'])['contributions'] ?? []),
+			register: $register,
+			schema: $schema,
+			case: $context['case']
+		);
+	}//end caseActionsFor()
+
+	/**
+	 * The open questions on the case, each with its answer action; none without the reader.
+	 *
+	 * @param array<string, mixed> $context The resolved case context.
+	 *
+	 * @return list<array<string, mixed>>
+	 *
+	 * @spec openspec/changes/woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-open-question-is-answered-on-the-case-page-req-wdm-001
+	 */
+	private function openQuestions(array $context): array {
+		if ($this->questions === null) {
+			return [];
+		}
+
+		return $this->questions->forCase(
+			subject: $context['subject'],
+			contributions: (array)($this->registry->aggregateFor($context['subject'])['contributions'] ?? []),
+			app: (string)$context['app'],
+			case: $context['case']
+		);
+	}//end openQuestions()
 
 	/**
 	 * Open one document the case screen listed. The id picks among what this
@@ -438,7 +507,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			content: $upload['content'],
 			// Tagged, so the case screen lists it under "Sent by you" and
 			// nothing else from the folder (cases-documents-on-the-case).
-			tags: [PortalFileWriter::TAG_FROM_APPLICANT]
+			tags: [PortalFileWriterInterface::TAG_FROM_APPLICANT]
 		);
 	}//end attachedUpload()
 
@@ -626,6 +695,29 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	}//end announceWithdrawal()
 
 	/**
+	 * The case as the resident reads it: the fields the collection declares,
+	 * and a result link only when it is https on a trusted domain
+	 * (woo-dossier-in-my-cases REQ-WDM-003). Without the filter no link is
+	 * shown at all.
+	 *
+	 * @param array<string, mixed> $context The resolved case context.
+	 * @param array<string, mixed> $case    The case as read or written.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-case-links-to-where-its-result-is-public-req-wdm-003
+	 */
+	private function projected(array $context, array $case): array {
+		$visible = (new CitizenCaseProjection(logger: $this->logger))->visible(context: $context, case: $case);
+		if ($this->resultLinks === null) {
+			unset($visible[CaseResultLink::FIELD]);
+			return $visible;
+		}
+
+		return $this->resultLinks->kept(case: $visible);
+	}//end projected()
+
+	/**
 	 * The withdrawn case and its withdrawal state. Nothing is deleted and no
 	 * undo is offered: the answers stay readable, with the withdrawal beside
 	 * them.
@@ -638,7 +730,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	private function withdrawnAnswer(CaseWriteRun $write, array $updated): JSONResponse {
 		$context = $write->context;
 		return new JSONResponse([
-			'case' => (new CitizenCaseProjection(logger: $this->logger))->visible(context: $context, case: $updated),
+			'case' => $this->projected(context: $context, case: $updated),
 			'withdrawal' => $this->writableSet->withdrawal(action: $context['action'], case: $updated, closedField: (string)($context['closedField'] ?? '')),
 		]);
 	}//end withdrawnAnswer()
@@ -652,7 +744,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 * @return string
 	 */
 	private function writeConfigField(CaseWriteRun $write, string $key): string {
-		$config = (array)($write->context['action'][CitizenWriteConfigNormaliser::KEY] ?? []);
+		$config = (array)($write->context['action'][CitizenWriteConfigNormaliserInterface::KEY] ?? []);
 		return (string)($config[$key] ?? self::WRITE_CONFIG_DEFAULTS[$key]);
 	}//end writeConfigField()
 
@@ -757,38 +849,28 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		// never grant itself one (REQ-PTV-006).
 		$subject = $this->actingAs(subject: $subject);
 
-		$match = $this->writeActions()->forSubject(subject: $subject, register: $register, schema: $schema);
-		if ($match === null) {
-			return $this->refuse(
-				message: $this->l10n->t('This case cannot be changed from the portal.'),
-				slug: 'portal-writes-not-declared',
-				status: Http::STATUS_FORBIDDEN
-			);
+		$match = $this->writableMatch(subject: $subject, register: $register, schema: $schema);
+		if ($match instanceof JSONResponse) {
+			return $match;
 		}
 
-		$action = $match['action'];
-		if (PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
-			return $this->refuse(
-				message: $this->l10n->t('This case cannot be changed from the portal.'),
-				slug: 'portal-writes-not-declared',
-				status: Http::STATUS_FORBIDDEN
-			);
-		}
+		return $this->ownedCaseContext(subject: $subject, writable: $match, target: ['register' => $register, 'schema' => $schema, 'id' => $id]);
+	}//end context()
 
-		// The ownership boundary. A case that is not the citizen's and a case
-		// that does not exist answer identically, so the portal never confirms
-		// that someone else's case number is real.
-		$case = $this->reader->readObject(
-			register: $register,
-			schema: $schema,
-			scopeField: (string)($action['scopeField'] ?? 'subjectRef'),
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			id: $id,
-			organisation: (string)($subject['organisation'] ?? ''),
-			scopeClaim: (string)($action['scopeClaim'] ?? ''),
-			contributingApp: $match['app'],
-			audience: (string)($subject['audience'] ?? '')
-		);
+	/**
+	 * The write context of a case the subject owns, or the refusal when the
+	 * case is not theirs, does not exist, or lies outside their branch.
+	 *
+	 * @param array<string, mixed>                                $subject  The resolved subject, acting as.
+	 * @param array<string, mixed>                                $writable The citizen write action and its app.
+	 * @param array{register: string, schema: string, id: string} $target   The case.
+	 *
+	 * @return array<string, mixed>|JSONResponse
+	 */
+	private function ownedCaseContext(array $subject, array $writable, array $target): array|JSONResponse {
+		$action = $writable['action'];
+
+		$case = $this->readOwnCase(subject: $subject, writable: $writable, target: $target);
 		// Change signin-eherkenning-branch D2: a branch session changes only its
 		// branch's cases, and answers the same as for a case not its own.
 		if ($case === null || $this->branches->admits(subject: $subject, collection: $action, row: $case) === false) {
@@ -799,6 +881,50 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			);
 		}
 
+		return $this->writeContext(subject: $subject, match: $writable, case: $case);
+	}//end ownedCaseContext()
+
+	/**
+	 * The case read through the write action's scope, or null.
+	 *
+	 * The ownership boundary. A case that is not the citizen's and a case
+	 * that does not exist answer identically, so the portal never confirms
+	 * that someone else's case number is real.
+	 *
+	 * @param array<string, mixed>                                $subject  The resolved subject, acting as.
+	 * @param array<string, mixed>                                $writable The citizen write action and its app.
+	 * @param array{register: string, schema: string, id: string} $target   The case.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function readOwnCase(array $subject, array $writable, array $target): array|null {
+		$action = $writable['action'];
+		return $this->reader->readObject(
+			register: $target['register'],
+			schema: $target['schema'],
+			scopeField: (string)($action['scopeField'] ?? 'subjectRef'),
+			subjectRef: (string)($subject['subjectRef'] ?? ''),
+			id: $target['id'],
+			organisation: (string)($subject['organisation'] ?? ''),
+			scopeClaim: (string)($action['scopeClaim'] ?? ''),
+			contributingApp: $writable['app'],
+			audience: (string)($subject['audience'] ?? '')
+		);
+	}//end readOwnCase()
+
+	/**
+	 * The write context of an owned case: the subject, the matched action and
+	 * app, the case, and the fields the action may set on it.
+	 *
+	 * @param array<string,mixed> $subject The session subject.
+	 * @param array<string,mixed> $match   The matched write action.
+	 * @param array<string,mixed> $case    The owned case.
+	 *
+	 * @return array<string,mixed>
+	 */
+	private function writeContext(array $subject, array $match, array $case): array {
+		$action = $match['action'];
+
 		return [
 			'subject' => $subject,
 			'action' => $action,
@@ -807,6 +933,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			'documents' => ($match['documents'] ?? null),
 			'fields' => ($match['fields'] ?? null),
 			'closedField' => (string)($match['closedField'] ?? ''),
+			'outcome' => ($match['outcome'] ?? null),
 			'case' => $case,
 			'set' => $this->writableSet->resolve(
 				action: $action,
@@ -815,7 +942,39 @@ class CitizenCaseController extends Controller implements PortalProtected {
 				closedField: (string)($match['closedField'] ?? '')
 			),
 		];
-	}//end context()
+	}//end writeContext()
+
+	/**
+	 * The portal write action declared for this collection whose trust level
+	 * the subject meets, or the 403 refusal.
+	 *
+	 * @param array<string,mixed> $subject  The session subject.
+	 * @param string              $register The register.
+	 * @param string              $schema   The schema.
+	 *
+	 * @return array<string,mixed>|JSONResponse
+	 */
+	private function writableMatch(array $subject, string $register, string $schema): array|JSONResponse {
+		$match = $this->writeActions()->forSubject(subject: $subject, register: $register, schema: $schema);
+		if ($match === null) {
+			return $this->refuse(
+				message: $this->l10n->t('This case cannot be changed from the portal.'),
+				slug: 'portal-writes-not-declared',
+				status: Http::STATUS_FORBIDDEN
+			);
+		}
+
+		$action = $match['action'];
+		if ((new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
+			return $this->refuse(
+				message: $this->l10n->t('This case cannot be changed from the portal.'),
+				slug: 'portal-writes-not-declared',
+				status: Http::STATUS_FORBIDDEN
+			);
+		}
+
+		return $match;
+	}//end writableMatch()
 
 	/**
 	 * The guard both write acts share: the throttle, counted per identity and
@@ -825,6 +984,8 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 * @param string $id The case id.
 	 *
 	 * @return JSONResponse|null The refusal, or null to proceed.
+	 *
+	 * @spec openspec/changes/citizen-case-write-limit/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-residents-writes-on-her-own-case-are-limited-per-case-and-per-identity-req-cwl-001
 	 */
 	private function guardWrite(array $context, string $id): ?JSONResponse {
 		$allowed = $this->throttle->allow(
@@ -913,7 +1074,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 
 		$this->announceWrite(write: $write, fields: array_map(strval(...), array_keys($submitted)));
 
-		return new JSONResponse(['case' => (new CitizenCaseProjection(logger: $this->logger))->visible(context: $write->context, case: $updated)]);
+		return new JSONResponse(['case' => $this->projected(context: $write->context, case: $updated)]);
 	}//end applyAmendment()
 
 	/**
@@ -1037,7 +1198,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		$held = $this->mandates->mandatesFor(
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
 			organisation: (string)($subject['organisation'] ?? ''),
-			holders: (new MandateParties())->holdersOf(subject: $subject)
+			holders: $this->mandateParties->holdersOf(subject: $subject)
 		);
 		return $this->mandates->activeMandate(mandates: $held, mandateId: (string)$this->request->getParam('mandate', ''));
 	}//end heldMandate()
@@ -1059,7 +1220,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 
 		return $this->tree->entitiesFor(
 			root: $party,
-			reachesDown: ($this->mandates->reachOf(mandate: $mandate) === PortalMandateService::REACH_TREE)
+			reachesDown: ($this->mandates->reachOf(mandate: $mandate) === PortalMandateServiceInterface::REACH_TREE)
 		);
 	}//end mandateScope()
 	/**

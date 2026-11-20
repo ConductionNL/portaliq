@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Intake;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\FormStatementsInterface;
 use OCP\IL10N;
 
 /**
@@ -36,7 +37,7 @@ use OCP\IL10N;
  *
  * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t03
  */
-class FormStatements {
+class FormStatements implements FormStatementsInterface {
 	/**
 	 * The statements a binding may ask.
 	 *

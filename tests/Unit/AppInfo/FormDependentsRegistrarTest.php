@@ -15,7 +15,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\AppInfo;
 
 use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\AppInfo\FormDependentsRegistrar;
+use OCA\Portaliq\Listener\FormDependentsRegistrar;
 use OCA\Portaliq\Listener\FormDestinationDependentsListener;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\EventDispatcher\IEventListener;

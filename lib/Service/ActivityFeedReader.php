@@ -32,6 +32,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\ActivityFeedReaderInterface;
+
 /**
  * Reads activities for a guardian, scoped to their own audience and children.
  *
@@ -41,7 +43,7 @@ namespace OCA\Portaliq\Service;
  * the one stateless audience predicate the news, event and activity feeds
  * share, so the rule cannot fork between them.
  */
-class ActivityFeedReader {
+class ActivityFeedReader implements ActivityFeedReaderInterface {
 	/**
 	 * Constructor.
 	 *

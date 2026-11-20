@@ -20,10 +20,10 @@ use OCA\Portaliq\Contribution\PortalProviderLocator;
 use OCA\Portaliq\Contribution\PublicIndexItems;
 use OCA\Portaliq\Controller\ContentCatalogueController;
 use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PublicCatalogue;
 use OCA\Portaliq\Service\PublicCatalogueQuery;
 use OCA\Portaliq\Service\PublicNewsReader;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Http;
 use OCP\ICache;
@@ -31,6 +31,8 @@ use OCP\ICacheFactory;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Contribution\PublicDetailShape;
+use OCA\Portaliq\Contribution\PublicIndexKinds;
 
 /**
  * @spec openspec/changes/portal-public-catalogue/specs/portal-public-catalogue/spec.md
@@ -83,7 +85,7 @@ class PublicCatalogueTest extends TestCase {
 		$caches = $this->createMock(ICacheFactory::class);
 		$caches->method('createDistributed')->willReturn($cache);
 
-		return new PublicCatalogue($apps, $locator, $reader, $caches, $this->createMock(LoggerInterface::class));
+		return new PublicCatalogue($apps, $locator, $reader, $caches, $this->createMock(LoggerInterface::class), new PublicDetailShape(), new PublicIndexKinds());
 	}//end catalogue()
 
 	public function testAnAppAnswerIsHeldToItsShape(): void {
@@ -218,9 +220,9 @@ class PublicCatalogueTest extends TestCase {
 		$request->method('getHeader')->willReturn('');
 		$resolver = $this->createMock(PortalResolver::class);
 		$resolver->method('resolve')->willReturn($modes === null ? null : ['slug' => 'warmtepompacademie', 'authentication' => ['modes' => $modes]]);
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn(null);
 
-		return new ContentCatalogueController('portaliq', $request, $resolver, $session, $this->catalogue(answer: self::courses()));
+		return new ContentCatalogueController('portaliq', $request, $resolver, $session, $this->catalogue(answer: self::courses()), new PublicCatalogueQuery());
 	}
 }

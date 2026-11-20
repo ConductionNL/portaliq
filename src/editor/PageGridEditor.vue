@@ -20,6 +20,22 @@
 -->
 <template>
 	<div class="page-grid-editor">
+		<!--
+			A REPORTING PAGE IS NOT COUNTED. A visitor row on it records that
+			somebody opened the form, so a page with a report widget belongs in
+			the portal's `traffic.excludedPaths` before it is published.
+		-->
+		<NcNoteCard
+			v-if="reportCounted"
+			type="warning"
+			data-testid="editor-report-counted">
+			{{
+				t(
+					'portaliq',
+					'This page is not excluded from visitor statistics. Add it before you publish.',
+				)
+			}}
+		</NcNoteCard>
 		<div
 			v-if="state.kind === 'markdown'"
 			class="page-grid-editor__markdown"
@@ -211,6 +227,14 @@
 							<label v-else :for="`field-${field.name}`">{{
 								field.label
 							}}</label>
+							<!-- The choices an app declares for a block that reads its public index. -->
+							<PublicSourcePicker
+								v-if="field.picker && catalogueKinds.length > 0"
+								:picker="field.picker"
+								:widgetKey="selected.widgetKey"
+								:blockProps="selected.props || {}"
+								:kinds="catalogueKinds"
+								@set="(name, value) => editor.setProp(name, value)" />
 							<textarea
 								v-if="field.kind === 'text' || field.kind === 'json'"
 								:id="`field-${field.name}`"
@@ -305,6 +329,7 @@ import { CnDashboardGrid, dashboardWidgetRegistry } from '@conduction/nextcloud-
 import { translate } from '@nextcloud/l10n'
 import { NcButton, NcNoteCard } from '@nextcloud/vue'
 import MarkdownField from './MarkdownField.vue'
+import PublicSourcePicker from './PublicSourcePicker.vue'
 import WidgetPalettePanel from './WidgetPalettePanel.vue'
 import {
 	fieldsFor,
@@ -316,6 +341,7 @@ import { historyIntent } from './editHistory.js'
 import { cellFromDrop } from './geometry.js'
 import { PALETTE_DRAG_TYPE } from './paletteDrag.js'
 import { recordListChoice } from './recordLists.js'
+import { reportPageIsCounted } from './reportExclusion.js'
 import {
 	formWidgetFor,
 	inspectorModeFor,
@@ -331,6 +357,7 @@ export default {
 		MarkdownField,
 		NcButton,
 		NcNoteCard,
+		PublicSourcePicker,
 		WidgetPalettePanel,
 	},
 
@@ -386,6 +413,30 @@ export default {
 			type: Function,
 			default: null,
 		},
+
+		/**
+		 * Lists the kinds the installed apps declare for their public index:
+		 * `() => Promise<Array<{app, type, label, categories, filters, columns}>>`.
+		 * Without it a block that reads one is configured in JSON only.
+		 *
+		 * @type {(() => Promise<Array<object>>)|null}
+		 */
+		loadCatalogueKinds: {
+			type: Function,
+			default: null,
+		},
+
+		/**
+		 * The portal's `traffic.excludedPaths`, or null when the host could not
+		 * read them. With a list, a report widget on a page outside it shows
+		 * a warning; without one, nothing is said.
+		 *
+		 * @type {Array<string>|null}
+		 */
+		excludedPaths: {
+			type: Array,
+			default: null,
+		},
 	},
 
 	emits: ['update:paletteOpen'],
@@ -419,6 +470,14 @@ export default {
 			 * @type {Array<{app: string, id: string, label: string}>}
 			 */
 			recordLists: [],
+
+			/**
+			 * The kinds the apps declare for their public index; empty until
+			 * read, and when the host cannot list them.
+			 *
+			 * @type {Array<object>}
+			 */
+			catalogueKinds: [],
 		}
 	},
 
@@ -430,6 +489,24 @@ export default {
 		 */
 		state() {
 			return this.editor.state
+		},
+
+		/**
+		 * Whether a report widget sits on a page visitor statistics still count.
+		 *
+		 * @return {boolean} True when the warning shows.
+		 *
+		 * @spec openspec/changes/intake-report-pages/specs/report-pages/spec.md#requirement-report-pages-stay-out-of-visitor-statistics-req-irp-003
+		 */
+		reportCounted() {
+			return (
+				this.state.kind !== 'markdown'
+				&& reportPageIsCounted(
+					this.state.widgets,
+					this.state.page?.route,
+					this.excludedPaths,
+				)
+			)
 		},
 
 		/**
@@ -525,6 +602,13 @@ export default {
 				this.recordLists = await this.loadRecordLists()
 			} catch {
 				this.recordLists = []
+			}
+		}
+		if (this.loadCatalogueKinds) {
+			try {
+				this.catalogueKinds = await this.loadCatalogueKinds()
+			} catch {
+				this.catalogueKinds = []
 			}
 		}
 	},

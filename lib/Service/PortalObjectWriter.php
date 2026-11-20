@@ -35,6 +35,11 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectWriterInterface;
 use OCA\Portaliq\Service\Tenancy\ActsForTheOrganisation;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -50,7 +55,7 @@ use Throwable;
  * moving a write path to another class would copy that boundary
  * (inbox-delete-own-messages added the delete).
  */
-class PortalObjectWriter {
+class PortalObjectWriter implements PortalObjectWriterInterface {
 	use ActsForTheOrganisation;
 	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
@@ -122,8 +127,7 @@ class PortalObjectWriter {
 		try {
 			$saved = $this->insideWriteContext(write: static fn () => $objectService->saveObject(
 				object: $data,
-				register: $register,
-				schema: $schema,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema)),
 				_rbac: false,
 				_multitenancy: false
 			));
@@ -147,6 +151,11 @@ class PortalObjectWriter {
 	 * `x-openregister-flows` declared on the target schema still run —
 	 * unchanged, automatic, no code here touches that path.
 	 *
+	 * The row is stamped with the SYSTEM identity as owner even when the
+	 * browser holds a Nextcloud session (`SaveActor::$unowned`, REQ-PTB-012):
+	 * a form that says it is not tied to an account must not be owned by
+	 * whoever happens to be signed in to Nextcloud in the same browser.
+	 *
 	 * @param string $register The register slug/id.
 	 * @param string $schema The schema slug.
 	 * @param array<string, mixed> $data The client-supplied fields (already whitelisted + defaults applied).
@@ -154,6 +163,7 @@ class PortalObjectWriter {
 	 * @return array<string, mixed>|null The created object, or null on failure.
 	 *
 	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
+	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-a-contributed-action-must-post-where-its-type-is-honoured-req-ptb-012
 	 */
 	public function createAnonymousObject(string $register, string $schema, array $data): ?array {
 		$objectService = $this->objectService();
@@ -161,11 +171,11 @@ class PortalObjectWriter {
 			return null;
 		}
 
+		$options = (new UnownedSaveOptions())->forTarget(register: $register, schema: $schema);
 		try {
 			$saved = $this->insideWriteContext(write: static fn () => $objectService->saveObject(
 				object: $data,
-				register: $register,
-				schema: $schema,
+				options: $options,
 				_rbac: false,
 				_multitenancy: false
 			));
@@ -252,11 +262,7 @@ class PortalObjectWriter {
 		array|\Closure $data,
 	): ?array {
 		$this->lastFailure = '';
-		if ($id === '') {
-			return null;
-		}
-
-		$objectService = $this->actingObjectService(organisation: $organisation);
+		$objectService     = $this->updateService(id: $id, organisation: $organisation);
 		if ($objectService === null) {
 			return null;
 		}
@@ -276,40 +282,18 @@ class PortalObjectWriter {
 			return null;
 		}
 
-		// A callable decides the fields from the row just verified as the
-		// subject's own, so a write that depends on the stored value (the
-		// first read moment) cannot race a second read.
-		if ($data instanceof \Closure) {
-			$data = (array)$data($existing);
-		}
-
-		// (2)-(4) Patch the verified row: merge, keep the stored organisation,
-		// re-stamp the scope field.
-		$merged = $this->mergedForUpdate(existing: $existing, data: $data, scopeField: $scopeField, subjectRef: $subjectRef);
+		// (2)-(4) Merge the fields onto the verified row, keeping the stored
+		// organisation and re-stamping the scope field.
+		$merged = $this->mergedUpdate(existing: $existing, data: $data, scopeField: $scopeField, subjectRef: $subjectRef);
 
 		// (5) Save with the id preserved (`uuid`) so OR UPDATES this row.
-		return $this->saveUpdate(objectService: $objectService, merged: $merged, register: $register, schema: $schema, id: $id);
-	}//end updateObject()
-
-	/**
-	 * Saves the patched row under its own id so OpenRegister updates it, and
-	 * returns it normalised; null (with the reason kept) when the store refuses.
-	 *
-	 * @param object $objectService OpenRegister's ObjectService.
-	 * @param array<string, mixed> $merged The patched row.
-	 * @param string $register The register slug/id.
-	 * @param string $schema The schema slug.
-	 * @param string $id The object's id.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function saveUpdate(object $objectService, array $merged, string $register, string $schema, string $id): ?array {
 		try {
 			$saved = $this->insideWriteContext(write: static fn () => $objectService->saveObject(
 				object: $merged,
-				register: $register,
-				schema: $schema,
-				uuid: $id,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $schema),
+					uuid: $id
+				),
 				_rbac: false,
 				_multitenancy: false
 			));
@@ -320,39 +304,70 @@ class PortalObjectWriter {
 		}
 
 		return $this->normalise(row: $saved);
-	}//end saveUpdate()
+	}//end updateObject()
 
 	/**
-	 * The object an update saves: the verified row patched by the fields.
+	 * The ObjectService an update writes through, acting for the tenant, or
+	 * null when there is no id to update or no service.
 	 *
-	 * (2) Merge the whitelisted fields onto the existing object; drop the
-	 * OR-managed `@self` envelope (id/schema/register travel as explicit save
-	 * arguments, not as object data).
-	 * (3) The stored organisation stays exactly as it is. The tenant was decided
-	 * when the object was created; the subject's organisation only takes part in
-	 * the ownership check. An update never overwrites it and never adds one,
-	 * whatever the subject's portal is or the payload says.
-	 * (4) RE-STAMP the scope field AFTER the merge, so a client value can never
-	 * win: a patch can never move the row out of scope. A verified membership
-	 * list is re-stamped with the stored list itself: it already contains the
-	 * subject, and portaliq never edits who else is on it.
+	 * @param string $id           The client-supplied object id.
+	 * @param string $organisation The subject's tenant (may be empty).
 	 *
-	 * @param array<string, mixed> $existing The row verified as the subject's own.
-	 * @param array<string, mixed> $data The whitelisted fields.
-	 * @param string $scopeField The field that must own the row.
+	 * @return object|null
+	 *
+	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T2
+	 */
+	private function updateService(string $id, string $organisation): object|null {
+		if ($id === '') {
+			return null;
+		}
+
+		return $this->actingObjectService(organisation: $organisation);
+	}//end updateService()
+
+	/**
+	 * The object an update saves: the client fields merged onto the row just
+	 * verified as the subject's own, with the stored organisation kept and
+	 * the scope field re-stamped.
+	 *
+	 * @param array<string, mixed> $existing The verified, owned row.
+	 * @param array<string, mixed>|\Closure $data The whitelisted fields, or a closure that returns them from the verified row.
+	 * @param string $scopeField The row field carrying the subject reference (may be empty).
 	 * @param string $subjectRef The server-derived subject reference.
 	 *
-	 * @return array<string, mixed>
+	 * @return array<string, mixed> The object to save.
+	 *
+	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T2
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-write-must-keep-a-verified-list-and-stamp-a-list-for-an-array-scope-field
 	 */
-	private function mergedForUpdate(array $existing, array $data, string $scopeField, string $subjectRef): array {
+	private function mergedUpdate(array $existing, array|\Closure $data, string $scopeField, string $subjectRef): array {
+		// A callable decides the fields from the row just verified as the
+		// subject's own, so a write that depends on the stored value (the
+		// first read moment) cannot race a second read.
+		if ($data instanceof \Closure) {
+			$data = (array)$data($existing);
+		}
+
+		// (2) Merge the whitelisted fields onto the existing object; drop the
+		// OR-managed `@self` envelope (id/schema/register travel as explicit
+		// save arguments, not as object data).
 		$merged = array_merge($existing, $data);
 		unset($merged['@self']);
 
+		// (3) The stored organisation stays exactly as it is. The tenant was
+		// decided when the object was created; `$organisation` only takes part
+		// in the ownership check. An update never overwrites it and never
+		// adds one, whatever the subject's portal is or the payload says.
 		unset($merged['organisation']);
 		if (array_key_exists('organisation', $existing) === true) {
 			$merged['organisation'] = $existing['organisation'];
 		}
 
+		// (4) RE-STAMP the scope field AFTER the merge, so a client value can
+		// never win: a patch can never move the row out of scope. A verified
+		// membership list is re-stamped with the stored list itself: it
+		// already contains the subject, and portaliq never edits who else is
+		// on it.
 		if ($scopeField !== '') {
 			$merged[$scopeField] = $subjectRef;
 			if ($this->isScopeList(stored: ($existing[$scopeField] ?? null)) === true) {
@@ -361,7 +376,7 @@ class PortalObjectWriter {
 		}
 
 		return $merged;
-	}//end mergedForUpdate()
+	}//end mergedUpdate()
 
 	/**
 	 * Why the last create or update was refused, as the store said it, or ''
@@ -404,7 +419,7 @@ class PortalObjectWriter {
 		string $id,
 	): bool {
 		$objectService = $this->actingObjectService(organisation: $organisation);
-		if ($id === '' || $scopeField === '' || $subjectRef === '' || $objectService === null) {
+		if ($this->cannotDelete(id: $id, scopeField: $scopeField, subjectRef: $subjectRef, objectService: $objectService) === true) {
 			return false;
 		}
 
@@ -417,15 +432,68 @@ class PortalObjectWriter {
 			organisation: $organisation,
 			id: $id
 		);
-		$stored = ($existing[$scopeField] ?? null);
-		if ($existing === null || (is_array($stored) === true && array_values(array_unique($stored)) !== [$subjectRef])) {
+		if ($this->isMissingOrShared(existing: $existing, scopeField: $scopeField, subjectRef: $subjectRef) === true) {
 			return false;
 		}
 
 		$uuid = (string)($existing['@self']['uuid'] ?? $existing['@self']['id'] ?? $existing['uuid'] ?? $existing['id'] ?? $id);
+		return $this->deleteRow(objectService: $objectService, uuid: $uuid, register: $register, schema: $schema);
+	}//end deleteObject()
+
+	/**
+	 * Whether a delete is refused before anything is read: no id, no scope
+	 * field, no subject reference, or no ObjectService.
+	 *
+	 * @param string      $id            The client-supplied id.
+	 * @param string      $scopeField    The field that must own the row.
+	 * @param string      $subjectRef    The server-derived subject reference.
+	 * @param object|null $objectService OpenRegister's ObjectService, or null.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+	 */
+	private function cannotDelete(string $id, string $scopeField, string $subjectRef, object|null $objectService): bool {
+		return $id === '' || $scopeField === '' || $subjectRef === '' || $objectService === null;
+	}//end cannotDelete()
+
+	/**
+	 * Whether the owned row is absent, or its scope field is a list naming
+	 * anyone besides the subject.
+	 *
+	 * @param array<string, mixed>|null $existing   The owned row, or null.
+	 * @param string                    $scopeField The field that must own the row.
+	 * @param string                    $subjectRef The server-derived subject reference.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+	 */
+	private function isMissingOrShared(array|null $existing, string $scopeField, string $subjectRef): bool {
+		$stored = ($existing[$scopeField] ?? null);
+		return $existing === null || (is_array($stored) === true && array_values(array_unique($stored)) !== [$subjectRef]);
+	}//end isMissingOrShared()
+
+	/**
+	 * Delete a verified row; an OpenRegister failure is logged and answers false.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $uuid          The row's stored identifier.
+	 * @param string $register      The register slug/id.
+	 * @param string $schema        The schema slug.
+	 *
+	 * @return bool True when the row is deleted.
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+	 */
+	private function deleteRow(object $objectService, string $uuid, string $register, string $schema): bool {
 		try {
 			$deleted = $this->insideWriteContext(
-				write: static fn () => $objectService->deleteObject(uuid: $uuid, register: $register, schema: $schema, _rbac: false, _multitenancy: false)
+				write: static fn () => $objectService->deleteObject(
+					new ObjectDeletion(uuid: $uuid, target: new ObjectFindTarget(register: $register, schema: $schema)),
+					_rbac: false,
+					_multitenancy: false
+				)
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: OR delete failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
@@ -433,7 +501,7 @@ class PortalObjectWriter {
 		}
 
 		return $deleted !== false;
-	}//end deleteObject()
+	}//end deleteRow()
 
 	/**
 	 * Re-read a row by id and return it ONLY when it is the subject's: the row
@@ -467,21 +535,29 @@ class PortalObjectWriter {
 		string $organisation,
 		string $id,
 	): ?array {
-		// OR only honours DATA-property filters, so findAll(filters:['id'=>…])
-		// does NOT select by identifier — fetch by id directly with find().
-		try {
-			$entity = $objectService->find(
-				id: $id,
-				register: $register,
-				schema: $schema,
-				_rbac: false,
-				_multitenancy: false
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: OR ownership read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
+		$row = $this->candidateRow(objectService: $objectService, register: $register, schema: $schema, id: $id);
+		if ($row === null || $this->ownedBy(row: $row, scopeField: $scopeField, subjectRef: $subjectRef, organisation: $organisation) === false) {
 			return null;
 		}
 
+		return $row;
+	}//end fetchOwnedObject()
+
+	/**
+	 * The row an id selects, normalised, or null when it cannot be read, does
+	 * not exist, or does not carry the requested id.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $register      The register slug/id.
+	 * @param string $schema        The schema slug.
+	 * @param string $id            The client-supplied id/uuid.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T2
+	 */
+	private function candidateRow(object $objectService, string $register, string $schema, string $id): array|null {
+		$entity = $this->entityById(objectService: $objectService, register: $register, schema: $schema, id: $id);
 		if ($entity === null) {
 			return null;
 		}
@@ -496,20 +572,64 @@ class PortalObjectWriter {
 			return null;
 		}
 
-		// THE ownership boundary — identical to the reader's verifyScope. The
-		// client id only SELECTS a candidate; the row's own stored scopeField
-		// value decides whether the subject may touch it: an equal single
-		// value or a list that contains it, the one rule the reader uses too.
-		if ($scopeField !== '' && $this->scopeMatches(stored: ($row[$scopeField] ?? null), scopeValue: $subjectRef) === false) {
+		return $row;
+	}//end candidateRow()
+
+	/**
+	 * The entity stored under an id, or null when the read fails.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $register      The register slug/id.
+	 * @param string $schema        The schema slug.
+	 * @param string $id            The client-supplied id/uuid.
+	 *
+	 * @return mixed
+	 *
+	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T2
+	 */
+	private function entityById(object $objectService, string $register, string $schema, string $id): mixed {
+		// OR only honours DATA-property filters, so findAll(filters:['id'=>…])
+		// does NOT select by identifier — fetch by id directly with find().
+		try {
+			return $objectService->find(
+				id: $id,
+				options: new ObjectFindOptions(register: $register, schema: $schema),
+				_rbac: false,
+				_multitenancy: false
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: OR ownership read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
 			return null;
+		}
+	}//end entityById()
+
+	/**
+	 * THE ownership boundary — identical to the reader's verifyScope. The
+	 * client id only SELECTS a candidate; the row's own stored scopeField
+	 * value decides whether the subject may touch it: an equal single value
+	 * or a list that contains it, the one rule the reader uses too. The
+	 * tenant check follows.
+	 *
+	 * @param array<string, mixed> $row          The candidate row.
+	 * @param string               $scopeField   The field that must own the row.
+	 * @param string               $subjectRef   The subject's reference.
+	 * @param string               $organisation The subject's tenant (may be empty).
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-direct-scope-field-must-match-a-single-value-or-strict-list-membership
+	 */
+	private function ownedBy(array $row, string $scopeField, string $subjectRef, string $organisation): bool {
+		if ($scopeField !== '' && $this->scopeMatches(stored: ($row[$scopeField] ?? null), scopeValue: $subjectRef) === false) {
+			return false;
 		}
 
 		if ($this->organisationMatches(row: $row, organisation: $organisation) === false) {
-			return null;
+			return false;
 		}
 
-		return $row;
-	}//end fetchOwnedObject()
+		return true;
+	}//end ownedBy()
 
 	/**
 	 * The server-side ownership stamps a create writes over the client's data.

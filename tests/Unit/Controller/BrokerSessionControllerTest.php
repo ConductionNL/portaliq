@@ -22,6 +22,7 @@ use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Service\Signin\SiteReturnAddress;
 
 /**
  * T04 and T08: the broker start and callback endpoints.
@@ -51,7 +52,8 @@ class BrokerSessionControllerTest extends TestCase {
 			$this->createMock(IRequest::class),
 			$login,
 			$urls,
-			($portals ?? $this->createMock(PortalResolver::class))
+			($portals ?? $this->createMock(PortalResolver::class)),
+			new SiteReturnAddress()
 		);
 	}//end controller()
 
@@ -85,7 +87,9 @@ class BrokerSessionControllerTest extends TestCase {
 		$portals->method('resolve')->willReturn(['slug' => 'venray', 'organisation' => 'gemeente-x']);
 		$login = $this->getMockBuilder(BrokerLogin::class)->disableOriginalConstructor()->onlyMethods(['start', 'complete'])->getMock();
 		$login->expects($this->once())->method('start')
-			->with('gemeente-x', 'digid', '/apps/portaliq/site?portal=venray', 'https://portal.example/apps/portaliq/portal/api/session/broker/callback')
+			// The resolved portal's slug binds the session the callback mints
+			// (portal-scoping-and-auth Task 4).
+			->with('gemeente-x', 'digid', '/apps/portaliq/site?portal=venray', 'https://portal.example/apps/portaliq/portal/api/session/broker/callback', 'venray')
 			->willReturn('https://integriq.example/idp/start?state=s');
 
 		$response = $this->controller(login: $login, portals: $portals)->start(provider: 'digid', portal: 'venray');
@@ -229,6 +233,9 @@ class BrokerSessionControllerTest extends TestCase {
 		$response = $this->controller(login: $this->login(complete: ['token' => 'a.b c', 'returnTo' => '/apps/portaliq/site']))->callback(state: 's', code: 'c');
 
 		$this->assertSame('https://portal.example/apps/portaliq/site#token=a.b%20c', $response->getRedirectURL());
+		// REQ-SEE-003: the bearer is in the fragment only; no query parameter holds it.
+		parse_str((string)parse_url($response->getRedirectURL(), PHP_URL_QUERY), $query);
+		$this->assertArrayNotHasKey('token', $query);
 	}//end testACompletedLoginCarriesTheBearerInTheFragment()
 
 

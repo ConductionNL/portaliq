@@ -28,10 +28,11 @@ use OCA\Portaliq\Service\Plans\PlanFiles;
 use OCA\Portaliq\Service\Plans\PortalPlanService;
 use OCA\Portaliq\Service\PortalPdfExport;
 use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\AppFramework\Http\StreamResponse;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Service\RequestedPortal;
 
 /**
  * 401 without a session, the outcomes as statuses, only the allowed fields
@@ -59,14 +60,14 @@ class PortalPlansControllerTest extends TestCase {
 		$request->method('getParams')->willReturn($params);
 		$request->method('getHeader')->willReturnCallback(static fn (string $name): string => ($name === 'X-Portaliq-Portal' ? $portalHeader : ''));
 		$request->method('getUploadedFile')->willReturn(['name' => 'Budgetplan.pdf', 'tmp_name' => '/tmp/x', 'error' => 0]);
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
 		if ($portals === null) {
 			$portals = $this->createMock(PortalResolver::class);
 			$portals->method('resolve')->willReturn(['slug' => 'zuid']);
 		}
 
-		return new PortalPlansController($request, $session, $plans, $portals, $pdf, $files);
+		return new PortalPlansController($request, $session, $plans, $portals, new RequestedPortal(), $pdf, $files);
 	}//end controller()
 
 	/**

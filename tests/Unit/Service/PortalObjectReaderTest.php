@@ -13,6 +13,7 @@ use OCP\EventDispatcher\IEventDispatcher;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * Tests the OR-backed reader: it degrades to empty without OpenRegister, filters
@@ -2097,7 +2098,9 @@ class PortalObjectReaderTest extends TestCase {
 			 *
 			 * @return array<string,mixed>|null
 			 */
-			public function find(string $id, string $register = '', string $schema = '', bool $_rbac = true, bool $_multitenancy = true): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				$this->calls[] = [
 					'register' => $register,
 					'schema' => $schema,
@@ -2116,6 +2119,53 @@ class PortalObjectReaderTest extends TestCase {
 		};
 
 	}//end objectService()
+
+	public function testAFailedOrReadIsLoggedAndContributesNothing(): void {
+		$objectService = new class {
+
+			public function setRegister(string $register): self {
+				return $this;
+			}//end setRegister()
+
+			public function setSchema(string $schema): self {
+				return $this;
+			}//end setSchema()
+
+			public function findAll(array $config, bool $_rbac = true, bool $_multitenancy = true): array {
+				throw new RuntimeException('index offline');
+			}//end findAll()
+		};
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('warning')
+			->with('Portaliq: OR read failed', ['schema' => 'exampleDocument', 'reason' => 'index offline']);
+
+		$reader = new PortalObjectReader($this->container($objectService), $logger, $this->projector());
+
+		$this->assertSame([], $reader->readCollection('portaliq', 'exampleDocument', 'subjectRef', 's1', 'org-1'));
+
+	}//end testAFailedOrReadIsLoggedAndContributesNothing()
+
+	public function testANonArrayOrAnswerContributesNothing(): void {
+		$objectService = new class {
+
+			public function setRegister(string $register): self {
+				return $this;
+			}//end setRegister()
+
+			public function setSchema(string $schema): self {
+				return $this;
+			}//end setSchema()
+
+			public function findAll(array $config, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				return 'not rows';
+			}//end findAll()
+		};
+
+		$reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
+
+		$this->assertSame([], $reader->readCollection('portaliq', 'exampleDocument', 'subjectRef', 's1', 'org-1'));
+
+	}//end testANonArrayOrAnswerContributesNothing()
 
 	private function container(object $objectService): ContainerInterface {
 		$dispatcher = $this->createMock(originalClassName: IEventDispatcher::class);

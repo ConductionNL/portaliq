@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
-use OCA\Portaliq\Service\Identity\PortalAccountLookup;
+use OCA\Portaliq\Kernel\Contracts\PortalAccountLookupInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -44,11 +44,11 @@ class HiddenPagesReader {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalAccountLookup|null $accounts Reads the account's hidden pages; none hides nothing.
+	 * @param PortalAccountLookupInterface|null $accounts Reads the account's hidden pages; none hides nothing.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
-		private readonly ?PortalAccountLookup $accounts,
+		private readonly ?PortalAccountLookupInterface $accounts,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

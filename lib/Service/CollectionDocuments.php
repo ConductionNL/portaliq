@@ -25,12 +25,13 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Contribution\PortalProviderLocator;
-use OCA\Portaliq\Contribution\TimelineProviderMethod;
+use OCA\Portaliq\Kernel\Contracts\CollectionDocumentsInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalProviderLocatorInterface;
 use OCP\AppFramework\Http\StreamResponse;
 use Psr\Log\LoggerInterface;
 use ReflectionMethod;
 use Throwable;
+use OCA\Portaliq\Kernel\Contracts\TimelineProviderMethodInterface;
 
 /**
  * The order of an open: the caller has proven the object is the subject's in a
@@ -39,7 +40,7 @@ use Throwable;
  *
  * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t4
  */
-class CollectionDocuments {
+class CollectionDocuments implements CollectionDocumentsInterface {
 
 	/**
 	 * What open() answers when the document is not listed (or cannot be read).
@@ -49,27 +50,22 @@ class CollectionDocuments {
 	public const NOT_FOUND = 'not_found';
 
 	/**
-	 * What open() answers when the `opened` hook did not return true.
-	 *
-	 * @var string
-	 */
-	public const REFUSED = 'refused';
-
-	/**
 	 * Constructor.
 	 *
 	 * @param PortalCaseDocumentReader $published Asks the app what it lists for an object.
 	 * @param PortalFileReader $files Streams a file from OpenRegister.
 	 * @param PortalAuditHook $audit Records each download.
-	 * @param PortalProviderLocator $locator Finds the app's provider for the hook.
+	 * @param PortalProviderLocatorInterface $locator Finds the app's provider for the hook.
 	 * @param LoggerInterface $logger Records a refused hook.
+	 * @param TimelineProviderMethodInterface $timelineProviderMethod The TimelineProviderMethod helper.
 	 */
 	public function __construct(
 		private readonly PortalCaseDocumentReader $published,
 		private readonly PortalFileReader $files,
 		private readonly PortalAuditHook $audit,
-		private readonly PortalProviderLocator $locator,
+		private readonly PortalProviderLocatorInterface $locator,
 		private readonly LoggerInterface $logger,
+		private readonly TimelineProviderMethodInterface $timelineProviderMethod,
 	) {
 	}//end __construct()
 
@@ -236,7 +232,7 @@ class CollectionDocuments {
 	private function hookProvider(DocumentOpening $run): ?object {
 		$method = (string)$run->documents['opened'];
 		$provider = $this->locator->locate(appId: $run->app);
-		if ($provider === null || (new TimelineProviderMethod())->accepts(name: $method) === false || method_exists($provider, $method) === false) {
+		if ($provider === null || $this->timelineProviderMethod->accepts(name: $method) === false || method_exists($provider, $method) === false) {
 			$this->logger->warning('Portaliq: the opened hook cannot be called', ['app' => $run->app]);
 			return null;
 		}

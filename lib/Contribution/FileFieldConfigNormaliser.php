@@ -28,26 +28,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\FileFieldConfigNormaliserInterface;
+
 /**
  * Sanitises the file keys of one field config.
  *
  * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-action-must-be-able-to-declare-a-file-field
  */
-class FileFieldConfigNormaliser {
-	/**
-	 * The one field type this vocabulary knows.
-	 */
-	public const TYPE_FILE = 'file';
-
-	/**
-	 * The size limit applied when a file field declares none, in megabytes.
-	 */
-	public const DEFAULT_SIZE_MB = 20;
-
-	/**
-	 * The highest size limit a leaf app may declare, in megabytes.
-	 */
-	public const MAX_SIZE_MB = 50;
+class FileFieldConfigNormaliser implements FileFieldConfigNormaliserInterface {
 
 	/**
 	 * The most `accept` entries kept per field.
@@ -83,21 +71,57 @@ class FileFieldConfigNormaliser {
 		}
 
 		$entry['type'] = self::TYPE_FILE;
-		$multiple = ($config['multiple'] ?? false);
-		$entry['multiple'] = ($multiple === true || $multiple === 'true' || $multiple === 1);
+		$entry['multiple'] = $this->multiple(config: $config);
+		$entry = $this->withAccept(entry: $entry, config: $config);
 
+		return $this->withMaxSize(entry: $entry, config: $config);
+	}//end apply()
+
+	/**
+	 * Whether the config allows more than one file, as a strict boolean.
+	 *
+	 * @param array<string, mixed> $config The declared field config.
+	 *
+	 * @return bool
+	 */
+	private function multiple(array $config): bool {
+		$multiple = ($config['multiple'] ?? false);
+		return ($multiple === true || $multiple === 'true' || $multiple === 1);
+	}//end multiple()
+
+	/**
+	 * The entry with the well-formed `accept` entries, when there are any.
+	 *
+	 * @param array<string, mixed> $entry  The entry built so far.
+	 * @param array<string, mixed> $config The declared field config.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withAccept(array $entry, array $config): array {
 		$accept = $this->accept(declared: ($config['accept'] ?? null));
 		if ($accept !== []) {
 			$entry['accept'] = $accept;
 		}
 
+		return $entry;
+	}//end withAccept()
+
+	/**
+	 * The entry with `maxSizeMb` clamped into 1 to 50, when a whole number is declared.
+	 *
+	 * @param array<string, mixed> $entry  The entry built so far.
+	 * @param array<string, mixed> $config The declared field config.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withMaxSize(array $entry, array $config): array {
 		$size = ($config['maxSizeMb'] ?? null);
 		if (is_int($size) === true || (is_string($size) === true && ctype_digit($size) === true)) {
 			$entry['maxSizeMb'] = max(1, min(self::MAX_SIZE_MB, (int)$size));
 		}
 
 		return $entry;
-	}//end apply()
+	}//end withMaxSize()
 
 	/**
 	 * Keep the well-formed `accept` entries: an extension (`.pdf`) or a MIME
@@ -114,18 +138,34 @@ class FileFieldConfigNormaliser {
 
 		$kept = [];
 		foreach ($declared as $candidate) {
-			if (is_string($candidate) === false) {
-				continue;
-			}
-
-			$value = strtolower(trim($candidate));
-			$isExtension = (preg_match('/^\.[a-z0-9]{1,16}$/', $value) === 1);
-			$isMime = (preg_match('/^[a-z]+\/(\*|[a-z0-9][a-z0-9.+-]*)$/', $value) === 1);
-			if (($isExtension === true || $isMime === true) && in_array($value, $kept, true) === false) {
+			$value = $this->acceptValue(candidate: $candidate);
+			if ($value !== null && in_array($value, $kept, true) === false) {
 				$kept[] = $value;
 			}
 		}
 
 		return array_slice($kept, 0, self::MAX_ACCEPT);
 	}//end accept()
+
+	/**
+	 * One `accept` entry lowercased, when it is an extension or a MIME type.
+	 *
+	 * @param mixed $candidate The declared entry.
+	 *
+	 * @return string|null
+	 */
+	private function acceptValue(mixed $candidate): string|null {
+		if (is_string($candidate) === false) {
+			return null;
+		}
+
+		$value = strtolower(trim($candidate));
+		$isExtension = (preg_match('/^\.[a-z0-9]{1,16}$/', $value) === 1);
+		$isMime = (preg_match('/^[a-z]+\/(\*|[a-z0-9][a-z0-9.+-]*)$/', $value) === 1);
+		if ($isExtension === true || $isMime === true) {
+			return $value;
+		}
+
+		return null;
+	}//end acceptValue()
 }//end class

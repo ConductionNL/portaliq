@@ -16,7 +16,9 @@ import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { OPEN_STORAGE_KEY } from '../src/shared/openRecord.js'
+import { fileLine } from '../src/site/components/mijn/documents.js'
 import { blocks } from '../src/site/components/mijn/index.js'
+import { organisationKind } from '../src/site/components/mijn/organisationKind.js'
 import {
 	deadlineBadge,
 	inboxRows,
@@ -390,13 +392,13 @@ test('an unread message carries "Nieuw" inside its link, and "Alle berichten" le
 	assert.equal(rows.length, 2)
 	assert.match(
 		rows[0],
-		/href="\/mijn\/dossiq\/zaken">.*Wij hebben een vraag over uw Woo-verzoek.*Dossiq, Vandaag om 14\.20 uur.*nl-data-badge--success[^>]*>(<!--\[-->)?Nieuw(<!--\]-->)?<\/span>.*<\/a>/,
-		'unread first, opening the record it is about',
+		/href="\/mijn\/inbox\/berichten\/m2">.*Wij hebben een vraag over uw Woo-verzoek.*Dossiq, Vandaag om 14\.20 uur.*nl-data-badge--success[^>]*>(<!--\[-->)?Nieuw(<!--\]-->)?<\/span>.*<\/a>/,
+		'unread first, opening its own message page (a-resident-opens-one-message T06)',
 	)
 	assert.match(
 		rows[1],
-		/href="\/mijn\/inbox">/,
-		'a message about no shown record opens the inbox',
+		/href="\/mijn\/inbox\/berichten\/m1">/,
+		'a message about no shown record opens its own page too',
 	)
 	assert.doesNotMatch(rows[1], /Nieuw/)
 	assert.match(
@@ -520,4 +522,27 @@ test("the components take only the Den Haag CSS, at thematiq's pinned versions, 
 		'@gemeente-denhaag/step-marker/index.css',
 		'@gemeente-denhaag/step-marker/index.css',
 	])
+})
+
+// portal-identity-from-the-admin 3.2 (REQ-PIA-003): the site names the
+// organisation's kind from the portal's TOOI organisation type label, with
+// its Dutch article, and never assumes a municipality.
+test('a water authority is not called a municipality', () => {
+	const nl = mijnTranslator((key) => key, 'nl')
+	const line = fileLine({ title: 'Aanslag', date: '2026-10-02' }, nl, 'nl', 'waterschap')
+	assert.match(line, /^Van het waterschap, /)
+	assert.doesNotMatch(line, /gemeente/i)
+	assert.equal(organisationKind('Ministerie', 'nl'), 'het ministerie')
+	assert.equal(organisationKind('provincie', 'nl'), 'de provincie')
+	assert.equal(organisationKind('gemeente', 'nl'), 'de gemeente')
+	assert.equal(strings.nl['From {organisation}'], 'Van {organisation}')
+	assert.equal(strings.nl['From the municipality'], undefined)
+})
+
+test('no type reads van de organisatie', () => {
+	const nl = mijnTranslator((key) => key, 'nl')
+	assert.equal(fileLine({ title: 'Brief' }, nl, 'nl'), 'Van de organisatie.')
+	assert.equal(fileLine({ title: 'Brief' }, nl, 'nl', '  '), 'Van de organisatie.')
+	assert.equal(organisationKind('', 'en'), 'the organisation')
+	assert.equal(organisationKind('waterschap', 'en'), 'the organisation')
 })

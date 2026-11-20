@@ -96,6 +96,23 @@ class PortalThemeOverviewTest extends TestCase {
 	}//end testEveryPortalGetsItsThemesVerdict()
 
 	/**
+	 * A malformed portal row is left out, and a domain entry that is not a
+	 * map is passed over for the next hostname.
+	 *
+	 * @return void
+	 */
+	public function testMalformedPortalsAndDomainsArePassedOver(): void {
+		$rows = $this->overview(portals: [
+			'not a portal',
+			['id' => 'p-1', 'slug' => 'gemeente', 'title' => 'Gemeente', 'theme' => 'readable', 'domains' => ['gemeente.nl', ['hostname' => ''], ['hostname' => 'www.gemeente.nl']]],
+		], themeApp: true)->rows();
+
+		$this->assertCount(1, $rows['portals']);
+		$this->assertSame('www.gemeente.nl', $rows['portals'][0]['domain']);
+		$this->assertSame('readable', $rows['portals'][0]['contrast']);
+	}//end testMalformedPortalsAndDomainsArePassedOver()
+
+	/**
 	 * Without the theme app nothing is measured, so nothing reads as readable.
 	 *
 	 * @return void

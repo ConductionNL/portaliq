@@ -35,8 +35,9 @@ namespace OCA\Portaliq\Service\Reports;
 
 use DateTimeImmutable;
 use OCA\Portaliq\Event\PortalReportRevealedEvent;
-use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\RevealServiceInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IGroupManager;
 use OCP\IUser;
@@ -46,7 +47,7 @@ use OCP\IUser;
  *
  * @spec openspec/specs/report-without-an-account/spec.md
  */
-class RevealService {
+class RevealService implements RevealServiceInterface {
 	/**
 	 * The register the request lives in.
 	 */
@@ -279,7 +280,27 @@ class RevealService {
 			return [];
 		}
 
-		$rows = $this->reader->readCollection(
+		$rows = $this->contactRows(report: $report);
+		foreach ($rows as $row) {
+			if (is_array($row) === false) {
+				continue;
+			}
+
+			return $this->givenFields(row: $row);
+		}
+
+		return [];
+	}//end contactFor()
+
+	/**
+	 * The contact rows written for the report.
+	 *
+	 * @param array<string, mixed> $report The report.
+	 *
+	 * @return array<int|string, mixed>
+	 */
+	private function contactRows(array $report): array {
+		return $this->reader->readCollection(
 			register: self::REGISTER,
 			schema: self::CONTACT_SCHEMA,
 			scopeField: 'reportRef',
@@ -287,25 +308,26 @@ class RevealService {
 			organisation: '',
 			limit: 5
 		);
+	}//end contactRows()
 
-		foreach ($rows as $row) {
-			if (is_array($row) === false) {
-				continue;
+	/**
+	 * The name, e-mail and phone the reporter filled in.
+	 *
+	 * @param array<string, mixed> $row The contact row.
+	 *
+	 * @return array<string, string>
+	 */
+	private function givenFields(array $row): array {
+		$contact = [];
+		foreach (['name', 'email', 'phone'] as $field) {
+			$value = (string)($row[$field] ?? '');
+			if ($value !== '') {
+				$contact[$field] = $value;
 			}
-
-			$contact = [];
-			foreach (['name', 'email', 'phone'] as $field) {
-				$value = (string)($row[$field] ?? '');
-				if ($value !== '') {
-					$contact[$field] = $value;
-				}
-			}
-
-			return $contact;
 		}
 
-		return [];
-	}//end contactFor()
+		return $contact;
+	}//end givenFields()
 
 	/**
 	 * Write the custodian's answer onto the request.

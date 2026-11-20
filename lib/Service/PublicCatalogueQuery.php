@@ -26,12 +26,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\PublicCatalogueQueryInterface;
+
 /**
  * Searches, filters, sorts and pages catalogue items.
  *
  * @spec openspec/changes/portal-public-catalogue/specs/portal-public-catalogue/spec.md#requirement-a-visitor-may-search-and-filter-a-portals-public-catalogue
  */
-class PublicCatalogueQuery {
+class PublicCatalogueQuery implements PublicCatalogueQueryInterface {
 	/**
 	 * The most results one page shows.
 	 */
@@ -46,11 +48,6 @@ class PublicCatalogueQuery {
 		'í' => 'i', 'ì' => 'i', 'ï' => 'i', 'î' => 'i', 'ó' => 'o', 'ò' => 'o', 'ö' => 'o', 'ô' => 'o',
 		'ú' => 'u', 'ù' => 'u', 'ü' => 'u', 'û' => 'u', 'ç' => 'c', 'ñ' => 'n', 'ĳ' => 'ij',
 	];
-
-	/**
-	 * The sorts a visitor may choose.
-	 */
-	public const SORTS = ['relevance', 'date', 'dateDesc', 'title'];
 
 	/**
 	 * One page of the items that match a visitor's query, with the facets of
@@ -262,6 +259,23 @@ class PublicCatalogueQuery {
 	 * @return array<int, array{label: string, values: array<int, array{value: string, count: int, selected: bool}>}>
 	 */
 	private function facets(array $items, array $filters): array {
+		$out = [];
+		foreach ($this->facetLabels(items: $items) as $label) {
+			$counts = $this->facetCounts(items: $items, filters: $filters, label: $label);
+			$out[]  = ['label' => $label, 'values' => $this->facetValues(counts: $counts, filters: $filters, label: $label)];
+		}
+
+		return $out;
+	}//end facets()
+
+	/**
+	 * The facet labels the items carry, in first-seen order.
+	 *
+	 * @param array<int, array<string, mixed>> $items The items that match the query.
+	 *
+	 * @return array<int, string>
+	 */
+	private function facetLabels(array $items): array {
 		$labels = [];
 		foreach ($items as $item) {
 			foreach (array_keys((array)($item['facets'] ?? [])) as $label) {
@@ -269,29 +283,50 @@ class PublicCatalogueQuery {
 			}
 		}
 
-		$out = [];
-		foreach (array_keys($labels) as $label) {
-			$counts = [];
-			foreach ($items as $item) {
-				if ($this->inFilters(item: $item, filters: $filters, except: $label) === false) {
-					continue;
-				}
+		return array_keys($labels);
+	}//end facetLabels()
 
-				foreach ((array)($item['facets'][$label] ?? []) as $value) {
-					$counts[$value] = ($counts[$value] ?? 0) + 1;
-				}
+	/**
+	 * How many items hold each value of one facet, among those that match every OTHER facet's choice.
+	 *
+	 * @param array<int, array<string, mixed>>  $items   The items that match the query.
+	 * @param array<string, array<int, string>> $filters The choices.
+	 * @param string                            $label   The facet.
+	 *
+	 * @return array<int|string, int>
+	 */
+	private function facetCounts(array $items, array $filters, string $label): array {
+		$counts = [];
+		foreach ($items as $item) {
+			if ($this->inFilters(item: $item, filters: $filters, except: $label) === false) {
+				continue;
 			}
 
-			$values = [];
-			foreach ($counts as $value => $count) {
-				$values[] = ['value' => (string)$value, 'count' => $count, 'selected' => in_array((string)$value, $filters[$label] ?? [], true)];
+			foreach ((array)($item['facets'][$label] ?? []) as $value) {
+				$counts[$value] = ($counts[$value] ?? 0) + 1;
 			}
+		}
 
-			$out[] = ['label' => $label, 'values' => $values];
-		}//end foreach
+		return $counts;
+	}//end facetCounts()
 
-		return $out;
-	}//end facets()
+	/**
+	 * One facet's values with their counts and whether they are chosen.
+	 *
+	 * @param array<int|string, int>            $counts  The count per value.
+	 * @param array<string, array<int, string>> $filters The choices.
+	 * @param string                            $label   The facet.
+	 *
+	 * @return array<int, array{value: string, count: int, selected: bool}>
+	 */
+	private function facetValues(array $counts, array $filters, string $label): array {
+		$values = [];
+		foreach ($counts as $value => $count) {
+			$values[] = ['value' => (string)$value, 'count' => $count, 'selected' => in_array((string)$value, $filters[$label] ?? [], true)];
+		}
+
+		return $values;
+	}//end facetValues()
 
 	/**
 	 * The items in the chosen order: by relevance (a word in the title first,

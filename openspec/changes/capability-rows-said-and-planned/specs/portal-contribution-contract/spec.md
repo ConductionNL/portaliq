@@ -8,10 +8,12 @@ Portaliq SHALL find a contributing app by a provider class at a conventional nam
 - **GIVEN** an app that ships a portal contribution provider at the conventional class name
 - **WHEN** it is installed and enabled next to portaliq
 - **THEN** its collections and actions appear for the audiences it names, with no change in portaliq or in that app
+@e2e tests/e2e/portal-cross-app-contributions.spec.ts
 
 #### Scenario: An app without a provider
 - **WHEN** an app without a contribution provider is installed
 - **THEN** the portal shows nothing from it and nothing fails
+@e2e exclude needs an installed app without a provider on the test instance; Unit: tests/Unit/Contribution/PortalContributionRegistryFailuresTest.php
 
 ### Requirement: A contributed page is built from typed blocks (REQ-RSP-004)
 
@@ -21,6 +23,7 @@ A contribution SHALL be able to declare pages made of typed blocks: a data list,
 - **GIVEN** a contribution page with a rich text block, a collection block and an action block
 - **WHEN** a resident opens that page
 - **THEN** the text, the list and the form show in that order
+@e2e exclude block order is a resolver contract; Unit: tests/Unit/Contribution/PortalBlockResolverTest.php
 
 ### Requirement: A contribution says how its data reads (REQ-RSP-005)
 
@@ -30,11 +33,13 @@ A contribution SHALL be able to say, without portaliq code, which columns a coll
 - **GIVEN** a collection declaring the columns reference, status and amount, status as a badge and amount as euros
 - **WHEN** a resident opens the list
 - **THEN** the list shows those three columns, the status as a badge and the amount as "€ 12,50"
+@e2e exclude rendering of a declared config; Unit: tests/Unit/Contribution/CollectionConfigNormaliserTest.php
 
 #### Scenario: A dropdown takes its options from a source
 - **GIVEN** an action whose field "type" names an options source
 - **WHEN** the resident opens the action form
 - **THEN** the dropdown lists the options that source answers
+@e2e exclude options source contract; Unit: tests/Unit/Contribution/ActionOptionsNormaliserProvidersTest.php
 
 ### Requirement: An anonymous visitor reads public contributed content (REQ-RSP-006)
 
@@ -44,3 +49,4 @@ Portaliq SHALL show a visitor who is not signed in the read-only content that co
 - **GIVEN** an app that declares a read-only collection for anonymous visitors
 - **WHEN** a visitor who is not signed in opens the page that shows it
 - **THEN** they see that collection, and no collection meant for signed-in residents
+@e2e tests/e2e/site-content.spec.ts S19 and S21 (unit: tests/Unit/Contribution/PortalContributionRegistryTest.php)

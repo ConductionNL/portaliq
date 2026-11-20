@@ -30,16 +30,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Kernel\Contracts\PortalEmbedGuardInterface;
+
 /**
  * Decides who may frame a form, and describes the embed to an administrator.
  *
  * @spec openspec/changes/embedded-intake-form/specs/embedded-intake-form/spec.md
  */
-class PortalEmbedGuard {
-	/**
-	 * The height the frame starts at when no message has arrived yet.
-	 */
-	public const MINIMUM_HEIGHT = 480;
+class PortalEmbedGuard implements PortalEmbedGuardInterface {
 
 	/**
 	 * The origins a binding allows, normalised to scheme and host.
@@ -182,6 +180,17 @@ class PortalEmbedGuard {
 			return '';
 		}
 
+		return $this->originOf(parts: $parts);
+	}//end normalise()
+
+	/**
+	 * `scheme://host[:port]` in lower case from parsed URL parts, or '' without scheme or host.
+	 *
+	 * @param array<string, mixed> $parts The parsed origin.
+	 *
+	 * @return string
+	 */
+	private function originOf(array $parts): string {
 		$scheme = strtolower((string)($parts['scheme'] ?? ''));
 		$host = strtolower((string)($parts['host'] ?? ''));
 		if ($scheme === '' || $host === '') {
@@ -194,5 +203,5 @@ class PortalEmbedGuard {
 		}
 
 		return $scheme . '://' . $host . ':' . (int)$port;
-	}//end normalise()
+	}//end originOf()
 }//end class

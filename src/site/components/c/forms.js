@@ -419,20 +419,52 @@ export function fieldErrors(action, values, files, t) {
 function fieldError(field, { action, values, files, translate, fileNames }) {
 	const config = fieldConfig(action, field)
 	const label = fieldLabel(action, field)
-	// The app's own words for an empty required field win (REQ-SMF-006).
-	const own =
-		typeof config.requiredMessage === 'string'
-		&& config.requiredMessage.trim() !== ''
-			? config.requiredMessage
-			: ''
+	const own = ownRequiredMessage(config)
 	if (fileNames.includes(field)) {
 		const missing = config.required === true && (files[field] || []).length === 0
 		return missing ? own || translate('Please choose a file for {field}.', { field: label }) : null
 	}
 	const value = values[field]
-	if (value === undefined || value === null || String(value).trim() === '') {
+	if (isBlank(value)) {
 		return config.required === true ? own || translate('{field} is required.', { field: label }) : null
 	}
+	return answerError(action, field, value, translate, label)
+}
+
+/**
+ * The app's own words for an empty required field, or '' (REQ-SMF-006).
+ *
+ * @param {object} config The field config.
+ * @return {string} The message, or ''.
+ */
+function ownRequiredMessage(config) {
+	return typeof config.requiredMessage === 'string'
+		&& config.requiredMessage.trim() !== ''
+		? config.requiredMessage
+		: ''
+}
+
+/**
+ * Whether an answer is missing or only whitespace.
+ *
+ * @param {unknown} value The answer.
+ * @return {boolean} True when it is blank.
+ */
+function isBlank(value) {
+	return value === undefined || value === null || String(value).trim() === ''
+}
+
+/**
+ * The error of an answer that was given: not a real date, or not its type.
+ *
+ * @param {object} action The action.
+ * @param {string} field The field.
+ * @param {unknown} value The answer.
+ * @param {(key: string, vars?: object) => string} translate The translator.
+ * @param {string} label The field's label.
+ * @return {string|null} The message, or null.
+ */
+function answerError(action, field, value, translate, label) {
 	if (fieldInput(action, field) === 'date' && dateProblem(value)) {
 		return translate('{field}: enter a real date, for example 1 3 2026.', { field: label })
 	}

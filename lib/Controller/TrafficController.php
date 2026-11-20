@@ -27,15 +27,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
-use OCA\Portaliq\Service\Traffic\RawRequestBody;
-use OCA\Portaliq\Service\Traffic\TrafficRecordingService;
-use OCA\Portaliq\Service\Traffic\TrafficServerBatch;
-use OCA\Portaliq\Service\Traffic\TrafficServerToken;
-use OCA\Portaliq\Service\TrafficEventValidator;
-use OCA\Portaliq\Service\TrafficIngestService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\BearerSessionResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\RawRequestBodyInterface;
+use OCA\Portaliq\Kernel\Contracts\TrafficEventValidatorInterface;
+use OCA\Portaliq\Kernel\Contracts\TrafficIngestServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\TrafficRecordingServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\TrafficServerTokenInterface;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -48,6 +47,7 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Http\Response;
 use OCP\IRequest;
 use Throwable;
+use OCA\Portaliq\Kernel\Contracts\TrafficServerBatchInterface;
 
 /**
  * Anonymous, unauthenticated, writable by anyone who can reach the portal:
@@ -74,6 +74,7 @@ use Throwable;
  * threshold are what account linking (portal-traffic-visitors-and-geo),
  * the server API (portal-traffic-reporting) and session recording
  * (portal-traffic-experiments) each need.
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class TrafficController extends Controller {
 
@@ -98,26 +99,28 @@ class TrafficController extends Controller {
 	 *
 	 * @param string               $appName    The app id.
 	 * @param IRequest             $request    The request.
-	 * @param PortalResolver       $resolver   Resolves the serving portal.
-	 * @param TrafficIngestService $ingest     Validates and stores events.
-	 * @param RawRequestBody       $body       Reads the text body.
+	 * @param PortalResolverInterface       $resolver   Resolves the serving portal.
+	 * @param TrafficIngestServiceInterface $ingest     Validates and stores events.
+	 * @param RawRequestBodyInterface       $body       Reads the text body.
 	 * @param IAppManager          $appManager Locates the built client on disk.
-	 * @param PortalSessionService $session    Resolves a portal session bearer to its subject, for account linking.
-	 * @param TrafficServerToken   $tokens     Verifies a backend's bearer token (portal-traffic-reporting).
-	 * @param TrafficRecordingService $recordings Stores a session recording chunk (portal-traffic-experiments).
+	 * @param BearerSessionResolverInterface $session    Resolves a portal session bearer to its subject, for account linking.
+	 * @param TrafficServerTokenInterface   $tokens     Verifies a backend's bearer token (portal-traffic-reporting).
+	 * @param TrafficRecordingServiceInterface $recordings Stores a session recording chunk (portal-traffic-experiments).
+	 * @param TrafficServerBatchInterface $trafficServerBatch The TrafficServerBatch helper.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly PortalResolver $resolver,
-		private readonly TrafficIngestService $ingest,
-		private readonly RawRequestBody $body,
+		private readonly PortalResolverInterface $resolver,
+		private readonly TrafficIngestServiceInterface $ingest,
+		private readonly RawRequestBodyInterface $body,
 		private readonly IAppManager $appManager,
-		private readonly PortalSessionService $session,
-		private readonly TrafficServerToken $tokens,
-		private readonly TrafficRecordingService $recordings,
+		private readonly BearerSessionResolverInterface $session,
+		private readonly TrafficServerTokenInterface $tokens,
+		private readonly TrafficRecordingServiceInterface $recordings,
+		private readonly TrafficServerBatchInterface $trafficServerBatch,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -173,7 +176,7 @@ class TrafficController extends Controller {
 			return $this->refusal(reason: 'malformed-batch');
 		}
 
-		if ($bounded === true && count($batch['events']) > TrafficEventValidator::MAX_BATCH) {
+		if ($bounded === true && count($batch['events']) > TrafficEventValidatorInterface::MAX_BATCH) {
 			return $this->refusal(reason: 'batch-too-large');
 		}
 
@@ -232,7 +235,7 @@ class TrafficController extends Controller {
 		$consent = (($batch['consent'] ?? false) === true);
 		// Pure and stateless, so built here rather than injected: a tenth
 		// constructor argument for a regrouping is more ceremony than fact.
-		$batches = new TrafficServerBatch();
+		$batches = $this->trafficServerBatch;
 		foreach ($batches->byVisitor(batch: $batch) as $group) {
 			$this->ingest->ingestForPortal(
 				portal: $portal,
@@ -370,6 +373,24 @@ class TrafficController extends Controller {
 	#[AnonRateLimit(limit: 600, period: 60)]
 	#[UserRateLimit(limit: 600, period: 60)]
 	public function pixel(?string $portal = null, ?string $e = null, ?string $l = null): DataDisplayResponse {
+		$this->ingestFor(slug: $portal, events: [$this->pixelEvent(e: $e, l: $l)], consent: false);
+
+		$this->stateless();
+		return $this->pixelResponse();
+	}//end pixel()
+
+
+	/**
+	 * The one event an image request records.
+	 *
+	 * @param string|null $e The event name; page_view when absent.
+	 * @param string|null $l The page location; the referer when absent.
+	 *
+	 * @return array{name: string, sequence: int, pageLocation: mixed}
+	 *
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
+	 */
+	private function pixelEvent(string|null $e, string|null $l): array {
 		$location = $l;
 		if (is_string($location) === false || trim($location) === '') {
 			$location = $this->request->getHeader('Referer');
@@ -380,14 +401,22 @@ class TrafficController extends Controller {
 			$name = 'page_view';
 		}
 
-		$event = [
+		return [
 			'name' => $name,
 			'sequence' => 0,
 			'pageLocation' => $location,
 		];
-		$this->ingestFor(slug: $portal, events: [$event], consent: false);
+	}//end pixelEvent()
 
-		$this->stateless();
+
+	/**
+	 * The 1x1 GIF, never cached.
+	 *
+	 * @return DataDisplayResponse
+	 *
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
+	 */
+	private function pixelResponse(): DataDisplayResponse {
 		$response = new DataDisplayResponse(
 			(string)base64_decode(self::PIXEL, true),
 			Http::STATUS_OK,
@@ -396,7 +425,7 @@ class TrafficController extends Controller {
 		$response->addHeader('Cache-Control', 'private, no-store');
 
 		return $response;
-	}//end pixel()
+	}//end pixelResponse()
 
 
 	/**
@@ -460,7 +489,7 @@ class TrafficController extends Controller {
 	 */
 	private function clientPath(string $file): ?string {
 		try {
-			$path = $this->appManager->getAppPath(Application::APP_ID) . '/js/' . $file;
+			$path = $this->appManager->getAppPath(AppIdentity::APP_ID) . '/js/' . $file;
 		} catch (Throwable) {
 			return null;
 		}

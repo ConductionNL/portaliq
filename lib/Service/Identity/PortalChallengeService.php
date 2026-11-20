@@ -40,6 +40,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\PortalChallengeServiceInterface;
 use OCP\Security\ICrypto;
 use OCP\Security\ISecureRandom;
 
@@ -48,7 +49,7 @@ use OCP\Security\ISecureRandom;
  *
  * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
-class PortalChallengeService {
+class PortalChallengeService implements PortalChallengeServiceInterface {
 	/**
 	 * The work factor used when a surface names none.
 	 */
