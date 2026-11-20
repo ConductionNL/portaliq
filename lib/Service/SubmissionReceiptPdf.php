@@ -151,8 +151,7 @@ final class SubmissionReceiptPdf {
 	 * The PDF bytes of a receipt document, or null when rendering failed or
 	 * the document was too large.
 	 *
-	 * @param array{title: string, columns: array<int, array{key: string, label: string}>, rows: array<int, array<string, string>>} $document
-	 *        What document() gave.
+	 * @param array<string, mixed> $document What document() gave: its title, columns and rows.
 	 *
 	 * @return string|null The bytes.
 	 *
