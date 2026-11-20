@@ -262,7 +262,8 @@
     "check:site-contrast": "node --test tests/site-contrast.spec.mjs",
     "check:surfaces": "node tests/site-surfaces.spec.mjs",
     "check:site-contribution": "node --test tests/site-contribution.spec.mjs",
-    "check:woo-bundle-routes": "node --test tests/woo-bundle-routes.spec.mjs"
+    "check:woo-bundle-routes": "node --test tests/woo-bundle-routes.spec.mjs",
+    "test:site-surfaces": "node tests/site-surfaces.spec.mjs"
   },
   "browserslist": [
     "extends @nextcloud/browserslist-config"
