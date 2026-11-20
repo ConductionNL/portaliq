@@ -60,12 +60,12 @@ use OCA\Portaliq\Kernel\Contracts\PortalIntakeQueueInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSubmissionChecksInterface;
+use OCA\Portaliq\Service\Intake\FormSignInGate;
 use OCA\Portaliq\Service\Intake\PortalCosignFlow;
 use OCA\Portaliq\Service\Intake\PortalIntakeConfirmation;
 use OCA\Portaliq\Service\Intake\PortalIntakePayments;
 use OCA\Portaliq\Service\Intake\PortalSubmissionChecks;
 use OCA\Portaliq\Service\Intake\QueuedSubmission;
-use OCA\Portaliq\Kernel\Support\SessionTrust;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -845,46 +845,6 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	}//end decide()
 
 	/**
-	 * Run one fetch a step declares, at the step change: integriq asks the
-	 * connection from the server and the step gets the fields it fills and
-	 * its check line. The source, its credential and its raw answer never
-	 * reach the browser; a fetch that does not answer is a 503, so the step
-	 * shows that the data cannot be fetched now and the draft stays.
-	 *
-	 * @param string $route The form page.
-	 * @param string $step The id of the step that declares the fetch.
-	 * @param string $fetch The id of the fetch.
-	 * @param array<string, mixed> $answers The answers so far.
-	 * @param string $portal The portal's slug; empty resolves it from the host.
-	 *
-	 * @return JSONResponse `{fetch, values, check, fetchedAt}`, 503 when the fetch does not answer, or 404.
-	 *
-	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t05
-	 */
-	#[PublicPage]
-	#[NoCSRFRequired]
-	#[AnonRateLimit(limit: 30, period: 60)]
-	public function fetch(string $route, string $step, string $fetch, array $answers = [], string $portal = ''): JSONResponse {
-		$site = $this->site(portal: $portal);
-		if ($site === null) {
-			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
-		}
-
-		$binding = $this->bindings->bindingFor(portal: (string)($site['slug'] ?? ''), route: $route);
-		if ($binding === null) {
-			return new JSONResponse(['error' => 'form_not_found'], Http::STATUS_NOT_FOUND);
-		}
-
-		$render  = $this->bindings->render(binding: $binding);
-		$refusal = $this->signInRefusal(site: $site, binding: $binding, render: $render, subject: $this->subject());
-		if ($refusal !== null) {
-			return $refusal;
-		}
-
-		return $this->checks->fetchStep(render: $render, step: $step, fetch: $fetch, answers: $answers);
-	}//end fetch()
-
-	/**
 	 * The resident's partner and children to choose from, DigiD only.
 	 *
 	 * Reads the BSN from the session's own account, never from the request.
@@ -1051,30 +1011,9 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @return JSONResponse|null
 	 */
 	private function signInRefusal(array $site, array $binding, array $render, ?array $subject): ?JSONResponse {
-		$required = $this->bindings->requiredTrust(site: $site, binding: $binding, render: $render);
-		if ($required === null) {
-			return null;
-		}
+		$gate = new FormSignInGate(bindings: $this->bindings, prefill: $this->prefill);
 
-		// What the sign-in page shows beside the choice: the Yivi attributes
-		// the form asks for (REQ-RIF-004) and whether an employee may fill it
-		// in (REQ-RIF-005).
-		$body = [
-			'error' => 'sign_in_required',
-			'minTrust' => $required,
-			'fee' => ($render['fee'] ?? null),
-			'yiviAttributes' => $this->prefill->yiviRequest(binding: $binding),
-			'staffMayFill' => (($binding['staffMayFill'] ?? false) === true),
-		];
-		if ($subject === null) {
-			return new JSONResponse($body, Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ((new SessionTrust())->trustSatisfies(subjectTrust: ($subject['trust'] ?? ''), minTrust: $required) === false) {
-			return new JSONResponse($body, Http::STATUS_FORBIDDEN);
-		}
-
-		return null;
+		return $gate->refusal(site: $site, binding: $binding, render: $render, subject: $subject);
 	}//end signInRefusal()
 
 	/**

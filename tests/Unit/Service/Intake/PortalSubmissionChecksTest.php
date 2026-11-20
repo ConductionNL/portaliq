@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service\Intake;
 
 use OCA\Portaliq\Service\Intake\FormStatements;
+use OCA\Portaliq\Service\Intake\FormStepFetches;
 use OCA\Portaliq\Service\Intake\PortalEmailVerification;
 use OCA\Portaliq\Service\Intake\PortalFamilyMembers;
 use OCA\Portaliq\Service\Intake\PortalFormCalculator;
@@ -27,6 +28,7 @@ use Psr\Log\LoggerInterface;
 #[CoversClass(PortalSubmissionChecks::class)]
 #[UsesClass(SubmissionDecisions::class)]
 #[UsesClass(PortalFormFetch::class)]
+#[UsesClass(FormStepFetches::class)]
 class PortalSubmissionChecksTest extends TestCase {
 	/**
 	 * A validator that accepts what it is given.
@@ -308,38 +310,6 @@ class PortalSubmissionChecksTest extends TestCase {
 
 		return new PortalFormFetch($events, $this->createMock(LoggerInterface::class), ServiceFetchEventFake::class);
 	}//end fetches()
-
-	/**
-	 * REQ-DIF-005: the step's fetch answers the fields it fills and its check
-	 * line, with only the form's own answers sent; an unknown fetch is a 404
-	 * and a source that is down a 503.
-	 *
-	 * @return void
-	 */
-	public function testFetchStepAnswersTheFieldsAndTheCheckLine(): void {
-		$dispatched = [];
-		$fetches    = $this->fetches(
-			static fn (ServiceFetchEventFake $e) => $e->setOutputs(['eigenaarNaam' => 'S. de Vries', 'isEigenaar' => true], '2026-11-17T12:00:00Z'),
-			$dispatched
-		);
-		$checks     = new PortalSubmissionChecks($this->validator(), null, null, null, null, null, $fetches);
-
-		$response = $checks->fetchStep($this->fetchForm(), 'pand', 'eigenaar', ['postcode' => '3311AB', 'junk' => 'x']);
-		$this->assertSame(200, $response->getStatus());
-		$this->assertSame(
-			['fetch' => 'eigenaar', 'values' => ['eigenaar' => 'S. de Vries'], 'check' => 'Volgens het Kadaster staat dit pand op uw naam.', 'fetchedAt' => '2026-11-17T12:00:00Z'],
-			$response->getData()
-		);
-		$this->assertSame(['postcode' => '3311AB'], $dispatched[0]->inputs);
-
-		$this->assertSame(404, $checks->fetchStep($this->fetchForm(), 'adres', 'eigenaar', [])->getStatus());
-		$this->assertSame(404, (new PortalSubmissionChecks($this->validator()))->fetchStep($this->fetchForm(), 'pand', 'eigenaar', [])->getStatus(), 'no fetch service, nothing to run');
-
-		$down = new PortalSubmissionChecks($this->validator(), null, null, null, null, null, $this->fetches(static fn (ServiceFetchEventFake $e) => $e->refuse('timeout')));
-		$failed = $down->fetchStep($this->fetchForm(), 'pand', 'eigenaar', []);
-		$this->assertSame(503, $failed->getStatus());
-		$this->assertSame(['error' => 'fetch_unavailable'], $failed->getData());
-	}//end testFetchStepAnswersTheFieldsAndTheCheckLine()
 
 	/**
 	 * REQ-DIF-005: on submit the field a fetch fills holds what the source

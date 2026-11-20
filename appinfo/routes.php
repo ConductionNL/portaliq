@@ -419,7 +419,7 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         // form-flow-repeating-groups-calculations-and-decisions: a step's decision, asked of the rule engine on the server.
         ['name' => 'portalIntake#decide', 'url' => '/portal/api/intake/decide', 'verb' => 'POST'],
         // A step's fetch, asked of integriq on the server (data-lookups-and-checks-in-forms).
-        ['name' => 'portalIntake#fetch', 'url' => '/portal/api/intake/fetch', 'verb' => 'POST'],
+        ['name' => 'formStepFetch#fetch', 'url' => '/portal/api/intake/fetch', 'verb' => 'POST'],
         ['name' => 'portalIntake#catalogue', 'url' => '/portal/api/intake/catalogue', 'verb' => 'GET'],
         // Street and town for a postcode and house number (data-lookups-and-checks-in-forms).
         ['name' => 'portalIntake#address', 'url' => '/portal/api/intake/address', 'verb' => 'GET'],

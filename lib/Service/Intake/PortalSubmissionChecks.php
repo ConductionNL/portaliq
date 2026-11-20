@@ -99,7 +99,7 @@ class PortalSubmissionChecks implements PortalSubmissionChecksInterface {
 			return $validated;
 		}
 
-		$validated = $this->fetchedAnswers(steps: (array)($render['steps'] ?? []), answers: $validated);
+		$validated = $this->stepFetches()->filledAnswers(steps: (array)($render['steps'] ?? []), answers: $validated);
 		if ($validated instanceof JSONResponse) {
 			return $validated;
 		}
@@ -232,6 +232,15 @@ class PortalSubmissionChecks implements PortalSubmissionChecksInterface {
 	}//end decisions()
 
 	/**
+	 * The fetches the form's steps declare.
+	 *
+	 * @return FormStepFetches
+	 */
+	private function stepFetches(): FormStepFetches {
+		return new FormStepFetches(fetches: $this->fetches, calculator: $this->calculator, decision: $this->decision);
+	}//end stepFetches()
+
+	/**
 	 * The statements the form asks are accepted before anything is recorded;
 	 * the record of each accepted one carries the version of its text
 	 * (form-statements-intro-and-confirmation-mail REQ-FCI-002).
@@ -268,84 +277,6 @@ class PortalSubmissionChecks implements PortalSubmissionChecksInterface {
 	}//end checkedStatements()
 
 	/**
-	 * The answers with every field a step's fetch fills taken from a fresh
-	 * fetch, so a value the browser changed never reaches a case; the refusal
-	 * when a fetch does not answer (data-lookups-and-checks-in-forms REQ-DIF-005).
-	 *
-	 * @param array<int, array<string, mixed>> $steps   The form's steps.
-	 * @param array<string, mixed>             $answers The validated answers.
-	 *
-	 * @return array<string, mixed>|JSONResponse
-	 *
-	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t05
-	 */
-	private function fetchedAnswers(array $steps, array $answers): array|JSONResponse {
-		if ($this->declaresFetch(steps: $steps) === false) {
-			return $answers;
-		}
-
-		$filled = $this->fetches?->filled(steps: $steps, answers: $answers);
-		if ($filled === null) {
-			return new JSONResponse(['error' => 'fetch_unavailable'], Http::STATUS_SERVICE_UNAVAILABLE);
-		}
-
-		return $filled;
-	}//end fetchedAnswers()
-
-	/**
-	 * Run one fetch a step declares, at the step change, and answer with the
-	 * fields it fills and its check line. The source, its inputs and its raw
-	 * answer never reach the browser.
-	 *
-	 * @param array<string, mixed> $render  What render() returned for the form.
-	 * @param string               $step    The id of the step that declares the fetch.
-	 * @param string               $fetch   The id of the fetch.
-	 * @param array<string, mixed> $answers The answers so far.
-	 *
-	 * @return JSONResponse `{fetch, values, check, fetchedAt}`, 503 when the fetch does not answer, or 404.
-	 *
-	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t05
-	 */
-	public function fetchStep(array $render, string $step, string $fetch, array $answers): JSONResponse {
-		$declared = $this->fetches?->declared(steps: (array)($render['steps'] ?? []), step: $step, fetch: $fetch);
-		if ($declared === null || $this->fetches === null) {
-			return new JSONResponse(['error' => 'fetch_not_found'], Http::STATUS_NOT_FOUND);
-		}
-
-		$known  = $this->decisions()->knownAnswers(fields: (array)($render['fields'] ?? []), answers: $answers);
-		$answer = $this->fetches->run(fetch: $declared, answers: $known);
-		if ($answer['status'] !== PortalFormFetch::FETCHED) {
-			return new JSONResponse(['error' => 'fetch_unavailable'], Http::STATUS_SERVICE_UNAVAILABLE);
-		}
-
-		return new JSONResponse(
-			[
-				'fetch' => $fetch,
-				'values' => ($answer['values'] ?? []),
-				'check' => ($answer['check'] ?? null),
-				'fetchedAt' => ($answer['fetchedAt'] ?? ''),
-			]
-		);
-	}//end fetchStep()
-
-	/**
-	 * Whether any step declares a fetch.
-	 *
-	 * @param array<int, array<string, mixed>> $steps The form's steps.
-	 *
-	 * @return bool
-	 */
-	private function declaresFetch(array $steps): bool {
-		foreach ($steps as $step) {
-			if (is_array($step) === true && empty($step['fetch']) === false) {
-				return true;
-			}
-		}
-
-		return false;
-	}//end declaresFetch()
-
-	/**
 	 * The steps as the browser may see them: a decision is reduced to the fact
 	 * that the step decides, so the rule, its inputs and its outcomes stay here.
 	 *
@@ -363,44 +294,12 @@ class PortalSubmissionChecks implements PortalSubmissionChecksInterface {
 			}
 
 			if (is_array($step) === true && array_key_exists('fetch', $step) === true) {
-				$steps[$index]['fetch'] = $this->fetchesForTheBrowser(fetches: (array)$step['fetch']);
+				$steps[$index]['fetch'] = $this->stepFetches()->forTheBrowser(fetches: (array)$step['fetch']);
 			}
 		}
 
 		return $steps;
 	}//end stepsForTheBrowser()
-
-	/**
-	 * A step's fetches as the browser may see them: the id, the fields each
-	 * fills and its check label. The source and the inputs stay here.
-	 *
-	 * @param array<int, mixed> $fetches The step's fetches.
-	 *
-	 * @return array<int, array{id: string, fields: array<int, string>, checkLabel: string|null}>
-	 *
-	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t05
-	 */
-	private function fetchesForTheBrowser(array $fetches): array {
-		$visible = [];
-		foreach ($fetches as $fetch) {
-			if (is_array($fetch) === false) {
-				continue;
-			}
-
-			$checkLabel = null;
-			if (is_array(($fetch['check'] ?? null)) === true) {
-				$checkLabel = (string)($fetch['check']['label'] ?? '');
-			}
-
-			$visible[] = [
-				'id' => (string)($fetch['id'] ?? ''),
-				'fields' => array_values((array)($fetch['outputs'] ?? [])),
-				'checkLabel' => $checkLabel,
-			];
-		}
-
-		return $visible;
-	}//end fetchesForTheBrowser()
 
 	/**
 	 * The statements this form asks, with the portal's wording.

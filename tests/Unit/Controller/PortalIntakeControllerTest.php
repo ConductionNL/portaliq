@@ -962,25 +962,15 @@ class PortalIntakeControllerTest extends TestCase {
 	}//end testASubmissionWhoseDecisionCannotBeAskedIsNotRecorded()
 
 	/**
-	 * REQ-DIF-005: the fetch route runs the step's fetch through integriq on
-	 * the server and answers the fields it fills; the form the browser gets
-	 * names no source.
+	 * REQ-DIF-005: the form the browser gets names the fields a step's fetch
+	 * fills and its check label, but no source and no inputs.
+	 *
+	 * @return void
 	 *
 	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t05
 	 */
-	public function testTheFetchRouteAnswersTheFilledFieldsAndTheSourceStaysOnTheServer(): void {
-		$events = $this->createMock(\OCP\EventDispatcher\IEventDispatcher::class);
-		$events->method('dispatchTyped')->willReturnCallback(
-			static function (object $event): void {
-				$event->setOutputs(['eigenaarNaam' => 'S. de Vries', 'isEigenaar' => true], '2026-11-17T12:00:00Z');
-			}
-		);
-		$fetches = new \OCA\Portaliq\Service\Intake\PortalFormFetch(
-			$events,
-			$this->createMock(LoggerInterface::class),
-			\OCA\Portaliq\Tests\Unit\Service\Intake\Fakes\ServiceFetchEventFake::class
-		);
-		$render  = [
+	public function testTheFormTheBrowserGetsNamesNoFetchSource(): void {
+		$render     = [
 			'kind' => 'form',
 			'fields' => [['name' => 'postcode', 'type' => 'text'], ['name' => 'eigenaar', 'type' => 'text']],
 			'settings' => [],
@@ -994,20 +984,13 @@ class PortalIntakeControllerTest extends TestCase {
 				],
 			],
 		];
-		$controller = $this->controller(render: $render, fetches: $fetches);
-
-		$fetched = $controller->fetch(route: 'pand', step: 'pand', fetch: 'eigenaar', answers: ['postcode' => '3311AB']);
-		$this->assertSame(Http::STATUS_OK, $fetched->getStatus());
-		$this->assertSame(['fetch' => 'eigenaar', 'values' => ['eigenaar' => 'S. de Vries'], 'check' => null, 'fetchedAt' => '2026-11-17T12:00:00Z'], $fetched->getData());
-		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->fetch(route: 'pand', step: 'adres', fetch: 'eigenaar')->getStatus());
+		$controller = $this->controller(render: $render);
 
 		$this->doubles['prefill']->method('forSubject')->willReturn([]);
 		$form = json_encode($controller->form(route: 'pand')->getData());
 		$this->assertStringNotContainsString('kadaster-eigendom', $form);
 		$this->assertStringContainsString('"fetch":[{"id":"eigenaar","fields":["eigenaar"],"checkLabel":null}]', $form);
-
-		$this->assertSame(Http::STATUS_NOT_FOUND, $this->controller(render: $render, binding: null, fetches: $fetches)->fetch(route: 'x', step: 'pand', fetch: 'eigenaar')->getStatus());
-	}//end testTheFetchRouteAnswersTheFilledFieldsAndTheSourceStaysOnTheServer()
+	}//end testTheFormTheBrowserGetsNamesNoFetchSource()
 
 	/**
 	 * REQ-FFL-003: the decide route answers outcome, field and next step, and
