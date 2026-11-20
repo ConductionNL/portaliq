@@ -21,19 +21,21 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-translation-work-per-request-is-bounded-and-skips-what-needs-none
+ * @spec openspec/specs/guardian-message-translation/spec.md#requirement-translation-work-per-request-is-bounded-and-skips-what-needs-none
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Messaging;
 
+use OCA\Portaliq\Kernel\Contracts\GuardianMessageTranslatorInterface;
+
 /**
  * Attaches (and stores) AI translations for one reader.
  *
- * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-translation-work-per-request-is-bounded-and-skips-what-needs-none
+ * @spec openspec/specs/guardian-message-translation/spec.md#requirement-translation-work-per-request-is-bounded-and-skips-what-needs-none
  */
-class GuardianMessageTranslator {
+class GuardianMessageTranslator implements GuardianMessageTranslatorInterface {
 	/**
 	 * The schema the messages live in.
 	 */
@@ -77,11 +79,11 @@ class GuardianMessageTranslator {
 	 * @return array<int, array<string, mixed>> The same messages, each carrying
 	 *                                          `translation` when one applies.
 	 *
-	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-translation-work-per-request-is-bounded-and-skips-what-needs-none
-	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-the-stored-message-keeps-both-texts-and-the-provenance
-	 * @spec openspec/changes/news-item-translation/specs/guardian-message-translation/spec.md#requirement-a-news-item-keeps-its-ai-translations-next-to-the-original
-	 * @spec openspec/changes/news-title-and-newsletter-translation/specs/guardian-message-translation/spec.md#requirement-a-news-title-is-translated-with-its-body
-	 * @spec openspec/changes/newsletter-title-translation/specs/guardian-message-translation/spec.md#requirement-a-newsletter-keeps-its-title-translations-next-to-the-original
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-translation-work-per-request-is-bounded-and-skips-what-needs-none
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-the-stored-message-keeps-both-texts-and-the-provenance
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-a-news-item-keeps-its-ai-translations-next-to-the-original
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-a-news-title-is-translated-with-its-body
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-a-newsletter-keeps-its-title-translations-next-to-the-original
 	 */
 	public function forReader(
 		array $messages,
@@ -98,24 +100,54 @@ class GuardianMessageTranslator {
 
 		$remaining = $budget ?? self::NEW_PER_REQUEST;
 		foreach ($messages as $index => $message) {
-			if ((string)($message['senderRef'] ?? '') === $readerRef || (string)($message[$textField] ?? '') === '') {
+			if ($this->needsNoTranslation(message: $message, readerRef: $readerRef, textField: $textField) === true) {
 				continue;
 			}
 
-			$entry = $this->entryFor(
+			$messages[$index] = $this->withTranslation(
 				message: $message,
 				language: $language,
 				fields: ['schema' => $schema, 'title' => $titleField, 'text' => $textField],
 				budget: $remaining
 			);
-			if ($entry !== null && $this->differs(entry: $entry, language: $language) === true) {
-				$messages[$index]['translation'] = $entry;
-			}
 		}
 
 		$budget = $remaining;
 		return $messages;
 	}//end forReader()
+
+	/**
+	 * Whether a message is the reader's own, or has no text to translate.
+	 *
+	 * @param array<string, mixed> $message   The message.
+	 * @param string               $readerRef The reader's own subjectRef.
+	 * @param string               $textField The field translated into the entry's `text`.
+	 *
+	 * @return bool
+	 */
+	private function needsNoTranslation(array $message, string $readerRef, string $textField): bool {
+		return (string)($message['senderRef'] ?? '') === $readerRef || (string)($message[$textField] ?? '') === '';
+	}//end needsNoTranslation()
+
+	/**
+	 * The message carrying its `translation` when one applies.
+	 *
+	 * @param array<string, mixed>                               $message  The row.
+	 * @param string                                             $language The reader's language.
+	 * @param array{schema: string, title: string, text: string} $fields   The schema the row is stored back to,
+	 *                                                                     its title field and its text field.
+	 * @param int                                                $budget   The remaining per-request budget, spent in place.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withTranslation(array $message, string $language, array $fields, int &$budget): array {
+		$entry = $this->entryFor(message: $message, language: $language, fields: $fields, budget: $budget);
+		if ($entry !== null && $this->differs(entry: $entry, language: $language) === true) {
+			$message['translation'] = $entry;
+		}
+
+		return $message;
+	}//end withTranslation()
 
 	/**
 	 * The reader's entry for one row: the stored one, a new one while the
@@ -180,9 +212,9 @@ class GuardianMessageTranslator {
 	 *
 	 * @return array<string, mixed>|null The new entry, or null.
 	 *
-	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-the-stored-message-keeps-both-texts-and-the-provenance
-	 * @spec openspec/changes/news-title-and-newsletter-translation/specs/guardian-message-translation/spec.md#requirement-a-news-title-is-translated-with-its-body
-	 * @spec openspec/changes/newsletter-title-translation/specs/guardian-message-translation/spec.md#requirement-a-newsletter-keeps-its-title-translations-next-to-the-original
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-the-stored-message-keeps-both-texts-and-the-provenance
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-a-news-title-is-translated-with-its-body
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-a-newsletter-keeps-its-title-translations-next-to-the-original
 	 */
 	private function translateAndStore(array $message, string $language, string $schema, array $fields): ?array {
 		$id = $this->store->rowId(row: $message);
@@ -199,21 +231,48 @@ class GuardianMessageTranslator {
 			return null;
 		}
 
+		$entry = $this->withNewsletterTitle(entry: $entry, fields: $fields);
+		if ($fields['title'] !== $fields['text']) {
+			$entry = $this->withTitle(entry: $entry, message: $message, schema: $schema, id: $id, titleField: $fields['title']);
+		}
+
+		$this->appendEntry(message: $message, entry: $entry, schema: $schema, id: $id);
+
+		return $entry;
+	}//end translateAndStore()
+
+	/**
+	 * A newsletter's entry with its title set to its text: the text is the title.
+	 *
+	 * @param array<string, mixed>                               $entry  The new entry.
+	 * @param array{schema: string, title: string, text: string} $fields The title field and the text field.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withNewsletterTitle(array $entry, array $fields): array {
 		if ($fields['title'] !== '' && $fields['title'] === $fields['text']) {
 			// A newsletter: the text is the title, so the entry's title is its text.
 			$entry['title'] = (string)$entry['text'];
 		}
 
-		if ($fields['title'] !== $fields['text']) {
-			$entry = $this->withTitle(entry: $entry, message: $message, schema: $schema, id: $id, titleField: $fields['title']);
-		}
+		return $entry;
+	}//end withNewsletterTitle()
 
+	/**
+	 * Store the message's translations with the new entry added.
+	 *
+	 * @param array<string, mixed> $message The message.
+	 * @param array<string, mixed> $entry   The new entry.
+	 * @param string               $schema  The schema the row is stored back to.
+	 * @param string               $id      The row's id.
+	 *
+	 * @return void
+	 */
+	private function appendEntry(array $message, array $entry, string $schema, string $id): void {
 		$entries   = array_values((array)($message['translations'] ?? []));
 		$entries[] = $entry;
 		$this->storeEntries(message: $message, entries: $entries, schema: $schema, id: $id);
-
-		return $entry;
-	}//end translateAndStore()
+	}//end appendEntry()
 
 	/**
 	 * Whether a stored entry still needs the title a news item has.
@@ -242,7 +301,7 @@ class GuardianMessageTranslator {
 	 *
 	 * @return array<string, mixed> The entry, with its title when hermiq labelled one.
 	 *
-	 * @spec openspec/changes/news-title-and-newsletter-translation/specs/guardian-message-translation/spec.md#requirement-a-news-title-is-translated-with-its-body
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-a-news-title-is-translated-with-its-body
 	 */
 	private function addTitle(array $message, array $entry, string $schema, string $titleField): array {
 		$id = $this->store->rowId(row: $message);

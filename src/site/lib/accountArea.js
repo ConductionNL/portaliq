@@ -7,7 +7,7 @@
  * own menu is lib/residentMenu.js. Imports only shared code, so
  * tests/site-signed-in-shell.spec.mjs runs it as node.
  *
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 
 import {
@@ -30,8 +30,8 @@ import {
  * @param {object|null} session The session.
  * @param {(key: string, vars?: object) => string} t The translator.
  * @return {string} The line, or '' without a session.
- * @spec openspec/changes/site-header-names-the-person/specs/portaliq-cms/spec.md#requirement-the-header-must-name-the-signed-in-person-never-their-reference
- * @spec openspec/changes/resident-sees-words-not-codes/specs/portaliq-cms/spec.md#requirement-the-header-must-never-name-a-person-by-a-number
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-header-must-name-the-signed-in-person-never-their-reference
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-header-must-never-name-a-person-by-a-number
  */
 export function loggedInAs(session, t) {
 	if (!session) {
@@ -94,7 +94,7 @@ export function pillLabel(session, words) {
  * @param {Array<object>} nav The navigation.
  * @param {string} route The route on screen.
  * @return {string} The route to replace it with, or ''.
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export function accountRedirect(nav, route) {
 	if (!isAccountRoute(route) || !Array.isArray(nav) || nav.length === 0) {
@@ -120,7 +120,7 @@ export function accountRedirect(nav, route) {
  * @param {(key: string) => string} t The translator.
  * @param {(route: string) => string} hrefFor A real address for a route.
  * @return {Array<{route: string, label: string, href: string}>} The crumbs.
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export function accountCrumbs(entry, t, hrefFor) {
 	const crumbs = [

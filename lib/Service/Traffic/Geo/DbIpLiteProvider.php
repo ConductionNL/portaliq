@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
+ * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ use Throwable;
  * the month may find that file not published yet, so the previous month
  * is the fallback rather than a failure.
  *
- * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
+ * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
  */
 class DbIpLiteProvider implements GeoDatabaseProvider {
 
@@ -79,7 +79,7 @@ class DbIpLiteProvider implements GeoDatabaseProvider {
 	 *
 	 * @return string dbip.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
 	 */
 	public function providerId(): string {
 		return 'dbip';
@@ -90,7 +90,7 @@ class DbIpLiteProvider implements GeoDatabaseProvider {
 	 *
 	 * @return string The CC BY 4.0 attribution.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
 	 */
 	public function attribution(): string {
 		return self::ATTRIBUTION;
@@ -101,7 +101,7 @@ class DbIpLiteProvider implements GeoDatabaseProvider {
 	 *
 	 * @return array<int, string> This month's URL, then last month's.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
 	 */
 	public function urls(): array {
 		$now = $this->time->getTime();
@@ -121,35 +121,55 @@ class DbIpLiteProvider implements GeoDatabaseProvider {
 	 *
 	 * @throws RuntimeException When neither month's file could be fetched.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
 	 */
 	public function fetch(string $targetPath): string {
 		$failures = [];
 		foreach ($this->urls() as $url) {
-			$compressed = $this->temp->getTemporaryFile('.mmdb.gz');
-			if ($compressed === false) {
-				throw new RuntimeException('No temporary file could be created for the download.');
-			}
-
-			try {
-				$response = $this->clients->newClient()->get($url, ['sink' => $compressed, 'timeout' => self::TIMEOUT]);
-				if ($response->getStatusCode() !== 200) {
-					$failures[] = $url . ' answered ' . $response->getStatusCode();
-					continue;
-				}
-
-				$this->gzip->extract(source: $compressed, target: $targetPath);
-
+			$failure = $this->fetchFrom(url: $url, targetPath: $targetPath);
+			if ($failure === null) {
 				return $url;
-			} catch (Throwable $e) {
-				$failures[] = $url . ': ' . $e->getMessage();
-			} finally {
-				if (is_file($compressed) === true) {
-					unlink($compressed);
-				}
 			}
+
+			$failures[] = $failure;
 		}
 
 		throw new RuntimeException('DB-IP download failed: ' . implode('; ', $failures));
+	}
+
+	/**
+	 * Download and unpack the database from one URL.
+	 *
+	 * @param string $url        The download URL.
+	 * @param string $targetPath Where the MMDB file must end up.
+	 *
+	 * @return string|null Null when it landed, else why it did not.
+	 *
+	 * @throws RuntimeException When no temporary file can be created.
+	 *
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
+	 */
+	private function fetchFrom(string $url, string $targetPath): string|null {
+		$compressed = $this->temp->getTemporaryFile('.mmdb.gz');
+		if ($compressed === false) {
+			throw new RuntimeException('No temporary file could be created for the download.');
+		}
+
+		try {
+			$response = $this->clients->newClient()->get($url, ['sink' => $compressed, 'timeout' => self::TIMEOUT]);
+			if ($response->getStatusCode() !== 200) {
+				return $url . ' answered ' . $response->getStatusCode();
+			}
+
+			$this->gzip->extract(source: $compressed, target: $targetPath);
+
+			return null;
+		} catch (Throwable $e) {
+			return $url . ': ' . $e->getMessage();
+		} finally {
+			if (is_file($compressed) === true) {
+				unlink($compressed);
+			}
+		}
 	}
 }

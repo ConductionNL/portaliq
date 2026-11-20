@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ use OCP\EventDispatcher\Event;
 /**
  * An app asks portaliq to write its claim on a portal account.
  *
- * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 class PortalAccountClaimRequestedEvent extends Event {
 	/**

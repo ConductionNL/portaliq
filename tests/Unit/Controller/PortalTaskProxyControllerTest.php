@@ -26,6 +26,7 @@ use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCA\Portaliq\Service\PortalTaskGateway;
 use OCA\Portaliq\Service\SubmissionReceiptService;
 use OCP\AppFramework\Http;
@@ -33,6 +34,17 @@ use OCP\IL10N;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Service\CaseRowMarker;
+use OCA\Portaliq\Contribution\CreateActionMatcher;
+use OCA\Portaliq\Contribution\CreateBody;
+use OCA\Portaliq\Contribution\InboxMessageFields;
+use OCA\Portaliq\Contribution\PageChoice;
+use OCA\Portaliq\Service\RequestedPortal;
+use OCA\Portaliq\Service\RequiredFieldsGuard;
+use OCA\Portaliq\Contribution\RowIdentifier;
+use OCA\Portaliq\Contribution\ThemeChoice;
+use OCA\Portaliq\Service\VisibleFromGate;
+use OCA\Portaliq\Service\WriteRefusal;
 
 /**
  * The proxy's fail-closed edge and refusal mapping (design D-3): no bearer
@@ -71,6 +83,8 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Portaliq\Service\CaseRowMarker
  * @uses   \OCA\Portaliq\Service\PortalUserDisplayNames
  * @uses   \OCA\Portaliq\Contribution\ThemeChoice
+ * @uses   \OCA\Portaliq\Contribution\ThemeTagRun
+ * @uses   \OCA\Portaliq\Controller\TaskCompletionRun
  *
  * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
  * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
@@ -689,7 +703,7 @@ class PortalTaskProxyControllerTest extends TestCase {
 		?SubmissionReceiptService $receiptService = null,
 		?CitizenWriteRecorder $recorder = null,
 	): PortalTaskProxyController {
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
 
 		return new PortalTaskProxyController(
@@ -740,6 +754,17 @@ class PortalTaskProxyControllerTest extends TestCase {
 			$this->receiptMock(),
 			$this->createMock(NotificationDispatchService::class),
 			$this->createMock(LoggerInterface::class),
+			new CaseRowMarker(),
+			new CreateActionMatcher(),
+			new CreateBody(),
+			new InboxMessageFields(),
+			new PageChoice(),
+			new RequestedPortal(),
+			new RequiredFieldsGuard(),
+			new RowIdentifier(),
+			new ThemeChoice(),
+			new VisibleFromGate(),
+			new WriteRefusal(),
 			$gateway
 		);
 	}//end contributionController()

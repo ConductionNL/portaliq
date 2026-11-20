@@ -11,10 +11,11 @@ use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
 use OCA\Portaliq\Service\CaseTypeVisibility;
 use OCA\Portaliq\Service\PortalCaseListReader;
 use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Service\Identity\MandateParties;
 
 /**
  * portal-identity-space REQ-PIS-004 and the fail-closed half of REQ-PIS-001:
@@ -208,7 +209,7 @@ class MyCasesControllerTest extends TestCase {
 	 * @return MyCasesController
 	 */
 	private function controller(?array $subject, PortalCaseListReader $cases, array $rows, array $mandates = [], array $mandatedRows = [], ?array $scope = null, ?CaseTypeVisibility $caseTypes = null, string $mandateParam = ''): MyCasesController {
-		$session = $this->getMockBuilder(PortalSessionService::class)
+		$session = $this->getMockBuilder(BearerSessionResolver::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['resolveFromBearer'])
 			->getMock();
@@ -257,7 +258,7 @@ class MyCasesControllerTest extends TestCase {
 			static fn (string $key, $default = null) => ($key === 'mandate' ? $mandateParam : $default)
 		);
 
-		return new MyCasesController($request, $registry, $session, $cases, $mandateService, $tree, $caseTypes);
+		return new MyCasesController($request, $registry, $session, $cases, $mandateService, $tree, new MandateParties(), $caseTypes);
 	}//end controller()
 
 	/**

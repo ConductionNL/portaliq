@@ -77,6 +77,17 @@
 			aria-live="polite"
 			data-testid="federated-search-status">
 			{{ status }}
+			<!--
+				"Bedoelde u: …?" (search-sort-by-relevance REQ-SSR-005). Inside
+				the live region, so it is announced with the count. Offered only
+				when the server checked that the corrected search finds results.
+			-->
+			<a
+				v-if="spellingSuggestion !== '' && loading === false"
+				:href="suggestionHref"
+				class="utrecht-link"
+				data-testid="federated-search-did-you-mean"
+				@click.prevent="onSearch(spellingSuggestion)">{{ suggestionLabel }}</a>
 		</p>
 
 		<!--
@@ -536,10 +547,12 @@ import { CnSiteSearch } from '@conduction/nextcloud-vue/public'
  */
 import { defineAsyncComponent } from 'vue'
 import SearchSuggestions from './SearchSuggestions.vue'
-import { runtimeConfig } from '../lib/contentApi.js'
+import { resolveApiBase, runtimeConfig } from '../lib/contentApi.js'
 import { labelBuckets, pageLocale } from '../lib/facetLabels.js'
 import {
+	asksForSuggestion,
 	buildRequestUrl,
+	fetchSuggestion,
 	lockedFiltersOf,
 	matchDescription,
 	pageWindow,
@@ -550,6 +563,8 @@ import {
 	searchQuery,
 	sortForNewSearch,
 	sortOptionsFor,
+	suggestionText,
+	suggestUrl,
 	toBuckets,
 	toResult,
 	withKindField,
@@ -558,6 +573,28 @@ import {
 } from '../lib/federatedSearch.js'
 import { suggestionRoute } from '../lib/searchSuggestions.js'
 import { addressOfRoute } from '../lib/siteAddress.js'
+
+/** The test id of each chip under a search result. */
+const META_TESTIDS = Object.freeze({
+	date: 'federated-search-date',
+	type: 'federated-search-type',
+	count: 'federated-search-publication-count',
+	publication: 'federated-search-publication',
+	source: 'federated-search-source',
+})
+
+/**
+ * One chip under a search result, or null when it has no text.
+ *
+ * @param {{key: string, text: string, prefix?: string}} chip The chip.
+ * @return {{key: string, text: string, prefix: string, testid: string}|null} The item.
+ */
+function metaChip(chip) {
+	if (!chip.text) {
+		return null
+	}
+	return { key: chip.key, text: chip.text, prefix: chip.prefix || '', testid: META_TESTIDS[chip.key] }
+}
 
 // The button links' classes need their stylesheet, or the browser draws its own blue link.
 import '@utrecht/button-link-css/dist/index.css'
@@ -904,6 +941,9 @@ export default {
 			// the option goes for the rest of the visit (REQ-SSR-002).
 			relevanceUnavailable: false,
 			relevanceNotice: '',
+			// The checked correction for a search that found little
+			// (REQ-SSR-005); '' when there is none.
+			spellingSuggestion: '',
 			facets: {},
 			periodFrom: '',
 			periodTo: '',
@@ -983,7 +1023,7 @@ export default {
 		 *
 		 * @return {Array<string>} Field names.
 		 *
-		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
 		 */
 		fields() {
 			const own = this.facetField ? [this.facetField] : this.facetFields
@@ -1025,7 +1065,7 @@ export default {
 		 *
 		 * @return {boolean} True with facet buckets or the period filter.
 		 *
-		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-a-publication-period-req-wsd-002
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-a-publication-period-req-wsd-002
 		 */
 		hasFilters() {
 			return this.facetGroups.length > 0 || this.hidePeriod === false
@@ -1036,7 +1076,7 @@ export default {
 		 *
 		 * @return {object} The query object.
 		 *
-		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-block-must-describe-its-search-as-the-saved-search-query-req-wsd-004
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-block-must-describe-its-search-as-the-saved-search-query-req-wsd-004
 		 */
 		savedQuery() {
 			return searchQuery(this.$data, this.catalog)
@@ -1063,6 +1103,27 @@ export default {
 			}
 
 			return this.countSentence
+		},
+
+		/**
+		 * @return {string} "Bedoelde u: {suggestion}?", or '' without one.
+		 * @spec openspec/changes/search-sort-by-relevance/specs/portal-federated-search/spec.md#requirement-a-search-that-finds-little-offers-a-checked-correction-req-ssr-005
+		 */
+		suggestionLabel() {
+			return suggestionText(this.spellingSuggestion)
+		},
+
+		/**
+		 * The address of the corrected search, for a visitor who opens it in
+		 * a new tab.
+		 *
+		 * @return {string}
+		 * @spec openspec/changes/search-sort-by-relevance/specs/portal-federated-search/spec.md#requirement-a-search-that-finds-little-offers-a-checked-correction-req-ssr-005
+		 */
+		suggestionHref() {
+			const url = new URL(window.location.href)
+			writeSearchState(url, { query: this.spellingSuggestion, page: 1, sort: this.sort }, [])
+			return url.pathname + url.search
 		},
 
 		/**
@@ -1321,6 +1382,10 @@ export default {
 					}))
 					.filter((group) => group.buckets.length > 0)
 				this.reportSearch(this.total)
+				this.spellingSuggestion = ''
+				if (asksForSuggestion(this.query, this.total)) {
+					this.askSuggestion(mine)
+				}
 			} catch {
 				// The reason is deliberately not surfaced to the visitor: this
 				// runs at a public origin and a raw fetch/parse message would
@@ -1354,7 +1419,7 @@ export default {
 		 * @param {number} total The result count.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-site-search-must-be-reported-by-the-built-in-search-box
+		 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-site-search-must-be-reported-by-the-built-in-search-box
 		 */
 		reportSearch(total) {
 			const term = String(this.query || '').trim()
@@ -1370,6 +1435,25 @@ export default {
 		},
 
 		/**
+		 * Ask the server for a checked spelling suggestion, and keep it only
+		 * while this search is still the current one.
+		 *
+		 * @param {number} mine The sequence number of the search that asks.
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/search-sort-by-relevance/specs/portal-federated-search/spec.md#requirement-a-search-that-finds-little-offers-a-checked-correction-req-ssr-005
+		 */
+		async askSuggestion(mine) {
+			const found = await fetchSuggestion(
+				suggestUrl(resolveApiBase(), runtimeConfig().resolvedPortal || '', this.query),
+			)
+			if (mine !== this.sequence) {
+				return
+			}
+			this.spellingSuggestion = found ? found.suggestion : ''
+		},
+
+		/**
 		 * Run the term the search box handed over.
 		 *
 		 * @param {string} term The submitted term.
@@ -1378,6 +1462,7 @@ export default {
 		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
 		 */
 		onSearch(term) {
+			this.spellingSuggestion = ''
 			this.query = term || ''
 			this.reported = ''
 			this.relevanceNotice = ''
@@ -1410,55 +1495,17 @@ export default {
 		 * @spec openspec/changes/search-names-only-a-foreign-source/specs/portal-federated-search/spec.md#requirement-every-result-from-another-catalogue-must-name-that-catalogue-req-snf-001
 		 */
 		metaItems(result) {
-			const items = []
-
-			if (result.date) {
-				items.push({
-					key: 'date',
-					text: result.date,
-					prefix: '',
-					testid: 'federated-search-date',
-				})
-			}
-
-			const type = result.type || this.typeLabel
-			if (type) {
-				items.push({
-					key: 'type',
-					text: type,
-					prefix: '',
-					testid: 'federated-search-type',
-				})
-			}
-
-			if (result.kind === 'subject' && result.publicationCount > 0) {
-				items.push({
-					key: 'count',
-					text: `${result.publicationCount} ${this.publicationsLabel}`,
-					prefix: '',
-					testid: 'federated-search-publication-count',
-				})
-			}
-
-			if (result.kind === 'document' && result.publication) {
-				items.push({
-					key: 'publication',
-					text: `${this.partOfLabel} ${result.publication}`,
-					prefix: '',
-					testid: 'federated-search-publication',
-				})
-			}
-
-			if (result.directory) {
-				items.push({
-					key: 'source',
-					text: result.directory,
-					prefix: this.sourceLabel,
-					testid: 'federated-search-source',
-				})
-			}
-
-			return items
+			const counted = result.kind === 'subject' && result.publicationCount > 0
+			const partOf = result.kind === 'document' && result.publication
+			return [
+				{ key: 'date', text: result.date },
+				{ key: 'type', text: result.type || this.typeLabel },
+				{ key: 'count', text: counted ? `${result.publicationCount} ${this.publicationsLabel}` : '' },
+				{ key: 'publication', text: partOf ? `${this.partOfLabel} ${result.publication}` : '' },
+				{ key: 'source', text: result.directory, prefix: this.sourceLabel },
+			]
+				.map(metaChip)
+				.filter(Boolean)
 		},
 
 		/**
@@ -1628,7 +1675,7 @@ export default {
 		 * @return {void}
 		 *
 		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-facet-buckets-must-be-read-in-both-dialects-the-endpoint-speaks
-		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
 		 */
 		toggleFacet(value, field = this.fields[0]) {
 			const current = this.facets[field] || []
@@ -1650,7 +1697,7 @@ export default {
 		 * @param {string} value The bucket value.
 		 * @return {boolean} True when selected.
 		 *
-		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
 		 */
 		isSelected(field, value) {
 			return (this.facets[field] || []).includes(value)
@@ -1678,7 +1725,7 @@ export default {
 		 * @param {string} value The date from the input, `YYYY-MM-DD` or ''.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-a-publication-period-req-wsd-002
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-a-publication-period-req-wsd-002
 		 */
 		setPeriod(which, value) {
 			this[which] = value || ''

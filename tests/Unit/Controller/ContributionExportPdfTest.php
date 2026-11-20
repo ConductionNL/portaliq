@@ -21,6 +21,7 @@ use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalPdfExport;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Support\SubjectAssertionIssuer;
 use OCA\Portaliq\Service\SubmissionReceiptService;
 use OCP\AppFramework\Http;
 use OCP\Http\Client\IClientService;
@@ -31,6 +32,17 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Portaliq\Service\CaseRowMarker;
+use OCA\Portaliq\Contribution\CreateActionMatcher;
+use OCA\Portaliq\Contribution\CreateBody;
+use OCA\Portaliq\Contribution\InboxMessageFields;
+use OCA\Portaliq\Contribution\PageChoice;
+use OCA\Portaliq\Service\RequestedPortal;
+use OCA\Portaliq\Service\RequiredFieldsGuard;
+use OCA\Portaliq\Contribution\RowIdentifier;
+use OCA\Portaliq\Contribution\ThemeChoice;
+use OCA\Portaliq\Service\VisibleFromGate;
+use OCA\Portaliq\Service\WriteRefusal;
 
 /**
  * OpenRegister refuses a list longer than its cap with this exception.
@@ -132,12 +144,12 @@ class ContributionExportPdfTest extends TestCase {
 			$this->createMock(PortalSchemaReader::class),
 			$this->createMock(PortalInboxReader::class),
 			$this->audit,
-			new PortalActionForwarder($request, new InstanceLoopback($this->createMock(IClientService::class), $urls, $this->createMock(InternalBaseUrl::class), $this->createMock(LoggerInterface::class)), $session),
+			new PortalActionForwarder($request, new InstanceLoopback($this->createMock(IClientService::class), $urls, $this->createMock(InternalBaseUrl::class), $this->createMock(LoggerInterface::class)), $this->createMock(SubjectAssertionIssuer::class)),
 			$this->createMock(AuditTrailService::class),
 			$this->createMock(SubmissionReceiptService::class),
 			$this->createMock(NotificationDispatchService::class),
 			$this->createMock(LoggerInterface::class),
-			pdf: $pdf
+			pdf: $pdf, caseRowMarker: new CaseRowMarker(), createActionMatcher: new CreateActionMatcher(), createBody: new CreateBody(), inboxMessageFields: new InboxMessageFields(), pageChoice: new PageChoice(), requestedPortal: new RequestedPortal(), requiredFieldsGuard: new RequiredFieldsGuard(), rowIdentifier: new RowIdentifier(), themeChoice: new ThemeChoice(), visibleFromGate: new VisibleFromGate(), writeRefusal: new WriteRefusal()
 		);
 	}
 

@@ -66,6 +66,22 @@ test('introView is null without content, so the form opens at step 1', () => {
 	assert.equal(introView({ lead: 'Vraag informatie.' }).lead, 'Vraag informatie.')
 })
 
+test('introView is null for an introduction switched off on the form settings page', () => {
+	assert.equal(introView({ enabled: false, lead: 'Vraag informatie.' }), null)
+	assert.deepEqual(introView({ enabled: true, lead: 'Vraag informatie.' }), { lead: 'Vraag informatie.', blocks: [] })
+})
+
+test('the form settings page carries the introduction switch and its text', async () => {
+	const { readFileSync } = await import('node:fs')
+	const manifest = JSON.parse(readFileSync(new URL('../src/manifest.json', import.meta.url), 'utf8'))
+	const page = manifest.pages.find((entry) => entry.id === 'FormBindingDetail')
+	const intro = page.config.widgets.find((widget) => widget.id === 'binding-intro')
+	assert.deepEqual(intro.content.fields.map((field) => [field.key, field.type]), [['intro.enabled', 'switch'], ['intro.lead', 'textarea']])
+	assert.equal(intro.content.fields[0].default, true, 'absent reads as on, as the server does')
+	const general = page.config.widgets.find((widget) => widget.id === 'binding-general')
+	assert.ok(general.content.sections.some((section) => section.widgetId === 'binding-intro'))
+})
+
 test('site: the introduction shows Voordat u begint, its blocks and Start', async () => {
 	const html = await renderSfc('src/site/components/forms/FormIntro.vue', {
 		formName: 'Woo-verzoek indienen',
@@ -161,6 +177,37 @@ test('the confirmation names when the request arrived, its term starts and a dec
 			'De termijn begint op 13 oktober 2026.',
 			'U krijgt uiterlijk 24 november 2026 een besluit.',
 		],
+	)
+	assert.deepEqual(
+		momentLines(
+			{
+				receivedAt: '2026-03-08T20:14:00+01:00',
+				termStartsAt: '2026-03-09T09:00:00+01:00',
+				deadline: '2026-05-04',
+				receivedOutsideWorkingHours: true,
+			},
+			{ ...text, firstWorkingDay: 'Buiten openingstijden, dus de eerstvolgende werkdag.' },
+		),
+		[
+			'Ontvangen op 8 maart 2026.',
+			'De termijn begint op 9 maart 2026.',
+			'Buiten openingstijden, dus de eerstvolgende werkdag.',
+			'U krijgt uiterlijk 4 mei 2026 een besluit.',
+		],
+		'a Sunday filing explains why the term starts on Monday',
+	)
+	assert.deepEqual(
+		momentLines(
+			{ receivedAt: '2026-03-10T10:00:00+01:00', termStartsAt: '2026-03-10T10:00:00+01:00', receivedOutsideWorkingHours: false },
+			{ ...text, firstWorkingDay: 'Buiten openingstijden, dus de eerstvolgende werkdag.' },
+		),
+		['Ontvangen op 10 maart 2026.', 'De termijn begint op 10 maart 2026.'],
+		'a filing inside the working week carries no explanation',
+	)
+	assert.deepEqual(
+		momentLines({ receivedOutsideWorkingHours: true }, { ...text, firstWorkingDay: 'Uitleg.' }),
+		[],
+		'no explanation without a term start to explain',
 	)
 	assert.deepEqual(momentLines({ deadline: 'geen datum' }, text), [])
 	assert.deepEqual(momentLines({}, text), [])

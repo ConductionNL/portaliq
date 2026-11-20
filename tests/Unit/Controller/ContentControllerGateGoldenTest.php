@@ -26,7 +26,7 @@ use OCA\Portaliq\Controller\ContentController;
 use OCA\Portaliq\Service\CmsReader;
 use OCA\Portaliq\Service\PortalNoticeReader;
 use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCA\Portaliq\Service\TrafficConfigResolver;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Http\Response;
@@ -37,6 +37,7 @@ use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use ReflectionProperty;
+use OCA\Portaliq\Service\Assistant\PublicSourceScope;
 
 /**
  * The gated content routes answer every portal and caller as recorded: the
@@ -45,7 +46,7 @@ use ReflectionProperty;
  *
  * @covers \OCA\Portaliq\Controller\ContentController
  * @covers \OCA\Portaliq\Controller\PublicContentGate
- * @uses   \OCA\Portaliq\Service\PortalSessionService
+ * @uses   \OCA\Portaliq\Kernel\Support\BearerSessionResolver
  */
 class ContentControllerGateGoldenTest extends TestCase {
 
@@ -131,7 +132,7 @@ class ContentControllerGateGoldenTest extends TestCase {
 		$request->method('getHeader')->willReturnCallback(static fn (string $name): string => ($name === 'Authorization') ? $header : '');
 		$resolver = $this->createMock(PortalResolver::class);
 		$resolver->method('resolve')->willReturn($portal);
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturnCallback(function (?string $authorizationHeader) use ($subject): ?array {
 			$this->log[] = ['resolveFromBearer' => $authorizationHeader];
 			if ($authorizationHeader === '') {
@@ -171,7 +172,8 @@ class ContentControllerGateGoldenTest extends TestCase {
 			$this->createMock(TrafficConfigResolver::class),
 			$this->createMock(IURLGenerator::class),
 			$this->createMock(PortalNoticeReader::class),
-			$users
+			$users,
+			new PublicSourceScope()
 		);
 	}//end controller()
 }//end class

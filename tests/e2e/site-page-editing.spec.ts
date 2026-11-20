@@ -339,6 +339,8 @@ test.describe('portal page editing', () => {
 		).not.toContain('draftBody')
 
 		await page.getByTestId('designer-publish').click()
+		// Publishing a page asks first: it makes the page public (page-public-on-purpose).
+		await page.getByTestId('publish-page-confirm').click()
 		await expect(page.getByTestId('designer-notice')).toBeVisible()
 		await expect(page.getByTestId('designer-has-draft')).toHaveCount(0)
 
@@ -553,6 +555,8 @@ test.describe('portal page editing in place', () => {
 		expect(drafted.draftBody.clearedRegions).toEqual(['footer'])
 
 		await page.getByTestId('site-edit-publish').click()
+		await page.getByTestId('publish-page-confirm').click()
+		await expect(page.getByTestId('publish-page-dialog')).toHaveCount(0)
 		await expect(page.getByTestId('site-edit-notice')).toBeVisible()
 
 		const published = await storedPage(api)

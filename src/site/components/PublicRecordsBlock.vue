@@ -532,10 +532,10 @@ export default {
 			try {
 				const api = this.apiOverride || {
 					list: (app, list) =>
-						fetchRecordList(resolveApiBase(), app, list),
+						fetchRecordList({ apiBase: resolveApiBase(), app, list }),
 
 					record: (app, list, id) =>
-						fetchRecord(resolveApiBase(), app, list, id),
+						fetchRecord({ apiBase: resolveApiBase(), app, list, id }),
 				}
 				const entries = await api.list(this.app, this.list)
 				if (entries === null) {
@@ -731,6 +731,7 @@ export default {
 
 .pq-records__main :deep(th) {
 	padding: 12px 16px;
+	font-size: 1rem;
 	background: var(--nldesign-color-surface, #f4f6f9);
 	border: 0;
 	text-align: start;

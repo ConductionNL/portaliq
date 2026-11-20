@@ -61,7 +61,7 @@ export const THEME_PRODUCTS_SEGMENT = 'producten'
  * @param {Array<object>} [enabled.themes] The life domains with something for this resident.
  * @param {Array<object>} [enabled.stepUp] The aggregate's `stepUp`: collections the login is too low for.
  * @return {Array<object>} `{key, label, icon, page?, contribution?, special?, stepUp?}` entries.
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t6
  */
 export function buildNav(contributions, t, enabled = {}) {
@@ -124,16 +124,27 @@ function contributionEntries(contributions) {
 	const nav = []
 	for (const contribution of contributions || []) {
 		for (const page of contribution.pages || []) {
-			nav.push({
-				key: `${contribution.app}:${page.id}`,
-				label: page.label || page.id,
-				icon: page.icon,
-				page,
-				contribution,
-			})
+			nav.push(pageEntry(contribution, page))
 		}
 	}
 	return nav
+}
+
+/**
+ * The entry of one contributed page, tagged with its contribution.
+ *
+ * @param {object} contribution The contribution.
+ * @param {object} page One of its pages.
+ * @return {{key: string, label: string, icon: string, page: object, contribution: object}} The entry.
+ */
+function pageEntry(contribution, page) {
+	return {
+		key: `${contribution.app}:${page.id}`,
+		label: page.label || page.id,
+		icon: page.icon,
+		page,
+		contribution,
+	}
 }
 
 /**
@@ -176,31 +187,61 @@ function ownAreaEntries(enabled, t) {
  */
 export function stepUpEntries(stepUp, nav = []) {
 	const taken = new Set((nav || []).map((entry) => entry.key))
-	const entries = []
-	for (const item of Array.isArray(stepUp) ? stepUp : []) {
-		const app = typeof item?.app === 'string' ? item.app : ''
-		const collection =
-			typeof item?.collection === 'string' ? item.collection : ''
-		const key = `${app}:${collection}`
-		if (app === '' || collection === '' || taken.has(key)) {
-			continue
-		}
-		taken.add(key)
-		entries.push({
-			key,
-			label:
-				typeof item.label === 'string' && item.label !== ''
-					? item.label
-					: collection,
-			icon: 'Lock',
-			stepUp: {
-				app,
-				collection,
-				minTrust: typeof item.minTrust === 'string' ? item.minTrust : '',
-			},
-		})
+	return (Array.isArray(stepUp) ? stepUp : [])
+		.map(stepUpEntry)
+		.filter((entry) => claimsRoute(entry, taken))
+}
+
+/**
+ * Whether an entry takes a route no entry holds yet; one that does is
+ * marked taken.
+ *
+ * @param {object|null} entry The entry, or null.
+ * @param {Set<string>} taken The keys held so far (changed in place).
+ * @return {boolean}
+ */
+function claimsRoute(entry, taken) {
+	if (entry === null || taken.has(entry.key)) {
+		return false
 	}
-	return entries
+	taken.add(entry.key)
+	return true
+}
+
+/**
+ * The navigation entry for one `stepUp` item, or null when it does not name
+ * both its app and its collection.
+ *
+ * @param {object|null} item `{app, collection, label, minTrust}`.
+ * @return {{key: string, label: string, icon: string, stepUp: object}|null} The entry.
+ */
+function stepUpEntry(item) {
+	const app = textOr(item?.app, '')
+	const collection = textOr(item?.collection, '')
+	if (app === '' || collection === '') {
+		return null
+	}
+	return {
+		key: `${app}:${collection}`,
+		label: textOr(item.label, '') || collection,
+		icon: 'Lock',
+		stepUp: {
+			app,
+			collection,
+			minTrust: textOr(item.minTrust, ''),
+		},
+	}
+}
+
+/**
+ * A value when it is text, else the fallback.
+ *
+ * @param {string|number|object|null|undefined} value The value.
+ * @param {string} fallback The fallback.
+ * @return {string} The text.
+ */
+function textOr(value, fallback) {
+	return typeof value === 'string' ? value : fallback
 }
 
 /**
@@ -215,7 +256,7 @@ export function stepUpEntries(stepUp, nav = []) {
  * @param {Array|null} state.threads The message threads.
  * @param {Array|null} state.news The news feed.
  * @return {{tasks: boolean, messages: boolean, news: boolean, access: boolean, cases: boolean, pages: Array<object>, themes: Array<object>}}
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export function shellSections({ session, contributions, threads, news }) {
 	return {
@@ -243,7 +284,7 @@ export function shellSections({ session, contributions, threads, news }) {
  *
  * @param {Array<object>} nav The navigation.
  * @return {string|null} The key, or null for an empty navigation.
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export function defaultNavKey(nav) {
 	if (!Array.isArray(nav) || nav.length === 0) {
@@ -261,17 +302,35 @@ export function defaultNavKey(nav) {
  *
  * @param {object} entry A navigation entry.
  * @return {string} The route.
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export function routeForNav(entry) {
 	if (entry.special) {
 		return `${ACCOUNT_ROUTE}/${entry.special}`
 	}
-	const app = encodeURIComponent(
-		entry.contribution?.app || entry.stepUp?.app || '',
-	)
-	const page = encodeURIComponent(entry.page?.id || entry.stepUp?.collection || '')
+	const app = encodeURIComponent(entryApp(entry))
+	const page = encodeURIComponent(entryPage(entry))
 	return `${ACCOUNT_ROUTE}/${app}/${page}`
+}
+
+/**
+ * The app an entry belongs to: its contribution's, else its step-up's.
+ *
+ * @param {object} entry A navigation entry.
+ * @return {string} The app, or ''.
+ */
+function entryApp(entry) {
+	return entry.contribution?.app || entry.stepUp?.app || ''
+}
+
+/**
+ * The page an entry opens: its page's id, else its step-up's collection.
+ *
+ * @param {object} entry A navigation entry.
+ * @return {string} The page, or ''.
+ */
+function entryPage(entry) {
+	return entry.page?.id || entry.stepUp?.collection || ''
 }
 
 /**
@@ -304,7 +363,7 @@ export function isThemeProductsRoute(entry, route) {
  *
  * @param {string} route The route.
  * @return {boolean}
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export function isAccountRoute(route) {
 	const value = String(route || '')
@@ -318,7 +377,7 @@ export function isAccountRoute(route) {
  * @param {Array<object>} nav The navigation.
  * @param {string} route The route.
  * @return {object|null} The entry.
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export function navEntryForRoute(nav, route) {
 	if (!isAccountRoute(route)) {
@@ -334,21 +393,59 @@ export function navEntryForRoute(nav, route) {
 	if (products) {
 		return products
 	}
-	// A record page with one record chosen: `/mijn/<app>/<page>/<id>`
-	// (site-mijn-omgeving-components REQ-SMO-008, REQ-SMO-020).
-	const id = recordIdOfRoute(route)
-	if (id === '') {
+	return inboxMessageEntry(nav, route) || recordPageEntry(nav, route)
+}
+
+/**
+ * The inbox page a message route opens one message on:
+ * `/mijn/<inbox page>/<source>/<id>` (a-resident-opens-one-message), or null.
+ *
+ * @param {Array<object>} nav The navigation.
+ * @param {string} route The route.
+ * @return {object|null} The inbox page's entry.
+ * @spec openspec/changes/a-resident-opens-one-message/tasks.md#T05
+ */
+function inboxMessageEntry(nav, route) {
+	const value = String(route || '')
+	return (
+		(nav || []).find((entry) => {
+			if (entry.special !== 'inbox' || !value.startsWith(`${routeForNav(entry)}/`)) {
+				return false
+			}
+			const rest = value.slice(routeForNav(entry).length + 1).split('/')
+			return rest.length === 2 && rest[0] !== '' && rest[1] !== ''
+		}) || null
+	)
+}
+
+/**
+ * The record page a route chooses one record on: `/mijn/<app>/<page>/<id>`
+ * (site-mijn-omgeving-components REQ-SMO-008, REQ-SMO-020), or null.
+ *
+ * @param {Array<object>} nav The navigation.
+ * @param {string} route The route.
+ * @return {object|null} The record page's entry.
+ */
+function recordPageEntry(nav, route) {
+	if (recordIdOfRoute(route) === '') {
 		return null
 	}
 	const pageRoute = String(route).slice(0, String(route).lastIndexOf('/'))
 	return (
 		(nav || []).find(
-			(entry) =>
-				!entry.special
-				&& (entry.page?.record || entry.page?.records)
-				&& routeForNav(entry) === pageRoute,
+			(entry) => isRecordPage(entry) && routeForNav(entry) === pageRoute,
 		) || null
 	)
+}
+
+/**
+ * Whether an entry is a contribution's page that lists records.
+ *
+ * @param {object} entry A navigation entry.
+ * @return {boolean} True for a record page.
+ */
+function isRecordPage(entry) {
+	return !entry.special && Boolean(entry.page?.record || entry.page?.records)
 }
 
 /**
@@ -357,7 +454,7 @@ export function navEntryForRoute(nav, route) {
  *
  * @param {string} route The route.
  * @return {string} The record id, decoded.
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
  */
 export function recordIdOfRoute(route) {
 	const parts = String(route || '').split('/')

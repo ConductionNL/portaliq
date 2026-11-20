@@ -8,10 +8,10 @@ use OCA\Portaliq\Controller\PortalAccountSelfController;
 use OCA\Portaliq\Service\Identity\PortalAccessRequestService;
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
 use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\Security\ISecureRandom;
@@ -72,6 +72,21 @@ class PortalAccountSelfControllerTest extends TestCase {
 	 *
 	 * @return void
 	 */
+	/**
+	 * A change the service refuses answers 400 and mails nothing.
+	 *
+	 * @return void
+	 */
+	public function testARefusedChangeIsABadRequestAndSendsNoMail(): void {
+		$controller = $this->controller(subject: ['subjectRef' => 'subject-1', 'organisation' => 'gemeente-x']);
+		$this->doubles['selfService']->method('updateDetails')->willReturn(null);
+		$this->doubles['mailer']->expects($this->never())->method('send');
+
+		$response = $controller->updateDetails(email: 'nieuw@example.org');
+
+		$this->assertSame([Http::STATUS_BAD_REQUEST, ['error' => 'refused']], [$response->getStatus(), $response->getData()]);
+	}//end testARefusedChangeIsABadRequestAndSendsNoMail()
+
 	public function testTheConfirmationSecretIsMailedToTheNewAddress(): void {
 		$controller = $this->controller(subject: ['subjectRef' => 'subject-1', 'organisation' => 'gemeente-x']);
 		$this->doubles['selfService']->method('updateDetails')->willReturn(['updated' => true, 'confirmationToken' => 'secret-1']);
@@ -228,7 +243,7 @@ class PortalAccountSelfControllerTest extends TestCase {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParams')->willReturn([]);
 
-		$session = $this->double(PortalSessionService::class, ['resolveFromBearer']);
+		$session = $this->double(BearerSessionResolver::class, ['resolveFromBearer']);
 		$session->method('resolveFromBearer')->willReturn($subject);
 
 		$this->doubles = [
@@ -276,11 +291,11 @@ class PortalAccountSelfControllerTest extends TestCase {
 	 */
 	private function preferencesController(array $account, array &$written, array $subscriptions = [], ?array $messageBox = null, bool $canDeliver = true): PortalAccountSelfController {
 		$request = $this->createMock(IRequest::class);
-		$session = $this->double(PortalSessionService::class, ['resolveFromBearer']);
+		$session = $this->double(BearerSessionResolver::class, ['resolveFromBearer']);
 		$session->method('resolveFromBearer')->willReturn(['subjectRef' => 'subject-1', 'organisation' => 'gemeente-x']);
 
-		$accounts = $this->double(PortalAccountService::class, ['findBySubjectRef']);
-		$accounts->method('findBySubjectRef')->willReturnCallback(
+		$accounts = $this->double(PortalAccountLookup::class, ['bySubjectRef']);
+		$accounts->method('bySubjectRef')->willReturnCallback(
 			static fn (string $subjectRef): ?array => ($subjectRef === 'subject-1' ? $account : ['uuid' => 'account-other', 'subjectRef' => $subjectRef])
 		);
 		$reader = $this->double(PortalObjectReader::class, ['readCollection']);

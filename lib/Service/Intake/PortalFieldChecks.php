@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md
  */
 
 declare(strict_types=1);
@@ -29,7 +29,7 @@ use OCP\IL10N;
 /**
  * The type, format, pattern, option and length checks of a single answer.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md
  */
 class PortalFieldChecks {
 	/**
@@ -63,7 +63,7 @@ class PortalFieldChecks {
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	public function checkValue(array $field, mixed $value): ?string {
 		$error = $this->typeError(type: (string)($field['type'] ?? 'string'), value: $value);
@@ -243,7 +243,7 @@ class PortalFieldChecks {
 	 *
 	 * @return mixed
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	public function stored(array $field, mixed $value): mixed {
 		$format = (string)($field['format'] ?? '');

@@ -23,12 +23,13 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Controller\ContentCatalogueController;
 use OCA\Portaliq\Controller\ContentNewsController;
 use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PublicCatalogue;
 use OCA\Portaliq\Service\PublicNewsReader;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Service\PublicCatalogueQuery;
 
 /**
  * The public news and catalogue routes answer every portal and caller as
@@ -39,9 +40,11 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Portaliq\Controller\ContentCatalogueController
  * @covers \OCA\Portaliq\Controller\PublicContentGate
  * @covers \OCA\Portaliq\Controller\BearerCachedJson
- * @uses   \OCA\Portaliq\Service\PortalSessionService
+ * @uses   \OCA\Portaliq\Kernel\Support\BearerSessionResolver
  * @uses   \OCA\Portaliq\Service\PublicCatalogueQuery
  * @uses   \OCA\Portaliq\Service\DerivedCatalogueFacets
+ * @uses   \OCA\Portaliq\Service\CatalogueScope
+ * @uses   \OCA\Portaliq\Kernel\Support\SessionTrust
  */
 class ContentNewsCatalogueGoldenTest extends TestCase {
 
@@ -119,7 +122,7 @@ class ContentNewsCatalogueGoldenTest extends TestCase {
 	 * @param array<string, mixed>|null $subject The subject behind the bearer.
 	 * @param string                    $header  The Authorization header.
 	 *
-	 * @return array{0: IRequest, 1: PortalResolver, 2: PortalSessionService}
+	 * @return array{0: IRequest, 1: PortalResolver, 2: BearerSessionResolver}
 	 */
 	private function shared(?array $portal, ?array $subject, string $header): array {
 		$request = $this->createMock(IRequest::class);
@@ -141,7 +144,7 @@ class ContentNewsCatalogueGoldenTest extends TestCase {
 			$this->log[] = ['resolve' => $portalSlug];
 			return $portal;
 		});
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturnCallback(function (?string $authorizationHeader) use ($subject): ?array {
 			$this->log[] = ['resolveFromBearer' => $authorizationHeader];
 			if ($authorizationHeader === '') {
@@ -201,6 +204,6 @@ class ContentNewsCatalogueGoldenTest extends TestCase {
 		$catalogue->method('itemsFor')->willReturn([]);
 		$catalogue->method('visitorValuesFor')->willReturn([]);
 
-		return new ContentCatalogueController('portaliq', $request, $resolver, $session, $catalogue);
+		return new ContentCatalogueController('portaliq', $request, $resolver, $session, $catalogue, new PublicCatalogueQuery());
 	}//end catalogue()
 }//end class

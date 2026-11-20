@@ -136,6 +136,25 @@ class PortalThemeContrast {
 			return ['measured' => 0, 'findings' => []];
 		}
 
+		$results = $this->measuredBy(service: $service, surface: $surface, candidates: $candidates, background: $background);
+		if ($results === null) {
+			return null;
+		}
+
+		return $this->tally(surface: $surface, results: $results);
+	}//end judgeSurface()
+
+	/**
+	 * Ask the service to measure the candidates against the background.
+	 *
+	 * @param object                                                       $service    The theme app's contrast service.
+	 * @param string                                                       $surface    The surface name.
+	 * @param array<int, array{name: string, value: string, role: string}> $candidates The text colours.
+	 * @param string                                                       $background The background colour.
+	 *
+	 * @return array<mixed>|null The service's results, or null when it failed.
+	 */
+	private function measuredBy(object $service, string $surface, array $candidates, string $background): array|null {
 		try {
 			$results = $service->evaluate($candidates, $background);
 		} catch (Throwable $e) {
@@ -143,9 +162,21 @@ class PortalThemeContrast {
 			return null;
 		}
 
+		return (array)$results;
+	}//end measuredBy()
+
+	/**
+	 * Count the measured pairs and collect the failing ones.
+	 *
+	 * @param string       $surface The surface name.
+	 * @param array<mixed> $results The service's results.
+	 *
+	 * @return array{measured: int, findings: array<int, array<string, mixed>>}
+	 */
+	private function tally(string $surface, array $results): array {
 		$measured = 0;
 		$findings = [];
-		foreach ((array)$results as $result) {
+		foreach ($results as $result) {
 			if (is_array($result) === false || ($result['unevaluated'] ?? false) === true) {
 				continue;
 			}
@@ -155,16 +186,28 @@ class PortalThemeContrast {
 				continue;
 			}
 
-			$findings[] = [
-				'surface' => $surface,
-				'token' => (string)($result['name'] ?? ''),
-				'ratio' => (float)($result['ratio'] ?? 0),
-				'threshold' => (float)($result['threshold'] ?? 4.5),
-			];
+			$findings[] = $this->finding(surface: $surface, result: $result);
 		}
 
 		return ['measured' => $measured, 'findings' => $findings];
-	}//end judgeSurface()
+	}//end tally()
+
+	/**
+	 * One failing pair.
+	 *
+	 * @param string               $surface The surface name.
+	 * @param array<string, mixed> $result  The service's result for the pair.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function finding(string $surface, array $result): array {
+		return [
+			'surface' => $surface,
+			'token' => (string)($result['name'] ?? ''),
+			'ratio' => (float)($result['ratio'] ?? 0),
+			'threshold' => (float)($result['threshold'] ?? 4.5),
+		];
+	}//end finding()
 
 	/**
 	 * The text colours a surface's roles resolve to, as the service takes them.

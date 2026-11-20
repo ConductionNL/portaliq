@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
+ * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ namespace OCA\Portaliq\Service\CaseTypeColumns;
 /**
  * Turns a submitted list of column settings into the stored shape.
  *
- * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
+ * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
  */
 class CaseTypeColumnsNormaliser {
 	/**
@@ -62,7 +62,7 @@ class CaseTypeColumnsNormaliser {
 	 *
 	 * @return array<int, array{field: string, render: string, linkLabel?: string}>
 	 *
-	 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
 	 */
 	public function normalise(array $columns): array {
 		$out = [];
@@ -84,7 +84,7 @@ class CaseTypeColumnsNormaliser {
 	 *
 	 * @return array<string, array<int, array{field: string, render: string, linkLabel?: string}>>
 	 *
-	 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
 	 */
 	public function byType(?array $portal): array {
 		$stored = [];
@@ -105,7 +105,7 @@ class CaseTypeColumnsNormaliser {
 	 *
 	 * @return array{field: string, render: string, linkLabel?: string}|null
 	 *
-	 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
 	 */
 	private function column(mixed $column): ?array {
 		if (is_array($column) === false || $this->accepts(column: $column) === false) {
@@ -128,7 +128,7 @@ class CaseTypeColumnsNormaliser {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
 	 */
 	private function accepts(array $column): bool {
 		$field = trim((string)($column['field'] ?? ''));
@@ -146,7 +146,7 @@ class CaseTypeColumnsNormaliser {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
 	 */
 	private function linkLabel(string $render, string $label): string {
 		$label = trim($label);

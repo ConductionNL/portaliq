@@ -32,7 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
-use OCA\Portaliq\Service\PortalSchemaReader;
+use OCA\Portaliq\Kernel\Contracts\PortalSchemaReaderInterface;
 
 /**
  * Labels a collection's projected fields with their schema property titles.
@@ -56,10 +56,10 @@ class CollectionSchemaLabels {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalSchemaReader|null $schemaReader Reads a schema by slug; null changes nothing.
+	 * @param PortalSchemaReaderInterface|null $schemaReader Reads a schema by slug; null changes nothing.
 	 */
 	public function __construct(
-		private readonly ?PortalSchemaReader $schemaReader = null,
+		private readonly ?PortalSchemaReaderInterface $schemaReader = null,
 	) {
 	}//end __construct()
 
@@ -93,8 +93,29 @@ class CollectionSchemaLabels {
 			return $collection;
 		}
 
-		$configs = (array)($collection[CollectionFieldConfigNormaliser::KEY] ?? []);
-		foreach ($this->fieldsOf(collection: $collection) as $field) {
+		$configs = $this->withSchemaLabels(
+			configs: (array)($collection[CollectionFieldConfigNormaliser::KEY] ?? []),
+			fields: $this->fieldsOf(collection: $collection),
+			properties: $properties
+		);
+		if ($configs !== []) {
+			$collection[CollectionFieldConfigNormaliser::KEY] = $configs;
+		}
+
+		return $collection;
+	}//end labelled()
+
+	/**
+	 * The field configs with the schema's title as label for each field that has none.
+	 *
+	 * @param array<mixed, mixed>  $configs    The declared field configs.
+	 * @param array<int, string>   $fields     The collection's fields.
+	 * @param array<string, mixed> $properties The schema's properties.
+	 *
+	 * @return array<mixed, mixed>
+	 */
+	private function withSchemaLabels(array $configs, array $fields, array $properties): array {
+		foreach ($fields as $field) {
 			if (isset($configs[$field]['label']) === true) {
 				continue;
 			}
@@ -105,12 +126,8 @@ class CollectionSchemaLabels {
 			}
 		}
 
-		if ($configs !== []) {
-			$collection[CollectionFieldConfigNormaliser::KEY] = $configs;
-		}
-
-		return $collection;
-	}//end labelled()
+		return $configs;
+	}//end withSchemaLabels()
 
 	/**
 	 * The fields a collection shows: its projected `fields`, else its columns'.

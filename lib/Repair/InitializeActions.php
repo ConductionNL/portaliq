@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Repair;
 
-use OCA\Portaliq\Service\ActionAuthService;
+use OCA\Portaliq\Kernel\Contracts\ActionAuthServiceInterface;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -45,11 +45,11 @@ class InitializeActions implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param ActionAuthService $actionAuth The action authorization service.
+	 * @param ActionAuthServiceInterface $actionAuth The action authorization service.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
-		private ActionAuthService $actionAuth,
+		private ActionAuthServiceInterface $actionAuth,
 		private LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -81,33 +81,60 @@ class InitializeActions implements IRepairStep {
 		}
 
 		$matrix = $this->actionAuth->getMatrix();
-		$added  = [];
-		foreach ($seed as $action => $groups) {
-			$groups = $this->groupsOf(entry: $groups);
-			if (is_string($action) === false || is_array($groups) === false || array_key_exists($action, $matrix) === true) {
-				continue;
-			}
-
-			$matrix[$action] = $groups;
-			$added[]         = $action;
-		}
-
-		if (count($added) === 0) {
+		$added  = $this->unseeded(seed: $seed, matrix: $matrix);
+		if ($added === []) {
 			$output->info(sprintf('Action matrix already holds every seeded action (%d) — preserving.', count($matrix)));
 			return;
 		}
 
+		if ($this->wroteMatrix(matrix: ($matrix + $added), output: $output) === false) {
+			return;
+		}
+
+		$message = sprintf('Added %d seeded action(s) to the action matrix: %s', count($added), implode(', ', array_keys($added)));
+		$output->info($message);
+		$this->logger->info('[portaliq] ADR-023 ' . $message);
+	}//end run()
+
+	/**
+	 * The seeded actions the stored matrix does not hold yet, with their
+	 * groups, in seed order; a stored grant is never overwritten.
+	 *
+	 * @param array<mixed>                      $seed   The seeded matrix.
+	 * @param array<string, array<int, string>> $matrix The stored matrix.
+	 *
+	 * @return array<string, array<int, string>>
+	 */
+	private function unseeded(array $seed, array $matrix): array {
+		$added = [];
+		foreach ($seed as $action => $groups) {
+			$groups = $this->groupsOf(entry: $groups);
+			if (is_string($action) === true && is_array($groups) === true && array_key_exists($action, $matrix) === false) {
+				$added[$action] = $groups;
+			}
+		}
+
+		return $added;
+	}//end unseeded()
+
+	/**
+	 * Store the matrix, or warn and say no when it cannot be encoded.
+	 *
+	 * @param array<string, array<int, string>> $matrix The matrix to store.
+	 * @param IOutput                           $output The repair output.
+	 *
+	 * @return bool Whether it was stored.
+	 */
+	private function wroteMatrix(array $matrix, IOutput $output): bool {
 		try {
 			$this->actionAuth->setMatrix($matrix);
 		} catch (\JsonException $e) {
 			$output->warning('Failed to write matrix: ' . $e->getMessage());
-			return;
+			return false;
 		}
 
-		$message = sprintf('Added %d seeded action(s) to the action matrix: %s', count($added), implode(', ', $added));
-		$output->info($message);
-		$this->logger->info('[portaliq] ADR-023 ' . $message);
-	}//end run()
+		return true;
+	}//end wroteMatrix()
 
 	/**
 	 * The groups of a seed entry: the old bare group list, or the catalogue
@@ -133,6 +160,22 @@ class InitializeActions implements IRepairStep {
 	 * @return array<mixed>|null
 	 */
 	private function readSeed(IOutput $output): ?array {
+		$raw = $this->seedText(output: $output);
+		if ($raw === null) {
+			return null;
+		}
+
+		return $this->seedActions(output: $output, raw: $raw);
+	}//end readSeed()
+
+	/**
+	 * The seed file's text, or null (with a warning) when it is missing or unreadable.
+	 *
+	 * @param IOutput $output Repair output channel.
+	 *
+	 * @return string|null
+	 */
+	private function seedText(IOutput $output): string|null {
 		if (file_exists(self::SEED_PATH) === false) {
 			$output->warning('actions.seed.json not found — matrix left as is (unknown actions are admin-only).');
 			$this->logger->warning('[portaliq] ADR-023 seed file missing at ' . self::SEED_PATH);
@@ -145,6 +188,19 @@ class InitializeActions implements IRepairStep {
 			return null;
 		}
 
+		return $raw;
+	}//end seedText()
+
+	/**
+	 * The `actions` object of the seed's text, or null (with a warning) when
+	 * the text is not JSON or has no `actions` object.
+	 *
+	 * @param IOutput $output Repair output channel.
+	 * @param string  $raw    The seed file's text.
+	 *
+	 * @return array<mixed>|null
+	 */
+	private function seedActions(IOutput $output, string $raw): array|null {
 		try {
 			$parsed = json_decode($raw, associative: true, depth: 512, flags: JSON_THROW_ON_ERROR);
 		} catch (\JsonException $e) {
@@ -160,5 +216,5 @@ class InitializeActions implements IRepairStep {
 		}
 
 		return $actions;
-	}//end readSeed()
+	}//end seedActions()
 }//end class

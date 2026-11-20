@@ -67,4 +67,112 @@ class DutchFormatsTest extends TestCase {
 		$this->assertFalse($formats->knows('colour'));
 		$this->assertNull($formats->normalise('colour', 'red'));
 	}//end testAnUnknownFormatChecksNothing()
+
+	/**
+	 * Each format's own check, untrimmed, refuses a value with a trailing
+	 * newline, or strips it with the other whitespace before checking.
+	 *
+	 * @return void
+	 */
+	public function testACheckRefusesATrailingNewline(): void {
+		$checks = (new \ReflectionMethod(objectOrMethod: DutchFormats::class, method: 'checks'))->invoke(object: new DutchFormats());
+		$cases  = [
+			['bsn', "123456782\n", null],
+			['kvk', "12345678\n", null],
+			['kvk-branch', "123456789012\n", null],
+			['postcode', "1234 AB\n", null],
+			['phone-nl', "0612345678\n", '0612345678'],
+			['phone-international', "+442079460958\n", '+442079460958'],
+			['iban', "NL91ABNA0417164300\n", 'NL91ABNA0417164300'],
+			['nl-licence-plate', "AB1234\n", 'AB1234'],
+		];
+		foreach ($cases as [$format, $value, $expected]) {
+			$this->assertSame(expected: $expected, actual: $checks[$format]($value), message: $format);
+		}
+
+		$this->assertEqualsCanonicalizing(expected: DutchFormats::FORMATS, actual: array_column(array: $cases, column_key: 0));
+	}//end testACheckRefusesATrailingNewline()
+
+	/**
+	 * A submitted value is trimmed first, so a trailing newline never reaches the stored value.
+	 *
+	 * @return void
+	 */
+	public function testATrailingNewlineIsNotStored(): void {
+		$formats = new DutchFormats();
+		$this->assertSame(expected: '0612345678', actual: $formats->normalise(format: 'phone-nl', value: "06 12345678\n"));
+		$this->assertSame(expected: '12345678', actual: $formats->normalise(format: 'kvk', value: "12345678\n"));
+	}//end testATrailingNewlineIsNotStored()
+
+	/**
+	 * Every value of every format is kept, normalised or refused exactly as recorded.
+	 *
+	 * @return void
+	 */
+	public function testEveryFormatAndValueIsAsRecorded(): void {
+		$formats = new DutchFormats();
+		$cases   = [
+			['bsn', ' 111222333 ', '111222333'],
+			['bsn', '123456782', '123456782'],
+			['bsn', '000000000', null],
+			['bsn', '12345678', null],
+			['bsn', '1234567890', null],
+			['bsn', '12345678a', null],
+			['bsn', '111222334', null],
+			['iban', 'NL91 ABNA 0417 1643 00', 'NL91ABNA0417164300'],
+			['iban', 'nl91abna0417164300', 'NL91ABNA0417164300'],
+			['iban', 'NL91ABNA041716430', null],
+			['iban', 'DE89370400440532013000', 'DE89370400440532013000'],
+			['iban', 'DE89370400440532013001', null],
+			['iban', 'GB82WEST12345698765432', 'GB82WEST12345698765432'],
+			['iban', 'XX', null],
+			['iban', '1234ABNA0417164300', null],
+			['nl-licence-plate', 'AB-12-34', 'AB1234'],
+			['nl-licence-plate', '12-AB-34', '12AB34'],
+			['nl-licence-plate', 'ab1234', 'AB1234'],
+			['nl-licence-plate', 'GBB-12-X', 'GBB12X'],
+			['nl-licence-plate', 'AAA-12-X', null],
+			['nl-licence-plate', 'A-123-BC', null],
+			['nl-licence-plate', '1-ABC-23', null],
+			['nl-licence-plate', 'K-123-BB', 'K123BB'],
+			['nl-licence-plate', 'AB12345', null],
+			['nl-licence-plate', '123456', null],
+			['nl-licence-plate', 'ABCDEF', null],
+			['nl-licence-plate', 'XXQ-12-B', null],
+			['phone-nl', '06-12345678', '0612345678'],
+			['phone-nl', '+31 6 12345678', '+31612345678'],
+			['phone-nl', '0031612345678', '0031612345678'],
+			['phone-nl', '0612345', null],
+			['phone-nl', '(020) 123 4567', '0201234567'],
+			['phone-nl', '+316123456789', null],
+			['phone-nl', '0012345678', null],
+			['phone-international', '+44 20 7946 0958', '+442079460958'],
+			['phone-international', '+1234567', '+1234567'],
+			['phone-international', '+123456', null],
+			['phone-international', '0044207946', null],
+			['phone-international', '+0123456789', null],
+			['postcode', '1234 AB', '1234 AB'],
+			['postcode', '1234ab', '1234 AB'],
+			['postcode', '1234  AB', null],
+			['postcode', '0123 AB', null],
+			['postcode', '1234 SA', null],
+			['postcode', '1234 sd', null],
+			['postcode', '1234 SS', null],
+			['postcode', '1234 ST', '1234 ST'],
+			['postcode', '12345 AB', null],
+			['kvk', '12345678', '12345678'],
+			['kvk', ' 12345678 ', '12345678'],
+			['kvk', '1234567', null],
+			['kvk', '1234567a', null],
+			['kvk-branch', '123456789012', '123456789012'],
+			['kvk-branch', '12345678901', null],
+			['kvk-branch', '1234567890123', null],
+			['unknown', 'x', null],
+			['unknown', '', null],
+			['', 'x', null],
+		];
+		foreach ($cases as [$format, $value, $expected]) {
+			$this->assertSame($expected, $formats->normalise(format: $format, value: $value), $format . ' ' . $value);
+		}
+	}//end testEveryFormatAndValueIsAsRecorded()
 }

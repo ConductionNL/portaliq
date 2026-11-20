@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md
  */
 
 declare(strict_types=1);
@@ -29,7 +29,7 @@ use OCP\IL10N;
 /**
  * Holds one answer to the limits its field declares.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md
  */
 class PortalFieldLimits {
 	/**
@@ -50,7 +50,7 @@ class PortalFieldLimits {
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	public function patternError(array $field, mixed $value): ?string {
 		$pattern = (string)($field['pattern'] ?? '');
@@ -73,7 +73,7 @@ class PortalFieldLimits {
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	public function optionsError(array $field, mixed $value): ?string {
 		if (($field['referenceListEmpty'] ?? false) === true) {
@@ -81,12 +81,34 @@ class PortalFieldLimits {
 			return $this->l10n->t('Choose one of the options offered.');
 		}
 
+		$values = $this->offeredValues(field: $field);
+		if ($values === null) {
+			return null;
+		}
+
+		if (in_array($value, $values, true) === false) {
+			return $this->l10n->t('Choose one of the options offered.');
+		}
+
+		return null;
+	}//end optionsError()
+
+	/**
+	 * The values of the options a field offers, or null when it offers none.
+	 *
+	 * @param array<string, mixed> $field The field's declaration.
+	 *
+	 * @return array<int|string, mixed>|null
+	 *
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 */
+	private function offeredValues(array $field): array|null {
 		$options = ($field['options'] ?? null);
 		if (is_array($options) === false || $options === []) {
 			return null;
 		}
 
-		$values = array_map(
+		return array_map(
 			static function ($option) {
 				if (is_array($option) === true && array_key_exists('value', $option) === true) {
 					return $option['value'];
@@ -96,12 +118,7 @@ class PortalFieldLimits {
 			},
 			$options
 		);
-		if (in_array($value, $values, true) === false) {
-			return $this->l10n->t('Choose one of the options offered.');
-		}
-
-		return null;
-	}//end optionsError()
+	}//end offeredValues()
 
 	/**
 	 * Whether the value fits the length the field allows.
@@ -111,7 +128,7 @@ class PortalFieldLimits {
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	public function lengthError(array $field, mixed $value): ?string {
 		$maxLength = (int)($field['maxLength'] ?? 0);

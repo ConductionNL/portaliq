@@ -14,7 +14,7 @@ export const COLUMN_RENDERS = ['text', 'link', 'qr', 'date']
  * @param {{slug: string, typeId: string}} target The portal slug and the case type id.
  * @param {(path: string) => string} generateUrl Nextcloud's URL generator.
  * @return {string} The URL.
- * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
+ * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
  */
 export function columnsUrl(target, generateUrl) {
 	const slug = encodeURIComponent(target.slug)
@@ -29,7 +29,7 @@ export function columnsUrl(target, generateUrl) {
  * @param {Array<{field: string, label: string}>} fields The fields the case apps show.
  * @param {Array<object>} stored The case type's stored columns.
  * @return {Array<{field: string, label: string, render: string, linkLabel: string}>}
- * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
+ * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
  */
 export function editableColumns(fields, stored) {
 	const byField = new Map((stored || []).map((column) => [column.field, column]))
@@ -46,7 +46,7 @@ export function editableColumns(fields, stored) {
  *
  * @param {string} render The render kind.
  * @return {boolean}
- * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
+ * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
  */
 export function hasLinkLabel(render) {
 	return render === 'link' || render === 'qr'
@@ -58,7 +58,7 @@ export function hasLinkLabel(render) {
  *
  * @param {Array<object>} rows The edited rows.
  * @return {Array<{field: string, render: string, linkLabel?: string}>}
- * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
+ * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
  */
 export function columnsToSave(rows) {
 	return (rows || [])

@@ -57,7 +57,8 @@
 				WHAT A VISITOR NEEDS, IN WORDS (resident-sees-words-not-codes):
 				the date, the information category by name and the themes by
 				name. The archive's bookkeeping (Plooi, retention, the
-				organisation id, the status) stays off the page.
+				organisation id, the status) stays out of this worded part;
+				it shows only in the "All details" table at the end.
 			-->
 			<dl
 				v-if="fields.length > 0"
@@ -85,6 +86,25 @@
 			</dl>
 
 			<!--
+				THE REACTION PERIOD (REQ-PDC-005): the state opencatalogi
+				reports, never one computed here. The form only while open.
+			-->
+			<p
+				v-if="period"
+				class="utrecht-paragraph pq-detail__period"
+				:data-state="period.state"
+				data-testid="publication-comment-period">
+				{{ period.text }}
+				<a
+					v-if="period.formUrl"
+					class="utrecht-link pq-detail__period-form"
+					:href="period.formUrl"
+					data-testid="publication-comment-period-form">
+					{{ t('Go to the reaction form') }}
+				</a>
+			</p>
+
+			<!--
 				THE DOCUMENTS (woo-search-and-detail, REQ-WSD-005). Rendered
 				once the attachment call answered; a failed call leaves the
 				section out rather than putting an error over a publication
@@ -95,6 +115,19 @@
 				class="pq-detail__documents"
 				data-testid="publication-documents">
 				<h2 class="utrecht-heading-2">{{ t('Documents') }}</h2>
+				<!-- One archive of every document (REQ-PDC-003). -->
+				<a
+					v-if="downloadAll"
+					class="utrecht-link pq-detail__download-all"
+					:href="downloadAll.href"
+					download
+					data-testid="publication-download-all">
+					{{
+						t('Download all ({count} documents)', {
+							count: downloadAll.count,
+						})
+					}}
+				</a>
 				<p
 					v-if="documents.length === 0"
 					class="utrecht-paragraph"
@@ -148,6 +181,63 @@
 							{{ t('Download')
 							}}<span class="sr-only">{{ ` ${document.title}` }}</span>
 						</a>
+						<span
+							v-if="
+								documentPage(document)
+								|| document.view
+								|| document.metadataUrl
+								|| document.diwooUrl
+							"
+							class="pq-detail__document-links">
+							<!-- The document's own page (REQ-PDC-002). -->
+							<a
+								v-if="documentPage(document)"
+								class="utrecht-link"
+								:href="documentHref(document)"
+								data-testid="publication-document-page"
+								@click.prevent="$emit('navigate', documentPage(document))">
+								{{ t('Details')
+								}}<span class="sr-only">{{ ` ${document.title}` }}</span>
+							</a>
+							<!-- Opens in the browser's viewer (REQ-PDC-001). -->
+							<a
+								v-if="document.view"
+								class="utrecht-link"
+								:href="document.view"
+								target="_blank"
+								rel="noopener noreferrer"
+								data-testid="publication-document-view">
+								{{ t('View')
+								}}<span class="sr-only">{{
+									` ${document.title}, ${t('opens in a new tab')}`
+								}}</span>
+							</a>
+							<!-- Only the metadata links the read carries (REQ-PDC-004). -->
+							<a
+								v-if="document.metadataUrl"
+								class="utrecht-link"
+								:href="document.metadataUrl"
+								:aria-label="
+									t('Metadata of {title} as JSON', {
+										title: document.title,
+									})
+								"
+								data-testid="publication-document-metadata">
+								{{ t('Metadata (JSON)') }}
+							</a>
+							<a
+								v-if="document.diwooUrl"
+								class="utrecht-link"
+								:href="document.diwooUrl"
+								:aria-label="
+									t('Metadata of {title} as DiWoo XML', {
+										title: document.title,
+									})
+								"
+								data-testid="publication-document-diwoo">
+								{{ t('Metadata (DiWoo XML)') }}
+							</a>
+						</span>
 						<SaveToDossier
 							v-if="signedIn && document.id"
 							:publication="subjectId"
@@ -178,6 +268,63 @@
 									.join(', ')
 							}})
 						</span>
+						<span
+							v-if="
+								documentPage(document)
+								|| document.view
+								|| document.metadataUrl
+								|| document.diwooUrl
+							"
+							class="pq-detail__document-links">
+							<!-- The document's own page (REQ-PDC-002). -->
+							<a
+								v-if="documentPage(document)"
+								class="utrecht-link"
+								:href="documentHref(document)"
+								data-testid="publication-document-page"
+								@click.prevent="$emit('navigate', documentPage(document))">
+								{{ t('Details')
+								}}<span class="sr-only">{{ ` ${document.title}` }}</span>
+							</a>
+							<!-- Opens in the browser's viewer (REQ-PDC-001). -->
+							<a
+								v-if="document.view"
+								class="utrecht-link"
+								:href="document.view"
+								target="_blank"
+								rel="noopener noreferrer"
+								data-testid="publication-document-view">
+								{{ t('View')
+								}}<span class="sr-only">{{
+									` ${document.title}, ${t('opens in a new tab')}`
+								}}</span>
+							</a>
+							<!-- Only the metadata links the read carries (REQ-PDC-004). -->
+							<a
+								v-if="document.metadataUrl"
+								class="utrecht-link"
+								:href="document.metadataUrl"
+								:aria-label="
+									t('Metadata of {title} as JSON', {
+										title: document.title,
+									})
+								"
+								data-testid="publication-document-metadata">
+								{{ t('Metadata (JSON)') }}
+							</a>
+							<a
+								v-if="document.diwooUrl"
+								class="utrecht-link"
+								:href="document.diwooUrl"
+								:aria-label="
+									t('Metadata of {title} as DiWoo XML', {
+										title: document.title,
+									})
+								"
+								data-testid="publication-document-diwoo">
+								{{ t('Metadata (DiWoo XML)') }}
+							</a>
+						</span>
 						<SaveToDossier
 							v-if="signedIn && document.id"
 							:publication="subjectId"
@@ -186,6 +333,68 @@
 					</li>
 				</ul>
 			</section>
+
+			<!--
+				DATASET VIEWS (dataset-views-on-the-public-page, REQ-DSV-003):
+				each published table's views under its title. A chart or map
+				always offers the same data as a table.
+			-->
+			<PublicationDatasetViews
+				v-if="hasDatasetViews"
+				:publication="publication"
+				:t="t"
+				:locale="locale" />
+
+			<!--
+				ALL DETAILS (publication-page-all-details): every stored
+				property below the worded part, with a readable label. The
+				object's own metadata and empty values are left out, and a
+				value shaped like a URL is a link. The worded part above stays
+				free of stored codes.
+			-->
+			<section
+				v-if="details.length > 0"
+				class="pq-detail__all"
+				data-testid="publication-all-details">
+				<h2 id="pq-detail-all-details" class="utrecht-heading-2">
+					{{ t('All details') }}
+				</h2>
+				<table
+					class="utrecht-table pq-detail__all-table"
+					aria-labelledby="pq-detail-all-details">
+					<tbody class="utrecht-table__body">
+						<tr
+							v-for="row in details"
+							:key="row.name"
+							class="utrecht-table__row"
+							:data-property="row.name">
+							<th scope="row" class="utrecht-table__header-cell">
+								{{ row.label }}
+							</th>
+							<td class="utrecht-table__cell">
+								<ul v-if="row.items.length > 1" class="pq-detail__list">
+									<li v-for="(item, index) in row.items" :key="index">
+										<a
+											v-if="item.href"
+											class="utrecht-link"
+											:href="item.href"
+											rel="noopener noreferrer">{{ item.text }}</a>
+										<span v-else>{{ item.text }}</span>
+									</li>
+								</ul>
+								<template v-else>
+									<a
+										v-if="row.items[0].href"
+										class="utrecht-link"
+										:href="row.items[0].href"
+										rel="noopener noreferrer">{{ row.items[0].text }}</a>
+									<span v-else>{{ row.items[0].text }}</span>
+								</template>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</section>
 		</article>
 	</section>
 </template>
@@ -193,13 +402,27 @@
 <script>
 import { defineAsyncComponent } from 'vue'
 import { createTranslator } from '../../shared/i18n/index.js'
+import { runtimeConfig } from '../lib/contentApi.js'
+import { documentPageRoute } from '../lib/documentRoute.js'
 import { pageLocale } from '../lib/facetLabels.js'
 import {
+	allDetailRows,
+	commentPeriodLine,
+	downloadAllLink,
 	publicationSummary,
 	themeIdsOf,
 	toDocuments,
 	visitorRows,
 } from '../lib/publicationDetail.js'
+import { addressOfRoute } from '../lib/siteAddress.js'
+
+/**
+ * Whether the pinned `@conduction/nextcloud-vue` offers a public file preview
+ * for data files (its `files-preview-in-place` change). 2.180.0 does not: its
+ * `CnFilePreview` is an admin dialog outside the `./public` entry. Until it
+ * does, CSV, TSV, JSON and XML stay downloads (REQ-PDC-001).
+ */
+const PUBLIC_PREVIEW = false
 
 /**
  * One publication, as a visitor reads it: title, summary, date, category and
@@ -229,6 +452,7 @@ export default {
 
 	components: {
 		SaveToDossier: defineAsyncComponent(() => import('./SaveToDossier.vue')),
+		PublicationDatasetViews: defineAsyncComponent(() => import('./PublicationDatasetViews.vue')),
 	},
 
 	props: {
@@ -278,9 +502,20 @@ export default {
 			type: String,
 			default: '/index.php/apps/opencatalogi/api/themes',
 		},
+
+		/**
+		 * The catalogue's slug, for opencatalogi's catalogue ZIP route. Empty
+		 * links the ZIP route beside the publication read instead.
+		 *
+		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-the-publication-downloads-as-one-archive-req-pdc-003
+		 */
+		catalogSlug: {
+			type: String,
+			default: '',
+		},
 	},
 
-	emits: ['subject'],
+	emits: ['navigate', 'subject'],
 
 	data() {
 		return {
@@ -296,7 +531,7 @@ export default {
 		/**
 		 * @return {string} The page's language.
 		 *
-		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
 		 */
 		locale() {
 			return pageLocale()
@@ -305,7 +540,7 @@ export default {
 		/**
 		 * @return {(key: string) => string} The translator for the page's language.
 		 *
-		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
 		 */
 		t() {
 			return createTranslator(this.locale)
@@ -314,7 +549,7 @@ export default {
 		/**
 		 * @return {string} The summary under the title, or ''.
 		 *
-		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
 		 */
 		summary() {
 			return publicationSummary(this.publication)
@@ -335,7 +570,7 @@ export default {
 		/**
 		 * @return {Array<object>} The rendered field rows.
 		 *
-		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
 		 */
 		/**
 		 * @return {boolean} Whether the cards variant is drawn.
@@ -352,6 +587,49 @@ export default {
 		categoryName() {
 			const row = this.fields.find((field) => field.name === 'wooCategory')
 			return row ? String(row.value) : ''
+		},
+
+		/**
+		 * @return {{href: string, count: number}|null} The "download all" link.
+		 *
+		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-the-publication-downloads-as-one-archive-req-pdc-003
+		 */
+		downloadAll() {
+			return downloadAllLink({
+				id: this.subjectId,
+				count: Array.isArray(this.documents) ? this.documents.length : 0,
+				catalogSlug: this.catalogSlug,
+				endpoint: this.endpoint,
+			})
+		},
+
+		/**
+		 * @return {{state: string, text: string, formUrl: string}|null} The reaction period line.
+		 *
+		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-the-page-states-the-reaction-period-req-pdc-005
+		 */
+		period() {
+			return commentPeriodLine(this.publication, this.t)
+		},
+
+		/**
+		 * @return {Array<object>} The rows of the "All details" table.
+		 * @spec openspec/changes/publication-page-all-details/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-end-with-an-all-details-table-of-every-stored-property
+		 */
+		details() {
+			return allDetailRows(this.publication)
+		},
+
+		/**
+		 * Whether a published table carries a view. The views and their
+		 * drawing load on demand, only then (REQ-DSV-003).
+		 *
+		 * @return {boolean} Whether the data section is drawn.
+		 * @spec openspec/changes/dataset-views-on-the-public-page/specs/open-data-tables/spec.md#requirement-the-public-page-draws-each-view-and-offers-its-data-as-a-table-req-dsv-003
+		 */
+		hasDatasetViews() {
+			const tables = this.publication?.tables
+			return Array.isArray(tables) && tables.some((table) => Array.isArray(table?.views) && table.views.length > 0)
 		},
 
 		fields() {
@@ -485,7 +763,7 @@ export default {
 		 * @param {string} publicationUrl The publication's own URL.
 		 * @return {Promise<void>} Resolves once `documents` is set.
 		 *
-		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-list-and-offer-every-document-for-download-req-wsd-005
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-list-and-offer-every-document-for-download-req-wsd-005
 		 */
 		async loadDocuments(publicationUrl) {
 			const asked = this.subjectId
@@ -501,11 +779,40 @@ export default {
 
 				const body = await response.json()
 				if (asked === this.subjectId) {
-					this.documents = toDocuments(body)
+					this.documents = toDocuments(body, { preview: PUBLIC_PREVIEW })
 				}
 			} catch {
 				// Left out: see above.
 			}
+		},
+
+		/**
+		 * The in-site route of a document's own page, or '' without an id.
+		 *
+		 * @param {object} document One row of `documents`.
+		 * @return {string} The route.
+		 *
+		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+		 */
+		documentPage(document) {
+			return documentPageRoute(this.subjectId, (document || {}).id)
+		},
+
+		/**
+		 * The href of a document's own page, in the addressing of this host.
+		 *
+		 * @param {object} document One row of `documents`.
+		 * @return {string} The href.
+		 *
+		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+		 */
+		documentHref(document) {
+			const route = this.documentPage(document)
+			if (typeof window === 'undefined') {
+				return route
+			}
+
+			return addressOfRoute(route, window.location.href, runtimeConfig()).toString()
 		},
 
 		/**
@@ -535,7 +842,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves once `themeNames` is set.
 		 *
-		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
 		 */
 		async loadThemeNames() {
 			const asked = this.subjectId
@@ -606,6 +913,26 @@ export default {
 	margin-block-start: 24px;
 }
 
+.pq-detail__period {
+	margin-block-start: 16px;
+}
+
+.pq-detail__period-form {
+	margin-inline-start: 4px;
+}
+
+.pq-detail__download-all {
+	display: inline-block;
+	margin-block-end: 8px;
+}
+
+.pq-detail__document-links {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: 0.25rem 0.75rem;
+	margin-inline-start: 8px;
+}
+
 .pq-detail__document-list {
 	margin: 0;
 	padding-inline-start: 20px;
@@ -617,6 +944,32 @@ export default {
 		var(--nldesign-color-text-muted, #65757b)
 	);
 	margin-inline-start: 4px;
+}
+
+/* All details: label column and value column, tokens only. */
+.pq-detail__all {
+	margin-block-start: 24px;
+}
+
+.pq-detail__all-table {
+	inline-size: 100%;
+	border-collapse: collapse;
+}
+
+.pq-detail__all-table th,
+.pq-detail__all-table td {
+	padding-block: 0.5rem;
+	padding-inline-end: 1rem;
+	border-block-end: 1px solid
+		var(--nldesign-color-border, var(--nldesign-color-border-dark, currentcolor));
+	text-align: start;
+	vertical-align: top;
+	overflow-wrap: anywhere;
+}
+
+.pq-detail__all-table th {
+	inline-size: 30%;
+	font-weight: 600;
 }
 
 /* The cards variant (board Publicatie). Tokens only. */

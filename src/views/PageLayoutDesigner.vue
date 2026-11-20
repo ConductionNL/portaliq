@@ -139,7 +139,7 @@
 					variant="primary"
 					data-testid="designer-publish"
 					:disabled="state.loading || state.saving"
-					@click="editor.publish()">
+					@click="isBlock ? editor.publish() : (confirmingPublish = true)">
 					{{ t('portaliq', 'Publish') }}
 				</NcButton>
 				<NcButton
@@ -190,7 +190,9 @@
 			v-model:paletteOpen="paletteOpen"
 			:editor="editor"
 			:loadBlocks="loadBlocks"
-			:loadRecordLists="loadRecordLists" />
+			:loadRecordLists="loadRecordLists"
+			:loadCatalogueKinds="loadCatalogueKinds"
+			:excludedPaths="excludedPaths" />
 
 		<MediaPickerDialog
 			v-model:open="mediaOpen"
@@ -202,6 +204,10 @@
 			:pageId="pageId"
 			:busy="state.saving"
 			@restore="restoreVersion" />
+		<PublishPageDialog
+			v-if="confirmingPublish"
+			:address="siteUrl"
+			@close="publishConfirmed" />
 	</div>
 </template>
 
@@ -219,11 +225,14 @@ import Redo from 'vue-material-design-icons/Redo.vue'
 import Undo from 'vue-material-design-icons/Undo.vue'
 import MediaPickerDialog from '../dialogs/MediaPickerDialog.vue'
 import PageHistoryDialog from '../dialogs/PageHistoryDialog.vue'
+import PublishPageDialog from '../dialogs/PublishPageDialog.vue'
 import PageGridEditor from '../editor/PageGridEditor.vue'
 import {
 	blockToPage,
 	createPageEditor,
 	createPageSaver,
+	kindsFrom,
+	loadExcludedPaths,
 	pageToBlock,
 	recordListsFrom,
 } from '../editor/index.js'
@@ -245,6 +254,7 @@ export default {
 		NcNoteCard,
 		PageGridEditor,
 		PageHistoryDialog,
+		PublishPageDialog,
 		Plus,
 		Redo,
 		Undo,
@@ -269,6 +279,15 @@ export default {
 			paletteOpen: false,
 			historyOpen: false,
 			mediaOpen: false,
+			confirmingPublish: false,
+
+			/**
+			 * The page's portal `traffic.excludedPaths`, or null until read
+			 * and when it cannot be read.
+			 *
+			 * @type {Array<string>|null}
+			 */
+			excludedPaths: null,
 		}
 	},
 
@@ -325,11 +344,35 @@ export default {
 		},
 	},
 
-	mounted() {
-		this.editor.load()
+	async mounted() {
+		await this.editor.load()
+		// A shared block has no route of its own, so nothing to warn about.
+		if (!this.isBlock) {
+			this.excludedPaths = await loadExcludedPaths(
+				(url, config) => axios.get(url, config),
+				generateUrl('/apps/openregister/api/objects/portaliq/portal'),
+				this.page.portal,
+			)
+		}
 	},
 
 	methods: {
+		/**
+		 * Publish once the editor confirmed that anyone may read the page;
+		 * cancelled, the page stays as it is.
+		 *
+		 * @param {boolean} confirmed Whether the editor chose Publish.
+		 * @return {Promise<void>} Resolves when published, refused or cancelled.
+		 *
+		 * @spec openspec/changes/page-public-on-purpose/tasks.md#1.1
+		 */
+		async publishConfirmed(confirmed) {
+			this.confirmingPublish = false
+			if (confirmed === true) {
+				await this.editor.publish()
+			}
+		},
+
 		/**
 		 * The shared editor over OpenRegister's object API.
 		 *
@@ -393,6 +436,21 @@ export default {
 				{ params: this.page.portal ? { portal: this.page.portal } : {} },
 			)
 			return recordListsFrom(data)
+		},
+
+		/**
+		 * The kinds the installed apps declare for their public index on this
+		 * page's portal, for the blocks that read one.
+		 *
+		 * @return {Promise<Array<object>>} The kinds.
+		 * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-4
+		 */
+		async loadCatalogueKinds() {
+			const { data } = await axios.get(
+				generateUrl('/apps/portaliq/api/content/catalogue/kinds'),
+				{ params: this.page.portal ? { portal: this.page.portal } : {} },
+			)
+			return kindsFrom(data)
 		},
 
 		/**

@@ -18,6 +18,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Signin;
 
+use OCA\Portaliq\Kernel\Contracts\BrokerLoginInterface;
 use OCA\Portaliq\Service\OidcStateStoreService;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -35,14 +36,13 @@ use OCA\Portaliq\Service\PortalSessionService;
  *
  * @spec openspec/specs/portal-broker-envelope-login/spec.md
  */
-class BrokerLogin {
+class BrokerLogin implements BrokerLoginInterface {
 
 	/**
 	 * The trust level asked of integriq. Integriq maps the login it actually
 	 * got to the envelope's `trust`, and that answer is what the session gets.
 	 */
 	private const REQUESTED_TRUST = 'substantial';
-
 
 	/**
 	 * Constructor.
@@ -66,7 +66,6 @@ class BrokerLogin {
 	) {
 	}//end __construct()
 
-
 	/**
 	 * The address to send the browser to, or null when this organisation does
 	 * not route this provider to a complete broker.
@@ -75,12 +74,14 @@ class BrokerLogin {
 	 * @param string $provider    The provider.
 	 * @param string $returnTo    The portal path to land on once signed in.
 	 * @param string $callbackUrl Portaliq's absolute broker callback address.
+	 * @param string $portal      The slug of the portal the login is started on, or ''; the session is bound to it.
 	 *
 	 * @return string|null
 	 *
 	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-broker-start-binds-the-login-to-one-organisation-and-one-provider-req-bel-002
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
 	 */
-	public function start(string $org, string $provider, string $returnTo, string $callbackUrl): ?string {
+	public function start(string $org, string $provider, string $returnTo, string $callbackUrl, string $portal = ''): ?string {
 		// Asked first, before any secret-bearing read: an OIDC-routed
 		// provider cannot be started on this route.
 		if ($this->orgConfig->loginRouteFor(orgSlug: $org, provider: $provider) !== BrokerLoginRoute::ROUTE_BROKER) {
@@ -93,7 +94,7 @@ class BrokerLogin {
 		}
 
 		$state = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
-		if ($this->stateStore->createBroker(state: $state, org: $org, provider: $provider, returnTo: $returnTo) === false) {
+		if ($this->stateStore->createBroker(state: $state, org: $org, provider: $provider, returnTo: $returnTo, portal: $portal) === false) {
 			return null;
 		}
 
@@ -113,14 +114,25 @@ class BrokerLogin {
 			PHP_QUERY_RFC3986
 		);
 
+		return $this->withQuery(startUrl: $broker['startUrl'], query: $query);
+	}//end start()
+
+	/**
+	 * The broker's start address with the query appended.
+	 *
+	 * @param string $startUrl The broker's start address.
+	 * @param string $query    The encoded query.
+	 *
+	 * @return string
+	 */
+	private function withQuery(string $startUrl, string $query): string {
 		$separator = '?';
-		if (str_contains($broker['startUrl'], '?') === true) {
+		if (str_contains($startUrl, '?') === true) {
 			$separator = '&';
 		}
 
-		return $broker['startUrl'] . $separator . $query;
-	}//end start()
-
+		return $startUrl . $separator . $query;
+	}//end withQuery()
 
 	/**
 	 * Complete a login: the minted bearer and where to land, or null when no
@@ -136,7 +148,7 @@ class BrokerLogin {
 	 *
 	 * @return array{token: string, returnTo: string}|null
 	 *
-	 * @spec openspec/changes/portal-broker-login-keeps-the-portal/specs/portal-broker-envelope-login/spec.md
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md
 	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-envelope-becomes-an-ordinary-portal-session-req-bel-005
 	 */
 	public function complete(string $state, string $code): ?array {
@@ -165,14 +177,16 @@ class BrokerLogin {
 		return ['token' => $token, 'returnTo' => $returnTo];
 	}//end complete()
 
-
 	/**
 	 * Redeem the code and check the envelope's claims against the state row.
 	 *
 	 * @param array<string, string|bool> $pending The consumed state row.
 	 * @param string                $code    The one-time code.
 	 *
-	 * @return array{sub: string, provider: string, trust: string, audience: string}|null
+	 * @return array{sub: string, provider: string, trust: string, audience: string, attributes?: array<string, string>}|null
+	 *
+	 * @spec openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md#requirement-an-eherkenning-sign-in-is-a-business-sign-in-req-see-001
+	 * @spec openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md#requirement-an-eidas-sign-in-is-a-visitor-from-another-eu-country-req-see-002
 	 */
 	private function redeem(array $pending, string $code): ?array {
 		$broker = $this->orgConfig->resolveBrokerConfig(orgSlug: $pending['org'], provider: $pending['provider']);
@@ -204,14 +218,13 @@ class BrokerLogin {
 		return $claims + ['audience' => $broker['audience']];
 	}//end redeem()
 
-
 	/**
 	 * The envelope as an ordinary portal session (design D6): the provider is
 	 * the identity type, the subject the identity reference, the preset's
 	 * audience the audience, and integriq's trust the session's trust.
 	 *
 	 * @param array<string, string|bool> $pending The consumed state row.
-	 * @param array<string, string> $claims  The checked claims plus the audience.
+	 * @param array<string, mixed>  $claims  The checked claims plus the audience.
 	 *
 	 * @return string|null The bearer.
 	 */
@@ -236,7 +249,10 @@ class BrokerLogin {
 			audience: $audience,
 			organisation: $pending['org'],
 			trust: $claims['trust'],
-			roles: [$audience . ':read']
+			roles: [$audience . ':read'],
+			attributes: (array)($claims['attributes'] ?? []),
+			// Bound to the portal the login started on (portal-scoping-and-auth Task 4).
+			portal: (string)($pending['portal'] ?? '')
 		);
 		if ($issued === null) {
 			return null;

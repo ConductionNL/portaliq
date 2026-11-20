@@ -27,7 +27,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity\EmailLink;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Auth\PortalAuthConfig;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\EmailLinkSettingInterface;
 use OCP\IAppConfig;
 
 /**
@@ -35,21 +37,11 @@ use OCP\IAppConfig;
  *
  * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#1
  */
-class EmailLinkSetting {
+class EmailLinkSetting implements EmailLinkSettingInterface {
 	/**
 	 * The app config key of the switch.
 	 */
 	public const CONFIG_KEY = 'email_link_signin';
-
-	/**
-	 * The settings key the admin screen reads and writes.
-	 */
-	public const SETTINGS_KEY = 'email_link_signin_enabled';
-
-	/**
-	 * The sign-in mode a portal declares in `authentication.modes`.
-	 */
-	public const MODE = 'email-link';
 
 	/**
 	 * Constructor.
@@ -72,7 +64,7 @@ class EmailLinkSetting {
 	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#1
 	 */
 	public function isEnabled(): bool {
-		return $this->appConfig->getValueString(Application::APP_ID, self::CONFIG_KEY, '0') === '1';
+		return $this->appConfig->getValueString(AppIdentity::APP_ID, self::CONFIG_KEY, '0') === '1';
 	}//end isEnabled()
 
 	/**
@@ -90,7 +82,7 @@ class EmailLinkSetting {
 			$value = '1';
 		}
 
-		$this->appConfig->setValueString(Application::APP_ID, self::CONFIG_KEY, $value);
+		$this->appConfig->setValueString(AppIdentity::APP_ID, self::CONFIG_KEY, $value);
 	}//end setEnabled()
 
 	/**
@@ -108,8 +100,8 @@ class EmailLinkSetting {
 			return false;
 		}
 
-		$modes = (((array)($portal['authentication'] ?? []))['modes'] ?? []);
-
-		return is_array($modes) === true && in_array(self::MODE, $modes, true) === true;
+		// Read against the closed set: a malformed block offers no way in
+		// (portal-scoping-and-auth Task 4).
+		return PortalAuthConfig::fromPortal(portal: $portal)->offers(mode: self::MODE);
 	}//end offeredBy()
 }//end class

@@ -5,34 +5,16 @@
 // block shows, where a case stands ("Stap 2 van 4"), its answer date and
 // whose turn it is. No Vue, so tests/mijn-cases.spec.mjs runs it as node.
 //
-// @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+// @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
 
 import { dueValueOf } from '../../../shared/casePage.js'
 import { caseStatus, caseTitle } from '../../../shared/myCases.js'
+import { isClosedCase } from './closedCase.js'
+
+export { isClosedCase }
 
 /** How many cases a `cases` block shows when it declares no limit (design D4). */
 export const DEFAULT_CASE_LIMIT = 4
-
-/**
- * Whether a collection row is a closed case: its `_closed` mark when the
- * server stamped one, else a value in the collection's `closedField`.
- *
- * @param {object} row The case row.
- * @param {object} collection The `cases` collection.
- * @return {boolean}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
- */
-export function isClosedCase(row, collection) {
-	if (typeof row?._closed === 'boolean') {
-		return row._closed
-	}
-	const field = collection?.closedField
-	if (!field) {
-		return false
-	}
-	const value = row?.[field]
-	return value !== undefined && value !== null && value !== '' && value !== false
-}
 
 /**
  * The cases a `cases` block shows: open ones only when it says `open`, at
@@ -42,7 +24,7 @@ export function isClosedCase(row, collection) {
  * @param {object} block The block (`open`, `limit`).
  * @param {object} collection The collection.
  * @return {{rows: Array<object>, more: boolean}}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
  */
 export function casesOnScreen(rows, block, collection) {
 	const limit =
@@ -61,7 +43,7 @@ export function casesOnScreen(rows, block, collection) {
  *
  * @param {Array<{state: string}>|null} steps The steps provider's answer.
  * @return {{current: number, total: number}|null}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
  */
 export function stepPosition(steps) {
 	const list = Array.isArray(steps) ? steps : []
@@ -112,15 +94,24 @@ export function dayInWords(value, today, locale, withYear = false) {
  * @param {object} row The case row.
  * @param {object} collection The `cases` collection.
  * @return {string}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
  */
 export function turnSentence(row, collection) {
 	const field = collection?.turnField
 	if (!field) {
 		return ''
 	}
-	const value = row?.[field]
-	const labels = collection?.fieldConfigs?.[field]?.valueLabels
+	return wordsFor(row?.[field], collection?.fieldConfigs?.[field]?.valueLabels)
+}
+
+/**
+ * The words the labels give a value, or '' without them.
+ *
+ * @param {unknown} value The turn field's value.
+ * @param {Record<string, string>|undefined} labels The field's value labels.
+ * @return {string}
+ */
+function wordsFor(value, labels) {
 	if (value === undefined || value === null || !labels) {
 		return ''
 	}
@@ -140,7 +131,7 @@ export function turnSentence(row, collection) {
  * @param {Array<object>|null} [context.steps] The case's steps, when read.
  * @param {Array<string>} [context.yourTurn] The turn values at which the resident must act (the board card's tag).
  * @return {object} `{title, typeName, status, reference, number, numberLabel, due, dueDay, readyBy, turn, yourTurn, position, closed}`.
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
  * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-contribution-may-declare-the-board-displays
  */
 export function caseCard(

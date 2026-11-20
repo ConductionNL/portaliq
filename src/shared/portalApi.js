@@ -102,23 +102,259 @@ export function setToken(token) {
  * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
  */
 export function rowActionFormData(answers, upload) {
-	if (!upload || !upload.field || !upload.files || upload.files.length === 0) {
+	if (!hasFiles(upload)) {
 		return null
 	}
 	const form = new FormData()
-	for (const [key, value] of Object.entries(answers || {})) {
-		if (value !== null && typeof value === 'object') {
-			for (const [name, inner] of Object.entries(value)) {
-				form.append(`${key}[${name}]`, String(inner))
-			}
-		} else if (value !== undefined && value !== null) {
-			form.append(key, String(value))
-		}
+	for (const entry of Object.entries(answers || {})) {
+		appendAnswer(form, entry)
 	}
 	for (const file of upload.files) {
 		form.append(`${upload.field}[]`, file, file.name)
 	}
 	return form
+}
+
+/**
+ * Whether an upload names its field and carries at least one file.
+ *
+ * @param {{field: string, files: Array<File>}|null} upload The upload.
+ * @return {boolean} True with files.
+ */
+function hasFiles(upload) {
+	return Boolean(upload && upload.field && upload.files && upload.files.length > 0)
+}
+
+/**
+ * One answer as form fields: an object answer as `key[name]` fields, any
+ * other value as one field, nothing for null or undefined.
+ *
+ * @param {FormData} form The body, appended to.
+ * @param {Array} entry The answer's key and value.
+ * @return {void}
+ */
+function appendAnswer(form, entry) {
+	const key = entry[0]
+	const value = entry[1]
+	if (value !== null && typeof value === 'object') {
+		appendObjectAnswer(form, entry)
+		return
+	}
+	if (value !== undefined && value !== null) {
+		form.append(key, String(value))
+	}
+}
+
+/**
+ * An object answer as `key[name]` fields.
+ *
+ * @param {FormData} form The body, appended to.
+ * @param {Array} entry The answer's key and its object value.
+ * @return {void}
+ */
+function appendObjectAnswer(form, entry) {
+	for (const [name, inner] of Object.entries(entry[1])) {
+		form.append(`${entry[0]}[${name}]`, String(inner))
+	}
+}
+
+/**
+ * Save a Blob URL under a name by clicking a link to it. The cleanup is
+ * deferred: revoking the object URL synchronously after click() can cancel
+ * the download before the browser has started streaming it.
+ *
+ * @param {string} objectUrl The Blob URL.
+ * @param {string} name The name to save it under.
+ * @return {void}
+ */
+function clickDownload(objectUrl, name) {
+	const link = document.createElement('a')
+	link.href = objectUrl
+	link.download = name
+	document.body.appendChild(link)
+	link.click()
+	setTimeout(() => {
+		link.remove()
+		window.URL.revokeObjectURL(objectUrl)
+	}, 10000)
+}
+
+/**
+ * The "my cases" answer as the pages read it: the cases only when the
+ * answer is ok, the mandates and the one acted under, and the refusal.
+ *
+ * @param {{ok: boolean, status: number}} res The response.
+ * @param {object} json Its body, `{}` when it was not JSON.
+ * @return {{ok: boolean, status: number, cases: Array, mandates: Array, activeMandate: object|null, error: string}} The answer.
+ */
+function myCasesAnswer(res, json) {
+	return {
+		ok: res.ok,
+		status: res.status,
+		cases: res.ok ? listIn(json, 'cases') : [],
+		mandates: listIn(json, 'mandates'),
+		activeMandate: json?.activeMandate || null,
+		error: res.ok ? '' : String(json?.error || ''),
+	}
+}
+
+/**
+ * Where one of the resident's inbox messages lives, with an action suffix
+ * (`/read`, `/reply`, or none), or null when the message does not name its
+ * id, register and schema.
+ *
+ * @param {object} message An inbox row, carrying its `_source` provenance tag.
+ * @param {string} suffix The action's path suffix.
+ * @return {string|null} The path.
+ */
+function inboxMessagePath(message, suffix) {
+	const source = message._source || {}
+	const id = inboxIdOf(message)
+	if (!id || !source.register || !source.schema) {
+		return null
+	}
+	return `/inbox/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}/${encodeURIComponent(id)}${suffix}?collection=${encodeURIComponent(source.collection || '')}`
+}
+
+/**
+ * An inbox message's id, wherever the row keeps it.
+ *
+ * @param {object} message An inbox row.
+ * @return {string|undefined} The id.
+ */
+function inboxIdOf(message) {
+	return message.id || message['@self']?.id
+}
+
+/**
+ * The bearer a session answer issues, or '' when it issues none.
+ *
+ * @param {{json: () => Promise<object>}} res The response.
+ * @return {Promise<string>} The bearer.
+ */
+async function issuedToken(res) {
+	const body = await res.json().catch(() => null)
+	return body && body.token ? body.token : ''
+}
+
+/**
+ * The dev-login request: JSON, for one audience, without a bearer.
+ *
+ * @param {string} audience The session audience.
+ * @return {object} The request init.
+ */
+function devLoginRequest(audience) {
+	return {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			Accept: 'application/json',
+		},
+		body: JSON.stringify({ audience }),
+	}
+}
+
+/**
+ * A list an answer's body carries under a key, or none.
+ *
+ * @param {object|null} json The body.
+ * @param {string} key The key.
+ * @return {Array} The list.
+ */
+function listIn(json, key) {
+	return Array.isArray(json?.[key]) ? json[key] : []
+}
+
+/**
+ * A task completion as multipart: the comment when there is one, and each
+ * file.
+ *
+ * @param {string} comment The comment, or ''.
+ * @param {Array<File>} files The files.
+ * @return {FormData} The body.
+ */
+function completionForm(comment, files) {
+	const form = new FormData()
+	if (comment) {
+		form.append('comment', comment)
+	}
+	for (const file of files) {
+		form.append('files[]', file, file.name)
+	}
+	return form
+}
+
+/**
+ * The request that posts a task completion; the browser sets the multipart
+ * Content-Type (with its boundary) itself.
+ *
+ * @param {FormData} form The completion.
+ * @param {object} auth The Authorization header, or none.
+ * @return {object} The request init.
+ */
+function completionRequest(form, auth) {
+	return {
+		method: 'POST',
+		headers: { Accept: 'application/json', ...auth },
+		body: form,
+	}
+}
+
+/**
+ * What a task completion answered, with its body (`{}` when it was not
+ * JSON).
+ *
+ * @param {{ok: boolean, status: number, json: () => Promise<object>}} res The response.
+ * @return {Promise<{ok: boolean, status: number, code: string, body: object}>} The outcome.
+ */
+async function completionAnswer(res) {
+	const body = await res.json().catch(() => ({}))
+	return { ok: res.ok, status: res.status, code: body.code || '', body }
+}
+
+/**
+ * A task completion that never reached the task service.
+ *
+ * @return {{ok: false, status: 0, code: string, body: object}} The outcome.
+ */
+function unreachableTask() {
+	return {
+		ok: false,
+		status: 0,
+		code: 'task-service-unreachable',
+		body: {},
+	}
+}
+
+/**
+ * The threads a read answered, or `failed` for a refusal or a body that is
+ * not a list.
+ *
+ * @param {{ok: boolean, json: () => Promise<unknown>}} res The response.
+ * @param {Array|null} failed The answer for a failed read.
+ * @return {Promise<Array<object>|null>} The threads.
+ */
+async function threadsIn(res, failed) {
+	if (!res.ok) {
+		return failed
+	}
+	const json = await res.json()
+	return Array.isArray(json) ? json : failed
+}
+
+/**
+ * The objects a collection read answered: its list, else none (null with
+ * `orNull`).
+ *
+ * @param {object|null|undefined} body The read's body.
+ * @param {boolean} orNull Answer null instead of none.
+ * @return {Array<object>|null} The objects.
+ */
+function objectsIn(body, orNull) {
+	if (body && Array.isArray(body.objects)) {
+		return body.objects
+	}
+	return orNull ? null : []
 }
 
 /**
@@ -389,25 +625,49 @@ export function createPortalApi(config, store = {}) {
 	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
 	 */
 	async function saveDocument(url, entry) {
+		return saveDownload(url, entry.title || 'download')
+	}
+
+	/**
+	 * Fetch a file with the bearer and save it under a name, through a Blob
+	 * URL and a clicked link.
+	 *
+	 * @param {string} url The file's route.
+	 * @param {string} name The name to save it under.
+	 * @return {Promise<object>} `{ ok }`, or `{ ok: false, status }`; `status` 0 on a network error.
+	 */
+	async function saveDownload(url, name) {
 		try {
 			const res = await fetch(url, { headers: { ...authHeaders() } })
 			if (!res.ok) {
 				return { ok: false, status: res.status }
 			}
-			const blob = await res.blob()
-			const objectUrl = window.URL.createObjectURL(blob)
-			const link = document.createElement('a')
-			link.href = objectUrl
-			link.download = entry.title || 'download'
-			document.body.appendChild(link)
-			link.click()
-			setTimeout(() => {
-				link.remove()
-				window.URL.revokeObjectURL(objectUrl)
-			}, 10000)
+			clickDownload(window.URL.createObjectURL(await res.blob()), name)
 			return { ok: true }
 		} catch {
 			return { ok: false, status: 0 }
+		}
+	}
+
+	/**
+	 * GET a list from the app with the bearer; anything but a list, a
+	 * refusal or a failure reads as an empty list.
+	 *
+	 * @param {string} path The path under the app root.
+	 * @return {Promise<Array<object>>} The list, or `[]`.
+	 */
+	async function fetchList(path) {
+		try {
+			const res = await fetch(`${appRoot}${path}`, {
+				headers: { Accept: 'application/json', ...authHeaders() },
+			})
+			if (!res.ok) {
+				return []
+			}
+			const json = await res.json()
+			return Array.isArray(json) ? json : []
+		} catch {
+			return []
 		}
 	}
 
@@ -458,24 +718,9 @@ export function createPortalApi(config, store = {}) {
 						...authHeaders(),
 					},
 				})
-				const json = await res.json().catch(() => ({}))
-				return {
-					ok: res.ok,
-					status: res.status,
-					cases: res.ok && Array.isArray(json?.cases) ? json.cases : [],
-					mandates: Array.isArray(json?.mandates) ? json.mandates : [],
-					activeMandate: json?.activeMandate || null,
-					error: res.ok ? '' : String(json?.error || ''),
-				}
+				return myCasesAnswer(res, await res.json().catch(() => ({})))
 			} catch {
-				return {
-					ok: false,
-					status: 0,
-					cases: [],
-					mandates: [],
-					activeMandate: null,
-					error: '',
-				}
+				return myCasesAnswer({ ok: false, status: 0 }, {})
 			}
 		},
 
@@ -551,33 +796,17 @@ export function createPortalApi(config, store = {}) {
 		 * @return {Promise<{ok: boolean, status: number, code: string, body: object}>}
 		 */
 		async completeTask(uuid, { comment = '', files = [] } = {}) {
-			const form = new FormData()
-			if (comment) {
-				form.append('comment', comment)
-			}
-			for (const file of files) {
-				form.append('files[]', file, file.name)
-			}
+			const form = completionForm(comment, files)
 			let res
 			try {
 				res = await fetch(
 					`${base}/tasks/${encodeURIComponent(uuid)}/complete`,
-					{
-						method: 'POST',
-						headers: { Accept: 'application/json', ...authHeaders() },
-						body: form,
-					},
+					completionRequest(form, authHeaders()),
 				)
 			} catch {
-				return {
-					ok: false,
-					status: 0,
-					code: 'task-service-unreachable',
-					body: {},
-				}
+				return unreachableTask()
 			}
-			const body = await res.json().catch(() => ({}))
-			return { ok: res.ok, status: res.status, code: body.code || '', body }
+			return completionAnswer(res)
 		},
 
 		/**
@@ -589,13 +818,47 @@ export function createPortalApi(config, store = {}) {
 		 * @return {Promise<object>} `{ ok, status }` result envelope.
 		 */
 		async markMessageRead(message) {
-			const source = message._source || {}
-			const id = message.id || message['@self']?.id
-			if (!id || !source.register || !source.schema) {
+			const path = inboxMessagePath(message, '/read')
+			if (path === null) {
 				return { ok: false, status: 0 }
 			}
-			const path = `/inbox/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}/${encodeURIComponent(id)}/read?collection=${encodeURIComponent(source.collection || '')}`
 			return send('PATCH', path, {})
+		},
+
+		/**
+		 * Read ONE of the resident's inbox messages, for its own page
+		 * (a-resident-opens-one-message REQ-ROM-002). The server proves it is
+		 * theirs before it reads it; another resident's message and a missing
+		 * one both answer 404.
+		 *
+		 * @param {{register: string, schema: string, collection: string}} source The inbox collection.
+		 * @param {string} id The message id.
+		 * @return {Promise<{ok: boolean, status: number, message: object|null}>}
+		 * @spec openspec/changes/a-resident-opens-one-message/tasks.md#T05
+		 */
+		async fetchMessage(source, id) {
+			if (!id || !source?.register || !source?.schema) {
+				return { ok: false, status: 404, message: null }
+			}
+			const path = `/inbox/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}/${encodeURIComponent(id)}?collection=${encodeURIComponent(source.collection || '')}`
+			let res
+			try {
+				res = await fetch(`${base}${path}`, {
+					headers: {
+						Accept: 'application/json',
+						...portalHeader,
+						...authHeaders(),
+					},
+				})
+			} catch {
+				return { ok: false, status: 0, message: null }
+			}
+			if (!res.ok) {
+				return { ok: false, status: res.status, message: null }
+			}
+			const body = await res.json().catch(() => null)
+			const message = body && typeof body.message === 'object' ? body.message : null
+			return { ok: message !== null, status: res.status, message }
 		},
 
 		/**
@@ -606,12 +869,10 @@ export function createPortalApi(config, store = {}) {
 		 * @return {Promise<{ok: boolean, status: number}>}
 		 */
 		async deleteMessage(message) {
-			const source = message._source || {}
-			const id = message.id || message['@self']?.id
-			if (!id || !source.register || !source.schema) {
+			const path = inboxMessagePath(message, '')
+			if (path === null) {
 				return { ok: false, status: 0 }
 			}
-			const path = `/inbox/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}/${encodeURIComponent(id)}?collection=${encodeURIComponent(source.collection || '')}`
 			return send('DELETE', path, {})
 		},
 
@@ -623,15 +884,13 @@ export function createPortalApi(config, store = {}) {
 		 * @param {object} message The message, with its `_source`.
 		 * @param {object} data The fields the resident filled in, files left out.
 		 * @return {Promise<object>} `{ ok, status, object, error, errors }`.
-		 * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t05
+		 * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t05
 		 */
 		async replyToMessage(message, data) {
-			const source = message._source || {}
-			const id = message.id || message['@self']?.id
-			if (!id || !source.register || !source.schema) {
+			const path = inboxMessagePath(message, '/reply')
+			if (path === null) {
 				return { ok: false, status: 0, object: null, error: '', errors: {} }
 			}
-			const path = `/inbox/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}/${encodeURIComponent(id)}/reply?collection=${encodeURIComponent(source.collection || '')}`
 			return send('POST', path, data)
 		},
 
@@ -653,11 +912,7 @@ export function createPortalApi(config, store = {}) {
 				const res = await fetch(`${appRoot}/api/messages/threads`, {
 					headers: { Accept: 'application/json', ...authHeaders() },
 				})
-				if (!res.ok) {
-					return failed
-				}
-				const json = await res.json()
-				return Array.isArray(json) ? json : failed
+				return await threadsIn(res, failed)
 			} catch {
 				return failed
 			}
@@ -885,18 +1140,7 @@ export function createPortalApi(config, store = {}) {
 		 * @return {Promise<Array<object>>} The published items, or `[]`.
 		 */
 		async fetchNewsFeed() {
-			try {
-				const res = await fetch(`${appRoot}/api/news/feed`, {
-					headers: { Accept: 'application/json', ...authHeaders() },
-				})
-				if (!res.ok) {
-					return []
-				}
-				const json = await res.json()
-				return Array.isArray(json) ? json : []
-			} catch {
-				return []
-			}
+			return fetchList('/api/news/feed')
 		},
 
 		/**
@@ -908,18 +1152,7 @@ export function createPortalApi(config, store = {}) {
 		 * @return {Promise<Array<object>>} The newsletters, or `[]`.
 		 */
 		async fetchNewsletterArchive() {
-			try {
-				const res = await fetch(`${appRoot}/api/newsletters/archive`, {
-					headers: { Accept: 'application/json', ...authHeaders() },
-				})
-				if (!res.ok) {
-					return []
-				}
-				const json = await res.json()
-				return Array.isArray(json) ? json : []
-			} catch {
-				return []
-			}
+			return fetchList('/api/newsletters/archive')
 		},
 
 		/**
@@ -1027,8 +1260,8 @@ export function createPortalApi(config, store = {}) {
 		 * @param {string} secret The secret from the invitation.
 		 * @return {Promise<object>} `{ ok, status, error, data }`.
 		 *
-		 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
-		 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+		 * @spec openspec/specs/portal-identity-space/spec.md
+		 * @spec openspec/specs/portal-identity-space/spec.md
 		 */
 		async claimInvitation(secret) {
 			const result = await answer('POST', '/identity/invitation/redeem', {
@@ -1080,10 +1313,7 @@ export function createPortalApi(config, store = {}) {
 					throw new TypeError('The collection could not be read.')
 				}
 			}
-			if (body && Array.isArray(body.objects)) {
-				return body.objects
-			}
-			return orNull ? null : []
+			return objectsIn(body, orNull)
 		},
 
 		/**
@@ -1137,6 +1367,27 @@ export function createPortalApi(config, store = {}) {
 				`${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/timeline?collection=${encodeURIComponent(collection.id)}${mandateQuery(mandateId)}`,
 			)
 			return body && Array.isArray(body.entries) ? body : null
+		},
+
+		/**
+		 * The messages about one object the subject owns, both ways, newest
+		 * first (capability-rows-said-and-planned T07): `{ label, messages }`
+		 * from the app's `messages` provider, read only after the server
+		 * proved the object is the subject's. Null when the collection
+		 * declares none, the object is not the subject's, or the messages
+		 * could not be read.
+		 *
+		 * @param {object} collection Manifest collection: `{ id, register, schema }`.
+		 * @param {string} id The object id.
+		 * @param {string} [mandateId] The mandate a case listed under one is read under.
+		 * @return {Promise<object|null>} The messages, or null.
+		 * @spec openspec/changes/capability-rows-said-and-planned/tasks.md#t07
+		 */
+		async fetchCaseMessages(collection, id, mandateId = '') {
+			const body = await get(
+				`${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/messages?collection=${encodeURIComponent(collection.id)}${mandateQuery(mandateId)}`,
+			).catch(() => null)
+			return body && Array.isArray(body.messages) ? body : null
 		},
 
 		/**
@@ -1238,6 +1489,29 @@ export function createPortalApi(config, store = {}) {
 		},
 
 		/**
+		 * The resident's own requests that wait for a co-signer or were not
+		 * co-signed; an empty list when there is none or it cannot be read.
+		 *
+		 * @return {Promise<Array<{reference: string, route: string, submittedAt: string, state: string, cosign: {state: string, name: string, deadline: string}}>>}
+		 *
+		 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+		 */
+		async listHeldRequests() {
+			try {
+				const res = await fetch(`${base}/cosign/held`, {
+					headers: { Accept: 'application/json', ...portalHeader, ...authHeaders() },
+				})
+				if (!res.ok) {
+					return []
+				}
+				const body = await res.json()
+				return Array.isArray(body?.requests) ? body.requests : []
+			} catch {
+				return []
+			}
+		},
+
+		/**
 		 * Delete the draft once the action was sent.
 		 *
 		 * @param {string} app The contributing app, or the action's register.
@@ -1271,7 +1545,7 @@ export function createPortalApi(config, store = {}) {
 		 * @param {object} data The whitelisted field values.
 		 * @return {Promise<object>} `{ ok, status, object }` result envelope.
 		 *
-		 * @spec openspec/changes/create-names-its-action/tasks.md#T2
+		 * @spec openspec/changes/archive/2026-10-07-create-names-its-action/tasks.md#T2
 		 */
 		async createObject(action, data) {
 			const id = action && typeof action.id === 'string' ? action.id : ''
@@ -1281,6 +1555,35 @@ export function createPortalApi(config, store = {}) {
 				`${col(action.register, action.schema)}${query}`,
 				data,
 			)
+		},
+
+		/**
+		 * Create through a create action filed from a case page: `onCase`
+		 * names the case (`<register>/<schema>/<id>`) and the server writes it
+		 * into the action's cross-reference field. A closed window answers 409
+		 * with the server's sentence in `message`.
+		 *
+		 * @param {object} action Manifest action: `{ id, register, schema }`.
+		 * @param {object} data The answers, without the cross-reference field.
+		 * @param {string} onCase The case, `<register>/<schema>/<id>`.
+		 * @return {Promise<object>} `{ ok, status, object, error, message }`.
+		 *
+		 * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-server-fills-in-the-case-and-the-guard-still-runs-req-coc-004
+		 */
+		async createObjectOnCase(action, data, onCase) {
+			const query = `?actionId=${encodeURIComponent(action.id || '')}&onCase=${encodeURIComponent(onCase)}`
+			const res = await fetch(
+				`${base}${col(action.register, action.schema)}${query}`,
+				jsonInit('POST', data || {}),
+			)
+			const json = await res.json().catch(() => ({}))
+			if (!res.ok) {
+				return {
+					...writeRefusal(res.status, json),
+					message: typeof json?.message === 'string' ? json.message : '',
+				}
+			}
+			return { ok: true, status: res.status, object: json.object || json }
 		},
 
 		/**
@@ -1356,7 +1659,7 @@ export function createPortalApi(config, store = {}) {
 		 * @param {string} id The case id.
 		 * @param {string} [mandateId] The mandate the case was listed under, if any.
 		 * @return {Promise<object|null>} `{ case, writableSet, documents }` or null.
-		 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+		 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 		 */
 		async fetchCitizenCase(collection, id, mandateId = '') {
 			// A case listed under a mandate is read under that mandate
@@ -1378,7 +1681,7 @@ export function createPortalApi(config, store = {}) {
 		 * @param {string} id The case id.
 		 * @param {object} fields The answers to change, by field name.
 		 * @return {Promise<object>} `{ ok, status, case }` or `{ ok: false, status, message, error }`.
-		 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+		 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 		 */
 		async amendCitizenCase(collection, id, fields) {
 			const res = await fetch(citizenCaseUrl(collection, id), jsonInit('PATCH', { fields }))
@@ -1397,7 +1700,7 @@ export function createPortalApi(config, store = {}) {
 		 * @param {object} collection Manifest collection: `{ register, schema, id, label }`.
 		 * @param {string} [id] The record id; none exports the whole list.
 		 * @return {Promise<object>} `{ ok }`, or `{ ok: false, status }` (400: the list is too long).
-		 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t06
+		 * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t06
 		 */
 		async downloadPdf(collection, id) {
 			const path =
@@ -1405,26 +1708,10 @@ export function createPortalApi(config, store = {}) {
 					? 'export.pdf'
 					: `${encodeURIComponent(id)}/export.pdf`
 			const url = `${base}${col(collection.register, collection.schema)}/${path}?collection=${encodeURIComponent(collection.id)}`
-			try {
-				const res = await fetch(url, { headers: { ...authHeaders() } })
-				if (!res.ok) {
-					return { ok: false, status: res.status }
-				}
-				const blob = await res.blob()
-				const objectUrl = window.URL.createObjectURL(blob)
-				const link = document.createElement('a')
-				link.href = objectUrl
-				link.download = `${(collection.label || 'export').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`
-				document.body.appendChild(link)
-				link.click()
-				setTimeout(() => {
-					link.remove()
-					window.URL.revokeObjectURL(objectUrl)
-				}, 10000)
-				return { ok: true }
-			} catch {
-				return { ok: false, status: 0 }
-			}
+			return saveDownload(
+				url,
+				`${(collection.label || 'export').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`,
+			)
 		},
 
 		/**
@@ -1521,7 +1808,7 @@ export function createPortalApi(config, store = {}) {
 		 * @param {string} id The case id.
 		 * @param {File} file The document to add.
 		 * @return {Promise<object>} `{ ok, document }` or `{ ok: false, status, message, error }`.
-		 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+		 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 		 */
 		async addCitizenDocument(collection, id, file) {
 			const form = new FormData()
@@ -1549,7 +1836,7 @@ export function createPortalApi(config, store = {}) {
 		 * @param {object} body The request body (only the action's `fields` are forwarded).
 		 * @param {{submissionKey?: string}} [options] The form's submission key (REQ-AFS-001).
 		 * @return {Promise<{ok: boolean, status: number, body: object}>} The relayed answer.
-		 * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-the-portal-must-let-a-subject-take-a-timed-task
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-the-portal-must-let-a-subject-take-a-timed-task
 		 */
 		async forwardAction(app, actionId, body, options = {}) {
 			try {
@@ -1661,7 +1948,7 @@ export function createPortalApi(config, store = {}) {
 		 * @param {string} field The file field.
 		 * @param {File} file The file to upload.
 		 * @return {Promise<object>} `{ ok, file, value }` on success, `{ ok: false, status, error }` otherwise.
-		 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-the-generic-portal-form-must-render-a-file-field-as-a-file-picker
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-the-generic-portal-form-must-render-a-file-field-as-a-file-picker
 		 */
 		async uploadFieldFile(action, id, field, file) {
 			const form = new FormData()
@@ -1700,28 +1987,7 @@ export function createPortalApi(config, store = {}) {
 		 */
 		async downloadFile(collection, id, file) {
 			const url = `${base}${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/files/${encodeURIComponent(file.id)}?collection=${encodeURIComponent(collection.id)}`
-			try {
-				const res = await fetch(url, { headers: { ...authHeaders() } })
-				if (!res.ok) {
-					return { ok: false, status: res.status }
-				}
-				const blob = await res.blob()
-				const objectUrl = window.URL.createObjectURL(blob)
-				const link = document.createElement('a')
-				link.href = objectUrl
-				link.download = file.name || 'download'
-				document.body.appendChild(link)
-				link.click()
-				// Defer cleanup: revoking the object URL synchronously after click()
-				// can cancel the download before the browser has started streaming it.
-				setTimeout(() => {
-					link.remove()
-					window.URL.revokeObjectURL(objectUrl)
-				}, 10000)
-				return { ok: true }
-			} catch {
-				return { ok: false, status: 0 }
-			}
+			return saveDownload(url, file.name || 'download')
 		},
 
 		/**
@@ -1773,23 +2039,18 @@ export function createPortalApi(config, store = {}) {
 		 * @spec openspec/specs/portal-branch-scope/spec.md#requirement-a-whole-company-user-can-narrow-to-a-branch-req-seb-003
 		 */
 		async chooseBranch(branch) {
-			const res = await fetch(`${base}/session/branch`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					Accept: 'application/json',
-					...authHeaders(),
-				},
-				body: JSON.stringify({ branch: branch || '' }),
-			})
+			const res = await fetch(
+				`${base}/session/branch`,
+				jsonInit('POST', { branch: branch || '' }),
+			)
 			if (!res.ok) {
 				return { ok: false }
 			}
-			const body = await res.json().catch(() => null)
-			if (!body || !body.token) {
+			const token = await issuedToken(res)
+			if (!token) {
 				return { ok: false }
 			}
-			writeToken(body.token)
+			writeToken(token)
 			return { ok: true }
 		},
 
@@ -1828,25 +2089,19 @@ export function createPortalApi(config, store = {}) {
 		 * @return {Promise<string|null>} The minted bearer, or null.
 		 */
 		async devLogin(audience) {
-			const res = await fetch(`${base}/session/dev-login`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					Accept: 'application/json',
-				},
-				body: JSON.stringify({
-					audience: audience || config.audience || 'supplier',
-				}),
-			})
+			const res = await fetch(
+				`${base}/session/dev-login`,
+				devLoginRequest(audience || config.audience || 'supplier'),
+			)
 			if (!res.ok) {
 				return null
 			}
-			const body = await res.json().catch(() => null)
-			if (body && body.token) {
-				writeToken(body.token)
-				return body.token
+			const token = await issuedToken(res)
+			if (!token) {
+				return null
 			}
-			return null
+			writeToken(token)
+			return token
 		},
 
 		/**
@@ -1897,6 +2152,7 @@ export function createPortalApi(config, store = {}) {
  * A no-op (returns false) when there is no `#token=` fragment.
  *
  * @return {boolean} Whether a token was picked up.
+ * @spec openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md#requirement-the-bearer-reaches-the-browser-in-the-fragment-and-leaves-the-address-req-see-003
  */
 export function consumeOidcCallbackFragment() {
 	const hash = window.location.hash || ''

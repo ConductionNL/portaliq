@@ -160,21 +160,18 @@
 			@edit="editStep" />
 
 		<template v-else>
-			<SchemaField
-				v-for="field in shownFields"
-				:id="inputId(field)"
-				:key="field"
-				v-model="values[field]"
-				:field="field"
-				:label="labelOf(field)"
-				:config="configOf(field)"
-				:input="inputOf(field)"
-				:options="options[field] || []"
-				:files="files[field] || []"
+			<ActionFields
+				:action="action"
+				:fields="shownFields"
+				:values="values"
+				:options="options"
+				:files="files"
 				:fileKey="fileKey"
-				:error="errors[field] || ''"
+				:errors="errors"
+				:idBase="`f-${action.id}`"
 				:t="t"
-				@pick="(picked) => pick(field, picked)" />
+				@update="(field, value) => (values[field] = value)"
+				@pick="pick" />
 			<!-- What the resident may want to know before going on, after
 			     the step's questions (the step's `note`). -->
 			<div
@@ -325,7 +322,7 @@ import FormHelp from '../FormHelp.vue'
 import ErrorSummary from '../forms/ErrorSummary.vue'
 import FormProgress from '../forms/FormProgress.vue'
 import ReviewList from '../forms/ReviewList.vue'
-import SchemaField from './SchemaField.vue'
+import ActionFields from './ActionFields.vue'
 import {
 	oversizedFiles,
 	submitWithFiles,
@@ -380,7 +377,7 @@ import '@utrecht/alert-css/dist/index.css'
  * optional fields says first that a field without "niet verplicht" must be
  * filled in.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
  * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-failed-submit-must-show-an-error-summary-that-takes-focus-req-smf-002
  */
 export default {
@@ -393,7 +390,7 @@ export default {
 		ResumeDraftModal,
 		ReviewList,
 		SaveDraftModal,
-		SchemaField,
+		ActionFields,
 	},
 
 	mixins: [stepFlow],
@@ -770,7 +767,7 @@ export default {
 		 * for it (`preset`), or the value the form starts from (`initial`).
 		 *
 		 * @return {Record<string, string>} The values.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
 		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-update-row-action-that-needs-input-must-open-its-form-on-the-row
 		 */
 		emptyValues() {
@@ -806,7 +803,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
 		 */
 		async loadOptions() {
 			const actionId = this.action.id
@@ -1159,7 +1156,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-file-field-must-upload-after-the-record-exists-req-srp-023
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-file-field-must-upload-after-the-record-exists-req-srp-023
 		 */
 		async retryFailed() {
 			if (this.pending === null) {
@@ -1189,7 +1186,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-file-field-must-upload-after-the-record-exists-req-srp-023
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-file-field-must-upload-after-the-record-exists-req-srp-023
 		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
 		 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
 		 */

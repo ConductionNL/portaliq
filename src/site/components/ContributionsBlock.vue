@@ -50,7 +50,17 @@
 					:key="entry.id || entry.label"
 					class="pq-contributions__entry"
 					data-testid="contribution-entry">
-					{{ entry.label || entry.id }}
+					<!-- A link only when the app publishes a page for the entry;
+					     otherwise text, never a link to a 404 (REQ-PTB-011). -->
+					<a
+						v-if="routeFor(contribution, entry)"
+						:href="routeFor(contribution, entry)"
+						@click.prevent="$emit('navigate', routeFor(contribution, entry))">
+						{{ entry.label || entry.id }}
+					</a>
+					<template v-else>
+						{{ entry.label || entry.id }}
+					</template>
 				</li>
 			</ul>
 		</div>
@@ -64,6 +74,8 @@
 </template>
 
 <script>
+import { entryRoute } from '../lib/contributionApi.js'
+
 /**
  * The contributed surfaces a portal offers — the "what can I do here" index.
  *
@@ -149,6 +161,8 @@ export default {
 		},
 	},
 
+	emits: ['navigate'],
+
 	computed: {
 		/**
 		 * @return {string} The heading element to render.
@@ -188,6 +202,19 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * The in-site route for an entry, or null so it stays text
+		 * (contributionApi.js `entryRoute`).
+		 *
+		 * @param {object} contribution The contributing app's record.
+		 * @param {object} entry        The action or collection.
+		 * @return {string|null} The route, or null.
+		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-a-contributed-page-must-be-reachable-at-its-own-route-req-ptb-011
+		 */
+		routeFor(contribution, entry) {
+			return entryRoute(contribution, entry)
+		},
+
 		/**
 		 * The entries of one contribution, as an index of what it offers.
 		 *

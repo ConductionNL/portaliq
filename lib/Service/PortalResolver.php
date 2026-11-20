@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCP\IRequest;
 use Psr\Log\LoggerInterface;
 
@@ -51,7 +52,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-request-must-resolve-to-exactly-one-portal-or-to-none
  */
-class PortalResolver {
+class PortalResolver implements PortalResolverInterface {
 
 	/**
 	 * The register the CMS schemas live in.
@@ -73,7 +74,6 @@ class PortalResolver {
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
-
 
 	/**
 	 * Resolve the portal for a request.
@@ -107,7 +107,6 @@ class PortalResolver {
 		return $this->resolveByHost(host: $this->requestHost(request: $request), sites: $sites);
 	}//end resolve()
 
-
 	/**
 	 * Resolve the portal for the traffic collector: HOST first, slug second.
 	 *
@@ -122,7 +121,7 @@ class PortalResolver {
 	 *
 	 * @return array|null The portal object, or null when nothing matched.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
 	 */
 	public function resolveForCollector(IRequest $request, ?string $portalSlug = null): ?array {
 		$sites = $this->allPublishedPortals();
@@ -141,6 +140,16 @@ class PortalResolver {
 
 		foreach ($sites as $site) {
 			if (($site['slug'] ?? null) === $portalSlug) {
+				// The fallback is what lets a caller attribute events to a
+				// portal it does not serve, so a portal that knows its own
+				// domains can refuse it. Measured 2026-09-22 on the
+				// ConductionNl portal: of 162 stored events, 29 came from
+				// `localhost:4173` and were counted as real visits, because
+				// naming the slug was enough.
+				if ($this->slugFallbackAllowed(site: $site) === false) {
+					return null;
+				}
+
 				return $site;
 			}
 		}
@@ -181,40 +190,92 @@ class PortalResolver {
 			return null;
 		}
 
-		$matches = [];
-		foreach ($this->allPublishedPortals() as $site) {
-			$value = ($site['organisation'] ?? null);
-			if (is_string($value) === false || trim($value) !== $organisation) {
-				continue;
-			}
-
-			$matches[] = $site;
-		}
-
+		$matches = $this->portalsOf(organisation: $organisation);
 		if (count($matches) === 1) {
 			return $matches[0];
 		}
 
 		if ($matches !== []) {
-			// Worth a log line rather than silence: an ambiguous `?org=` is a
-			// deployment that has outgrown the alias, and the neutral default
-			// the visitor gets looks like a bug from the outside.
-			$this->logger->info(
-				'Portaliq: ?org= matched several published portals; refusing to guess a brand',
-				[
-					'organisation' => $organisation,
-					'portals' => array_map(
-						static function (array $site): string {
-							return (string)($site['slug'] ?? '');
-						},
-						$matches
-					),
-				]
-			);
+			$this->logAmbiguous(organisation: $organisation, matches: $matches);
 		}
 
 		return null;
 	}//end resolveByOrganisation()
+
+	/**
+	 * The published portals whose organisation is this one, trimmed.
+	 *
+	 * @param string $organisation The trimmed `?org=` value.
+	 *
+	 * @return array<int, array> The matching portals.
+	 */
+	private function portalsOf(string $organisation): array {
+		$matches = [];
+		foreach ($this->allPublishedPortals() as $site) {
+			$value = ($site['organisation'] ?? null);
+			if (is_string($value) === true && trim($value) === $organisation) {
+				$matches[] = $site;
+			}
+		}
+
+		return $matches;
+	}//end portalsOf()
+
+	/**
+	 * Log an organisation that matched several portals.
+	 *
+	 * Worth a log line rather than silence: an ambiguous `?org=` is a
+	 * deployment that has outgrown the alias, and the neutral default the
+	 * visitor gets looks like a bug from the outside.
+	 *
+	 * @param string            $organisation The trimmed `?org=` value.
+	 * @param array<int, array> $matches      The matching portals.
+	 *
+	 * @return void
+	 */
+	private function logAmbiguous(string $organisation, array $matches): void {
+		$this->logger->info(
+			'Portaliq: ?org= matched several published portals; refusing to guess a brand',
+			[
+				'organisation' => $organisation,
+				'portals' => array_map(
+					static function (array $site): string {
+						return (string)($site['slug'] ?? '');
+					},
+					$matches
+				),
+			]
+		);
+	}//end logAmbiguous()
+
+	/**
+	 * Whether this portal still accepts events that only name its slug.
+	 *
+	 * Defaults to TRUE, and deliberately: the fallback is the only route for
+	 * a `kind: external` portal on its own domain posting to the platform
+	 * host, and switching it off for everyone would silence those portals
+	 * without anyone asking for it.
+	 *
+	 * ⚠️ Switching it off needs `domains` FIRST. With no verified domain the
+	 * host can never match, so every event is refused rather than just the
+	 * unwanted ones, and the portal reports zero traffic that looks exactly
+	 * like a portal nobody visits.
+	 *
+	 * @param array $site The portal object.
+	 *
+	 * @return bool True when the slug alone may resolve this portal.
+	 */
+	private function slugFallbackAllowed(array $site): bool {
+		$traffic = ($site['traffic'] ?? null);
+		if (is_array($traffic) === false) {
+			return true;
+		}
+
+		// Only an explicit boolean false switches it off. A missing key, a
+		// null, or a string left behind by a hand-edited configuration all
+		// keep the documented default rather than silently refusing traffic.
+		return (($traffic['allowSlugFallback'] ?? true) !== false);
+	}//end slugFallbackAllowed()
 
 
 	/**
@@ -235,7 +296,6 @@ class PortalResolver {
 
 		return $match['site'];
 	}//end resolveByHost()
-
 
 	/**
 	 * The verified domain entry this request is served on, or null.
@@ -276,7 +336,6 @@ class PortalResolver {
 		return $match['domain'];
 	}//end servingDomain()
 
-
 	/**
 	 * The portal and the verified domain entry a host matches, or null.
 	 *
@@ -288,7 +347,6 @@ class PortalResolver {
 	private function verifiedMatch(string $host, array $sites): ?array {
 		return (new PortalDomainMatch(logger: $this->logger))->find(host: $host, sites: $sites);
 	}//end verifiedMatch()
-
 
 	/**
 	 * The host this request is for, taken from the server-resolved value.
@@ -312,7 +370,6 @@ class PortalResolver {
 		return $host;
 	}//end requestHost()
 
-
 	/**
 	 * Every published portal.
 	 *
@@ -323,8 +380,6 @@ class PortalResolver {
 	public function allPublishedPortals(): array {
 		return $this->publishedPortals->allPublishedPortals();
 	}//end allPublishedPortals()
-
-
 
 	/**
 	 * @param array<string, mixed>|null $portal The serving portal, or null when it could not be resolved.
@@ -355,7 +410,6 @@ class PortalResolver {
 
 		return $declared[0];
 	}//end localeFor()
-
 
 	/**
 	 * @param array<string, mixed>|null $portal The portal.

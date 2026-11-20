@@ -101,6 +101,7 @@ import {
 	recordRoute,
 	sessionStore,
 } from '../../pages/inbox/inbox.js'
+import { messageRoute } from '../../pages/inbox/message.js'
 import { dayInWords } from './cases.js'
 import { inboxRows, mijnTranslator, receivedInWords, siteHref } from './rows.js'
 
@@ -110,7 +111,7 @@ const DAY_MS = 24 * 60 * 60 * 1000
 const INBOX_ROUTE = routeForNav({ special: 'inbox' })
 
 /**
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
  */
 export default {
 	name: 'InboxBlock',
@@ -152,7 +153,7 @@ export default {
 	computed: {
 		/**
 		 * @return {(key: string, vars?: object) => string} The translator.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 		 */
 		tr() {
 			return mijnTranslator(this.t, this.locale)
@@ -160,7 +161,7 @@ export default {
 
 		/**
 		 * @return {string} The block's heading, or ''.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 		 */
 		label() {
 			return this.block?.label || ''
@@ -168,7 +169,7 @@ export default {
 
 		/**
 		 * @return {string} The heading's id.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 		 */
 		headingId() {
 			return `pq-inbox-${String(this.block?.collection || 'all').replace(/[^A-Za-z0-9_-]/g, '')}`
@@ -180,7 +181,7 @@ export default {
 		 * open record such a block shows none.
 		 *
 		 * @return {Array<object>}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-tasks-and-inbox-blocks-may-narrow-to-the-open-record-and-leave-rows-out-by-a-lookup-req-smo-025
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-tasks-and-inbox-blocks-may-narrow-to-the-open-record-and-leave-rows-out-by-a-lookup-req-smo-025
 		 */
 		aboutTheRecord() {
 			const field = this.block?.recordField
@@ -200,7 +201,7 @@ export default {
 
 		/**
 		 * @return {string} The inbox's real address.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 		 */
 		allHref() {
 			return siteHref(INBOX_ROUTE)
@@ -218,13 +219,16 @@ export default {
 		 * The rows on screen, each with where it leads.
 		 *
 		 * @return {Array<object>}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 		 */
 		entries() {
 			return inboxRows(this.aboutTheRecord, this.block, this.app).map(
 				(message, index) => {
 					const link = message.recordLink?.id ? message.recordLink : null
 					const recordAt = link ? recordRoute(this.nav, link) : null
+					// Each message opens on its own page
+					// (a-resident-opens-one-message T06).
+					const own = messageRoute(message, INBOX_ROUTE)
 					return {
 						key: String(message.id || message.uuid || index),
 						title: message.subject || '',
@@ -240,8 +244,8 @@ export default {
 							.filter(Boolean)
 							.join(', '),
 						unread: message.read !== true,
-						link: recordAt ? link : null,
-						route: recordAt || INBOX_ROUTE,
+						link: !own && recordAt ? link : null,
+						route: own || recordAt || INBOX_ROUTE,
 						day: this.dayOf(message.receivedAt),
 					}
 				},
@@ -252,7 +256,7 @@ export default {
 	/**
 	 * Read on arrival.
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+	 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 	 */
 	created() {
 		if (this.messages === null) {
@@ -318,7 +322,7 @@ export default {
 		 * Read the unified inbox; a read that fails says so, it is not empty.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 		 */
 		async load() {
 			let answer
@@ -335,7 +339,7 @@ export default {
 		 * Try the read again after it failed, showing the skeleton meanwhile.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-loading-and-empty-states-must-say-what-is-happening-req-smo-009
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-loading-and-empty-states-must-say-what-is-happening-req-smo-009
 		 */
 		async retry() {
 			this.failed = false
@@ -348,7 +352,7 @@ export default {
 		 *
 		 * @param {object} entry The row.
 		 * @return {void}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 		 */
 		open(entry) {
 			if (entry.link) {
@@ -360,7 +364,7 @@ export default {
 		/**
 		 * @param {MouseEvent} event The click.
 		 * @return {void}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 		 */
 		openAll(event) {
 			if (event?.ctrlKey || event?.metaKey || event?.shiftKey) {

@@ -21,11 +21,13 @@ use OCA\Portaliq\Controller\MessageGuardianController;
 use OCA\Portaliq\Service\Messaging\GuardianMessagingLeafInterface;
 use OCA\Portaliq\Service\Messaging\MessageContactReader;
 use OCA\Portaliq\Service\PortalObjectReader;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Contribution\MessageContactsKeys;
+use OCA\Portaliq\Contribution\TimelineProviderMethod;
 
 /**
  * @spec openspec/changes/site-messages-per-record/specs/portal-contribution-contract/spec.md#requirement-a-resident-may-start-a-conversation-only-with-a-contact-of-their-own-record
@@ -97,7 +99,7 @@ class MessageContactReaderTest extends TestCase {
 		$locator = $this->createMock(PortalProviderLocator::class);
 		$locator->method('locate')->willReturn($provider);
 
-		return new MessageContactReader($registry, $objects, $locator, $this->createMock(LoggerInterface::class));
+		return new MessageContactReader($registry, $objects, $locator, $this->createMock(LoggerInterface::class), new MessageContactsKeys(), new TimelineProviderMethod());
 	}
 
 	/**
@@ -207,7 +209,7 @@ class MessageContactReaderTest extends TestCase {
 	private function controller(?MessageContactReader $reader, ?GuardianMessagingLeafInterface $messaging = null): MessageGuardianController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('Bearer token');
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn(self::SUBJECT);
 
 		return new MessageGuardianController($request, $session, $messaging ?? $this->createMock(GuardianMessagingLeafInterface::class), null, null, $reader);

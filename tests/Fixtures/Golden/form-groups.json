@@ -1,0 +1,6 @@
+{
+	"repeatOf": [{"min":0,"max":0,"itemLabel":"Item","itemsLabel":"Item","addLabel":"Nog een item toevoegen"},{"min":0,"max":0,"itemLabel":"Item","itemsLabel":"Item","addLabel":"Nog een item toevoegen"},{"min":1,"max":0,"itemLabel":"Item","itemsLabel":"Item","addLabel":"Nog een item toevoegen"},{"min":1,"max":0,"itemLabel":"Item","itemsLabel":"Item","addLabel":"Nog een item toevoegen"},{"min":0,"max":0,"itemLabel":"Item","itemsLabel":"Item","addLabel":"Nog een item toevoegen"},{"min":0,"max":0,"itemLabel":"auto","itemsLabel":"auto","addLabel":"Nog een item toevoegen"},{"min":2,"max":3,"itemLabel":"kind","itemsLabel":"kinderen","addLabel":"Kind toevoegen"}],
+	"itemErrors": [{"name":"Naam is verplicht."},{"name":"Vul Naam in, Naam!","age":"Vul age in, age!"},{},{},{}],
+	"groupCountErrors": [{"kids":"Voeg nog 1 kind toe","pets":"U kunt hoogstens 1 toevoegen.","cars":"Voeg nog 1 item toe"},{"kids":"U kunt hoogstens 3 toevoegen.","cars":"Voeg nog 1 item toe"},{},{"kids":"Nog 2 kinderen","cars":"Nog 1 item"},{}],
+	"confirmationView": [{"title":"Klaar","body":"Bedankt R-1.","next":[]},{"title":"Klaar","body":"","next":[]},{"title":"Klaar","body":"Nummer R-2, besluit voor 2026-11-01.","next":[{"title":"","text":"Wacht"},{"title":"Stap","text":"3"}]},{"title":"Eigen","body":"","next":[]}]
+}

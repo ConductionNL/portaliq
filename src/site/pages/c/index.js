@@ -15,7 +15,7 @@
  * @property {(key: string, vars?: Record<string, string|number>) => string} t The translator.
  * @property {(key: string, params?: object) => void} navigate Go to another page.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
  */
 
 import { registerBlockSlot } from '../collections/blockSlots.js'

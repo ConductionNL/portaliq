@@ -29,10 +29,10 @@ namespace OCA\Portaliq\BackgroundJob;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use OCA\Portaliq\Service\Availability\AvailabilityProbe;
-use OCA\Portaliq\Service\Availability\AvailabilityRollup;
-use OCA\Portaliq\Service\Availability\AvailabilityStore;
-use OCA\Portaliq\Service\PublishedPortals;
+use OCA\Portaliq\Kernel\Contracts\AvailabilityProbeInterface;
+use OCA\Portaliq\Kernel\Contracts\AvailabilityRollupInterface;
+use OCA\Portaliq\Kernel\Contracts\AvailabilityStoreInterface;
+use OCA\Portaliq\Kernel\Contracts\PublishedPortalsInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
 use Psr\Log\LoggerInterface;
@@ -55,22 +55,22 @@ class AvailabilityProbeJob extends TimedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory $time Testable clock (job base class).
-	 * @param PublishedPortals $portals Lists the published portals.
-	 * @param AvailabilityProbe $probe Checks one portal.
-	 * @param AvailabilityStore $store Keeps the records.
-	 * @param AvailabilityRollup $rollup Folds a check into the records.
+	 * @param PublishedPortalsInterface $portals Lists the published portals.
+	 * @param AvailabilityProbeInterface $probe Checks one portal.
+	 * @param AvailabilityStoreInterface $store Keeps the records.
+	 * @param AvailabilityRollupInterface $rollup Folds a check into the records.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly PublishedPortals $portals,
-		private readonly AvailabilityProbe $probe,
-		private readonly AvailabilityStore $store,
-		private readonly AvailabilityRollup $rollup,
+		private readonly PublishedPortalsInterface $portals,
+		private readonly AvailabilityProbeInterface $probe,
+		private readonly AvailabilityStoreInterface $store,
+		private readonly AvailabilityRollupInterface $rollup,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(time: $time);
-		$this->setInterval(seconds: AvailabilityRollup::INTERVAL);
+		$this->setInterval(seconds: AvailabilityRollupInterface::INTERVAL);
 		$this->setAllowParallelRuns(allow: false);
 	}//end __construct()
 
@@ -118,13 +118,7 @@ class AvailabilityProbeJob extends TimedJob {
 	private function checkOne(string $slug, DateTimeImmutable $now): void {
 		$check = $this->probe->check(slug: $slug);
 
-		$today = $now->format('Y-m-d');
-		$days = $this->store->dailyBetween(portal: $slug, from: $now->modify('-1 day')->format('Y-m-d'), until: $today);
-		if ($this->rollup->lastCheckAt(days: $days) === null) {
-			// No check in the last two days: read the whole kept window, so
-			// an instance that was off for longer still counts its gap.
-			$days = $this->store->dailyBetween(portal: $slug, from: $now->modify(self::RETENTION)->format('Y-m-d'), until: $today);
-		}
+		$days = $this->recentDays(slug: $slug, now: $now);
 
 		$result = $this->rollup->record(
 			portal: $slug,
@@ -135,18 +129,51 @@ class AvailabilityProbeJob extends TimedJob {
 			openOutage: $this->store->openOutage(portal: $slug)
 		);
 
+		$this->saveChanges(result: $result, days: $days);
+	}//end checkOne()
+
+	/**
+	 * The stored days the rollup continues from: the last two, or the whole
+	 * kept window when there was no check in them.
+	 *
+	 * @param string            $slug The portal slug.
+	 * @param DateTimeImmutable $now  This run.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function recentDays(string $slug, DateTimeImmutable $now): array {
+		$today = $now->format('Y-m-d');
+		$days = $this->store->dailyBetween(portal: $slug, from: $now->modify('-1 day')->format('Y-m-d'), until: $today);
+		if ($this->rollup->lastCheckAt(days: $days) === null) {
+			// No check in the last two days: read the whole kept window, so
+			// an instance that was off for longer still counts its gap.
+			$days = $this->store->dailyBetween(portal: $slug, from: $now->modify(self::RETENTION)->format('Y-m-d'), until: $today);
+		}
+
+		return $days;
+	}//end recentDays()
+
+	/**
+	 * Store the days that changed and the outages closed or still open.
+	 *
+	 * @param array<string, mixed>                $result What the rollup recorded.
+	 * @param array<string, array<string, mixed>> $days   The days it started from.
+	 *
+	 * @return void
+	 */
+	private function saveChanges(array $result, array $days): void {
 		foreach ($result['days'] as $date => $day) {
 			if (($days[$date] ?? null) !== $day) {
-				$this->store->save(schema: AvailabilityStore::DAILY_SCHEMA, row: $day);
+				$this->store->save(schema: AvailabilityStoreInterface::DAILY_SCHEMA, row: $day);
 			}
 		}
 
 		foreach ($result['closed'] as $outage) {
-			$this->store->save(schema: AvailabilityStore::OUTAGE_SCHEMA, row: $outage);
+			$this->store->save(schema: AvailabilityStoreInterface::OUTAGE_SCHEMA, row: $outage);
 		}
 
 		if ($result['open'] !== null) {
-			$this->store->save(schema: AvailabilityStore::OUTAGE_SCHEMA, row: $result['open']);
+			$this->store->save(schema: AvailabilityStoreInterface::OUTAGE_SCHEMA, row: $result['open']);
 		}
-	}//end checkOne()
+	}//end saveChanges()
 }//end class

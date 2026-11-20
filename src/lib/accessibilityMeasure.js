@@ -60,18 +60,25 @@ export function frameAddress(siteBase, slug, route) {
 export function violationsOf(results) {
 	const out = []
 	for (const violation of results?.violations || []) {
-		if (!violation?.id || !IMPACTS.includes(violation.impact)) {
-			continue
+		if (violation?.id && IMPACTS.includes(violation.impact)) {
+			out.push(violationRow(violation))
 		}
-		out.push({
-			rule: String(violation.id),
-			impact: violation.impact,
-			nodes: Array.isArray(violation.nodes) ? violation.nodes.length : 0,
-			help: String(violation.help || ''),
-			helpUrl: String(violation.helpUrl || ''),
-		})
 	}
 	return out
+}
+
+/**
+ * @param {object} violation One rule axe-core reports as failed.
+ * @return {{rule: string, impact: string, nodes: number, help: string, helpUrl: string}} Its row.
+ */
+function violationRow(violation) {
+	return {
+		rule: String(violation.id),
+		impact: violation.impact,
+		nodes: Array.isArray(violation.nodes) ? violation.nodes.length : 0,
+		help: String(violation.help || ''),
+		helpUrl: String(violation.helpUrl || ''),
+	}
 }
 
 /**
@@ -91,29 +98,38 @@ export async function measurePage(route, { open, run }) {
 	try {
 		root = await open(route)
 	} catch (error) {
-		return {
-			url: route,
-			measured: false,
-			reason: String(error?.message || 'The page could not be loaded.'),
-		}
+		return unmeasured(route, String(error?.message || 'The page could not be loaded.'))
 	}
 	if (!root) {
-		return {
-			url: route,
-			measured: false,
-			reason: 'The page showed no site content.',
-		}
+		return unmeasured(route, 'The page showed no site content.')
 	}
+	return measureRoot(root, { route, run })
+}
+
+/**
+ * Run axe-core on a loaded page.
+ *
+ * @param {object} root The page's site root element.
+ * @param {{route: string, run: (root: object) => Promise<object>}} page The site route and the axe-core run.
+ * @return {Promise<object>} The page row.
+ */
+async function measureRoot(root, page) {
+	const { route, run } = page
 	try {
 		const results = await run(root)
 		return { url: route, measured: true, violations: violationsOf(results) }
 	} catch {
-		return {
-			url: route,
-			measured: false,
-			reason: 'The measurement could not run on this page.',
-		}
+		return unmeasured(route, 'The measurement could not run on this page.')
 	}
+}
+
+/**
+ * @param {string} route The site route.
+ * @param {string} reason Why it was not measured, in words.
+ * @return {{url: string, measured: boolean, reason: string}} The page row.
+ */
+function unmeasured(route, reason) {
+	return { url: route, measured: false, reason }
 }
 
 /**
@@ -149,27 +165,55 @@ export async function measureRun(routes, deps, progress = () => {}) {
  * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
  */
 export function auditProblem(audit, today) {
-	const result = String(audit?.result || '')
-	if (result !== 'A' && result !== 'B') {
+	if (!['A', 'B'].includes(String(audit?.result || ''))) {
 		return ''
 	}
-	const party = String(audit?.party || '').trim()
-	const report = String(audit?.reportUrl || '').trim()
-	const date = String(audit?.date || '').trim()
-	if (
-		party === ''
-		|| !/^https:\/\/\S+/.test(report)
-		|| !/^\d{4}-\d{2}-\d{2}$/.test(date)
-	) {
+	const audited = evidencedDay(audit, today)
+	if (audited === null) {
 		return 'incomplete'
+	}
+	return isExpired(audited, today) ? 'expired' : ''
+}
+
+/**
+ * The day of an audit that names its evidence, or null when it names too
+ * little or a day that is unreadable or still to come.
+ *
+ * @param {object} audit `{party, date, reportUrl, result}`.
+ * @param {Date} today The clock.
+ * @return {Date|null} The audit's day.
+ */
+function evidencedDay(audit, today) {
+	const date = String(audit?.date || '').trim()
+	if (!namesItsEvidence(audit, date)) {
+		return null
 	}
 	const audited = new Date(`${date}T00:00:00Z`)
-	if (Number.isNaN(audited.getTime()) || audited > today) {
-		return 'incomplete'
-	}
+	return Number.isNaN(audited.getTime()) || audited > today ? null : audited
+}
+
+/**
+ * @param {object} audit `{party, date, reportUrl, result}`.
+ * @param {string} date Its date, trimmed.
+ * @return {boolean} Whether it names who audited, an https report and a `YYYY-MM-DD` date.
+ */
+function namesItsEvidence(audit, date) {
+	return (
+		String(audit?.party || '').trim() !== ''
+		&& /^https:\/\/\S+/.test(String(audit?.reportUrl || '').trim())
+		&& /^\d{4}-\d{2}-\d{2}$/.test(date)
+	)
+}
+
+/**
+ * @param {Date} audited The audit's day.
+ * @param {Date} today The clock.
+ * @return {boolean} Whether the audit is older than the years it counts for.
+ */
+function isExpired(audited, today) {
 	const limit = new Date(today.getTime())
 	limit.setUTCFullYear(limit.getUTCFullYear() - AUDIT_YEARS)
-	return audited < limit ? 'expired' : ''
+	return audited < limit
 }
 
 /**

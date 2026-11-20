@@ -37,6 +37,7 @@ use OCP\Security\RateLimiting\ILimiter;
 use OCP\Security\RateLimiting\IRateLimitExceededException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Service\RequestedPortal;
 
 /**
  * The request endpoint, the link page's describe call and the redeem.
@@ -64,6 +65,20 @@ class EmailLinkControllerTest extends TestCase {
 	 * @var array<int, array<string, mixed>>
 	 */
 	private array $minted = [];
+
+	/**
+	 * Whether minting a session fails.
+	 *
+	 * @var bool
+	 */
+	private bool $sessionFails = false;
+
+	/**
+	 * The signed-in notices mailed, with the address and organisation.
+	 *
+	 * @var array<int, array<int, mixed>>
+	 */
+	private array $notices = [];
 
 	/**
 	 * The request's cookie, or null.
@@ -267,6 +282,9 @@ class EmailLinkControllerTest extends TestCase {
 		$this->assertSame('email:tom', $this->minted[0]['subjectRef']);
 		$this->assertSame('low', $this->minted[0]['trust']);
 		$this->assertSame('email-link', $this->minted[0]['provider']);
+		// The session is bound to the portal the link was asked on
+		// (portal-scoping-and-auth Task 4).
+		$this->assertSame('academie', $this->minted[0]['portal']);
 
 		$again = $this->controller()->describe(token: $token);
 		$this->assertSame('link_used', $again->getData()['error']);
@@ -292,6 +310,43 @@ class EmailLinkControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
 		$this->assertSame([], $this->minted);
 	}//end testAWithdrawnAccountDoesNotSignIn()
+
+	/**
+	 * A signed-in answer carries exactly the session's moments, clears the
+	 * page cookie and mails the signed-in notice.
+	 *
+	 * @return void
+	 */
+	public function testTheSignedInAnswerAndASessionFailureAreAsRecorded(): void {
+		$token = $this->issue(cookie: 'browser-a');
+		$this->cookie = 'browser-a';
+		$page     = $this->controller()->describe(token: $token)->getData();
+		$response = $this->controller()->redeem(token: $token, nonce: $page['nonce']);
+
+		$this->assertSame(['bearer' => 'bearer-1', 'expiresAt' => 1, 'hardExpiresAt' => 2, 'idleTimeout' => 900], $response->getData());
+		$this->assertSame(['audience' => 'client', 'organisation' => 'academie', 'roles' => ['client:read']], array_intersect_key($this->minted[0], ['audience' => 0, 'organisation' => 0, 'roles' => 0]));
+		$this->assertCount(1, $this->notices);
+		$this->assertSame(['academie', null], [$this->notices[0][1], $this->notices[0][2]]);
+		$this->assertStringContainsString(EmailLinkController::COOKIE, implode(' ', array_keys($response->getCookies())));
+
+	}//end testTheSignedInAnswerAndASessionFailureAreAsRecorded()
+
+	/**
+	 * A session that cannot be made answers 503 and mails nothing.
+	 *
+	 * @return void
+	 */
+	public function testASessionThatCannotBeMadeAnswersUnavailable(): void {
+		$this->sessionFails = true;
+		$token        = $this->issue(cookie: 'browser-a');
+		$this->cookie = 'browser-a';
+		$page         = $this->controller()->describe(token: $token)->getData();
+		$response     = $this->controller()->redeem(token: $token, nonce: $page['nonce']);
+
+		$this->assertSame([Http::STATUS_SERVICE_UNAVAILABLE, ['error' => 'session_unavailable']], [$response->getStatus(), $response->getData()]);
+		$this->assertCount(1, $this->minted);
+		$this->assertSame([], $this->notices);
+	}//end testASessionThatCannotBeMadeAnswersUnavailable()
 
 	/**
 	 * A link of Tom's, issued for the browser holding `$cookie`.
@@ -384,14 +439,25 @@ class EmailLinkControllerTest extends TestCase {
 
 		$sessions = $this->getMockBuilder(PortalSessionService::class)->disableOriginalConstructor()->onlyMethods(['issueSession'])->getMock();
 		$sessions->method('issueSession')->willReturnCallback(
-			function (string $subjectRef, string $audience, string $organisation, string $trust = '', array $roles = [], string $branch = '', string $provider = ''): array {
-				$this->minted[] = compact('subjectRef', 'audience', 'organisation', 'trust', 'roles', 'provider');
+			function (string $subjectRef, string $audience, string $organisation, string $trust = '', array $roles = [], string $branch = '', string $provider = '', string $kvk = '', array $attributes = [], string $portal = ''): ?array {
+				$this->minted[] = compact('subjectRef', 'audience', 'organisation', 'trust', 'roles', 'provider', 'portal');
+				if ($this->sessionFails === true) {
+					return null;
+				}
+
 				return ['token' => 'bearer-' . count($this->minted), 'jti' => 'jti-' . count($this->minted), 'expiresAt' => 1, 'hardExpiresAt' => 2, 'idleTimeout' => 900];
 			}
 		);
 
 		$reader  = $this->fakeReader();
 		$address = new EmailLinkAddress();
+		$mailer  = $this->createMock(PortalIdentityMailer::class);
+		$mailer->method('sendSignedInNotice')->willReturnCallback(
+			function (string $email, string $organisation, ?array $portal, \DateTimeInterface $moment): bool {
+				$this->notices[] = [$email, $organisation, $portal];
+				return true;
+			}
+		);
 
 		return new EmailLinkController(
 			$request,
@@ -405,8 +471,9 @@ class EmailLinkControllerTest extends TestCase {
 			$random,
 			$cacheFactory,
 			$sessions,
-			$this->createMock(PortalIdentityMailer::class),
-			$this->createMock(LoggerInterface::class)
+			$mailer,
+			$this->createMock(LoggerInterface::class),
+			new RequestedPortal()
 		);
 	}//end controller()
 }//end class

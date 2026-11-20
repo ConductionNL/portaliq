@@ -4,7 +4,7 @@
 // The parts of slice e that other screens mount. Each is a lazy chunk, so
 // importing this file adds almost nothing to the site bundle.
 //
-// @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md
+// @spec openspec/specs/site-portal-parity/spec.md
 
 import { defineAsyncComponent } from 'vue'
 
@@ -23,7 +23,7 @@ import { defineAsyncComponent } from 'vue'
  * - `t` (function, required): the translator.
  * - `locale` (string): dates in this language, else the page's `<html lang>`.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-citizen-must-work-on-their-own-case-req-srp-042
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-citizen-must-work-on-their-own-case-req-srp-042
  */
 export const CitizenCase = defineAsyncComponent(() => import('./CitizenCase.vue'))
 
@@ -35,7 +35,7 @@ export const CitizenCase = defineAsyncComponent(() => import('./CitizenCase.vue'
  * Props: `t` (function, required); `mandates` (array) and `value` (string)
  * override the store. Emits `change(id)`.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-act-for-someone-else-req-srp-041
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-act-for-someone-else-req-srp-041
  */
 export const ActingForSwitcher = defineAsyncComponent(
 	() => import('./ActingForSwitcher.vue'),
@@ -49,7 +49,7 @@ export const ActingForSwitcher = defineAsyncComponent(
  * calls `navigate('__account__')`). Emits `dismiss` after hiding itself for
  * the session.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
  */
 export const ContactPrompt = defineAsyncComponent(
 	() => import('./ContactPrompt.vue'),

@@ -112,6 +112,16 @@ class InAppMessagingLeafTest extends TestCase {
 		$this->assertNull((new InAppMessagingLeaf($fullRead, $access))->listMessages('thread-9', 'guardian-1', false));
 	}//end testAThreadIsFoundByIdOrByTheFullRead()
 
+	/**
+	 * An empty thread id finds no thread and reads nothing.
+	 */
+	public function testAnEmptyThreadIdReadsNothing(): void {
+		$store = $this->createMock(MessageStore::class);
+		$store->expects($this->never())->method('findAll');
+
+		$this->assertNull((new InAppMessagingLeaf($store, $this->createMock(MessageThreadAccessGuard::class)))->listMessages('', 'guardian-1', false));
+	}//end testAnEmptyThreadIdReadsNothing()
+
 	public function testMarkThreadReadIsIdempotent(): void {
 		$access = $this->createMock(MessageThreadAccessGuard::class);
 		$access->method('isParticipant')->willReturn(true);

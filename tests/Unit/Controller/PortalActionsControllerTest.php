@@ -12,7 +12,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Controller\PortalActionsController;
 use OCA\Portaliq\Service\Actions\PortalActionService;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 
@@ -27,7 +27,7 @@ class PortalActionsControllerTest extends TestCase {
 	private function controller(?array $subject, PortalActionService $actions, array $params=[]): PortalActionsController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParams')->willReturn($params);
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
 
 		return new PortalActionsController($request, $session, $actions);
@@ -41,6 +41,28 @@ class PortalActionsControllerTest extends TestCase {
 		foreach ([$controller->index(), $controller->create(), $controller->update('a'), $controller->destroy('a'), $controller->history('a'), $controller->attach('a'), $controller->file('a')] as $response) {
 			$this->assertSame(401, $response->getStatus());
 		}
+	}
+
+	/**
+	 * A bearer that names no subject is no session, and every outcome's
+	 * answer is whole: `ok` for success, the outcome as the error otherwise,
+	 * an unknown outcome a 500.
+	 *
+	 * @return void
+	 */
+	public function testANamelessSubjectIsNoSessionAndEveryAnswerIsWhole(): void {
+		$actions = $this->createMock(PortalActionService::class);
+		$actions->expects($this->never())->method($this->anything());
+		$nameless = $this->controller(subject: ['subjectRef' => ''], actions: $actions)->index();
+		$this->assertSame([401, ['authenticated' => false]], [$nameless->getStatus(), $nameless->getData()]);
+
+		$actions = $this->createMock(PortalActionService::class);
+		$actions->method('delete')->willReturnOnConsecutiveCalls('ok', 'forbidden', 'something-else');
+		$controller = $this->controller(subject: ['subjectRef' => 'sanne'], actions: $actions);
+
+		$this->assertSame([200, ['ok' => true]], [($r = $controller->destroy('a'))->getStatus(), $r->getData()]);
+		$this->assertSame([403, ['error' => 'forbidden']], [($r = $controller->destroy('a'))->getStatus(), $r->getData()]);
+		$this->assertSame([500, ['error' => 'something-else']], [($r = $controller->destroy('a'))->getStatus(), $r->getData()]);
 	}
 
 	public function testOutcomesBecomeStatuses(): void {

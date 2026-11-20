@@ -14,7 +14,7 @@
   - An administrator can create a site, menu, markdown page and glossary term and publish them, with no API client, and the public site then renders
   - The menu editor enforces the two-level limit the schema declares
 - [x] Implement (already built: the Portals, Menus, Pages and Glossary index and detail pages in `src/manifest.json`, over the shared manifest components; the schema declares the two-level menu limit)
-- [ ] Test — not run: the editorial path end to end needs a live instance
+- [ ] Test — the spec is written (`tests/e2e/cms-admin.spec.ts`: the four surfaces are the shared index pages; a site is checked, published, served by the public content API and rendered); not run: needs a live instance
 
 ### Task 2: Publish-time validation
 - **spec_ref**: `openspec/changes/portal-cms-admin-ui/specs/portaliq-cms/spec.md#requirement-publishing-must-refuse-content-that-would-render-broken`
@@ -24,8 +24,8 @@
   - A menu item pointing at a DRAFTED page WARNS rather than blocks; refusing it would make the guard the obstacle in a normal editorial workflow
   - A website with no published page at `/` is refused — `open-venray` currently 404s on its own front door
   - Duplicate routes within one website are refused
-- [x] Implement (`lib/Service/Cms/CmsPublishValidator.php`, reached through `GET /api/cms/publish-check` on `CmsEditorController::publishCheck`; the check is read-only, so it is not yet a hook that stops an OpenRegister write: not run, that needs a decision on a pre-save event)
-- [x] Test (`tests/Unit/Service/Cms/CmsPublishValidatorTest.php`)
+- [x] Implement (`lib/Service/Cms/CmsPublishValidator.php`, reached through `GET /api/cms/publish-check` on `CmsEditorController::publishCheck`; the check is read-only. A second page on a route its portal already has in that language is refused when it is saved, by `PageRouteGuardListener` on OpenRegister's pre-write events with `PageRouteClaim` deciding, as the glossary relation guard does. The menu-link and root-page refusals stay in the publish check and are not a write veto: an install writes a portal and its menus before their pages, and such a veto would refuse that order)
+- [x] Test (`tests/Unit/Service/Cms/CmsPublishValidatorTest.php`; `tests/Unit/Service/Cms/PageRouteClaimTest.php`, `tests/Unit/Listener/PageRouteGuardListenerTest.php`)
 
 ### Task 3: Domain verification trigger
 - **spec_ref**: `openspec/changes/portal-cms-admin-ui/specs/portaliq-cms/spec.md#requirement-domain-verification-must-be-triggerable-from-the-ui`
@@ -34,5 +34,5 @@
   - The pending domain's exact TXT record name and value are shown and copyable
   - Verification can be run and RE-run without re-adding the domain, because "DNS has not propagated yet" is the normal first outcome, not an error state
   - The e2e covers the whole editorial path: create a site, add a domain, see the record, publish a page, load the public site
-- [ ] Implement — partial (checked 12 Oct 2026): `PortalDomainVerifier` and `CmsDomainController` (`GET /api/cms/domains`, `POST /api/cms/domains/verify`) show the exact record, check it, and can be run again. The screen is manifest configuration, not `src/views/cms/WebsiteDomains.vue`: the `portal-domains` field list on the portal's settings tab (`src/manifest.json`) shows a pending domain's record as "Publish this TXT record: {name} = {value}" and offers "Check again" per pending domain (`tests/portal-domains.spec.mjs`). Open: the record's name and value each with their own copy button. The shared field list has no copy option, so that is a nextcloud-vue piece first
-- [ ] Test — partial: `PortalDomainVerifierTest` covers the record, pending and verified; `tests/e2e/cms-admin.spec.ts` is not run: needs a live instance
+- [x] Implement: `PortalDomainVerifier` and `CmsDomainController` (`GET /api/cms/domains`, `POST /api/cms/domains/verify`) show the exact record, check it, and can be run again. The screen is manifest configuration, not `src/views/cms/WebsiteDomains.vue`: the `portal-domains` field list on the portal's settings tab (`src/manifest.json`) shows a pending domain's record as "Publish this TXT record: {name} = {value}", offers "Check again" per pending domain, and puts a "Copy name" and a "Copy value" button beside the record (`row.detail.copy`, available in nextcloud-vue 2.180) (`tests/portal-domains.spec.mjs`)
+- [ ] Test — partial: `PortalDomainVerifierTest` covers the record, pending and verified; `tests/e2e/cms-admin.spec.ts` is written (the pending domain's record, the check run twice without the domain being added again, and both endpoints refused to a caller without a session) and not run: needs a live instance

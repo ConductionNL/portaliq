@@ -31,6 +31,9 @@ export const DEFAULT_REGIONS = {
 	footer: [{ id: 'footer-columns', widgetKey: 'footerColumns', props: {} }],
 }
 
+/** The slots that mean `main`: none, an empty one, and `body`. */
+const MAIN_SLOTS = [undefined, null, '', 'body']
+
 /**
  * The region a slot names, or null. `body` and an empty slot mean `main`.
  *
@@ -40,7 +43,7 @@ export const DEFAULT_REGIONS = {
  * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-a-widgets-slot-must-select-one-of-five-regions-req-ptb-008
  */
 export function regionOf(slot) {
-	if (slot === undefined || slot === null || slot === '' || slot === 'body') {
+	if (MAIN_SLOTS.includes(slot)) {
 		return 'main'
 	}
 
@@ -60,34 +63,63 @@ export function regionOf(slot) {
  * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-regions-must-resolve-page-first-then-portal-then-default-req-ptb-009
  */
 export function pageRegionsOf(body) {
-	const page = {}
 	if (!body) {
-		return page
+		return {}
 	}
 
 	const served = body.regions && !Array.isArray(body.regions) ? body.regions : null
-	if (served !== null) {
-		for (const region of REGIONS) {
-			if (Object.hasOwn(served, region)) {
-				page[region] = served[region]
-			}
-		}
-	} else {
-		for (const widget of body.widgets || []) {
-			const region = regionOf(widget.slot)
-			if (region !== null) {
-				page[region] = [...(page[region] || []), widget]
-			}
+	const page = served !== null ? statedRegions(served) : regionsBySlot(body.widgets)
+	addClearedRegions(page, body.clearedRegions)
+	return page
+}
+
+/**
+ * The regions the content API served, in render order.
+ *
+ * @param {object} served Region name to widgets.
+ * @return {object} The known regions it states.
+ */
+function statedRegions(served) {
+	const page = {}
+	for (const region of REGIONS) {
+		if (Object.hasOwn(served, region)) {
+			page[region] = served[region]
 		}
 	}
+	return page
+}
 
-	for (const region of body.clearedRegions || []) {
+/**
+ * The page's widgets grouped by the region their slot names; a slot that
+ * names no region is left out.
+ *
+ * @param {Array<object>|undefined} widgets The page's widgets.
+ * @return {object} Region name to widgets, in the order the regions first occur.
+ */
+function regionsBySlot(widgets) {
+	const page = {}
+	for (const widget of widgets || []) {
+		const region = regionOf(widget.slot)
+		if (region !== null) {
+			page[region] = [...(page[region] || []), widget]
+		}
+	}
+	return page
+}
+
+/**
+ * Add each cleared region the page does not state already, as an empty list.
+ *
+ * @param {object} page Region name to widgets.
+ * @param {Array<string>|undefined} cleared The regions the page clears.
+ * @return {void}
+ */
+function addClearedRegions(page, cleared) {
+	for (const region of cleared || []) {
 		if (REGIONS.includes(region) && !Object.hasOwn(page, region)) {
 			page[region] = []
 		}
 	}
-
-	return page
 }
 
 /**
@@ -111,14 +143,26 @@ export function resolveRegions(pageRegions, portalRegions) {
 	const resolved = {}
 
 	for (const region of REGIONS) {
-		if (Object.hasOwn(page, region)) {
-			resolved[region] = [...(page[region] || [])]
-		} else if (Object.hasOwn(portal, region)) {
-			resolved[region] = [...(portal[region] || [])]
-		} else {
-			resolved[region] = [...DEFAULT_REGIONS[region]]
-		}
+		resolved[region] = [...regionWidgets(region, { page, portal })]
 	}
 
 	return resolved
+}
+
+/**
+ * The widgets of one region: the page's when it states the region, then the
+ * portal's, then the default.
+ *
+ * @param {string} region The region.
+ * @param {{page: object, portal: object}} stated The page's and the portal's regions.
+ * @return {Array<object>} The widgets.
+ */
+function regionWidgets(region, stated) {
+	if (Object.hasOwn(stated.page, region)) {
+		return stated.page[region] || []
+	}
+	if (Object.hasOwn(stated.portal, region)) {
+		return stated.portal[region] || []
+	}
+	return DEFAULT_REGIONS[region]
 }

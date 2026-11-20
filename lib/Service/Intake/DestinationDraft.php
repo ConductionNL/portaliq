@@ -36,6 +36,7 @@ use OCA\OpenRegister\Service\Form\FormSubmitter;
 use OCA\OpenRegister\Service\Object\DiscardDraftRequest;
 use OCA\OpenRegister\Service\Object\DraftDiscard;
 use OCA\OpenRegister\Service\Object\DraftOwner;
+use OCA\Portaliq\Kernel\Contracts\DestinationDraftInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -45,7 +46,7 @@ use Throwable;
  *
  * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
  */
-class DestinationDraft {
+class DestinationDraft implements DestinationDraftInterface {
 	/**
 	 * OpenRegister's submit service.
 	 */
@@ -60,7 +61,6 @@ class DestinationDraft {
 	 * OpenRegister's draft owner, built as `portal:<subjectRef>` (decision 195).
 	 */
 	private const DRAFT_OWNER = DraftOwner::class;
-
 
 	/**
 	 * Constructor.
@@ -114,12 +114,23 @@ class DestinationDraft {
 			return $this->submit->refusalOf(exception: $exception, destination: $destination);
 		}
 
+		return $this->savedAnswer(answer: $answer);
+	}//end saveDraft()
+
+	/**
+	 * The outcome of a saved draft: its id, or a refusal when the destination gave none.
+	 *
+	 * @param mixed $answer What the destination answered.
+	 *
+	 * @return array{ok: bool, status: int, answer: array<string, mixed>, message: string, findings: array<int, array<string, mixed>>}
+	 */
+	private function savedAnswer(mixed $answer): array {
 		if (is_array($answer) === false || (string)($answer['id'] ?? '') === '') {
 			return $this->submit->refusal(status: 503, message: 'The destination gave no answer.', findings: []);
 		}
 
 		return ['ok' => true, 'status' => 200, 'answer' => $answer, 'message' => '', 'findings' => []];
-	}//end saveDraft()
+	}//end savedAnswer()
 
 	/**
 	 * The subject's newest draft in a destination whose data holds each `$match` value, or null.
@@ -139,23 +150,50 @@ class DestinationDraft {
 			return null;
 		}
 
+		$draft = $this->lookedUp(service: $service, destination: $destination, owner: $owner, values: $match);
+
+		return $this->draftOf(draft: $draft);
+	}//end findDraft()
+
+	/**
+	 * The draft when the destination answered one with an id.
+	 *
+	 * @param mixed $draft What the destination answered.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function draftOf(mixed $draft): array|null {
+		if (is_array($draft) === false || (string)($draft['id'] ?? '') === '') {
+			return null;
+		}
+
+		return $draft;
+	}//end draftOf()
+
+	/**
+	 * Ask the destination for the owner's newest matching draft; null, logged, when the lookup fails.
+	 *
+	 * @param object                                  $service     The form submit service.
+	 * @param array{register: string, schema: string} $destination The destination pair.
+	 * @param DraftOwner                              $owner       The draft's owner.
+	 * @param array<string, mixed>                    $values      Values the draft must hold.
+	 *
+	 * @return mixed
+	 */
+	private function lookedUp(object $service, array $destination, DraftOwner $owner, array $values): mixed {
 		try {
 			$draft = $service->findDraft(
 				destination: $destination,
 				submitter: new FormSubmitter(subject: null, owner: $owner),
-				match: $match
+				match: $values
 			);
 		} catch (Throwable $exception) {
 			$this->logger->warning('Portaliq: a draft could not be looked up', ['reason' => $exception->getMessage()]);
 			return null;
 		}
 
-		if (is_array($draft) === false || (string)($draft['id'] ?? '') === '') {
-			return null;
-		}
-
 		return $draft;
-	}//end findDraft()
+	}//end lookedUp()
 
 	/**
 	 * Send the subject's draft: it leaves `draft` with full validation and gets its reference.
@@ -190,12 +228,23 @@ class DestinationDraft {
 			return $this->submit->refusalOf(exception: $exception, destination: $destination);
 		}
 
+		return $this->sentAnswer(answer: $answer);
+	}//end sendDraft()
+
+	/**
+	 * The outcome of a sent draft, or a refusal when the destination gave no answer.
+	 *
+	 * @param mixed $answer What the destination answered.
+	 *
+	 * @return array{ok: bool, status: int, answer: array<string, mixed>, message: string, findings: array<int, array<string, mixed>>}
+	 */
+	private function sentAnswer(mixed $answer): array {
 		if (is_array($answer) === false) {
 			return $this->submit->refusal(status: 503, message: 'The destination gave no answer.', findings: []);
 		}
 
 		return ['ok' => true, 'status' => 201, 'answer' => $answer, 'message' => '', 'findings' => []];
-	}//end sendDraft()
+	}//end sentAnswer()
 
 	/**
 	 * Discard the subject's draft. Someone else's draft, or a sent object, is left alone.

@@ -23,13 +23,14 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\PushSubscriptionController;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @spec openspec/changes/push-notifications-quiet-hours/design.md#api-design
@@ -42,7 +43,7 @@ class PushSubscriptionControllerTest extends TestCase {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('Bearer token');
 
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
 
 		$container = $this->createMock(ContainerInterface::class);
@@ -94,7 +95,10 @@ class PushSubscriptionControllerTest extends TestCase {
 			/**
 			 * @param array<string,mixed> $object
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved = $object;
 				$this->uuid = $uuid;
 				return $object;

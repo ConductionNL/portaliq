@@ -32,9 +32,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
-use OCA\Portaliq\Service\PublicNewsReader;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\BearerSessionResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PublicNewsReaderInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -56,18 +56,18 @@ class ContentNewsController extends Controller {
 	 *
 	 * @param string               $appName  The app id.
 	 * @param IRequest             $request  The request.
-	 * @param PortalResolver       $resolver Resolves the serving portal.
-	 * @param PortalSessionService $session  Resolves the caller's portal session for the content gate.
-	 * @param PublicNewsReader     $news     Reads the portal's public news.
+	 * @param PortalResolverInterface       $resolver Resolves the serving portal.
+	 * @param BearerSessionResolverInterface $session  Resolves the caller's portal session for the content gate.
+	 * @param PublicNewsReaderInterface     $news     Reads the portal's public news.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly PortalResolver $resolver,
-		private readonly PortalSessionService $session,
-		private readonly PublicNewsReader $news,
+		private readonly PortalResolverInterface $resolver,
+		private readonly BearerSessionResolverInterface $session,
+		private readonly PublicNewsReaderInterface $news,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -86,14 +86,9 @@ class ContentNewsController extends Controller {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 240, period: 60)]
 	public function index(?string $portal = null, ?int $limit = null): JSONResponse {
-		$resolved = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
-		if ($resolved === null) {
-			return $this->notFound();
-		}
-
-		$refusal = $this->refuseUnlessPermitted(portal: $resolved);
-		if ($refusal !== null) {
-			return $refusal;
+		$resolved = $this->permittedPortal(portal: $portal);
+		if ($resolved instanceof JSONResponse) {
+			return $resolved;
 		}
 
 		return $this->publicJson(
@@ -115,14 +110,9 @@ class ContentNewsController extends Controller {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 240, period: 60)]
 	public function show(string $id, ?string $portal = null): JSONResponse {
-		$resolved = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
-		if ($resolved === null) {
-			return $this->notFound();
-		}
-
-		$refusal = $this->refuseUnlessPermitted(portal: $resolved);
-		if ($refusal !== null) {
-			return $refusal;
+		$resolved = $this->permittedPortal(portal: $portal);
+		if ($resolved instanceof JSONResponse) {
+			return $resolved;
 		}
 
 		$item = $this->news->itemFor(portal: (string)$resolved['slug'], id: $id);

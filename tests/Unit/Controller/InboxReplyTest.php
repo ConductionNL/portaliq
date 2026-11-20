@@ -20,6 +20,7 @@ use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Support\SubjectAssertionIssuer;
 use OCA\Portaliq\Service\SubmissionReceiptService;
 use OCP\AppFramework\Http;
 use OCP\Http\Client\IClientService;
@@ -28,6 +29,17 @@ use OCP\IURLGenerator;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Service\CaseRowMarker;
+use OCA\Portaliq\Contribution\CreateActionMatcher;
+use OCA\Portaliq\Contribution\CreateBody;
+use OCA\Portaliq\Contribution\InboxMessageFields;
+use OCA\Portaliq\Contribution\PageChoice;
+use OCA\Portaliq\Service\RequestedPortal;
+use OCA\Portaliq\Service\RequiredFieldsGuard;
+use OCA\Portaliq\Contribution\RowIdentifier;
+use OCA\Portaliq\Contribution\ThemeChoice;
+use OCA\Portaliq\Service\VisibleFromGate;
+use OCA\Portaliq\Service\WriteRefusal;
 
 /**
  * inbox-reply-with-attachments REQ-IRA-002: the reply is built on the server
@@ -87,12 +99,12 @@ class InboxReplyTest extends TestCase {
 			$this->createMock(PortalSchemaReader::class),
 			$this->createMock(PortalInboxReader::class),
 			$this->createMock(PortalAuditHook::class),
-			new PortalActionForwarder($request, new InstanceLoopback($this->createMock(IClientService::class), $urls, $this->createMock(InternalBaseUrl::class), $this->createMock(LoggerInterface::class)), $session),
+			new PortalActionForwarder($request, new InstanceLoopback($this->createMock(IClientService::class), $urls, $this->createMock(InternalBaseUrl::class), $this->createMock(LoggerInterface::class)), $this->createMock(SubjectAssertionIssuer::class)),
 			$this->createMock(AuditTrailService::class),
 			$this->createMock(SubmissionReceiptService::class),
 			$this->createMock(NotificationDispatchService::class),
 			$this->createMock(LoggerInterface::class),
-			crossRefs: $guard
+			crossRefs: $guard, caseRowMarker: new CaseRowMarker(), createActionMatcher: new CreateActionMatcher(), createBody: new CreateBody(), inboxMessageFields: new InboxMessageFields(), pageChoice: new PageChoice(), requestedPortal: new RequestedPortal(), requiredFieldsGuard: new RequiredFieldsGuard(), rowIdentifier: new RowIdentifier(), themeChoice: new ThemeChoice(), visibleFromGate: new VisibleFromGate(), writeRefusal: new WriteRefusal()
 		);
 	}
 

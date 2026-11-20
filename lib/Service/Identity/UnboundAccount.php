@@ -20,22 +20,19 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Support\SessionTrust;
 
 /**
  * The account side of taking on an invitation's audience.
  *
- * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
- *
- * @SuppressWarnings(PHPMD.StaticAccess) -- PortalSessionService::trustSatisfies,
- * the one comparison of trust levels, as in ContributionController.
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 final class UnboundAccount {
 	/**
@@ -83,7 +80,7 @@ final class UnboundAccount {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function mayTakeOn(array $account, array $waiting): bool {
 		return in_array((string)($waiting['audience'] ?? ''), $this->audiences, true) === true
@@ -92,7 +89,7 @@ final class UnboundAccount {
 			&& (string)($account['identityRef'] ?? '') !== ''
 			&& (string)($account['provisionedBy'] ?? '') === ''
 			&& $this->holdsNoClaims(account: $account) === true
-			&& PortalSessionService::trustSatisfies(subjectTrust: $this->trust, minTrust: self::ADOPT_TRUST) === true;
+			&& (new SessionTrust())->trustSatisfies(subjectTrust: $this->trust, minTrust: self::ADOPT_TRUST) === true;
 	}//end mayTakeOn()
 
 	/**

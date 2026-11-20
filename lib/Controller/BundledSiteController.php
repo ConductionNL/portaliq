@@ -2,13 +2,13 @@
 
 /**
  * Hosts a bundled single-page site as a Nextcloud public page. A bundled site
- * is a directory of build output in the app root; this controller serves its
+ * is a directory of build output under `build/`; this controller serves its
  * static assets and falls back to `index.html` for client-side routes
  * (ADR-046: the standalone-SPA pattern, served in-app).
  *
  * Which bundle a URL serves is configuration, not code: the route names the
  * bundle in its `defaults` (appinfo/routes.php), and BUNDLES lists the
- * directories this app ships. Today that is one, `woo/`, the Open Tilburg
+ * directories this app ships. Today that is one, `build/woo/`, the Open Tilburg
  * publication site built with `PUBLIC_URL=/index.php/apps/portaliq/woo`
  * (decision 182: named by what it does, the procedure is configuration).
  *
@@ -36,8 +36,12 @@ use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\DataDisplayResponse;
 use OCP\AppFramework\Http\EmptyContentSecurityPolicy;
+use OCP\AppFramework\Http\RedirectResponse;
 use OCP\AppFramework\Http\Response;
+use OCA\Portaliq\Service\RetiredBundleAddress;
+use OCP\IAppConfig;
 use OCP\IRequest;
+use OCP\IURLGenerator;
 
 /**
  * Serves a bundled single-page site as an in-app public page.
@@ -47,7 +51,7 @@ use OCP\IRequest;
 class BundledSiteController extends Controller {
 
 	/**
-	 * The bundle directories this app ships, relative to the app root. A
+	 * The bundle directories this app ships, relative to `build/`. A
 	 * route may only name one of these: `bundle` arrives as a request
 	 * parameter, so it is checked against this list and never used as a path.
 	 *
@@ -56,27 +60,46 @@ class BundledSiteController extends Controller {
 	private const BUNDLES = ['woo'];
 
 	/**
-	 * Absolute path to the app root, the directory the bundles live in.
+	 * The app setting, per bundle, naming the portal whose authored site now
+	 * answers on the bundle's paths (`bundled_site_portal_woo`). Empty: the
+	 * bundle itself still serves them.
+	 */
+	public const PORTAL_SETTING_PREFIX = 'bundled_site_portal_';
+
+	/**
+	 * HTTP 302 Found: what a bundle path answers once its portal is authored.
+	 */
+	private const STATUS_FOUND = 302;
+
+	/**
+	 * Absolute path to the directory the bundles live in, `build/` in the app root.
 	 *
 	 * @var string
 	 */
-	private string $appRoot;
+	private string $bundlesRoot;
 
 	/**
 	 * Constructor.
 	 *
 	 * @param string $appName The app id.
 	 * @param IRequest $request The request.
+	 * @param IAppConfig|null $appConfig Names the portal a bundle's paths moved to; null keeps the bundle serving.
+	 * @param IURLGenerator|null $urlGenerator Builds the authored site's address.
 	 */
-	public function __construct(string $appName, IRequest $request) {
+	public function __construct(
+		string $appName,
+		IRequest $request,
+		private readonly ?IAppConfig $appConfig = null,
+		private readonly ?IURLGenerator $urlGenerator = null,
+	) {
 		parent::__construct(appName: $appName, request: $request);
 
 		// Initialise to the unresolved path, then override when `realpath()`
 		// can canonicalise it.
-		$this->appRoot = __DIR__ . '/../..';
-		$resolved = realpath($this->appRoot);
+		$this->bundlesRoot = __DIR__ . '/../../build';
+		$resolved = realpath($this->bundlesRoot);
 		if ($resolved !== false) {
-			$this->appRoot = $resolved;
+			$this->bundlesRoot = $resolved;
 		}
 	}//end __construct()
 
@@ -131,6 +154,15 @@ class BundledSiteController extends Controller {
 	 * @return Response
 	 */
 	private function render(string $bundle, string $path): Response {
+		$moved = $this->authoredSiteAddress(bundle: $bundle, path: $path);
+		if ($moved !== null) {
+			$response = new RedirectResponse($moved);
+			// 302, not RedirectResponse's own 303: the address moved, the
+			// request did not change meaning.
+			$response->setStatus(self::STATUS_FOUND);
+			return $response;
+		}
+
 		$root = $this->bundleRoot(bundle: $bundle);
 		if ($root === null) {
 			return new DataDisplayResponse('Not found', Http::STATUS_NOT_FOUND, ['Content-Type' => 'text/plain']);
@@ -138,15 +170,90 @@ class BundledSiteController extends Controller {
 
 		$resolved = $this->bundledFile(root: $root, path: $path);
 
+		$content = $this->contentOf(resolved: $resolved);
+		if ($content === false) {
+			return new DataDisplayResponse('Not found', Http::STATUS_NOT_FOUND, ['Content-Type' => 'text/plain']);
+		}
+
+		return $this->fileResponse(resolved: $resolved, content: $content);
+	}//end render()
+
+	/**
+	 * Where the authored site answers this bundle path, or null while the
+	 * bundle still serves it.
+	 *
+	 * An administrator moves a bundle's paths to an authored portal by naming
+	 * that portal in `bundled_site_portal_<bundle>`; until then nothing changes
+	 * for the visitors of the bundle. Once set, every path, the ones the bundle
+	 * routed and the ones it did not, redirects to the site route
+	 * RetiredBundleAddress gives it, keeping the query string and naming the
+	 * portal when the query does not already.
+	 *
+	 * @param string $bundle The bundle name from the route defaults.
+	 * @param string $path   The path under the bundle.
+	 *
+	 * @return string|null The address, or null.
+	 *
+	 * @spec openspec/changes/retire-the-vendored-woo-bundle/specs/portaliq-cms/spec.md#requirement-the-authored-portal-must-answer-on-the-paths-the-bundle-answered-on
+	 */
+	private function authoredSiteAddress(string $bundle, string $path): ?string {
+		if ($this->appConfig === null
+			|| $this->urlGenerator === null
+			|| in_array($bundle, self::BUNDLES, true) === false
+		) {
+			return null;
+		}
+
+		$portal = trim($this->appConfig->getValueString($this->appName, self::PORTAL_SETTING_PREFIX . $bundle, ''));
+		if ($portal === '') {
+			return null;
+		}
+
+		$route = (new RetiredBundleAddress())->siteRoute(path: $path);
+		$address = $this->urlGenerator->linkToRoute('portaliq.portalPage.site');
+		if ($route !== RetiredBundleAddress::HOME) {
+			$address = $this->urlGenerator->linkToRoute(
+				'portaliq.portalPage.sitePath',
+				['path' => ltrim($route, '/')]
+			);
+		}
+
+		$query = [];
+		parse_str((string)parse_url($this->request->getRequestUri(), PHP_URL_QUERY), $query);
+		if (isset($query['portal']) === false) {
+			$query['portal'] = $portal;
+		}
+
+		return $address . '?' . http_build_query($query);
+	}//end authoredSiteAddress()
+
+	/**
+	 * The bytes of a resolved bundled file, or false when it is not a file or
+	 * cannot be read.
+	 *
+	 * @param string $resolved The resolved file.
+	 *
+	 * @return string|false
+	 */
+	private function contentOf(string $resolved): string|false {
 		$content = false;
 		if (is_file($resolved) === true) {
 			$content = file_get_contents($resolved);
 		}
 
-		if ($content === false) {
-			return new DataDisplayResponse('Not found', Http::STATUS_NOT_FOUND, ['Content-Type' => 'text/plain']);
-		}
+		return $content;
+	}//end contentOf()
 
+	/**
+	 * The response serving a bundled file: hash-named assets cached, the SPA
+	 * index and the runtime config never cached and under the SPA's CSP.
+	 *
+	 * @param string $resolved The resolved file.
+	 * @param string $content  Its bytes.
+	 *
+	 * @return Response
+	 */
+	private function fileResponse(string $resolved, string $content): Response {
 		$isIndex = (substr($resolved, -10) === 'index.html');
 		$response = new DataDisplayResponse($content, Http::STATUS_OK, ['Content-Type' => $this->mimeFor(file: $resolved)]);
 
@@ -161,7 +268,7 @@ class BundledSiteController extends Controller {
 		$this->applySpaCsp(response: $response);
 
 		return $response;
-	}//end render()
+	}//end fileResponse()
 
 	/**
 	 * The file a request path names inside a bundle, or the bundle's
@@ -201,7 +308,7 @@ class BundledSiteController extends Controller {
 			return null;
 		}
 
-		$root = $this->appRoot . '/' . $bundle;
+		$root = $this->bundlesRoot . '/' . $bundle;
 		$canonical = realpath($root);
 		if ($canonical !== false) {
 			return $canonical;

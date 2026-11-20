@@ -200,7 +200,7 @@ class PortalResolverTest extends TestCase {
 	 *
 	 * @return PortalResolver The resolver, wired.
 	 */
-	private function resolverReturning(?array $rows): PortalResolver {
+	private function resolverReturning(?array $rows, ?LoggerInterface $logger = null): PortalResolver {
 		$container = $this->createMock(ContainerInterface::class);
 
 		if ($rows === null) {
@@ -269,7 +269,7 @@ class PortalResolverTest extends TestCase {
 
 		return new PortalResolver(
 			new PublishedPortals($container, $this->createMock(LoggerInterface::class), $this->contextDouble()),
-			$this->createMock(LoggerInterface::class)
+			($logger ?? $this->createMock(LoggerInterface::class))
 		);
 	}//end resolverReturning()
 
@@ -617,6 +617,32 @@ class PortalResolverTest extends TestCase {
 
 
 	/**
+	 * An ambiguous organisation is logged with the organisation as asked
+	 * (trimmed) and every matching portal's slug; one match logs nothing.
+	 *
+	 * @return void
+	 */
+	public function testAnAmbiguousOrganisationIsLoggedWithItsPortals(): void {
+		$rows   = [
+			['slug' => 'inwoners', 'organisation' => ' gemeente-x '],
+			['slug' => 'other', 'organisation' => 'gemeente-y'],
+			['organisation' => 'gemeente-x'],
+		];
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('info')->with(
+			'Portaliq: ?org= matched several published portals; refusing to guess a brand',
+			['organisation' => 'gemeente-x', 'portals' => ['inwoners', '']]
+		);
+
+		$this->assertNull($this->resolverReturning(rows: $rows, logger: $logger)->resolveByOrganisation(' gemeente-x '));
+
+		$quiet = $this->createMock(LoggerInterface::class);
+		$quiet->expects($this->never())->method('info');
+		$this->assertSame('other', $this->resolverReturning(rows: $rows, logger: $quiet)->resolveByOrganisation('gemeente-y')['slug']);
+	}//end testAnAmbiguousOrganisationIsLoggedWithItsPortals()
+
+
+	/**
 	 * An organisation no portal claims resolves to nothing.
 	 *
 	 * @return void
@@ -836,4 +862,89 @@ class PortalResolverTest extends TestCase {
 			],
 		];
 	}//end rootSites()
+
+
+	/**
+	 * A portal may refuse the slug fallback, and then naming it is not
+	 * enough: the host has to match one of its verified domains.
+	 *
+	 * This is the switch behind a real measurement. On 2026-09-22 the
+	 * ConductionNl portal had stored 162 traffic events, of which 29 came
+	 * from `localhost:4173` and were counted as visits, because naming the
+	 * slug was the only credential the collector asked for.
+	 *
+	 * @return void
+	 */
+	public function testAPortalCanRefuseTheSlugFallback(): void {
+		$sites = $this->sites;
+		$sites[1]['traffic'] = ['allowSlugFallback' => false];
+
+		$resolver = $this->resolverReturning($sites);
+		$request = $this->createMock(IRequest::class);
+		$request->method('getServerHost')->willReturn('platform.example');
+
+		$this->assertNull(
+			$resolver->resolveForCollector($request, 'open-venray'),
+			'a portal that refuses the fallback must not resolve from the slug alone'
+		);
+	}//end testAPortalCanRefuseTheSlugFallback()
+
+
+	/**
+	 * Refusing the fallback never costs the portal its OWN host. The switch
+	 * narrows what may name the portal; it does not stop the portal being
+	 * recognised on a domain it has verified.
+	 *
+	 * @return void
+	 */
+	public function testRefusingTheFallbackStillResolvesTheVerifiedHost(): void {
+		$sites = $this->sites;
+		$sites[1]['traffic'] = ['allowSlugFallback' => false];
+
+		$resolver = $this->resolverReturning($sites);
+		$request = $this->createMock(IRequest::class);
+		$request->method('getServerHost')->willReturn('venray.example');
+
+		$this->assertSame(
+			'open-venray',
+			$resolver->resolveForCollector($request, 'open-venray')['slug']
+		);
+	}//end testRefusingTheFallbackStillResolvesTheVerifiedHost()
+
+
+	/**
+	 * The default is ON, and stays on for everything that is not an explicit
+	 * boolean false. A missing key, a missing `traffic` block, a null and a
+	 * string all keep the fallback, because the alternative is a portal that
+	 * silently reports zero traffic after a hand-edited configuration.
+	 *
+	 * @return void
+	 */
+	public function testTheFallbackDefaultsToOnForEverythingButAnExplicitFalse(): void {
+		$request = $this->createMock(IRequest::class);
+		$request->method('getServerHost')->willReturn('platform.example');
+
+		foreach (
+			[
+				'no traffic block' => null,
+				'no key' => ['enabled' => true],
+				'null' => ['allowSlugFallback' => null],
+				'string' => ['allowSlugFallback' => 'false'],
+				'explicit true' => ['allowSlugFallback' => true],
+			] as $label => $traffic
+		) {
+			$sites = $this->sites;
+			if ($traffic !== null) {
+				$sites[1]['traffic'] = $traffic;
+			}
+
+			$resolver = $this->resolverReturning($sites);
+
+			$this->assertSame(
+				'open-venray',
+				$resolver->resolveForCollector($request, 'open-venray')['slug'],
+				sprintf('%s must keep the documented default', $label)
+			);
+		}
+	}//end testTheFallbackDefaultsToOnForEverythingButAnExplicitFalse()
 }//end class

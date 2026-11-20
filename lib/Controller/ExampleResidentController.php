@@ -20,18 +20,19 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+ * @spec openspec/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\ExampleResident\ExampleResidentSignIn;
-use OCA\Portaliq\Service\PortalAccountService;
-use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Auth\PortalAuthConfig;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\ExampleResidentSignInInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalAccountLookupInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -47,7 +48,10 @@ use OCP\IURLGenerator;
 /**
  * The one-click demo sign-in for the example resident.
  *
- * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+ * @spec openspec/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the count includes the route attributes
+ *   (NoAdminRequired, NoCSRFRequired, ...) a controller declares.
  */
 class ExampleResidentController extends Controller {
 
@@ -55,21 +59,21 @@ class ExampleResidentController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest              $request      The request object.
-	 * @param PortalSessionService  $session      Mints the portal session.
-	 * @param PortalAccountService  $accounts     Finds the resident's `portalAccount`.
+	 * @param PortalSessionServiceInterface  $session      Mints the portal session.
+	 * @param PortalAccountLookupInterface   $accounts     Finds the resident's `portalAccount`.
 	 * @param IURLGenerator         $urlGenerator Builds the final SPA redirect.
-	 * @param PortalResolver        $portals      Resolves the portal being signed in to.
-	 * @param ExampleResidentSignIn $signIns      The demo switch and the installed resident of a portal.
+	 * @param PortalResolverInterface        $portals      Resolves the portal being signed in to.
+	 * @param ExampleResidentSignInInterface $signIns      The demo switch and the installed resident of a portal.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
-		private readonly PortalAccountService $accounts,
+		private readonly PortalSessionServiceInterface $session,
+		private readonly PortalAccountLookupInterface $accounts,
 		private readonly IURLGenerator $urlGenerator,
-		private readonly PortalResolver $portals,
-		private readonly ExampleResidentSignIn $signIns,
+		private readonly PortalResolverInterface $portals,
+		private readonly ExampleResidentSignInInterface $signIns,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -92,7 +96,7 @@ class ExampleResidentController extends Controller {
 	 *
 	 * @return Response A redirect carrying the bearer in the URL fragment, or 404.
 	 *
-	 * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+	 * @spec openspec/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
 	 * @spec openspec/changes/demo-sign-in-beside-the-account/specs/example-resident/spec.md#requirement-a-demo-may-sign-in-each-example-resident-with-one-click
 	 */
 	#[PublicPage]
@@ -101,40 +105,87 @@ class ExampleResidentController extends Controller {
 	#[BruteForceProtection(action: 'portaliq_example_resident_login')]
 	public function signIn(string $id = '', string $portal = '', string $returnTo = '', string $resident = ''): Response {
 		$userId  = $this->residentUser(id: $id, portal: $portal, resident: $resident);
-		$account = null;
-		if ($userId !== '') {
-			$account = $this->accounts->findBySubjectRef(subjectRef: $userId);
-		}
-
-		if ($account === null || ($account['status'] ?? 'active') !== 'active') {
+		$account = $this->activeAccount(userId: $userId);
+		if ($account === null) {
 			$response = new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 			$response->throttle(['reason' => 'example_resident_login_closed']);
 			return $response;
 		}
 
+		// A resident is found only on the named portal, so the session is bound to it
+		// (portal-scoping-and-auth Task 4).
+		$issued = $this->issuedSession(userId: $userId, account: $account, portal: $portal);
+		if ($issued === null) {
+			return new JSONResponse(['error' => 'not_configured'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
+		return new RedirectResponse(
+			$this->urlGenerator->getAbsoluteURL($this->landing(portal: $portal, returnTo: $returnTo)) . '#token=' . rawurlencode(string: $issued['token']),
+			Http::STATUS_FOUND
+		);
+	}//end signIn()
+
+	/**
+	 * The resident's portal account when it is active, else null (also for
+	 * no resident at all).
+	 *
+	 * @param string $userId The resident's account id, '' for none.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function activeAccount(string $userId): ?array {
+		if ($userId === '') {
+			return null;
+		}
+
+		$account = $this->accounts->bySubjectRef(subjectRef: $userId);
+		if ($account === null || ($account['status'] ?? 'active') !== 'active') {
+			return null;
+		}
+
+		return $account;
+	}//end activeAccount()
+
+	/**
+	 * A session for the resident's account, or null when none can be issued.
+	 *
+	 * @param string               $userId  The resident's account id.
+	 * @param array<string, mixed> $account The active account.
+	 * @param string               $portal  The portal the resident signs in on.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
+	 */
+	private function issuedSession(string $userId, array $account, string $portal): ?array {
 		$audience = (string)($account['audience'] ?? 'client');
-		$issued   = $this->session->issueSession(
+		return $this->session->issueSession(
 			subjectRef: $userId,
 			audience: $audience,
 			organisation: (string)($account['organisation'] ?? 'dev-org'),
 			// No password was asked: the lowest assurance, as dev-login and
 			// the nextcloud mode carry.
 			trust: 'low',
-			roles: [$audience . ':read']
+			roles: [$audience . ':read'],
+			portal: $portal
 		);
-		if ($issued === null) {
-			return new JSONResponse(['error' => 'not_configured'], Http::STATUS_SERVICE_UNAVAILABLE);
+	}//end issuedSession()
+
+	/**
+	 * Where the signed-in resident lands: the given path, else the portal's
+	 * site.
+	 *
+	 * @param string $portal   The portal slug.
+	 * @param string $returnTo The asked return path, '' for none.
+	 *
+	 * @return string
+	 */
+	private function landing(string $portal, string $returnTo): string {
+		if ($returnTo !== '') {
+			return $returnTo;
 		}
 
-		$target = $returnTo;
-		if ($target === '') {
-			$target = '/apps/portaliq/site?portal=' . rawurlencode(string: $portal);
-		}
-
-		return new RedirectResponse(
-			$this->urlGenerator->getAbsoluteURL($target) . '#token=' . rawurlencode(string: $issued['token']),
-			Http::STATUS_FOUND
-		);
+		return '/apps/portaliq/site?portal=' . rawurlencode(string: $portal);
 	}//end signIn()
 
 	/**
@@ -149,7 +200,7 @@ class ExampleResidentController extends Controller {
 	 *
 	 * @return string The user id, or ''.
 	 *
-	 * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+	 * @spec openspec/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
 	 */
 	private function residentUser(string $id, string $portal, string $resident): string {
 		if ($this->signIns->open() === false || $portal === '') {
@@ -178,15 +229,13 @@ class ExampleResidentController extends Controller {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+	 * @spec openspec/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
 	 */
 	private function offersNextcloud(?array $site, string $portal): bool {
 		if ($site === null || (string)($site['slug'] ?? '') !== $portal) {
 			return false;
 		}
 
-		$modes = ($site['authentication']['modes'] ?? []);
-
-		return is_array($modes) === true && in_array(needle: 'nextcloud', haystack: $modes, strict: true) === true;
+		return PortalAuthConfig::fromPortal(portal: $site)->offers(mode: 'nextcloud');
 	}//end offersNextcloud()
 }//end class

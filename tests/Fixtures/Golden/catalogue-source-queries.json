@@ -1,0 +1,9 @@
+{
+	"null": null,
+	"no kind": null,
+	"no app": null,
+	"bare": {"app":"learniq","types":["course"],"sort":"date","limit":20},
+	"full": {"app":"learniq","types":["course"],"sort":"date","categories":["a","b"],"range":"schoolYear","limit":7,"filters":{"Plaats":["Hal"],"Niveau":["B1"]}},
+	"limits": [20,20,1,50,50,20,20],
+	"other range, categories not a list, filters empty": {"app":"a","types":["k"],"sort":"date","limit":20}
+}

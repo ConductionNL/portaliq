@@ -27,7 +27,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T8
- * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+ * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T09
  * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
  */
 
@@ -35,6 +35,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Support\SubjectAssertionIssuer;
+use OCA\Portaliq\Kernel\Contracts\PortalActionForwarderInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\Http\Client\IResponse;
@@ -46,7 +48,7 @@ use Throwable;
  *
  * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T8
  */
-class PortalActionForwarder {
+class PortalActionForwarder implements PortalActionForwarderInterface {
 	/**
 	 * Timeout (seconds) for the server-to-server action forward.
 	 *
@@ -85,12 +87,12 @@ class PortalActionForwarder {
 	 *
 	 * @param IRequest $request The request (source of the raw relayed body).
 	 * @param InstanceLoopback $loopback Sends the A6 action forward to this instance.
-	 * @param PortalSessionService $session Mints the signed `X-Portal-Subject` assertion.
+	 * @param SubjectAssertionIssuer $session Mints the signed `X-Portal-Subject` assertion.
 	 */
 	public function __construct(
 		private readonly IRequest $request,
 		private readonly InstanceLoopback $loopback,
-		private readonly PortalSessionService $session,
+		private readonly SubjectAssertionIssuer $session,
 	) {
 	}//end __construct()
 
@@ -121,34 +123,24 @@ class PortalActionForwarder {
 	 * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
 	 */
 	public function forward(array $action, array $subject, ?array $whitelisted = null, string $scopeValue = '', array $files = []): ?IResponse {
-		$scopeClaim = '';
-		if (is_string($action['scopeClaim'] ?? null) === true) {
-			$scopeClaim = $action['scopeClaim'];
-		}
+		$forward = new ActionForward(action: $action, subject: $subject);
+		$forward->whitelisted = $whitelisted;
+		$forward->scopeValue  = $scopeValue;
+		$forward->files       = $files;
+		return $this->send(forward: $forward, options: $this->forwardOptions(forward: $forward));
+	}//end forward()
 
-		$body = $this->requestBody();
-		if ($whitelisted !== null) {
-			$body = (string)json_encode($whitelisted);
-		}
-
-		$options = [
-			'headers' => [
-				'X-Portal-Subject' => $this->session->issueAssertion(
-					subject: $subject,
-					scopeClaim: $scopeClaim,
-					scopeValue: $scopeValue
-				),
-				'Content-Type' => 'application/json',
-			],
-			'timeout' => self::FORWARD_TIMEOUT,
-			'body' => $body,
-			// Relay non-2xx domain responses instead of throwing, so the
-			// domain app's own status codes (e.g. 422) reach the caller.
-			'http_errors' => false,
-			// The endpoint is instance-local by contract, so the request
-			// legitimately targets our own (possibly private) address.
-			'nextcloud' => ['allow_local_address' => true],
-		];
+	/**
+	 * The request options of a forward: JSON with the signed assertion, the
+	 * submission key when the browser made one, multipart when it carries
+	 * files.
+	 *
+	 * @param ActionForward $forward The forward.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function forwardOptions(ActionForward $forward): array {
+		$options = $this->jsonOptions(forward: $forward);
 
 		// The submission key the browser made when the form opened rides
 		// along, so the domain app can answer a repeated send with the record
@@ -161,20 +153,96 @@ class PortalActionForwarder {
 		// Files the action lets the resident add go multipart beside the
 		// fields; without files the forward stays JSON, exactly as before
 		// (row-action-carries-files REQ-RAF-001).
-		$multipart = $this->multipart(action: $action, whitelisted: ($whitelisted ?? []), files: $files);
+		$multipart = $this->multipart(forward: $forward);
 		if ($multipart !== null) {
 			unset($options['body'], $options['headers']['Content-Type']);
 			$options['multipart'] = $multipart;
 		}
 
+		return $options;
+	}//end forwardOptions()
+
+	/**
+	 * The JSON request options: the whitelisted body, or the raw request body
+	 * when the action declares no whitelist, and the signed assertion.
+	 *
+	 * @param ActionForward $forward The forward.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function jsonOptions(ActionForward $forward): array {
+		$body = $this->forwardBody(whitelisted: $forward->whitelisted);
+		return [
+			'headers' => $this->forwardHeaders(forward: $forward),
+			'timeout' => self::FORWARD_TIMEOUT,
+			'body' => $body,
+			// Relay non-2xx domain responses instead of throwing, so the
+			// domain app's own status codes (e.g. 422) reach the caller.
+			'http_errors' => false,
+			// The endpoint is instance-local by contract, so the request
+			// legitimately targets our own (possibly private) address.
+			'nextcloud' => ['allow_local_address' => true],
+		];
+	}//end jsonOptions()
+
+	/**
+	 * The forwarded body: the whitelisted map, else the raw request body.
+	 *
+	 * @param array<string, mixed>|null $whitelisted The rebuilt whitelisted body, or null to relay raw.
+	 *
+	 * @return string
+	 */
+	private function forwardBody(?array $whitelisted): string {
+		$body = $this->requestBody();
+		if ($whitelisted !== null) {
+			$body = (string)json_encode($whitelisted);
+		}
+
+		return $body;
+	}//end forwardBody()
+
+	/**
+	 * The forward's headers: the signed subject assertion, carrying the
+	 * action's declared `scopeClaim` and its server-resolved value.
+	 *
+	 * @param ActionForward $forward The forward.
+	 *
+	 * @return array<string, string>
+	 */
+	private function forwardHeaders(ActionForward $forward): array {
+		$scopeClaim = '';
+		if (is_string($forward->action['scopeClaim'] ?? null) === true) {
+			$scopeClaim = $forward->action['scopeClaim'];
+		}
+
+		return [
+			'X-Portal-Subject' => $this->session->issueAssertion(
+				subject: $forward->subject,
+				scopeClaim: $scopeClaim,
+				scopeValue: $forward->scopeValue
+			),
+			'Content-Type' => 'application/json',
+		];
+	}//end forwardHeaders()
+
+	/**
+	 * Send the forward through the instance loopback; null on a transport
+	 * failure, remembering whether it timed out.
+	 *
+	 * @param ActionForward        $forward The forward.
+	 * @param array<string, mixed> $options The request options.
+	 *
+	 * @return IResponse|null
+	 */
+	private function send(ActionForward $forward, array $options): ?IResponse {
 		$this->timedOut = false;
 		try {
 			// InstanceLoopback picks the address that answers from inside the
 			// server (configured, absolute, or the loopback after a transport
 			// failure); the method maps as before, anything unknown is a POST.
 			return $this->loopback->request(
-				method: strtoupper((string)($action['method'] ?? 'POST')),
-				path: (string)$action['endpoint'],
+				method: strtoupper((string)($forward->action['method'] ?? 'POST')),
+				path: (string)$forward->action['endpoint'],
 				options: $options
 			);
 		} catch (Throwable $failure) {
@@ -184,7 +252,7 @@ class PortalActionForwarder {
 			$this->timedOut = $this->isTimeout(failure: $failure);
 			return null;
 		}//end try
-	}//end forward()
+	}//end send()
 
 	/**
 	 * Whether the last forward failed because the domain app did not answer
@@ -261,20 +329,33 @@ class PortalActionForwarder {
 	 * part named `<files.field>[]` with its own name and type. A file that
 	 * cannot be opened is left out rather than sent empty.
 	 *
-	 * @param array<string, mixed>                                                      $action      The normalised action.
-	 * @param array<string, mixed>                                                      $whitelisted The forwarded fields.
-	 * @param list<array{name: string, type: string, tmp_name: string, size: int}> $files       The checked uploads.
+	 * @param ActionForward $forward The forward.
 	 *
 	 * @return list<array<string, mixed>>|null
 	 *
 	 * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
 	 */
-	private function multipart(array $action, array $whitelisted, array $files): ?array {
-		$field = ($action['files']['field'] ?? null);
-		if ($files === [] || is_string($field) === false) {
+	private function multipart(ActionForward $forward): ?array {
+		$field = ($forward->action['files']['field'] ?? null);
+		if ($forward->files === [] || is_string($field) === false) {
 			return null;
 		}
 
+		return array_merge(
+			$this->fieldParts(whitelisted: ($forward->whitelisted ?? [])),
+			$this->fileParts(field: $field, files: $forward->files)
+		);
+	}//end multipart()
+
+	/**
+	 * One multipart part per forwarded field; a value that is not a string
+	 * goes as its JSON.
+	 *
+	 * @param array<string, mixed> $whitelisted The forwarded fields.
+	 *
+	 * @return list<array<string, mixed>>
+	 */
+	private function fieldParts(array $whitelisted): array {
 		$parts = [];
 		foreach ($whitelisted as $name => $value) {
 			$contents = $value;
@@ -285,6 +366,20 @@ class PortalActionForwarder {
 			$parts[] = ['name' => (string)$name, 'contents' => $contents];
 		}
 
+		return $parts;
+	}//end fieldParts()
+
+	/**
+	 * One multipart part per upload that can be opened, under the action's
+	 * file field.
+	 *
+	 * @param string                                                               $field The action's file field.
+	 * @param list<array{name: string, type: string, tmp_name: string, size: int}> $files The checked uploads.
+	 *
+	 * @return list<array<string, mixed>>
+	 */
+	private function fileParts(string $field, array $files): array {
+		$parts = [];
 		foreach ($files as $file) {
 			$handle = $this->open(path: $file['tmp_name']);
 			if ($handle === null) {
@@ -300,7 +395,7 @@ class PortalActionForwarder {
 		}
 
 		return $parts;
-	}//end multipart()
+	}//end fileParts()
 
 	/**
 	 * Open an uploaded file for reading, or null when it cannot be read.
@@ -336,7 +431,7 @@ class PortalActionForwarder {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/contribution-pay-screen/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
 	 */
 	public function isForwardable(array $action): bool {
 		$endpoint = ($action['endpoint'] ?? null);
@@ -386,7 +481,7 @@ class PortalActionForwarder {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/contribution-pay-screen/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
 	 */
 	protected function requestBody(): string {
 		if (is_callable([$this->request, 'getContent']) === true) {
@@ -404,7 +499,7 @@ class PortalActionForwarder {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/contribution-pay-screen/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
 	 */
 	protected function rawInput(): string {
 		$raw = file_get_contents('php://input');
