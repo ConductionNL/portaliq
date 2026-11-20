@@ -15002,8 +15002,8 @@
     {
       "type": "library",
       "name": "axios",
-      "version": "1.20.0",
-      "bom-ref": "portaliq@0.1.0|axios@1.20.0",
+      "version": "1.21.1",
+      "bom-ref": "portaliq@0.1.0|axios@1.21.1",
       "licenses": [
         {
           "license": {
@@ -15011,15 +15011,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/axios@1.20.0",
+      "purl": "pkg:npm/axios@1.21.1",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/axios/-/axios-1.20.0.tgz",
+          "url": "https://registry.npmjs.org/axios/-/axios-1.21.1.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "afc68e87c8fd7062a981002aa73ad41e748873a6b9f58dd77ff72ff2ccb50eb1c29191f340612ea2ad6d01193aa92c8376d4064838296fd90596bbb33efae0c2"
+              "content": "e9e23943f638bbf526f5d0e5b11a2ae69636af19d44eff8be0fa4b8ad9db93f8b88dbdccc4b6790ac379221dc8cac6de4582b8a51f8feea7ccb0e425f5fc3015"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
