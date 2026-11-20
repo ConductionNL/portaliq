@@ -123,3 +123,34 @@ test('the featured widget asks for featured rows anonymously and tells when the 
 	const html = await renderSfc(FEATURED, { heading: 'Uitgelichte onderwerpen' })
 	assert.match(html, /Uitgelichte onderwerpen/)
 })
+
+// @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+test('the grid hands the subject page its slug from the route, and a placement cannot pin one', async () => {
+	const grid = await loadSfc('src/site/components/WidgetGrid.vue', {
+		'@conduction/nextcloud-vue/public': [
+			'export const siteBlockIsBand = () => false',
+			'export const siteBlockRegistry = {}',
+			'export const CnSiteIcon = {}',
+			'export const CnSiteSearch = {}',
+			'export const CnSiteSection = {}',
+		].join('\n'),
+		'@conduction/nextcloud-vue': "export const cnRenderMarkdown = () => ''\n",
+	})
+	const props = grid.methods.propsFor.call(
+		{ routeParam: 'parkeren' },
+		{ widgetKey: 'nlSubjectLanding', props: { backLabel: 'Alle onderwerpen', routeParam: 'afval' } },
+	)
+	assert.equal(props.routeParam, 'parkeren', 'the route wins over the placement')
+	assert.equal(props.backLabel, 'Alle onderwerpen', 'the author keeps the rest')
+
+	const bare = grid.methods.propsFor.call({}, { widgetKey: 'nlSubjectLanding', props: {} })
+	assert.equal(bare.routeParam, '', 'no route segment hands over no slug')
+})
+
+// @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+test('a result link on the subject page is handed on to the grid', async () => {
+	const component = await loadSfc(LANDING)
+	assert.deepEqual(component.emits, ['navigate'])
+	const template = readFileSync(LANDING, 'utf8')
+	assert.match(template, /<FederatedSearchBlock[^>]*@navigate="\$emit\('navigate', \$event\)"/s)
+})

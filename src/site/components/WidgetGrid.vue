@@ -562,6 +562,7 @@ export default {
 		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-blocks-must-take-their-data-as-props-and-nothing-else-req-ptb-007
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
 		 * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-the-sign-in-card-offers-the-portals-own-ways-in
+		 * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
 		 */
 		propsFor(widget) {
 			// `style` and `class` never reach a block (REQ-PTB-007).
@@ -630,6 +631,15 @@ export default {
 					publications: this.publications,
 					portal: this.portal,
 				}
+			}
+
+			// The subject page takes its subject from the route, like the
+			// publication detail: after the authored props, so a placement
+			// cannot pin the page to one subject. Read from the address itself
+			// it found `site` under `?route=` addressing
+			// (home-and-theme-landing-pages REQ-HTL-002).
+			if (widget.widgetKey === 'nlSubjectLanding') {
+				return { ...props, routeParam: this.routeParam || '' }
 			}
 
 			// The search block learns the signed-in state the same way

@@ -28,6 +28,11 @@ say so in the PR body. Write in the PR body the exact keys the merged routes ans
     spec with a source line; opencatalogi's change tests the same keys on its side.
   - e2e `tests/e2e/subject-landing.spec.ts` on the dev rig: open `/onderwerp/{slug}` for a seeded
     public subject and see its publications only. Cite REQ-HTL-002.
+  - Fixed 20 Nov: `WidgetGrid.propsFor()` hands `nlSubjectLanding` the route's `routeParam` after the
+    authored props (read from the address under `?route=` it found `site`), and the widget passes its
+    search block's `navigate` on so a result link routes; node tests `the grid hands the subject page its
+    slug from the route, and a placement cannot pin one`, `a result link on the subject page is handed on
+    to the grid`.
 
 ## 3. Featured subjects
 
