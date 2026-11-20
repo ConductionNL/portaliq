@@ -581,7 +581,7 @@ class ContributionController extends Controller implements PortalProtected {
 		}
 
 		$collection = $match['collection'];
-		if ((new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
+		if (self::sessionMeetsCollectionTrust(subject: $subject, collection: $collection) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -606,6 +606,20 @@ class ContributionController extends Controller implements PortalProtected {
 
 		return new JSONResponse(['message' => $message]);
 	}//end message()
+
+	/**
+	 * Whether the session's trust meets the collection's minTrust.
+	 *
+	 * @param array<string, mixed> $subject    The portal subject.
+	 * @param array<string, mixed> $collection The inbox collection.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/a-resident-opens-one-message/tasks.md#T02
+	 */
+	private static function sessionMeetsCollectionTrust(array $subject, array $collection): bool {
+		return (new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null));
+	}//end sessionMeetsCollectionTrust()
 
 	/**
 	 * Whether a single inbox message read can be scoped to the subject: the
