@@ -137,7 +137,8 @@ class PlainPageRendererTest extends TestCase {
 	public function testAnInteractiveWidgetSaysItNeedsJavascript(): void {
 		$page = $this->gridPage(widgets: [['widgetKey' => 'intakeForm', 'props' => ['formId' => 'f1']]]);
 
-		$view = $this->renderer(pages: ['/aanvragen' => $page])->render(self::PORTAL, '/aanvragen', 'nl', ['query' => 'paspoort', 'page' => 1], $this->address());
+		$asked = ['query' => 'paspoort', 'page' => 1];
+		$view = $this->renderer(pages: ['/aanvragen' => $page])->render(self::PORTAL, '/aanvragen', 'nl', $asked, $this->address());
 
 		$this->assertSame([
 			'kind' => 'needsJs',
