@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Tenancy;
 
 use OCA\Portaliq\Kernel\Contracts\PageEditorServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalAdminWriteGateInterface;
 use OCP\IL10N;
 use OCP\IUserSession;
 
@@ -41,7 +42,7 @@ use OCP\IUserSession;
  *
  * @spec openspec/changes/operate-portals-per-organisation/specs/portal-tenancy/spec.md#requirement-each-organisation-looks-after-its-own-portal-on-a-shared-installation-req-opo-005
  */
-class PortalAdminWriteGate {
+class PortalAdminWriteGate implements PortalAdminWriteGateInterface {
 
 	/**
 	 * Constructor.

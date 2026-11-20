@@ -15,6 +15,7 @@ import { VALUE_LISTS } from '../src/site/config/valueLists.js'
 import { labelBuckets, valueLabel } from '../src/site/lib/facetLabels.js'
 import {
 	allDetailRows,
+	downloadAllLink,
 	humanSize,
 	propertyLabel,
 	publicationSummary,
@@ -67,6 +68,9 @@ test('documents from the envelope', () => {
 			type: 'PDF',
 			size: '120 kB',
 			href: 'https://gemeente.example/s/abc/download',
+			view: 'https://gemeente.example/s/abc',
+			metadataUrl: '',
+			diwooUrl: '',
 		},
 		{
 			id: '12',
@@ -74,6 +78,9 @@ test('documents from the envelope', () => {
 			type: 'XLSX',
 			size: '2,4 MB',
 			href: '/index.php/s/def',
+			view: '',
+			metadataUrl: '',
+			diwooUrl: '',
 		},
 	])
 })
@@ -88,6 +95,118 @@ test('unsafe link', () => {
 		results: [{ id: 2, title: 'y.pdf', downloadUrl: '//evil.example/y.pdf' }],
 	})
 	assert.equal(protocolRelative.href, '')
+})
+
+// The attachment shape of opencatalogi's publication-detail-for-the-portal
+// (REQ-PDP-002, openspec/changes/publication-detail-for-the-portal/specs/
+// publications/spec.md on opencatalogi development): documentId, title,
+// format, size, published, downloadUrl, metadataUrl and diwooUrl.
+const READ = {
+	results: [
+		{
+			documentId: '301',
+			id: 301,
+			title: 'besluit.pdf',
+			format: 'application/pdf',
+			extension: 'pdf',
+			size: 120000,
+			downloadUrl: '/index.php/s/abc/download',
+			accessUrl: '/index.php/s/abc',
+			metadataUrl: '/index.php/apps/opencatalogi/api/woo/p-1/documents/301',
+			diwooUrl: '/index.php/apps/opencatalogi/api/woo/p-1/documents/301/diwoo',
+		},
+		{
+			documentId: '302',
+			id: 302,
+			title: 'inventaris.csv',
+			format: 'text/csv',
+			extension: 'csv',
+			size: 2400,
+			downloadUrl: '/index.php/s/def/download',
+			accessUrl: '/index.php/s/def',
+			metadataUrl: '/index.php/apps/opencatalogi/api/woo/p-1/documents/302',
+		},
+	],
+	total: 2,
+}
+
+test('a pdf opens rather than downloads', () => {
+	const [pdf] = toDocuments(READ)
+	assert.equal(pdf.view, '/index.php/s/abc')
+	assert.equal(pdf.href, '/index.php/s/abc/download')
+	assert.equal(pdf.id, '301')
+})
+
+test('a data file goes to the preview when the library has it', () => {
+	assert.equal(toDocuments(READ)[1].view, '')
+	assert.equal(toDocuments(READ, { preview: true })[1].view, '/index.php/s/def')
+	// An office file is never previewed, with or without the library.
+	const [office] = toDocuments(
+		{ results: [{ id: 5, title: 'brief.docx', accessUrl: '/index.php/s/ghi' }] },
+		{ preview: true },
+	)
+	assert.equal(office.view, '')
+})
+
+test('a foreign url is not opened', () => {
+	const [foreign, script, nested] = toDocuments({
+		results: [
+			{ id: 1, title: 'a.pdf', accessUrl: 'https://evil.example/a.pdf' },
+			{ id: 2, title: 'b.pdf', accessUrl: 'javascript:alert(1)' },
+			{ id: 3, title: 'c.pdf', accessUrl: '/index.php/apps/other/s/abc' },
+		],
+	})
+	assert.equal(foreign.view, '')
+	assert.equal(script.view, '')
+	assert.equal(nested.view, '')
+})
+
+test('metadata json links the url the read carries', () => {
+	const [pdf, csv] = toDocuments(READ)
+	assert.equal(
+		pdf.metadataUrl,
+		'/index.php/apps/opencatalogi/api/woo/p-1/documents/301',
+	)
+	assert.equal(
+		csv.metadataUrl,
+		'/index.php/apps/opencatalogi/api/woo/p-1/documents/302',
+	)
+	const [bare] = toDocuments({ results: [{ id: 9, title: 'x.pdf' }] })
+	assert.equal(bare.metadataUrl, '')
+})
+
+test('a document without a diwoo url has no diwoo link', () => {
+	const [pdf, csv] = toDocuments(READ)
+	assert.equal(
+		pdf.diwooUrl,
+		'/index.php/apps/opencatalogi/api/woo/p-1/documents/301/diwoo',
+	)
+	assert.equal(csv.diwooUrl, '')
+})
+
+test('download alles links the zip route with the count', () => {
+	assert.deepEqual(downloadAllLink({ id: 'p-1', count: 3, catalogSlug: 'woo' }), {
+		href: '/index.php/apps/opencatalogi/api/woo/p-1/download',
+		count: 3,
+	})
+	// Without a catalogue slug: the zip route of the read the page used.
+	assert.deepEqual(
+		downloadAllLink({
+			id: 'p 1',
+			count: 2,
+			endpoint: '/index.php/apps/opencatalogi/api/federation/publications/',
+		}),
+		{
+			href: '/index.php/apps/opencatalogi/api/federation/publications/p%201/download',
+			count: 2,
+		},
+	)
+})
+
+test('no documents, no download alles', () => {
+	assert.equal(downloadAllLink({ id: 'p-1', count: 0, catalogSlug: 'woo' }), null)
+	assert.equal(downloadAllLink({ id: '', count: 3, catalogSlug: 'woo' }), null)
+	assert.equal(downloadAllLink({ id: 'p-1', count: 3, catalogSlug: '../x' }), null)
 })
 
 test('an envelope that is not one lists nothing', () => {
@@ -371,6 +490,63 @@ test('a property name reads as a label', () => {
 	assert.equal(propertyLabel('retention_term_months'), 'Retention term months')
 	assert.equal(propertyLabel('HTMLBody'), 'HTML body')
 	assert.equal(propertyLabel('_'), '')
+})
+
+test('the publication page offers view, metadata, download alles and the reaction period', async () => {
+	const nl = JSON.stringify(bundle('nl'))
+	const component = await loadSfc(
+		'src/site/components/PublicationDetailBlock.vue',
+		{
+			'../../shared/i18n/index.js': `const nl = ${nl}\nexport function createTranslator() { return (key, vars = {}) => Object.entries(vars).reduce((text, [name, value]) => text.replace('{' + name + '}', String(value)), nl[key] || key) }\n`,
+		},
+	)
+	const data = component.data
+	const render = (publication, documents) =>
+		renderComponent(
+			{
+				...component,
+				mounted() {},
+				data() {
+					return {
+						...data.call(this),
+						loading: false,
+						publication,
+						documents,
+					}
+				},
+			},
+			{ subjectId: 'p-1', catalogSlug: 'woo' },
+		)
+
+	const html = await render(
+		{
+			...PUBLICATION,
+			commentPeriod: {
+				state: 'open',
+				endDate: '2026-11-16',
+				reactionFormUrl: 'https://gemeente.example/zienswijze',
+			},
+		},
+		toDocuments(READ),
+	)
+	assert.match(html, /Download alles \(2 documenten\)/)
+	assert.match(
+		html,
+		/href="\/index.php\/apps\/opencatalogi\/api\/woo\/p-1\/download"/,
+	)
+	assert.match(html, /Reageren kan tot en met 16 november 2026/)
+	assert.match(html, /href="https:\/\/gemeente.example\/zienswijze"/)
+	// The pdf opens in a new tab, the csv (no public preview yet) does not.
+	assert.equal(html.match(/data-testid="publication-document-view"/g).length, 1)
+	assert.match(html, /href="\/index.php\/s\/abc" target="_blank"/)
+	assert.equal(
+		html.match(/data-testid="publication-document-metadata"/g).length,
+		2,
+	)
+	assert.equal(html.match(/data-testid="publication-document-diwoo"/g).length, 1)
+
+	const empty = await render({ ...PUBLICATION }, [])
+	assert.doesNotMatch(empty, /publication-download-all|publication-comment-period/)
 })
 
 test('the publication tells the page its title for the breadcrumb, and nothing when it is not found (REQ-RR3-004)', async () => {

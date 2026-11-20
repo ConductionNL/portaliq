@@ -446,9 +446,10 @@ function lintDetailPage(page, errors) {
 /**
  * The widget ids a detail page draws somewhere.
  *
- * A `tabs` widget holds its children as tabs and `sideColumn` draws
- * widgets beside the body: neither needs a grid cell of its own, and a
- * grid cell for them would draw the widget twice.
+ * A `tabs` widget holds its children as tabs, `sideColumn` draws
+ * widgets beside the body and `band` draws a row of widgets above both:
+ * none of them needs a grid cell of its own, and a grid cell for them
+ * would draw the widget twice.
  *
  * @param {object} page A detail page with a `config.widgets` array.
  * @return {Set<string>} The placed widget ids.
@@ -464,6 +465,12 @@ function detailPlacedIds(page) {
 	const sideColumn = Array.isArray(page.config.sideColumn) ? page.config.sideColumn : []
 	for (const entry of sideColumn) {
 		placed.add(typeof entry === 'string' ? entry : entry && entry.id)
+	}
+
+	// A band entry is a widget id, `{ widgetId, span, chrome }` or a widget definition.
+	const band = Array.isArray(page.config.band) ? page.config.band : []
+	for (const entry of band) {
+		placed.add(typeof entry === 'string' ? entry : entry && (entry.widgetId || entry.id))
 	}
 
 	return placed

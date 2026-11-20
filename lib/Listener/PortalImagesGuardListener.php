@@ -29,7 +29,7 @@ namespace OCA\Portaliq\Listener;
 
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
-use OCA\Portaliq\Service\Cms\PortalImageChoice;
+use OCA\Portaliq\Kernel\Contracts\PortalImageChoiceInterface;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -59,15 +59,15 @@ class PortalImagesGuardListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param ContainerInterface $container For OpenRegister's schema mapper.
-	 * @param PortalImageChoice  $images    The image rules.
-	 * @param LoggerInterface    $logger    For a schema that cannot be read.
+	 * @param ContainerInterface         $container For OpenRegister's schema mapper.
+	 * @param PortalImageChoiceInterface $images    The image rules.
+	 * @param LoggerInterface            $logger    For a schema that cannot be read.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
-		private readonly PortalImageChoice $images,
+		private readonly PortalImageChoiceInterface $images,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

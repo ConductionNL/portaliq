@@ -80,6 +80,10 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         ['name' => 'portalCaseTypes#index', 'url' => '/api/portals/{slug}/case-types', 'verb' => 'GET'],
         ['name' => 'portalCaseTypes#update', 'url' => '/api/portals/{slug}/case-types', 'verb' => 'PUT'],
         ['name' => 'portalCaseTypes#updateColumns', 'url' => '/api/portals/{slug}/case-types/{typeId}/columns', 'verb' => 'PUT'],
+        // Which contributed pages a portal's menu shows, per audience, and in
+        // which order (operate-pages-per-portal-and-client REQ-PGC-003).
+        ['name' => 'portalNavigation#index', 'url' => '/api/portals/{slug}/navigation', 'verb' => 'GET'],
+        ['name' => 'portalNavigation#update', 'url' => '/api/portals/{slug}/navigation', 'verb' => 'PUT'],
         // A portal's house style, picked from the theme app's catalogue with a
         // contrast verdict per set (nldesign-theme-integration). Admin-only.
         ['name' => 'portalTheme#index', 'url' => '/api/portals/{slug}/theme', 'verb' => 'GET'],
@@ -112,6 +116,10 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         ['name' => 'portalAccountAdmin#approve', 'url' => '/api/accounts/{subjectRef}/approve', 'verb' => 'POST'],
         ['name' => 'portalAccountAdmin#refuse', 'url' => '/api/accounts/{subjectRef}/refuse', 'verb' => 'POST'],
         ['name' => 'portalAccountAdmin#signInAddress', 'url' => '/api/accounts/{subjectRef}/sign-in-address', 'verb' => 'POST'],
+        // The pages hidden for one client account, staff only
+        // (operate-pages-per-portal-and-client REQ-PGC-002).
+        ['name' => 'portalAccountPages#index', 'url' => '/api/accounts/{subjectRef}/pages', 'verb' => 'GET'],
+        ['name' => 'portalAccountPages#update', 'url' => '/api/accounts/{subjectRef}/pages', 'verb' => 'PUT'],
 
         // Prometheus metrics endpoint.
         ['name' => 'metrics#index', 'url' => '/api/metrics', 'verb' => 'GET'],
@@ -251,6 +259,8 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         ['name' => 'publicRecord#record', 'url' => '/api/public-records/{app}/{list}/{id}', 'verb' => 'GET'],
         // search-assistant-from-public-content: the anonymous, tool-free assistant.
         ['name' => 'publicAssistant#ask', 'url' => '/api/assistant/ask', 'verb' => 'POST'],
+        // search-sort-by-relevance REQ-SSR-005: the checked did-you-mean suggestion, public and rate limited.
+        ['name' => 'searchSuggest#suggest', 'url' => '/api/site/search/suggest', 'verb' => 'GET'],
         ['name' => 'traffic#collect', 'url' => '/api/traffic', 'verb' => 'POST'],
         ['name' => 'traffic#pixel', 'url' => '/api/traffic/pixel.gif', 'verb' => 'GET'],
         ['name' => 'traffic#client', 'url' => '/api/traffic-client.js', 'verb' => 'GET'],

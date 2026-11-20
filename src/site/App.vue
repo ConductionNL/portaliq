@@ -299,6 +299,19 @@
 							:portal="site.slug || portalSlug"
 							:t="t" />
 
+						<!-- One public document's own page, read through the public read
+				     of its publication (publication-detail-page-complete REQ-PDC-002).
+				     Nothing found renders the not-found page below. -->
+						<DocumentPage
+							v-else-if="documentRoute && !(error && error.status === 404)"
+							:publicationId="documentRoute.publicationId"
+							:documentId="documentRoute.documentId"
+							:hrefForRoute="hrefForRoute"
+							:t="t"
+							@navigate="go"
+							@notfound="onDocumentMissing"
+							@subject="onDocumentSubject" />
+
 						<!-- Every portal's accessibility statement, generated from its
 				     latest measurement (site-accessibility-statement). -->
 						<AccessibilityStatementPage
@@ -529,12 +542,6 @@ import IdleWarningDialog from './components/IdleWarningDialog.vue'
 import MarkdownBlock from './components/MarkdownBlock.vue'
 import PageArticleBlock from './components/PageArticleBlock.vue'
 import WidgetGrid from './components/WidgetGrid.vue'
-import {
-	codeOutcome,
-	forgetClaimSecret,
-	keepClaimSecret,
-	redeemKeptClaim,
-} from '../shared/claimInvitation.js'
 import { createTranslator } from '../shared/i18n/index.js'
 import { logoutTarget, silentSignInUrl } from '../shared/idleSession.js'
 import { noticesFor } from '../shared/notices.js'
@@ -585,8 +592,9 @@ import {
 	fetchSite,
 	resolveApiBase,
 } from './lib/contentApi.js'
-import { isCosignRoute } from './lib/cosign.js'
+import { isCosignRoute } from './lib/cosignRoute.js'
 import { crumbLabel, signInCrumbs } from './lib/crumbWords.js'
+import { documentRouteOf } from './lib/documentRoute.js'
 import { editorBaseFrom, fetchEditingContext } from './lib/editorApi.js'
 import { asideOf } from './lib/gridPlacement.js'
 import { createIdleTracker, idlePreviewWanted } from './lib/idleTracker.js'
@@ -628,7 +636,7 @@ import { menuRouteOf, subjectCrumbs, subjectOf } from './lib/subjectTrail.js'
 import { hasWayInLink, waysInFrom, waysInTranslator } from './lib/waysIn.js'
 import { openRecordEntry } from './pages/collections/index.js'
 import { confirmEmailFromLink, contactPromptWanted } from './pages/e/index.js'
-import { themeCaseCounts } from './pages/e/themes.js'
+import { themeCaseCounts } from './pages/e/themeCases.js'
 import { TASK_STORAGE_KEY } from './pages/inbox/taskStorage.js'
 
 /**
@@ -644,6 +652,12 @@ import { TASK_STORAGE_KEY } from './pages/inbox/taskStorage.js'
  * It is imported only once the probe has said this session may edit, so a
  * reader never downloads it at all.
  */
+/**
+ * Where claimInvitation.js keeps an invitation's secret (its CLAIM_STORAGE_KEY).
+ * The shell reads it to load that module only when a claim was kept.
+ */
+const CLAIM_STORAGE_KEY = 'portaliq.claimInvitation'
+
 const NotFoundPage = defineAsyncComponent(
 	() => import('./components/NotFoundPage.vue'),
 )
@@ -661,6 +675,9 @@ const SiteNotices = defineAsyncComponent(
 // visitor pays nothing for it in the site bundle (site-shared-dossier).
 const AccessibilityStatementPage = defineAsyncComponent(
 	() => import('./components/AccessibilityStatementPage.vue'),
+)
+const DocumentPage = defineAsyncComponent(
+	() => import('./components/DocumentPage.vue'),
 )
 const CosignPage = defineAsyncComponent(
 	() => import('./components/CosignPage.vue'),
@@ -707,6 +724,7 @@ export default {
 		NotFoundPage,
 		SharedDossierPage,
 		CosignPage,
+		DocumentPage,
 		AccessibilityStatementPage,
 		SiteEditButton,
 		SiteNotices,
@@ -888,34 +906,11 @@ export default {
 				}
 				return accountCrumbs(this.accountEntry, this.t, this.hrefForRoute)
 			}
-			if (this.statementRoute) {
-				return [
-					{
-						route: '/',
-						label: this.t('Home'),
-						href: this.hrefForRoute('/'),
-					},
-					{
-						route: this.route,
-						label: this.t('Accessibility statement'),
-						href: this.hrefForRoute(this.route),
-					},
-				]
-			}
-			// The token is not a word and no page sits at its parent.
-			if (this.sharedDossierRoute) {
-				return [
-					{
-						route: '/',
-						label: this.t('Home'),
-						href: this.hrefForRoute('/'),
-					},
-					{
-						route: this.route,
-						label: this.sharedDossierTitle || this.t('Shared dossier'),
-						href: this.hrefForRoute(this.route),
-					},
-				]
+			// The statement, a document page and a shared dossier: no page sits
+			// at their parents and their ids or tokens are not words.
+			const ownLabel = this.ownRouteCrumbLabel()
+			if (ownLabel !== null) {
+				return this.homeAndHereCrumbs(ownLabel)
 			}
 			const crumbs = [
 				{ route: '/', label: this.t('Home'), href: this.hrefForRoute('/') },
@@ -1419,6 +1414,15 @@ export default {
 		},
 
 		/**
+		 * @return {{publicationId: string, documentId: string}|null} The ids of the
+		 *   document page on screen, or null on any other route.
+		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+		 */
+		documentRoute() {
+			return documentRouteOf(this.route)
+		},
+
+		/**
 		 * @return {string} The co-signer's bearer once a session is known, else ''.
 		 */
 		cosignToken() {
@@ -1649,8 +1653,14 @@ export default {
 		// it survives the sign-in and opens once the navigation has loaded.
 		this.keepOpenTarget()
 		// An invitation's secret (`#claim=<secret>`) is kept the same way,
-		// and handed back once the visitor is signed in.
-		keepClaimSecret(window.location, window.history, this.claimStorage())
+		// and handed back once the visitor is signed in. Like the mandate and
+		// contact invitations below, its module loads only when the mail
+		// left one, so the visitor's entry does not carry it
+		// (public-bundle-budget).
+		if (window.location.hash.includes('#claim=')) {
+			const { keepClaimSecret } = await import('../shared/claimInvitation.js')
+			keepClaimSecret(window.location, window.history, this.claimStorage())
+		}
 		if (window.location.hash.includes('#mandate-invitation=')) {
 			const { keepMandateInvitation } =
 				await import('../shared/mandateInvitation.js')
@@ -1841,6 +1851,11 @@ export default {
 		 * @return {Promise<void>} Resolves when redeemed.
 		 */
 		async handBackKeptClaim() {
+			if (!this.claimStorage()?.getItem(CLAIM_STORAGE_KEY)) {
+				this.claimMessage = null
+				return
+			}
+			const { redeemKeptClaim } = await import('../shared/claimInvitation.js')
 			this.claimMessage = await redeemKeptClaim({
 				api: this.api,
 				session: this.session,
@@ -1899,6 +1914,7 @@ export default {
 		 * @spec openspec/specs/portal-identity-space/spec.md
 		 */
 		async onCodeClaimed() {
+			const { codeOutcome } = await import('../shared/claimInvitation.js')
 			this.claimMessage = {
 				role: 'status',
 				text: this.t(codeOutcome({ ok: true }).text),
@@ -2033,7 +2049,11 @@ export default {
 			this.openTasks = 0
 			this.contactPrompt = false
 			forgetActingFor()
-			forgetClaimSecret(this.claimStorage())
+			try {
+				this.claimStorage()?.removeItem(CLAIM_STORAGE_KEY)
+			} catch {
+				// Without storage nothing was kept.
+			}
 			try {
 				window.sessionStorage.removeItem(OPEN_STORAGE_KEY)
 				window.sessionStorage.removeItem(TASK_STORAGE_KEY)
@@ -2414,6 +2434,61 @@ export default {
 		},
 
 		/**
+		 * The last crumb's label on a route whose trail is only home and itself,
+		 * or null on any other route.
+		 *
+		 * @return {string|null} The label.
+		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+		 */
+		ownRouteCrumbLabel() {
+			const own = [
+				{ on: this.statementRoute, label: () => this.t('Accessibility statement') },
+				{ on: this.documentRoute, label: () => (this.subject ? this.subject.title : this.t('Document')) },
+				{ on: this.sharedDossierRoute, label: () => this.sharedDossierTitle || this.t('Shared dossier') },
+			].find((row) => Boolean(row.on))
+			return own === undefined ? null : own.label()
+		},
+
+		/**
+		 * A two-crumb trail: home, then the current route under the given label.
+		 *
+		 * @param {string} label The current route's label.
+		 * @return {Array<object>} `{route, label, href}` crumbs, home first.
+		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+		 */
+		homeAndHereCrumbs(label) {
+			return [
+				{ route: '/', label: this.t('Home'), href: this.hrefForRoute('/') },
+				{ route: this.route, label, href: this.hrefForRoute(this.route) },
+			]
+		},
+
+		/**
+		 * A document page found nothing: the not-found page renders, with
+		 * nothing of the document (REQ-PDC-002).
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+		 */
+		onDocumentMissing() {
+			this.subject = null
+			this.error = { status: 404 }
+			this.applyDocumentTitle()
+		},
+
+		/**
+		 * A document page names its document, for the trail and the tab.
+		 *
+		 * @param {{title: string}|null} subject What the page shows.
+		 * @return {void}
+		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+		 */
+		onDocumentSubject(subject) {
+			this.subject = subject
+			this.applyDocumentTitle()
+		},
+
+		/**
 		 * Load one page by route.
 		 *
 		 * @param {string} route The in-portal route.
@@ -2443,11 +2518,12 @@ export default {
 		},
 
 		/**
-		 * Open a route that renders without a CMS page: the signed-in area or
-		 * a shared dossier.
+		 * Open a route that renders without a CMS page: the signed-in area, a
+		 * shared dossier, the co-sign page or a document page.
 		 *
 		 * @param {string} route The in-portal route.
 		 * @return {boolean} Whether the route was one of them.
+		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
 		 */
 		openPagelessRoute(route) {
 			// The signed-in area renders from the session, not from a CMS
@@ -2467,6 +2543,13 @@ export default {
 			// The co-sign page works from the code and the co-signer's own
 			// sign-in, so it opens on every portal without a CMS page.
 			if (isCosignRoute(route)) {
+				this.openSharedDossierRoute()
+				return true
+			}
+
+			// A document page renders from opencatalogi's public read, so it
+			// opens on every portal without a CMS page (REQ-PDC-002).
+			if (documentRouteOf(route) !== null) {
 				this.openSharedDossierRoute()
 				return true
 			}

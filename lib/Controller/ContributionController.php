@@ -47,6 +47,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\ActionScopeResolver;
+use OCA\Portaliq\Contribution\FieldMap;
 use OCA\Portaliq\Http\PdfDownloadResponse;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\ActionDraftInterface;
@@ -605,7 +606,7 @@ class ContributionController extends Controller implements PortalProtected {
 
 		// Defense in depth (contract v2, A3): re-check the matched collection's
 		// minTrust — 403 before any OpenRegister write.
-		if (SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
+		if ((new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -766,7 +767,7 @@ class ContributionController extends Controller implements PortalProtected {
 
 		$collection = $match['collection'];
 		if (InboxDeletion::residentMayDelete(collection: $collection) === false
-			|| SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false
+			|| (new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false
 		) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
@@ -884,7 +885,7 @@ class ContributionController extends Controller implements PortalProtected {
 	private function trustedReplyInbox(array $subject, string $register, string $schema): array|null {
 		$collectionId = (string)$this->request->getParam('collection', '');
 		$match = $this->authorisedInboxCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
-		if ($match === null || SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
+		if ($match === null || (new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
 			return null;
 		}
 
@@ -938,7 +939,7 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		if (SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
+		if ((new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -1167,7 +1168,7 @@ class ContributionController extends Controller implements PortalProtected {
 			schema: $target['schema'],
 			collectionId: $collectionId
 		);
-		if ($match === null || SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
+		if ($match === null || (new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
 			return null;
 		}
 
@@ -1550,7 +1551,7 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		if (SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
+		if ((new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -1782,7 +1783,7 @@ class ContributionController extends Controller implements PortalProtected {
 
 		$collection = $match['collection'];
 
-		if (SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
+		if ((new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -1956,7 +1957,7 @@ class ContributionController extends Controller implements PortalProtected {
 
 		// Defense in depth (contract v2, A3): re-check the matched action's
 		// minTrust — 403 before any OpenRegister write.
-		if (SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
+		if ((new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -1996,6 +1997,10 @@ class ContributionController extends Controller implements PortalProtected {
 		if ($refused !== null) {
 			return $refused;
 		}
+
+		// Each answer moves to where the action says it lands, after the
+		// checks that read it by its own name (create-action-field-map).
+		$data = (new FieldMap())->apply(action: $action, body: $data);
 
 		// The scope field carries the declared `scopeClaim` resolved server
 		// side, else the subjectRef; an absent claim refuses the write
@@ -2315,6 +2320,8 @@ class ContributionController extends Controller implements PortalProtected {
 		if ($missing !== null) {
 			return $missing;
 		}
+
+		$data = (new FieldMap())->apply(action: $action, body: $data);
 
 		if (is_array($action['destination'] ?? null) === true) {
 			return $this->submitIntoDestination(action: $action, answers: $whitelisted);
@@ -2692,7 +2699,7 @@ class ContributionController extends Controller implements PortalProtected {
 
 		// Defense in depth (contract v2, A3): re-check the matched action's
 		// minTrust — 403 before any OpenRegister write.
-		if (SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
+		if ((new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -3080,7 +3087,7 @@ class ContributionController extends Controller implements PortalProtected {
 			return false;
 		}
 
-		return SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null));
+		return (new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null));
 	}//end isForwardableAction()
 
 	/**

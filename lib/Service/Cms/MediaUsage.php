@@ -149,7 +149,8 @@ class MediaUsage implements MediaUsageInterface {
 		}
 
 		$used = ($counts[$id] ?? 0);
-		if (array_key_exists(key: 'usedOn', array: $item) === true && (int)$item['usedOn'] === $used) {
+		// OpenRegister reads an uncounted item as `usedOn: null`, which is not a count of 0.
+		if (isset($item['usedOn']) === true && (int)$item['usedOn'] === $used) {
 			return false;
 		}
 

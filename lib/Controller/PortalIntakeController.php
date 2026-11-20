@@ -37,6 +37,7 @@ use OCA\Portaliq\Kernel\Contracts\DestinationIntakeInterface;
 use OCA\Portaliq\Kernel\Contracts\DestinationLookupInterface;
 use OCA\Portaliq\Kernel\Contracts\FormConfirmationMailerInterface;
 use OCA\Portaliq\Kernel\Contracts\FormStatementsInterface;
+use OCA\Portaliq\Kernel\Contracts\OnBehalfFillingInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalActionForwarderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalAddressLookupInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalApplicantPrefillInterface;
@@ -47,6 +48,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalDeepLinkBuilderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalEmailVerificationInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFamilyMembersInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFeeInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFormAvailabilityInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFormBindingResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFormCalculatorInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFormDecisionInterface;
@@ -57,10 +59,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalIntakeQueueInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSubmissionChecksInterface;
-use OCA\Portaliq\Service\Intake\OnBehalfFilling;
 use OCA\Portaliq\Service\Intake\PortalCosignFlow;
-use OCA\Portaliq\Service\Intake\PortalFormAvailability;
-use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\Intake\PortalIntakeConfirmation;
 use OCA\Portaliq\Service\Intake\PortalIntakePayments;
 use OCA\Portaliq\Service\Intake\PortalSubmissionChecks;
@@ -135,8 +134,8 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param PortalEmailVerificationInterface|null $emailVerification Checks the proof that an e-mail address was verified.
 	 * @param DestinationIntakeInterface|null $intake Submits the answers into the binding's destination (decision 179).
 	 * @param DestinationLookupInterface|null $lookup Finds the object a reference belongs to.
-	 * @param PortalFormAvailability|null $availability Whether a form takes submissions now (REQ-FGV-001).
-	 * @param OnBehalfFilling|null $onBehalf The desk employee who fills a form in for a resident (resident-identity-in-forms T06).
+	 * @param PortalFormAvailabilityInterface|null $availability Whether a form takes submissions now (REQ-FGV-001).
+	 * @param OnBehalfFillingInterface|null $onBehalf The desk employee who fills a form in for a resident (resident-identity-in-forms T06).
 	 * @param PortalCosignFlow|null $cosign Holds a submission for its co-signer (resident-identity-in-forms T04).
 	 */
 	public function __construct(
@@ -163,8 +162,8 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		?PortalEmailVerificationInterface $emailVerification = null,
 		private readonly ?DestinationIntakeInterface $intake = null,
 		private readonly ?DestinationLookupInterface $lookup = null,
-		private readonly ?PortalFormAvailability $availability = null,
-		private readonly ?OnBehalfFilling $onBehalf = null,
+		private readonly ?PortalFormAvailabilityInterface $availability = null,
+		private readonly ?OnBehalfFillingInterface $onBehalf = null,
 		private readonly ?PortalCosignFlow $cosign = null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
@@ -306,7 +305,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	private function unavailableForm(array $unavailable): JSONResponse {
 		return new JSONResponse(
 			[
-				'kind' => PortalFormBindingResolver::KIND_HOSTED,
+				'kind' => PortalFormBindingResolverInterface::KIND_HOSTED,
 				'resolvesToNoForm' => true,
 				'reason' => 'unavailable',
 				'unavailable' => $unavailable,
@@ -552,7 +551,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-an-employee-can-fill-in-a-form-for-a-resident-or-company-req-rif-005
 	 */
 	private function deskEmployee(array $site, array $binding, ?array $subject): array|JSONResponse|null {
-		if ($subject === null || ($subject['provider'] ?? '') !== OnBehalfFilling::PROVIDER) {
+		if ($subject === null || ($subject['provider'] ?? '') !== OnBehalfFillingInterface::PROVIDER) {
 			return null;
 		}
 
@@ -1027,7 +1026,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			return new JSONResponse($body, Http::STATUS_UNAUTHORIZED);
 		}
 
-		if (SessionTrust::trustSatisfies(subjectTrust: ($subject['trust'] ?? ''), minTrust: $required) === false) {
+		if ((new SessionTrust())->trustSatisfies(subjectTrust: ($subject['trust'] ?? ''), minTrust: $required) === false) {
 			return new JSONResponse($body, Http::STATUS_FORBIDDEN);
 		}
 

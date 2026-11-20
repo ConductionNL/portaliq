@@ -180,13 +180,6 @@ if (interface_exists(\OCP\IUser::class) === false && is_dir(__DIR__ . '/../vendo
 	);
 }
 
-// Load the IMcpToolProvider stub when the openregister runtime (PR #1466,
-// ai-chat-companion-orchestrator) is absent. Also registered via autoload-dev
-// PSR-4 in composer.json (OCA\OpenRegister\ -> tests/Stubs/).
-if (interface_exists(\OCA\OpenRegister\Mcp\IMcpToolProvider::class) === false) {
-	require_once __DIR__ . '/Stubs/Mcp/IMcpToolProvider.php';
-}
-
 // Integriq's connection-registry events (adopt-connection-registry).
 // ConnectionReporter sends them by string class name behind class_exists
 // (ADR-041), so portaliq stays installable without integriq. The stubs mirror
@@ -212,6 +205,9 @@ foreach ([
 	'Service\\Form\\FormSubmission' => 'Service/Form/FormSubmission.php',
 	// The concept register's reader (portal-identity-from-the-admin 3.1).
 	'Service\\Vocabulary\\ConceptRepository' => 'Service/Vocabulary/ConceptRepository.php',
+	// What ObjectService::saveObjects() takes (openregister #9108): the defaults first.
+	'Kernel\\Contracts\\Value\\BulkBatchDefaults' => 'Kernel/Contracts/Value/BulkBatchDefaults.php',
+	'Kernel\\Contracts\\Value\\BulkSaveOptions' => 'Kernel/Contracts/Value/BulkSaveOptions.php',
 ] as $orStubClass => $orStubFile) {
 	if (class_exists('\\OCP\\EventDispatcher\\Event') === true
 		&& class_exists('\\OCA\\OpenRegister\\' . $orStubClass) === false

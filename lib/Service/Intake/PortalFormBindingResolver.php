@@ -44,11 +44,6 @@ use OCA\Portaliq\Kernel\Contracts\FormStepsNormaliserInterface;
  */
 class PortalFormBindingResolver implements PortalFormBindingResolverInterface {
 	/**
-	 * A binding whose form is rendered by the portal itself.
-	 */
-	public const KIND_HOSTED = 'hosted';
-
-	/**
 	 * The register the binding lives in.
 	 */
 	private const REGISTER = 'portaliq';

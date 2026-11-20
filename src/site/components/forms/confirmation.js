@@ -152,21 +152,33 @@ export function readableDay(value) {
  * request arrived, when its term starts and when a decision is due, for
  * each moment the destination answered (decision 179).
  *
- * @param {{receivedAt?: string, termStartsAt?: string, deadline?: string}} moments The destination's confirmation.
- * @param {{receivedOn: string, termStartsOn: string, decisionBy: string}} text The sentences, with `{date}`.
+ * When the destination stamped the request as received outside working
+ * hours, one sentence follows the term start saying why it is not the
+ * moment the citizen pressed send. It is said only then: an explanation on
+ * every confirmation teaches people to stop reading them. The flag is the
+ * one stored on the case, never derived here, so the screen and the
+ * ontvangstbevestiging cannot disagree.
+ *
+ * @param {{receivedAt?: string, termStartsAt?: string, deadline?: string, receivedOutsideWorkingHours?: boolean}} moments The destination's confirmation.
+ * @param {{receivedOn: string, termStartsOn: string, decisionBy: string, firstWorkingDay?: string}} text The sentences, with `{date}`.
  * @return {string[]} The lines that can be said.
  * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#2.4
+ * @spec openspec/changes/intake-says-when-the-term-starts/tasks.md#2.1
  */
 export function momentLines(moments, text) {
-	const pairs = [
-		[moments?.receivedAt, text.receivedOn],
-		[moments?.termStartsAt, text.termStartsOn],
-		[moments?.deadline, text.decisionBy],
-	]
-	return pairs
-		.map(([value, sentence]) => {
-			const day = readableDay(value)
-			return day === '' ? '' : sentence.split('{date}').join(day)
-		})
-		.filter((line) => line !== '')
+	const say = (value, sentence) => {
+		const day = readableDay(value)
+		return day === '' ? '' : sentence.split('{date}').join(day)
+	}
+	const received = say(moments?.receivedAt, text.receivedOn)
+	const starts = say(moments?.termStartsAt, text.termStartsOn)
+	const explained = starts !== ''
+		&& moments?.receivedOutsideWorkingHours === true
+		&& String(text.firstWorkingDay || '') !== ''
+	return [
+		received,
+		starts,
+		explained ? text.firstWorkingDay : '',
+		say(moments?.deadline, text.decisionBy),
+	].filter((line) => line !== '')
 }

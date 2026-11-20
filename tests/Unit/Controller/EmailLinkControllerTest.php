@@ -282,6 +282,9 @@ class EmailLinkControllerTest extends TestCase {
 		$this->assertSame('email:tom', $this->minted[0]['subjectRef']);
 		$this->assertSame('low', $this->minted[0]['trust']);
 		$this->assertSame('email-link', $this->minted[0]['provider']);
+		// The session is bound to the portal the link was asked on
+		// (portal-scoping-and-auth Task 4).
+		$this->assertSame('academie', $this->minted[0]['portal']);
 
 		$again = $this->controller()->describe(token: $token);
 		$this->assertSame('link_used', $again->getData()['error']);
@@ -436,8 +439,8 @@ class EmailLinkControllerTest extends TestCase {
 
 		$sessions = $this->getMockBuilder(PortalSessionService::class)->disableOriginalConstructor()->onlyMethods(['issueSession'])->getMock();
 		$sessions->method('issueSession')->willReturnCallback(
-			function (string $subjectRef, string $audience, string $organisation, string $trust = '', array $roles = [], string $branch = '', string $provider = ''): ?array {
-				$this->minted[] = compact('subjectRef', 'audience', 'organisation', 'trust', 'roles', 'provider');
+			function (string $subjectRef, string $audience, string $organisation, string $trust = '', array $roles = [], string $branch = '', string $provider = '', string $kvk = '', array $attributes = [], string $portal = ''): ?array {
+				$this->minted[] = compact('subjectRef', 'audience', 'organisation', 'trust', 'roles', 'provider', 'portal');
 				if ($this->sessionFails === true) {
 					return null;
 				}

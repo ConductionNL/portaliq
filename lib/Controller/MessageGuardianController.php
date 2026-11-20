@@ -31,11 +31,11 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\GuardianMessageTranslatorInterface;
 use OCA\Portaliq\Kernel\Contracts\MessageContactReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalContactServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSelfServiceServiceInterface;
-use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
-use OCA\Portaliq\Service\Messaging\GuardianMessageTranslator;
+use OCA\Portaliq\Kernel\Contracts\BearerSessionResolverInterface;
 use OCA\Portaliq\Service\Messaging\GuardianMessagingLeafInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -72,9 +72,9 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
+	 * @param BearerSessionResolverInterface $session Resolves the subject from the bearer.
 	 * @param GuardianMessagingLeafInterface $messaging The messaging leaf.
-	 * @param GuardianMessageTranslator|null $translator Shows messages in the reader's
+	 * @param GuardianMessageTranslatorInterface|null $translator Shows messages in the reader's
 	 *                                                   language (translated-message-notice).
 	 *                                                   Nullable and trailing so a
 	 *                                                   controller built by hand keeps
@@ -87,9 +87,9 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionServiceInterface $session,
+		private readonly BearerSessionResolverInterface $session,
 		private readonly GuardianMessagingLeafInterface $messaging,
-		private readonly ?GuardianMessageTranslator $translator = null,
+		private readonly ?GuardianMessageTranslatorInterface $translator = null,
 		private readonly ?PortalSelfServiceServiceInterface $selfService = null,
 		private readonly ?MessageContactReaderInterface $contacts = null,
 		private readonly ?PortalContactServiceInterface $portalContacts = null,

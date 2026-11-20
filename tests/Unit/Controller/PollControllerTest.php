@@ -6,7 +6,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\PollController;
 use OCA\Portaliq\Service\PollService;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -129,7 +129,7 @@ class PollControllerTest extends TestCase {
 			->onlyMethods(['create', 'forSubject', 'respond'])
 			->getMock();
 
-		$session = $this->getMockBuilder(PortalSessionService::class)
+		$session = $this->getMockBuilder(BearerSessionResolver::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['resolveFromBearer'])
 			->getMock();

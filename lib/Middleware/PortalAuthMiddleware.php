@@ -45,7 +45,7 @@ use OCA\Portaliq\Auth\PortalReadOnlySessionException;
 use OCA\Portaliq\Auth\PortalUnauthorizedException;
 use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalRateLimitInterface;
-use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\BearerSessionResolverInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Http\Response;
@@ -81,7 +81,7 @@ class PortalAuthMiddleware extends Middleware {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request object.
-	 * @param PortalSessionServiceInterface $session The session resolver.
+	 * @param BearerSessionResolverInterface $session The session resolver.
 	 * @param PortalContributionRegistryInterface $registry Resolves the anonymous-reachable
 	 *                                             surface
 	 *                                             (portal-page-provisioning).
@@ -91,7 +91,7 @@ class PortalAuthMiddleware extends Middleware {
 	 */
 	public function __construct(
 		private readonly IRequest $request,
-		private readonly PortalSessionServiceInterface $session,
+		private readonly BearerSessionResolverInterface $session,
 		private readonly PortalContributionRegistryInterface $registry,
 		private readonly IL10N $l10n,
 		private readonly ?PortalRateLimitInterface $rateLimit = null,
@@ -266,7 +266,9 @@ class PortalAuthMiddleware extends Middleware {
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
 	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-signed-in-portal-session-must-be-rate-limited-per-subject
 	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- Middleware dictates
+	 * the signature; the response depends only on the exception type, never on
+	 * which `$controller` / `$methodName` threw it.
 	 */
 	public function afterException($controller, $methodName, \Throwable $exception): Response {
 		if ($exception instanceof PortalUnauthorizedException) {

@@ -21,6 +21,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\DeskSessionController;
+use OCA\Portaliq\Kernel\Contracts\OnBehalfFillingInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFormBindingResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalRegisteredDetailsServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
@@ -80,6 +81,33 @@ class DeskSessionControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_FOUND, $response->getStatus());
 		$this->assertSame('https://nc.example/apps/portaliq/site?portal=gemeente-x&form=woo#token=tok%20en', $response->getRedirectURL());
 	}//end testADeskMemberGetsALowTrustDeskSessionInTheFragment()
+
+	public function testTheDeskSessionTakesItsAudienceRoleAndProviderFromTheContract(): void {
+		$this->assertSame('desk', OnBehalfFillingInterface::AUDIENCE);
+		$this->assertSame('desk', OnBehalfFillingInterface::PROVIDER);
+		$this->assertSame(OnBehalfFillingInterface::PROVIDER, OnBehalfFilling::PROVIDER);
+		$this->assertSame(OnBehalfFillingInterface::AUDIENCE, OnBehalfFilling::AUDIENCE);
+
+		$this->session->expects($this->once())->method('issueSession')->with(
+			'balie1',
+			OnBehalfFillingInterface::AUDIENCE,
+			'org-x',
+			'low',
+			[OnBehalfFillingInterface::AUDIENCE . ':fill'],
+			'',
+			OnBehalfFillingInterface::PROVIDER,
+			'',
+			[],
+			// The desk session is bound to the portal it was started on
+			// (portal-scoping-and-auth Task 4).
+			'gemeente-x'
+		)->willReturn(['token' => 'tok']);
+
+		$response = $this->controller()->start(portal: 'gemeente-x', route: 'woo', returnTo: '');
+
+		$this->assertInstanceOf(RedirectResponse::class, $response);
+		$this->assertStringEndsWith('#token=tok', $response->getRedirectURL());
+	}//end testTheDeskSessionTakesItsAudienceRoleAndProviderFromTheContract()
 
 	public function testAReturnAddressOnAnotherHostIsReplacedByThePortalsSite(): void {
 		$this->session->method('issueSession')->willReturn(['token' => 't']);

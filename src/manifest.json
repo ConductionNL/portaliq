@@ -312,6 +312,17 @@
       }
     },
     {
+      "id": "PlanTemplatesMenu",
+      "label": "Plan templates",
+      "icon": "ClipboardListOutline",
+      "route": "PlanTemplates",
+      "section": "settings",
+      "order": 94,
+      "visibleIf": {
+        "access.admin": true
+      }
+    },
+    {
       "id": "FindersMenu",
       "label": "Product finders",
       "icon": "FileFindOutline",
@@ -831,8 +842,7 @@
               "aggregate": "count"
             },
             "props": {
-              "countLabel": "portals",
-              "variant": "primary"
+              "countLabel": "portals"
             }
           },
           {
@@ -841,10 +851,13 @@
             "type": "tile",
             "icon": "M12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2C17.5,2 22,6 22,11A5,5 0 0,1 17,16H15.2C14.9,16 14.7,16.2 14.7,16.5C14.7,16.6 14.75,16.7 14.8,16.8C15.1,17.2 15.2,17.6 15.2,18A2,2 0 0,1 13.2,20H12M6.5,10A1.5,1.5 0 0,0 5,11.5A1.5,1.5 0 0,0 6.5,13A1.5,1.5 0 0,0 8,11.5A1.5,1.5 0 0,0 6.5,10M9.5,6A1.5,1.5 0 0,0 8,7.5A1.5,1.5 0 0,0 9.5,9A1.5,1.5 0 0,0 11,7.5A1.5,1.5 0 0,0 9.5,6M14.5,6A1.5,1.5 0 0,0 13,7.5A1.5,1.5 0 0,0 14.5,9A1.5,1.5 0 0,0 16,7.5A1.5,1.5 0 0,0 14.5,6M17.5,10A1.5,1.5 0 0,0 16,11.5A1.5,1.5 0 0,0 17.5,13A1.5,1.5 0 0,0 19,11.5A1.5,1.5 0 0,0 17.5,10Z",
             "iconType": "svg",
-            "backgroundColor": "#0078c8",
-            "textColor": "#ffffff",
+            "backgroundColor": "var(--color-primary-element)",
+            "textColor": "var(--color-primary-element-text)",
             "linkType": "url",
-            "linkValue": "/index.php/settings/admin/theming"
+            "linkValue": "/index.php/settings/admin/theming",
+            "content": {
+              "subtitle": "in the Nextcloud settings"
+            }
           },
           {
             "id": "themes-portal-list",
@@ -852,10 +865,13 @@
             "type": "tile",
             "icon": "M16,9H21.5L16,3.5V9M7,2H17L23,8V18A2,2 0 0,1 21,20H7C5.89,20 5,19.1 5,18V4A2,2 0 0,1 7,2M3,6V22H21V24H3A2,2 0 0,1 1,22V6H3Z",
             "iconType": "svg",
-            "backgroundColor": "#003865",
-            "textColor": "#ffffff",
+            "backgroundColor": "color-mix(in srgb, var(--color-primary-element) 80%, black)",
+            "textColor": "var(--color-primary-element-text)",
             "linkType": "app",
-            "linkValue": "portaliq/portals"
+            "linkValue": "portaliq/portals",
+            "content": {
+              "subtitle": "to Portals"
+            }
           },
           {
             "id": "themes-portal-table",
@@ -981,6 +997,7 @@
             "gridHeight": 1
           }
         ],
+        "description": "The house style of every portal · themes come from the Nextcloud theme catalogue",
         "showActionsMenu": false,
         "showWidgetActions": false,
         "showRefresh": false,
@@ -2037,6 +2054,13 @@
             }
           },
           {
+            "id": "account-hidden-pages",
+            "type": "PortalAccountPages",
+            "title": "Pages hidden for this client",
+            "icon": "EyeLock",
+            "content": {}
+          },
+          {
             "id": "account-withdraw",
             "type": "PortalAccountWithdraw",
             "title": "Account intrekken",
@@ -2191,10 +2215,18 @@
             "gridHeight": 4
           },
           {
+            "id": "account-hidden-pages",
+            "widgetId": "account-hidden-pages",
+            "gridX": 0,
+            "gridY": 4,
+            "gridWidth": 12,
+            "gridHeight": 4
+          },
+          {
             "id": "account-stats-sessions-issued",
             "widgetId": "account-stats-sessions-issued",
             "gridX": 0,
-            "gridY": 4,
+            "gridY": 8,
             "gridWidth": 6,
             "gridHeight": 2
           },
@@ -2202,7 +2234,7 @@
             "id": "account-stats-active-sessions",
             "widgetId": "account-stats-active-sessions",
             "gridX": 6,
-            "gridY": 4,
+            "gridY": 8,
             "gridWidth": 6,
             "gridHeight": 2
           },
@@ -2210,7 +2242,7 @@
             "id": "account-sessions",
             "widgetId": "account-sessions",
             "gridX": 0,
-            "gridY": 6,
+            "gridY": 10,
             "gridWidth": 12,
             "gridHeight": 4
           },
@@ -2218,7 +2250,7 @@
             "id": "account-messages",
             "widgetId": "account-messages",
             "gridX": 0,
-            "gridY": 10,
+            "gridY": 14,
             "gridWidth": 12,
             "gridHeight": 4
           }
@@ -3390,28 +3422,8 @@
               "metric": "pageViews",
               "label": "Page views",
               "testId": "portal-kpi-page-views",
-              "dateRange": {
-                "default": "30",
-                "presets": [
-                  {
-                    "id": "7",
-                    "label": "Last 7 days"
-                  },
-                  {
-                    "id": "30",
-                    "label": "Last 30 days"
-                  },
-                  {
-                    "id": "90",
-                    "label": "Last 90 days"
-                  },
-                  {
-                    "id": "365",
-                    "label": "Last 365 days"
-                  }
-                ]
-              },
-              "variant": "primary"
+              "variant": "primary",
+              "days": "@page.period"
             }
           },
           {
@@ -3421,27 +3433,7 @@
               "metric": "sessions",
               "label": "Sessions",
               "testId": "portal-kpi-sessions",
-              "dateRange": {
-                "default": "30",
-                "presets": [
-                  {
-                    "id": "7",
-                    "label": "Last 7 days"
-                  },
-                  {
-                    "id": "30",
-                    "label": "Last 30 days"
-                  },
-                  {
-                    "id": "90",
-                    "label": "Last 90 days"
-                  },
-                  {
-                    "id": "365",
-                    "label": "Last 365 days"
-                  }
-                ]
-              }
+              "days": "@page.period"
             }
           },
           {
@@ -3451,27 +3443,7 @@
               "metric": "visitors",
               "label": "Visitors",
               "testId": "portal-kpi-visitors",
-              "dateRange": {
-                "default": "30",
-                "presets": [
-                  {
-                    "id": "7",
-                    "label": "Last 7 days"
-                  },
-                  {
-                    "id": "30",
-                    "label": "Last 30 days"
-                  },
-                  {
-                    "id": "90",
-                    "label": "Last 90 days"
-                  },
-                  {
-                    "id": "365",
-                    "label": "Last 365 days"
-                  }
-                ]
-              }
+              "days": "@page.period"
             }
           },
           {
@@ -3481,28 +3453,8 @@
               "metric": "engagedSessions",
               "label": "Engaged sessions",
               "testId": "portal-kpi-engaged",
-              "dateRange": {
-                "default": "30",
-                "presets": [
-                  {
-                    "id": "7",
-                    "label": "Last 7 days"
-                  },
-                  {
-                    "id": "30",
-                    "label": "Last 30 days"
-                  },
-                  {
-                    "id": "90",
-                    "label": "Last 90 days"
-                  },
-                  {
-                    "id": "365",
-                    "label": "Last 365 days"
-                  }
-                ]
-              },
-              "variant": "success"
+              "variant": "success",
+              "days": "@page.period"
             }
           },
           {
@@ -3902,20 +3854,11 @@
                 {
                   "id": "overview",
                   "widgetIds": [
-                    "portal-home-page",
-                    "portal-kpi-page-views",
-                    "portal-kpi-sessions",
-                    "portal-kpi-visitors",
-                    "portal-kpi-engaged",
                     "portal-data"
                   ],
                   "label": "Overzicht",
                   "columns": 4,
                   "layout": [
-                    {
-                      "widgetId": "portal-home-page",
-                      "gridWidth": 12
-                    },
                     {
                       "widgetId": "portal-data",
                       "gridWidth": 12
@@ -4028,6 +3971,11 @@
                   "widgetId": "portal-settings-case-types"
                 },
                 {
+                  "key": "navigation",
+                  "title": "Navigation",
+                  "widgetId": "portal-settings-navigation"
+                },
+                {
                   "key": "signin",
                   "title": "Sign in",
                   "widgetId": "portal-settings-signin"
@@ -4051,6 +3999,11 @@
                   "key": "section-help",
                   "title": "Help per part of Mijn omgeving",
                   "widgetId": "portal-settings-section-help"
+                },
+                {
+                  "key": "search-ranking",
+                  "title": "How search ranks",
+                  "widgetId": "portal-settings-search-ranking"
                 },
                 {
                   "key": "editors",
@@ -4349,6 +4302,12 @@
             "content": {}
           },
           {
+            "id": "portal-settings-navigation",
+            "type": "PortalNavigation",
+            "title": "Navigation",
+            "content": {}
+          },
+          {
             "id": "portal-settings-signin",
             "type": "PortalSignin",
             "title": "Sign in",
@@ -4364,6 +4323,12 @@
             "id": "portal-settings-accessibility",
             "type": "PortalAccessibility",
             "title": "Accessibility",
+            "content": {}
+          },
+          {
+            "id": "portal-settings-search-ranking",
+            "type": "PortalSearchRanking",
+            "title": "How search ranks",
             "content": {}
           },
           {
@@ -4392,6 +4357,16 @@
                   "prefix": "valid until",
                   "fallback": "not checked yet"
                 },
+                "meta": [
+                  {
+                    "path": "servedAtRoot",
+                    "map": {
+                      "true": "Site at the root of this domain",
+                      "false": ""
+                    }
+                  },
+                  "landingRoute"
+                ],
                 "detail": {
                   "template": "Publish this TXT record: {name} = {value}",
                   "when": {
@@ -4422,6 +4397,17 @@
                     "required": true,
                     "pattern": "^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,63}$",
                     "patternMessage": "Use a plain host name, such as portal.example.nl, without https:// or a path."
+                  },
+                  {
+                    "key": "servedAtRoot",
+                    "label": "Site at the root of this domain",
+                    "type": "checkbox"
+                  },
+                  {
+                    "key": "landingRoute",
+                    "label": "Page the bare domain opens",
+                    "pattern": "^/[^/\\\\?#:\\s]([^\\\\?#:\\s]*[^/\\\\?#:\\s])?$",
+                    "patternMessage": "Use a page path of the site, such as /afval."
                   }
                 ]
               },
@@ -4682,6 +4668,54 @@
           "portal-side-status",
           "portal-side-editors",
           "portal-side-traffic"
+        ],
+        "band": [
+          {
+            "widgetId": "portal-kpi-page-views",
+            "span": 3,
+            "chrome": "bare"
+          },
+          {
+            "widgetId": "portal-kpi-sessions",
+            "span": 3,
+            "chrome": "bare"
+          },
+          {
+            "widgetId": "portal-kpi-visitors",
+            "span": 3,
+            "chrome": "bare"
+          },
+          {
+            "widgetId": "portal-kpi-engaged",
+            "span": 3,
+            "chrome": "bare"
+          },
+          {
+            "widgetId": "portal-home-page",
+            "span": 12
+          }
+        ],
+        "pageFilters": [
+          {
+            "key": "period",
+            "label": "Period",
+            "control": "segmented",
+            "options": [
+              {
+                "value": "7",
+                "label": "7 days"
+              },
+              {
+                "value": "30",
+                "label": "30 days"
+              },
+              {
+                "value": "365",
+                "label": "12 months"
+              }
+            ],
+            "default": "30"
+          }
         ],
         "headerActions": [
           {
@@ -5287,6 +5321,7 @@
           {
             "key": "onBehalfOf",
             "label": "Access requested to",
+            "overlineText": "Cases of",
             "width": "195px"
           },
           {
@@ -5360,7 +5395,7 @@
         ],
         "showTitle": true,
         "showTitleIcon": false,
-        "countText": "{shown} of {total} requests",
+        "countText": "{shown} of {total} requests to see cases on behalf of someone else",
         "headerButtons": [
           {
             "action": "export",
@@ -5408,7 +5443,8 @@
           "board",
           "map"
         ],
-        "footerNote": "on approval the requester sees the cases at once, on refusal they read your reason"
+        "footerNote": "on approval the requester sees the cases at once, on refusal they read your reason",
+        "defaultOrder": "stateRank,-requestedAt"
       }
     },
     {
@@ -7122,6 +7158,56 @@
       }
     },
     {
+      "id": "PlanTemplates",
+      "route": "/plan-templates",
+      "type": "index",
+      "title": "Plan templates",
+      "config": {
+        "register": "portaliq",
+        "schema": "portalPlanTemplate",
+        "_note": "Where a resident's shared plan can begin (shared-plans-with-a-caseworker T07, board PtPlansjablonen). An editor lists, writes and publishes a portal's templates through the object form; only a published template is offered to residents.",
+        "columns": [
+          {
+            "key": "title",
+            "label": "Template title"
+          },
+          {
+            "key": "summary",
+            "label": "Template summary"
+          },
+          {
+            "key": "portal",
+            "label": "Portal"
+          },
+          {
+            "key": "durationDays",
+            "label": "Duration in days"
+          },
+          {
+            "key": "published",
+            "label": "Published",
+            "widget": "badge",
+            "widgetProps": {
+              "colorMap": {
+                "true": "success",
+                "false": "warning"
+              }
+            }
+          }
+        ],
+        "showTitle": true,
+        "showTitleIcon": false,
+        "actions": [
+          "builtin:view",
+          "builtin:edit"
+        ],
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true
+        }
+      }
+    },
+    {
       "id": "Finders",
       "route": "/finders",
       "type": "index",
@@ -7557,11 +7643,19 @@
         "How we measure": "Zo meten wij",
         "Outage began": "Begon",
         "Outage ended": "Eindigde",
+        "The house style of every portal · themes come from the Nextcloud theme catalogue": "De huisstijl van elke portal · thema's komen uit de themacatalogus van Nextcloud",
+        "in the Nextcloud settings": "in de Nextcloud-instellingen",
+        "to Portals": "naar Portals",
         "{shown} of {total} terms · visitors read them at /begrippen on every portal": "{shown} van {total} begrippen · bezoekers lezen ze op /begrippen van elke portal",
         "{shown} of {total} files in the media library · usable on every page of the portal": "{shown} van {total} bestanden in de mediabibliotheek · te gebruiken op elke pagina van de portal",
         "Upload": "Uploaden",
         "{shown} of {total} submissions via the portals · with the proof that the resident received a confirmation": "{shown} van {total} inzendingen via de portals · met het bewijs dat de inwoner een ontvangstbevestiging kreeg",
         "{shown} of {total} accounts · who may sign in, and how": "{shown} van {total} accounts · wie mag inloggen, en hoe",
+        "View website": "Website bekijken",
+        "Period": "Periode",
+        "7 days": "7 dagen",
+        "30 days": "30 dagen",
+        "12 months": "12 maanden",
         "{shown} of {total} sessions · a session starts when someone signs in": "{shown} van {total} sessies · een sessie ontstaat bij het inloggen",
         "Contrast": "Contrast",
         "Readable": "Leesbaar",
@@ -7569,7 +7663,9 @@
         "Not checked": "Niet gecontroleerd",
         "Change house style": "Huisstijl wijzigen",
         "Hard to read:": "Slecht leesbaar:",
-        "the text in the footer does not reach a contrast of 4.5 to 1 with this theme. An editor can still use the theme; that is recorded. You choose the house style at the portal, under Settings.": "de tekst in de voet haalt met dit thema geen contrast van 4,5 op 1. Een redacteur kan het thema toch gebruiken; dat wordt vastgelegd. De huisstijl kiest u bij de portal, onder Instellingen."
+        "the text in the footer does not reach a contrast of 4.5 to 1 with this theme. An editor can still use the theme; that is recorded. You choose the house style at the portal, under Settings.": "de tekst in de voet haalt met dit thema geen contrast van 4,5 op 1. Een redacteur kan het thema toch gebruiken; dat wordt vastgelegd. De huisstijl kiest u bij de portal, onder Instellingen.",
+        "{shown} of {total} requests to see cases on behalf of someone else": "{shown} van {total} verzoeken om zaken van een ander te zien",
+        "Cases of": "Zaken van"
       }
     }
   }

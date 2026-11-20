@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Intake;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Kernel\Contracts\PortalCosignInterface;
 use OCP\Security\ISecureRandom;
 
 /**
@@ -36,7 +37,7 @@ use OCP\Security\ISecureRandom;
  *
  * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
  */
-class PortalCosign {
+class PortalCosign implements PortalCosignInterface {
 
 	/**
 	 * The code characters: upper case and digits without the look-alikes (0 O 1 I 2 Z 5 S 8 B).
@@ -51,34 +52,6 @@ class PortalCosign {
 	 * @var int
 	 */
 	public const DEFAULT_DEADLINE_DAYS = 14;
-
-	/**
-	 * Co-sign states.
-	 *
-	 * @var string
-	 */
-	public const AWAITING = 'awaiting';
-
-	/**
-	 * Co-sign states.
-	 *
-	 * @var string
-	 */
-	public const SIGNED = 'signed';
-
-	/**
-	 * Co-sign states.
-	 *
-	 * @var string
-	 */
-	public const REFUSED = 'refused';
-
-	/**
-	 * Co-sign states.
-	 *
-	 * @var string
-	 */
-	public const EXPIRED = 'expired';
 
 	/**
 	 * Constructor.

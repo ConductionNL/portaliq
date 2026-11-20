@@ -109,7 +109,10 @@ class BrokerSessionController extends Controller {
 			org: $org,
 			provider: $provider,
 			returnTo: $this->returnPath(returnTo: $returnTo, site: $site),
-			callbackUrl: $this->urlGenerator->linkToRouteAbsolute(AppIdentity::APP_ID . '.brokerSession.callback')
+			callbackUrl: $this->urlGenerator->linkToRouteAbsolute(AppIdentity::APP_ID . '.brokerSession.callback'),
+			// Only a resolved portal's slug: the session is bound to it
+			// (portal-scoping-and-auth Task 4).
+			portal: (string)($site['slug'] ?? '')
 		);
 		if ($url === null) {
 			return $this->failed(landing: $this->portalOf(site: $site));

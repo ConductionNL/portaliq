@@ -319,14 +319,17 @@ class LandingPageProvisioningService implements LandingPageProvisioningServiceIn
 			return [];
 		}
 
-		return [
-			'destination' => [
-				'register' => $register,
-				'schema' => $schema,
+		// OpenRegister refuses an empty array where the schema declares an
+		// object, so an empty map is left out rather than written as [].
+		$maps = array_filter(
+			[
 				'fields' => array_filter((array)($destination['fields'] ?? []), 'is_string'),
 				'fixed' => (array)($destination['fixed'] ?? []),
 			],
-		];
+			static fn (array $map): bool => $map !== []
+		);
+
+		return ['destination' => ['register' => $register, 'schema' => $schema] + $maps];
 	}//end destinationOf()
 
 	/**

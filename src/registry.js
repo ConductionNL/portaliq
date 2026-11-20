@@ -48,10 +48,13 @@ import PageLayoutDesigner from './views/PageLayoutDesigner.vue'
 import PageLayoutEditor from './widgets/PageLayoutEditor.vue'
 import PageTrafficFlow from './widgets/PageTrafficFlow.vue'
 import PortalAccessibility from './widgets/PortalAccessibility.vue'
+import PortalAccountPages from './widgets/PortalAccountPages.vue'
 import PortalAccountWithdraw from './widgets/PortalAccountWithdraw.vue'
 import PortalCaseTypes from './widgets/PortalCaseTypes.vue'
 import PortalHomePage from './widgets/PortalHomePage.vue'
+import PortalNavigation from './widgets/PortalNavigation.vue'
 import PortalRegistration from './widgets/PortalRegistration.vue'
+import PortalSearchRanking from './widgets/PortalSearchRanking.vue'
 import PortalSignin from './widgets/PortalSignin.vue'
 import PortalSummaryCard from './widgets/PortalSummaryCard.vue'
 import PortalTheme from './widgets/PortalTheme.vue'
@@ -221,6 +224,28 @@ export default {
 		propsSchema: null,
 		_note: "The portal's case types, each with a \"Show in this portal\" switch (operate-show-per-case-type). Custom because the list is the union of the portal's published forms, the case apps' caseTypeSource and its own hidden list, read and saved through PortalCaseTypesController, and because hiding must warn before it saves.",
 	},
+	// @custom-widget-ratchet exclude per audience a show switch and up and down buttons over the pages the installed apps contribute, saved into the portal's navigation through an admin controller, which no built-in widget reads or reorders
+	PortalNavigation: {
+		kind: 'widget',
+		component: PortalNavigation,
+		defaultSize: { w: 12, h: 6 },
+		minSize: { w: 6, h: 3 },
+		maxSize: { w: 12, h: 12 },
+		allowedSlots: ['body'],
+		propsSchema: null,
+		_note: "The pages one portal's menu shows, per audience and in order (operate-pages-per-portal-and-client REQ-PGC-003). Custom because the list is the installed apps' contributed pages merged with the portal's stored navigation, read and saved through PortalNavigationController, and because the order is set with up and down buttons.",
+	},
+	// @custom-widget-ratchet exclude a hide switch per contributed page of the account's audience, saved into the account's hiddenPages through a staff-guarded controller, which no built-in widget reads
+	PortalAccountPages: {
+		kind: 'widget',
+		component: PortalAccountPages,
+		defaultSize: { w: 12, h: 5 },
+		minSize: { w: 6, h: 3 },
+		maxSize: { w: 12, h: 10 },
+		allowedSlots: ['body'],
+		propsSchema: null,
+		_note: 'The pages hidden for one client account (operate-pages-per-portal-and-client REQ-PGC-002). Custom because the list is the contributed pages of the account\'s audience, read and saved through PortalAccountPagesController behind portal.provision.',
+	},
 	// @custom-widget-ratchet exclude the button shows only on a pending account and asks a required reason before posting the guarded void route, which no built-in widget or detail header action can do in nc-vue 2.57
 	PortalAccountWithdraw: {
 		kind: 'widget',
@@ -264,6 +289,17 @@ export default {
 		allowedSlots: ['body'],
 		propsSchema: null,
 		_note: "How residents sign in to the portal's organisation: per provider its own OIDC broker or integriq, and the integriq broker settings (signin-integriq-broker-login T11). Custom because the secret is write-only and the server refuses a broker route whose settings are incomplete.",
+	},
+	// @custom-widget-ratchet exclude the text is rendered in the browser from the ranking declaration the public search block builds its request from, and a built-in widget can only show stored data, so it could not follow that declaration
+	PortalSearchRanking: {
+		kind: 'widget',
+		component: PortalSearchRanking,
+		defaultSize: { w: 12, h: 4 },
+		minSize: { w: 6, h: 3 },
+		maxSize: { w: 12, h: 8 },
+		allowedSlots: ['body'],
+		propsSchema: null,
+		_note: 'How search ranks (search-sort-by-relevance REQ-SSR-006). Custom because the sentences are rendered from RANKING in src/site/lib/federatedSearch.js, the declaration buildRequestUrl() reads, so the explanation and the request cannot drift apart.',
 	},
 	// @custom-widget-ratchet exclude the measurement frames each page in this browser and runs axe-core inside it, then posts the run to a guarded controller, which no built-in widget does
 	PortalAccessibility: {

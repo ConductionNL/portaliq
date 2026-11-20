@@ -104,6 +104,7 @@ class PortalAccessRequestService implements PortalAccessRequestServiceInterface 
 				'onBehalfOf' => $onBehalfOf,
 				'reason' => $reason,
 				'state' => 'pending',
+				'stateRank' => self::STATE_RANKS['pending'],
 				'requestedAt' => (new DateTimeImmutable())->format(DATE_ATOM),
 			]
 		);
@@ -245,6 +246,7 @@ class PortalAccessRequestService implements PortalAccessRequestServiceInterface 
 			id: $id,
 			data: [
 				'state' => $state,
+				'stateRank' => self::STATE_RANKS[$state],
 				'decidedBy' => $decidedBy,
 				'decidedAt' => (new DateTimeImmutable())->format(DATE_ATOM),
 			]
@@ -398,6 +400,7 @@ class PortalAccessRequestService implements PortalAccessRequestServiceInterface 
 			id: $id,
 			data: [
 				'state' => 'refused',
+				'stateRank' => self::STATE_RANKS['refused'],
 				'decisionReason' => trim($reason),
 				'decidedBy' => $decidedBy,
 				'decidedAt' => (new DateTimeImmutable())->format(DATE_ATOM),
