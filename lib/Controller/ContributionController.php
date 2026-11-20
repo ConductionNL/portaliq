@@ -589,22 +589,7 @@ class ContributionController extends Controller implements PortalProtected {
 			return $notFound;
 		}
 
-		// The same scoped single-object read as object(), narrowed by the
-		// collection's own filter as the inbox list is.
-		$row = $this->reader->readObject(
-			register: $register,
-			schema: $schema,
-			scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			id: $id,
-			organisation: (string)($subject['organisation'] ?? ''),
-			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
-			contributingApp: $match['app'],
-			via: ($collection['via'] ?? null),
-			audience: (string)($subject['audience'] ?? ''),
-			fields: ($collection['fields'] ?? null),
-			filter: (array)($collection['filter'] ?? [])
-		);
+		$row = $this->readInboxMessageRow(subject: $subject, collection: $collection, app: $match['app'], register: $register, schema: $schema, id: $id);
 		if ($row === null) {
 			return $notFound;
 		}
@@ -654,6 +639,40 @@ class ContributionController extends Controller implements PortalProtected {
 
 		return $this->withoutTenant(subject: $subject, schema: $schema) === false;
 	}//end messageScopeResolves()
+
+	/**
+	 * The scoped single-object read of one inbox message: the same read as
+	 * object(), narrowed by the collection's own filter as the inbox list is.
+	 *
+	 * @param array<string, mixed> $subject    The portal subject.
+	 * @param array<string, mixed> $collection The inbox collection.
+	 * @param string               $app        The contributing app.
+	 * @param string               $register   The register of the inbox collection.
+	 * @param string               $schema     The schema of the inbox collection.
+	 * @param string               $id         The message id.
+	 *
+	 * @return array<string, mixed>|null The row, or null when it is not the subject's.
+	 *
+	 * @spec openspec/changes/a-resident-opens-one-message/tasks.md#T02
+	 */
+	private function readInboxMessageRow(array $subject, array $collection, string $app, string $register, string $schema, string $id): ?array {
+		// The same scoped single-object read as object(), narrowed by the
+		// collection's own filter as the inbox list is.
+		return $this->reader->readObject(
+			register: $register,
+			schema: $schema,
+			scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
+			subjectRef: (string)($subject['subjectRef'] ?? ''),
+			id: $id,
+			organisation: (string)($subject['organisation'] ?? ''),
+			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
+			contributingApp: $app,
+			via: ($collection['via'] ?? null),
+			audience: (string)($subject['audience'] ?? ''),
+			fields: ($collection['fields'] ?? null),
+			filter: (array)($collection['filter'] ?? [])
+		);
+	}//end readInboxMessageRow()
 
 	/**
 	 * Whether an inbox collection declares no way to scope a read to the
