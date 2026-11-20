@@ -206,6 +206,10 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			// The open questions of the case's app on this case, each with the
 			// row action that answers it (woo-dossier-in-my-cases REQ-WDM-001).
 			'questions' => $this->openQuestions(context: $context),
+			// Which projected fields hold the public outcome and its explanation
+			// (case-outcome-on-the-case-page REQ-COC-001); the page shows them
+			// only once the case has ended.
+			'outcome' => ($context['outcome'] ?? null),
 		]);
 	}//end show()
 
@@ -899,6 +903,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			'documents' => ($match['documents'] ?? null),
 			'fields' => ($match['fields'] ?? null),
 			'closedField' => (string)($match['closedField'] ?? ''),
+			'outcome' => ($match['outcome'] ?? null),
 			'case' => $case,
 			'set' => $this->writableSet->resolve(
 				action: $action,

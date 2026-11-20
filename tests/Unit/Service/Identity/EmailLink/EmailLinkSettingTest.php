@@ -51,6 +51,24 @@ class EmailLinkSettingTest extends TestCase {
 	}//end testOffByDefaultAndAPortalMustAlsoDeclareTheMode()
 
 	/**
+	 * A portal whose authentication block is malformed offers no e-mail link,
+	 * even when it spells the mode right (portal-scoping-and-auth Task 4).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 */
+	public function testAMalformedAuthenticationBlockOffersNoLink(): void {
+		$setting = $this->setting();
+		$setting->setEnabled(enabled: true);
+
+		$this->assertTrue($setting->offeredBy(portal: ['authentication' => ['modes' => ['email-link', 'public']]]));
+		$this->assertFalse($setting->offeredBy(portal: ['authentication' => ['modes' => ['email-link', 'magic']]]));
+		$this->assertFalse($setting->offeredBy(portal: ['authentication' => ['modes' => ['email-link'], 'minTrust' => 'medium']]));
+		$this->assertFalse($setting->offeredBy(portal: ['authentication' => 'email-link']));
+	}//end testAMalformedAuthenticationBlockOffersNoLink()
+
+	/**
 	 * An administrator sees and sets the switch; others do not see it; only a
 	 * real boolean switches it.
 	 *

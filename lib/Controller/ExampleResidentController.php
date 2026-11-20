@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
+use OCA\Portaliq\Auth\PortalAuthConfig;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\ExampleResidentSignInInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalAccountLookupInterface;
@@ -48,6 +49,9 @@ use OCP\IURLGenerator;
  * The one-click demo sign-in for the example resident.
  *
  * @spec openspec/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the count includes the route attributes
+ *   (NoAdminRequired, NoCSRFRequired, ...) a controller declares.
  */
 class ExampleResidentController extends Controller {
 
@@ -108,7 +112,9 @@ class ExampleResidentController extends Controller {
 			return $response;
 		}
 
-		$issued = $this->issuedSession(userId: $userId, account: $account);
+		// A resident is found only on the named portal, so the session is bound to it
+		// (portal-scoping-and-auth Task 4).
+		$issued = $this->issuedSession(userId: $userId, account: $account, portal: $portal);
 		if ($issued === null) {
 			return new JSONResponse(['error' => 'not_configured'], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
@@ -145,10 +151,13 @@ class ExampleResidentController extends Controller {
 	 *
 	 * @param string               $userId  The resident's account id.
 	 * @param array<string, mixed> $account The active account.
+	 * @param string               $portal  The portal the resident signs in on.
 	 *
 	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
 	 */
-	private function issuedSession(string $userId, array $account): ?array {
+	private function issuedSession(string $userId, array $account, string $portal): ?array {
 		$audience = (string)($account['audience'] ?? 'client');
 		return $this->session->issueSession(
 			subjectRef: $userId,
@@ -157,7 +166,8 @@ class ExampleResidentController extends Controller {
 			// No password was asked: the lowest assurance, as dev-login and
 			// the nextcloud mode carry.
 			trust: 'low',
-			roles: [$audience . ':read']
+			roles: [$audience . ':read'],
+			portal: $portal
 		);
 	}//end issuedSession()
 
@@ -226,8 +236,6 @@ class ExampleResidentController extends Controller {
 			return false;
 		}
 
-		$modes = ($site['authentication']['modes'] ?? []);
-
-		return is_array($modes) === true && in_array(needle: 'nextcloud', haystack: $modes, strict: true) === true;
+		return PortalAuthConfig::fromPortal(portal: $site)->offers(mode: 'nextcloud');
 	}//end offersNextcloud()
 }//end class

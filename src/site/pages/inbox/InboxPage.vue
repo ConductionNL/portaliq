@@ -13,7 +13,19 @@
 -->
 <template>
 	<div class="pq-inbox-page">
-		<BusyStatus v-if="loading" :t="tr" />
+		<!-- One message on its own page (a-resident-opens-one-message). -->
+		<MessagePage
+			v-if="opened"
+			:opened="opened"
+			:api="api"
+			:t="t"
+			:locale="locale"
+			:contributions="contributions"
+			:nav="nav"
+			@navigate="go"
+			@read="onOpenedRead"
+			@titled="$emit('titled', $event)" />
+		<BusyStatus v-else-if="loading" :t="tr" />
 		<template v-else>
 			<NotificationSettings :api="api" :t="tr" />
 			<p v-if="messages.length === 0" class="utrecht-paragraph pq-empty">
@@ -120,7 +132,15 @@
 							class="pq-inbox-row__unread">
 							{{ tr('New') }}
 						</strong>
-						<span class="pq-inbox-row__subject">{{
+						<a
+							v-if="messageRouteOf(message)"
+							class="utrecht-link pq-inbox-row__subject"
+							:href="hrefOf(messageRouteOf(message))"
+							data-testid="inbox-row-title"
+							@click="followSameSite($event, messageRouteOf(message))"
+							>{{ message.subject || '' }}</a
+						>
+						<span v-else class="pq-inbox-row__subject">{{
 							message.subject || ''
 						}}</span>
 						<span
@@ -319,6 +339,7 @@ import {
 	TASKS_ROUTE,
 	withoutMessages,
 } from './inbox.js'
+import { messageOfRoute, messageRoute } from './message.js'
 import { PAGE_EMITS, PAGE_PROPS } from './pageProps.js'
 import { pageLocale, withStrings } from './translate.js'
 
@@ -347,6 +368,7 @@ export default {
 
 	components: {
 		BusyStatus,
+		MessagePage: defineAsyncComponent(() => import('./MessagePage.vue')),
 		// On demand: only a message that can be answered needs the form.
 		InboxReply: defineAsyncComponent(
 			() => import('../../components/inbox/InboxReply.vue'),
@@ -356,7 +378,11 @@ export default {
 		TranslatedText,
 	},
 
-	props: PAGE_PROPS,
+	props: {
+		...PAGE_PROPS,
+		/** The route on screen: a message route opens that message's page. */
+		currentRoute: { type: String, default: '' },
+	},
 
 	emits: PAGE_EMITS,
 
@@ -375,10 +401,21 @@ export default {
 			origin: pageOrigin(),
 			activeTab: 'all',
 			markingAll: false,
+			lastUnread: null,
 		}
 	},
 
 	computed: {
+		/**
+		 * The message the route opens, or null on the list.
+		 *
+		 * @return {{source: string, id: string}|null}
+		 * @spec openspec/changes/a-resident-opens-one-message/tasks.md#T05
+		 */
+		opened() {
+			return messageOfRoute(this.currentRoute)
+		},
+
 		/**
 		 * @return {string} `nl` or `en`.
 		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
@@ -482,8 +519,25 @@ export default {
 		},
 	},
 
+	watch: {
+		/**
+		 * Back on the list from a message page opened cold: read the list now.
+		 *
+		 * @param {object|null} opened The message the route opens.
+		 * @return {void}
+		 */
+		opened(opened) {
+			if (!opened && this.loading) {
+				this.load()
+			}
+		},
+	},
+
 	created() {
-		this.load()
+		// A message page reads its one message; the list waits until it shows.
+		if (!this.opened) {
+			this.load()
+		}
 	},
 
 	methods: {
@@ -520,6 +574,36 @@ export default {
 			if (Array.isArray(messages)) {
 				this.$emit('unread', this.unread)
 			}
+		},
+
+		/**
+		 * The message page marked its message read: the row follows, and the
+		 * menu's count drops by one.
+		 *
+		 * @param {string|number} id The message's id.
+		 * @return {void}
+		 * @spec openspec/changes/a-resident-opens-one-message/tasks.md#T07
+		 */
+		onOpenedRead(id) {
+			if (!this.loading) {
+				this.messages = markedRead(this.messages, id)
+				this.$emit('unread', this.unread)
+				return
+			}
+			const before = this.lastUnread ?? Number(this.contributions?.unreadCount || 0)
+			this.lastUnread = Math.max(0, before - 1)
+			this.$emit('unread', this.lastUnread)
+		},
+
+		/**
+		 * The route a message's title opens.
+		 *
+		 * @param {object} message A message.
+		 * @return {string} The route, or ''.
+		 * @spec openspec/changes/a-resident-opens-one-message/tasks.md#T06
+		 */
+		messageRouteOf(message) {
+			return messageRoute(message)
 		},
 
 		/**

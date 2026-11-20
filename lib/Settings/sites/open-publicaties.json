@@ -1,0 +1,307 @@
+{
+	"$comment": "The public surface the vendored WOO bundle (build/woo, served by BundledSiteController at /woo) draws, authored as Portaliq content (openspec/changes/retire-the-vendored-woo-bundle, task 2). Home, themes, search, one publication and the GEMMA page are page rows built only from blocks the public site renders; the navigation is a menu row, so an editor changes it without a deploy. Sign-in is the portal's own auth edge (DigiD, eHerkenning), never a bundled screen. A municipality installs it with `occ portaliq:example-site:install open-publicaties` and then sets its own domain, theme and organisation on the portal row. Nothing here names a real organisation.",
+	"id": "open-publicaties",
+	"name": "Open publicaties",
+	"description": "A public site for a municipality's Woo publications: a home page with search and themes, a search page over the publication register, the page of one publication and a page on GEMMA.",
+	"portal": {
+		"slug": "open-publicaties",
+		"title": "Open publicaties",
+		"status": "published",
+		"kind": "site",
+		"domains": [],
+		"locales": [
+			"nl"
+		],
+		"authentication": {
+			"modes": [
+				"public",
+				"digid",
+				"eherkenning"
+			],
+			"minTrust": "low"
+		},
+		"headerSearch": {
+			"label": "Zoeken in publicaties",
+			"placeholder": "Zoeken",
+			"route": "/zoeken"
+		}
+	},
+	"forms": [],
+	"menus": [
+		{
+			"title": "Hoofdmenu",
+			"position": 0,
+			"items": [
+				{
+					"order": 1,
+					"name": "Home",
+					"link": "/"
+				},
+				{
+					"order": 2,
+					"name": "Zoeken",
+					"link": "/zoeken"
+				},
+				{
+					"order": 3,
+					"name": "Onderwerpen",
+					"link": "/onderwerpen"
+				},
+				{
+					"order": 4,
+					"name": "GEMMA",
+					"link": "/gemma"
+				},
+				{
+					"order": 5,
+					"name": "Mijn omgeving",
+					"link": "/mijn"
+				}
+			]
+		}
+	],
+	"pages": [
+		{
+			"route": "/",
+			"title": "Home",
+			"summary": "Zoek in de publicaties van de gemeente.",
+			"status": "published",
+			"locale": "nl",
+			"body": {
+				"type": "grid",
+				"widgets": [
+					{
+						"id": "op-home-01-hero",
+						"widgetKey": "hero",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 4,
+						"props": {
+							"title": "Waar bent u naar op zoek?",
+							"search": true,
+							"searchLabel": "Zoek in besluiten, rapporten en antwoorden op Woo-verzoeken",
+							"searchSubmitLabel": "Zoeken",
+							"headingVisible": true,
+							"variant": "plain"
+						}
+					},
+					{
+						"id": "op-home-02-nlfeaturedsubjects",
+						"widgetKey": "nlFeaturedSubjects",
+						"gridX": 0,
+						"gridY": 4,
+						"gridWidth": 8,
+						"gridHeight": 2,
+						"props": {
+							"heading": "Onderwerpen",
+							"count": 6,
+							"subjectRoute": "/onderwerp"
+						}
+					},
+					{
+						"id": "op-home-03-nllinklist",
+						"widgetKey": "nlLinkList",
+						"gridX": 8,
+						"gridY": 4,
+						"gridWidth": 4,
+						"gridHeight": 1,
+						"props": {
+							"heading": "Alle publicaties",
+							"intro": "Zoek en filter op soort, periode en organisatie.",
+							"display": "card",
+							"links": [
+								{
+									"label": "Zoeken in publicaties",
+									"href": "/zoeken"
+								},
+								{
+									"label": "Alle onderwerpen",
+									"href": "/onderwerpen"
+								}
+							]
+						}
+					}
+				]
+			}
+		},
+		{
+			"route": "/zoeken",
+			"title": "Zoeken in publicaties",
+			"summary": "Zoek in alle publicaties.",
+			"status": "published",
+			"locale": "nl",
+			"body": {
+				"type": "grid",
+				"widgets": [
+					{
+						"id": "op-zoeken-01-federatedsearch",
+						"widgetKey": "federatedSearch",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 8,
+						"props": {
+							"variant": "plain",
+							"inputLabel": "Zoekterm",
+							"placeholder": "Bijvoorbeeld: subsidie",
+							"submitLabel": "Zoeken",
+							"facetLabel": "Filters",
+							"periodLabel": "Periode",
+							"periodFromLabel": "Vanaf",
+							"periodToLabel": "Tot en met",
+							"sortLabel": "Sorteren"
+						}
+					}
+				]
+			}
+		},
+		{
+			"route": "/publicatie",
+			"title": "Publicatie",
+			"summary": "Details van één publicatie.",
+			"status": "published",
+			"locale": "nl",
+			"body": {
+				"type": "grid",
+				"widgets": [
+					{
+						"id": "op-publicatie-01-publicationdetail",
+						"widgetKey": "publicationDetail",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 8,
+						"props": {
+							"endpoint": "/index.php/apps/opencatalogi/api/federation/publications",
+							"variant": "cards"
+						}
+					}
+				]
+			}
+		},
+		{
+			"route": "/onderwerpen",
+			"title": "Onderwerpen",
+			"summary": "Publicaties per onderwerp.",
+			"status": "published",
+			"locale": "nl",
+			"body": {
+				"type": "grid",
+				"widgets": [
+					{
+						"id": "op-onderwerpen-01-nlheading",
+						"widgetKey": "nlHeading",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 1,
+						"props": {
+							"text": "Onderwerpen",
+							"level": 1
+						}
+					},
+					{
+						"id": "op-onderwerpen-02-nlparagraph",
+						"widgetKey": "nlParagraph",
+						"gridX": 0,
+						"gridY": 1,
+						"gridWidth": 8,
+						"gridHeight": 1,
+						"props": {
+							"text": "Kies een onderwerp om de publicaties daarover te zoeken. Op de zoekpagina filtert u verder op soort en periode.",
+							"lead": true
+						}
+					},
+					{
+						"id": "op-onderwerpen-03-nlfeaturedsubjects",
+						"widgetKey": "nlFeaturedSubjects",
+						"gridX": 0,
+						"gridY": 2,
+						"gridWidth": 12,
+						"gridHeight": 3,
+						"props": {
+							"heading": "Alle onderwerpen",
+							"count": 24,
+							"subjectRoute": "/onderwerp"
+						}
+					}
+				]
+			}
+		},
+		{
+			"route": "/onderwerp",
+			"title": "Onderwerp",
+			"summary": "Alles wat de gemeente over één onderwerp publiceert.",
+			"status": "published",
+			"locale": "nl",
+			"requiresApp": "opencatalogi",
+			"body": {
+				"type": "grid",
+				"widgets": [
+					{
+						"id": "op-onderwerp-01-nlsubjectlanding",
+						"widgetKey": "nlSubjectLanding",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 10,
+						"props": {
+							"backLabel": "Alle onderwerpen",
+							"backHref": "/onderwerpen"
+						}
+					}
+				]
+			}
+		},
+		{
+			"route": "/gemma",
+			"title": "GEMMA",
+			"summary": "Over de GEMMA-architectuur.",
+			"status": "published",
+			"locale": "nl",
+			"body": {
+				"type": "grid",
+				"widgets": [
+					{
+						"id": "op-gemma-01-nlheading",
+						"widgetKey": "nlHeading",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 8,
+						"gridHeight": 1,
+						"props": {
+							"text": "GEMMA",
+							"level": 1
+						}
+					},
+					{
+						"id": "op-gemma-02-nlparagraph",
+						"widgetKey": "nlParagraph",
+						"gridX": 0,
+						"gridY": 1,
+						"gridWidth": 8,
+						"gridHeight": 1,
+						"props": {
+							"text": "GEMMA is de gemeentelijke referentiearchitectuur. Zij beschrijft hoe gemeenten hun informatievoorziening inrichten, van de bedrijfsprocessen tot de applicaties die ze ondersteunen.",
+							"lead": true
+						}
+					},
+					{
+						"id": "op-gemma-03-nlparagraph",
+						"widgetKey": "nlParagraph",
+						"gridX": 0,
+						"gridY": 2,
+						"gridWidth": 8,
+						"gridHeight": 1,
+						"props": {
+							"text": "De publicaties op deze website volgen de afspraken uit GEMMA over openbaarmaking onder de Wet open overheid."
+						}
+					}
+				]
+			}
+		}
+	],
+	"news": [],
+	"glossary": []
+}

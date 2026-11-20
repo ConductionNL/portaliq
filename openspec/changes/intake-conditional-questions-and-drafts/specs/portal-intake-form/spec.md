@@ -1,15 +1,3 @@
----
-status: proposed
----
-
-# Spec: portal-intake-form
-
-## Purpose
-
-A resident fills in a published request form that shows only the questions
-that apply to them, and can stop halfway and continue later. Portaliq matrix
-rows `cmp-int-conditional` and `cmp-int-save-resume`.
-
 ## ADDED Requirements
 
 ### Requirement: A field's condition decides whether the resident sees it (REQ-ICQ-001)
