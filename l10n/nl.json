@@ -3661,7 +3661,8 @@
         "Results from other catalogues that carry no score come after the scored results, in the order their catalogue gave them.": "Resultaten uit andere catalogi zonder score komen na de resultaten met een score, in de volgorde die hun catalogus gaf.",
         "Pages that place this block": "Pagina's met dit blok",
         "No page places this block yet.": "Nog geen pagina plaatst dit blok.",
-        "Onderdelen van het blok": "Onderdelen van het blok"
+        "Onderdelen van het blok": "Onderdelen van het blok",
+        "You can no longer do this on this case.": "Dit kan niet meer bij deze zaak."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

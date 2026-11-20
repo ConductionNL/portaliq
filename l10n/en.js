@@ -3481,7 +3481,8 @@ OC.L10N.register(
         "Results from other catalogues that carry no score come after the scored results, in the order their catalogue gave them.": "Results from other catalogues that carry no score come after the scored results, in the order their catalogue gave them.",
         "Pages that place this block": "Pages that place this block",
         "No page places this block yet.": "No page places this block yet.",
-        "Onderdelen van het blok": "Onderdelen van het blok"
+        "Onderdelen van het blok": "Onderdelen van het blok",
+        "You can no longer do this on this case.": "You can no longer do this on this case."
     },
     "nplurals=2; plural=(n != 1);"
 )
