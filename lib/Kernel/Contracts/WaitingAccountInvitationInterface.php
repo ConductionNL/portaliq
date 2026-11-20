@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Kernel\Contracts;
 
 use DateTimeImmutable;
+use SensitiveParameter;
 
 /**
  * Contract of WaitingAccountInvitation.
@@ -146,5 +147,5 @@ interface WaitingAccountInvitationInterface {
 	 * @spec openspec/specs/portal-identity-space/spec.md
 	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
-	public function redeem(array $subject, #[\SensitiveParameter] string $secret, ?DateTimeImmutable $now = null): string;
+	public function redeem(array $subject, #[SensitiveParameter] string $secret, ?DateTimeImmutable $now = null): string;
 }//end interface

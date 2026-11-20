@@ -238,10 +238,12 @@ class PortalSessionService implements PortalSessionServiceInterface {
 	 * @param string $provider The OIDC provider the login came through, or '' (dev-login, Nextcloud mode, integriq route).
 	 * @param string $kvk The KVK number of the company an eHerkenning login signs in for, or ''.
 	 * @param array<string, string> $attributes The attributes a Yivi login disclosed, or [].
+	 * @param string $portal The slug of the portal the login happened on, binding the session to it; '' binds it to none.
 	 *
 	 * @return array{token: string, jti: string, expiresAt: int, hardExpiresAt: int, idleTimeout: int}|null The minted
 	 *         bearer token, its id and the session's times, or null when the edge is not yet configured.
 	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
 	 * @spec openspec/changes/archive/2026-09-30-signin-eherkenning-branch/tasks.md#T02
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
@@ -260,6 +262,7 @@ class PortalSessionService implements PortalSessionServiceInterface {
 		string $provider = '',
 		string $kvk = '',
 		array $attributes = [],
+		string $portal = '',
 	): ?array {
 		// A branch from the login restricts the session to it
 		// (signin-eherkenning-branch D1); a malformed one is never signed.
@@ -277,6 +280,7 @@ class PortalSessionService implements PortalSessionServiceInterface {
 				'provider' => $provider,
 				'kvk' => $kvk,
 				'attributes' => $attributes,
+				'portal' => $portal,
 			]
 		);
 		if ($issued === null) {
@@ -619,6 +623,8 @@ class PortalSessionService implements PortalSessionServiceInterface {
 				// The disclosed Yivi attributes stay with the session chain,
 				// as they were disclosed (resident-identity-in-forms T05).
 				'attributes' => (array)($subject['attributes'] ?? []),
+				// A rotation stays on the portal the session was minted on.
+				'portal' => (string)($subject['portal'] ?? ''),
 			]
 		);
 	}//end refreshSession()
@@ -658,6 +664,8 @@ class PortalSessionService implements PortalSessionServiceInterface {
 				'provider' => (string)($subject['provider'] ?? ''),
 				'kvk' => (string)($subject['kvk'] ?? ''),
 				'attributes' => (array)($subject['attributes'] ?? []),
+				// A rotation stays on the portal the session was minted on.
+				'portal' => (string)($subject['portal'] ?? ''),
 			]
 		);
 	}//end rebranchSession()

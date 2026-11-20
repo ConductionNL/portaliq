@@ -136,7 +136,7 @@ class PortalJwtService implements PortalJwtServiceInterface {
 	 *                           so the absolute session lifetime can be enforced from
 	 *                           the true origin, not the most recent mint. Defaults to
 	 *                           `$iat` (a fresh login) when not supplied.
-	 * @param array{number?: string, restricted?: bool, provider?: string, kvk?: string} $context The login's context: the branch in
+	 * @param array{number?: string, restricted?: bool, provider?: string, kvk?: string, portal?: string} $context The login's context: the branch in
 	 *                                                                             effect, whether the login restricted
 	 *                                                                             the session to it, and the OIDC
 	 *                                                                             provider the session came through.
@@ -183,7 +183,8 @@ class PortalJwtService implements PortalJwtServiceInterface {
 				$this->branchClaims(context: $context),
 				$this->providerClaim(context: $context),
 				$this->kvkClaim(context: $context),
-				$this->attributesClaim(context: $context)
+				$this->attributesClaim(context: $context),
+				$this->portalClaim(context: $context)
 			)
 		);
 	}//end createSession()
@@ -244,6 +245,27 @@ class PortalJwtService implements PortalJwtServiceInterface {
 
 		return ['kvk' => $kvk];
 	}//end kvkClaim()
+
+	/**
+	 * Change portal-scoping-and-auth Task 4: the slug of the portal the
+	 * session was minted on, so another portal refuses it. Signed only when
+	 * it is a well-formed slug, so a session minted without a portal carries
+	 * exactly the claims it did before.
+	 *
+	 * @param array<string, mixed> $context The login's context.
+	 *
+	 * @return array<string, string>
+	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
+	 */
+	private function portalClaim(array $context): array {
+		$portal = ($context['portal'] ?? '');
+		if (is_string($portal) === false || preg_match(SessionClaims::PORTAL_SLUG, $portal) !== 1) {
+			return [];
+		}
+
+		return ['portal' => $portal];
+	}//end portalClaim()
 
 	/**
 	 * Change resident-identity-in-forms T05: the attributes a resident

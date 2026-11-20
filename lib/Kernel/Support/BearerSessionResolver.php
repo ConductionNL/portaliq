@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Kernel\Support;
 
+use OCA\Portaliq\Auth\PortalSessionScope;
 use OCA\Portaliq\Kernel\Contracts\BearerSessionResolverInterface;
 use OCA\Portaliq\Service\PortalJwtService;
 use OCA\Portaliq\Service\SessionClaims;
@@ -51,11 +52,13 @@ class BearerSessionResolver implements BearerSessionResolverInterface {
 	 * @param SessionSigningKey $signingKey The signer, or none when unconfigured.
 	 * @param SessionRecords    $records    Tells a live session from a revoked one.
 	 * @param LoggerInterface   $logger     Records why a bearer was rejected (debug).
+	 * @param PortalSessionScope|null $scope Keeps a portal-bound session on its own portal.
 	 */
 	public function __construct(
 		private readonly SessionSigningKey $signingKey,
 		private readonly SessionRecords $records,
 		private readonly LoggerInterface $logger,
+		private readonly ?PortalSessionScope $scope = null,
 	) {
 	}//end __construct()
 
@@ -89,7 +92,18 @@ class BearerSessionResolver implements BearerSessionResolverInterface {
 			return null;
 		}
 
-		return (new SessionClaims())->subject(claims: $claims, trust: (new SessionTrust())->normaliseTrust(trust: ($claims['trust'] ?? '')));
+		$subject = (new SessionClaims())->subject(claims: $claims, trust: (new SessionTrust())->normaliseTrust(trust: ($claims['trust'] ?? '')));
+
+		// A session minted on one portal is refused on another, exactly as an
+		// invalid one is: the caller learns nothing about where it is valid
+		// (portal-scoping-and-auth Task 4). Without a scope to ask, a
+		// portal-bound session is refused rather than let through.
+		if ($subject['portal'] !== '' && ($this->scope === null || $this->scope->admits(portal: $subject['portal']) === false)) {
+			$this->logger->debug('Portaliq: bearer rejected', ['reason' => 'session bound to another portal']);
+			return null;
+		}
+
+		return $subject;
 	}//end resolveFromBearer()
 
 	/**
