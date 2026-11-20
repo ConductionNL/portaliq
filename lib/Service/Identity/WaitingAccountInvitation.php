@@ -39,6 +39,7 @@ use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCP\Security\ISecureRandom;
+use SensitiveParameter;
 
 /**
  * Issues and redeems the one-time secret of a waiting account.
@@ -259,7 +260,7 @@ class WaitingAccountInvitation implements WaitingAccountInvitationInterface {
 	 * @spec openspec/specs/portal-identity-space/spec.md
 	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
-	public function redeem(array $subject, #[\SensitiveParameter] string $secret, ?DateTimeImmutable $now = null): string {
+	public function redeem(array $subject, #[SensitiveParameter] string $secret, ?DateTimeImmutable $now = null): string {
 		$moment  = ($now ?? new DateTimeImmutable());
 		$lookup  = new PortalAccountLookup(reader: $this->reader);
 		$account = $this->receiver(subject: $subject, lookup: $lookup);
@@ -302,7 +303,7 @@ class WaitingAccountInvitation implements WaitingAccountInvitationInterface {
 		array $account,
 		string $accountId,
 		array $subject,
-		#[\SensitiveParameter] string $secret,
+		#[SensitiveParameter] string $secret,
 		DateTimeImmutable $moment,
 		PortalAccountLookup $lookup,
 	): string {

@@ -49,6 +49,9 @@ use OCP\IURLGenerator;
  * The one-click demo sign-in for the example resident.
  *
  * @spec openspec/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the count includes the route attributes
+ *   (NoAdminRequired, NoCSRFRequired, ...) a controller declares.
  */
 class ExampleResidentController extends Controller {
 

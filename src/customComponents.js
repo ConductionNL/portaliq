@@ -44,6 +44,7 @@ import { generateUrl } from '@nextcloud/router'
 import FormEmbedDialog from './dialogs/FormEmbedDialog.vue'
 import InviteDialog from './dialogs/InviteDialog.vue'
 import IssueAccountDialog from './dialogs/IssueAccountDialog.vue'
+import LinkFormDialog from './dialogs/LinkFormDialog.vue'
 import MailTemplateDialog from './dialogs/MailTemplateDialog.vue'
 import NewPortalDialog from './dialogs/NewPortalDialog.vue'
 import NewsItemDialog from './dialogs/NewsItemDialog.vue'
@@ -62,12 +63,14 @@ import { createNewsApi, createNewsHandlers, NEWS_LIST } from './lib/newsAuthorin
 import { createOpenPortalSite } from './lib/openPortalSite.js'
 import { createPageVisibilityHandlers } from './lib/pageVisibility.js'
 import { createPortalProvisioning, createPortalProvisioningHandlers } from './lib/portalProvisioning.js'
+import { createPublicationReportHandlers } from './lib/publicationReportActions.js'
 import { createRevealHandlers } from './lib/revealActions.js'
 import { createSessionHandlers } from './lib/sessionActions.js'
 import {
 	createStaffAccountActions,
 	createStaffAccountHandlers,
 } from './lib/staffAccountActions.js'
+import { createSubmissionHandlers } from './lib/submissionActions.js'
 
 /**
  * The `Open portal` row action, wired to Nextcloud's URL generator, toast and
@@ -105,6 +108,20 @@ const accessRequestHandlers = createAccessRequestHandlers({
 	translate: (text) => t('portaliq', text),
 	// A row handler gets no handle on the list, so the page reloads to show
 	// the answered request in its new state.
+	reload: () => window.location.reload(),
+})
+
+/**
+ * The Handled and Not applicable row actions on the Error reports page
+ * (publication-error-reports-and-withheld-notices REQ-PER-002). See
+ * src/lib/publicationReportActions.js.
+ */
+const publicationReportHandlers = createPublicationReportHandlers({
+	post: (url, body) => axios.post(url, body),
+	generateUrl,
+	notify: showSuccess,
+	notifyError: showError,
+	translate: (text) => t('portaliq', text),
 	reload: () => window.location.reload(),
 })
 
@@ -187,6 +204,24 @@ const sessionHandlers = createSessionHandlers({
 	translate: (text) => t('portaliq', text),
 	reload: () => window.location.reload(),
 	open: (url) => window.location.assign(url),
+})
+/**
+ * `Gesprek in Talk` and `Formulier koppelen` on a Submissions row
+ * (submission-row-actions). Talk goes through OpenRegister's Talk links on
+ * the submission; the form link writes `formBinding` only, and the write guard
+ * refuses any change to a proof field. See src/lib/submissionActions.js.
+ */
+const submissionHandlers = createSubmissionHandlers({
+	get: (url) => axios.get(url),
+	post: (url, body) => axios.post(url, body),
+	patch: (url, body) => axios.patch(url, body),
+	generateUrl,
+	open: (url) => window.open(url, '_blank', 'noopener'),
+	chooseForm: (options, current) => spawnLookDialog(LinkFormDialog, { options, current }),
+	notify: showSuccess,
+	notifyError: showError,
+	translate: (text) => t('portaliq', text),
+	reload: () => refreshList('portaliq-portalSubmission') || window.location.reload(),
 })
 /**
  * `Toestaan` and `Weigeren` on the Reveal requests page
@@ -313,6 +348,7 @@ export default {
 	 * AccessRequestAdminController, and a grant also records the mandate.
 	 */
 	...accessRequestHandlers,
+	...publicationReportHandlers,
 	/**
 	 * `Check form` row action on the Request forms index page.
 	 */
@@ -338,6 +374,10 @@ export default {
 	 * The Sessions list's row actions (staff-revoke-one-session).
 	 */
 	...sessionHandlers,
+	/**
+	 * The Submissions list's Talk and form-link row actions (submission-row-actions).
+	 */
+	...submissionHandlers,
 	/**
 	 * The Reveal requests page's row actions (intake-report-pages T09).
 	 */

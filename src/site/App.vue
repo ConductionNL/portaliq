@@ -321,6 +321,17 @@
 							:locale="chosenLocale"
 							:t="t" />
 
+						<!-- A page a contributing app publishes on this portal
+				     (portal-theme-blocks-and-contributed-pages REQ-PTB-011).
+				     An unknown one renders the not-found page below. -->
+						<ContributionPage
+							v-else-if="contributionPage"
+							:page="contributionPage.page"
+							:contribution="contributionPage.contribution"
+							:session="session"
+							:apiBase="guestAuthBase"
+							:t="t" />
+
 						<p
 							v-else-if="loading"
 							class="container"
@@ -592,6 +603,10 @@ import {
 	fetchSite,
 	resolveApiBase,
 } from './lib/contentApi.js'
+import {
+	parseContributionRoute,
+	resolveContributionPage,
+} from './lib/contributionApi.js'
 import { isCosignRoute } from './lib/cosignRoute.js'
 import { crumbLabel, signInCrumbs } from './lib/crumbWords.js'
 import { documentRouteOf } from './lib/documentRoute.js'
@@ -661,6 +676,11 @@ const CLAIM_STORAGE_KEY = 'portaliq.claimInvitation'
 const NotFoundPage = defineAsyncComponent(
 	() => import('./components/NotFoundPage.vue'),
 )
+// A contributed page (`/diensten/{app}/{page}`) loads on demand: few visits
+// open one, and the site entry has a size budget (REQ-PTB-011).
+const ContributionPage = defineAsyncComponent(
+	() => import('./components/ContributionPage.vue'),
+)
 const SiteEditButton = defineAsyncComponent(
 	() => import('./components/SiteEditButton.vue'),
 )
@@ -722,6 +742,7 @@ export default {
 		MarkdownBlock,
 		PageArticleBlock,
 		NotFoundPage,
+		ContributionPage,
 		SharedDossierPage,
 		CosignPage,
 		DocumentPage,
@@ -1035,6 +1056,9 @@ export default {
 				portal: this.site.slug || '',
 				signedIn: this.session !== null,
 				searchInsideDocuments: this.site.searchInsideDocuments !== false,
+				// "Fout melden" and the withdrawal notice, both opt-in
+				// (publication-error-reports-and-withheld-notices).
+				publications: this.site.publications || null,
 				organisation: this.site.organisation || null,
 				navigation: this.navigation,
 				languages: this.languages,
@@ -1420,6 +1444,21 @@ export default {
 		 */
 		documentRoute() {
 			return documentRouteOf(this.route)
+		},
+
+		/**
+		 * The contributed page on screen, resolved from the contributions
+		 * already loaded rather than a second request: the public contract
+		 * carries every page a contributing app publishes, so asking the CMS
+		 * for a `/diensten/…` route would be a guaranteed 404.
+		 *
+		 * @return {{page: object, contribution: object}|null} The page and the
+		 *   contribution whose actions it names, or null.
+		 *
+		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-a-contributed-page-must-be-reachable-at-its-own-route-req-ptb-011
+		 */
+		contributionPage() {
+			return resolveContributionPage(this.contributions, this.route)
 		},
 
 		/**
@@ -2551,6 +2590,17 @@ export default {
 			// opens on every portal without a CMS page (REQ-PDC-002).
 			if (documentRouteOf(route) !== null) {
 				this.openSharedDossierRoute()
+				return true
+			}
+
+			// A contributed page renders from the contributions already
+			// loaded; an unknown app or page is the site's not-found state
+			// (REQ-PTB-011).
+			if (parseContributionRoute(route) !== null) {
+				this.openSharedDossierRoute()
+				this.error = resolveContributionPage(this.contributions, route) === null
+					? { status: 404 }
+					: null
 				return true
 			}
 			return false

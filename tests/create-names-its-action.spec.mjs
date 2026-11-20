@@ -195,6 +195,9 @@ test('site: no create in src/shared or src/site bypasses the action id', () => {
 	const allowed = new Set([
 		'src/shared/portalApi.js',
 		'src/site/lib/formSubmission.js',
+		// A contributed page's create action (REQ-PTB-012), pinned in
+		// tests/site-contribution.spec.mjs.
+		'src/site/lib/contributionApi.js',
 	])
 	const files = [
 		...listFiles(join(ROOT, 'src', 'shared')),

@@ -151,6 +151,11 @@ class PortalObjectWriter implements PortalObjectWriterInterface {
 	 * `x-openregister-flows` declared on the target schema still run —
 	 * unchanged, automatic, no code here touches that path.
 	 *
+	 * The row is stamped with the SYSTEM identity as owner even when the
+	 * browser holds a Nextcloud session (`SaveActor::$unowned`, REQ-PTB-012):
+	 * a form that says it is not tied to an account must not be owned by
+	 * whoever happens to be signed in to Nextcloud in the same browser.
+	 *
 	 * @param string $register The register slug/id.
 	 * @param string $schema The schema slug.
 	 * @param array<string, mixed> $data The client-supplied fields (already whitelisted + defaults applied).
@@ -158,6 +163,7 @@ class PortalObjectWriter implements PortalObjectWriterInterface {
 	 * @return array<string, mixed>|null The created object, or null on failure.
 	 *
 	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
+	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-a-contributed-action-must-post-where-its-type-is-honoured-req-ptb-012
 	 */
 	public function createAnonymousObject(string $register, string $schema, array $data): ?array {
 		$objectService = $this->objectService();
@@ -165,10 +171,11 @@ class PortalObjectWriter implements PortalObjectWriterInterface {
 			return null;
 		}
 
+		$options = (new UnownedSaveOptions())->forTarget(register: $register, schema: $schema);
 		try {
 			$saved = $this->insideWriteContext(write: static fn () => $objectService->saveObject(
 				object: $data,
-				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema)),
+				options: $options,
 				_rbac: false,
 				_multitenancy: false
 			));

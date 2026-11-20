@@ -49,6 +49,9 @@ use OCA\Portaliq\Kernel\Contracts\MandatePartiesInterface;
  * Serves the subject's own case list.
  *
  * @spec openspec/specs/portal-identity-space/spec.md
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the count includes the route attributes
+ *   (NoAdminRequired, NoCSRFRequired, ...) a controller declares.
  */
 class MyCasesController extends Controller implements PortalProtected {
 	/**

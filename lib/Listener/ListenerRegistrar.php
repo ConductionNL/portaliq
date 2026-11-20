@@ -162,6 +162,8 @@ final class ListenerRegistrar {
 			$context->registerEventListener($event, NoticeWriteGuardListener::class);
 		}
 
+		$this->registerPublicationReportGuard(context: $context);
+
 		// A portal's administrators write only that portal's content, and its
 		// `adminGroups` enter the content rules (operate-portals-per-organisation REQ-OPO-005).
 		$portalAdminEvents = [
@@ -176,7 +178,27 @@ final class ListenerRegistrar {
 		foreach ($portalAdminEvents as $event) {
 			$context->registerEventListener($event, PortalAdminListener::class);
 		}
+
+		// A submission's proof fields never change after the write (submission-row-actions).
+		$context->registerEventListener(ObjectUpdatingEvent::class, SubmissionWriteGuardListener::class);
 	}//end registerCmsListeners()
+
+	/**
+	 * Error reports on publications need an existing owner
+	 * (publication-error-reports-and-withheld-notices REQ-PER-001): the guard
+	 * checks every portal create and update.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/publication-error-reports-and-withheld-notices/specs/portal-federated-search/spec.md#requirement-error-reports-are-opt-in-and-need-a-named-owner-req-per-001
+	 */
+	private function registerPublicationReportGuard(IRegistrationContext $context): void {
+		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $event) {
+			$context->registerEventListener($event, PortalReportOwnerGuardListener::class);
+		}
+	}//end registerPublicationReportGuard()
 
 	/**
 	 * Tell a resident when a record they follow changes, or when a case app

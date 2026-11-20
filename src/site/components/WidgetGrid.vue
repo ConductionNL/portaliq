@@ -397,6 +397,15 @@ export default {
 			default: false,
 		},
 
+		/**
+		 * The site record's `publications`, `{errorReports, withheldNotices}`
+		 * (publication-error-reports-and-withheld-notices).
+		 */
+		publications: {
+			type: Object,
+			default: null,
+		},
+
 		/** The portal's help details, offered as "Hulp nodig?" on a form. */
 		portalHelp: {
 			type: Object,
@@ -615,6 +624,11 @@ export default {
 					...props,
 					subjectId: this.routeParam,
 					signedIn: this.signedIn === true,
+					// The two opt-in publication features, from the site
+					// record, after the authored props so a page cannot
+					// switch them on (publication-error-reports-and-withheld-notices).
+					publications: this.publications,
+					portal: this.portal,
 				}
 			}
 

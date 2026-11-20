@@ -66,6 +66,8 @@ class CosignDeadlineJob extends TimedJob {
 	 * @return void
 	 *
 	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- TimedJob::run() takes an argument this job does not need.
 	 */
 	protected function run($argument): void {
 		$this->cosign->lapse(now: (new DateTimeImmutable())->setTimestamp($this->time->getTime()));
