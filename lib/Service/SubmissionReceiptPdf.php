@@ -26,7 +26,10 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
+use Closure;
 use OCA\Portaliq\Kernel\Contracts\PortalPdfExportInterface;
+use OCA\Portaliq\Kernel\Contracts\SubmissionReceiptServiceInterface;
+use OCP\IL10N;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -64,6 +67,76 @@ final class SubmissionReceiptPdf {
 	}//end __construct()
 
 	/**
+	 * The PDF of one of the subject's own receipts: the reference, the moment
+	 * of receipt and the submitted answers from its data copy, rendered
+	 * through OpenRegister. Someone else's receipt, an unknown id and a
+	 * message that is no receipt all answer RECEIPT_NOT_FOUND, read before
+	 * anything is rendered.
+	 *
+	 * @param array<string, mixed>     $subject    The resolved session subject.
+	 * @param string                   $id         The receipt message's id, as the client sent it.
+	 * @param IL10N                    $l10n       The portal's language.
+	 * @param string                   $subjectKey The translatable title, with the reference as its one parameter.
+	 * @param Closure(string): string  $readable   A moment as the reader reads it.
+	 *
+	 * @return array{status: string, bytes?: string, name?: string}
+	 *
+	 * @spec openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+	 */
+	public function pdfFor(array $subject, string $id, IL10N $l10n, string $subjectKey, Closure $readable): array {
+		$message = $this->ownReceipt(subject: $subject, id: $id);
+		if ($message === null) {
+			return ['status' => SubmissionReceiptServiceInterface::RECEIPT_NOT_FOUND];
+		}
+
+		if ($this->available() === false) {
+			return ['status' => SubmissionReceiptServiceInterface::RECEIPT_PDF_UNAVAILABLE];
+		}
+
+		$document = $this->document(
+			message: $message,
+			l10n: $l10n,
+			title: $l10n->t($subjectKey, [(string)$message['referenceId']]),
+			received: $readable((string)($message['receivedAt'] ?? ''))
+		);
+		$bytes    = $this->render(document: $document);
+		if ($bytes === null) {
+			return ['status' => SubmissionReceiptServiceInterface::RECEIPT_PDF_FAILED];
+		}
+
+		return ['status' => SubmissionReceiptServiceInterface::RECEIPT_PDF, 'bytes' => $bytes, 'name' => $document['title']];
+	}//end pdfFor()
+
+	/**
+	 * What the receipt's PDF holds: the reference, the moment of receipt and
+	 * every answer of the data copy, and nothing else of the message.
+	 *
+	 * @param array<string, mixed> $message  The receipt message.
+	 * @param IL10N                $l10n     The portal's language.
+	 * @param string               $title    The document's title.
+	 * @param string               $received The moment of receipt, as the reader reads it.
+	 *
+	 * @return array{title: string, columns: array<int, array{key: string, label: string}>, rows: array<int, array<string, string>>}
+	 *
+	 * @spec openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+	 */
+	public function document(array $message, IL10N $l10n, string $title, string $received): array {
+		$rows = [
+			['part' => $l10n->t('Reference'), 'content' => (string)$message['referenceId']],
+			['part' => $l10n->t('Received'), 'content' => $received],
+		];
+		foreach ((array)$message['dataCopy'] as $field => $answer) {
+			$rows[] = ['part' => (string)$field, 'content' => $this->answerText(answer: $answer)];
+		}
+
+		return [
+			'title'   => $title,
+			'columns' => [['key' => 'part', 'label' => $l10n->t('Part')], ['key' => 'content', 'label' => $l10n->t('Content')]],
+			'rows'    => $rows,
+		];
+	}//end document()
+
+	/**
 	 * Whether OpenRegister can render a PDF here.
 	 *
 	 * @return bool
@@ -78,7 +151,8 @@ final class SubmissionReceiptPdf {
 	 * The PDF bytes of a receipt document, or null when rendering failed or
 	 * the document was too large.
 	 *
-	 * @param array{title: string, columns: array<int, array{key: string, label: string}>, rows: array<int, array<string, string>>} $document What receiptDocument() gave.
+	 * @param array{title: string, columns: array<int, array{key: string, label: string}>, rows: array<int, array<string, string>>} $document
+	 *        What document() gave.
 	 *
 	 * @return string|null The bytes.
 	 *

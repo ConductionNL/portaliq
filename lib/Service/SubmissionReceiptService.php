@@ -700,53 +700,18 @@ class SubmissionReceiptService implements SubmissionReceiptServiceInterface {
 	 * @spec openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
 	 */
 	public function receiptPdf(array $subject, string $id): array {
-		$message = $this->pdfs?->ownReceipt(subject: $subject, id: $id);
-		if ($message === null || $this->pdfs === null) {
+		if ($this->pdfs === null) {
 			return ['status' => self::RECEIPT_NOT_FOUND];
 		}
 
-		if ($this->pdfs->available() === false) {
-			return ['status' => self::RECEIPT_PDF_UNAVAILABLE];
-		}
+		$l10n = $this->language->forOrganisation(organisation: (string)($subject['organisation'] ?? ''));
 
-		$document = $this->receiptDocument(
-			message: $message,
-			l10n: $this->language->forOrganisation(organisation: (string)($subject['organisation'] ?? ''))
+		return $this->pdfs->pdfFor(
+			subject: $subject,
+			id: $id,
+			l10n: $l10n,
+			subjectKey: self::SUBJECT_KEY,
+			readable: fn (string $moment): string => $this->readable(l10n: $l10n, moment: $moment)
 		);
-		$bytes    = $this->pdfs->render(document: $document);
-		if ($bytes === null) {
-			return ['status' => self::RECEIPT_PDF_FAILED];
-		}
-
-		return ['status' => self::RECEIPT_PDF, 'bytes' => $bytes, 'name' => $document['title']];
 	}//end receiptPdf()
-
-	/**
-	 * What the receipt's PDF holds: the reference, the moment of receipt and
-	 * every answer of the data copy, and nothing else of the message.
-	 *
-	 * @param array<string, mixed> $message The receipt message.
-	 * @param IL10N $l10n The portal's language.
-	 *
-	 * @return array{title: string, columns: array<int, array{key: string, label: string}>, rows: array<int, array<string, string>>}
-	 *
-	 * @spec openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
-	 */
-	public function receiptDocument(array $message, IL10N $l10n): array {
-		$reference = (string)$message['referenceId'];
-		$rows      = [
-			['part' => $l10n->t('Reference'), 'content' => $reference],
-			['part' => $l10n->t('Received'), 'content' => $this->readable(l10n: $l10n, moment: (string)($message['receivedAt'] ?? ''))],
-		];
-		$answers   = ($this->pdfs ?? new SubmissionReceiptPdf(logger: $this->logger));
-		foreach ((array)$message['dataCopy'] as $field => $answer) {
-			$rows[] = ['part' => (string)$field, 'content' => $answers->answerText(answer: $answer)];
-		}
-
-		return [
-			'title'   => $l10n->t(self::SUBJECT_KEY, [$reference]),
-			'columns' => [['key' => 'part', 'label' => $l10n->t('Part')], ['key' => 'content', 'label' => $l10n->t('Content')]],
-			'rows'    => $rows,
-		];
-	}//end receiptDocument()
 }//end class
