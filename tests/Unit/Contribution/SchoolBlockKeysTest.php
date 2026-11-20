@@ -72,7 +72,7 @@ class SchoolBlockKeysTest extends TestCase {
 	/**
 	 * A rows block keeps the field of the moment its status was set.
 	 *
-	 * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/portal-contribution-contract/spec.md#requirement-a-dated-row-may-say-when-its-status-was-set
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-dated-row-may-say-when-its-status-was-set
 	 */
 	public function testRowsKeepTheMomentTheStatusWasSet(): void {
 		$block = $this->blocks([[

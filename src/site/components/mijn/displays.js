@@ -86,7 +86,7 @@ export function toneOf(row, block) {
  * @param {object} block The block.
  * @param {object} [collection] The collection, for its value labels.
  * @return {Array<object>} `{key, row, date, title, subtitle, quote, status, tone, statusNote, statusNoteAt}`.
- * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/portal-contribution-contract/spec.md#requirement-a-dated-row-may-say-when-its-status-was-set
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-dated-row-may-say-when-its-status-was-set
  */
 export function dateRows(rows, block, collection = null) {
 	return (Array.isArray(rows) ? rows : []).map((row, index) => ({

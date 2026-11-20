@@ -166,7 +166,7 @@ function limitOf(block) {
  * @param {string|undefined} template The block's `titleTemplate`.
  * @param {object} row The row, with its looked-up values.
  * @return {string} The sentence, or ''.
- * @spec openspec/changes/lookup-by-row-field/specs/portal-contribution-contract/spec.md#requirement-a-task-may-be-titled-by-a-sentence-with-fields
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-task-may-be-titled-by-a-sentence-with-fields
  */
 export function filledTemplate(template, row) {
 	if (typeof template !== 'string' || template === '') {
@@ -344,7 +344,7 @@ function clockTime(at, locale) {
  * @param {{who: string, at: string}} note The name and the ISO moment.
  * @param {{today: Date, tr: (key: string, vars?: object) => string, locale?: string}} context Today, the translator and the page language.
  * @return {string}
- * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/portal-contribution-contract/spec.md#requirement-a-dated-row-may-say-when-its-status-was-set
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-dated-row-may-say-when-its-status-was-set
  */
 export function decidedInWords(note, context) {
 	const moment = momentInWords(note.at, context)

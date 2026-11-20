@@ -21,7 +21,7 @@ import { rowFor } from '../../../shared/openRecord.js'
  *
  * @param {object} page The contribution page.
  * @return {Array<string>}
- * @spec openspec/changes/documents-for-each-record/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
  */
 export function collectionIdsFor(page) {
 	const ids = []
@@ -76,7 +76,7 @@ function calendarSourceIds(block) {
  *
  * @param {object} block The block.
  * @return {boolean}
- * @spec openspec/changes/documents-for-each-record/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
  */
 function readsRows(block) {
 	return (

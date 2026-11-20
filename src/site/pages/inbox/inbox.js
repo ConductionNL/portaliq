@@ -296,7 +296,7 @@ export function attachmentsOf(message) {
  *
  * @param {object} message The message.
  * @return {{id: string, name: string}|null} The receipt's id and file name, or null.
- * @spec openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+ * @spec openspec/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
  */
 export function receiptPdfOf(message) {
 	const source = message?._source || {}

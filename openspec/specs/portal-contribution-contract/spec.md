@@ -1934,6 +1934,115 @@ A `type: create` action MAY declare `fieldMap`, an object from answer name to a 
 - **THEN** that app is listed with the error class and every other app is still listed
 - @e2e exclude CLI; pinned by ContributionsCommandTest
 
+### Requirement: A field may declare a count stepper
+
+An action field config MAY declare `widget: count`. The server MUST keep `min` and `max` only as whole numbers from 0 to 999 with `max` not below `min`, `unit` only with both `one` and `other` as text of at most 60 characters, and `priceLabel` only as text of at most 60 characters. It MUST drop the widget and its companions on a field with an options provider, a date input or a file.
+
+#### Scenario: The employer's booking form keeps its stepper
+- **GIVEN** a field declaring `widget: count`, `min: 1`, `max: 12`, `unit: {one: deelnemer, other: deelnemers}`, `priceLabel: [PRIJS]`
+- **WHEN** the manifest is normalised
+- **THEN** all five keys are kept
+- @e2e exclude server normaliser, covered by PHPUnit `ActionConfigNormaliserTest::testACountStepperKeepsWhatFits`
+
+### Requirement: An anonymous collection shows what the public may read
+
+A collection a contribution declares `anonymous: true` MUST be read without the subject scope, with OpenRegister's own read rules applied to the caller as it is, so the read never shows more than OpenRegister shows that caller. Its declared `filter` MUST narrow the read, a row naming another tenant than the session's MUST be dropped, and its `fields` whitelist MUST shape every row. Every other collection MUST stay scoped to the subject.
+
+#### Scenario: The council calendar
+- GIVEN decidiq contributes `publicCalendar` over `publication-payload` with `anonymous: true` and `filter: {oriType: "Vergadering"}`
+- AND three council meetings are published
+- WHEN a signed-in resident opens "Vergaderkalender"
+- THEN the meetings are listed
+- AND a payload whose publication date lies ahead is not
+- @e2e exclude pinned by `PortalObjectReaderTest::testAPublicReadLetsOpenRegisterDecideAndNarrowsAndProjects` and `ContributionControllerTest::testAnAnonymousCollectionIsReadAsThePublicMayReadIt`; the live check on the rehearsal follows the merge
+
+#### Scenario: A resident's own records stay theirs
+- GIVEN a collection without `anonymous`
+- WHEN a resident reads it
+- THEN only the rows their scope field names are listed, as before
+- @e2e exclude pinned by `PortalObjectReaderTest::testFiltersOnScopeAndDropsForeignRows`
+
+### Requirement: A collection block may leave out its first rows
+
+A collection block MAY declare `skip`, a whole number from 1 to 50. The site MUST leave out that
+many rows after the block's order and before its limit, also when the resident opens the whole
+list. Any other value MUST be dropped.
+
+#### Scenario: "Daarna" under the next course day
+@e2e exclude Unit tests in node: tests/site-look/collection-skip.spec.mjs; PHPUnit CollectionSkipTest
+- GIVEN course days on 8, 15, 22 and 29 October, a highlight showing 8 October, and "Daarna" with `skip: 1` and `limit: 2`
+- WHEN the overview renders
+- THEN "Daarna" lists 15 and 22 October and offers the rest
+
+### Requirement: A documents block may show the documents of every record it can read
+
+A `documents` block MAY declare `eachRecord: true`. Such a block MUST stay on any page of its contribution, not only on its collection's record page, and MUST keep `titleFields` and `subtitleFields` only as lists of fields the collection projects. Any other value of `eachRecord` MUST leave the record-page rule as it is. A documents block MAY declare `subtitle` and `emptyLabel`, kept trimmed when they are text of at most 400 characters. Listing and opening a document of one row MUST go through the per-object route, which proves the row is the subject's before the provider is asked.
+
+#### Scenario: Fatima's two children on one page
+- GIVEN learniq's page `parentDocuments` with a block `{type: documents, collection: parentChildren, eachRecord: true, titleFields: [givenName], subtitleFields: [groupLabel]}` and no record collection
+- WHEN the manifest is normalised
+- THEN the block stays, with `eachRecord: true` and both field lists
+- AND a block with `eachRecord: "yes"` on the same page is dropped
+- @e2e exclude normaliser output, covered by PHPUnit `PortalBlockResolverTest::testADocumentsBlockForEachRecordStaysOnAnyPage` and `BoardKeysTest::testADocumentsBlockKeepsItsSubtitleAndEmptyWords`
+
+### Requirement: A documents entry may carry its own line, a new mark and a status
+
+The entry reader MUST keep an entry's `meta`, `status` and `statusTone` when each is a non-empty text of at most 200 characters, and `isNew` when it is a boolean. Any other key or value MUST be left out. The `file` reference MUST still never reach the browser.
+
+#### Scenario: A new report
+- GIVEN learniq answers a report with `isNew: true` and `meta: "Groep 6"`
+- WHEN the guardian's page lists it
+- THEN the row shows "Nieuw" and "Groep 6"
+- @e2e exclude reader output, covered by PHPUnit `PortalCaseDocumentReaderTest::testKeepsTheLineTheNewMarkAndTheStatus`
+
+### Requirement: A lookup may be keyed on a field of the row
+
+A block lookup MAY declare `rowField`. The site MUST then match the row's value of that field
+against the lookup collection's `matchField`, where `id` names the looked-up row's id, and put the
+`valueField` of the matching row under the lookup's `as` name. Without `rowField` the lookup MUST
+key on the row's id. A lookup's `as` name MUST count as a field of the block's rows where the block
+names fields. A lookup MUST read only a collection of the same contribution.
+
+#### Scenario: An absence report names the child
+@e2e exclude Unit tests in node: tests/site-look/lookup-by-row-field.spec.mjs; PHPUnit LookupByRowFieldTest
+- GIVEN a report with `learnerRef` `sami` and the guardian's child Sami
+- WHEN the reports block with the `childName` lookup renders
+- THEN the report reads "Sami"
+
+### Requirement: A task may be titled by a sentence with fields
+
+A tasks block MAY declare `titleTemplate`, at most 200 characters, whose `{name}` places each name
+a field of the rows or a lookup. The site MUST title a task with the filled sentence, and with the
+joined title fields when a place stays empty.
+
+#### Scenario: The parent-teacher conversation
+@e2e exclude Unit tests in node: tests/site-look/lookup-by-row-field.spec.mjs; PHPUnit LookupByRowFieldTest
+- GIVEN a conference task for Sami and the template "Kies een tijd voor het oudergesprek van {childName}"
+- WHEN the overview renders the task
+- THEN the card reads "Kies een tijd voor het oudergesprek van Sami"
+
+### Requirement: A dated row may say when its status was set
+
+A collection block with `display: rows` MAY declare `statusNoteAtField`, a date-time field. The line under the status MUST then read the `statusNoteField` value, a comma, and the moment: "vandaag" and the time when it is today, else the day and month and the time ("1 oktober 8:20 uur"). Without a moment the line MUST be the name alone; without a name, the moment alone. The normaliser MUST keep `statusNoteAtField` like the other rows keys.
+
+#### Scenario: Goedgekeurd by the teacher, with the time
+- GIVEN Vera's absence report with status "Goedgekeurd", `decidedBy` "Meester Daan" and `decidedAt` 1 October 2026 08:20
+- AND the rows block declares `statusNoteField: decidedBy` and `statusNoteAtField: decidedAt`
+- WHEN the guardian opens Afwezigheid on 5 October
+- THEN the row reads "Goedgekeurd" with "Meester Daan, 1 oktober 8:20 uur" under it, and a report decided that morning reads "Juf Esra, vandaag 8:12 uur"
+- @e2e exclude pure function, covered by `node --test tests/site-school-displays.spec.mjs` ("the line under a status says who set it and when") and PHPUnit `SchoolBlockKeysTest::testRowsKeepTheMomentTheStatusWasSet`
+
+### Requirement: A cta label may name any field of the open record
+
+On a record page a cta label MAY hold `{field}` for any field of the open record besides `{title}`, filled as plain text. A cta MAY declare `labelWhenEmpty` (at most 120 characters); when a field its label names is empty on the open record, that label MUST be shown instead. Without it the empty placeholder is left out.
+
+#### Scenario: Bericht aan meester Daan
+- GIVEN Vera's page with a cta `route: /mijn/messages`, label "Bericht aan {teacherName}" and `labelWhenEmpty` "Bericht sturen"
+- WHEN the guardian opens Vera, whose `teacherName` is "Meester Daan"
+- THEN the button reads "Bericht aan Meester Daan"
+- AND on the page of a child without a teacher it reads "Bericht sturen"
+- @e2e exclude pure function, covered by `node --test tests/mijn-wave6.spec.mjs` ("a cta label names any field of the open record") and PHPUnit `PortalBlockResolverTest::testACtaKeepsTheLabelForAnEmptyField`
+
 ## Non-Functional Requirements
 
 - **Performance:** trust filtering adds no OpenRegister queries; `scopeClaim`

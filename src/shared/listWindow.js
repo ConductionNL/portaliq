@@ -115,7 +115,7 @@ export function listOrder(block, collection) {
  * @param {Array<object>} rows The ordered rows.
  * @param {object} block The block (`skip`).
  * @return {Array<object>}
- * @spec openspec/changes/collection-skip/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-may-leave-out-its-first-rows
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-may-leave-out-its-first-rows
  */
 export function skipRows(rows, block) {
 	const skip = Number.isInteger(block?.skip) && block.skip >= 1 ? block.skip : 0

@@ -3,7 +3,7 @@
 // Copyright (C) 2026 Conduction B.V.
 //
 // traffic-do-not-track.spec.mjs — the served traffic client honours Do Not
-// Track (REQ-CRG-013, openspec/changes/capability-rows-without-a-requirement).
+// Track (REQ-CRG-013, openspec/specs/portal-traffic-experiments/spec.md).
 //
 // Usage:
 //   node --test tests/traffic-do-not-track.spec.mjs

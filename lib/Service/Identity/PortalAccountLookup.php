@@ -166,7 +166,7 @@ class PortalAccountLookup implements PortalAccountLookupInterface {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/portal-account-presence/specs/portal-identity-space/spec.md#requirement-staff-can-ask-whether-a-citizen-has-a-portal-account
+	 * @spec openspec/specs/portal-identity-space/spec.md#requirement-staff-can-ask-whether-a-citizen-has-a-portal-account
 	 */
 	public function activeByCitizenNumber(string $bsn): ?array {
 		$bsn = trim($bsn);
@@ -200,7 +200,7 @@ class PortalAccountLookup implements PortalAccountLookupInterface {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-account-presence/specs/portal-identity-space/spec.md#requirement-staff-can-ask-whether-a-citizen-has-a-portal-account
+	 * @spec openspec/specs/portal-identity-space/spec.md#requirement-staff-can-ask-whether-a-citizen-has-a-portal-account
 	 */
 	private function isActiveCitizenRow(array $row, string $bsn): bool {
 		return ($row['identityRef'] ?? '') === $bsn

@@ -21,7 +21,7 @@ use PHPUnit\Framework\TestCase;
  * The receipt PDF route answers only a signed-in subject, asks the service
  * with that subject, and maps its answer onto the file or a status.
  *
- * @spec openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+ * @spec openspec/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
  */
 class SubmissionReceiptControllerTest extends TestCase {
 

@@ -30,7 +30,7 @@ use RuntimeException;
  * of its data copy, and nothing else of the message; it opens only for the
  * subject the receipt belongs to, and someone else's receipt renders nothing.
  *
- * @spec openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+ * @spec openspec/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
  */
 class SubmissionReceiptPdfTest extends TestCase {
 

@@ -1432,7 +1432,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return array<int, mixed> The rows.
 	 *
-	 * @spec openspec/changes/anonymous-collection-reads-what-the-public-may/specs/portal-contribution-contract/spec.md#requirement-an-anonymous-collection-shows-what-the-public-may-read
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-anonymous-collection-shows-what-the-public-may-read
 	 */
 	private function readRows(array $subject, array $match, string $register, string $schema): array {
 		$collection = $match['collection'];

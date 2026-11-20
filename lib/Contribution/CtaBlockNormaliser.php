@@ -85,7 +85,7 @@ class CtaBlockNormaliser {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/portal-contribution-contract/spec.md#requirement-a-cta-label-may-name-any-field-of-the-open-record
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-cta-label-may-name-any-field-of-the-open-record
 	 * @spec openspec/changes/guardian-message-to-and-whole-day/specs/portal-contribution-contract/spec.md#requirement-a-message-button-opens-the-form-with-its-teacher-chosen
 	 */
 	private function withOptions(array $entry, array $block): array {
@@ -105,7 +105,7 @@ class CtaBlockNormaliser {
 	 *
 	 * @return array<string, string>
 	 *
-	 * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/portal-contribution-contract/spec.md#requirement-a-cta-label-may-name-any-field-of-the-open-record
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-cta-label-may-name-any-field-of-the-open-record
 	 */
 	private function labelWhenEmptyOf(array $block): array {
 		$fallback = ($block['labelWhenEmpty'] ?? null);
