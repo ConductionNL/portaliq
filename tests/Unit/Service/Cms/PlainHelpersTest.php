@@ -29,6 +29,7 @@ namespace OCA\Portaliq\Tests\Unit\Service\Cms;
 use OCA\Portaliq\Service\Cms\PlainAddress;
 use OCA\Portaliq\Service\Cms\PlainCategoryNames;
 use OCA\Portaliq\Service\Cms\PlainContext;
+use OCA\Portaliq\Service\Cms\PlainQuery;
 use OCA\Portaliq\Service\Cms\PlainDates;
 use OCA\Portaliq\Service\Cms\PlainWidgetLabels;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -36,6 +37,7 @@ use PHPUnit\Framework\TestCase;
 
 #[CoversClass(PlainAddress::class)]
 #[CoversClass(PlainContext::class)]
+#[CoversClass(PlainQuery::class)]
 #[CoversClass(PlainDates::class)]
 #[CoversClass(PlainWidgetLabels::class)]
 #[CoversClass(PlainCategoryNames::class)]
@@ -85,9 +87,27 @@ class PlainHelpersTest extends TestCase {
 	public function testTheContextNamesItsFullPage(): void {
 		$address = new PlainAddress('/site', '');
 
-		$this->assertSame('/site?route=/zoeken&_search=afval&_page=3', (new PlainContext('/zoeken', '', 'afval', 3, $address, 'nl'))->fullUrl());
-		$this->assertSame('/site?route=/zoeken', (new PlainContext('/zoeken', 'x', '', 1, $address, 'nl'))->fullUrl());
+		$searched = new PlainContext('/zoeken', '', new PlainQuery('afval', 3), $address, 'nl');
+		$this->assertSame('/site?route=/zoeken&_search=afval&_page=3', $searched->fullUrl());
+		$this->assertSame('/site?route=/zoeken', (new PlainContext('/zoeken', 'x', new PlainQuery(), $address, 'nl'))->fullUrl());
 	}//end testTheContextNamesItsFullPage()
+
+	/**
+	 * The request's record, search and page become address parameters; an
+	 * empty one and page 1 are left out, a page below 1 is page 1, and the
+	 * context's full page keeps the record.
+	 *
+	 * @return void
+	 */
+	public function testTheQueryNamesOnlyWhatWasAsked(): void {
+		$this->assertSame(['record' => 'm1', '_search' => 'vvd', '_page' => '2'], (new PlainQuery('vvd', 2, 'm1'))->params());
+		$this->assertSame([], (new PlainQuery('', -4, ''))->params());
+		$this->assertSame(1, (new PlainQuery('', -4))->page);
+
+		$context = new PlainContext('/raad', '', new PlainQuery(record: 'm1'), new PlainAddress('/site', ''), 'nl');
+		$this->assertSame('m1', $context->record);
+		$this->assertSame('/site?route=/raad&record=m1', $context->fullUrl());
+	}//end testTheQueryNamesOnlyWhatWasAsked()
 
 	/**
 	 * A date reads as words in the document language, on the day it was

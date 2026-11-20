@@ -37,10 +37,13 @@ use OCA\Portaliq\Service\Cms\PlainPageRenderer;
 use OCA\Portaliq\Service\Cms\PlainPublicationDetail;
 use OCA\Portaliq\Service\Cms\PlainPublicationReader;
 use OCA\Portaliq\Service\Cms\PlainPublicationSearch;
+use OCA\Portaliq\Service\Cms\PlainPublicRecords;
+use OCA\Portaliq\Service\Cms\PlainReadWidgets;
 use OCA\Portaliq\Service\Cms\PlainTextBlocks;
 use OCA\Portaliq\Service\Cms\PlainWidgetLabels;
 use OCA\Portaliq\Service\Cms\SiteHead;
 use OCA\Portaliq\Service\CmsReader;
+use OCA\Portaliq\Kernel\Contracts\PublicRecordReaderInterface;
 use OCA\Portaliq\Service\PortalNoticeReader;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
@@ -71,6 +74,13 @@ class PortalPageControllerPlainTest extends TestCase {
 	 * @var list<string>
 	 */
 	private array $audiences = [];
+
+	/**
+	 * The records each public record list holds, by `app|list`, then by id.
+	 *
+	 * @var array<string, array<string, array<string, mixed>>>
+	 */
+	private array $records = [];
 
 	/**
 	 * `plain()` carries the same attributes as `site()`: public, no CSRF
@@ -161,12 +171,62 @@ class PortalPageControllerPlainTest extends TestCase {
 	}//end testTheCanonicalIsTheSiteAddress()
 
 	/**
+	 * A public records page read with `record=<id>` shows that record; an id
+	 * the list does not hold answers 404 with the stale-link sentence, and
+	 * the full-page link keeps the record (REQ-SCR-006).
+	 *
+	 * @return void
+	 */
+	public function testAPublicRecordRendersAndAStaleOneIs404(): void {
+		$this->pages['/raad'] = ['title' => 'Hoe stemden de raadsleden', 'summary' => '', 'body' => ['type' => 'grid', 'widgets' => [
+			['widgetKey' => 'publicRecords', 'props' => ['app' => 'decidiq', 'list' => 'votes', 'recordHeading' => 'Stemgedrag van {title}']],
+		]]];
+		$this->records['decidiq|votes'] = ['m1' => ['title' => 'Sanne Mulder', 'summary' => [], 'columns' => [], 'rows' => []]];
+
+		$found = $this->controller(route: '/raad', portalParam: 'demo', record: 'm1')->plain();
+		$stale = $this->controller(route: '/raad', portalParam: 'demo', record: 'weg')->plain();
+
+		$this->assertSame(200, $found->getStatus());
+		$this->assertSame('Stemgedrag van Sanne Mulder', $found->getParams()['plain']['blocks'][0]['heading']);
+		$this->assertSame('/index.php/apps/portaliq/site?route=/raad&portal=demo&record=m1', $found->getParams()['plain']['fullUrl']);
+		$this->assertSame(404, $stale->getStatus());
+		$this->assertSame('gone', $stale->getParams()['plain']['blocks'][0]['state']);
+		$this->assertSame('This overview no longer exists.', $stale->getParams()['plain']['blocks'][0]['sentence']);
+
+		$template = (string)file_get_contents(__DIR__ . '/../../../templates/site-plain.php');
+		$this->assertStringContainsString("elseif (\$kind === 'records')", $template);
+		$this->assertStringContainsString('<th class="utrecht-table__header-cell" scope="col">', $template);
+	}//end testAPublicRecordRendersAndAStaleOneIs404()
+
+	/**
+	 * The entries of one record list: each held record by its id, or null
+	 * when the list is not declared.
+	 *
+	 * @param string $key The `app|list`.
+	 *
+	 * @return list<array{id: string, title: string}>|null
+	 */
+	private function entriesOf(string $key): ?array {
+		if (isset($this->records[$key]) === false) {
+			return null;
+		}
+
+		$entries = [];
+		foreach (array_keys($this->records[$key]) as $id) {
+			$entries[] = ['id' => (string)$id, 'title' => (string)$id];
+		}
+
+		return $entries;
+	}//end entriesOf()
+
+	/**
 	 * The controller over doubles of its boundaries and the real plain page.
 	 *
 	 * @param string                    $route       The `route` parameter.
 	 * @param string                    $portalParam The `portal` parameter.
 	 * @param array<string, mixed>|null $portal      The portal the host resolves to.
 	 * @param array<string, string>     $cookies     Cookies the request carries.
+	 * @param string                    $record      The `record` parameter.
 	 *
 	 * @return PortalPageController
 	 */
@@ -174,15 +234,13 @@ class PortalPageControllerPlainTest extends TestCase {
 		string $route = '',
 		string $portalParam = '',
 		?array $portal = ['slug' => 'demo', 'title' => 'Gemeente Demo'],
-		array $cookies = []
+		array $cookies = [],
+		string $record = ''
 	): PortalPageController {
 		$request = $this->createMock(IRequest::class);
+		$params = array_filter(['route' => $route, 'portal' => $portalParam, 'record' => $record], static fn (string $value): bool => $value !== '');
 		$request->method('getParam')->willReturnCallback(
-			static fn (string $key, $default = null) => match ($key) {
-				'route' => ($route !== '' ? $route : $default),
-				'portal' => ($portalParam !== '' ? $portalParam : $default),
-				default => $default,
-			}
+			static fn (string $key, $default = null) => ($params[$key] ?? $default)
 		);
 		$request->method('getHeader')->willReturn('');
 		$request->method('getCookie')->willReturnCallback(static fn (string $name) => ($cookies[$name] ?? null));
@@ -225,14 +283,24 @@ class PortalPageControllerPlainTest extends TestCase {
 
 		$publications = $this->getMockBuilder(PlainPublicationReader::class)->disableOriginalConstructor()->onlyMethods(['search', 'publication'])->getMock();
 		$words = PlainTestWords::for($this);
+		$recordReader = $this->createMock(PublicRecordReaderInterface::class);
+		$recordReader->method('entries')->willReturnCallback(
+			fn (string $app, string $list): ?array => $this->entriesOf(key: $app . '|' . $list)
+		);
+		$recordReader->method('record')->willReturnCallback(
+			fn (string $app, string $list, string $id): ?array => ($this->records[$app . '|' . $list][$id] ?? null)
+		);
 		$plain = new PlainPageRenderer(
 			$reader,
 			$words,
 			new PlainMarkdown(),
 			new PlainWidgetLabels(),
 			new PlainTextBlocks(new PlainMarkdown()),
-			new PlainPublicationSearch($publications, $words, new PlainDates()),
-			new PlainPublicationDetail($publications, $words, new PlainDates(), new PlainCategoryNames())
+			new PlainReadWidgets(
+				new PlainPublicationSearch($publications, $words, new PlainDates()),
+				new PlainPublicationDetail($publications, $words, new PlainDates(), new PlainCategoryNames()),
+				new PlainPublicRecords($recordReader, $words)
+			)
 		);
 
 		return new PortalPageController(

@@ -3717,7 +3717,12 @@
         "The report is marked not applicable.": "De melding is als niet van toepassing gemarkeerd.",
         "Only the owner of this portal's error reports can close them.": "Alleen de eigenaar van de foutmeldingen van dit portaal kan ze sluiten.",
         "The report could not be closed. Try again.": "De melding kon niet worden gesloten. Probeer het opnieuw.",
-        "{read} of {total} read": "{read} van {total} gelezen"
+        "{read} of {total} read": "{read} van {total} gelezen",
+        "Search for a name": "Zoek een naam",
+        "Nothing matches this search.": "Niets past bij deze zoekopdracht.",
+        "Back to the overview": "Terug naar het overzicht",
+        "This overview no longer exists.": "Dit overzicht bestaat niet (meer).",
+        "%1$d to %2$d of %3$d": "%1$d tot %2$d van %3$d"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"
