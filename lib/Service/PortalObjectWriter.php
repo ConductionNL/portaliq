@@ -171,7 +171,7 @@ class PortalObjectWriter implements PortalObjectWriterInterface {
 			return null;
 		}
 
-		$options = UnownedSaveOptions::forTarget(register: $register, schema: $schema);
+		$options = (new UnownedSaveOptions())->forTarget(register: $register, schema: $schema);
 		try {
 			$saved = $this->insideWriteContext(write: static fn () => $objectService->saveObject(
 				object: $data,

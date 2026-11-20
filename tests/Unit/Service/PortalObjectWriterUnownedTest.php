@@ -117,7 +117,7 @@ class PortalObjectWriterUnownedTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheUnownedOptionsNameTheTarget(): void {
-		$options = UnownedSaveOptions::forTarget(register: 'r', schema: 's');
+		$options = (new UnownedSaveOptions())->forTarget(register: 'r', schema: 's');
 
 		$this->assertSame(expected: 'r', actual: $options->target->register);
 		$this->assertSame(expected: 's', actual: $options->target->schema);

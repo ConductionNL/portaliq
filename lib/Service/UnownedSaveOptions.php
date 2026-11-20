@@ -53,7 +53,7 @@ final class UnownedSaveOptions {
 	 *
 	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-a-contributed-action-must-post-where-its-type-is-honoured-req-ptb-012
 	 */
-	public static function forTarget(string $register, string $schema): ObjectSaveOptions {
+	public function forTarget(string $register, string $schema): ObjectSaveOptions {
 		$target = new ObjectFindTarget(register: $register, schema: $schema);
 		if (self::openRegisterStampsUnowned() === false) {
 			return new ObjectSaveOptions(target: $target);
