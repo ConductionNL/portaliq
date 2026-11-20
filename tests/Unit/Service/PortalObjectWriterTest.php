@@ -133,7 +133,10 @@ class PortalObjectWriterTest extends TestCase {
 			]
 		);
 
-		$writer = new PortalObjectWriter($this->container($objectService), $this->createMock(LoggerInterface::class));
+		$writer = new PortalObjectWriter(
+			container: $this->container(objectService: $objectService),
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
 		$result = $writer->updateObject('portaliq', 'exampleDocument', 'subjectRef', 's1', 'org-1', 'd-1', ['title' => 'New']);
 
 		$this->assertTrue($objectService->saveCalled);
@@ -162,7 +165,10 @@ class PortalObjectWriterTest extends TestCase {
 		$objectService = $this->updatableObjectService(
 			['portalMessage' => [['id' => 'm-1', 'subjectRef' => 's1', 'organisation' => 'org-1', 'readAt' => '2026-10-08T09:14:00Z']]]
 		);
-		$writer = new PortalObjectWriter($this->container($objectService), $this->createMock(LoggerInterface::class));
+		$writer = new PortalObjectWriter(
+			container: $this->container(objectService: $objectService),
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
 		$seen = null;
 
 		$writer->updateObject('portaliq', 'portalMessage', 'subjectRef', 's1', 'org-1', 'm-1', static function (array $row) use (&$seen): array {
@@ -197,7 +203,10 @@ class PortalObjectWriterTest extends TestCase {
 			]
 		);
 
-		$writer = new PortalObjectWriter($this->container($objectService), $this->createMock(LoggerInterface::class));
+		$writer = new PortalObjectWriter(
+			container: $this->container(objectService: $objectService),
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
 		$result = $writer->updateObject('portaliq', 'exampleDocument', 'subjectRef', 's1', 'org-1', 'd-2', ['title' => 'HACKED']);
 
 		$this->assertNull($result);
@@ -219,7 +228,10 @@ class PortalObjectWriterTest extends TestCase {
 			]
 		);
 
-		$writer = new PortalObjectWriter($this->container($objectService), $this->createMock(LoggerInterface::class));
+		$writer = new PortalObjectWriter(
+			container: $this->container(objectService: $objectService),
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
 		$this->assertNull($writer->updateObject('portaliq', 'exampleDocument', 'subjectRef', 's1', 'org-1', 'd-3', ['title' => 'X']));
 		$this->assertFalse($objectService->saveCalled);
 
@@ -234,7 +246,10 @@ class PortalObjectWriterTest extends TestCase {
 			]
 		);
 
-		$writer = new PortalObjectWriter($this->container($objectService), $this->createMock(LoggerInterface::class));
+		$writer = new PortalObjectWriter(
+			container: $this->container(objectService: $objectService),
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
 		$this->assertNull($writer->updateObject('portaliq', 'exampleDocument', 'subjectRef', 's1', '', 'nope', ['title' => 'X']));
 		$this->assertFalse($objectService->saveCalled);
 
@@ -254,7 +269,10 @@ class PortalObjectWriterTest extends TestCase {
 			]
 		);
 
-		$writer = new PortalObjectWriter($this->container($objectService), $this->createMock(LoggerInterface::class));
+		$writer = new PortalObjectWriter(
+			container: $this->container(objectService: $objectService),
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
 		// Client tries to smuggle a foreign subjectRef into the patch body.
 		$writer->updateObject('portaliq', 'exampleDocument', 'subjectRef', 's1', 'org-1', 'd-1', ['title' => 'New', 'subjectRef' => 'HACKER']);
 
@@ -273,7 +291,10 @@ class PortalObjectWriterTest extends TestCase {
 			throwOnSave: true
 		);
 
-		$writer = new PortalObjectWriter($this->container($objectService), $this->createMock(LoggerInterface::class));
+		$writer = new PortalObjectWriter(
+			container: $this->container(objectService: $objectService),
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
 		$this->assertNull($writer->updateObject('portaliq', 'exampleDocument', 'subjectRef', 's1', 'org-1', 'd-1', ['title' => 'X']));
 
 	}//end testUpdateFailsClosedOnOpenRegisterWriteError()
@@ -293,7 +314,10 @@ class PortalObjectWriterTest extends TestCase {
 			]
 		);
 
-		$writer = new PortalObjectWriter($this->container($objectService), $this->createMock(LoggerInterface::class));
+		$writer = new PortalObjectWriter(
+			container: $this->container(objectService: $objectService),
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
 		$result = $writer->updateObject('learniq', 'submission', 'learnerRefs', 'learner-1', '', 'sub-1', ['feedbackText' => 'new', 'learnerRefs' => ['intruder']]);
 
 		$this->assertTrue($objectService->saveCalled);
@@ -321,7 +345,10 @@ class PortalObjectWriterTest extends TestCase {
 			]
 		);
 
-		$writer = new PortalObjectWriter($this->container($objectService), $this->createMock(LoggerInterface::class));
+		$writer = new PortalObjectWriter(
+			container: $this->container(objectService: $objectService),
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
 		$this->assertNull($writer->updateObject('learniq', 'submission', 'learnerRefs', 'learner-1', 'org-1', 'sub-5', ['feedbackText' => 'X']));
 
 		$this->assertNull($writer->updateObject('learniq', 'submission', 'learnerRefs', 'learner-1', '', 'sub-2', ['feedbackText' => 'X']));
@@ -375,40 +402,72 @@ class PortalObjectWriterTest extends TestCase {
 	 * The saved object is the stored row patched by the fields, in the stored
 	 * key order: the envelope dropped, the organisation never added or changed,
 	 * and the scope field re-stamped in place.
+	 *
+	 * @return void
 	 */
 	public function testUpdateSavesTheExactMergedRowAndNeverAddsAnOrganisation(): void {
 		$objectService = $this->updatableObjectService(
-			[
+			rowsPerSchema: [
 				'exampleDocument' => [
 					['@self' => ['id' => 'd-1'], 'id' => 'd-1', 'subjectRef' => 's1', 'title' => 'Old', 'status' => 'open'],
 				],
 			]
 		);
-		$writer = new PortalObjectWriter($this->container($objectService), $this->createMock(LoggerInterface::class));
+		$writer = new PortalObjectWriter(
+			container: $this->container(objectService: $objectService),
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
 
-		$writer->updateObject('portaliq', 'exampleDocument', 'subjectRef', 's1', '', 'd-1', ['organisation' => 'org-x', 'subjectRef' => 'other', 'note' => 'n']);
+		$writer->updateObject(
+			register: 'portaliq',
+			schema: 'exampleDocument',
+			scopeField: 'subjectRef',
+			subjectRef: 's1',
+			organisation: '',
+			id: 'd-1',
+			data: ['organisation' => 'org-x', 'subjectRef' => 'other', 'note' => 'n']
+		);
 
-		$this->assertSame(['id' => 'd-1', 'subjectRef' => 's1', 'title' => 'Old', 'status' => 'open', 'note' => 'n'], $objectService->saved);
+		$this->assertSame(
+			expected: ['id' => 'd-1', 'subjectRef' => 's1', 'title' => 'Old', 'status' => 'open', 'note' => 'n'],
+			actual: $objectService->saved
+		);
 
 	}//end testUpdateSavesTheExactMergedRowAndNeverAddsAnOrganisation()
 
 	/**
 	 * A stored organisation is put back after the patch, so it moves to the end
 	 * of the saved row and keeps its stored value.
+	 *
+	 * @return void
 	 */
 	public function testUpdateKeepsTheStoredOrganisationAtTheEndOfTheRow(): void {
 		$objectService = $this->updatableObjectService(
-			[
+			rowsPerSchema: [
 				'exampleDocument' => [
 					['id' => 'd-1', 'organisation' => 'org-1', 'subjectRef' => 's1', 'title' => 'Old'],
 				],
 			]
 		);
-		$writer = new PortalObjectWriter($this->container($objectService), $this->createMock(LoggerInterface::class));
+		$writer = new PortalObjectWriter(
+			container: $this->container(objectService: $objectService),
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
 
-		$writer->updateObject('portaliq', 'exampleDocument', 'subjectRef', 's1', 'org-1', 'd-1', ['organisation' => 'org-2', 'title' => 'New']);
+		$writer->updateObject(
+			register: 'portaliq',
+			schema: 'exampleDocument',
+			scopeField: 'subjectRef',
+			subjectRef: 's1',
+			organisation: 'org-1',
+			id: 'd-1',
+			data: ['organisation' => 'org-2', 'title' => 'New']
+		);
 
-		$this->assertSame(['id' => 'd-1', 'subjectRef' => 's1', 'title' => 'New', 'organisation' => 'org-1'], $objectService->saved);
+		$this->assertSame(
+			expected: ['id' => 'd-1', 'subjectRef' => 's1', 'title' => 'New', 'organisation' => 'org-1'],
+			actual: $objectService->saved
+		);
 
 	}//end testUpdateKeepsTheStoredOrganisationAtTheEndOfTheRow()
 
