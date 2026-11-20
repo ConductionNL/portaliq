@@ -585,18 +585,7 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		// An inbox collection that declares no scopeField, scopeClaim or via is
-		// refused, as the inbox list refuses it: a message is subject data.
-		if (self::inboxDeclaresNoScope(collection: $collection) === true) {
-			return $notFound;
-		}
-
-		$scopeValue = $this->reader->resolveScopeValue(
-			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
-			contributingApp: $match['app'],
-			subject: $subject
-		);
-		if ($scopeValue === null || $scopeValue === '' || $this->withoutTenant(subject: $subject, schema: $schema) === true) {
+		if ($this->messageScopeResolves(subject: $subject, collection: $collection, app: $match['app'], schema: $schema) === false) {
 			return $notFound;
 		}
 
@@ -632,6 +621,39 @@ class ContributionController extends Controller implements PortalProtected {
 
 		return new JSONResponse(['message' => $message]);
 	}//end message()
+
+	/**
+	 * Whether a single inbox message read can be scoped to the subject: the
+	 * collection declares a scope, the scope value resolves from its
+	 * scopeClaim, and the subject has a tenant for the schema. An inbox
+	 * collection that declares no scopeField, scopeClaim or via is refused,
+	 * as the inbox list refuses it: a message is subject data.
+	 *
+	 * @param array<string, mixed> $subject    The portal subject.
+	 * @param array<string, mixed> $collection The inbox collection.
+	 * @param string               $app        The contributing app.
+	 * @param string               $schema     The schema of the inbox collection.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/a-resident-opens-one-message/tasks.md#T02
+	 */
+	private function messageScopeResolves(array $subject, array $collection, string $app, string $schema): bool {
+		if (self::inboxDeclaresNoScope(collection: $collection) === true) {
+			return false;
+		}
+
+		$scopeValue = $this->reader->resolveScopeValue(
+			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
+			contributingApp: $app,
+			subject: $subject
+		);
+		if ($scopeValue === null || $scopeValue === '') {
+			return false;
+		}
+
+		return $this->withoutTenant(subject: $subject, schema: $schema) === false;
+	}//end messageScopeResolves()
 
 	/**
 	 * Whether an inbox collection declares no way to scope a read to the
