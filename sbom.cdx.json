@@ -5167,8 +5167,8 @@
       "type": "library",
       "name": "number-badge",
       "group": "@gemeente-denhaag",
-      "version": "2.2.2",
-      "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/number-badge@2.2.2",
+      "version": "2.2.3",
+      "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/number-badge@2.2.3",
       "licenses": [
         {
           "license": {
@@ -5176,15 +5176,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40gemeente-denhaag/number-badge@2.2.2",
+      "purl": "pkg:npm/%40gemeente-denhaag/number-badge@2.2.3",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/@gemeente-denhaag/number-badge/-/number-badge-2.2.2.tgz",
+          "url": "https://registry.npmjs.org/@gemeente-denhaag/number-badge/-/number-badge-2.2.3.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "3c0d7f24dcf6f124025d328538adead4dc5e5e18613102ddadb9c8221b85625cf802f33cdc168aacd3047c18cbc66e8dd12b8d8c0cb59593a3805fc3657af23a"
+              "content": "c7cb7afc58475430bbf23c1af9a5fd1638b6112870533e11b6e029622c48ee68e4ec638002cececd1dd66143f006718d5e8d69511dfac6f11f5df27f36195a40"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -5269,8 +5269,8 @@
       "type": "library",
       "name": "side-navigation",
       "group": "@gemeente-denhaag",
-      "version": "4.3.0",
-      "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/side-navigation@4.3.0",
+      "version": "4.3.1",
+      "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/side-navigation@4.3.1",
       "licenses": [
         {
           "license": {
@@ -5278,15 +5278,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40gemeente-denhaag/side-navigation@4.3.0",
+      "purl": "pkg:npm/%40gemeente-denhaag/side-navigation@4.3.1",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/@gemeente-denhaag/side-navigation/-/side-navigation-4.3.0.tgz",
+          "url": "https://registry.npmjs.org/@gemeente-denhaag/side-navigation/-/side-navigation-4.3.1.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "6fa9fcdf8b4ab56e2ed25287f7fd77252383633281bd21f5837642efc089c4d41738461183621327a6fa7c0872ebeeb4772231241b6b5cf19dbcde58c5c45e0a"
+              "content": "f24492262d4e69fc2e44797a2236ad243f5407de3e2de1a0200303a760cd6c327f8a63a0d1a9bae6b4fda92f809462856a67634e25190480288e68b35ab90569"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -6994,40 +6994,6 @@
             {
               "name": "cdx:npm:package:path",
               "value": "node_modules/@nextcloud/vue/node_modules/vue-router"
-            }
-          ]
-        },
-        {
-          "type": "library",
-          "name": "pinia",
-          "version": "4.1.0",
-          "bom-ref": "portaliq@0.1.0|@nextcloud/vue@9.13.1|pinia@4.1.0",
-          "scope": "optional",
-          "licenses": [
-            {
-              "license": {
-                "id": "MIT"
-              }
-            }
-          ],
-          "purl": "pkg:npm/pinia@4.1.0",
-          "externalReferences": [
-            {
-              "url": "https://registry.npmjs.org/pinia/-/pinia-4.1.0.tgz",
-              "type": "distribution",
-              "hashes": [
-                {
-                  "alg": "SHA-512",
-                  "content": "fb9fc732e5636107ca9420f9c50ef37d79f5c54cd81446bba5dd0340ae5268c7d909a1514c795a1ff734d8dd45a0639d9734a2c1fe4438f809c7fff5403c3a83"
-                }
-              ],
-              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
-            }
-          ],
-          "properties": [
-            {
-              "name": "cdx:npm:package:path",
-              "value": "node_modules/@nextcloud/vue/node_modules/pinia"
             }
           ]
         }
