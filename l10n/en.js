@@ -3327,6 +3327,20 @@ OC.L10N.register(
         "This page is not excluded from visitor statistics. Add it before you publish.": "This page is not excluded from visitor statistics. Add it before you publish.",
         "Excluded paths": "Excluded paths",
         "Pages the collector writes no visitor row for: each path and everything below it. Put every page that takes or shows a report of wrongdoing here, so nothing records that somebody opened the form.": "Pages the collector writes no visitor row for: each path and everything below it. Put every page that takes or shows a report of wrongdoing here, so nothing records that somebody opened the form.",
+        "Register again": "Register again",
+        "The receipt is registered again": "The receipt is registered again",
+        "The receipt could not be registered again": "The receipt could not be registered again",
+        "The proof of a submission cannot be changed.": "The proof of a submission cannot be changed.",
+        "The request form (`portalFormBinding`) this submission came through. Linked by an employee from the Submissions list; the only field besides the delivery state that changes after the write.": "The request form (`portalFormBinding`) this submission came through. Linked by an employee from the Submissions list; the only field besides the delivery state that changes after the write.",
+        "Conversation in Talk": "Conversation in Talk",
+        "Choose the request form this submission came through": "Choose the request form this submission came through",
+        "Choose a request form.": "Choose a request form.",
+        "The conversation could not be started.": "The conversation could not be started.",
+        "The request forms could not be loaded.": "The request forms could not be loaded.",
+        "This portal has no request forms to link.": "This portal has no request forms to link.",
+        "The form could not be linked.": "The form could not be linked.",
+        "The form is linked.": "The form is linked.",
+        "Submission": "Submission",
         "Favicon": "Favicon",
         "The image the home page hero shows when its block sets no image of its own: an item of this portal's media library as media:<id>.": "The image the home page hero shows when its block sets no image of its own: an item of this portal's media library as media:<id>.",
         "The site logo shown in the portal header: an item of this portal's media library as media:<id>, or an address. Also the tab icon when the portal has no favicon.": "The site logo shown in the portal header: an item of this portal's media library as media:<id>, or an address. Also the tab icon when the portal has no favicon.",
@@ -3482,7 +3496,8 @@ OC.L10N.register(
         "Results from other catalogues that carry no score come after the scored results, in the order their catalogue gave them.": "Results from other catalogues that carry no score come after the scored results, in the order their catalogue gave them.",
         "Pages that place this block": "Pages that place this block",
         "No page places this block yet.": "No page places this block yet.",
-        "Onderdelen van het blok": "Onderdelen van het blok"
+        "Onderdelen van het blok": "Onderdelen van het blok",
+        "You can no longer do this on this case.": "You can no longer do this on this case."
     },
     "nplurals=2; plural=(n != 1);"
 )

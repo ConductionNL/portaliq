@@ -576,5 +576,10 @@
 	"Label": "Label",
 	"Latitude": "Latitude",
 	"Longitude": "Longitude",
-	"Point {number}": "Point {number}"
+	"Point {number}": "Point {number}",
+	"More actions for this case": "More actions for this case",
+	"You can no longer do this on this case.": "You can no longer do this on this case.",
+	"We have received it.": "We have received it.",
+	"We have received it. Reference {reference}.": "We have received it. Reference {reference}.",
+	"You will find it as a case of its own in My cases.": "You will find it as a case of its own in My cases."
 }

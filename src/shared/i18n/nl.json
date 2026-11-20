@@ -576,5 +576,10 @@
 	"Label": "Label",
 	"Latitude": "Breedtegraad",
 	"Longitude": "Lengtegraad",
-	"Point {number}": "Punt {number}"
+	"Point {number}": "Punt {number}",
+	"More actions for this case": "Meer acties voor deze zaak",
+	"You can no longer do this on this case.": "Dit kan niet meer bij deze zaak.",
+	"We have received it.": "Wij hebben het ontvangen.",
+	"We have received it. Reference {reference}.": "Wij hebben het ontvangen. Kenmerk {reference}.",
+	"You will find it as a case of its own in My cases.": "U vindt het als eigen zaak in Mijn zaken."
 }

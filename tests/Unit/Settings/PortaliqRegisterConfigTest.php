@@ -446,11 +446,15 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.124.0 (portal 0.36.0): a domain's `reverifyMisses` and `unboundAt`, kept by the periodic re-check that unbinds a domain whose record is gone (portal-scoping-and-auth Task 2). Additive.
 		// 0.125.0 (portalOidcState 0.4.0): a login state row names the `portal` the login started on, so the OIDC and broker callbacks bind the session to it (portal-scoping-and-auth Task 4). Additive; a row without it binds the session to no portal.
 		// 0.126.0 (portal 0.37.0): `authentication.oidc` declares `issuer` and `clientId`, the one OIDC provider a portal accepts (portal-scoping-and-auth Task 4). Additive; a portal without them accepts its organisation's provider.
-		$this->assertSame(expected: '0.126.0', actual: self::$register['info']['version']);
-		$this->assertSame(expected: '0.126.0', actual: self::$register['components']['registers']['portaliq']['version']);
 		$domainItem = self::$register['components']['schemas']['portal']['properties']['domains']['items']['properties'];
 		$this->assertSame(expected: 'integer', actual: $domainItem['reverifyMisses']['type']);
 		$this->assertSame(expected: 'date-time', actual: $domainItem['unboundAt']['format']);
+		// 0.122.0 (portalSubmission 0.4.0): the optional `formBinding`, the request form a submission came through (submission-row-actions). Additive; written as 0.111.0 on its branch, moved past development's 0.121.0 at merge time, then to 0.127.0 (portalSubmission 0.5.0) past development's 0.126.0 (portalSubmission 0.4.0 is hermiq-ai-tooling's).
+		$this->assertSame(expected: '0.127.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.127.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame(expected: '0.5.0', actual: self::$register['components']['schemas']['portalSubmission']['version']);
+		$this->assertSame(expected: 'uuid', actual: self::$register['components']['schemas']['portalSubmission']['properties']['formBinding']['format']);
+		$this->assertNotContains(needle: 'formBinding', haystack: self::$register['components']['schemas']['portalSubmission']['required']);
 		foreach (['menu', 'glossaryTerm'] as $translatable) {
 			$this->assertSame(expected: '0.2.0', actual: self::$register['components']['schemas'][$translatable]['version']);
 			$this->assertSame(expected: 'string', actual: self::$register['components']['schemas'][$translatable]['properties']['locale']['type']);

@@ -247,6 +247,44 @@
 			{{ windowReason }}
 		</p>
 
+		<!-- The create actions a contribution places on this case, before the
+		     change proposal and the withdrawal: an open one a button that opens
+		     its form here, a closed one its sentence. The server decides which
+		     (case-page-objection-and-complaint REQ-COC-002). -->
+		<div
+			v-if="caseActions.length > 0"
+			class="pq-case-actions"
+			role="group"
+			:aria-label="t('More actions for this case')"
+			data-testid="case-actions">
+			<template v-for="entry in caseActions" :key="entry.key">
+				<button
+					v-if="entry.open"
+					type="button"
+					class="utrecht-button utrecht-button--secondary-action pq-case-action"
+					:aria-expanded="String(openCaseAction === entry.key)"
+					:data-testid="`case-action-${entry.key}`"
+					@click="toggleCaseAction(entry.key)">
+					{{ entry.label }}
+				</button>
+				<p
+					v-else
+					class="utrecht-paragraph pq-case-reason"
+					:data-testid="`case-action-closed-${entry.key}`">
+					{{ entry.closedText || t('You can no longer do this on this case.') }}
+				</p>
+			</template>
+		</div>
+		<CaseActionForm
+			v-if="openCaseActionEntry"
+			:key="openCaseActionEntry.key"
+			:form="openCaseActionEntry.form"
+			:label="openCaseActionEntry.label"
+			:target="caseActionTarget"
+			:api="api"
+			:t="t"
+			@cancel="openCaseAction = ''" />
+
 		<div class="pq-case-fields">
 			<CaseField
 				v-for="field in fields"
@@ -378,6 +416,7 @@
 <script>
 import WithdrawCaseConfirm from '../../modals/e/WithdrawCaseConfirm.vue'
 import FileItem from '../mijn/FileItem.vue'
+import CaseActionForm from './CaseActionForm.vue'
 import CaseField from './CaseField.vue'
 import { groupDocuments } from '../../../shared/caseDocuments.js'
 import { caseOutcome } from '../../../shared/caseOutcome.js'
@@ -408,11 +447,12 @@ import {
 } from '../../pages/inbox/inbox.js'
 import { fileLine } from '../mijn/documents.js'
 import { mijnTranslator, siteHref } from '../mijn/rows.js'
+import { caseActionsView, onCaseTarget } from './caseActions.js'
 
 export default {
 	name: 'CitizenCase',
 
-	components: { CaseField, FileItem, WithdrawCaseConfirm },
+	components: { CaseActionForm, CaseField, FileItem, WithdrawCaseConfirm },
 
 	// The portal's organisation type label, from the site shell (App.vue);
 	// none reads "de organisatie" (portal-identity-from-the-admin REQ-PIA-003).
@@ -468,10 +508,40 @@ export default {
 			questionBusy: '',
 			questionNotice: '',
 			questionFiles: {},
+			openCaseAction: '',
 		}
 	},
 
 	computed: {
+		/**
+		 * The create actions the server places on this case (REQ-COC-002).
+		 *
+		 * @return {Array<object>}
+		 *
+		 * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-case-page-offers-the-actions-the-server-lists-req-coc-002
+		 */
+		caseActions() {
+			return caseActionsView(this.data)
+		},
+
+		/**
+		 * The open case action whose form is shown, or null.
+		 *
+		 * @return {object|null}
+		 */
+		openCaseActionEntry() {
+			return this.caseActions.find((entry) => entry.open && entry.key === this.openCaseAction) || null
+		},
+
+		/**
+		 * The case a case action's submit names (REQ-COC-004).
+		 *
+		 * @return {string}
+		 */
+		caseActionTarget() {
+			return onCaseTarget(this.collection, this.caseId)
+		},
+
 		caseId() {
 			return (this.row && (this.row.id || this.row['@self']?.id)) || ''
 		},
@@ -634,6 +704,15 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * Open a case action's form, or close it when it is open.
+		 *
+		 * @param {string} key The entry's key.
+		 */
+		toggleCaseAction(key) {
+			this.openCaseAction = this.openCaseAction === key ? '' : key
+		},
+
 		/**
 		 * The fields of a question's answer form.
 		 *
