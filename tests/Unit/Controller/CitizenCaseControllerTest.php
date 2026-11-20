@@ -581,7 +581,7 @@ class CitizenCaseControllerTest extends TestCase {
 	 * 429 `too-many-writes` and the sentence, and neither the case writer nor
 	 * the file writer is called (REQ-CWL-001).
 	 *
-	 * @spec openspec/changes/citizen-case-write-limit/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-residents-writes-on-her-own-case-are-limited-per-case-and-per-identity-req-cwl-001
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-residents-writes-on-her-own-case-are-limited-per-case-and-per-identity-req-cwl-001
 	 */
 	public function testPastTheThrottleAWithdrawalAndADocumentAreRefused(): void {
 		$refusal = [
