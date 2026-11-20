@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use Closure;
+use OCA\Portaliq\Auth\PortalAuthConfig;
 use OCA\Portaliq\Kernel\Contracts\CmsReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\NextcloudRegistrationDoorInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalContributionFilterInterface;
@@ -637,8 +638,7 @@ class ContentController extends Controller {
 	 * @spec openspec/changes/password-reset-from-the-sign-in-page/specs/portal-ways-in/spec.md#requirement-the-sign-in-page-leads-to-nextclouds-own-password-reset-req-pwr-001
 	 */
 	private function lostPasswordUrl(array $portal): string {
-		$modes = ($portal['authentication']['modes'] ?? []);
-		if (is_array($modes) === false || in_array('nextcloud', $modes, true) === false) {
+		if (PortalAuthConfig::fromPortal(portal: $portal)->offers(mode: 'nextcloud') === false) {
 			return '';
 		}
 

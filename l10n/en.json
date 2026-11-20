@@ -3498,7 +3498,10 @@
         "Summaries are only found when the search term is spelled exactly.": "Summaries are only found when the search term is spelled exactly.",
         "Text inside documents is found even with a small spelling mistake in the search term.": "Text inside documents is found even with a small spelling mistake in the search term.",
         "Text inside documents is only found when the search term is spelled exactly.": "Text inside documents is only found when the search term is spelled exactly.",
-        "Results from other catalogues that carry no score come after the scored results, in the order their catalogue gave them.": "Results from other catalogues that carry no score come after the scored results, in the order their catalogue gave them."
+        "Results from other catalogues that carry no score come after the scored results, in the order their catalogue gave them.": "Results from other catalogues that carry no score come after the scored results, in the order their catalogue gave them.",
+        "Pages that place this block": "Pages that place this block",
+        "No page places this block yet.": "No page places this block yet.",
+        "Onderdelen van het blok": "Onderdelen van het blok"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

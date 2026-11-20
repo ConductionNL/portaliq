@@ -67,6 +67,7 @@ class SessionClaimsTest extends TestCase {
 				'expiresAt'        => 1700003600,
 				'kvk'              => '12345678',
 				'attributes'       => [],
+				'portal'           => '',
 			],
 			actual: $subject
 		);
@@ -93,6 +94,7 @@ class SessionClaimsTest extends TestCase {
 				'expiresAt'        => 0,
 				'kvk'              => '',
 				'attributes'       => [],
+				'portal'           => '',
 			],
 			actual: (new SessionClaims())->subject(claims: [], trust: 'low')
 		);
@@ -185,4 +187,18 @@ class SessionClaimsTest extends TestCase {
 			actual: $claims->reference(claims: [])
 		);
 	}//end testTheReferenceCarriesTheCase()
+	/**
+	 * A signed portal slug reads back; a malformed one reads as no portal.
+	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
+	 *
+	 * @return void
+	 */
+	public function testThePortalClaimReadsBackOnlyAsASlug(): void {
+		$claims = new SessionClaims();
+		$this->assertSame('portal-a', $claims->subject(claims: ['portal' => 'portal-a'], trust: 'low')['portal']);
+		foreach (['Portal-A', '-a', 'a b', ['portal-a'], 7, str_repeat('a', 64)] as $bad) {
+			$this->assertSame('', $claims->subject(claims: ['portal' => $bad], trust: 'low')['portal'], var_export($bad, true));
+		}
+	}//end testThePortalClaimReadsBackOnlyAsASlug()
 }//end class
