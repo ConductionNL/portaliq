@@ -143,7 +143,7 @@ test('the grid hands the subject page its slug from the route, and a placement c
 	assert.equal(props.routeParam, 'parkeren', 'the route wins over the placement')
 	assert.equal(props.backLabel, 'Alle onderwerpen', 'the author keeps the rest')
 
-	const bare = grid.methods.propsFor.call({}, { widgetKey: 'nlSubjectLanding', props: {} })
+	const bare = grid.methods.propsFor.call({ routeParam: '' }, { widgetKey: 'nlSubjectLanding', props: {} })
 	assert.equal(bare.routeParam, '', 'no route segment hands over no slug')
 })
 

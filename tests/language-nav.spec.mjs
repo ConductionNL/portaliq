@@ -241,3 +241,15 @@ test('the chosen language reaches every content request', async () => {
 		],
 	)
 })
+
+// @spec openspec/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
+test('languageNavProps keeps the authored label and takes the languages from the portal only', async () => {
+	const { languageNavProps } = await import('../src/site/lib/blockProps.js')
+	const portal = { locales: [{ locale: 'nl' }, { locale: 'en' }], current: 'en' }
+	assert.deepEqual(
+		languageNavProps({ label: 'Taal', locales: [{ locale: 'xx' }], current: 'xx' }, portal),
+		{ label: 'Taal', locales: portal.locales, current: 'en' },
+	)
+	assert.deepEqual(languageNavProps({}, null), { locales: [], current: '' })
+	assert.deepEqual(languageNavProps({}, { locales: 'nl' }), { locales: [], current: '' }, 'a locales value that is not a list offers none')
+})
