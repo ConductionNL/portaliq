@@ -36,6 +36,9 @@ use OCA\Portaliq\Service\Cms\PlainPageRenderer;
 use OCA\Portaliq\Service\Cms\PlainPublicationDetail;
 use OCA\Portaliq\Service\Cms\PlainPublicationReader;
 use OCA\Portaliq\Service\Cms\PlainPublicationSearch;
+use OCA\Portaliq\Service\Cms\PlainPublicRecords;
+use OCA\Portaliq\Service\Cms\PlainRecordPager;
+use OCA\Portaliq\Kernel\Contracts\PublicRecordReaderInterface;
 use OCA\Portaliq\Service\Cms\PlainTextBlocks;
 use OCA\Portaliq\Service\Cms\PlainWidgetLabels;
 use OCA\Portaliq\Service\CmsReader;
@@ -54,6 +57,8 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(PlainPublicationDetail::class)]
 #[UsesClass(PlainDates::class)]
 #[UsesClass(PlainCategoryNames::class)]
+#[UsesClass(PlainPublicRecords::class)]
+#[UsesClass(PlainRecordPager::class)]
 class PlainPageRendererTest extends TestCase {
 
 	/**
@@ -142,7 +147,8 @@ class PlainPageRendererTest extends TestCase {
 
 	/**
 	 * Every placement gives exactly one block: an empty text widget, an
-	 * unknown key and a detail widget without an id all say they need
+	 * unknown key, a detail widget without an id and a records widget
+	 * without an app all say they need
 	 * JavaScript rather than vanish.
 	 *
 	 * @return void
@@ -155,12 +161,13 @@ class PlainPageRendererTest extends TestCase {
 			['widgetKey' => 'somethingNew', 'props' => []],
 			['widgetKey' => 'publicationDetail', 'props' => []],
 			['widgetKey' => 'hero', 'props' => ['title' => 'Welkom']],
+			['widgetKey' => 'publicRecords', 'props' => ['list' => 'zonder-app']],
 			'not a widget',
 		];
 
 		$view = $this->renderer(pages: ['/' => $this->gridPage(widgets: $widgets)])->render(self::PORTAL, '/', 'nl', '', 1, $this->address());
 
-		$this->assertCount(6, $view['blocks']);
+		$this->assertCount(7, $view['blocks']);
 		$labels = [];
 		foreach ($view['blocks'] as $block) {
 			$this->assertSame('needsJs', $block['kind']);
@@ -168,7 +175,7 @@ class PlainPageRendererTest extends TestCase {
 			$labels[] = $block['label'];
 		}
 
-		$this->assertSame(['Kop', 'Tekst', 'Lijst met links', 'Something New', 'Publicatiedetail', 'Hero'], $labels);
+		$this->assertSame(['Kop', 'Tekst', 'Lijst met links', 'Something New', 'Publicatiedetail', 'Hero', 'Openbare overzichten'], $labels);
 	}//end testNoWidgetPlaceIsLeftEmpty()
 
 	/**
@@ -310,7 +317,8 @@ class PlainPageRendererTest extends TestCase {
 			new PlainWidgetLabels(),
 			new PlainTextBlocks(new PlainMarkdown()),
 			new PlainPublicationSearch($this->publications, $words, new PlainDates()),
-			new PlainPublicationDetail($this->publications, $words, new PlainDates(), new PlainCategoryNames())
+			new PlainPublicationDetail($this->publications, $words, new PlainDates(), new PlainCategoryNames()),
+			new PlainPublicRecords($this->createMock(PublicRecordReaderInterface::class), $words)
 		);
 	}//end renderer()
 }//end class

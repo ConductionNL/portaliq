@@ -216,6 +216,95 @@ if ($headTitle === '') {
             <?php } else { ?>
             <p class="utrecht-paragraph" role="status"><?php p((string)$block['sentence']); ?> <a class="utrecht-link" href="<?php p((string)$block['fullUrl']); ?>" aria-label="<?php p((string)$block['fullLabel']); ?>"><?php p((string)$block['fullLabel']); ?></a></p>
             <?php } ?>
+            <?php } elseif ($kind === 'records') { ?>
+            <?php if ((string)($block['state'] ?? '') === 'gone') { ?>
+            <p class="utrecht-paragraph" role="alert"><?php p((string)$block['sentence']); ?></p>
+            <?php if ((string)($block['backHref'] ?? '') !== '') { ?>
+            <p class="utrecht-paragraph"><a class="utrecht-link" href="<?php p((string)$block['backHref']); ?>" aria-label="<?php p((string)$block['backLabel']); ?>"><?php p((string)$block['backLabel']); ?></a></p>
+            <?php } ?>
+            <?php } elseif ((string)($block['mode'] ?? '') === 'list') { ?>
+            <?php if ((string)($block['title'] ?? '') !== '') { ?>
+            <h2 class="utrecht-heading-2"><?php p((string)$block['title']); ?></h2>
+            <?php } ?>
+            <form method="get" action="<?php p((string)$block['action']); ?>" role="search">
+                <input type="hidden" name="route" value="<?php p((string)$block['route']); ?>">
+                <?php if ((string)($block['portal'] ?? '') !== '') { ?>
+                <input type="hidden" name="portal" value="<?php p((string)$block['portal']); ?>">
+                <?php } ?>
+                <label class="utrecht-form-label" for="pq-plain-records-search"><?php p((string)$block['label']); ?></label>
+                <input id="pq-plain-records-search" class="utrecht-textbox utrecht-textbox--html-input" type="search" name="_search" value="<?php p((string)$block['query']); ?>">
+                <button type="submit" class="utrecht-button utrecht-button--primary-action" aria-label="<?php p((string)$block['submit']); ?>"><?php p((string)$block['submit']); ?></button>
+            </form>
+            <?php if ((string)($block['empty'] ?? '') !== '') { ?>
+            <p class="utrecht-paragraph" role="status"><?php p((string)$block['empty']); ?></p>
+            <?php } ?>
+            <ul class="utrecht-link-list">
+                <?php foreach ((array)$block['links'] as $link) { ?>
+                <li class="utrecht-link-list__item">
+                    <a class="utrecht-link utrecht-link-list__link" href="<?php p((string)$link['href']); ?>" aria-label="<?php p((string)$link['label']); ?>"><?php p((string)$link['label']); ?></a>
+                    <?php if ((string)$link['description'] !== '') { ?>
+                    <span class="utrecht-link-list__description"><?php p((string)$link['description']); ?></span>
+                    <?php } ?>
+                </li>
+                <?php } ?>
+            </ul>
+            <?php } else { ?>
+            <h2 class="utrecht-heading-2"><?php p((string)$block['heading']); ?></h2>
+            <?php if ((string)$block['subtitle'] !== '') { ?>
+            <p class="utrecht-paragraph"><?php p((string)$block['subtitle']); ?></p>
+            <?php } ?>
+            <?php if ((array)$block['figures'] !== []) { ?>
+            <dl class="utrecht-data-list">
+                <?php foreach ((array)$block['figures'] as $figure) { ?>
+                <dt><?php p((string)$figure['label']); ?></dt>
+                <dd><?php p(trim((string)$figure['value'] . ' ' . (string)$figure['detail'])); ?></dd>
+                <?php } ?>
+            </dl>
+            <?php } ?>
+            <?php if ((string)$block['countText'] !== '') { ?>
+            <p class="utrecht-paragraph" role="status"><?php p((string)$block['countText']); ?></p>
+            <?php } ?>
+            <?php if ((array)$block['rows'] !== []) { ?>
+            <table class="utrecht-table">
+                <thead class="utrecht-table__header">
+                    <tr class="utrecht-table__row">
+                        <?php foreach ((array)$block['columns'] as $column) { ?>
+                        <th class="utrecht-table__header-cell" scope="col"><?php p((string)$column); ?></th>
+                        <?php } ?>
+                    </tr>
+                </thead>
+                <tbody class="utrecht-table__body">
+                    <?php foreach ((array)$block['rows'] as $row) { ?>
+                    <tr class="utrecht-table__row">
+                        <?php foreach ((array)$row as $cell) { ?>
+                        <td class="utrecht-table__cell"><?php if ((string)$cell['href'] !== '') { ?><a class="utrecht-link" href="<?php p((string)$cell['href']); ?>" aria-label="<?php p((string)$cell['text']); ?>"><?php p((string)$cell['text']); ?></a><?php } else { ?><?php p((string)$cell['text']); ?><?php } ?></td>
+                        <?php } ?>
+                    </tr>
+                    <?php } ?>
+                </tbody>
+            </table>
+            <?php } ?>
+            <?php if ((string)$block['previous'] !== '' || (string)$block['next'] !== '') { ?>
+            <nav aria-label="<?php p((string)$block['rangeText']); ?>">
+                <?php if ((string)$block['previous'] !== '') { ?>
+                <a class="utrecht-link" rel="prev" href="<?php p((string)$block['previous']); ?>" aria-label="<?php p((string)$block['previousLabel']); ?>"><?php p((string)$block['previousLabel']); ?></a>
+                <?php } ?>
+                <span><?php p((string)$block['rangeText']); ?></span>
+                <?php if ((string)$block['next'] !== '') { ?>
+                <a class="utrecht-link" rel="next" href="<?php p((string)$block['next']); ?>" aria-label="<?php p((string)$block['nextLabel']); ?>"><?php p((string)$block['nextLabel']); ?></a>
+                <?php } ?>
+            </nav>
+            <?php } ?>
+            <?php if ((string)$block['note'] !== '') { ?>
+            <p class="utrecht-paragraph"><?php p((string)$block['note']); ?></p>
+            <?php } ?>
+            <ul class="utrecht-link-list">
+                <li class="utrecht-link-list__item"><a class="utrecht-link utrecht-link-list__link" href="<?php p((string)$block['backHref']); ?>" aria-label="<?php p((string)$block['backLabel']); ?>"><?php p((string)$block['backLabel']); ?></a></li>
+                <?php foreach ((array)$block['links'] as $link) { ?>
+                <li class="utrecht-link-list__item"><a class="utrecht-link utrecht-link-list__link" href="<?php p((string)$link['href']); ?>" aria-label="<?php p((string)$link['label']); ?>"><?php p((string)$link['label']); ?></a></li>
+                <?php } ?>
+            </ul>
+            <?php } ?>
             <?php } else { ?>
             <p class="utrecht-paragraph pq-plain__needs-js"><?php p((string)($block['sentence'] ?? '')); ?> <a class="utrecht-link" href="<?php p((string)($block['fullUrl'] ?? '')); ?>" aria-label="<?php p((string)($block['fullLabel'] ?? '')); ?>"><?php p((string)($block['fullLabel'] ?? '')); ?></a></p>
             <?php } ?>

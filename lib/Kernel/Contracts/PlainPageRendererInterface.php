@@ -48,10 +48,11 @@ interface PlainPageRendererInterface {
 	 * @param string                    $query   The request's `_search`.
 	 * @param int                       $page    The request's `_page`.
 	 * @param PlainAddress              $address The addresses of this request.
+	 * @param string                    $record  The request's `record`, the id a public records block shows; else ''.
 	 *
 	 * @return array<string, mixed> `status` (200 or 404), `portalTitle`, `menu`, `title`, `summary`, `blocks`, `fullUrl`.
 	 *
 	 * @spec openspec/changes/site-honest-without-javascript/tasks.md#2.4
 	 */
-	public function render(?array $portal, string $route, string $locale, string $query, int $page, PlainAddress $address): array;
+	public function render(?array $portal, string $route, string $locale, string $query, int $page, PlainAddress $address, string $record = ''): array;
 }//end interface

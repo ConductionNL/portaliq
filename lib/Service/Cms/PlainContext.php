@@ -24,7 +24,8 @@ namespace OCA\Portaliq\Service\Cms;
 
 /**
  * The route, the trailing segment a parent page gets, the search term, the
- * page number, the language and the addresses of one plain page request.
+ * page number, the language, the addresses and the record id of one plain
+ * page request.
  *
  * @spec openspec/changes/site-honest-without-javascript/specs/site-without-javascript/spec.md#requirement-the-server-renders-a-plain-version-of-every-public-page-req-shj-002
  */
@@ -40,6 +41,7 @@ class PlainContext {
 	 * @param PlainAddress $address    The addresses.
 	 * @param string       $locale     The document language.
 	 * @param list<array{label: string, href: string, items: list<array{label: string, href: string}>}> $menu The main menu as plain links.
+	 * @param string       $record     The request's `record`: the id a public records block shows; else ''.
 	 */
 	public function __construct(
 		public readonly string $route,
@@ -49,18 +51,24 @@ class PlainContext {
 		public readonly PlainAddress $address,
 		public readonly string $locale,
 		public readonly array $menu = [],
+		public readonly string $record = '',
 	) {
 	}//end __construct()
 
 	/**
-	 * The full page of this request's route, with its search and page.
+	 * The full page of this request's route, with its record, search and page.
 	 *
 	 * @return string
 	 *
 	 * @spec openspec/changes/site-honest-without-javascript/tasks.md#2.4
+	 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
 	 */
 	public function fullUrl(): string {
 		$extra = [];
+		if ($this->record !== '') {
+			$extra['record'] = $this->record;
+		}
+
 		if ($this->query !== '') {
 			$extra['_search'] = $this->query;
 		}

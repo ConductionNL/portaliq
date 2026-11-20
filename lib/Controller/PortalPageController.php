@@ -322,6 +322,7 @@ class PortalPageController extends Controller {
 	 * @return TemplateResponse The plain page.
 	 *
 	 * @spec openspec/changes/site-honest-without-javascript/specs/site-without-javascript/spec.md#requirement-the-server-renders-a-plain-version-of-every-public-page-req-shj-002
+	 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -343,7 +344,8 @@ class PortalPageController extends Controller {
 				locale: $asked['locale'],
 				query: $asked['query'],
 				page: $asked['page'],
-				address: $address
+				address: $address,
+				record: $asked['record']
 			);
 		}
 

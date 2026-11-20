@@ -3558,7 +3558,12 @@
         "The report is marked not applicable.": "The report is marked not applicable.",
         "Only the owner of this portal's error reports can close them.": "Only the owner of this portal's error reports can close them.",
         "The report could not be closed. Try again.": "The report could not be closed. Try again.",
-        "{read} of {total} read": "{read} of {total} read"
+        "{read} of {total} read": "{read} of {total} read",
+        "Search for a name": "Search for a name",
+        "Nothing matches this search.": "Nothing matches this search.",
+        "Back to the overview": "Back to the overview",
+        "This overview no longer exists.": "This overview no longer exists.",
+        "%1$d to %2$d of %3$d": "%1$d to %2$d of %3$d"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"
