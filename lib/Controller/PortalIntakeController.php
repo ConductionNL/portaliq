@@ -52,6 +52,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalFormAvailabilityInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFormBindingResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFormCalculatorInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFormDecisionInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFormFetchInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFormValidatorInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalIntakeConfirmationInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalIntakePaymentsInterface;
@@ -59,12 +60,12 @@ use OCA\Portaliq\Kernel\Contracts\PortalIntakeQueueInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSubmissionChecksInterface;
+use OCA\Portaliq\Service\Intake\FormSignInGate;
 use OCA\Portaliq\Service\Intake\PortalCosignFlow;
 use OCA\Portaliq\Service\Intake\PortalIntakeConfirmation;
 use OCA\Portaliq\Service\Intake\PortalIntakePayments;
 use OCA\Portaliq\Service\Intake\PortalSubmissionChecks;
 use OCA\Portaliq\Service\Intake\QueuedSubmission;
-use OCA\Portaliq\Kernel\Support\SessionTrust;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -137,6 +138,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param PortalFormAvailabilityInterface|null $availability Whether a form takes submissions now (REQ-FGV-001).
 	 * @param OnBehalfFillingInterface|null $onBehalf The desk employee who fills a form in for a resident (resident-identity-in-forms T06).
 	 * @param PortalCosignFlow|null $cosign Holds a submission for its co-signer (resident-identity-in-forms T04).
+	 * @param PortalFormFetchInterface|null $fetches Runs the fetches a form step declares through integriq (data-lookups-and-checks-in-forms T05).
 	 */
 	public function __construct(
 		IRequest $request,
@@ -165,6 +167,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		private readonly ?PortalFormAvailabilityInterface $availability = null,
 		private readonly ?OnBehalfFillingInterface $onBehalf = null,
 		private readonly ?PortalCosignFlow $cosign = null,
+		?PortalFormFetchInterface $fetches = null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 		$this->checks       = new PortalSubmissionChecks(
@@ -173,7 +176,8 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			statements: $statements,
 			calculator: $calculator,
 			decision: $decision,
-			emailVerification: $emailVerification
+			emailVerification: $emailVerification,
+			fetches: $fetches
 		);
 		$this->payments     = new PortalIntakePayments(
 			lookup: $lookup,
@@ -1007,30 +1011,9 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @return JSONResponse|null
 	 */
 	private function signInRefusal(array $site, array $binding, array $render, ?array $subject): ?JSONResponse {
-		$required = $this->bindings->requiredTrust(site: $site, binding: $binding, render: $render);
-		if ($required === null) {
-			return null;
-		}
+		$gate = new FormSignInGate(bindings: $this->bindings, prefill: $this->prefill);
 
-		// What the sign-in page shows beside the choice: the Yivi attributes
-		// the form asks for (REQ-RIF-004) and whether an employee may fill it
-		// in (REQ-RIF-005).
-		$body = [
-			'error' => 'sign_in_required',
-			'minTrust' => $required,
-			'fee' => ($render['fee'] ?? null),
-			'yiviAttributes' => $this->prefill->yiviRequest(binding: $binding),
-			'staffMayFill' => (($binding['staffMayFill'] ?? false) === true),
-		];
-		if ($subject === null) {
-			return new JSONResponse($body, Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ((new SessionTrust())->trustSatisfies(subjectTrust: ($subject['trust'] ?? ''), minTrust: $required) === false) {
-			return new JSONResponse($body, Http::STATUS_FORBIDDEN);
-		}
-
-		return null;
+		return $gate->refusal(site: $site, binding: $binding, render: $render, subject: $subject);
 	}//end signInRefusal()
 
 	/**

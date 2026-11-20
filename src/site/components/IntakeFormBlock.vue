@@ -211,6 +211,18 @@
 				<p v-if="currentStep.description" class="utrecht-paragraph">
 					{{ currentStep.description }}
 				</p>
+				<div
+					v-for="check in stepChecks"
+					:key="check.id"
+					class="pq-intake-form__check"
+					:data-testid="`intake-form-check-${check.id}`">
+					<p v-if="check.label" class="utrecht-paragraph pq-intake-form__check-label">
+						{{ check.label }}
+					</p>
+					<p class="utrecht-paragraph" role="status">
+						{{ check.line }}
+					</p>
+				</div>
 			</template>
 
 			<p
@@ -380,6 +392,30 @@
 				</button>
 			</div>
 
+			<div
+				v-if="fetchDown"
+				class="pq-intake-form__error"
+				role="alert"
+				data-testid="intake-form-fetch-down">
+				<p class="utrecht-paragraph">
+					<strong>{{ text.fetchDownTitle }}</strong>
+				</p>
+				<p class="utrecht-paragraph">
+					{{ text.fetchDown }}
+				</p>
+				<p class="utrecht-paragraph">
+					{{ text.draftKept }}
+				</p>
+				<button
+					type="button"
+					class="utrecht-button utrecht-button--subtle"
+					:disabled="fetching"
+					data-testid="intake-form-fetch-retry"
+					@click="nextStep">
+					{{ text.retry }}
+				</button>
+			</div>
+
 			<p
 				v-if="decisionDown"
 				class="utrecht-paragraph pq-intake-form__error"
@@ -439,6 +475,7 @@ import {
 	challengeProof,
 	decideStep as decideStepOnServer,
 	deskSignInUrl,
+	fetchStep as fetchStepOnServer,
 	initialValues,
 	loadForm,
 	lookUpApplicant as lookUpApplicantOnServer,
@@ -803,6 +840,8 @@ export default {
 			values: {},
 			errors: {},
 			submitting: false,
+			/** The check line each fetch of a step answered, by fetch id (data-lookups-and-checks-in-forms T05). */
+			fetchedChecks: {},
 			sendFailed: false,
 			/** The destination's refusal that names no field of this form (decision 179). */
 			formError: '',
@@ -1018,6 +1057,37 @@ export default {
 		 */
 		rawSteps() {
 			return this.render.steps
+		},
+
+		/**
+		 * The fields a step's fetch fills: shown read-only, filled by the server.
+		 *
+		 * @return {Array<string>} The field names.
+		 *
+		 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t05
+		 */
+		fetchedFields() {
+			return this.flow.flatMap((step) =>
+				(step.fetch || []).flatMap((fetch) => fetch.fields),
+			)
+		},
+
+		/**
+		 * The check lines of the step on screen that a fetch answered.
+		 *
+		 * @return {Array<{id: string, label: string, line: string}>} The lines.
+		 *
+		 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t05
+		 */
+		stepChecks() {
+			const fetches = (this.currentStep && this.currentStep.fetch) || []
+			return fetches
+				.filter((fetch) => (this.fetchedChecks[fetch.id] || '') !== '')
+				.map((fetch) => ({
+					id: fetch.id,
+					label: fetch.checkLabel,
+					line: this.fetchedChecks[fetch.id],
+				}))
 		},
 
 		/**
@@ -1622,7 +1692,11 @@ export default {
 		 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t04
 		 */
 		isComputedField(field) {
-			return Boolean(field.calculate) || field.computed === true
+			return (
+				Boolean(field.calculate)
+				|| field.computed === true
+				|| (this.fetchedFields || []).includes(field.name)
+			)
 		},
 
 		/**
@@ -1657,6 +1731,32 @@ export default {
 				this.values[decided.output] = decided.outcome
 			}
 			return decided
+		},
+
+		/**
+		 * Run one fetch of a step on the server and keep what it answered: the
+		 * fields it fills, and its check line. A throw means the connection is
+		 * down.
+		 *
+		 * @param {object} step The step.
+		 * @param {object} fetch The step's fetch.
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t05
+		 */
+		async fetchStep(step, fetch) {
+			const fetched = await fetchStepOnServer(intakeConnection(this.portal), {
+				route: this.bindingRoute,
+				step: step.id,
+				fetch: fetch.id,
+				answers: this.values,
+			})
+			for (const field of fetch.fields) {
+				if (Object.hasOwn(fetched.values, field)) {
+					this.values[field] = fetched.values[field]
+				}
+			}
+			this.fetchedChecks = { ...this.fetchedChecks, [fetch.id]: fetched.check }
 		},
 
 		/**
@@ -1768,5 +1868,15 @@ export default {
 .pq-intake-form__buttons,
 .pq-intake-form__error {
 	margin-block-start: var(--utrecht-space-block-md, 1rem);
+}
+
+.pq-intake-form__check {
+	margin-block: var(--utrecht-space-block-md, 1rem);
+	padding-inline-start: var(--utrecht-space-inline-md, 1rem);
+	border-inline-start: 3px solid var(--utrecht-color-blue-500, currentColor);
+}
+
+.pq-intake-form__check-label {
+	font-weight: var(--utrecht-typography-weight-scale-bold-font-weight, bold);
 }
 </style>

@@ -47,6 +47,7 @@ export function flowSteps(steps, titles) {
 		fields: step.fields.filter((field) => typeof field === 'string'),
 		review: false,
 		...(step.decides === true ? { decides: true } : {}),
+		...stepFetches(step.fetch),
 	}))
 	const review = list.find((step) => step.review === true)
 	out.push({
@@ -59,6 +60,31 @@ export function flowSteps(steps, titles) {
 		review: true,
 	})
 	return out
+}
+
+/**
+ * A step's fetches, `{fetch: [{id, fields, checkLabel}]}`, as the server sent
+ * them; else nothing. The source and its inputs never reach the browser.
+ *
+ * @param {unknown} fetches The step's declared fetches.
+ * @return {object} `{fetch}` or `{}`.
+ *
+ * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t05
+ */
+export function stepFetches(fetches) {
+	if (!Array.isArray(fetches)) {
+		return {}
+	}
+	const kept = fetches
+		.filter((fetch) => fetch && typeof fetch.id === 'string' && fetch.id !== '')
+		.map((fetch) => ({
+			id: fetch.id,
+			fields: Array.isArray(fetch.fields)
+				? fetch.fields.filter((field) => typeof field === 'string')
+				: [],
+			checkLabel: typeof fetch.checkLabel === 'string' ? fetch.checkLabel : '',
+		}))
+	return kept.length > 0 ? { fetch: kept } : {}
 }
 
 /**
