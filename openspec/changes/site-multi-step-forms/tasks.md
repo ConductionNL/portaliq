@@ -45,4 +45,4 @@ Four waves. Each wave is one PR to `development`. Every PR runs `npm run build:s
 
 ## Validation
 
-- [ ] **T9**: `openspec validate site-multi-step-forms --strict` — not run: openspec CLI not installed here
+- [x] **T9**: `openspec validate site-multi-step-forms --strict` — valid with openspec 2.1.1, once the eight requirements over 500 characters (REQ-SMF-002, -005, -010, -020, -021, -023, -024 and the supplier-portal data-minimisation requirement) moved their edge cases into scenarios
