@@ -13,28 +13,14 @@
 	<div class="nl-cases" data-testid="nl-cases">
 		<CasesBlock
 			v-if="signedIn"
-			:block="{
-				collection,
-				open: openOnly,
-				limit: rowLimit,
-				label,
-			}"
+			:block="{ collection, open: openOnly, limit: rowLimit, label }"
 			:collection="ownCollection"
-			:rows="rows"
-			:loading="loading"
-			:failed="failed"
 			:api="mijn.api"
 			:app="app"
-			:nav="mijn.nav || []"
-			:t="mijn.t || null"
-			:locale="mijn.locale || 'nl'"
+			v-bind="{ ...readProps, ...shellProps }"
 			@navigate="$emit('navigate', $event)"
 			@retry="load" />
-		<SignInPrompt
-			v-else
-			:label="label"
-			:signInRoutes="signInRoutes"
-			:locale="locale" />
+		<SignInPrompt v-else v-bind="promptProps" />
 	</div>
 </template>
 

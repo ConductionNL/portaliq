@@ -27,7 +27,7 @@
 				v-if="run.band && componentFor(run.widget.widgetKey)"
 				:data-testid="`widget-${run.widget.id || run.widget.widgetKey}`"
 				:data-widget-key="run.widget.widgetKey"
-				v-bind="propsFor(run.widget)"
+				v-bind="widgetProps(run.widget)"
 				@subject="$emit('subject', $event)"
 				@navigate="$emit('navigate', $event)"
 				@search="forwardSearch" />
@@ -47,7 +47,7 @@
 						<component
 							:is="componentFor(widget.widgetKey)"
 							v-if="componentFor(widget.widgetKey)"
-							v-bind="propsFor(widget)"
+							v-bind="widgetProps(widget)"
 							@subject="$emit('subject', $event)"
 							@navigate="$emit('navigate', $event)"
 							@search="forwardSearch" />
@@ -564,6 +564,21 @@ export default {
 		},
 
 		/**
+		 * The props handed to a mounted widget: a Mijn omgeving widget's own
+		 * (site-nlds-widget-palette T9), every other widget's from `propsFor()`.
+		 *
+		 * @param {object} widget The placement.
+		 * @return {object} The component props.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portaliq-cms/spec.md#requirement-a-mijn-omgeving-widget-must-show-only-the-visitors-own-data-req-snw-012
+		 */
+		widgetProps(widget) {
+			return SIGNED_IN_WIDGETS.includes(widget.widgetKey)
+				? this.signedInProps(withoutStyling(widget.props))
+				: this.propsFor(widget)
+		},
+
+		/**
 		 * The props of a Mijn omgeving widget: the authored ones, then the
 		 * shell's signed-in data, the ways in, the page language and the
 		 * route's record id, so none of those can be authored.
@@ -793,13 +808,6 @@ export default {
 
 			if (widget.widgetKey === 'nlProductFinder') {
 				return { ...props, portal: this.portal }
-			}
-
-			// site-nlds-widget-palette T9: the visitor's own data, from the
-			// shell, after the authored props (REQ-SNW-012). Signed out it is
-			// null, so the widget shows a sign-in prompt and reads nothing.
-			if (SIGNED_IN_WIDGETS.includes(widget.widgetKey)) {
-				return this.signedInProps(props)
 			}
 
 			// The hero hands the portal on to the list beside it, which reads

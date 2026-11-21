@@ -13,28 +13,22 @@
 -->
 <template>
 	<div class="nl-record-switcher" data-testid="nl-record-switcher">
-		<template v-if="signedIn">
-			<RecordSwitcher
-				v-if="rows.length > 0"
-				:rows="rows"
-				:chosen="routeParam"
-				:titleFields="titleList"
-				:subtitleFields="subtitleList"
-				:legend="label || tr('Choose for whom')"
-				:name="`nl-record-switcher-${collection}`"
-				@choose="choose" />
-			<p
-				v-else-if="!loading"
-				class="utrecht-paragraph"
-				data-testid="nl-record-switcher-none">
-				{{ tr('There is nothing to show here yet.') }}
-			</p>
-		</template>
-		<SignInPrompt
-			v-else
-			:label="label"
-			:signInRoutes="signInRoutes"
-			:locale="locale" />
+		<SignInPrompt v-if="!signedIn" v-bind="promptProps" />
+		<RecordSwitcher
+			v-else-if="rows.length > 0"
+			:rows="rows"
+			:chosen="routeParam"
+			:titleFields="titleList"
+			:subtitleFields="subtitleList"
+			:legend="label || tr('Choose for whom')"
+			:name="`nl-record-switcher-${collection}`"
+			@choose="choose" />
+		<p
+			v-else-if="!loading"
+			class="utrecht-paragraph"
+			data-testid="nl-record-switcher-none">
+			{{ tr('There is nothing to show here yet.') }}
+		</p>
 	</div>
 </template>
 

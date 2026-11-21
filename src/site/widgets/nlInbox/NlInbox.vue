@@ -16,15 +16,9 @@
 			:block="{ collection, limit: rowLimit, label }"
 			:api="mijn.api"
 			:app="app"
-			:nav="mijn.nav || []"
-			:t="mijn.t || null"
-			:locale="mijn.locale || 'nl'"
+			v-bind="shellProps"
 			@navigate="$emit('navigate', $event)" />
-		<SignInPrompt
-			v-else
-			:label="label"
-			:signInRoutes="signInRoutes"
-			:locale="locale" />
+		<SignInPrompt v-else v-bind="promptProps" />
 	</div>
 </template>
 

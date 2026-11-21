@@ -12,20 +12,16 @@
 -->
 <template>
 	<div class="nl-calendar" data-testid="nl-calendar">
+		<SignInPrompt v-if="!signedIn" v-bind="promptProps" />
 		<CalendarTiles
-			v-if="signedIn"
+			v-else
 			:items="items"
 			:limit="rowLimit"
 			:loading="loading"
 			:label="label || (calendarBlock ? calendarBlock.label || '' : '')"
 			:range="chosenRange"
-			:t="mijn.t || null"
-			:locale="mijn.locale || 'nl'" />
-		<SignInPrompt
-			v-else
-			:label="label"
-			:signInRoutes="signInRoutes"
-			:locale="locale" />
+			:t="shellProps.t"
+			:locale="shellProps.locale" />
 	</div>
 </template>
 

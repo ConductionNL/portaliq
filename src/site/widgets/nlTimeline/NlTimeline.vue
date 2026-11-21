@@ -14,27 +14,21 @@
 -->
 <template>
 	<div class="nl-timeline" data-testid="nl-timeline">
-		<template v-if="signedIn">
-			<TimelineBlock
-				v-if="record"
-				:block="{ collection, label }"
-				:collection="ownCollection"
-				:record="record"
-				:api="mijn.api"
-				:t="mijn.t || null"
-				:locale="mijn.locale || 'nl'" />
-			<p
-				v-else-if="!loading"
-				class="utrecht-paragraph"
-				data-testid="nl-timeline-none">
-				{{ tr('There is nothing to show here yet.') }}
-			</p>
-		</template>
-		<SignInPrompt
-			v-else
-			:label="label"
-			:signInRoutes="signInRoutes"
-			:locale="locale" />
+		<SignInPrompt v-if="!signedIn" v-bind="promptProps" />
+		<TimelineBlock
+			v-else-if="record"
+			:block="{ collection, label }"
+			:collection="ownCollection"
+			:record="record"
+			:api="mijn.api"
+			:t="shellProps.t"
+			:locale="shellProps.locale" />
+		<p
+			v-else-if="!loading"
+			class="utrecht-paragraph"
+			data-testid="nl-timeline-none">
+			{{ tr('There is nothing to show here yet.') }}
+		</p>
 	</div>
 </template>
 

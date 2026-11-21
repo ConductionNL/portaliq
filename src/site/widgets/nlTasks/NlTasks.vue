@@ -16,20 +16,11 @@
 			v-if="signedIn"
 			:block="taskBlock"
 			:collection="ownCollection"
-			:rows="rows"
-			:loading="loading"
-			:failed="failed"
 			:app="collection ? app : ''"
-			:nav="mijn.nav || []"
-			:t="mijn.t || null"
-			:locale="mijn.locale || 'nl'"
+			v-bind="{ ...readProps, ...shellProps }"
 			@navigate="$emit('navigate', $event)"
 			@retry="load" />
-		<SignInPrompt
-			v-else
-			:label="label"
-			:signInRoutes="signInRoutes"
-			:locale="locale" />
+		<SignInPrompt v-else v-bind="promptProps" />
 	</div>
 </template>
 

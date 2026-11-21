@@ -19,12 +19,8 @@
 			:loading="loading"
 			:label="label || figures.label"
 			:t="translate"
-			:locale="mijn.locale || 'nl'" />
-		<SignInPrompt
-			v-else
-			:label="label"
-			:signInRoutes="signInRoutes"
-			:locale="locale" />
+			:locale="shellProps.locale" />
+		<SignInPrompt v-else v-bind="promptProps" />
 	</div>
 </template>
 

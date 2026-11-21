@@ -53,6 +53,38 @@ export default {
 		},
 
 		/**
+		 * @return {{nav: Array<object>, t: Function|null, locale: string}} What every mijn block takes from the shell.
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portaliq-cms/spec.md#requirement-a-mijn-omgeving-widget-must-show-only-the-visitors-own-data-req-snw-012
+		 */
+		shellProps() {
+			return {
+				nav: this.mijn?.nav || [],
+				t: this.mijn?.t || null,
+				locale: this.mijn?.locale || this.locale,
+			}
+		},
+
+		/**
+		 * @return {{rows: Array<object>, loading: boolean, failed: boolean}} The read's state, as the mijn blocks take it.
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portaliq-cms/spec.md#requirement-a-mijn-omgeving-widget-must-show-only-the-visitors-own-data-req-snw-012
+		 */
+		readProps() {
+			return { rows: this.rows, loading: this.loading, failed: this.failed }
+		},
+
+		/**
+		 * @return {{label: string, signInRoutes: Array<object>, locale: string}} The signed-out prompt's props.
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portaliq-cms/spec.md#requirement-a-mijn-omgeving-widget-must-show-only-the-visitors-own-data-req-snw-012
+		 */
+		promptProps() {
+			return {
+				label: this.label,
+				signInRoutes: this.signInRoutes,
+				locale: this.locale,
+			}
+		},
+
+		/**
 		 * @return {number} The limit, between 1 and 20.
 		 * @spec openspec/changes/site-nlds-widget-palette/specs/portaliq-cms/spec.md#requirement-a-mijn-omgeving-widget-must-show-only-the-visitors-own-data-req-snw-012
 		 */
