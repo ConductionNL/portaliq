@@ -188,7 +188,12 @@ test.describe.fixme('portal public search (endpoint not built yet)', () => {
 	test.beforeAll(async () => {
 		const api = await adminApi()
 		const records = [
-			pageRecord(SITE_PORTAL, ROUTES.published, 'published', `Gevonden ${STAMP}`),
+			pageRecord(
+				SITE_PORTAL,
+				ROUTES.published,
+				'published',
+				`Gevonden ${STAMP}`,
+			),
 			pageRecord(SITE_PORTAL, ROUTES.draft, 'draft', `Concept ${STAMP}`),
 			pageRecord(OTHER_PORTAL, ROUTES.other, 'published', `Elders ${STAMP}`),
 		]
@@ -237,7 +242,9 @@ test.describe.fixme('portal public search (endpoint not built yet)', () => {
 	test('a draft page is not searchable, while a published one is', async () => {
 		// @e2e portal-public-search::a-draft-page-is-not-searchable-while-a-published-one-is (S24)
 		const visitor = await request.newContext()
-		const answer = (await (await search(visitor, SITE_PORTAL)).json()) as SearchAnswer
+		const answer = (await (
+			await search(visitor, SITE_PORTAL)
+		).json()) as SearchAnswer
 		const routes = routesOf(answer)
 		// Both in one test: a search that found nothing would pass the
 		// exclusion on its own.
@@ -265,7 +272,9 @@ test.describe.fixme('portal public search (endpoint not built yet)', () => {
 	test('facets narrow the result set', async () => {
 		// @e2e portal-public-search::facets-narrow-the-result-set (S26)
 		const visitor = await request.newContext()
-		const whole = (await (await search(visitor, SITE_PORTAL)).json()) as SearchAnswer
+		const whole = (await (
+			await search(visitor, SITE_PORTAL)
+		).json()) as SearchAnswer
 		const kinds = bucketsOf(whole, 'kind')
 		expect(kinds.length).toBeGreaterThan(0)
 
@@ -291,7 +300,10 @@ test.describe.fixme('portal public search (endpoint not built yet)', () => {
 			'set PORTALIQ_E2E_FILE_TERM to the term tests/e2e/fixtures/seed-search.sh puts in the attachment',
 		)
 		const visitor = await request.newContext()
-		const params = new URLSearchParams({ portal: SITE_PORTAL, _search: FILE_TERM })
+		const params = new URLSearchParams({
+			portal: SITE_PORTAL,
+			_search: FILE_TERM,
+		})
 		const response = await visitor.get(`${SEARCH}?${params.toString()}`)
 		expect(response.status()).toBe(200)
 		const answer = (await response.json()) as SearchAnswer
