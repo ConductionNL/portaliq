@@ -17,7 +17,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * The origins InstanceLoopback retries on.
  *
- * @spec openspec/changes/loopback-tries-the-address-php-was-reached-on/specs/instance-loopback/spec.md#requirement-a-transport-failure-on-the-absolute-url-is-retried-on-the-addresses-this-server-answers-on
+ * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-a-transport-failure-on-the-absolute-url-is-retried-on-the-addresses-this-server-answers-on
  */
 class LoopbackOriginsTest extends TestCase {
 	/**
