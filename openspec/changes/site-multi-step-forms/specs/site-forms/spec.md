@@ -18,7 +18,7 @@ Every form the site renders (the published intake form, a create or update actio
 
 ### Requirement: A failed submit MUST show an error summary that takes focus (REQ-SMF-002)
 
-When a submit or a step fails validation, on the client or on the server, the form MUST show an error summary above its fields. The summary heading MUST count the errors of a failed step ("Er is 1 fout", "Er zijn 3 fouten"), and MUST read "Er ontbreekt nog iets" for a failed send. The heading MUST receive keyboard focus. The summary MUST list one link per error, in field order. Activating a link MUST move focus to that field, or to the first input of a field group. Each field's own message MUST stay under the field and be referenced by its `aria-describedby`. While errors stand, the document title MUST start with "Fout: ".
+When a submit or a step fails validation, on the client or on the server, the form MUST show an error summary above its fields. Its heading MUST count the errors of a failed step, read "Er ontbreekt nog iets" for a failed send, and receive keyboard focus. The summary MUST list one link per error, in field order, and a link MUST move focus to its field. While errors stand, the document title MUST start with "Fout: ".
 
 #### Scenario: A guardian forgets the last day
 - GIVEN the absence form with "Tot en met welke dag?" left empty
@@ -33,6 +33,18 @@ When a submit or a step fails validation, on the client or on the server, the fo
 - THEN a summary with the heading "Er zijn 3 fouten" appears above the fields and has focus
 - AND it links the three messages
 - @e2e exclude a static board state until the counted heading is built
+
+#### Scenario: A step with one error
+- GIVEN step 2 of the Woo request with only the e-mail address wrong
+- WHEN the resident presses "Volgende stap"
+- THEN the summary heading reads "Er is 1 fout"
+- AND the document title starts with "Fout: "
+
+#### Scenario: A link to a field group focuses its first input
+- GIVEN a failed send whose summary links the start date, asked as day, month and year
+- WHEN the resident follows that link
+- THEN focus moves to the day input
+- AND the start date's own message stays under the group and is referenced by its `aria-describedby`
 
 #### Scenario: A server refusal lands in the same summary
 - GIVEN a published form whose server validation rejects the field `email`
@@ -81,7 +93,7 @@ A file field on a create or update action MUST render a real file input behind a
 
 ### Requirement: An action field MAY ask for choice cards or named days (REQ-SMF-005)
 
-The contribution contract MUST accept `fieldConfigs.<field>.widget` with the values `choices` and `dateChoices`, and drop any other value. `choices` on a field with options MUST render one radio card per option in a fieldset, sending the same value the select would. `dateChoices` on a date field MUST offer today and the next days the action names (1 to 5, default 2), named in the site's language, plus "Een andere dag", which opens the date group. With `choices` the field MAY also declare `choiceOptions` (a subset of its option values, in order) and `otherLabel`: the cards then show only that subset plus one card with the `otherLabel`, and choosing it reveals the remaining options as a select. Values outside the field's options MUST be dropped from `choiceOptions`. Neither value changes what is sent or how it is validated.
+The contribution contract MUST accept `fieldConfigs.<field>.widget` with the values `choices` and `dateChoices`, and drop any other value. `choices` on a field with options MUST render one radio card per option in a fieldset; the field MAY narrow the cards with `choiceOptions` and `otherLabel`. `dateChoices` on a date field MUST offer today, the next days the action names (1 to 5, default 2) and "Een andere dag". Neither value changes what is sent or how it is validated.
 
 #### Scenario: The reason as three cards
 - GIVEN learniq's absence action declares `fieldConfigs.reasonKind.widget: choices`
@@ -93,6 +105,17 @@ The contribution contract MUST accept `fieldConfigs.<field>.widget` with the val
 - WHEN the guardian chooses "Een andere reden"
 - THEN a select with the other four kinds appears
 - AND the chosen kind is sent as `reasonKind`
+
+#### Scenario: A choice option the field does not have is dropped
+- GIVEN `reasonKind` declares `choiceOptions: [illness, holiday]` and has no option `holiday`
+- WHEN the contribution is normalised
+- THEN `choiceOptions` holds only `illness`
+
+#### Scenario: The absence form offers named days
+- GIVEN learniq's absence action declares `fieldConfigs.lastDay.widget: dateChoices` and names no number of days
+- WHEN the guardian opens the form on a Dutch site
+- THEN it offers today and the next two days by their Dutch names, plus "Een andere dag"
+- AND choosing "Een andere dag" opens the day, month and year group
 
 #### Scenario: An unknown widget falls back
 - GIVEN an action declares `fieldConfigs.reasonKind.widget: slider`
