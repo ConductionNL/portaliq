@@ -27,7 +27,7 @@
 				v-if="run.band && componentFor(run.widget.widgetKey)"
 				:data-testid="`widget-${run.widget.id || run.widget.widgetKey}`"
 				:data-widget-key="run.widget.widgetKey"
-				v-bind="propsFor(run.widget)"
+				v-bind="widgetProps(run.widget)"
 				@subject="$emit('subject', $event)"
 				@navigate="$emit('navigate', $event)"
 				@search="forwardSearch" />
@@ -47,7 +47,7 @@
 						<component
 							:is="componentFor(widget.widgetKey)"
 							v-if="componentFor(widget.widgetKey)"
-							v-bind="propsFor(widget)"
+							v-bind="widgetProps(widget)"
 							@subject="$emit('subject', $event)"
 							@navigate="$emit('navigate', $event)"
 							@search="forwardSearch" />
@@ -83,7 +83,10 @@ import {
 	ownBand,
 	runsFor,
 } from '../lib/gridPlacement.js'
-import { loaders as siteWidgetLoaders } from '../widgets/loaders.js'
+import {
+	SIGNED_IN_WIDGETS,
+	loaders as siteWidgetLoaders,
+} from '../widgets/loaders.js'
 
 /**
  * LOADED ON DEMAND, and that is a budget decision rather than a style one.
@@ -465,6 +468,18 @@ export default {
 			type: Array,
 			default: () => [],
 		},
+
+		/**
+		 * The signed-in shell's data for the Mijn omgeving widgets: `{api,
+		 * contributions, nav, t, locale}`, null when signed out. Handed to
+		 * those widgets AFTER their authored props, so a placement can name an
+		 * app and a collection but never bring data, an endpoint or a subject
+		 * of its own (site-nlds-widget-palette REQ-SNW-012).
+		 */
+		mijn: {
+			type: Object,
+			default: null,
+		},
 	},
 
 	// `search` comes from the shared hero block, which renders a search box and
@@ -546,6 +561,41 @@ export default {
 		 */
 		componentFor(key) {
 			return publicWidgetFor(key)
+		},
+
+		/**
+		 * The props handed to a mounted widget: a Mijn omgeving widget's own
+		 * (site-nlds-widget-palette T9), every other widget's from `propsFor()`.
+		 *
+		 * @param {object} widget The placement.
+		 * @return {object} The component props.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portaliq-cms/spec.md#requirement-a-mijn-omgeving-widget-must-show-only-the-visitors-own-data-req-snw-012
+		 */
+		widgetProps(widget) {
+			return SIGNED_IN_WIDGETS.includes(widget.widgetKey)
+				? this.signedInProps(withoutStyling(widget.props))
+				: this.propsFor(widget)
+		},
+
+		/**
+		 * The props of a Mijn omgeving widget: the authored ones, then the
+		 * shell's signed-in data, the ways in, the page language and the
+		 * route's record id, so none of those can be authored.
+		 *
+		 * @param {object} props The authored props.
+		 * @return {object} The component props.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portaliq-cms/spec.md#requirement-a-mijn-omgeving-widget-must-show-only-the-visitors-own-data-req-snw-012
+		 */
+		signedInProps(props) {
+			return {
+				...props,
+				mijn: this.signedIn === true ? this.mijn : null,
+				signInRoutes: this.signInRoutes,
+				locale: this.languages?.current || 'nl',
+				routeParam: this.routeParam,
+			}
 		},
 
 		/**

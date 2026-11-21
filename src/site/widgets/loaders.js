@@ -69,4 +69,33 @@ export const loaders = {
 	nlPortalCounts: () => import('./nlPortalCounts/NlPortalCounts.vue'),
 	nlSubjectLanding: () => import('./nlSubjectLanding/NlSubjectLanding.vue'),
 	nlStartTiles: () => import('./nlStartTiles/NlStartTiles.vue'),
+	// site-nlds-widget-palette T9: the Mijn omgeving widgets and two content ones.
+	nlCases: () => import('./nlCases/NlCases.vue'),
+	nlTasks: () => import('./nlTasks/NlTasks.vue'),
+	nlInbox: () => import('./nlInbox/NlInbox.vue'),
+	nlTimeline: () => import('./nlTimeline/NlTimeline.vue'),
+	nlFigures: () => import('./nlFigures/NlFigures.vue'),
+	nlCalendar: () => import('./nlCalendar/NlCalendar.vue'),
+	nlRecordSwitcher: () => import('./nlRecordSwitcher/NlRecordSwitcher.vue'),
+	nlSteps: () => import('./nlSteps/NlSteps.vue'),
+	nlFileList: () => import('./nlFileList/NlFileList.vue'),
 }
+
+/**
+ * The widgets that show the signed-in visitor's own data (REQ-SNW-012). The
+ * grid hands each the shell's signed-in data after its authored props, so a
+ * placement cannot supply data of its own; signed out it hands down none and
+ * the widget shows a sign-in prompt. `tests/mijn-widgets.spec.mjs` holds this
+ * list to the metas whose scope is `signedIn`.
+ *
+ * @type {Array<string>}
+ */
+export const SIGNED_IN_WIDGETS = [
+	'nlCases',
+	'nlTasks',
+	'nlInbox',
+	'nlTimeline',
+	'nlFigures',
+	'nlCalendar',
+	'nlRecordSwitcher',
+]
