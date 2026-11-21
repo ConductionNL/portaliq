@@ -87,6 +87,54 @@ class PortalSessionScopeTest extends TestCase {
 	}//end testAServingPortalWithoutASlugAdmitsNoBoundSession()
 
 	/**
+	 * The serving portal's `minTrust` is a floor: a session below it is
+	 * refused on that portal, bound or not, and a session at it is admitted.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 */
+	public function testASessionBelowTheServingPortalsFloorIsRefused(): void {
+		$asked   = [];
+		$serving = ['slug' => 'portal-a', 'authentication' => ['modes' => ['digid'], 'minTrust' => 'substantial']];
+		$scope   = $this->scope(serving: $serving, named: null, asked: $asked);
+
+		$this->assertFalse(condition: $scope->admits(portal: 'portal-a', trust: 'low'));
+		$this->assertFalse(condition: $scope->admits(portal: '', trust: 'low'));
+		$this->assertTrue(condition: $scope->admits(portal: 'portal-a', trust: 'substantial'));
+		$this->assertTrue(condition: $scope->admits(portal: '', trust: 'substantial'));
+		$this->assertTrue(condition: $scope->admits(portal: 'portal-a', trust: 'high'));
+		$this->assertFalse(condition: $scope->admits(portal: 'portal-b', trust: 'high'));
+	}//end testASessionBelowTheServingPortalsFloorIsRefused()
+
+	/**
+	 * A portal that declares no floor, or a malformed authentication block,
+	 * admits a low session; an unbound session at `high` is admitted without
+	 * resolving anything, and an unbound lower one is refused when the
+	 * serving portal cannot be resolved.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 */
+	public function testWithoutAFloorEverySessionMeetsIt(): void {
+		$asked     = [];
+		$noFloor   = ['slug' => 'portal-a'];
+		$malformed = ['slug' => 'portal-a', 'authentication' => 'not an object'];
+		$lowFloor  = ['slug' => 'portal-a', 'authentication' => ['modes' => ['digid'], 'minTrust' => 'low']];
+		$this->assertTrue(condition: $this->scope(serving: $noFloor, named: null, asked: $asked)->admits(portal: 'portal-a', trust: 'low'));
+		$this->assertTrue(condition: $this->scope(serving: $malformed, named: null, asked: $asked)->admits(portal: '', trust: 'low'));
+		$this->assertTrue(condition: $this->scope(serving: $lowFloor, named: null, asked: $asked)->admits(portal: '', trust: 'low'));
+
+		$request  = $this->createMock(originalClassName: IRequest::class);
+		$resolver = $this->createMock(originalClassName: PortalResolver::class);
+		$resolver->method('resolveForCollector')->willThrowException(new RuntimeException('down'));
+		$scope = new PortalSessionScope(request: $request, portals: $resolver);
+		$this->assertFalse(condition: $scope->admits(portal: '', trust: 'low'));
+		$this->assertTrue(condition: $scope->admits(portal: '', trust: 'high'));
+	}//end testWithoutAFloorEverySessionMeetsIt()
+
+	/**
 	 * A scope whose resolver serves the given portal and records the named portal it was asked with.
 	 *
 	 * @param array<string, mixed>|null $serving The serving portal.

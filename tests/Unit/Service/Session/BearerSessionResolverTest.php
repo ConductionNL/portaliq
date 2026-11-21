@@ -109,26 +109,58 @@ class BearerSessionResolverTest extends TestCase {
 	}//end testAPortalBoundSessionResolvesOnlyWhereItsPortalIsAdmitted()
 
 	/**
-	 * Without a scope to ask, a portal-bound session is refused, while a
-	 * session bound to no portal is not asked about at all.
+	 * Without a scope to ask, a portal-bound session is refused and a session
+	 * bound to no portal is admitted; with a scope, the unbound session is
+	 * asked about with its own trust level, so the serving portal's floor
+	 * applies to it too.
 	 *
 	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 	 */
-	public function testAPortalBoundSessionWithoutAScopeIsRefusedAndAnUnboundOneIsNotAsked(): void {
+	public function testAPortalBoundSessionWithoutAScopeIsRefusedAndAnUnboundOneIsAskedWithItsTrust(): void {
 		$jwt   = new PortalJwtService(signingSecret: self::SECRET);
 		$bound = $jwt->createSession(subjectRef: 's1', audience: 'client', organisation: 'org-1', jti: 'bound', context: ['portal' => 'portal-a']);
 		$free  = $jwt->createSession(subjectRef: 's2', audience: 'client', organisation: 'org-1', jti: 'free');
 		$rows  = ['bound' => ['jti' => 'bound'], 'free' => ['jti' => 'free']];
 
 		$this->assertNull($this->resolver(rows: $rows)->resolveFromBearer('Bearer ' . $bound));
+		$this->assertSame(expected: 's2', actual: $this->resolver(rows: $rows)->resolveFromBearer('Bearer ' . $free)['subjectRef']);
 
+		$asked = [];
 		$scope = $this->createMock(PortalSessionScope::class);
-		$scope->expects($this->never())->method('admits');
+		$scope->method('admits')->willReturnCallback(function (string $portal, string $trust) use (&$asked): bool {
+			$asked[] = [$portal, $trust];
+			return true;
+		});
 		$subject = $this->resolver(rows: $rows, scope: $scope)->resolveFromBearer('Bearer ' . $free);
 		$this->assertSame('s2', $subject['subjectRef']);
 		$this->assertSame('', $subject['portal']);
+		$this->assertSame(expected: [['', 'low']], actual: $asked);
 
-	}//end testAPortalBoundSessionWithoutAScopeIsRefusedAndAnUnboundOneIsNotAsked()
+	}//end testAPortalBoundSessionWithoutAScopeIsRefusedAndAnUnboundOneIsAskedWithItsTrust()
+
+	/**
+	 * A session the serving portal refuses for its trust level resolves to no
+	 * subject, exactly as an invalid bearer does.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 */
+	public function testASessionBelowTheServingPortalsFloorResolvesToNoSubject(): void {
+		$jwt  = new PortalJwtService(signingSecret: self::SECRET);
+		$bind = ['portal' => 'portal-a'];
+		$low  = $jwt->createSession(subjectRef: 's1', audience: 'client', organisation: 'org-1', jti: 'low', trust: 'low', context: $bind);
+		$high = $jwt->createSession(subjectRef: 's2', audience: 'client', organisation: 'org-1', jti: 'high', trust: 'substantial', context: $bind);
+		$rows = ['low' => ['jti' => 'low'], 'high' => ['jti' => 'high']];
+
+		$scope = $this->createMock(originalClassName: PortalSessionScope::class);
+		$scope->method('admits')->willReturnCallback(fn (string $portal, string $trust): bool => $trust !== 'low');
+
+		$this->assertNull(actual: $this->resolver(rows: $rows, scope: $scope)->resolveFromBearer('Bearer ' . $low));
+		$this->assertSame(expected: 'substantial', actual: $this->resolver(rows: $rows, scope: $scope)->resolveFromBearer('Bearer ' . $high)['trust']);
+
+	}//end testASessionBelowTheServingPortalsFloorResolvesToNoSubject()
 
 	/**
 	 * A resolver over recorded session rows, keyed by jti.
