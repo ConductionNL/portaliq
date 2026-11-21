@@ -103,6 +103,7 @@ on `origin/development` first and seen red; put the failing line in the PR body.
     the switch`, `an author cannot add a locale the portal does not serve`, and
     `every content read carries the chosen locale`, wired into `check:specs`.
   - Status: the node tests above pass on this branch because #1196 merged; the e2e and the live check below are not run: need a live instance.
+  - Written 21 Nov: `tests/e2e/site-language.spec.ts` creates two routes on the seeded portal in Dutch and English (the Dutch first page places `nlLanguageNav`), chooses English, reads the English title, follows a link and reads the next page in English with `lang=en` kept; pages deleted afterwards. Not run: needs a live instance.
   - e2e `tests/e2e/site-language.spec.ts`: on a portal with locales `nl` and `en`, choose English and
     see a page with an English translation render in English, then follow a link and stay in English.
     Cite REQ-SNW-013.

@@ -51,6 +51,7 @@ each test carries the `@e2e portaliq site-without-javascript::<scenario>` tag of
   - unit `PortalPageControllerPlainTest::testTheCanonicalIsTheSiteAddress`.
   - e2e `a text page reads the same without JavaScript`, `a part that needs JavaScript says so` and
     `a draft or a session never leaks` (the last with a signed-in resident's storage state).
+  - Written 21 Nov: `tests/e2e/site-without-javascript.spec.ts` holds these three and the two notice tests of 1.1, on the pages `seed-cms.sh` seeds (`/over-ons`, the home page's `contributions` block, `/zoeken`, the draft `/concept`, the last asked with a dev-login bearer). The publication tests of 3.4 wait on opencatalogi in CI. Not run: needs a live instance.
 
 ## 3. Publications without JavaScript (REQ-SHJ-003, REQ-SHJ-004, REQ-SHJ-005)
 
