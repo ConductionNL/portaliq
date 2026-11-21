@@ -1,3 +1,8 @@
+## RENAMED Requirements
+
+- FROM: `### Requirement: A transport failure on the absolute URL is retried once on the loopback`
+- TO: `### Requirement: A transport failure on the absolute URL is retried on the addresses this server answers on`
+
 ## MODIFIED Requirements
 
 ### Requirement: A transport failure on the absolute URL is retried on the addresses this server answers on
