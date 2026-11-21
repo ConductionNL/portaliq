@@ -51,7 +51,7 @@ class CitizenWriteThrottleTest extends TestCase {
 	 * identity's budget, so after the limit the next write elsewhere is still
 	 * refused (REQ-CWL-001).
 	 *
-	 * @spec openspec/changes/citizen-case-write-limit/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-residents-writes-on-her-own-case-are-limited-per-case-and-per-identity-req-cwl-001
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-residents-writes-on-her-own-case-are-limited-per-case-and-per-identity-req-cwl-001
 	 */
 	public function testARefusedWriteIsCountedSoTheNextWriteIsStillRefused(): void {
 		$throttle = new CitizenWriteThrottle($this->cacheFactory());

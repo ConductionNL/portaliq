@@ -773,7 +773,8 @@ class CitizenCaseController extends Controller implements PortalProtected {
 
 	/**
 	 * Save the write on the case under the action's scope. Null when the
-	 * scoped write finds no case.
+	 * scoped write finds no case. Nothing is thrown here: the writer fails
+	 * closed and turns an OpenRegister Exception into null.
 	 *
 	 * @param CaseWriteRun         $write The write.
 	 * @param array<string, mixed> $data  What to write.
@@ -985,7 +986,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse|null The refusal, or null to proceed.
 	 *
-	 * @spec openspec/changes/citizen-case-write-limit/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-residents-writes-on-her-own-case-are-limited-per-case-and-per-identity-req-cwl-001
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-residents-writes-on-her-own-case-are-limited-per-case-and-per-identity-req-cwl-001
 	 */
 	private function guardWrite(array $context, string $id): ?JSONResponse {
 		$allowed = $this->throttle->allow(
