@@ -64,7 +64,7 @@
   - GIVEN the capability spec WHEN this change is archived THEN `openspec/specs/portaliq-mcp-surface/spec.md` reflects the base requirements from `portaliq-mcp-adoption` plus this delta's MODIFIED and ADDED requirements, listing both changes
   - GIVEN the CHANGELOG WHEN this change lands THEN it records the new derived read dialects and the governed provider
 - [x] Implement
-- [ ] Test
+- [x] Test — `tests/Unit/Mcp/McpDocumentationTest.php` pins the README's curated-tool table (scope × reach, approval) to `PortaliqToolProvider::getTools()`, its derived-read table to the schemas declaring `x-openregister-mcp`, and checks the CHANGELOG and the portal-edge rule; the capability spec is synced when the change is archived
 
 ## Verification
 
