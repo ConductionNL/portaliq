@@ -4050,6 +4050,11 @@
                   "widgetId": "portal-settings-signin"
                 },
                 {
+                  "key": "oidc",
+                  "title": "OIDC provider",
+                  "widgetId": "portal-settings-oidc"
+                },
+                {
                   "key": "registration",
                   "title": "Registration",
                   "widgetId": "portal-settings-registration"
@@ -4381,6 +4386,32 @@
             "type": "PortalSignin",
             "title": "Sign in",
             "content": {}
+          },
+          {
+            "id": "portal-settings-oidc",
+            "type": "settings-form",
+            "title": "OIDC provider",
+            "_note": "Which OIDC provider this portal accepts (portal-scoping-and-auth Task 4). The fields write authentication.oidc.issuer and authentication.oidc.clientId; the settings form merges a dot-path into the stored authentication block, so modes and the rest are kept, and a cleared field is sent as null, which names no provider. PortalAuthConfig::acceptsOidcProvider() compares them with the organisation's provider; the client secret never lives on the portal.",
+            "content": {
+              "columns": 2,
+              "saveLabel": "Save",
+              "savedText": "The portal is saved.",
+              "fields": [
+                {
+                  "key": "authentication.oidc.issuer",
+                  "label": "Issuer",
+                  "placeholder": "https://login.example.nl",
+                  "pattern": "^$|^https://\\S+$",
+                  "patternMessage": "An issuer address starts with https://.",
+                  "hint": "The only OIDC provider this portal accepts; a sign-in through another provider is refused. Empty: the organisation's provider is accepted."
+                },
+                {
+                  "key": "authentication.oidc.clientId",
+                  "label": "Client id",
+                  "hint": "The client id that provider must use. Empty: any client of that provider. The client secret stays with the organisation."
+                }
+              ]
+            }
           },
           {
             "id": "portal-settings-registration",
