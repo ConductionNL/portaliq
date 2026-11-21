@@ -3727,7 +3727,8 @@
         "Issuer": "Issuer",
         "An issuer address starts with https://.": "Een issuer-adres begint met https://.",
         "The only OIDC provider this portal accepts; a sign-in through another provider is refused. Empty: the organisation's provider is accepted.": "De enige OIDC-aanbieder die deze portal accepteert; inloggen via een andere aanbieder wordt geweigerd. Leeg: de aanbieder van de organisatie wordt geaccepteerd.",
-        "The client id that provider must use. Empty: any client of that provider. The client secret stays with the organisation.": "De client-id die die aanbieder moet gebruiken. Leeg: elke client van die aanbieder. Het clientgeheim blijft bij de organisatie."
+        "The client id that provider must use. Empty: any client of that provider. The client secret stays with the organisation.": "De client-id die die aanbieder moet gebruiken. Leeg: elke client van die aanbieder. Het clientgeheim blijft bij de organisatie.",
+        "https://login.example.nl": "https://login.example.nl"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"
