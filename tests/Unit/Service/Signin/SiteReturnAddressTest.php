@@ -38,10 +38,10 @@ class SiteReturnAddressTest extends TestCase {
 	 * @return SiteReturnAddress
 	 */
 	private function address(?array $domain = null): SiteReturnAddress {
-		$resolver = $this->createMock(PortalResolverInterface::class);
+		$resolver = $this->createMock(originalClassName: PortalResolverInterface::class);
 		$resolver->method('servingDomain')->willReturn($domain);
 
-		return new SiteReturnAddress($resolver, $this->createMock(IRequest::class));
+		return new SiteReturnAddress(portalResolver: $resolver, request: $this->createMock(originalClassName: IRequest::class));
 	}//end address()
 
 	/**
@@ -51,10 +51,11 @@ class SiteReturnAddressTest extends TestCase {
 	 */
 	public function testAShortAddressIsKeptOnAHostServedAtRoot(): void {
 		$address = $this->address(domain: ['host' => 'www.zuiddrecht.nl', 'servedAtRoot' => true]);
-		$this->assertSame('/afval', $address->accept(candidate: '/afval', sitePath: '/apps/portaliq/site'));
-		$this->assertSame('/mijn/inbox?tab=2', $address->accept(candidate: '/mijn/inbox?tab=2', sitePath: '/apps/portaliq/site'));
-		$this->assertSame('/', $address->accept(candidate: '/', sitePath: '/apps/portaliq/site'));
-		$this->assertSame('/apps/portaliq/site?portal=x', $address->accept(candidate: '/apps/portaliq/site?portal=x', sitePath: '/apps/portaliq/site'));
+		$this->assertSame(expected: '/afval', actual: $address->accept(candidate: '/afval', sitePath: '/apps/portaliq/site'));
+		$this->assertSame(expected: '/mijn/inbox?tab=2', actual: $address->accept(candidate: '/mijn/inbox?tab=2', sitePath: '/apps/portaliq/site'));
+		$this->assertSame(expected: '/', actual: $address->accept(candidate: '/', sitePath: '/apps/portaliq/site'));
+		$long = '/apps/portaliq/site?portal=x';
+		$this->assertSame(expected: $long, actual: $address->accept(candidate: $long, sitePath: '/apps/portaliq/site'));
 	}//end testAShortAddressIsKeptOnAHostServedAtRoot()
 
 	/**
@@ -65,13 +66,16 @@ class SiteReturnAddressTest extends TestCase {
 	 * @return void
 	 */
 	public function testAShortAddressIsRefusedElsewhere(): void {
-		$this->assertSame('', $this->address()->accept(candidate: '/afval', sitePath: '/apps/portaliq/site'));
-		$this->assertSame('', $this->address(domain: ['host' => 'x.nl', 'servedAtRoot' => false])->accept(candidate: '/afval', sitePath: '/apps/portaliq/site'));
-		$this->assertSame('', $this->address(domain: ['host' => 'x.nl', 'servedAtRoot' => 'true'])->accept(candidate: '/afval', sitePath: '/apps/portaliq/site'));
+		$this->assertSame(expected: '', actual: $this->address()->accept(candidate: '/afval', sitePath: '/apps/portaliq/site'));
+		$notAtRoot = $this->address(domain: ['host' => 'x.nl', 'servedAtRoot' => false]);
+		$this->assertSame(expected: '', actual: $notAtRoot->accept(candidate: '/afval', sitePath: '/apps/portaliq/site'));
+		$notABool = $this->address(domain: ['host' => 'x.nl', 'servedAtRoot' => 'true']);
+		$this->assertSame(expected: '', actual: $notABool->accept(candidate: '/afval', sitePath: '/apps/portaliq/site'));
 
-		$failing = $this->createMock(PortalResolverInterface::class);
-		$failing->method('servingDomain')->willThrowException(new RuntimeException('register down'));
-		$this->assertSame('', (new SiteReturnAddress($failing, $this->createMock(IRequest::class)))->accept(candidate: '/afval', sitePath: '/apps/portaliq/site'));
+		$failing = $this->createMock(originalClassName: PortalResolverInterface::class);
+		$failing->method('servingDomain')->willThrowException(new RuntimeException(message: 'register down'));
+		$address = new SiteReturnAddress(portalResolver: $failing, request: $this->createMock(originalClassName: IRequest::class));
+		$this->assertSame(expected: '', actual: $address->accept(candidate: '/afval', sitePath: '/apps/portaliq/site'));
 	}//end testAShortAddressIsRefusedElsewhere()
 
 	/**
@@ -102,7 +106,7 @@ class SiteReturnAddressTest extends TestCase {
 			"/afval\r\nLocation: https://evil.example",
 		];
 		foreach ($refused as $candidate) {
-			$this->assertSame('', $address->accept(candidate: $candidate, sitePath: '/apps/portaliq/site'), $candidate);
+			$this->assertSame(expected: '', actual: $address->accept(candidate: $candidate, sitePath: '/apps/portaliq/site'), message: $candidate);
 		}
 	}//end testAHostServedAtRootRefusesWhatIsNotASitePage()
 
@@ -113,8 +117,9 @@ class SiteReturnAddressTest extends TestCase {
 	 */
 	public function testAPageOnTheSiteIsKept(): void {
 		$page = '/apps/portaliq/site?portal=wilgenboom&route=%2Fmijn%2Finbox';
-		$this->assertSame($page, $this->address()->accept(candidate: $page, sitePath: '/apps/portaliq/site'));
-		$this->assertSame('/apps/portaliq/site', $this->address()->accept(candidate: '/apps/portaliq/site', sitePath: '/apps/portaliq/site'));
+		$this->assertSame(expected: $page, actual: $this->address()->accept(candidate: $page, sitePath: '/apps/portaliq/site'));
+		$site = '/apps/portaliq/site';
+		$this->assertSame(expected: $site, actual: $this->address()->accept(candidate: $site, sitePath: $site));
 	}//end testAPageOnTheSiteIsKept()
 
 	/**
@@ -124,12 +129,12 @@ class SiteReturnAddressTest extends TestCase {
 	 */
 	public function testTheFrontControllerIsOptional(): void {
 		$this->assertSame(
-			'/apps/portaliq/site?portal=x',
-			$this->address()->accept(candidate: '/apps/portaliq/site?portal=x', sitePath: '/index.php/apps/portaliq/site')
+			expected: '/apps/portaliq/site?portal=x',
+			actual: $this->address()->accept(candidate: '/apps/portaliq/site?portal=x', sitePath: '/index.php/apps/portaliq/site')
 		);
 		$this->assertSame(
-			'/index.php/apps/portaliq/site?portal=x',
-			$this->address()->accept(candidate: '/index.php/apps/portaliq/site?portal=x', sitePath: '/apps/portaliq/site')
+			expected: '/index.php/apps/portaliq/site?portal=x',
+			actual: $this->address()->accept(candidate: '/index.php/apps/portaliq/site?portal=x', sitePath: '/apps/portaliq/site')
 		);
 	}//end testTheFrontControllerIsOptional()
 
@@ -154,7 +159,7 @@ class SiteReturnAddressTest extends TestCase {
 			'apps/portaliq/site',
 		];
 		foreach ($refused as $candidate) {
-			$this->assertSame('', $this->address()->accept(candidate: $candidate, sitePath: '/apps/portaliq/site'), $candidate);
+			$this->assertSame(expected: '', actual: $this->address()->accept(candidate: $candidate, sitePath: '/apps/portaliq/site'), message: $candidate);
 		}
 	}//end testEveryOtherAddressIsRefused()
 }//end class

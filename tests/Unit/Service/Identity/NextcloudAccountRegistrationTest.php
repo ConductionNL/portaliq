@@ -356,7 +356,10 @@ class NextcloudAccountRegistrationTest extends TestCase {
 			$resolver,
 			new ContactAddressValues(),
 			new RequestedPortal(),
-			new SiteReturnAddress($this->createMock(PortalResolverInterface::class), $this->createMock(IRequest::class)),
+			new SiteReturnAddress(
+				portalResolver: $this->createMock(originalClassName: PortalResolverInterface::class),
+				request: $this->createMock(originalClassName: IRequest::class)
+			),
 			null,
 			$this->door(published: [$portal], provisioner: new NextcloudAccountProvisioner($reader, $writer, $users, $published))
 		);

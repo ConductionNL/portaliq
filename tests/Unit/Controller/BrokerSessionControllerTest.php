@@ -54,7 +54,10 @@ class BrokerSessionControllerTest extends TestCase {
 			$login,
 			$urls,
 			($portals ?? $this->createMock(PortalResolver::class)),
-			new SiteReturnAddress($this->createMock(PortalResolverInterface::class), $this->createMock(IRequest::class))
+			new SiteReturnAddress(
+				portalResolver: $this->createMock(originalClassName: PortalResolverInterface::class),
+				request: $this->createMock(originalClassName: IRequest::class)
+			)
 		);
 	}//end controller()
 

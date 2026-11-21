@@ -1526,7 +1526,10 @@ class SessionControllerTest extends TestCase {
 			($portals ?? $this->createMock(originalClassName: PortalResolver::class)),
 			new ContactAddressValues(),
 			new RequestedPortal(),
-			new SiteReturnAddress($this->createMock(PortalResolverInterface::class), $this->createMock(IRequest::class)),
+			new SiteReturnAddress(
+				portalResolver: $this->createMock(originalClassName: PortalResolverInterface::class),
+				request: $this->createMock(originalClassName: IRequest::class)
+			),
 			$loginConfig
 		);
 

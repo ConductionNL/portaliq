@@ -48,7 +48,21 @@ final class SiteReturnAddress implements SiteReturnAddressInterface {
 	/**
 	 * First path segments that belong to Nextcloud, never to the site.
 	 */
-	private const NEXTCLOUD_SEGMENTS = ['index.php', 'apps', 'ocs', 'ocs-provider', 'remote.php', 'public.php', 'status.php', 'core', 'login', 'logout', 'settings', 's', '.well-known'];
+	private const NEXTCLOUD_SEGMENTS = [
+		'index.php',
+		'apps',
+		'ocs',
+		'ocs-provider',
+		'remote.php',
+		'public.php',
+		'status.php',
+		'core',
+		'login',
+		'logout',
+		'settings',
+		's',
+		'.well-known',
+	];
 
 	/**
 	 * Constructor.
