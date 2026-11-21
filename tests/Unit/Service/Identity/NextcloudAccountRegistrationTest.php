@@ -56,6 +56,7 @@ use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use OCA\Portaliq\Service\Identity\ContactAddressValues;
 use OCA\Portaliq\Service\RequestedPortal;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Service\Signin\SiteReturnAddress;
 
 /**
@@ -355,7 +356,7 @@ class NextcloudAccountRegistrationTest extends TestCase {
 			$resolver,
 			new ContactAddressValues(),
 			new RequestedPortal(),
-			new SiteReturnAddress(),
+			new SiteReturnAddress($this->createMock(PortalResolverInterface::class), $this->createMock(IRequest::class)),
 			null,
 			$this->door(published: [$portal], provisioner: new NextcloudAccountProvisioner($reader, $writer, $users, $published))
 		);
