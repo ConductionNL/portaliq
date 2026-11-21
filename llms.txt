@@ -25,7 +25,8 @@
 - [openspec/config.yaml](openspec/config.yaml): OpenSpec project context and rules
 - [openspec/specs/](openspec/specs/): current requirements, one directory per capability
 - [openspec/changes/](openspec/changes/): proposed and in-progress changes; finished ones in `archive/`
-- [openspec/architecture/](openspec/architecture/): architecture decision records
+- [docs/adr/](docs/adr/README.md): this repo's numbered architecture decision records
+- [openspec/architecture/](openspec/architecture/): a copy of an organisation-wide decision record
 
 ## Code
 
