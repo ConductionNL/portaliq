@@ -124,7 +124,7 @@ class BearerSessionResolverTest extends TestCase {
 		$rows  = ['bound' => ['jti' => 'bound'], 'free' => ['jti' => 'free']];
 
 		$this->assertNull($this->resolver(rows: $rows)->resolveFromBearer('Bearer ' . $bound));
-		$this->assertSame('s2', $this->resolver(rows: $rows)->resolveFromBearer('Bearer ' . $free)['subjectRef']);
+		$this->assertSame(expected: 's2', actual: $this->resolver(rows: $rows)->resolveFromBearer('Bearer ' . $free)['subjectRef']);
 
 		$asked = [];
 		$scope = $this->createMock(PortalSessionScope::class);
@@ -135,7 +135,7 @@ class BearerSessionResolverTest extends TestCase {
 		$subject = $this->resolver(rows: $rows, scope: $scope)->resolveFromBearer('Bearer ' . $free);
 		$this->assertSame('s2', $subject['subjectRef']);
 		$this->assertSame('', $subject['portal']);
-		$this->assertSame([['', 'low']], $asked);
+		$this->assertSame(expected: [['', 'low']], actual: $asked);
 
 	}//end testAPortalBoundSessionWithoutAScopeIsRefusedAndAnUnboundOneIsAskedWithItsTrust()
 
@@ -143,19 +143,22 @@ class BearerSessionResolverTest extends TestCase {
 	 * A session the serving portal refuses for its trust level resolves to no
 	 * subject, exactly as an invalid bearer does.
 	 *
+	 * @return void
+	 *
 	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 	 */
 	public function testASessionBelowTheServingPortalsFloorResolvesToNoSubject(): void {
 		$jwt  = new PortalJwtService(signingSecret: self::SECRET);
-		$low  = $jwt->createSession(subjectRef: 's1', audience: 'client', organisation: 'org-1', jti: 'low', trust: 'low', context: ['portal' => 'portal-a']);
-		$high = $jwt->createSession(subjectRef: 's2', audience: 'client', organisation: 'org-1', jti: 'high', trust: 'substantial', context: ['portal' => 'portal-a']);
+		$bind = ['portal' => 'portal-a'];
+		$low  = $jwt->createSession(subjectRef: 's1', audience: 'client', organisation: 'org-1', jti: 'low', trust: 'low', context: $bind);
+		$high = $jwt->createSession(subjectRef: 's2', audience: 'client', organisation: 'org-1', jti: 'high', trust: 'substantial', context: $bind);
 		$rows = ['low' => ['jti' => 'low'], 'high' => ['jti' => 'high']];
 
-		$scope = $this->createMock(PortalSessionScope::class);
+		$scope = $this->createMock(originalClassName: PortalSessionScope::class);
 		$scope->method('admits')->willReturnCallback(fn (string $portal, string $trust): bool => $trust !== 'low');
 
-		$this->assertNull($this->resolver(rows: $rows, scope: $scope)->resolveFromBearer('Bearer ' . $low));
-		$this->assertSame('substantial', $this->resolver(rows: $rows, scope: $scope)->resolveFromBearer('Bearer ' . $high)['trust']);
+		$this->assertNull(actual: $this->resolver(rows: $rows, scope: $scope)->resolveFromBearer('Bearer ' . $low));
+		$this->assertSame(expected: 'substantial', actual: $this->resolver(rows: $rows, scope: $scope)->resolveFromBearer('Bearer ' . $high)['trust']);
 
 	}//end testASessionBelowTheServingPortalsFloorResolvesToNoSubject()
 
