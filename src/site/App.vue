@@ -1071,6 +1071,32 @@ export default {
 				heroImage: this.site.heroImage || '',
 				// A fixed-width aside column (site-aside-column).
 				aside: asideOf(this.page && this.page.body),
+				// The Mijn omgeving widgets' data, only with a session
+				// (site-nlds-widget-palette REQ-SNW-012).
+				mijn: this.mijnContext,
+			}
+		},
+
+		/**
+		 * What the signed-in shell holds for the Mijn omgeving widgets on a
+		 * CMS page: the api bound to the visitor's bearer, the contributions
+		 * the server answered for them, the navigation and the translator.
+		 * Null without a session, so a widget reads nothing.
+		 *
+		 * @return {object|null} The data, or null.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portaliq-cms/spec.md#requirement-a-mijn-omgeving-widget-must-show-only-the-visitors-own-data-req-snw-012
+		 */
+		mijnContext() {
+			if (!this.session) {
+				return null
+			}
+			return {
+				api: this.api,
+				contributions: this.account?.contributions?.contributions || [],
+				nav: this.nav,
+				t: this.t,
+				locale: this.locale,
 			}
 		},
 

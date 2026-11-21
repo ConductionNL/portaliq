@@ -136,6 +136,9 @@ class PlainHelpersTest extends TestCase {
 
 		$this->assertSame('Aanvraagformulier', $labels->label('intakeForm'));
 		$this->assertSame('Uitklapblokken', $labels->label('nlAccordion'));
+		// site-nlds-widget-palette T9: the two Mijn omgeving compositions.
+		$this->assertSame('Berichten', $labels->label('nlInbox'));
+		$this->assertSame('Kies voor wie', $labels->label('nlRecordSwitcher'));
 		$this->assertSame('Some New Block', $labels->label('someNewBlock'));
 		$this->assertSame('My block', $labels->label('my_block'));
 		$this->assertSame('Blok', $labels->label(''));

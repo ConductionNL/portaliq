@@ -83,7 +83,10 @@ import {
 	ownBand,
 	runsFor,
 } from '../lib/gridPlacement.js'
-import { loaders as siteWidgetLoaders } from '../widgets/loaders.js'
+import {
+	SIGNED_IN_WIDGETS,
+	loaders as siteWidgetLoaders,
+} from '../widgets/loaders.js'
 
 /**
  * LOADED ON DEMAND, and that is a budget decision rather than a style one.
@@ -465,6 +468,18 @@ export default {
 			type: Array,
 			default: () => [],
 		},
+
+		/**
+		 * The signed-in shell's data for the Mijn omgeving widgets: `{api,
+		 * contributions, nav, t, locale}`, null when signed out. Handed to
+		 * those widgets AFTER their authored props, so a placement can name an
+		 * app and a collection but never bring data, an endpoint or a subject
+		 * of its own (site-nlds-widget-palette REQ-SNW-012).
+		 */
+		mijn: {
+			type: Object,
+			default: null,
+		},
 	},
 
 	// `search` comes from the shared hero block, which renders a search box and
@@ -546,6 +561,26 @@ export default {
 		 */
 		componentFor(key) {
 			return publicWidgetFor(key)
+		},
+
+		/**
+		 * The props of a Mijn omgeving widget: the authored ones, then the
+		 * shell's signed-in data, the ways in, the page language and the
+		 * route's record id, so none of those can be authored.
+		 *
+		 * @param {object} props The authored props.
+		 * @return {object} The component props.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portaliq-cms/spec.md#requirement-a-mijn-omgeving-widget-must-show-only-the-visitors-own-data-req-snw-012
+		 */
+		signedInProps(props) {
+			return {
+				...props,
+				mijn: this.signedIn === true ? this.mijn : null,
+				signInRoutes: this.signInRoutes,
+				locale: this.languages?.current || 'nl',
+				routeParam: this.routeParam,
+			}
 		},
 
 		/**
@@ -758,6 +793,13 @@ export default {
 
 			if (widget.widgetKey === 'nlProductFinder') {
 				return { ...props, portal: this.portal }
+			}
+
+			// site-nlds-widget-palette T9: the visitor's own data, from the
+			// shell, after the authored props (REQ-SNW-012). Signed out it is
+			// null, so the widget shows a sign-in prompt and reads nothing.
+			if (SIGNED_IN_WIDGETS.includes(widget.widgetKey)) {
+				return this.signedInProps(props)
 			}
 
 			// The hero hands the portal on to the list beside it, which reads
