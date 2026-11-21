@@ -23,6 +23,7 @@ use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use OCA\Portaliq\Service\Identity\ContactAddressValues;
 use OCA\Portaliq\Service\RequestedPortal;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Service\Signin\SiteReturnAddress;
 
 /**
@@ -1525,7 +1526,10 @@ class SessionControllerTest extends TestCase {
 			($portals ?? $this->createMock(originalClassName: PortalResolver::class)),
 			new ContactAddressValues(),
 			new RequestedPortal(),
-			new SiteReturnAddress(),
+			new SiteReturnAddress(
+				portalResolver: $this->createMock(originalClassName: PortalResolverInterface::class),
+				request: $this->createMock(originalClassName: IRequest::class)
+			),
 			$loginConfig
 		);
 
