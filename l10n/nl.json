@@ -3722,7 +3722,13 @@
         "Nothing matches this search.": "Niets past bij deze zoekopdracht.",
         "Back to the overview": "Terug naar het overzicht",
         "This overview no longer exists.": "Dit overzicht bestaat niet (meer).",
-        "%1$d to %2$d of %3$d": "%1$d tot %2$d van %3$d"
+        "%1$d to %2$d of %3$d": "%1$d tot %2$d van %3$d",
+        "OIDC provider": "OIDC-aanbieder",
+        "Issuer": "Issuer",
+        "An issuer address starts with https://.": "Een issuer-adres begint met https://.",
+        "The only OIDC provider this portal accepts; a sign-in through another provider is refused. Empty: the organisation's provider is accepted.": "De enige OIDC-aanbieder die deze portal accepteert; inloggen via een andere aanbieder wordt geweigerd. Leeg: de aanbieder van de organisatie wordt geaccepteerd.",
+        "The client id that provider must use. Empty: any client of that provider. The client secret stays with the organisation.": "De client-id die die aanbieder moet gebruiken. Leeg: elke client van die aanbieder. Het clientgeheim blijft bij de organisatie.",
+        "https://login.example.nl": "https://login.example.nl"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"
