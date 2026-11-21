@@ -240,7 +240,7 @@ class PortalSessionServiceTest extends TestCase {
 		$this->assertSame('portal-a', $service->resolveFromBearer('Bearer ' . $refreshed['token'])['portal']);
 
 		$other = $this->createMock(PortalSessionScope::class);
-		$other->method('admits')->willReturn(false);
+		$other->method('admits')->willReturnCallback(fn (string $portal): bool => $portal === '');
 		$elsewhere = $this->service(store: $store, scope: $other);
 		$this->assertNull($elsewhere->resolveFromBearer('Bearer ' . $refreshed['token']));
 		$this->assertNull($elsewhere->refreshSession('Bearer ' . $refreshed['token']));
