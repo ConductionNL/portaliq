@@ -82,8 +82,10 @@ Work is specified before it is built, with [OpenSpec](openspec/config.yaml):
 
 ## Architecture decisions
 
-`openspec/architecture/` holds the architecture records, named `adr-NNN-<slug>.md`;
-its README explains the format and when to write one.
+`docs/adr/` holds this repo's numbered decision records (`0001-<slug>.md`, MADR
+style), each citing the design or README section it came from; its
+[README](docs/adr/README.md) lists them. `openspec/architecture/` holds a copy of an
+organisation-wide record and a README on when to write one.
 
 ## Conventions
 
