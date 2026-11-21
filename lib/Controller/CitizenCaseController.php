@@ -773,7 +773,8 @@ class CitizenCaseController extends Controller implements PortalProtected {
 
 	/**
 	 * Save the write on the case under the action's scope. Null when the
-	 * scoped write finds no case.
+	 * scoped write finds no case. Nothing is thrown here: the writer fails
+	 * closed and turns an OpenRegister Exception into null.
 	 *
 	 * @param CaseWriteRun         $write The write.
 	 * @param array<string, mixed> $data  What to write.
