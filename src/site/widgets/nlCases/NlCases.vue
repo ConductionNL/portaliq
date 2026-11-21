@@ -11,16 +11,16 @@
 -->
 <template>
 	<div class="nl-cases" data-testid="nl-cases">
+		<SignInPrompt v-if="!signedIn" v-bind="promptProps" />
 		<CasesBlock
-			v-if="signedIn"
+			v-else
 			:block="{ collection, open: openOnly, limit: rowLimit, label }"
-			:collection="ownCollection"
 			:api="mijn.api"
 			:app="app"
+			:collection="ownCollection"
 			v-bind="{ ...readProps, ...shellProps }"
-			@navigate="$emit('navigate', $event)"
-			@retry="load" />
-		<SignInPrompt v-else v-bind="promptProps" />
+			@retry="load"
+			@navigate="$emit('navigate', $event)" />
 	</div>
 </template>
 

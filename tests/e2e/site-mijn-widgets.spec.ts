@@ -118,7 +118,7 @@ test.describe('site-mijn-widgets: signed out', () => {
 		})
 
 		await page.goto(siteAddress(route))
-		await page.waitForLoadState('networkidle')
+		await page.waitForLoadState('domcontentloaded')
 
 		for (const key of SIGNED_IN) {
 			const cell = page.getByTestId(`widget-${key}`)
