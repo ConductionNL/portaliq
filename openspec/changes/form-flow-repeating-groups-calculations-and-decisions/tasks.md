@@ -8,4 +8,5 @@
 - [x] **T06**: `stepFlow.js` follows `nextStep` from the decision's answer; node test (REQ-FFL-003)
 - [x] **T07**: delivery marks calculated and decided fields `computed: true`; PHPUnit on the delivery payload
 - [ ] **T08**: strings in nl, en and en_US (`npm run check:l10n-js`); Playwright: the street party form with three neighbours, keyboard only, cites REQ-FFL-001 with `@e2e` Strings are in; the Playwright street party spec — not run: needs a live instance.
+  - Written 22 Nov: `tests/e2e/form-flow-repeating-groups.spec.ts`, keyboard only on a form, binding and page it seeds and deletes: one neighbour refused with "Voeg nog 1 bewoner toe" linking to the add button, three neighbours with the add button gone at the maximum, "Verwijderen" on Bewoner 2 renumbering the cards, and a tampered submit with an empty name refused by the server on `bewoners[1].naam`. Not run: needs a live instance.
 - [ ] **T09**: Live check against the FormulierKaart board; screenshots in the build PR — not run: needs a live instance.
