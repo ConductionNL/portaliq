@@ -44,6 +44,8 @@ class PublicContentGateGoldenTest extends TestCase {
 			'lowTrust'      => [['digid'], 'Bearer x', ['trust' => 'low']],
 			'signedIn'      => [['digid'], 'Bearer x', ['trust' => 'substantial']],
 			'public'        => [['public'], '', null],
+			// A malformed block (a mode outside the set) fails closed to public read-only.
+			'malformed'     => [['digid', 'google'], '', null],
 		];
 	}//end callers()
 
@@ -69,6 +71,7 @@ class PublicContentGateGoldenTest extends TestCase {
 			$golden[$read.'.lowTrust']      = $trust;
 			$golden[$read.'.signedIn']      = [200, $body, 'private, no-store'];
 			$golden[$read.'.public']        = [200, $body, 'public, max-age=300, must-revalidate'];
+			$golden[$read.'.malformed']     = [200, $body, 'public, max-age=300, must-revalidate'];
 		}
 
 		return $golden;
@@ -187,7 +190,7 @@ class PublicContentGateGoldenTest extends TestCase {
 			$statuses[$name] = $this->catalogue($caller)[0]->index(portal: 'asked')->getStatus();
 		}
 
-		$this->assertSame(['unknownPortal' => 404, 'anonymous' => 401, 'lowTrust' => 403, 'signedIn' => 200, 'public' => 200], $statuses);
+		$this->assertSame(['unknownPortal' => 404, 'anonymous' => 401, 'lowTrust' => 403, 'signedIn' => 200, 'public' => 200, 'malformed' => 200], $statuses);
 	}//end testTheCatalogueIndexIsGated()
 
 	/**
