@@ -12,7 +12,7 @@
 // Usage:
 //   node --test tests/portal-oidc-provider-settings.spec.mjs
 //
-// @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+// @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'

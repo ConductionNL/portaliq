@@ -5,7 +5,7 @@
 **OpenSpec changes**:
 
 - [portal-cms-content-model](../../changes/archive/2026-10-09-portal-cms-content-model/) _(archived 2026-10-09)_
-- [portal-scoping-and-auth](../../changes/portal-scoping-and-auth/)
+- [portal-scoping-and-auth](../../changes/archive/2026-11-22-portal-scoping-and-auth/) _(archived 2026-11-22)_
 - [portal-headless-content-api](../../changes/portal-headless-content-api/)
 - [portal-shared-runtime](../../changes/portal-shared-runtime/)
 - [contribution-landing-page-action](../../changes/contribution-landing-page-action/)

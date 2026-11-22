@@ -102,7 +102,7 @@ class MediaFile implements MediaFileInterface {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 	 */
 	private function isPublic(array $portal): bool {
 		return PortalAuthConfig::fromPortal(portal: $portal)->readsPublicly();

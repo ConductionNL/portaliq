@@ -81,7 +81,7 @@ class BearerSessionResolver implements BearerSessionResolverInterface {
 	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.3
 	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#2.2
 	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#2.3
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 	 */
 	public function resolveFromBearer(?string $authorizationHeader): ?array {
 		if ($this->signingKey->jwt() === null || $this->hasBearer(authorizationHeader: $authorizationHeader) === false) {
@@ -117,7 +117,7 @@ class BearerSessionResolver implements BearerSessionResolverInterface {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 	 */
 	private function admitted(array $subject): bool {
 		if ($this->scope === null) {

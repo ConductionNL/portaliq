@@ -62,7 +62,7 @@ class MediaFileTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 	 */
 	public function testAPortalWithAMalformedBlockStillServesItsPublishedItem(): void {
 		$stream = $this->createMock(originalClassName: StreamResponse::class);

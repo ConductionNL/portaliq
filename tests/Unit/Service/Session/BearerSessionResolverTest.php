@@ -79,7 +79,7 @@ class BearerSessionResolverTest extends TestCase {
 	 * A session minted on portal A resolves where the scope admits portal A,
 	 * and is refused, exactly as an invalid bearer, where it does not.
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
 	 */
 	public function testAPortalBoundSessionResolvesOnlyWhereItsPortalIsAdmitted(): void {
 		$token = (new PortalJwtService(signingSecret: self::SECRET))->createSession(
@@ -114,8 +114,8 @@ class BearerSessionResolverTest extends TestCase {
 	 * asked about with its own trust level, so the serving portal's floor
 	 * applies to it too.
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 	 */
 	public function testAPortalBoundSessionWithoutAScopeIsRefusedAndAnUnboundOneIsAskedWithItsTrust(): void {
 		$jwt   = new PortalJwtService(signingSecret: self::SECRET);
@@ -145,7 +145,7 @@ class BearerSessionResolverTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 	 */
 	public function testASessionBelowTheServingPortalsFloorResolvesToNoSubject(): void {
 		$jwt  = new PortalJwtService(signingSecret: self::SECRET);

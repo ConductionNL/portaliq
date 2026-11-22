@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-custom-domain-must-be-verified-before-it-serves
+ * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-a-custom-domain-must-be-verified-before-it-serves
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use Throwable;
  * removed record unbinds its domain after about a day and a half. One
  * portal's failure does not stop the others.
  *
- * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-custom-domain-must-be-verified-before-it-serves
+ * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-a-custom-domain-must-be-verified-before-it-serves
  */
 class DomainReverificationJob extends TimedJob {
 
@@ -72,7 +72,7 @@ class DomainReverificationJob extends TimedJob {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-custom-domain-must-be-verified-before-it-serves
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-a-custom-domain-must-be-verified-before-it-serves
 	 */
 	protected function run($argument): void {
 		foreach ($this->portals->allPublishedPortals() as $portal) {

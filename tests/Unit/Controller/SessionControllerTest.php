@@ -695,7 +695,7 @@ class SessionControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
 	 */
 	public function testOidcCallbackBindsTheSessionToThePortalTheLoginStartedOn(): void {
 		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
@@ -755,7 +755,7 @@ class SessionControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 	 */
 	public function testOidcCallbackAcceptsOnlyTheProviderTheStartPortalNames(): void {
 		$cases = [
@@ -811,7 +811,7 @@ class SessionControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 	 */
 	public function testOidcCallbackRefusesWhenTheStartPortalIsGone(): void {
 		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
@@ -842,7 +842,7 @@ class SessionControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 	 */
 	public function testOidcStartRefusesAProviderThePortalDoesNotName(): void {
 		$portals = $this->createMock(originalClassName: PortalResolver::class);

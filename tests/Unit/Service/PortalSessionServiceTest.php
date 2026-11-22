@@ -224,7 +224,7 @@ class PortalSessionServiceTest extends TestCase {
 	 * A session minted on a portal is bound to it and stays bound through a
 	 * refresh; another portal refuses it, and its refresh, as invalid.
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
 	 */
 	public function testAPortalSessionStaysOnItsPortalThroughARefresh(): void {
 		$store = [];
