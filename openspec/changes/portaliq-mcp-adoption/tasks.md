@@ -29,7 +29,7 @@
   - GIVEN `portalAccount`, `portalSession` and `exampleDocument` WHEN the register is imported THEN none MUST carry an `x-openregister-mcp` block, so no tool can return an IdP claims blob or a session `jti`
   - GIVEN `portaliq.portalmessage.search` is invoked on behalf of subject S WHEN results are returned THEN OpenRegister RBAC MUST restrict them to S's own messages, and no other subject's message MUST appear
 - [x] Implement
-- [ ] Test
+- [ ] Test — partial: the first criterion is `PortaliqMcpSurfaceTest::testIdentitySessionAndTemplateSchemasDeclareNoMcpBlock`. Open: the second needs a decision, because `portalMessage` grants read to the staff group `portaliq-medewerkers` only and has no rule on `subjectRef`, so a tool call (always a Nextcloud user) sees every inbox the staff group sees, not one subject's; and the runtime RBAC check needs a live OpenRegister.
 
 ### Task 4: Remove the scaffold provider's test fixtures and update the CHANGELOG
 - **spec_ref**: `openspec/changes/portaliq-mcp-adoption/specs/portaliq-mcp-surface/spec.md#requirement-portaliq-exposes-no-hand-written-mcp-tool`

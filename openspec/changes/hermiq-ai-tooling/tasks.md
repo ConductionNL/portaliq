@@ -44,7 +44,7 @@
   - GIVEN the control half WHEN the same bearer is presented to a `PortalProtected` `/portal/api/*` endpoint THEN it authenticates — proving the bearer is genuinely valid and the rejection above is the guard, not a broken fixture
   - GIVEN `appinfo/routes.php` and the `#[PublicPage]` controller set WHEN audited by test THEN no `/portal/*` route and no public method lists, proxies or invokes an MCP tool
 - [x] Implement
-- [ ] Test
+- [x] Test — `tests/Unit/Mcp/PortalBearerReachesNoToolTest.php`: a minted, unrevoked portal bearer passes `PortalAuthMiddleware` on a protected portal route (control), every tool answers it exactly as it answers a forged bearer (`unauthenticated`), and the provider takes no request or bearer resolver; the route and edge-controller audit is `PortalEdgeMcpTest`
 
 ### Task 5: Audit every invocation through `AuditTrailService`
 - **spec_ref**: `openspec/changes/hermiq-ai-tooling/specs/portaliq-mcp-surface/spec.md#requirement-every-tool-invocation-leaves-an-app-side-audit-record`

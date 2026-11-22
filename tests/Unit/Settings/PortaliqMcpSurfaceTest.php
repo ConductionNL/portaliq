@@ -214,6 +214,26 @@ class PortaliqMcpSurfaceTest extends TestCase {
 	}//end testIdentityAndSessionObjectsAreNotTools()
 
 	/**
+	 * The account, session and template schemas carry no MCP block at all,
+	 * not even a disabled one, while they still hold the identity claims and
+	 * the session id a tool must never return.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portaliq-mcp-adoption/tasks.md#task-3-verify-the-identity-and-session-schemas-stay-off-and-that-reads-are-subject-scoped
+	 */
+	public function testIdentitySessionAndTemplateSchemasDeclareNoMcpBlock(): void {
+		$schemas = $this->schemas();
+		foreach (['portalAccount', 'portalSession', 'exampleDocument'] as $slug) {
+			$this->assertArrayHasKey(key: $slug, array: $schemas, message: $slug . ' moved; the check would pass vacuously.');
+			$this->assertArrayNotHasKey(key: 'x-openregister-mcp', array: $schemas[$slug], message: $slug . ' must not declare an MCP block');
+		}
+
+		$this->assertArrayHasKey(key: 'claims', array: $schemas['portalAccount']['properties']);
+		$this->assertArrayHasKey(key: 'jti', array: $schemas['portalSession']['properties']);
+	}//end testIdentitySessionAndTemplateSchemasDeclareNoMcpBlock()
+
+	/**
 	 * The scaffold provider stays gone and exactly one governed provider
 	 * replaces it: lib/Mcp/PortaliqToolProvider.php is the only file under
 	 * lib/ that implements IMcpToolProvider, nothing carries #[McpTool], and
