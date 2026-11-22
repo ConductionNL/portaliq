@@ -192,7 +192,7 @@ class PortalBearerReachesNoToolTest extends TestCase {
 			},
 			methodName: 'index'
 		);
-		$this->addToAssertionCount(1);
+		$this->addToAssertionCount(count: 1);
 	}//end testTheBearerAuthenticatesOnAProtectedPortalRoute()
 
 	/**

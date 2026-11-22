@@ -225,12 +225,12 @@ class PortaliqMcpSurfaceTest extends TestCase {
 	public function testIdentitySessionAndTemplateSchemasDeclareNoMcpBlock(): void {
 		$schemas = $this->schemas();
 		foreach (['portalAccount', 'portalSession', 'exampleDocument'] as $slug) {
-			$this->assertArrayHasKey($slug, $schemas, $slug . ' moved; the check would pass vacuously.');
-			$this->assertArrayNotHasKey('x-openregister-mcp', $schemas[$slug], $slug . ' must not declare an MCP block');
+			$this->assertArrayHasKey(key: $slug, array: $schemas, message: $slug . ' moved; the check would pass vacuously.');
+			$this->assertArrayNotHasKey(key: 'x-openregister-mcp', array: $schemas[$slug], message: $slug . ' must not declare an MCP block');
 		}
 
-		$this->assertArrayHasKey('claims', $schemas['portalAccount']['properties']);
-		$this->assertArrayHasKey('jti', $schemas['portalSession']['properties']);
+		$this->assertArrayHasKey(key: 'claims', array: $schemas['portalAccount']['properties']);
+		$this->assertArrayHasKey(key: 'jti', array: $schemas['portalSession']['properties']);
 	}//end testIdentitySessionAndTemplateSchemasDeclareNoMcpBlock()
 
 	/**
