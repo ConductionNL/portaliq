@@ -192,6 +192,8 @@ class NextcloudAccountRegistrationTest extends TestCase {
 		$door = $this->door();
 		$this->assertSame('', $door->registerUrl(portal: self::portalWith(['modes' => ['nextcloud']])), 'no group named');
 		$this->assertSame('', $door->registerUrl(portal: self::portalWith(['modes' => ['digid'], 'registration' => ['residentGroup' => 'inwoners']])), 'no account route');
+		$malformed = self::portalWith(authentication: ['modes' => ['nextcloud', 'google'], 'registration' => ['residentGroup' => 'inwoners']]);
+		$this->assertSame(expected: '', actual: $door->registerUrl(portal: $malformed), message: 'malformed block');
 		// REQ-IWI-014: the e-mail link never opens registration.
 		$this->assertSame('', $door->registerUrl(portal: self::portalWith(['modes' => ['email-link'], 'registration' => ['residentGroup' => 'inwoners', 'policy' => 'activation']])), 'e-mail link only');
 

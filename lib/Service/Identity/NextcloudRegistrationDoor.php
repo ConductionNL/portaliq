@@ -44,6 +44,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
+use OCA\Portaliq\Auth\PortalAuthConfig;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\NextcloudRegistrationDoorInterface;
 use OCA\Portaliq\Service\PublishedPortals;
@@ -321,19 +322,22 @@ class NextcloudRegistrationDoor implements NextcloudRegistrationDoorInterface {
 
 	/**
 	 * The group a portal names under `authentication.registration.<key>`, or
-	 * '' unless the portal offers the `nextcloud` mode.
+	 * '' unless the portal offers the `nextcloud` mode. A malformed
+	 * authentication block offers no mode, so it names no group either.
 	 *
 	 * @param array<string, mixed> $portal The portal's own configuration row.
 	 * @param string               $key    `residentGroup` or `businessGroup`.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 	 */
 	private function namedGroup(array $portal, string $key): string {
-		$authentication = (array)($portal['authentication'] ?? []);
-		$modes = ($authentication['modes'] ?? []);
-		if (is_array($modes) === false || in_array(self::MODE, $modes, true) === false) {
+		if (PortalAuthConfig::fromPortal(portal: $portal)->offers(mode: self::MODE) === false) {
 			return '';
 		}
+
+		$authentication = (array)($portal['authentication'] ?? []);
 
 		$registration = ($authentication['registration'] ?? []);
 		if (is_array($registration) === false) {

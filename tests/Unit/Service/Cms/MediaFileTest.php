@@ -57,6 +57,24 @@ class MediaFileTest extends TestCase {
 	}//end testAPortalBehindSignInServesNoItem()
 
 	/**
+	 * A malformed authentication block fails closed to public read-only:
+	 * the published item is still served.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 */
+	public function testAPortalWithAMalformedBlockStillServesItsPublishedItem(): void {
+		$stream = $this->createMock(originalClassName: StreamResponse::class);
+		$files  = $this->files(listing: [['id' => 1, 'name' => 'a.jpg']]);
+		$files->expects($this->once())->method('streamFile')->willReturn($stream);
+		$malformed = self::PORTAL + ['authentication' => ['modes' => ['digid', 'google']]];
+
+		$media = new MediaFile(library: $this->reader(item: self::ITEM), files: $files);
+		$this->assertSame(expected: $stream, actual: $media->stream(portal: $malformed, id: 'm1'));
+	}//end testAPortalWithAMalformedBlockStillServesItsPublishedItem()
+
+	/**
 	 * A reader answering one item for (gemeente, m1).
 	 *
 	 * @param array|null $item The item, or null.

@@ -145,6 +145,21 @@ final class PortalAuthConfig {
 	}//end offers()
 
 	/**
+	 * Whether anyone may read the portal's published content without signing
+	 * in: a portal without modes, one that offers `public`, and a malformed
+	 * block. A malformed block fails closed to public read-only, so it offers
+	 * no way in and no write, yet its published content stays readable.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 * @spec openspec/changes/portal-scoping-and-auth/tasks.md#task-4-per-portal-authentication-and-scoped-sessions
+	 */
+	public function readsPublicly(): bool {
+		return $this->malformed === true || $this->modes === [] || $this->offers(mode: 'public') === true;
+	}//end readsPublicly()
+
+	/**
 	 * The declared assurance floor, or null when none is declared (or the block is malformed).
 	 *
 	 * @return string|null
