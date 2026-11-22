@@ -75,7 +75,7 @@ trait PublicContentGate {
 	 * @return JSONResponse|null A refusal, or null when the read may proceed.
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-portal
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 	 */
 	private function refuseUnlessPermitted(array $portal): ?JSONResponse {
 		$auth = PortalAuthConfig::fromPortal(portal: $portal);

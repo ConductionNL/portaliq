@@ -330,7 +330,7 @@ class NextcloudRegistrationDoor implements NextcloudRegistrationDoorInterface {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 	 */
 	private function namedGroup(array $portal, string $key): string {
 		if (PortalAuthConfig::fromPortal(portal: $portal)->offers(mode: self::MODE) === false) {

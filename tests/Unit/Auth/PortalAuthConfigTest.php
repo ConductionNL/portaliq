@@ -28,7 +28,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * @covers \OCA\Portaliq\Auth\PortalAuthConfig
  *
- * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+ * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
  */
 class PortalAuthConfigTest extends TestCase {
 

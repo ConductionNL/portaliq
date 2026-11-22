@@ -155,7 +155,7 @@ class ExampleResidentController extends Controller {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
 	 */
 	private function issuedSession(string $userId, array $account, string $portal): ?array {
 		$audience = (string)($account['audience'] ?? 'client');

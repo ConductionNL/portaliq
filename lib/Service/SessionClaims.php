@@ -89,7 +89,7 @@ final class SessionClaims {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
 	 */
 	private function portal(array $claims): string {
 		$portal = ($claims['portal'] ?? '');

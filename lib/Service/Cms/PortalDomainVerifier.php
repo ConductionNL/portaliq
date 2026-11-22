@@ -429,7 +429,7 @@ class PortalDomainVerifier implements PortalDomainVerifierInterface {
 	 *                                                                             found missing but not yet unbound;
 	 *                                                                             null for an unknown portal or a failed save.
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-custom-domain-must-be-verified-before-it-serves
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-a-custom-domain-must-be-verified-before-it-serves
 	 */
 	public function reverify(string $slug): ?array {
 		$portal = $this->portal(slug: $slug);

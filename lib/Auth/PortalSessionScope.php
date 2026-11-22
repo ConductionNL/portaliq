@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
+ * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
  */
 
 declare(strict_types=1);
@@ -46,7 +46,7 @@ use Throwable;
  * from another portal is, bound or not. A session at `high` meets every
  * floor, so an unbound one is admitted without resolving anything.
  *
- * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
+ * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
  */
 class PortalSessionScope {
 
@@ -70,8 +70,8 @@ class PortalSessionScope {
 	 *
 	 * @return bool True when the session may be used here.
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 	 */
 	public function admits(string $portal, string $trust = 'high'): bool {
 		if ($portal === '' && (new SessionTrust())->trustSatisfies(subjectTrust: $trust, minTrust: 'high') === true) {
@@ -112,7 +112,7 @@ class PortalSessionScope {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 	 */
 	private function meetsFloor(array $serving, string $trust): bool {
 		$floor = PortalAuthConfig::fromPortal(portal: $serving)->minTrust();
