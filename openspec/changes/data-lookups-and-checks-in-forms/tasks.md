@@ -10,6 +10,7 @@
   - Not built: the "Naar Mijn Zuiddrecht" link of situation 4 (the portal's own name and home; it waits for the live check T08).
 - [ ] **T06**: `productVariant` field: options from the catalogue's variants; `intake-pay-on-submit`'s amount resolver prefers the variant price; PHPUnit for the ignored browser amount (REQ-DIF-006). Waits on the decision in the proposal. — not run: needs the decision and `intake-pay-on-submit`
 - [ ] **T07**: Playwright: the address block fills in, the wrong IBAN is refused, the family cards; scenarios cite REQ-DIF-001, REQ-DIF-002, REQ-DIF-004 with `@e2e` — not run: needs a live instance
+  - Written 22 Nov: `tests/e2e/data-lookups-and-checks-in-forms.spec.ts` on a form, binding and page it seeds and deletes: Sanne's address filled in and editable (the address answer stubbed for 3311 AB 12, since CI has no BAG rows), no match against the real route (404) leaving street and town empty and editable, the wrong IBAN refused in the form with nothing sent, a tampered BSN and a forged family member refused by the server on their field, and no family list without DigiD. "Moving with the family" and the stored plate need a DigiD session, a BRP and a destination with a plate, so they stay with T08 and PHPUnit. Not run: needs a live instance.
 - [ ] **T08**: Live check against FormulierVelden, FormulierGezinsleden and FormulierNietBeschikbaar; screenshots in the build PR — not run: needs a live instance
 
 ## Build notes
