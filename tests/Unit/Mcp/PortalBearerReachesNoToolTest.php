@@ -88,18 +88,35 @@ class PortalBearerReachesNoToolTest extends TestCase {
 	 * @return BearerSessionResolver
 	 */
 	private function resolver(): BearerSessionResolver {
-		$appConfig = $this->createMock(IAppConfig::class);
-		$appConfig->method('getValueString')->willReturnCallback(
-			fn (string $app, string $key, string $default = '') => ($key === 'jwt_signing_secret' ? self::SECRET : $default)
+		$appConfig = $this->createMock(originalClassName: IAppConfig::class);
+		$appConfig->method('getValueString')->willReturnMap(
+			[
+				['portaliq', 'jwt_signing_secret', '', self::SECRET],
+			]
 		);
-		$reader = $this->createMock(PortalObjectReader::class);
+		$reader = $this->createMock(originalClassName: PortalObjectReader::class);
 		$reader->method('readCollection')->willReturnCallback(
-			fn (string $register, string $schema, string $scopeField, string $subjectRef) => ($subjectRef === 'live' ? [['jti' => 'live', 'revoked' => false]] : [])
-		);
-		$logger = $this->createMock(LoggerInterface::class);
-		$revoker = new PortalSessionRevoker($reader, $this->createMock(PortalObjectWriter::class), $this->createMock(AuditTrailService::class), $logger);
+			static function (string $register, string $schema, string $scopeField, string $subjectRef): array {
+				if ($subjectRef !== 'live') {
+					return [];
+				}
 
-		return new BearerSessionResolver(new SessionSigningKey($appConfig), new SessionRecords($reader, $revoker), $logger);
+				return [['jti' => 'live', 'revoked' => false]];
+			}
+		);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+		$revoker = new PortalSessionRevoker(
+			reader: $reader,
+			writer: $this->createMock(originalClassName: PortalObjectWriter::class),
+			auditor: $this->createMock(originalClassName: AuditTrailService::class),
+			logger: $logger
+		);
+
+		return new BearerSessionResolver(
+			signingKey: new SessionSigningKey(appConfig: $appConfig),
+			records: new SessionRecords(reader: $reader, revoker: $revoker),
+			logger: $logger
+		);
 	}//end resolver()
 
 	/**
@@ -110,21 +127,21 @@ class PortalBearerReachesNoToolTest extends TestCase {
 	 * @return PortaliqToolProvider
 	 */
 	private function provider(): PortaliqToolProvider {
-		$userSession = $this->createMock(IUserSession::class);
+		$userSession = $this->createMock(originalClassName: IUserSession::class);
 		$userSession->method('getUser')->willReturn(null);
-		$auditor = $this->createMock(AuditTrailService::class);
+		$auditor = $this->createMock(originalClassName: AuditTrailService::class);
 		$auditor->expects($this->never())->method('record');
 
 		return new PortaliqToolProvider(
 			userSession: $userSession,
-			groups: $this->createMock(IGroupManager::class),
-			editors: $this->createMock(PageEditorService::class),
-			objects: $this->createMock(StaffObjectStore::class),
+			groups: $this->createMock(originalClassName: IGroupManager::class),
+			editors: $this->createMock(originalClassName: PageEditorService::class),
+			objects: $this->createMock(originalClassName: StaffObjectStore::class),
 			regions: new PortalRegionResolver(),
-			themes: $this->createMock(PortalThemeChoice::class),
-			sessions: $this->createMock(PortalSessionService::class),
-			traffic: $this->createMock(TrafficEventStore::class),
-			numbers: $this->createMock(TrafficReportNumbers::class),
+			themes: $this->createMock(originalClassName: PortalThemeChoice::class),
+			sessions: $this->createMock(originalClassName: PortalSessionService::class),
+			traffic: $this->createMock(originalClassName: TrafficEventStore::class),
+			numbers: $this->createMock(originalClassName: TrafficReportNumbers::class),
 			auditor: $auditor,
 		);
 	}//end provider()
@@ -140,7 +157,10 @@ class PortalBearerReachesNoToolTest extends TestCase {
 		$provider = $this->provider();
 		$answers = [];
 		foreach ($provider->getTools() as $tool) {
-			$answers[$tool['id']] = $provider->invokeTool($tool['id'], ['authorization' => $bearer, 'organisation' => 'org-1', 'id' => 'x', 'portal' => 'p']);
+			$answers[$tool['id']] = $provider->invokeTool(
+				toolId: $tool['id'],
+				arguments: ['authorization' => $bearer, 'organisation' => 'org-1', 'id' => 'x', 'portal' => 'p']
+			);
 		}
 
 		return $answers;
@@ -154,20 +174,24 @@ class PortalBearerReachesNoToolTest extends TestCase {
 	 */
 	public function testTheBearerAuthenticatesOnAProtectedPortalRoute(): void {
 		$bearer = $this->validBearer();
-		$this->assertSame('resident-1', $this->resolver()->resolveFromBearer($bearer)['subjectRef'] ?? null);
+		$subject = $this->resolver()->resolveFromBearer(authorizationHeader: $bearer);
+		$this->assertSame(expected: 'resident-1', actual: ($subject['subjectRef'] ?? null));
 
-		$request = $this->createMock(IRequest::class);
-		$request->method('getHeader')->willReturnCallback(fn (string $name) => ($name === 'Authorization' ? $bearer : ''));
+		$request = $this->createMock(originalClassName: IRequest::class);
+		$request->method('getHeader')->willReturnMap([['Authorization', $bearer]]);
 		$middleware = new PortalAuthMiddleware(
-			$request,
-			$this->resolver(),
-			$this->createMock(PortalContributionRegistryInterface::class),
-			$this->createMock(IL10N::class)
+			request: $request,
+			session: $this->resolver(),
+			registry: $this->createMock(originalClassName: PortalContributionRegistryInterface::class),
+			l10n: $this->createMock(originalClassName: IL10N::class)
 		);
 
 		// No exception: the guard accepts the session.
-		$middleware->beforeController(new class implements PortalProtected {
-		}, 'index');
+		$middleware->beforeController(
+			controller: new class implements PortalProtected {
+			},
+			methodName: 'index'
+		);
 		$this->addToAssertionCount(1);
 	}//end testTheBearerAuthenticatesOnAProtectedPortalRoute()
 
@@ -178,13 +202,13 @@ class PortalBearerReachesNoToolTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheSameBearerIsRefusedByEveryToolLikeAForgedOne(): void {
-		$valid = $this->answers($this->validBearer());
-		$forged = $this->answers('Bearer not.a.token');
+		$valid = $this->answers(bearer: $this->validBearer());
+		$forged = $this->answers(bearer: 'Bearer not.a.token');
 
-		$this->assertCount(7, $valid);
-		$this->assertSame($forged, $valid);
+		$this->assertCount(expectedCount: 7, haystack: $valid);
+		$this->assertSame(expected: $forged, actual: $valid);
 		foreach ($valid as $id => $answer) {
-			$this->assertSame('unauthenticated', $answer['error'] ?? null, $id . ' accepted a portal bearer');
+			$this->assertSame(expected: 'unauthenticated', actual: ($answer['error'] ?? null), message: $id . ' accepted a portal bearer');
 		}
 	}//end testTheSameBearerIsRefusedByEveryToolLikeAForgedOne()
 
@@ -196,15 +220,15 @@ class PortalBearerReachesNoToolTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheProviderCannotReadABearer(): void {
-		$constructor = (new ReflectionClass(PortaliqToolProvider::class))->getConstructor();
+		$constructor = (new ReflectionClass(objectOrClass: PortaliqToolProvider::class))->getConstructor();
 		$types = [];
 		foreach ($constructor?->getParameters() ?? [] as $parameter) {
 			$types[] = (string)$parameter->getType();
 		}
 
-		$this->assertContains(IUserSession::class, $types);
-		$this->assertNotContains(IRequest::class, $types);
-		$this->assertNotContains(BearerSessionResolver::class, $types);
-		$this->assertSame([], preg_grep('/Bearer|PortalJwt|PortalSessionScope/', $types));
+		$this->assertContains(needle: IUserSession::class, haystack: $types);
+		$this->assertNotContains(needle: IRequest::class, haystack: $types);
+		$this->assertNotContains(needle: BearerSessionResolver::class, haystack: $types);
+		$this->assertSame(expected: [], actual: preg_grep(pattern: '/Bearer|PortalJwt|PortalSessionScope/', array: $types));
 	}//end testTheProviderCannotReadABearer()
 }//end class
