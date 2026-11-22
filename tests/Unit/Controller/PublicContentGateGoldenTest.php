@@ -190,7 +190,10 @@ class PublicContentGateGoldenTest extends TestCase {
 			$statuses[$name] = $this->catalogue($caller)[0]->index(portal: 'asked')->getStatus();
 		}
 
-		$this->assertSame(['unknownPortal' => 404, 'anonymous' => 401, 'lowTrust' => 403, 'signedIn' => 200, 'public' => 200, 'malformed' => 200], $statuses);
+		$this->assertSame(
+			expected: ['unknownPortal' => 404, 'anonymous' => 401, 'lowTrust' => 403, 'signedIn' => 200, 'public' => 200, 'malformed' => 200],
+			actual: $statuses
+		);
 	}//end testTheCatalogueIndexIsGated()
 
 	/**
