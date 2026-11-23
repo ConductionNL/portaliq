@@ -344,7 +344,10 @@ test('zuiddrecht.json lets Sanne act for a company and follow two access request
 			assert.ok(schema.properties[key], `${request.key}: ${key} is a property`)
 			// JSON Schema's `integer` (stateRank) is a whole JavaScript number.
 			if (schema.properties[key].type === 'integer') {
-				assert.ok(Number.isInteger(value), `${request.key}: ${key} is a whole number`)
+				assert.ok(
+					Number.isInteger(value),
+					`${request.key}: ${key} is a whole number`,
+				)
 			} else {
 				assert.equal(typeof value, schema.properties[key].type)
 			}

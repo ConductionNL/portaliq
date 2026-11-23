@@ -103,7 +103,10 @@ test('the site places the notices above the page content, signed in and signed o
 
 test('the end-after-start guard is registered on every notice create and update', () => {
 	// The Listener component registers its listeners (ListenerRegistrar), not Application.
-	const app = readFileSync(join(ROOT, 'lib', 'Listener', 'ListenerRegistrar.php'), 'utf8')
+	const app = readFileSync(
+		join(ROOT, 'lib', 'Listener', 'ListenerRegistrar.php'),
+		'utf8',
+	)
 	assert.match(app, /foreach \(\[ObjectCreatingEvent::class, ObjectUpdatingEvent::class\] as \$event\) \{\n\t\t\t\$context->registerEventListener\(\$event, NoticeWriteGuardListener::class\);/)
 })
 
