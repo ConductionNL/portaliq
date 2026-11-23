@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/hermiq-ai-tooling/tasks.md#task-6-documentation--capability-spec-maintenance
+ * @spec openspec/changes/archive/2026-11-23-hermiq-ai-tooling/tasks.md#task-6-documentation--capability-spec-maintenance
  */
 
 declare(strict_types=1);
@@ -182,4 +182,35 @@ class McpDocumentationTest extends TestCase {
 
 		$this->assertStringContainsString(needle: 'No tool is reachable from the portal edge (ADR-046).', haystack: $readme);
 	}//end testTheReadmeStatesThePortalEdgeRule()
+
+	/**
+	 * The capability spec holds the base requirements and the governed-surface
+	 * requirements, and the README points at it.
+	 *
+	 * @spec openspec/specs/portaliq-mcp-surface/spec.md#requirement-portaliq-exposes-no-hand-written-mcp-tool
+	 *
+	 * @return void
+	 */
+	public function testTheCapabilitySpecCarriesEveryRequirement(): void {
+		$spec = (string)file_get_contents(self::root() . '/openspec/specs/portaliq-mcp-surface/spec.md');
+
+		$expected = [
+			'Portaliq exposes no hand-written MCP tool',
+			'A curated read-only dialect on the portal inbox',
+			'Portal identity and session objects are not tools',
+			'Derived read dialects cover the operational record',
+			'Every staff write action is a curated tool governed by scope and reach',
+			'High-impact writes require a human approval gate',
+			'MCP tools are unreachable from the external portal edge',
+			'Every tool invocation leaves an app-side audit record',
+		];
+		foreach ($expected as $title) {
+			$this->assertStringContainsString(needle: '### Requirement: ' . $title . "\n", haystack: $spec);
+		}
+
+		$this->assertSame(expected: count($expected), actual: substr_count(haystack: $spec, needle: '### Requirement: '));
+
+		$readme = (string)file_get_contents(self::root() . '/README.md');
+		$this->assertStringContainsString(needle: '`openspec/specs/portaliq-mcp-surface/spec.md`', haystack: $readme);
+	}//end testTheCapabilitySpecCarriesEveryRequirement()
 }//end class
