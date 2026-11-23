@@ -52,16 +52,20 @@ interface AxeViolation {
  * Nextcloud's markup as a defect in Portaliq. At a real public origin the
  * chrome is absent and the scope is the page.
  *
- * @param page The Playwright page.
+ * @param page  The Playwright page.
+ * @param scope The selector axe runs on; the renderer's root by default.
  * @return The serious and critical violations.
  */
-async function seriousViolations(page: {
-	addScriptTag: (opts: { content: string }) => Promise<unknown>
-	evaluate: <T>(fn: string) => Promise<T>
-}): Promise<AxeViolation[]> {
+async function seriousViolations(
+	page: {
+		addScriptTag: (opts: { content: string }) => Promise<unknown>
+		evaluate: <T>(fn: string) => Promise<T>
+	},
+	scope = '[data-testid="site-root"]',
+): Promise<AxeViolation[]> {
 	await page.addScriptTag({ content: AXE_SOURCE })
 	const results = await page.evaluate<{ violations: AxeViolation[] }>(`
-		window.axe.run('[data-testid="site-root"]', {
+		window.axe.run(${JSON.stringify(scope)}, {
 			runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'] },
 		})
 	`)
@@ -582,6 +586,59 @@ test.describe('site renderer — accessibility statement', () => {
 		}
 
 		const violations = await seriousViolations(page)
+		expect(violations, describe(violations)).toEqual([])
+	})
+})
+
+/**
+ * site-honest-without-javascript task 4.1 (REQ-SHJ-002): the plain version of
+ * a page passes the same axe check as the site.
+ *
+ * axe runs with JavaScript on. That is not a contradiction: the plain page
+ * carries no script element (`tests/site-plain.spec.mjs` proves it), so the
+ * DOM axe reads is the one a visitor without JavaScript gets, and axe itself
+ * needs scripting to run. The plain page is rendered blank, without
+ * Nextcloud's chrome, so the whole document is the scope rather than the
+ * renderer's root, which the plain page does not have.
+ *
+ * The plain search reads the catalogue on the server, so a browser stub cannot
+ * answer it. On an instance without a catalogue the block shows its
+ * "unavailable" sentence with the link to the full site; that state is checked
+ * as it is, because it is the one such a visitor meets.
+ *
+ * @spec openspec/changes/site-honest-without-javascript/specs/portaliq-cms/spec.md
+ */
+test.describe('site renderer — the plain version', () => {
+	const PLAIN = `${SITE}/plain`
+
+	test('S13f: the plain version of a markdown page has no serious or critical axe violations', async ({
+		page,
+	}) => {
+		await page.goto(`${PLAIN}?route=/over-ons`)
+		await expect(page.locator('#pq-main h1')).toHaveText('Over ons')
+		// No script reached the page, so this DOM is the no-JavaScript one.
+		await expect(page.locator('script')).toHaveCount(0)
+
+		const violations = await seriousViolations(page, 'html')
+		expect(violations, describe(violations)).toEqual([])
+	})
+
+	test('S13g: the plain search page with a term has no serious or critical axe violations', async ({
+		page,
+	}) => {
+		await page.goto(`${PLAIN}?route=/zoeken&_search=afval`)
+		await expect(page.locator('#pq-main h1')).toHaveText('Zoeken in publicaties')
+		const field = page.locator(
+			'#pq-main form[role="search"] input[name="_search"]',
+		)
+		await expect(field).toHaveValue('afval')
+		// Whatever the catalogue answered, the block says so in words.
+		await expect(
+			page.locator('#pq-main [role="status"]').first(),
+		).not.toBeEmpty()
+		await expect(page.locator('script')).toHaveCount(0)
+
+		const violations = await seriousViolations(page, 'html')
 		expect(violations, describe(violations)).toEqual([])
 	})
 })
