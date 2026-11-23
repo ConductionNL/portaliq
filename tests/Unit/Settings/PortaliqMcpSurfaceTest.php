@@ -34,7 +34,7 @@ use PHPUnit\Framework\TestCase;
  * or a write verb to the inbox, fails this test until the spec says so.
  *
  * @spec openspec/changes/portaliq-mcp-adoption/specs/portaliq-mcp-surface/spec.md
- * @spec openspec/changes/hermiq-ai-tooling/specs/portaliq-mcp-surface/spec.md
+ * @spec openspec/specs/portaliq-mcp-surface/spec.md
  */
 class PortaliqMcpSurfaceTest extends TestCase {
 
@@ -105,7 +105,7 @@ class PortaliqMcpSurfaceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/hermiq-ai-tooling/specs/portaliq-mcp-surface/spec.md#requirement-derived-read-dialects-cover-the-operational-record
+	 * @spec openspec/specs/portaliq-mcp-surface/spec.md#requirement-derived-read-dialects-cover-the-operational-record
 	 */
 	public function testTheOperationalRecordsCarryReadOnlyDialects(): void {
 		$expected = [
@@ -241,7 +241,7 @@ class PortaliqMcpSurfaceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/hermiq-ai-tooling/specs/portaliq-mcp-surface/spec.md#requirement-portaliq-exposes-no-hand-written-mcp-tool
+	 * @spec openspec/specs/portaliq-mcp-surface/spec.md#requirement-portaliq-exposes-no-hand-written-mcp-tool
 	 */
 	public function testOnlyTheGovernedProviderIsRegistered(): void {
 		$this->assertFileDoesNotExist(self::ROOT . '/lib/Mcp/ExampleToolProvider.php');

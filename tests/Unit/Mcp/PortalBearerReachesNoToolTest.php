@@ -15,8 +15,8 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/hermiq-ai-tooling/specs/portaliq-mcp-surface/spec.md#requirement-mcp-tools-are-unreachable-from-the-external-portal-edge
- * @spec openspec/changes/hermiq-ai-tooling/tasks.md#task-4-prove-the-portal-edge-cannot-reach-mcp
+ * @spec openspec/specs/portaliq-mcp-surface/spec.md#requirement-mcp-tools-are-unreachable-from-the-external-portal-edge
+ * @spec openspec/changes/archive/2026-11-23-hermiq-ai-tooling/tasks.md#task-4-prove-the-portal-edge-cannot-reach-mcp
  */
 
 declare(strict_types=1);
