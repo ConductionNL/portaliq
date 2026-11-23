@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Service\Branch\BranchNumber;
+use OCA\Portaliq\Service\Branch\PortalBranchScope;
 use OCA\Portaliq\Service\CaseTypeVisibility;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalRowScreen;
+use OCA\Portaliq\Service\VisibleFromGate;
 use OCP\IRequest;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -21,6 +25,9 @@ use PHPUnit\Framework\TestCase;
  * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t03
  */
 #[CoversClass(PortalRowScreen::class)]
+#[UsesClass(BranchNumber::class)]
+#[UsesClass(PortalBranchScope::class)]
+#[UsesClass(VisibleFromGate::class)]
 class PortalRowScreenTest extends TestCase {
 
 	/**
