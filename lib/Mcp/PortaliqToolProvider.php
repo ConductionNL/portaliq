@@ -29,7 +29,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/hermiq-ai-tooling/specs/portaliq-mcp-surface/spec.md#requirement-every-staff-write-action-is-a-curated-tool-governed-by-scope-and-reach
+ * @spec openspec/specs/portaliq-mcp-surface/spec.md#requirement-every-staff-write-action-is-a-curated-tool-governed-by-scope-and-reach
  */
 
 declare(strict_types=1);
@@ -54,7 +54,7 @@ use OCP\IUserSession;
 /**
  * Curated, governed MCP tools for portaliq staff actions.
  *
- * @spec openspec/changes/hermiq-ai-tooling/specs/portaliq-mcp-surface/spec.md#requirement-portaliq-exposes-no-hand-written-mcp-tool
+ * @spec openspec/specs/portaliq-mcp-surface/spec.md#requirement-portaliq-exposes-no-hand-written-mcp-tool
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) One dispatcher over the seven production paths it fronts.
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) Seven small handlers, each a guard and one call.
@@ -131,7 +131,7 @@ class PortaliqToolProvider implements IMcpToolProvider {
 	 *
 	 * @return string "portaliq"
 	 *
-	 * @spec openspec/changes/hermiq-ai-tooling/specs/portaliq-mcp-surface/spec.md#requirement-portaliq-exposes-no-hand-written-mcp-tool
+	 * @spec openspec/specs/portaliq-mcp-surface/spec.md#requirement-portaliq-exposes-no-hand-written-mcp-tool
 	 */
 	public function getAppId(): string {
 		return Application::APP_ID;
@@ -143,7 +143,7 @@ class PortaliqToolProvider implements IMcpToolProvider {
 	 *
 	 * @return list<array<string, mixed>> Tool descriptors.
 	 *
-	 * @spec openspec/changes/hermiq-ai-tooling/specs/portaliq-mcp-surface/spec.md#requirement-high-impact-writes-require-a-human-approval-gate
+	 * @spec openspec/specs/portaliq-mcp-surface/spec.md#requirement-high-impact-writes-require-a-human-approval-gate
 	 */
 	public function getTools(): array {
 		$tools = [];
@@ -164,7 +164,7 @@ class PortaliqToolProvider implements IMcpToolProvider {
 	 *
 	 * @return array<string, mixed> The result, or `['error' => ..., 'message' => ...]`.
 	 *
-	 * @spec openspec/changes/hermiq-ai-tooling/specs/portaliq-mcp-surface/spec.md#requirement-mcp-tools-are-unreachable-from-the-external-portal-edge
+	 * @spec openspec/specs/portaliq-mcp-surface/spec.md#requirement-mcp-tools-are-unreachable-from-the-external-portal-edge
 	 */
 	public function invokeTool(string $toolId, array $arguments): array {
 		$scope = $this->scopeOf(toolId: $toolId);
@@ -226,7 +226,7 @@ class PortaliqToolProvider implements IMcpToolProvider {
 	 *
 	 * @return array<string, mixed> The outcome.
 	 *
-	 * @spec openspec/changes/hermiq-ai-tooling/specs/portaliq-mcp-surface/spec.md#requirement-every-staff-write-action-is-a-curated-tool-governed-by-scope-and-reach
+	 * @spec openspec/specs/portaliq-mcp-surface/spec.md#requirement-every-staff-write-action-is-a-curated-tool-governed-by-scope-and-reach
 	 */
 	private function trafficSummary(array $arguments, string $uid): array {
 		if ($this->groups->isAdmin($uid) === false) {
@@ -274,7 +274,7 @@ class PortaliqToolProvider implements IMcpToolProvider {
 	 *
 	 * @return array<string, mixed> The outcome.
 	 *
-	 * @spec openspec/changes/hermiq-ai-tooling/specs/portaliq-mcp-surface/spec.md#requirement-every-staff-write-action-is-a-curated-tool-governed-by-scope-and-reach
+	 * @spec openspec/specs/portaliq-mcp-surface/spec.md#requirement-every-staff-write-action-is-a-curated-tool-governed-by-scope-and-reach
 	 */
 	private function updatePortalContent(array $arguments): array {
 		if ($this->editors->mayEdit() === false) {
@@ -320,7 +320,7 @@ class PortaliqToolProvider implements IMcpToolProvider {
 	 *
 	 * @return array<string, mixed> The outcome.
 	 *
-	 * @spec openspec/changes/hermiq-ai-tooling/specs/portaliq-mcp-surface/spec.md#requirement-every-staff-write-action-is-a-curated-tool-governed-by-scope-and-reach
+	 * @spec openspec/specs/portaliq-mcp-surface/spec.md#requirement-every-staff-write-action-is-a-curated-tool-governed-by-scope-and-reach
 	 */
 	private function updatePageRegions(array $arguments): array {
 		if ($this->editors->mayEdit() === false) {
@@ -362,7 +362,7 @@ class PortaliqToolProvider implements IMcpToolProvider {
 	 *
 	 * @return array<string, mixed> The outcome.
 	 *
-	 * @spec openspec/changes/hermiq-ai-tooling/specs/portaliq-mcp-surface/spec.md#requirement-every-staff-write-action-is-a-curated-tool-governed-by-scope-and-reach
+	 * @spec openspec/specs/portaliq-mcp-surface/spec.md#requirement-every-staff-write-action-is-a-curated-tool-governed-by-scope-and-reach
 	 */
 	private function applyTheme(array $arguments, string $uid): array {
 		if ($this->groups->isAdmin($uid) === false) {
@@ -402,7 +402,7 @@ class PortaliqToolProvider implements IMcpToolProvider {
 	 *
 	 * @return array<string, mixed> The outcome.
 	 *
-	 * @spec openspec/changes/hermiq-ai-tooling/specs/portaliq-mcp-surface/spec.md#requirement-high-impact-writes-require-a-human-approval-gate
+	 * @spec openspec/specs/portaliq-mcp-surface/spec.md#requirement-high-impact-writes-require-a-human-approval-gate
 	 */
 	private function publishPortalPage(array $arguments): array {
 		if ($this->editors->mayEdit() === false) {
@@ -444,7 +444,7 @@ class PortaliqToolProvider implements IMcpToolProvider {
 	 *
 	 * @return array<string, mixed> The outcome.
 	 *
-	 * @spec openspec/changes/hermiq-ai-tooling/specs/portaliq-mcp-surface/spec.md#requirement-high-impact-writes-require-a-human-approval-gate
+	 * @spec openspec/specs/portaliq-mcp-surface/spec.md#requirement-high-impact-writes-require-a-human-approval-gate
 	 */
 	private function sendPortalMessage(array $arguments, string $uid): array {
 		if ($this->groups->isAdmin($uid) === false) {
@@ -485,7 +485,7 @@ class PortaliqToolProvider implements IMcpToolProvider {
 	 *
 	 * @return array<string, mixed> The outcome.
 	 *
-	 * @spec openspec/changes/hermiq-ai-tooling/specs/portaliq-mcp-surface/spec.md#requirement-every-staff-write-action-is-a-curated-tool-governed-by-scope-and-reach
+	 * @spec openspec/specs/portaliq-mcp-surface/spec.md#requirement-every-staff-write-action-is-a-curated-tool-governed-by-scope-and-reach
 	 */
 	private function revokeOrganisationSessions(array $arguments, string $uid): array {
 		if ($this->groups->isAdmin($uid) === false) {
