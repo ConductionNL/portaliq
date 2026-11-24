@@ -156,6 +156,7 @@ import EmptyState from './EmptyState.vue'
 import FileItem from './FileItem.vue'
 import LoadError from './LoadError.vue'
 import Skeleton from './Skeleton.vue'
+import { documentTermsApi } from '../../../shared/documentTermsApi.js'
 import { fileLine, groupDocuments, paperLine, statusState } from './documents.js'
 import { mijnTranslator } from './rows.js'
 
@@ -373,11 +374,11 @@ export default {
 		async openDocument(entry) {
 			this.openFailed = false
 			this.termsNotice = ''
-			if (!this.isCase && this.collection?.documents?.terms && this.api?.fetchCollectionDocumentTerms) {
+			if (!this.isCase && this.collection?.documents?.terms && this.api?.request) {
 				this.busyId = entry.id
 				let terms
 				try {
-					terms = await this.api.fetchCollectionDocumentTerms(this.collection, this.recordId, entry)
+					terms = await documentTermsApi(this.api).fetchTerms(this.collection, this.recordId, entry)
 				} catch {
 					terms = null
 				}
@@ -410,7 +411,7 @@ export default {
 			this.busyId = pending.entry.id
 			let result
 			try {
-				result = await this.api?.acceptCollectionDocumentTerms?.(this.collection, this.recordId, pending.entry, pending.version)
+				result = await documentTermsApi(this.api).acceptTerms(this.collection, this.recordId, pending.entry, pending.version)
 			} catch {
 				result = null
 			}

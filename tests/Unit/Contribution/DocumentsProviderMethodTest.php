@@ -119,7 +119,8 @@ class DocumentsProviderMethodTest extends TestCase {
 		$this->assertSame(expected: ['label' => ''] + $declared, actual: $out['documents']);
 
 		foreach (['getContribution', 'a-b', '__call', 7, null] as $bad) {
-			$out = (new DocumentsProviderMethod())->normalise(collection: ['documents' => ['provider' => 'releasedDocuments', 'terms' => $bad, 'accept' => $bad]]);
+			$malformed = ['provider' => 'releasedDocuments', 'terms' => $bad, 'accept' => $bad];
+			$out       = (new DocumentsProviderMethod())->normalise(collection: ['documents' => $malformed]);
 			$this->assertSame(expected: ['label' => '', 'provider' => 'releasedDocuments'], actual: $out['documents'], message: json_encode(value: $bad));
 		}
 	}//end testTheTermsAndAcceptHooksAreKeptOrDroppedAlone()

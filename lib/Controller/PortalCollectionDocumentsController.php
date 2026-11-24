@@ -32,6 +32,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Kernel\Support\SessionTrust;
+use OCA\Portaliq\Service\DocumentOpening;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -169,26 +170,21 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 			return $proven;
 		}
 
-		$terms = $this->documents->terms(
-			subject: $proven['subject'],
-			app: $proven['app'],
-			documents: $proven['documents'],
-			object: ['register' => $register, 'schema' => $schema, 'id' => $id],
-			documentId: $documentId
-		);
+		$object = ['register' => $register, 'schema' => $schema, 'id' => $id];
+		$terms  = $this->documents->terms(opening: $this->opening(proven: $proven, object: $object, documentId: $documentId));
 
 		return new JSONResponse(['terms' => $terms]);
 	}//end terms()
 
 	/**
 	 * Accept the conditions of one listed paper in the version shown. The
-	 * acceptance is the session subject's; only the version travels.
+	 * acceptance is the session subject's; only the version travels, in the
+	 * body as `version`.
 	 *
 	 * @param string $register   The register of the collection.
 	 * @param string $schema     The schema of the collection.
 	 * @param string $id         The object id.
 	 * @param string $documentId The listed entry's id.
-	 * @param string $version    The version of the conditions shown.
 	 *
 	 * @return JSONResponse `{accepted: true}`, or 401 / 404 / 409.
 	 *
@@ -197,19 +193,17 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 20, period: 60)]
-	public function acceptTerms(string $register, string $schema, string $id, string $documentId, string $version=''): JSONResponse {
+	public function acceptTerms(string $register, string $schema, string $id, string $documentId): JSONResponse {
 		$proven = $this->proven(register: $register, schema: $schema, id: $id);
 		if ($proven instanceof JSONResponse) {
 			return $proven;
 		}
 
+		$version  = $this->request->getParam('version', '');
+		$object   = ['register' => $register, 'schema' => $schema, 'id' => $id];
 		$accepted = $this->documents->accept(
-			subject: $proven['subject'],
-			app: $proven['app'],
-			documents: $proven['documents'],
-			object: ['register' => $register, 'schema' => $schema, 'id' => $id],
-			documentId: $documentId,
-			version: $version
+			opening: $this->opening(proven: $proven, object: $object, documentId: $documentId),
+			version: is_string($version) === true ? $version : ''
 		);
 		if ($accepted === false) {
 			$message = $this->l10n->t('The conditions could not be accepted. Read them again and try once more.');
@@ -252,6 +246,25 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 
 		return $stream;
 	}//end bundle()
+
+	/**
+	 * One listed document of a proven object, as the documents service takes it.
+	 *
+	 * @param array{subject: array<string, mixed>, app: string, documents: array<string, mixed>} $proven     The proven match.
+	 * @param array{register: string, schema: string, id: string}                                $object     The proven object.
+	 * @param string                                                                             $documentId The listed entry's id.
+	 *
+	 * @return DocumentOpening
+	 */
+	private function opening(array $proven, array $object, string $documentId): DocumentOpening {
+		return new DocumentOpening(
+			subject: $proven['subject'],
+			app: $proven['app'],
+			documents: $proven['documents'],
+			object: $object,
+			documentId: $documentId
+		);
+	}//end opening()
 
 	/**
 	 * Prove the object is the subject's, in a collection of the subject's own

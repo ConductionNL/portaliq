@@ -64,21 +64,11 @@ class DocumentsProviderMethod {
 		}
 
 		$collection['documents'] = ['label' => $label, 'provider' => $declared['provider']];
-		// An `opened` hook (site-member-voting-record-and-confidential-papers) is kept only
-		// as a plain method name; a malformed one is dropped and the key stays without it.
-		if (array_key_exists('opened', $declared) === true && (new TimelineProviderMethod())->accepts(name: $declared['opened']) === true) {
-			$collection['documents']['opened'] = $declared['opened'];
-		}
-
-		// A `bundle` method (documents-grouped-per-record) answers the one file
-		// of every listed document together; kept only as a plain method name.
-		if (array_key_exists('bundle', $declared) === true && (new TimelineProviderMethod())->accepts(name: $declared['bundle']) === true) {
-			$collection['documents']['bundle'] = $declared['bundle'];
-		}
-
-		// A `terms` and an `accept` hook (document-download-terms) read and record the
-		// download conditions of a listed document; each kept only as a plain method name.
-		foreach (['terms', 'accept'] as $hook) {
+		// The hooks are kept only as plain method names; a malformed one is dropped and
+		// the key stays without it: `opened` (site-member-voting-record-and-confidential-papers),
+		// `bundle` (documents-grouped-per-record, the one file of every listed document),
+		// `terms` and `accept` (document-download-terms, a document's download conditions).
+		foreach (['opened', 'bundle', 'terms', 'accept'] as $hook) {
 			if (array_key_exists($hook, $declared) === true && (new TimelineProviderMethod())->accepts(name: $declared[$hook]) === true) {
 				$collection['documents'][$hook] = $declared[$hook];
 			}

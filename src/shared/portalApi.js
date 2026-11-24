@@ -1767,45 +1767,6 @@ export function createPortalApi(config, store = {}) {
 		},
 
 		/**
-		 * The download conditions one listed document carries, read before it
-		 * is opened. Null when the app declares none or cannot tell; the
-		 * download itself still asks the app (document-download-terms).
-		 *
-		 * @param {object} collection Manifest collection: `{ register, schema }`.
-		 * @param {string} id The object id.
-		 * @param {object} entry The listed entry: `{ id }`.
-		 * @return {Promise<object|null>} `{ mayDownload, message, agreement }` or null.
-		 * @spec openspec/changes/document-download-terms/tasks.md#task-3
-		 */
-		async fetchCollectionDocumentTerms(collection, id, entry) {
-			const answer = await get(
-				`${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/documents/${encodeURIComponent(entry.id)}/terms`,
-			)
-			return answer && answer.terms && typeof answer.terms === 'object' ? answer.terms : null
-		},
-
-		/**
-		 * Accept the conditions of one listed document in the version shown.
-		 *
-		 * @param {object} collection Manifest collection: `{ register, schema }`.
-		 * @param {string} id The object id.
-		 * @param {object} entry The listed entry: `{ id }`.
-		 * @param {string} version The version of the conditions shown.
-		 * @return {Promise<object>} `{ ok }`, or `{ ok: false, message }`.
-		 * @spec openspec/changes/document-download-terms/tasks.md#task-3
-		 */
-		async acceptCollectionDocumentTerms(collection, id, entry, version) {
-			const res = await fetch(
-				`${base}${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/documents/${encodeURIComponent(entry.id)}/terms`,
-				jsonInit('POST', { version }),
-			)
-			const json = await res.json().catch(() => ({}))
-			return res.ok && json.accepted === true
-				? { ok: true }
-				: { ok: false, message: json.message || '' }
-		},
-
-		/**
 		 * Open one document `fetchCollectionDocuments` listed. Only the entry
 		 * id travels; the server looks it up again, runs the collection's
 		 * `opened` hook when it has one, and answers 503 when that says no.

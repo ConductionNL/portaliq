@@ -152,27 +152,26 @@ class CollectionDocuments implements CollectionDocumentsInterface {
 	 * declares no `terms` hook, the document is not listed, or the hook
 	 * cannot answer; only `mayDownload`, `message` and `agreement` pass.
 	 *
-	 * @param array<string, mixed>                                $subject    The resolved subject.
-	 * @param string                                              $app        The contributing app.
-	 * @param array<string, mixed>                                $documents  The collection's `documents` declaration.
-	 * @param array{register: string, schema: string, id: string} $object     The proven object.
-	 * @param string                                              $documentId The listed entry's id.
+	 * @param DocumentOpening $opening The subject, app, declaration, proven object and listed entry.
 	 *
 	 * @return array<string, mixed>|null The conditions, or null.
 	 *
 	 * @spec openspec/changes/document-download-terms/tasks.md#task-1
 	 */
-	public function terms(array $subject, string $app, array $documents, array $object, string $documentId): ?array {
-		$run      = new DocumentOpening(subject: $subject, app: $app, documents: $documents, object: $object, documentId: $documentId);
-		$provider = $this->listedHookProvider(run: $run, hook: 'terms');
+	public function terms(DocumentOpening $opening): ?array {
+		$provider = $this->listedHookProvider(run: $opening, hook: 'terms');
 		if ($provider === null) {
 			return null;
 		}
 
 		try {
-			$answer = $provider->{(string)$documents['terms']}($object['id'], $documentId, $this->hookSubject(subject: $subject));
+			$answer = $provider->{(string)$opening->documents['terms']}(
+				$opening->object['id'],
+				$opening->documentId,
+				$this->hookSubject(subject: $opening->subject)
+			);
 		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: the terms hook failed', ['app' => $app]);
+			$this->logger->warning('Portaliq: the terms hook failed', ['app' => $opening->app]);
 			return null;
 		}
 
@@ -189,28 +188,28 @@ class CollectionDocuments implements CollectionDocumentsInterface {
 	 * unlisted document, an empty version, a throw or anything but true
 	 * answers false.
 	 *
-	 * @param array<string, mixed>                                $subject    The resolved subject.
-	 * @param string                                              $app        The contributing app.
-	 * @param array<string, mixed>                                $documents  The collection's `documents` declaration.
-	 * @param array{register: string, schema: string, id: string} $object     The proven object.
-	 * @param string                                              $documentId The listed entry's id.
-	 * @param string                                              $version    The version of the conditions shown.
+	 * @param DocumentOpening $opening The subject, app, declaration, proven object and listed entry.
+	 * @param string          $version The version of the conditions shown.
 	 *
 	 * @return bool True when the document may now be opened.
 	 *
 	 * @spec openspec/changes/document-download-terms/tasks.md#task-1
 	 */
-	public function accept(array $subject, string $app, array $documents, array $object, string $documentId, string $version): bool {
-		$run      = new DocumentOpening(subject: $subject, app: $app, documents: $documents, object: $object, documentId: $documentId);
-		$provider = $this->listedHookProvider(run: $run, hook: 'accept');
+	public function accept(DocumentOpening $opening, string $version): bool {
+		$provider = $this->listedHookProvider(run: $opening, hook: 'accept');
 		if ($provider === null || trim($version) === '') {
 			return false;
 		}
 
 		try {
-			$accepted = $provider->{(string)$documents['accept']}($object['id'], $documentId, $this->hookSubject(subject: $subject), trim($version));
+			$accepted = $provider->{(string)$opening->documents['accept']}(
+				$opening->object['id'],
+				$opening->documentId,
+				$this->hookSubject(subject: $opening->subject),
+				trim($version)
+			);
 		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: the accept hook failed', ['app' => $app]);
+			$this->logger->warning('Portaliq: the accept hook failed', ['app' => $opening->app]);
 			return false;
 		}
 

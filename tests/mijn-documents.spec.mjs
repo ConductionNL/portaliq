@@ -376,14 +376,16 @@ test('a document with download conditions shows them first and downloads after A
 		documents: { label: 'Documenten', provider: 'releasedDocuments', opened: 'releasedDocumentOpened', terms: 'releasedDocumentTerms', accept: 'releasedDocumentAccept' },
 	}
 	const calls = []
-	let acceptAnswer = { ok: false, message: 'Changed meanwhile' }
+	let acceptAnswer = { ok: false, status: 409, json: { accepted: false, message: 'Changed meanwhile' } }
+	let termsAnswer = { mayDownload: false, message: '', agreement: { version: 'v2', text: 'Niet verder verspreiden.' } }
+	const PATH = '/collections/filinq/documentRelease/rel-1/documents/d1/terms'
 	const api = {
-		fetchCollectionDocumentTerms: async (collection, id, entry) => {
-			calls.push(`terms:${id}:${entry.id}`)
-			return { mayDownload: false, message: '', agreement: { version: 'v2', text: 'Niet verder verspreiden.' } }
-		},
-		acceptCollectionDocumentTerms: async (collection, id, entry, version) => {
-			calls.push(`accept:${id}:${entry.id}:${version}`)
+		request: async (method, path, body) => {
+			if (method === 'GET') {
+				calls.push(`terms:${path}`)
+				return { ok: true, status: 200, json: { terms: termsAnswer } }
+			}
+			calls.push(`accept:${path}:${body.version}`)
 			return acceptAnswer
 		},
 		downloadCollectionDocument: async (collection, id, entry) => {
@@ -399,7 +401,7 @@ test('a document with download conditions shows them first and downloads after A
 		locale: 'nl',
 	})
 	await ctx.openDocument(RECEIPT)
-	assert.deepEqual(calls, ['terms:rel-1:d1'], 'nothing downloads before the conditions are accepted')
+	assert.deepEqual(calls, [`terms:${PATH}`], 'nothing downloads before the conditions are accepted')
 	assert.equal(ctx.pendingTerms.version, 'v2')
 	assert.equal(ctx.pendingTerms.text, 'Niet verder verspreiden.')
 
@@ -407,9 +409,9 @@ test('a document with download conditions shows them first and downloads after A
 	assert.equal(ctx.termsNotice, 'Changed meanwhile', 'a refused acceptance says why and downloads nothing')
 	assert.notEqual(ctx.pendingTerms, null)
 
-	acceptAnswer = { ok: true }
+	acceptAnswer = { ok: true, status: 200, json: { accepted: true } }
 	await ctx.acceptAndOpen()
-	assert.deepEqual(calls, ['terms:rel-1:d1', 'accept:rel-1:d1:v2', 'accept:rel-1:d1:v2', 'download:rel-1:d1'])
+	assert.deepEqual(calls, [`terms:${PATH}`, `accept:${PATH}:v2`, `accept:${PATH}:v2`, 'download:rel-1:d1'])
 	assert.equal(ctx.pendingTerms, null)
 	assert.equal(ctx.openFailed, false)
 
@@ -423,7 +425,7 @@ test('a document with download conditions shows them first and downloads after A
 
 	// Accepted already, or no conditions: straight to the download.
 	calls.length = 0
-	api.fetchCollectionDocumentTerms = async () => ({ mayDownload: true })
+	termsAnswer = { mayDownload: true }
 	await ctx.openDocument(RECEIPT)
-	assert.deepEqual(calls, ['download:rel-1:d1'])
+	assert.deepEqual(calls, [`terms:${PATH}`, 'download:rel-1:d1'])
 })

@@ -6,6 +6,7 @@ namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Contribution\PortalProviderLocator;
 use OCA\Portaliq\Service\CollectionDocuments;
+use OCA\Portaliq\Service\DocumentOpening;
 use OCA\Portaliq\Service\PortalAuditHook;
 use OCA\Portaliq\Service\PortalCaseDocumentReader;
 use OCA\Portaliq\Service\PortalFileReader;
@@ -63,6 +64,10 @@ class FakeOpenedProvider {
 	/**
 	 * The terms hook.
 	 *
+	 * @param string                $objectId   The object.
+	 * @param string                $documentId The document.
+	 * @param array<string, string> $subject    The session's subject.
+	 *
 	 * @return mixed
 	 */
 	public function paperTerms(string $objectId, string $documentId, array $subject): mixed {
@@ -76,6 +81,11 @@ class FakeOpenedProvider {
 
 	/**
 	 * The accept hook: answers $answer.
+	 *
+	 * @param string                $objectId   The object.
+	 * @param string                $documentId The document.
+	 * @param array<string, string> $subject    The session's subject.
+	 * @param string                $version    The version shown.
 	 *
 	 * @return mixed
 	 */
@@ -293,59 +303,81 @@ class CollectionDocumentsTest extends TestCase {
 	}//end testNoBundleMethodOrNoEntryStreamsNothing()
 
 	/**
+	 * One listed document of the test object, as the controller hands it over.
+	 *
+	 * @param array<string, mixed> $documents  The declaration.
+	 * @param string               $documentId The listed entry's id.
+	 *
+	 * @return DocumentOpening
+	 */
+	private function opening(array $documents=self::TERMS, string $documentId='d1'): DocumentOpening {
+		return new DocumentOpening(subject: self::SUBJECT, app: 'filinq', documents: $documents, object: self::OBJECT, documentId: $documentId);
+	}
+
+	/**
 	 * document-download-terms task 1: the terms hook answers the conditions, filtered, with the session's subject.
+	 *
+	 * @return void
 	 */
 	public function testTheTermsHookAnswersTheConditionsShown(): void {
-		$service = $this->service();
-		$this->provider->terms = ['mayDownload' => false, 'message' => 'Accept first', 'agreement' => ['version' => 'v2', 'text' => 'No reuse'], 'internal' => 'x'];
+		$service               = $this->service();
+		$agreement             = ['version' => 'v2', 'text' => 'No reuse'];
+		$this->provider->terms = ['mayDownload' => false, 'message' => 'Accept first', 'agreement' => $agreement, 'internal' => 'x'];
 
-		$terms = $service->terms(subject: self::SUBJECT, app: 'filinq', documents: self::TERMS, object: self::OBJECT, documentId: 'd1');
+		$terms = $service->terms(opening: $this->opening());
 
-		$this->assertSame(['mayDownload' => false, 'message' => 'Accept first', 'agreement' => ['version' => 'v2', 'text' => 'No reuse']], $terms);
-		$this->assertSame(['terms', 'a1', 'd1', ['subjectRef' => 'bsn-1', 'trust' => 'substantial', 'identityType' => 'digid', 'audience' => 'citizen']], $this->provider->calls[0]);
+		$this->assertSame(expected: ['mayDownload' => false, 'message' => 'Accept first', 'agreement' => $agreement], actual: $terms);
+		$subject = ['subjectRef' => 'bsn-1', 'trust' => 'substantial', 'identityType' => 'digid', 'audience' => 'citizen'];
+		$this->assertSame(expected: ['terms', 'a1', 'd1', $subject], actual: $this->provider->calls[0]);
 	}
 
 	/**
 	 * document-download-terms task 1: no hook, an unlisted document, a throw or a non-array answer gives no terms.
+	 *
+	 * @return void
 	 */
 	public function testTermsAreNullWhenTheyCannotBeRead(): void {
-		$this->assertNull($this->service()->terms(subject: self::SUBJECT, app: 'filinq', documents: self::DOCUMENTS, object: self::OBJECT, documentId: 'd1'));
-		$this->assertNull($this->service(listed: false)->terms(subject: self::SUBJECT, app: 'filinq', documents: self::TERMS, object: self::OBJECT, documentId: 'd1'));
-		$this->assertSame([], $this->provider->calls);
+		$this->assertNull(actual: $this->service()->terms(opening: $this->opening(documents: self::DOCUMENTS)));
+		$this->assertNull(actual: $this->service(listed: false)->terms(opening: $this->opening()));
+		$this->assertSame(expected: [], actual: $this->provider->calls);
 
-		$service = $this->service();
+		$service               = $this->service();
 		$this->provider->terms = new RuntimeException('down');
-		$this->assertNull($service->terms(subject: self::SUBJECT, app: 'filinq', documents: self::TERMS, object: self::OBJECT, documentId: 'd1'));
+		$this->assertNull(actual: $service->terms(opening: $this->opening()));
 		$this->provider->terms = 'yes';
-		$this->assertNull($service->terms(subject: self::SUBJECT, app: 'filinq', documents: self::TERMS, object: self::OBJECT, documentId: 'd1'));
+		$this->assertNull(actual: $service->terms(opening: $this->opening()));
 	}
 
 	/**
 	 * document-download-terms task 1: accepting passes the trimmed version and is true only on exactly true.
+	 *
+	 * @return void
 	 */
 	public function testAcceptingPassesTheVersionShown(): void {
 		$service = $this->service();
-		$this->assertTrue($service->accept(subject: self::SUBJECT, app: 'filinq', documents: self::TERMS, object: self::OBJECT, documentId: 'd1', version: ' v2 '));
-		$this->assertSame('v2', $this->provider->calls[0][4]);
+		$this->assertTrue(condition: $service->accept(opening: $this->opening(), version: ' v2 '));
+		$this->assertSame(expected: 'v2', actual: $this->provider->calls[0][4]);
 
 		$this->provider->answer = 'true';
-		$this->assertFalse($service->accept(subject: self::SUBJECT, app: 'filinq', documents: self::TERMS, object: self::OBJECT, documentId: 'd1', version: 'v2'));
+		$this->assertFalse(condition: $service->accept(opening: $this->opening(), version: 'v2'));
 		$this->provider->answer = new RuntimeException('down');
-		$this->assertFalse($service->accept(subject: self::SUBJECT, app: 'filinq', documents: self::TERMS, object: self::OBJECT, documentId: 'd1', version: 'v2'));
+		$this->assertFalse(condition: $service->accept(opening: $this->opening(), version: 'v2'));
 	}
 
 	/**
 	 * document-download-terms task 1: no hook, no version or an unlisted document records nothing.
+	 *
+	 * @return void
 	 */
 	public function testAnAcceptanceWithoutHookVersionOrListingRecordsNothing(): void {
 		$service = $this->service();
-		$this->assertFalse($service->accept(subject: self::SUBJECT, app: 'filinq', documents: self::DOCUMENTS, object: self::OBJECT, documentId: 'd1', version: 'v2'));
-		$this->assertFalse($service->accept(subject: self::SUBJECT, app: 'filinq', documents: self::TERMS, object: self::OBJECT, documentId: 'd1', version: '  '));
-		$this->assertFalse($service->accept(subject: self::SUBJECT, app: 'filinq', documents: self::TERMS, object: self::OBJECT, documentId: '', version: 'v2'));
-		$this->assertSame([], $this->provider->calls);
+		$this->assertFalse(condition: $service->accept(opening: $this->opening(documents: self::DOCUMENTS), version: 'v2'));
+		$this->assertFalse(condition: $service->accept(opening: $this->opening(), version: '  '));
+		$this->assertFalse(condition: $service->accept(opening: $this->opening(documentId: ''), version: 'v2'));
+		$this->assertSame(expected: [], actual: $this->provider->calls);
 
 		$unlisted = $this->service(listed: false);
-		$this->assertFalse($unlisted->accept(subject: self::SUBJECT, app: 'filinq', documents: self::TERMS, object: self::OBJECT, documentId: 'd1', version: 'v2'));
-		$this->assertSame([], $this->provider->calls);
+		$this->assertFalse(condition: $unlisted->accept(opening: $this->opening(), version: 'v2'));
+		$this->assertSame(expected: [], actual: $this->provider->calls);
 	}
 }

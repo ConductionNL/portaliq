@@ -7,6 +7,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\PortalCollectionDocumentsController;
 use OCA\Portaliq\Service\CollectionDocuments;
+use OCA\Portaliq\Service\DocumentOpening;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
@@ -41,7 +42,9 @@ class PortalCollectionDocumentsControllerTest extends TestCase {
 	private function controller(?array $subject, array $collections, ?array $owned=['id' => 'a1']): PortalCollectionDocumentsController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('Bearer x');
-		$request->method('getParam')->willReturn('');
+		$request->method('getParam')->willReturnCallback(
+			static fn (string $key, mixed $default=null): mixed => ($key === 'version' ? 'v2' : '')
+		);
 		$session = $this->createMock(PortalSessionService::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
 		$registry = $this->createMock(PortalContributionRegistry::class);
@@ -154,11 +157,14 @@ class PortalCollectionDocumentsControllerTest extends TestCase {
 	 */
 	public function testTheTermsAreProvenLikeAPaper(): void {
 		$noSession = $this->controller(subject: null, collections: [$this->collection()]);
-		$this->assertSame(expected: Http::STATUS_UNAUTHORIZED, actual: $noSession->terms(register: 'decidiq', schema: 'agendaItem', id: 'a1', documentId: 'd1')->getStatus());
+		$refusal   = $noSession->terms(register: 'decidiq', schema: 'agendaItem', id: 'a1', documentId: 'd1');
+		$this->assertSame(expected: Http::STATUS_UNAUTHORIZED, actual: $refusal->getStatus());
 
-		$outside = $this->controller(subject: ['subjectRef' => 'other', 'trust' => 'substantial'], collections: [$this->collection()], owned: null);
+		$other   = ['subjectRef' => 'other', 'trust' => 'substantial'];
+		$outside = $this->controller(subject: $other, collections: [$this->collection()], owned: null);
 		$this->documents->expects($this->never())->method('terms');
-		$this->assertSame(expected: Http::STATUS_NOT_FOUND, actual: $outside->terms(register: 'decidiq', schema: 'agendaItem', id: 'a1', documentId: 'd1')->getStatus());
+		$refused = $outside->terms(register: 'decidiq', schema: 'agendaItem', id: 'a1', documentId: 'd1');
+		$this->assertSame(expected: Http::STATUS_NOT_FOUND, actual: $refused->getStatus());
 	}
 
 	/**
@@ -172,11 +178,12 @@ class PortalCollectionDocumentsControllerTest extends TestCase {
 		$controller = $this->controller(subject: ['subjectRef' => 'p', 'trust' => 'substantial'], collections: [$this->collection()]);
 		$terms      = ['mayDownload' => false, 'agreement' => ['version' => 'v2', 'text' => 'No reuse']];
 		$this->documents->expects($this->once())->method('terms')->with(
-			$this->anything(),
-			'decidiq',
-			$this->anything(),
-			['register' => 'decidiq', 'schema' => 'agendaItem', 'id' => 'a1'],
-			'd1'
+			$this->callback(
+				static fn (DocumentOpening $opening): bool => $opening->app === 'decidiq'
+					&& $opening->documentId === 'd1'
+					&& $opening->object === ['register' => 'decidiq', 'schema' => 'agendaItem', 'id' => 'a1']
+					&& $opening->subject['subjectRef'] === 'p'
+			)
 		)->willReturn($terms);
 
 		$answer = $controller->terms(register: 'decidiq', schema: 'agendaItem', id: 'a1', documentId: 'd1');
@@ -184,7 +191,7 @@ class PortalCollectionDocumentsControllerTest extends TestCase {
 	}
 
 	/**
-	 * document-download-terms task 2: accepting answers 200 when recorded and 409 with a sentence when not.
+	 * document-download-terms task 2: accepting passes the body's version and answers whether it was recorded.
 	 *
 	 * @return void
 	 *
@@ -192,12 +199,12 @@ class PortalCollectionDocumentsControllerTest extends TestCase {
 	 */
 	public function testAcceptingAnswersWhetherItWasRecorded(): void {
 		$controller = $this->controller(subject: ['subjectRef' => 'p', 'trust' => 'substantial'], collections: [$this->collection()]);
-		$this->documents->method('accept')->willReturnOnConsecutiveCalls(true, false);
+		$this->documents->method('accept')->with($this->isInstanceOf(DocumentOpening::class), 'v2')->willReturnOnConsecutiveCalls(true, false);
 
-		$accepted = $controller->acceptTerms(register: 'decidiq', schema: 'agendaItem', id: 'a1', documentId: 'd1', version: 'v2');
+		$accepted = $controller->acceptTerms(register: 'decidiq', schema: 'agendaItem', id: 'a1', documentId: 'd1');
 		$this->assertSame(expected: ['accepted' => true], actual: $accepted->getData());
 
-		$refused = $controller->acceptTerms(register: 'decidiq', schema: 'agendaItem', id: 'a1', documentId: 'd1', version: 'v1');
+		$refused = $controller->acceptTerms(register: 'decidiq', schema: 'agendaItem', id: 'a1', documentId: 'd1');
 		$this->assertSame(expected: Http::STATUS_CONFLICT, actual: $refused->getStatus());
 		$this->assertFalse(condition: $refused->getData()['accepted']);
 	}
@@ -210,10 +217,11 @@ class PortalCollectionDocumentsControllerTest extends TestCase {
 	 * @spec openspec/changes/document-download-terms/tasks.md#task-2
 	 */
 	public function testAnAcceptanceOutsideTheScopeIsNotFound(): void {
-		$outside = $this->controller(subject: ['subjectRef' => 'other', 'trust' => 'substantial'], collections: [$this->collection()], owned: null);
+		$other   = ['subjectRef' => 'other', 'trust' => 'substantial'];
+		$outside = $this->controller(subject: $other, collections: [$this->collection()], owned: null);
 		$this->documents->expects($this->never())->method('accept');
 
-		$answer = $outside->acceptTerms(register: 'decidiq', schema: 'agendaItem', id: 'a1', documentId: 'd1', version: 'v2');
+		$answer = $outside->acceptTerms(register: 'decidiq', schema: 'agendaItem', id: 'a1', documentId: 'd1');
 		$this->assertSame(expected: Http::STATUS_NOT_FOUND, actual: $answer->getStatus());
 	}
 }//end class

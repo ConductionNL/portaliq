@@ -14,5 +14,5 @@ filinq releases a decision or document to the requester of a record, and a relea
 ## Impact
 
 - `lib/Contribution/DocumentsProviderMethod.php`, `lib/Service/CollectionDocuments.php`, `lib/Kernel/Contracts/CollectionDocumentsInterface.php`, `lib/Controller/PortalCollectionDocumentsController.php`, `appinfo/routes.php`
-- `src/shared/portalApi.js`, `src/site/components/mijn/DocumentsBlock.vue`, `src/site/components/mijn/strings.js`
+- `src/shared/documentTermsApi.js` (over the api's `request` door), `src/site/components/mijn/DocumentsBlock.vue`, `src/site/components/mijn/strings.js`
 - The acceptance is keyed by the app to the session's subject; portaliq never takes the subject from the request.
