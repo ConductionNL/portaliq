@@ -366,6 +366,17 @@
     },
     "@toast-ui/editor": {
       "dompurify": "^3.4.15"
+    },
+    "@nextcloud/stylelint-config": {
+      "stylelint": "$stylelint",
+      "stylelint-config-recommended-scss": "^18.0.0",
+      "stylelint-config-recommended-vue": "^2.0.0"
+    },
+    "stylelint-use-logical": {
+      "stylelint": "$stylelint"
+    },
+    "@conduction/nextcloud-vue": {
+      "stylelint": "$stylelint"
     }
   },
   "devDependencies": {
