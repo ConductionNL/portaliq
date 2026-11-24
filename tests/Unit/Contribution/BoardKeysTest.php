@@ -249,10 +249,17 @@ class BoardKeysTest extends TestCase {
 			)
 		);
 
-		$many = array_fill(0, 7, ['label' => 'G', 'register' => 'r', 'schema' => 's']);
+		$many = array_fill(start_index: 0, count: 7, value: ['label' => 'G', 'register' => 'r', 'schema' => 's']);
 		$this->assertCount(expectedCount: 5, haystack: $keys->documentsKeys(block: ['extraGroups' => $many])['extraGroups']);
-		$this->assertSame(expected: ['bulkDownload' => ['label' => 'Alles downloaden']], actual: $keys->documentsKeys(block: ['bulkDownload' => 'Alles downloaden']));
-		$this->assertSame(expected: [], actual: $keys->documentsKeys(block: ['extraGroups' => ['a' => ['label' => 'G', 'register' => 'r', 'schema' => 's']], 'bulkDownload' => str_repeat('x', 121)]));
+		$this->assertSame(
+			expected: ['bulkDownload' => ['label' => 'Alles downloaden']],
+			actual: $keys->documentsKeys(block: ['bulkDownload' => 'Alles downloaden'])
+		);
+		$notAList = ['a' => ['label' => 'G', 'register' => 'r', 'schema' => 's']];
+		$this->assertSame(
+			expected: [],
+			actual: $keys->documentsKeys(block: ['extraGroups' => $notAList, 'bulkDownload' => str_repeat(string: 'x', times: 121)])
+		);
 	}//end testADocumentsBlockKeepsItsExtraGroupsAndBundleWords()
 
 	/**

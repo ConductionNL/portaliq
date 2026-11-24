@@ -10,8 +10,8 @@
 // the response shapes are normalised to plain arrays/objects the renderers use.
 //
 // Written for the retired React portal and used by the Vue site renderer
-// (src/site) and the embed frame: it imports nothing, so node tests cover the
-// one implementation the bundles run.
+// (src/site) and the embed frame: it imports only its own plain part
+// (documentsApi.js), so node tests cover the one implementation the bundles run.
 //
 // Auth: the portal session is a bearer minted at the auth edge (`/portal/api/
 // session`). The default store below is the React portal's localStorage key;
@@ -22,11 +22,13 @@
 // closed: a non-2xx or a network error yields an empty/`null` result, never a
 // throw the UI has to guard.
 
+import { documentsApi } from './documentsApi.js'
+
 const TOKEN_KEY = 'portaliq_token'
 
 /**
  * The header that carries a send's submission key, or none. The same rule as
- * `submissionKey.js`, kept here because this module imports nothing
+ * `submissionKey.js`, kept here so this module imports no other feature
  * (action-forward-survives-a-slow-answer REQ-AFS-001).
  *
  * @param {{submissionKey?: string}|undefined} options The send's options.
@@ -1745,93 +1747,7 @@ export function createPortalApi(config, store = {}) {
 			)
 		},
 
-		/**
-		 * The documents one object of any collection lists, for a collection
-		 * that declares `documents` and is not a case collection. The server
-		 * finds the collection in the resident's own aggregate and reads the
-		 * object within its scope, so a collection above the session's trust,
-		 * an object outside the scope and an unknown id are all null here.
-		 *
-		 * @param {object} collection Manifest collection: `{ register, schema }`.
-		 * @param {string} id The object id.
-		 * @return {Promise<object|null>} `{ documents, documentsLabel }` or null.
-		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t4
-		 */
-		async fetchCollectionDocuments(collection, id) {
-			const answer = await get(
-				`${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/documents`,
-			)
-			return answer && Array.isArray(answer.documents)
-				? { documents: answer.documents, documentsLabel: answer.label || '' }
-				: null
-		},
-
-		/**
-		 * Open one document `fetchCollectionDocuments` listed. Only the entry
-		 * id travels; the server looks it up again, runs the collection's
-		 * `opened` hook when it has one, and answers 503 when that says no.
-		 *
-		 * @param {object} collection Manifest collection: `{ register, schema }`.
-		 * @param {string} id The object id.
-		 * @param {object} entry The listed entry: `{ id, title }`.
-		 * @return {Promise<object>} `{ ok }`, or `{ ok: false, status }`.
-		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t4
-		 */
-		async downloadCollectionDocument(collection, id, entry) {
-			return saveDocument(
-				`${base}${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/documents/${encodeURIComponent(entry.id)}`,
-				entry,
-			)
-		},
-
-		/**
-		 * Save the bundle an object's app answers through its collection's
-		 * `bundle` method (documents-grouped-per-record), under the button's
-		 * own words.
-		 *
-		 * @param {object} collection Manifest collection: `{ register, schema }`.
-		 * @param {string} id The object id.
-		 * @param {string} name The name to save it under.
-		 * @return {Promise<object>} `{ ok }`, or `{ ok: false, status }`.
-		 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-2
-		 */
-		async downloadDocumentsBundle(collection, id, name) {
-			return saveDownload(
-				`${base}${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/documents-bundle`,
-				name || 'download',
-			)
-		},
-
-		/**
-		 * The media of a documents block's extra group the signed-in person
-		 * may read; OpenRegister decides which (documents-grouped-per-record).
-		 *
-		 * @param {object} group The block's extra group: `{ register, schema }`.
-		 * @return {Promise<Array<object>|null>} The media, or null when the read fails.
-		 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-3
-		 */
-		async fetchMediaGroup(group) {
-			const answer = await get(
-				`/media-groups/${encodeURIComponent(group.register)}/${encodeURIComponent(group.schema)}`,
-			)
-			return answer && Array.isArray(answer.documents) ? answer.documents : null
-		},
-
-		/**
-		 * Open one medium of an extra group. Only its id travels; the server
-		 * asks OpenRegister again.
-		 *
-		 * @param {object} group The block's extra group: `{ register, schema }`.
-		 * @param {object} entry The listed medium: `{ id, title }`.
-		 * @return {Promise<object>} `{ ok }`, or `{ ok: false, status }`.
-		 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-3
-		 */
-		async downloadMediaGroupFile(group, entry) {
-			return saveDocument(
-				`${base}/media-groups/${encodeURIComponent(group.register)}/${encodeURIComponent(group.schema)}/${encodeURIComponent(entry.id)}`,
-				entry,
-			)
-		},
+		...documentsApi({ base, col, get, saveDocument, saveDownload }),
 
 		/**
 		 * Withdraw the citizen's own request. Only the reason travels; the

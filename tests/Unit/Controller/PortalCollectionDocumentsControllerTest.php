@@ -128,16 +128,18 @@ class PortalCollectionDocumentsControllerTest extends TestCase {
 	 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-2
 	 */
 	public function testTheBundleIsProvenLikeAPaper(): void {
-		$this->assertSame(Http::STATUS_UNAUTHORIZED, $this->controller(subject: null, collections: [$this->collection()])->bundle('decidiq', 'agendaItem', 'a1')->getStatus());
+		$noSession = $this->controller(subject: null, collections: [$this->collection()]);
+		$this->assertSame(expected: Http::STATUS_UNAUTHORIZED, actual: $noSession->bundle(register: 'decidiq', schema: 'agendaItem', id: 'a1')->getStatus());
 
 		$outside = $this->controller(subject: ['subjectRef' => 'other', 'trust' => 'substantial'], collections: [$this->collection()], owned: null);
 		$this->documents->expects($this->never())->method('bundle');
-		$this->assertSame(Http::STATUS_NOT_FOUND, $outside->bundle('decidiq', 'agendaItem', 'a1')->getStatus());
+		$refused = $outside->bundle(register: 'decidiq', schema: 'agendaItem', id: 'a1');
+		$this->assertSame(expected: Http::STATUS_NOT_FOUND, actual: $refused->getStatus());
 
 		$controller = $this->controller(subject: ['subjectRef' => 'p', 'trust' => 'substantial'], collections: [$this->collection()]);
-		$stream     = $this->createMock(StreamResponse::class);
+		$stream     = $this->createMock(originalClassName: StreamResponse::class);
 		$this->documents->method('bundle')->willReturnOnConsecutiveCalls(null, $stream);
-		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->bundle('decidiq', 'agendaItem', 'a1')->getStatus());
-		$this->assertSame($stream, $controller->bundle('decidiq', 'agendaItem', 'a1'));
+		$this->assertSame(expected: Http::STATUS_NOT_FOUND, actual: $controller->bundle(register: 'decidiq', schema: 'agendaItem', id: 'a1')->getStatus());
+		$this->assertSame(expected: $stream, actual: $controller->bundle(register: 'decidiq', schema: 'agendaItem', id: 'a1'));
 	}//end testTheBundleIsProvenLikeAPaper()
 }//end class

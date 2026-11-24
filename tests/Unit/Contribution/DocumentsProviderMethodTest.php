@@ -98,11 +98,11 @@ class DocumentsProviderMethodTest extends TestCase {
 	 */
 	public function testTheBundleMethodIsKeptOrDroppedAlone(): void {
 		$out = (new DocumentsProviderMethod())->normalise(collection: ['documents' => ['provider' => 'certificates', 'bundle' => 'validCertificates']]);
-		$this->assertSame(['label' => '', 'provider' => 'certificates', 'bundle' => 'validCertificates'], $out['documents']);
+		$this->assertSame(expected: ['label' => '', 'provider' => 'certificates', 'bundle' => 'validCertificates'], actual: $out['documents']);
 
 		foreach (['getContribution', 'a-b', '__call', 7, null] as $bad) {
 			$out = (new DocumentsProviderMethod())->normalise(collection: ['documents' => ['provider' => 'certificates', 'bundle' => $bad]]);
-			$this->assertSame(['label' => '', 'provider' => 'certificates'], $out['documents'], json_encode($bad));
+			$this->assertSame(expected: ['label' => '', 'provider' => 'certificates'], actual: $out['documents'], message: json_encode(value: $bad));
 		}
 	}//end testTheBundleMethodIsKeptOrDroppedAlone()
 }//end class

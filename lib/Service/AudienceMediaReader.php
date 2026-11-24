@@ -113,7 +113,7 @@ class AudienceMediaReader {
 
 		$entries = [];
 		foreach ($this->objects(register: $register, schema: $schema) as $object) {
-			$entry = $this->entryOf(object: $object, schemaEntity: $schemaEntity, uid: $uid, register: $register, schema: $schema);
+			$entry = $this->entryOf(object: $object, schemaEntity: $schemaEntity, uid: $uid, place: ['register' => $register, 'schema' => $schema]);
 			if ($entry !== null) {
 				$entries[] = $entry;
 			}
@@ -179,21 +179,20 @@ class AudienceMediaReader {
 	/**
 	 * One medium as a listed entry when the person may read it and it holds a file.
 	 *
-	 * @param object $object       The OpenRegister object.
-	 * @param object $schemaEntity The schema.
-	 * @param string $uid          The person's Nextcloud account.
-	 * @param string $register     The register slug.
-	 * @param string $schema       The schema slug.
+	 * @param object                                  $object       The OpenRegister object.
+	 * @param object                                  $schemaEntity The schema.
+	 * @param string                                  $uid          The person's Nextcloud account.
+	 * @param array{register: string, schema: string} $place        The register and schema slugs.
 	 *
 	 * @return array<string, mixed>|null
 	 */
-	private function entryOf(object $object, object $schemaEntity, string $uid, string $register, string $schema): ?array {
+	private function entryOf(object $object, object $schemaEntity, string $uid, array $place): ?array {
 		$id = $this->idOf(object: $object);
 		if ($id === '' || $this->mayRead(object: $object, schemaEntity: $schemaEntity, uid: $uid) === false) {
 			return null;
 		}
 
-		$file = ($this->files->listFiles(register: $register, schema: $schema, id: $id)[0] ?? null);
+		$file = ($this->files->listFiles(register: $place['register'], schema: $place['schema'], id: $id)[0] ?? null);
 		if (is_array($file) === false) {
 			return null;
 		}
@@ -231,11 +230,15 @@ class AudienceMediaReader {
 				$owner = $object->getOwner();
 			}
 
+			if (is_string($owner) === false) {
+				$owner = null;
+			}
+
 			return $permissions->hasPermission(
 				schema: $schemaEntity,
 				action: 'read',
 				userId: $uid,
-				objectOwner: (is_string($owner) === true ? $owner : null),
+				objectOwner: $owner,
 				_rbac: true,
 				object: $object
 			) === true;
@@ -261,9 +264,8 @@ class AudienceMediaReader {
 			return null;
 		}
 
-		$entity = (is_array($found) === true ? ($found[0] ?? null) : null);
-		if (is_object($entity) === true) {
-			return $entity;
+		if (is_array($found) === true && is_object($found[0] ?? null) === true) {
+			return $found[0];
 		}
 
 		return null;
@@ -289,7 +291,11 @@ class AudienceMediaReader {
 			return [];
 		}
 
-		return array_values(array_filter((is_array($rows) === true ? $rows : []), 'is_object'));
+		if (is_array($rows) === false) {
+			return [];
+		}
+
+		return array_values(array_filter($rows, 'is_object'));
 	}//end objects()
 
 

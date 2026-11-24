@@ -1,8 +1,21 @@
 <?php
 
 /**
+ * Audience Media Reader Test
+ *
+ * @category Tests
+ * @package  OCA\Portaliq\Tests\Unit\Service
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-3
  */
 
 declare(strict_types=1);
@@ -18,100 +31,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
-
-/**
- * A stand-in for an OpenRegister object.
- */
-class FakeMediaObject {
-
-	/**
-	 * @param string               $uuid  The id.
-	 * @param array<string, mixed> $data  The object's data.
-	 * @param string|null          $owner The owner.
-	 */
-	public function __construct(private string $uuid, private array $data, private ?string $owner=null) {
-	}
-
-	public function getUuid(): string {
-		return $this->uuid;
-	}
-
-	public function getObject(): array {
-		return $this->data;
-	}
-
-	public function getOwner(): ?string {
-		return $this->owner;
-	}
-}
-
-/**
- * A stand-in for OpenRegister's ObjectService.
- */
-class FakeMediaObjects {
-
-	/**
-	 * @var array<int, object>
-	 */
-	public array $rows = [];
-
-	/**
-	 * @var array<int, array<string, mixed>>
-	 */
-	public array $calls = [];
-
-	public function setRegister(string $register): void {
-		$this->calls[] = ['register' => $register];
-	}
-
-	public function setSchema(string $schema): void {
-		$this->calls[] = ['schema' => $schema];
-	}
-
-	public function findAll(array $config, bool $_rbac=true, bool $_multitenancy=true): array {
-		$this->calls[] = ['rbac' => $_rbac, 'multitenancy' => $_multitenancy];
-		return $this->rows;
-	}
-}
-
-/**
- * A stand-in for OpenRegister's PermissionHandler: reads are allowed for the listed object ids.
- */
-class FakeMediaPermissions {
-
-	/**
-	 * @var array<int, string>
-	 */
-	public array $readable = [];
-
-	/**
-	 * @var array<int, array<string, mixed>>
-	 */
-	public array $asked = [];
-
-	public mixed $throw = null;
-
-	public function hasPermission(object $schema, string $action, ?string $userId=null, ?string $objectOwner=null, bool $_rbac=true, ?object $object=null, ?string $register=null): bool {
-		if ($this->throw !== null) {
-			throw $this->throw;
-		}
-
-		$this->asked[] = ['action' => $action, 'userId' => $userId, 'rbac' => $_rbac, 'id' => $object?->getUuid(), 'register' => $register];
-		return in_array($object?->getUuid(), $this->readable, true);
-	}
-}
-
-/**
- * A stand-in for OpenRegister's SchemaMapper.
- */
-class FakeMediaSchemas {
-
-	public bool $found = true;
-
-	public function findBySlug(string $slug, int $limit, int $offset, bool $_rbac, bool $_multitenancy): array {
-		return $this->found === true ? [new \stdClass()] : [];
-	}
-}
+use stdClass;
 
 /**
  * documents-grouped-per-record task 3: the media of an extra group are what
@@ -122,85 +42,344 @@ class FakeMediaSchemas {
  */
 class AudienceMediaReaderTest extends TestCase {
 
+	/**
+	 * A session minted by the Nextcloud sign-in.
+	 */
 	private const FATIMA = ['subjectRef' => 'fatima', 'provider' => 'nextcloud', 'trust' => 'low'];
 
-	private FakeMediaObjects $objects;
+	/**
+	 * The object ids OpenRegister lets the account read.
+	 *
+	 * @var array<int, string>
+	 */
+	private array $readable = [];
 
-	private FakeMediaPermissions $permissions;
+	/**
+	 * What the permission check was asked, in order.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private array $asked = [];
 
-	private FakeMediaSchemas $schemas;
+	/**
+	 * Whether the permission check throws.
+	 *
+	 * @var boolean
+	 */
+	private bool $checkFails = false;
 
+	/**
+	 * Whether the schema is found.
+	 *
+	 * @var boolean
+	 */
+	private bool $schemaFound = true;
+
+	/**
+	 * The file reader.
+	 *
+	 * @var MockObject&PortalFileReader
+	 */
 	private MockObject $files;
 
-	private function reader(bool $userExists=true): AudienceMediaReader {
-		$this->objects     = new FakeMediaObjects();
-		$this->permissions = new FakeMediaPermissions();
-		$this->schemas     = new FakeMediaSchemas();
-		$this->objects->rows = [
-			new FakeMediaObject('guide', ['title' => 'Schoolgids 2026-2027', 'date' => '2026-08-20']),
-			new FakeMediaObject('letter5', ['title' => 'Brief voor groep 5']),
-			new FakeMediaObject('nofile', ['title' => 'Zonder bestand']),
+
+	/**
+	 * An OpenRegister object as the reader sees it.
+	 *
+	 * @param string               $uuid The id.
+	 * @param array<string, mixed> $data The object's data.
+	 *
+	 * @return object
+	 */
+	private function mediaObject(string $uuid, array $data): object {
+		return new class ($uuid, $data) {
+			/**
+			 * Constructor.
+			 *
+			 * @param string               $uuid The id.
+			 * @param array<string, mixed> $data The data.
+			 */
+			public function __construct(private string $uuid, private array $data) {
+			}//end __construct()
+
+			/**
+			 * @return string
+			 */
+			public function getUuid(): string {
+				return $this->uuid;
+			}//end getUuid()
+
+			/**
+			 * @return array<string, mixed>
+			 */
+			public function getObject(): array {
+				return $this->data;
+			}//end getObject()
+
+			/**
+			 * @return string|null
+			 */
+			public function getOwner(): ?string {
+				return null;
+			}//end getOwner()
+		};
+	}//end mediaObject()
+
+
+	/**
+	 * The OpenRegister services the reader asks for, as stand-ins.
+	 *
+	 * @return array<string, object>
+	 */
+	private function services(): array {
+		$rows = [
+			$this->mediaObject(uuid: 'guide', data: ['title' => 'Schoolgids 2026-2027', 'date' => '2026-08-20']),
+			$this->mediaObject(uuid: 'letter5', data: ['title' => 'Brief voor groep 5']),
+			$this->mediaObject(uuid: 'nofile', data: ['title' => 'Zonder bestand']),
 		];
-		$container = $this->createMock(ContainerInterface::class);
-		$container->method('get')->willReturnCallback(fn (string $id): object => match ($id) {
-			'OCA\\OpenRegister\\Service\\ObjectService' => $this->objects,
-			'OCA\\OpenRegister\\Service\\Object\\PermissionHandler' => $this->permissions,
-			'OCA\\OpenRegister\\Db\\SchemaMapper' => $this->schemas,
-		});
-		$users = $this->createMock(IUserManager::class);
+
+		return [
+			'OCA\\OpenRegister\\Service\\ObjectService'           => new class ($rows) {
+				/**
+				 * Constructor.
+				 *
+				 * @param array<int, object> $rows The rows findAll() answers.
+				 */
+				public function __construct(private array $rows) {
+				}//end __construct()
+
+				/**
+				 * @param string $register The register.
+				 *
+				 * @return void
+				 */
+				public function setRegister(string $register): void {
+				}//end setRegister()
+
+				/**
+				 * @param string $schema The schema.
+				 *
+				 * @return void
+				 */
+				public function setSchema(string $schema): void {
+				}//end setSchema()
+
+				/**
+				 * @param array<string, mixed> $config        The read.
+				 * @param boolean              $_rbac         RBAC.
+				 * @param boolean              $_multitenancy Multitenancy.
+				 *
+				 * @return array<int, object>
+				 */
+				public function findAll(array $config, bool $_rbac=true, bool $_multitenancy=true): array {
+					return $this->rows;
+				}//end findAll()
+			},
+			'OCA\\OpenRegister\\Service\\Object\\PermissionHandler' => new class ($this) {
+				/**
+				 * Constructor.
+				 *
+				 * @param AudienceMediaReaderTest $test The test, which holds the answers.
+				 */
+				public function __construct(private AudienceMediaReaderTest $test) {
+				}//end __construct()
+
+				/**
+				 * @param object      $schema      The schema.
+				 * @param string      $action      The action.
+				 * @param string|null $userId      The account.
+				 * @param string|null $objectOwner The owner.
+				 * @param boolean     $_rbac       RBAC.
+				 * @param object|null $object      The object.
+				 * @param string|null $register    The register.
+				 *
+				 * @return boolean
+				 */
+				public function hasPermission(
+					object $schema,
+					string $action,
+					?string $userId=null,
+					?string $objectOwner=null,
+					bool $_rbac=true,
+					?object $object=null,
+					?string $register=null
+				): bool {
+					return $this->test->answer(action: $action, userId: $userId, rbac: $_rbac, id: (string)$object?->getUuid(), register: $register);
+				}//end hasPermission()
+			},
+			'OCA\\OpenRegister\\Db\\SchemaMapper'                  => new class ($this) {
+				/**
+				 * Constructor.
+				 *
+				 * @param AudienceMediaReaderTest $test The test, which says whether the schema exists.
+				 */
+				public function __construct(private AudienceMediaReaderTest $test) {
+				}//end __construct()
+
+				/**
+				 * @param string  $slug          The slug.
+				 * @param integer $limit         The limit.
+				 * @param integer $offset        The offset.
+				 * @param boolean $_rbac         RBAC.
+				 * @param boolean $_multitenancy Multitenancy.
+				 *
+				 * @return array<int, object>
+				 */
+				public function findBySlug(string $slug, int $limit, int $offset, bool $_rbac, bool $_multitenancy): array {
+					return $this->test->schemas();
+				}//end findBySlug()
+			},
+		];
+	}//end services()
+
+
+	/**
+	 * What the stand-in permission check answers, recorded.
+	 *
+	 * @param string      $action   The action.
+	 * @param string|null $userId   The account.
+	 * @param boolean     $rbac     Whether RBAC applies.
+	 * @param string      $id       The object id.
+	 * @param string|null $register The register handed in.
+	 *
+	 * @return boolean
+	 */
+	public function answer(string $action, ?string $userId, bool $rbac, string $id, ?string $register): bool {
+		if ($this->checkFails === true) {
+			throw new RuntimeException(message: 'down');
+		}
+
+		$this->asked[] = ['action' => $action, 'userId' => $userId, 'rbac' => $rbac, 'register' => $register];
+		return in_array(needle: $id, haystack: $this->readable, strict: true);
+	}//end answer()
+
+
+	/**
+	 * What the stand-in schema mapper answers.
+	 *
+	 * @return array<int, object>
+	 */
+	public function schemas(): array {
+		if ($this->schemaFound === false) {
+			return [];
+		}
+
+		return [new stdClass()];
+	}//end schemas()
+
+
+	/**
+	 * The reader over the stand-ins.
+	 *
+	 * @param boolean $userExists Whether the session's account exists.
+	 *
+	 * @return AudienceMediaReader
+	 */
+	private function reader(bool $userExists=true): AudienceMediaReader {
+		$this->readable    = [];
+		$this->asked       = [];
+		$this->checkFails  = false;
+		$this->schemaFound = true;
+		$services          = $this->services();
+		$container         = $this->createMock(originalClassName: ContainerInterface::class);
+		$container->method('get')->willReturnCallback(static fn (string $id): object => $services[$id]);
+		$users = $this->createMock(originalClassName: IUserManager::class);
 		$users->method('userExists')->willReturn($userExists);
-		$this->files = $this->createMock(PortalFileReader::class);
-		$this->files->method('listFiles')->willReturnCallback(static fn (string $register, string $schema, string $id): array => $id === 'nofile' ? [] : [['id' => 7, 'name' => $id . '.pdf', 'size' => 2048]]);
+		$this->files = $this->createMock(originalClassName: PortalFileReader::class);
+		$this->files->method('listFiles')->willReturnCallback(
+			static function (string $register, string $schema, string $id): array {
+				if ($id === 'nofile') {
+					return [];
+				}
 
-		return new AudienceMediaReader($container, $users, $this->files, $this->createMock(LoggerInterface::class));
-	}
+				return [['id' => 7, 'name' => $id . '.pdf', 'size' => 2048]];
+			}
+		);
 
+		return new AudienceMediaReader(
+			container: $container,
+			users: $users,
+			files: $this->files,
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
+	}//end reader()
+
+
+	/**
+	 * Only what OpenRegister lets the account read, with a file, is listed;
+	 * each check is a read with RBAC as the account, without elevation.
+	 *
+	 * @return void
+	 */
 	public function testOnlyWhatOpenRegisterLetsTheAccountReadIsListed(): void {
-		$reader = $this->reader();
-		$this->permissions->readable = ['guide', 'nofile'];
+		$reader         = $this->reader();
+		$this->readable = ['guide', 'nofile'];
 
 		$entries = $reader->list(subject: self::FATIMA, register: 'school-media', schema: 'paper');
 
-		$this->assertSame([['id' => 'guide', 'title' => 'Schoolgids 2026-2027', 'kind' => 'document', 'date' => '2026-08-20', 'size' => 2048]], $entries);
-		$this->assertSame(['read'], array_unique(array_column($this->permissions->asked, 'action')));
-		$this->assertSame(['fatima'], array_unique(array_column($this->permissions->asked, 'userId')));
-		$this->assertSame([true], array_unique(array_column($this->permissions->asked, 'rbac')));
-		$this->assertSame([null], array_unique(array_column($this->permissions->asked, 'register')));
+		$expected = [['id' => 'guide', 'title' => 'Schoolgids 2026-2027', 'kind' => 'document', 'date' => '2026-08-20', 'size' => 2048]];
+		$this->assertSame(expected: $expected, actual: $entries);
+		foreach ($this->asked as $asked) {
+			$this->assertSame(expected: ['action' => 'read', 'userId' => 'fatima', 'rbac' => true, 'register' => null], actual: $asked);
+		}
 	}//end testOnlyWhatOpenRegisterLetsTheAccountReadIsListed()
 
+
+	/**
+	 * A session that is no Nextcloud account is shown nothing, and OpenRegister is not asked.
+	 *
+	 * @return void
+	 */
 	public function testASessionThatIsNoNextcloudAccountIsShownNothing(): void {
-		foreach ([['subjectRef' => '999993653', 'provider' => '', 'trust' => 'substantial'], ['subjectRef' => 'fatima', 'provider' => 'email'], ['subjectRef' => '', 'provider' => 'nextcloud']] as $subject) {
-			$reader = $this->reader();
-			$this->permissions->readable = ['guide'];
-			$this->assertSame([], $reader->list(subject: $subject, register: 'school-media', schema: 'paper'), json_encode($subject));
-			$this->assertNull($reader->open(subject: $subject, register: 'school-media', schema: 'paper', id: 'guide'));
-			$this->assertSame([], $this->permissions->asked);
+		$subjects = [
+			['subjectRef' => '999993653', 'provider' => '', 'trust' => 'substantial'],
+			['subjectRef' => 'fatima', 'provider' => 'email'],
+			['subjectRef' => '', 'provider' => 'nextcloud'],
+		];
+		foreach ($subjects as $subject) {
+			$reader         = $this->reader();
+			$this->readable = ['guide'];
+			$this->assertSame(expected: [], actual: $reader->list(subject: $subject, register: 'school-media', schema: 'paper'));
+			$this->assertNull(actual: $reader->open(subject: $subject, register: 'school-media', schema: 'paper', id: 'guide'));
+			$this->assertSame(expected: [], actual: $this->asked);
 		}
 
-		$gone = $this->reader(userExists: false);
-		$this->permissions->readable = ['guide'];
-		$this->assertSame([], $gone->list(subject: self::FATIMA, register: 'school-media', schema: 'paper'));
+		$gone           = $this->reader(userExists: false);
+		$this->readable = ['guide'];
+		$this->assertSame(expected: [], actual: $gone->list(subject: self::FATIMA, register: 'school-media', schema: 'paper'));
 	}//end testASessionThatIsNoNextcloudAccountIsShownNothing()
 
-	public function testAFailedPermissionCheckOrAnUnknownSchemaShowsNothing(): void {
-		$reader = $this->reader();
-		$this->permissions->throw = new RuntimeException('down');
-		$this->assertSame([], $reader->list(subject: self::FATIMA, register: 'school-media', schema: 'paper'));
 
-		$reader = $this->reader();
-		$this->permissions->readable = ['guide'];
-		$this->schemas->found = false;
-		$this->assertSame([], $reader->list(subject: self::FATIMA, register: 'school-media', schema: 'paper'));
+	/**
+	 * A permission check that throws, or an unknown schema, shows nothing.
+	 *
+	 * @return void
+	 */
+	public function testAFailedPermissionCheckOrAnUnknownSchemaShowsNothing(): void {
+		$reader           = $this->reader();
+		$this->checkFails = true;
+		$this->assertSame(expected: [], actual: $reader->list(subject: self::FATIMA, register: 'school-media', schema: 'paper'));
+
+		$reader            = $this->reader();
+		$this->readable    = ['guide'];
+		$this->schemaFound = false;
+		$this->assertSame(expected: [], actual: $reader->list(subject: self::FATIMA, register: 'school-media', schema: 'paper'));
 	}//end testAFailedPermissionCheckOrAnUnknownSchemaShowsNothing()
 
+
+	/**
+	 * Opening asks OpenRegister again and streams the first file.
+	 *
+	 * @return void
+	 */
 	public function testOpeningAsksOpenRegisterAgain(): void {
-		$reader = $this->reader();
-		$this->permissions->readable = ['guide'];
-		$stream = $this->createMock(StreamResponse::class);
+		$reader         = $this->reader();
+		$this->readable = ['guide'];
+		$stream         = $this->createMock(originalClassName: StreamResponse::class);
 		$this->files->expects($this->once())->method('streamFile')->with('school-media', 'paper', 'guide', '7')->willReturn($stream);
 
-		$this->assertSame($stream, $reader->open(subject: self::FATIMA, register: 'school-media', schema: 'paper', id: 'guide'));
-		$this->assertNull($reader->open(subject: self::FATIMA, register: 'school-media', schema: 'paper', id: 'letter5'));
-		$this->assertNull($reader->open(subject: self::FATIMA, register: 'school-media', schema: 'paper', id: 'unknown'));
+		$this->assertSame(expected: $stream, actual: $reader->open(subject: self::FATIMA, register: 'school-media', schema: 'paper', id: 'guide'));
+		$this->assertNull(actual: $reader->open(subject: self::FATIMA, register: 'school-media', schema: 'paper', id: 'letter5'));
+		$this->assertNull(actual: $reader->open(subject: self::FATIMA, register: 'school-media', schema: 'paper', id: 'unknown'));
 	}//end testOpeningAsksOpenRegisterAgain()
 }//end class

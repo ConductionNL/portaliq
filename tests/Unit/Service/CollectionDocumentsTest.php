@@ -76,6 +76,8 @@ class CollectionDocumentsTest extends TestCase {
 
 	private const OBJECT = ['register' => 'decidiq', 'schema' => 'agendaItem', 'id' => 'a1'];
 
+	private const BUNDLED = ['provider' => 'certificates', 'bundle' => 'validCertificates'];
+
 	private FakeOpenedProvider $provider;
 
 	private MockObject $files;
@@ -232,9 +234,9 @@ class CollectionDocumentsTest extends TestCase {
 		$this->files->expects($this->once())->method('streamFile')->with('r', 's', 'o', 'f1');
 		$this->audit->expects($this->once())->method('download');
 
-		$result = $service->bundle(subject: self::SUBJECT, app: 'learniq', documents: ['provider' => 'certificates', 'bundle' => 'validCertificates'], object: self::OBJECT);
+		$result = $service->bundle(subject: self::SUBJECT, app: 'learniq', documents: self::BUNDLED, object: self::OBJECT);
 
-		$this->assertInstanceOf(StreamResponse::class, $result);
+		$this->assertInstanceOf(expected: StreamResponse::class, actual: $result);
 	}//end testTheBundleStreamsTheFirstEntryOfTheBundleMethod()
 
 	/**
@@ -245,11 +247,11 @@ class CollectionDocumentsTest extends TestCase {
 	public function testNoBundleMethodOrNoEntryStreamsNothing(): void {
 		$service = $this->service();
 		$this->files->expects($this->never())->method('streamFile');
-		$this->assertNull($service->bundle(subject: self::SUBJECT, app: 'learniq', documents: self::DOCUMENTS, object: self::OBJECT));
+		$this->assertNull(actual: $service->bundle(subject: self::SUBJECT, app: 'learniq', documents: self::DOCUMENTS, object: self::OBJECT));
 
 		$service = $this->service(listed: false);
 		$this->files->expects($this->never())->method('streamFile');
 		$this->audit->expects($this->never())->method('download');
-		$this->assertNull($service->bundle(subject: self::SUBJECT, app: 'learniq', documents: ['provider' => 'certificates', 'bundle' => 'validCertificates'], object: self::OBJECT));
+		$this->assertNull(actual: $service->bundle(subject: self::SUBJECT, app: 'learniq', documents: self::BUNDLED, object: self::OBJECT));
 	}//end testNoBundleMethodOrNoEntryStreamsNothing()
 }//end class

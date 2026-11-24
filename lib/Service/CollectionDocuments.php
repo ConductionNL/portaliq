@@ -132,21 +132,29 @@ class CollectionDocuments implements CollectionDocumentsInterface {
 			return null;
 		}
 
-		$entries = $this->published->entries(appId: $app, method: $method, caseId: $object['id']);
-		$file    = ($entries[0]['file'] ?? null);
-		if (is_array($file) === false) {
+		$first = ($this->published->entries(appId: $app, method: $method, caseId: $object['id'])[0] ?? []);
+		if (is_array($first['file'] ?? null) === false) {
 			return null;
 		}
 
-		$stream = $this->files->streamFile(register: $file['register'], schema: $file['schema'], id: $file['id'], fileId: $file['fileId']);
-		if ($stream === null) {
-			return null;
+		$stream = $this->streamOf(file: $first['file']);
+		if ($stream !== null) {
+			$this->recordDownload(run: new DocumentOpening(subject: $subject, app: $app, documents: $documents, object: $object, documentId: ''));
 		}
-
-		$this->recordDownload(run: new DocumentOpening(subject: $subject, app: $app, documents: $documents, object: $object, documentId: ''));
 
 		return $stream;
 	}//end bundle()
+
+	/**
+	 * Stream a listed file from OpenRegister, or null.
+	 *
+	 * @param array<string, string> $file Where the file lives: register, schema, id, fileId.
+	 *
+	 * @return StreamResponse|null
+	 */
+	private function streamOf(array $file): ?StreamResponse {
+		return $this->files->streamFile(register: $file['register'], schema: $file['schema'], id: $file['id'], fileId: $file['fileId']);
+	}//end streamOf()
 
 	/**
 	 * Open the listed document when the app's hook, if it declares one,
@@ -166,7 +174,7 @@ class CollectionDocuments implements CollectionDocumentsInterface {
 			return self::REFUSED;
 		}
 
-		$stream = $this->files->streamFile(register: $file['register'], schema: $file['schema'], id: $file['id'], fileId: $file['fileId']);
+		$stream = $this->streamOf(file: $file);
 		if ($stream === null) {
 			return self::NOT_FOUND;
 		}

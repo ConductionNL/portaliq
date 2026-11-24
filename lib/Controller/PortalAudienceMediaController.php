@@ -73,6 +73,31 @@ class PortalAudienceMediaController extends Controller implements PortalProtecte
 
 
 	/**
+	 * The session's subject when a documents block of its own aggregate names
+	 * the register and schema as an extra group, else the refusal.
+	 *
+	 * @param string $register The requested register.
+	 * @param string $schema   The requested schema.
+	 *
+	 * @return JSONResponse|array<string, mixed>
+	 */
+	private function declaredFor(string $register, string $schema): JSONResponse|array {
+		$subject = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
+		if ($subject === null) {
+			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+		}
+
+		foreach (($this->registry->aggregateFor($subject)['contributions'] ?? []) as $contribution) {
+			if ($this->names(pages: ($contribution['pages'] ?? []), register: $register, schema: $schema) === true) {
+				return $subject;
+			}
+		}
+
+		return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+	}//end declaredFor()
+
+
+	/**
 	 * The media of the group the person may read.
 	 *
 	 * @param string $register The register of the group.
@@ -124,29 +149,6 @@ class PortalAudienceMediaController extends Controller implements PortalProtecte
 	}//end open()
 
 
-	/**
-	 * The session's subject when a documents block of its own aggregate names
-	 * the register and schema as an extra group, else the refusal.
-	 *
-	 * @param string $register The requested register.
-	 * @param string $schema   The requested schema.
-	 *
-	 * @return JSONResponse|array<string, mixed>
-	 */
-	private function declaredFor(string $register, string $schema): JSONResponse|array {
-		$subject = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
-		if ($subject === null) {
-			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
-		}
-
-		foreach (($this->registry->aggregateFor($subject)['contributions'] ?? []) as $contribution) {
-			if ($this->names(pages: ($contribution['pages'] ?? []), register: $register, schema: $schema) === true) {
-				return $subject;
-			}
-		}
-
-		return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
-	}//end declaredFor()
 
 
 	/**
@@ -160,7 +162,11 @@ class PortalAudienceMediaController extends Controller implements PortalProtecte
 	 * @return bool
 	 */
 	private function names(mixed $pages, string $register, string $schema): bool {
-		foreach ((is_array($pages) === true ? $pages : []) as $page) {
+		if (is_array($pages) === false) {
+			return false;
+		}
+
+		foreach ($pages as $page) {
 			foreach ((array)($page['blocks'] ?? []) as $block) {
 				if (($block['type'] ?? '') !== 'documents') {
 					continue;
