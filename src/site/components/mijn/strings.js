@@ -118,6 +118,8 @@ export default {
 		'Nothing has happened yet.': 'Er is nog niets gebeurd.',
 		'The document could not be opened. Try again.':
 			'Het document kon niet worden geopend. Probeer het opnieuw.',
+		'The documents could not be downloaded. Try again.':
+			'De documenten konden niet worden gedownload. Probeer het opnieuw.',
 		'On whose behalf you act': 'Namens wie u werkt',
 		'You are now acting for {party}.': 'U regelt nu zaken voor {party}.',
 		'You are now handling your own affairs.': 'U regelt nu uw eigen zaken.',
@@ -229,6 +231,8 @@ export default {
 		'Nothing has happened yet.': 'Nothing has happened yet.',
 		'The document could not be opened. Try again.':
 			'The document could not be opened. Try again.',
+		'The documents could not be downloaded. Try again.':
+			'The documents could not be downloaded. Try again.',
 		'On whose behalf you act': 'On whose behalf you act',
 		'You are now acting for {party}.': 'You are now acting for {party}.',
 		'You are now handling your own affairs.':

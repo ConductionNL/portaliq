@@ -218,4 +218,38 @@ class CollectionDocumentsTest extends TestCase {
 		$this->assertSame(CollectionDocuments::REFUSED, $service->open(subject: self::SUBJECT, app: 'decidiq', documents: ['provider' => 'papers', 'opened' => 'staticHook'], object: self::OBJECT, documentId: 'd1'));
 		$this->assertSame([], $this->warnings, 'a hook that is not a public instance method refuses without a warning');
 	}//end testTheAuditAndTheHookWarningsAreAsRecorded()
+
+	/**
+	 * The bundle streams the first entry the `bundle` method answers and is
+	 * recorded as a download; no `bundle` method, or no entry, streams nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-2
+	 */
+	public function testTheBundleStreamsTheFirstEntryOfTheBundleMethod(): void {
+		$service = $this->service();
+		$this->files->expects($this->once())->method('streamFile')->with('r', 's', 'o', 'f1');
+		$this->audit->expects($this->once())->method('download');
+
+		$result = $service->bundle(subject: self::SUBJECT, app: 'learniq', documents: ['provider' => 'certificates', 'bundle' => 'validCertificates'], object: self::OBJECT);
+
+		$this->assertInstanceOf(StreamResponse::class, $result);
+	}//end testTheBundleStreamsTheFirstEntryOfTheBundleMethod()
+
+	/**
+	 * @return void
+	 *
+	 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-2
+	 */
+	public function testNoBundleMethodOrNoEntryStreamsNothing(): void {
+		$service = $this->service();
+		$this->files->expects($this->never())->method('streamFile');
+		$this->assertNull($service->bundle(subject: self::SUBJECT, app: 'learniq', documents: self::DOCUMENTS, object: self::OBJECT));
+
+		$service = $this->service(listed: false);
+		$this->files->expects($this->never())->method('streamFile');
+		$this->audit->expects($this->never())->method('download');
+		$this->assertNull($service->bundle(subject: self::SUBJECT, app: 'learniq', documents: ['provider' => 'certificates', 'bundle' => 'validCertificates'], object: self::OBJECT));
+	}//end testNoBundleMethodOrNoEntryStreamsNothing()
 }//end class

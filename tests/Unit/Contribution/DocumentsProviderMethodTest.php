@@ -87,4 +87,22 @@ class DocumentsProviderMethodTest extends TestCase {
 			$this->assertSame(['label' => '', 'provider' => 'papers'], $out['documents'], json_encode($bad));
 		}
 	}//end testTheOpenedHookIsKeptOrDroppedAlone()
+
+	/**
+	 * The `bundle` method is kept as a plain method name and dropped otherwise,
+	 * without dropping the documents declaration.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-1
+	 */
+	public function testTheBundleMethodIsKeptOrDroppedAlone(): void {
+		$out = (new DocumentsProviderMethod())->normalise(collection: ['documents' => ['provider' => 'certificates', 'bundle' => 'validCertificates']]);
+		$this->assertSame(['label' => '', 'provider' => 'certificates', 'bundle' => 'validCertificates'], $out['documents']);
+
+		foreach (['getContribution', 'a-b', '__call', 7, null] as $bad) {
+			$out = (new DocumentsProviderMethod())->normalise(collection: ['documents' => ['provider' => 'certificates', 'bundle' => $bad]]);
+			$this->assertSame(['label' => '', 'provider' => 'certificates'], $out['documents'], json_encode($bad));
+		}
+	}//end testTheBundleMethodIsKeptOrDroppedAlone()
 }//end class

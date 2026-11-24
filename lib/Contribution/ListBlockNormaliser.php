@@ -278,10 +278,17 @@ class ListBlockNormaliser {
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
+	 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-1
 	 */
 	private function documentsKeys(array $block, array $collection): array {
 		// The upload button beside the heading (zuiddrecht-resident-pages-match-the-boards).
 		$out = (new BoardKeys())->documentsKeys(block: $block);
+		// The bundle button shows only when the collection declares the
+		// method that answers the bundle (documents-grouped-per-record).
+		if (is_string($collection['documents']['bundle'] ?? null) === false) {
+			unset($out['bulkDownload']);
+		}
+
 		if (($block['eachRecord'] ?? null) !== true) {
 			return $out;
 		}

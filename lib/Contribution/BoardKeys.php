@@ -15,7 +15,9 @@
  * - `tasks` with `display: highlight`: a `tone` (`warning` or `info`) and
  *   `dueInLine: true` (the due day joins the sub line);
  * - `inbox`: `display: list` (a title and the day, no badge);
- * - `documents`: `upload: true` (an outlined button that adds a document);
+ * - `documents`: `upload: true` (an outlined button that adds a document),
+ *   `groupBy`, `note`, `extraGroups` (media groups for the signed-in person)
+ *   and `bulkDownload` (the words on the bundle button);
  * - `detail`: a `label` over the facts and `timeline: false`;
  * - `citizenCase`: `display: actions` (the closed window sentence as a
  *   notice, no status block, no documents section);
@@ -70,6 +72,16 @@ class BoardKeys {
 	 * list, a line beside its heading and the words when it lists nothing.
 	 */
 	private const DOCUMENTS_TEXT_KEYS = ['note', 'subtitle', 'emptyLabel'];
+
+	/**
+	 * How many groups of media a documents block may add.
+	 */
+	private const MAX_EXTRA_GROUPS = 5;
+
+	/**
+	 * A register or schema slug an extra group may name.
+	 */
+	private const SLUG = '/^[a-z0-9][a-z0-9_-]{0,63}$/D';
 
 	/**
 	 * How many turn values a cases block may name.
@@ -169,7 +181,7 @@ class BoardKeys {
 
 	/**
 	 * A documents block's board keys: `upload: true`, `groupBy`, `note`,
-	 * `subtitle` and `emptyLabel`.
+	 * `extraGroups`, `bulkDownload`, `subtitle` and `emptyLabel`.
 	 *
 	 * @param array<string, mixed> $block The declared block.
 	 *
@@ -192,8 +204,102 @@ class BoardKeys {
 			$out['groupBy'] = $groupBy;
 		}
 
+		// Groups of media for the signed-in person, read through OpenRegister's
+		// own access checks (documents-grouped-per-record task 3).
+		$extra = $this->extraGroups(value: ($block['extraGroups'] ?? null));
+		if ($extra !== []) {
+			$out['extraGroups'] = $extra;
+		}
+
+		// The words on the bundle button; whether the button shows is the
+		// collection's `documents.bundle` (ListBlockNormaliser).
+		$bundle = $this->bundleLabel(value: ($block['bulkDownload'] ?? null));
+		if ($bundle !== '') {
+			$out['bulkDownload'] = ['label' => $bundle];
+		}
+
 		return $out + $this->documentsTexts(block: $block);
 	}//end documentsKeys()
+
+	/**
+	 * The well-formed `extraGroups`: each a heading and the register and
+	 * schema of its media, at most five; a malformed entry is dropped.
+	 *
+	 * @param mixed $value The declared `extraGroups`.
+	 *
+	 * @return array<int, array{label: string, register: string, schema: string}>
+	 *
+	 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-1
+	 */
+	private function extraGroups(mixed $value): array {
+		if (is_array($value) === false || array_is_list($value) === false) {
+			return [];
+		}
+
+		$out = [];
+		foreach ($value as $group) {
+			$entry = $this->extraGroup(group: $group);
+			if ($entry !== null && count($out) < self::MAX_EXTRA_GROUPS) {
+				$out[] = $entry;
+			}
+		}
+
+		return $out;
+	}//end extraGroups()
+
+	/**
+	 * One extra group, or null when its heading, register or schema does not fit.
+	 *
+	 * @param mixed $group The declared group.
+	 *
+	 * @return array{label: string, register: string, schema: string}|null
+	 *
+	 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-1
+	 */
+	private function extraGroup(mixed $group): ?array {
+		if (is_array($group) === false) {
+			return null;
+		}
+
+		$label    = $this->bundleLabel(value: ($group['label'] ?? null));
+		$register = ($group['register'] ?? null);
+		$schema   = ($group['schema'] ?? null);
+		if ($label === ''
+			|| is_string($register) === false || preg_match(self::SLUG, $register) !== 1
+			|| is_string($schema) === false || preg_match(self::SLUG, $schema) !== 1
+		) {
+			return null;
+		}
+
+		return ['label' => $label, 'register' => $register, 'schema' => $schema];
+	}//end extraGroup()
+
+	/**
+	 * A trimmed label no longer than a label over the facts may be, or ''.
+	 * The bundle button reads `bulkDownload.label`; a plain string is that label.
+	 *
+	 * @param mixed $value The declared label, or `{label}`.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-1
+	 */
+	private function bundleLabel(mixed $value): string {
+		if (is_array($value) === true) {
+			$value = ($value['label'] ?? null);
+		}
+
+		if (is_string($value) === false) {
+			return '';
+		}
+
+		$text = trim($value);
+		if (mb_strlen($text) > self::MAX_LABEL_LENGTH) {
+			return '';
+		}
+
+		return $text;
+	}//end bundleLabel()
 
 	/**
 	 * A documents block's authored sentences: under the list, beside the

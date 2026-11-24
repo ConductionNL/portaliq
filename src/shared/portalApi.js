@@ -1785,6 +1785,55 @@ export function createPortalApi(config, store = {}) {
 		},
 
 		/**
+		 * Save the bundle an object's app answers through its collection's
+		 * `bundle` method (documents-grouped-per-record), under the button's
+		 * own words.
+		 *
+		 * @param {object} collection Manifest collection: `{ register, schema }`.
+		 * @param {string} id The object id.
+		 * @param {string} name The name to save it under.
+		 * @return {Promise<object>} `{ ok }`, or `{ ok: false, status }`.
+		 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-2
+		 */
+		async downloadDocumentsBundle(collection, id, name) {
+			return saveDownload(
+				`${base}${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/documents-bundle`,
+				name || 'download',
+			)
+		},
+
+		/**
+		 * The media of a documents block's extra group the signed-in person
+		 * may read; OpenRegister decides which (documents-grouped-per-record).
+		 *
+		 * @param {object} group The block's extra group: `{ register, schema }`.
+		 * @return {Promise<Array<object>|null>} The media, or null when the read fails.
+		 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-3
+		 */
+		async fetchMediaGroup(group) {
+			const answer = await get(
+				`/media-groups/${encodeURIComponent(group.register)}/${encodeURIComponent(group.schema)}`,
+			)
+			return answer && Array.isArray(answer.documents) ? answer.documents : null
+		},
+
+		/**
+		 * Open one medium of an extra group. Only its id travels; the server
+		 * asks OpenRegister again.
+		 *
+		 * @param {object} group The block's extra group: `{ register, schema }`.
+		 * @param {object} entry The listed medium: `{ id, title }`.
+		 * @return {Promise<object>} `{ ok }`, or `{ ok: false, status }`.
+		 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-3
+		 */
+		async downloadMediaGroupFile(group, entry) {
+			return saveDocument(
+				`${base}/media-groups/${encodeURIComponent(group.register)}/${encodeURIComponent(group.schema)}/${encodeURIComponent(entry.id)}`,
+				entry,
+			)
+		},
+
+		/**
 		 * Withdraw the citizen's own request. Only the reason travels; the
 		 * server decides whether the window is open and which status follows
 		 * (case-actions-withdraw-screen, REQ-WDS-002).

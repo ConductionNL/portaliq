@@ -142,3 +142,80 @@ test('a page that is no record page draws a group per child the guardian may rea
 	assert.deepEqual(ctx.loadedOf(item.collection).objects.map((row) => ctx.eachRecordBlockOf(item.block, row).label), ['Vera', 'Sami'])
 	assert.equal(ctx.eachRowKey(rows[1]), 'sami')
 })
+
+// documents-grouped-per-record tasks 2 and 3: the media group for the
+// signed-in person and the bundle button.
+
+function renderWith (block, props = {}) {
+	return renderComponent(inState(DocumentsBlock, { answer: { documents: ROWS }, failed: false }), {
+		block: { type: 'documents', collection: 'mijnKinderen', ...block },
+		collection: ZAKEN,
+		record: { id: 'k-1' },
+		locale: 'nl',
+		...props,
+	})
+}
+
+test('a media group renders after the provider groups, and an empty one is left out', async () => {
+	const html = await renderWith({ groupBy: 'group' }, {
+		initialMediaGroups: [
+			{ label: 'Van school', register: 'school-media', schema: 'paper', entries: [{ id: 'm1', title: 'Schoolgids 2026-2027', mimeType: 'application/pdf' }] },
+			{ label: 'Voor groep 5', register: 'school-media', schema: 'letter', entries: [] },
+		],
+	})
+	assert.equal((html.match(/data-testid="mijn-documents-media-group"/g) || []).length, 1)
+	assert.match(html, /Groep 4[\s\S]*Van school[\s\S]*Schoolgids 2026-2027/)
+	assert.doesNotMatch(html, /Voor groep 5/)
+})
+
+test('the media groups are read through the api, one read per declared group', async () => {
+	const asked = []
+	const api = { fetchMediaGroup: async (group) => { asked.push(group.schema); return group.schema === 'paper' ? [{ id: 'm1', title: 'Schoolgids' }] : null } }
+	const ctx = instance(DocumentsBlock, {
+		block: { type: 'documents', collection: 'mijnKinderen', extraGroups: [{ label: 'Van school', register: 'r', schema: 'paper' }, { label: 'Brieven', register: 'r', schema: 'letter' }] },
+		collection: ZAKEN,
+		record: { id: 'k-1' },
+		api,
+		initialAnswer: { documents: [] },
+	})
+	await ctx.loadMediaGroups()
+	assert.deepEqual(asked, ['paper', 'letter'])
+	assert.deepEqual(ctx.mediaGroups.map((g) => g.entries.length), [1, 0])
+	assert.deepEqual(ctx.shownMediaGroups.map((g) => g.label), ['Van school'])
+})
+
+test('opening a medium asks for it by its group and id, and a failure says so', async () => {
+	const opened = []
+	const ctx = instance(DocumentsBlock, {
+		block: { type: 'documents', collection: 'mijnKinderen' },
+		collection: ZAKEN,
+		record: { id: 'k-1' },
+		api: { downloadMediaGroupFile: async (group, entry) => { opened.push([group.schema, entry.id]); return { ok: opened.length === 1 } } },
+		initialAnswer: { documents: [] },
+		initialMediaGroups: [],
+	})
+	await ctx.openMedia({ register: 'r', schema: 'paper' }, 0, { id: 'm1' })
+	assert.deepEqual(opened, [['paper', 'm1']])
+	assert.equal(ctx.openFailed, false)
+	await ctx.openMedia({ register: 'r', schema: 'paper' }, 0, { id: 'm2' })
+	assert.equal(ctx.openFailed, true)
+})
+
+test('the bundle button shows its words above the list and saves through the api', async () => {
+	const html = await renderWith({ bulkDownload: { label: 'Alle geldige certificaten downloaden' } }, { api: {} })
+	assert.match(html, /data-testid="mijn-documents-bundle"[^>]*>\s*Alle geldige certificaten downloaden/)
+	assert.doesNotMatch(await renderWith({}, { api: {} }), /mijn-documents-bundle/)
+
+	const saved = []
+	const ctx = instance(DocumentsBlock, {
+		block: { type: 'documents', collection: 'mijnKinderen', bulkDownload: { label: 'Alles downloaden' } },
+		collection: ZAKEN,
+		record: { id: 'k-1' },
+		api: { downloadDocumentsBundle: async (collection, id, name) => { saved.push([collection.id, id, name]); return { ok: false } } },
+		initialAnswer: { documents: [] },
+		initialMediaGroups: [],
+	})
+	await ctx.downloadBundle()
+	assert.deepEqual(saved, [['mijnKinderen', 'k-1', 'Alles downloaden']])
+	assert.equal(ctx.bundleFailed, true)
+})

@@ -219,4 +219,76 @@ class BoardKeysTest extends TestCase {
 		);
 		$this->assertSame([], $keys->documentsKeys(block: ['subtitle' => ['x'], 'emptyLabel' => str_repeat('x', 401)]));
 	}//end testADocumentsBlockKeepsItsSubtitleAndEmptyWords()
+
+	/**
+	 * A documents block keeps well-formed `extraGroups` (at most five) and the
+	 * words of `bulkDownload`, and drops what does not fit.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-1
+	 */
+	public function testADocumentsBlockKeepsItsExtraGroupsAndBundleWords(): void {
+		$keys = new BoardKeys();
+		$this->assertSame(
+			expected: [
+				'extraGroups'  => [['label' => 'Van school', 'register' => 'school-media', 'schema' => 'paper']],
+				'bulkDownload' => ['label' => 'Alle geldige certificaten downloaden'],
+			],
+			actual: $keys->documentsKeys(
+				block: [
+					'extraGroups'  => [
+						['label' => ' Van school ', 'register' => 'school-media', 'schema' => 'paper'],
+						['label' => '', 'register' => 'school-media', 'schema' => 'paper'],
+						['label' => 'Bad', 'register' => '../x', 'schema' => 'paper'],
+						['label' => 'Bad', 'register' => 'school-media', 'schema' => ['paper']],
+						'Van school',
+					],
+					'bulkDownload' => ['label' => 'Alle geldige certificaten downloaden'],
+				]
+			)
+		);
+
+		$many = array_fill(0, 7, ['label' => 'G', 'register' => 'r', 'schema' => 's']);
+		$this->assertCount(expectedCount: 5, haystack: $keys->documentsKeys(block: ['extraGroups' => $many])['extraGroups']);
+		$this->assertSame(expected: ['bulkDownload' => ['label' => 'Alles downloaden']], actual: $keys->documentsKeys(block: ['bulkDownload' => 'Alles downloaden']));
+		$this->assertSame(expected: [], actual: $keys->documentsKeys(block: ['extraGroups' => ['a' => ['label' => 'G', 'register' => 'r', 'schema' => 's']], 'bulkDownload' => str_repeat('x', 121)]));
+	}//end testADocumentsBlockKeepsItsExtraGroupsAndBundleWords()
+
+	/**
+	 * Through the manifest normaliser the bundle button is kept only on a
+	 * block whose collection declares the `bundle` method.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-1
+	 */
+	public function testTheBundleButtonNeedsTheCollectionsBundleMethod(): void {
+		$out = (new PortalManifestNormaliser())->normalise(
+			[
+				'collections' => [
+					['id' => 'certificaten', 'schema' => 'certificate', 'documents' => ['provider' => 'certificates', 'bundle' => 'validCertificates']],
+					['id' => 'rapporten', 'schema' => 'report', 'documents' => ['provider' => 'reports']],
+				],
+				'actions'     => [],
+				'pages'       => [
+					[
+						'id'     => 'certificaten',
+						'label'  => 'Certificaten',
+						'record' => ['collection' => 'certificaten'],
+						'blocks' => [['type' => 'documents', 'collection' => 'certificaten', 'bulkDownload' => 'Alle geldige certificaten downloaden']],
+					],
+					[
+						'id'     => 'rapporten',
+						'label'  => 'Rapporten',
+						'record' => ['collection' => 'rapporten'],
+						'blocks' => [['type' => 'documents', 'collection' => 'rapporten', 'bulkDownload' => 'Alles downloaden']],
+					],
+				],
+			]
+		);
+
+		$this->assertSame(expected: ['label' => 'Alle geldige certificaten downloaden'], actual: $out['pages'][0]['blocks'][0]['bulkDownload']);
+		$this->assertArrayNotHasKey(key: 'bulkDownload', array: $out['pages'][1]['blocks'][0]);
+	}//end testTheBundleButtonNeedsTheCollectionsBundleMethod()
 }//end class

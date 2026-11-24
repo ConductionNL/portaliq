@@ -55,6 +55,26 @@
 			data-testid="mijn-documents-upload-notice">
 			{{ uploadNotice }}
 		</p>
+		<!-- With `bulkDownload` (and a collection that declares its `bundle`
+		     method) one button above the list saves every document together
+		     (documents-grouped-per-record). -->
+		<p v-if="bundleLabel" class="pq-documents-block__bundle">
+			<button
+				type="button"
+				class="utrecht-button utrecht-button--secondary-action"
+				data-testid="mijn-documents-bundle"
+				:disabled="bundleBusy"
+				@click="downloadBundle">
+				{{ bundleLabel }}
+			</button>
+		</p>
+		<p
+			v-if="bundleFailed"
+			class="utrecht-paragraph"
+			role="alert"
+			data-testid="mijn-documents-bundle-failed">
+			{{ tr('The documents could not be downloaded. Try again.') }}
+		</p>
 		<Skeleton
 			v-if="answer === null && !failed"
 			:label="tr('Loading')"
@@ -101,10 +121,33 @@
 				data-testid="mijn-documents-note">
 				{{ block.note }}
 			</p>
-			<p v-if="openFailed" class="utrecht-paragraph" role="alert">
-				{{ tr('The document could not be opened. Try again.') }}
-			</p>
 		</template>
+		<!-- `extraGroups`: media for the signed-in person, each a group of its
+		     own after the provider's; OpenRegister decides which media show
+		     (documents-grouped-per-record). A group with nothing is left out. -->
+		<section
+			v-for="(media, m) in shownMediaGroups"
+			:key="`media-${m}`"
+			class="pq-documents-block__group"
+			data-testid="mijn-documents-media-group">
+			<component
+				:is="`h${Math.min(level + 1, 6)}`"
+				class="utrecht-heading-4 pq-documents-block__group-heading">
+				{{ media.label }}
+			</component>
+			<ul class="pq-documents-block__list">
+				<FileItem
+					v-for="entry in media.entries"
+					:key="entry.id"
+					:name="entry.title || entry.id"
+					:line="paperLineOf(entry)"
+					:busy="busyId === `${m}:${entry.id}`"
+					@open="openMedia(media, m, entry)" />
+			</ul>
+		</section>
+		<p v-if="openFailed" class="utrecht-paragraph" role="alert">
+			{{ tr('The document could not be opened. Try again.') }}
+		</p>
 	</section>
 </template>
 
@@ -145,6 +188,8 @@ export default {
 		locale: { type: String, default: 'nl' },
 		/** An answer to start from, for a test. */
 		initialAnswer: { type: Object, default: null },
+		/** Media groups to start from, for a test: `[{ label, register, schema, entries }]`. */
+		initialMediaGroups: { type: Array, default: null },
 	},
 
 	data() {
@@ -155,6 +200,9 @@ export default {
 			openFailed: false,
 			uploading: false,
 			uploadNotice: '',
+			mediaGroups: this.initialMediaGroups || [],
+			bundleBusy: false,
+			bundleFailed: false,
 		}
 	},
 
@@ -222,6 +270,25 @@ export default {
 		documents() {
 			return Array.isArray(this.answer?.documents) ? this.answer.documents : []
 		},
+
+		/**
+		 * @return {Array<object>} The media groups that list something.
+		 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-2
+		 */
+		shownMediaGroups() {
+			return this.mediaGroups.filter(
+				(group) => Array.isArray(group?.entries) && group.entries.length > 0,
+			)
+		},
+
+		/**
+		 * @return {string} The bundle button's words, or '' when the block has none.
+		 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-2
+		 */
+		bundleLabel() {
+			const label = this.block?.bulkDownload?.label
+			return typeof label === 'string' && this.api ? label : ''
+		},
 	},
 
 	watch: {
@@ -244,6 +311,9 @@ export default {
 	created() {
 		if (this.answer === null) {
 			this.load()
+		}
+		if (this.initialMediaGroups === null) {
+			this.loadMediaGroups()
 		}
 	},
 
@@ -281,6 +351,85 @@ export default {
 			}
 			this.failed = !answer || !Array.isArray(answer.documents)
 			this.answer = this.failed ? null : answer
+		},
+
+		/**
+		 * Read every extra group's media; a group whose read fails lists
+		 * nothing and is left out.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-3
+		 */
+		async loadMediaGroups() {
+			const declared = Array.isArray(this.block?.extraGroups) ? this.block.extraGroups : []
+			if (declared.length === 0 || !this.api?.fetchMediaGroup) {
+				return
+			}
+			this.mediaGroups = await Promise.all(
+				declared.map(async (group) => {
+					let entries
+					try {
+						entries = await this.api.fetchMediaGroup(group)
+					} catch {
+						entries = null
+					}
+					return { ...group, entries: Array.isArray(entries) ? entries : [] }
+				}),
+			)
+		},
+
+		/**
+		 * @param {object} entry A medium.
+		 * @return {string} Its day, type and size.
+		 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-2
+		 */
+		paperLineOf(entry) {
+			return paperLine(entry, this.locale)
+		},
+
+		/**
+		 * Download one medium of an extra group; a failure says so.
+		 *
+		 * @param {object} group The extra group.
+		 * @param {number} index Its place among the shown groups.
+		 * @param {object} entry The medium.
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-3
+		 */
+		async openMedia(group, index, entry) {
+			this.busyId = `${index}:${entry.id}`
+			this.openFailed = false
+			let result
+			try {
+				result = await this.api?.downloadMediaGroupFile?.(group, entry)
+			} catch {
+				result = null
+			}
+			this.busyId = null
+			this.openFailed = result?.ok !== true
+		},
+
+		/**
+		 * Save the bundle of every document; a failure says so.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-2
+		 */
+		async downloadBundle() {
+			this.bundleBusy = true
+			this.bundleFailed = false
+			let result
+			try {
+				result = await this.api?.downloadDocumentsBundle?.(
+					this.collection,
+					this.recordId,
+					this.bundleLabel,
+				)
+			} catch {
+				result = null
+			}
+			this.bundleBusy = false
+			this.bundleFailed = result?.ok !== true
 		},
 
 		/**

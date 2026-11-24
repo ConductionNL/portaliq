@@ -118,4 +118,26 @@ class PortalCollectionDocumentsControllerTest extends TestCase {
 		$this->assertSame('d1', $data['documents'][0]['id']);
 
 	}//end testTheNamedReaderGetsTheListAndTheFile()
+
+	/**
+	 * The bundle is proven like a paper: no session 401, outside the scope
+	 * 404, no bundle 404, else the stream.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-2
+	 */
+	public function testTheBundleIsProvenLikeAPaper(): void {
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $this->controller(subject: null, collections: [$this->collection()])->bundle('decidiq', 'agendaItem', 'a1')->getStatus());
+
+		$outside = $this->controller(subject: ['subjectRef' => 'other', 'trust' => 'substantial'], collections: [$this->collection()], owned: null);
+		$this->documents->expects($this->never())->method('bundle');
+		$this->assertSame(Http::STATUS_NOT_FOUND, $outside->bundle('decidiq', 'agendaItem', 'a1')->getStatus());
+
+		$controller = $this->controller(subject: ['subjectRef' => 'p', 'trust' => 'substantial'], collections: [$this->collection()]);
+		$stream     = $this->createMock(StreamResponse::class);
+		$this->documents->method('bundle')->willReturnOnConsecutiveCalls(null, $stream);
+		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->bundle('decidiq', 'agendaItem', 'a1')->getStatus());
+		$this->assertSame($stream, $controller->bundle('decidiq', 'agendaItem', 'a1'));
+	}//end testTheBundleIsProvenLikeAPaper()
 }//end class
