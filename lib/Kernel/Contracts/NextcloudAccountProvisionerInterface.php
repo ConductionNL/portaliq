@@ -52,7 +52,7 @@ interface NextcloudAccountProvisionerInterface {
 	 *         `refused`, `unknown_user`, `unknown_portal`, `portal_mismatch`, `mode_not_offered`,
 	 *         `conflict`, `not_active` or `unavailable`.
 	 *
-	 * @spec openspec/changes/an-app-provisions-a-nextcloud-account/specs/portal-identity-space/spec.md#requirement-an-app-may-provision-an-active-account-for-a-nextcloud-user
+	 * @spec openspec/changes/archive/2026-11-24-an-app-provisions-a-nextcloud-account/specs/portal-identity-space/spec.md#requirement-an-app-may-provision-an-active-account-for-a-nextcloud-user
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- one parameter per field
 	 * of the account asked for, as on the provision event it answers.

@@ -35,7 +35,7 @@ use OCP\EventDispatcher\Event;
  * sign-in mode (an-app-provisions-a-nextcloud-account).
  *
  * @spec openspec/specs/portal-identity-space/spec.md
- * @spec openspec/changes/an-app-provisions-a-nextcloud-account/specs/portal-identity-space/spec.md#requirement-an-app-may-provision-an-active-account-for-a-nextcloud-user
+ * @spec openspec/changes/archive/2026-11-24-an-app-provisions-a-nextcloud-account/specs/portal-identity-space/spec.md#requirement-an-app-may-provision-an-active-account-for-a-nextcloud-user
  */
 class PortalAccountProvisionRequestedEvent extends Event {
 	/**
@@ -231,7 +231,7 @@ class PortalAccountProvisionRequestedEvent extends Event {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/an-app-provisions-a-nextcloud-account/specs/portal-identity-space/spec.md#requirement-an-app-may-provision-an-active-account-for-a-nextcloud-user
+	 * @spec openspec/changes/archive/2026-11-24-an-app-provisions-a-nextcloud-account/specs/portal-identity-space/spec.md#requirement-an-app-may-provision-an-active-account-for-a-nextcloud-user
 	 */
 	public function getNextcloudUid(): string {
 		return $this->nextcloudUid;
@@ -242,7 +242,7 @@ class PortalAccountProvisionRequestedEvent extends Event {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/an-app-provisions-a-nextcloud-account/specs/portal-identity-space/spec.md#requirement-an-app-may-provision-an-active-account-for-a-nextcloud-user
+	 * @spec openspec/changes/archive/2026-11-24-an-app-provisions-a-nextcloud-account/specs/portal-identity-space/spec.md#requirement-an-app-may-provision-an-active-account-for-a-nextcloud-user
 	 */
 	public function getPortal(): string {
 		return $this->portal;
