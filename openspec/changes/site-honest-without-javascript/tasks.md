@@ -78,34 +78,48 @@ each test carries the `@e2e portaliq site-without-javascript::<scenario>` tag of
   links; `not-found` answers 404 with one body for both causes.
   - **fails today**: `tests/Unit/Service/Cms/PlainPublicationDetailTest.php::testThePublicationAndItsDocuments`,
     `testMissingAndWithheldAnswerTheSame404`.
-- [ ] 3.4 CI: add `{"repo":"ConductionNL/opencatalogi","app":"opencatalogi","ref":"development"}` to
+- [x] 3.4 CI: add `{"repo":"ConductionNL/opencatalogi","app":"opencatalogi","ref":"development"}` to
   `e2e-additional-apps` in `.github/workflows/code-quality.yml`, and seed one published publication titled
   "Woo-besluit afvalinzameling 2026" with one PDF in `tests/e2e/ci-seed.sh` through opencatalogi's own API. If
   opencatalogi cannot be installed in that job, stop and report it in the PR body; do not skip the tests below.
   - e2e `a search works with JavaScript off` and `a publication and its documents open without JavaScript`
     (follow the title, download the PDF, compare its bytes), and `missing and withheld look the same`.
+  - Written, runs in nightly (24 Nov): opencatalogi is in `e2e-additional-apps`; `ci-seed.sh` imports its
+    configuration, runs its first-catalog setup and seeds the publication (category infocat002), a shared
+    `besluit-afvalinzameling-2026.pdf` and an unpublished sibling, failing loudly when a write fails; the three
+    scenarios are in `tests/e2e/site-without-javascript.spec.ts`. The download is checked by its `%PDF-` header.
+    Not run here: no instance in the cloud sandbox.
 
 ## 4. Accessibility and live
 
-- [ ] 4.1 The plain pages pass the same axe check as the site: add `/site/plain?route=/over-ons` and
+- [x] 4.1 The plain pages pass the same axe check as the site: add `/site/plain?route=/over-ons` and
   `/site/plain?route=/zoeken&_search=afval` to `tests/e2e/site-accessibility.spec.ts`. Run axe there with
   JavaScript on: the plain page carries no script (2.2 proves it), so its DOM is the one a visitor without
   JavaScript gets, and axe needs scripting to run.
+  - Written, runs in nightly: S13f and S13g in `tests/e2e/site-accessibility.spec.ts` (`site renderer — the plain
+    version`), scope `html`, the same tags as S13.
 - [ ] 4.2 Live check after merge on the dev instance, in a browser with JavaScript disabled: open a portal's home,
   follow the notice, search for a publication, open it and download a document. Record the addresses and what each
   page showed in the PR.
 
 ## 5. Verify and deliver
 
-- [ ] 5.1 `TMPDIR` set to a sibling directory beside the clone. While building, run
+- [x] 5.1 `TMPDIR` set to a sibling directory beside the clone. While building, run
   `./vendor/bin/phpunit -c phpunit-unit.xml --no-coverage --filter` on the touched classes and `node --test` on the
   touched node tests. Judge PHPUnit by the `Tests:` line.
-- [ ] 5.2 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then `npm run lint`,
+- [x] 5.2 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then `npm run lint`,
   `npm run format`, `npm run check:l10n-js`, `npm run check:schema-l10n`, `npm run check:manifest`,
   `npm run check:register`, `npm run check:specs` and `npm run build:site`, plus any other leg `code-quality.yml`
   requires. Then hydra's `scripts/run-hydra-gates.sh --base origin/development`; count the gates that ran.
-- [ ] 5.3 Project coverage of the added statements: no coverage driver runs locally, so take the base percentages
+- [x] 5.3 Project coverage of the added statements: no coverage driver runs locally, so take the base percentages
   from the last green push run on `development`, intersect its clover uncovered lines with the lines you add, and
   say in the PR body that the number is arithmetic, not a local green.
-- [ ] 5.4 One PR, `--base development`. Merge, never rebase. No `Co-Authored-By`. Done means merged on
+- [x] 5.4 One PR, `--base development`. Merge, never rebase. No `Co-Authored-By`. Done means merged on
   `development` with CI green. 6.6 then reads `yes` (build), and `production` only with a store release.
+  - 24 Nov, the test PR `cloud/b-portaliq-plain-publications`: TMPDIR a sibling directory; `check:strict` on
+    development has the same set before and after (phpstan 3 errors, PHPUnit 16 errors, none in this change's
+    classes; the PR touches no PHP); `npm run lint` 0 errors; `format`, and `build:site`'s Dexie check, fail on
+    development as they do here (inherited); `check:l10n-js`, `check:schema-l10n`, `check:manifest`,
+    `check:specs` pass; hydra-gates `--diff`: 29 of 29 applicable gates ran, gate 23 fails on the untouched
+    `AuditTrailServiceInterface` (inherited). Coverage: the PR adds no PHP or JS statements, so 0 added lines.
+    Feature branches run no CI (23 Nov), so local green is the gate.
