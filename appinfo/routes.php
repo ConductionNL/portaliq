@@ -550,6 +550,17 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         ['name' => 'portalAudienceMedia#open', 'url' => '/portal/api/media-groups/{register}/{schema}/{id}', 'verb' => 'GET'],
         // The bundle the collection's `bundle` method answers (documents-grouped-per-record), before the {documentId} route.
         ['name' => 'portalCollectionDocuments#bundle', 'url' => '/portal/api/collections/{register}/{schema}/{id}/documents-bundle', 'verb' => 'GET'],
+        // A listed paper's download conditions (document-download-terms): read, and accept.
+        [
+            'name' => 'portalCollectionDocuments#terms',
+            'url' => '/portal/api/collections/{register}/{schema}/{id}/documents/{documentId}/terms',
+            'verb' => 'GET',
+        ],
+        [
+            'name' => 'portalCollectionDocuments#acceptTerms',
+            'url' => '/portal/api/collections/{register}/{schema}/{id}/documents/{documentId}/terms',
+            'verb' => 'POST',
+        ],
         ['name' => 'portalCollectionDocuments#open', 'url' => '/portal/api/collections/{register}/{schema}/{id}/documents/{documentId}', 'verb' => 'GET'],
         // The declared history of one object the subject owns (portaliq#723).
         ['name' => 'portalTimeline#show', 'url' => '/portal/api/collections/{register}/{schema}/{id}/timeline', 'verb' => 'GET'],

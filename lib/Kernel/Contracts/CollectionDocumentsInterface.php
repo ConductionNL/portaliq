@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Kernel\Contracts;
 
+use OCA\Portaliq\Service\DocumentOpening;
 use OCP\AppFramework\Http\StreamResponse;
 
 /**
@@ -89,4 +90,23 @@ interface CollectionDocumentsInterface {
 	 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-2
 	 */
 	public function bundle(array $subject, string $app, array $documents, array $object): ?StreamResponse;
+
+	/**
+	 * The download conditions a listed document carries, from the app's `terms` hook.
+	 *
+	 * @param DocumentOpening $opening The subject, app, declaration, proven object and listed entry.
+	 *
+	 * @return array<string, mixed>|null `mayDownload`, `message` and `agreement`, or null.
+	 */
+	public function terms(DocumentOpening $opening): ?array;
+
+	/**
+	 * Record, through the app's `accept` hook, that the subject accepted the conditions shown.
+	 *
+	 * @param DocumentOpening $opening The subject, app, declaration, proven object and listed entry.
+	 * @param string          $version The version of the conditions shown.
+	 *
+	 * @return bool True when the document may now be opened.
+	 */
+	public function accept(DocumentOpening $opening, string $version): bool;
 }//end interface

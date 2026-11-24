@@ -105,4 +105,23 @@ class DocumentsProviderMethodTest extends TestCase {
 			$this->assertSame(expected: ['label' => '', 'provider' => 'certificates'], actual: $out['documents'], message: json_encode(value: $bad));
 		}
 	}//end testTheBundleMethodIsKeptOrDroppedAlone()
+
+	/**
+	 * The `terms` and `accept` hooks are kept as plain method names and dropped otherwise.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/document-download-terms/tasks.md#task-1
+	 */
+	public function testTheTermsAndAcceptHooksAreKeptOrDroppedAlone(): void {
+		$declared = ['provider' => 'releasedDocuments', 'terms' => 'releasedDocumentTerms', 'accept' => 'releasedDocumentAccept'];
+		$out      = (new DocumentsProviderMethod())->normalise(collection: ['documents' => $declared]);
+		$this->assertSame(expected: ['label' => ''] + $declared, actual: $out['documents']);
+
+		foreach (['getContribution', 'a-b', '__call', 7, null] as $bad) {
+			$malformed = ['provider' => 'releasedDocuments', 'terms' => $bad, 'accept' => $bad];
+			$out       = (new DocumentsProviderMethod())->normalise(collection: ['documents' => $malformed]);
+			$this->assertSame(expected: ['label' => '', 'provider' => 'releasedDocuments'], actual: $out['documents'], message: json_encode(value: $bad));
+		}
+	}//end testTheTermsAndAcceptHooksAreKeptOrDroppedAlone()
 }//end class

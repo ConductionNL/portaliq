@@ -7,6 +7,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\PortalCollectionDocumentsController;
 use OCA\Portaliq\Service\CollectionDocuments;
+use OCA\Portaliq\Service\DocumentOpening;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
@@ -41,7 +42,7 @@ class PortalCollectionDocumentsControllerTest extends TestCase {
 	private function controller(?array $subject, array $collections, ?array $owned=['id' => 'a1']): PortalCollectionDocumentsController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('Bearer x');
-		$request->method('getParam')->willReturn('');
+		$request->method('getParam')->willReturnMap([['version', '', 'v2']]);
 		$session = $this->createMock(PortalSessionService::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
 		$registry = $this->createMock(PortalContributionRegistry::class);
@@ -144,4 +145,81 @@ class PortalCollectionDocumentsControllerTest extends TestCase {
 		$this->assertSame(expected: Http::STATUS_NOT_FOUND, actual: $controller->bundle(register: 'decidiq', schema: 'agendaItem', id: 'a1')->getStatus());
 		$this->assertSame(expected: $stream, actual: $controller->bundle(register: 'decidiq', schema: 'agendaItem', id: 'a1'));
 	}//end testTheBundleIsProvenLikeAPaper()
+
+	/**
+	 * document-download-terms task 2: the terms are proven like a paper and answered as the app gives them.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/document-download-terms/tasks.md#task-2
+	 */
+	public function testTheTermsAreProvenLikeAPaper(): void {
+		$noSession = $this->controller(subject: null, collections: [$this->collection()]);
+		$refusal   = $noSession->terms(register: 'decidiq', schema: 'agendaItem', id: 'a1', documentId: 'd1');
+		$this->assertSame(expected: Http::STATUS_UNAUTHORIZED, actual: $refusal->getStatus());
+
+		$other   = ['subjectRef' => 'other', 'trust' => 'substantial'];
+		$outside = $this->controller(subject: $other, collections: [$this->collection()], owned: null);
+		$this->documents->expects($this->never())->method('terms');
+		$refused = $outside->terms(register: 'decidiq', schema: 'agendaItem', id: 'a1', documentId: 'd1');
+		$this->assertSame(expected: Http::STATUS_NOT_FOUND, actual: $refused->getStatus());
+	}
+
+	/**
+	 * document-download-terms task 2: the owner reads the terms of a listed paper.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/document-download-terms/tasks.md#task-2
+	 */
+	public function testTheOwnerReadsTheTerms(): void {
+		$controller = $this->controller(subject: ['subjectRef' => 'p', 'trust' => 'substantial'], collections: [$this->collection()]);
+		$terms      = ['mayDownload' => false, 'agreement' => ['version' => 'v2', 'text' => 'No reuse']];
+		$this->documents->expects($this->once())->method('terms')->with(
+			$this->callback(
+				callback: static fn (DocumentOpening $opening): bool => $opening->app === 'decidiq'
+					&& $opening->documentId === 'd1'
+					&& $opening->object === ['register' => 'decidiq', 'schema' => 'agendaItem', 'id' => 'a1']
+					&& $opening->subject['subjectRef'] === 'p'
+			)
+		)->willReturn($terms);
+
+		$answer = $controller->terms(register: 'decidiq', schema: 'agendaItem', id: 'a1', documentId: 'd1');
+		$this->assertSame(expected: ['terms' => $terms], actual: $answer->getData());
+	}
+
+	/**
+	 * document-download-terms task 2: accepting passes the body's version and answers whether it was recorded.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/document-download-terms/tasks.md#task-2
+	 */
+	public function testAcceptingAnswersWhetherItWasRecorded(): void {
+		$controller = $this->controller(subject: ['subjectRef' => 'p', 'trust' => 'substantial'], collections: [$this->collection()]);
+		$this->documents->method('accept')->with($this->isInstanceOf(className: DocumentOpening::class), 'v2')->willReturnOnConsecutiveCalls(true, false);
+
+		$accepted = $controller->acceptTerms(register: 'decidiq', schema: 'agendaItem', id: 'a1', documentId: 'd1');
+		$this->assertSame(expected: ['accepted' => true], actual: $accepted->getData());
+
+		$refused = $controller->acceptTerms(register: 'decidiq', schema: 'agendaItem', id: 'a1', documentId: 'd1');
+		$this->assertSame(expected: Http::STATUS_CONFLICT, actual: $refused->getStatus());
+		$this->assertFalse(condition: $refused->getData()['accepted']);
+	}
+
+	/**
+	 * document-download-terms task 2: an acceptance outside the scope never reaches the app.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/document-download-terms/tasks.md#task-2
+	 */
+	public function testAnAcceptanceOutsideTheScopeIsNotFound(): void {
+		$other   = ['subjectRef' => 'other', 'trust' => 'substantial'];
+		$outside = $this->controller(subject: $other, collections: [$this->collection()], owned: null);
+		$this->documents->expects($this->never())->method('accept');
+
+		$answer = $outside->acceptTerms(register: 'decidiq', schema: 'agendaItem', id: 'a1', documentId: 'd1');
+		$this->assertSame(expected: Http::STATUS_NOT_FOUND, actual: $answer->getStatus());
+	}
 }//end class
