@@ -1192,6 +1192,9 @@ class SessionController extends Controller {
 			// this login felt more effortful.
 			trust: 'low',
 			roles: [$audience . ':read'],
+			// The way in, so a media group can ask OpenRegister as this
+			// account (documents-grouped-per-record task 3).
+			provider: 'nextcloud',
 			portal: $portal
 		);
 	}//end issueNextcloudSession()

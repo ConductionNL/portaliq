@@ -1621,7 +1621,9 @@ class SessionControllerTest extends TestCase {
 			->method('issueSession')
 			// The session is bound to the portal the user signed in on
 			// (portal-scoping-and-auth Task 4).
-			->with('alice', 'client', 'org-1', 'low', ['client:read'], '', '', '', [], 'demo')
+			// The way in is named, so a media group can ask OpenRegister as
+			// this account (documents-grouped-per-record task 3).
+			->with('alice', 'client', 'org-1', 'low', ['client:read'], '', 'nextcloud', '', [], 'demo')
 			->willReturn(['token' => 'tok en']);
 		$accounts = $this->createMock(originalClassName: PortalAccountService::class);
 		$accounts->method('findBySubjectRef')->willReturn(

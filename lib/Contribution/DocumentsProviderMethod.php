@@ -44,6 +44,7 @@ class DocumentsProviderMethod {
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-case-app-declares-which-documents-a-resident-may-see-req-cdc-001
+	 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-1
 	 */
 	public function normalise(array $collection): array {
 		if (array_key_exists('documents', $collection) === false) {
@@ -66,6 +67,12 @@ class DocumentsProviderMethod {
 		// as a plain method name; a malformed one is dropped and the key stays without it.
 		if (array_key_exists('opened', $declared) === true && (new TimelineProviderMethod())->accepts(name: $declared['opened']) === true) {
 			$collection['documents']['opened'] = $declared['opened'];
+		}
+
+		// A `bundle` method (documents-grouped-per-record) answers the one file
+		// of every listed document together; kept only as a plain method name.
+		if (array_key_exists('bundle', $declared) === true && (new TimelineProviderMethod())->accepts(name: $declared['bundle']) === true) {
+			$collection['documents']['bundle'] = $declared['bundle'];
 		}
 
 		return $collection;

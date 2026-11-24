@@ -15,7 +15,9 @@
  * - `tasks` with `display: highlight`: a `tone` (`warning` or `info`) and
  *   `dueInLine: true` (the due day joins the sub line);
  * - `inbox`: `display: list` (a title and the day, no badge);
- * - `documents`: `upload: true` (an outlined button that adds a document);
+ * - `documents`: `upload: true` (an outlined button that adds a document),
+ *   `groupBy`, `note`, `extraGroups` (media groups for the signed-in person)
+ *   and `bulkDownload` (the words on the bundle button);
  * - `detail`: a `label` over the facts and `timeline: false`;
  * - `citizenCase`: `display: actions` (the closed window sentence as a
  *   notice, no status block, no documents section);
@@ -169,7 +171,7 @@ class BoardKeys {
 
 	/**
 	 * A documents block's board keys: `upload: true`, `groupBy`, `note`,
-	 * `subtitle` and `emptyLabel`.
+	 * `extraGroups`, `bulkDownload`, `subtitle` and `emptyLabel`.
 	 *
 	 * @param array<string, mixed> $block The declared block.
 	 *
@@ -192,8 +194,24 @@ class BoardKeys {
 			$out['groupBy'] = $groupBy;
 		}
 
+		// Groups of media for the signed-in person, read through OpenRegister's
+		// own access checks (documents-grouped-per-record task 3).
+		$extras = new DocumentsBlockExtras();
+		$extra  = $extras->extraGroups(value: ($block['extraGroups'] ?? null));
+		if ($extra !== []) {
+			$out['extraGroups'] = $extra;
+		}
+
+		// The words on the bundle button; whether the button shows is the
+		// collection's `documents.bundle` (ListBlockNormaliser).
+		$bundle = $extras->bundleLabel(value: ($block['bulkDownload'] ?? null));
+		if ($bundle !== '') {
+			$out['bulkDownload'] = ['label' => $bundle];
+		}
+
 		return $out + $this->documentsTexts(block: $block);
 	}//end documentsKeys()
+
 
 	/**
 	 * A documents block's authored sentences: under the list, beside the

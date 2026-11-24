@@ -55,6 +55,13 @@
 			data-testid="mijn-documents-upload-notice">
 			{{ uploadNotice }}
 		</p>
+		<!-- The bundle button above the list and the media groups after it
+		     load on demand, only for a block that declares them
+		     (documents-grouped-per-record). -->
+		<DocumentsExtras
+			v-if="block.bulkDownload && api"
+			part="bundle"
+			v-bind="$props" />
 		<Skeleton
 			v-if="answer === null && !failed"
 			:label="tr('Loading')"
@@ -105,10 +112,15 @@
 				{{ tr('The document could not be opened. Try again.') }}
 			</p>
 		</template>
+		<DocumentsExtras
+			v-if="block.extraGroups && api"
+			part="media"
+			v-bind="$props" />
 	</section>
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
 import EmptyState from './EmptyState.vue'
 import FileItem from './FileItem.vue'
 import LoadError from './LoadError.vue'
@@ -122,7 +134,13 @@ import { mijnTranslator } from './rows.js'
 export default {
 	name: 'DocumentsBlock',
 
-	components: { EmptyState, FileItem, LoadError, Skeleton },
+	components: {
+		DocumentsExtras: defineAsyncComponent(() => import('./DocumentsExtras.vue')),
+		EmptyState,
+		FileItem,
+		LoadError,
+		Skeleton,
+	},
 
 	// The portal's organisation type label, from the site shell (App.vue);
 	// none reads "de organisatie" (portal-identity-from-the-admin REQ-PIA-003).
