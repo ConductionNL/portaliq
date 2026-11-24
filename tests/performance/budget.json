@@ -1,0 +1,11 @@
+{
+	"app": "portaliq",
+	"pages": [
+		{"name": "Dashboard", "path": "/index.php/apps/portaliq/"},
+		{"name": "Portals", "path": "/index.php/apps/portaliq/portals"},
+		{"name": "Articles", "path": "/index.php/apps/portaliq/articles"},
+		{"name": "Accounts", "path": "/index.php/apps/portaliq/accounts"},
+		{"name": "Submissions", "path": "/index.php/apps/portaliq/submissions"},
+		{"name": "Request forms", "path": "/index.php/apps/portaliq/form-bindings"}
+	]
+}
