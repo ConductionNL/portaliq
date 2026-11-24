@@ -69,7 +69,7 @@ export default {
 		/**
 		 * @param {string} value An ISO moment.
 		 * @return {string} The day in words.
-		 * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-the-own-area-lists-unfinished-forms-req-fsr-003
+		 * @spec openspec/changes/archive/2026-11-24-form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-the-own-area-lists-unfinished-forms-req-fsr-003
 		 */
 		day(value) {
 			return fullDay(value, this.locale)
@@ -78,7 +78,7 @@ export default {
 		/**
 		 * @param {{app: string, action: string}} draft A live draft.
 		 * @return {string} The form's address on this site.
-		 * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-the-own-area-lists-unfinished-forms-req-fsr-003
+		 * @spec openspec/changes/archive/2026-11-24-form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-the-own-area-lists-unfinished-forms-req-fsr-003
 		 */
 		hrefFor(draft) {
 			const route = formRoute(draft)

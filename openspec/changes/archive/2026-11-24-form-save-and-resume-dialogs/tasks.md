@@ -1,0 +1,8 @@
+- [x] T01 `GET /portal/api/drafts` lists the subject's live drafts (PortalDraftController::index, ActionDraft::liveDrafts); the single draft answer carries `updatedAt`
+- [x] T02 portalApi `listDrafts()`
+- [x] T03 Save dialog (src/site/modals/forms/SaveDraftModal.vue) behind "Save and continue later"
+- [x] T04 Resume dialog (src/site/modals/forms/ResumeDraftModal.vue) on opening a form with a live draft
+- [x] T05 Mijn zaken lists each live draft as an "Onvoltooid formulier" card
+- [x] T06 Tests: PHPUnit PortalDraftControllerTest, node specs
+- [x] T07 Decide (a) or (b) for dossiq's Woo endpoint action (see proposal)
+  - Decided (a), and it is already built: dossiq's `startWooVerzoekAlgemeen` is a `type: create` action on register `dossiq`, schema `case` (dossiq `lib/Portal/CitizenManifest.php`, decision 180, a1), so its half-filled request is a draft of the case and the dialogs and the Mijn zaken card of this change apply to it. Portaliq keeps no `portalDraft` store; (b) is not built. The dossier variant `startWooVerzoek` stays an endpoint action (it writes case objects and a link on the dossier) and keeps no draft under REQ-RR3-005.

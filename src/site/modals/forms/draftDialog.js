@@ -10,7 +10,7 @@
  * @param {HTMLDialogElement|undefined} dialog The dialog.
  * @param {HTMLElement|undefined} heading Its heading.
  * @return {void}
- * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-saving-a-form-first-says-what-saving-does-req-fsr-001
+ * @spec openspec/changes/archive/2026-11-24-form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-saving-a-form-first-says-what-saving-does-req-fsr-001
  */
 export function openDialog(dialog, heading) {
 	if (typeof dialog?.showModal === 'function') {
@@ -28,7 +28,7 @@ export function openDialog(dialog, heading) {
  *
  * @param {HTMLDialogElement|undefined} dialog The dialog.
  * @return {void}
- * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-saving-a-form-first-says-what-saving-does-req-fsr-001
+ * @spec openspec/changes/archive/2026-11-24-form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-saving-a-form-first-says-what-saving-does-req-fsr-001
  */
 export function closeDialog(dialog) {
 	if (dialog?.open && typeof dialog.close === 'function') {
