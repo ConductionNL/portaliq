@@ -632,4 +632,93 @@ WT_CODE="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 60 \
 	"${WT_BASE}/index.php/apps/portaliq/api/preferences/walkthrough_completed_version" || echo 000)"
 echo "[ci-seed] PUT preferences/walkthrough_completed_version -> HTTP ${WT_CODE}"
 
+# ── One published publication for the plain pages ───────────────────────────
+# site-honest-without-javascript task 3.4 (REQ-SHJ-003, REQ-SHJ-004): the
+# plain search and the plain publication page read opencatalogi's federation
+# endpoint on the server, so a browser stub cannot answer them. The workflow
+# installs opencatalogi through `e2e-additional-apps`; this seeds, through
+# opencatalogi's and OpenRegister's own API, the publication
+# tests/e2e/site-without-javascript.spec.ts searches for: published, one PDF
+# shared, and one unpublished sibling for "missing and withheld look the same".
+# Idempotent: a publication that already exists (by title) is reused.
+#
+# @spec openspec/changes/site-honest-without-javascript/tasks.md#3.4
+OC_ENABLED=""
+if [ -n "$OCC" ] && $OCC app:list --enabled 2>/dev/null | grep -qE '^\s*- opencatalogi:'; then
+	OC_ENABLED="yes"
+fi
+if [ -z "$OC_ENABLED" ]; then
+	echo "::warning::opencatalogi is not enabled; the plain publication scenarios in site-without-javascript.spec.ts will fail."
+else
+	OC_API="${BASE}/index.php/apps/opencatalogi/api"
+	OR_OBJECTS="${BASE}/index.php/apps/openregister/api/objects/publication/publication"
+	OC_IMPORT="$(curl -sS -o /dev/null -w '%{http_code}' -u "${USER_NAME}:${USER_PASS}" -X POST \
+		-H 'Content-Type: application/json' -H 'OCS-APIRequest: true' --data '{"force":true}' \
+		"${OC_API}/settings/import" || echo 000)"
+	echo "[ci-seed] opencatalogi settings/import -> HTTP ${OC_IMPORT}"
+	if [ "$OC_IMPORT" != "200" ]; then
+		echo "::error::opencatalogi's configuration import failed (HTTP ${OC_IMPORT}); the plain publication scenarios need its register."
+		exit 1
+	fi
+	# A catalog over the publication register, the way opencatalogi's own
+	# first-time setup makes one; tolerant, because an instance past its
+	# setup answers these with a refusal.
+	curl -sS -o /dev/null -X POST -u "${USER_NAME}:${USER_PASS}" -H 'OCS-APIRequest: true' \
+		-d 'default_catalog_scope=organisation' "${OC_API}/setup/config" || true
+	curl -sS -o /dev/null -X POST -u "${USER_NAME}:${USER_PASS}" -H 'OCS-APIRequest: true' \
+		"${OC_API}/setup/action/create-first-catalog" || true
+
+	# $1 title, $2 JSON body; prints the id.
+	seed_publication () {
+		local found
+		found="$(curl -sS -G -u "${USER_NAME}:${USER_PASS}" -H 'OCS-APIRequest: true' \
+			--data-urlencode "title=$1" --data-urlencode '_limit=1' "$OR_OBJECTS" \
+			| python3 -c 'import json,sys
+try:
+    d=json.load(sys.stdin); rows=d.get("results", d if isinstance(d,list) else [])
+    print((rows[0].get("id") or rows[0].get("@self",{}).get("id") or "") if rows else "")
+except Exception:
+    print("")' 2>/dev/null || true)"
+		if [ -n "$found" ]; then
+			echo "$found"
+			return 0
+		fi
+		curl -sS -X POST -u "${USER_NAME}:${USER_PASS}" -H 'OCS-APIRequest: true' \
+			-H 'Content-Type: application/json' --data "$2" "$OR_OBJECTS" \
+			| python3 -c 'import json,sys
+try:
+    d=json.load(sys.stdin); print(d.get("id") or d.get("@self",{}).get("id") or "")
+except Exception:
+    print("")' 2>/dev/null || true
+	}
+
+	PUB_DATE="$(date -u -d '-14 days' +%Y-%m-%dT%H:%M:%SZ)"
+	PUB_TITLE='Woo-besluit afvalinzameling 2026'
+	PUB_ID="$(seed_publication "$PUB_TITLE" "{\"title\":\"${PUB_TITLE}\",\"summary\":\"Het besluit over de nieuwe afvalinzameling in 2026.\",\"publicationDate\":\"${PUB_DATE}\",\"status\":\"published\",\"wooCategory\":\"infocat002\"}")"
+	DRAFT_TITLE='Woo-besluit afvalinzameling 2026 (concept)'
+	DRAFT_ID="$(seed_publication "$DRAFT_TITLE" "{\"title\":\"${DRAFT_TITLE}\",\"summary\":\"Nog niet gepubliceerd.\"}")"
+	if [ -z "$PUB_ID" ] || [ -z "$DRAFT_ID" ]; then
+		echo "::error::Could not create the publications the plain publication scenarios read (published '${PUB_ID}', draft '${DRAFT_ID}')."
+		exit 1
+	fi
+	echo "[ci-seed] publication '${PUB_TITLE}' -> ${PUB_ID}; unpublished sibling -> ${DRAFT_ID}"
+
+	# One shared PDF on the published publication; a re-run sees it and skips.
+	PDF_NAME='besluit-afvalinzameling-2026.pdf'
+	PDF_URL="${OR_OBJECTS}/${PUB_ID}/files"
+	if curl -sS -u "${USER_NAME}:${USER_PASS}" -H 'OCS-APIRequest: true' "$PDF_URL" | grep -q "$PDF_NAME"; then
+		echo "[ci-seed] publication file '${PDF_NAME}' (already there)"
+	else
+		PDF_BODY="$(python3 -c 'import json; print(json.dumps({"name": "besluit-afvalinzameling-2026.pdf", "content": "%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[]/Count 0>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n", "share": True}))')"
+		PDF_CODE="$(curl -sS -o /dev/null -w '%{http_code}' -X POST -u "${USER_NAME}:${USER_PASS}" \
+			-H 'OCS-APIRequest: true' -H 'Content-Type: application/json' --data "$PDF_BODY" \
+			"$PDF_URL" || echo 000)"
+		echo "[ci-seed] publication file '${PDF_NAME}' -> HTTP ${PDF_CODE}"
+		case "$PDF_CODE" in
+			2??) ;;
+			*) echo "::error::Could not add the PDF the plain publication page downloads."; exit 1 ;;
+		esac
+	fi
+fi
+
 echo "[ci-seed] done."
