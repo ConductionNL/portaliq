@@ -146,6 +146,94 @@ class CollectionDocuments implements CollectionDocumentsInterface {
 	}//end bundle()
 
 	/**
+	 * The download conditions a listed document carries, from the app's
+	 * `terms` hook: whether it may be opened now and, when not, the
+	 * conditions in force with their version. Null when the collection
+	 * declares no `terms` hook, the document is not listed, or the hook
+	 * cannot answer; only `mayDownload`, `message` and `agreement` pass.
+	 *
+	 * @param array<string, mixed>                                $subject    The resolved subject.
+	 * @param string                                              $app        The contributing app.
+	 * @param array<string, mixed>                                $documents  The collection's `documents` declaration.
+	 * @param array{register: string, schema: string, id: string} $object     The proven object.
+	 * @param string                                              $documentId The listed entry's id.
+	 *
+	 * @return array<string, mixed>|null The conditions, or null.
+	 *
+	 * @spec openspec/changes/document-download-terms/tasks.md#task-1
+	 */
+	public function terms(array $subject, string $app, array $documents, array $object, string $documentId): ?array {
+		$run      = new DocumentOpening(subject: $subject, app: $app, documents: $documents, object: $object, documentId: $documentId);
+		$provider = $this->listedHookProvider(run: $run, hook: 'terms');
+		if ($provider === null) {
+			return null;
+		}
+
+		try {
+			$answer = $provider->{(string)$documents['terms']}($object['id'], $documentId, $this->hookSubject(subject: $subject));
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: the terms hook failed', ['app' => $app]);
+			return null;
+		}
+
+		if (is_array($answer) === false) {
+			return null;
+		}
+
+		return array_intersect_key($answer, array_flip(['mayDownload', 'message', 'agreement']));
+	}//end terms()
+
+	/**
+	 * Record, through the app's `accept` hook, that the session's subject
+	 * accepted the conditions in the version shown. Fail closed: no hook, an
+	 * unlisted document, an empty version, a throw or anything but true
+	 * answers false.
+	 *
+	 * @param array<string, mixed>                                $subject    The resolved subject.
+	 * @param string                                              $app        The contributing app.
+	 * @param array<string, mixed>                                $documents  The collection's `documents` declaration.
+	 * @param array{register: string, schema: string, id: string} $object     The proven object.
+	 * @param string                                              $documentId The listed entry's id.
+	 * @param string                                              $version    The version of the conditions shown.
+	 *
+	 * @return bool True when the document may now be opened.
+	 *
+	 * @spec openspec/changes/document-download-terms/tasks.md#task-1
+	 */
+	public function accept(array $subject, string $app, array $documents, array $object, string $documentId, string $version): bool {
+		$run      = new DocumentOpening(subject: $subject, app: $app, documents: $documents, object: $object, documentId: $documentId);
+		$provider = $this->listedHookProvider(run: $run, hook: 'accept');
+		if ($provider === null || trim($version) === '') {
+			return false;
+		}
+
+		try {
+			$accepted = $provider->{(string)$documents['accept']}($object['id'], $documentId, $this->hookSubject(subject: $subject), trim($version));
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: the accept hook failed', ['app' => $app]);
+			return false;
+		}
+
+		return $accepted === true;
+	}//end accept()
+
+	/**
+	 * The app's provider for a declared hook on a listed document, or null.
+	 *
+	 * @param DocumentOpening $run  The opening.
+	 * @param string          $hook The declared hook.
+	 *
+	 * @return object|null
+	 */
+	private function listedHookProvider(DocumentOpening $run, string $hook): ?object {
+		if (isset($run->documents[$hook]) === false || $run->documentId === '' || $this->listedFile(run: $run) === null) {
+			return null;
+		}
+
+		return $this->hookProvider(run: $run, hook: $hook);
+	}//end listedHookProvider()
+
+	/**
 	 * Stream a listed file from OpenRegister, or null.
 	 *
 	 * @param array<string, string> $file Where the file lives: register, schema, id, fileId.
@@ -269,15 +357,16 @@ class CollectionDocuments implements CollectionDocumentsInterface {
 	 * The app's provider when its declared hook is a public instance method,
 	 * else null (logged when the hook cannot be named or found).
 	 *
-	 * @param DocumentOpening $run The opening.
+	 * @param DocumentOpening $run  The opening.
+	 * @param string          $hook The declared hook: `opened`, `terms` or `accept`.
 	 *
 	 * @return object|null
 	 */
-	private function hookProvider(DocumentOpening $run): ?object {
-		$method = (string)$run->documents['opened'];
+	private function hookProvider(DocumentOpening $run, string $hook='opened'): ?object {
+		$method = (string)$run->documents[$hook];
 		$provider = $this->locator->locate(appId: $run->app);
 		if ($provider === null || $this->timelineProviderMethod->accepts(name: $method) === false || method_exists($provider, $method) === false) {
-			$this->logger->warning('Portaliq: the opened hook cannot be called', ['app' => $run->app]);
+			$this->logger->warning('Portaliq: the ' . $hook . ' hook cannot be called', ['app' => $run->app]);
 			return null;
 		}
 

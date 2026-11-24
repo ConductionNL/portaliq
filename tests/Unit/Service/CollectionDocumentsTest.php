@@ -53,6 +53,41 @@ class FakeOpenedProvider {
 		return $this->answer;
 	}
 
+	/**
+	 * What the terms hook answers, or an exception to throw.
+	 *
+	 * @var mixed
+	 */
+	public mixed $terms = null;
+
+	/**
+	 * The terms hook.
+	 *
+	 * @return mixed
+	 */
+	public function paperTerms(string $objectId, string $documentId, array $subject): mixed {
+		$this->calls[] = ['terms', $objectId, $documentId, $subject];
+		if ($this->terms instanceof RuntimeException) {
+			throw $this->terms;
+		}
+
+		return $this->terms;
+	}
+
+	/**
+	 * The accept hook: answers $answer.
+	 *
+	 * @return mixed
+	 */
+	public function paperAccept(string $objectId, string $documentId, array $subject, string $version): mixed {
+		$this->calls[] = ['accept', $objectId, $documentId, $subject, $version];
+		if ($this->answer instanceof RuntimeException) {
+			throw $this->answer;
+		}
+
+		return $this->answer;
+	}
+
 	private function privateHook(string $objectId, string $documentId, array $subject): bool {
 		return true;
 	}
@@ -75,6 +110,8 @@ class CollectionDocumentsTest extends TestCase {
 	private const DOCUMENTS = ['label' => 'Stukken', 'provider' => 'papers', 'opened' => 'confidentialPaperOpened'];
 
 	private const OBJECT = ['register' => 'decidiq', 'schema' => 'agendaItem', 'id' => 'a1'];
+
+	private const TERMS = ['provider' => 'papers', 'opened' => 'confidentialPaperOpened', 'terms' => 'paperTerms', 'accept' => 'paperAccept'];
 
 	private const BUNDLED = ['provider' => 'certificates', 'bundle' => 'validCertificates'];
 
@@ -254,4 +291,61 @@ class CollectionDocumentsTest extends TestCase {
 		$this->audit->expects($this->never())->method('download');
 		$this->assertNull(actual: $service->bundle(subject: self::SUBJECT, app: 'learniq', documents: self::BUNDLED, object: self::OBJECT));
 	}//end testNoBundleMethodOrNoEntryStreamsNothing()
-}//end class
+
+	/**
+	 * document-download-terms task 1: the terms hook answers the conditions, filtered, with the session's subject.
+	 */
+	public function testTheTermsHookAnswersTheConditionsShown(): void {
+		$service = $this->service();
+		$this->provider->terms = ['mayDownload' => false, 'message' => 'Accept first', 'agreement' => ['version' => 'v2', 'text' => 'No reuse'], 'internal' => 'x'];
+
+		$terms = $service->terms(subject: self::SUBJECT, app: 'filinq', documents: self::TERMS, object: self::OBJECT, documentId: 'd1');
+
+		$this->assertSame(['mayDownload' => false, 'message' => 'Accept first', 'agreement' => ['version' => 'v2', 'text' => 'No reuse']], $terms);
+		$this->assertSame(['terms', 'a1', 'd1', ['subjectRef' => 'bsn-1', 'trust' => 'substantial', 'identityType' => 'digid', 'audience' => 'citizen']], $this->provider->calls[0]);
+	}
+
+	/**
+	 * document-download-terms task 1: no hook, an unlisted document, a throw or a non-array answer gives no terms.
+	 */
+	public function testTermsAreNullWhenTheyCannotBeRead(): void {
+		$this->assertNull($this->service()->terms(subject: self::SUBJECT, app: 'filinq', documents: self::DOCUMENTS, object: self::OBJECT, documentId: 'd1'));
+		$this->assertNull($this->service(listed: false)->terms(subject: self::SUBJECT, app: 'filinq', documents: self::TERMS, object: self::OBJECT, documentId: 'd1'));
+		$this->assertSame([], $this->provider->calls);
+
+		$service = $this->service();
+		$this->provider->terms = new RuntimeException('down');
+		$this->assertNull($service->terms(subject: self::SUBJECT, app: 'filinq', documents: self::TERMS, object: self::OBJECT, documentId: 'd1'));
+		$this->provider->terms = 'yes';
+		$this->assertNull($service->terms(subject: self::SUBJECT, app: 'filinq', documents: self::TERMS, object: self::OBJECT, documentId: 'd1'));
+	}
+
+	/**
+	 * document-download-terms task 1: accepting passes the trimmed version and is true only on exactly true.
+	 */
+	public function testAcceptingPassesTheVersionShown(): void {
+		$service = $this->service();
+		$this->assertTrue($service->accept(subject: self::SUBJECT, app: 'filinq', documents: self::TERMS, object: self::OBJECT, documentId: 'd1', version: ' v2 '));
+		$this->assertSame('v2', $this->provider->calls[0][4]);
+
+		$this->provider->answer = 'true';
+		$this->assertFalse($service->accept(subject: self::SUBJECT, app: 'filinq', documents: self::TERMS, object: self::OBJECT, documentId: 'd1', version: 'v2'));
+		$this->provider->answer = new RuntimeException('down');
+		$this->assertFalse($service->accept(subject: self::SUBJECT, app: 'filinq', documents: self::TERMS, object: self::OBJECT, documentId: 'd1', version: 'v2'));
+	}
+
+	/**
+	 * document-download-terms task 1: no hook, no version or an unlisted document records nothing.
+	 */
+	public function testAnAcceptanceWithoutHookVersionOrListingRecordsNothing(): void {
+		$service = $this->service();
+		$this->assertFalse($service->accept(subject: self::SUBJECT, app: 'filinq', documents: self::DOCUMENTS, object: self::OBJECT, documentId: 'd1', version: 'v2'));
+		$this->assertFalse($service->accept(subject: self::SUBJECT, app: 'filinq', documents: self::TERMS, object: self::OBJECT, documentId: 'd1', version: '  '));
+		$this->assertFalse($service->accept(subject: self::SUBJECT, app: 'filinq', documents: self::TERMS, object: self::OBJECT, documentId: '', version: 'v2'));
+		$this->assertSame([], $this->provider->calls);
+
+		$unlisted = $this->service(listed: false);
+		$this->assertFalse($unlisted->accept(subject: self::SUBJECT, app: 'filinq', documents: self::TERMS, object: self::OBJECT, documentId: 'd1', version: 'v2'));
+		$this->assertSame([], $this->provider->calls);
+	}
+}

@@ -89,4 +89,31 @@ interface CollectionDocumentsInterface {
 	 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-2
 	 */
 	public function bundle(array $subject, string $app, array $documents, array $object): ?StreamResponse;
+
+	/**
+	 * The download conditions a listed document carries, from the app's `terms` hook.
+	 *
+	 * @param array<string, mixed>                                $subject    The resolved subject.
+	 * @param string                                              $app        The contributing app.
+	 * @param array<string, mixed>                                $documents  The collection's `documents` declaration.
+	 * @param array{register: string, schema: string, id: string} $object     The proven object.
+	 * @param string                                              $documentId The listed entry's id.
+	 *
+	 * @return array<string, mixed>|null `mayDownload`, `message` and `agreement`, or null.
+	 */
+	public function terms(array $subject, string $app, array $documents, array $object, string $documentId): ?array;
+
+	/**
+	 * Record, through the app's `accept` hook, that the subject accepted the conditions shown.
+	 *
+	 * @param array<string, mixed>                                $subject    The resolved subject.
+	 * @param string                                              $app        The contributing app.
+	 * @param array<string, mixed>                                $documents  The collection's `documents` declaration.
+	 * @param array{register: string, schema: string, id: string} $object     The proven object.
+	 * @param string                                              $documentId The listed entry's id.
+	 * @param string                                              $version    The version of the conditions shown.
+	 *
+	 * @return bool True when the document may now be opened.
+	 */
+	public function accept(array $subject, string $app, array $documents, array $object, string $documentId, string $version): bool;
 }//end interface

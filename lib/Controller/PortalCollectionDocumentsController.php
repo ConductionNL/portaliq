@@ -147,6 +147,79 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 	}//end open()
 
 	/**
+	 * The download conditions one listed paper carries, so they can be shown
+	 * with an Accept button before it is opened. An app that declares no
+	 * `terms` hook, or a paper it cannot decide on, answers `terms: null`.
+	 *
+	 * @param string $register   The register of the collection.
+	 * @param string $schema     The schema of the collection.
+	 * @param string $id         The object id.
+	 * @param string $documentId The listed entry's id.
+	 *
+	 * @return JSONResponse `{terms}`, or 401 / 404.
+	 *
+	 * @spec openspec/changes/document-download-terms/tasks.md#task-2
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
+	public function terms(string $register, string $schema, string $id, string $documentId): JSONResponse {
+		$proven = $this->proven(register: $register, schema: $schema, id: $id);
+		if ($proven instanceof JSONResponse) {
+			return $proven;
+		}
+
+		$terms = $this->documents->terms(
+			subject: $proven['subject'],
+			app: $proven['app'],
+			documents: $proven['documents'],
+			object: ['register' => $register, 'schema' => $schema, 'id' => $id],
+			documentId: $documentId
+		);
+
+		return new JSONResponse(['terms' => $terms]);
+	}//end terms()
+
+	/**
+	 * Accept the conditions of one listed paper in the version shown. The
+	 * acceptance is the session subject's; only the version travels.
+	 *
+	 * @param string $register   The register of the collection.
+	 * @param string $schema     The schema of the collection.
+	 * @param string $id         The object id.
+	 * @param string $documentId The listed entry's id.
+	 * @param string $version    The version of the conditions shown.
+	 *
+	 * @return JSONResponse `{accepted: true}`, or 401 / 404 / 409.
+	 *
+	 * @spec openspec/changes/document-download-terms/tasks.md#task-2
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 20, period: 60)]
+	public function acceptTerms(string $register, string $schema, string $id, string $documentId, string $version=''): JSONResponse {
+		$proven = $this->proven(register: $register, schema: $schema, id: $id);
+		if ($proven instanceof JSONResponse) {
+			return $proven;
+		}
+
+		$accepted = $this->documents->accept(
+			subject: $proven['subject'],
+			app: $proven['app'],
+			documents: $proven['documents'],
+			object: ['register' => $register, 'schema' => $schema, 'id' => $id],
+			documentId: $documentId,
+			version: $version
+		);
+		if ($accepted === false) {
+			$message = $this->l10n->t('The conditions could not be accepted. Read them again and try once more.');
+			return new JSONResponse(['accepted' => false, 'message' => $message], Http::STATUS_CONFLICT);
+		}
+
+		return new JSONResponse(['accepted' => true]);
+	}//end acceptTerms()
+
+	/**
 	 * The bundle of an object's papers its app answers through the
 	 * collection's `bundle` method (documents-grouped-per-record).
 	 *
