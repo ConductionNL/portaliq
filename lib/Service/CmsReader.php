@@ -315,7 +315,7 @@ class CmsReader implements CmsReaderInterface {
 	 *
 	 * @return array|null The page, with `body.article` when the body names one.
 	 *
-	 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-page-can-show-an-article
+	 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-page-can-show-an-article
 	 */
 	private function withArticle(?array $page, string $portal, string $organisation): ?array {
 		$ref = ($page['body']['articleRef'] ?? '');

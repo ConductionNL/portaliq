@@ -27,5 +27,5 @@ Spec only in this PR. Tier V1. pipelinq's `marketing-articles-move-to-portaliq` 
 
 ## 4. Verify
 
-- [ ] 4.1 `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, `npm run lint`, `npm run test:l10n` once before push.
-- [ ] 4.2 e2e: `tests/e2e/articles.spec.ts` covers the scenarios that are not excluded.
+- [x] 4.1 `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, `npm run lint`, `npm run test:l10n` once before push. — run on development after the build merged (24 Nov): `composer check:strict` PHPUnit 6575 tests with the 16 inherited errors and no failure of this change's tests, `npm run lint` 0 errors; `test:l10n` is now `check:l10n-js` (in sync) and `check:schema-l10n`, which flagged `articleRef.description` among 56 strings and is green since #2677.
+- [x] 4.2 e2e: `tests/e2e/articles.spec.ts` covers the scenarios that are not excluded. — written, runs in nightly (`tests/e2e/articles.spec.ts`); not verified on a live instance in this run.

@@ -18,7 +18,7 @@
  * button never offers a move the server would refuse. Colours are Nextcloud
  * CSS variables, never literals, per the app's styling rule.
  *
- * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-moves-through-a-declared-lifecycle
+ * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-moves-through-a-declared-lifecycle
  */
 
 /** Every status the `article` schema declares, in lifecycle order. */
@@ -52,7 +52,7 @@ const CHIPS = {
  *
  * @param {string} status The stored `status` value.
  * @return {{label: string, color: string}} The chip.
- * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-moves-through-a-declared-lifecycle
+ * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-moves-through-a-declared-lifecycle
  */
 export function chipForStatus(status) {
 	const chip = CHIPS[status]
@@ -78,7 +78,7 @@ export function chipForStatus(status) {
  *
  * @param {string} status The stored `status` value.
  * @return {Array<{id: string, label: string, endpoint: string}>} The moves.
- * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-moves-through-a-declared-lifecycle
+ * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-moves-through-a-declared-lifecycle
  */
 export function transitionsForStatus(status) {
 	const table = {
@@ -113,7 +113,7 @@ export function transitionsForStatus(status) {
  *
  * @param {Array<object>} rows Usage payloads (`{id, title, kind, app, url}`).
  * @return {Array<{app: string, items: Array<object>}>} The groups, none empty.
- * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-reports-where-it-has-been-used
+ * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-reports-where-it-has-been-used
  */
 export function groupUsages(rows) {
 	const groups = new Map()

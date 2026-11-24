@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-reports-where-it-has-been-used
+ * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-reports-where-it-has-been-used
  */
 
 declare(strict_types=1);
@@ -33,7 +33,7 @@ use OCP\EventDispatcher\Event;
 /**
  * Collects the usages of one article, each `{id, title, kind, app, url}`.
  *
- * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-reports-where-it-has-been-used
+ * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-reports-where-it-has-been-used
  */
 class ArticleUsagesRequestedEvent extends Event {
 
@@ -69,7 +69,7 @@ class ArticleUsagesRequestedEvent extends Event {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-reports-where-it-has-been-used
+	 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-reports-where-it-has-been-used
 	 */
 	public function getArticleId(): string {
 		return $this->articleId;
@@ -80,7 +80,7 @@ class ArticleUsagesRequestedEvent extends Event {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-reports-where-it-has-been-used
+	 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-reports-where-it-has-been-used
 	 */
 	public function getSlug(): string {
 		return $this->slug;
@@ -91,7 +91,7 @@ class ArticleUsagesRequestedEvent extends Event {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-reports-where-it-has-been-used
+	 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-reports-where-it-has-been-used
 	 */
 	public function getLegacyRef(): string {
 		return $this->legacyRef;
@@ -109,7 +109,7 @@ class ArticleUsagesRequestedEvent extends Event {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-reports-where-it-has-been-used
+	 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-reports-where-it-has-been-used
 	 */
 	public function addUsage(string $id, string $title, string $kind, string $app, string $url = ''): void {
 		$usage = [
@@ -135,7 +135,7 @@ class ArticleUsagesRequestedEvent extends Event {
 	 *
 	 * @return array<int, array{id: string, title: string, kind: string, app: string, url: string}>
 	 *
-	 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-reports-where-it-has-been-used
+	 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-reports-where-it-has-been-used
 	 */
 	public function getUsages(): array {
 		return $this->usages;

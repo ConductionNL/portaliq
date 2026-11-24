@@ -25,7 +25,7 @@ use Psr\Log\LoggerInterface;
  * whole lifecycle walks as declared, and a usage request names the article
  * by every identity it has.
  *
- * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md
+ * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md
  */
 class ArticleServiceRulesTest extends TestCase {
 

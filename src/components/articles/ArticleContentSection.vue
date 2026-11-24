@@ -20,7 +20,7 @@
   - once and never moving it — so the real moves go through
   - ArticleService::publish() / archive() / applyTransition() instead.
   -
-  - @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
+  - @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
   -->
 <template>
 	<div class="article-content">
@@ -221,7 +221,7 @@ export default {
 		 * The article record whichever way it arrived: as a resolved prop, or
 		 * loaded here by id.
 		 *
-		 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
+		 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
 		 * @return {object|null} The article, or null while unresolved.
 		 */
 		effectiveArticle() {
@@ -229,7 +229,7 @@ export default {
 		},
 
 		/**
-		 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
+		 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
 		 * @return {string} The article body as sanitised HTML.
 		 */
 		renderedBody() {
@@ -239,7 +239,7 @@ export default {
 		},
 
 		/**
-		 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-moves-through-a-declared-lifecycle
+		 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-moves-through-a-declared-lifecycle
 		 * @return {{label: string, color: string}} The status chip.
 		 */
 		statusChip() {
@@ -252,7 +252,7 @@ export default {
 		 * Translated status label. A lookup by the fixed status value (not
 		 * the vocabulary's English label) keeps this `t()` call a literal.
 		 *
-		 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-moves-through-a-declared-lifecycle
+		 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-moves-through-a-declared-lifecycle
 		 * @return {string} The translated status label.
 		 */
 		statusLabel() {
@@ -269,7 +269,7 @@ export default {
 		},
 
 		/**
-		 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-moves-through-a-declared-lifecycle
+		 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-moves-through-a-declared-lifecycle
 		 * @return {Array<object>} The lifecycle moves legal from the current status.
 		 */
 		transitions() {
@@ -285,7 +285,7 @@ export default {
 		 * Anything else is a Files path, rendered through Nextcloud's
 		 * `file=`-addressed preview endpoint.
 		 *
-		 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
+		 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
 		 * @return {string} The hero image URL, or an empty string.
 		 */
 		heroImageUrl() {
@@ -307,7 +307,7 @@ export default {
 		/**
 		 * A new hero image gets a fresh load attempt.
 		 *
-		 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
+		 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
 		 */
 		heroImageUrl() {
 			this.heroFailed = false
@@ -319,7 +319,7 @@ export default {
 			 * Resolve the article by id when the host gave the section only an
 			 * id (`@objectId`) rather than the whole record.
 			 *
-			 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
+			 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
 			 * @return {void}
 			 */
 			handler() {
@@ -343,7 +343,7 @@ export default {
 		 * The id this section is bound to, either the prop or the section
 		 * context the page host provides.
 		 *
-		 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
+		 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
 		 * @return {string} The article id, or an empty string.
 		 */
 		effectiveId() {
@@ -357,7 +357,7 @@ export default {
 		/**
 		 * The object id the page host resolved, when no prop carries one.
 		 *
-		 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
+		 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
 		 * @return {string} The id, or an empty string.
 		 */
 		contextId() {
@@ -376,7 +376,7 @@ export default {
 		 *
 		 * @param {object} [options] Load options.
 		 * @param {boolean} [options.silent] Keep the current content on screen while loading.
-		 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
+		 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
 		 * @return {Promise<void>} Resolves when the article is in place.
 		 */
 		async load({ silent = false } = {}) {
@@ -400,7 +400,7 @@ export default {
 		 * Refresh after a save or a lifecycle move, whichever way the host
 		 * expects it.
 		 *
-		 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
+		 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
 		 * @return {Promise<void>} Resolves when the article is current again.
 		 */
 		async refresh() {
@@ -418,7 +418,7 @@ export default {
 		 *
 		 * @param {object} payload The refresh event.
 		 *
-		 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
+		 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
 		 */
 		onPageRefresh(payload) {
 			if (
@@ -435,7 +435,7 @@ export default {
 		/**
 		 * Close the edit modal and refresh.
 		 *
-		 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
+		 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
 		 * @return {Promise<void>} Resolves when the section reflects the save.
 		 */
 		async onSaved() {
@@ -450,7 +450,7 @@ export default {
 		 * tooling requires.
 		 *
 		 * @param {string} id The transition id from `transitionsForStatus()`.
-		 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-moves-through-a-declared-lifecycle
+		 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-moves-through-a-declared-lifecycle
 		 * @return {string} The translated button label.
 		 */
 		actionLabel(id) {
@@ -468,7 +468,7 @@ export default {
 		 * Run one lifecycle move.
 		 *
 		 * @param {object} action One entry from `transitionsForStatus()`.
-		 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-moves-through-a-declared-lifecycle
+		 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-moves-through-a-declared-lifecycle
 		 * @return {Promise<void>} Resolves when the move has been applied.
 		 */
 		async runTransition(action) {

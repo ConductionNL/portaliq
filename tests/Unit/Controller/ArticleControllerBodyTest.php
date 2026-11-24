@@ -24,7 +24,7 @@ use PHPUnit\Framework\TestCase;
  * article is a 404 on every route; any other refusal is a 400 that keeps its
  * reason; a success carries the article alone.
  *
- * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md
+ * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md
  */
 class ArticleControllerBodyTest extends TestCase {
 	use StaffActionDoubleTrait;
