@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/loopback-tries-the-address-php-was-reached-on/specs/instance-loopback/spec.md#requirement-a-transport-failure-on-the-absolute-url-is-retried-on-the-addresses-this-server-answers-on
+ * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-a-transport-failure-on-the-absolute-url-is-retried-on-the-addresses-this-server-answers-on
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use OCP\IRequest;
 /**
  * Lists the origins this server may answer on from inside itself.
  *
- * @spec openspec/changes/loopback-tries-the-address-php-was-reached-on/specs/instance-loopback/spec.md#requirement-a-transport-failure-on-the-absolute-url-is-retried-on-the-addresses-this-server-answers-on
+ * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-a-transport-failure-on-the-absolute-url-is-retried-on-the-addresses-this-server-answers-on
  */
 class LoopbackOrigins {
 	/**
@@ -66,7 +66,7 @@ class LoopbackOrigins {
 	 *
 	 * @return list<string> Origins as scheme://host[:port], no trailing slash.
 	 *
-	 * @spec openspec/changes/loopback-tries-the-address-php-was-reached-on/specs/instance-loopback/spec.md#requirement-a-transport-failure-on-the-absolute-url-is-retried-on-the-addresses-this-server-answers-on
+	 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-a-transport-failure-on-the-absolute-url-is-retried-on-the-addresses-this-server-answers-on
 	 */
 	public function candidates(string $absolute): array {
 		$port = $this->serverPort();
@@ -89,7 +89,7 @@ class LoopbackOrigins {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/loopback-tries-the-address-php-was-reached-on/specs/instance-loopback/spec.md#requirement-a-transport-failure-on-the-absolute-url-is-retried-on-the-addresses-this-server-answers-on
+	 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-a-transport-failure-on-the-absolute-url-is-retried-on-the-addresses-this-server-answers-on
 	 */
 	private function localOnPort(int|null $port): string {
 		$localOnPort = '';
@@ -108,7 +108,7 @@ class LoopbackOrigins {
 	 *
 	 * @return list<string>
 	 *
-	 * @spec openspec/changes/loopback-tries-the-address-php-was-reached-on/specs/instance-loopback/spec.md#requirement-a-transport-failure-on-the-absolute-url-is-retried-on-the-addresses-this-server-answers-on
+	 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-a-transport-failure-on-the-absolute-url-is-retried-on-the-addresses-this-server-answers-on
 	 */
 	private function distinct(array $candidates, string $skip): array {
 		$origins = [];

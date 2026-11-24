@@ -22,6 +22,7 @@ use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Service\Signin\SiteReturnAddress;
 
 /**
@@ -53,7 +54,10 @@ class BrokerSessionControllerTest extends TestCase {
 			$login,
 			$urls,
 			($portals ?? $this->createMock(PortalResolver::class)),
-			new SiteReturnAddress()
+			new SiteReturnAddress(
+				portalResolver: $this->createMock(originalClassName: PortalResolverInterface::class),
+				request: $this->createMock(originalClassName: IRequest::class)
+			)
 		);
 	}//end controller()
 

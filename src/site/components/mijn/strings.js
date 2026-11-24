@@ -14,6 +14,10 @@
 
 export default {
 	nl: {
+		// site-nlds-widget-palette T9: a Mijn omgeving widget, signed out
+		'Sign in to see this.': 'Log in om dit te zien.',
+		'Sign in': 'Inloggen',
+		'There is nothing to show here yet.': 'Er is hier nog niets te zien.',
 		// capability-rows-said-and-planned T07: the messages on a case
 		Messages: 'Berichten',
 		'The messages could not be loaded.':
@@ -127,6 +131,9 @@ export default {
 		'{value} of {total} {label}': '{value} van {total} {label}',
 	},
 	en: {
+		'Sign in to see this.': 'Sign in to see this.',
+		'Sign in': 'Sign in',
+		'There is nothing to show here yet.': 'There is nothing to show here yet.',
 		// capability-rows-said-and-planned T07: the messages on a case
 		Messages: 'Messages',
 		'The messages could not be loaded.': 'The messages could not be loaded.',

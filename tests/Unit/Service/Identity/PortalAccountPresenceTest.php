@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-account-presence/specs/portal-identity-space/spec.md#requirement-staff-can-ask-whether-a-citizen-has-a-portal-account
+ * @spec openspec/specs/portal-identity-space/spec.md#requirement-staff-can-ask-whether-a-citizen-has-a-portal-account
  */
 
 declare(strict_types=1);

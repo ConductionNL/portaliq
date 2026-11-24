@@ -280,7 +280,7 @@ class EmailLinkController extends Controller {
 	 *
 	 * @return array<string, mixed>|null The session, or null when none could be made.
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
 	 */
 	private function sessionFor(array $account, string $organisation, string $portal): ?array {
 		$audience = (string)($account['audience'] ?? 'client');

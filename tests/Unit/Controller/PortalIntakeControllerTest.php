@@ -409,6 +409,7 @@ class PortalIntakeControllerTest extends TestCase {
 		?\OCA\Portaliq\Service\Intake\PortalFormAvailability $availability = null,
 		?\OCA\Portaliq\Service\Intake\OnBehalfFilling $onBehalf = null,
 		?\OCA\Portaliq\Service\Intake\PortalCosignFlow $cosign = null,
+		?\OCA\Portaliq\Service\Intake\PortalFormFetch $fetches = null,
 	): PortalIntakeController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('');
@@ -476,7 +477,8 @@ class PortalIntakeControllerTest extends TestCase {
 			destinationMapping: new DestinationMapping(),
 			availability: $availability,
 			onBehalf: $onBehalf,
-			cosign: $cosign
+			cosign: $cosign,
+			fetches: $fetches
 		);
 	}//end controller()
 
@@ -958,6 +960,37 @@ class PortalIntakeControllerTest extends TestCase {
 		$this->assertSame(['error' => 'decision_unavailable'], $response->getData());
 
 	}//end testASubmissionWhoseDecisionCannotBeAskedIsNotRecorded()
+
+	/**
+	 * REQ-DIF-005: the form the browser gets names the fields a step's fetch
+	 * fills and its check label, but no source and no inputs.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t05
+	 */
+	public function testTheFormTheBrowserGetsNamesNoFetchSource(): void {
+		$render     = [
+			'kind' => 'form',
+			'fields' => [['name' => 'postcode', 'type' => 'text'], ['name' => 'eigenaar', 'type' => 'text']],
+			'settings' => [],
+			'steps' => [
+				['id' => 'adres', 'title' => 'Adres', 'fields' => ['postcode']],
+				[
+					'id' => 'pand',
+					'title' => 'Pand',
+					'fields' => ['eigenaar'],
+					'fetch' => [['id' => 'eigenaar', 'source' => 'kadaster-eigendom', 'inputs' => ['postcode' => 'postcode'], 'outputs' => ['eigenaarNaam' => 'eigenaar']]],
+				],
+			],
+		];
+		$controller = $this->controller(render: $render);
+
+		$this->doubles['prefill']->method('forSubject')->willReturn([]);
+		$form = json_encode($controller->form(route: 'pand')->getData());
+		$this->assertStringNotContainsString('kadaster-eigendom', $form);
+		$this->assertStringContainsString('"fetch":[{"id":"eigenaar","fields":["eigenaar"],"checkLabel":null}]', $form);
+	}//end testTheFormTheBrowserGetsNamesNoFetchSource()
 
 	/**
 	 * REQ-FFL-003: the decide route answers outcome, field and next step, and

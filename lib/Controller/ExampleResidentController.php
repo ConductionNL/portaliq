@@ -49,6 +49,9 @@ use OCP\IURLGenerator;
  * The one-click demo sign-in for the example resident.
  *
  * @spec openspec/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the count includes the route attributes
+ *   (NoAdminRequired, NoCSRFRequired, ...) a controller declares.
  */
 class ExampleResidentController extends Controller {
 
@@ -152,7 +155,7 @@ class ExampleResidentController extends Controller {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
 	 */
 	private function issuedSession(string $userId, array $account, string $portal): ?array {
 		$audience = (string)($account['audience'] ?? 'client');

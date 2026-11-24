@@ -33,6 +33,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalEmailVerificationInterface;
 use OCA\Portaliq\Kernel\Contracts\FormStatementsInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFormCalculatorInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFormDecisionInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFormFetchInterface;
 
 /**
  * The checks between a validated form and a recorded submission: validation,
@@ -50,6 +51,7 @@ class PortalSubmissionChecks implements PortalSubmissionChecksInterface {
 	 * @param PortalFormCalculatorInterface|null $calculator Works out the form's calculated fields again on submit.
 	 * @param PortalFormDecisionInterface|null $decision Asks the rule engine for the decisions a form's steps declare.
 	 * @param PortalEmailVerificationInterface|null $emailVerification Checks the proof that an e-mail address was verified.
+	 * @param PortalFormFetchInterface|null $fetches Runs the fetches a form's steps declare again on submit.
 	 */
 	public function __construct(
 		private readonly PortalFormValidatorInterface $validator,
@@ -58,6 +60,7 @@ class PortalSubmissionChecks implements PortalSubmissionChecksInterface {
 		private readonly ?PortalFormCalculatorInterface $calculator = null,
 		private readonly ?PortalFormDecisionInterface $decision = null,
 		private readonly ?PortalEmailVerificationInterface $emailVerification = null,
+		private readonly ?PortalFormFetchInterface $fetches = null,
 	) {
 	}//end __construct()
 
@@ -92,6 +95,11 @@ class PortalSubmissionChecks implements PortalSubmissionChecksInterface {
 		array $verifiedEmails
 	): array|JSONResponse {
 		$validated = $this->checkedAnswers(render: $render, answers: $answers, subject: $subject);
+		if ($validated instanceof JSONResponse) {
+			return $validated;
+		}
+
+		$validated = $this->stepFetches()->filledAnswers(steps: (array)($render['steps'] ?? []), answers: $validated);
 		if ($validated instanceof JSONResponse) {
 			return $validated;
 		}
@@ -224,6 +232,15 @@ class PortalSubmissionChecks implements PortalSubmissionChecksInterface {
 	}//end decisions()
 
 	/**
+	 * The fetches the form's steps declare.
+	 *
+	 * @return FormStepFetches
+	 */
+	private function stepFetches(): FormStepFetches {
+		return new FormStepFetches(fetches: $this->fetches, calculator: $this->calculator, decision: $this->decision);
+	}//end stepFetches()
+
+	/**
 	 * The statements the form asks are accepted before anything is recorded;
 	 * the record of each accepted one carries the version of its text
 	 * (form-statements-intro-and-confirmation-mail REQ-FCI-002).
@@ -274,6 +291,10 @@ class PortalSubmissionChecks implements PortalSubmissionChecksInterface {
 			if (is_array($step) === true && array_key_exists('decision', $step) === true) {
 				unset($steps[$index]['decision']);
 				$steps[$index]['decides'] = true;
+			}
+
+			if (is_array($step) === true && array_key_exists('fetch', $step) === true) {
+				$steps[$index]['fetch'] = $this->stepFetches()->forTheBrowser(fetches: (array)$step['fetch']);
 			}
 		}
 

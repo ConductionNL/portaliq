@@ -61,6 +61,8 @@ use Throwable;
  * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
  */
 class SubmissionReceiptService implements SubmissionReceiptServiceInterface {
+	use RowIdOf;
+
 	/**
 	 * The register every portal-owned schema lives in.
 	 */
@@ -111,6 +113,7 @@ class SubmissionReceiptService implements SubmissionReceiptServiceInterface {
 	 *                                                          on a successful receipt write; itself
 	 *                                                          fail-safe, never affects this call.
 	 * @param IDateTimeZone|null $timeZone The instance's time zone, in which the receipt names the moment.
+	 * @param SubmissionReceiptPdf|null $pdfs Reads a receipt back and renders its PDF (REQ-CRG-005).
 	 *
 	 * @spec openspec/changes/receipt-date-reads-in-the-portals-language/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-names-the-moment-in-words-of-the-portals-language
 	 */
@@ -121,6 +124,7 @@ class SubmissionReceiptService implements SubmissionReceiptServiceInterface {
 		private readonly LoggerInterface $logger,
 		private readonly NotificationDispatchService $notificationDispatch,
 		private readonly ?IDateTimeZone $timeZone = null,
+		private readonly ?SubmissionReceiptPdf $pdfs = null,
 	) {
 	}//end __construct()
 
@@ -176,6 +180,91 @@ class SubmissionReceiptService implements SubmissionReceiptServiceInterface {
 			$this->recordingFailedEntirely(run: $run, error: $e);
 		}
 	}//end record()
+
+	/**
+	 * Write the receipt again for one stored proof-log record whose receipt
+	 * failed or is still pending, and mark the record delivered.
+	 *
+	 * The record is not copied and its proof fields do not move: the receipt
+	 * is written from the record's own `subjectRef`, `organisation` and
+	 * `payloadCopy`, keeps the record's reference when it has one, and names
+	 * the record's `submittedAt` as the moment of submission. Only
+	 * `receiptMessageRef` and `deliveryStatus` are written back. A receipt
+	 * write that fails leaves the record `failed`. Never throws.
+	 *
+	 * @param array<string, mixed> $record The stored `portalSubmission` row, as the caller may read it.
+	 *
+	 * @return bool True when the receipt was written and the record marked delivered.
+	 *
+	 * @spec openspec/changes/submission-row-actions/specs/supplier-portal/spec.md#requirement-an-employee-can-register-a-failed-receipt-again
+	 */
+	public function registerAgain(array $record): bool {
+		$id  = $this->idOf(row: $record);
+		$run = new ReceiptRun(subjectRef: (string)($record['subjectRef'] ?? ''), organisation: (string)($record['organisation'] ?? ''));
+		if ($id === '' || $run->subjectRef === '') {
+			$this->logger->warning('Portaliq: a submission without an id or subject cannot be registered again', ['id' => $id]);
+			return false;
+		}
+
+		$run->appId           = (string)($record['appId'] ?? '');
+		$run->actionId        = (string)($record['actionId'] ?? '');
+		$run->whitelistedData = (array)($record['payloadCopy'] ?? []);
+		$run->referenceId     = (string)($record['receiptMessageRef'] ?? '');
+		if ($run->referenceId === '') {
+			$run->referenceId = $this->generateReferenceId();
+		}
+
+		$run->submittedAt = (string)($record['submittedAt'] ?? '');
+		if ($run->submittedAt === '') {
+			$run->submittedAt = $this->now();
+		}
+
+		try {
+			$message = $this->writeReceiptMessage(run: $run, data: (['receivedAt' => $this->now()] + $this->receiptMessageData(run: $run)));
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: registering a receipt again failed', ['id' => $id, 'reason' => $e->getMessage()]);
+			$message = null;
+		}
+
+		if ($message === null) {
+			$this->markSubmission(run: $run, id: $id, values: ['deliveryStatus' => 'failed']);
+			return false;
+		}
+
+		return $this->markSubmission(run: $run, id: $id, values: ['receiptMessageRef' => $run->referenceId, 'deliveryStatus' => 'delivered']);
+	}//end registerAgain()
+
+	/**
+	 * Write the service's own fields back onto a stored proof-log record.
+	 *
+	 * @param ReceiptRun           $run    The receipt, for the record's subject and tenant.
+	 * @param string               $id     The record.
+	 * @param array<string, mixed> $values Only `receiptMessageRef` and `deliveryStatus`.
+	 *
+	 * @return bool True when the record was written.
+	 */
+	private function markSubmission(ReceiptRun $run, string $id, array $values): bool {
+		try {
+			$saved = $this->writer->updateObject(
+				register: self::REGISTER,
+				schema: self::SUBMISSION_SCHEMA,
+				scopeField: 'subjectRef',
+				subjectRef: $run->subjectRef,
+				organisation: $run->organisation,
+				id: $id,
+				data: $values
+			);
+		} catch (Throwable $e) {
+			$saved = null;
+		}
+
+		if ($saved === null) {
+			$this->logger->warning('Portaliq: a submission could not be marked after registering its receipt again', ['id' => $id]);
+			return false;
+		}
+
+		return true;
+	}//end markSubmission()
 
 	/**
 	 * Belt-and-braces: doRecord()'s own writes already degrade to null rather
@@ -595,4 +684,34 @@ class SubmissionReceiptService implements SubmissionReceiptServiceInterface {
 		return $recorded;
 	}//end recordedOutcome()
 
+	/**
+	 * The PDF of one of the subject's own receipts: the reference, the moment
+	 * of receipt and the submitted answers from its data copy, rendered
+	 * through OpenRegister. Someone else's receipt, an unknown id and a
+	 * message that is no receipt all answer RECEIPT_NOT_FOUND, read before
+	 * anything is rendered.
+	 *
+	 * @param array<string, mixed> $subject The resolved session subject.
+	 * @param string $id The receipt message's id, as the client sent it.
+	 *
+	 * @return array{status: string, bytes?: string, name?: string} `status` is
+	 *         RECEIPT_PDF, RECEIPT_NOT_FOUND, RECEIPT_PDF_UNAVAILABLE or RECEIPT_PDF_FAILED.
+	 *
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+	 */
+	public function receiptPdf(array $subject, string $id): array {
+		if ($this->pdfs === null) {
+			return ['status' => self::RECEIPT_NOT_FOUND];
+		}
+
+		$l10n = $this->language->forOrganisation(organisation: (string)($subject['organisation'] ?? ''));
+
+		return $this->pdfs->pdfFor(
+			subject: $subject,
+			id: $id,
+			l10n: $l10n,
+			subjectKey: self::SUBJECT_KEY,
+			readable: fn (string $moment): string => $this->readable(l10n: $l10n, moment: $moment)
+		);
+	}//end receiptPdf()
 }//end class

@@ -393,7 +393,29 @@ export function navEntryForRoute(nav, route) {
 	if (products) {
 		return products
 	}
-	return recordPageEntry(nav, route)
+	return inboxMessageEntry(nav, route) || recordPageEntry(nav, route)
+}
+
+/**
+ * The inbox page a message route opens one message on:
+ * `/mijn/<inbox page>/<source>/<id>` (a-resident-opens-one-message), or null.
+ *
+ * @param {Array<object>} nav The navigation.
+ * @param {string} route The route.
+ * @return {object|null} The inbox page's entry.
+ * @spec openspec/changes/a-resident-opens-one-message/tasks.md#T05
+ */
+function inboxMessageEntry(nav, route) {
+	const value = String(route || '')
+	return (
+		(nav || []).find((entry) => {
+			if (entry.special !== 'inbox' || !value.startsWith(`${routeForNav(entry)}/`)) {
+				return false
+			}
+			const rest = value.slice(routeForNav(entry).length + 1).split('/')
+			return rest.length === 2 && rest[0] !== '' && rest[1] !== ''
+		}) || null
+	)
 }
 
 /**

@@ -224,7 +224,7 @@ class PortalSessionServiceTest extends TestCase {
 	 * A session minted on a portal is bound to it and stays bound through a
 	 * refresh; another portal refuses it, and its refresh, as invalid.
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
 	 */
 	public function testAPortalSessionStaysOnItsPortalThroughARefresh(): void {
 		$store = [];
@@ -240,7 +240,7 @@ class PortalSessionServiceTest extends TestCase {
 		$this->assertSame('portal-a', $service->resolveFromBearer('Bearer ' . $refreshed['token'])['portal']);
 
 		$other = $this->createMock(PortalSessionScope::class);
-		$other->method('admits')->willReturn(false);
+		$other->method('admits')->willReturnCallback(fn (string $portal): bool => $portal === '');
 		$elsewhere = $this->service(store: $store, scope: $other);
 		$this->assertNull($elsewhere->resolveFromBearer('Bearer ' . $refreshed['token']));
 		$this->assertNull($elsewhere->refreshSession('Bearer ' . $refreshed['token']));

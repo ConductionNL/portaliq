@@ -108,7 +108,7 @@ class RecordScopeNormaliser {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/lookup-by-row-field/specs/portal-contribution-contract/spec.md#requirement-a-lookup-may-be-keyed-on-a-field-of-the-row
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-lookup-may-be-keyed-on-a-field-of-the-row
 	 */
 	public function withLookupFields(?array $collection, array $entry): ?array {
 		if ($collection === null || is_array($collection['fields'] ?? null) === false) {

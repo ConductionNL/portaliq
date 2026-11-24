@@ -7,7 +7,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/collection-skip/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-may-leave-out-its-first-rows
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-may-leave-out-its-first-rows
  */
 
 declare(strict_types=1);
@@ -18,7 +18,7 @@ use OCA\Portaliq\Contribution\PortalManifestNormaliser;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @spec openspec/changes/collection-skip/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-may-leave-out-its-first-rows
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-may-leave-out-its-first-rows
  */
 class CollectionSkipTest extends TestCase {
 	/**

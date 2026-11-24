@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/hermiq-ai-tooling/specs/portaliq-mcp-surface/spec.md#requirement-every-staff-write-action-is-a-curated-tool-governed-by-scope-and-reach
+ * @spec openspec/specs/portaliq-mcp-surface/spec.md#requirement-every-staff-write-action-is-a-curated-tool-governed-by-scope-and-reach
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use Throwable;
 /**
  * One portaliq object read or written under the caller's own RBAC.
  *
- * @spec openspec/changes/hermiq-ai-tooling/specs/portaliq-mcp-surface/spec.md#requirement-every-staff-write-action-is-a-curated-tool-governed-by-scope-and-reach
+ * @spec openspec/specs/portaliq-mcp-surface/spec.md#requirement-every-staff-write-action-is-a-curated-tool-governed-by-scope-and-reach
  */
 class StaffObjectStore {
 
@@ -82,7 +82,7 @@ class StaffObjectStore {
 	 *
 	 * @return array<string, mixed>|null The object.
 	 *
-	 * @spec openspec/changes/hermiq-ai-tooling/specs/portaliq-mcp-surface/spec.md#requirement-every-staff-write-action-is-a-curated-tool-governed-by-scope-and-reach
+	 * @spec openspec/specs/portaliq-mcp-surface/spec.md#requirement-every-staff-write-action-is-a-curated-tool-governed-by-scope-and-reach
 	 */
 	public function find(string $schema, string $id): ?array {
 		$objectService = $this->objectService(schema: $schema);
@@ -115,7 +115,7 @@ class StaffObjectStore {
 	 *
 	 * @return array<string, mixed>|null The saved object.
 	 *
-	 * @spec openspec/changes/hermiq-ai-tooling/specs/portaliq-mcp-surface/spec.md#requirement-every-staff-write-action-is-a-curated-tool-governed-by-scope-and-reach
+	 * @spec openspec/specs/portaliq-mcp-surface/spec.md#requirement-every-staff-write-action-is-a-curated-tool-governed-by-scope-and-reach
 	 */
 	public function save(string $schema, array $object, ?string $id = null): ?array {
 		$objectService = $this->objectService(schema: $schema);

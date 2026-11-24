@@ -2,7 +2,7 @@
 
 ### Requirement: Form data-minimisation — no non-mandatory field may be required
 
-`PortalManifestNormaliser` MUST NOT let a field config alone make a field required: a `fieldConfigs` entry with `required: true` on a field that is not in the action schema's `required` set MUST lose that flag (the field stays optional), and so MUST every `required` flag when the schema cannot be resolved. A field becomes required in exactly two ways: the action's schema requires it, on a create action (and then it can never read as optional), or the action names it in `requiredFields` (site-multi-step-forms REQ-SMF-023). `requiredFields` MUST only name fields from the action's own `fields` list. This keeps the WMEBV rule: an electronic form asks no more than the action already sends, and the organisation decides openly, per action, which of those answers it cannot do without. The server MUST refuse an empty required field (REQ-SMF-024), so the form never claims more than portaliq enforces.
+`PortalManifestNormaliser` MUST NOT let a field config alone make a field required. A field becomes required in exactly two ways: the action's schema requires it, on a create action, or the action names it in `requiredFields` (site-multi-step-forms REQ-SMF-023), which MUST only name fields from the action's own `fields` list. The server MUST refuse an empty required field (REQ-SMF-024), so the form never claims more than portaliq enforces.
 
 #### Scenario: A manifest cannot elevate an optional field to required
 
@@ -10,6 +10,13 @@
 - **WHEN** the manifest is normalised
 - **THEN** the `required` flag is dropped (the field stays optional) and the rest of the field config survives
 - @e2e exclude normalisation guard, covered by PHPUnit (`PortalManifestNormaliserTest::testRequiredIsDroppedOnANonMandatoryField`, `testRequiredIsDroppedWhenSchemaIsUnresolvable`, `testRequiredIsDroppedWhenActionHasNoSchemaKey`); no UI surface
+
+#### Scenario: An unresolvable schema makes nothing required
+
+- **GIVEN** an action whose schema cannot be resolved and whose `fieldConfigs` mark two fields `required: true`, with no `requiredFields`
+- **WHEN** the manifest is normalised
+- **THEN** both fields lose their `required` flag and stay optional
+- @e2e exclude normalisation guard, covered by PHPUnit (`PortalManifestNormaliserTest::testRequiredIsDroppedWhenSchemaIsUnresolvable`); no UI surface
 
 #### Scenario: A genuinely mandatory field keeps its required flag
 

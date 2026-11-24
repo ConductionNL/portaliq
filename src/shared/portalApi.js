@@ -364,7 +364,7 @@ function objectsIn(body, orNull) {
  * @param {object} row The row.
  * @param {object} provider The provider.
  * @return {{value: unknown, label: unknown, description?: string}} The option.
- * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/site-forms/spec.md#requirement-a-choice-card-may-carry-a-second-line
+ * @spec openspec/specs/site-forms/spec.md#requirement-a-choice-card-may-carry-a-second-line
  */
 export function optionOf(row, provider) {
 	const option = { value: optionValue(row, provider), label: optionLabel(row, provider) }
@@ -823,6 +823,54 @@ export function createPortalApi(config, store = {}) {
 				return { ok: false, status: 0 }
 			}
 			return send('PATCH', path, {})
+		},
+
+		/**
+		 * Download a submission receipt as a PDF: its reference, moment and
+		 * answers. The server answers only for the resident's own receipt.
+		 *
+		 * @param {{id: string, name: string}} receipt What receiptPdfOf() gave.
+		 * @return {Promise<object>} `{ ok }`, or `{ ok: false, status }`.
+		 * @spec openspec/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+		 */
+		async downloadReceiptPdf(receipt) {
+			return saveDownload(`${base}/receipts/${encodeURIComponent(receipt.id)}/pdf`, receipt.name)
+		},
+
+		/**
+		 * Read ONE of the resident's inbox messages, for its own page
+		 * (a-resident-opens-one-message REQ-ROM-002). The server proves it is
+		 * theirs before it reads it; another resident's message and a missing
+		 * one both answer 404.
+		 *
+		 * @param {{register: string, schema: string, collection: string}} source The inbox collection.
+		 * @param {string} id The message id.
+		 * @return {Promise<{ok: boolean, status: number, message: object|null}>}
+		 * @spec openspec/changes/a-resident-opens-one-message/tasks.md#T05
+		 */
+		async fetchMessage(source, id) {
+			if (!id || !source?.register || !source?.schema) {
+				return { ok: false, status: 404, message: null }
+			}
+			const path = `/inbox/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}/${encodeURIComponent(id)}?collection=${encodeURIComponent(source.collection || '')}`
+			let res
+			try {
+				res = await fetch(`${base}${path}`, {
+					headers: {
+						Accept: 'application/json',
+						...portalHeader,
+						...authHeaders(),
+					},
+				})
+			} catch {
+				return { ok: false, status: 0, message: null }
+			}
+			if (!res.ok) {
+				return { ok: false, status: res.status, message: null }
+			}
+			const body = await res.json().catch(() => null)
+			const message = body && typeof body.message === 'object' ? body.message : null
+			return { ok: message !== null, status: res.status, message }
 		},
 
 		/**
@@ -1522,6 +1570,35 @@ export function createPortalApi(config, store = {}) {
 		},
 
 		/**
+		 * Create through a create action filed from a case page: `onCase`
+		 * names the case (`<register>/<schema>/<id>`) and the server writes it
+		 * into the action's cross-reference field. A closed window answers 409
+		 * with the server's sentence in `message`.
+		 *
+		 * @param {object} action Manifest action: `{ id, register, schema }`.
+		 * @param {object} data The answers, without the cross-reference field.
+		 * @param {string} onCase The case, `<register>/<schema>/<id>`.
+		 * @return {Promise<object>} `{ ok, status, object, error, message }`.
+		 *
+		 * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-server-fills-in-the-case-and-the-guard-still-runs-req-coc-004
+		 */
+		async createObjectOnCase(action, data, onCase) {
+			const query = `?actionId=${encodeURIComponent(action.id || '')}&onCase=${encodeURIComponent(onCase)}`
+			const res = await fetch(
+				`${base}${col(action.register, action.schema)}${query}`,
+				jsonInit('POST', data || {}),
+			)
+			const json = await res.json().catch(() => ({}))
+			if (!res.ok) {
+				return {
+					...writeRefusal(res.status, json),
+					message: typeof json?.message === 'string' ? json.message : '',
+				}
+			}
+			return { ok: true, status: res.status, object: json.object || json }
+		},
+
+		/**
 		 * Update an object via a declared `type: update` action (portal-scoped-crud,
 		 * PR #25). Ownership is re-verified server-side; the id is never trusted.
 		 *
@@ -1933,7 +2010,7 @@ export function createPortalApi(config, store = {}) {
 		 *
 		 * @param {object} provider optionsProvider: `{ register, schema, valueField, labelField, descriptionField? }`.
 		 * @return {Promise<Array<object>>} `{ value, label, description? }`; the description is a choice card's second line.
-		 * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/site-forms/spec.md#requirement-a-choice-card-may-carry-a-second-line
+		 * @spec openspec/specs/site-forms/spec.md#requirement-a-choice-card-may-carry-a-second-line
 		 */
 		async fetchOptions(provider) {
 			const body = await get(`${col(provider.register, provider.schema)}`)

@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/hermiq-ai-tooling/specs/portaliq-mcp-surface/spec.md
+ * @spec openspec/specs/portaliq-mcp-surface/spec.md
  */
 
 declare(strict_types=1);

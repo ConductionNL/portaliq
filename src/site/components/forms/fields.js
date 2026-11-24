@@ -232,6 +232,10 @@ export const DUTCH = Object.freeze({
 	statementRequired: 'Vink deze verklaring aan voordat u verstuurt.',
 	decisionDown: 'Er is een storing bij een koppeling. Uw antwoorden zijn bewaard.',
 	retry: 'Opnieuw proberen',
+	fetchDownTitle: 'Er is een storing',
+	fetchDown:
+		'Wij kunnen uw gegevens nu niet ophalen bij een ander systeem. Daardoor kunt u dit formulier nu niet afmaken. Probeer het later opnieuw.',
+	draftKept: 'Uw concept blijft bewaard',
 	notCalculated: 'Nog niet te berekenen',
 	feeLine: 'Deze aanvraag kost {amount}.',
 	payNow: 'Betaal {amount} nu',
@@ -346,7 +350,7 @@ function localIso(date) {
  * @return {Array<{value: string, label: string, description: string}>} The days, today first.
  *
  * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
- * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/site-forms/spec.md#requirement-a-choice-card-may-carry-a-second-line
+ * @spec openspec/specs/site-forms/spec.md#requirement-a-choice-card-may-carry-a-second-line
  */
 export function namedDays(now, ask = {}) {
 	const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -465,7 +469,7 @@ export function choiceSplit(options, choiceOptions) {
  * @param {number} max The highest count.
  * @return {string} The count, as the form sends it.
  *
- * @spec openspec/changes/count-field/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-a-count-with-a-stepper
+ * @spec openspec/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-a-count-with-a-stepper
  */
 export function countValue(value, min, max) {
 	const low = Number.isInteger(min) ? min : 1
@@ -486,7 +490,7 @@ export function countValue(value, min, max) {
  * @param {string} priceLabel The price per unit as authored text, or ''.
  * @return {string} The line, or '' without a unit.
  *
- * @spec openspec/changes/count-field/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-a-count-with-a-stepper
+ * @spec openspec/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-a-count-with-a-stepper
  */
 export function countLine(value, unit, priceLabel) {
 	const n = Number.parseInt(String(value ?? ''), 10)

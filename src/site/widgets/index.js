@@ -42,6 +42,8 @@ import { metaOf as actionGroupMeta } from './nlActionGroup/meta.js'
 import { metaOf as alertMeta } from './nlAlert/meta.js'
 import { metaOf as bannerMeta } from './nlBanner/meta.js'
 import { metaOf as buttonLinkMeta } from './nlButtonLink/meta.js'
+import { metaOf as calendarMeta } from './nlCalendar/meta.js'
+import { metaOf as casesMeta } from './nlCases/meta.js'
 import { metaOf as catalogueMeta } from './nlCatalogue/meta.js'
 import { metaOf as codeBlockMeta } from './nlCodeBlock/meta.js'
 import { metaOf as descriptionListMeta } from './nlDescriptionList/meta.js'
@@ -50,8 +52,11 @@ import { metaOf as drawerMeta } from './nlDrawer/meta.js'
 import { metaOf as eventListMeta } from './nlEventList/meta.js'
 import { metaOf as faqListMeta } from './nlFaqList/meta.js'
 import { metaOf as featuredSubjectsMeta } from './nlFeaturedSubjects/meta.js'
+import { metaOf as figuresMeta } from './nlFigures/meta.js'
+import { metaOf as fileListMeta } from './nlFileList/meta.js'
 import { metaOf as headingMeta } from './nlHeading/meta.js'
 import { metaOf as imageMeta } from './nlImage/meta.js'
+import { metaOf as inboxMeta } from './nlInbox/meta.js'
 import { metaOf as languageNavMeta } from './nlLanguageNav/meta.js'
 import { metaOf as linkMeta } from './nlLink/meta.js'
 import { metaOf as linkColumnsMeta } from './nlLinkColumns/meta.js'
@@ -71,18 +76,22 @@ import { metaOf as publicDetailMeta } from './nlPublicDetail/meta.js'
 import { metaOf as publicTableMeta } from './nlPublicTable/meta.js'
 import { metaOf as quickTasksMeta } from './nlQuickTasks/meta.js'
 import { metaOf as quoteMeta } from './nlQuote/meta.js'
+import { metaOf as recordSwitcherMeta } from './nlRecordSwitcher/meta.js'
 import { metaOf as separatorMeta } from './nlSeparator/meta.js'
 import { metaOf as signInMeta } from './nlSignIn/meta.js'
 import { metaOf as startTilesMeta } from './nlStartTiles/meta.js'
+import { metaOf as stepsMeta } from './nlSteps/meta.js'
 import { metaOf as subjectLandingMeta } from './nlSubjectLanding/meta.js'
 import { metaOf as tableMeta } from './nlTable/meta.js'
 import { metaOf as tabsMeta } from './nlTabs/meta.js'
 import { metaOf as taskNavMeta } from './nlTaskNav/meta.js'
+import { metaOf as tasksMeta } from './nlTasks/meta.js'
+import { metaOf as timelineMeta } from './nlTimeline/meta.js'
 import { metaOf as toggletipMeta } from './nlToggletip/meta.js'
 import { metaOf as videoMeta } from './nlVideo/meta.js'
 import { metaOf as youTubeMeta } from './nlYouTube/meta.js'
 
-export { loaders } from './loaders.js'
+export { loaders, SIGNED_IN_WIDGETS } from './loaders.js'
 
 /**
  * One widget's description, as the editor reads it.
@@ -148,6 +157,15 @@ export const metas = {
 	nlPortalCounts: portalCountsMeta,
 	nlSubjectLanding: subjectLandingMeta,
 	nlStartTiles: startTilesMeta,
+	nlCases: casesMeta,
+	nlTasks: tasksMeta,
+	nlInbox: inboxMeta,
+	nlTimeline: timelineMeta,
+	nlFigures: figuresMeta,
+	nlCalendar: calendarMeta,
+	nlRecordSwitcher: recordSwitcherMeta,
+	nlSteps: stepsMeta,
+	nlFileList: fileListMeta,
 }
 
 /**

@@ -131,7 +131,7 @@ class ActionConfigNormaliserTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/count-field/specs/portal-contribution-contract/spec.md#requirement-a-field-may-declare-a-count-stepper
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-field-may-declare-a-count-stepper
 	 */
 	public function testACountStepperKeepsWhatFits(): void {
 		$configs = $this->absenceConfigs(

@@ -177,7 +177,7 @@ class BoardKeys {
 	 *
 	 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-contribution-may-declare-the-board-displays
 	 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-1
-	 * @spec openspec/changes/documents-for-each-record/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
 	 */
 	public function documentsKeys(array $block): array {
 		$out = [];
@@ -203,7 +203,7 @@ class BoardKeys {
 	 *
 	 * @return array<string, string>
 	 *
-	 * @spec openspec/changes/documents-for-each-record/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
 	 */
 	private function documentsTexts(array $block): array {
 		$out = [];
@@ -224,7 +224,7 @@ class BoardKeys {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/documents-for-each-record/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
 	 */
 	private function shortText(mixed $value): string {
 		if (is_string($value) === false) {

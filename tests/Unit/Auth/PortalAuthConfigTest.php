@@ -28,7 +28,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * @covers \OCA\Portaliq\Auth\PortalAuthConfig
  *
- * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+ * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
  */
 class PortalAuthConfigTest extends TestCase {
 
@@ -48,6 +48,8 @@ class PortalAuthConfigTest extends TestCase {
 		$this->assertTrue($config->offers(mode: 'nextcloud'));
 		$this->assertFalse($config->offers(mode: 'email-link'));
 		$this->assertSame('substantial', $config->minTrust());
+		$this->assertFalse(condition: $config->readsPublicly());
+		$this->assertTrue(condition: PortalAuthConfig::fromPortal(portal: ['authentication' => ['modes' => ['public', 'digid']]])->readsPublicly());
 	}//end testAWellFormedBlockOffersExactlyItsModes()
 
 	/**
@@ -62,6 +64,7 @@ class PortalAuthConfigTest extends TestCase {
 			$this->assertFalse($config->isMalformed());
 			$this->assertSame([], $config->modes());
 			$this->assertFalse($config->offers(mode: 'nextcloud'));
+			$this->assertTrue(condition: $config->readsPublicly());
 		}
 	}//end testAnAbsentBlockIsPublicAndOffersNoSignIn()
 
@@ -105,6 +108,8 @@ class PortalAuthConfigTest extends TestCase {
 		}
 
 		$this->assertFalse($config->acceptsOidcProvider(config: ['issuer' => 'https://idp.example', 'clientId' => 'rp']));
+		// Fail closed to public read-only: no way in, yet published content stays readable.
+		$this->assertTrue(condition: $config->readsPublicly());
 	}//end testAMalformedBlockOffersNoWayIn()
 
 	/**

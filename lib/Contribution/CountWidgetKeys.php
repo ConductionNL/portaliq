@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/count-field/specs/portal-contribution-contract/spec.md#requirement-a-field-may-declare-a-count-stepper
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-field-may-declare-a-count-stepper
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ namespace OCA\Portaliq\Contribution;
 /**
  * Keeps the count widget and its companions in shape.
  *
- * @spec openspec/changes/count-field/specs/portal-contribution-contract/spec.md#requirement-a-field-may-declare-a-count-stepper
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-field-may-declare-a-count-stepper
  */
 class CountWidgetKeys {
 	/**
@@ -48,7 +48,7 @@ class CountWidgetKeys {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/count-field/specs/portal-contribution-contract/spec.md#requirement-a-field-may-declare-a-count-stepper
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-field-may-declare-a-count-stepper
 	 */
 	public function apply(array $entry, array $source, int $maxCount): array {
 		$entry['widget'] = FieldWidgetNormaliser::COUNT;
@@ -83,7 +83,7 @@ class CountWidgetKeys {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/count-field/specs/portal-contribution-contract/spec.md#requirement-a-field-may-declare-a-count-stepper
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-field-may-declare-a-count-stepper
 	 */
 	public function fit(array $config, mixed $provider): array {
 		$isDate = in_array(($config['input'] ?? null), ['date', 'datetime'], true);

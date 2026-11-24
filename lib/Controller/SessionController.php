@@ -796,7 +796,7 @@ class SessionController extends Controller {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 	 */
 	private function portalAcceptsProvider(?array $site, array $config): bool {
 		if ($site === null) {
@@ -816,7 +816,7 @@ class SessionController extends Controller {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 	 */
 	private function startPortalAcceptsProvider(array $pending, array $config): bool {
 		$slug = (string)($pending['portal'] ?? '');
@@ -1178,7 +1178,7 @@ class SessionController extends Controller {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
 	 */
 	private function issueNextcloudSession(string $uid, array $account, string $portal = ''): ?array {
 		$audience = (string)($account['audience'] ?? 'client');

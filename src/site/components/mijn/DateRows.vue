@@ -128,7 +128,7 @@ export default {
 		 *
 		 * @param {object} entry The row as drawn.
 		 * @return {string} The line, or ''.
-		 * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/portal-contribution-contract/spec.md#requirement-a-dated-row-may-say-when-its-status-was-set
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-dated-row-may-say-when-its-status-was-set
 		 */
 		noteOf(entry) {
 			return decidedInWords(

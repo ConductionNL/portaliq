@@ -62,6 +62,7 @@
   - Keyboard reachable and axe-clean at serious/critical, like every other portal surface
 - [ ] Implement
 - [ ] Test
+- **written 21 Nov**: `tests/e2e/site-search.spec.ts` covers S23 to S28 from the spec's scenarios against the proposed `GET /api/content/search` (the file says the address and keys are a proposal). It is `describe.fixme` until task 2 lands, and S27 waits on `tests/e2e/fixtures/seed-search.sh`. Not run.
 
 ### Task 6: School news and documents in the public search (added 8 October)
 - **spec_ref**: `openspec/changes/portal-public-search/specs/portal-public-search/spec.md#requirement-a-school-portals-public-news-and-documents-are-searchable-with-school-facets`

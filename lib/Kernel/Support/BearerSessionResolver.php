@@ -81,6 +81,7 @@ class BearerSessionResolver implements BearerSessionResolverInterface {
 	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.3
 	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#2.2
 	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#2.3
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 	 */
 	public function resolveFromBearer(?string $authorizationHeader): ?array {
 		if ($this->signingKey->jwt() === null || $this->hasBearer(authorizationHeader: $authorizationHeader) === false) {
@@ -94,17 +95,37 @@ class BearerSessionResolver implements BearerSessionResolverInterface {
 
 		$subject = (new SessionClaims())->subject(claims: $claims, trust: (new SessionTrust())->normaliseTrust(trust: ($claims['trust'] ?? '')));
 
-		// A session minted on one portal is refused on another, exactly as an
-		// invalid one is: the caller learns nothing about where it is valid
-		// (portal-scoping-and-auth Task 4). Without a scope to ask, a
-		// portal-bound session is refused rather than let through.
-		if ($subject['portal'] !== '' && ($this->scope === null || $this->scope->admits(portal: $subject['portal']) === false)) {
-			$this->logger->debug('Portaliq: bearer rejected', ['reason' => 'session bound to another portal']);
+		// A session minted on one portal is refused on another, and a session
+		// below the serving portal's trust floor is refused there, exactly as
+		// an invalid one is: the caller learns nothing about where it is valid
+		// (portal-scoping-and-auth Task 4).
+		if ($this->admitted(subject: $subject) === false) {
+			$this->logger->debug('Portaliq: bearer rejected', ['reason' => 'session not admitted on the serving portal']);
 			return null;
 		}
 
 		return $subject;
 	}//end resolveFromBearer()
+
+	/**
+	 * Whether the serving portal admits this session.
+	 *
+	 * Without a scope to ask, a portal-bound session is refused rather than
+	 * let through, and a session bound to no portal is admitted as before.
+	 *
+	 * @param array<string, mixed> $subject The session's subject.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 */
+	private function admitted(array $subject): bool {
+		if ($this->scope === null) {
+			return $subject['portal'] === '';
+		}
+
+		return $this->scope->admits(portal: (string)$subject['portal'], trust: (string)$subject['trust']);
+	}//end admitted()
 
 	/**
 	 * Whether the header carries a bearer.

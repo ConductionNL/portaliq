@@ -2,7 +2,7 @@
 
 ### Requirement: A colleague who may read a record proposes from the queue widget (REQ-CPC-001)
 
-`portaliq-change-proposal-queue` SHALL show a user who may review proposals on the record the queued proposals with accept and reject, as it does today. It SHALL show a user who may read the record but not review proposals a form "Wijziging voorstellen" with exactly the record's proposable properties, each prefilled with its current value, and a note. Submitting SHALL send only the properties whose value changed to `POST /apps/portaliq/api/proposals`. Below the form the widget SHALL list that user's own proposals on this record in any state, each queued one with a withdraw button. A user who may not read the record SHALL see nothing.
+`portaliq-change-proposal-queue` SHALL show a user who may review proposals on the record the queued proposals with accept and reject. It SHALL show a user who may read the record but not review proposals a form "Wijziging voorstellen" over the record's proposable properties, with that user's own proposals on the record below it. Submitting SHALL send only the changed properties to `POST /apps/portaliq/api/proposals`. A user who may not read the record SHALL see nothing.
 
 #### Scenario: A colleague proposes a new phone number
 - **GIVEN** a colleague with read but no review right on case 2026-0082, whose proposable properties are `applicantPhone` and `applicantEmail`
@@ -10,11 +10,22 @@
 - **THEN** a proposal is queued with only `applicantPhone`, channel `staff`, and it shows under their own proposals with a withdraw button
 - e2e: `tests/e2e/change-proposals-reach-the-case-page.spec.ts`
 
+#### Scenario: The form starts from the record
+- **GIVEN** a colleague with read but no review right on case 2026-0082, who proposed a change there before
+- **WHEN** they open the case
+- **THEN** "Wijziging voorstellen" holds exactly the proposable properties, each prefilled with its current value, and a note
+- **AND** below it their own proposals on this case are listed in any state, each queued one with a withdraw button
+
 #### Scenario: A reviewer sees the queue, not the form
 - **GIVEN** a handler with the review right on the same case
 - **WHEN** they open the case
 - **THEN** the widget lists the queued proposal with accept and reject
 - e2e: `tests/e2e/change-proposals-reach-the-case-page.spec.ts`
+
+#### Scenario: A user who may not read the record
+- **GIVEN** a user without read access to case 2026-0082
+- **WHEN** the case page would place the widget
+- **THEN** the widget shows nothing
 
 ### Requirement: A colleague lists their own proposals on a record (REQ-CPC-002)
 

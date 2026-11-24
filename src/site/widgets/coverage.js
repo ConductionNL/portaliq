@@ -987,6 +987,16 @@ export function coverageByPlacement() {
  */
 export const SITE_COMPOSITIONS = [
 	{
+		key: 'nlInbox',
+		composes: ['Task List', 'Data Badge'],
+		why: 'The signed-in visitor\'s newest messages as action rows, unread first (site-nlds-widget-palette T9).',
+	},
+	{
+		key: 'nlRecordSwitcher',
+		composes: ['Radio Group', 'Avatar'],
+		why: 'For whom a page shows: a radio group over the signed-in visitor\'s own records (site-nlds-widget-palette T9).',
+	},
+	{
 		key: 'nlQuickTasks',
 		composes: ['Link List', 'Card as Link'],
 		why: 'The tasks a portal is visited for, as one card of tiles ("Direct regelen").',

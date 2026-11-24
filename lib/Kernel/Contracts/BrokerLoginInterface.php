@@ -69,7 +69,7 @@ interface BrokerLoginInterface {
 	 * @return string|null
 	 *
 	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-broker-start-binds-the-login-to-one-organisation-and-one-provider-req-bel-002
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
 	 */
 	public function start(string $org, string $provider, string $returnTo, string $callbackUrl, string $portal = ''): ?string;
 }//end interface

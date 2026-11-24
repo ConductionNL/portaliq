@@ -6,4 +6,4 @@
 - [x] **T04**: Node test for `consumeOidcCallbackFragment` in `src/shared/portalApi.js` next to the existing `adoptSessionToken` case in `tests/site-auth.spec.mjs`: the fragment is adopted once and the address loses it (REQ-SEE-003). — done in `tests/site-auth.spec.mjs`.
 - [x] **T05**: Add `@spec` tags naming REQ-SEE-001..003 to `OidcClaimMapperService::applyPreset`, `BrokerLogin::redeem`, `adoptSessionToken` and `consumeOidcCallbackFragment`. — done, plus `LoginProviders::brokerSettings`.
 - [ ] **T06**: Live check on a broker-routed organisation once integriq's IdP adapter answers: eHerkenning and eIDAS sign-ins reach the site signed in, with the address clean; screenshots against the Inloggen board in the build PR. Not runnable until integriq's vendor half lands.
-- [ ] **T07**: `openspec validate signin-eherkenning-eidas-and-the-token-fragment --strict`. — not run: the openspec CLI is not installed on the build worker
+- [x] **T07**: `openspec validate signin-eherkenning-eidas-and-the-token-fragment --strict`. Valid (20 Nov, openspec 2.1.1) once the texts of REQ-SEE-001 and REQ-SEE-003 were cut under 500 characters, same requirements.

@@ -18,7 +18,7 @@
 ## Docs, strings and validation
 
 - [x] **T08**: English and Dutch strings ("New portal", "This web address is already used by another portal."); a docs page for hosting parties: provisioning, DNS verification, what is and is not isolated. Verification: `npm run lint`, `test:l10n`. The command speaks English; the docs page is `docs/operations/portals-per-organisation.md`.
-- [ ] **T09**: `openspec validate operate-portals-per-organisation --strict`. — not run: the openspec CLI is not installed here.
+- [x] **T09**: `openspec validate operate-portals-per-organisation --strict`. Valid (20 Nov, openspec 2.1.1).
 
 ## Each organisation looks after its own portal
 

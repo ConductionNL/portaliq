@@ -86,6 +86,24 @@
       }
     },
     {
+      "id": "PublicationReportsMenu",
+      "label": "Error reports",
+      "icon": "AlertCircleOutline",
+      "route": "PublicationReports",
+      "order": 26,
+      "visibleIf": {
+        "access.pages": true
+      },
+      "count": {
+        "register": "portaliq",
+        "schema": "publicationErrorReport",
+        "filter": {
+          "status": "new"
+        }
+      },
+      "counterVariant": "attention"
+    },
+    {
       "id": "NewsMenu",
       "label": "News",
       "icon": "FileDocumentOutline",
@@ -2534,6 +2552,15 @@
           },
           "receivedAt"
         ],
+        "countTextFiltered": "{read} of {total} read",
+        "countValues": {
+          "read": {
+            "metric": "count",
+            "filter": {
+              "read": true
+            }
+          }
+        },
         "sidebar": {
           "enabled": true,
           "showMetadata": true
@@ -2832,7 +2859,49 @@
           "map"
         ],
         "footerNote": "what the resident filled in is only on the submission itself, not in this list",
-        "showAdd": false
+        "showAdd": false,
+        "showCopyAction": false,
+        "showDeleteAction": false,
+        "showMassCopy": false,
+        "showMassDelete": false,
+        "actions": [
+          "builtin:edit",
+          {
+            "id": "link-form",
+            "label": "Link a form",
+            "icon": "FileLinkOutline",
+            "type": "handler",
+            "handler": "linkSubmissionForm"
+          },
+          {
+            "id": "conversation-in-talk",
+            "label": "Conversation in Talk",
+            "icon": "Chat",
+            "type": "handler",
+            "handler": "startSubmissionConversation",
+            "visibleWhen": {
+              "appInstalled": "spreed"
+            }
+          },
+          {
+            "id": "register-again",
+            "label": "Register again",
+            "icon": "Refresh",
+            "type": "api-call",
+            "url": "/apps/portaliq/api/submissions/@objectId/register-again",
+            "method": "POST",
+            "visibleWhen": {
+              "field": "deliveryStatus",
+              "op": "in",
+              "value": [
+                "failed",
+                "pending"
+              ]
+            },
+            "successMessage": "The receipt is registered again",
+            "errorMessage": "The receipt could not be registered again"
+          }
+        ]
       }
     },
     {
@@ -3981,6 +4050,11 @@
                   "widgetId": "portal-settings-signin"
                 },
                 {
+                  "key": "oidc",
+                  "title": "OIDC provider",
+                  "widgetId": "portal-settings-oidc"
+                },
+                {
                   "key": "registration",
                   "title": "Registration",
                   "widgetId": "portal-settings-registration"
@@ -4312,6 +4386,32 @@
             "type": "PortalSignin",
             "title": "Sign in",
             "content": {}
+          },
+          {
+            "id": "portal-settings-oidc",
+            "type": "settings-form",
+            "title": "OIDC provider",
+            "_note": "Which OIDC provider this portal accepts (portal-scoping-and-auth Task 4). The fields write authentication.oidc.issuer and authentication.oidc.clientId; the settings form merges a dot-path into the stored authentication block, so modes and the rest are kept, and a cleared field is sent as null, which names no provider. PortalAuthConfig::acceptsOidcProvider() compares them with the organisation's provider; the client secret never lives on the portal.",
+            "content": {
+              "columns": 2,
+              "saveLabel": "Save",
+              "savedText": "The portal is saved.",
+              "fields": [
+                {
+                  "key": "authentication.oidc.issuer",
+                  "label": "Issuer",
+                  "placeholder": "https://login.example.nl",
+                  "pattern": "^$|^https://\\S+$",
+                  "patternMessage": "An issuer address starts with https://.",
+                  "hint": "The only OIDC provider this portal accepts; a sign-in through another provider is refused. Empty: the organisation's provider is accepted."
+                },
+                {
+                  "key": "authentication.oidc.clientId",
+                  "label": "Client id",
+                  "hint": "The client id that provider must use. Empty: any client of that provider. The client secret stays with the organisation."
+                }
+              ]
+            }
           },
           {
             "id": "portal-settings-registration",
@@ -5445,6 +5545,186 @@
         ],
         "footerNote": "on approval the requester sees the cases at once, on refusal they read your reason",
         "defaultOrder": "stateRank,-requestedAt"
+      }
+    },
+    {
+      "id": "PublicationReports",
+      "route": "/publication-reports",
+      "type": "index",
+      "title": "Error reports",
+      "config": {
+        "register": "portaliq",
+        "schema": "publicationErrorReport",
+        "_note": "The owner's queue of error reports on publications (publication-error-reports-and-withheld-notices REQ-PER-002). Handled and Not applicable are handlers, not object-op patches: a close goes through PublicationReportController::close, which lets only the portal's owner of error reports close and stamps who and when. See src/lib/publicationReportActions.js. A closed report's contact e-mail is erased 30 days later by EraseReportContactJob.",
+        "columns": [
+          {
+            "key": "publicationTitle",
+            "label": "Publication",
+            "width": "240px"
+          },
+          {
+            "key": "document",
+            "label": "Document",
+            "width": "160px"
+          },
+          {
+            "key": "description",
+            "label": "What is wrong",
+            "width": "300px"
+          },
+          {
+            "key": "receivedAt",
+            "label": "Received on",
+            "widget": "date",
+            "width": "160px"
+          },
+          {
+            "key": "status",
+            "label": "Status",
+            "widget": "badge",
+            "widgetProps": {
+              "colorMap": {
+                "new": "warning",
+                "handled": "success",
+                "not-applicable": "default"
+              }
+            },
+            "enum": [
+              "new",
+              "handled",
+              "not-applicable"
+            ],
+            "enumLabels": {
+              "new": "New",
+              "handled": "Handled",
+              "not-applicable": "Not applicable"
+            },
+            "width": "160px"
+          }
+        ],
+        "pagination": {
+          "limit": 20
+        },
+        "rowClass": [
+          {
+            "when": {
+              "field": "status",
+              "value": "new"
+            },
+            "class": "cn-row--attention"
+          }
+        ],
+        "actions": [
+          "builtin:view",
+          {
+            "id": "handled",
+            "label": "Handled",
+            "icon": "Check",
+            "type": "handler",
+            "handler": "markReportHandled"
+          },
+          {
+            "id": "notApplicable",
+            "label": "Not applicable",
+            "icon": "Close",
+            "type": "handler",
+            "handler": "markReportNotApplicable"
+          }
+        ],
+        "showTitle": true,
+        "showTitleIcon": false,
+        "countText": "{shown} of {total} reports",
+        "quickFilters": [
+          {
+            "label": "New",
+            "filter": {
+              "status": "new"
+            },
+            "showCount": true
+          },
+          {
+            "label": "All",
+            "filter": {},
+            "showCount": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "PublicationReportDetail",
+      "route": "/publication-reports/:id",
+      "type": "detail",
+      "title": "Error report",
+      "config": {
+        "register": "portaliq",
+        "schema": "publicationErrorReport",
+        "widgets": [
+          {
+            "id": "report-data",
+            "type": "data",
+            "title": "Report",
+            "icon": "AlertCircleOutline",
+            "content": {
+              "columns": 2,
+              "include": [
+                "publicationTitle",
+                "publication",
+                "document",
+                "description",
+                "contactEmail",
+                "status",
+                "receivedAt",
+                "closedAt",
+                "closedBy",
+                "portal"
+              ]
+            }
+          }
+        ],
+        "layout": [
+          {
+            "id": "report-data",
+            "widgetId": "report-data",
+            "gridX": 0,
+            "gridY": 0,
+            "gridWidth": 12,
+            "gridHeight": 4
+          }
+        ],
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true,
+          "tabs": [
+            {
+              "id": "audit",
+              "label": "History",
+              "icon": "History",
+              "widgets": [
+                {
+                  "type": "audit"
+                }
+              ]
+            }
+          ]
+        },
+        "breadcrumb": {
+          "label": "Error reports",
+          "route": "PublicationReports",
+          "currentField": "publicationTitle"
+        },
+        "statusPill": {
+          "field": "status",
+          "colorMap": {
+            "new": "warning",
+            "handled": "success",
+            "not-applicable": "default"
+          },
+          "labels": {
+            "new": "New",
+            "handled": "Handled",
+            "not-applicable": "Not applicable"
+          }
+        }
       }
     },
     {
@@ -7274,6 +7554,109 @@
           "enabled": true,
           "showMetadata": true
         }
+      }
+    },
+    {
+      "id": "SharedBlockDetail",
+      "route": "/shared-blocks/:id",
+      "type": "detail",
+      "title": "Shared block",
+      "config": {
+        "register": "portaliq",
+        "schema": "sharedBlock",
+        "sidebar": {
+          "enabled": true,
+          "showMetadata": true
+        },
+        "headerActions": [
+          {
+            "id": "open-layout",
+            "label": "Layout",
+            "icon": "ViewDashboardOutline",
+            "type": "open-page",
+            "target": "SharedBlockLayout"
+          }
+        ],
+        "widgets": [
+          {
+            "id": "shared-block-data",
+            "type": "data",
+            "title": "Gegevens",
+            "icon": "InformationOutline",
+            "content": {
+              "columns": 2
+            }
+          },
+          {
+            "id": "shared-block-pages",
+            "type": "record-list",
+            "title": "Pages that place this block",
+            "icon": "FileDocumentOutline",
+            "content": {
+              "endpointSource": {
+                "url": "/apps/portaliq/api/shared-blocks/@objectId/pages",
+                "method": "GET",
+                "responsePath": "results"
+              },
+              "presentation": "rows",
+              "title": "{title}",
+              "meta": "{portalTitle} · {route}",
+              "pill": {
+                "field": "status",
+                "labels": {
+                  "published": "Published",
+                  "draft": "Draft"
+                },
+                "colorMap": {
+                  "published": "success",
+                  "draft": "warning"
+                }
+              },
+              "rowRoute": "PageDetail",
+              "emptyText": "No page places this block yet."
+            }
+          },
+          {
+            "id": "shared-block-history",
+            "type": "audit-trail",
+            "title": "Historie",
+            "icon": "History"
+          },
+          {
+            "id": "shared-block-tabs",
+            "type": "tabs",
+            "title": "Onderdelen van het blok",
+            "content": {
+              "ariaLabel": "Onderdelen van het blok",
+              "tabs": [
+                {
+                  "widgetId": "shared-block-data",
+                  "label": "Overzicht"
+                },
+                {
+                  "widgetId": "shared-block-pages",
+                  "label": "Pagina's"
+                },
+                {
+                  "widgetId": "shared-block-history",
+                  "label": "Historie"
+                }
+              ]
+            }
+          }
+        ],
+        "layout": [
+          {
+            "id": "shared-block-tabs",
+            "widgetId": "shared-block-tabs",
+            "gridX": 0,
+            "gridY": 0,
+            "gridWidth": 12,
+            "gridHeight": 8
+          }
+        ],
+        "tabsLabel": "Onderdelen van het blok",
+        "_note": "The block's detail (site-shared-page-blocks REQ-SPB-005, T06). Pagina's lists the pages of the block's organisation whose published layout places it, from GET /api/shared-blocks/{id}/pages (page editors only), so an editor sees every page a change reaches before publishing it. A placement that is only in a page's draft is not listed."
       }
     },
     {

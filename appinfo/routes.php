@@ -108,6 +108,8 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         ['name' => 'accessibility#store', 'url' => '/api/portals/{slug}/accessibility/measurements', 'verb' => 'POST'],
         ['name' => 'accessRequestAdmin#grant', 'url' => '/api/access-requests/{id}/grant', 'verb' => 'POST'],
         ['name' => 'accessRequestAdmin#refuse', 'url' => '/api/access-requests/{id}/refuse', 'verb' => 'POST'],
+        // Staff register a failed or pending submission receipt again (submission-row-actions).
+        ['name' => 'submissionAdmin#registerAgain', 'url' => '/api/submissions/{id}/register-again', 'verb' => 'POST'],
 
         // The identity space (portal-identity-space). Staff acts, gated by
         // the ADR-023 action `portal.provision`; a citizen never reaches them.
@@ -302,6 +304,9 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         // A page's published versions for the designer's History dialog
         // (site-page-seo-history-and-media REQ-SPH-003), page editors only.
         ['name' => 'pageHistory#index', 'url' => '/api/pages/{id}/history', 'verb' => 'GET'],
+        // The pages that place a shared block, for its detail page
+        // (site-shared-page-blocks REQ-SPB-005), page editors only.
+        ['name' => 'sharedBlock#pages', 'url' => '/api/shared-blocks/{id}/pages', 'verb' => 'GET'],
 
         // Public portal SPA (external clients + suppliers) — served with public
         // chrome via #[PublicPage]. The portalPage#catchAll route handles
@@ -390,6 +395,9 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         // re-verified before any write; only `read` is ever set (portal-inbox-v2
         // T03). The {register}/{schema}/{id} segments distinguish it from the
         // plain GET above.
+        // a-resident-opens-one-message: read ONE inbox message for its own page;
+        // the same ownership, tenant and trust checks as mark-read, before any read.
+        ['name' => 'contribution#message', 'url' => '/portal/api/inbox/{register}/{schema}/{id}', 'verb' => 'GET'],
         ['name' => 'contribution#markRead', 'url' => '/portal/api/inbox/{register}/{schema}/{id}/read', 'verb' => 'PATCH'],
         // Delete ONE of the resident's own inbox messages: portaliq's own notices,
         // or an app's inbox that declares `deletable: true`; ownership and tenant
@@ -410,6 +418,8 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         // reference page that reads the submission's real state.
         // form-flow-repeating-groups-calculations-and-decisions: a step's decision, asked of the rule engine on the server.
         ['name' => 'portalIntake#decide', 'url' => '/portal/api/intake/decide', 'verb' => 'POST'],
+        // A step's fetch, asked of integriq on the server (data-lookups-and-checks-in-forms).
+        ['name' => 'formStepFetch#fetch', 'url' => '/portal/api/intake/fetch', 'verb' => 'POST'],
         ['name' => 'portalIntake#catalogue', 'url' => '/portal/api/intake/catalogue', 'verb' => 'GET'],
         // Street and town for a postcode and house number (data-lookups-and-checks-in-forms).
         ['name' => 'portalIntake#address', 'url' => '/portal/api/intake/address', 'verb' => 'GET'],
@@ -453,6 +463,10 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         // A guest's one act from a link a contributing app signed
         // (identity-guest-page-for-signed-links D3): public, rate limited, no session.
         ['name' => 'guestAction#preview', 'url' => '/portal/api/guest/{appId}/{actionId}/preview', 'verb' => 'POST'],
+        // An error report on a publication, and its owner closing it
+        // (publication-error-reports-and-withheld-notices REQ-PER-002).
+        ['name' => 'publicationReport#create', 'url' => '/api/site/publication-reports', 'verb' => 'POST'],
+        ['name' => 'publicationReport#close', 'url' => '/api/publication-reports/{id}/close', 'verb' => 'POST'],
         ['name' => 'guestAction#act', 'url' => '/portal/api/guest/{appId}/{actionId}', 'verb' => 'POST'],
         ['name' => 'portalAccountSelf#updateDetails', 'url' => '/portal/api/identity/details', 'verb' => 'PATCH'],
         ['name' => 'portalAccountSelf#details', 'url' => '/portal/api/identity/details', 'verb' => 'GET'],
@@ -492,6 +506,8 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         ['name' => 'portalPlans#update', 'url' => '/portal/api/plans/{id}', 'verb' => 'PATCH'],
         ['name' => 'portalPlans#destroy', 'url' => '/portal/api/plans/{id}', 'verb' => 'DELETE'],
         ['name' => 'portalPlans#pdf', 'url' => '/portal/api/plans/{id}/pdf', 'verb' => 'GET'],
+        // capability-rows-without-a-requirement (REQ-CRG-005): a receipt's answers as a PDF, for its own subject only.
+        ['name' => 'submissionReceipt#pdf', 'url' => '/portal/api/receipts/{id}/pdf', 'verb' => 'GET'],
         ['name' => 'portalPlans#addFile', 'url' => '/portal/api/plans/{id}/files', 'verb' => 'POST'],
         ['name' => 'portalPlans#file', 'url' => '/portal/api/plans/{id}/files/{fileId}', 'verb' => 'GET'],
         ['name' => 'portalPlans#addParticipants', 'url' => '/portal/api/plans/{id}/participants', 'verb' => 'POST'],

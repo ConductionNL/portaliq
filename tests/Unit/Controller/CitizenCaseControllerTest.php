@@ -17,6 +17,7 @@ use OCA\Portaliq\Controller\CitizenCaseController;
 use OCA\Portaliq\Event\PortalClientWriteEvent;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Kernel\Support\PortalBranchScope;
+use OCA\Portaliq\Service\CaseActionsResolver;
 use OCA\Portaliq\Service\CaseQuestions;
 use OCA\Portaliq\Service\CaseResultLink;
 use OCA\Portaliq\Service\CaseTypeReader;
@@ -72,6 +73,7 @@ use OCA\Portaliq\Contribution\TimelineProviderMethod;
  * @uses   \OCA\Portaliq\Kernel\Support\PortalBranchScope
  * @uses   \OCA\Portaliq\Service\CaseResultLink
  * @uses   \OCA\Portaliq\Service\CaseQuestions
+ * @uses   \OCA\Portaliq\Service\CaseActionsResolver
  * @uses   \OCA\Portaliq\Contribution\RowActionResolver
  * @uses   \OCA\Portaliq\Service\CitizenCaseDocuments
  * @uses   \OCA\Portaliq\Service\PortalCaseDocumentReader
@@ -579,7 +581,7 @@ class CitizenCaseControllerTest extends TestCase {
 	 * 429 `too-many-writes` and the sentence, and neither the case writer nor
 	 * the file writer is called (REQ-CWL-001).
 	 *
-	 * @spec openspec/changes/citizen-case-write-limit/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-residents-writes-on-her-own-case-are-limited-per-case-and-per-identity-req-cwl-001
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-residents-writes-on-her-own-case-are-limited-per-case-and-per-identity-req-cwl-001
 	 */
 	public function testPastTheThrottleAWithdrawalAndADocumentAreRefused(): void {
 		$refusal = [
@@ -816,6 +818,7 @@ class CitizenCaseControllerTest extends TestCase {
 		array $caseExtra = [],
 		?CaseQuestions $questions = null,
 		array $extraActions = [],
+		?CaseActionsResolver $caseActions = null,
 	): CitizenCaseController {
 		$action = ($action ?? $this->action());
 		$cases = $this->cases();
@@ -944,9 +947,58 @@ class CitizenCaseControllerTest extends TestCase {
 			$mandatedCases,
 			new PortalBranchScope(),
 			$resultLinks,
-			$questions
+			$questions,
+			$caseActions
 		);
 	}//end controller()
+
+	/**
+	 * case-page-objection-and-complaint REQ-COC-002: the case answers the
+	 * create actions a contribution places on it, open or closed as the
+	 * server reckons it.
+	 *
+	 * @return void
+	 */
+	public function testTheCaseAnswersTheActionsPlacedOnIt(): void {
+		$bezwaar = [
+			'id' => 'createBezwaar',
+			'type' => 'create',
+			'label' => 'Bezwaar maken',
+			'crossRefs' => ['againstCaseId' => ['register' => 'zaken', 'schema' => 'zaak', 'scopeField' => 'portalSubject']],
+			'onCase' => ['crossRef' => 'againstCaseId', 'order' => 10, 'window' => ['from' => 'decisionSentAt', 'days' => 42]],
+		];
+		$clock = $this->createMock(\OCP\AppFramework\Utility\ITimeFactory::class);
+		$clock->method('getTime')->willReturn((new \DateTimeImmutable('2026-10-20 12:00:00', new \DateTimeZone('Europe/Amsterdam')))->getTimestamp());
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnCallback(static fn (string $text) => $text);
+
+		$data = $this->controller(
+			caseExtra: ['decisionSentAt' => '2026-10-02'],
+			extraActions: [$bezwaar],
+			caseActions: new CaseActionsResolver(time: $clock, l10n: $l10n)
+		)->show('zaken', 'zaak', self::CASE_ID)->getData();
+
+		$this->assertSame(
+			[[
+				'app' => 'dossiq',
+				'action' => 'createBezwaar',
+				'label' => 'Bezwaar maken',
+				'open' => true,
+				'closesOn' => '2026-11-13',
+				'form' => ['id' => 'createBezwaar', 'type' => 'create', 'label' => 'Bezwaar maken', 'crossRefs' => []],
+			]],
+			$data['caseActions']
+		);
+	}//end testTheCaseAnswersTheActionsPlacedOnIt()
+
+	/**
+	 * Without the resolver the case answers no case actions.
+	 *
+	 * @return void
+	 */
+	public function testWithoutTheResolverTheCaseAnswersNoActions(): void {
+		$this->assertSame([], $this->controller()->show('zaken', 'zaak', self::CASE_ID)->getData()['caseActions']);
+	}//end testWithoutTheResolverTheCaseAnswersNoActions()
 
 	/**
 	 * The `vragenAanU` collection dossiq declares, and its answer action.

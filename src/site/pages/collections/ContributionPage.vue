@@ -876,7 +876,7 @@ export default {
 		 * The open record's title and row, for a cta label.
 		 *
 		 * @return {{title: string, record: object|null}}
-		 * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/portal-contribution-contract/spec.md#requirement-a-cta-label-may-name-any-field-of-the-open-record
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-cta-label-may-name-any-field-of-the-open-record
 		 */
 		labelRecord() {
 			return { title: this.recordName, record: this.activeRecord }
@@ -1542,7 +1542,7 @@ export default {
 		 * @param {object} block The documents block.
 		 * @param {object} row One row of its collection.
 		 * @return {object}
-		 * @spec openspec/changes/documents-for-each-record/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
 		 */
 		eachRecordBlockOf(block, row) {
 			return eachRecordBlock(block, row)
@@ -1551,7 +1551,7 @@ export default {
 		/**
 		 * @param {object} row A row.
 		 * @return {string} Its id.
-		 * @spec openspec/changes/documents-for-each-record/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
 		 */
 		eachRowKey(row) {
 			return rowIdOf(row) || ''

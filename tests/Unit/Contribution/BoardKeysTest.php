@@ -206,7 +206,7 @@ class BoardKeysTest extends TestCase {
 	/**
 	 * A documents block keeps a short `subtitle` and `emptyLabel`, trimmed.
 	 *
-	 * @spec openspec/changes/documents-for-each-record/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
 	 *
 	 * @return void
 	 */
