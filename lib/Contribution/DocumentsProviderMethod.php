@@ -45,6 +45,7 @@ class DocumentsProviderMethod {
 	 *
 	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-case-app-declares-which-documents-a-resident-may-see-req-cdc-001
 	 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-1
+	 * @spec openspec/changes/document-download-terms/tasks.md#task-1
 	 */
 	public function normalise(array $collection): array {
 		if (array_key_exists('documents', $collection) === false) {
@@ -73,6 +74,14 @@ class DocumentsProviderMethod {
 		// of every listed document together; kept only as a plain method name.
 		if (array_key_exists('bundle', $declared) === true && (new TimelineProviderMethod())->accepts(name: $declared['bundle']) === true) {
 			$collection['documents']['bundle'] = $declared['bundle'];
+		}
+
+		// A `terms` and an `accept` hook (document-download-terms) read and record the
+		// download conditions of a listed document; each kept only as a plain method name.
+		foreach (['terms', 'accept'] as $hook) {
+			if (array_key_exists($hook, $declared) === true && (new TimelineProviderMethod())->accepts(name: $declared[$hook]) === true) {
+				$collection['documents'][$hook] = $declared[$hook];
+			}
 		}
 
 		return $collection;

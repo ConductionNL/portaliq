@@ -367,3 +367,63 @@ test('any collection that declares documents reads them through its own route (T
 	await caseCtx.load()
 	assert.deepEqual(calls, ['case'], 'a case keeps the case screen route')
 })
+
+test('a document with download conditions shows them first and downloads after Accept (document-download-terms)', async () => {
+	const RELEASES = {
+		id: 'subjectDocuments',
+		register: 'filinq',
+		schema: 'documentRelease',
+		documents: { label: 'Documenten', provider: 'releasedDocuments', opened: 'releasedDocumentOpened', terms: 'releasedDocumentTerms', accept: 'releasedDocumentAccept' },
+	}
+	const calls = []
+	let acceptAnswer = { ok: false, message: 'Changed meanwhile' }
+	const api = {
+		fetchCollectionDocumentTerms: async (collection, id, entry) => {
+			calls.push(`terms:${id}:${entry.id}`)
+			return { mayDownload: false, message: '', agreement: { version: 'v2', text: 'Niet verder verspreiden.' } }
+		},
+		acceptCollectionDocumentTerms: async (collection, id, entry, version) => {
+			calls.push(`accept:${id}:${entry.id}:${version}`)
+			return acceptAnswer
+		},
+		downloadCollectionDocument: async (collection, id, entry) => {
+			calls.push(`download:${id}:${entry.id}`)
+			return { ok: true }
+		},
+	}
+	const ctx = instance(DocumentsBlock, {
+		block: { type: 'documents', collection: 'subjectDocuments' },
+		collection: RELEASES,
+		record: { id: 'rel-1' },
+		api,
+		locale: 'nl',
+	})
+	await ctx.openDocument(RECEIPT)
+	assert.deepEqual(calls, ['terms:rel-1:d1'], 'nothing downloads before the conditions are accepted')
+	assert.equal(ctx.pendingTerms.version, 'v2')
+	assert.equal(ctx.pendingTerms.text, 'Niet verder verspreiden.')
+
+	await ctx.acceptAndOpen()
+	assert.equal(ctx.termsNotice, 'Changed meanwhile', 'a refused acceptance says why and downloads nothing')
+	assert.notEqual(ctx.pendingTerms, null)
+
+	acceptAnswer = { ok: true }
+	await ctx.acceptAndOpen()
+	assert.deepEqual(calls, ['terms:rel-1:d1', 'accept:rel-1:d1:v2', 'accept:rel-1:d1:v2', 'download:rel-1:d1'])
+	assert.equal(ctx.pendingTerms, null)
+	assert.equal(ctx.openFailed, false)
+
+	const html = await renderComponent(
+		inState(DocumentsBlock, { answer: { documents: [RECEIPT] }, failed: false, pendingTerms: { entry: RECEIPT, version: 'v2', text: 'Niet verder verspreiden.', message: '' } }),
+		{ block: { type: 'documents', collection: 'subjectDocuments' }, collection: RELEASES, record: { id: 'rel-1' }, api, locale: 'nl' },
+	)
+	assert.match(html, /mijn-documents-terms-accept/)
+	assert.match(html, /Akkoord en downloaden/)
+	assert.match(html, /Niet verder verspreiden\./)
+
+	// Accepted already, or no conditions: straight to the download.
+	calls.length = 0
+	api.fetchCollectionDocumentTerms = async () => ({ mayDownload: true })
+	await ctx.openDocument(RECEIPT)
+	assert.deepEqual(calls, ['download:rel-1:d1'])
+})

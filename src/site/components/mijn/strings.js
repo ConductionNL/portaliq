@@ -118,6 +118,13 @@ export default {
 		'Nothing has happened yet.': 'Er is nog niets gebeurd.',
 		'The document could not be opened. Try again.':
 			'Het document kon niet worden geopend. Probeer het opnieuw.',
+		'Conditions for {name}': 'Voorwaarden voor {name}',
+		'Read the conditions and accept them before you download this document.':
+			'Lees de voorwaarden en ga ermee akkoord voordat u dit document downloadt.',
+		'Accept and download': 'Akkoord en downloaden',
+		'Cancel': 'Annuleren',
+		'The conditions could not be accepted. Try again.':
+			'De voorwaarden konden niet worden geaccepteerd. Probeer het opnieuw.',
 		'On whose behalf you act': 'Namens wie u werkt',
 		'You are now acting for {party}.': 'U regelt nu zaken voor {party}.',
 		'You are now handling your own affairs.': 'U regelt nu uw eigen zaken.',
@@ -229,6 +236,13 @@ export default {
 		'Nothing has happened yet.': 'Nothing has happened yet.',
 		'The document could not be opened. Try again.':
 			'The document could not be opened. Try again.',
+		'Conditions for {name}': 'Conditions for {name}',
+		'Read the conditions and accept them before you download this document.':
+			'Read the conditions and accept them before you download this document.',
+		'Accept and download': 'Accept and download',
+		'Cancel': 'Cancel',
+		'The conditions could not be accepted. Try again.':
+			'The conditions could not be accepted. Try again.',
 		'On whose behalf you act': 'On whose behalf you act',
 		'You are now acting for {party}.': 'You are now acting for {party}.',
 		'You are now handling your own affairs.':
