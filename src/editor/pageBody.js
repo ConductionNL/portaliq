@@ -185,7 +185,7 @@ export function publishPayload(page, body) {
  *
  * @param {object} page The page as loaded.
  * @return {object} The payload.
- * @spec openspec/changes/page-public-on-purpose/tasks.md#1.2
+ * @spec openspec/changes/archive/2026-11-24-page-public-on-purpose/tasks.md#1.2
  */
 export function draftStatusPayload(page) {
 	return { ...withoutEnvelope(page), status: 'draft' }

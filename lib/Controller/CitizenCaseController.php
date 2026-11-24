@@ -250,7 +250,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 *
 	 * @return list<array<string, mixed>>
 	 *
-	 * @spec openspec/changes/woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-open-question-is-answered-on-the-case-page-req-wdm-001
+	 * @spec openspec/changes/archive/2026-11-24-woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-open-question-is-answered-on-the-case-page-req-wdm-001
 	 */
 	private function openQuestions(array $context): array {
 		if ($this->questions === null) {
@@ -705,7 +705,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-case-links-to-where-its-result-is-public-req-wdm-003
+	 * @spec openspec/changes/archive/2026-11-24-woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-case-links-to-where-its-result-is-public-req-wdm-003
 	 */
 	private function projected(array $context, array $case): array {
 		$visible = (new CitizenCaseProjection(logger: $this->logger))->visible(context: $context, case: $case);

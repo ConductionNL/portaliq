@@ -263,7 +263,7 @@ export default {
 		 *                  its declared `fields` without file fields (a row
 		 *                  action carries files through `files`) and without
 		 *                  hidden ones.
-		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-fields-it-declares-req-rai-001
+		 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-fields-it-declares-req-rai-001
 		 */
 		fieldAction() {
 			const files = fileFields(this.action)
@@ -279,7 +279,7 @@ export default {
 
 		/**
 		 * @return {string[]} The declared fields on screen: none once the action has run.
-		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-fields-it-declares-req-rai-001
+		 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-fields-it-declares-req-rai-001
 		 */
 		shownFields() {
 			return this.message === '' ? this.fieldAction.fields : []
@@ -287,7 +287,7 @@ export default {
 
 		/**
 		 * @return {Array<object>} The inputs the row declares for this action.
-		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-inputs-its-row-declares-req-rai-002
+		 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-inputs-its-row-declares-req-rai-002
 		 */
 		inputs() {
 			return rowInputsOf(this.action, this.row)
@@ -295,7 +295,7 @@ export default {
 
 		/**
 		 * @return {Array<object>} The inputs on screen: none once the action has run.
-		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-inputs-its-row-declares-req-rai-002
+		 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-inputs-its-row-declares-req-rai-002
 		 */
 		shownInputs() {
 			return this.message === '' ? this.inputs : []
@@ -406,7 +406,7 @@ export default {
 		 *
 		 * @param {string} field The field.
 		 * @param {string} value The value.
-		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-fields-it-declares-req-rai-001
+		 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-fields-it-declares-req-rai-001
 		 */
 		setField(field, value) {
 			this.fieldValues = { ...this.fieldValues, [field]: value }
@@ -417,7 +417,7 @@ export default {
 		 * field declares; a field left empty is absent, never sent as ''.
 		 *
 		 * @return {object} Field to value.
-		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-fields-it-declares-req-rai-001
+		 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-fields-it-declares-req-rai-001
 		 */
 		fieldAnswers() {
 			const body = formBody(this.fieldAction, this.fieldValues, this.fieldOptions)
@@ -433,7 +433,7 @@ export default {
 		 * typed into the row's inputs under the body key the action declares.
 		 *
 		 * @return {object} `{}` for an action without fields or row inputs.
-		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-inputs-its-row-declares-req-rai-002
+		 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-inputs-its-row-declares-req-rai-002
 		 */
 		answers() {
 			return { ...this.fieldAnswers(), ...this.rowInputAnswers() }
@@ -444,7 +444,7 @@ export default {
 		 * the action declares.
 		 *
 		 * @return {object} `{}` for an action without row inputs.
-		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-inputs-its-row-declares-req-rai-002
+		 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-inputs-its-row-declares-req-rai-002
 		 */
 		rowInputAnswers() {
 			const into = this.action.rowInputs?.into
@@ -467,7 +467,7 @@ export default {
 		 *
 		 * @param {object} errors Input name to message.
 		 * @return {object} Input name to sentence.
-		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-the-resident-sees-what-happened-req-rai-003
+		 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-the-resident-sees-what-happened-req-rai-003
 		 */
 		said(errors) {
 			const out = {}

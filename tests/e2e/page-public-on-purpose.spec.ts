@@ -25,7 +25,7 @@
  * the browser; the visitor reads in a fresh context with an empty storage
  * state. The base URL comes from tests/e2e/base-url.ts.
  *
- * @spec openspec/changes/page-public-on-purpose/tasks.md#1.3
+ * @spec openspec/changes/archive/2026-11-24-page-public-on-purpose/tasks.md#1.3
  */
 
 import type { APIRequestContext, Browser, Page } from '@playwright/test'

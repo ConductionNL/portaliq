@@ -272,7 +272,7 @@ export function decisionDateRows(caseRow, t, locale) {
  * @param {Function} t The translator.
  * @param {boolean} underDate Whether the "Ready by" row is shown.
  * @return {Array<{key: string, label: string, value: string}>} No row, or one.
- * @spec openspec/changes/woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-case-shows-the-sentence-the-case-app-wrote-about-the-term-req-wdm-002
+ * @spec openspec/changes/archive/2026-11-24-woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-case-shows-the-sentence-the-case-app-wrote-about-the-term-req-wdm-002
  */
 export function termNoteRows(caseRow, t, underDate) {
 	const note = typeof caseRow?.termNote === 'string' ? caseRow.termNote.trim().slice(0, 200) : ''
@@ -290,7 +290,7 @@ export function termNoteRows(caseRow, t, underDate) {
  * @param {object|null} caseRow The case.
  * @param {Function} t The translator.
  * @return {{label: string, url: string}|null} The link.
- * @spec openspec/changes/woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-case-links-to-where-its-result-is-public-req-wdm-003
+ * @spec openspec/changes/archive/2026-11-24-woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-case-links-to-where-its-result-is-public-req-wdm-003
  */
 export function resultLinkOf(caseRow, t) {
 	const link = caseRow?.resultLink

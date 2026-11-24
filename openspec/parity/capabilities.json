@@ -12609,7 +12609,7 @@
 				"readOn": "2026-10-08",
 				"owner": "ConductionNL/portaliq",
 				"change": "search-suggestions-while-typing",
-				"requirement": "openspec/changes/search-suggestions-while-typing/specs/portal-federated-search/spec.md :: The search box suggests publications while you type (REQ-SST-001)"
+				"requirement": "openspec/specs/portal-federated-search/spec.md :: The search box suggests publications while you type (REQ-SST-001)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
