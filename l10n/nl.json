@@ -3784,7 +3784,20 @@
         "Where the case's result is public, written by the case app. The case page shows it under the steps only when the url is https on one of the instance's trusted domains.": "Waar het resultaat van de zaak openbaar is, geschreven door de zaak-app. De zaakpagina toont het onder de stappen alleen als de url https is op een van de vertrouwde domeinen van de instantie.",
         "Whether the form opens with its introduction page. Absent reads as true; false opens the form at step 1 and keeps the introduction's text for later.": "Of het formulier opent met zijn introductiepagina. Ontbreekt het, dan geldt true; false opent het formulier bij stap 1 en bewaart de tekst van de introductie voor later.",
         "cards draws the folder cards; rows draws one line per case with its number, title, tag and the day it is due by; folders draws the board folders with the case number, title, tag and the day it is due by.": "cards tekent de mapkaarten; rows tekent één regel per zaak met het nummer, de titel, het label en de dag waarop de zaak uiterlijk klaar is; folders tekent de mappen van het ontwerp met het zaaknummer, de titel, het label en de dag waarop de zaak uiterlijk klaar is.",
-        "statusNoteAtField": "Veld voor het statusmoment"
+        "statusNoteAtField": "Veld voor het statusmoment",
+        "/aanvragen/nieuw-formulier": "/aanvragen/nieuw-formulier",
+        "12 months": "12 maanden",
+        "14 0123": "14 0123",
+        "2026-01-01": "2026-01-01",
+        "2026-10-09T18:00": "2026-10-09T18:00",
+        "2026-10-09T22:00": "2026-10-09T22:00",
+        "2026-12-31": "2026-12-31",
+        "2027-01-05": "2027-01-05",
+        "30 days": "30 dagen",
+        "7 days": "7 dagen",
+        "The house style of every portal · themes come from the Nextcloud theme catalogue": "De huisstijl van elke portal · thema's komen uit de themacatalogus van Nextcloud",
+        "in the Nextcloud settings": "in de Nextcloud-instellingen",
+        "to Portals": "naar Portalen"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

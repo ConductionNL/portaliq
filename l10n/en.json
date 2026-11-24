@@ -3625,7 +3625,20 @@
         "Where the case's result is public, written by the case app. The case page shows it under the steps only when the url is https on one of the instance's trusted domains.": "Where the case's result is public, written by the case app. The case page shows it under the steps only when the url is https on one of the instance's trusted domains.",
         "Whether the form opens with its introduction page. Absent reads as true; false opens the form at step 1 and keeps the introduction's text for later.": "Whether the form opens with its introduction page. Absent reads as true; false opens the form at step 1 and keeps the introduction's text for later.",
         "cards draws the folder cards; rows draws one line per case with its number, title, tag and the day it is due by; folders draws the board folders with the case number, title, tag and the day it is due by.": "cards draws the folder cards; rows draws one line per case with its number, title, tag and the day it is due by; folders draws the board folders with the case number, title, tag and the day it is due by.",
-        "statusNoteAtField": "statusNoteAtField"
+        "statusNoteAtField": "statusNoteAtField",
+        "/aanvragen/nieuw-formulier": "/aanvragen/nieuw-formulier",
+        "12 months": "12 months",
+        "14 0123": "14 0123",
+        "2026-01-01": "2026-01-01",
+        "2026-10-09T18:00": "2026-10-09T18:00",
+        "2026-10-09T22:00": "2026-10-09T22:00",
+        "2026-12-31": "2026-12-31",
+        "2027-01-05": "2027-01-05",
+        "30 days": "30 days",
+        "7 days": "7 days",
+        "The house style of every portal · themes come from the Nextcloud theme catalogue": "The house style of every portal · themes come from the Nextcloud theme catalogue",
+        "in the Nextcloud settings": "in the Nextcloud settings",
+        "to Portals": "to Portals"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"
