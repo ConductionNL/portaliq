@@ -42,9 +42,7 @@ class PortalCollectionDocumentsControllerTest extends TestCase {
 	private function controller(?array $subject, array $collections, ?array $owned=['id' => 'a1']): PortalCollectionDocumentsController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('Bearer x');
-		$request->method('getParam')->willReturnCallback(
-			static fn (string $key, mixed $default=null): mixed => ($key === 'version' ? 'v2' : '')
-		);
+		$request->method('getParam')->willReturnMap([['version', '', 'v2']]);
 		$session = $this->createMock(PortalSessionService::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
 		$registry = $this->createMock(PortalContributionRegistry::class);
@@ -179,7 +177,7 @@ class PortalCollectionDocumentsControllerTest extends TestCase {
 		$terms      = ['mayDownload' => false, 'agreement' => ['version' => 'v2', 'text' => 'No reuse']];
 		$this->documents->expects($this->once())->method('terms')->with(
 			$this->callback(
-				static fn (DocumentOpening $opening): bool => $opening->app === 'decidiq'
+				callback: static fn (DocumentOpening $opening): bool => $opening->app === 'decidiq'
 					&& $opening->documentId === 'd1'
 					&& $opening->object === ['register' => 'decidiq', 'schema' => 'agendaItem', 'id' => 'a1']
 					&& $opening->subject['subjectRef'] === 'p'
@@ -199,7 +197,7 @@ class PortalCollectionDocumentsControllerTest extends TestCase {
 	 */
 	public function testAcceptingAnswersWhetherItWasRecorded(): void {
 		$controller = $this->controller(subject: ['subjectRef' => 'p', 'trust' => 'substantial'], collections: [$this->collection()]);
-		$this->documents->method('accept')->with($this->isInstanceOf(DocumentOpening::class), 'v2')->willReturnOnConsecutiveCalls(true, false);
+		$this->documents->method('accept')->with($this->isInstanceOf(className: DocumentOpening::class), 'v2')->willReturnOnConsecutiveCalls(true, false);
 
 		$accepted = $controller->acceptTerms(register: 'decidiq', schema: 'agendaItem', id: 'a1', documentId: 'd1');
 		$this->assertSame(expected: ['accepted' => true], actual: $accepted->getData());

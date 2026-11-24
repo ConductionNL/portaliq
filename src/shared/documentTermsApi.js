@@ -16,13 +16,14 @@ const seg = (value) => encodeURIComponent(String(value ?? ''))
  * @param {object} entry The listed entry: `{ id }`.
  * @return {string} The terms path under the api base.
  */
-const termsPath = (collection, id, entry) =>
-	`/collections/${seg(collection?.register)}/${seg(collection?.schema)}/${seg(id)}/documents/${seg(entry?.id)}/terms`
+function termsPath(collection, id, entry) {
+	return `/collections/${seg(collection?.register)}/${seg(collection?.schema)}/${seg(id)}/documents/${seg(entry?.id)}/terms`
+}
 
 /**
  * The terms calls of a documents block over a portal api.
  *
- * @param {{request: Function}} api The portal api.
+ * @param {{request: (method: string, path: string, body?: object) => Promise<object>}} api The portal api.
  * @return {object} `{ fetchTerms, acceptTerms }`.
  * @spec openspec/changes/document-download-terms/tasks.md#task-3
  */

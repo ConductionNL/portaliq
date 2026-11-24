@@ -199,11 +199,15 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 			return $proven;
 		}
 
-		$version  = $this->request->getParam('version', '');
+		$version = $this->request->getParam('version', '');
+		if (is_string($version) === false) {
+			$version = '';
+		}
+
 		$object   = ['register' => $register, 'schema' => $schema, 'id' => $id];
 		$accepted = $this->documents->accept(
 			opening: $this->opening(proven: $proven, object: $object, documentId: $documentId),
-			version: is_string($version) === true ? $version : ''
+			version: $version
 		);
 		if ($accepted === false) {
 			$message = $this->l10n->t('The conditions could not be accepted. Read them again and try once more.');
