@@ -9,7 +9,7 @@
 //
 // Imports nothing, so tests/case-outcome.spec.mjs reads it as node.
 //
-// @spec openspec/changes/case-outcome-on-the-case-page/specs/citizen-writes-on-their-own-case/spec.md#requirement-an-ended-case-shows-its-outcome-with-the-organisations-explanation-req-coc-001
+// @spec openspec/changes/archive/2026-11-24-case-outcome-on-the-case-page/specs/citizen-writes-on-their-own-case/spec.md#requirement-an-ended-case-shows-its-outcome-with-the-organisations-explanation-req-coc-001
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const URL_LIKE = /^(?:[a-z][a-z0-9+.-]*:\/\/|www\.)/i
