@@ -123,7 +123,7 @@ class ActionDraft implements ActionDraftInterface {
 	 *
 	 * @return array<int, array{app: string, action: string, label: string, updatedAt: string, expiresAt: string}>
 	 *
-	 * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-the-own-area-lists-unfinished-forms-req-fsr-003
+	 * @spec openspec/changes/archive/2026-11-24-form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-the-own-area-lists-unfinished-forms-req-fsr-003
 	 */
 	public function liveDrafts(array $subject): array {
 		$subjectRef = (string)($subject['subjectRef'] ?? '');
@@ -148,7 +148,7 @@ class ActionDraft implements ActionDraftInterface {
 	 *
 	 * @return array<int, array{app: string, action: string, label: string, updatedAt: string, expiresAt: string}>
 	 *
-	 * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-the-own-area-lists-unfinished-forms-req-fsr-003
+	 * @spec openspec/changes/archive/2026-11-24-form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-the-own-area-lists-unfinished-forms-req-fsr-003
 	 */
 	private function liveDraftsOf(array $contribution, array $subject, string $subjectRef): array {
 		$live  = [];
@@ -177,7 +177,7 @@ class ActionDraft implements ActionDraftInterface {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-the-own-area-lists-unfinished-forms-req-fsr-003
+	 * @spec openspec/changes/archive/2026-11-24-form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-the-own-area-lists-unfinished-forms-req-fsr-003
 	 */
 	private function keepsDraft(mixed $action, array $subject): bool {
 		return is_array($action) === true
@@ -194,7 +194,7 @@ class ActionDraft implements ActionDraftInterface {
 	 *
 	 * @return array{app: string, action: string, label: string, updatedAt: string, expiresAt: string}
 	 *
-	 * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-the-own-area-lists-unfinished-forms-req-fsr-003
+	 * @spec openspec/changes/archive/2026-11-24-form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-the-own-area-lists-unfinished-forms-req-fsr-003
 	 */
 	private function draftEntry(string $appId, array $action, array $draft): array {
 		return [

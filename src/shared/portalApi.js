@@ -1483,7 +1483,7 @@ export function createPortalApi(config, store = {}) {
 		 *
 		 * @return {Promise<Array<{app: string, action: string, label: string, updatedAt: string, expiresAt: string}>>}
 		 *
-		 * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-the-own-area-lists-unfinished-forms-req-fsr-003
+		 * @spec openspec/changes/archive/2026-11-24-form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-the-own-area-lists-unfinished-forms-req-fsr-003
 		 */
 		async listDrafts() {
 			try {
