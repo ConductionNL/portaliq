@@ -295,7 +295,7 @@ export default {
 		/**
 		 * @param {object} row A row.
 		 * @return {Array<{id: string, text: string}>} The reasons its actions are not offered.
-		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-can-be-offered-on-some-rows-only-req-rai-004
+		 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-can-be-offered-on-some-rows-only-req-rai-004
 		 */
 		reasonsFor(row) {
 			const out = []

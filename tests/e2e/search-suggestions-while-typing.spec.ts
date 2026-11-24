@@ -27,8 +27,8 @@
  *
  *     NEXTCLOUD_URL=http://localhost:8080 npx playwright test search-suggestions-while-typing
  *
- * @spec openspec/changes/search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-search-box-suggests-publications-while-you-type-req-sst-001
- * @spec openspec/changes/search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-suggestion-list-works-by-keyboard-and-screen-reader-req-sst-002
+ * @spec openspec/changes/archive/2026-11-24-search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-search-box-suggests-publications-while-you-type-req-sst-001
+ * @spec openspec/changes/archive/2026-11-24-search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-suggestion-list-works-by-keyboard-and-screen-reader-req-sst-002
  */
 
 import type { APIRequestContext, Page, Route } from '@playwright/test'

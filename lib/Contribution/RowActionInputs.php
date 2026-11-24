@@ -30,7 +30,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md
+ * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ namespace OCA\Portaliq\Contribution;
 /**
  * Normalises and applies the input and availability keys of an endpoint row action.
  *
- * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md
+ * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md
  *
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- The total is the sum of small private steps; each method stays under the method thresholds.
  */
@@ -64,7 +64,7 @@ class RowActionInputs {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/case-actions-row-inputs-and-conditions/tasks.md#t01
+	 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/tasks.md#t01
 	 */
 	public function normaliseAction(array $action): array {
 		$isEndpoint = ((new RowActionResolver())->isEndpointRowAction(action: $action) === true);
@@ -90,7 +90,7 @@ class RowActionInputs {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/case-actions-row-inputs-and-conditions/tasks.md#t01
+	 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/tasks.md#t01
 	 */
 	private function withValidTexts(array $action): array {
 		foreach (['confirmText', 'successText'] as $textKey) {
@@ -111,7 +111,7 @@ class RowActionInputs {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/case-actions-row-inputs-and-conditions/tasks.md#t01
+	 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/tasks.md#t01
 	 */
 	private function isInvalidText(mixed $text): bool {
 		return is_string($text) === false || trim($text) === '' || mb_strlen($text) > self::MAX_TEXT;
@@ -126,7 +126,7 @@ class RowActionInputs {
 	 *
 	 * @return array{available: bool, reason: string}
 	 *
-	 * @spec openspec/changes/case-actions-row-inputs-and-conditions/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/tasks.md#t02
 	 */
 	public function availability(array $action, array $row = []): array {
 		$when = ($action['availableWhen'] ?? null);
@@ -156,7 +156,7 @@ class RowActionInputs {
 	 *
 	 * @return array<int, array{name: string, label: string, required: bool, type: string}>
 	 *
-	 * @spec openspec/changes/case-actions-row-inputs-and-conditions/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/tasks.md#t02
 	 */
 	public function declaredInputs(array $action, array $row): array {
 		$config = ($action['rowInputs'] ?? null);
@@ -235,7 +235,7 @@ class RowActionInputs {
 	 *
 	 * @return array{values: array<string, string>, errors: array<string, string>}
 	 *
-	 * @spec openspec/changes/case-actions-row-inputs-and-conditions/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/tasks.md#t02
 	 */
 	public function collect(array $action, array $row, mixed $submitted): array {
 		$asked = [];
@@ -268,7 +268,7 @@ class RowActionInputs {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/case-actions-row-inputs-and-conditions/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/tasks.md#t02
 	 */
 	private function inputText(mixed $value): string {
 		$text = '';

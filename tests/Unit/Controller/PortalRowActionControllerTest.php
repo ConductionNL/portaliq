@@ -260,7 +260,7 @@ class PortalRowActionControllerTest extends TestCase {
 	 * The inputs the row declares are forwarded under `into`, and a name the
 	 * row does not declare is dropped.
 	 *
-	 * @spec openspec/changes/case-actions-row-inputs-and-conditions/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/tasks.md#t02
 	 *
 	 * @return void
 	 */
@@ -289,7 +289,7 @@ class PortalRowActionControllerTest extends TestCase {
 	/**
 	 * A required input left empty is a 422 that names it and forwards nothing.
 	 *
-	 * @spec openspec/changes/case-actions-row-inputs-and-conditions/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/tasks.md#t02
 	 *
 	 * @return void
 	 */
@@ -316,7 +316,7 @@ class PortalRowActionControllerTest extends TestCase {
 	 * A row where the action is not available answers 409 with the row's reason
 	 * and forwards nothing.
 	 *
-	 * @spec openspec/changes/case-actions-row-inputs-and-conditions/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/tasks.md#t02
 	 *
 	 * @return void
 	 */

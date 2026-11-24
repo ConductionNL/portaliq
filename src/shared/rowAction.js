@@ -83,7 +83,7 @@ function meetsRowWhen(rowWhen, row) {
  * @param {object} action A resolved row action.
  * @param {object} row The row.
  * @return {boolean}
- * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-can-be-offered-on-some-rows-only-req-rai-004
+ * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-can-be-offered-on-some-rows-only-req-rai-004
  */
 export function isAvailable(action, row) {
 	const when = action?.availableWhen
@@ -104,7 +104,7 @@ export function isAvailable(action, row) {
  * @param {object} action A resolved row action.
  * @param {object} row The row.
  * @return {string} The reason.
- * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-can-be-offered-on-some-rows-only-req-rai-004
+ * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-can-be-offered-on-some-rows-only-req-rai-004
  */
 export function unavailableReason(action, row) {
 	if (!action?.availableWhen || isAvailable(action, row)) {
@@ -124,7 +124,7 @@ const INPUT_NAME = /^[a-zA-Z][a-zA-Z0-9_]*$/
  * @param {object} action A resolved row action.
  * @param {object} row The row.
  * @return {Array<{name: string, label: string, required: boolean, type: string}>}
- * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-inputs-its-row-declares-req-rai-002
+ * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-inputs-its-row-declares-req-rai-002
  */
 export function rowInputsOf(action, row) {
 	const seen = new Set()
@@ -178,7 +178,7 @@ function rowInput(entry, name) {
  *
  * @param {object} result `{ok, status, body}` from a forward.
  * @return {{message: string, errors: Object<string, string>}}
- * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-the-resident-sees-what-happened-req-rai-003
+ * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-the-resident-sees-what-happened-req-rai-003
  */
 export function answerWords(result) {
 	const body =

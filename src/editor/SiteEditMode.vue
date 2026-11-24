@@ -283,7 +283,7 @@ export default {
 		 *
 		 * @return {string} The address, without a fragment.
 		 *
-		 * @spec openspec/changes/page-public-on-purpose/tasks.md#1.1
+		 * @spec openspec/changes/archive/2026-11-24-page-public-on-purpose/tasks.md#1.1
 		 */
 		publicAddress() {
 			return typeof window === 'undefined'
@@ -370,7 +370,7 @@ export default {
 		 * @param {boolean} confirmed Whether the editor chose Publish.
 		 * @return {Promise<void>} Resolves when published, refused or cancelled.
 		 *
-		 * @spec openspec/changes/page-public-on-purpose/tasks.md#1.1
+		 * @spec openspec/changes/archive/2026-11-24-page-public-on-purpose/tasks.md#1.1
 		 *
 		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
 		 */

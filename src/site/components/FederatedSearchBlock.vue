@@ -1534,7 +1534,7 @@ export default {
 		 * @param {Event} event The input event.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-search-box-suggests-publications-while-you-type-req-sst-001
+		 * @spec openspec/changes/archive/2026-11-24-search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-search-box-suggests-publications-while-you-type-req-sst-001
 		 */
 		onTyping(event) {
 			this.typed = String(event?.target?.value ?? '')
@@ -1547,7 +1547,7 @@ export default {
 		 * @param {KeyboardEvent} event The key event.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-suggestion-list-works-by-keyboard-and-screen-reader-req-sst-002
+		 * @spec openspec/changes/archive/2026-11-24-search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-suggestion-list-works-by-keyboard-and-screen-reader-req-sst-002
 		 */
 		onSuggestKey(event) {
 			const list = this.$refs.suggestions
@@ -1562,7 +1562,7 @@ export default {
 		 * @param {{expanded: boolean, controls: string, activeId: string}} state The list's state.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-suggestion-list-works-by-keyboard-and-screen-reader-req-sst-002
+		 * @spec openspec/changes/archive/2026-11-24-search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-suggestion-list-works-by-keyboard-and-screen-reader-req-sst-002
 		 */
 		onSuggestState(state) {
 			const input =
@@ -1589,7 +1589,7 @@ export default {
 		 * @param {{id: string, kind: string}} item The suggestion.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-search-box-suggests-publications-while-you-type-req-sst-001
+		 * @spec openspec/changes/archive/2026-11-24-search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-search-box-suggests-publications-while-you-type-req-sst-001
 		 */
 		openSuggestion(item) {
 			this.$emit(

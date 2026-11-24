@@ -228,7 +228,7 @@ const RENDERABLE_WIDGET_TYPES = new Set([
  * `object-table`) is mountable here without this script naming it. A library
  * that is not installed adds no keys; the hand-written list above still holds.
  *
- * @spec openspec/changes/case-actions-row-inputs-and-conditions/tasks.md#T07
+ * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/tasks.md#T07
  *
  * @param {string} [libraryRoot] The nextcloud-vue package directory.
  * @return {string[]} The registered keys.

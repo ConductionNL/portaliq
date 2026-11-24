@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-open-question-is-answered-on-the-case-page-req-wdm-001
+ * @spec openspec/changes/archive/2026-11-24-woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-open-question-is-answered-on-the-case-page-req-wdm-001
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use Throwable;
  *
  * @SuppressWarnings(PHPMD.StaticAccess) -- SessionTrust::trustSatisfies, the trust comparison every collection read uses.
  *
- * @spec openspec/changes/woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-open-question-is-answered-on-the-case-page-req-wdm-001
+ * @spec openspec/changes/archive/2026-11-24-woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-open-question-is-answered-on-the-case-page-req-wdm-001
  */
 class CaseQuestions {
 
@@ -64,7 +64,7 @@ class CaseQuestions {
 	 * @param PortalBranchScopeInterface  $branches  Keeps a branch session to its branch's rows.
 	 * @param LoggerInterface             $logger    Records why a read gave nothing.
 	 *
-	 * @spec openspec/changes/woo-dossier-in-my-cases/tasks.md#task-1.1
+	 * @spec openspec/changes/archive/2026-11-24-woo-dossier-in-my-cases/tasks.md#task-1.1
 	 */
 	public function __construct(
 		private readonly PortalObjectReaderInterface $reader,
@@ -84,7 +84,7 @@ class CaseQuestions {
 	 *
 	 * @return list<array<string, mixed>> One entry per open question: `id`, `collection`, `summary`, `hersteltermijn` when set, `action`.
 	 *
-	 * @spec openspec/changes/woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-open-question-is-answered-on-the-case-page-req-wdm-001
+	 * @spec openspec/changes/archive/2026-11-24-woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-open-question-is-answered-on-the-case-page-req-wdm-001
 	 */
 	public function forCase(array $subject, array $contributions, string $app, array $case): array {
 		$caseIds = $this->caseIds(case: $case);

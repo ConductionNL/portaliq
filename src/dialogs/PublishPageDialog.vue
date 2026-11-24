@@ -10,7 +10,7 @@
   Its own file per ADR-004's modal-isolation rule; the page designer and the
   site edit mode both mount it.
 
-  @spec openspec/changes/page-public-on-purpose/tasks.md#1.1
+  @spec openspec/changes/archive/2026-11-24-page-public-on-purpose/tasks.md#1.1
 -->
 <template>
 	<CnDialog

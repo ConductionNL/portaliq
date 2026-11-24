@@ -29,7 +29,7 @@
  * signs in through the portal's dev login, never as a Nextcloud admin. The
  * base URL comes from tests/e2e/base-url.ts.
  *
- * @spec openspec/changes/woo-dossier-in-my-cases/tasks.md#4.1
+ * @spec openspec/changes/archive/2026-11-24-woo-dossier-in-my-cases/tasks.md#4.1
  */
 
 import type { APIRequestContext, Page } from '@playwright/test'
