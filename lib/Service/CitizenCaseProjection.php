@@ -74,7 +74,7 @@ class CitizenCaseProjection implements CitizenCaseProjectionInterface {
 	 * @return array<string, mixed> The projected case.
 	 *
 	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
-	 * @spec openspec/changes/case-outcome-on-the-case-page/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/changes/archive/2026-11-24-case-outcome-on-the-case-page/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	public function visible(array $context, array $case): array {
 		$declared = ($context['fields'] ?? null);

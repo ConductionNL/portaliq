@@ -262,7 +262,7 @@ class CitizenWriteActionFinder {
 	 *
 	 * @return array{labelField?: string, descriptionField?: string}|null
 	 *
-	 * @spec openspec/changes/case-outcome-on-the-case-page/specs/portal-contribution-contract/spec.md
+	 * @spec openspec/changes/archive/2026-11-24-case-outcome-on-the-case-page/specs/portal-contribution-contract/spec.md
 	 */
 	private function outcome(array $contribution, string $register, string $schema): ?array {
 		foreach (($contribution['collections'] ?? []) as $collection) {
