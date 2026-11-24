@@ -380,10 +380,10 @@
 				-->
 				<nav
 					v-if="pages > 1"
-					class="ams-pagination"
+					class="utrecht-pagination pq-search__pagination"
 					:aria-label="paginationLabel"
 					data-testid="federated-search-pagination">
-					<ul class="ams-pagination__list">
+					<ul class="pq-search__page-list">
 						<li
 							v-for="(entry, index) in paginationRow"
 							:key="`${entry}-${index}`">
@@ -395,9 +395,9 @@
 							</span>
 							<a
 								v-else
-								class="ams-pagination__button"
+								class="utrecht-pagination__page-link"
 								:class="{
-									'ams-pagination__button--current':
+									'utrecht-pagination__page-link--current':
 										entry === page,
 								}"
 								:href="hrefForPage(entry)"
@@ -415,7 +415,7 @@
 
 						<li v-if="page < pages">
 							<a
-								class="ams-pagination__button"
+								class="utrecht-pagination__relative-link utrecht-pagination__relative-link--next"
 								:href="hrefForPage(page + 1)"
 								aria-label="Volgende pagina"
 								data-testid="federated-search-page-next"
@@ -598,6 +598,8 @@ function metaChip(chip) {
 
 // The button links' classes need their stylesheet, or the browser draws its own blue link.
 import '@utrecht/button-link-css/dist/index.css'
+// The pagination is Utrecht's (site-nlds-widget-palette T8b): its stylesheet carries the token hooks.
+import '@utrecht/pagination-css/dist/index.css'
 
 export default {
 	name: 'FederatedSearchBlock',
@@ -1832,6 +1834,31 @@ export default {
 	margin: 0;
 	color: var(--nldesign-color-info, #003865);
 	font-weight: 700;
+}
+
+/* Utrecht's pagination draws flat links; the list layout and a usable
+   fallback size are ours, each value overridable by the theme's
+   `--utrecht-pagination-*` tokens. @spec openspec/changes/site-nlds-widget-palette/tasks.md#T8b */
+.pq-search__page-list {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: var(--utrecht-pagination-page-link-distanced-margin-inline-start, 4px);
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.pq-search__pagination .utrecht-pagination__page-link,
+.pq-search__pagination .utrecht-pagination__relative-link {
+	padding-block: var(--utrecht-pagination-page-link-padding-block-start, 6px);
+	padding-inline: var(--utrecht-pagination-page-link-padding-inline-start, 12px);
+	color: var(--utrecht-pagination-page-link-color, var(--nldesign-color-primary, LinkText));
+}
+
+.pq-search__pagination .utrecht-pagination__page-link--current {
+	font-weight: var(--utrecht-pagination-page-link-current-font-weight, 700);
+	text-decoration: none;
 }
 
 .pq-search__page-gap {

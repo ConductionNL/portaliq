@@ -1993,7 +1993,8 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	color: var(--nldesign-color-primary, currentcolor);
 }
 
-.pq-site .pq-search--plain .ams-pagination__button {
+.pq-site .pq-search--plain .utrecht-pagination__page-link,
+.pq-site .pq-search--plain .utrecht-pagination__relative-link {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -2006,7 +2007,7 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	text-decoration: none;
 }
 
-.pq-site .pq-search--plain .ams-pagination__button--current {
+.pq-site .pq-search--plain .utrecht-pagination__page-link--current {
 	border-color: var(--nldesign-color-primary, currentcolor);
 	background: var(--nldesign-color-primary, CanvasText);
 	color: var(--nldesign-color-primary-text, Canvas);
