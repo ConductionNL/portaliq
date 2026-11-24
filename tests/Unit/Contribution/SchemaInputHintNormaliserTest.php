@@ -144,7 +144,7 @@ class SchemaInputHintNormaliserTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-form-must-send-each-value-in-the-type-its-field-declares
+	 * @spec openspec/specs/site-forms/spec.md#requirement-a-form-must-send-each-value-in-the-type-its-field-declares
 	 */
 	public function testANumberAnIntegerAndABooleanNameTheirValueType(): void {
 		$schemaReader = $this->createMock(PortalSchemaReader::class);

@@ -768,7 +768,7 @@ export default {
 		 *
 		 * @return {Record<string, string>} The values.
 		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
-		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-update-row-action-that-needs-input-must-open-its-form-on-the-row
+		 * @spec openspec/specs/site-forms/spec.md#requirement-an-update-row-action-that-needs-input-must-open-its-form-on-the-row
 		 */
 		emptyValues() {
 			const values = {}
@@ -1187,7 +1187,7 @@ export default {
 		 * @return {Promise<void>}
 		 *
 		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-file-field-must-upload-after-the-record-exists-req-srp-023
-		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+		 * @spec openspec/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
 		 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
 		 */
 		async submit() {
@@ -1266,7 +1266,7 @@ export default {
 		 * @return {Promise<{ok: boolean, status: number, object: object|null, id: string, failed: Array, errors: object, invalid: object}>} The result.
 		 *
 		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-create-or-endpoint-action-may-run-in-steps-with-a-review-a-draft-and-a-confirmation-req-smf-020
-		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+		 * @spec openspec/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
 		 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
 		 */
 		async sendBody(body) {

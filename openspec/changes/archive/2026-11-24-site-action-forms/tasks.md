@@ -6,4 +6,4 @@
 - [x] 4. `WriteRefusal` and `PortalObjectWriter::lastFailure()`: 422 `invalid` on create and update; the form shows it on the field, else a message by status.
 - [x] 5. Tests: `tests/site-action-forms.spec.mjs`; `WriteRefusalTest`; `ContributionControllerRequiredFieldsTest` (422 and 502); `SchemaInputHintNormaliserTest` (valueType).
 - [x] 6. Live check on the proof instance: log hours, approve hours, enrol employees, fill in a birth date, fill in a self-assessment.
-- [ ] 7. learniq: `schema` on `approveHourWeek`; endpoint refusals name their fields (see proposal).
+- [x] 7. learniq: `schema` on `approveHourWeek`; endpoint refusals name their fields. Built in learniq (`portal-refusals-name-their-fields` T1 and T2: `TrainerSitePages` and `PortalAnswers::refused()`).

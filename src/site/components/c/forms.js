@@ -260,7 +260,7 @@ function instantOf(text) {
  * @param {string} field The field.
  * @return {'integer'|'number'|'boolean'|'string'} The type.
  *
- * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-form-must-send-each-value-in-the-type-its-field-declares
+ * @spec openspec/specs/site-forms/spec.md#requirement-a-form-must-send-each-value-in-the-type-its-field-declares
  */
 export function valueTypeOf(action, field) {
 	const config = fieldConfig(action, field)
@@ -321,7 +321,7 @@ const TYPED_READERS = new Map([
  * @param {string} text The answer as typed.
  * @return {string|number|boolean} The value.
  *
- * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-form-must-send-each-value-in-the-type-its-field-declares
+ * @spec openspec/specs/site-forms/spec.md#requirement-a-form-must-send-each-value-in-the-type-its-field-declares
  */
 export function typedValue(type, text) {
 	const read = TYPED_READERS.get(type)
@@ -343,7 +343,7 @@ export function typedValue(type, text) {
  * @return {Record<string, string|number|boolean>} The body.
  *
  * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
- * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-form-must-send-each-value-in-the-type-its-field-declares
+ * @spec openspec/specs/site-forms/spec.md#requirement-a-form-must-send-each-value-in-the-type-its-field-declares
  */
 export function formBody(action, values, options = {}) {
 	const files = fileFields(action)
@@ -479,7 +479,7 @@ function answerError(action, field, value, translate, label) {
  * @param {string} text The answer.
  * @return {string} The English source string.
  *
- * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-form-must-send-each-value-in-the-type-its-field-declares
+ * @spec openspec/specs/site-forms/spec.md#requirement-a-form-must-send-each-value-in-the-type-its-field-declares
  */
 function typeProblem(type, text) {
 	if (type === 'number' && numberOf(text) === null) {
@@ -510,7 +510,7 @@ const INVALID_KEYS = Object.freeze({
  * @param {(key: string, vars?: object) => string} t The translator.
  * @return {Record<string, string>} The message per field.
  *
- * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+ * @spec openspec/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
  */
 export function invalidFieldErrors(action, invalid, t) {
 	const translate = translatorOr(t)
@@ -545,7 +545,7 @@ const REFUSAL_KEYS = new Map([
  * @param {number} status The answer's status; 0 for a network failure.
  * @return {string} The English source string.
  *
- * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+ * @spec openspec/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
  */
 export function refusalKey(status) {
 	return REFUSAL_KEYS.get(status) ?? 'Saving did not work.'
@@ -559,7 +559,7 @@ export function refusalKey(status) {
  * @param {{ok: boolean, status: number, body: object}} result The forward's answer.
  * @return {{ok: boolean, status: number, object: object, errors: object, invalid: object}} The send result.
  *
- * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
+ * @spec openspec/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
  */
 export function forwardResult(result) {
 	const body = (result && result.body) || {}

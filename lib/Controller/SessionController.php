@@ -402,7 +402,7 @@ class SessionController extends Controller {
 	 *
 	 * @return string The company's name, or ''.
 	 *
-	 * @spec openspec/changes/the-account-names-the-audience-and-the-company/specs/portal-identity-space/spec.md#requirement-the-session-names-the-company-the-person-acts-for
+	 * @spec openspec/specs/portal-identity-space/spec.md#requirement-the-session-names-the-company-the-person-acts-for
 	 */
 	private function organisationNameOf(?array $account): string {
 		$claims = ($account['claims'] ?? null);

@@ -137,7 +137,7 @@ interface PortalAccountServiceInterface {
 	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T08
 	 * @spec openspec/specs/supplier-portal/spec.md#the-subject-reference-is-server-derived-never-client-supplied
 	 * @spec openspec/specs/portal-identity-space/spec.md
-	 * @spec openspec/changes/the-account-names-the-audience-and-the-company/specs/portal-identity-space/spec.md#requirement-an-existing-accounts-audience-wins-over-the-sign-in-routes
+	 * @spec openspec/specs/portal-identity-space/spec.md#requirement-an-existing-accounts-audience-wins-over-the-sign-in-routes
 	 */
 	public function findOrCreate(
 		string $identityType,
