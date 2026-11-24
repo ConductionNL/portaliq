@@ -3638,7 +3638,12 @@
         "7 days": "7 days",
         "The house style of every portal · themes come from the Nextcloud theme catalogue": "The house style of every portal · themes come from the Nextcloud theme catalogue",
         "in the Nextcloud settings": "in the Nextcloud settings",
-        "to Portals": "to Portals"
+        "to Portals": "to Portals",
+        "This form has no fields yet.": "This form has no fields yet.",
+        "Move up": "Move up",
+        "Move down": "Move down",
+        "Remove field": "Remove field",
+        "Add field": "Add field"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

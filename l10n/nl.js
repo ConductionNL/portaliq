@@ -3777,7 +3777,12 @@ OC.L10N.register(
         "7 days": "7 dagen",
         "The house style of every portal · themes come from the Nextcloud theme catalogue": "De huisstijl van elke portal · thema's komen uit de themacatalogus van Nextcloud",
         "in the Nextcloud settings": "in de Nextcloud-instellingen",
-        "to Portals": "naar Portalen"
+        "to Portals": "naar Portalen",
+        "This form has no fields yet.": "Dit formulier heeft nog geen velden.",
+        "Move up": "Omhoog",
+        "Move down": "Omlaag",
+        "Remove field": "Veld verwijderen",
+        "Add field": "Veld toevoegen"
     },
     "nplurals=2; plural=(n != 1);"
 )
