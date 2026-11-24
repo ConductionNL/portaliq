@@ -141,7 +141,7 @@ class PortalAccountProvisionListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/an-app-provisions-a-nextcloud-account/specs/portal-identity-space/spec.md#requirement-an-app-may-provision-an-active-account-for-a-nextcloud-user
+	 * @spec openspec/changes/archive/2026-11-24-an-app-provisions-a-nextcloud-account/specs/portal-identity-space/spec.md#requirement-an-app-may-provision-an-active-account-for-a-nextcloud-user
 	 */
 	private function provisionNextcloud(PortalAccountProvisionRequestedEvent $event): void {
 		if ($this->nextcloud === null) {
