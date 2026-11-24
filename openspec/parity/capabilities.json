@@ -8121,13 +8121,13 @@
 			},
 			"built": {
 				"state": "built",
-				"evidence": "lib/Service/PortalOrganisationConfigService.php:55-84 class docblock and NEUTRAL default, :147 resolve(string $orgSlug, ...); resolved via `?org=` on the anonymous `/portal` shell per the class docblock's design.md reference; openspec/changes/portal-white-label-runtime-config is archived (all tasks built)",
+				"evidence": "lib/Service/PortalOrganisationConfigService.php:55-84 class docblock and NEUTRAL default, :147 resolve(string $orgSlug, ...); resolved via `?org=` on the anonymous `/portal` shell per the class docblock's design.md reference; openspec/changes/archive/2026-11-24-portal-white-label-runtime-config is archived (all tasks built)",
 				"reachedOn": "public route /portal, PortalPageController's RUNTIME_CONFIG injection",
 				"owner": "ConductionNL/portaliq",
 				"note": "Fails closed to the neutral default on every unresolved path (no org param, unknown slug, OpenRegister unavailable) per :130,:473, never another tenant's branding, never a wildcard frame-ancestors.",
 				"origin": "code",
 				"change": "portal-white-label-runtime-config",
-				"requirement": "openspec/changes/portal-white-label-runtime-config/specs/supplier-portal/spec.md :: The portal MUST be organisation-agnostic and white-label",
+				"requirement": "openspec/changes/archive/2026-11-24-portal-white-label-runtime-config/specs/supplier-portal/spec.md :: The portal MUST be organisation-agnostic and white-label",
 				"plan": "portal-identity-from-the-admin"
 			},
 			"provider": "portaliq",

@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#3.2
+ * @spec openspec/changes/archive/2026-11-24-portal-white-label-runtime-config/tasks.md#3.2
  */
 
 declare(strict_types=1);
@@ -35,7 +35,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalThemeResolverInterface;
  * overrides, logo and app sheets. Every method resolves the portal again, as
  * the shell always did.
  *
- * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#3.2
+ * @spec openspec/changes/archive/2026-11-24-portal-white-label-runtime-config/tasks.md#3.2
  */
 class SiteShellTheme {
 	/**

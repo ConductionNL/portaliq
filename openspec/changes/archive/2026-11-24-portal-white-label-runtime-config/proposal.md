@@ -2,6 +2,8 @@
 kind: code
 ---
 
+> Superseded by `site-reaches-portal-parity` (the `/portal` shell now redirects to `/site`, which resolves the portal by `?portal`, the `?org` alias or the verified host and renders the neutral shell for an unknown one) and by `portal-scoping-and-auth` (its main spec holds "Frame-ancestors MUST be derived per portal"; the site itself is never framed, the embed frame has its own policy). Archived 24 Nov 2026 without syncing its spec, as `portal-shared-runtime` was: its two requirements describe the retired `/portal` shell and `window.RUNTIME_CONFIG`. Tasks 4.2 (a two-tenant e2e on `/portal`) and 4.3 (gates before push) are left open: the first targets a route that only redirects now (`tests/e2e/operate-portals-per-organisation.spec.ts` covers two portals on the site), the second ran with every later change. Reversible.
+
 ## Why
 
 The supplier-portal spec's own **"The portal MUST be organisation-agnostic and
