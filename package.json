@@ -366,6 +366,17 @@
     },
     "@toast-ui/editor": {
       "dompurify": "^3.4.15"
+    },
+    "@nextcloud/stylelint-config": {
+      "stylelint": "$stylelint",
+      "stylelint-config-recommended-scss": "^18.0.0",
+      "stylelint-config-recommended-vue": "^2.0.0"
+    },
+    "stylelint-use-logical": {
+      "stylelint": "$stylelint"
+    },
+    "@conduction/nextcloud-vue": {
+      "stylelint": "$stylelint"
     }
   },
   "devDependencies": {
@@ -389,7 +400,7 @@
     "sass": "^1.106.1",
     "sass-loader": "^17.0.1",
     "style-loader": "~4.0.0",
-    "stylelint": "^17.15.0",
+    "stylelint": "^18.0.0",
     "terser-webpack-plugin": "^5.3.14",
     "vue-eslint-parser": "^10.3.0",
     "vue-loader": "^17.4.2",
