@@ -6,7 +6,7 @@
  * (site-action-forms). Pure, with no imports, so a page of any slice can ask
  * it without loading the forms.
  *
- * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
+ * @spec openspec/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
  */
 
 /**
@@ -34,7 +34,7 @@ function stampedFields(action) {
  * @param {object} action The action.
  * @return {string[]} The fields.
  *
- * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
+ * @spec openspec/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
  */
 export function inputFields(action) {
 	if (!action || !Array.isArray(action.fields)) {
@@ -56,7 +56,7 @@ export function inputFields(action) {
  * @param {object} action The action.
  * @return {boolean} True when it has a field to fill in.
  *
- * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
+ * @spec openspec/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
  */
 export function asksInput(action) {
 	return inputFields(action).length > 0

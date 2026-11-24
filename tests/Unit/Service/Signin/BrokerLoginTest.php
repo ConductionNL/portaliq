@@ -484,7 +484,7 @@ class BrokerLoginTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/the-account-names-the-audience-and-the-company/specs/portal-identity-space/spec.md#requirement-an-existing-accounts-audience-wins-over-the-sign-in-routes
+	 * @spec openspec/specs/portal-identity-space/spec.md#requirement-an-existing-accounts-audience-wins-over-the-sign-in-routes
 	 */
 	public function testAnInvitedAccountKeepsItsAudience(): void {
 		$this->accountAudience = 'employer';

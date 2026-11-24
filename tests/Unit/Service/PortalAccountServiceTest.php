@@ -85,7 +85,7 @@ class PortalAccountServiceTest extends TestCase {
 	 * An account an app invited as `employer` stays an employer when the
 	 * person signs in through eHerkenning, whose preset proposes `supplier`.
 	 *
-	 * @spec openspec/changes/the-account-names-the-audience-and-the-company/specs/portal-identity-space/spec.md#requirement-an-existing-accounts-audience-wins-over-the-sign-in-routes
+	 * @spec openspec/specs/portal-identity-space/spec.md#requirement-an-existing-accounts-audience-wins-over-the-sign-in-routes
 	 */
 	public function testAReturningIdentityKeepsItsOwnAudience(): void {
 		[$service] = $this->serviceWithStore();
@@ -102,7 +102,7 @@ class PortalAccountServiceTest extends TestCase {
 	/**
 	 * A new account takes the audience the sign-in route proposes.
 	 *
-	 * @spec openspec/changes/the-account-names-the-audience-and-the-company/specs/portal-identity-space/spec.md#requirement-an-existing-accounts-audience-wins-over-the-sign-in-routes
+	 * @spec openspec/specs/portal-identity-space/spec.md#requirement-an-existing-accounts-audience-wins-over-the-sign-in-routes
 	 */
 	public function testANewIdentityTakesTheProposedAudience(): void {
 		[$service] = $this->serviceWithStore();

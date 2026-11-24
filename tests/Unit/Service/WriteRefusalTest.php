@@ -30,7 +30,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * A refused value names its field, and only a field the portal wrote.
  *
- * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+ * @spec openspec/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
  */
 class WriteRefusalTest extends TestCase {
 	/**

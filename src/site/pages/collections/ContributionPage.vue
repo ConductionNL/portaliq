@@ -1680,7 +1680,7 @@ export default {
 		 * @param {object} action The action.
 		 * @param {object} row The row.
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-update-row-action-that-needs-input-must-open-its-form-on-the-row
+		 * @spec openspec/specs/site-forms/spec.md#requirement-an-update-row-action-that-needs-input-must-open-its-form-on-the-row
 		 */
 		async onRowAction(item, action, row) {
 			if (action.type === 'update' && asksInput(action)) {

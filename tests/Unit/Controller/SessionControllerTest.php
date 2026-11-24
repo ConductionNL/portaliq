@@ -936,7 +936,7 @@ class SessionControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/the-account-names-the-audience-and-the-company/specs/portal-identity-space/spec.md#requirement-the-session-names-the-company-the-person-acts-for
+	 * @spec openspec/specs/portal-identity-space/spec.md#requirement-the-session-names-the-company-the-person-acts-for
 	 */
 	public function testIndexNamesTheCompanyFromAClaim(): void {
 		$session = $this->createMock(PortalSessionService::class);
@@ -966,7 +966,7 @@ class SessionControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/the-account-names-the-audience-and-the-company/specs/portal-identity-space/spec.md#requirement-an-existing-accounts-audience-wins-over-the-sign-in-routes
+	 * @spec openspec/specs/portal-identity-space/spec.md#requirement-an-existing-accounts-audience-wins-over-the-sign-in-routes
 	 */
 	public function testOidcCallbackKeepsTheAccountsOwnAudience(): void {
 		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);

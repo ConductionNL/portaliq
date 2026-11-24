@@ -26,7 +26,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+ * @spec openspec/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use OCP\AppFramework\Http\JSONResponse;
 /**
  * Turns a store refusal of a written value into a 422 that names the field.
  *
- * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+ * @spec openspec/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
  */
 class WriteRefusal implements WriteRefusalInterface {
 	/**
@@ -69,7 +69,7 @@ class WriteRefusal implements WriteRefusalInterface {
 	 *
 	 * @return JSONResponse|null
 	 *
-	 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+	 * @spec openspec/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
 	 */
 	public function response(string $failure, array $data): ?JSONResponse {
 		$invalid = $this->invalidFields(failure: $failure, fields: array_map('strval', array_keys($data)));
@@ -89,7 +89,7 @@ class WriteRefusal implements WriteRefusalInterface {
 	 *
 	 * @return array<string, string> The kind per refused field.
 	 *
-	 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+	 * @spec openspec/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
 	 */
 	public function invalidFields(string $failure, array $fields): array {
 		$out = [];
@@ -114,7 +114,7 @@ class WriteRefusal implements WriteRefusalInterface {
 	 *
 	 * @return array<int, array<int, string>> The matches, none when the refusal names no property.
 	 *
-	 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+	 * @spec openspec/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
 	 */
 	private function refusalMatches(string $failure): array {
 		$found = preg_match_all(
@@ -137,7 +137,7 @@ class WriteRefusal implements WriteRefusalInterface {
 	 *
 	 * @return array{0: string, 1: string}
 	 *
-	 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+	 * @spec openspec/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
 	 */
 	private function pathAndKind(array $hit): array {
 		$path = $hit[1];
