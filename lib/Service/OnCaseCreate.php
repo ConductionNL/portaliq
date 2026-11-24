@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-server-fills-in-the-case-and-the-guard-still-runs-req-coc-004
+ * @spec openspec/changes/archive/2026-11-24-case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-server-fills-in-the-case-and-the-guard-still-runs-req-coc-004
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ use OCP\AppFramework\Http\JSONResponse;
  * case id is the value of the cross-reference field, over anything the body sent. The
  * cross-reference guard still runs on the result.
  *
- * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-server-fills-in-the-case-and-the-guard-still-runs-req-coc-004
+ * @spec openspec/changes/archive/2026-11-24-case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-server-fills-in-the-case-and-the-guard-still-runs-req-coc-004
  */
 class OnCaseCreate {
 
@@ -42,7 +42,7 @@ class OnCaseCreate {
 	 * @param PortalObjectReaderInterface $reader  Subject-scoped OpenRegister reader.
 	 * @param CaseActionsResolver         $actions The placement and the window.
 	 *
-	 * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-server-fills-in-the-case-and-the-guard-still-runs-req-coc-004
+	 * @spec openspec/changes/archive/2026-11-24-case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-server-fills-in-the-case-and-the-guard-still-runs-req-coc-004
 	 */
 	public function __construct(
 		private readonly PortalObjectReaderInterface $reader,
@@ -60,7 +60,7 @@ class OnCaseCreate {
 	 *
 	 * @return array<string,string>|JSONResponse The cross-reference field and the case id.
 	 *
-	 * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-server-fills-in-the-case-and-the-guard-still-runs-req-coc-004
+	 * @spec openspec/changes/archive/2026-11-24-case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-server-fills-in-the-case-and-the-guard-still-runs-req-coc-004
 	 */
 	public function carried(string $target, array $action, array $subject, string $app): array|JSONResponse {
 		$parts = explode('/', $target);

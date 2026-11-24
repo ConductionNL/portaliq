@@ -518,7 +518,7 @@ export default {
 		 *
 		 * @return {Array<object>}
 		 *
-		 * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-case-page-offers-the-actions-the-server-lists-req-coc-002
+		 * @spec openspec/changes/archive/2026-11-24-case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-case-page-offers-the-actions-the-server-lists-req-coc-002
 		 */
 		caseActions() {
 			return caseActionsView(this.data)

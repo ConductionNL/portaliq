@@ -2152,7 +2152,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return array<string, string>|JSONResponse
 	 *
-	 * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-server-fills-in-the-case-and-the-guard-still-runs-req-coc-004
+	 * @spec openspec/changes/archive/2026-11-24-case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-server-fills-in-the-case-and-the-guard-still-runs-req-coc-004
 	 */
 	private function onCaseFields(array $subject, array $match): array|JSONResponse {
 		$target = (string)$this->request->getParam('onCase', '');

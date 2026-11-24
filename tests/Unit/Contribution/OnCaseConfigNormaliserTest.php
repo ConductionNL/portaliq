@@ -34,7 +34,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Portaliq\Contribution\OnCaseConfigNormaliser
  *
- * @spec openspec/changes/case-page-objection-and-complaint/specs/portal-contribution-contract/spec.md
+ * @spec openspec/changes/archive/2026-11-24-case-page-objection-and-complaint/specs/portal-contribution-contract/spec.md
  */
 class OnCaseConfigNormaliserTest extends TestCase {
 
