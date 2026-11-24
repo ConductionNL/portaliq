@@ -67,12 +67,18 @@ test('the row stays links with aria-current and keeps its e2e testids', () => {
 test('the plain theme styles the new class names, current page included', () => {
 	assert.match(theme, /\.pq-search--plain \.utrecht-pagination__page-link,/)
 	assert.match(theme, /\.pq-search--plain \.utrecht-pagination__relative-link \{/)
-	assert.match(theme, /\.pq-search--plain \.utrecht-pagination__page-link--current \{/)
+	assert.match(
+		theme,
+		/\.pq-search--plain \.utrecht-pagination__page-link--current \{/,
+	)
 })
 
-test('the block\'s own fallbacks are token-first, never a bare colour', () => {
+test("the block's own fallbacks are token-first, never a bare colour", () => {
 	const style = block.slice(block.indexOf('<style'))
-	const rules = style.slice(style.indexOf('.pq-search__page-list'), style.indexOf('.pq-search__page-gap'))
+	const rules = style.slice(
+		style.indexOf('.pq-search__page-list'),
+		style.indexOf('.pq-search__page-gap'),
+	)
 	assert.match(rules, /var\(--utrecht-pagination-page-link-color,/)
 	assert.doesNotMatch(rules, /#[0-9a-f]{3,8}\b|\brgba?\(/i)
 })
