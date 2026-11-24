@@ -14141,7 +14141,7 @@
 			"built": {
 				"state": "specified",
 				"evidence": "Not built: 0 of 7 tasks; no article schema, ArticleService or pages in the code (Ruben decision 2026-10-09).",
-				"requirement": "openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md :: A marketer writes and reads an article in portaliq",
+				"requirement": "openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md :: A marketer writes and reads an article in portaliq",
 				"plan": "marketing-articles-from-pipelinq",
 				"note": "Row added 2026-11-12 in the closing round: the open change marketing-articles-from-pipelinq had no capability row (decision 395)."
 			},

@@ -9,7 +9,7 @@
   - native picker rather than typed as a bare path, the same
   - `getFilePickerBuilder` pattern the library's own `CnFilesWidgetForm` uses.
   -
-  - @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
+  - @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
   -->
 <template>
 	<NcDialog
@@ -209,7 +209,7 @@ export default {
 		},
 
 		/**
-		 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
+		 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
 		 * @return {string} The modal title.
 		 */
 		modalTitle() {
@@ -219,7 +219,7 @@ export default {
 		},
 
 		/**
-		 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
+		 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
 		 * @return {Array<{value: string, label: string}>} The two language options.
 		 */
 		languageOptions() {
@@ -233,7 +233,7 @@ export default {
 		 */
 		languageOption: {
 			/**
-			 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
+			 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
 			 * @return {string} The current language code.
 			 */
 			get() {
@@ -242,7 +242,7 @@ export default {
 
 			/**
 			 * @param {string} value The language code just picked.
-			 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
+			 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
 			 */
 			set(value) {
 				this.model.language = value || 'nl'
@@ -250,7 +250,7 @@ export default {
 		},
 
 		/**
-		 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
+		 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
 		 * @return {boolean} Whether the form has enough to attempt a save.
 		 */
 		canSave() {
@@ -263,7 +263,7 @@ export default {
 		 * Open the Nextcloud Files picker restricted to images, and store the
 		 * picked node's path.
 		 *
-		 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
+		 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
 		 * @return {Promise<void>} Resolves once a pick has been applied, or declined.
 		 */
 		async openHeroPicker() {
@@ -305,7 +305,7 @@ export default {
 		 * Build the payload from the model, splitting the tags text field
 		 * back into an array.
 		 *
-		 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
+		 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
 		 * @return {object} The payload the API expects.
 		 */
 		buildPayload() {
@@ -323,7 +323,7 @@ export default {
 		/**
 		 * Create or update the article.
 		 *
-		 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
+		 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
 		 * @return {Promise<void>} Resolves when the caller has been told.
 		 */
 		async save() {

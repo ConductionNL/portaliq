@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-holds-its-body-as-markdown-and-its-own-identity
+ * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-holds-its-body-as-markdown-and-its-own-identity
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use Throwable;
 /**
  * The article lifecycle and its usages.
  *
- * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-holds-its-body-as-markdown-and-its-own-identity
+ * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-holds-its-body-as-markdown-and-its-own-identity
  *
  * @SuppressWarnings(PHPMD.TooManyMethods) The private slug, identity and
  * lifecycle helpers back one surface; splitting them would only relocate them.
@@ -108,7 +108,7 @@ class ArticleService implements ArticleServiceInterface {
 	 *
 	 * @return array{data: array<int, array<string, mixed>>, pagination: array{page: int, limit: int, total: int, pages: int}}
 	 *
-	 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
+	 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
 	 */
 	public function listArticles(int $page, int $limit): array {
 		$page  = max(1, $page);
@@ -133,7 +133,7 @@ class ArticleService implements ArticleServiceInterface {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-holds-its-body-as-markdown-and-its-own-identity
+	 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-holds-its-body-as-markdown-and-its-own-identity
 	 */
 	public function getArticle(string $articleId): ?array {
 		$found = $this->store->find(id: $articleId);
@@ -160,8 +160,8 @@ class ArticleService implements ArticleServiceInterface {
 	 *
 	 * @return array{article?: array<string, mixed>, error?: string, field?: string}
 	 *
-	 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-holds-its-body-as-markdown-and-its-own-identity
-	 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-agent-drafted-article-is-marked-as-such
+	 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-holds-its-body-as-markdown-and-its-own-identity
+	 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-agent-drafted-article-is-marked-as-such
 	 */
 	public function createArticle(array $payload, string $authorUid, string $agent = '', string $legacyRef = ''): array {
 		$clean = $this->sanitise(payload: $payload);
@@ -215,8 +215,8 @@ class ArticleService implements ArticleServiceInterface {
 	 *
 	 * @return array{article?: array<string, mixed>, error?: string, field?: string}
 	 *
-	 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-holds-its-body-as-markdown-and-its-own-identity
-	 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-agent-drafted-article-is-marked-as-such
+	 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-holds-its-body-as-markdown-and-its-own-identity
+	 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-agent-drafted-article-is-marked-as-such
 	 */
 	public function updateArticle(string $articleId, array $patch, string $agent = ''): array {
 		$existing = $this->getArticle(articleId: $articleId);
@@ -255,7 +255,7 @@ class ArticleService implements ArticleServiceInterface {
 	 *
 	 * @return array{article?: array<string, mixed>, error?: string}
 	 *
-	 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-moves-through-a-declared-lifecycle
+	 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-moves-through-a-declared-lifecycle
 	 */
 	public function applyTransition(string $articleId, string $transition): array {
 		$rule = (self::TRANSITIONS[$transition] ?? null);
@@ -291,7 +291,7 @@ class ArticleService implements ArticleServiceInterface {
 	 *
 	 * @return array{data?: array<int, array{id: string, title: string, kind: string, app: string, url: string}>, error?: string}
 	 *
-	 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-reports-where-it-has-been-used
+	 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-reports-where-it-has-been-used
 	 */
 	public function listUsages(string $articleId): array {
 		$article = $this->getArticle(articleId: $articleId);

@@ -32,7 +32,7 @@
 import MarkdownBlock from './MarkdownBlock.vue'
 
 /**
- * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-page-can-show-an-article
+ * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-page-can-show-an-article
  */
 export default {
 	name: 'PageArticleBlock',

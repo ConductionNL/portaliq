@@ -22,7 +22,7 @@ use RuntimeException;
 /**
  * portaliq's pages that name an article are among its usages.
  *
- * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-reports-where-it-has-been-used
+ * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-reports-where-it-has-been-used
  */
 #[CoversClass(ArticlePageUsagesListener::class)]
 #[UsesClass(ArticleUsagesRequestedEvent::class)]

@@ -4,7 +4,7 @@
 // A markdown page that names an article shows its title, hero image and body
 // in place (marketing-articles-from-pipelinq).
 //
-// @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-page-can-show-an-article
+// @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-page-can-show-an-article
 
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'

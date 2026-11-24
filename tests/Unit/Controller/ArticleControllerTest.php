@@ -23,7 +23,7 @@ use PHPUnit\Framework\TestCase;
  * `portal.write-articles`, the author is the session's user, the server
  * stamps what a client may not send, and each refusal has its status.
  *
- * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md
+ * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md
  */
 class ArticleControllerTest extends TestCase {
 	use StaffActionDoubleTrait;

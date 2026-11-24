@@ -27,7 +27,7 @@
  * Articles and pages created here are deleted again in afterAll. The base URL
  * comes from tests/e2e/base-url.ts.
  *
- * @spec openspec/changes/marketing-articles-from-pipelinq/tasks.md#4.2
+ * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/tasks.md#4.2
  */
 
 import type { APIRequestContext, Page } from '@playwright/test'
