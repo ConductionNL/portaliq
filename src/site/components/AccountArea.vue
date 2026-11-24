@@ -361,7 +361,7 @@ export default {
 		 *
 		 * @return {object|null} `{label, title}`.
 		 *
-		 * @spec openspec/changes/resident-menu-badges-and-cards/specs/site-resident-menu/spec.md#requirement-the-menu-may-open-with-whom-the-resident-acts-for
+		 * @spec openspec/specs/site-resident-menu/spec.md#requirement-the-menu-may-open-with-whom-the-resident-acts-for
 		 */
 		menuCard() {
 			const label = this.portal?.residentMenu?.cardLabel

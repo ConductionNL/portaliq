@@ -245,7 +245,7 @@ class PortalBlockResolverTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/steps-highlight/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-the-step-that-matters-now-as-a-highlight
+	 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-the-step-that-matters-now-as-a-highlight
 	 */
 	public function testAStepsBlockMayDrawAHighlight(): void {
 		$declared = [
@@ -468,7 +468,7 @@ class PortalBlockResolverTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/guardian-message-to-and-whole-day/specs/portal-contribution-contract/spec.md#requirement-a-message-button-opens-the-form-with-its-teacher-chosen
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-message-button-opens-the-form-with-its-teacher-chosen
 	 */
 	public function testACtaKeepsWhomItsMessageGoesTo(): void {
 		$declared = ['type' => 'cta', 'route' => '/mijn/messages', 'label' => 'Bericht aan {teacherName}', 'messageTo' => 'teacherRef'];

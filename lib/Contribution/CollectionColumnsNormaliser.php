@@ -122,7 +122,7 @@ class CollectionColumnsNormaliser {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/link-field-qr-code/tasks.md#t1
+	 * @spec openspec/specs/portal-contribution-contract/spec.md
 	 */
 	private function withLinkLabel(array $entry, array $source): array {
 		$label = ($source['linkLabel'] ?? null);

@@ -292,7 +292,7 @@ export default {
 
 		/**
 		 * @return {Array<object>} The fields that render as a QR code.
-		 * @spec openspec/changes/link-field-qr-code/tasks.md#t5
+		 * @spec openspec/specs/portal-contribution-contract/spec.md
 		 */
 		qrFields() {
 			return this.fields.filter((field) => field.render === 'qr')

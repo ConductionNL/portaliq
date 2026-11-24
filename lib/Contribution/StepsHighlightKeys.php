@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/steps-highlight/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-the-step-that-matters-now-as-a-highlight
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-the-step-that-matters-now-as-a-highlight
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ namespace OCA\Portaliq\Contribution;
 /**
  * Sanitises the highlight keys of a `steps` block.
  *
- * @spec openspec/changes/steps-highlight/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-the-step-that-matters-now-as-a-highlight
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-the-step-that-matters-now-as-a-highlight
  */
 class StepsHighlightKeys {
 	/**
@@ -46,7 +46,7 @@ class StepsHighlightKeys {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/steps-highlight/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-the-step-that-matters-now-as-a-highlight
+	 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-the-step-that-matters-now-as-a-highlight
 	 */
 	public function keys(array $block, array $pageIds): array {
 		if (($block['display'] ?? null) !== 'highlight') {

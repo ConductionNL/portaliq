@@ -632,7 +632,7 @@ const QR_SCHEMES = /^(openid-credential-offer|openid4vp):\/\//i
  * @param {string} origin The site's origin, to make a path absolute.
  * @return {string} The address, or '' when it is not one.
  *
- * @spec openspec/changes/link-field-qr-code/tasks.md#t3
+ * @spec openspec/specs/portal-contribution-contract/spec.md
  */
 export function qrHref(value, origin = '') {
 	if (typeof value !== 'string') {
@@ -667,7 +667,7 @@ function onOrigin(safe, origin) {
  * @param {{linkLabel?: string, label?: string, field?: string}} column The column or field.
  * @return {string} The words.
  *
- * @spec openspec/changes/link-field-qr-code/tasks.md#t5
+ * @spec openspec/specs/portal-contribution-contract/spec.md
  */
 export function qrLabel(column) {
 	for (const key of ['linkLabel', 'label', 'field']) {

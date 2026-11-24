@@ -393,7 +393,7 @@ function workingDaysFrom(today, total) {
  * @param {Date} date The day.
  * @param {{today: Date, ask: object}} context Today and the words asked for.
  * @return {{value: string, label: string, description: string}} The day.
- * @spec openspec/changes/guardian-message-to-and-whole-day/specs/site-forms/spec.md#requirement-today-reads-as-the-whole-day
+ * @spec openspec/specs/site-forms/spec.md#requirement-today-reads-as-the-whole-day
  */
 function namedDay(date, { today, ask }) {
 	const offset = Math.round((date - today) / 86400000)
@@ -412,7 +412,7 @@ function namedDay(date, { today, ask }) {
  *
  * @param {{todayWord?: string, tomorrowWord?: string, wholeDayWords?: string}} ask The words asked for.
  * @return {{names: Array<string>, allDay: string}}
- * @spec openspec/changes/guardian-message-to-and-whole-day/specs/site-forms/spec.md#requirement-today-reads-as-the-whole-day
+ * @spec openspec/specs/site-forms/spec.md#requirement-today-reads-as-the-whole-day
  */
 function dayWords(ask) {
 	return {
