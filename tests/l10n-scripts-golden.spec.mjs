@@ -116,8 +116,13 @@ const BUILD_REPO = {
 	'l10n/readme.md': 'ignored',
 }
 
-const CURRENT_EN =
+// Every entry of a catalogue, as a locale other than the source one serves it.
+const FULL_JS =
 	'OC.L10N.register(\n    "demoapp",\n    {\n        "A": "A",\n        "Say \\"hi\\"": "Say \\"hi\\""\n    },\n    "nplurals=2; plural=(n != 1);"\n)\n'
+
+// The same catalogue as en serves it: every entry equals its key, so none is kept.
+const CURRENT_EN =
+	'OC.L10N.register(\n    "demoapp",\n    {\n\n    },\n    "nplurals=2; plural=(n != 1);"\n)\n'
 
 const BUILD_SCENARIOS = {
 	'write every locale': { files: BUILD_REPO, args: [] },
@@ -130,7 +135,7 @@ const BUILD_SCENARIOS = {
 		args: ['--check'],
 	},
 	'check passes': {
-		files: { ...BUILD_REPO, 'l10n/nl.json': BUILD_REPO['l10n/en.json'], 'l10n/en.js': CURRENT_EN, 'l10n/nl.js': CURRENT_EN },
+		files: { ...BUILD_REPO, 'l10n/nl.json': BUILD_REPO['l10n/en.json'], 'l10n/en.js': CURRENT_EN, 'l10n/nl.js': FULL_JS },
 		args: ['--check'],
 	},
 	'empty translations': {
