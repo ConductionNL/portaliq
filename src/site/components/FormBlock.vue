@@ -239,9 +239,9 @@ import {
 	firstTouch,
 	lastTouch,
 } from '../lib/campaignTracking.js'
+import { chosenList, chosenValue, minimumErrors } from '../lib/formFieldValues.js'
 import { submitLandingPageForm } from '../lib/formSubmission.js'
 import { hasHelp, mergeHelp } from '../lib/help.js'
-import { chosenList, chosenValue, minimumErrors } from '../lib/formFieldValues.js'
 import {
 	DUTCH,
 	explainsOptional,
@@ -480,7 +480,7 @@ export default {
 		helpOf(field) {
 			const own = typeof field.description === 'string' ? field.description.trim() : ''
 			const affix = field.type === 'textAffixed'
-				? [field.prefix, field.suffix].filter(Boolean).join(' … ')
+				? [field.prefix, field.suffix].filter(Boolean).join(' – ')
 				: ''
 			if (own !== '') {
 				return affix ? `${own} (${affix})` : own

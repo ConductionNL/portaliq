@@ -85,7 +85,10 @@ After `site-mijn-omgeving-components` waves 2 to 5.
 
 After `site-multi-step-forms` wave 1.
 
-- [ ] **T11** (not run in this batch): the `form` widget's field list in the inspector, the Formulieren group adding fields, every field type of design D1 rendered through the shared field layer.
+- [x] **T11a**: the `form` widget's field list in the inspector, the Formulieren group adding fields, and the D1 field types FormBlock can submit as plain values.
+  - Built 24 Nov: `src/lib/formFieldTypes.js` declares thirteen field types (text, textarea, number, email, tel, textAffixed, date, select, radio, checkboxes, checkbox, switch, range), each with its NL Design System name and D1's editable settings; name, label and required are always editable. Pure edits (`addField`, `updateField`, `removeField`, `moveField`) keep names unique and write only the settings a type declares. `FormFieldList.vue` is the inspector's list for a selected `form` (move, remove, "Add field" opens the palette); `FormBlock` is now introspected for the inspector, with `portal` and `portalHelp` host-supplied. The palette's Formulieren group (`formFieldGroup`, `withFormFieldGroup`) sits after Navigatie, lists the field types, and with no form selected says to select one first and adds nothing (REQ-SNW-003, both scenarios); a field type is never draggable onto the grid. `FormBlock` draws radio and checkbox groups under one legend, a single checkbox, a switch (`role="switch"`), prefix and suffix, a range and number limits; a checkbox group's minimum is checked in `src/site/lib/formFieldValues.js`.
+  - Test: `tests/form-widget-fields.spec.mjs` (`check:form-widget-fields`, in `check:specs`), 15 tests. The e2e of the date scenario is not run: needs a live instance.
+- [ ] **T11b**: the rest of D4: (1) the server takes a landing form's accepted field ids from its `form` row (`FormSubmitActions::fieldIdsOf`), so a field added on the widget must also reach that row when the page is saved; (2) the `file` and `group` (fieldset) types and the `select` with search and date-picker variants, which need the upload path and nested fields. — not run in this batch: server-side save path and upload handling.
 
 ## Validation
 

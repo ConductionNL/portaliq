@@ -179,8 +179,8 @@
 <script>
 import { translate, translatePlural } from '@nextcloud/l10n'
 import { NcButton } from '@nextcloud/vue'
-import { widgetCatalogue } from '../lib/pageWidgetCatalogue.js'
 import { formFieldGroup, withFormFieldGroup } from '../lib/formFieldTypes.js'
+import { widgetCatalogue } from '../lib/pageWidgetCatalogue.js'
 import { paletteGroups, paletteHitCount } from '../lib/widgetPalette.js'
 import { PALETTE_DRAG_TYPE } from './paletteDrag.js'
 

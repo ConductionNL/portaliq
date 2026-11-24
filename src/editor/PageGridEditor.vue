@@ -220,12 +220,18 @@
 							v-for="field in fields"
 							:key="field.name"
 							class="page-grid-editor__field">
+							<!-- A text block's markdown gets the toolbar, so an editor needs no markdown. -->
+							<MarkdownField
+								v-if="field.kind === 'markdown'"
+								:id="`field-${field.name}`"
+								:modelValue="fieldValue(field)"
+								@update:modelValue="onFieldInput(field, $event)" />
 							<!--
 								A form's fields are a list an editor builds, not JSON
 								to type (REQ-SNW-003): each field with its own
 								settings, added from the palette's Formulieren group.
 							-->
-							<template v-if="isFormFieldList(field)">
+							<template v-else-if="isFormFieldList(field)">
 								<label :for="`field-${field.name}`">{{ field.label }}</label>
 								<FormFieldList
 									:id="`field-${field.name}`"
@@ -234,15 +240,9 @@
 									@update:fields="editor.setProp('fields', $event)"
 									@add="$emit('update:paletteOpen', true)" />
 							</template>
-							<!-- A text block's markdown gets the toolbar, so an editor needs no markdown. -->
-							<MarkdownField
-								v-else-if="field.kind === 'markdown'"
-								:id="`field-${field.name}`"
-								:modelValue="fieldValue(field)"
-								@update:modelValue="onFieldInput(field, $event)" />
-							<label
-								v-else-if="!isFormFieldList(field)"
-								:for="`field-${field.name}`">{{ field.label }}</label>
+							<label v-else :for="`field-${field.name}`">{{
+								field.label
+							}}</label>
 							<!-- The choices an app declares for a block that reads its public index. -->
 							<PublicSourcePicker
 								v-if="field.picker && catalogueKinds.length > 0"
@@ -353,6 +353,7 @@ import FormFieldList from './FormFieldList.vue'
 import MarkdownField from './MarkdownField.vue'
 import PublicSourcePicker from './PublicSourcePicker.vue'
 import WidgetPalettePanel from './WidgetPalettePanel.vue'
+import { addField } from '../lib/formFieldTypes.js'
 import {
 	fieldsFor,
 	isPublicWidget,
@@ -360,7 +361,6 @@ import {
 } from '../lib/pageWidgetCatalogue.js'
 import { widgetLabel, widgetWidthLine } from '../lib/widgetLabels.js'
 import { historyIntent } from './editHistory.js'
-import { addField } from '../lib/formFieldTypes.js'
 import { cellFromDrop } from './geometry.js'
 import { PALETTE_DRAG_TYPE } from './paletteDrag.js'
 import { recordListChoice } from './recordLists.js'
