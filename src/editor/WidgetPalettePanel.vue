@@ -97,7 +97,38 @@
 			class="palette__group"
 			:data-testid="`widget-palette-group-${group.group}`">
 			<h4 class="palette__group-heading">{{ group.label }}</h4>
-			<ul class="palette__list">
+			<!--
+				FORMULIEREN ADDS A FIELD TO THE SELECTED FORM, never a widget to
+				the grid (REQ-SNW-003). With no form selected the group says so
+				and its buttons are disabled rather than hidden: an editor who
+				looks for "Datum" learns where it lives and what to do first.
+				No drag: a field has no cell to land on.
+			-->
+			<template v-if="group.fields">
+				<p
+					v-if="!group.enabled"
+					class="palette__note"
+					data-testid="widget-palette-forms-note">
+					{{ group.note }}
+				</p>
+				<ul class="palette__list" data-testid="widget-palette-fields">
+					<li
+						v-for="field in group.fields"
+						:key="`field-${field.key}`"
+						class="palette__item">
+						<button
+							type="button"
+							class="palette__button"
+							:disabled="!group.enabled"
+							:data-testid="`widget-palette-field-${field.key}`"
+							@click="chooseField(field)">
+							<span class="palette__label">{{ field.label }}</span>
+							<span class="palette__key">{{ field.nlds }}</span>
+						</button>
+					</li>
+				</ul>
+			</template>
+			<ul v-if="group.entries.length > 0" class="palette__list">
 				<li
 					v-for="entry in group.entries"
 					:key="entry.key"
@@ -149,6 +180,7 @@
 import { translate, translatePlural } from '@nextcloud/l10n'
 import { NcButton } from '@nextcloud/vue'
 import { widgetCatalogue } from '../lib/pageWidgetCatalogue.js'
+import { formFieldGroup, withFormFieldGroup } from '../lib/formFieldTypes.js'
 import { paletteGroups, paletteHitCount } from '../lib/widgetPalette.js'
 import { PALETTE_DRAG_TYPE } from './paletteDrag.js'
 
@@ -175,9 +207,18 @@ export default {
 			type: Boolean,
 			default: false,
 		},
+
+		/**
+		 * Whether a `form` widget is selected on the grid: only then does the
+		 * Formulieren group add a field (REQ-SNW-003).
+		 */
+		formSelected: {
+			type: Boolean,
+			default: false,
+		},
 	},
 
-	emits: ['update:open', 'choose', 'dragging'],
+	emits: ['update:open', 'choose', 'chooseField', 'dragging'],
 
 	data() {
 		return {
@@ -217,7 +258,10 @@ export default {
 		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-the-palette-must-group-widgets-and-let-an-editor-search-them-req-snw-001
 		 */
 		groups() {
-			return paletteGroups(this.entries, this.query)
+			return withFormFieldGroup(
+				paletteGroups(this.entries, this.query),
+				formFieldGroup(this.query, this.formSelected),
+			)
 		},
 
 		/**
@@ -228,7 +272,10 @@ export default {
 		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-the-palette-must-group-widgets-and-let-an-editor-search-them-req-snw-001
 		 */
 		hitsText() {
-			const hits = paletteHitCount(this.entries, this.query)
+			const fields = formFieldGroup(this.query, this.formSelected)
+			const hits =
+				paletteHitCount(this.entries, this.query)
+				+ (fields ? fields.entries.length : 0)
 			// translatePlural, NOT translate. `translate(app, text, vars, count)`
 			// takes the THIRD argument as vars, so passing the plural there
 			// handed it an ignored string and the count never chose a form: the
@@ -343,6 +390,23 @@ export default {
 		 */
 		choose(entry) {
 			this.$emit('choose', entry.key)
+			this.close()
+		},
+
+		/**
+		 * Add a field of this type to the selected form. The panel closes, as
+		 * after a widget, so focus returns to the control that opened it.
+		 *
+		 * @param {{key: string}} field The field type entry.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
+		chooseField(field) {
+			if (!this.formSelected) {
+				return
+			}
+			this.$emit('chooseField', field.key)
 			this.close()
 		},
 
@@ -504,6 +568,16 @@ export default {
 	color: var(--color-text-maxcontrast);
 	font-family: monospace;
 	font-size: 0.85em;
+}
+
+.palette__note {
+	margin: 0 0 8px;
+	color: var(--color-text-maxcontrast);
+}
+
+.palette__button:disabled {
+	cursor: not-allowed;
+	opacity: 0.6;
 }
 
 .palette__reason {
