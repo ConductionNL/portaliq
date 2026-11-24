@@ -676,7 +676,12 @@ OC.L10N.register(
         "Client id": "Client id",
         "An issuer address starts with https://.": "An issuer address starts with https://.",
         "The only OIDC provider this portal accepts; a sign-in through another provider is refused. Empty: the organisation's provider is accepted.": "The only OIDC provider this portal accepts; a sign-in through another provider is refused. Empty: the organisation's provider is accepted.",
-        "The client id that provider must use. Empty: any client of that provider. The client secret stays with the organisation.": "The client id that provider must use. Empty: any client of that provider. The client secret stays with the organisation."
+        "The client id that provider must use. Empty: any client of that provider. The client secret stays with the organisation.": "The client id that provider must use. Empty: any client of that provider. The client secret stays with the organisation.",
+        "This form has no fields yet.": "This form has no fields yet.",
+        "Move up": "Move up",
+        "Move down": "Move down",
+        "Remove field": "Remove field",
+        "Add field": "Add field"
     },
     "nplurals=2; plural=(n != 1);"
 )

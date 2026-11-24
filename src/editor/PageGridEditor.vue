@@ -70,8 +70,10 @@
 			<WidgetPalettePanel
 				:open="paletteOpen"
 				:publicOnly="publicOnly"
+				:formSelected="formSelected"
 				@update:open="$emit('update:paletteOpen', $event)"
-				@choose="editor.addWidget" />
+				@choose="editor.addWidget"
+				@chooseField="addFormField" />
 
 			<!--
 				A DROP TARGET AROUND THE GRID, not on each cell: the fleet's
@@ -224,6 +226,20 @@
 								:id="`field-${field.name}`"
 								:modelValue="fieldValue(field)"
 								@update:modelValue="onFieldInput(field, $event)" />
+							<!--
+								A form's fields are a list an editor builds, not JSON
+								to type (REQ-SNW-003): each field with its own
+								settings, added from the palette's Formulieren group.
+							-->
+							<template v-else-if="isFormFieldList(field)">
+								<label :for="`field-${field.name}`">{{ field.label }}</label>
+								<FormFieldList
+									:id="`field-${field.name}`"
+									:idPrefix="`field-${selected.id}`"
+									:fields="selected.props?.fields || []"
+									@update:fields="editor.setProp('fields', $event)"
+									@add="$emit('update:paletteOpen', true)" />
+							</template>
 							<label v-else :for="`field-${field.name}`">{{
 								field.label
 							}}</label>
@@ -236,7 +252,10 @@
 								:kinds="catalogueKinds"
 								@set="(name, value) => editor.setProp(name, value)" />
 							<textarea
-								v-if="field.kind === 'text' || field.kind === 'json'"
+								v-if="
+									!isFormFieldList(field)
+									&& (field.kind === 'text' || field.kind === 'json')
+								"
 								:id="`field-${field.name}`"
 								class="page-grid-editor__input"
 								rows="6"
@@ -292,7 +311,9 @@
 									editor.setProp(field.name, $event.target.checked)
 								" />
 							<input
-								v-else-if="field.kind !== 'markdown'"
+								v-else-if="
+									field.kind !== 'markdown' && !isFormFieldList(field)
+								"
 								:id="`field-${field.name}`"
 								class="page-grid-editor__input"
 								:type="field.kind === 'number' ? 'number' : 'text'"
@@ -328,9 +349,11 @@
 import { CnDashboardGrid, dashboardWidgetRegistry } from '@conduction/nextcloud-vue'
 import { translate } from '@nextcloud/l10n'
 import { NcButton, NcNoteCard } from '@nextcloud/vue'
+import FormFieldList from './FormFieldList.vue'
 import MarkdownField from './MarkdownField.vue'
 import PublicSourcePicker from './PublicSourcePicker.vue'
 import WidgetPalettePanel from './WidgetPalettePanel.vue'
+import { addField } from '../lib/formFieldTypes.js'
 import {
 	fieldsFor,
 	isPublicWidget,
@@ -354,6 +377,7 @@ export default {
 
 	components: {
 		CnDashboardGrid,
+		FormFieldList,
 		MarkdownField,
 		NcButton,
 		NcNoteCard,
@@ -507,6 +531,18 @@ export default {
 					this.excludedPaths,
 				)
 			)
+		},
+
+		/**
+		 * Whether the selected widget is a `form`, the one place the palette's
+		 * Formulieren group adds a field to (REQ-SNW-003).
+		 *
+		 * @return {boolean} True for a selected form.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
+		formSelected() {
+			return this.selected?.widgetKey === 'form'
 		},
 
 		/**
@@ -859,6 +895,35 @@ export default {
 		 * @return {void}
 		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
 		 */
+		/**
+		 * Whether this inspector field is a form's field list.
+		 *
+		 * @param {object} field The inspector field.
+		 * @return {boolean} True for the `fields` of a `form` widget.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
+		isFormFieldList(field) {
+			return this.formSelected && field.name === 'fields'
+		},
+
+		/**
+		 * Add a field of TYPE to the selected form, at the end of its list.
+		 * Nothing happens without a selected form: a field never lands on the
+		 * grid.
+		 *
+		 * @param {string} type The field type from the Formulieren group.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
+		addFormField(type) {
+			if (!this.formSelected) {
+				return
+			}
+			this.editor.setProp('fields', addField(this.selected.props?.fields, type))
+		},
+
 		onFieldInput(field, raw) {
 			this.jsonError = ''
 			if (field.kind === 'number') {
