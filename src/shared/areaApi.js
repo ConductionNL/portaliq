@@ -394,7 +394,7 @@ export function actionsApi(api) {
  * @param {string} name The file's name.
  * @return {Promise<void>} Resolves when the download started.
  */
-async function saveBlob(res, name) {
+export async function saveBlob(res, name) {
 	const objectUrl = window.URL.createObjectURL(await res.blob())
 	const link = document.createElement('a')
 	link.href = objectUrl

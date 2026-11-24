@@ -129,9 +129,11 @@ class PortalCollectionDocumentsControllerTest extends TestCase {
 	 */
 	public function testTheBundleIsProvenLikeAPaper(): void {
 		$noSession = $this->controller(subject: null, collections: [$this->collection()]);
-		$this->assertSame(expected: Http::STATUS_UNAUTHORIZED, actual: $noSession->bundle(register: 'decidiq', schema: 'agendaItem', id: 'a1')->getStatus());
+		$refusal   = $noSession->bundle(register: 'decidiq', schema: 'agendaItem', id: 'a1');
+		$this->assertSame(expected: Http::STATUS_UNAUTHORIZED, actual: $refusal->getStatus());
 
-		$outside = $this->controller(subject: ['subjectRef' => 'other', 'trust' => 'substantial'], collections: [$this->collection()], owned: null);
+		$other   = ['subjectRef' => 'other', 'trust' => 'substantial'];
+		$outside = $this->controller(subject: $other, collections: [$this->collection()], owned: null);
 		$this->documents->expects($this->never())->method('bundle');
 		$refused = $outside->bundle(register: 'decidiq', schema: 'agendaItem', id: 'a1');
 		$this->assertSame(expected: Http::STATUS_NOT_FOUND, actual: $refused->getStatus());
