@@ -33,7 +33,7 @@ namespace OCA\Portaliq\Contribution;
 /**
  * Normalise the `onCase` declaration on one action.
  *
- * @spec openspec/changes/case-page-objection-and-complaint/specs/portal-contribution-contract/spec.md
+ * @spec openspec/changes/archive/2026-11-24-case-page-objection-and-complaint/specs/portal-contribution-contract/spec.md
  */
 class OnCaseConfigNormaliser {
 
@@ -51,7 +51,7 @@ class OnCaseConfigNormaliser {
 	 *
 	 * @return array<string, mixed> The action, with a sound `onCase` kept or the key dropped.
 	 *
-	 * @spec openspec/changes/case-page-objection-and-complaint/specs/portal-contribution-contract/spec.md
+	 * @spec openspec/changes/archive/2026-11-24-case-page-objection-and-complaint/specs/portal-contribution-contract/spec.md
 	 */
 	public function normaliseAction(array $action): array {
 		if (array_key_exists(self::KEY, $action) === false) {

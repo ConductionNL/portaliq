@@ -1580,7 +1580,7 @@ export function createPortalApi(config, store = {}) {
 		 * @param {string} onCase The case, `<register>/<schema>/<id>`.
 		 * @return {Promise<object>} `{ ok, status, object, error, message }`.
 		 *
-		 * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-server-fills-in-the-case-and-the-guard-still-runs-req-coc-004
+		 * @spec openspec/changes/archive/2026-11-24-case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-server-fills-in-the-case-and-the-guard-still-runs-req-coc-004
 		 */
 		async createObjectOnCase(action, data, onCase) {
 			const query = `?actionId=${encodeURIComponent(action.id || '')}&onCase=${encodeURIComponent(onCase)}`

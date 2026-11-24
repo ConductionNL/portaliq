@@ -6108,7 +6108,7 @@
 				"origin": "competitor",
 				"readOn": "2026-09-26",
 				"change": "case-page-objection-and-complaint",
-				"requirement": "openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md :: The server fills in the case, and the guard still runs (REQ-COC-004)"
+				"requirement": "openspec/changes/archive/2026-11-24-case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md :: The server fills in the case, and the guard still runs (REQ-COC-004)"
 			},
 			"provider": "dossiq",
 			"providerHow": "read-from-code",
@@ -11322,8 +11322,8 @@
 				"note": "Canvas decision (7 Oct 2026): Bezwaar and Klacht live on the case page, board Zaak.",
 				"change": "case-page-objection-and-complaint",
 				"requirement": [
-					"openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md :: The case page offers the actions the server lists (REQ-COC-002)",
-					"openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md :: The resident gets a receipt on the case page (REQ-COC-005)"
+					"openspec/changes/archive/2026-11-24-case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md :: The case page offers the actions the server lists (REQ-COC-002)",
+					"openspec/changes/archive/2026-11-24-case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md :: The resident gets a receipt on the case page (REQ-COC-005)"
 				]
 			},
 			"source": "spec-round-2026-10-07",

@@ -24,5 +24,6 @@ Board: `Zaak` on the Zuiddrecht canvas (`5NkFW28vZUUij43xzxHg5a`). New frontend 
 
 - [x] **T09**: Dutch and English strings: the group name, the default closed sentence, the success notice per kind; `l10n/` updated
 - [x] **T10**: Docs page `docs/features/objection-and-complaint-on-the-case.md` (written at `docs/operations/objection-and-complaint-on-the-case.md`, where this repo keeps its feature pages) with the `onCase` key and an example
-- [ ] **T11**: Open the dossiq issue for its half: `onCase` on `createBezwaar` (window 42 days from the decision sent date) and `createKlacht`, and both removed from the overview page
+- [x] **T11**: Open the dossiq issue for its half: `onCase` on `createBezwaar` (window 42 days from the decision sent date) and `createKlacht`, and both removed from the overview page
+  - Built in dossiq, no issue needed: `lib/Portal/CitizenManifest.php` declares `onCase` on `createBezwaar` (crossRef `contestedCase`, order 10, window `decisionSentOn` + 42 days, closed sentence) and on `createKlacht` (crossRef `contestedCase`, after the bezwaar), pinned by dossiq's `tests/Unit/golden/citizen-manifest.json`; neither is an overview start any more (`PortalPages::PAGE_START_ACTIONS` keeps only `createKlacht` on the Klacht indienen page, about no case).
 - [x] **T12**: `openspec validate case-page-objection-and-complaint --strict` Valid (20 Nov, openspec 2.1.1).
