@@ -15,7 +15,7 @@
 - [x] **T06**: `src/manifest.json` PortalMessages: columns "Ontvanger", "Gelezen", "Gelezen op"; a `sendingRef` filter; the count "{n} van {m} gelezen" above the table when filtered (REQ-IRR-005) — built: the columns Recipient, Read, Read on and Sending; the `?sendingRef=` the message page links with is applied by the index as an address filter (nextcloud-vue `resolveQueryFilters`); the count line reads `countTextFiltered` "{read} of {total} read" ("{read} van {total} gelezen") with `countValues.read` a count of the read messages under the active filters (nextcloud-vue 2.180.0), so it shows only while the list is narrowed
   - node `tests/inbox-read-receipt.spec.mjs` reads the manifest for T05 and T06
 - [ ] **T07**: Live check on a dev instance: write three `portalMessage` rows with one `sendingRef` and a request, open one as the resident twice, and screenshot the message page and the filtered index for the build PR — not run: needs a live instance
-- [ ] **T08**: Tell planninq and learniq in their issue trackers which fields to set when they send a class letter (`readReceiptRequested`, `sendingRef`) — not run: needs planninq and learniq
+- [x] **T08**: Tell planninq and learniq in their issue trackers which fields to set when they send a class letter (`readReceiptRequested`, `sendingRef`) — filed as ConductionNL/planninq#1336 and ConductionNL/learniq#2734
 
 ## Build notes
 
