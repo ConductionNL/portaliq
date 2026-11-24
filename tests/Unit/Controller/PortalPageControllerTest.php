@@ -27,7 +27,7 @@ use PHPUnit\Framework\TestCase;
  * @spec openspec/changes/portal-controller-http-test-coverage/tasks.md#3.1
  * @spec openspec/changes/portal-controller-http-test-coverage/tasks.md#3.2
  * @spec openspec/changes/portal-controller-http-test-coverage/tasks.md#3.3
- * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#3.2
+ * @spec openspec/changes/archive/2026-11-24-portal-white-label-runtime-config/tasks.md#3.2
  */
 class PortalPageControllerTest extends TestCase {
 
