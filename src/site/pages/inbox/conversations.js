@@ -369,7 +369,7 @@ export const MESSAGE_TO_STORAGE_KEY = 'portaliq.messageTo'
  * @param {object|null} storage sessionStorage.
  * @param {{recordRef: string, staffRef: string}} target The record and the staff member.
  * @return {void}
- * @spec openspec/changes/guardian-message-to-and-whole-day/specs/portal-contribution-contract/spec.md#requirement-a-message-button-opens-the-form-with-its-teacher-chosen
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-message-button-opens-the-form-with-its-teacher-chosen
  */
 export function keepMessageTo(storage, target) {
 	try {
@@ -384,7 +384,7 @@ export function keepMessageTo(storage, target) {
  *
  * @param {object|null} storage sessionStorage.
  * @return {{recordRef?: string, staffRef?: string}|null}
- * @spec openspec/changes/guardian-message-to-and-whole-day/specs/portal-contribution-contract/spec.md#requirement-a-message-button-opens-the-form-with-its-teacher-chosen
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-message-button-opens-the-form-with-its-teacher-chosen
  */
 export function takeMessageTo(storage) {
 	try {
@@ -403,7 +403,7 @@ export function takeMessageTo(storage) {
  * @param {Array<{value: string, recordRef: string}>} options The "to" choices.
  * @param {{recordRef?: string, staffRef?: string}|null} target The kept target.
  * @return {string} The chosen value.
- * @spec openspec/changes/guardian-message-to-and-whole-day/specs/portal-contribution-contract/spec.md#requirement-a-message-button-opens-the-form-with-its-teacher-chosen
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-message-button-opens-the-form-with-its-teacher-chosen
  */
 export function chosenContact(options, target) {
 	if (!target?.recordRef) {

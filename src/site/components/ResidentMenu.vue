@@ -162,7 +162,7 @@ export default {
 		 *
 		 * @return {number}
 		 *
-		 * @spec openspec/changes/resident-menu-badges-and-cards/specs/site-resident-menu/spec.md#requirement-a-menu-entry-may-show-the-count-of-a-collection
+		 * @spec openspec/specs/site-resident-menu/spec.md#requirement-a-menu-entry-may-show-the-count-of-a-collection
 		 */
 		newCount() {
 			return this.groups

@@ -21,4 +21,4 @@
 
 ## Follow-up outside this repo
 
-- [ ] **T10**: learniq: on `participantCertificates`, add the column `{field: "walletOfferUri", label: "Wallet", render: "qr", linkLabel: "Add to wallet"}` (learniq change `credential-wallet-offer-for-the-learner`). Tracked in learniq, not built here.
+- [x] **T10**: learniq: on `participantCertificates`, the column `{field: "walletOfferUri", label: "Wallet", render: "qr", linkLabel: "Add to wallet"}` (`ParticipantSitePages`). Built in learniq.

@@ -6,7 +6,7 @@
 // "dinsdag 13 oktober, 10.00 uur", English "Tuesday 13 October, 10:00".
 // Imports nothing, so node tests it.
 //
-// @spec openspec/changes/steps-highlight/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-the-step-that-matters-now-as-a-highlight
+// @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-the-step-that-matters-now-as-a-highlight
 
 /**
  * A step's moment in words, or '' without a readable date.

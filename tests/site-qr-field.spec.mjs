@@ -9,7 +9,7 @@
 // Usage:
 //   node --test tests/site-qr-field.spec.mjs
 //
-// @spec openspec/changes/link-field-qr-code/specs/portal-contribution-contract/spec.md
+// @spec openspec/specs/portal-contribution-contract/spec.md
 
 import { encodeQr } from '@conduction/nextcloud-vue/src/utils/qr.js'
 import assert from 'node:assert/strict'

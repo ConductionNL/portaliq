@@ -108,7 +108,7 @@ class CollectionConfigNormaliserTest extends TestCase {
 	/**
 	 * A qr column is a render kind and keeps its trimmed link label.
 	 *
-	 * @spec openspec/changes/link-field-qr-code/tasks.md#t1
+	 * @spec openspec/specs/portal-contribution-contract/spec.md
 	 *
 	 * @return void
 	 */
@@ -125,7 +125,7 @@ class CollectionConfigNormaliserTest extends TestCase {
 	/**
 	 * A link label that is empty, too long, not text or on another kind is dropped.
 	 *
-	 * @spec openspec/changes/link-field-qr-code/tasks.md#t1
+	 * @spec openspec/specs/portal-contribution-contract/spec.md
 	 *
 	 * @return void
 	 */

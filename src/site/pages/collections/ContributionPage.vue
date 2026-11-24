@@ -1364,7 +1364,7 @@ export default {
 		 *
 		 * @param {object} block The cta block.
 		 * @return {void}
-		 * @spec openspec/changes/guardian-message-to-and-whole-day/specs/portal-contribution-contract/spec.md#requirement-a-message-button-opens-the-form-with-its-teacher-chosen
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-message-button-opens-the-form-with-its-teacher-chosen
 		 */
 		keepMessageTarget(block) {
 			if (!block.messageTo || !this.recordId) {

@@ -452,7 +452,7 @@ export default {
 		 * Open the form for the teacher a "Bericht aan ..." button named.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/guardian-message-to-and-whole-day/specs/portal-contribution-contract/spec.md#requirement-a-message-button-opens-the-form-with-its-teacher-chosen
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-message-button-opens-the-form-with-its-teacher-chosen
 		 */
 		applyMessageTo() {
 			const value = chosenContact(this.options, takeMessageTo(sessionStore()))

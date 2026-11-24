@@ -165,7 +165,7 @@ export default {
 		 * Whether the block draws only the step that matters now.
 		 *
 		 * @return {boolean} True for `display: highlight`.
-		 * @spec openspec/changes/steps-highlight/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-the-step-that-matters-now-as-a-highlight
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-the-step-that-matters-now-as-a-highlight
 		 */
 		highlight() {
 			return this.block?.display === 'highlight'
@@ -176,7 +176,7 @@ export default {
 		 * not done; null when every step is done.
 		 *
 		 * @return {object|null} The step.
-		 * @spec openspec/changes/steps-highlight/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-the-step-that-matters-now-as-a-highlight
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-the-step-that-matters-now-as-a-highlight
 		 */
 		nowStep() {
 			return (
@@ -191,7 +191,7 @@ export default {
 		 * has one ("Tussenbeoordeling op dinsdag 13 oktober, 10.00 uur").
 		 *
 		 * @return {string} The title.
-		 * @spec openspec/changes/steps-highlight/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-the-step-that-matters-now-as-a-highlight
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-the-step-that-matters-now-as-a-highlight
 		 */
 		highlightTitle() {
 			const step = this.nowStep
