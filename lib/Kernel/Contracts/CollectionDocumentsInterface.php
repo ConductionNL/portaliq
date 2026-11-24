@@ -74,4 +74,19 @@ interface CollectionDocumentsInterface {
 	 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t5
 	 */
 	public function open(array $subject, string $app, array $documents, array $object, string $documentId): StreamResponse|string;
+
+	/**
+	 * Open the bundle the collection's `bundle` method answers for the object:
+	 * the first well-formed entry of its answer.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param string $app The contributing app.
+	 * @param array<string, mixed> $documents The collection's `documents` declaration.
+	 * @param array{register: string, schema: string, id: string} $object The proven object.
+	 *
+	 * @return StreamResponse|null The stream, or null when there is no bundle.
+	 *
+	 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-2
+	 */
+	public function bundle(array $subject, string $app, array $documents, array $object): ?StreamResponse;
 }//end interface

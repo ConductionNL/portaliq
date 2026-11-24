@@ -23,8 +23,8 @@ run on `origin/development` first and seen red.
 - [x] 2.1 `toResult()` maps each kind to its link and its secondary line (REQ-SFK-002).
   - **fails today**: node test `a document hit links to its page and names its publication`, `a
     subject hit links to its landing page with its count`, `an unknown kind renders as a publication`.
-- [ ] 2.2 e2e `tests/e2e/site-federated-search.spec.ts` gains: search a seeded term, choose
-  "Onderwerp", open the subject. Cite REQ-SFK-001 and REQ-SFK-002. — not run: needs a live instance and an opencatalogi that answers `resultType`.
+- [x] 2.2 e2e `tests/e2e/site-federated-search.spec.ts` gains: search a seeded term, choose
+  "Onderwerp", open the subject. Cite REQ-SFK-001 and REQ-SFK-002. — written, runs in nightly (`tests/e2e/site-federated-search.spec.ts`, describe "the results filter by kind": "Onderwerp" sends `resultType=subject` and opens the subject; an endpoint without the kind facet gets no filter; opencatalogi's search is stubbed with the REQ-SUB-004 shape); not verified on a live instance in this run.
 
 ## 3. Live and deliver
 

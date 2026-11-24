@@ -113,6 +113,50 @@ class CollectionDocuments implements CollectionDocumentsInterface {
 	}//end open()
 
 	/**
+	 * Open the bundle the collection's `bundle` method answers for the
+	 * object: the first well-formed entry of its answer, read the same way
+	 * a listed document is, and recorded as a download.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param string $app The contributing app.
+	 * @param array<string, mixed> $documents The collection's `documents` declaration.
+	 * @param array{register: string, schema: string, id: string} $object The proven object.
+	 *
+	 * @return StreamResponse|null The stream, or null when there is no bundle.
+	 *
+	 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-2
+	 */
+	public function bundle(array $subject, string $app, array $documents, array $object): ?StreamResponse {
+		$method = ($documents['bundle'] ?? null);
+		if (is_string($method) === false || $method === '') {
+			return null;
+		}
+
+		$first = ($this->published->entries(appId: $app, method: $method, caseId: $object['id'])[0] ?? []);
+		if (is_array($first['file'] ?? null) === false) {
+			return null;
+		}
+
+		$stream = $this->streamOf(file: $first['file']);
+		if ($stream !== null) {
+			$this->recordDownload(run: new DocumentOpening(subject: $subject, app: $app, documents: $documents, object: $object, documentId: ''));
+		}
+
+		return $stream;
+	}//end bundle()
+
+	/**
+	 * Stream a listed file from OpenRegister, or null.
+	 *
+	 * @param array<string, string> $file Where the file lives: register, schema, id, fileId.
+	 *
+	 * @return StreamResponse|null
+	 */
+	private function streamOf(array $file): ?StreamResponse {
+		return $this->files->streamFile(register: $file['register'], schema: $file['schema'], id: $file['id'], fileId: $file['fileId']);
+	}//end streamOf()
+
+	/**
 	 * Open the listed document when the app's hook, if it declares one,
 	 * allows it, and record the download.
 	 *
@@ -130,7 +174,7 @@ class CollectionDocuments implements CollectionDocumentsInterface {
 			return self::REFUSED;
 		}
 
-		$stream = $this->files->streamFile(register: $file['register'], schema: $file['schema'], id: $file['id'], fileId: $file['fileId']);
+		$stream = $this->streamOf(file: $file);
 		if ($stream === null) {
 			return self::NOT_FOUND;
 		}

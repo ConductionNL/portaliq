@@ -76,6 +76,8 @@ class CollectionDocumentsTest extends TestCase {
 
 	private const OBJECT = ['register' => 'decidiq', 'schema' => 'agendaItem', 'id' => 'a1'];
 
+	private const BUNDLED = ['provider' => 'certificates', 'bundle' => 'validCertificates'];
+
 	private FakeOpenedProvider $provider;
 
 	private MockObject $files;
@@ -218,4 +220,38 @@ class CollectionDocumentsTest extends TestCase {
 		$this->assertSame(CollectionDocuments::REFUSED, $service->open(subject: self::SUBJECT, app: 'decidiq', documents: ['provider' => 'papers', 'opened' => 'staticHook'], object: self::OBJECT, documentId: 'd1'));
 		$this->assertSame([], $this->warnings, 'a hook that is not a public instance method refuses without a warning');
 	}//end testTheAuditAndTheHookWarningsAreAsRecorded()
+
+	/**
+	 * The bundle streams the first entry the `bundle` method answers and is
+	 * recorded as a download; no `bundle` method, or no entry, streams nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-2
+	 */
+	public function testTheBundleStreamsTheFirstEntryOfTheBundleMethod(): void {
+		$service = $this->service();
+		$this->files->expects($this->once())->method('streamFile')->with('r', 's', 'o', 'f1');
+		$this->audit->expects($this->once())->method('download');
+
+		$result = $service->bundle(subject: self::SUBJECT, app: 'learniq', documents: self::BUNDLED, object: self::OBJECT);
+
+		$this->assertInstanceOf(expected: StreamResponse::class, actual: $result);
+	}//end testTheBundleStreamsTheFirstEntryOfTheBundleMethod()
+
+	/**
+	 * @return void
+	 *
+	 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-2
+	 */
+	public function testNoBundleMethodOrNoEntryStreamsNothing(): void {
+		$service = $this->service();
+		$this->files->expects($this->never())->method('streamFile');
+		$this->assertNull(actual: $service->bundle(subject: self::SUBJECT, app: 'learniq', documents: self::DOCUMENTS, object: self::OBJECT));
+
+		$service = $this->service(listed: false);
+		$this->files->expects($this->never())->method('streamFile');
+		$this->audit->expects($this->never())->method('download');
+		$this->assertNull(actual: $service->bundle(subject: self::SUBJECT, app: 'learniq', documents: self::BUNDLED, object: self::OBJECT));
+	}//end testNoBundleMethodOrNoEntryStreamsNothing()
 }//end class

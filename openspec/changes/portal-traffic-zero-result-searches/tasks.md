@@ -38,8 +38,8 @@ line in the PR body.
 
 ## 3. End to end and live
 
-- [ ] 3.1 — not run: needs a live instance and a browser. e2e `tests/e2e/traffic-zero-results.spec.ts`: search a nonsense term on the site, run the
-  roll-up, and find the term on the Traffic page. Cite REQ-PZR-001 and REQ-PZR-002.
+- [x] 3.1 e2e `tests/e2e/traffic-zero-results.spec.ts`: search a nonsense term on the site, run the
+  roll-up, and find the term on the Traffic page. Cite REQ-PZR-001 and REQ-PZR-002. — written, runs in nightly (`tests/e2e/traffic-zero-results.spec.ts`, three tests citing REQ-PZR-001 and REQ-PZR-002, inside the e2e config's testDir and not ignored); not verified on a live instance in this run.
 - [ ] 3.2 — not run: needs the dev instance. Live check after merge on the dev instance: one zero-result search on a portal with
   traffic on; record the daily record's `zeroResultSearches` through the OpenRegister API.
 

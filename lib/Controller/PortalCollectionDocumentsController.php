@@ -147,6 +147,40 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 	}//end open()
 
 	/**
+	 * The bundle of an object's papers its app answers through the
+	 * collection's `bundle` method (documents-grouped-per-record).
+	 *
+	 * @param string $register The register of the collection.
+	 * @param string $schema   The schema of the collection.
+	 * @param string $id       The object id.
+	 *
+	 * @return Response The file, or 401 / 404.
+	 *
+	 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-2
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
+	public function bundle(string $register, string $schema, string $id): Response {
+		$proven = $this->proven(register: $register, schema: $schema, id: $id);
+		if ($proven instanceof JSONResponse) {
+			return $proven;
+		}
+
+		$stream = $this->documents->bundle(
+			subject: $proven['subject'],
+			app: $proven['app'],
+			documents: $proven['documents'],
+			object: ['register' => $register, 'schema' => $schema, 'id' => $id]
+		);
+		if ($stream === null) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		return $stream;
+	}//end bundle()
+
+	/**
 	 * Prove the object is the subject's, in a collection of the subject's own
 	 * aggregate that declares `documents`.
 	 *

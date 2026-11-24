@@ -545,6 +545,11 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         ['name' => 'contribution#object', 'url' => '/portal/api/collections/{register}/{schema}/{id}', 'verb' => 'GET'],
         // site-member-voting-record-and-confidential-papers: the papers of one object, on any collection that declares `documents`.
         ['name' => 'portalCollectionDocuments#list', 'url' => '/portal/api/collections/{register}/{schema}/{id}/documents', 'verb' => 'GET'],
+        // A documents block's media group (documents-grouped-per-record), read through OpenRegister's own access checks.
+        ['name' => 'portalAudienceMedia#list', 'url' => '/portal/api/media-groups/{register}/{schema}', 'verb' => 'GET'],
+        ['name' => 'portalAudienceMedia#open', 'url' => '/portal/api/media-groups/{register}/{schema}/{id}', 'verb' => 'GET'],
+        // The bundle the collection's `bundle` method answers (documents-grouped-per-record), before the {documentId} route.
+        ['name' => 'portalCollectionDocuments#bundle', 'url' => '/portal/api/collections/{register}/{schema}/{id}/documents-bundle', 'verb' => 'GET'],
         ['name' => 'portalCollectionDocuments#open', 'url' => '/portal/api/collections/{register}/{schema}/{id}/documents/{documentId}', 'verb' => 'GET'],
         // The declared history of one object the subject owns (portaliq#723).
         ['name' => 'portalTimeline#show', 'url' => '/portal/api/collections/{register}/{schema}/{id}/timeline', 'verb' => 'GET'],
