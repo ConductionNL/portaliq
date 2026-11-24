@@ -72,12 +72,17 @@ export function chosenValue(field, value, option, checked) {
 export function minimumErrors(fields, values) {
 	const errors = {}
 	for (const field of Array.isArray(fields) ? fields : []) {
-		if (field?.type !== 'checkboxes' || !Number.isInteger(field.minimum) || field.minimum < 2) {
+		if (
+			field?.type !== 'checkboxes'
+			|| !Number.isInteger(field.minimum)
+			|| field.minimum < 2
+		) {
 			continue
 		}
 		const count = chosenList(field, (values || {})[field.id]).length
 		if (count > 0 && count < field.minimum) {
-			errors[field.id] = `Kies er minstens ${field.minimum} bij ${field.label}.`
+			errors[field.id] =
+				`Kies er minstens ${field.minimum} bij ${field.label}.`
 		}
 	}
 	return errors

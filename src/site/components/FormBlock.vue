@@ -133,6 +133,7 @@
 					"
 					:checked="values[field.id] === 'ja'"
 					:aria-required="field.required ? 'true' : undefined"
+					:aria-labelledby="`${fieldElementId(field)}-label`"
 					:aria-invalid="errors[field.id] ? 'true' : undefined"
 					:aria-describedby="describedBy"
 					:data-testid="`form-field-${field.id}`"
@@ -166,6 +167,7 @@
 					:max="numberOr(field.max, 100)"
 					:step="numberOr(field.step, 1)"
 					:aria-required="field.required ? 'true' : undefined"
+					:aria-labelledby="`${fieldElementId(field)}-label`"
 					:aria-describedby="describedBy"
 					:data-testid="`form-field-${field.id}`" />
 

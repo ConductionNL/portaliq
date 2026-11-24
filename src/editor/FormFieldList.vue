@@ -30,7 +30,9 @@
 				<fieldset class="form-field-list__fieldset">
 					<legend class="form-field-list__legend">
 						{{ field.label || field.id }}
-						<span class="form-field-list__type">{{ typeLabel(field.type) }}</span>
+						<span class="form-field-list__type">{{
+							typeLabel(field.type)
+						}}</span>
 					</legend>
 
 					<div
@@ -43,13 +45,22 @@
 								type="checkbox"
 								:checked="field[setting.name] === true"
 								:data-testid="`designer-form-field-${field.id}-${setting.name}`"
-								@change="set(field, setting, $event.target.checked)" />
-							<label :for="controlId(index, setting)">{{ setting.label }}</label>
+								@change="
+									set(field, setting, $event.target.checked)
+								" />
+							<label :for="controlId(index, setting)">{{
+								setting.label
+							}}</label>
 						</template>
 						<template v-else>
-							<label :for="controlId(index, setting)">{{ setting.label }}</label>
+							<label :for="controlId(index, setting)">{{
+								setting.label
+							}}</label>
 							<textarea
-								v-if="setting.kind === 'text' || setting.kind === 'options'"
+								v-if="
+									setting.kind === 'text'
+									|| setting.kind === 'options'
+								"
 								:id="controlId(index, setting)"
 								class="form-field-list__input"
 								rows="3"

@@ -30,6 +30,17 @@
  */
 
 /**
+ * The limits a number and a range share.
+ *
+ * @type {Array<FieldSetting>}
+ */
+const LIMITS = Object.freeze([
+	{ name: 'min', kind: 'number', label: 'Minimum' },
+	{ name: 'max', kind: 'number', label: 'Maximum' },
+	{ name: 'step', kind: 'number', label: 'Stap' },
+])
+
+/**
  * The field types, in the order the Formulieren group lists them.
  *
  * `nlds` is the NL Design System component the type draws (design D1), so a
@@ -45,7 +56,11 @@ export const FORM_FIELD_TYPES = Object.freeze([
 		synonyms: ['tekst', 'invoer', 'naam'],
 		settings: [
 			{ name: 'description', kind: 'text', label: 'Toelichting' },
-			{ name: 'autocomplete', kind: 'string', label: 'Automatisch invullen (autocomplete)' },
+			{
+				name: 'autocomplete',
+				kind: 'string',
+				label: 'Automatisch invullen (autocomplete)',
+			},
 		],
 	},
 	{
@@ -63,11 +78,7 @@ export const FORM_FIELD_TYPES = Object.freeze([
 		label: 'Getal',
 		nlds: 'Number Input',
 		synonyms: ['nummer', 'aantal'],
-		settings: [
-			{ name: 'min', kind: 'number', label: 'Minimum' },
-			{ name: 'max', kind: 'number', label: 'Maximum' },
-			{ name: 'step', kind: 'number', label: 'Stap' },
-		],
+		settings: LIMITS,
 	},
 	{
 		type: 'email',
@@ -105,14 +116,18 @@ export const FORM_FIELD_TYPES = Object.freeze([
 		label: 'Keuzelijst',
 		nlds: 'Select',
 		synonyms: ['dropdown', 'uitklaplijst'],
-		settings: [{ name: 'options', kind: 'options', label: 'Keuzes (één per regel)' }],
+		settings: [
+			{ name: 'options', kind: 'options', label: 'Keuzes (één per regel)' },
+		],
 	},
 	{
 		type: 'radio',
 		label: 'Keuzerondjes',
 		nlds: 'Radio Group',
 		synonyms: ['radio', 'één keuze'],
-		settings: [{ name: 'options', kind: 'options', label: 'Keuzes (één per regel)' }],
+		settings: [
+			{ name: 'options', kind: 'options', label: 'Keuzes (één per regel)' },
+		],
 	},
 	{
 		type: 'checkboxes',
@@ -143,11 +158,7 @@ export const FORM_FIELD_TYPES = Object.freeze([
 		label: 'Schuifbalk',
 		nlds: 'Range',
 		synonyms: ['schuif', 'slider'],
-		settings: [
-			{ name: 'min', kind: 'number', label: 'Minimum' },
-			{ name: 'max', kind: 'number', label: 'Maximum' },
-			{ name: 'step', kind: 'number', label: 'Stap' },
-		],
+		settings: LIMITS,
 	},
 ])
 
@@ -191,7 +202,12 @@ export function fieldSettings(type) {
  */
 export function fieldList(fields) {
 	return Array.isArray(fields)
-		? fields.filter((field) => field && typeof field === 'object' && typeof field.id === 'string')
+		? fields.filter(
+				(field) =>
+					field
+					&& typeof field === 'object'
+					&& typeof field.id === 'string',
+			)
 		: []
 }
 
@@ -233,7 +249,12 @@ export function addField(fields, type) {
 	if (!declared) {
 		return list
 	}
-	const field = { id: freeId(list, type), type, label: declared.label, required: false }
+	const field = {
+		id: freeId(list, type),
+		type,
+		label: declared.label,
+		required: false,
+	}
 	if (declared.settings.some((setting) => setting.kind === 'options')) {
 		field.options = []
 	}
@@ -253,7 +274,9 @@ function settingValue(kind, value) {
 	}
 	if (kind === 'number') {
 		const number = Number(value)
-		return value === '' || value === null || !Number.isFinite(number) ? undefined : number
+		return value === '' || value === null || !Number.isFinite(number)
+			? undefined
+			: number
 	}
 	if (kind === 'options') {
 		const lines = Array.isArray(value) ? value : String(value ?? '').split('\n')
@@ -284,17 +307,24 @@ export function updateField(fields, id, name, value) {
 	if (!field) {
 		return list
 	}
-	const setting = fieldSettings(field.type).find((candidate) => candidate.name === name)
+	const setting = fieldSettings(field.type).find(
+		(candidate) => candidate.name === name,
+	)
 	if (!setting) {
 		return list
 	}
 	const stored = settingValue(setting.kind, value)
 	if (name === 'id') {
 		const wanted = String(stored).trim()
-		if (wanted === '' || list.some((other) => other !== field && other.id === wanted)) {
+		if (
+			wanted === ''
+			|| list.some((other) => other !== field && other.id === wanted)
+		) {
 			return list
 		}
-		return list.map((other) => (other === field ? { ...other, id: wanted } : other))
+		return list.map((other) =>
+			other === field ? { ...other, id: wanted } : other,
+		)
 	}
 	return list.map((other) => {
 		if (other !== field) {
@@ -363,7 +393,9 @@ export function moveField(fields, id, by) {
  * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
  */
 export function formFieldGroup(query, formSelected) {
-	const needle = String(query || '').trim().toLowerCase()
+	const needle = String(query || '')
+		.trim()
+		.toLowerCase()
 	const entries = FORM_FIELD_TYPES.filter((entry) => {
 		if (needle === '') {
 			return true
@@ -381,7 +413,10 @@ export function formFieldGroup(query, formSelected) {
 		group: 'forms',
 		label: 'Formulieren',
 		enabled: formSelected === true,
-		note: formSelected === true ? '' : 'Selecteer eerst een formulier op de pagina. Een veld komt altijd in een formulier.',
+		note:
+			formSelected === true
+				? ''
+				: 'Selecteer eerst een formulier op de pagina. Een veld komt altijd in een formulier.',
 		entries,
 	}
 }
@@ -416,7 +451,9 @@ export function withFormFieldGroup(groups, fieldGroup) {
 		entries: existing ? existing.entries : [],
 	}
 	const rest = list.filter((group) => group.group !== 'forms')
-	const after = rest.findIndex((group) => !['content', 'nav'].includes(group.group))
+	const after = rest.findIndex(
+		(group) => !['content', 'nav'].includes(group.group),
+	)
 	const at = after < 0 ? rest.length : after
 	return [...rest.slice(0, at), merged, ...rest.slice(at)]
 }
