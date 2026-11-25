@@ -330,7 +330,7 @@ export default {
 		/**
 		 * @param {string} href A document's or the secondary link's address.
 		 * @return {string} A site path in the site's own addressing, else as it is.
-		 * @spec openspec/changes/hero-links-follow-the-site-address/specs/site-navigation/spec.md#requirement-a-block-link-to-a-site-page-carries-the-sites-own-address
+		 * @spec openspec/specs/site-navigation/spec.md#requirement-a-block-link-to-a-site-page-carries-the-sites-own-address
 		 */
 		linkOf(href) {
 			return authoredLink(href)?.href || href

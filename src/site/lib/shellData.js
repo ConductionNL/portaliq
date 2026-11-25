@@ -68,7 +68,7 @@ export function isSiteRoute(link) {
  * @return {string} The href.
  *
  * @spec openspec/specs/site-navigation/spec.md#requirement-a-menu-link-to-a-site-page-carries-the-sites-own-address
- * @spec openspec/changes/hero-links-follow-the-site-address/specs/site-navigation/spec.md#requirement-a-block-link-to-a-site-page-carries-the-sites-own-address
+ * @spec openspec/specs/site-navigation/spec.md#requirement-a-block-link-to-a-site-page-carries-the-sites-own-address
  */
 export function linkAddress(link, addressOf) {
 	return typeof addressOf === 'function' && isSiteRoute(link)
