@@ -176,8 +176,8 @@ test.describe('personal-action-list', () => {
 		const rows = page.getByTestId('actions-row')
 		await expect(rows).toHaveCount(1)
 		await expect(rows.first()).toContainText('Bankafschriften van drie maanden uploaden')
-		await expect(rows.first()).toContainText(oneOf('Te doen', 'To do'))
-		await expect(page.getByTestId('actions-progress')).toContainText(oneOf('0 van 1', '0 of 1'))
+		await expect(rows.first().locator('.pq-actions__status')).toHaveText(oneOf('Te doen', 'To do'))
+		await expect(page.getByTestId('actions-progress')).toContainText(oneOf('0 van 1 klaar', '0 of 1 done'))
 
 		const listed = await overview(request, sanne)
 		expect(listed.total).toBe(1)
