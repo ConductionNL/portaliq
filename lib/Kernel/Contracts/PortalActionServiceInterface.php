@@ -49,7 +49,7 @@ interface PortalActionServiceInterface {
 	 *
 	 * @return string OK, NOT_FOUND, FORBIDDEN, INVALID (not a PDF, JPG or PNG up to 10 MB) or FAILED.
 	 *
-	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-a-resident-keeps-a-list-of-own-actions-req-ral-001
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-a-resident-keeps-a-list-of-own-actions-req-ral-001
 	 */
 	public function attach(array $subject, string $id, ?array $uploaded, string $planId=''): string;
 
@@ -61,7 +61,7 @@ interface PortalActionServiceInterface {
 	 *
 	 * @return array{status: string, id: string} OK with the new id, INVALID or FAILED.
 	 *
-	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-a-resident-keeps-a-list-of-own-actions-req-ral-001
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-a-resident-keeps-a-list-of-own-actions-req-ral-001
 	 */
 	public function create(array $subject, array $data): array;
 
@@ -74,7 +74,7 @@ interface PortalActionServiceInterface {
 	 *
 	 * @return string OK, NOT_FOUND, FORBIDDEN or FAILED.
 	 *
-	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
 	 */
 	public function delete(array $subject, string $id, string $planId=''): string;
 
@@ -87,7 +87,7 @@ interface PortalActionServiceInterface {
 	 *
 	 * @return StreamResponse|null
 	 *
-	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-a-resident-keeps-a-list-of-own-actions-req-ral-001
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-a-resident-keeps-a-list-of-own-actions-req-ral-001
 	 */
 	public function file(array $subject, string $id, string $planId=''): ?StreamResponse;
 
@@ -100,7 +100,7 @@ interface PortalActionServiceInterface {
 	 *
 	 * @return array<int, array<string, string>>|null The lines.
 	 *
-	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
 	 */
 	public function history(array $subject, string $id, string $planId=''): ?array;
 
@@ -112,7 +112,7 @@ interface PortalActionServiceInterface {
 	 *
 	 * @return array{actions: array<int, array<string, mixed>>, done: int, total: int, assignees: array<int, array{ref: string, displayName: string}>}
 	 *
-	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-a-resident-keeps-a-list-of-own-actions-req-ral-001
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-a-resident-keeps-a-list-of-own-actions-req-ral-001
 	 */
 	public function overview(array $subject): array;
 
@@ -126,7 +126,7 @@ interface PortalActionServiceInterface {
 	 *
 	 * @return string OK, NOT_FOUND, FORBIDDEN, INVALID or FAILED.
 	 *
-	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
 	 */
 	public function update(array $subject, string $id, array $data, string $planId=''): string;
 }//end interface

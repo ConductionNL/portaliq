@@ -307,7 +307,7 @@ import {
 import { closeDialog, openDialog } from '../forms/draftDialog.js'
 
 /**
- * @spec openspec/changes/personal-action-list/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
  */
 export default {
 	name: 'ActionEditModal',
@@ -356,7 +356,7 @@ export default {
 	computed: {
 		/**
 		 * @return {string} The page's language.
-		 * @spec openspec/changes/personal-action-list/tasks.md#t03
+		 * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
 		 */
 		pageLocale() {
 			return globalThis.document?.documentElement?.lang || ''
@@ -364,7 +364,7 @@ export default {
 
 		/**
 		 * @return {Record<string, string>} The words in the page language.
-		 * @spec openspec/changes/personal-action-list/tasks.md#t03
+		 * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
 		 */
 		words() {
 			return actionWords(this.locale || this.pageLocale)
@@ -372,7 +372,7 @@ export default {
 
 		/**
 		 * @return {boolean} Whether this adds an action.
-		 * @spec openspec/changes/personal-action-list/tasks.md#t03
+		 * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
 		 */
 		isNew() {
 			return !this.action?.id
@@ -380,7 +380,7 @@ export default {
 
 		/**
 		 * @return {boolean} Whether the viewer may change only status, description and file.
-		 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
+		 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
 		 */
 		limited() {
 			return this.action?.role === 'assignee'
@@ -388,7 +388,7 @@ export default {
 
 		/**
 		 * @return {Array<{ref: string, displayName: string}>} Who the action may be given to.
-		 * @spec openspec/changes/personal-action-list/tasks.md#t03
+		 * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
 		 */
 		people() {
 			const own = this.action?.assignees
@@ -407,11 +407,11 @@ export default {
 
 		/**
 		 * @return {string} In which plan, and who else sees the changes.
-		 * @spec openspec/changes/personal-action-list/tasks.md#t03
+		 * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
 		 */
 		/**
 		 * @return {string} "Plan Schuldhulp op orde" above the title, for an action in a plan (board ActieBewerken).
-		 * @spec openspec/changes/personal-action-list/tasks.md#t07
+		 * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t07
 		 */
 		overline() {
 			const title = this.action?.planTitle || this.planTitle
@@ -428,7 +428,7 @@ export default {
 	 * Open as a modal and read the history.
 	 *
 	 * @return {Promise<void>} Resolves when read.
-	 * @spec openspec/changes/personal-action-list/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
 	 */
 	async mounted() {
 		openDialog(this.$refs.dialog, this.$refs.heading)
@@ -439,7 +439,7 @@ export default {
 	 * Close the native dialog when the component goes.
 	 *
 	 * @return {void}
-	 * @spec openspec/changes/personal-action-list/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
 	 */
 	beforeUnmount() {
 		closeDialog(this.$refs.dialog)
@@ -452,7 +452,7 @@ export default {
 		/**
 		 * @param {{ref: string, displayName: string}} person Someone who may be assigned.
 		 * @return {string} "Sanne de Vries (u)" for the viewer.
-		 * @spec openspec/changes/personal-action-list/tasks.md#t03
+		 * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
 		 */
 		personName(person) {
 			return person.ref === this.viewer
@@ -462,7 +462,7 @@ export default {
 
 		/**
 		 * @return {Promise<void>} Resolves when read.
-		 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
+		 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
 		 */
 		async loadHistory() {
 			if (this.isNew) {
@@ -479,7 +479,7 @@ export default {
 		 * The fields the viewer may send.
 		 *
 		 * @return {object} The fields.
-		 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
+		 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
 		 */
 		fields() {
 			const draft = { ...this.draft, title: this.draft.title.trim() }
@@ -496,7 +496,7 @@ export default {
 		 * Save the action. A refusal is told in words and the dialog stays open.
 		 *
 		 * @return {Promise<void>} Resolves when answered.
-		 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-a-resident-keeps-a-list-of-own-actions-req-ral-001
+		 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-a-resident-keeps-a-list-of-own-actions-req-ral-001
 		 */
 		async submit() {
 			this.problem = ''
@@ -521,7 +521,7 @@ export default {
 		 *
 		 * @param {object} data The fields.
 		 * @return {Promise<{ok: boolean}>} The outcome.
-		 * @spec openspec/changes/personal-action-list/tasks.md#t03
+		 * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
 		 */
 		send(data) {
 			if (!this.isNew) {
@@ -542,7 +542,7 @@ export default {
 
 		/**
 		 * @return {void}
-		 * @spec openspec/changes/personal-action-list/tasks.md#t03
+		 * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
 		 */
 		chooseFile() {
 			this.$refs.fileInput?.click()
@@ -553,7 +553,7 @@ export default {
 		 *
 		 * @param {Event} event The picker's change.
 		 * @return {Promise<void>} Resolves when answered.
-		 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-a-resident-keeps-a-list-of-own-actions-req-ral-001
+		 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-a-resident-keeps-a-list-of-own-actions-req-ral-001
 		 */
 		async pickFile(event) {
 			const input = event?.target
@@ -587,7 +587,7 @@ export default {
 		 * Take the file off the action.
 		 *
 		 * @return {Promise<void>} Resolves when answered.
-		 * @spec openspec/changes/personal-action-list/tasks.md#t03
+		 * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
 		 */
 		async removeFile() {
 			this.problem = ''
@@ -608,7 +608,7 @@ export default {
 		 * Save the action's file.
 		 *
 		 * @return {Promise<void>} Resolves when answered.
-		 * @spec openspec/changes/personal-action-list/tasks.md#t03
+		 * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
 		 */
 		async openFile() {
 			const answer = await actionsApi(this.api).downloadActionFile(
@@ -625,7 +625,7 @@ export default {
 		 * Delete the action.
 		 *
 		 * @return {Promise<void>} Resolves when answered.
-		 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
+		 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
 		 */
 		async destroy() {
 			const answer = await actionsApi(this.api).deleteAction(

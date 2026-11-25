@@ -150,7 +150,7 @@ const FILE_TYPES = ['pdf', 'jpg', 'jpeg', 'png']
  * @param {string} locale The locale.
  * @return {Record<string, string>} The words.
  *
- * @spec openspec/changes/personal-action-list/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
  */
 export function actionWords(locale) {
 	return String(locale || '')
@@ -167,7 +167,7 @@ export function actionWords(locale) {
  * @param {Record<string, string|number>} vars The values.
  * @return {string} The text.
  *
- * @spec openspec/changes/personal-action-list/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
  */
 export function fill(text, vars = {}) {
 	return text.replace(/\{(\w+)\}/g, (_, key) => String(vars[key] ?? ''))
@@ -180,7 +180,7 @@ export function fill(text, vars = {}) {
  * @param {{name: string, size: number}|null} file The chosen file.
  * @return {boolean} True when it may.
  *
- * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-a-resident-keeps-a-list-of-own-actions-req-ral-001
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-a-resident-keeps-a-list-of-own-actions-req-ral-001
  */
 export function fileAllowed(file) {
 	if (!file) {
@@ -201,7 +201,7 @@ export function fileAllowed(file) {
  * @param {boolean} [withYear] Whether to name the year: a table row leaves it out, as the board does.
  * @return {string} The day in words, or ''.
  *
- * @spec openspec/changes/personal-action-list/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
  */
 export function dayText(day, locale, withYear = true) {
 	if (!/^\d{4}-\d{2}-\d{2}/.test(String(day || ''))) {
@@ -242,7 +242,7 @@ function dateLocale(locale) {
  * @param {Record<string, string>} words The words.
  * @return {string} The line, or '' for a done action or one without a date.
  *
- * @spec openspec/changes/personal-action-list/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
  */
 export function daysLeftLine(action, today, words) {
 	if (action.status === 'done' || !action.endDate || !today) {
@@ -301,7 +301,7 @@ const HISTORY_LINES = {
  * @param {string} locale The locale, for dates.
  * @return {string} The line.
  *
- * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
  */
 export function historyText(line, words, locale) {
 	const say = Object.hasOwn(HISTORY_LINES, line.kind)
@@ -349,7 +349,7 @@ function fieldLabel(field, words) {
  * @param {string} locale The locale.
  * @return {string} The moment in words.
  *
- * @spec openspec/changes/personal-action-list/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
  */
 export function momentText(at, locale) {
 	const text = String(at || '')
@@ -367,7 +367,7 @@ export function momentText(at, locale) {
  * @param {Record<string, string>} words The words.
  * @return {string} The lead, or ''.
  *
- * @spec openspec/changes/personal-action-list/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
  */
 export function leadText(action, people, viewer, words) {
 	if (action?.role === 'assignee') {

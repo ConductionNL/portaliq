@@ -20,7 +20,7 @@ use PHPUnit\Framework\TestCase;
  * 401 without a session, the outcomes as statuses, and only the action
  * fields reach the service.
  *
- * @spec openspec/changes/personal-action-list/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t02
  */
 class PortalActionsControllerTest extends TestCase {
 

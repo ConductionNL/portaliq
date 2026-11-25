@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/personal-action-list/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t02
  */
 
 declare(strict_types=1);
@@ -50,7 +50,7 @@ use OCP\AppFramework\Http\StreamResponse;
  * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the constructor takes the services an action touches.
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- one method per thing a resident does with an action.
  *
- * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md
  */
 class PortalActionService implements PortalActionServiceInterface {
 
@@ -115,7 +115,7 @@ class PortalActionService implements PortalActionServiceInterface {
 	 *
 	 * @return array{actions: array<int, array<string, mixed>>, done: int, total: int, assignees: array<int, array{ref: string, displayName: string}>}
 	 *
-	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-a-resident-keeps-a-list-of-own-actions-req-ral-001
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-a-resident-keeps-a-list-of-own-actions-req-ral-001
 	 */
 	public function overview(array $subject): array {
 		$plans   = [];
@@ -150,7 +150,7 @@ class PortalActionService implements PortalActionServiceInterface {
 	 *
 	 * @return array{status: string, id: string} OK with the new id, INVALID or FAILED.
 	 *
-	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-a-resident-keeps-a-list-of-own-actions-req-ral-001
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-a-resident-keeps-a-list-of-own-actions-req-ral-001
 	 */
 	public function create(array $subject, array $data): array {
 		$ref   = (string)($subject['subjectRef'] ?? '');
@@ -184,7 +184,7 @@ class PortalActionService implements PortalActionServiceInterface {
 	 *
 	 * @return string OK, NOT_FOUND, FORBIDDEN, INVALID or FAILED.
 	 *
-	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
 	 */
 	public function update(array $subject, string $id, array $data, string $planId=''): string {
 		$found = $this->find(subject: $subject, id: $id, planId: $planId);
@@ -218,7 +218,7 @@ class PortalActionService implements PortalActionServiceInterface {
 	 *
 	 * @return string OK, NOT_FOUND, FORBIDDEN or FAILED.
 	 *
-	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
 	 */
 	public function delete(array $subject, string $id, string $planId=''): string {
 		$found = $this->find(subject: $subject, id: $id, planId: $planId);
@@ -256,7 +256,7 @@ class PortalActionService implements PortalActionServiceInterface {
 	 *
 	 * @return array<int, array<string, string>>|null The lines.
 	 *
-	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
 	 */
 	public function history(array $subject, string $id, string $planId=''): ?array {
 		$found = $this->find(subject: $subject, id: $id, planId: $planId);
@@ -277,7 +277,7 @@ class PortalActionService implements PortalActionServiceInterface {
 	 *
 	 * @return string OK, NOT_FOUND, FORBIDDEN, INVALID (not a PDF, JPG or PNG up to 10 MB) or FAILED.
 	 *
-	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-a-resident-keeps-a-list-of-own-actions-req-ral-001
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-a-resident-keeps-a-list-of-own-actions-req-ral-001
 	 */
 	public function attach(array $subject, string $id, ?array $uploaded, string $planId=''): string {
 		$access = $this->writable(subject: $subject, id: $id, planId: $planId);
@@ -369,7 +369,7 @@ class PortalActionService implements PortalActionServiceInterface {
 	 *
 	 * @return StreamResponse|null
 	 *
-	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-a-resident-keeps-a-list-of-own-actions-req-ral-001
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-a-resident-keeps-a-list-of-own-actions-req-ral-001
 	 */
 	public function file(array $subject, string $id, string $planId=''): ?StreamResponse {
 		$found  = $this->find(subject: $subject, id: $id, planId: $planId);
