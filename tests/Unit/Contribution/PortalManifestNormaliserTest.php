@@ -516,6 +516,8 @@ class PortalManifestNormaliserTest extends TestCase {
 	 * collection-group-order T2: `groupOrder` stays only as 'rows' or
 	 * 'heading', and only beside a kept `groupByField`.
 	 *
+	 * @return void
+	 *
 	 * @spec openspec/changes/collection-group-order/tasks.md#T2
 	 */
 	public function testAGroupOrderIsKeptOnlyAsRowsOrHeadingBesideAGroupField(): void {
@@ -533,10 +535,10 @@ class PortalManifestNormaliserTest extends TestCase {
 		);
 
 		$byId = array_column($out['collections'], null, 'id');
-		$this->assertSame('rows', $byId['c1']['groupOrder']);
-		$this->assertSame('heading', $byId['c2']['groupOrder']);
+		$this->assertSame(expected: 'rows', actual: $byId['c1']['groupOrder']);
+		$this->assertSame(expected: 'heading', actual: $byId['c2']['groupOrder']);
 		foreach (['c3', 'c4', 'c5', 'c6'] as $id) {
-			$this->assertArrayNotHasKey('groupOrder', $byId[$id], $id);
+			$this->assertArrayNotHasKey(key: 'groupOrder', array: $byId[$id], message: $id);
 		}
 
 	}//end testAGroupOrderIsKeptOnlyAsRowsOrHeadingBesideAGroupField()

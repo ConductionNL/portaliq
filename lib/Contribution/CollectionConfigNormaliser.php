@@ -132,6 +132,8 @@ class CollectionConfigNormaliser {
 	 * @param array<string, mixed> $collection The collection.
 	 *
 	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/collection-group-order/tasks.md#T2
 	 */
 	private function normaliseCaseKeys(array $collection): array {
 		// Steps, answer date and whose turn, on a cases collection only
@@ -146,7 +148,7 @@ class CollectionConfigNormaliser {
 		$collection = (new CaseStatusLabelField())->normalise(collection: $collection);
 		$collection = (new CollectionIntroKey())->normalise(collection: $collection);
 
-		return $this->normaliseGroupByField(collection: $collection);
+		return $this->normaliseGroupOrder(collection: $this->normaliseGroupByField(collection: $collection));
 	}//end normaliseCaseKeys()
 
 	/**
@@ -343,7 +345,7 @@ class CollectionConfigNormaliser {
 			unset($collection['groupByField']);
 		}
 
-		return $this->normaliseGroupOrder(collection: $collection);
+		return $collection;
 	}//end normaliseGroupByField()
 
 	/**
