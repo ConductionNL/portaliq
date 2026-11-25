@@ -23,6 +23,8 @@ namespace OCA\Portaliq\Tests\Unit\Service\Intake;
 use OCA\Portaliq\BackgroundJob\FormFailureDigestJob;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Service\Intake\FormFailureDigest;
+use OCA\Portaliq\Service\Intake\FormFailureDigestMail;
+use OCA\Portaliq\Service\Intake\FormFailureRecipients;
 use OCA\Portaliq\Service\Intake\SubmitFailureLog;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IAppConfig;
@@ -43,6 +45,8 @@ use RuntimeException;
  * one mail per administrator of each portal with failures, none on a quiet day.
  *
  * @covers \OCA\Portaliq\Service\Intake\FormFailureDigest
+ * @covers \OCA\Portaliq\Service\Intake\FormFailureDigestMail
+ * @covers \OCA\Portaliq\Service\Intake\FormFailureRecipients
  * @covers \OCA\Portaliq\BackgroundJob\FormFailureDigestJob
  *
  * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-a-failed-submit-is-reported-and-can-be-sent-again-req-fgv-003
@@ -128,16 +132,15 @@ class FormFailureDigestTest extends TestCase {
 		);
 
 		$config = $this->createMock(originalClassName: IAppConfig::class);
-		$config->method('getValueString')->willReturnCallback(fn (string $app, string $key, string $default = ''): string => ($this->config[$key] ?? $default));
+		$config->method('getValueString')->willReturnCallback(
+			fn (string $app, string $key, string $default = ''): string => ($this->config[$key] ?? $default)
+		);
 		$config->method('setValueString')->willReturnCallback(
 			function (string $app, string $key, string $value): bool {
 				$this->config[$key] = $value;
 				return true;
 			}
 		);
-
-		$time = $this->createMock(originalClassName: ITimeFactory::class);
-		$time->method('getTime')->willReturnCallback(fn (): int => $this->now);
 
 		$portals = $this->createMock(originalClassName: PortalResolverInterface::class);
 		$portals->method('allPublishedPortals')->willReturn(
@@ -154,13 +157,13 @@ class FormFailureDigestTest extends TestCase {
 
 		return new FormFailureDigest(
 			failures: $log,
-			portals: $portals,
-			groups: $this->groupManager(),
-			appConfig: $config,
-			time: $time,
-			mailer: $this->mailer(fails: $mailFails),
-			l10n: $l10n,
-			logger: $this->createMock(originalClassName: LoggerInterface::class)
+			recipients: new FormFailureRecipients(portals: $portals, groups: $this->groupManager()),
+			mail: new FormFailureDigestMail(
+				mailer: $this->mailer(fails: $mailFails),
+				l10n: $l10n,
+				logger: $this->createMock(originalClassName: LoggerInterface::class)
+			),
+			appConfig: $config
 		);
 	}//end digest()
 
@@ -242,7 +245,7 @@ class FormFailureDigestTest extends TestCase {
 			['code' => 'OF-3C4D', 'portal' => 'zuid', 'route' => 'woo', 'title' => 'Woo-verzoek', 'status' => 503, 'at' => $this->now - 3600],
 		];
 
-		$this->assertSame(expected: 1, actual: $this->digest(failures: $failures)->run());
+		$this->assertSame(expected: 1, actual: $this->digest(failures: $failures)->run(now: $this->now));
 		$this->assertSame(expected: ['beheer@zuid.nl'], actual: $this->sent[0]['to']);
 		$this->assertSame(expected: 'Form submits that failed: Zuiddrecht', actual: $this->sent[0]['subject']);
 		$this->assertSame(expected: 'Woo-verzoek (woo): 2 × OF-1A2B, OF-3C4D', actual: $this->sent[0]['lines'][1]);
@@ -251,7 +254,7 @@ class FormFailureDigestTest extends TestCase {
 		// The same day again sends nothing.
 		$this->sent = [];
 		$this->now += 3600;
-		$this->assertSame(expected: 0, actual: $this->digest(failures: $failures)->run());
+		$this->assertSame(expected: 0, actual: $this->digest(failures: $failures)->run(now: $this->now));
 		$this->assertSame(expected: [], actual: $this->sent);
 	}//end testOneDigestNamesTheFormAndItsCodes()
 
@@ -263,11 +266,11 @@ class FormFailureDigestTest extends TestCase {
 	public function testNothingBeforeSevenAndNothingOnAQuietDay(): void {
 		$this->now = 1795589999;
 		$failure   = [['code' => 'OF-1A2B', 'portal' => 'zuid', 'route' => 'woo', 'title' => '', 'status' => 503, 'at' => $this->now]];
-		$this->assertSame(expected: 0, actual: $this->digest(failures: $failure)->run());
+		$this->assertSame(expected: 0, actual: $this->digest(failures: $failure)->run(now: $this->now));
 		$this->assertArrayNotHasKey(key: FormFailureDigest::SENT_KEY, array: $this->config);
 
 		$this->now = 1795593600;
-		$this->assertSame(expected: 0, actual: $this->digest(failures: [])->run());
+		$this->assertSame(expected: 0, actual: $this->digest(failures: [])->run(now: $this->now));
 		$this->assertSame(expected: '2026-11-25', actual: $this->config[FormFailureDigest::SENT_KEY]);
 		$this->assertSame(expected: [], actual: $this->sent);
 	}//end testNothingBeforeSevenAndNothingOnAQuietDay()
@@ -283,7 +286,7 @@ class FormFailureDigestTest extends TestCase {
 			['code' => 'OF-BBBB', 'portal' => 'weg', 'route' => 'x', 'title' => 'X', 'status' => 503, 'at' => $this->now],
 		];
 
-		$this->assertSame(expected: 2, actual: $this->digest(failures: $failures)->run());
+		$this->assertSame(expected: 2, actual: $this->digest(failures: $failures)->run(now: $this->now));
 		$this->assertSame(expected: [['root@example.nl'], ['root@example.nl']], actual: array_column($this->sent, 'to'));
 		$this->assertSame(expected: 'melding (melding): 1 × OF-AAAA', actual: $this->sent[0]['lines'][1]);
 		$this->assertSame(expected: 'Form submits that failed: weg', actual: $this->sent[1]['subject']);
@@ -296,13 +299,15 @@ class FormFailureDigestTest extends TestCase {
 	 */
 	public function testAFailedMailIsNotCountedAndTheJobDoesNotThrow(): void {
 		$failure = [['code' => 'OF-1A2B', 'portal' => 'zuid', 'route' => 'woo', 'title' => 'Woo', 'status' => 503, 'at' => $this->now]];
-		$this->assertSame(expected: 0, actual: $this->digest(failures: $failure, mailFails: true)->run());
+		$this->assertSame(expected: 0, actual: $this->digest(failures: $failure, mailFails: true)->run(now: $this->now));
 
 		$digest = $this->createMock(originalClassName: FormFailureDigest::class);
-		$digest->expects($this->once())->method('run')->willThrowException(new RuntimeException('boom'));
+		$digest->expects($this->once())->method('run')->with(1234)->willThrowException(new RuntimeException('boom'));
 		$logger = $this->createMock(originalClassName: LoggerInterface::class);
-		$logger->expects($this->once())->method('error');
-		$job = new FormFailureDigestJob(time: $this->createMock(originalClassName: ITimeFactory::class), digest: $digest, logger: $logger);
+		$logger->expects($this->once())->method('warning');
+		$time = $this->createMock(originalClassName: ITimeFactory::class);
+		$time->method('getTime')->willReturn(1234);
+		$job = new FormFailureDigestJob(time: $time, digest: $digest, logger: $logger);
 		$run = new \ReflectionMethod($job, 'run');
 		$run->invoke($job, null);
 		$this->assertSame(expected: FormFailureDigestJob::INTERVAL, actual: 3600);
@@ -326,6 +331,6 @@ class FormFailureDigestTest extends TestCase {
 			expected: ['a' => ['r1' => ['title' => 'R1', 'codes' => ['OF-1', 'OF-3']]], 'b' => ['r1' => ['title' => 'r1', 'codes' => ['OF-2']]]],
 			actual: $grouped
 		);
-		$this->assertSame(expected: ['R1 (r1): 2 × OF-1, OF-3'], actual: FormFailureDigest::lines(forms: $grouped['a']));
+		$this->assertSame(expected: ['R1 (r1): 2 × OF-1, OF-3'], actual: FormFailureDigestMail::lines(forms: $grouped['a']));
 	}//end testFailuresAreGroupedPerPortalAndForm()
 }//end class

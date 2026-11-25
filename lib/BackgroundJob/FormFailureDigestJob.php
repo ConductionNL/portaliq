@@ -47,7 +47,7 @@ class FormFailureDigestJob extends TimedJob {
 	/**
 	 * Constructor.
 	 *
-	 * @param ITimeFactory      $time   The clock.
+	 * @param ITimeFactory      $time   The clock; its time is what the digest compares with 07:00.
 	 * @param FormFailureDigest $digest Sends the digest when it is due.
 	 * @param LoggerInterface   $logger Logs a run that failed.
 	 */
@@ -57,13 +57,12 @@ class FormFailureDigestJob extends TimedJob {
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(time: $time);
-		$this->setInterval(seconds: self::INTERVAL);
 		$this->setTimeSensitivity(sensitivity: IJob::TIME_INSENSITIVE);
-		$this->setAllowParallelRuns(allow: false);
+		$this->setInterval(seconds: self::INTERVAL);
 	}//end __construct()
 
 	/**
-	 * Send the digest when it is due.
+	 * Send the digest when it is due; a failure is logged, never thrown.
 	 *
 	 * @param mixed $argument Unused.
 	 *
@@ -72,10 +71,11 @@ class FormFailureDigestJob extends TimedJob {
 	 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-a-failed-submit-is-reported-and-can-be-sent-again-req-fgv-003
 	 */
 	protected function run($argument): void {
+		$now = $this->time->getTime();
 		try {
-			$this->digest->run();
+			$this->digest->run(now: $now);
 		} catch (Throwable $failure) {
-			$this->logger->error('[FormFailureDigestJob] digest failed: ' . $failure->getMessage(), ['exception' => $failure]);
+			$this->logger->warning('Portaliq: the digest of failed form submits did not run', ['exception' => $failure, 'at' => $now]);
 		}
 	}//end run()
 }//end class
