@@ -74,6 +74,12 @@ export {
 	renameMenuItem,
 	sortedMenuItems,
 } from './menuModel.js'
+export {
+	boundFormId,
+	createFormRowFields,
+	formRowEditable,
+	refusalOf,
+} from './formRowFields.js'
 export { createPageEditor } from './pageEditor.js'
 export { createPageSaver, isConflict, PageConflictError } from './pageSaver.js'
 export {

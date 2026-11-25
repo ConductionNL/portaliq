@@ -3782,7 +3782,12 @@ OC.L10N.register(
         "Move up": "Omhoog",
         "Move down": "Omlaag",
         "Remove field": "Veld verwijderen",
-        "Add field": "Veld toevoegen"
+        "Add field": "Veld toevoegen",
+        "Reading the fields of this form…": "De velden van dit formulier worden gelezen…",
+        "Only someone who may change this form can change its fields. What an anonymous visitor may send is set on the form, not on the page.": "Alleen wie dit formulier mag wijzigen, kan de velden ervan wijzigen. Wat een anonieme bezoeker mag versturen, staat op het formulier, niet op de pagina.",
+        "Someone else changed this form in the meantime. Select the form again to read its latest fields.": "Iemand anders heeft dit formulier intussen gewijzigd. Selecteer het formulier opnieuw om de nieuwste velden te lezen.",
+        "The form this widget is bound to no longer exists.": "Het formulier waaraan deze widget gekoppeld is, bestaat niet meer.",
+        "The fields of this form could not be read or saved.": "De velden van dit formulier konden niet worden gelezen of opgeslagen."
     },
     "nplurals=2; plural=(n != 1);"
 )

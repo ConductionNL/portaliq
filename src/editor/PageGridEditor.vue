@@ -233,11 +233,18 @@
 							-->
 							<template v-else-if="isFormFieldList(field)">
 								<label :for="`field-${field.name}`">{{ field.label }}</label>
+								<NcNoteCard
+									v-if="formRowNotice"
+									type="warning"
+									data-testid="designer-form-row-notice">
+									{{ formRowNotice }}
+								</NcNoteCard>
 								<FormFieldList
 									:id="`field-${field.name}`"
 									:idPrefix="`field-${selected.id}`"
-									:fields="selected.props?.fields || []"
-									@update:fields="editor.setProp('fields', $event)"
+									:fields="formFieldsShown"
+									:readonly="!formRowWritable"
+									@update:fields="writeFormFields"
 									@add="$emit('update:paletteOpen', true)" />
 							</template>
 							<label v-else :for="`field-${field.name}`">{{
@@ -361,6 +368,7 @@ import {
 } from '../lib/pageWidgetCatalogue.js'
 import { widgetLabel, widgetWidthLine } from '../lib/widgetLabels.js'
 import { historyIntent } from './editHistory.js'
+import { boundFormId, formRowEditable } from './formRowFields.js'
 import { cellFromDrop } from './geometry.js'
 import { PALETTE_DRAG_TYPE } from './paletteDrag.js'
 import { recordListChoice } from './recordLists.js'
@@ -461,6 +469,20 @@ export default {
 			type: Array,
 			default: null,
 		},
+
+		/**
+		 * Reads and writes the field list of the `form` row a form widget is
+		 * bound to: the client from `createFormRowFields()`. With it, a bound
+		 * widget's inspector edits that row, because the anonymous submit
+		 * accepts only the row's field ids (decision 24 Nov 2026, T11b
+		 * option b). Without it, the list is the widget's own.
+		 *
+		 * @type {object|null}
+		 */
+		formRows: {
+			type: Object,
+			default: null,
+		},
 	},
 
 	emits: ['update:paletteOpen'],
@@ -468,6 +490,14 @@ export default {
 	data() {
 		return {
 			jsonError: '',
+
+			/**
+			 * The bound form row's state from `formRows`, or null while the
+			 * selection is no bound form widget.
+			 *
+			 * @type {object|null}
+			 */
+			formRow: null,
 
 			/**
 			 * Whether a palette drag is over the canvas right now, so the drop
@@ -546,6 +576,53 @@ export default {
 		},
 
 		/**
+		 * @return {string} The id of the form row the selected form widget is
+		 *   bound to, or '' when there is none or no client to reach it.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
+		boundForm() {
+			return this.formSelected && this.formRows
+				? boundFormId(this.selected?.props)
+				: ''
+		},
+
+		/**
+		 * @return {Array<object>|object|string} The fields the inspector lists:
+		 *   the bound row's, else the widget's own.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
+		formFieldsShown() {
+			return this.formRow ? this.formRow.fields : this.selected?.props?.fields || []
+		},
+
+		/**
+		 * @return {boolean} Whether the field list may be edited now.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
+		formRowWritable() {
+			return formRowEditable(this.formRow)
+		},
+
+		/**
+		 * @return {string} Why the bound row's fields cannot be edited, or ''.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
+		formRowNotice() {
+			const notices = {
+				loading: this.t('portaliq', 'Reading the fields of this form…'),
+				forbidden: this.t('portaliq', 'Only someone who may change this form can change its fields. What an anonymous visitor may send is set on the form, not on the page.'),
+				conflict: this.t('portaliq', 'Someone else changed this form in the meantime. Select the form again to read its latest fields.'),
+				missing: this.t('portaliq', 'The form this widget is bound to no longer exists.'),
+				failed: this.t('portaliq', 'The fields of this form could not be read or saved.'),
+			}
+			return this.formRow ? notices[this.formRow.state] || '' : ''
+		},
+
+		/**
 		 * @return {object|null} The selected placement.
 		 *
 		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
@@ -616,6 +693,21 @@ export default {
 	watch: {
 		'state.selectedId': function () {
 			this.jsonError = ''
+		},
+
+		boundForm: {
+			immediate: true,
+			/**
+			 * Read the row a newly selected form widget is bound to.
+			 *
+			 * @param {string} formId The bound row's id, or ''.
+			 * @return {void}
+			 *
+			 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+			 */
+			handler(formId) {
+				this.readFormRow(formId)
+			},
 		},
 	},
 
@@ -921,7 +1013,58 @@ export default {
 			if (!this.formSelected) {
 				return
 			}
-			this.editor.setProp('fields', addField(this.selected.props?.fields, type))
+			this.writeFormFields(addField(this.formFieldsShown, type))
+		},
+
+		/**
+		 * Read the bound form row, or forget it for an unbound selection. A
+		 * read that comes back after the selection moved on is dropped.
+		 *
+		 * @param {string} formId The bound row's id, or ''.
+		 * @return {Promise<void>} Resolves when read.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
+		async readFormRow(formId) {
+			if (!formId) {
+				this.formRow = null
+				return
+			}
+			this.formRow = { state: 'loading', formId, row: null, version: '', fields: [] }
+			const next = await this.formRows.load(formId)
+			if (this.boundForm === formId) {
+				this.formRow = next
+			}
+		},
+
+		/**
+		 * Store a new field list. A bound widget writes its form row first and
+		 * takes the list onto the widget only when OpenRegister stored it, so
+		 * the page never shows a field the submit refuses. An unbound widget
+		 * keeps the list on its own props.
+		 *
+		 * @param {Array<object>} list The new field list.
+		 * @return {Promise<void>} Resolves when stored or refused.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
+		async writeFormFields(list) {
+			if (!this.formRow) {
+				this.editor.setProp('fields', list)
+				return
+			}
+			if (!this.formRowWritable) {
+				return
+			}
+			const formId = this.formRow.formId
+			const next = await this.formRows.save(this.formRow, list)
+			if (this.boundForm !== formId) {
+				return
+			}
+			this.formRow = next
+			if (next.state === 'ready') {
+				this.editor.setProp('fields', next.fields)
+			}
 		},
 
 		onFieldInput(field, raw) {

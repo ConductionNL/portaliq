@@ -249,10 +249,11 @@ test("the inspector edits a form's fields as a list and the palette adds to it",
 	assert.match(editor, /:formSelected="formSelected"/)
 	assert.match(editor, /@chooseField="addFormField"/)
 	assert.match(editor, /<FormFieldList/)
-	assert.match(
-		editor,
-		/editor\.setProp\('fields', addField\(this\.selected\.props\?\.fields, type\)\)/,
-	)
+	// A field from the palette goes through the same write as an inspector
+	// edit: onto the bound form row when there is one, else onto the widget
+	// (T11b, tests/form-row-fields.spec.mjs).
+	assert.match(editor, /this\.writeFormFields\(addField\(this\.formFieldsShown, type\)\)/)
+	assert.match(editor, /if \(!this\.formRow\) \{\s*this\.editor\.setProp\('fields', list\)/)
 	const catalogue = source('src/lib/pageWidgetCatalogue.js')
 	assert.match(
 		catalogue,

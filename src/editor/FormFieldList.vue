@@ -5,6 +5,11 @@
   FormFieldList — the `form` widget's field list in the page designer's
   inspector (site-nlds-widget-palette design D4, REQ-SNW-003).
 
+  A widget bound to a `form` row (`formId`) lists and edits that row's fields
+  instead, through the host's `formRows` client (PageGridEditor), because the
+  anonymous submit accepts only the row's field ids; `readonly` is set while
+  OpenRegister does not let this user write the row.
+
   Each field shows its label, name and whether it is required, then the
   settings its type declares in src/lib/formFieldTypes.js. Every edit emits the
   whole new list; the grid editor stores it on the widget's `fields` prop, so
@@ -43,6 +48,7 @@
 							<input
 								:id="controlId(index, setting)"
 								type="checkbox"
+								:disabled="readonly"
 								:checked="field[setting.name] === true"
 								:data-testid="`designer-form-field-${field.id}-${setting.name}`"
 								@change="
@@ -64,6 +70,7 @@
 								:id="controlId(index, setting)"
 								class="form-field-list__input"
 								rows="3"
+								:disabled="readonly"
 								:value="displayValue(field, setting)"
 								:data-testid="`designer-form-field-${field.id}-${setting.name}`"
 								@change="set(field, setting, $event.target.value)" />
@@ -72,6 +79,7 @@
 								:id="controlId(index, setting)"
 								class="form-field-list__input"
 								:type="setting.kind === 'number' ? 'number' : 'text'"
+								:disabled="readonly"
 								:value="displayValue(field, setting)"
 								:data-testid="`designer-form-field-${field.id}-${setting.name}`"
 								@change="set(field, setting, $event.target.value)" />
@@ -81,20 +89,21 @@
 					<div class="form-field-list__actions">
 						<button
 							type="button"
-							:disabled="index === 0"
+							:disabled="readonly || index === 0"
 							:data-testid="`designer-form-field-${field.id}-up`"
 							@click="emitList(moveField(list, field.id, -1))">
 							{{ t('portaliq', 'Move up') }}
 						</button>
 						<button
 							type="button"
-							:disabled="index === list.length - 1"
+							:disabled="readonly || index === list.length - 1"
 							:data-testid="`designer-form-field-${field.id}-down`"
 							@click="emitList(moveField(list, field.id, 1))">
 							{{ t('portaliq', 'Move down') }}
 						</button>
 						<button
 							type="button"
+							:disabled="readonly"
 							:data-testid="`designer-form-field-${field.id}-remove`"
 							@click="emitList(removeField(list, field.id))">
 							{{ t('portaliq', 'Remove field') }}
@@ -107,6 +116,7 @@
 		<button
 			type="button"
 			class="form-field-list__add"
+			:disabled="readonly"
 			data-testid="designer-form-field-add"
 			@click="$emit('add')">
 			{{ t('portaliq', 'Add field') }}
@@ -133,6 +143,15 @@ export default {
 		fields: {
 			type: [Array, Object, String],
 			default: () => [],
+		},
+
+		/**
+		 * Show the list without letting it change: the bound form row could
+		 * not be read, or OpenRegister refused this user a write to it.
+		 */
+		readonly: {
+			type: Boolean,
+			default: false,
 		},
 
 		/** Prefix for the control ids, so two inspectors never share one. */
