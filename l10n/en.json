@@ -3324,6 +3324,8 @@
         "Activate an account": "Activate an account",
         "Confirmation of a question": "Confirmation of a question",
         "Confirmation of a request": "Confirmation of a request",
+        "Invitation to co-sign a request": "Invitation to co-sign a request",
+        "A request was not co-signed": "A request was not co-signed",
         "A plan is nearly ending": "A plan is nearly ending",
         "Columns in My cases": "Columns in My cases",
         "Per column you choose how the value is shown. A link can be a QR code, with its own text under it.": "Per column you choose how the value is shown. A link can be a QR code, with its own text under it.",

@@ -236,7 +236,7 @@ test.describe('mail-templates-admin-screen', () => {
 		})
 
 		await signIn(page)
-		await page.goto('/apps/portaliq/#/mail-templates')
+		await page.goto(`${APP}/mail-templates`)
 		await expect(
 			page.getByRole('row', { name: new RegExp(SUBJECT) }),
 		).toBeVisible({ timeout: 30_000 })
@@ -275,10 +275,11 @@ test.describe('mail-templates-admin-screen', () => {
 		})
 
 		await signIn(page)
-		await page.goto('/apps/portaliq/#/mail-log')
+		await page.goto(`${APP}/mail-log`)
 		const row = page.getByRole('row', { name: new RegExp(`E2E-${STAMP}`) })
 		await expect(row).toBeVisible({ timeout: 30_000 })
-		await expect(row).toContainText('failed')
+		// The status reads in the reader's language (REQ-PMT-003 filters on Mislukt).
+		await expect(row).toContainText(/failed|mislukt/i)
 
 		const resend = await api.post(`${APP}/api/mail-log/${failed}/resend`)
 		expect(resend.status()).toBe(202)
