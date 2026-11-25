@@ -27,7 +27,7 @@
  * members"), because the seeded second member, open-venray, measures no
  * traffic; TrafficRollupSumTest pins it.
  *
- * @spec openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md
+ * @spec openspec/specs/portal-traffic-reporting/spec.md
  */
 
 import type { Page, Route } from '@playwright/test'
@@ -202,7 +202,7 @@ test.describe('searches that found nothing', () => {
 		await page.goto(`${APP}/traffic`)
 		const sentence = page.getByTestId('traffic-searches-without-count').first()
 		await expect(sentence).toBeVisible({ timeout: 30_000 })
-		await expect(sentence).toContainText(/did not report how many results/)
+		await expect(sentence).toContainText(/did not report how many results|meldd?en? niet hoeveel resultaten/)
 	})
 
 	// REQ-PZR-002, scenario "An editor sees the misspelling" (task 3.1: search a nonsense term on

@@ -139,7 +139,7 @@ class TrafficExport implements TrafficExportInterface {
 	 *
 	 * @return string The cell, empty when there are none.
 	 *
-	 * @spec openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md#requirement-the-traffic-page-shows-what-the-public-did-not-find-req-pzr-002
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-traffic-page-shows-what-the-public-did-not-find-req-pzr-002
 	 */
 	private function termList(mixed $terms): string {
 		if (is_array($terms) === false) {
