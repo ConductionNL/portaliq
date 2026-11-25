@@ -37,13 +37,15 @@ final class DestinationRefusal {
 	 * 422: the destination's message on each refused field; nothing was
 	 * stored. 403/404: the form cannot be sent. Anything else, and no submit
 	 * at all: the request did not arrive, the page keeps the answers and says
-	 * to try again later. Nothing is queued (decision 181).
+	 * to try again later, with the error code the failure was logged under.
+	 * Nothing is queued (decision 181).
 	 *
 	 * @param array<string, mixed>|null $submitted What submit() answered, or null when there was no intake.
 	 *
 	 * @return array{body: array<string, mixed>, status: int}
 	 *
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-submission-is-validated-against-its-destinations-schema-before-anything-is-stored-req-pifo-004
+	 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-a-failed-submit-is-reported-and-can-be-sent-again-req-fgv-003
 	 */
 	public static function of(?array $submitted): array {
 		$status = (int)($submitted['status'] ?? 503);
@@ -55,6 +57,11 @@ final class DestinationRefusal {
 			return ['body' => ['error' => 'form_not_submittable'], 'status' => $status];
 		}
 
-		return ['body' => ['error' => 'try_again_later'], 'status' => 503];
+		$body = ['error' => 'try_again_later'];
+		if (is_string($submitted['code'] ?? null) === true && $submitted['code'] !== '') {
+			$body['code'] = $submitted['code'];
+		}
+
+		return ['body' => $body, 'status' => 503];
 	}//end of()
 }//end class

@@ -63,8 +63,9 @@ interface DestinationIntakeInterface {
 	 * @param array<string, mixed> $server         Values the server knows, carried where the destination declares them.
 	 * @param string               $idempotencyKey The client's Idempotency-Key, or ''.
 	 *
-	 * @return array{ok: bool, status: int, answer: array<string, mixed>, message: string, errors: array<string, string>}
-	 *         `errors` holds a message per field for a 422.
+	 * @return array{ok: bool, status: int, answer: array<string, mixed>, message: string, errors: array<string, string>, code?: string}
+	 *         `errors` holds a message per field for a 422; `code` names a submit
+	 *         the destination did not answer.
 	 *
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-the-case-is-created-in-the-request-and-the-citizen-gets-its-reference-at-once-req-pifo-005
 	 */

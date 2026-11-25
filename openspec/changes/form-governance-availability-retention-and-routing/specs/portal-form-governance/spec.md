@@ -36,17 +36,21 @@ Rewritten onto the direct submit (Ruben, 25 Nov 2026: form-governance T04-T08 re
 - **WHEN** a binding has a rule without register or schema
 - **THEN** the binding cannot be published and the finding names `destinationRules.<n>`
 
-### Requirement: A failed registration is retried and reported (REQ-FGV-003)
+### Requirement: A failed submit is reported and can be sent again (REQ-FGV-003)
 
-A submission whose delivery failed SHALL be retried in the background after 5 minutes, 1 hour and 6 hours. The resident's processing page SHALL show "Het versturen is niet gelukt", the date the answers are kept until, "Opnieuw proberen" and an error code. Staff SHALL be able to retry from the submission's page. Each attempt SHALL be a line in the evidence log. Once a day the portal's administrators SHALL get one mail listing failed deliveries, failed confirmations, failed prefills and bindings that open no form, and no mail when there is nothing to list.
+Rewritten onto the direct submit (Ruben, 25 Nov 2026: form-governance T04-T08 rewritten onto the direct submit). Nothing is queued and nothing is retried in the background: a submit either creates the destination object in the request or does not. When the destination does not answer (503), the server SHALL give the failure an error code `OF-` plus four characters, write one evidence line in the server log with that code, the form and the destination's status, and answer the code with the 503. The form SHALL keep the answers and show "Het versturen is niet gelukt", the error code and "Opnieuw proberen". Every send of one filled-in form SHALL carry the same Idempotency-Key, so a retry after an answer that got lost creates no second object. A refused answer (422) and a form that cannot be sent (403, 404) SHALL carry no error code. Once a day at 07:00 the portal's administrators SHALL get one mail listing the forms whose submits failed in the past 24 hours with their error codes, and no mail when there is nothing to list.
 
 #### Scenario: The resident retries
-- **WHEN** a delivery failed and the resident chooses "Opnieuw proberen" and the target answers
-- **THEN** the page shows the reference of the created case and the evidence log has two attempts
+- **WHEN** a submit fails because the destination does not answer, and the resident chooses "Opnieuw proberen" once the destination answers again
+- **THEN** the page shows the reference of the created object, the server log has one line with the error code the resident saw, and both sends carried the same Idempotency-Key
+
+#### Scenario: A refused answer is not a failure
+- **WHEN** the destination refuses an answer with 422
+- **THEN** the refusal comes back on its field and no error code is given or logged
 
 #### Scenario: One digest a day
-- **WHEN** two deliveries failed three times yesterday and nothing else failed
-- **THEN** the administrators get one mail at 07:00 naming both submissions
+- **WHEN** two submits of the Woo form failed yesterday and nothing else failed
+- **THEN** the administrators get one mail at 07:00 naming the Woo form and both error codes
 
 #### Scenario: A quiet day
 - **WHEN** nothing failed in the past 24 hours
