@@ -20,7 +20,8 @@
  */
 
 import { fieldList } from '../lib/formFieldTypes.js'
-import { createPageSaver, isConflict } from './pageSaver.js'
+import { refusalKind } from './editorRefusal.js'
+import { createPageSaver } from './pageSaver.js'
 
 /**
  * The id of the `form` row a widget is bound to.
@@ -45,17 +46,11 @@ export function boundFormId(props) {
  * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
  */
 export function refusalOf(error) {
-	if (isConflict(error)) {
-		return 'conflict'
-	}
-	const status = error?.response?.status
-	if (status === 401 || status === 403) {
-		return 'forbidden'
-	}
-	if (status === 404) {
+	if (error?.response?.status === 404) {
 		return 'missing'
 	}
-	return 'failed'
+	const kind = refusalKind(error)
+	return kind === 'message' ? 'failed' : kind
 }
 
 /**
