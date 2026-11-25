@@ -344,7 +344,7 @@ class PortalTaskProxyControllerTest extends TestCase {
 	/**
 	 * A completion is recorded by the task's title as "Mijn taken" showed it.
 	 *
-	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
 	 */
 	public function testACompletionIsRecordedByTheTasksTitle(): void {
 		$gateway = $this->createMock(PortalTaskGateway::class);
