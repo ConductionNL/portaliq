@@ -98,6 +98,11 @@ class PortalFilteredRows {
 	 * @return array<int, mixed> The raw rows.
 	 */
 	private function readUpTo(object $objectService, OuterRowsQuery $query): array {
+		$byId = $this->rowsById(objectService: $objectService, query: $query);
+		if ($byId !== []) {
+			return $byId;
+		}
+
 		$rows = [];
 		foreach ($this->queries(query: $query) as $filters) {
 			$remaining = ($query->limit - count($rows));
@@ -183,6 +188,31 @@ class PortalFilteredRows {
 
 		return $filters;
 	}//end filters()
+
+	/**
+	 * A forward (`match: id`) read asks OpenRegister for its targets by id
+	 * first, so a target past the first page of a large schema is still read.
+	 * An OpenRegister that does not select on a plain `id` filter answers no
+	 * row; the caller then reads the schema as before and keeps the targets.
+	 *
+	 * @param object          $objectService OpenRegister's ObjectService.
+	 * @param OuterRowsQuery  $query         The read.
+	 *
+	 * @return array<int, mixed> The rows read by id, or [] to read as before.
+	 *
+	 * @spec openspec/changes/archive/2026-09-07-reverse-scope-join/tasks.md#T1
+	 */
+	private function rowsById(object $objectService, OuterRowsQuery $query): array {
+		if ($query->match === 'scopeField' || $query->targets === [] || $query->limit <= 0) {
+			return [];
+		}
+
+		$filters       = $this->filters(filter: $query->filter, scopeField: '', value: '');
+		$filters['id'] = array_map('strval', array_keys($query->targets));
+		$page          = $objectService->findAll(config: ['filters' => $filters, 'limit' => $query->limit, 'offset' => 0], _rbac: false, _multitenancy: false);
+
+		return $this->withoutDuplicates(rows: [], page: (array)$page);
+	}//end rowsById()
 
 	/**
 	 * Append a page of rows, skipping a row already read by an earlier query
