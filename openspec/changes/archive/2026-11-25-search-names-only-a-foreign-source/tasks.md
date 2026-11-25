@@ -13,4 +13,7 @@ Kind: code. Board canon: `Zoeken` (design-system `screens-src/zuiddrecht/`).
 
 ## 2. Live
 
-- [ ] 2.1 After merge, on the Zuiddrecht portal: a search shows no "Bron: local" on any own card.
+- [x] 2.1 After merge, on the Zuiddrecht portal: a search shows no "Bron: local" on any own card.
+      Done 25 Nov 2026 on a sandbox Nextcloud 34.0.6 (MariaDB, php -S) with openregister, opencatalogi
+      and portaliq from development, `portaliq:example-site:install zuiddrecht`, two published
+      publications: `/zoeken` searched "fietspad" in Chromium, 2 own results, no "Bron" line on either card.
