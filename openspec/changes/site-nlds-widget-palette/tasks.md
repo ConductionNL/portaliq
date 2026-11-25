@@ -104,7 +104,7 @@ After `site-multi-step-forms` wave 1.
 Build rules: `openspec/woo-build-rules.md`. A test marked **fails today** must be run
 on `origin/development` first and seen red; put the failing line in the PR body.
 
-- [ ] **T8c**: the language switch renders and the chosen language reaches the content (REQ-SNW-013).
+- [x] **T8c**: the language switch renders and the chosen language reaches the content (REQ-SNW-013).
   **Start from PR #1196** (`fix/language-switch-renders`): it implements exactly this, with
   `src/site/lib/languageNav.js` and `tests/language-nav.spec.mjs` (7 tests, 5 red on `development`).
   On 2026-10-05 it was CONFLICTING and red on `validate` and `check:specs`. Merge `development` into
@@ -116,6 +116,7 @@ on `origin/development` first and seen red; put the failing line in the PR body.
     the switch`, `an author cannot add a locale the portal does not serve`, and
     `every content read carries the chosen locale`, wired into `check:specs`.
   - Status: the node tests above pass on this branch because #1196 merged; the e2e and the live check below are not run: need a live instance.
+  - Run live 25 Nov 2026 on a sandbox Nextcloud 35.0.3 (MariaDB, OpenRegister main, portaliq development, `tests/e2e/ci-seed.sh`): `tests/e2e/site-language.spec.ts` 1 passed (5.6 s), after two fixes it surfaced. An authored markdown link to a site page left the app path and opened Nextcloud's 404 (losing `?lang`); `MarkdownBlock` now writes site links in the site's own address (`withSiteAddresses`, node test in `tests/markdown-block-classes.spec.mjs`). The spec no longer sends `props: {}`, which OpenRegister reads as an empty list and refuses as no object.
   - Written 21 Nov: `tests/e2e/site-language.spec.ts` creates two routes on the seeded portal in Dutch and English (the Dutch first page places `nlLanguageNav`), chooses English, reads the English title, follows a link and reads the next page in English with `lang=en` kept; pages deleted afterwards. Not run: needs a live instance.
   - e2e `tests/e2e/site-language.spec.ts`: on a portal with locales `nl` and `en`, choose English and
     see a page with an English translation render in English, then follow a link and stay in English.

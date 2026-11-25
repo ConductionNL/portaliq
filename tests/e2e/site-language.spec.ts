@@ -95,7 +95,8 @@ function pageRecord(
 					gridY: 0,
 					gridWidth: 12,
 					gridHeight: 1,
-					props: {},
+					// No `props`: the switch has none, and OpenRegister reads an
+					// empty `{}` as an empty list and refuses it as no object.
 				},
 				{
 					id: 'tekst',
