@@ -52,11 +52,13 @@ class DestinationIntake implements DestinationIntakeInterface {
 	 * @param DestinationSubmit  $submitter Calls OpenRegister's submit service and validator.
 	 * @param DestinationMapping $mapping   Builds the binding's mapping.
 	 * @param PortalSchemaReader $schemas   Reads the destination schema.
+	 * @param SubmitFailureLog|null $failures Gives a failed submit its error code and log line.
 	 */
 	public function __construct(
 		private readonly DestinationSubmit $submitter,
 		private readonly DestinationMapping $mapping,
 		private readonly PortalSchemaReader $schemas,
+		private readonly ?SubmitFailureLog $failures = null,
 	) {
 	}//end __construct()
 
@@ -70,10 +72,12 @@ class DestinationIntake implements DestinationIntakeInterface {
 	 * @param array<string, mixed> $server         Values the server knows, carried where the destination declares them.
 	 * @param string               $idempotencyKey The client's Idempotency-Key, or ''.
 	 *
-	 * @return array{ok: bool, status: int, answer: array<string, mixed>, message: string, errors: array<string, string>}
-	 *         `errors` holds a message per field for a 422.
+	 * @return array{ok: bool, status: int, answer: array<string, mixed>, message: string, errors: array<string, string>, code?: string}
+	 *         `errors` holds a message per field for a 422; `code` names a submit
+	 *         the destination did not answer (REQ-FGV-003).
 	 *
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-the-case-is-created-in-the-request-and-the-citizen-gets-its-reference-at-once-req-pifo-005
+	 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-a-failed-submit-is-reported-and-can-be-sent-again-req-fgv-003
 	 */
 	public function submit(
 		array $binding,
@@ -85,7 +89,7 @@ class DestinationIntake implements DestinationIntakeInterface {
 	): array {
 		$destination = $this->mapping->destinationOf(binding: $binding);
 		if ($destination === null) {
-			return ['ok' => false, 'status' => 503, 'answer' => [], 'message' => 'The form names no destination.', 'errors' => []];
+			return $this->failed(binding: $binding, result: ['ok' => false, 'status' => 503, 'answer' => [], 'message' => 'The form names no destination.', 'errors' => []]);
 		}
 
 		$mapping = $this->mapping->mappingFor(
@@ -110,14 +114,38 @@ class DestinationIntake implements DestinationIntakeInterface {
 			$errors = $this->mapping->fieldErrors(findings: $result['findings'], mapping: $mapping);
 		}
 
-		return [
-			'ok' => $result['ok'],
-			'status' => $result['status'],
-			'answer' => $result['answer'],
-			'message' => $result['message'],
-			'errors' => $errors,
-		];
+		return $this->failed(
+			binding: $binding,
+			result: [
+				'ok' => $result['ok'],
+				'status' => $result['status'],
+				'answer' => $result['answer'],
+				'message' => $result['message'],
+				'errors' => $errors,
+			]
+		);
 	}//end submit()
+
+	/**
+	 * A submit the destination did not answer gets its error code and log
+	 * line; an accepted submit, a refused answer (422) and a form that cannot
+	 * be sent (403, 404) pass unchanged.
+	 *
+	 * @param array<string, mixed> $binding The binding.
+	 * @param array{ok: bool, status: int, answer: array<string, mixed>, message: string, errors: array<string, string>} $result What the submit answered.
+	 *
+	 * @return array{ok: bool, status: int, answer: array<string, mixed>, message: string, errors: array<string, string>, code?: string} The answer, with `code` on a failure.
+	 *
+	 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-a-failed-submit-is-reported-and-can-be-sent-again-req-fgv-003
+	 */
+	private function failed(array $binding, array $result): array {
+		if ($this->failures === null || $result['ok'] === true || in_array($result['status'], [403, 404, 422], true) === true) {
+			return $result;
+		}
+
+		$result['code'] = $this->failures->record(binding: $binding, status: $result['status'], message: $result['message']);
+		return $result;
+	}//end failed()
 
 	/**
 	 * The answer to a submit that did not create the destination object.

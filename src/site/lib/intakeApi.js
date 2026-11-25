@@ -86,13 +86,19 @@ function fetcher(fetchImpl) {
  * POST a JSON body to one intake endpoint, with the bearer when there is one.
  *
  * @param {IntakeConnection} conn The connection.
- * @param {{path: string, body: object}} request The endpoint path and the body.
+ * @param {{path: string, body: object, idempotencyKey?: string}} request The endpoint path, the body and the submission's key.
  * @return {Promise<object>} The response.
  */
 function postIntake(conn, request) {
+	const headers = headersFor(conn.token, true)
+	// One key per filled-in form: a retry after an answer that got lost
+	// creates no second case (REQ-FGV-003).
+	if (typeof request.idempotencyKey === 'string' && request.idempotencyKey !== '') {
+		headers['Idempotency-Key'] = request.idempotencyKey
+	}
 	return fetcher(conn.fetchImpl)(intakeUrl(conn.base, request.path), {
 		method: 'POST',
-		headers: headersFor(conn.token, true),
+		headers,
 		body: JSON.stringify(request.body),
 	})
 }
@@ -116,11 +122,13 @@ function withPortal(body, portal) {
  *
  * @param {string} what The call, e.g. `intake submit`.
  * @param {object} response The response.
- * @return {Error} The error.
+ * @param {string} [code] The error code the server logged the failure under, `OF-xxxx`, or ''.
+ * @return {Error} The error, with `status` and `code`.
  */
-function intakeError(what, response) {
+function intakeError(what, response, code = '') {
 	const error = new Error(`${what} ${response.status}`)
 	error.status = response.status
+	error.code = code
 	return error
 }
 
@@ -351,15 +359,19 @@ function emptyOrPreset(field) {
  * @param {string[]} [submission.statements] The keys of the statements ticked.
  * @param {Record<string, string>} [submission.verifiedEmails] The proof of each verified e-mail address, by address.
  * @param {{nonce: string, solution: string, expiresAt: number, signature: string}|null} [submission.proof] The solved challenge, when the form carries one.
+ * @param {string} [submission.idempotencyKey] The key of this filled-in form, the same on every retry.
  * @return {Promise<{reference: string, confirmationText: string, errors: object, moments?: object, unavailable?: object}>} The outcome.
+ * @throws {Error} With `status` and `code` (the `OF-xxxx` the failure was logged under) when it was not sent.
  *
  * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
  * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-the-case-is-created-in-the-request-and-the-citizen-gets-its-reference-at-once-req-pifo-005
+ * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-a-failed-submit-is-reported-and-can-be-sent-again-req-fgv-003
  */
 export async function submitIntake(conn, submission) {
 	const response = await postIntake(conn, {
 		path: '/intake/submit',
 		body: submissionBody(submission, conn.portal),
+		idempotencyKey: submission.idempotencyKey,
 	})
 	const parsed = await response.json().catch(() => ({}))
 
@@ -376,7 +388,7 @@ export async function submitIntake(conn, submission) {
 	}
 
 	if (!response.ok || !parsed?.reference) {
-		throw intakeError('intake submit', response)
+		throw intakeError('intake submit', response, typeof parsed?.code === 'string' ? parsed.code : '')
 	}
 
 	return submittedOutcome(parsed)
@@ -921,4 +933,29 @@ export async function challengeProof(challenge, subtle = globalThis.crypto?.subt
 		expiresAt: Number(challenge.expiresAt) || 0,
 		signature: String(challenge.signature || ''),
 	}
+}
+
+/**
+ * A new key for one filled-in form, sent as its Idempotency-Key: the same on
+ * every retry of that form, so a retry after an answer that got lost creates
+ * no second case.
+ *
+ * @param {{randomUUID?: () => string, getRandomValues?: (array: Uint8Array) => Uint8Array}} [random] The random source; the browser's crypto by default.
+ * @return {string} The key.
+ *
+ * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-a-failed-submit-is-reported-and-can-be-sent-again-req-fgv-003
+ */
+export function newSubmissionKey(random = globalThis.crypto) {
+	if (typeof random?.randomUUID === 'function') {
+		return random.randomUUID()
+	}
+	const bytes = new Uint8Array(16)
+	if (typeof random?.getRandomValues === 'function') {
+		random.getRandomValues(bytes)
+	} else {
+		for (let i = 0; i < bytes.length; i++) {
+			bytes[i] = Math.floor(Math.random() * 256)
+		}
+	}
+	return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('')
 }

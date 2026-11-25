@@ -7,12 +7,11 @@
 - [x] **T03**: `src/site/components/forms/FormUnavailable.vue` with the three situations of the FormulierNietBeschikbaar board and the not-yet-open text; node test (REQ-FGV-001)
 - [ ] **T04**: `lib/Service/Intake/PortalDeliveryRouter.php`: default plus rules, kinds `caseType`, `email` (Nextcloud mailer, template `form-delivery-mail`), `integriq` (integriq's call API); `PortalIntakeQueue` uses it; PHPUnit per kind and for rule order (REQ-FGV-002)
   - Not built: decision 179 removed routing (REQ-FGV-002 amended: the binding names its `destination`, no routing step after the submit).
-- [ ] **T05**: `lib/BackgroundJob/IntakeRetryJob.php` with the 5 min, 1 h, 6 h schedule; retry routes for the resident (own submission, by reference and session) and for staff; evidence log line per attempt; IDOR gate green; PHPUnit (REQ-FGV-003)
-  - Not built: decision 179 removed REQ-FGV-003; nothing is queued, so nothing is retried.
-- [ ] **T06**: FormulierVerwerken situation 2 on the reference page: text, kept-until date, "Opnieuw proberen", error code `OF-xxxx` (REQ-FGV-003)
-  - Not built: decision 179 removed REQ-FGV-003 (a refused submit answers 422 on its field, an unreachable destination 503 with the answers kept).
-- [ ] **T07**: `lib/BackgroundJob/FormFailureDigestJob.php` at 07:00, template `form-failure-digest` listed in the mail templates screen; no mail when empty; PHPUnit (REQ-FGV-003)
-  - Not built: decision 179 removed REQ-FGV-003, so there are no failures to digest.
+- [x] **T05**: (rewritten onto the direct submit, decision 25 Nov 2026) a submit the destination does not answer gets an error code and one evidence line; the resident sends it again from the form with the same Idempotency-Key. No background retry and no staff retry: nothing is queued or stored (REQ-FGV-003)
+  - `lib/Service/Intake/SubmitFailureLog.php` (code `OF-xxxx`, warning line with code, form and status, a short entry for the digest in app config, two days, at most 500); `DestinationIntake::submit()` records every non-422/403/404 failure, `DestinationRefusal::of()` puts the code in the 503 body. PHPUnit: `SubmitFailureLogTest`, `DestinationIntakeTest`, `DestinationRefusalTest`.
+- [x] **T06**: (rewritten onto the direct submit) FormulierVerwerken situation 2 in the form itself: "Het versturen is niet gelukt", the answers stay in the form, the error code `OF-xxxx` and "Opnieuw proberen" (REQ-FGV-003). No kept-until date: nothing is kept on the server.
+  - `IntakeFormBlock.vue` (failure block, `keyOfThisSubmission()`), `intakeApi.js` (`Idempotency-Key` header, `error.code`, `newSubmissionKey()`), words in `forms/fields.js`. Node test: `tests/intake-send-failed.spec.mjs` (`npm run check:intake-send-failed`).
+- [ ] **T07**: (rewritten onto the direct submit) `lib/BackgroundJob/FormFailureDigestJob.php` at 07:00 over `SubmitFailureLog::since()`, template `form-failure-digest` listed in the mail templates screen; no mail when nothing failed; PHPUnit (REQ-FGV-003)
 - [ ] **T08**: `lib/BackgroundJob/IntakeRetentionJob.php`: expiry per state, delete through OpenRegister or anonymise; PHPUnit for both methods and the defaults (REQ-FGV-004)
   - Not built in portaliq: decision 179 moved retention to the destination objects, by the destination app's own rules.
 - [ ] **T09**: export route and "Inzendingen downloaden" under "Meer" on the form settings page, built on OpenRegister's object export filtered on the binding; audit line; PtInzendingen "Downloaden" without answers; PHPUnit for the rights check (REQ-FGV-005)
