@@ -138,6 +138,10 @@ foreach ([
 	// What OpenRegister throws when an owning app's hook stops a write (the-owning-apps-refusal-reads-as-no-longer-possible).
 	'Exception\\HookStoppedException' => 'Exception/HookStoppedException.php',
 	'Service\\Integration\\IntegrationProvider' => 'Service/Integration/IntegrationProvider.php',
+	// The object-scoped CRUD half of the contract and the refs it takes (openregister main, 25 Nov 2026).
+	'Kernel\\Contracts\\RegisterSchemaRef' => 'Kernel/Contracts/RegisterSchemaRef.php',
+	'Kernel\\Contracts\\ObjectRef' => 'Kernel/Contracts/ObjectRef.php',
+	'Service\\Integration\\RefIntegrationProvider' => 'Service/Integration/RefIntegrationProvider.php',
 	'Service\\Integration\\LeafIdentity' => 'Service/Integration/LeafIdentity.php',
 	'Service\\Integration\\LeafAvailability' => 'Service/Integration/LeafAvailability.php',
 	'Service\\Integration\\LeafRendering' => 'Service/Integration/LeafRendering.php',

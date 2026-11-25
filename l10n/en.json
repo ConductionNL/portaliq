@@ -3658,7 +3658,17 @@
         "Changed on": "Changed on",
         "Form submits that failed: %1$s": "Form submits that failed: %1$s",
         "%1$s submits on %2$s did not reach their destination in the past 24 hours. The residents kept their answers and saw the error code.": "%1$s submits on %2$s did not reach their destination in the past 24 hours. The residents kept their answers and saw the error code.",
-        "Form submits that failed": "Form submits that failed"
+        "Form submits that failed": "Form submits that failed",
+        "Against case": "Against case",
+        "Closed at": "Closed at",
+        "Decision sent on": "Decision sent on",
+        "Public outcome": "Public outcome",
+        "Public outcome explanation": "Public outcome explanation",
+        "The case an objection or complaint is made against, set by the portal from the case page, never by the resident (case-page-objection-and-complaint).": "The case an objection or complaint is made against, set by the portal from the case page, never by the resident (case-page-objection-and-complaint).",
+        "The explanation shown under the public outcome (case-outcome-on-the-case-page REQ-COC-001).": "The explanation shown under the public outcome (case-outcome-on-the-case-page REQ-COC-001).",
+        "The outcome the resident may read once the case has ended, such as \"Vergunning verleend\" (case-outcome-on-the-case-page REQ-COC-001).": "The outcome the resident may read once the case has ended, such as \"Vergunning verleend\" (case-outcome-on-the-case-page REQ-COC-001).",
+        "When the case ended; empty while it runs. A collection names it as its closedField (case-outcome-on-the-case-page).": "When the case ended; empty while it runs. A collection names it as its closedField (case-outcome-on-the-case-page).",
+        "When the decision was sent; the objection window an onCase action declares counts from it (case-page-objection-and-complaint).": "When the decision was sent; the objection window an onCase action declares counts from it (case-page-objection-and-complaint)."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

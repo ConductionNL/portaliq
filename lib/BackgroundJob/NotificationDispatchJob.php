@@ -351,7 +351,8 @@ class NotificationDispatchJob extends QueuedJob {
 			return;
 		}
 
-		$this->recordAttempt(run: $run, outcome: new NotificationOutcome(status: $status, attempts: 0, channel: NotificationChannelsInterface::CHANNEL_PUSH));
+		$outcome = new NotificationOutcome(status: $status, attempts: 0, channel: NotificationChannelsInterface::CHANNEL_PUSH);
+		$this->recordAttempt(run: $run, outcome: $outcome);
 	}//end sendPush()
 
 	/**

@@ -3130,8 +3130,10 @@ class ContributionController extends Controller implements PortalProtected {
 		$scoped = (new ActionScopeResolver(reader: $this->reader))
 			->prepare(action: $action, subject: $subject, appId: $appId, body: $whitelisted);
 		$refused = $this->requiredFieldsGuard->forwardRefusal(action: $action, scoped: $scoped, declaresFields: $whitelisted !== null);
-		if ($refused !== null) {
-			return $refused;
+		if ($refused !== null || $scoped === null) {
+			// The guard already answers an unresolved scope with 403; the
+			// second test only tells the analysers the body is there.
+			return $refused ?? new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
 		$this->recordForward(subject: $subject, appId: $appId, actionId: $actionId);
