@@ -49,8 +49,29 @@
 				:error="errors[field.id] || ''"
 				:group="isGroup(field)"
 				:errorTestid="`form-field-error-${field.id}`">
+				<!--
+					A DATE WITH `picker` IS ONE CALENDAR CONTROL (design D1, Date
+					Picker): the browser's own date input, bounded by the field's
+					earliest and latest date, sending the same `yyyy-mm-dd` the
+					day, month and year group sends.
+					@spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+				-->
+				<input
+					v-if="isDatePicker(field)"
+					:id="fieldElementId(field)"
+					v-model="values[field.id]"
+					type="date"
+					class="utrecht-textbox utrecht-textbox--html-input pq-form__date-picker"
+					:min="dateLimit(field.earliest) || undefined"
+					:max="dateLimit(field.latest) || undefined"
+					:aria-labelledby="`${fieldElementId(field)}-label`"
+					:required="!!field.required"
+					:aria-invalid="errors[field.id] ? 'true' : undefined"
+					:aria-describedby="describedBy"
+					:data-testid="`form-field-${field.id}`" />
+
 				<DateInputGroup
-					v-if="field.type === 'date'"
+					v-else-if="field.type === 'date'"
 					:id="fieldElementId(field)"
 					v-model="values[field.id]"
 					:required="!!field.required"
@@ -241,7 +262,13 @@ import {
 	firstTouch,
 	lastTouch,
 } from '../lib/campaignTracking.js'
-import { chosenList, chosenValue, minimumErrors } from '../lib/formFieldValues.js'
+import {
+	chosenList,
+	chosenValue,
+	dateLimit,
+	dateRangeErrors,
+	minimumErrors,
+} from '../lib/formFieldValues.js'
 import { submitLandingPageForm } from '../lib/formSubmission.js'
 import { hasHelp, mergeHelp } from '../lib/help.js'
 import {
@@ -276,7 +303,11 @@ function fieldRules(fields) {
  * @return {Record<string, string>} The message per field id.
  */
 function formErrors(fields, values) {
-	return { ...plainFieldErrors(fieldRules(fields), values), ...minimumErrors(fields, values) }
+	return {
+		...plainFieldErrors(fieldRules(fields), values),
+		...minimumErrors(fields, values),
+		...dateRangeErrors(fields, values),
+	}
 }
 
 /**
@@ -490,18 +521,36 @@ export default {
 			if (affix) {
 				return affix
 			}
-			return field.type === 'date' ? this.text.dateHint : ''
+			return field.type === 'date' && !this.isDatePicker(field) ? this.text.dateHint : ''
+		},
+
+		dateLimit,
+
+		/**
+		 * Whether a date field is drawn as one calendar control.
+		 *
+		 * @param {object} field One declared form field.
+		 * @return {boolean} True for a `date` with `picker`.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
+		isDatePicker(field) {
+			return field.type === 'date' && field.picker === true
 		},
 
 		/**
 		 * Whether the field is a group of inputs under one legend.
 		 *
 		 * @param {object} field One declared form field.
-		 * @return {boolean} True for a date, a radio group and checkboxes.
+		 * @return {boolean} True for a date group, a radio group and checkboxes; a
+		 *  date picker is one control with its own label.
 		 *
 		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
 		 */
 		isGroup(field) {
+			if (this.isDatePicker(field)) {
+				return false
+			}
 			return ['date', 'radio', 'checkboxes'].includes(field.type)
 		},
 
@@ -610,6 +659,10 @@ export default {
 	display: flex;
 	align-items: center;
 	gap: var(--utrecht-space-inline-sm, 0.5rem);
+}
+
+.pq-form__date-picker {
+	max-inline-size: 12rem;
 }
 
 .pq-form__affixed {

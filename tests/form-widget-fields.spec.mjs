@@ -36,6 +36,8 @@ import {
 import {
 	chosenList,
 	chosenValue,
+	dateLimit,
+	dateRangeErrors,
 	minimumErrors,
 } from '../src/site/lib/formFieldValues.js'
 
@@ -292,4 +294,74 @@ test('FormBlock draws every declared type, choice groups under one legend', () =
 	)
 	assert.match(block, /:role="field\.type === 'switch' \? 'switch' : undefined"/)
 	assert.match(block, /formErrors\(this\.fields, this\.values\)/)
+})
+
+test('a date field offers the picker and its earliest and latest date (D1 rows 22, 23)', () => {
+	const names = fieldSettings('date').map((setting) => setting.name)
+	for (const name of ['picker', 'earliest', 'latest']) {
+		assert.ok(names.includes(name), `date has no ${name} setting`)
+	}
+	const [date] = addField([], 'date')
+	const picked = updateField([date], date.id, 'picker', true)[0]
+	assert.equal(picked.picker, true)
+	const bounded = updateField([picked], date.id, 'earliest', '2026-01-01')[0]
+	assert.equal(bounded.earliest, '2026-01-01')
+	assert.equal(
+		updateField([bounded], date.id, 'picker', false)[0].picker,
+		false,
+		'the picker can be switched off again',
+	)
+})
+
+test('dateLimit keeps only a real yyyy-mm-dd', () => {
+	assert.equal(dateLimit('2026-02-28'), '2026-02-28')
+	assert.equal(dateLimit(' 2026-02-28 '), '2026-02-28')
+	assert.equal(dateLimit('2026-02-30'), '', 'a date that does not exist is no limit')
+	assert.equal(dateLimit('28-02-2026'), '')
+	assert.equal(dateLimit(''), '')
+	assert.equal(dateLimit(undefined), '')
+})
+
+test('a date before the earliest or after the latest date is refused, in words', () => {
+	const fields = [
+		{ id: 'start', type: 'date', label: 'Startdatum', picker: true, earliest: '2026-12-01', latest: '2026-12-31' },
+		{ id: 'free', type: 'date', label: 'Vrije datum' },
+		{ id: 'name', type: 'text', label: 'Naam', earliest: '2026-12-01' },
+	]
+	assert.deepEqual(dateRangeErrors(fields, { start: '2026-12-15', free: '1900-01-01', name: '1900-01-01' }), {})
+	assert.deepEqual(dateRangeErrors(fields, { start: '2026-11-30' }), {
+		start: 'Kies bij Startdatum een datum op of na 1-12-2026.',
+	})
+	assert.deepEqual(dateRangeErrors(fields, { start: '2027-01-01' }), {
+		start: 'Kies bij Startdatum een datum op of voor 31-12-2026.',
+	})
+	assert.deepEqual(
+		dateRangeErrors(fields, { start: '' }),
+		{},
+		'an empty date is the required rule\'s to judge',
+	)
+	assert.deepEqual(
+		dateRangeErrors(fields, { start: '30-11-2026' }),
+		{},
+		'a half-typed date is the date rule\'s to judge',
+	)
+	assert.deepEqual(
+		dateRangeErrors([{ id: 'd', type: 'date', label: 'D', earliest: 'gisteren' }], { d: '2000-01-01' }),
+		{},
+		'an unreadable limit limits nothing',
+	)
+})
+
+test('FormBlock draws a picker date as one bounded calendar control', () => {
+	const block = source('src/site/components/FormBlock.vue')
+	assert.match(block, /v-if="isDatePicker\(field\)"[\s\S]*?type="date"/)
+	assert.match(block, /:min="dateLimit\(field\.earliest\) \|\| undefined"/)
+	assert.match(block, /:max="dateLimit\(field\.latest\) \|\| undefined"/)
+	assert.match(block, /return field\.type === 'date' && field\.picker === true/)
+	assert.match(
+		block,
+		/if \(this\.isDatePicker\(field\)\) \{\s*return false/,
+		'a picker is one control with its own label, not a group',
+	)
+	assert.match(block, /\.\.\.dateRangeErrors\(fields, values\)/)
 })
