@@ -78,7 +78,7 @@ class EnsurePortalFileTagsTest extends TestCase {
 		$tags->method('getAllTags')->willReturn([]);
 		$tags->method('createTag')->willThrowException(new RuntimeException('forbidden'));
 		$output = $this->createMock(originalClassName: IOutput::class);
-		$output->expects($this->once())->method('warning')->with($this->stringContains(needle: 'portal:from-applicant'));
+		$output->expects($this->once())->method('warning')->with($this->stringContains(string: 'portal:from-applicant'));
 
 		(new EnsurePortalFileTags(tags: $tags))->run(output: $output);
 	}//end testARefusedCreationIsAWarning()
