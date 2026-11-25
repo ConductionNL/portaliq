@@ -27,6 +27,13 @@ const ADMIN = Buffer.from('admin:admin').toString('base64')
 const ORGANISATION = 'dev-org'
 
 /**
+ * What the current test seeded, removed after it. The portal reads ONE active
+ * portalPage per audience and takes the lowest id when several are active, so
+ * a page left behind can shadow the page the next test (or spec) seeds.
+ */
+const created: string[] = []
+
+/**
  * Create one object through OpenRegister's own object API, as the dev admin.
  *
  * @param request The request fixture.
@@ -48,7 +55,9 @@ async function seed(
 		`OpenRegister objects#create must be reachable for ${schema}`,
 	).toBeTruthy()
 	const body = await res.json()
-	return (body.id ?? body['@self']?.id) as string
+	const id = (body.id ?? body['@self']?.id) as string
+	created.push(`${schema}/${id}`)
+	return id
 }
 
 /**
@@ -84,6 +93,25 @@ async function openCase(
 			},
 		],
 		actions: [
+			// The case screen opens only for a case schema the page declares a
+			// citizen write on (CitizenWriteActionFinder); with portalWritable
+			// empty nothing on the case itself can be changed.
+			{
+				id: 'amend-case',
+				type: 'update',
+				label: 'Mijn aanvraag wijzigen',
+				register: 'portaliq',
+				schema: 'portalCase',
+				scopeField: 'subjectRef',
+				fields: ['omschrijving'],
+				citizenWrite: {
+					typeField: 'caseType',
+					typeRegister: 'portaliq',
+					typeSchema: 'portalCaseType',
+					statusField: 'status',
+					recordField: 'portalWrites',
+				},
+			},
 			{
 				id: 'createBezwaar',
 				type: 'create',
@@ -157,6 +185,14 @@ function day(offset: number): string {
 }
 
 test.describe('case-page-objection-and-complaint', () => {
+	test.afterEach(async ({ request }) => {
+		for (const ref of created.splice(0).reverse()) {
+			await request.delete(`${OR_OBJECTS_BASE}/portaliq/${ref}`, {
+				headers: { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true' },
+			})
+		}
+	})
+
 	// @e2e citizen-case-objection-and-complaint::a-resident-sees-bezwaar-maken-on-a-decided-case
 	// @e2e citizen-case-objection-and-complaint::the-case-is-filled-in
 	// @e2e citizen-case-objection-and-complaint::a-klacht-is-received
@@ -183,7 +219,8 @@ test.describe('case-page-objection-and-complaint', () => {
 			.locator('textarea, input[type="text"]')
 			.first()
 			.fill('Het besluit is onjuist.')
-		await form.getByRole('button', { name: /verstuur|versturen|send/i }).click()
+		// The submit names its action, as the board draws it ("Bezwaar maken").
+		await form.getByRole('button', { name: /bezwaar maken|verstuur|versturen|send/i }).click()
 
 		await expect(page.getByTestId('case-action-receipt')).toContainText(
 			'Mijn zaken',

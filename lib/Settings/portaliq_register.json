@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.129.0"
+        "version": "0.130.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.129.0",
+                "version": "0.130.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -7937,7 +7937,7 @@
                     ]
                 },
                 "icon": "FolderOutline",
-                "version": "0.4.0",
+                "version": "0.5.0",
                 "title": "Portal Case",
                 "description": "A citizen's own case as the portal sees it: scoped by subjectRef, pointing at its case type, carrying its status and the answers the citizen gave. `portalWrites` is the append-only record of what the citizen changed, naming the identity and the mandate each change acted under.",
                 "type": "object",
@@ -7994,6 +7994,19 @@
                         "items": {
                             "type": "object"
                         }
+                    },
+                    "decisionSentAt": {
+                        "title": "Decision sent on",
+                        "type": "string",
+                        "format": "date",
+                        "description": "When the decision was sent; the objection window an onCase action declares counts from it (case-page-objection-and-complaint).",
+                        "example": ""
+                    },
+                    "againstCaseId": {
+                        "title": "Against case",
+                        "type": "string",
+                        "description": "The case an objection or complaint is made against, set by the portal from the case page, never by the resident (case-page-objection-and-complaint).",
+                        "example": ""
                     },
                     "closedAt": {
                         "title": "Closed at",

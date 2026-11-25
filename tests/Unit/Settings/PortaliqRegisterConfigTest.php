@@ -452,8 +452,9 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.122.0 (portalSubmission 0.4.0): the optional `formBinding`, the request form a submission came through (submission-row-actions). Additive; written as 0.111.0 on its branch, moved past development's 0.121.0 at merge time, then to 0.127.0 (portalSubmission 0.5.0) past development's 0.126.0 (portalSubmission 0.4.0 is hermiq-ai-tooling's); the register is 0.128.0 since publication-error-reports-and-withheld-notices merged after it.
 		// 0.129.0: portalCase carries closedAt, resultPublicLabel and resultPublicDescription,
 		// the fields a cases collection names for its outcome (case-outcome-on-the-case-page).
-		$this->assertSame(expected: '0.129.0', actual: self::$register['info']['version']);
-		$this->assertSame(expected: '0.129.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		// 0.130.0 (portalCase 0.5.0): decisionSentAt and againstCaseId (case-page-objection-and-complaint).
+		$this->assertSame(expected: '0.130.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.130.0', actual: self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame(expected: '0.5.0', actual: self::$register['components']['schemas']['portalSubmission']['version']);
 		$this->assertSame(expected: 'uuid', actual: self::$register['components']['schemas']['portalSubmission']['properties']['formBinding']['format']);
 		$this->assertNotContains(needle: 'formBinding', haystack: self::$register['components']['schemas']['portalSubmission']['required']);
@@ -464,8 +465,8 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.123.0 (portalCase 0.3.0): the case app's `termNote` and `resultLink` (woo-dossier-in-my-cases). Additive; written as 0.110.0 on its branch, moved past development's 0.122.0 at merge time.
 		$case = self::$register['components']['schemas']['portalCase'];
 		// 0.129.0 (portalCase 0.4.0): closedAt and the public outcome a cases collection names (case-outcome-on-the-case-page). Additive.
-		$this->assertSame(expected: '0.4.0', actual: $case['version']);
-		foreach (['closedAt', 'resultPublicLabel', 'resultPublicDescription'] as $field) {
+		$this->assertSame(expected: '0.5.0', actual: $case['version']);
+		foreach (['closedAt', 'resultPublicLabel', 'resultPublicDescription', 'decisionSentAt', 'againstCaseId'] as $field) {
 			$this->assertArrayHasKey(key: $field, array: $case['properties'], message: $field);
 		}
 		$this->assertSame(expected: ['type' => 'string', 'maxLength' => 200], actual: array_intersect_key($case['properties']['termNote'], ['type' => 1, 'maxLength' => 1]));
@@ -491,8 +492,9 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// Written as 0.111.0 (portal 0.30.0) on its branch; moved past development's 0.121.0 (portal 0.35.0) at merge time, then to 0.123.0 past development's 0.122.0 (the x-openregister-mcp dialects above), then to 0.124.0 past development's 0.123.0 (woo-dossier-in-my-cases above), then to 0.127.0 (portal 0.38.0) past development's 0.126.0 (portal 0.37.0, portal-scoping-and-auth above), then to 0.128.0 past development's 0.127.0 (submission-row-actions above), so an install already on it imports these.
 		// 0.129.0: portalCase carries closedAt, resultPublicLabel and resultPublicDescription,
 		// the fields a cases collection names for its outcome (case-outcome-on-the-case-page).
-		$this->assertSame(expected: '0.129.0', actual: self::$register['info']['version']);
-		$this->assertSame(expected: '0.129.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		// 0.130.0 (portalCase 0.5.0): decisionSentAt and againstCaseId (case-page-objection-and-complaint).
+		$this->assertSame(expected: '0.130.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.130.0', actual: self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portalPage']['properties']['pages']['items']['properties']['blocks']['items']['properties']['messageTo']['type']);
 		$this->assertContains(needle: 'yivi', haystack: self::$register['components']['schemas']['portalAccount']['properties']['identityType']['enum']);
 		$this->assertSame(expected: 'date-time', actual: self::$register['components']['schemas']['guardianMessage']['properties']['readAt']['format']);
@@ -558,7 +560,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['admin'], self::$register['components']['schemas']['activityAttendance']['authorization']['read']);
 		$this->assertArrayNotHasKey('fee', self::$register['components']['schemas']['activityOffer']['properties'], 'D19: an activity holds no amount');
 		$this->assertArrayNotHasKey('amount', self::$register['components']['schemas']['activityOffer']['properties'], 'D19: an activity holds no amount');
-		$this->assertSame(expected: '0.4.0', actual: self::$register['components']['schemas']['portalCase']['version']);
+		$this->assertSame(expected: '0.5.0', actual: self::$register['components']['schemas']['portalCase']['version']);
 		$this->assertSame(['portaliq-medewerkers'], self::$register['components']['schemas']['portalCase']['authorization']['read']);
 		$this->assertSame('0.7.0', self::$register['components']['schemas']['portalTrafficDaily']['version']);
 		$this->assertSame('0.4.0', self::$register['components']['schemas']['portalTrafficEvent']['version']);
