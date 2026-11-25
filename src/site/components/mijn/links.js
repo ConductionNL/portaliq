@@ -58,7 +58,7 @@ export function staysInSite(event, link) {
  * @param {string} href The address of the route.
  * @param {string} query The query, without `?`.
  * @return {string} The address.
- * @spec openspec/changes/hero-links-follow-the-site-address/specs/site-navigation/spec.md#requirement-a-block-link-to-a-site-page-carries-the-sites-own-address
+ * @spec openspec/specs/site-navigation/spec.md#requirement-a-block-link-to-a-site-page-carries-the-sites-own-address
  */
 function withQuery(href, query) {
 	if (!query) {
