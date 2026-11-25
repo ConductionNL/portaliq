@@ -251,8 +251,13 @@ class DestinationLookup implements DestinationLookupInterface {
 			return null;
 		}
 
-		$row = $this->byMarkedReference(destination: $destination, schema: $schema, subjectField: $subjectField, subjectRef: $subjectRef, reference: $reference)
-			?? $this->byUuidReference(destination: $destination, subjectField: $subjectField, subjectRef: $subjectRef, reference: $reference);
+		$row = $this->byMarkedReference(entry: $entry, subjectField: $subjectField, subjectRef: $subjectRef, reference: $reference)
+			?? $this->byUuidReference(
+				destination: $destination,
+				subjectField: $subjectField,
+				subjectRef: $subjectRef,
+				reference: $reference
+			);
 		if ($this->isNotTheSubjects(row: $row, subjectField: $subjectField, subjectRef: $subjectRef) === true) {
 			return null;
 		}
@@ -263,18 +268,18 @@ class DestinationLookup implements DestinationLookupInterface {
 	/**
 	 * The subject's row whose reference property holds the reference, or null.
 	 *
-	 * @param array<string, string> $destination  The destination register and schema.
-	 * @param array<string, mixed>  $schema       The destination schema.
-	 * @param string                $subjectField The binding's subject property.
-	 * @param string                $subjectRef   The signed-in subject.
-	 * @param string                $reference    The reference.
+	 * @param array<string, mixed> $entry        The destination: `destination`, `binding` and `schema`.
+	 * @param string               $subjectField The binding's subject property.
+	 * @param string               $subjectRef   The signed-in subject.
+	 * @param string               $reference    The reference.
 	 *
 	 * @return array<string, mixed>|null
 	 *
 	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
-	private function byMarkedReference(array $destination, array $schema, string $subjectField, string $subjectRef, string $reference): ?array {
-		$own = $this->marked(schema: $schema, marker: 'reference');
+	private function byMarkedReference(array $entry, string $subjectField, string $subjectRef, string $reference): ?array {
+		$destination = $entry['destination'];
+		$own         = $this->marked(schema: $entry['schema'], marker: 'reference');
 		if ($own === []) {
 			return null;
 		}

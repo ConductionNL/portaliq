@@ -82,10 +82,11 @@ class DestinationLookupTest extends TestCase {
 	public function testTheUuidTheSubmitAnsweredFindsTheCaseForItsOwnSubjectOnly(): void {
 		$found = $this->lookup()->find(portal: 'gemeente-x', reference: '3C47D035-E556-4AE9-BBAD-4D668E097609', subjectRef: 'sub-123');
 
-		$this->assertNotNull($found);
-		$this->assertSame('2026-0042', $found['object']['identifier']);
-		$this->assertNull($this->lookup()->find(portal: 'gemeente-x', reference: '3c47d035-e556-4ae9-bbad-4d668e097609', subjectRef: 'sub-999'));
-		$this->assertNull($this->lookup()->find(portal: 'gemeente-x', reference: '3c47d035-e556-4ae9-bbad-4d668e097609'));
+		$this->assertNotNull(actual: $found);
+		$this->assertSame(expected: '2026-0042', actual: $found['object']['identifier']);
+		$uuid = '3c47d035-e556-4ae9-bbad-4d668e097609';
+		$this->assertNull(actual: $this->lookup()->find(portal: 'gemeente-x', reference: $uuid, subjectRef: 'sub-999'));
+		$this->assertNull(actual: $this->lookup()->find(portal: 'gemeente-x', reference: $uuid));
 	}//end testTheUuidTheSubmitAnsweredFindsTheCaseForItsOwnSubjectOnly()
 
 	public function testNothingIsFoundWithoutAPortalOrAReference(): void {
