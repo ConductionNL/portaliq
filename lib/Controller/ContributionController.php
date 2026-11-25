@@ -45,6 +45,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
+use OCA\Portaliq\Contribution\EndpointDraftSchema;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\ActionScopeResolver;
 use OCA\Portaliq\Contribution\FieldMap;
@@ -3219,6 +3220,8 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @param array{appId: string, actionId: string} $target  The requested app and action id.
 	 *
 	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/endpoint-forward-draft-schema/tasks.md#T3
 	 */
 	private function forwardAndAnswer(array $subject, array $action, array $scoped, array $target): JSONResponse {
 		$response = $this->forwarder->forward(action: $action, subject: $subject, whitelisted: $scoped['body'], scopeValue: $scoped['scopeValue']);
@@ -3238,8 +3241,49 @@ class ContributionController extends Controller implements PortalProtected {
 			$this->recordReceipt(subject: $subject, action: $action, target: $target);
 		}
 
+		// The endpoint took the final body: the draft kept elsewhere is done
+		// (endpoint-forward-draft-schema). Fail-safe, never a gate.
+		if ($status >= 200 && $status < 300) {
+			$this->discardForwardedDraft(subject: $subject, action: $action);
+		}
+
 		return new JSONResponse($decoded, $status);
 	}//end forwardAndAnswer()
+
+	/**
+	 * Discard the subject's draft of an endpoint action that keeps its draft
+	 * on a declared `draftSchema`, once the endpoint accepted the final body.
+	 *
+	 * A draft that cannot be found or discarded stays until its retention
+	 * ends; the answer to the resident never changes.
+	 *
+	 * @param array<string, mixed> $subject The subject.
+	 * @param array<string, mixed> $action  The endpoint action.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/endpoint-forward-draft-schema/tasks.md#T3
+	 */
+	private function discardForwardedDraft(array $subject, array $action): void {
+		if ($this->drafts === null || $this->destinations === null
+			|| (new EndpointDraftSchema())->keepsDraftElsewhere(action: $action) === false
+		) {
+			return;
+		}
+
+		$subjectRef = (string)($subject['subjectRef'] ?? '');
+		$draft      = $this->liveDraftOf(action: $action, subjectRef: $subjectRef);
+		if ($draft === null) {
+			return;
+		}
+
+		try {
+			$this->destinations->discardDraft(destination: $this->drafts->destinationOf(action: $action), subjectRef: $subjectRef, draftId: (string)$draft['id']);
+		} catch (\Throwable) {
+			// Kept until its retention ends.
+			return;
+		}
+	}//end discardForwardedDraft()
 
 	/**
 	 * Record the submission receipt of a create forward that succeeded.

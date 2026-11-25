@@ -33,6 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Contribution\EndpointDraftSchema;
 use DateTimeImmutable;
 use OCA\Portaliq\Contribution\ActionScopeResolver;
 use OCA\Portaliq\Kernel\Contracts\ActionDraftInterface;
@@ -214,8 +215,15 @@ class ActionDraft implements ActionDraftInterface {
 	 * @return array{register: string, schema: string}
 	 *
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
+	 * @spec openspec/changes/endpoint-forward-draft-schema/tasks.md#T2
 	 */
 	public function destinationOf(array $action): array {
+		// An endpoint action keeps its draft on the schema it declares (endpoint-forward-draft-schema).
+		$elsewhere = (new EndpointDraftSchema())->destinationOf(action: $action);
+		if ($elsewhere !== null) {
+			return $elsewhere;
+		}
+
 		return ['register' => (string)($action['register'] ?? ''), 'schema' => (string)($action['schema'] ?? '')];
 	}//end destinationOf()
 
@@ -230,6 +238,7 @@ class ActionDraft implements ActionDraftInterface {
 	 * @return array<string, mixed>|null Null when the action's scope claim does not resolve.
 	 *
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
+	 * @spec openspec/changes/endpoint-forward-draft-schema/tasks.md#T2
 	 */
 	public function bodyOf(array $match, array $subject, array $answers): ?array {
 		$action = $match['action'];
@@ -241,13 +250,33 @@ class ActionDraft implements ActionDraftInterface {
 		$kept = $this->keptAnswers(action: $action, answers: $answers);
 
 		return $this->writer->stamp(
-			schema: (string)($action['schema'] ?? ''),
-			scopeField: (string)($action['scopeField'] ?? 'subjectRef'),
+			schema: $this->destinationOf(action: $action)['schema'],
+			scopeField: $this->draftScopeField(action: $action),
 			subjectRef: $stamp,
 			organisation: (string)($subject['organisation'] ?? ''),
 			data: (new FieldMap())->apply(action: $action, body: $this->createBody->build(action: $action, whitelisted: $kept))
 		);
 	}//end bodyOf()
+
+	/**
+	 * The field a draft is stamped with: a create action's `scopeField`, or for
+	 * an endpoint action that keeps its draft elsewhere the field it sends the
+	 * subject in.
+	 *
+	 * @param array<string, mixed> $action The action.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/endpoint-forward-draft-schema/tasks.md#T2
+	 */
+	private function draftScopeField(array $action): string {
+		$elsewhere = new EndpointDraftSchema();
+		if ($elsewhere->keepsDraftElsewhere(action: $action) === true) {
+			return $elsewhere->scopeFieldOf(action: $action);
+		}
+
+		return (string)($action['scopeField'] ?? 'subjectRef');
+	}//end draftScopeField()
 
 	/**
 	 * The declared, non-file answers that were sent and are not null.
@@ -397,11 +426,14 @@ class ActionDraft implements ActionDraftInterface {
 	 * @param array<string, mixed> $subject The subject.
 	 *
 	 * @return bool
+	 *
+	 * @spec openspec/changes/endpoint-forward-draft-schema/tasks.md#T2
 	 */
 	private function isDraftable(array $action, array $subject): bool {
 		$destination = $this->destinationOf(action: $action);
+		$kind        = (($action['type'] ?? '') === 'create' || (new EndpointDraftSchema())->keepsDraftElsewhere(action: $action) === true);
 
-		return ($action['type'] ?? '') === 'create'
+		return $kind === true
 			&& $destination['register'] !== ''
 			&& $destination['schema'] !== ''
 			&& PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === true;
