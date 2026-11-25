@@ -763,7 +763,7 @@ export default {
 	 * so a block reads the current page's language after a navigation.
 	 *
 	 * @return {{siteContentLocale: () => string}} The provided values.
-	 * @spec openspec/changes/site-dates-in-content-language/specs/site-look/spec.md#requirement-a-date-inside-page-content-must-read-in-the-content-language
+	 * @spec openspec/specs/site-look/spec.md#requirement-a-date-inside-page-content-must-read-in-the-content-language
 	 */
 	provide() {
 		return {
@@ -1348,7 +1348,7 @@ export default {
 		 * language (WCAG 3.1.2).
 		 *
 		 * @return {string} A two-letter language.
-		 * @spec openspec/changes/site-dates-in-content-language/specs/site-look/spec.md#requirement-a-date-inside-page-content-must-read-in-the-content-language
+		 * @spec openspec/specs/site-look/spec.md#requirement-a-date-inside-page-content-must-read-in-the-content-language
 		 */
 		contentLocale() {
 			const own = String(this.page?.locale || '').trim()
