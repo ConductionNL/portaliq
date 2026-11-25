@@ -7296,17 +7296,25 @@
       "type": "index",
       "title": "Mail templates",
       "config": {
-        "register": "portaliq",
-        "schema": "portalMailTemplate",
-        "_note": "The text of each kind of mail, per portal (mail-templates-admin-screen). A stored active text replaces the default; a text with a variable its kind does not declare is ignored. Preview and the test mail go through MailTemplateAdminController. 'New mail text' and 'Change' open MailTemplateDialog, where CnMarkdownEditor inserts the kind's variables and names an unknown one; a text with one is not saved. 'Back to the default text' removes the stored row.",
+        "entitySource": "endpoint",
+        "sourceConfig": {
+          "url": "/apps/portaliq/api/mail-templates/rows",
+          "rowsPath": "results",
+          "totalPath": "total"
+        },
+        "_note": "The text of each kind of mail, per portal (mail-templates-admin-screen). T09: the rows come from GET /api/mail-templates/rows, one per kind of mail merged with the stored portalMailTemplate rows (MailTemplateList), so a fresh portal lists every kind with the default text. 'Change' on a default row opens the editor for a new text of that kind. A stored active text replaces the default; a text with a variable its kind does not declare is ignored. Preview and the test mail go through MailTemplateAdminController. 'New mail text' and 'Change' open MailTemplateDialog, where CnMarkdownEditor inserts the kind's variables and names an unknown one; a text with one is not saved. 'Back to the default text' removes the stored row.",
         "columns": [
           {
-            "key": "templateKey",
+            "key": "kindLabel",
             "label": "Kind of notice"
           },
           {
             "key": "subject",
             "label": "Subject line"
+          },
+          {
+            "key": "variableCount",
+            "label": "Variables"
           },
           {
             "key": "portal",
@@ -7322,6 +7330,11 @@
                 "false": "warning"
               }
             }
+          },
+          {
+            "key": "updated",
+            "label": "Changed on",
+            "format": "datetime"
           },
           {
             "key": "updatedBy",
@@ -7374,7 +7387,12 @@
             "icon": "Restore",
             "type": "handler",
             "handler": "resetMailTemplate",
-            "destructive": true
+            "destructive": true,
+            "visibleWhen": {
+              "field": "text",
+              "op": "eq",
+              "value": "own"
+            }
           }
         ]
       }

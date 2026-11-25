@@ -69,6 +69,7 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         // The mail templates screen: kinds, preview, test mail, resend
         // (mail-templates-admin-screen T04). Admin-only.
         ['name' => 'mailTemplateAdmin#kinds', 'url' => '/api/mail-templates', 'verb' => 'GET'],
+        ['name' => 'mailTemplateRows#index', 'url' => '/api/mail-templates/rows', 'verb' => 'GET'],
         ['name' => 'mailTemplateAdmin#preview', 'url' => '/api/mail-templates/preview', 'verb' => 'POST'],
         ['name' => 'mailTemplateAdmin#test', 'url' => '/api/mail-templates/test', 'verb' => 'POST'],
         ['name' => 'mailTemplateAdmin#resend', 'url' => '/api/mail-log/{id}/resend', 'verb' => 'POST'],

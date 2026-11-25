@@ -39,14 +39,20 @@ export function variablesOf(kind) {
 /**
  * The editor's fields for a stored row, or empty ones for a new text.
  *
- * @param {object|null} row A `portalMailTemplate` row.
+ * A row of the screen with `stored: false` is a kind no portal changed
+ * (GET /api/mail-templates/rows): it opens as a new text of that kind, with
+ * no id, so saving creates a stored row instead of writing to the row's
+ * placeholder id.
+ *
+ * @param {object|null} row A `portalMailTemplate` row, or a row of the screen.
  * @return {{id: string, templateKey: string, portal: string, subject: string, body: string, active: boolean}}
  * @spec openspec/changes/mail-templates-admin-screen/specs/portal-mail-templates/spec.md#requirement-an-admin-can-edit-the-text-of-each-portal-mail-req-pmt-001
+ * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t09
  */
 export function formFromRow(row) {
 	const source = row || {}
 	return {
-		id: fieldOf(source, 'id') || fieldOf(source, 'uuid'),
+		id: source.stored === false ? '' : fieldOf(source, 'id') || fieldOf(source, 'uuid'),
 		templateKey: fieldOf(source, 'templateKey'),
 		portal: fieldOf(source, 'portal'),
 		subject: fieldOf(source, 'subject'),
