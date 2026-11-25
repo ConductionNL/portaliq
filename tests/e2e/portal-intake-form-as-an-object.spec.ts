@@ -45,11 +45,87 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { SITE_PORTAL } from './portal-nav.ts'
 
 const API_BASE = '/apps/portaliq/portal/api'
-const OR_OBJECTS_BASE = '/apps/openregister/api/objects'
+const OR_API = '/apps/openregister/api'
+const OR_OBJECTS_BASE = `${OR_API}/objects`
 
 const ADMIN = Buffer.from('admin:admin').toString('base64')
+const ADMIN_HEADERS = { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true' }
+
+/** The organisation a resident's session belongs to: CI seeds `dev-org`. */
+const ORGANISATION = process.env.PORTALIQ_E2E_ORGANISATION || 'dev-org'
+
+/**
+ * The register and schema the answers go to. A portal submit is an anonymous
+ * write, so the binding only publishes against a schema that lets a public
+ * visitor create; the spec makes its own and removes it afterwards.
+ */
+const DESTINATION = `e2e-intake-${Date.now()}`
+
+/** What this run created, to remove afterwards. */
+const created: string[] = []
+const destinationIds: { schema?: number, register?: number } = {}
+
+/** The destination register and schema, made once for the run. */
+async function seedDestination(request: APIRequestContext): Promise<void> {
+	if (destinationIds.register) {
+		return
+	}
+	const schema = await request.post(`${OR_API}/schemas`, {
+		headers: ADMIN_HEADERS,
+		data: {
+			title: `E2E intake ${DESTINATION}`,
+			slug: DESTINATION,
+			properties: {
+				caseType: { type: 'string' },
+				postcode: { type: 'string' },
+				huisnummer: { type: 'string' },
+				applicantName: { type: 'string' },
+				// The reference page finds the case by its own reference, for
+				// the resident who sent it (DestinationLookup).
+				reference: { type: 'string', 'x-openregister': { reference: true } },
+				subjectRef: { type: 'string' },
+			},
+			authorization: { create: ['public'], read: ['admin'] },
+		},
+	})
+	expect(schema.ok(), `the destination schema must be created: ${await schema.text()}`).toBeTruthy()
+	destinationIds.schema = (await schema.json()).id
+	const register = await request.post(`${OR_API}/registers`, {
+		headers: ADMIN_HEADERS,
+		data: { title: `E2E intake ${DESTINATION}`, slug: DESTINATION, schemas: [destinationIds.schema] },
+	})
+	expect(register.ok(), `the destination register must be created: ${await register.text()}`).toBeTruthy()
+	destinationIds.register = (await register.json()).id
+}
+
+/** The run's shared resident session. */
+let sharedToken = ''
+
+/**
+ * A resident's portal session: every intake route reads only with one.
+ *
+ * @param request The request fixture.
+ * @param subjectRef The resident, or a fresh one.
+ * @return The bearer.
+ */
+async function residentToken(request: APIRequestContext, subjectRef = ''): Promise<string> {
+	// One shared resident for the run: dev-login allows ten sign-ins a minute.
+	if (subjectRef === '' && sharedToken !== '') {
+		return sharedToken
+	}
+	const login = await request.post(`${API_BASE}/session/dev-login`, {
+		data: { subjectRef: subjectRef !== '' ? subjectRef : `e2e-resident-${Date.now()}`, audience: 'client', organisation: ORGANISATION },
+	})
+	expect(login.ok(), 'dev-login must be enabled (app config portaliq dev_login_enabled = yes)').toBeTruthy()
+	const token = (await login.json()).token as string
+	if (subjectRef === '') {
+		sharedToken = token
+	}
+	return token
+}
 
 /** Create one object through OpenRegister's own object API, as the dev admin. */
 async function seed(
@@ -69,6 +145,7 @@ async function seed(
 	const body = await res.json()
 	const id = (body.id ?? body['@self']?.id) as string
 	expect(id).toBeTruthy()
+	created.push(`${register}/${schema}/${id}`)
 	return id
 }
 
@@ -80,8 +157,16 @@ async function seedForm(
 	fields: Array<Record<string, unknown>>,
 	confirmationText = '',
 ): Promise<string> {
-	return seed(request, 'portaliq', 'registrationForm', {
-		caseType,
+	// The published form lives in buildiq, the binding resolver's default
+	// form register; portaliq declares no registrationForm schema.
+	await seedDestination(request)
+	return seed(request, 'buildiq', 'registrationForm', {
+		targetApp: 'portaliq',
+		register: DESTINATION,
+		schema: DESTINATION,
+		typeProperty: 'caseType',
+		typeValue: caseType,
+		isPublic: true,
 		audience,
 		name: `${caseType}-${audience}`,
 		status: 'published',
@@ -98,17 +183,17 @@ async function seedBinding(
 	audience: string,
 	extra: Record<string, unknown> = {},
 ): Promise<string> {
+	await seedDestination(request)
 	return seed(request, 'portaliq', 'portalFormBinding', {
-		portal: 'dev-portal',
+		portal: SITE_PORTAL,
 		route,
 		typeRegister: 'portaliq',
 		typeSchema: 'portalCaseType',
 		typeId: caseType,
 		audience,
-		formRegister: 'portaliq',
+		formRegister: 'buildiq',
 		formSchema: 'registrationForm',
-		caseRegister: 'portaliq',
-		caseSchema: 'portalCase',
+		destination: { register: DESTINATION, schema: DESTINATION, subjectField: 'subjectRef' },
 		intakeKind: 'hosted',
 		status: 'published',
 		...extra,
@@ -121,13 +206,11 @@ async function renderOf(
 	route: string,
 	token = '',
 ): Promise<Record<string, never>> {
-	const headers: Record<string, string> = {}
-	if (token !== '') {
-		headers.Authorization = `Bearer ${token}`
-	}
+	const bearer = token !== '' ? token : await residentToken(request)
+	const headers: Record<string, string> = { Authorization: `Bearer ${bearer}` }
 
 	const res = await request.get(
-		`${API_BASE}/intake/form?route=${encodeURIComponent(route)}`,
+		`${API_BASE}/intake/form?portal=${encodeURIComponent(SITE_PORTAL)}&route=${encodeURIComponent(route)}`,
 		{ headers },
 	)
 	expect(res.ok(), `the form page ${route} must render`).toBeTruthy()
@@ -135,6 +218,24 @@ async function renderOf(
 }
 
 test.describe('portal-intake-form-as-an-object', () => {
+	test.afterAll(async ({ request }) => {
+		for (const ref of created.splice(0).reverse()) {
+			await request.delete(`${OR_OBJECTS_BASE}/${ref}`, { headers: ADMIN_HEADERS })
+		}
+		const sent = await request.get(`${OR_OBJECTS_BASE}/${DESTINATION}/${DESTINATION}?_limit=100`, { headers: ADMIN_HEADERS })
+		if (sent.ok()) {
+			for (const row of ((await sent.json()).results ?? []) as Array<{ id?: string }>) {
+				await request.delete(`${OR_OBJECTS_BASE}/${DESTINATION}/${DESTINATION}/${row.id}`, { headers: ADMIN_HEADERS })
+			}
+		}
+		if (destinationIds.register) {
+			await request.delete(`${OR_API}/registers/${destinationIds.register}`, { headers: ADMIN_HEADERS })
+		}
+		if (destinationIds.schema) {
+			await request.delete(`${OR_API}/schemas/${destinationIds.schema}`, { headers: ADMIN_HEADERS })
+		}
+	})
+
 	test('a case type with two forms renders only the bound audience, and an edit reaches the portal', async ({
 		request,
 	}) => {
@@ -156,14 +257,19 @@ test.describe('portal-intake-form-as-an-object', () => {
 
 		// The form is edited where it lives; the portal page is not touched.
 		const edit = await request.put(
-			`${OR_OBJECTS_BASE}/portaliq/registrationForm/${clientForm}`,
+			`${OR_OBJECTS_BASE}/buildiq/registrationForm/${clientForm}`,
 			{
 				headers: {
 					Authorization: `Basic ${ADMIN}`,
 					'OCS-APIRequest': 'true',
 				},
 				data: {
-					caseType,
+					targetApp: 'portaliq',
+					register: DESTINATION,
+					schema: DESTINATION,
+					typeProperty: 'caseType',
+					typeValue: caseType,
+					isPublic: true,
 					audience: 'client',
 					name: `${caseType}-client`,
 					status: 'published',
@@ -199,19 +305,26 @@ test.describe('portal-intake-form-as-an-object', () => {
 		const route = `aanvragen/melding-${stamp}`
 		await seedBinding(request, route, caseType, 'client')
 
-		const refused = await request.post(`${API_BASE}/intake/submit`, {
+		// A portal submit comes from a resident's session, like every intake route.
+		const token = await residentToken(request)
+		const asResident = { Authorization: `Bearer ${token}` }
+		const refused = await request.post(`${API_BASE}/intake/submit?portal=${encodeURIComponent(SITE_PORTAL)}`, {
+			headers: asResident,
 			data: { route, answers: { toelichting: 'Er ligt afval op straat.' } },
 		})
 		expect(refused.status()).toBe(400)
 		expect((await refused.json()).errors).toHaveProperty('postcode')
 
-		const accepted = await request.post(`${API_BASE}/intake/submit`, {
+		const accepted = await request.post(`${API_BASE}/intake/submit?portal=${encodeURIComponent(SITE_PORTAL)}`, {
+			headers: asResident,
 			data: { route, answers: { postcode: '1234 AB' } },
 		})
 		expect(accepted.ok()).toBeTruthy()
 		const body = await accepted.json()
 		expect(body.reference).toBeTruthy()
-		expect(body.state).toBe('queued')
+		// The submit creates the case directly (submit-creates-the-case-directly):
+		// the reference comes back registered, not queued.
+		expect(body.state).toBe('registered')
 		expect(body.confirmationText).toBe(
 			'Bedankt, u hoort binnen vijf werkdagen van ons.',
 		)
@@ -219,11 +332,12 @@ test.describe('portal-intake-form-as-an-object', () => {
 		// The reference page reads the submission's real state, and says
 		// nothing about a case that does not exist yet.
 		const status = await request.get(
-			`${API_BASE}/intake/status?reference=${encodeURIComponent(body.reference)}`,
+			`${API_BASE}/intake/status?portal=${encodeURIComponent(SITE_PORTAL)}&reference=${encodeURIComponent(body.reference)}`,
+			{ headers: asResident },
 		)
 		expect(status.ok()).toBeTruthy()
 		const state = await status.json()
-		expect(['queued', 'registered', 'failed']).toContain(state.state)
+		expect(state.state).toBe('registered')
 		if (state.state !== 'registered') {
 			expect(state.caseId).toBe('')
 		}
@@ -258,8 +372,10 @@ test.describe('portal-intake-form-as-an-object', () => {
 		const route = `aanvragen/prefill-${stamp}`
 		await seedBinding(request, route, caseType, 'client')
 
+		// A resident with no registered details gets an empty applicant block
+		// (an empty list or object: PHP answers an empty map as []).
 		const anonymous = await renderOf(request, route)
-		expect(anonymous.prefill).toEqual({})
+		expect(Object.keys(anonymous.prefill ?? {})).toEqual([])
 
 		const provisioned = await request.post(
 			'/apps/portaliq/api/accounts/provision',
@@ -271,7 +387,7 @@ test.describe('portal-intake-form-as-an-object', () => {
 				},
 				data: {
 					audience: 'client',
-					organisation: 'dev-org',
+					organisation: ORGANISATION,
 					identityType: 'digid',
 					identityRef: `bsn-${stamp}`,
 					displayName: 'Ans de Vries',
@@ -282,7 +398,7 @@ test.describe('portal-intake-form-as-an-object', () => {
 		const { subjectRef } = await provisioned.json()
 
 		const login = await request.post(`${API_BASE}/session/dev-login`, {
-			data: { subjectRef, audience: 'client', organisation: 'dev-org' },
+			data: { subjectRef, audience: 'client', organisation: ORGANISATION },
 		})
 		expect(
 			login.ok(),
@@ -301,15 +417,27 @@ test.describe('portal-intake-form-as-an-object', () => {
 	}) => {
 		const stamp = Date.now()
 		const route = `aanvragen/catalogus-${stamp}`
-		await seed(request, 'portaliq', 'publication', {
-			portal: 'dev-portal',
+		// The catalogue is opencatalogi's published catalogue
+		// (PortalCatalogueReader reads opencatalogi/publication).
+		const publication = await seed(request, 'opencatalogi', 'publication', {
+			portal: SITE_PORTAL,
 			topic: `Wonen ${stamp}`,
 			title: 'Verhuizing doorgeven',
 			route,
-			status: 'published',
+			publicationDate: new Date(Date.now() - 60_000).toISOString(),
 		})
+		// A publication starts as a draft and is reviewed before it is published.
+		for (const status of ['in_review', 'approved', 'published']) {
+			const moved = await request.patch(`${OR_OBJECTS_BASE}/opencatalogi/publication/${publication}`, {
+				headers: ADMIN_HEADERS,
+				data: { status },
+			})
+			expect(moved.ok(), `the publication moves to ${status}: ${await moved.text()}`).toBeTruthy()
+		}
 
-		const res = await request.get(`${API_BASE}/intake/catalogue`)
+		const res = await request.get(`${API_BASE}/intake/catalogue?portal=${encodeURIComponent(SITE_PORTAL)}`, {
+			headers: { Authorization: `Bearer ${await residentToken(request)}` },
+		})
 		expect(res.ok()).toBeTruthy()
 		const topics = (await res.json()).topics as Array<Record<string, never>>
 		const mine = topics.find(
