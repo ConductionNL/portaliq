@@ -208,10 +208,10 @@ class TrafficExperiments {
 	private function ranked(array $variants): array {
 		$ranked = array_values($variants);
 		usort($ranked, static fn (array $a, array $b): int => [
-			(float)($b['conversions'] ?? 0) / max(1, (int)($b['sessions'] ?? 0)),
+			(float)($b['conversions'] ?? 0) / (float)max(1, (int)($b['sessions'] ?? 0)),
 			(int)($b['sessions'] ?? 0),
 		] <=> [
-			(float)($a['conversions'] ?? 0) / max(1, (int)($a['sessions'] ?? 0)),
+			(float)($a['conversions'] ?? 0) / (float)max(1, (int)($a['sessions'] ?? 0)),
 			(int)($a['sessions'] ?? 0),
 		]);
 
@@ -258,16 +258,16 @@ class TrafficExperiments {
 			return 0.0;
 		}
 
-		$pooled = ($conversionsA + $conversionsB) / ($sessionsA + $sessionsB);
-		$error = sqrt($pooled * (1 - $pooled) * ((1 / $sessionsA) + (1 / $sessionsB)));
+		$pooled = (float)($conversionsA + $conversionsB) / (float)($sessionsA + $sessionsB);
+		$error = sqrt($pooled * (1.0 - $pooled) * ((1.0 / (float)$sessionsA) + (1.0 / (float)$sessionsB)));
 		if ($error <= 0.0) {
 			return 0.0;
 		}
 
-		$score = abs(($conversionsA / $sessionsA) - ($conversionsB / $sessionsB)) / $error;
-		$pValue = 2 * (1 - $this->normalCdf(score: $score));
+		$score = abs(((float)$conversionsA / (float)$sessionsA) - ((float)$conversionsB / (float)$sessionsB)) / $error;
+		$pValue = 2.0 * (1.0 - $this->normalCdf(score: $score));
 
-		return round(max(0.0, min(1.0, 1 - $pValue)), 3);
+		return round(max(0.0, min(1.0, 1.0 - $pValue)), 3);
 	}
 
 	/**

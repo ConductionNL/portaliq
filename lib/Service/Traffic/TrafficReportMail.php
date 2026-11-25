@@ -425,6 +425,6 @@ class TrafficReportMail {
 	 * @return string The percentage.
 	 */
 	private function percent(float $share): string {
-		return $this->number(value: round($share * 100, 1));
+		return $this->number(value: round($share * 100.0, 1));
 	}
 }

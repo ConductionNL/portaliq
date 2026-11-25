@@ -43,7 +43,7 @@ final class TrafficRollupValues {
 			return 0.0;
 		}
 
-		return $numerator / $denominator;
+		return $numerator / (float)$denominator;
 	}
 
 	/**

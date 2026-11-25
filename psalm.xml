@@ -37,6 +37,11 @@
         <file name="tests/Stubs/Integriq/Event/DigitalPostDeliveredEvent.php" />
     </stubs>
     <issueHandlers>
+        <!-- psalm 7 asks for #[\Override] on every overriding method. Not added:
+             PHP fatals on #[\Override] when the parent method is missing, and the
+             parents here are OCP, OpenRegister and Integriq classes that differ across
+             the Nextcloud and sibling-app versions this app runs next to. -->
+        <MissingOverrideAttribute errorLevel="suppress"/>
         <UndefinedDocblockClass errorLevel="suppress"/>
         <UndefinedClass>
             <errorLevel type="suppress">

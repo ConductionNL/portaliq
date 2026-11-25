@@ -502,7 +502,7 @@ class TrafficRollup {
 			return 0.0;
 		}
 
-		return round($sum / $count, 1);
+		return round($sum / (float)$count, 1);
 	}
 
 	/**
