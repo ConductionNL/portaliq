@@ -39,6 +39,13 @@ const ORGANISATION = 'dev-org'
 const BLOCKED = 'The withdrawal period ended on 4 October 2026.'
 
 /**
+ * What the current test seeded, removed after it. The portal reads ONE active
+ * portalPage per audience and takes the lowest id when several are active, so
+ * a page left behind can shadow the page the next test (or spec) seeds.
+ */
+const created: string[] = []
+
+/**
  * Create one object through OpenRegister's own object API, as the dev admin
  * (seeding only; the browser never holds these credentials).
  *
@@ -58,10 +65,12 @@ async function seed(
 	})
 	expect(
 		res.ok(),
-		`OpenRegister objects#create must be reachable for ${schema}`,
+		`OpenRegister objects#create must be reachable for ${schema}: ${await res.text()}`,
 	).toBeTruthy()
 	const body = await res.json()
-	return (body.id ?? body['@self']?.id) as string
+	const id = (body.id ?? body['@self']?.id) as string
+	created.push(`${schema}/${id}`)
+	return id
 }
 
 /**
@@ -103,7 +112,7 @@ async function openRows(request: APIRequestContext, page: Page): Promise<void> {
 		actions: [
 			{
 				id: 'cancel-subscription',
-				type: 'endpoint-forward',
+				type: 'endpoint',
 				label: 'Cancel subscription',
 				endpoint: '/apps/portaliq/e2e/cancel-subscription',
 				rowField: 'subscriptionId',
@@ -191,6 +200,14 @@ async function stubForward(
 }
 
 test.describe('case-actions-row-inputs-and-conditions', () => {
+	test.afterEach(async ({ request }) => {
+		for (const ref of created.splice(0).reverse()) {
+			await request.delete(`${OR_OBJECTS_BASE}/portaliq/${ref}`, {
+				headers: { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true' },
+			})
+		}
+	})
+
 	// @e2e portal-row-action-inputs::the-withdrawal-period-has-ended
 	// @e2e portal-row-action-inputs::the-withdrawal-button-reads-as-the-law-asks
 	test('the action shows only on the row that offers it, the reason on the other', async ({
