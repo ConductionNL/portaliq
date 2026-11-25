@@ -17,6 +17,7 @@
  *     link, and is never asked to sign in (REQ-EIF-004)
  *   - a signed-in visitor is anonymous inside the frame (REQ-EIF-005)
  *   - the frame RENDERS the form, in a real browser (embed-frame-renders-the-form)
+ *   - a frame without Origin is judged by its Referer's origin (REQ-EIF-006)
  *
  * NOT anchored here, covered by PHPUnit and named so anyone can check:
  *   - that the refusal reads no schema:
@@ -208,7 +209,12 @@ test.describe('embedded-intake-form', () => {
 		const route = `aanvragen/embed-render-${Date.now()}`
 		await seedEmbeddableForm(request, route, [ALLOWED_ORIGIN])
 
-		await page.goto(`${EMBED_PATH}?route=${encodeURIComponent(route)}`)
+		// A browser sends no Origin on an iframe's document GET, only the
+		// Referer of the framing page: its origin is judged by the same list
+		// (embed-frame-reads-the-referer-origin, REQ-EIF-006).
+		await page.goto(`${EMBED_PATH}?route=${encodeURIComponent(route)}`, {
+			referer: `${ALLOWED_ORIGIN}/loket/verhuizen`,
+		})
 
 		// A control a visitor can actually type into, and a submit they can
 		// press. An empty div satisfies neither.
@@ -218,6 +224,21 @@ test.describe('embedded-intake-form', () => {
 
 		// The mount really ran: the div is no longer empty.
 		await expect(page.locator('#portaliq-embed')).not.toBeEmpty()
+	})
+
+	test('a frame on a page of another origin gets words, judged by its Referer', async ({
+		page,
+		request,
+	}) => {
+		const route = `aanvragen/embed-other-referer-${Date.now()}`
+		await seedEmbeddableForm(request, route, [ALLOWED_ORIGIN])
+
+		await page.goto(`${EMBED_PATH}?route=${encodeURIComponent(route)}`, {
+			referer: `${OTHER_ORIGIN}/www.gemeente.nl`,
+		})
+
+		await expect(page.getByTestId('embed-refusal')).toBeVisible()
+		await expect(page.getByTestId('embed-field-postcode')).toHaveCount(0)
 	})
 
 	test('a refused frame renders words, not a blank rectangle', async ({

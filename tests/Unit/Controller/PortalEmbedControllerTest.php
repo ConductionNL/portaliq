@@ -137,6 +137,81 @@ class PortalEmbedControllerTest extends TestCase {
 
 	}//end testAnIdentifiedIntakeLinksToThePortalRatherThanLoggingIn()
 
+	/**
+	 * A browser sends no Origin on an iframe's document GET, only a Referer:
+	 * the Referer's origin is judged by the same list.
+	 *
+	 * @spec openspec/changes/embed-frame-reads-the-referer-origin/specs/embedded-intake-form/spec.md
+	 */
+	public function testAFrameWithoutOriginIsJudgedByItsReferersOrigin(): void {
+		$controller = $this->controller(origin: '', referer: 'https://WWW.gemeente.nl/loket/verhuizen?stap=1#formulier');
+
+		$params = $controller->frame(route: 'aanvragen/verhuizing')->getParams()['embed'];
+
+		$this->assertArrayNotHasKey('refused', $params);
+		$this->assertSame(['postcode'], array_column($params['fields'], 'name'));
+
+	}//end testAFrameWithoutOriginIsJudgedByItsReferersOrigin()
+
+	/**
+	 * @spec openspec/changes/embed-frame-reads-the-referer-origin/specs/embedded-intake-form/spec.md
+	 */
+	public function testARefererOnAnotherOriginIsRefusedBeforeTheFormIsRead(): void {
+		$controller = $this->controller(origin: '', referer: 'https://www.elders.nl/gemeente.nl');
+		$this->doubles['bindings']->expects($this->never())->method('render');
+
+		$params = $controller->frame(route: 'aanvragen/verhuizing')->getParams()['embed'];
+
+		$this->assertSame('origin_not_allowed', $params['refused']);
+		$this->assertSame([], $params['fields']);
+
+	}//end testARefererOnAnotherOriginIsRefusedBeforeTheFormIsRead()
+
+	/**
+	 * @spec openspec/changes/embed-frame-reads-the-referer-origin/specs/embedded-intake-form/spec.md
+	 */
+	public function testAFrameWithNeitherOriginNorRefererServesNobody(): void {
+		foreach (['', 'not a url', '/loket/verhuizen', 'https://'] as $referer) {
+			$controller = $this->controller(origin: '', referer: $referer);
+			$this->doubles['bindings']->expects($this->never())->method('render');
+
+			$params = $controller->frame(route: 'aanvragen/verhuizing')->getParams()['embed'];
+
+			$this->assertSame('origin_not_allowed', $params['refused'], 'Referer: ' . $referer);
+		}
+
+	}//end testAFrameWithNeitherOriginNorRefererServesNobody()
+
+	/**
+	 * The Origin header, when sent, decides on its own: an allowed Referer
+	 * does not rescue a disallowed Origin.
+	 *
+	 * @spec openspec/changes/embed-frame-reads-the-referer-origin/specs/embedded-intake-form/spec.md
+	 */
+	public function testAnOriginHeaderWinsOverTheReferer(): void {
+		$controller = $this->controller(origin: 'https://www.elders.nl', referer: 'https://www.gemeente.nl/loket');
+
+		$params = $controller->frame(route: 'aanvragen/verhuizing')->getParams()['embed'];
+
+		$this->assertSame('origin_not_allowed', $params['refused']);
+
+	}//end testAnOriginHeaderWinsOverTheReferer()
+
+	/**
+	 * A submission without Origin records the Referer's origin, never its path.
+	 *
+	 * @spec openspec/changes/embed-frame-reads-the-referer-origin/specs/embedded-intake-form/spec.md
+	 */
+	public function testASubmissionWithoutOriginRecordsTheReferersOriginOnly(): void {
+		$controller = $this->controller(origin: '', referer: 'https://www.gemeente.nl/loket/verhuizen?bsn=1');
+
+		$data = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB'])->getData();
+
+		$this->assertSame('2026-0042', $data['reference']);
+		$this->assertSame('https://www.gemeente.nl', $this->submit->calls[0]['mapping']['fixed']['origin']);
+
+	}//end testASubmissionWithoutOriginRecordsTheReferersOriginOnly()
+
 	public function testASubmissionRecordsTheOriginItCameFrom(): void {
 		$controller = $this->controller(origin: 'https://www.gemeente.nl');
 		$data = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB'])->getData();
@@ -321,6 +396,7 @@ class PortalEmbedControllerTest extends TestCase {
 	 * @param bool $throttleOpen Whether the throttle lets the request through.
 	 * @param mixed $formMinTrust The published form's sign-in level, or null.
 	 * @param mixed $bindingMinTrust The binding's sign-in level, or null.
+	 * @param string $referer The Referer header of the request, '' for none.
 	 *
 	 * @return PortalEmbedController
 	 */
@@ -330,11 +406,16 @@ class PortalEmbedControllerTest extends TestCase {
 		bool $throttleOpen = true,
 		mixed $formMinTrust = null,
 		mixed $bindingMinTrust = null,
+		string $referer = '',
 	): PortalEmbedController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturnCallback(
-			static function (string $name) use ($origin): string {
-				return ($name === 'Origin' ? $origin : '');
+			static function (string $name) use ($origin, $referer): string {
+				return match ($name) {
+					'Origin' => $origin,
+					'Referer' => $referer,
+					default => '',
+				};
 			}
 		);
 		$request->method('getRemoteAddress')->willReturn('203.0.113.10');
