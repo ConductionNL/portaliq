@@ -71,7 +71,7 @@ class CmsContentCache {
 	 *
 	 * @return mixed The stored value, or null on a miss.
 	 *
-	 * @spec openspec/changes/portal-headless-content-api/tasks.md#task-2
+	 * @spec openspec/changes/archive/2026-11-25-portal-headless-content-api/tasks.md#task-2
 	 */
 	public function lookup(string $key): mixed {
 		$hit = $this->cache->get($key);
@@ -105,7 +105,7 @@ class CmsContentCache {
 	 *
 	 * @return array{hits: int, misses: int}
 	 *
-	 * @spec openspec/changes/portal-headless-content-api/tasks.md#task-2
+	 * @spec openspec/changes/archive/2026-11-25-portal-headless-content-api/tasks.md#task-2
 	 */
 	public function stats(): array {
 		return [

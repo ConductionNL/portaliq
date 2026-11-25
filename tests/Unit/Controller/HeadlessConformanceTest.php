@@ -15,7 +15,7 @@ use ReflectionMethod;
  * portal reads of the content API is a routed public path. The test reads
  * routes.php and the portal's sources, nothing else of Portaliq.
  *
- * @spec openspec/changes/portal-headless-content-api/tasks.md#task-4
+ * @spec openspec/changes/archive/2026-11-25-portal-headless-content-api/tasks.md#task-4
  */
 class HeadlessConformanceTest extends TestCase {
 	/**
