@@ -119,7 +119,7 @@ export function resolveBlocks(page, contribution) {
  *
  * @param {Array<object>} items The resolved blocks.
  * @return {Array<object>} The same blocks, read-only.
- * @spec openspec/changes/mandated-case-offers-no-writes/specs/portal-my-cases/spec.md#requirement-a-case-read-under-a-mandate-offers-no-writes
+ * @spec openspec/specs/portal-my-cases/spec.md#requirement-a-case-read-under-a-mandate-offers-no-writes
  */
 export function withoutRecordWrites(items) {
 	return items
