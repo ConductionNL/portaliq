@@ -197,3 +197,14 @@ When a resident opens a form for which they have a live draft, the site SHALL as
 - GIVEN a resident with a live draft of a create action labelled "Woo-verzoek"
 - WHEN they open Mijn zaken
 - THEN a card "Onvoltooid formulier" names "Woo-verzoek" and the day it was saved, and "Formulier afmaken" opens that form
+
+### Requirement: The contact question form reads in the page's language
+
+The contact block SHALL render its form in the page's language, with the same words as the other site forms, and an optional field's label SHALL read its name, a space and the optional mark.
+
+#### Scenario: A Dutch resident opens the contact question form
+@e2e exclude needs a signed-in portal session and pipelinq's action; covered by tests/contact-form.spec.mjs
+- **GIVEN** a resident signed in on a Dutch page
+- **WHEN** she opens `/contact/vraag` and the form has a field that is not required
+- **THEN** the form says "Een veld zonder "niet verplicht" moet u invullen."
+- **AND** that field's label reads "<name> (niet verplicht)"

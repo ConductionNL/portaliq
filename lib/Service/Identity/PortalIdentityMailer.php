@@ -34,6 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
+use DateTime;
 use DateTimeInterface;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\PortalIdentityMailerInterface;
@@ -551,7 +552,9 @@ class PortalIdentityMailer implements PortalIdentityMailerInterface {
 	private function noticeMail(IdentityNotice $notice, string $name): IEMailTemplate {
 		$keys = self::NOTICES[$notice->template];
 		$l10n = $this->l10nFactory->get(AppIdentity::APP_ID, $this->site->language(portal: $notice->portal));
-		$day  = (string)$l10n->l($keys['moment'], $notice->moment, ['width' => 'long']);
+		// IL10N::l() reads only a mutable \DateTime; a DateTimeImmutable would
+		// be cast to an integer and read as 1 January 1970.
+		$day  = (string)$l10n->l($keys['moment'], DateTime::createFromInterface($notice->moment), ['width' => 'long']);
 
 		$mail = $this->mailer->createEMailTemplate('portaliq.identity.' . $notice->template, []);
 		$mail->setSubject($l10n->t($keys['subject'], [$name]));

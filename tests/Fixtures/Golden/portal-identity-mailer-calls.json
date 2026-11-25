@@ -392,7 +392,7 @@
                     {
                         "l10n.l": {
                             "type": "date",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -530,7 +530,7 @@
                     {
                         "l10n.l": {
                             "type": "datetime",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -671,7 +671,7 @@
                     {
                         "l10n.l": {
                             "type": "datetime",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -1177,7 +1177,7 @@
                     {
                         "l10n.l": {
                             "type": "date",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -1315,7 +1315,7 @@
                     {
                         "l10n.l": {
                             "type": "datetime",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -1456,7 +1456,7 @@
                     {
                         "l10n.l": {
                             "type": "datetime",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -1964,7 +1964,7 @@
                     {
                         "l10n.l": {
                             "type": "date",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -2111,7 +2111,7 @@
                     {
                         "l10n.l": {
                             "type": "datetime",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -2261,7 +2261,7 @@
                     {
                         "l10n.l": {
                             "type": "datetime",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -2786,7 +2786,7 @@
                     {
                         "l10n.l": {
                             "type": "date",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -2924,7 +2924,7 @@
                     {
                         "l10n.l": {
                             "type": "datetime",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -3065,7 +3065,7 @@
                     {
                         "l10n.l": {
                             "type": "datetime",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -3595,7 +3595,7 @@
                     {
                         "l10n.l": {
                             "type": "date",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -3733,7 +3733,7 @@
                     {
                         "l10n.l": {
                             "type": "datetime",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -3874,7 +3874,7 @@
                     {
                         "l10n.l": {
                             "type": "datetime",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -4406,7 +4406,7 @@
                     {
                         "l10n.l": {
                             "type": "date",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -4553,7 +4553,7 @@
                     {
                         "l10n.l": {
                             "type": "datetime",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -4703,7 +4703,7 @@
                     {
                         "l10n.l": {
                             "type": "datetime",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -5228,7 +5228,7 @@
                     {
                         "l10n.l": {
                             "type": "date",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -5366,7 +5366,7 @@
                     {
                         "l10n.l": {
                             "type": "datetime",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -5507,7 +5507,7 @@
                     {
                         "l10n.l": {
                             "type": "datetime",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -6037,7 +6037,7 @@
                     {
                         "l10n.l": {
                             "type": "date",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -6175,7 +6175,7 @@
                     {
                         "l10n.l": {
                             "type": "datetime",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -6316,7 +6316,7 @@
                     {
                         "l10n.l": {
                             "type": "datetime",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -6848,7 +6848,7 @@
                     {
                         "l10n.l": {
                             "type": "date",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -6995,7 +6995,7 @@
                     {
                         "l10n.l": {
                             "type": "datetime",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -7145,7 +7145,7 @@
                     {
                         "l10n.l": {
                             "type": "datetime",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -7694,7 +7694,7 @@
                     {
                         "l10n.l": {
                             "type": "date",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -7832,7 +7832,7 @@
                     {
                         "l10n.l": {
                             "type": "datetime",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -7973,7 +7973,7 @@
                     {
                         "l10n.l": {
                             "type": "datetime",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -8527,7 +8527,7 @@
                     {
                         "l10n.l": {
                             "type": "date",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -8665,7 +8665,7 @@
                     {
                         "l10n.l": {
                             "type": "datetime",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -8806,7 +8806,7 @@
                     {
                         "l10n.l": {
                             "type": "datetime",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -9362,7 +9362,7 @@
                     {
                         "l10n.l": {
                             "type": "date",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -9509,7 +9509,7 @@
                     {
                         "l10n.l": {
                             "type": "datetime",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -9659,7 +9659,7 @@
                     {
                         "l10n.l": {
                             "type": "datetime",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -10208,7 +10208,7 @@
                     {
                         "l10n.l": {
                             "type": "date",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -10346,7 +10346,7 @@
                     {
                         "l10n.l": {
                             "type": "datetime",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -10487,7 +10487,7 @@
                     {
                         "l10n.l": {
                             "type": "datetime",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -11041,7 +11041,7 @@
                     {
                         "l10n.l": {
                             "type": "date",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -11179,7 +11179,7 @@
                     {
                         "l10n.l": {
                             "type": "datetime",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -11320,7 +11320,7 @@
                     {
                         "l10n.l": {
                             "type": "datetime",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -11876,7 +11876,7 @@
                     {
                         "l10n.l": {
                             "type": "date",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -12023,7 +12023,7 @@
                     {
                         "l10n.l": {
                             "type": "datetime",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }
@@ -12173,7 +12173,7 @@
                     {
                         "l10n.l": {
                             "type": "datetime",
-                            "data": "DateTimeImmutable",
+                            "data": "DateTime",
                             "options": {
                                 "width": "long"
                             }

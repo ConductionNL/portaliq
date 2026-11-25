@@ -25,5 +25,6 @@
 - warmtepompacademie/MijnOverzicht overzicht: the card "Eerst dit" https://identity.conduction.nl/screens/board?id=warmtepompacademie/MijnOverzicht
 - warmtepompacademie/MijnLijst inschrijvingen: rows with a date tile, a status and a note https://identity.conduction.nl/screens/board?id=warmtepompacademie/MijnLijst
 - portaliq/Dossiers dossiers: "Stel een vraag" and "Start een Woo-verzoek" as contributed actions (REQ-WJE-004) https://identity.conduction.nl/screens/board?id=portaliq/Dossiers
+- portaliq/Contact Site: contact https://identity.conduction.nl/screens/board?id=portaliq/Contact
 
 Components: CnActionsMenu, CnAppNav, CnBreadcrumbs, CnBuildiqEditButton, CnDataTable, CnJsonViewer, CnRowActions, CnSettingsPage, CnSettingsSection, CnStatusBadge

@@ -148,7 +148,7 @@ export default {
 		 * language, as the account pages hand it.
 		 *
 		 * @return {(key: string, vars?: object) => string} The translator.
-		 * @spec openspec/changes/contact-question-form-reads-dutch/specs/site-forms/spec.md#requirement-the-contact-question-form-reads-in-the-pages-language
+		 * @spec openspec/specs/site-forms/spec.md#requirement-the-contact-question-form-reads-in-the-pages-language
 		 */
 		translate() {
 			return withBundles(formStrings, null, this.locale)
