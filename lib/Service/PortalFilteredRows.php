@@ -209,7 +209,8 @@ class PortalFilteredRows {
 
 		$filters       = $this->filters(filter: $query->filter, scopeField: '', value: '');
 		$filters['id'] = array_map('strval', array_keys($query->targets));
-		$page          = $objectService->findAll(config: ['filters' => $filters, 'limit' => $query->limit, 'offset' => 0], _rbac: false, _multitenancy: false);
+		$config        = ['filters' => $filters, 'limit' => $query->limit, 'offset' => 0];
+		$page          = $objectService->findAll(config: $config, _rbac: false, _multitenancy: false);
 
 		return $this->withoutDuplicates(rows: [], page: (array)$page);
 	}//end rowsById()
