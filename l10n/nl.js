@@ -552,6 +552,8 @@ OC.L10N.register(
         "Returning visitors": "Terugkerende bezoekers",
         "Revoke all sessions for this organisation": "Alle sessies van deze organisatie intrekken",
         "Revoked": "Ingetrokken",
+        "Yes": "Ja",
+        "No": "Nee",
         "Revoked sessions": "Ingetrokken sessies",
         "Revoked {count} session(s).": "{count} sessie(s) ingetrokken.",
         "Route": "Route",
