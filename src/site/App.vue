@@ -520,8 +520,7 @@
 				:menus="footerMenus"
 				:legalLinks="legalLinks"
 				:footer="site.footer || {}"
-				:organisationType="site.organisationTypeLabel || ''"
-				:locale="locale"
+				:kindLine="site.organisationKindLine || ''"
 				:addressOf="hrefForRoute"
 				@navigate="go" />
 			<WidgetGrid
@@ -551,7 +550,6 @@ import { defineAsyncComponent } from 'vue'
 import AccountArea from './components/AccountArea.vue'
 import BrandHeader from './components/BrandHeader.vue'
 import FooterColumns from './components/FooterColumns.vue'
-import IdleWarningDialog from './components/IdleWarningDialog.vue'
 import MarkdownBlock from './components/MarkdownBlock.vue'
 import PageArticleBlock from './components/PageArticleBlock.vue'
 import WidgetGrid from './components/WidgetGrid.vue'
@@ -685,6 +683,11 @@ const ContributionPage = defineAsyncComponent(
 )
 const SiteEditButton = defineAsyncComponent(
 	() => import('./components/SiteEditButton.vue'),
+)
+// The warning before an inactivity sign-out shows only once a session goes
+// idle, so it loads then and the site entry stays inside its size budget.
+const IdleWarningDialog = defineAsyncComponent(
+	() => import('./components/IdleWarningDialog.vue'),
 )
 
 // Loaded only when a notice is running, so a portal without one pays nothing

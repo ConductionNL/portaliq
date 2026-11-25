@@ -41,6 +41,7 @@ use OCA\Portaliq\Kernel\Contracts\PublicSourceScopeInterface;
 use OCA\Portaliq\Kernel\Contracts\SiteOrganisationInterface;
 use OCA\Portaliq\Kernel\Contracts\TrafficConfigResolverInterface;
 use OCA\Portaliq\Service\Cms\MediaReferences;
+use OCA\Portaliq\Service\Cms\SiteCreator;
 use OCA\Portaliq\Service\Publication\PublicationReportSwitch;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -195,6 +196,8 @@ class ContentController extends Controller {
 				// save: the site names the organisation's kind with it, and says
 				// "de organisatie" without it (REQ-PIA-003).
 				'organisationTypeLabel' => (string)($portal['organisationTypeLabel'] ?? ''),
+				// The footer's "Een website van het waterschap", in the page language.
+				'organisationKindLine' => SiteCreator::kindLine(portal: $portal, locale: $this->locale(portal: $portal, requested: $locale)),
 				// The line under the name in the footer's logo block. The
 				// reference carries one ("Één plek voor alle publicaties van
 				// Gemeente Tilburg") and this app had no field for it at all,

@@ -179,7 +179,7 @@
 
 <script>
 import { CnSiteIcon } from '@conduction/nextcloud-vue/public'
-import { contactLineParts, organisationKindLine } from '../lib/footerLine.js'
+import { contactLineParts } from '../lib/footerLine.js'
 import { footerContentOf, linkAddress } from '../lib/shellData.js'
 
 // The button links' classes need their stylesheet, or the browser draws its own blue link.
@@ -215,10 +215,8 @@ export default {
 		legalLabel: { type: String, default: 'Juridische informatie' },
 		/** A site route to the address that opens it; a route as it is without one. */
 		addressOf: { type: Function, default: null },
-		/** The portal's organisation type label (`organisationTypeLabel`). */
-		organisationType: { type: String, default: '' },
-		/** The site language. */
-		locale: { type: String, default: 'nl' },
+		/** Whose website this is, by the organisation type: the content API's `organisationKindLine`. */
+		kindLine: { type: String, default: '' },
 	},
 
 	emits: ['navigate'],
@@ -245,17 +243,6 @@ export default {
 		 */
 		content() {
 			return footerContentOf({ footer: this.footer })
-		},
-
-		/**
-		 * The legal band's line naming the organisation's kind, '' for none.
-		 *
-		 * @return {string}
-		 *
-		 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
-		 */
-		kindLine() {
-			return organisationKindLine(this.organisationType, this.locale)
 		},
 
 		/**

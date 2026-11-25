@@ -368,6 +368,25 @@ class ContentControllerTest extends TestCase {
 
 
 	/**
+	 * The footer's line comes with the site: "Een website van het waterschap"
+	 * for a Dutch portal with a type, '' without one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+	 */
+	public function testSiteSendsTheFooterKindLine(): void {
+		$this->resolver->method('resolve')->willReturnOnConsecutiveCalls(
+			[...$this->portal(), 'organisationTypeLabel' => 'waterschap'],
+			$this->portal()
+		);
+
+		$this->assertSame('Een website van het waterschap', $this->controller()->site(locale: 'nl')->getData()['organisationKindLine']);
+		$this->assertSame('', $this->controller()->site(locale: 'nl')->getData()['organisationKindLine']);
+	}//end testSiteSendsTheFooterKindLine()
+
+
+	/**
 	 * Without a way to name it, the site names no organisation.
 	 *
 	 * @return void

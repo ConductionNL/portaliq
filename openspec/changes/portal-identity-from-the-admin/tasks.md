@@ -96,13 +96,16 @@ that is not in `check:specs` does not run in CI.
     label), tests in `tests/Unit/Service/Cms/SiteCreatorTest.php`, `SiteShellTest` and
     `tests/site-head.spec.mjs`.
   - Built 25 Nov 2026 (the footer line), on a decision taken here: the legal band, under the colophon,
-    reads "Een website van het waterschap" (`organisationKindLine` in `src/site/lib/footerLine.js`,
-    `data-testid="site-footer-kind"` in `FooterColumns.vue`, fed `organisationTypeLabel` and the site
-    language by `App.vue`). It is no footer key: the portal authors nothing for it, and an authored
-    colophon stays as written. No type, or a page in another language, draws no line (the label is
-    Dutch). Node tests: `tests/mijn-components.spec.mjs` `the footer line names the kind with its
-    article, and nothing without a type`, `tests/site-shell-blocks.spec.mjs` `the footer names the
-    organisation type: een website van het waterschap`.
+    reads "Een website van het waterschap". The content API words it (`SiteCreator::kindLine()`, sent
+    as `organisationKindLine` by `ContentController::site()` in the page language) and
+    `FooterColumns.vue` draws it (`data-testid="site-footer-kind"`, prop `kindLine` from `App.vue`), so
+    the site entry stays inside its size budget; `IdleWarningDialog` now loads on demand to make room.
+    It is no footer key: the portal authors nothing for it, and an authored colophon stays as written.
+    No type, or a page in another language, draws no line (the label is Dutch). Tests:
+    `SiteCreatorTest::testTheFooterLineNamesTheKindWithItsArticle`,
+    `::testNoTypeOrAnotherLanguageHasNoFooterLine`, `ContentControllerTest::testSiteSendsTheFooterKindLine`,
+    node `tests/site-shell-blocks.spec.mjs` `the footer names the organisation type: een website van het
+    waterschap`.
 
 ## 4. Live
 

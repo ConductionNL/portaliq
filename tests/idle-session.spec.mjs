@@ -195,7 +195,7 @@ test('the site renderer refreshes on activity, warns in its own dialog and follo
 	const app = readFileSync(join(ROOT, 'src', 'site', 'App.vue'), 'utf8')
 	assert.match(
 		app,
-		/import IdleWarningDialog from '\.\/components\/IdleWarningDialog\.vue'/,
+		/const IdleWarningDialog = defineAsyncComponent\(\s*\(\) => import\('\.\/components\/IdleWarningDialog\.vue'\),?\s*\)/,
 	)
 	assert.doesNotMatch(app, /REFRESH_INTERVAL_MS/, 'no fixed refresh interval')
 	assert.match(app, /createIdleTracker\(\{\s*refresh: \(\) => refreshSession\(/)

@@ -271,11 +271,11 @@ test('the legal bar always names someone: the colophon, else the portal title', 
 })
 
 // portal-identity-from-the-admin 3.2 (REQ-PIA-003): the footer names whose
-// website this is by the portal's organisation type, on a Dutch page only.
+// website this is: the content API's line, none without one.
 test('the footer names the organisation type: een website van het waterschap', async () => {
 	const typed = await renderSfc(
 		'src/site/components/FooterColumns.vue',
-		{ title: 'Mijn Rivierenland', organisationType: 'waterschap', locale: 'nl' },
+		{ title: 'Mijn Rivierenland', kindLine: 'Een website van het waterschap' },
 		LIBRARY,
 	)
 	assert.match(typed, /data-testid="site-footer-kind">\s*Een website van het waterschap\s*</)
@@ -287,13 +287,6 @@ test('the footer names the organisation type: een website van het waterschap', a
 		LIBRARY,
 	)
 	assert.equal(count(untyped, 'site-footer-kind'), 0)
-
-	const english = await renderSfc(
-		'src/site/components/FooterColumns.vue',
-		{ title: 'Mijn Rivierenland', organisationType: 'waterschap', locale: 'en' },
-		LIBRARY,
-	)
-	assert.equal(count(english, 'site-footer-kind'), 0)
 })
 
 test('every footer band names its role, and socials carry a screen-reader label', async () => {
