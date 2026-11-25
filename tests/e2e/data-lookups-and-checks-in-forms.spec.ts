@@ -92,6 +92,39 @@ async function seed(
 }
 
 /**
+ * Store a published form through buildiq's own form API, the way its form
+ * designer does, and remember its id for the clean-up.
+ *
+ * Not through OpenRegister's `objects/buildiq/registrationForm` route: a form
+ * carries `register` and `schema` properties (where its answers go), and a
+ * JSON body's `register` and `schema` replace the route's own parameters in
+ * Nextcloud's request, so that write lands in the destination register
+ * instead and the portal finds no form ("Dit formulier is nu niet
+ * beschikbaar").
+ *
+ * @param request The request fixture.
+ * @param form The form.
+ */
+async function seedRegistrationForm(
+	request: APIRequestContext,
+	form: Record<string, unknown>,
+): Promise<void> {
+	const saved = await request.put('/apps/buildiq/api/registration-forms', {
+		headers: ADMIN_HEADERS,
+		data: form,
+	})
+	expect(saved.ok(), `buildiq must store the form: ${await saved.text()}`).toBeTruthy()
+	const found = await request.get(`${OR_OBJECTS_BASE}/buildiq/registrationForm`, {
+		headers: ADMIN_HEADERS,
+		params: { name: String(form.name), _limit: '1' },
+	})
+	const rows = ((await found.json()).results ?? []) as Array<Record<string, unknown>>
+	const id = String(rows[0]?.id ?? '')
+	expect(id, `the stored form ${String(form.name)} is listed`).not.toBe('')
+	created.push(`buildiq/registrationForm/${id}`)
+}
+
+/**
  * The register and schema the answers go to. A portal submit is an anonymous
  * write, so the form points at a schema that lets a public visitor create;
  * the spec makes its own and removes it afterwards. (A registrationForm's
@@ -147,7 +180,7 @@ async function seedForm(request: APIRequestContext): Promise<void> {
 	await seedDestination(request)
 	// The published form lives in buildiq, the binding resolver's default
 	// form register; portaliq declares no registrationForm schema.
-	await seed(request, 'registrationForm', {
+	await seedRegistrationForm(request, {
 		targetApp: 'portaliq',
 		register: DESTINATION,
 		schema: DESTINATION,
@@ -180,7 +213,7 @@ async function seedForm(request: APIRequestContext): Promise<void> {
 				order: 4,
 			},
 		],
-	}, 'buildiq')
+	})
 	await seed(request, 'portalFormBinding', {
 		portal: SITE_PORTAL,
 		route: ROUTE,
