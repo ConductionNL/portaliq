@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-cms-admin-ui/tasks.md#task-2
+ * @spec openspec/changes/archive/2026-11-25-portal-cms-admin-ui/tasks.md#task-2
  */
 
 declare(strict_types=1);
@@ -33,7 +33,7 @@ use OCA\Portaliq\Kernel\Contracts\CmsPublishValidatorInterface;
 /**
  * Finds what would render broken in one portal's pages and menus.
  *
- * @spec openspec/changes/portal-cms-admin-ui/tasks.md#task-2
+ * @spec openspec/changes/archive/2026-11-25-portal-cms-admin-ui/tasks.md#task-2
  */
 class CmsPublishValidator implements CmsPublishValidatorInterface {
 	public const NO_ROOT_PAGE = 'no-root-page';
@@ -52,7 +52,7 @@ class CmsPublishValidator implements CmsPublishValidatorInterface {
 	 *
 	 * @return array{blocking: array<int, array<string, string>>, warnings: array<int, array<string, string>>}
 	 *
-	 * @spec openspec/changes/portal-cms-admin-ui/tasks.md#task-2
+	 * @spec openspec/changes/archive/2026-11-25-portal-cms-admin-ui/tasks.md#task-2
 	 */
 	public function check(array $pages, array $menus): array {
 		$byRoute  = $this->byRoute(pages: $pages);

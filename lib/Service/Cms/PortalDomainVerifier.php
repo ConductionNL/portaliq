@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-cms-admin-ui/tasks.md#task-3
+ * @spec openspec/changes/archive/2026-11-25-portal-cms-admin-ui/tasks.md#task-3
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use Throwable;
 /**
  * Shows and checks the TXT record of a portal's domains.
  *
- * @spec openspec/changes/portal-cms-admin-ui/tasks.md#task-3
+ * @spec openspec/changes/archive/2026-11-25-portal-cms-admin-ui/tasks.md#task-3
  */
 class PortalDomainVerifier implements PortalDomainVerifierInterface {
 	public const PENDING = 'pending';
@@ -118,7 +118,7 @@ class PortalDomainVerifier implements PortalDomainVerifierInterface {
 	 *                                               servedAtRoot and landingRoute.
 	 *                                               Null for an unknown portal.
 	 *
-	 * @spec openspec/changes/portal-cms-admin-ui/tasks.md#task-3
+	 * @spec openspec/changes/archive/2026-11-25-portal-cms-admin-ui/tasks.md#task-3
 	 * @spec openspec/changes/site-at-the-root-of-a-portal-host/tasks.md#t8
 	 */
 	public function records(string $slug): ?array {
@@ -190,7 +190,7 @@ class PortalDomainVerifier implements PortalDomainVerifierInterface {
 	 * @return string|null `verified`, `pending`, or `not_found` for a domain the portal does not list;
 	 *                     null when the portal is unknown or the save failed.
 	 *
-	 * @spec openspec/changes/portal-cms-admin-ui/tasks.md#task-3
+	 * @spec openspec/changes/archive/2026-11-25-portal-cms-admin-ui/tasks.md#task-3
 	 */
 	public function verify(string $slug, string $hostname): ?string {
 		if ($this->records(slug: $slug) === null) {

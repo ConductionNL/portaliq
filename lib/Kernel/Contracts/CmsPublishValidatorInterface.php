@@ -45,7 +45,7 @@ interface CmsPublishValidatorInterface {
 	 *
 	 * @return array{blocking: array<int, array<string, string>>, warnings: array<int, array<string, string>>}
 	 *
-	 * @spec openspec/changes/portal-cms-admin-ui/tasks.md#task-2
+	 * @spec openspec/changes/archive/2026-11-25-portal-cms-admin-ui/tasks.md#task-2
 	 */
 	public function check(array $pages, array $menus): array;
 }//end interface
