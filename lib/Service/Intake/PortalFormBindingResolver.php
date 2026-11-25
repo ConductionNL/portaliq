@@ -656,21 +656,6 @@ class PortalFormBindingResolver implements PortalFormBindingResolverInterface {
 	}//end formRows()
 
 	/**
-	 * The case type a published form row serves: buildiq's `typeValue`, or
-	 * `caseType` on a row written before.
-	 *
-	 * @param array<string, mixed> $row One form row.
-	 *
-	 * @return string
-	 *
-	 * @spec openspec/specs/portal-intake-form/spec.md
-	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md
-	 */
-	private function formTypeOf(array $row): string {
-		return (string)($row[self::FORM_TYPE_FIELD] ?? $row['caseType'] ?? '');
-	}//end formTypeOf()
-
-	/**
 	 * Whether one form row is the published form this binding asked for.
 	 *
 	 * The reader's filter narrows; this re-checks the answer, because
@@ -687,7 +672,9 @@ class PortalFormBindingResolver implements PortalFormBindingResolverInterface {
 	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	private function formAnswersTheBinding(array $row, array $binding, string $typeId, string $audience): bool {
-		if ($this->formTypeOf(row: $row) !== $typeId || ($row['audience'] ?? '') !== $audience) {
+		// buildiq's typeValue, or caseType on a row written before it.
+		$formType = (string)($row[self::FORM_TYPE_FIELD] ?? $row['caseType'] ?? '');
+		if ($formType !== $typeId || ($row['audience'] ?? '') !== $audience) {
 			return false;
 		}
 

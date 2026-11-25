@@ -99,8 +99,21 @@ class DestinationSubmitEdgeTest extends TestCase {
 			public function __construct(private mixed $result) {
 			}
 
+			/**
+			 * The destination the last validate() was handed.
+			 *
+			 * @var object|null
+			 */
 			public ?object $destination = null;
 
+			/**
+			 * Answer the fixed result, as OpenRegister's validator would.
+			 *
+			 * @param array<string, mixed> $mapping     The mapping.
+			 * @param object               $destination The schema and audience.
+			 *
+			 * @return mixed
+			 */
 			public function validate(array $mapping, object $destination): mixed {
 				$this->destination = $destination;
 				if ($this->result instanceof \Throwable) {
@@ -236,12 +249,14 @@ class DestinationSubmitEdgeTest extends TestCase {
 	 */
 	public function testTheValidatorIsHandedTheSchemaAndTheAudienceAsOneDestination(): void {
 		$schema    = new \stdClass();
-		$validator = self::validator([]);
-		$container = self::container([self::VALIDATOR => $validator, self::MAPPER => self::mapper([$schema])]);
+		$validator = self::validator(result: []);
+		$container = self::container(services: [self::VALIDATOR => $validator, self::MAPPER => self::mapper(result: [$schema])]);
+		$submit    = new DestinationSubmit(container: $container, logger: $this->createMock(originalClassName: LoggerInterface::class));
 
-		$this->assertSame([], (new DestinationSubmit($container, $this->createMock(LoggerInterface::class)))->findings(destination: ['register' => 'a', 'schema' => 'case'], mapping: [], audience: 'public'));
-		$this->assertInstanceOf(\OCA\OpenRegister\Service\Form\FormDestination::class, $validator->destination);
-		$this->assertSame($schema, $validator->destination->schema);
-		$this->assertSame('public', $validator->destination->audience);
+		$findings = $submit->findings(destination: ['register' => 'a', 'schema' => 'case'], mapping: [], audience: 'public');
+		$this->assertSame(expected: [], actual: $findings);
+		$this->assertInstanceOf(expected: \OCA\OpenRegister\Service\Form\FormDestination::class, actual: $validator->destination);
+		$this->assertSame(expected: $schema, actual: $validator->destination->schema);
+		$this->assertSame(expected: 'public', actual: $validator->destination->audience);
 	}//end testTheValidatorIsHandedTheSchemaAndTheAudienceAsOneDestination()
 }//end class
