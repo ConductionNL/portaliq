@@ -60,3 +60,46 @@ test('each bare element gets its class, in the map order; an own class stays', (
 		{ h2: ['utrecht-heading-2', 'own'], p: ['utrecht-paragraph'], strong: ['utrecht-strong'], img: ['utrecht-img'], table: ['utrecht-table'], tr: ['utrecht-table__row', 'utrecht-table__row'], th: ['utrecht-table__header-cell'], td: ['own'] },
 	)
 })
+
+// site-nlds-widget-palette T8c: a markdown link to a site page follows the
+// site's own address, so it opens under the app path too and keeps the
+// portal and the chosen language; a link elsewhere stays as written.
+test('a link to a site page carries the site address, the portal and the language', () => {
+	const links = [
+		{ href: '/grofvuil' },
+		{ href: 'https://example.org/x' },
+		{ href: '//cdn.example.org/y' },
+	]
+	globalThis.window = {
+		location: { href: 'http://nc.test/index.php/apps/portaliq/site/open-tilburg/afval?lang=en&x=1' },
+	}
+	globalThis.DOMParser = class {
+		parseFromString() {
+			return {
+				body: {
+					get innerHTML() {
+						return links.map((link) => link.href).join(' ')
+					},
+					querySelectorAll: () =>
+						links.map((link) => ({
+							getAttribute: () => link.href,
+							setAttribute: (name, value) => {
+								link.href = value
+							},
+						})),
+				},
+			}
+		}
+	}
+	const out = MarkdownBlock.methods.withSiteAddresses.call({}, '<a href="/grofvuil">x</a>')
+	const [site, other, protocolRelative] = out.split(' ')
+	assert.match(decodeURIComponent(site), /\/grofvuil/)
+	assert.match(site, /^http:\/\/nc\.test\/index\.php\/apps\/portaliq\/site/)
+	assert.match(site, /[?&]lang=en(&|$)/)
+	assert.doesNotMatch(site, /[?&]x=1/)
+	assert.notEqual(site, '/grofvuil')
+	assert.equal(other, 'https://example.org/x')
+	assert.equal(protocolRelative, '//cdn.example.org/y')
+	assert.equal(MarkdownBlock.methods.withSiteAddresses.call({}, '<p>no links</p>'), '<p>no links</p>')
+	delete globalThis.window
+})

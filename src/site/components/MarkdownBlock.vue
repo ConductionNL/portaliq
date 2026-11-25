@@ -21,6 +21,9 @@
 
 <script>
 import { cnRenderMarkdown } from '@conduction/nextcloud-vue'
+import { runtimeConfig } from '../lib/contentApi.js'
+import { isSiteRoute } from '../lib/shellData.js'
+import { addressOfRoute } from '../lib/siteAddress.js'
 
 /**
  * The design system's class for each element markdown renders bare.
@@ -118,7 +121,9 @@ export default {
 				return ''
 			}
 
-			return this.withDesignSystemClasses(cnRenderMarkdown(this.source))
+			return this.withSiteAddresses(
+				this.withDesignSystemClasses(cnRenderMarkdown(this.source)),
+			)
 		},
 	},
 
@@ -154,6 +159,36 @@ export default {
 				addMissingClass(body.querySelectorAll(tag.toLowerCase()), className)
 			}
 
+			return body.innerHTML
+		},
+
+		/**
+		 * Write each link to a site page in the site's own address, as the
+		 * hero and the menus do: `/grofvuil` opens the portal's page where the
+		 * site is served under the app path too, and the portal and the chosen
+		 * language (`?portal=`, `?lang=`) stay on it. Links elsewhere stay.
+		 *
+		 * Runs on the sanitiser's output and only rewrites an `href` it holds.
+		 *
+		 * @param {string} html Sanitised HTML.
+		 * @return {string} The same HTML, site links addressed.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/tasks.md#t8c
+		 */
+		withSiteAddresses(html) {
+			if (typeof window === 'undefined' || !html.includes('href="/')) {
+				return html
+			}
+			const body = new DOMParser().parseFromString(html, 'text/html').body
+			for (const link of body.querySelectorAll('a[href]')) {
+				const href = link.getAttribute('href')
+				if (isSiteRoute(href)) {
+					link.setAttribute(
+						'href',
+						addressOfRoute(href, window.location.href, runtimeConfig()).toString(),
+					)
+				}
+			}
 			return body.innerHTML
 		},
 	},
