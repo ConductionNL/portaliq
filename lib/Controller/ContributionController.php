@@ -477,7 +477,8 @@ class ContributionController extends Controller implements PortalProtected {
 		}
 
 		if (($portal['plansEnabled'] ?? false) === true) {
-			$pages[] = ['special' => 'samenwerken', 'label' => 'Collaborate', 'icon' => 'ClipboardCheckOutline'];
+			// The menu item reads "Mijn plannen" under the group "Samenwerken" (board Plannen); the page keeps its title.
+			$pages[] = ['special' => 'samenwerken', 'label' => 'My plans', 'icon' => 'ClipboardCheckOutline'];
 		}
 
 		if (($portal['actionsEnabled'] ?? false) === true) {

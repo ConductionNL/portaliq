@@ -122,7 +122,7 @@ test('the resident items go into groups: the own area, cases and requests, one p
 test('plans and contacts, once the portal switches them on, sit in a group of their own', () => {
 	const areaPages = [
 		{ special: 'contacts', label: 'My contacts', icon: 'AccountMultiple' },
-		{ special: 'samenwerken', label: 'Collaborate', icon: 'ClipboardCheckOutline' },
+		{ special: 'samenwerken', label: 'My plans', icon: 'ClipboardCheckOutline' },
 	]
 	const groups = residentMenuGroups(navFor(nl, { pages: areaPages }), { t: nl, unread: 0, hrefFor: href })
 	const collaborate = groups.find((group) => group.key === 'collaborate')
