@@ -365,6 +365,19 @@ export default {
 	margin: 0.25rem 0 0;
 }
 
+/*
+ * A place's links (Route, Afspraak maken) are 24px targets. As bare text they
+ * were 19px high with less than 24px between them, and WCAG 2.2 SC 2.5.8
+ * (target size, minimum) asks 24 by 24 CSS pixels or that much space; axe
+ * flagged every one on the Zuiddrecht Locaties page.
+ * @spec openspec/changes/site-location-map/tasks.md#t03
+ */
+.nl-location-map__links .utrecht-link {
+	display: inline-flex;
+	align-items: center;
+	min-block-size: 24px;
+}
+
 .nl-location-map__hidden {
 	position: absolute;
 	inline-size: 1px;
