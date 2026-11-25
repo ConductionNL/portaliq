@@ -33,31 +33,37 @@ test.describe('identity-staff-account-screens', () => {
 		page,
 	}) => {
 		const ref = `9999${Date.now() % 100000}`
-		await page.goto('/apps/portaliq/#/accounts')
-		await page.getByRole('button', { name: 'Actions' }).click()
-		await page.getByText('Issue an account').click()
+		// The Accounts index draws "Account uitgeven" as its own header button
+		// (manifest headerButtons), not inside an Actions menu, and the app
+		// routes by path, not by hash.
+		await page.goto('/apps/portaliq/accounts')
+		await page.getByTestId('cn-index-header-button-issue-account').click()
 		await page
 			.getByTestId('issue-account-organisation')
-			.locator('input')
 			.fill('dev-org')
+		// Issuing for an identity reference needs its sign-in service: the
+		// provision call refuses a reference without an identity type.
+		await page.getByTestId('issue-account-identity-type').click()
+		await page.getByRole('option', { name: 'DigiD' }).click()
 		await page
 			.getByTestId('issue-account-identity-ref')
-			.locator('input')
 			.fill(ref)
 		await page.getByTestId('issue-account-confirm').click()
+		// The confirmation shows as a toast and in the live region; one is enough.
 		await expect(
-			page.getByText('The account is issued.', { exact: false }),
+			page.getByText('The account is issued.', { exact: false }).first(),
 		).toBeVisible()
 
-		await page.getByRole('button', { name: 'Actions' }).click()
-		await page.getByText('Issue an account').click()
+		await page.getByTestId('cn-index-header-button-issue-account').click()
 		await page
 			.getByTestId('issue-account-organisation')
-			.locator('input')
 			.fill('dev-org')
+		// Issuing for an identity reference needs its sign-in service: the
+		// provision call refuses a reference without an identity type.
+		await page.getByTestId('issue-account-identity-type').click()
+		await page.getByRole('option', { name: 'DigiD' }).click()
 		await page
 			.getByTestId('issue-account-identity-ref')
-			.locator('input')
 			.fill(ref)
 		await page.getByTestId('issue-account-confirm').click()
 		await expect(page.getByTestId('issue-account-refusal')).toHaveText(
@@ -74,15 +80,17 @@ test.describe('identity-staff-account-screens', () => {
 		expect(sent.ok(), 'the instance needs a working mail transport').toBeTruthy()
 		expect(JSON.stringify(await sent.json())).not.toContain('token')
 
-		await page.goto('/apps/portaliq/#/invitations')
+		await page.goto('/apps/portaliq/invitations')
+		// The index shows a first page of rows; find this invitation by its address.
+		await page.getByPlaceholder('Search in this list').fill(email)
 		const row = page.getByRole('row', { name: new RegExp(email) })
-		await expect(row).toContainText('sent')
+		await expect(row).toContainText(/sent/i)
 		await row.getByRole('button', { name: 'Actions' }).click()
 		await page.getByText('Withdraw invitation').click()
 		await page.getByRole('button', { name: 'Withdraw invitation' }).click()
 		await expect(
 			page.getByRole('row', { name: new RegExp(email) }),
-		).toContainText('revoked')
+		).toContainText('Withdrawn')
 	})
 
 	test('Withdraw this account shows on a pending account only', async ({
@@ -108,11 +116,10 @@ test.describe('identity-staff-account-screens', () => {
 		)
 		const id = (await found.json()).results[0].id
 
-		await page.goto(`/apps/portaliq/#/accounts/${id}`)
+		await page.goto(`/apps/portaliq/accounts/${id}`)
 		await page.getByTestId('portal-account-withdraw-button').click()
 		await page
 			.getByTestId('void-account-reason')
-			.locator('textarea')
 			.fill('Wrong address')
 		await page.getByTestId('void-account-confirm').click()
 		await expect(page.getByTestId('portal-account-withdraw-button')).toHaveCount(
@@ -122,14 +129,20 @@ test.describe('identity-staff-account-screens', () => {
 
 	test('A registration is approved', async ({ page, request }) => {
 		const email = `new-${Date.now()}@example.org`
+		// `organisation` on the objects route filters OpenRegister's own
+		// organisation uuid, so a slug there matches nothing; the portal the
+		// CI seed provisions is found by its own slug.
 		const portals = await request.get(
-			'/apps/openregister/api/objects/portaliq/portal?organisation=dev-org',
+			'/apps/openregister/api/objects/portaliq/portal?slug=open-tilburg',
 			{ headers: STAFF_HEADERS },
 		)
 		const portal = (await portals.json()).results[0]
 
-		await page.goto(`/apps/portaliq/#/portals/${portal.id}`)
-		await page.getByTestId('portal-registration-approval').click()
+		await page.goto(`/apps/portaliq/portals/${portal.id}`)
+		// The Registration widget is on the portal page's settings tab
+		// (PortalDetail: portal-settings-registration), as the board draws it.
+		await page.getByRole('tab', { name: /^\s*(Instellingen|Settings)\s*$/ }).click()
+		await page.getByText('Anyone, after a staff member approves').click()
 		await page.getByTestId('portal-registration-save').click()
 		await expect(page.getByText('Your choices are saved.')).toBeVisible()
 
@@ -145,6 +158,7 @@ test.describe('identity-staff-account-screens', () => {
 		).toBeTruthy()
 
 		await page.reload()
+		await page.getByRole('tab', { name: /^\s*(Instellingen|Settings)\s*$/ }).click()
 		const row = page.getByTestId('portal-registration-waiting').getByText(email)
 		await expect(row).toBeVisible()
 		await page.getByRole('button', { name: 'Approve' }).first().click()
