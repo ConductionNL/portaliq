@@ -294,7 +294,7 @@ function baseResult(row) {
  *
  * @param {string|null|undefined} directory The row's `@self.directory`; any other type counts as none.
  * @return {string} The foreign directory, or ''.
- * @spec openspec/changes/search-names-only-a-foreign-source/specs/portal-federated-search/spec.md#requirement-every-result-from-another-catalogue-must-name-that-catalogue-req-snf-001
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-every-result-from-another-catalogue-must-name-that-catalogue-req-snf-001
  */
 export function foreignDirectory(directory) {
 	const name = typeof directory === 'string' ? directory.trim() : ''
