@@ -34,9 +34,9 @@ use OCA\Portaliq\Service\Signin\SiteReturnAddress;
  * described), and logout's real revocation
  * (portal-auth-edge-session-hardening) rather than a static `{ok: true}`.
  *
- * @spec openspec/changes/portal-controller-http-test-coverage/tasks.md#2.1
- * @spec openspec/changes/portal-controller-http-test-coverage/tasks.md#2.2
- * @spec openspec/changes/portal-controller-http-test-coverage/tasks.md#2.3
+ * @spec openspec/changes/archive/2026-11-25-portal-controller-http-test-coverage/tasks.md#2.1
+ * @spec openspec/changes/archive/2026-11-25-portal-controller-http-test-coverage/tasks.md#2.2
+ * @spec openspec/changes/archive/2026-11-25-portal-controller-http-test-coverage/tasks.md#2.3
  * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T03
  * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T12
  */
