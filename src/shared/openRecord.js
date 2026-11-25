@@ -203,15 +203,28 @@ export function recordPageForRow(nav, current, page, target) {
 	if (showsRowItself(page || current?.page || {}, target.collection)) {
 		return null
 	}
-	const currentKey = current?.key
 	return (
-		(nav || []).find(
-			(entry) =>
-				entry !== current
-				&& (!currentKey || entry.key !== currentKey)
-				&& entry.contribution?.app === target.app
-				&& opensAsRecordPage(entry, target.collection),
-		) || null
+		(nav || []).find((entry) => isOtherRecordPage(entry, current, target))
+		|| null
+	)
+}
+
+/**
+ * Whether a nav entry is another page of the target's app that is the
+ * target collection's record page.
+ *
+ * @param {object} entry The nav entry.
+ * @param {object|null} current The nav entry of the page the list is on.
+ * @param {{app: string, collection: string}} target The row's app and collection.
+ * @return {boolean}
+ */
+function isOtherRecordPage(entry, current, target) {
+	if (entry === current || (current?.key && entry.key === current.key)) {
+		return false
+	}
+	return (
+		entry.contribution?.app === target.app
+		&& opensAsRecordPage(entry, target.collection)
 	)
 }
 
