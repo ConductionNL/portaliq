@@ -1337,7 +1337,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 	 * site-accessibility-statement REQ-SAS-001 and REQ-SAS-003: the run and
 	 * the portal's audit settings are declared.
 	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
 	 */
 	public function testTheMeasurementSchemaIsDeclared(): void {
 		$schemas = self::$register['components']['schemas'];

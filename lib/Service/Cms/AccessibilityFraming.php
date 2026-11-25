@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ use OCA\Portaliq\Kernel\StaffAction;
  * to measure. Only the same origin may frame it then, so a page elsewhere
  * still cannot.
  *
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
  */
 class AccessibilityFraming implements AccessibilityFramingInterface {
 
@@ -60,7 +60,7 @@ class AccessibilityFraming implements AccessibilityFramingInterface {
 	 *
 	 * @return ContentSecurityPolicy
 	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
 	 */
 	public function sitePolicy(IRequest $request): ContentSecurityPolicy {
 		$csp = new ContentSecurityPolicy();
@@ -84,7 +84,7 @@ class AccessibilityFraming implements AccessibilityFramingInterface {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
 	 */
 	public function allowsSelf(IRequest $request): bool {
 		if ((string)$request->getParam('measure', '') !== '1') {

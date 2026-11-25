@@ -11,8 +11,8 @@
   that cannot be framed is stored as not measured. Status A or B needs an
   audit; the server refuses the save without one.
 
-  @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
-  @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
+  @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+  @spec openspec/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
 -->
 <template>
 	<div class="portal-accessibility" data-testid="portal-accessibility">
@@ -132,6 +132,7 @@ import {
 import {
 	auditProblem,
 	AXE_TAGS,
+	axeVersionOf,
 	createAccessibilityApi,
 	frameAddress,
 	measureRun,
@@ -204,7 +205,7 @@ export default {
 	computed: {
 		/**
 		 * @return {string} The site's address on this instance.
-		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
 		 */
 		siteBase() {
 			return generateUrl('/apps/portaliq/site')
@@ -212,7 +213,7 @@ export default {
 
 		/**
 		 * @return {string} The public statement of this portal.
-		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
 		 */
 		statementAddress() {
 			return `${this.siteBase}?portal=${encodeURIComponent(this.slug)}&route=${encodeURIComponent('/toegankelijkheid')}`
@@ -220,7 +221,7 @@ export default {
 
 		/**
 		 * @return {string} The status the statement shows, in words.
-		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
 		 */
 		statusLine() {
 			const status = this.statement.status
@@ -246,7 +247,7 @@ export default {
 
 		/**
 		 * @return {Array<{value: string, label: string}>} The audit results.
-		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
 		 */
 		resultOptions() {
 			return [
@@ -260,7 +261,7 @@ export default {
 	},
 
 	/**
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
 	 */
 	created() {
 		this.api = createAccessibilityApi({
@@ -275,7 +276,7 @@ export default {
 	methods: {
 		/**
 		 * @param {object} view What the server answered.
-		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
 		 */
 		apply(view) {
 			this.statement = view?.statement || this.statement
@@ -292,7 +293,7 @@ export default {
 		},
 
 		/**
-		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
 		 */
 		async load() {
 			const result = await this.api.load(this.slug)
@@ -305,7 +306,7 @@ export default {
 		/**
 		 * @param {string} value An ISO date-time.
 		 * @return {string} The date in the browser's language.
-		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
 		 */
 		shortDate(value) {
 			const date = new Date(value)
@@ -315,7 +316,7 @@ export default {
 		},
 
 		/**
-		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
 		 */
 		async save() {
 			const problem = auditProblem(this.audit, new Date())
@@ -344,7 +345,7 @@ export default {
 		/**
 		 * @param {string} error The refusal.
 		 * @return {string} The refusal in words.
-		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
 		 */
 		auditMessage(error) {
 			const code = String(error).replace(/^audit_/, '')
@@ -357,7 +358,7 @@ export default {
 		/**
 		 * @param {string} type The note type.
 		 * @param {string} text The note.
-		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
 		 */
 		say(type, text) {
 			this.noticeType = type
@@ -367,19 +368,22 @@ export default {
 		/**
 		 * Measure every page and store the run.
 		 *
-		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
 		 */
 		async measure() {
 			this.measuring = true
 			this.progress = { done: 0, total: this.pages.length }
-			const axe = (await import('axe-core')).default
+			// The published file's text, not the source webpack's copy of
+			// axe-core rebuilds from a function that refers to the bundle's
+			// module wrapper, which does not exist inside the frame.
+			const source = (await import(/* webpackChunkName: "axe-source" */ 'axe-core/axe.min.js?raw')).default
 			const run = await measureRun(
 				this.pages,
 				{
-					axeVersion: axe.version,
+					axeVersion: axeVersionOf(source),
 					theme: String(this.objectData?.theme || ''),
 					open: (route) => this.openInFrame(route),
-					run: (root) => this.runInFrame(root, axe.source),
+					run: (root) => this.runInFrame(root, source),
 				},
 				(done, total) => {
 					this.progress = { done, total }
@@ -400,7 +404,7 @@ export default {
 		 *
 		 * @param {string} route The site route.
 		 * @return {Promise<Element>}
-		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
 		 */
 		openInFrame(route) {
 			this.closeFrame()
@@ -436,7 +440,7 @@ export default {
 		 * @param {Element} root The site root inside the frame.
 		 * @param {string} source axe-core's source.
 		 * @return {Promise<object>} axe-core's result.
-		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
 		 */
 		async runInFrame(root, source) {
 			const doc = root.ownerDocument
@@ -459,7 +463,7 @@ export default {
 		},
 
 		/**
-		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
 		 */
 		closeFrame() {
 			if (this.frame) {

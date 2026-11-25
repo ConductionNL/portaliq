@@ -46,7 +46,7 @@ interface AccessibilityMeasurementsInterface {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
 	 */
 	public function latest(string $slug): ?array;
 
@@ -58,7 +58,7 @@ interface AccessibilityMeasurementsInterface {
 	 *
 	 * @return list<string> Site routes, each once.
 	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
 	 */
 	public function pagesFor(array $portal): array;
 
@@ -69,7 +69,7 @@ interface AccessibilityMeasurementsInterface {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
 	 */
 	public function portalBySlug(string $slug): ?array;
 
@@ -86,7 +86,7 @@ interface AccessibilityMeasurementsInterface {
 	 *
 	 * @return array<string, mixed> `['error' => reason]`, or the saved portal.
 	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
 	 */
 	public function saveSettings(array $portal, array $audit, string $registerUrl, array $pages, DateTimeImmutable $now): array;
 
@@ -100,7 +100,7 @@ interface AccessibilityMeasurementsInterface {
 	 *
 	 * @return array<string, mixed>|null The stored measurement, or null when the write failed.
 	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
 	 */
 	public function store(array $portal, array $run, string $userId, DateTimeImmutable $now): ?array;
 }//end interface

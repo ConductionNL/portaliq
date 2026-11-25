@@ -14348,7 +14348,7 @@
 			"built": {
 				"state": "built",
 				"evidence": "lib/Service/Cms/AccessibilityStatement.php; lib/Service/Cms/AccessibilityMeasurements.php; lib/Service/Cms/AccessibilityRun.php; lib/Controller/AccessibilityController.php; src/site/components/AccessibilityStatementPage.vue",
-				"requirement": "openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md :: Each portal publishes a statement in the national model (REQ-SAS-002)",
+				"requirement": "openspec/specs/portaliq-cms/spec.md :: Each portal publishes a statement in the national model (REQ-SAS-002)",
 				"plan": "site-accessibility-statement",
 				"note": "Row added 2026-11-12 in the closing round: the open change site-accessibility-statement had no capability row (decision 395)."
 			},

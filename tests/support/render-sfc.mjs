@@ -68,6 +68,17 @@ function compile(file, stubs, dir) {
 		return match
 	})
 
+	// A lazy `import('<spec>')` of a stubbed specifier loads the stub too
+	// (PortalAccessibility imports axe-core's text lazily).
+	code = code.replace(/import\(\s*(?:\/\*[^*]*\*\/\s*)?['"]([^'"]+)['"]\s*\)/g, (match, spec) => {
+		if (!Object.hasOwn(stubs, spec)) {
+			return match
+		}
+		const stubFile = join(dir, `stub-${spec.replace(/[^a-z0-9]/gi, '_')}.mjs`)
+		writeFileSync(stubFile, stubs[spec])
+		return `import('${pathToFileURL(stubFile).href}')`
+	})
+
 	const out = join(dir, `${basename(file, '.vue')}-${id}.mjs`)
 	writeFileSync(out, code)
 	return out
