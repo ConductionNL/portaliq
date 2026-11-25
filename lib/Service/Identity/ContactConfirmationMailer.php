@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t02
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ use Throwable;
  * It goes to the account's confirmed address and to nobody else; without one,
  * or for a withdrawn (void) account, nothing is sent and nothing is claimed.
  *
- * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t02
  */
 class ContactConfirmationMailer implements ContactConfirmationMailerInterface {
 	/**
@@ -83,7 +83,7 @@ class ContactConfirmationMailer implements ContactConfirmationMailerInterface {
 	 *
 	 * @return bool True when a mail went out.
 	 *
-	 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t02
 	 */
 	public function afterCreate(array $subject, array $action, array $data): bool {
 		if (in_array(($action['confirmationMail'] ?? null), ConfirmationMailKeysInterface::TEMPLATES, true) === false) {

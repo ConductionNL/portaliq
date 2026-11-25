@@ -957,7 +957,7 @@ class ContributionControllerTest extends TestCase {
 	 * contact-page-question-form-and-not-found T02: after a stored create the
 	 * confirmation follow-on runs with the matched action and the stored values.
 	 *
-	 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t02
 	 */
 	public function testACreateHandsTheStoredValuesToTheConfirmationMail(): void {
 		$action = ['id' => 'ask', 'type' => 'create', 'register' => 'r1', 'schema' => 'ticket', 'fields' => ['title'], 'confirmationMail' => 'contact-confirmation'];
@@ -978,7 +978,7 @@ class ContributionControllerTest extends TestCase {
 	/**
 	 * A create that was not stored sends no confirmation.
 	 *
-	 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t02
 	 */
 	public function testAFailedCreateSendsNoConfirmation(): void {
 		$action = ['id' => 'ask', 'type' => 'create', 'register' => 'r1', 'schema' => 'ticket', 'fields' => ['title'], 'confirmationMail' => 'contact-confirmation'];

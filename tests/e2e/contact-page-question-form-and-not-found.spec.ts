@@ -21,7 +21,7 @@
  * runs in a fresh, non-admin context with an empty storage state; the base
  * URL comes from the environment through `tests/e2e/base-url.ts`.
  *
- * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#T06
+ * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#T06
  */
 
 import type { Page, Request } from '@playwright/test'

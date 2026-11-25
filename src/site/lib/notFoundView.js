@@ -12,7 +12,7 @@
  * @param {Array<{route?: string}>} pages The portal's published page summaries.
  * @param {string} route The route.
  * @return {boolean}
- * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t04
+ * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t04
  */
 export function hasPage(pages, route) {
 	const wanted = String(route || '').replace(/\/+$/, '') || '/'
@@ -36,7 +36,7 @@ export function hasPage(pages, route) {
  * @param {boolean} input.searchEnabled Whether the portal has search.
  * @param {(key: string, vars?: object) => string} input.t The translator.
  * @return {{links: Array<{route: string, label: string, kind: string}>, report: string, search: boolean}} The view.
- * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t04
+ * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t04
  */
 export function notFoundView({
 	contactRoute,

@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
  * contact-page-question-form-and-not-found T02: an action asks for a shipped
  * mail by name and names a whitelisted subject field; anything else is dropped.
  *
- * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t02
  */
 class ConfirmationMailKeysTest extends TestCase {
 

@@ -118,7 +118,7 @@ const WORDS = {
 }
 
 /**
- * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t04
+ * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t04
  */
 export default {
 	name: 'NotFoundPage',
@@ -156,7 +156,7 @@ export default {
 		 * live here, not in the shared catalogue, which the first-load entry carries.
 		 *
 		 * @return {(key: string) => string} The translator.
-		 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t04
+		 * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t04
 		 */
 		tr() {
 			const own = WORDS[pageLocale(this.locale)] || {}
@@ -164,7 +164,7 @@ export default {
 		},
 
 		/**
-		 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t04
+		 * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t04
 		 */
 		view() {
 			return notFoundView({
@@ -182,7 +182,7 @@ export default {
 	/**
 	 * Read the portal's pages when none were handed in.
 	 *
-	 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t05
 	 */
 	mounted() {
 		if (this.initialPages === null) {
@@ -197,7 +197,7 @@ export default {
 		 * could not confirm.
 		 *
 		 * @return {Promise<void>} Resolves when read.
-		 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t04
+		 * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t04
 		 */
 		async loadPages() {
 			try {
@@ -213,7 +213,7 @@ export default {
 		/**
 		 * @param {string} route An in-site route.
 		 * @return {string} Its address.
-		 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t04
+		 * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t04
 		 */
 		hrefFor(route) {
 			return this.hrefForRoute(route)
@@ -223,7 +223,7 @@ export default {
 		 * Hand a typed term to the shell, which opens the search page.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t04
+		 * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t04
 		 */
 		onSearch() {
 			const term = this.term.trim()

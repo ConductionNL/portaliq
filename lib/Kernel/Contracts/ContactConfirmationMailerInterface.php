@@ -49,7 +49,7 @@ interface ContactConfirmationMailerInterface {
 	 *
 	 * @return bool True when a mail went out.
 	 *
-	 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t02
 	 */
 	public function afterCreate(array $subject, array $action, array $data): bool;
 }//end interface

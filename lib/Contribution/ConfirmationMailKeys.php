@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t02
  */
 
 declare(strict_types=1);
@@ -33,7 +33,7 @@ use OCA\Portaliq\Kernel\Contracts\ConfirmationMailKeysInterface;
  * names the whitelisted field whose value the mail names; the question text
  * itself never goes in the mail.
  *
- * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t02
  */
 class ConfirmationMailKeys implements ConfirmationMailKeysInterface {
 
@@ -45,7 +45,7 @@ class ConfirmationMailKeys implements ConfirmationMailKeysInterface {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t02
 	 */
 	public function normalise(array $action, array $whitelist): array {
 		$mail    = ($action['confirmationMail'] ?? null);

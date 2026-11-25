@@ -101,7 +101,7 @@ const STRINGS = {
 }
 
 /**
- * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t01
+ * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t01
  */
 export default {
 	name: 'ContactForm',
@@ -137,7 +137,7 @@ export default {
 
 	computed: {
 		/**
-		 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t01
+		 * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t01
 		 */
 		words() {
 			return STRINGS[pageLocale(this.locale)] || STRINGS.nl
@@ -155,7 +155,7 @@ export default {
 		},
 
 		/**
-		 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t01
+		 * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t01
 		 */
 		api() {
 			if (this.apiOverride) {
@@ -182,7 +182,7 @@ export default {
 		 *
 		 * @return {string} The href.
 		 *
-		 * @spec openspec/changes/contact-question-form-names-its-action/specs/site-contact/spec.md#requirement-the-example-contact-page-follows-the-contact-board-req-scn-003
+		 * @spec openspec/specs/site-contact/spec.md#requirement-the-example-contact-page-follows-the-contact-board-req-scn-003
 		 */
 		questionsHref() {
 			if (typeof window === 'undefined') {
@@ -195,7 +195,7 @@ export default {
 	},
 
 	/**
-	 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t01
+	 * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t01
 	 */
 	mounted() {
 		if (this.signedIn) {
@@ -210,7 +210,7 @@ export default {
 		 * action's whitelist and audience are the server's.
 		 *
 		 * @return {Promise<void>} Resolves when found or missing.
-		 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t01
+		 * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t01
 		 */
 		async load() {
 			this.state = 'loading'
