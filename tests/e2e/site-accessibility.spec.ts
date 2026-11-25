@@ -547,7 +547,7 @@ test.describe('signed-in portal — accessibility', () => {
  * from the footer, the statement names the date of the measurement it rests
  * on, and the statement page itself passes the same axe check.
  *
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
  */
 test.describe('site renderer — accessibility statement', () => {
 	test('the statement is linked from the footer and lists the measurement date', async ({

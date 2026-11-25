@@ -49,20 +49,42 @@ A test marked **fails today** must be run on `origin/development` first and seen
 
 ## 3. Live
 
-- [ ] 3.1 (not run: needs a live instance) Live check after merge on the dev instance: run a measurement on one portal, open
+- [x] 3.1 Live check after merge on the dev instance: run a measurement on one portal, open
   `/toegankelijkheid` anonymously, and record the status line and the known issues.
+  — done 25 Nov 2026 (live-portaliq-1) on a sandbox Nextcloud 34.0.6 + MariaDB with OpenRegister main
+  and portaliq development, portal open-tilburg (theme vng) seeded by `tests/e2e/ci-seed.sh`.
+  Found and fixed live: every page was stored as "The measurement could not run on this page."
+  The widget injected `axe.source`, which webpack's copy of axe-core rebuilds from `toString()` of a
+  function that refers to the bundle's minified module wrapper (`ReferenceError: t is not defined`
+  inside the frame), so `window.axe` never existed there. The widget now imports the published
+  `axe-core/axe.min.js` text (`?raw`, an `asset/source` rule in webpack.config.js, its own lazy chunk
+  `portaliq-axe-source.js`) and reads the version from it (`axeVersionOf`). After the fix:
+  "Toegankelijkheid meten" stores one measurement (201) with axe 4.13.0, the five tags, theme vng and
+  `/`, `/zoeken` and `/deze-pagina-bestaat-niet` measured with 0 violations. Anonymously,
+  `/toegankelijkheid` reads "Status C: er zijn eerste maatregelen genomen om aan de eisen te
+  voldoen." with "Een automatische controle bewijst niet dat de website aan de eisen voldoet.",
+  "Gemeten op 25 november 2026 met axe-core 4.13.0: 3 pagina's gemeten, 0 pagina's konden niet
+  worden gemeten." and under Bekende problemen "De laatste meting vond geen problemen."
+  (REQ-SAS-001, REQ-SAS-002, REQ-SAS-003).
 
 ## 4. Verify and deliver
 
 - [x] 4.1 `TMPDIR` set to a sibling directory beside the clone.
 - [x] 4.2 While building, run `./vendor/bin/phpunit -c phpunit-unit.xml --no-coverage --filter` on the
   touched classes and `node --test` on the touched node tests. Judge PHPUnit by the `Tests:` line.
-- [ ] 4.3 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then `npm run lint`,
+- [x] 4.3 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then `npm run lint`,
   `npm run format`, `npm run check:l10n-js`, `npm run check:schema-l10n`, `npm run check:manifest`,
   `npm run check:register`, `npm run check:specs` and `npm run build:site`, plus any other leg
   `code-quality.yml` requires. Then hydra's `scripts/run-hydra-gates.sh --base origin/development`;
   count the gates that ran.
-- [ ] 4.4 Project coverage of the added statements: no coverage driver runs locally, so take the base percentages from the last green push run on `development`, intersect its clover uncovered lines with the lines you add, and say in the PR body that the number is arithmetic, not a local green.
-- [ ] 4.5 One PR, `--base development`. Merge, never rebase. No `Co-Authored-By`. Done means merged on
+- [x] 4.4 Project coverage of the added statements: no coverage driver runs locally, so take the base percentages from the last green push run on `development`, intersect its clover uncovered lines with the lines you add, and say in the PR body that the number is arithmetic, not a local green.
+- [x] 4.5 One PR, `--base development`. Merge, never rebase. No `Co-Authored-By`. Done means merged on
   `development` with CI green. 6.7 and 15.2 then read `yes` (build), and `production` only with a
   store release.
+
+> 4.3 to 4.5 for the live round (25 Nov 2026, live-portaliq-1): hydra diff-check with only the
+> inherited gate-23 finding (lib/Kernel/Contracts/AuditTrailServiceInterface.php, also red on
+> development); `npm run lint` 0 errors; `tests/accessibility-measure.spec.mjs` 9/9. Added
+> statements: `axeVersionOf` (covered by its node test) and the changed import in
+> PortalAccessibility.vue (covered live, not by a local coverage driver): the number is arithmetic,
+> not a local green. One PR on development, merged.

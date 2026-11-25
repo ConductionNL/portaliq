@@ -1503,7 +1503,7 @@ export default {
 		 * @return {boolean} Whether the generated accessibility statement is on
 		 *   screen: its route, with no authored page there.
 		 *
-		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
 		 */
 		statementRoute() {
 			return showsGeneratedStatement(this.route, {
@@ -1601,7 +1601,7 @@ export default {
 		 * @return {Array} `{label, href}` entries.
 		 *
 		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-footer-must-be-a-block-whose-bands-are-styled-by-role-req-ptb-005
-		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
 		 */
 		legalLinks() {
 			// Every portal links its accessibility statement from the footer

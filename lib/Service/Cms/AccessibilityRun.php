@@ -16,7 +16,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ use OCA\Portaliq\Kernel\Contracts\AccessibilityRunInterface;
  * that was not measured keeps its reason and loses any violations, so it can
  * never read as a page without findings.
  *
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
  */
 class AccessibilityRun implements AccessibilityRunInterface {
 
@@ -67,7 +67,7 @@ class AccessibilityRun implements AccessibilityRunInterface {
 	 *
 	 * @return array<string, mixed> `['error' => reason]`, or the run's fields.
 	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
 	 */
 	public function normalise(string $axeVersion, array $tags, string $theme, array $pages): array {
 		$axeVersion = trim($axeVersion);

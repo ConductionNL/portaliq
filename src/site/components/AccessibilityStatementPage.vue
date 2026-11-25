@@ -9,7 +9,7 @@
   line comes from the server's statement, which follows the latest
   measurement and never claims a status beyond the recorded audit.
 
-  @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+  @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
 -->
 <template>
 	<section
@@ -191,7 +191,7 @@ export default {
 	computed: {
 		/**
 		 * @return {string} The website's name.
-		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
 		 */
 		website() {
 			return this.statement.website || this.portalName
@@ -199,7 +199,7 @@ export default {
 
 		/**
 		 * @return {object} The page's lines.
-		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
 		 */
 		lines() {
 			return statementLines(this.statement, this.t, this.formatDate)
@@ -208,7 +208,7 @@ export default {
 		/**
 		 * @return {string} The status box's kind: `ok` for status A, `info`
 		 *   without a status, `warning` for any other.
-		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
 		 */
 		statusKind() {
 			const status = this.statement.status
@@ -221,7 +221,7 @@ export default {
 
 	watch: {
 		/**
-		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
 		 */
 		locale() {
 			this.load()
@@ -229,7 +229,7 @@ export default {
 	},
 
 	/**
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
 	 */
 	mounted() {
 		this.load()
@@ -237,7 +237,7 @@ export default {
 
 	methods: {
 		/**
-		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
 		 */
 		async load() {
 			try {
@@ -256,7 +256,7 @@ export default {
 		/**
 		 * @param {string} iso A date or date-time.
 		 * @return {string} The date in the visitor's language.
-		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
 		 */
 		formatDate(iso) {
 			const date = new Date(iso)

@@ -189,6 +189,17 @@ webpackConfig.module.rules.push({
 	use: ['style-loader', 'css-loader', 'sass-loader'],
 })
 
+// `import text from '<file>?raw'` hands over the file's text as a string. The
+// accessibility measurement injects axe-core into a framed site page; its
+// `axe.source` (built from `toString()` of webpack's copy) refers to the
+// bundle's minified module wrapper and throws in the frame, so the
+// measurement injects the published axe.min.js text instead
+// (site-accessibility-statement 3.1, seen live 25 Nov 2026).
+webpackConfig.module.rules.push({
+	resourceQuery: /raw/,
+	type: 'asset/source',
+})
+
 // Replace plugins to avoid duplicate VueLoaderPlugin (base config also registers one).
 // CRITICAL: re-add the appName / appVersion DefinePlugin entries — without them
 // every @nextcloud/vue widget mount logs `[ERROR] @nextcloud/vue: The library

@@ -19,6 +19,7 @@ import { fileURLToPath } from 'node:url'
 import {
 	auditProblem,
 	AXE_TAGS,
+	axeVersionOf,
 	createAccessibilityApi,
 	frameAddress,
 	measurePage,
@@ -218,7 +219,7 @@ test('the calls name the portal and report a refusal in its own words', async ()
 
 test('axe-core is a lazy admin chunk and never enters the site', () => {
 	const widget = read('src/widgets/PortalAccessibility.vue')
-	assert.match(widget, /import\('axe-core'\)/, 'the widget loads axe-core lazily')
+	assert.match(widget, /import\([^)]*'axe-core\/axe\.min\.js\?raw'\)/, 'the widget loads axe-core lazily, as the published file text')
 	assert.doesNotMatch(
 		widget,
 		/^import [^\n]*axe-core/m,
@@ -235,4 +236,17 @@ test('the widget sits on the portal page and is registered', () => {
 	// The portal page's Instellingen tab (a sections widget) places it.
 	assert.ok(pageDraws(detail.config, 'PortalAccessibility'))
 	assert.match(read('src/registry.js'), /PortalAccessibility: \{/)
+})
+
+test('the frame gets the published axe-core text, not a rebuilt function source', () => {
+	// Seen live 25 Nov 2026: `axe.source` of webpack's copy is `toString()` of a
+	// function that refers to the bundle's module wrapper (`t is not defined`
+	// in the frame), so every page was stored as "could not run".
+	const widget = read('src/widgets/PortalAccessibility.vue')
+	assert.doesNotMatch(widget, /axe\.source/)
+	assert.match(read('webpack.config.js'), /resourceQuery: \/raw\/,\s*type: 'asset\/source'/)
+	assert.equal(axeVersionOf('/*! axe v4.13.0\n * Copyright (c) 2015 - 2026 Deque Systems, Inc.'), '4.13.0')
+	assert.equal(axeVersionOf('!function e(t){var o=o||{},i=(o.version="4.13.0",1)}'), '4.13.0', 'the bundled text, without its banner')
+	assert.equal(axeVersionOf('function(){}'), '')
+	assert.equal(axeVersionOf(undefined), '')
 })
