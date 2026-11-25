@@ -30,6 +30,7 @@ class DestinationLookupTest extends TestCase {
 	 */
 	private array $rows = [
 		[
+			'id' => '3c47d035-e556-4ae9-bbad-4d668e097609',
 			'identifier' => '2026-0042',
 			'externalReference' => 'AANVRAAG-ABC12345',
 			'portalSubject' => 'sub-123',
@@ -70,6 +71,22 @@ class DestinationLookupTest extends TestCase {
 		$this->assertSame('2026-10-11T09:00:00+00:00', $status['submittedAt']);
 		$this->assertEqualsCanonicalizing(['identifier', 'receivedAt', 'termStartsAt', 'deadline'], array_keys($status['confirmation']));
 	}//end testTheStatusNamesTheCaseAndTheConfirmationMoments()
+
+	/**
+	 * OpenRegister answers the object's uuid as the reference when the case
+	 * carries none of its own: the reference page finds the case by it, for its
+	 * own subject only.
+	 *
+	 * @return void
+	 */
+	public function testTheUuidTheSubmitAnsweredFindsTheCaseForItsOwnSubjectOnly(): void {
+		$found = $this->lookup()->find(portal: 'gemeente-x', reference: '3C47D035-E556-4AE9-BBAD-4D668E097609', subjectRef: 'sub-123');
+
+		$this->assertNotNull($found);
+		$this->assertSame('2026-0042', $found['object']['identifier']);
+		$this->assertNull($this->lookup()->find(portal: 'gemeente-x', reference: '3c47d035-e556-4ae9-bbad-4d668e097609', subjectRef: 'sub-999'));
+		$this->assertNull($this->lookup()->find(portal: 'gemeente-x', reference: '3c47d035-e556-4ae9-bbad-4d668e097609'));
+	}//end testTheUuidTheSubmitAnsweredFindsTheCaseForItsOwnSubjectOnly()
 
 	public function testNothingIsFoundWithoutAPortalOrAReference(): void {
 		$this->assertNull($this->lookup()->find(portal: '', reference: 'AANVRAAG-ABC12345'));

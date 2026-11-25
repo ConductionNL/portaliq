@@ -50,6 +50,11 @@ class DestinationLookup implements DestinationLookupInterface {
 	public const EARLIER_REFERENCE = 'externalReference';
 
 	/**
+	 * How many of a subject's own rows the uuid reference is looked for in.
+	 */
+	private const OWN_ROWS = 200;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param PortalFormBindingResolver $bindings The portal's published bindings.
@@ -242,12 +247,39 @@ class DestinationLookup implements DestinationLookupInterface {
 		$schema      = $entry['schema'];
 
 		$subjectField = trim((string)($entry['binding']['destination']['subjectField'] ?? ''));
-		$own          = $this->marked(schema: $schema, marker: 'reference');
-		if ($subjectRef === '' || $subjectField === '' || $own === []) {
+		if ($subjectRef === '' || $subjectField === '') {
 			return null;
 		}
 
-		$row = $this->first(
+		$row = $this->byMarkedReference(destination: $destination, schema: $schema, subjectField: $subjectField, subjectRef: $subjectRef, reference: $reference)
+			?? $this->byUuidReference(destination: $destination, subjectField: $subjectField, subjectRef: $subjectRef, reference: $reference);
+		if ($this->isNotTheSubjects(row: $row, subjectField: $subjectField, subjectRef: $subjectRef) === true) {
+			return null;
+		}
+
+		return ['object' => $row, 'binding' => $entry['binding'], 'schema' => $schema];
+	}//end byOwnReference()
+
+	/**
+	 * The subject's row whose reference property holds the reference, or null.
+	 *
+	 * @param array<string, string> $destination  The destination register and schema.
+	 * @param array<string, mixed>  $schema       The destination schema.
+	 * @param string                $subjectField The binding's subject property.
+	 * @param string                $subjectRef   The signed-in subject.
+	 * @param string                $reference    The reference.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 */
+	private function byMarkedReference(array $destination, array $schema, string $subjectField, string $subjectRef, string $reference): ?array {
+		$own = $this->marked(schema: $schema, marker: 'reference');
+		if ($own === []) {
+			return null;
+		}
+
+		return $this->first(
 			rows: $this->reader->readCollection(
 				register: $destination['register'],
 				schema: $destination['schema'],
@@ -259,12 +291,57 @@ class DestinationLookup implements DestinationLookupInterface {
 			property: $own[0],
 			value: $reference
 		);
-		if ($this->isNotTheSubjects(row: $row, subjectField: $subjectField, subjectRef: $subjectRef) === true) {
+	}//end byMarkedReference()
+
+	/**
+	 * The subject's row whose uuid is the reference, or null.
+	 *
+	 * OpenRegister's form submit answers the destination's reference property,
+	 * or the object's uuid when that property is empty or absent. A resident
+	 * then holds the uuid, and the reference page has to find the case by it
+	 * (found live, 25 Nov 2026: a registered submit's reference answered 404).
+	 * Only the subject's own rows are read.
+	 *
+	 * @param array<string, string> $destination  The destination register and schema.
+	 * @param string                $subjectField The binding's subject property.
+	 * @param string                $subjectRef   The signed-in subject.
+	 * @param string                $reference    The reference.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 */
+	private function byUuidReference(array $destination, string $subjectField, string $subjectRef, string $reference): ?array {
+		if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $reference) !== 1) {
 			return null;
 		}
 
-		return ['object' => $row, 'binding' => $entry['binding'], 'schema' => $schema];
-	}//end byOwnReference()
+		$rows = $this->reader->readCollection(
+			register: $destination['register'],
+			schema: $destination['schema'],
+			scopeField: $subjectField,
+			subjectRef: $subjectRef,
+			limit: self::OWN_ROWS
+		);
+		foreach ($rows as $row) {
+			if (is_array($row) === true && strcasecmp($this->uuidOf(row: $row), $reference) === 0) {
+				return $row;
+			}
+		}
+
+		return null;
+	}//end byUuidReference()
+
+	/**
+	 * The uuid of a row as the reader returns it.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return string
+	 */
+	private function uuidOf(array $row): string {
+		return (string)($row['id'] ?? $row['uuid'] ?? ($row['@self']['id'] ?? ''));
+	}//end uuidOf()
 
 	/**
 	 * Whether a row read is absent or not the signed-in subject's.
