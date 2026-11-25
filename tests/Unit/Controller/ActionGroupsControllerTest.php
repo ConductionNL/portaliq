@@ -25,7 +25,7 @@ use ReflectionMethod;
 /**
  * The rights per group, for the admin rights page (board PtBeheerdersrechten).
  *
- * @spec openspec/changes/admin-rights-page/specs/portal-admin-roles/spec.md#requirement-an-administrator-reads-the-rights-per-group-req-arp-001
+ * @spec openspec/specs/portal-admin-roles/spec.md#requirement-an-administrator-reads-the-rights-per-group-req-arp-001
  */
 class ActionGroupsControllerTest extends TestCase {
 	/**

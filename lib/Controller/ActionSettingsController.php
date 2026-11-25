@@ -102,7 +102,7 @@ class ActionSettingsController extends Controller {
 	 *       instance administrator may see it; Nextcloud checks it before this
 	 *       method runs.
 	 *
-	 * @spec openspec/changes/admin-rights-page/specs/portal-admin-roles/spec.md#requirement-an-administrator-reads-the-rights-per-group-req-arp-001
+	 * @spec openspec/specs/portal-admin-roles/spec.md#requirement-an-administrator-reads-the-rights-per-group-req-arp-001
 	 */
 	public function byGroup(): JSONResponse {
 		$names = array_column($this->groups->availableGroups(), 'label', 'id');
