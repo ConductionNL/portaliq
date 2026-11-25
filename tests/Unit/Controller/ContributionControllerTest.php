@@ -1270,16 +1270,22 @@ class ContributionControllerTest extends TestCase {
 	public function testActionWithDeclaredFieldsAlsoForwardsItsTaskField(): void {
 		$aggregate = $this->aggregate(
 			actions: [
-				['id' => 'completeChecklistTask', 'endpoint' => '/apps/demo/api/portal/checklist', 'method' => 'POST', 'fields' => ['reason'], 'taskField' => 'title'],
+				[
+					'id' => 'completeChecklistTask',
+					'endpoint' => '/apps/demo/api/portal/checklist',
+					'method' => 'POST',
+					'fields' => ['reason'],
+					'taskField' => 'title',
+				],
 			]
 		);
 
 		$captured = [];
-		$response = $this->createMock(IResponse::class);
-		$response->method('getBody')->willReturn('{}');
-		$response->method('getStatusCode')->willReturn(200);
+		$response = $this->createMock(originalClassName: IResponse::class);
+		$response->method('getBody')->willReturn(value: '{}');
+		$response->method('getStatusCode')->willReturn(value: 200);
 
-		$client = $this->createMock(IClient::class);
+		$client = $this->createMock(originalClassName: IClient::class);
 		$client->method('post')->willReturnCallback(
 			function (string $uri, array $options) use (&$captured, $response) {
 				$captured = $options;
@@ -1287,16 +1293,16 @@ class ContributionControllerTest extends TestCase {
 			}
 		);
 
-		$clientService = $this->createMock(IClientService::class);
-		$clientService->method('newClient')->willReturn($client);
+		$clientService = $this->createMock(originalClassName: IClientService::class);
+		$clientService->method('newClient')->willReturn(value: $client);
 
 		// The request fixture carries 'title' => 'X': named as the task field,
 		// it is forwarded; the undeclared 'claims' still is not.
 		$controller = $this->controller(aggregate: $aggregate, clientService: $clientService);
-		$result = $controller->action('portaliq', 'completeChecklistTask');
+		$result = $controller->action(appId: 'portaliq', actionId: 'completeChecklistTask');
 
-		$this->assertSame(200, $result->getStatus());
-		$this->assertSame('{"title":"X"}', $captured['body']);
+		$this->assertSame(expected: 200, actual: $result->getStatus());
+		$this->assertSame(expected: '{"title":"X"}', actual: $captured['body']);
 
 	}//end testActionWithDeclaredFieldsAlsoForwardsItsTaskField()
 
