@@ -738,10 +738,11 @@ export default {
 
 		/**
 		 * Whether a published table carries a view. The views and their
-		 * drawing load on demand, only then (REQ-DSV-003).
+		 * drawing load on demand, only then (REQ-DSV-003 of the
+		 * dataset-views-on-the-public-page change, which lives outside this repo).
 		 *
 		 * @return {boolean} Whether the data section is drawn.
-		 * @spec openspec/changes/dataset-views-on-the-public-page/specs/open-data-tables/spec.md#requirement-the-public-page-draws-each-view-and-offers-its-data-as-a-table-req-dsv-003
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
 		 */
 		hasDatasetViews() {
 			const tables = this.publication?.tables
