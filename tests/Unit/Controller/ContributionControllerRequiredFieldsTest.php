@@ -192,6 +192,32 @@ class ContributionControllerRequiredFieldsTest extends TestCase {
 	}//end testARefusalOfAnotherFieldStaysAWriteFailure()
 
 	/**
+	 * A refusal by the record's own app (its creating hook stopped the write)
+	 * reads as no longer possible: 409 `refused`, none of the app's text, even
+	 * when that text would name a written field.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/site-forms/spec.md#requirement-a-refusal-by-the-records-own-app-must-read-as-no-longer-possible-req-orr-001
+	 */
+	public function testARefusalByTheOwningAppIsNoLongerPossible(): void {
+		$writer = $this->createMock(originalClassName: PortalObjectWriter::class);
+		$writer->expects($this->once())->method('createObject')->willReturn(null);
+		$writer->method('lastRefusedByOwner')->willReturn(true);
+		$writer->method('lastFailure')->willReturn("Property 'notes' is closed for reactions");
+		$controller = $this->controller(
+			params: ['actionId' => 'bookConferenceSlot', 'learnerRef' => 'vera-1', 'slotId' => 'slot-9', 'notes' => 'x'],
+			action: $this->booking(),
+			writer: $writer
+		);
+
+		$response = $controller->create('learniq', 'conference-signup');
+
+		$this->assertSame(expected: 409, actual: $response->getStatus());
+		$this->assertSame(expected: ['error' => 'refused'], actual: $response->getData());
+	}//end testARefusalByTheOwningAppIsNoLongerPossible()
+
+	/**
 	 * An anonymous create (a landing page form) is held to the same rule.
 	 *
 	 * @return void

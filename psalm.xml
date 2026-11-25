@@ -93,6 +93,7 @@
                 <referencedClass name="OCA\OpenRegister\Event\ObjectUpdatingEvent"/>
                 <referencedClass name="OCA\OpenRegister\Event\ObjectUpdatedEvent"/>
                 <referencedClass name="OCA\OpenRegister\Event\ObjectDeletingEvent"/>
+                <referencedClass name="OCA\OpenRegister\Event\ObjectLeavingEvent"/>
                 <referencedClass name="OCA\OpenRegister\Event\ObjectDeletedEvent"/>
                 <referencedClass name="OCA\OpenRegister\Event\FormDestinationDependentsEvent"/>
                 <referencedClass name="OCA\OpenRegister\Service\Form\FormDependent"/>

@@ -75,14 +75,30 @@ class PortalFilteredRowsGoldenTest extends TestCase {
 	public function testTheQueriesAndRowsAreAsRecorded(): void {
 		$rows = new PortalFilteredRows($this->createMock(LoggerInterface::class));
 
+		// A forward read asks for its targets by id first.
 		$forward = self::objects(pages: [[['id' => 'a'], ['id' => 'b']]]);
 		$this->assertSame(
 			[['id' => 'a'], ['id' => 'b']],
 			$rows->outerRows($forward, 'lesson', 'student', ['s1' => true, 's2' => true], 'id', 5, ['status' => 'open', '' => 'x', 3 => 'y', 'student' => 'z'])
 		);
+		$byId = ['filters' => ['status' => 'open', 'student' => 'z', 'id' => ['s1', 's2']], 'limit' => 5, 'offset' => 0];
 		$this->assertSame(
-			[['config' => ['filters' => ['status' => 'open', 'student' => 'z'], 'limit' => 5, 'offset' => 0], 'rbac' => false, 'mt' => false]],
-			$forward->calls
+			expected: [['config' => $byId, 'rbac' => false, 'mt' => false]],
+			actual: $forward->calls
+		);
+
+		// An OpenRegister that answers nothing for an id filter is read as before.
+		$unfiltered = self::objects(pages: [[], [['id' => 'a'], ['id' => 'b']]]);
+		$this->assertSame(
+			expected: [['id' => 'a'], ['id' => 'b']],
+			actual: $rows->outerRows($unfiltered, 'lesson', 'student', ['s1' => true], 'id', 5, ['status' => 'open'])
+		);
+		$this->assertSame(
+			expected: [
+				['filters' => ['status' => 'open', 'id' => ['s1']], 'limit' => 5, 'offset' => 0],
+				['filters' => ['status' => 'open'], 'limit' => 5, 'offset' => 0],
+			],
+			actual: array_column(array: $unfiltered->calls, column_key: 'config')
 		);
 
 		$reverse = self::objects(pages: [[['id' => 'a'], ['uuid' => 'b']], [['id' => 'a'], ['id' => 'c']], [['id' => 'd']]]);
