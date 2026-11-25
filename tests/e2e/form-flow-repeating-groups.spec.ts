@@ -39,9 +39,10 @@ import type {
 
 import { expect, test } from '@playwright/test'
 import { BASE_URL } from './base-url.ts'
-import { SITE_PORTAL, siteAddress } from './portal-nav.ts'
+import { PORTAL_API, seedSiteSession, SITE_PORTAL, siteAddress } from './portal-nav.ts'
 
-const OR_OBJECTS_BASE = '/apps/openregister/api/objects'
+const OR_API = '/apps/openregister/api'
+const OR_OBJECTS_BASE = `${OR_API}/objects`
 const ADMIN = Buffer.from(process.env.PORTALIQ_E2E_ADMIN || 'admin:admin').toString(
 	'base64',
 )
@@ -49,6 +50,17 @@ const ADMIN_HEADERS = { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true
 const EMPTY_STATE = { cookies: [], origins: [] }
 
 const STAMP = Date.now()
+
+/** The organisation the resident's session belongs to: CI seeds `dev-org`. */
+const ORGANISATION = process.env.PORTALIQ_E2E_ORGANISATION || 'dev-org'
+
+/**
+ * The register and schema the street party's answers go to. Every portal
+ * submit is an anonymous write (portaliq's DestinationSubmit), so the binding
+ * only publishes against a schema that lets a public visitor create; the spec
+ * makes its own rather than opening a product schema to anonymous writes.
+ */
+const DESTINATION = `e2e-straatfeest-${STAMP}`
 const ROUTE = `aanvragen/straatfeest-${STAMP}`
 const PAGE_ROUTE = `/e2e/straatfeest-${STAMP}`
 
@@ -95,12 +107,46 @@ async function seed(
 	created.push(`${register}/${schema}/${id}`)
 }
 
+/** The destination's schema and register ids, to delete afterwards. */
+const destinationIds: { schema?: number, register?: number } = {}
+
+/**
+ * The register and schema the answers go to: a public visitor may create,
+ * only an administrator may read.
+ *
+ * @param request The request fixture.
+ */
+async function seedDestination(request: APIRequestContext): Promise<void> {
+	const schema = await request.post(`${OR_API}/schemas`, {
+		headers: ADMIN_HEADERS,
+		data: {
+			title: `E2E straatfeest ${STAMP}`,
+			slug: DESTINATION,
+			properties: {
+				caseType: { type: 'string' },
+				aanvrager: { type: 'string' },
+				bewoners: { type: 'array', items: { type: 'object' } },
+			},
+			authorization: { create: ['public'], read: ['admin'] },
+		},
+	})
+	expect(schema.ok(), `the destination schema must be created: ${await schema.text()}`).toBeTruthy()
+	destinationIds.schema = (await schema.json()).id
+	const register = await request.post(`${OR_API}/registers`, {
+		headers: ADMIN_HEADERS,
+		data: { title: `E2E straatfeest ${STAMP}`, slug: DESTINATION, schemas: [destinationIds.schema] },
+	})
+	expect(register.ok(), `the destination register must be created: ${await register.text()}`).toBeTruthy()
+	destinationIds.register = (await register.json()).id
+}
+
 /**
  * The street party form, its binding and the page that shows it.
  *
  * @param request The request fixture.
  */
 async function seedStreetParty(request: APIRequestContext): Promise<void> {
+	await seedDestination(request)
 	const caseType = `straatfeest-${STAMP}`
 	await seed(request, 'registrationForm', {
 		caseType,
@@ -109,6 +155,8 @@ async function seedStreetParty(request: APIRequestContext): Promise<void> {
 		schema: 'portalCase',
 		typeProperty: 'caseType',
 		typeValue: caseType,
+		// Open to visitors: a form that is not public asks for a sign-in first.
+		isPublic: true,
 		audience: 'client',
 		name: `${caseType}-client`,
 		status: 'published',
@@ -148,7 +196,7 @@ async function seedStreetParty(request: APIRequestContext): Promise<void> {
 		audience: 'client',
 		formRegister: 'buildiq',
 		formSchema: 'registrationForm',
-		destination: { register: 'portaliq', schema: 'portalCase' },
+		destination: { register: DESTINATION, schema: DESTINATION },
 		intakeKind: 'hosted',
 		status: 'published',
 	})
@@ -178,7 +226,9 @@ async function seedStreetParty(request: APIRequestContext): Promise<void> {
 }
 
 /**
- * A page in a fresh anonymous context, opened on the form.
+ * A page in a fresh context, signed in as a resident through the debug-gated
+ * dev login, opened on the form. A portal form is only served to a portal
+ * session (PortalAuthMiddleware): an anonymous visitor is asked to sign in.
  *
  * @param browser The browser fixture.
  * @return The page.
@@ -188,7 +238,12 @@ async function openForm(browser: Browser): Promise<Page> {
 		baseURL: BASE_URL,
 		storageState: EMPTY_STATE,
 	})
+	const login = await context.request.post(`${PORTAL_API}/session/dev-login`, {
+		data: { subjectRef: `e2e-straatfeest-${STAMP}`, audience: 'client', organisation: ORGANISATION },
+	})
+	expect(login.ok(), 'dev-login must be enabled on the target instance (app config portaliq dev_login_enabled = yes)').toBeTruthy()
 	const page = await context.newPage()
+	await seedSiteSession(page, (await login.json()).token as string)
 	await page.goto(siteAddress(PAGE_ROUTE))
 	await expect(page.getByTestId('intake-form')).toBeVisible({ timeout: 60_000 })
 	return page
@@ -256,6 +311,18 @@ test.describe('form-flow-repeating-groups-calculations-and-decisions', () => {
 			await request.delete(`${OR_OBJECTS_BASE}/${ref}`, {
 				headers: ADMIN_HEADERS,
 			})
+		}
+		const sent = await request.get(`${OR_OBJECTS_BASE}/${DESTINATION}/${DESTINATION}?_limit=100`, { headers: ADMIN_HEADERS })
+		if (sent.ok()) {
+			for (const row of ((await sent.json()).results ?? []) as Array<{ id?: string }>) {
+				await request.delete(`${OR_OBJECTS_BASE}/${DESTINATION}/${DESTINATION}/${row.id}`, { headers: ADMIN_HEADERS })
+			}
+		}
+		if (destinationIds.register) {
+			await request.delete(`${OR_API}/registers/${destinationIds.register}`, { headers: ADMIN_HEADERS })
+		}
+		if (destinationIds.schema) {
+			await request.delete(`${OR_API}/schemas/${destinationIds.schema}`, { headers: ADMIN_HEADERS })
 		}
 	})
 
