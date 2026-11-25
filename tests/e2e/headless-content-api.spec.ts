@@ -18,7 +18,9 @@
  * metrics route for the second throttle discriminator.
  */
 
-import { expect, test, request as playwrightRequest, type APIRequestContext } from '@playwright/test'
+import type { APIRequestContext } from '@playwright/test'
+
+import { expect, request as playwrightRequest, test } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { resolveBaseURL } from './base-url.ts'
