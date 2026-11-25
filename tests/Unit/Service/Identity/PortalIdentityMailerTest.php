@@ -304,7 +304,16 @@ class PortalIdentityMailerTest extends TestCase {
 			$this->mailed['languages'][] = (string)$lang;
 			$l10n = $this->createMock(IL10N::class);
 			$l10n->method('t')->willReturnCallback(static fn (string $text, $parameters = []): string => vsprintf($text, (array)$parameters));
-			$l10n->method('l')->willReturnCallback(static fn (string $type, $value): string => $value->format('j F Y'));
+			// As Nextcloud's L10N::l(): only a mutable \DateTime is read as a moment.
+			$l10n->method('l')->willReturnCallback(
+				static function (string $type, $value): string {
+					if ($value instanceof \DateTime) {
+						return $value->format('j F Y');
+					}
+
+					return gmdate('j F Y', (int)$value);
+				}
+			);
 			return $l10n;
 		});
 

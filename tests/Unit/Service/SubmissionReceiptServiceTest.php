@@ -137,7 +137,7 @@ class SubmissionReceiptServiceTest extends TestCase {
 	 * The receipt names the moment in words of the portal's language, in the
 	 * instance's time zone and to the minute; the stored moment stays ISO.
 	 *
-	 * @spec openspec/changes/receipt-date-reads-in-the-portals-language/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-names-the-moment-in-words-of-the-portals-language
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-names-the-moment-in-words-of-the-portals-language
 	 */
 	public function testTheReceiptNamesTheMomentInTheReadersWords(): void {
 		$widths = [];
@@ -146,7 +146,14 @@ class SubmissionReceiptServiceTest extends TestCase {
 		$l10n->method('l')->willReturnCallback(
 			static function (string $type, $data, array $options = []) use (&$widths) {
 				$widths[] = $type . ':' . ($options['width'] ?? '');
-				return $data instanceof DateTimeInterface ? $data->format('j-n-Y H:i e') : false;
+				// As Nextcloud's L10N::l(): only a mutable \DateTime is read as a
+				// moment; anything else is cast to an integer (a DateTimeImmutable
+				// became 1 January 1970, seen live 25 Nov 2026).
+				if ($data instanceof \DateTime) {
+					return $data->format('j-n-Y H:i e');
+				}
+
+				return gmdate('j-n-Y H:i e', (int)$data);
 			}
 		);
 		$factory = $this->createMock(IFactory::class);
@@ -177,7 +184,7 @@ class SubmissionReceiptServiceTest extends TestCase {
 	/**
 	 * A moment the language cannot write, or one it fails on, is named as stored.
 	 *
-	 * @spec openspec/changes/receipt-date-reads-in-the-portals-language/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-names-the-moment-in-words-of-the-portals-language
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-names-the-moment-in-words-of-the-portals-language
 	 */
 	public function testAMomentTheLanguageCannotWriteIsNamedAsStored(): void {
 		foreach ([static fn () => false, static fn () => throw new RuntimeException('no calendar data')] as $answer) {

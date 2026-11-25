@@ -17,7 +17,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * A create action may name the field the server stamps with the moment it was made.
  *
- * @spec openspec/changes/a-create-stamps-the-moment-it-was-made/specs/portal-contribution-contract/spec.md#requirement-a-create-action-may-name-the-field-that-holds-when-it-was-made
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-create-action-may-name-the-field-that-holds-when-it-was-made
  */
 class CreateBodyTest extends TestCase {
 	/**

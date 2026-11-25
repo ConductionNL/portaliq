@@ -45,7 +45,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use DateTimeImmutable;
+use DateTime;
 use DateTimeZone;
 use OCA\Portaliq\Kernel\Contracts\SubmissionReceiptServiceInterface;
 use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
@@ -115,7 +115,7 @@ class SubmissionReceiptService implements SubmissionReceiptServiceInterface {
 	 * @param IDateTimeZone|null $timeZone The instance's time zone, in which the receipt names the moment.
 	 * @param SubmissionReceiptPdf|null $pdfs Reads a receipt back and renders its PDF (REQ-CRG-005).
 	 *
-	 * @spec openspec/changes/receipt-date-reads-in-the-portals-language/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-names-the-moment-in-words-of-the-portals-language
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-names-the-moment-in-words-of-the-portals-language
 	 */
 	public function __construct(
 		private readonly PortalObjectWriter $writer,
@@ -529,12 +529,15 @@ class SubmissionReceiptService implements SubmissionReceiptServiceInterface {
 	 *
 	 * @return string The readable moment, or the moment as given when it cannot be read.
 	 *
-	 * @spec openspec/changes/receipt-date-reads-in-the-portals-language/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-names-the-moment-in-words-of-the-portals-language
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-names-the-moment-in-words-of-the-portals-language
 	 */
 	private function readable(IL10N $l10n, string $moment): string {
 		try {
 			$zone = ($this->timeZone?->getTimeZone() ?? new DateTimeZone('UTC'));
-			$text = $l10n->l('datetime', (new DateTimeImmutable($moment))->setTimezone($zone), ['width' => 'long|short']);
+			// IL10N::l() reads only a mutable \DateTime as a moment; anything
+			// else is cast to an integer, and a DateTimeImmutable became
+			// 1 January 1970 (seen live 25 Nov 2026).
+			$text = $l10n->l('datetime', (new DateTime($moment))->setTimezone($zone), ['width' => 'long|short']);
 		} catch (Throwable) {
 			return $moment;
 		}
