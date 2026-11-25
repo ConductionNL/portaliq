@@ -76,6 +76,8 @@ import History from 'vue-material-design-icons/History.vue'
 import Home from 'vue-material-design-icons/Home.vue'
 import HomeOutline from 'vue-material-design-icons/HomeOutline.vue'
 import InformationOutline from 'vue-material-design-icons/InformationOutline.vue'
+// The manifest's Reply row action and its LinkVariant item, unregistered until now (gate-60).
+import LinkVariant from 'vue-material-design-icons/LinkVariant.vue'
 import Login from 'vue-material-design-icons/Login.vue'
 import MapMarkerPath from 'vue-material-design-icons/MapMarkerPath.vue'
 import Menu from 'vue-material-design-icons/Menu.vue'
@@ -92,6 +94,7 @@ import Plus from 'vue-material-design-icons/Plus.vue'
 import PowerPlugOutline from 'vue-material-design-icons/PowerPlugOutline.vue'
 import Pulse from 'vue-material-design-icons/Pulse.vue'
 import Refresh from 'vue-material-design-icons/Refresh.vue'
+import Reply from 'vue-material-design-icons/Reply.vue'
 import Restore from 'vue-material-design-icons/Restore.vue'
 import ShieldAccount from 'vue-material-design-icons/ShieldAccount.vue'
 import ShieldCheckOutline from 'vue-material-design-icons/ShieldCheckOutline.vue'
@@ -204,4 +207,6 @@ export default {
 	Chat,
 	FileLinkOutline,
 	Refresh,
+	LinkVariant,
+	Reply,
 }
