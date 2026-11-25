@@ -112,7 +112,7 @@ export default {
 		 * @param {{slug: string}} subject The subject.
 		 * @return {string} Its page, in the site's own addressing.
 		 * @spec openspec/specs/portal-federated-search/spec.md
-		 * @spec openspec/changes/hero-links-follow-the-site-address/specs/site-navigation/spec.md#requirement-a-block-link-to-a-site-page-carries-the-sites-own-address
+		 * @spec openspec/specs/site-navigation/spec.md#requirement-a-block-link-to-a-site-page-carries-the-sites-own-address
 		 */
 		hrefOf(subject) {
 			const route = subjectHref(

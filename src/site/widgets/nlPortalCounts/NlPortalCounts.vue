@@ -86,7 +86,7 @@ export default {
 		/**
 		 * @param {{href: string}} entry A count.
 		 * @return {string} Its search page in the site's own addressing.
-		 * @spec openspec/changes/hero-links-follow-the-site-address/specs/site-navigation/spec.md#requirement-a-block-link-to-a-site-page-carries-the-sites-own-address
+		 * @spec openspec/specs/site-navigation/spec.md#requirement-a-block-link-to-a-site-page-carries-the-sites-own-address
 		 */
 		hrefOf(entry) {
 			return authoredLink(entry.href)?.href || ''

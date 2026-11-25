@@ -229,7 +229,7 @@ export default {
 		 *
 		 * @param {string} href The authored destination.
 		 * @return {string} The href.
-		 * @spec openspec/changes/hero-links-follow-the-site-address/specs/site-navigation/spec.md#requirement-a-block-link-to-a-site-page-carries-the-sites-own-address
+		 * @spec openspec/specs/site-navigation/spec.md#requirement-a-block-link-to-a-site-page-carries-the-sites-own-address
 		 */
 		addressFor(href) {
 			if (typeof window === 'undefined') {
