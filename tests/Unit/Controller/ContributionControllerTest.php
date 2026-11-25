@@ -1083,7 +1083,7 @@ class ContributionControllerTest extends TestCase {
 	 * A successful create passes the matched action's declared `label` as the
 	 * title the proof log names the submission by.
 	 *
-	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
 	 */
 	public function testSuccessfulCreatePassesTheActionsLabelAsItsTitle(): void {
 		$aggregate = $this->aggregate(
@@ -1501,7 +1501,7 @@ class ContributionControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
 	 */
 	public function testActionThatTimesOutIs504ForwardTimeout(): void {
 		$aggregate = $this->aggregate(

@@ -28,7 +28,7 @@
  *
  * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T8
  * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T09
- * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
  */
 
 declare(strict_types=1);
@@ -120,7 +120,7 @@ class PortalActionForwarder implements PortalActionForwarderInterface {
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T8
 	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
 	 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-every-call-to-this-instance-goes-through-one-loopback-service
-	 * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
 	 */
 	public function forward(array $action, array $subject, ?array $whitelisted = null, string $scopeValue = '', array $files = []): ?IResponse {
 		$forward = new ActionForward(action: $action, subject: $subject);
@@ -261,7 +261,7 @@ class PortalActionForwarder implements PortalActionForwarderInterface {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
 	 */
 	public function lastForwardTimedOut(): bool {
 		return $this->timedOut;
@@ -275,7 +275,7 @@ class PortalActionForwarder implements PortalActionForwarderInterface {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
 	 */
 	public function failureResponse(): JSONResponse {
 		if ($this->timedOut === true) {
@@ -293,7 +293,7 @@ class PortalActionForwarder implements PortalActionForwarderInterface {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
 	 */
 	private function isTimeout(Throwable $failure): bool {
 		for ($current = $failure; $current !== null; $current = $current->getPrevious()) {
@@ -311,7 +311,7 @@ class PortalActionForwarder implements PortalActionForwarderInterface {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
 	 */
 	private function submissionKey(): string {
 		$key = trim((string)$this->request->getHeader(self::SUBMISSION_HEADER));
@@ -333,7 +333,7 @@ class PortalActionForwarder implements PortalActionForwarderInterface {
 	 *
 	 * @return list<array<string, mixed>>|null
 	 *
-	 * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
 	 */
 	private function multipart(ActionForward $forward): ?array {
 		$field = ($forward->action['files']['field'] ?? null);
@@ -404,7 +404,7 @@ class PortalActionForwarder implements PortalActionForwarderInterface {
 	 *
 	 * @return resource|null
 	 *
-	 * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
 	 */
 	protected function open(string $path) {
 		if ($path === '' || is_readable($path) === false) {

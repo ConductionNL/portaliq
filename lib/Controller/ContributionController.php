@@ -2182,7 +2182,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @return JSONResponse The created object, or the refusal.
 	 *
 	 * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t02
-	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
 	 */
 	private function createFrom(array $subject, array $match, string $register, string $schema, array $carried=[]): JSONResponse {
 		$action = $match['action'];
@@ -3065,7 +3065,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
 	 * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
 	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
-	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
 	 *
 	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) -- the audit fact-record
 	 * (portal-session-hardening-v2), the WMEBV receipt follow-on

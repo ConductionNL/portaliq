@@ -235,7 +235,7 @@ export default {
 		 *
 		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-create-or-endpoint-action-may-run-in-steps-with-a-review-a-draft-and-a-confirmation-req-smf-020
 		 * @spec openspec/specs/site-forms/spec.md#requirement-a-refusal-of-a-form-attached-to-a-record-lands-on-its-field-req-eaf-003
-		 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
 		 */
 		async sendOpen(body, options = {}) {
 			const result = await runAttachedAction(this.api, {

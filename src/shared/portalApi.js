@@ -31,7 +31,7 @@ const TOKEN_KEY = 'portaliq_token'
  *
  * @param {{submissionKey?: string}|undefined} options The send's options.
  * @return {Record<string, string>} The header to add.
- * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
  */
 function submissionHeaders(options) {
 	const key = options && options.submissionKey
@@ -99,7 +99,7 @@ export function setToken(token) {
  * @param {object} answers The answers.
  * @param {{field: string, files: Array<File>}|null} upload The declared field and the chosen files.
  * @return {FormData|null}
- * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
  */
 export function rowActionFormData(answers, upload) {
 	if (!hasFiles(upload)) {

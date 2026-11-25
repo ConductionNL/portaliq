@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ use OCP\IRequest;
  * fields. Nothing else changes: an action without `files` forwards JSON as
  * before, and uploads sent to one are never read.
  *
- * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
  */
 class RowActionFiles implements RowActionFilesInterface {
 
@@ -73,7 +73,7 @@ class RowActionFiles implements RowActionFilesInterface {
 	 *
 	 * @return array<string, mixed> The action, `files` as `{field, max, maxBytes}` or absent.
 	 *
-	 * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
 	 */
 	public function normalise(array $action, array $whitelist): array {
 		$declared = ($action['files'] ?? null);
@@ -138,7 +138,7 @@ class RowActionFiles implements RowActionFilesInterface {
 	 *
 	 * @return array{files: list<array{name: string, type: string, tmp_name: string, size: int}>, error: string|null}
 	 *
-	 * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
 	 */
 	public function collect(array $action, IRequest $request): array {
 		$declared = ($action['files'] ?? null);
