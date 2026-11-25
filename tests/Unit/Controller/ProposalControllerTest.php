@@ -163,6 +163,40 @@ class ProposalControllerTest extends TestCase {
 	}//end testAColleagueProposesAsThemselvesOnTheStaffChannel()
 
 	/**
+	 * A colleague's proposal records what the record said when it was made,
+	 * so the accept's drift check compares against that and not against
+	 * nothing (change-proposals-reach-the-case-page T07: an empty snapshot
+	 * answered 409 drifted for every property that had a value).
+	 *
+	 * @return void
+	 */
+	public function testAColleaguesProposalSnapshotsTheRecordAsItStands(): void {
+		$controller = $this->controller(subject: null, user: $this->user('colleague-bob'), mayReview: false, subjectRow: ['applicantPhone' => '0612345678']);
+		$this->doubles['proposals']->expects($this->once())
+			->method('propose')
+			->with(
+				$this->anything(),
+				$this->anything(),
+				$this->anything(),
+				$this->equalTo(['applicantPhone' => '0612345678']),
+				$this->equalTo('colleague-bob'),
+				$this->equalTo('staff'),
+				$this->anything()
+			)
+			->willReturn(['proposal' => ['state' => 'queued']]);
+
+		$response = $controller->proposeAsColleague(
+			register: 'dossiq',
+			schema: 'zaak',
+			id: 'zaak-1',
+			changes: [['property' => 'applicantPhone', 'proposedValue' => '0687654321']]
+		);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+
+	}//end testAColleaguesProposalSnapshotsTheRecordAsItStands()
+
+	/**
 	 * REQ-CPQ-002: a colleague proposes on a record they can read. The
 	 * route asked only whether anybody was logged in, so any account could
 	 * queue a proposal on any record id it named.
@@ -198,7 +232,8 @@ class ProposalControllerTest extends TestCase {
 				$this->equalTo(['register' => 'dossiq', 'schema' => 'zaak', 'id' => 'zaak-1']),
 				$this->equalTo([['property' => 'status', 'proposedValue' => 'closed']]),
 				$this->equalTo(['applicantPhone']),
-				$this->equalTo([]),
+				// The snapshot is the record as it stands (T07 live: an empty one read as drift on accept).
+				$this->equalTo(['applicantPhone' => '0612345678']),
 				$this->equalTo('colleague-bob'),
 				$this->equalTo('staff'),
 				$this->equalTo('Klopt niet')

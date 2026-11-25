@@ -138,6 +138,7 @@ class ProposalController extends Controller {
 	 *
 	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 * @spec openspec/changes/change-proposals-reach-the-case-page/specs/change-proposal-queue/spec.md#requirement-the-colleague-route-takes-the-allow-list-from-the-server-req-cpc-003
+	 * @spec openspec/changes/change-proposals-reach-the-case-page/tasks.md#t07
 	 */
 	#[NoAdminRequired]
 	public function proposeAsColleague(
@@ -168,10 +169,14 @@ class ProposalController extends Controller {
 				subject: ['register' => $register, 'schema' => $schema, 'id' => $id],
 				changes: $changes,
 				proposable: $proposable,
-				// A colleague proposes on what they can see; the snapshot is
-				// taken from the record itself when the reviewer accepts,
-				// which is where the drift check lives.
-				subjectRow: [],
+				// The snapshot is what the record says now, read as the
+				// widget's context reads it. The accept compares the record
+				// with this snapshot (ProposalService::drift()): an empty
+				// snapshot made every property that had a value read as
+				// drifted, so no colleague's proposal could be accepted.
+				subjectRow: $this->subjectRowOf(
+					proposal: ['subjectRegister' => $register, 'subjectSchema' => $schema, 'subjectId' => $id]
+				),
 				proposedBy: $user->getUID(),
 				channel: 'staff',
 				note: $note
