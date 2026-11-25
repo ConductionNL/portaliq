@@ -56,6 +56,11 @@ use Throwable;
  * (inbox-delete-own-messages added the delete).
  */
 class PortalObjectWriter implements PortalObjectWriterInterface {
+
+	/**
+	 * What OpenRegister throws when the owning app's hook stops a write.
+	 */
+	private const OWNER_REFUSAL = 'OCA\\OpenRegister\\Exception\\HookStoppedException';
 	use ActsForTheOrganisation;
 	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
@@ -68,6 +73,15 @@ class PortalObjectWriter implements PortalObjectWriterInterface {
 	 * @var string
 	 */
 	private string $lastFailure = '';
+
+	/**
+	 * Whether the last create or update failed because the app that owns the
+	 * record refused it (OpenRegister's creating or updating hook stopped
+	 * the write), as opposed to a value the store refused or a store failure.
+	 *
+	 * @var boolean
+	 */
+	private bool $lastRefusedByOwner = false;
 
 	/**
 	 * Constructor.
@@ -117,6 +131,7 @@ class PortalObjectWriter implements PortalObjectWriterInterface {
 		array $data,
 	): ?array {
 		$this->lastFailure = '';
+		$this->lastRefusedByOwner = false;
 		$objectService = $this->actingObjectService(organisation: $organisation);
 		if ($objectService === null) {
 			return null;
@@ -133,7 +148,7 @@ class PortalObjectWriter implements PortalObjectWriterInterface {
 			));
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: OR write failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
-			$this->lastFailure = $e->getMessage();
+			$this->recordFailure(failure: $e);
 			return null;
 		}
 
@@ -262,6 +277,7 @@ class PortalObjectWriter implements PortalObjectWriterInterface {
 		array|\Closure $data,
 	): ?array {
 		$this->lastFailure = '';
+		$this->lastRefusedByOwner = false;
 		$objectService     = $this->updateService(id: $id, organisation: $organisation);
 		if ($objectService === null) {
 			return null;
@@ -299,7 +315,7 @@ class PortalObjectWriter implements PortalObjectWriterInterface {
 			));
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: OR update failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
-			$this->lastFailure = $e->getMessage();
+			$this->recordFailure(failure: $e);
 			return null;
 		}
 
@@ -390,6 +406,36 @@ class PortalObjectWriter implements PortalObjectWriterInterface {
 	public function lastFailure(): string {
 		return $this->lastFailure;
 	}//end lastFailure()
+
+	/**
+	 * Whether the last create or update failed because the app that owns the
+	 * record refused it before it was stored (OpenRegister's
+	 * `HookStoppedException`, e.g. decidiq refusing a reaction on a closed
+	 * consultation).
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/the-owning-apps-refusal-reads-as-no-longer-possible/specs/site-forms/spec.md#requirement-a-refusal-by-the-records-own-app-must-read-as-no-longer-possible-req-orr-001
+	 */
+	public function lastRefusedByOwner(): bool {
+		return $this->lastRefusedByOwner;
+	}//end lastRefusedByOwner()
+
+	/**
+	 * Keep why a write failed: the store's text for WriteRefusal, and whether
+	 * the owning app refused it. The class is named by string so portaliq
+	 * loads without OpenRegister.
+	 *
+	 * @param Throwable $failure What the write threw.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/the-owning-apps-refusal-reads-as-no-longer-possible/specs/site-forms/spec.md#requirement-a-refusal-by-the-records-own-app-must-read-as-no-longer-possible-req-orr-001
+	 */
+	private function recordFailure(Throwable $failure): void {
+		$this->lastFailure        = $failure->getMessage();
+		$this->lastRefusedByOwner = is_a($failure, self::OWNER_REFUSAL);
+	}//end recordFailure()
 
 	/**
 	 * Delete ONE row, only when it is the subject's alone: the same ownership
