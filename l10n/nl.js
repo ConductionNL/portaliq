@@ -3808,6 +3808,7 @@ OC.L10N.register(
         "The outcome the resident may read once the case has ended, such as \"Vergunning verleend\" (case-outcome-on-the-case-page REQ-COC-001).": "De uitkomst die de inwoner mag lezen zodra de zaak is afgerond, zoals \"Vergunning verleend\" (case-outcome-on-the-case-page REQ-COC-001).",
         "When the case ended; empty while it runs. A collection names it as its closedField (case-outcome-on-the-case-page).": "Wanneer de zaak is afgerond; leeg zolang die loopt. Een collectie noemt dit veld als closedField (case-outcome-on-the-case-page).",
         "When the decision was sent; the objection window an onCase action declares counts from it (case-page-objection-and-complaint).": "Wanneer het besluit is verzonden; de bezwaartermijn die een onCase-actie opgeeft telt vanaf dit moment (case-page-objection-and-complaint).",
+        "Media library": "Mediabibliotheek",
         "statusNotes": "Regels onder de status per waarde",
         "On rows: a different line under the status pill per status value, each {field, atField, template} (\"Gezien door juf Esra om 8:12 uur\" while submitted); other values keep statusNoteField.": "Bij rijen: per statuswaarde een eigen regel onder de status, elk {field, atField, template} (\"Gezien door juf Esra om 8:12 uur\" zolang de melding is ingediend); andere waarden houden statusNoteField."
     },

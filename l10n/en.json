@@ -3669,6 +3669,7 @@
         "The outcome the resident may read once the case has ended, such as \"Vergunning verleend\" (case-outcome-on-the-case-page REQ-COC-001).": "The outcome the resident may read once the case has ended, such as \"Vergunning verleend\" (case-outcome-on-the-case-page REQ-COC-001).",
         "When the case ended; empty while it runs. A collection names it as its closedField (case-outcome-on-the-case-page).": "When the case ended; empty while it runs. A collection names it as its closedField (case-outcome-on-the-case-page).",
         "When the decision was sent; the objection window an onCase action declares counts from it (case-page-objection-and-complaint).": "When the decision was sent; the objection window an onCase action declares counts from it (case-page-objection-and-complaint).",
+        "Media library": "Media library",
         "statusNotes": "statusNotes",
         "On rows: a different line under the status pill per status value, each {field, atField, template} (\"Gezien door juf Esra om 8:12 uur\" while submitted); other values keep statusNoteField.": "On rows: a different line under the status pill per status value, each {field, atField, template} (\"Gezien door juf Esra om 8:12 uur\" while submitted); other values keep statusNoteField."
     },

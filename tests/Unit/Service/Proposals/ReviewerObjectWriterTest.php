@@ -74,6 +74,35 @@ class ReviewerObjectWriterTest extends TestCase {
 		);
 	}//end testTheValuesAreWrittenAsTheReviewerWithRbacAndMultitenancyOn()
 
+	/**
+	 * Where OpenRegister merges a partial write, the accepted values are
+	 * patched onto the stored record: a save of only those values replaced
+	 * the record and was refused for its other required properties
+	 * (change-proposals-reach-the-case-page T07, a dossiq case).
+	 *
+	 * @return void
+	 */
+	public function testTheValuesArePatchedOntoTheRecordWhereOpenRegisterMerges(): void {
+		$service = new class {
+			public array $patched = [];
+			public array $saved = [];
+
+			public function patchObject(\OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$this->patched[] = [$patch->objectId, $patch->data, $patch->target->register, $patch->target->schema, $_rbac, $_multitenancy];
+				return ['id' => $patch->objectId];
+			}
+
+			public function saveObject(...$args): mixed {
+				$this->saved[] = $args;
+				return ['id' => 'o-1'];
+			}
+		};
+
+		$this->assertTrue($this->writer($service)->write('dossiq', 'case', 'o-1', ['description' => 'Nieuw']));
+		$this->assertSame([['o-1', ['description' => 'Nieuw'], 'dossiq', 'case', true, true]], $service->patched);
+		$this->assertSame([], $service->saved, 'no replacing save next to the patch');
+	}//end testTheValuesArePatchedOntoTheRecordWhereOpenRegisterMerges()
+
 	public function testANullSaveIsNotWritten(): void {
 		$this->assertFalse($this->writer(self::service(null))->write('reg', 'page', 'o-1', ['title' => 'New']));
 	}//end testANullSaveIsNotWritten()
