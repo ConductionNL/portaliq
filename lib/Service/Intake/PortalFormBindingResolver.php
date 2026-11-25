@@ -672,7 +672,7 @@ class PortalFormBindingResolver implements PortalFormBindingResolverInterface {
 	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	private function formAnswersTheBinding(array $row, array $binding, string $typeId, string $audience): bool {
-		// buildiq's typeValue, or caseType on a row written before it.
+		// Buildiq's typeValue, or caseType on a row written before it.
 		$formType = (string)($row[self::FORM_TYPE_FIELD] ?? $row['caseType'] ?? '');
 		if ($formType !== $typeId || ($row['audience'] ?? '') !== $audience) {
 			return false;
