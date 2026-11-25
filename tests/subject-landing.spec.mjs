@@ -107,6 +107,17 @@ test('only featured rows are listed, in featuredOrder', () => {
 	assert.equal(subjectHref('a b', '/thema/'), '/thema/a%20b')
 })
 
+// Found live on 25 Nov 2026 (home-and-theme-landing-pages 5.1): opencatalogi's
+// merged featured list answers the REQ-SUB-002 projection, which has no
+// `featured` key, and the widget showed "no featured subjects". The row below
+// is the answer as a sandbox opencatalogi gave it.
+test('a row of the merged featured list is featured although it carries no featured key', () => {
+	const answer = { results: [{ id: '513bcf86-1995-490b-9a91-ce775ad714a9', slug: 'verkeer-en-vervoer', title: 'Verkeer en vervoer', summary: 'Wegen, fietspaden en parkeren', description: 'Alles wat de gemeente publiceert over verkeer.', image: 'https://example.org/verkeer.jpg', url: null, isExternal: null, featuredOrder: 1, publicationCount: 3 }], total: 1 }
+	assert.deepEqual(featuredFrom(answer, 6).map((s) => [s.slug, s.publicationCount]), [['verkeer-en-vervoer', 3]])
+	assert.deepEqual(featuredFrom({ results: [{ id: 'a', slug: 'a', title: 'A', featuredOrder: null }] }, 6).map((s) => s.slug), ['a'], 'the projection carries featuredOrder even when it is empty')
+	assert.deepEqual(featuredFrom({ results: [{ id: 'a', slug: 'a', title: 'A', featured: false, featuredOrder: 1 }] }, 6), [], 'a full row that says it is not featured stays out')
+})
+
 test('the featured widget asks for featured rows anonymously and tells when the catalogue is absent', async () => {
 	const asked = []
 	const ok = await fetchFeatured({ count: 6, fetchImpl: answer(200, CONTRACT.list, asked) })

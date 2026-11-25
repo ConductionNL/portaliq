@@ -567,6 +567,7 @@ import {
 	suggestUrl,
 	toBuckets,
 	toResult,
+	withAddressFields,
 	withKindField,
 	withoutLocked,
 	writeSearchState,
@@ -1028,7 +1029,8 @@ export default {
 		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
 		 */
 		fields() {
-			const own = this.facetField ? [this.facetField] : this.facetFields
+			const placed = this.facetField ? [this.facetField] : this.facetFields
+			const own = withAddressFields(placed, typeof window === 'undefined' ? '' : window.location.search)
 			return withoutLocked(withKindField(own, this.hideKind), this.locked)
 		},
 

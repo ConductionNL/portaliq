@@ -33,8 +33,10 @@ subject is unknown or not public, the route SHALL render the site's not-found pa
 
 ### Requirement: The home page features subjects from the register (REQ-HTL-003)
 
-A `featuredSubjects` widget SHALL list the rows of `GET /api/themes?featured=true` whose `featured`
-is true, in `featuredOrder` then `title`, each with its image, title, summary and
+A `featuredSubjects` widget SHALL list the featured rows of `GET /api/themes?featured=true` (a row
+whose `featured` is true, or, without a `featured` key, a row of opencatalogi's REQ-SUB-002
+projection, which carries `featuredOrder`; a row with neither is not featured), in `featuredOrder`
+then `title`, each with its image, title, summary and
 `publicationCount`, linking to `/onderwerp/{slug}`. It SHALL show at most the number the author sets,
 default six.
 

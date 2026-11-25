@@ -134,8 +134,28 @@ function shownSubject(row, title) {
 		image: imageOf(row.image, title),
 		publicationCount: publicationCountOf(row),
 		featuredOrder: featuredOrderOf(row),
-		featured: row.featured === true,
+		featured: isFeaturedRow(row),
 	}
+}
+
+/**
+ * Whether a row is featured. opencatalogi's featured list (REQ-SUB-002) answers
+ * the projection `{id, slug, title, summary, description, image, url,
+ * isExternal, featuredOrder, publicationCount}`: it carries `featuredOrder`
+ * and no `featured` key, so a row of that shape is featured. A full theme row
+ * says so itself (`featured: true` or `false`), and an opencatalogi older than
+ * the flag answers rows with neither key, which are left out.
+ *
+ * @param {object} row One row of the answer.
+ * @return {boolean}
+ *
+ * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+ */
+function isFeaturedRow(row) {
+	if (Object.prototype.hasOwnProperty.call(row, 'featured')) {
+		return row.featured === true
+	}
+	return Object.prototype.hasOwnProperty.call(row, 'featuredOrder')
 }
 
 /**
@@ -162,9 +182,9 @@ function featuredOrderOf(row) {
 }
 
 /**
- * The subjects to feature: only rows whose `featured` is true, whatever the
- * server was asked, so an opencatalogi older than the `featured` filter shows
- * nothing rather than every subject; in `featuredOrder`, then title; at most
+ * The subjects to feature: only featured rows (see isFeaturedRow), whatever
+ * the server was asked, so an opencatalogi older than the `featured` filter
+ * shows nothing rather than every subject; in `featuredOrder`, then title; at most
  * `count`; with a slug to link to.
  *
  * @param {object} body The list answer.

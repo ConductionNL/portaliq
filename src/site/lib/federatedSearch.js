@@ -345,6 +345,30 @@ export function withKindField(fields, hideKind = false) {
 }
 
 /**
+ * The placement's facet fields, plus every field the page address filters on
+ * with an `f.<field>` parameter. A live count on the home page links to the
+ * search with its filter set (`f.themes=<subject>`); a search placement that
+ * does not facet on that field would otherwise drop the filter and show
+ * everything. Only plain field names are taken from the address.
+ *
+ * @param {Array<string>} fields The placement's facet fields.
+ * @param {string} search `window.location.search`.
+ * @return {Array<string>} The fields, the placement's first.
+ *
+ * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+ */
+export function withAddressFields(fields, search) {
+	const own = Array.isArray(fields) ? [...fields] : []
+	for (const key of new URLSearchParams(search || '').keys()) {
+		const field = key.startsWith('f.') ? key.slice(2) : ''
+		if (/^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(field) && field !== KIND_FIELD && !own.includes(field)) {
+			own.push(field)
+		}
+	}
+	return own
+}
+
+/**
  * What kind of row the endpoint returned: its `resultType`, else the schema
  * word on `@self`, else 'publication'.
  *
