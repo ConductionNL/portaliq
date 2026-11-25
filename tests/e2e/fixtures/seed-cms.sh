@@ -120,6 +120,7 @@ SITE=$(upsert portal slug open-tilburg '{
   "theme":"vng","locales":["nl","en"],
   "authentication":{"modes":["public"]},
   "frameAncestors":[],"organisation":"dev-org",
+  "contactsEnabled":true,"plansEnabled":true,"actionsEnabled":true,
   "traffic":{
     "enabled":true,
     "events":["page_view","session_start","scroll","outbound_click","search","form_start","form_field","form_abandon","page_not_found"],
