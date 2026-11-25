@@ -21,7 +21,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * The dashboard's figures of all published portals together.
  *
- * @spec openspec/changes/dashboard-figures-across-portals/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
+ * @spec openspec/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
  */
 class PortalOverviewTest extends TestCase {
 	/**
@@ -30,7 +30,7 @@ class PortalOverviewTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/dashboard-figures-across-portals/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
+	 * @spec openspec/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
 	 */
 	public function testTrafficOfAllPortalsAddsUp(): void {
 		$asked = [];
@@ -63,7 +63,7 @@ class PortalOverviewTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/dashboard-figures-across-portals/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
+	 * @spec openspec/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
 	 */
 	public function testNoTrafficHasNoEngagedShare(): void {
 		$traffic = $this->createMock(originalClassName: TrafficEventStore::class);
@@ -82,7 +82,7 @@ class PortalOverviewTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/dashboard-figures-across-portals/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
+	 * @spec openspec/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
 	 */
 	public function testAvailabilityOfLastMonthPerPortalAndTogether(): void {
 		$store = $this->createMock(originalClassName: AvailabilityStore::class);

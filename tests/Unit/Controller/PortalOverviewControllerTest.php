@@ -23,7 +23,7 @@ use ReflectionClass;
 /**
  * Only an administrator reaches the dashboard's figures across portals.
  *
- * @spec openspec/changes/dashboard-figures-across-portals/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
+ * @spec openspec/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
  */
 class PortalOverviewControllerTest extends TestCase {
 	/**

@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/dashboard-figures-across-portals/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
+ * @spec openspec/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use OCA\Portaliq\Service\Traffic\TrafficReportNumbers;
 /**
  * Folds the figures of all published portals into one overview.
  *
- * @spec openspec/changes/dashboard-figures-across-portals/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
+ * @spec openspec/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
  */
 class PortalOverview implements PortalOverviewInterface {
 	/**
@@ -74,7 +74,7 @@ class PortalOverview implements PortalOverviewInterface {
 	 *                              `engagedSessions`, `engagedShare` (percent, null without sessions)
 	 *                              and `pages` (`path`, `portal`, `title`, `views`).
 	 *
-	 * @spec openspec/changes/dashboard-figures-across-portals/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
+	 * @spec openspec/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
 	 */
 	public function traffic(int $days, DateTimeImmutable $now): array {
 		$today = $now->setTimezone(new DateTimeZone('UTC'))->setTime(0, 0);
@@ -175,7 +175,7 @@ class PortalOverview implements PortalOverviewInterface {
 	 *                              `outageMinutes`, `lastOutage` and `portals` (`portal`, `title`,
 	 *                              `percentage`).
 	 *
-	 * @spec openspec/changes/dashboard-figures-across-portals/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
+	 * @spec openspec/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
 	 */
 	public function availability(DateTimeImmutable $now): array {
 		$reports = $this->lastMonthReports(now: $now);

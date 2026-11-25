@@ -1,0 +1,6 @@
+# Tasks: dashboard-figures-across-portals
+
+- [x] **T01**: `PortalOverview` traffic and availability; PHPUnit (REQ-DFP-001)
+- [x] **T02**: `PortalOverviewController` + routes, admin only; PHPUnit (REQ-DFP-001)
+- [x] **T03**: Dashboard manifest: KPIs, availability card, traffic card, most viewed pages; `tests/dashboard-site-wide-figures.spec.mjs` (REQ-DFP-001)
+- [x] **T04**: Live check against PtDashboard — done 25 Nov 2026 on a sandbox Nextcloud 34.0.6 + MariaDB with OpenRegister main and portaliq development, the Zuiddrecht and Open publicaties example sites, traffic imported per portal (15 and 9 visitors in the last 7 days): "Bezoekers, laatste 7 dagen" reads 24, the most viewed pages of both portals are listed most viewed first (/afval 15, /paspoort 10, /publicaties 9, /parkeren 5), both overview routes answer 403 to a non-administrator. Found live: the "Verkeer, laatste 7 dagen" and "Mijn Zuiddrecht nu" cards drew no title (stats-block is a headerless card widget in nc-vue); the layout cells now ask for it, `tests/dashboard-site-wide-figures.spec.mjs`. Pixel deviations left for the board pass: the board names pages by title, the live list by path and portal; the availability title is cut beside its header link.

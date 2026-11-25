@@ -92,3 +92,15 @@ test('the right column reads availability, traffic, pages, then Mijn Zuiddrecht 
 		assert.ok(NL[widget(id).content.emptyText || widget(id).title])
 	}
 })
+
+// dashboard-figures-across-portals T04 (live check, 25 Nov 2026): a stats-block
+// is a card widget, and nc-vue draws card widgets without a header unless the
+// layout cell asks for one. Live, the board's "Verkeer, laatste 7 dagen" and
+// "Mijn Zuiddrecht nu" cards showed their figures with no title.
+test('the traffic card and Mijn Zuiddrecht nu show their titles, as the board draws them', () => {
+	for (const id of ['overview-traffic', 'now-mijn']) {
+		assert.equal(widget(id).type, 'stats-block', id)
+		assert.equal(cell(id).showTitle, true, `${id} draws no title`)
+		assert.ok(NL[widget(id).title] || widget(id).title === 'Mijn Zuiddrecht nu', `"${widget(id).title}" has no Dutch title`)
+	}
+})

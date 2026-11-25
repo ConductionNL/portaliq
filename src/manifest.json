@@ -788,6 +788,7 @@
           {
             "id": "overview-traffic",
             "widgetId": "overview-traffic",
+            "showTitle": true,
             "gridX": 8,
             "gridY": 7,
             "gridWidth": 4,
@@ -804,6 +805,7 @@
           {
             "id": "now-mijn",
             "widgetId": "now-mijn",
+            "showTitle": true,
             "gridX": 8,
             "gridY": 15,
             "gridWidth": 4,
