@@ -107,3 +107,12 @@ test('a real copy without a readable version still fails loudly', () => {
 	assert.equal(status, 1, out)
 	assert.match(out, /no version literal matched/)
 })
+
+test('a production chunk that hoists the version into a variable still reads (dexie 4.4.7)', () => {
+	const chunk =
+		`var xbn="0.0.1",bn="${LOCKED}";var D={semVer:bn,version:1};\n`
+		+ 'throw new Error(`Two different versions of Dexie loaded in the same app: ${a} and ${b}`)\n'
+	const { status, out } = guard({ 'portaliq-dexie.js': chunk })
+	assert.equal(status, 0, out)
+	assert.match(out, new RegExp(`one Dexie version \\(${LOCKED.replace(/\./g, '\\.')}\\)`))
+})
