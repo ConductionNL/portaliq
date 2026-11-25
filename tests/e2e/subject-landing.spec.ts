@@ -35,7 +35,7 @@
  * `/site?route=/onderwerp/<slug>` reaches the same subject; path addressing is
  * kept because it is the address a visitor follows from a subject card.
  *
- * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+ * @spec openspec/specs/portal-federated-search/spec.md
  */
 
 import type { APIRequestContext, Page, Request, Route } from '@playwright/test'

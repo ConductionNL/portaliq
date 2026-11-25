@@ -33,8 +33,10 @@ subject is unknown or not public, the route SHALL render the site's not-found pa
 
 ### Requirement: The home page features subjects from the register (REQ-HTL-003)
 
-A `featuredSubjects` widget SHALL list the rows of `GET /api/themes?featured=true` whose `featured`
-is true, in `featuredOrder` then `title`, each with its image, title, summary and
+A `featuredSubjects` widget SHALL list the featured rows of `GET /api/themes?featured=true` (a row
+whose `featured` is true, or, without a `featured` key, a row of opencatalogi's REQ-SUB-002
+projection, which carries `featuredOrder`; a row with neither is not featured), in `featuredOrder`
+then `title`, each with its image, title, summary and
 `publicationCount`, linking to `/onderwerp/{slug}`. It SHALL show at most the number the author sets,
 default six.
 
@@ -49,7 +51,8 @@ A `portalCounts` widget SHALL show totals per category, per subject or per year 
 one), read from the facet counts of one search request, and each count SHALL link to the search page
 with that filter set. The request SHALL be made without the viewer's session (`credentials: 'omit'`),
 so a signed-in officer viewing the site sees the counts the public sees. A count the endpoint did not
-answer SHALL be left out, never shown as 0.
+answer SHALL be left out, never shown as 0. The search page SHALL apply the filter a count's link
+names (`f.<field>`) even when its placement does not offer that field as a facet.
 
 #### Scenario: Counts link into the search
 - **GIVEN** 40 public publications, 12 in category "Raadsstukken"
@@ -60,3 +63,8 @@ answer SHALL be left out, never shown as 0.
 - **GIVEN** the same portal and 5 draft publications in "Raadsstukken"
 - **WHEN** a signed-in officer opens the home page
 - **THEN** the widget SHALL still show 12
+
+#### Scenario: A subject's count opens the search for that subject
+- **GIVEN** a subject with 3 public publications, and a search page whose placement facets on category and organisation only
+- **WHEN** a visitor follows the subject's count on the home page
+- **THEN** the search SHALL list those 3 publications, not every publication

@@ -567,6 +567,7 @@ import {
 	suggestUrl,
 	toBuckets,
 	toResult,
+	withAddressFields,
 	withKindField,
 	withoutLocked,
 	writeSearchState,
@@ -1028,7 +1029,8 @@ export default {
 		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
 		 */
 		fields() {
-			const own = this.facetField ? [this.facetField] : this.facetFields
+			const placed = this.facetField ? [this.facetField] : this.facetFields
+			const own = withAddressFields(placed, typeof window === 'undefined' ? '' : window.location.search)
 			return withoutLocked(withKindField(own, this.hideKind), this.locked)
 		},
 
@@ -1037,7 +1039,7 @@ export default {
 		 *
 		 * @return {Record<string, Array<string>>} The locks.
 		 *
-		 * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+		 * @spec openspec/specs/portal-federated-search/spec.md
 		 */
 		locked() {
 			return lockedFiltersOf({ lockedFilters: this.lockedFilters })
@@ -1048,7 +1050,7 @@ export default {
 		 *
 		 * @return {Array<{key: string, label: string}>} The chips.
 		 *
-		 * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+		 * @spec openspec/specs/portal-federated-search/spec.md
 		 */
 		lockedChips() {
 			return Object.entries(this.locked).flatMap(([field, values]) =>

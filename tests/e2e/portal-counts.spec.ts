@@ -27,7 +27,7 @@
  * the Woo category the site names "Vergaderstukken decentrale overheden"
  * (src/site/config/valueLists.js), and a category reads by its name.
  *
- * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+ * @spec openspec/specs/portal-federated-search/spec.md
  */
 
 import type { APIRequestContext, Page, Request, Route } from '@playwright/test'

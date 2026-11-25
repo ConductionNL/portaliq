@@ -74,7 +74,7 @@ import '@utrecht/link-css/dist/index.css'
 import '@utrecht/paragraph-css/dist/index.css'
 
 /**
- * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+ * @spec openspec/specs/portal-federated-search/spec.md
  */
 export default {
 	name: 'NlSubjectLanding',
@@ -99,7 +99,7 @@ export default {
 	 * grid, which routes it; without this the click was prevented and went
 	 * nowhere.
 	 *
-	 * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+	 * @spec openspec/specs/portal-federated-search/spec.md
 	 */
 	emits: ['navigate'],
 
@@ -110,7 +110,7 @@ export default {
 	/**
 	 * Read the subject once the page is shown.
 	 *
-	 * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+	 * @spec openspec/specs/portal-federated-search/spec.md
 	 */
 	async mounted() {
 		const answer = await fetchSubject(this.slug())
@@ -123,7 +123,7 @@ export default {
 		 * The slug: the one the host handed over, else the last segment of the address.
 		 *
 		 * @return {string} The slug.
-		 * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+		 * @spec openspec/specs/portal-federated-search/spec.md
 		 */
 		slug() {
 			if (this.routeParam !== '') {
@@ -138,7 +138,7 @@ export default {
 		/**
 		 * @param {string} key A string key.
 		 * @return {string} The words in the page language.
-		 * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+		 * @spec openspec/specs/portal-federated-search/spec.md
 		 */
 		say(key) {
 			return (strings[pageLocale()] || strings.nl)[key]

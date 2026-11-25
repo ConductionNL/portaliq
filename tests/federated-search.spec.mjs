@@ -57,6 +57,7 @@ import {
 	toBuckets,
 	toResult,
 	validDate,
+	withAddressFields,
 	withKindField,
 	withoutLocked,
 	writeSearchState,
@@ -958,6 +959,19 @@ console.log('suggestion and ranking (search-sort-by-relevance REQ-SSR-005, REQ-S
 	const template = readFileSync(new URL('../src/site/components/FederatedSearchBlock.vue', import.meta.url), 'utf8')
 	const liveRegion = template.slice(template.indexOf('aria-live="polite"'), template.indexOf('</p>', template.indexOf('aria-live="polite"')))
 	assertTrue('the suggestion is announced in the live region', liveRegion.includes('federated-search-did-you-mean') && liveRegion.includes('@click.prevent="onSearch(spellingSuggestion)"'))
+}
+
+// home-and-theme-landing-pages 5.1, found live on 25 Nov 2026: a subject's live
+// count links to /zoeken?f.themes=<subject>, and the search placement (facets
+// wooCategory and organization) dropped the filter and listed everything.
+{
+	const fields = withAddressFields(['wooCategory', 'organization'], '?route=%2Fzoeken&f.themes=th-1')
+	assertEqual('a filter the address names is added to the placement\'s fields', fields, ['wooCategory', 'organization', 'themes'])
+	assertEqual('and read as a filter', readSearchState('?route=%2Fzoeken&f.themes=th-1', fields).facets.themes, ['th-1'])
+	assertEqual('a placed field, an odd name and the kind are not added', withAddressFields(['wooCategory'], '?f.wooCategory=a&f.x-y=1&f.' + KIND_FIELD + '=document'), ['wooCategory'])
+	assertEqual('an address without filters adds nothing', withAddressFields(['wooCategory'], ''), ['wooCategory'])
+	const block = readFileSync(new URL('../src/site/components/FederatedSearchBlock.vue', import.meta.url), 'utf8')
+	assertTrue('the block reads its fields through withAddressFields', block.includes('withAddressFields(placed,'))
 }
 
 if (failures > 0) {
