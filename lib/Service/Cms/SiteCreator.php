@@ -4,7 +4,8 @@
  * Portaliq Site Creator
  *
  * The site head's `DCTERMS.creator`: the organisation that runs the portal,
- * with its kind from the portal's TOOI organisation type label.
+ * with its kind from the portal's TOOI organisation type label; and the
+ * footer's line saying whose website it is ("Een website van het waterschap").
  *
  * @category Service
  * @package  OCA\Portaliq\Service\Cms
@@ -57,4 +58,36 @@ final class SiteCreator {
 
 		return $name . ' (' . $kind . ')';
 	}//end content()
+
+	/**
+	 * The Dutch nouns among the organisation types that take "het"; every
+	 * other kind takes "de".
+	 */
+	private const HET = ['waterschap', 'ministerie'];
+
+	/**
+	 * The footer's line naming whose website this is: "Een website van het
+	 * waterschap". The type label is Dutch, so only a Dutch page names it;
+	 * a portal without a type, or a page in another language, has none ('').
+	 *
+	 * @param array<string, mixed> $portal The resolved portal.
+	 * @param string               $locale The page language.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+	 */
+	public function kindLine(array $portal, string $locale): string {
+		$kind = mb_strtolower(trim((string)($portal['organisationTypeLabel'] ?? '')));
+		if ($kind === '' || str_starts_with(strtolower($locale), 'nl') === false) {
+			return '';
+		}
+
+		$article = 'de';
+		if (in_array($kind, self::HET, true) === true) {
+			$article = 'het';
+		}
+
+		return 'Een website van ' . $article . ' ' . $kind;
+	}//end kindLine()
 }//end class
