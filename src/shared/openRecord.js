@@ -181,3 +181,44 @@ export function rowFor(objects, id) {
 		) || null
 	)
 }
+
+/**
+ * The nav entry a list row of this collection opens: another page of the
+ * same app that is the collection's record page (REQ-SMO-010), or null. A
+ * page that shows the row itself keeps it: the list's own page when it is
+ * that record page, or when it carries a `detail` or `citizenCase` block on
+ * the collection.
+ *
+ * @param {Array<object>} nav The shell's nav entries.
+ * @param {object|null} current The nav entry of the page the list is on.
+ * @param {object|null} page The page the list is on.
+ * @param {{app: string, collection: string}} target The row's app and collection.
+ * @return {object|null}
+ * @spec openspec/changes/list-row-opens-its-record-page/specs/site-mijn-omgeving/spec.md#requirement-a-list-row-opens-its-collections-record-page
+ */
+export function recordPageForRow(nav, current, page, target) {
+	if (!target?.app || !target?.collection) {
+		return null
+	}
+	const here = page || current?.page || {}
+	if ((here.record || here.records)?.collection === target.collection) {
+		return null
+	}
+	const shownHere = (here.blocks || []).some(
+		(block) =>
+			block?.collection === target.collection
+			&& ['detail', 'citizenCase'].includes(block.type),
+	)
+	if (shownHere) {
+		return null
+	}
+	return (
+		(nav || []).find(
+			(entry) =>
+				entry !== current
+				&& (!current || entry.key !== current.key)
+				&& entry.contribution?.app === target.app
+				&& opensAsRecordPage(entry, target.collection),
+		) || null
+	)
+}
