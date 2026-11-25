@@ -72,6 +72,25 @@ test('load finds the create action of the named app and shows the form', async (
 	assert.equal(broken.state, 'missing')
 })
 
+test('"Naar Mijn vragen" keeps the site\'s own address under the app path', async () => {
+	const screen = await loadSfc(FORM)
+	const href = (route, location) => {
+		const previous = globalThis.window
+		globalThis.window = { location: { href: location } }
+		try {
+			return screen.computed.questionsHref.call({ questionsRoute: route })
+		} finally {
+			globalThis.window = previous
+		}
+	}
+	const app = 'http://localhost:8080/index.php/apps/portaliq/site?portal=zuiddrecht&route=%2Fcontact%2Fvraag'
+	const out = new URL(href('/mijn', app))
+	assert.equal(out.pathname, '/index.php/apps/portaliq/site', 'a bare /mijn would leave the site')
+	assert.equal(out.searchParams.get('portal'), 'zuiddrecht')
+	assert.equal(out.searchParams.get('route'), '/mijn')
+	assert.equal(href('https://example.org/vragen', app), 'https://example.org/vragen', 'a link elsewhere stays')
+})
+
 test('the block says what happened after a question was sent', async () => {
 	const html = await renderSfc(FORM, { signedIn: true, locale: 'nl', apiOverride: {} })
 	assert.doesNotMatch(html, /contact-form-sent/, 'nothing is claimed before a send')

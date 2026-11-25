@@ -76,6 +76,8 @@ import {
 	storeSessionToken,
 } from '../lib/authApi.js'
 import { resolveApiBase, runtimeConfig } from '../lib/contentApi.js'
+import { linkAddress } from '../lib/shellData.js'
+import { addressOfRoute } from '../lib/siteAddress.js'
 import formStrings from '../pages/c/strings.js'
 import { pageLocale, withBundles } from '../pages/inbox/translate.js'
 
@@ -174,10 +176,21 @@ export default {
 		},
 
 		/**
-		 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t01
+		 * The "Naar Mijn vragen" link in the site's own addressing: under the
+		 * app path a bare `/mijn` leaves the site, so an in-site route gets the
+		 * portal and route the site is served with. Another link stays as it is.
+		 *
+		 * @return {string} The href.
+		 *
+		 * @spec openspec/changes/contact-question-form-names-its-action/specs/site-contact/spec.md#requirement-the-example-contact-page-follows-the-contact-board-req-scn-003
 		 */
 		questionsHref() {
-			return this.questionsRoute
+			if (typeof window === 'undefined') {
+				return this.questionsRoute
+			}
+			return linkAddress(this.questionsRoute, (route) =>
+				addressOfRoute(route, window.location.href, runtimeConfig()).toString(),
+			)
 		},
 	},
 

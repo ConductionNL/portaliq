@@ -2571,7 +2571,7 @@
                             "app": "pipelinq",
                             "action": "askQuestion",
                             "intro": "Noem het onderwerp en stel uw vraag. U vindt hem terug bij Mijn vragen.",
-                            "questionsRoute": "/mijn"
+                            "questionsRoute": "/mijn/pipelinq/questions"
                         }
                     }
                 ]
