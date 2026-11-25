@@ -24,7 +24,6 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\MailTemplateAdminController;
 use OCA\Portaliq\Service\Mail\MailLog;
-use OCA\Portaliq\Service\Mail\MailTemplateList;
 use OCA\Portaliq\Service\Mail\MailTemplateRenderer;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
@@ -48,13 +47,6 @@ use ReflectionMethod;
  */
 class MailTemplateAdminControllerTest extends TestCase {
 	/**
-	 * The screen's rows the controller answers with, when a test sets them.
-	 *
-	 * @var MailTemplateList|null
-	 */
-	private ?MailTemplateList $rowList = null;
-
-	/**
 	 * A controller with the given log and mailer.
 	 *
 	 * @param MailLog|null $log    The log.
@@ -77,8 +69,7 @@ class MailTemplateAdminControllerTest extends TestCase {
 			($log ?? $this->createMock(MailLog::class)),
 			$mailer,
 			$session,
-			$this->createMock(LoggerInterface::class),
-			$this->rowList ?? $this->createMock(MailTemplateList::class)
+			$this->createMock(LoggerInterface::class)
 		);
 	}//end controller()
 
@@ -88,7 +79,7 @@ class MailTemplateAdminControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testEndpointsAreAdminOnly(): void {
-		foreach (['kinds', 'rows', 'preview', 'test', 'resend'] as $name) {
+		foreach (['kinds', 'preview', 'test', 'resend'] as $name) {
 			$method = new ReflectionMethod(MailTemplateAdminController::class, $name);
 			self::assertNotEmpty($method->getAttributes(AuthorizedAdminSetting::class), $name);
 			self::assertEmpty($method->getAttributes(NoAdminRequired::class), $name);
@@ -98,22 +89,6 @@ class MailTemplateAdminControllerTest extends TestCase {
 		self::assertNotEmpty((new ReflectionMethod(MailTemplateAdminController::class, 'resend'))->getAttributes(UserRateLimit::class));
 		self::assertNotEmpty((new ReflectionMethod(MailTemplateAdminController::class, 'test'))->getAttributes(UserRateLimit::class));
 	}//end testEndpointsAreAdminOnly()
-
-	/**
-	 * The screen's rows come from the list, with their total.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t09
-	 */
-	public function testRowsAnswerEveryKindWithItsTotal(): void {
-		$list = $this->createMock(MailTemplateList::class);
-		$list->method('rows')->willReturn([['id' => 'default-invitation'], ['id' => 'r1']]);
-		$this->rowList = $list;
-
-		$answer = $this->controller()->rows();
-		self::assertSame(['results' => [['id' => 'default-invitation'], ['id' => 'r1']], 'total' => 2], $answer->getData());
-	}//end testRowsAnswerEveryKindWithItsTotal()
 
 	/**
 	 * Preview reports unknown variables and fills the sample values.

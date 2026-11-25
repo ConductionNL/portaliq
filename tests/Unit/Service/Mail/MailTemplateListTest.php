@@ -27,6 +27,7 @@ use OCA\Portaliq\Service\Mail\MailTemplateList;
 use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -35,24 +36,27 @@ use RuntimeException;
  */
 class MailTemplateListTest extends TestCase {
 	/**
-	 * A fresh portal lists every kind once, with the default text.
+	 * A fresh portal lists every kind once, with the default text, named in the reader's language.
 	 *
 	 * @return void
 	 */
 	public function testEveryKindIsListedWithoutStoredTexts(): void {
-		$rows = MailTemplateList::merge(stored: []);
-
-		self::assertSame(array_keys(MailTemplateRendererInterface::TEMPLATES), array_column($rows, 'templateKey'));
+		$rows  = $this->list(container: $this->createMock(originalClassName: ContainerInterface::class))->merge(stored: []);
 		$first = $rows[0];
-		self::assertFalse($first['stored']);
-		self::assertSame('default', $first['text']);
-		self::assertSame('default-reference-link', $first['id']);
-		self::assertSame('Link to follow a case', $first['kindLabel']);
-		self::assertSame(2, $first['variableCount']);
-		self::assertSame('', $first['updated']);
 
-		$dutch = MailTemplateList::merge(stored: [], translate: static fn (string $text): string => 'nl:'.$text);
-		self::assertSame('nl:Link to follow a case', $dutch[0]['kindLabel']);
+		self::assertSame(expected: array_keys(MailTemplateRendererInterface::TEMPLATES), actual: array_column($rows, 'templateKey'));
+		self::assertFalse(condition: $first['stored']);
+		self::assertSame(expected: 'default', actual: $first['text']);
+		self::assertSame(expected: 'default-reference-link', actual: $first['id']);
+		self::assertSame(expected: 'Link to follow a case', actual: $first['kindLabel']);
+		self::assertSame(expected: 2, actual: $first['variableCount']);
+		self::assertSame(expected: '', actual: $first['updated']);
+
+		$dutch = $this->list(container: $this->createMock(originalClassName: ContainerInterface::class))->merge(
+			stored: [],
+			translate: static fn (string $text): string => 'nl:'.$text
+		);
+		self::assertSame(expected: 'nl:Link to follow a case', actual: $dutch[0]['kindLabel']);
 	}//end testEveryKindIsListedWithoutStoredTexts()
 
 	/**
@@ -62,24 +66,31 @@ class MailTemplateListTest extends TestCase {
 	 */
 	public function testStoredTextsReplaceTheDefaultRow(): void {
 		$stored = [
-			['@self' => ['id' => 'r1', 'updated' => '2026-11-20T10:00:00+00:00'], 'templateKey' => 'invitation', 'portal' => 'zuiddrecht', 'subject' => 'Welkom bij {portal}', 'body' => 'Open {link}', 'updatedBy' => 'admin'],
+			[
+				'@self' => ['id' => 'r1', 'updated' => '2026-11-20T10:00:00+00:00'],
+				'templateKey' => 'invitation',
+				'portal' => 'zuiddrecht',
+				'subject' => 'Welkom bij {portal}',
+				'body' => 'Open {link}',
+				'updatedBy' => 'admin',
+			],
 			['uuid' => 'r2', 'templateKey' => 'invitation', 'portal' => 'tilburg', 'subject' => 'Hallo', 'body' => 'x', 'active' => false],
 			['id' => 'r3', 'templateKey' => 'no-such-kind', 'subject' => 'x', 'body' => 'x'],
 			'not a row',
 		];
 
-		$rows    = MailTemplateList::merge(stored: $stored);
+		$rows    = $this->list(container: $this->createMock(originalClassName: ContainerInterface::class))->merge(stored: $stored);
 		$invites = array_values(array_filter($rows, static fn (array $row): bool => $row['templateKey'] === 'invitation'));
 
-		self::assertCount(count(MailTemplateRendererInterface::TEMPLATES) + 1, $rows);
-		self::assertSame(['r1', 'r2'], array_column($invites, 'id'));
-		self::assertSame('Welkom bij {portal}', $invites[0]['subject']);
-		self::assertSame('2026-11-20T10:00:00+00:00', $invites[0]['updated']);
-		self::assertSame('own', $invites[0]['text']);
-		self::assertTrue($invites[0]['stored']);
-		self::assertTrue($invites[0]['active']);
-		self::assertFalse($invites[1]['active']);
-		self::assertNotContains('no-such-kind', array_column($rows, 'templateKey'));
+		self::assertCount(expectedCount: (count(MailTemplateRendererInterface::TEMPLATES) + 1), haystack: $rows);
+		self::assertSame(expected: ['r1', 'r2'], actual: array_column($invites, 'id'));
+		self::assertSame(expected: 'Welkom bij {portal}', actual: $invites[0]['subject']);
+		self::assertSame(expected: '2026-11-20T10:00:00+00:00', actual: $invites[0]['updated']);
+		self::assertSame(expected: 'own', actual: $invites[0]['text']);
+		self::assertTrue(condition: $invites[0]['stored']);
+		self::assertTrue(condition: $invites[0]['active']);
+		self::assertFalse(condition: $invites[1]['active']);
+		self::assertNotContains(needle: 'no-such-kind', haystack: array_column($rows, 'templateKey'));
 	}//end testStoredTextsReplaceTheDefaultRow()
 
 	/**
@@ -88,61 +99,113 @@ class MailTemplateListTest extends TestCase {
 	 * @return void
 	 */
 	public function testRowsReadTheStoredTextsAndSurviveAFailedRead(): void {
-		$service = new class {
-			/**
-			 * The config the last read asked for.
-			 *
-			 * @var array<string, mixed>
-			 */
-			public array $asked = [];
+		$service   = new MailTemplateStoreStub();
+		$container = $this->createConfiguredMock(originalClassName: ContainerInterface::class, configuration: ['get' => $service]);
+		$rows = $this->list(container: $container)->rows();
 
-			/**
-			 * Stand-in for ObjectService::findAll.
-			 *
-			 * @param array<string, mixed> $config        The read.
-			 * @param bool                 $_rbac         Ignored.
-			 * @param bool                 $_multitenancy Ignored.
-			 *
-			 * @return array<int, mixed>
-			 */
-			public function findAll(array $config, bool $_rbac=true, bool $_multitenancy=true): array {
-				$this->asked = $config;
-				return [new class {
-					/**
-					 * The row.
-					 *
-					 * @return array<string, mixed>
-					 */
-					public function jsonSerialize(): array {
-						return ['id' => 'r9', 'templateKey' => 'action-due', 'portal' => 'p', 'subject' => 'S', 'body' => 'B'];
-					}//end jsonSerialize()
-				},
-				];
-			}//end findAll()
-		};
+		self::assertSame(expected: 'portalMailTemplate', actual: $service->schema);
+		self::assertContains(needle: 'r9', haystack: array_column($rows, 'id'));
 
-		$container = $this->createMock(ContainerInterface::class);
-		$container->method('get')->willReturn($service);
-		$rows = (new MailTemplateList($container, $this->createMock(LoggerInterface::class), $this->l10n()))->rows();
-
-		self::assertSame(['register' => 'portaliq', 'schema' => 'portalMailTemplate'], $service->asked['filters']);
-		self::assertContains('r9', array_column($rows, 'id'));
-
-		$broken = $this->createMock(ContainerInterface::class);
-		$broken->method('get')->willThrowException(new RuntimeException('no OpenRegister'));
-		$fallback = (new MailTemplateList($broken, $this->createMock(LoggerInterface::class), $this->l10n()))->rows();
-		self::assertCount(count(MailTemplateRendererInterface::TEMPLATES), $fallback);
+		$fallback = $this->list(container: new MissingObjectServiceContainer())->rows();
+		self::assertCount(expectedCount: count(MailTemplateRendererInterface::TEMPLATES), haystack: $fallback);
 	}//end testRowsReadTheStoredTextsAndSurviveAFailedRead()
 
 	/**
-	 * A translator that answers the text as given.
+	 * A list over the given container, with a translator that answers 'label'.
 	 *
-	 * @return IL10N
+	 * @param ContainerInterface $container Resolves OpenRegister's ObjectService.
+	 *
+	 * @return MailTemplateList
 	 */
-	private function l10n(): IL10N {
-		$l10n = $this->createMock(IL10N::class);
-		$l10n->method('t')->willReturnArgument(0);
+	private function list(ContainerInterface $container): MailTemplateList {
+		return new MailTemplateList(
+			container: $container,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			l10n: $this->createConfiguredMock(originalClassName: IL10N::class, configuration: ['t' => 'label'])
+		);
+	}//end list()
+}//end class
 
-		return $l10n;
-	}//end l10n()
+/**
+ * Stand-in for OpenRegister's ObjectService: one stored text.
+ */
+class MailTemplateStoreStub {
+	/**
+	 * The schema the last read asked for.
+	 *
+	 * @var string
+	 */
+	public string $schema = '';
+
+	/**
+	 * Stand-in for ObjectService::setRegister.
+	 *
+	 * @param string $register The register.
+	 *
+	 * @return void
+	 */
+	public function setRegister(string $register): void {
+		unset($register);
+	}//end setRegister()
+
+	/**
+	 * Stand-in for ObjectService::setSchema.
+	 *
+	 * @param string $schema The schema.
+	 *
+	 * @return void
+	 */
+	public function setSchema(string $schema): void {
+		$this->schema = $schema;
+	}//end setSchema()
+
+	/**
+	 * Stand-in for ObjectService::findAll.
+	 *
+	 * @param array<string, mixed> $config        The read.
+	 * @param bool                 $_rbac         Ignored.
+	 * @param bool                 $_multitenancy Ignored.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 * @SuppressWarnings(PHPMD.CamelCaseParameterName)
+	 */
+	public function findAll(array $config, bool $_rbac=true, bool $_multitenancy=true): array {
+		unset($config);
+
+		return [['id' => 'r9', 'templateKey' => 'action-due', 'portal' => 'p', 'subject' => 'S', 'body' => 'B']];
+	}//end findAll()
+}//end class
+
+/**
+ * A container without OpenRegister.
+ */
+class MissingObjectServiceContainer implements ContainerInterface {
+	/**
+	 * Nothing resolves.
+	 *
+	 * @param string $id The service.
+	 *
+	 * @return mixed
+	 *
+	 * @throws NotFoundExceptionInterface Always.
+	 */
+	public function get(string $id): mixed {
+		throw new class(message: 'no '.$id) extends RuntimeException implements NotFoundExceptionInterface {
+		};
+	}//end get()
+
+	/**
+	 * Nothing is there.
+	 *
+	 * @param string $id The service.
+	 *
+	 * @return bool
+	 */
+	public function has(string $id): bool {
+		unset($id);
+
+		return false;
+	}//end has()
 }//end class

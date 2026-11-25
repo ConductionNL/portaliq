@@ -23,11 +23,13 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Mail;
 
 use OCA\Portaliq\Kernel\Contracts\MailTemplateRendererInterface;
+use OCA\Portaliq\Service\NormalisedRowReads;
+use OCA\Portaliq\Service\ObjectRowNormaliser;
 use OCA\Portaliq\Service\ObjectServiceLookup;
+use OCA\Portaliq\Service\PagedObjectReads;
 use OCP\IL10N;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * The rows of the Mail templates screen: one per kind of mail, merged with the
@@ -41,7 +43,20 @@ use Throwable;
  * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t09
  */
 class MailTemplateList {
+	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
+	use PagedObjectReads;
+	use NormalisedRowReads;
+
+	/**
+	 * The register the stored texts live in.
+	 */
+	private const REGISTER = MailTemplateRenderer::REGISTER;
+
+	/**
+	 * Logged when the stored texts could not be read.
+	 */
+	private const READ_FAILED = 'Portaliq: the stored mail texts could not be read';
 
 	/**
 	 * Constructor.
@@ -65,8 +80,8 @@ class MailTemplateList {
 	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t09
 	 */
 	public function rows(): array {
-		return self::merge(
-			stored: $this->stored(),
+		return $this->merge(
+			stored: $this->findAll(schema: MailTemplateRenderer::SCHEMA),
 			translate: fn (string $text): string => $this->l10n->t($text)
 		);
 	}//end rows()
@@ -84,7 +99,7 @@ class MailTemplateList {
 	 *
 	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t09
 	 */
-	public static function merge(array $stored, ?callable $translate=null): array {
+	public function merge(array $stored, ?callable $translate=null): array {
 		$byKey = [];
 		foreach ($stored as $row) {
 			if (is_array($row) === false) {
@@ -102,12 +117,12 @@ class MailTemplateList {
 
 			$own = ($byKey[$key] ?? []);
 			if ($own === []) {
-				$rows[] = self::defaultRow(key: $key, kind: $kind);
+				$rows[] = $this->defaultRow(key: $key, kind: $kind);
 				continue;
 			}
 
 			foreach ($own as $row) {
-				$rows[] = self::storedRow(key: $key, kind: $kind, row: $row);
+				$rows[] = $this->storedRow(key: $key, kind: $kind, row: $row);
 			}
 		}
 
@@ -122,7 +137,7 @@ class MailTemplateList {
 	 *
 	 * @return array<string, mixed>
 	 */
-	private static function defaultRow(string $key, array $kind): array {
+	private function defaultRow(string $key, array $kind): array {
 		return [
 			'id' => 'default-'.$key,
 			'stored' => false,
@@ -147,11 +162,11 @@ class MailTemplateList {
 	 *
 	 * @return array<string, mixed>
 	 */
-	private static function storedRow(string $key, array $kind, array $row): array {
+	private function storedRow(string $key, array $kind, array $row): array {
 		$self = (array)($row['@self'] ?? []);
 
 		return [
-			'id' => self::idOf(row: $row),
+			'id' => $this->rowId(row: $row),
 			'stored' => true,
 			'templateKey' => $key,
 			'kindLabel' => (string)$kind['label'],
@@ -165,63 +180,4 @@ class MailTemplateList {
 			'updatedBy' => (string)($row['updatedBy'] ?? ''),
 		];
 	}//end storedRow()
-
-	/**
-	 * A stored row's id: its uuid or id, flat or from `@self`.
-	 *
-	 * @param array<string, mixed> $row The stored row.
-	 *
-	 * @return string
-	 */
-	private static function idOf(array $row): string {
-		foreach ([$row, (array)($row['@self'] ?? [])] as $source) {
-			foreach (['uuid', 'id'] as $field) {
-				$value = ($source[$field] ?? null);
-				if (is_scalar($value) === true && (string)$value !== '') {
-					return (string)$value;
-				}
-			}
-		}
-
-		return '';
-	}//end idOf()
-
-	/**
-	 * Every stored text, of every portal.
-	 *
-	 * @return array<int, mixed>
-	 */
-	private function stored(): array {
-		$service = $this->objectService();
-		if ($service === null) {
-			return [];
-		}
-
-		try {
-			$rows = $service->findAll(
-				config: [
-					'filters' => ['register' => MailTemplateRenderer::REGISTER, 'schema' => MailTemplateRenderer::SCHEMA],
-					'limit' => 500,
-				],
-				_rbac: false,
-				_multitenancy: false
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: the stored mail texts could not be read', ['reason' => $e->getMessage()]);
-			return [];
-		}
-
-		$out = [];
-		foreach ((array)($rows ?? []) as $row) {
-			if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-				$row = $row->jsonSerialize();
-			}
-
-			if (is_array($row) === true) {
-				$out[] = $row;
-			}
-		}
-
-		return $out;
-	}//end stored()
 }//end class

@@ -25,7 +25,6 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\MailLogInterface;
 use OCA\Portaliq\Kernel\Contracts\MailTemplateRendererInterface;
-use OCA\Portaliq\Service\Mail\MailTemplateList;
 use OCA\Portaliq\Settings\PortaliqAdmin;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -57,7 +56,6 @@ class MailTemplateAdminController extends Controller {
 	 * @param IMailer              $mailer   Sends the test mail.
 	 * @param IUserSession         $session  Names the admin whose address gets the test mail.
 	 * @param LoggerInterface      $logger   Logs a test mail that was not sent.
-	 * @param MailTemplateList     $list     The screen's rows: every kind merged with the stored texts.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -66,7 +64,6 @@ class MailTemplateAdminController extends Controller {
 		private readonly IMailer $mailer,
 		private readonly IUserSession $session,
 		private readonly LoggerInterface $logger,
-		private readonly MailTemplateList $list,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
@@ -87,21 +84,6 @@ class MailTemplateAdminController extends Controller {
 
 		return new JSONResponse(['kinds' => $kinds]);
 	}//end kinds()
-
-	/**
-	 * The rows of the Mail templates screen: one per kind of mail, or one per
-	 * stored text of that kind, with its subject, variable count and change date.
-	 *
-	 * @return JSONResponse `results` and `total`.
-	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t09
-	 */
-	#[AuthorizedAdminSetting(PortaliqAdmin::class)]
-	public function rows(): JSONResponse {
-		$rows = $this->list->rows();
-
-		return new JSONResponse(['results' => $rows, 'total' => count($rows)]);
-	}//end rows()
 
 	/**
 	 * Check a text against its kind and preview it with sample values.
