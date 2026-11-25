@@ -3486,6 +3486,8 @@
         "Activate an account": "Account activeren",
         "Confirmation of a question": "Bevestiging contactformulier",
         "Confirmation of a request": "Bevestiging van een aanvraag",
+        "Invitation to co-sign a request": "Uitnodiging om een aanvraag mede te ondertekenen",
+        "A request was not co-signed": "Een aanvraag is niet mede-ondertekend",
         "A plan is nearly ending": "Plan verloopt",
         "Columns in My cases": "Kolommen in Mijn zaken",
         "Per column you choose how the value is shown. A link can be a QR code, with its own text under it.": "Per kolom kiest u hoe de waarde wordt getoond. Een link kan als QR-code, met een eigen tekst eronder.",
