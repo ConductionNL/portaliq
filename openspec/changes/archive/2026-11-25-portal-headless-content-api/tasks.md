@@ -47,7 +47,7 @@
   - A conformance test enumerates the built-in portal's capabilities and fails when one is unreachable through the public API, naming it
   - The conformance test reaches into no Portaliq internal, or it is not testing headlessness
 - [x] Implement
-- [ ] Test — not run: the 429 and the live conformance walk need a running instance; the static half (every content route is PublicPage + AnonRateLimit, every URL the portal reads is routed) is `tests/Unit/Controller/HeadlessConformanceTest.php`
+- [x] Test — live half `tests/e2e/headless-content-api.spec.ts`, 2/2 green on 25 Nov 2026 against a sandbox Nextcloud 34.0.6 (MariaDB, APCu, php -S) with the Zuiddrecht example site: the menu walk serves every linked route through `/api/content/page`, and past 240 reads `/api/content/faq` answers 429 while the content cache counters stand still (discriminator 2; by hand on `glossary`: 1 miss + 239 hits, then 20 refusals with hit count unchanged). The static half (every content route is PublicPage + AnonRateLimit, every URL the portal reads is routed) is `tests/Unit/Controller/HeadlessConformanceTest.php`
 
 ## Build notes
 
