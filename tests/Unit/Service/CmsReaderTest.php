@@ -277,7 +277,7 @@ class CmsReaderTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t02
 	 */
 	public function testAFaqDraftIsNeverServedAndEntriesAreFiltered(): void {
 		$this->cache->method('get')->willReturn(null);
@@ -303,7 +303,7 @@ class CmsReaderTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t02
 	 */
 	public function testAFinderOffersOnlyPublishedProducts(): void {
 		$this->cache->method('get')->willReturn(null);

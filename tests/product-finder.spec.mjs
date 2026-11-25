@@ -10,7 +10,7 @@
 // Usage:
 //   node --test tests/product-finder.spec.mjs
 //
-// @spec openspec/changes/public-faq-and-product-finder/specs/portaliq-cms/spec.md
+// @spec openspec/specs/site-faq-and-product-finder/spec.md
 
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'

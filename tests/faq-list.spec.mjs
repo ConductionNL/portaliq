@@ -9,7 +9,7 @@
 // Usage:
 //   node --test tests/faq-list.spec.mjs
 //
-// @spec openspec/changes/public-faq-and-product-finder/specs/portaliq-cms/spec.md
+// @spec openspec/specs/site-faq-and-product-finder/spec.md
 
 import assert from 'node:assert/strict'
 import { test } from 'node:test'

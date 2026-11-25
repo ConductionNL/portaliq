@@ -704,7 +704,7 @@ class CmsReader implements CmsReaderInterface {
 	 *
 	 * @return array The entries: question, answer, topic, pages.
 	 *
-	 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t02
 	 */
 	public function faq(string $portal, string $locale, string $audience, string $page='', string $topic=''): array {
 		return $this->faqReader->faq(portal: $portal, locale: $locale, audience: $audience, page: $page, topic: $topic);
@@ -720,7 +720,7 @@ class CmsReader implements CmsReaderInterface {
 	 *
 	 * @return array|null The finder, or null when there is none published.
 	 *
-	 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t02
 	 */
 	public function finder(string $portal, string $id, string $locale, string $audience): ?array {
 		return $this->faqReader->finder(portal: $portal, id: $id, locale: $locale, audience: $audience);
