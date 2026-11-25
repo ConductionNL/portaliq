@@ -699,7 +699,9 @@
         "Condition": "Condition",
         "Rules that send a submit elsewhere by its answers (form-governance REQ-FGV-002). The first rule whose condition holds decides; with no match the form's own destination applies. Each rule's destination must fit its schema when the binding is published.": "Rules that send a submit elsewhere by its answers (form-governance REQ-FGV-002). The first rule whose condition holds decides; with no match the form's own destination applies. Each rule's destination must fit its schema when the binding is published.",
         "A condition over the answers, in the grammar of a field's visibleWhen: {field, op, value}, or all / any of them.": "A condition over the answers, in the grammar of a field's visibleWhen: {field, op, value}, or all / any of them.",
-        "The register and schema the submit goes to when the condition holds, with the same keys as the form's own destination.": "The register and schema the submit goes to when the condition holds, with the same keys as the form's own destination."
+        "The register and schema the submit goes to when the condition holds, with the same keys as the form's own destination.": "The register and schema the submit goes to when the condition holds, with the same keys as the form's own destination.",
+        "The register of the object the submit creates when the condition holds.": "The register of the object the submit creates when the condition holds.",
+        "The schema of the object the submit creates when the condition holds.": "The schema of the object the submit creates when the condition holds."
     },
     "pluralForm": "nplurals=2; plural=(n != 1);"
 }

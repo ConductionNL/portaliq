@@ -9135,11 +9135,13 @@
                                     "properties": {
                                         "register": {
                                             "type": "string",
-                                            "title": "Register"
+                                            "title": "Register",
+                                            "description": "The register of the object the submit creates when the condition holds."
                                         },
                                         "schema": {
                                             "type": "string",
-                                            "title": "Schema"
+                                            "title": "Schema",
+                                            "description": "The schema of the object the submit creates when the condition holds."
                                         }
                                     }
                                 }

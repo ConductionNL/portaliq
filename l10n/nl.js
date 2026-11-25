@@ -3802,7 +3802,9 @@ OC.L10N.register(
         "Condition": "Voorwaarde",
         "Rules that send a submit elsewhere by its answers (form-governance REQ-FGV-002). The first rule whose condition holds decides; with no match the form's own destination applies. Each rule's destination must fit its schema when the binding is published.": "Regels die een inzending op grond van de antwoorden ergens anders heen sturen (form-governance REQ-FGV-002). De eerste regel waarvan de voorwaarde klopt beslist; klopt er geen, dan geldt de eigen bestemming van het formulier. De bestemming van elke regel moet bij publiceren passen bij haar schema.",
         "A condition over the answers, in the grammar of a field's visibleWhen: {field, op, value}, or all / any of them.": "Een voorwaarde op de antwoorden, in de vorm van de visibleWhen van een veld: {field, op, value}, of all / any daarvan.",
-        "The register and schema the submit goes to when the condition holds, with the same keys as the form's own destination.": "Het register en schema waar de inzending heen gaat als de voorwaarde klopt, met dezelfde sleutels als de eigen bestemming van het formulier."
+        "The register and schema the submit goes to when the condition holds, with the same keys as the form's own destination.": "Het register en schema waar de inzending heen gaat als de voorwaarde klopt, met dezelfde sleutels als de eigen bestemming van het formulier.",
+        "The register of the object the submit creates when the condition holds.": "Het register van het object dat de inzending maakt als de voorwaarde klopt.",
+        "The schema of the object the submit creates when the condition holds.": "Het schema van het object dat de inzending maakt als de voorwaarde klopt."
     },
     "nplurals=2; plural=(n != 1);"
 )

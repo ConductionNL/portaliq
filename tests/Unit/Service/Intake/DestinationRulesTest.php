@@ -74,7 +74,8 @@ class DestinationRulesTest extends TestCase {
 		$second  = ['when' => ['field' => 'onderwerp', 'op' => 'notEmpty'], 'destination' => ['register' => 'algemeen', 'schema' => 'vraag']];
 		$binding = self::binding(rules: [self::environment(), $second]);
 
-		$this->assertSame(expected: self::environment()['destination'], actual: $rules->routed(binding: $binding, answers: ['onderwerp' => 'milieu'])['destination']);
+		$routed = $rules->routed(binding: $binding, answers: ['onderwerp' => 'milieu']);
+		$this->assertSame(expected: self::environment()['destination'], actual: $routed['destination']);
 		$this->assertSame(expected: $second['destination'], actual: $rules->routed(binding: $binding, answers: ['onderwerp' => 'verkeer'])['destination']);
 		$this->assertSame(expected: $binding['destination'], actual: $rules->routed(binding: $binding, answers: [])['destination']);
 		$plain = self::binding(rules: []);
@@ -121,7 +122,7 @@ class DestinationRulesTest extends TestCase {
 		$schemas = $this->createMock(originalClassName: PortalSchemaReader::class);
 		$schemas->method('readSchema')->willReturn(['properties' => ['onderwerp' => ['type' => 'string']]]);
 		$intake = new DestinationIntake(
-			submitter: new DestinationSubmit($fake->container(), $this->createMock(originalClassName: LoggerInterface::class)),
+			submitter: new DestinationSubmit(container: $fake->container(), logger: $this->createMock(originalClassName: LoggerInterface::class)),
 			mapping: new DestinationMapping(),
 			schemas: $schemas
 		);
