@@ -433,13 +433,29 @@
 				</button>
 			</p>
 
-			<p
+			<div
 				v-if="sendFailed"
-				class="utrecht-paragraph pq-intake-form__error"
+				class="pq-intake-form__error"
 				data-testid="intake-form-error"
 				role="alert">
-				{{ errorLabel }}
-			</p>
+				<p class="utrecht-paragraph">
+					{{ errorLabel || text.sendFailed }}
+				</p>
+				<p
+					v-if="failureCode"
+					class="utrecht-paragraph"
+					data-testid="intake-form-error-code">
+					{{ text.errorCode.split('{code}').join(failureCode) }}
+				</p>
+				<button
+					type="button"
+					class="utrecht-button utrecht-button--secondary-action"
+					:disabled="submitting"
+					data-testid="intake-form-send-retry"
+					@click="submit">
+					{{ text.retry }}
+				</button>
+			</div>
 			<p
 				v-if="formError"
 				class="utrecht-paragraph pq-intake-form__error"
@@ -468,6 +484,7 @@ import RepeatingGroup from './forms/RepeatingGroup.vue'
 import ReviewList from './forms/ReviewList.vue'
 import SignatureField from './forms/SignatureField.vue'
 import StatementsBlock from './forms/StatementsBlock.vue'
+import { newSubmissionKey } from '../../shared/submissionKey.js'
 import { adoptSessionToken, authBaseFrom } from '../lib/authApi.js'
 import { resolveApiBase } from '../lib/contentApi.js'
 import { hasHelp, mergeHelp } from '../lib/help.js'
@@ -821,10 +838,10 @@ export default {
 				'Bewaar dit kenmerk. Hiermee kunt u later zien hoe het met uw aanvraag staat.',
 		},
 
-		/** Shown when sending failed. */
+		/** Shown when sending failed; empty uses the form's own words (REQ-FGV-003). */
 		errorLabel: {
 			type: String,
-			default: 'Versturen is niet gelukt. Probeer het later opnieuw.',
+			default: '',
 		},
 
 		/** The first, empty choice of a list. */
@@ -844,6 +861,8 @@ export default {
 			/** The check line each fetch of a step answered, by fetch id (data-lookups-and-checks-in-forms T05). */
 			fetchedChecks: {},
 			sendFailed: false,
+			failureCode: '',
+			submissionKey: '',
 			/** The destination's refusal that names no field of this form (decision 179). */
 			formError: '',
 			/** When the request arrived, its term starts and a decision is due, as the destination answered. */
@@ -1331,9 +1350,11 @@ export default {
 		 * @return {Promise<void>} Resolves when answered.
 		 *
 		 * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
+		 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-a-failed-submit-is-reported-and-can-be-sent-again-req-fgv-003
 		 */
 		async submit() {
 			this.sendFailed = false
+			this.failureCode = ''
 			this.formError = ''
 			const wrong = this.checkFields(
 				this.fields
@@ -1365,6 +1386,7 @@ export default {
 					statements: this.accepted,
 					onBehalf: this.onBehalf,
 					proof: await challengeProof(this.render.challenge),
+					idempotencyKey: this.keyOfThisSubmission(),
 					verifiedEmails: this.verifiedEmails,
 				})
 				if (outcome.unavailable) {
@@ -1388,6 +1410,7 @@ export default {
 				}
 
 				this.reference = outcome.reference
+				this.submissionKey = ''
 				this.confirmationText = outcome.confirmationText
 				this.confirmation = outcome.confirmation
 				this.mailedTo = outcome.mailedTo
@@ -1399,11 +1422,28 @@ export default {
 						this.$refs.doneHeading.focus()
 					}
 				})
-			} catch {
+			} catch (failure) {
 				this.sendFailed = true
+				this.failureCode = typeof failure?.code === 'string' ? failure.code : ''
 			} finally {
 				this.submitting = false
 			}
+		},
+
+		/**
+		 * The key of this filled-in form: made on the first send and kept for
+		 * every retry, so a retry after an answer that got lost creates no
+		 * second case. A sent form starts a new key.
+		 *
+		 * @return {string} The key.
+		 *
+		 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-a-failed-submit-is-reported-and-can-be-sent-again-req-fgv-003
+		 */
+		keyOfThisSubmission() {
+			if (this.submissionKey === '') {
+				this.submissionKey = newSubmissionKey()
+			}
+			return this.submissionKey
 		},
 
 		/**
