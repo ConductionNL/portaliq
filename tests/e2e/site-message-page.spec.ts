@@ -222,7 +222,8 @@ test.describe('a-resident-opens-one-message', () => {
 
 		// Both attachments, by name.
 		const files = page.getByTestId('message-files')
-		await expect(files).toContainText(oneOf('Bijlagen', 'Attachments'))
+		// oneOf() matches a whole text, so it is held against the heading, not the section.
+		await expect(files.getByRole('heading', { level: 2 })).toHaveText(oneOf('Bijlagen', 'Attachments'))
 		for (const name of FILES) {
 			await expect(files.getByTestId('message-download').filter({ hasText: name })).toBeVisible()
 		}

@@ -9,6 +9,7 @@
 ## End to end
 
 - [ ] **T04**: `tests/e2e/search-sort-by-relevance.spec.ts` on an instance with `pg_trgm` and local publications only (the case that works without the opencatalogi sibling half) (REQ-SSR-001). Verification: the first result for the seeded term is the matching publication, not the newest.
+  - Run live 25 Nov 2026 on a sandbox Nextcloud 35.0.3 on MariaDB (not PostgreSQL, so not yet the `pg_trgm` instance this task names): `tests/e2e/search-sort-by-relevance.spec.ts` 4 passed (REQ-SSR-001 x3, REQ-SSR-004), 1 skipped (REQ-SSR-005 needs `E2E_CONTAINER` and opencatalogi). Left open for the PostgreSQL run.
 
 ## Docs, strings and validation
 

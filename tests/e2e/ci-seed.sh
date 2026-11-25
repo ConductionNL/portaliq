@@ -428,6 +428,25 @@ for ORG_SLUG in dev-org e2e-org; do
 		"${BASE}/index.php/apps/openregister/api/organisations" || echo 000)"
 	echo "[ci-seed] organisation ${ORG_SLUG} -> HTTP ${ORG_CODE}"
 done
+# The rows the specs create as the admin are stamped with the admin's ACTIVE
+# OpenRegister organisation, and a portal session reads as its own one: rows
+# left in the default organisation are never listed to a resident of dev-org
+# (found live 25 Nov 2026: the inbox of site-message-page.spec.ts stayed empty).
+# So the admin works in dev-org, the organisation the site's dev-login uses.
+DEV_ORG_UUID="$(curl -sS -u "${USER_NAME}:${USER_PASS}" -H 'OCS-APIRequest: true' \
+	"${BASE}/index.php/apps/openregister/api/organisations?_limit=200" \
+	| python3 -c 'import json,sys
+d=json.load(sys.stdin)
+rows=d.get("results", d) if isinstance(d, dict) else d
+print(next((o.get("uuid") or o.get("id") for o in rows if isinstance(o, dict) and o.get("slug")=="dev-org"), ""))' 2>/dev/null || true)"
+if [ -n "$DEV_ORG_UUID" ]; then
+	ACTIVE_CODE="$(curl -sS -o /dev/null -w '%{http_code}' -u "${USER_NAME}:${USER_PASS}" \
+		-X POST -H 'OCS-APIRequest: true' \
+		"${BASE}/index.php/apps/openregister/api/organisations/${DEV_ORG_UUID}/set-active" || echo 000)"
+	echo "[ci-seed] admin works in dev-org -> HTTP ${ACTIVE_CODE}"
+else
+	echo "::warning::dev-org not found; rows the specs create stay in the admin's default organisation."
+fi
 ORGS_BODY="$(mktemp)"
 curl -sS -o "$ORGS_BODY" -u "${USER_NAME}:${USER_PASS}" -H 'OCS-APIRequest: true' \
 	"${BASE}/index.php/apps/openregister/api/organisations?_limit=200" || true
