@@ -35,7 +35,7 @@ import strings from '../lib/helpStrings.js'
 import { pageLocale } from '../pages/inbox/translate.js'
 
 /**
- * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
+ * @spec openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
  */
 export default {
 	name: 'FormHelp',
@@ -58,7 +58,7 @@ export default {
 	computed: {
 		/**
 		 * @return {object} The merged details.
-		 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
+		 * @spec openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
 		 */
 		details() {
 			return mergeHelp(this.portalHelp, this.formHelp)
@@ -66,7 +66,7 @@ export default {
 
 		/**
 		 * @return {boolean} Whether there is anything to show.
-		 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
+		 * @spec openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
 		 */
 		show() {
 			return hasHelp(this.details)
@@ -77,7 +77,7 @@ export default {
 		/**
 		 * @param {string} key A string key.
 		 * @return {string} The words in the page language.
-		 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
+		 * @spec openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
 		 */
 		say(key) {
 			return (strings[pageLocale()] || strings.nl)[key]
@@ -87,7 +87,7 @@ export default {
 		 * Close the dialog and give focus back to the link.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
+		 * @spec openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
 		 */
 		closeDialog() {
 			this.open = false

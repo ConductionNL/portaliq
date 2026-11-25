@@ -12726,7 +12726,7 @@
 				"readOn": "2026-10-08",
 				"owner": "ConductionNL/portaliq",
 				"change": "help-texts-and-form-help",
-				"requirement": "openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md :: A page and each part of Mijn omgeving can carry a help text (REQ-HTF-002)"
+				"requirement": "openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md :: A page and each part of Mijn omgeving can carry a help text (REQ-HTF-002)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -13030,7 +13030,7 @@
 				"readOn": "2026-10-08",
 				"owner": "ConductionNL/portaliq",
 				"change": "help-texts-and-form-help",
-				"requirement": "openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md :: A form offers help without losing the answers (REQ-HTF-001)"
+				"requirement": "openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md :: A form offers help without losing the answers (REQ-HTF-001)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",

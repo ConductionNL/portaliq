@@ -6,7 +6,7 @@
 // offers, and which part of Mijn omgeving a page belongs to. No Vue, so node
 // tests it.
 //
-// @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md
+// @spec openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md
 
 const KEYS = ['intro', 'image', 'phone', 'phoneNote', 'hours', 'desk', 'email']
 
@@ -17,7 +17,7 @@ const KEYS = ['intro', 'image', 'phone', 'phoneNote', 'hours', 'desk', 'email']
  * @param {object|null} portalHelp The portal's `help`.
  * @param {object|null} formHelp The form's `help`.
  * @return {object} The merged details, only keys that hold text.
- * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
+ * @spec openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
  */
 export function mergeHelp(portalHelp, formHelp) {
 	const out = {}
@@ -51,7 +51,7 @@ function filledHelp(source) {
  *
  * @param {object} help The merged details.
  * @return {boolean}
- * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
+ * @spec openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
  */
 export function hasHelp(help) {
 	return KEYS.some((key) => key !== 'image' && Boolean(help?.[key]))
@@ -63,7 +63,7 @@ export function hasHelp(help) {
  * @param {string} note The `phoneNote`.
  * @param {string} title The form's title.
  * @return {string} The note.
- * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
+ * @spec openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
  */
 export function phoneNoteFor(note, title) {
 	return String(note || '').replaceAll('{formulier}', String(title || '').trim())
@@ -76,7 +76,7 @@ export function phoneNoteFor(note, title) {
  * @param {string} email The address.
  * @param {string} title The form's title.
  * @return {string} A `mailto:` link, or ''.
- * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
+ * @spec openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
  */
 export function mailtoFor(email, title) {
 	const address = String(email || '').trim()
@@ -103,7 +103,7 @@ const SECTIONS = {
  * @param {object|null} entry The navigation entry.
  * @param {boolean} isHome Whether this is the area's home.
  * @return {string} `overview`, `cases`, `tasks`, `messages`, `contacts`, or ''.
- * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-page-and-each-part-of-mijn-omgeving-can-carry-a-help-text-req-htf-002
+ * @spec openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-page-and-each-part-of-mijn-omgeving-can-carry-a-help-text-req-htf-002
  */
 export function sectionOf(entry, isHome = false) {
 	if (isHome) {
