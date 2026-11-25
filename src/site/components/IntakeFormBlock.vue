@@ -163,6 +163,7 @@
 		<form
 			v-else-if="state === 'form'"
 			class="pq-intake-form__form"
+			:data-portaliq-form="trafficFormId"
 			novalidate
 			@submit.prevent="onSubmit">
 			<!-- An employee fills it in for a resident (REQ-RIF-005): signed in, whom for; else the way in. -->
@@ -865,6 +866,17 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The id the traffic client reports this form under (portal-traffic-outcomes:
+		 * form starts, submits, abandons and the field people leave on). Without it
+		 * the form has no id, name or action, so its use is never counted.
+		 *
+		 * @return {string} The served form's id, else the binding's route, else `intake`.
+		 */
+		trafficFormId() {
+			return String(this.render?.formId || this.bindingRoute || 'intake')
+		},
+
 		/**
 		 * @return {Record<string, string>} The signature, e-mail, desk and Yivi words in the page language.
 		 * @spec openspec/changes/resident-identity-in-forms/tasks.md#T06
