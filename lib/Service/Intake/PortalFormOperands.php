@@ -126,6 +126,8 @@ class PortalFormOperands {
 	 * @return array<int, mixed> The values; empty when the argument names nothing answered.
 	 *
 	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+	 *
+	 * @psalm-suppress InvalidOperand `+ 0` keeps a numeric literal int or float as written.
 	 */
 	public function values(mixed $arg, array $answers): array {
 		if (is_int($arg) === true || is_float($arg) === true) {
@@ -141,11 +143,6 @@ class PortalFormOperands {
 		}
 
 		if (is_numeric($arg) === true) {
-			/**
-			 * `+ 0` turns a numeric literal into int or float as written.
-			 *
-			 * @psalm-suppress InvalidOperand
-			 */
 			return [$arg + 0];
 		}
 

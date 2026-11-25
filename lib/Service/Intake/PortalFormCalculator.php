@@ -233,6 +233,8 @@ class PortalFormCalculator implements PortalFormCalculatorInterface {
 	 * @param array<string, mixed> $answers The answers so far.
 	 *
 	 * @return array<int, int|float>|null
+	 *
+	 * @psalm-suppress InvalidOperand `+ 0` keeps a numeric answer int or float as written.
 	 */
 	private function numbersOf(array $args, array $answers): ?array {
 		$numbers = [];
@@ -248,11 +250,6 @@ class PortalFormCalculator implements PortalFormCalculatorInterface {
 					return null;
 				}
 
-				/**
-				 * `+ 0` turns a numeric answer into int or float as written, so whole numbers stay whole.
-				 *
-				 * @psalm-suppress InvalidOperand
-				 */
 				$numbers[] = $value + 0;
 			}
 		}
@@ -267,6 +264,8 @@ class PortalFormCalculator implements PortalFormCalculatorInterface {
 	 * @param array<int, int|float> $numbers The numbers.
 	 *
 	 * @return int|float|null The result, or null for no numbers.
+	 *
+	 * @psalm-suppress InvalidOperand ints and floats mix on purpose: a whole result stays an int.
 	 */
 	private function arithmetic(string $op, array $numbers): int|float|null {
 		if ($numbers === []) {
@@ -283,11 +282,6 @@ class PortalFormCalculator implements PortalFormCalculatorInterface {
 
 		$result = array_shift($numbers);
 		foreach ($numbers as $number) {
-			/**
-			 * Ints and floats mix on purpose: a whole result stays an int.
-			 *
-			 * @psalm-suppress InvalidOperand
-			 */
 			$result -= $number;
 		}
 

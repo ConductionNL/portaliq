@@ -247,4 +247,22 @@ class TrafficSessioniserTest extends TestCase {
 
 		$this->assertSame(['/first', '/second'], $this->paths($sessions[0]));
 	}//end testMillisecondsOrderEventsWithinOneSecond()
+
+
+	/**
+	 * A shortened fraction is read as tenths: `.2` comes after `.15`.
+	 *
+	 * @return void
+	 */
+	public function testAShortFractionIsReadAsTenths(): void {
+		$sessions = (new TrafficSessioniser())->sessions(
+			events: [
+				$this->event(at: '2026-09-04T10:00:00.2Z', seq: 0, path: '/second'),
+				$this->event(at: '2026-09-04T10:00:00.15Z', seq: 0, path: '/first'),
+			],
+			timeoutMinutes: 30
+		);
+
+		$this->assertSame(expected: ['/first', '/second'], actual: $this->paths(session: $sessions[0]));
+	}//end testAShortFractionIsReadAsTenths()
 }//end class
