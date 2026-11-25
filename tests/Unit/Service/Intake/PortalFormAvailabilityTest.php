@@ -112,7 +112,9 @@ class PortalFormAvailabilityTest extends TestCase {
 			['situation' => 'full', 'limit' => 150, 'per' => 'total', 'reopensOn' => '2027-01-05'],
 			$this->availability(count: 150)->unavailable(binding: $binding, now: $this->at('2026-12-20 10:00'))
 		);
-		$this->assertSame(['register' => 'dossiq', 'schema' => 'case', 'filters' => []], $this->counted[0]);
+		// Every submission counts, not only those the visitor may read: a
+		// resident who may read no other application still meets a full form.
+		$this->assertSame(['register' => 'dossiq', 'schema' => 'case', 'filters' => ['_rbac' => false, '_multitenancy' => false]], $this->counted[0]);
 
 		$this->assertNull($this->availability(count: 149)->unavailable(binding: $binding, now: $this->at('2026-12-20 10:00')));
 	}//end testTheLimitReachedIsFull()
@@ -130,11 +132,11 @@ class PortalFormAvailabilityTest extends TestCase {
 			['count' => 41, 'limit' => 500, 'per' => 'month'],
 			$this->availability(count: 41)->counter(binding: $monthly, now: $this->at('2026-10-09 12:00'))
 		);
-		$this->assertSame(['@self' => ['created' => ['gte' => '2026-09-30 22:00:00']]], $this->counted[0]['filters']);
+		$this->assertSame(['_rbac' => false, '_multitenancy' => false, '@self' => ['created' => ['gte' => '2026-09-30 22:00:00']]], $this->counted[0]['filters']);
 
 		$yearly = $this->binding(['limit' => ['count' => 10, 'per' => 'year']]);
 		$this->availability(count: 0)->counter(binding: $yearly, now: $this->at('2026-10-09 12:00'));
-		$this->assertSame(['@self' => ['created' => ['gte' => '2025-12-31 23:00:00']]], $this->counted[1]['filters']);
+		$this->assertSame(['_rbac' => false, '_multitenancy' => false, '@self' => ['created' => ['gte' => '2025-12-31 23:00:00']]], $this->counted[1]['filters']);
 	}//end testTheCounterCountsTheCurrentPeriod()
 
 	/**

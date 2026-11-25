@@ -278,7 +278,15 @@ class PortalFormAvailability implements PortalFormAvailabilityInterface {
 	 * @param array<string, mixed>   $binding The binding.
 	 * @param DateTimeImmutable|null $start   The first moment counted; null counts all.
 	 *
+	 * The count is of every submission, not of those the visitor may read: a
+	 * limit is the form's, and a resident who may read none of the other
+	 * applications (the usual destination) must still meet a full form. So
+	 * OpenRegister counts without RBAC and without the organisation scope;
+	 * only the number leaves this class, never a row.
+	 *
 	 * @return int
+	 *
+	 * @spec openspec/changes/form-governance-availability-retention-and-routing/tasks.md#t11
 	 */
 	private function submissionsSince(array $binding, ?DateTimeImmutable $start): int {
 		$destination = $this->mapping->destinationOf(binding: $binding);
@@ -286,7 +294,7 @@ class PortalFormAvailability implements PortalFormAvailabilityInterface {
 			return 0;
 		}
 
-		$filters = [];
+		$filters = ['_rbac' => false, '_multitenancy' => false];
 		if ($start !== null) {
 			$filters['@self'] = ['created' => ['gte' => $start->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s')]];
 		}
