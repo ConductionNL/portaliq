@@ -387,7 +387,7 @@ class PortalIdentityMailer implements PortalIdentityMailerInterface {
 	 *
 	 * @return array{subject: string, body: string}
 	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t03
 	 */
 	private function textOf(IdentityMailRun $run, IL10N $l10n): array {
 		$subject = $l10n->t($run->keys['subject'], [$run->name]);
@@ -410,7 +410,7 @@ class PortalIdentityMailer implements PortalIdentityMailerInterface {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t03
 	 */
 	private function logSend(IdentityMailRun $run, string $failure): void {
 		if ($this->mailLog === null) {

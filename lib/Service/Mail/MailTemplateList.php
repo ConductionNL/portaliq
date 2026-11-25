@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t09
+ * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t09
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use Psr\Log\LoggerInterface;
  * and change date. So a fresh portal lists every kind it sends, as the
  * PtMailsjablonen board draws, instead of an empty list.
  *
- * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t09
+ * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t09
  */
 class MailTemplateList {
 	use ObjectRowNormaliser;
@@ -77,7 +77,7 @@ class MailTemplateList {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t09
+	 * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t09
 	 */
 	public function rows(): array {
 		return $this->merge(
@@ -97,7 +97,7 @@ class MailTemplateList {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t09
+	 * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t09
 	 */
 	public function merge(array $stored, ?callable $translate=null): array {
 		$byKey = [];

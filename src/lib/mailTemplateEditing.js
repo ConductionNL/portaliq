@@ -14,7 +14,7 @@
  * src/customComponents.js, so tests/mail-template-editing.spec.mjs runs this
  * module as a plain node script.
  *
- * @spec openspec/changes/mail-templates-admin-screen/specs/portal-mail-templates/spec.md#requirement-an-admin-can-edit-the-text-of-each-portal-mail-req-pmt-001
+ * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/specs/portal-mail-templates/spec.md#requirement-an-admin-can-edit-the-text-of-each-portal-mail-req-pmt-001
  */
 
 export const KINDS_PATH = '/apps/portaliq/api/mail-templates'
@@ -30,7 +30,7 @@ const REQUIRED = ['templateKey', 'portal', 'subject', 'body']
  *
  * @param {object|null} kind A kind from the kinds endpoint.
  * @return {Array<{name: string, label: string}>} The variables.
- * @spec openspec/changes/mail-templates-admin-screen/specs/portal-mail-templates/spec.md#requirement-a-template-accepts-only-its-own-variables-and-no-record-content-req-pmt-002
+ * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/specs/portal-mail-templates/spec.md#requirement-a-template-accepts-only-its-own-variables-and-no-record-content-req-pmt-002
  */
 export function variablesOf(kind) {
 	return (kind?.variables || []).map((name) => ({ name, label: `{${name}}` }))
@@ -46,8 +46,8 @@ export function variablesOf(kind) {
  *
  * @param {object|null} row A `portalMailTemplate` row, or a row of the screen.
  * @return {{id: string, templateKey: string, portal: string, subject: string, body: string, active: boolean}}
- * @spec openspec/changes/mail-templates-admin-screen/specs/portal-mail-templates/spec.md#requirement-an-admin-can-edit-the-text-of-each-portal-mail-req-pmt-001
- * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t09
+ * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/specs/portal-mail-templates/spec.md#requirement-an-admin-can-edit-the-text-of-each-portal-mail-req-pmt-001
+ * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t09
  */
 export function formFromRow(row) {
 	const source = row || {}
@@ -77,7 +77,7 @@ function fieldOf(row, name) {
  *
  * @param {object} form The editor's fields.
  * @return {Array<string>} Their names, in the order of REQUIRED.
- * @spec openspec/changes/mail-templates-admin-screen/specs/portal-mail-templates/spec.md#requirement-an-admin-can-edit-the-text-of-each-portal-mail-req-pmt-001
+ * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/specs/portal-mail-templates/spec.md#requirement-an-admin-can-edit-the-text-of-each-portal-mail-req-pmt-001
  */
 export function missingFields(form) {
 	return REQUIRED.filter((name) => String(form?.[name] || '').trim() === '')
@@ -89,7 +89,7 @@ export function missingFields(form) {
  * @param {Array<string>} names The unknown variables, without braces.
  * @param {(text: string, vars?: object) => string} translate The translator.
  * @return {string} The message.
- * @spec openspec/changes/mail-templates-admin-screen/specs/portal-mail-templates/spec.md#requirement-a-template-accepts-only-its-own-variables-and-no-record-content-req-pmt-002
+ * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/specs/portal-mail-templates/spec.md#requirement-a-template-accepts-only-its-own-variables-and-no-record-content-req-pmt-002
  */
 export function unknownMessage(names, translate) {
 	const list = names.map((name) => `{${name}}`).join(', ')
@@ -111,7 +111,7 @@ function textOf(form) {
  *
  * @param {{get: (url: string) => Promise<object>, post: (url: string, body: object) => Promise<object>, put: (url: string, body: object) => Promise<object>, del: (url: string) => Promise<object>, generateUrl: (path: string, params?: object) => string}} http The HTTP verbs and URL generator.
  * @return {object} kinds, portals, check, sendTest, save, remove.
- * @spec openspec/changes/mail-templates-admin-screen/specs/portal-mail-templates/spec.md#requirement-an-admin-can-edit-the-text-of-each-portal-mail-req-pmt-001
+ * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/specs/portal-mail-templates/spec.md#requirement-an-admin-can-edit-the-text-of-each-portal-mail-req-pmt-001
  */
 export function createMailTemplateApi({ get, post, put, del, generateUrl }) {
 	const rowUrl = (id) => generateUrl(`${TEMPLATES_PATH}/{id}`, { id })
@@ -145,7 +145,7 @@ function refused(ctx, message) {
  * @param {object} ctx The context: `api`, `translate`.
  * @param {object} form The editor's fields.
  * @return {Promise<{ok: boolean, message: string}>}
- * @spec openspec/changes/mail-templates-admin-screen/specs/portal-mail-templates/spec.md#requirement-a-template-accepts-only-its-own-variables-and-no-record-content-req-pmt-002
+ * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/specs/portal-mail-templates/spec.md#requirement-a-template-accepts-only-its-own-variables-and-no-record-content-req-pmt-002
  */
 async function submitText(ctx, form) {
 	if (missingFields(form).length > 0) {
@@ -165,7 +165,7 @@ async function submitText(ctx, form) {
  * @param {object} ctx The context: `api`, `translate`.
  * @param {object} form The editor's fields.
  * @return {Promise<{ok: boolean, message: string}>}
- * @spec openspec/changes/mail-templates-admin-screen/specs/portal-mail-templates/spec.md#requirement-an-admin-can-send-a-test-mail-req-pmt-004
+ * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/specs/portal-mail-templates/spec.md#requirement-an-admin-can-send-a-test-mail-req-pmt-004
  */
 async function sendTestText(ctx, form) {
 	await ctx.api.sendTest(form)
@@ -180,7 +180,7 @@ async function sendTestText(ctx, form) {
  * @param {object} api The calls of createMailTemplateApi.
  * @param {(text: string, vars?: object) => string} translate The translator.
  * @return {{submit: (form: object) => Promise<object>, preview: (form: object) => Promise<object>, sendTest: (form: object) => Promise<object>}}
- * @spec openspec/changes/mail-templates-admin-screen/specs/portal-mail-templates/spec.md#requirement-an-admin-can-edit-the-text-of-each-portal-mail-req-pmt-001
+ * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/specs/portal-mail-templates/spec.md#requirement-an-admin-can-edit-the-text-of-each-portal-mail-req-pmt-001
  */
 export function createEditorActions(api, translate) {
 	const ctx = { api, translate }
@@ -214,7 +214,7 @@ function finish(deps, message) {
  * @param {object} deps The handlers' dependencies, with `actions`.
  * @param {object} form The editor's fields.
  * @return {Promise<boolean>} Whether a text was saved.
- * @spec openspec/changes/mail-templates-admin-screen/specs/portal-mail-templates/spec.md#requirement-an-admin-can-edit-the-text-of-each-portal-mail-req-pmt-001
+ * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/specs/portal-mail-templates/spec.md#requirement-an-admin-can-edit-the-text-of-each-portal-mail-req-pmt-001
  */
 async function editText(deps, form) {
 	let options
@@ -233,7 +233,7 @@ async function editText(deps, form) {
  * @param {object} deps The handlers' dependencies.
  * @param {object} item The stored row.
  * @return {Promise<boolean>} Whether it was removed.
- * @spec openspec/changes/mail-templates-admin-screen/specs/portal-mail-templates/spec.md#requirement-an-admin-can-edit-the-text-of-each-portal-mail-req-pmt-001
+ * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/specs/portal-mail-templates/spec.md#requirement-an-admin-can-edit-the-text-of-each-portal-mail-req-pmt-001
  */
 async function resetText(deps, item) {
 	const id = formFromRow(item).id
@@ -255,7 +255,7 @@ async function resetText(deps, item) {
  *
  * @param {object} deps api, openEditor, confirmReset, notify, notifyError, translate, reload.
  * @return {{newMailTemplate: () => Promise<boolean>, editMailTemplate: (payload: object) => Promise<boolean>, resetMailTemplate: (payload: object) => Promise<boolean>}}
- * @spec openspec/changes/mail-templates-admin-screen/specs/portal-mail-templates/spec.md#requirement-an-admin-can-edit-the-text-of-each-portal-mail-req-pmt-001
+ * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/specs/portal-mail-templates/spec.md#requirement-an-admin-can-edit-the-text-of-each-portal-mail-req-pmt-001
  */
 export function createMailTemplateHandlers(deps) {
 	const ctx = { ...deps, actions: createEditorActions(deps.api, deps.translate) }

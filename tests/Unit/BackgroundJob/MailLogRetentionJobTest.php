@@ -19,7 +19,7 @@ use ReflectionMethod;
 /**
  * The daily job that removes expired mail log rows.
  *
- * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t05
+ * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t05
  */
 #[CoversClass(MailLogRetentionJob::class)]
 class MailLogRetentionJobTest extends TestCase {

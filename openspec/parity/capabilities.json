@@ -12762,7 +12762,7 @@
 				"readOn": "2026-10-08",
 				"owner": "ConductionNL/portaliq",
 				"change": "mail-templates-admin-screen",
-				"requirement": "openspec/changes/mail-templates-admin-screen/specs/portal-mail-templates/spec.md :: An admin can edit the text of each portal mail (REQ-PMT-001)"
+				"requirement": "openspec/specs/portal-mail-templates/spec.md :: An admin can edit the text of each portal mail (REQ-PMT-001)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",

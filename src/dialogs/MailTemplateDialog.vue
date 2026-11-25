@@ -9,7 +9,7 @@
   src/lib/mailTemplateEditing.js; a refusal shows here, where the admin can
   correct it. It closes with the saved message, or with nothing.
 
-  @spec openspec/changes/mail-templates-admin-screen/specs/portal-mail-templates/spec.md#requirement-an-admin-can-edit-the-text-of-each-portal-mail-req-pmt-001
+  @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/specs/portal-mail-templates/spec.md#requirement-an-admin-can-edit-the-text-of-each-portal-mail-req-pmt-001
 -->
 <template>
 	<CnDialog
@@ -196,7 +196,7 @@ export default {
 		 *
 		 * @param {string} name submit, preview or sendTest.
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/mail-templates-admin-screen/specs/portal-mail-templates/spec.md#requirement-a-template-accepts-only-its-own-variables-and-no-record-content-req-pmt-002
+		 * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/specs/portal-mail-templates/spec.md#requirement-a-template-accepts-only-its-own-variables-and-no-record-content-req-pmt-002
 		 */
 		async run(name) {
 			this.busy = true

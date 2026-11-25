@@ -301,7 +301,7 @@ class FormConfirmationMailer implements FormConfirmationMailerInterface {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t03
 	 */
 	private function logSend(string $slug, string $email, string $reference, bool $sent): void {
 		if ($this->mailLog === null) {

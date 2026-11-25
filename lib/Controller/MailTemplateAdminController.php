@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t04
+ * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t04
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use Psr\Log\LoggerInterface;
  * and preview of a text, a test mail to the admin's own address, and a
  * resend of a failed mail.
  *
- * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t04
+ * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t04
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the count includes the route attributes
  *   (NoAdminRequired, NoCSRFRequired, ...) a controller declares.
@@ -73,7 +73,7 @@ class MailTemplateAdminController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t04
+	 * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t04
 	 */
 	#[AuthorizedAdminSetting(PortaliqAdmin::class)]
 	public function kinds(): JSONResponse {
@@ -94,7 +94,7 @@ class MailTemplateAdminController extends Controller {
 	 *
 	 * @return JSONResponse `ok`, the unknown variables, and the preview.
 	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t04
+	 * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t04
 	 */
 	#[AuthorizedAdminSetting(PortaliqAdmin::class)]
 	public function preview(string $templateKey='', string $subject='', string $body=''): JSONResponse {
@@ -123,7 +123,7 @@ class MailTemplateAdminController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t04
+	 * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t04
 	 */
 	#[AuthorizedAdminSetting(PortaliqAdmin::class)]
 	#[UserRateLimit(limit: 20, period: 60)]
@@ -153,7 +153,7 @@ class MailTemplateAdminController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t04
+	 * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t04
 	 */
 	#[AuthorizedAdminSetting(PortaliqAdmin::class)]
 	#[UserRateLimit(limit: 20, period: 60)]

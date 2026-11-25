@@ -97,7 +97,7 @@ class FormConfirmationMailerTest extends TestCase {
 	 * default subject and body, with the trimmed portal title, the reference
 	 * and the form's name as its variables.
 	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t02
 	 */
 	public function testAPortalsOwnTextReplacesTheDefaultSubjectAndBody(): void {
 		$renderer = $this->createMock(MailTemplateRenderer::class);
@@ -124,7 +124,7 @@ class FormConfirmationMailerTest extends TestCase {
 	 * mail-templates-admin-screen T03: each send is logged against the
 	 * portal as delivered or failed, and a log that fails never fails the mail.
 	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t03
 	 */
 	public function testEachSendIsLoggedAsDeliveredOrFailed(): void {
 		$records = [];

@@ -47,7 +47,7 @@ interface MailLogInterface {
 	 *
 	 * @return int How many rows were removed.
 	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t05
 	 */
 	public function purgeExpired(int $limit=500, ?DateTimeImmutable $now=null): int;
 
@@ -62,7 +62,7 @@ interface MailLogInterface {
 	 *
 	 * @return string `queued`, `not_found`, `not_failed` or `error`.
 	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t04
+	 * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t04
 	 */
 	public function queueRetry(string $id): string;
 }//end interface
