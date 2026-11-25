@@ -333,7 +333,9 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.5.0: `destination` replaces caseRegister/caseSchema/deliverTo (decision 179); those stay, deprecated.
 		// 0.6.0: `intro.enabled`, the form settings page's switch for the introduction (form-statements-intro-and-confirmation-mail T06). Additive.
 		// 0.7.0: `availability` (form-governance-availability-retention-and-routing REQ-FGV-001). Additive.
-		$this->assertSame('0.7.0', self::$register['components']['schemas']['portalFormBinding']['version']);
+		// 0.8.0: `destinationRules` (REQ-FGV-002, rewritten onto the direct submit). Additive.
+		$this->assertSame('0.8.0', self::$register['components']['schemas']['portalFormBinding']['version']);
+		$this->assertSame('array', self::$register['components']['schemas']['portalFormBinding']['properties']['destinationRules']['type']);
 		$this->assertSame('boolean', self::$register['components']['schemas']['portalFormBinding']['properties']['intro']['properties']['enabled']['type']);
 		$this->assertSame(['case', 'wooRequest'], self::$register['components']['schemas']['portalFormBinding']['properties']['deliverTo']['enum']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalIntakeSubmission']['version']);
@@ -453,8 +455,9 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.129.0: portalCase carries closedAt, resultPublicLabel and resultPublicDescription,
 		// the fields a cases collection names for its outcome (case-outcome-on-the-case-page).
 		// 0.130.0 (portalCase 0.5.0): decisionSentAt and againstCaseId (case-page-objection-and-complaint).
-		$this->assertSame(expected: '0.130.0', actual: self::$register['info']['version']);
-		$this->assertSame(expected: '0.130.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		// 0.131.0 (portalFormBinding 0.8.0): destinationRules (form-governance REQ-FGV-002).
+		$this->assertSame(expected: '0.131.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.131.0', actual: self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame(expected: '0.5.0', actual: self::$register['components']['schemas']['portalSubmission']['version']);
 		$this->assertSame(expected: 'uuid', actual: self::$register['components']['schemas']['portalSubmission']['properties']['formBinding']['format']);
 		$this->assertNotContains(needle: 'formBinding', haystack: self::$register['components']['schemas']['portalSubmission']['required']);
@@ -493,8 +496,9 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.129.0: portalCase carries closedAt, resultPublicLabel and resultPublicDescription,
 		// the fields a cases collection names for its outcome (case-outcome-on-the-case-page).
 		// 0.130.0 (portalCase 0.5.0): decisionSentAt and againstCaseId (case-page-objection-and-complaint).
-		$this->assertSame(expected: '0.130.0', actual: self::$register['info']['version']);
-		$this->assertSame(expected: '0.130.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		// 0.131.0 (portalFormBinding 0.8.0): destinationRules (form-governance REQ-FGV-002).
+		$this->assertSame(expected: '0.131.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.131.0', actual: self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portalPage']['properties']['pages']['items']['properties']['blocks']['items']['properties']['messageTo']['type']);
 		$this->assertContains(needle: 'yivi', haystack: self::$register['components']['schemas']['portalAccount']['properties']['identityType']['enum']);
 		$this->assertSame(expected: 'date-time', actual: self::$register['components']['schemas']['guardianMessage']['properties']['readAt']['format']);
