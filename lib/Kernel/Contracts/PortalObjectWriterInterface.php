@@ -145,7 +145,7 @@ interface PortalObjectWriterInterface {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/the-owning-apps-refusal-reads-as-no-longer-possible/specs/site-forms/spec.md#requirement-a-refusal-by-the-records-own-app-must-read-as-no-longer-possible-req-orr-001
+	 * @spec openspec/specs/site-forms/spec.md#requirement-a-refusal-by-the-records-own-app-must-read-as-no-longer-possible-req-orr-001
 	 */
 	public function lastRefusedByOwner(): bool;
 

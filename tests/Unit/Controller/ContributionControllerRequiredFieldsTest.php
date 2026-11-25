@@ -198,7 +198,7 @@ class ContributionControllerRequiredFieldsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/the-owning-apps-refusal-reads-as-no-longer-possible/specs/site-forms/spec.md#requirement-a-refusal-by-the-records-own-app-must-read-as-no-longer-possible-req-orr-001
+	 * @spec openspec/specs/site-forms/spec.md#requirement-a-refusal-by-the-records-own-app-must-read-as-no-longer-possible-req-orr-001
 	 */
 	public function testARefusalByTheOwningAppIsNoLongerPossible(): void {
 		$writer = $this->createMock(originalClassName: PortalObjectWriter::class);

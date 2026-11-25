@@ -415,7 +415,7 @@ class PortalObjectWriter implements PortalObjectWriterInterface {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/the-owning-apps-refusal-reads-as-no-longer-possible/specs/site-forms/spec.md#requirement-a-refusal-by-the-records-own-app-must-read-as-no-longer-possible-req-orr-001
+	 * @spec openspec/specs/site-forms/spec.md#requirement-a-refusal-by-the-records-own-app-must-read-as-no-longer-possible-req-orr-001
 	 */
 	public function lastRefusedByOwner(): bool {
 		return $this->lastRefusedByOwner;
@@ -430,7 +430,7 @@ class PortalObjectWriter implements PortalObjectWriterInterface {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/the-owning-apps-refusal-reads-as-no-longer-possible/specs/site-forms/spec.md#requirement-a-refusal-by-the-records-own-app-must-read-as-no-longer-possible-req-orr-001
+	 * @spec openspec/specs/site-forms/spec.md#requirement-a-refusal-by-the-records-own-app-must-read-as-no-longer-possible-req-orr-001
 	 */
 	private function recordFailure(Throwable $failure): void {
 		$this->lastFailure        = $failure->getMessage();

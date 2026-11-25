@@ -49,7 +49,7 @@ class PortalObjectWriterTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/the-owning-apps-refusal-reads-as-no-longer-possible/specs/site-forms/spec.md#requirement-a-refusal-by-the-records-own-app-must-read-as-no-longer-possible-req-orr-001
+	 * @spec openspec/specs/site-forms/spec.md#requirement-a-refusal-by-the-records-own-app-must-read-as-no-longer-possible-req-orr-001
 	 */
 	public function testAWriteTheOwningAppRefusedIsMarkedAsSuch(): void {
 		$writer = $this->writerThrowing(failure: new \OCA\OpenRegister\Exception\HookStoppedException(message: 'Could not verify the parent is open'));
@@ -73,7 +73,7 @@ class PortalObjectWriterTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/the-owning-apps-refusal-reads-as-no-longer-possible/specs/site-forms/spec.md#requirement-a-refusal-by-the-records-own-app-must-read-as-no-longer-possible-req-orr-001
+	 * @spec openspec/specs/site-forms/spec.md#requirement-a-refusal-by-the-records-own-app-must-read-as-no-longer-possible-req-orr-001
 	 */
 	public function testAStoreFailureIsNotAnOwnersRefusal(): void {
 		$writer = $this->writerThrowing(failure: new RuntimeException(message: 'database is down'));
