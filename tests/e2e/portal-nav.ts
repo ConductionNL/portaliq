@@ -99,7 +99,9 @@ export async function devLogin(
 	audience: string,
 	organisation: string,
 ): Promise<string> {
-	const waits = [0, 3000, 9000]
+	// dev-login allows 10 sign-ins a minute per address (AnonRateLimit), so the
+	// waits together cover one full window: a busy spec file waits it out.
+	const waits = [0, 5000, 20000, 40000]
 	let last = { status: 0, body: '' }
 	for (const wait of waits) {
 		if (wait > 0) {
