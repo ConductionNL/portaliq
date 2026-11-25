@@ -54,6 +54,8 @@ const SUBJECT = `opo-subject-${STAMP}`
 /** One organisation's half of the fixture. */
 interface Tenant {
 	organisation: string
+	/** The OpenRegister organisation's uuid, filled by organisation(). */
+	organisationUuid: string
 	slug: string
 	title: string
 	group: string
@@ -77,6 +79,7 @@ const B: Tenant = tenant('b')
 function tenant(letter: string): Tenant {
 	return {
 		organisation: `opo-org-${letter}-${STAMP}`,
+		organisationUuid: '',
 		slug: `opo-${letter}-${STAMP}`,
 		title: `Gemeente OPO ${letter.toUpperCase()} ${STAMP}`,
 		group: `opo-beheer-${letter}-${STAMP}`,
@@ -238,6 +241,14 @@ const ROUTES: Record<string, Mode> = {
 	'POST /portal/api/citizen/cases/{register}/{schema}/{id}/documents': 'crossWrite',
 	'GET /portal/api/citizen/cases/{register}/{schema}/{id}/documents/{documentId}': 'cross',
 	'POST /portal/api/citizen/cases/{register}/{schema}/{id}/withdraw': 'crossWrite',
+	'GET /portal/api/inbox/{register}/{schema}/{id}': 'cross',
+	'POST /portal/api/intake/fetch': 'own: looks up data for a step of the caller\'s own form and reads no stored record',
+	'GET /portal/api/receipts/{id}/pdf': 'cross',
+	'GET /portal/api/media-groups/{register}/{schema}': 'cross',
+	'GET /portal/api/media-groups/{register}/{schema}/{id}': 'cross',
+	'GET /portal/api/collections/{register}/{schema}/{id}/documents-bundle': 'cross',
+	'GET /portal/api/collections/{register}/{schema}/{id}/documents/{documentId}/terms': 'cross',
+	'POST /portal/api/collections/{register}/{schema}/{id}/documents/{documentId}/terms': 'crossWrite',
 }
 
 /**
@@ -250,7 +261,7 @@ const ROUTES: Record<string, Mode> = {
  */
 async function seed(request: APIRequestContext, schema: string, data: Record<string, unknown>): Promise<string> {
 	const res = await request.post(`${OBJECTS}/${schema}`, { headers: ADMIN_HEADERS, data })
-	expect(res.ok(), `seeding ${schema}: ${res.status()} ${(await res.text()).slice(0, 200)}`).toBeTruthy()
+	expect(res.ok(), `seeding ${schema}: ${res.status()} ${(await res.text()).slice(0, 800)}`).toBeTruthy()
 	const body = await res.json()
 	return String(body.id ?? body.uuid ?? body['@self']?.id)
 }
@@ -269,6 +280,29 @@ async function member(request: APIRequestContext, who: Tenant): Promise<void> {
 		form: { userid: who.member, password: who.password, 'groups[]': who.group },
 	})
 	expect(users.ok(), `creating user ${who.member}: ${users.status()}`).toBeTruthy()
+}
+
+/**
+ * Create the tenant's OpenRegister organisation and make it the admin's
+ * active one, so the rows seeded next belong to it.
+ *
+ * A portal acts for its organisation (portal-acts-for-its-organisation,
+ * REQ-PAO-002): a slug that names no OpenRegister organisation reads and
+ * writes nothing, so the dev-login bearer of such an organisation answers 401
+ * on every route. OpenRegister derives the slug from the name, so the name
+ * is the slug itself.
+ *
+ * @param request The admin context.
+ * @param who The tenant.
+ */
+async function organisation(request: APIRequestContext, who: Tenant): Promise<void> {
+	const created = await request.post('/apps/openregister/api/organisations', { headers: ADMIN_HEADERS, data: { name: who.organisation } })
+	expect(created.ok(), `creating organisation ${who.organisation}: ${created.status()} ${(await created.text()).slice(0, 300)}`).toBeTruthy()
+	const { organisation: row } = await created.json() as { organisation: { uuid: string, slug: string } }
+	expect(row.slug, 'OpenRegister derives the organisation slug from its name').toBe(who.organisation)
+	who.organisationUuid = row.uuid
+	const active = await request.post(`/apps/openregister/api/organisations/${row.uuid}/set-active`, { headers: ADMIN_HEADERS })
+	expect(active.ok(), `making ${who.organisation} active: ${active.status()}`).toBeTruthy()
 }
 
 /**
@@ -302,12 +336,12 @@ async function seedTenant(request: APIRequestContext, who: Tenant): Promise<void
 	who.ids.menu = await seed(request, 'menu', {
 		title: mark('Menu'),
 		portal: who.slug,
-		items: [{ label: mark('Menu-item'), route: `/opo-${STAMP}` }],
+		items: [{ name: mark('Menu-item'), link: `/opo-${STAMP}` }],
 	})
 	who.ids.news = await seed(request, 'newsItem', {
 		title: mark('Nieuws'),
 		body: mark('Nieuwsbericht'),
-		target: {},
+		target: { schoolRef: who.slug },
 		authorRef: 'admin',
 		status: 'published',
 		public: true,
@@ -380,6 +414,7 @@ let admin: APIRequestContext
 let resident: APIRequestContext
 let anonymous: APIRequestContext
 let token = ''
+let previousActive = ''
 
 test.describe.configure({ mode: 'serial' })
 
@@ -388,9 +423,15 @@ test.describe('operate-portals-per-organisation', () => {
 		admin = await playwright.request.newContext({ baseURL: BASE_URL })
 		resident = await playwright.request.newContext({ baseURL: BASE_URL, storageState: EMPTY_STATE })
 		anonymous = await playwright.request.newContext({ baseURL: BASE_URL, storageState: EMPTY_STATE })
+		const before = await admin.get('/apps/openregister/api/organisations/active', { headers: ADMIN_HEADERS })
+		previousActive = before.ok() ? String((await before.json()).activeOrganisation?.uuid ?? '') : ''
 		for (const who of [A, B]) {
 			await member(admin, who)
+			await organisation(admin, who)
 			await seedTenant(admin, who)
+		}
+		if (previousActive !== '') {
+			await admin.post(`/apps/openregister/api/organisations/${previousActive}/set-active`, { headers: ADMIN_HEADERS })
 		}
 		token = await devLogin(resident, SUBJECT, 'client', A.organisation)
 	})
@@ -428,7 +469,11 @@ test.describe('operate-portals-per-organisation', () => {
 			const [verb, url] = route.split(' ')
 			const path = mode === 'read' ? '/apps/portaliq' + url : filled(url)
 			const res = await resident.fetch(`${path}?portal=${A.slug}`, { method: verb, headers, data: verb === 'GET' ? undefined : {} })
-			const found = leaked(await res.text())
+			// An id the request itself carried may come back in a refusal (an
+			// RFC 9457 problem names its `instance`, the URL asked for): that is
+			// the caller's own input, not org-b's record. The record's strings
+			// still count wherever they appear.
+			const found = leaked(await res.text()).filter((marker) => !path.includes(marker))
 			if (found.length > 0) {
 				leaks.push(`${route} (${res.status()}): ${found.join(', ')}`)
 			}
@@ -489,7 +534,8 @@ test.describe('operate-portals-per-organisation', () => {
 		expect((await second.json()).message).toBe('This web address is already used by another portal.')
 
 		const written = await admin.get(`${OBJECTS}/portal?slug=opo-host-c-${STAMP}`, { headers: ADMIN_HEADERS })
-		expect(await written.text(), 'the refused portal must not be written').not.toContain(`opo-host-c-${STAMP}`)
+		// The list echoes the slug filter in `@self.query`, so count the rows.
+		expect(((await written.json()).results || []).length, 'the refused portal must not be written').toBe(0)
 
 		const created = await admin.get(`${OBJECTS}/portal?slug=opo-host-b-${STAMP}`, { headers: ADMIN_HEADERS })
 		for (const row of ((await created.json()).results || []) as Array<Record<string, unknown>>) {
