@@ -7,7 +7,7 @@
  * takes its collaborators as arguments so it runs as a plain node module in
  * tests/session-row-actions.spec.mjs.
  *
- * @spec openspec/changes/staff-revoke-one-session/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
+ * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
  */
 
 /** The admin route that revokes one session by its token id. */
@@ -21,7 +21,7 @@ const ACCOUNT_PATH = '/apps/portaliq/accounts/'
  *
  * @param {object} error The transport error.
  * @return {string} An English source sentence.
- * @spec openspec/changes/staff-revoke-one-session/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
+ * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
  */
 export function revokeFailure(error) {
 	const status = error?.response?.status ?? 0
@@ -47,7 +47,7 @@ export function revokeFailure(error) {
  * @param {() => void} deps.reload Shows the list again.
  * @param {(url: string) => void} deps.open Goes to an address.
  * @return {{revokeSession: Function, openSessionAccount: Function}}
- * @spec openspec/changes/staff-revoke-one-session/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
+ * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
  */
 export function createSessionHandlers({ post, generateUrl, confirmRevoke, notify, notifyError, translate, reload, open }) {
 	return {
@@ -56,7 +56,7 @@ export function createSessionHandlers({ post, generateUrl, confirmRevoke, notify
 		 *
 		 * @param {{item: object}} payload The row action payload.
 		 * @return {Promise<boolean>} Whether the session was revoked.
-		 * @spec openspec/changes/staff-revoke-one-session/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
+		 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
 		 */
 		async revokeSession({ item }) {
 			const jti = String(item?.jti ?? '').trim()
@@ -83,7 +83,7 @@ export function createSessionHandlers({ post, generateUrl, confirmRevoke, notify
 		 *
 		 * @param {{item: object}} payload The row action payload.
 		 * @return {boolean} Whether there was an account to open.
-		 * @spec openspec/changes/staff-revoke-one-session/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
+		 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
 		 */
 		openSessionAccount({ item }) {
 			const account = String(item?.accountRef ?? '').trim()

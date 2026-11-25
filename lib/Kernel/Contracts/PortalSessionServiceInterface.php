@@ -238,7 +238,7 @@ interface PortalSessionServiceInterface {
 	 *
 	 * @return bool True when a live session was found and marked revoked.
 	 *
-	 * @spec openspec/changes/staff-revoke-one-session/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
+	 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
 	 */
 	public function revokeByAdmin(string $jti, string $admin): bool;
 

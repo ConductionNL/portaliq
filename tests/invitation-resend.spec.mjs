@@ -14,7 +14,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
-import { createStaffAccountActions, createStaffAccountHandlers } from '../src/lib/staffAccountActions.js'
+import { createStaffAccountActions, createStaffAccountHandlers, INVITATION_LIST } from '../src/lib/staffAccountActions.js'
 
 const read = (name) => readFileSync(new URL(`../${name}`, import.meta.url), 'utf8')
 const MANIFEST = JSON.parse(read('src/manifest.json'))
@@ -67,7 +67,7 @@ test('each refusal is named', async () => {
 })
 
 test('the row handler reports and reloads after a success only', async () => {
-	const log = { notices: [], errors: [], reloads: 0 }
+	const log = { notices: [], errors: [], reloads: [] }
 	const build = (outcome) => createStaffAccountHandlers({
 		actions: { resendInvitation: async () => outcome },
 		openIssue: async () => null,
@@ -75,11 +75,11 @@ test('the row handler reports and reloads after a success only', async () => {
 		confirmWithdrawInvitation: async () => true,
 		notify: (text) => log.notices.push(text),
 		notifyError: (text) => log.errors.push(text),
-		reload: () => { log.reloads++ },
+		reload: (list) => { log.reloads.push(list) },
 	})
 	assert.equal(await build({ ok: true, message: 'sent again' }).resendInvitation({ item: { id: 'inv-1' } }), true)
 	assert.equal(await build({ ok: false, message: 'accepted' }).resendInvitation({ item: { id: 'inv-1' } }), false)
-	assert.deepEqual(log, { notices: ['sent again'], errors: ['accepted'], reloads: 1 })
+	assert.deepEqual(log, { notices: ['sent again'], errors: ['accepted'], reloads: [INVITATION_LIST] })
 })
 
 test('the Invitations list offers it on an open or expired invitation only', () => {
@@ -93,4 +93,15 @@ test('the Invitations list offers it on an open or expired invitation only', () 
 		assert.ok(NL[text], `"${text}" is not in the Dutch catalogue`)
 	}
 	assert.match(ROUTES, /'portalAccountAdmin#resendInvitation', 'url' => '\/api\/invitations\/\{id\}\/resend', 'verb' => 'POST'/)
+})
+
+test('the page refreshes the invitation list in place, so the toast stays readable', () => {
+	// REQ-ISA-011: the clerk reads "Uitnodiging opnieuw verstuurd naar ..." with
+	// the new date. A full page reload right after the toast threw it away
+	// (seen live, 25 Nov 2026); the host now fetches the named list again.
+	assert.equal(INVITATION_LIST, 'portaliq-portalInvitation')
+	const host = read('src/customComponents.js')
+	const block = host.slice(host.indexOf('const staffAccountHandlers = createStaffAccountHandlers('))
+	const reload = block.slice(0, block.indexOf('\n})'))
+	assert.match(reload, /reload: \(list\) => refreshList\(list\) \|\| window\.location\.reload\(\)/)
 })

@@ -180,9 +180,11 @@ const staffAccountHandlers = createStaffAccountHandlers({
 		}),
 	notify: showSuccess,
 	notifyError: showError,
-	// A header or row handler gets no handle on the list, so the page reloads
-	// to show the new account or the withdrawn invitation.
-	reload: () => window.location.reload(),
+	// A header or row handler gets no handle on the list, so it names the list
+	// it changed and that list is fetched again in place; reloading the whole
+	// page would drop the toast saying what happened (REQ-ISA-011). A list not
+	// fetched on this page yet falls back to the page reload.
+	reload: (list) => refreshList(list) || window.location.reload(),
 })
 /**
  * `Naar het account` and `Sessie intrekken` on a Sessions row
