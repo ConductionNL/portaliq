@@ -40,19 +40,34 @@ line in the PR body.
 
 - [x] 3.1 e2e `tests/e2e/traffic-zero-results.spec.ts`: search a nonsense term on the site, run the
   roll-up, and find the term on the Traffic page. Cite REQ-PZR-001 and REQ-PZR-002. — written, runs in nightly (`tests/e2e/traffic-zero-results.spec.ts`, three tests citing REQ-PZR-001 and REQ-PZR-002, inside the e2e config's testDir and not ignored); not verified on a live instance in this run.
-- [ ] 3.2 — not run: needs the dev instance. Live check after merge on the dev instance: one zero-result search on a portal with
+- [x] 3.2 Live check after merge on the dev instance: one zero-result search on a portal with
   traffic on; record the daily record's `zeroResultSearches` through the OpenRegister API.
+  — done 25 Nov 2026 (live-portaliq-1) on a sandbox Nextcloud 34.0.6 + MariaDB with OpenRegister main
+  and portaliq development, seeded by `tests/e2e/ci-seed.sh`: `tests/e2e/traffic-zero-results.spec.ts`
+  ran live 3/3 (its occ calls through a local `docker exec` shim) after one spec fix: the without-count
+  sentence was matched in English only, the Dutch page reads "1 zoekopdracht meldde niet hoeveel
+  resultaten die vond." / "2 zoekopdrachten meldden niet ...". The daily record of open-tilburg for
+  2026-11-25, read through `/apps/openregister/api/objects/portaliq/portalTrafficDaily`, holds
+  `zeroResultSearches` `[{"term": "parkeervergunnig <run>", "count": 2}, {"term": "hondenbelasting <run>",
+  "count": 1}, {"term": "qzxvbn<run>", "count": 1}, ...]` (no "parkeervergunning", which found results)
+  and `searchesWithoutCount: 3` (one per run); the roll-up portal rollup-tilburg-venray carries the
+  same sums (REQ-PZR-001, REQ-PZR-002).
 
 ## 4. Verify and deliver
 
 - [x] 4.1 `TMPDIR` set to a sibling directory beside the clone (build round 2: `TMPDIR=../tmp` in the lane's PHPUnit runner; the 8 named PHPUnit tests and 2 node tests pass on 2594f608).
 - [x] 4.2 While building, run `./vendor/bin/phpunit -c phpunit-unit.xml --no-coverage --filter` on the
   touched classes and `node --test` on the touched node tests. Judge PHPUnit by the `Tests:` line.
-- [ ] 4.3 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then `npm run lint`,
+- [x] 4.3 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then `npm run lint`,
   `npm run format`, `npm run check:l10n-js`, `npm run check:schema-l10n`, `npm run check:manifest`,
   `npm run check:register` and `npm run check:specs`, plus any other leg `code-quality.yml` requires.
   Then hydra's `scripts/run-hydra-gates.sh --base origin/development`; count the gates that ran.
-- [ ] 4.4 Project coverage of the added statements: no coverage driver runs locally, so take the base percentages from the last green push run on `development`, intersect its clover uncovered lines with the lines you add, and say in the PR body that the number is arithmetic, not a local green.
-- [ ] 4.5 One PR, `--base development`. Merge, never rebase. No `Co-Authored-By`. Done means merged on
+- [x] 4.4 Project coverage of the added statements: no coverage driver runs locally, so take the base percentages from the last green push run on `development`, intersect its clover uncovered lines with the lines you add, and say in the PR body that the number is arithmetic, not a local green.
+- [x] 4.5 One PR, `--base development`. Merge, never rebase. No `Co-Authored-By`. Done means merged on
   `development` with CI green. 16.3 then reads `yes` (build), and `production` only with a store
   release.
+
+> 4.3 to 4.5 for the live round (25 Nov 2026, live-portaliq-1): this round changes only the e2e spec and
+> this file, so no new statements and no coverage arithmetic; hydra diff-check shows only the inherited
+> gate-23 finding (lib/Kernel/Contracts/AuditTrailServiceInterface.php, also red on development);
+> `npm run lint` 0 errors; one PR on development, merged.

@@ -197,7 +197,7 @@ export default {
 		 * Whether to show the heading: a list of terms, or only a count of unknown searches.
 		 *
 		 * @return {boolean} True when there is a zero-result term to list.
-		 * @spec openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md#requirement-the-traffic-page-shows-what-the-public-did-not-find-req-pzr-002
+		 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-traffic-page-shows-what-the-public-did-not-find-req-pzr-002
 		 */
 		showZeroResults() {
 			return this.summary.zeroResultSearches.length > 0
@@ -210,7 +210,7 @@ export default {
 		 *
 		 * @param {string} term The term.
 		 * @return {string} The URL, or ''.
-		 * @spec openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md#requirement-the-traffic-page-shows-what-the-public-did-not-find-req-pzr-002
+		 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-traffic-page-shows-what-the-public-did-not-find-req-pzr-002
 		 */
 		searchLink(term) {
 			return searchLinkOf(this.portal, term, generateUrl)
