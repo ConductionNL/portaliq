@@ -144,7 +144,7 @@ class AvailabilityReport implements AvailabilityReportInterface {
 	 */
 	private static function percentage(int $available, int $intervals): ?float {
 		if ($intervals > 0) {
-			return round(($available / $intervals) * 100, 2);
+			return round(((float)$available / (float)$intervals) * 100.0, 2);
 		}
 
 		return null;

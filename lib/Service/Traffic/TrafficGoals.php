@@ -78,7 +78,7 @@ class TrafficGoals {
 				'name' => (string)$goal['name'],
 				'conversions' => $conversions,
 				'completions' => $completions,
-				'value' => round(((float)($goal['value'] ?? 0)) * $conversions, 2),
+				'value' => round(((float)($goal['value'] ?? 0)) * (float)$conversions, 2),
 			];
 		}
 

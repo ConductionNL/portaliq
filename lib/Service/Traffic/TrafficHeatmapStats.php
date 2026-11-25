@@ -161,7 +161,7 @@ class TrafficHeatmapStats {
 			return $page;
 		}
 
-		$page['scroll'][min(self::DECILES - 1, (int)floor($depth * self::DECILES))]++;
+		$page['scroll'][min(self::DECILES - 1, (int)floor($depth * (float)self::DECILES))]++;
 		$page['samples']++;
 
 		return $page;
@@ -216,7 +216,7 @@ class TrafficHeatmapStats {
 			return null;
 		}
 
-		return min(self::GRID - 1, (int)floor($fraction * self::GRID));
+		return min(self::GRID - 1, (int)floor($fraction * (float)self::GRID));
 	}
 
 	/**

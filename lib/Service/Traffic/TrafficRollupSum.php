@@ -226,8 +226,8 @@ class TrafficRollupSum {
 	 */
 	private function addEngagement(array $acc, array $record): array {
 		$sessions = $this->values()->int(value: ($record['sessions'] ?? 0));
-		$acc['seconds'] += $this->values()->float(value: ($record['avgEngagementSeconds'] ?? 0)) * $sessions;
-		$acc['converted'] += $this->values()->float(value: ($record['conversionRate'] ?? 0)) * $sessions;
+		$acc['seconds'] += $this->values()->float(value: ($record['avgEngagementSeconds'] ?? 0)) * (float)$sessions;
+		$acc['converted'] += $this->values()->float(value: ($record['conversionRate'] ?? 0)) * (float)$sessions;
 		$acc['last'] = max($acc['last'], (string)($record['lastEventAt'] ?? ''));
 		return $acc;
 	}
@@ -495,7 +495,7 @@ class TrafficRollupSum {
 		$page['views'] += $views;
 		$page['entrances'] += $this->values()->int(value: $row['entrances'] ?? 0);
 		$page['exits'] += $this->values()->int(value: $row['exits'] ?? 0);
-		$page['seconds'] += $this->values()->float(value: $row['avgEngagementSeconds'] ?? 0) * $views;
+		$page['seconds'] += $this->values()->float(value: $row['avgEngagementSeconds'] ?? 0) * (float)$views;
 		$into[$path] = $this->addPageDetail(page: $page, row: $row);
 		return $into;
 	}

@@ -141,6 +141,11 @@ class PortalFormOperands {
 		}
 
 		if (is_numeric($arg) === true) {
+			/**
+			 * `+ 0` turns a numeric literal into int or float as written.
+			 *
+			 * @psalm-suppress InvalidOperand
+			 */
 			return [$arg + 0];
 		}
 

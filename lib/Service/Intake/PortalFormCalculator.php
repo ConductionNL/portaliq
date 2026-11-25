@@ -248,6 +248,11 @@ class PortalFormCalculator implements PortalFormCalculatorInterface {
 					return null;
 				}
 
+				/**
+				 * `+ 0` turns a numeric answer into int or float as written, so whole numbers stay whole.
+				 *
+				 * @psalm-suppress InvalidOperand
+				 */
 				$numbers[] = $value + 0;
 			}
 		}
@@ -278,6 +283,11 @@ class PortalFormCalculator implements PortalFormCalculatorInterface {
 
 		$result = array_shift($numbers);
 		foreach ($numbers as $number) {
+			/**
+			 * Ints and floats mix on purpose: a whole result stays an int.
+			 *
+			 * @psalm-suppress InvalidOperand
+			 */
 			$result -= $number;
 		}
 

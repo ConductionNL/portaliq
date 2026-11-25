@@ -142,7 +142,7 @@ class PortalOverview implements PortalOverviewInterface {
 			return null;
 		}
 
-		return (int)round(($totals['engagedSessions'] / $totals['sessions']) * 100);
+		return (int)round(((float)$totals['engagedSessions'] / (float)$totals['sessions']) * 100.0);
 	}//end engagedShare()
 
 	/**
@@ -243,7 +243,7 @@ class PortalOverview implements PortalOverviewInterface {
 			return null;
 		}
 
-		return round(($available / $intervals) * 100, 2);
+		return round(((float)$available / (float)$intervals) * 100.0, 2);
 	}//end percentage()
 
 	/**

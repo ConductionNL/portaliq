@@ -225,6 +225,6 @@ class TrafficReportNumbers implements TrafficReportNumbersInterface {
 			return null;
 		}
 
-		return round((($current - $previous) / $previous) * 100, 1);
+		return round((($current - $previous) / $previous) * 100.0, 1);
 	}
 }

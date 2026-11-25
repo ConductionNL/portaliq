@@ -262,9 +262,9 @@ class TrafficSessioniser {
 		// in one second still order.
 		$fraction = 0.0;
 		if (preg_match('/\.(\d{1,3})(?:Z|[+-]\d{2}:?\d{2})?$/', $value, $match) === 1) {
-			$fraction = ((float)str_pad($match[1], 3, '0')) / 1000;
+			$fraction = ((float)str_pad($match[1], 3, '0')) / 1000.0;
 		}
 
-		return $stamp + $fraction;
+		return (float)$stamp + $fraction;
 	}
 }

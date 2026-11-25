@@ -296,6 +296,6 @@ class GzipExtractor {
 	 * @return int The padded size.
 	 */
 	private function padded(int $size): int {
-		return (int)(ceil($size / self::BLOCK) * self::BLOCK);
+		return (int)(ceil((float)$size / (float)self::BLOCK) * (float)self::BLOCK);
 	}
 }
