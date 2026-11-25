@@ -25,8 +25,9 @@ namespace OCA\Portaliq\Service\Cms;
 /**
  * Renders a fixed markdown subset to HTML and escapes everything else.
  *
- * The subset: ATX headings, paragraphs, ordered and unordered lists, links,
- * emphasis (`*`, `**`, `_`, `__`), inline code and fenced code. Every other
+ * The subset: ATX headings, paragraphs, ordered and unordered lists, pipe
+ * tables (a header row, a delimiter row, then body rows), links, emphasis
+ * (`*`, `**`, `_`, `__`), inline code and fenced code. Every other
  * character is escaped, so raw HTML in the source shows as text. A link keeps
  * its target only when it is `http`, `https`, `mailto` or a relative path;
  * any other link is rendered as its text alone.
@@ -102,8 +103,81 @@ class PlainMarkdown {
 			}
 		}
 
+		if ($this->startsTable(lines: $lines, index: $index) === true) {
+			return $this->table(lines: $lines, index: $index, html: $html);
+		}
+
 		return $this->paragraph(lines: $lines, index: $index, html: $html);
 	}//end block()
+
+	/**
+	 * Whether a pipe table starts at a line: a row with a pipe, followed by a
+	 * delimiter row of dashes (with optional alignment colons).
+	 *
+	 * @param array<int, string> $lines The source lines.
+	 * @param int                $index The line to look at.
+	 *
+	 * @return bool True when the line is a table's header row.
+	 *
+	 * @spec openspec/changes/site-honest-without-javascript/specs/site-without-javascript/spec.md#requirement-the-server-renders-a-plain-version-of-every-public-page-req-shj-002
+	 */
+	private function startsTable(array $lines, int $index): bool {
+		if (isset($lines[($index + 1)]) === false || str_contains($lines[$index], '|') === false) {
+			return false;
+		}
+
+		$delimiter = '/^\s{0,3}\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$/';
+		return str_contains($lines[($index + 1)], '|') === true && preg_match($delimiter, $lines[($index + 1)]) === 1;
+	}//end startsTable()
+
+	/**
+	 * A pipe table: the header row, the delimiter row, and the rows after it
+	 * up to a blank line or a line without a pipe.
+	 *
+	 * @param array<int, string> $lines The source lines.
+	 * @param int                $index The header row's line.
+	 * @param array<int, string> $html  The rendered blocks (appended to).
+	 *
+	 * @return int The index after the last row.
+	 *
+	 * @spec openspec/changes/site-honest-without-javascript/specs/site-without-javascript/spec.md#requirement-the-server-renders-a-plain-version-of-every-public-page-req-shj-002
+	 */
+	private function table(array $lines, int $index, array &$html): int {
+		$head  = $this->tableRow(line: $lines[$index], cell: 'th');
+		$rows  = [];
+		$count = count($lines);
+		$index = ($index + 2);
+		while ($index < $count && trim($lines[$index]) !== '' && str_contains($lines[$index], '|') === true) {
+			$rows[] = $this->tableRow(line: $lines[$index], cell: 'td');
+			$index++;
+		}
+
+		$body = '';
+		if ($rows !== []) {
+			$body = '<tbody>'.implode('', $rows).'</tbody>';
+		}
+
+		$html[] = '<table><thead>'.$head.'</thead>'.$body.'</table>';
+		return $index;
+	}//end table()
+
+	/**
+	 * One table row: its cells between the pipes, each with inline markup.
+	 *
+	 * @param string $line The row's line.
+	 * @param string $cell The cell element, `th` or `td`.
+	 *
+	 * @return string The row's HTML.
+	 */
+	private function tableRow(string $line, string $cell): string {
+		$cells = explode('|', trim(trim($line), '|'));
+		$html  = '';
+		foreach ($cells as $text) {
+			$html .= '<'.$cell.'>'.$this->inline(text: trim($text)).'</'.$cell.'>';
+		}
+
+		return '<tr>'.$html.'</tr>';
+	}//end tableRow()
 
 	/**
 	 * A fenced code block: its lines escaped, up to the closing fence or the end.
@@ -163,7 +237,9 @@ class PlainMarkdown {
 		$text  = [trim($lines[$index])];
 		$count = count($lines);
 		$index++;
-		while ($index < $count && trim($lines[$index]) !== '' && $this->startsBlock(line: $lines[$index]) === false) {
+		while ($index < $count && trim($lines[$index]) !== '' && $this->startsBlock(line: $lines[$index]) === false
+			&& $this->startsTable(lines: $lines, index: $index) === false
+		) {
 			$text[] = trim($lines[$index]);
 			$index++;
 		}
