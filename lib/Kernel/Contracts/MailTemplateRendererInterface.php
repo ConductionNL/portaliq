@@ -154,7 +154,7 @@ interface MailTemplateRendererInterface {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t02
 	 */
 	public function knows(string $key): bool;
 
@@ -166,7 +166,7 @@ interface MailTemplateRendererInterface {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t04
+	 * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t04
 	 */
 	public function preview(string $key, string $text): string;
 
@@ -178,7 +178,7 @@ interface MailTemplateRendererInterface {
 	 *
 	 * @return string[] The unknown variable names, once each; every name when the kind is unknown.
 	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t02
 	 */
 	public function unknownVariables(string $key, string ...$texts): array;
 }//end interface

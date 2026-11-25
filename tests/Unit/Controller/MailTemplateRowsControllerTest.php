@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t09
+ * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t09
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ class MailTemplateRowsControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t09
+	 * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t09
 	 */
 	public function testRowsAnswerEveryKindWithItsTotalForAnAdminOnly(): void {
 		$list = $this->createConfiguredMock(

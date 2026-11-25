@@ -28,7 +28,7 @@
  *
  *     PLAYWRIGHT_BASE_URL=http://localhost:8095 npx playwright test mail-templates-admin-screen
  *
- * @spec openspec/changes/mail-templates-admin-screen/specs/portal-mail-templates/spec.md
+ * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/specs/portal-mail-templates/spec.md
  */
 
 import type { APIRequestContext, Page } from '@playwright/test'

@@ -10,7 +10,7 @@
 // Usage:
 //   node --test tests/mail-template-editing.spec.mjs
 //
-// @spec openspec/changes/mail-templates-admin-screen/specs/portal-mail-templates/spec.md
+// @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/specs/portal-mail-templates/spec.md
 
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'

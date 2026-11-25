@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t09
+ * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t09
  */
 
 declare(strict_types=1);
@@ -34,7 +34,7 @@ use OCP\IRequest;
  * The rows of the Mail templates screen: every kind of mail, merged with the
  * texts portals stored for it.
  *
- * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t09
+ * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t09
  */
 class MailTemplateRowsController extends Controller {
 	/**
@@ -56,7 +56,7 @@ class MailTemplateRowsController extends Controller {
 	 *
 	 * @return JSONResponse `results` and `total`.
 	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t09
+	 * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t09
 	 */
 	#[AuthorizedAdminSetting(PortaliqAdmin::class)]
 	public function index(): JSONResponse {

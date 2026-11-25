@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t03
  */
 
 declare(strict_types=1);
@@ -34,7 +34,7 @@ use OCA\Portaliq\Service\PortalObjectWriter;
  * the status. It never holds the full address or any text of the mail, so a
  * resend rebuilds the mail from the account instead of from the log.
  *
- * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t03
  */
 class MailLog implements MailLogInterface {
 	public const REGISTER = 'portaliq';
@@ -72,7 +72,7 @@ class MailLog implements MailLogInterface {
 	 *
 	 * @return bool True when the row was written.
 	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t03
 	 */
 	public function record(
 		string $portal,
@@ -116,7 +116,7 @@ class MailLog implements MailLogInterface {
 	 *
 	 * @return string `queued`, `not_found`, `not_failed` or `error`.
 	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t04
+	 * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t04
 	 */
 	public function queueRetry(string $id): string {
 		$row = $this->readRow(id: $id);
@@ -203,7 +203,7 @@ class MailLog implements MailLogInterface {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t03
 	 */
 	public static function mask(string $email): string {
 		return (new RecipientMask())->mask(email: $email);
@@ -217,7 +217,7 @@ class MailLog implements MailLogInterface {
 	 *
 	 * @return int How many rows were removed.
 	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t05
 	 */
 	public function purgeExpired(int $limit=500, ?DateTimeImmutable $now=null): int {
 		$now ??= new DateTimeImmutable();

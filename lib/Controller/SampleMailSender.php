@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t04
+ * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t04
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use Throwable;
  * The sending half of MailTemplateAdminController::test(), built by it for
  * each sample.
  *
- * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t04
+ * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t04
  */
 final class SampleMailSender {
 	/**
@@ -62,7 +62,7 @@ final class SampleMailSender {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t04
+	 * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t04
 	 */
 	public function send(SampleMail $sample): JSONResponse {
 		try {
