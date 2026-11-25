@@ -683,7 +683,12 @@
         "Move up": "Move up",
         "Move down": "Move down",
         "Remove field": "Remove field",
-        "Add field": "Add field"
+        "Add field": "Add field",
+        "Reading the fields of this form…": "Reading the fields of this form…",
+        "Only someone who may change this form can change its fields. What an anonymous visitor may send is set on the form, not on the page.": "Only someone who may change this form can change its fields. What an anonymous visitor may send is set on the form, not on the page.",
+        "Someone else changed this form in the meantime. Select the form again to read its latest fields.": "Someone else changed this form in the meantime. Select the form again to read its latest fields.",
+        "The form this widget is bound to no longer exists.": "The form this widget is bound to no longer exists.",
+        "The fields of this form could not be read or saved.": "The fields of this form could not be read or saved."
     },
     "pluralForm": "nplurals=2; plural=(n != 1);"
 }
