@@ -34,6 +34,12 @@ import {
 	withFormFieldGroup,
 } from '../src/lib/formFieldTypes.js'
 import {
+	choiceErrors,
+	filterOptions,
+	moveActive,
+	optionNamed,
+} from '../src/site/lib/comboboxOptions.js'
+import {
 	chosenList,
 	chosenValue,
 	dateLimit,
@@ -364,4 +370,64 @@ test('FormBlock draws a picker date as one bounded calendar control', () => {
 		'a picker is one control with its own label, not a group',
 	)
 	assert.match(block, /\.\.\.dateRangeErrors\(fields, values\)/)
+})
+
+test('a select can be searchable (D1 row 82, Select Combobox)', () => {
+	assert.ok(fieldSettings('select').some((setting) => setting.name === 'searchable' && setting.kind === 'boolean'))
+	const [select] = addField([], 'select')
+	assert.equal(updateField([select], select.id, 'searchable', true)[0].searchable, true)
+})
+
+test('the combobox narrows the options on their words, ignoring case and accents', () => {
+	const options = ['nh', 'zh', 'fr']
+	const labels = { nh: 'Noord-Holland', zh: 'Zuid-Holland', fr: 'Fryslân' }
+	const labelOf = (option) => labels[option]
+	assert.deepEqual(filterOptions(options, labelOf, ''), options, 'nothing typed shows every option')
+	assert.deepEqual(filterOptions(options, labelOf, 'HOLLAND'), ['nh', 'zh'], 'in their declared order')
+	assert.deepEqual(filterOptions(options, labelOf, 'fryslan'), ['fr'])
+	assert.deepEqual(filterOptions(options, labelOf, 'utrecht'), [])
+	assert.equal(optionNamed(options, labelOf, ' zuid-holland '), 'zh')
+	assert.equal(optionNamed(options, labelOf, 'fr'), 'fr', 'the option itself names it too')
+	assert.equal(optionNamed(options, labelOf, 'Holland'), null, 'a part names nothing')
+	assert.equal(optionNamed(options, labelOf, ''), null)
+})
+
+test('the arrow keys move through the shown options and wrap around', () => {
+	assert.equal(moveActive(-1, 3, 1), 0)
+	assert.equal(moveActive(-1, 3, -1), 2)
+	assert.equal(moveActive(2, 3, 1), 0)
+	assert.equal(moveActive(0, 3, -1), 2)
+	assert.equal(moveActive(1, 3, 1), 2)
+	assert.equal(moveActive(5, 2, 1), 0, 'an index past a narrowed list starts again')
+	assert.equal(moveActive(0, 0, 1), -1)
+})
+
+test('a select answer that is not one of its options is refused, in words', () => {
+	const fields = [
+		{ id: 'province', type: 'select', label: 'Provincie', searchable: true, options: ['nh', 'zh'] },
+		{ id: 'note', type: 'text', label: 'Opmerking' },
+	]
+	assert.deepEqual(choiceErrors(fields, { province: 'zh', note: 'iets' }), {})
+	assert.deepEqual(choiceErrors(fields, { province: '' }), {}, 'empty is the required rule\'s')
+	assert.deepEqual(choiceErrors(fields, { province: 'Utrecht' }), {
+		province: 'Kies bij Provincie een keuze uit de lijst.',
+	})
+})
+
+test('FormBlock draws a searchable select as the combobox, on Utrecht CSS', () => {
+	const block = source('src/site/components/FormBlock.vue')
+	assert.match(block, /<SelectCombobox\s+v-else-if="field\.type === 'select' && field\.searchable === true"/)
+	assert.match(block, /:labelledby="`\$\{fieldElementId\(field\)\}-label`"/)
+	assert.match(block, /\.\.\.choiceErrors\(fields, values\)/)
+	const combobox = source('src/site/components/forms/SelectCombobox.vue')
+	assert.match(combobox, /role="combobox"/)
+	assert.match(combobox, /:aria-expanded="open \? 'true' : 'false'"/)
+	assert.match(combobox, /:aria-controls="listId"/)
+	assert.match(combobox, /:aria-activedescendant=/)
+	assert.match(combobox, /role="listbox"/)
+	assert.match(combobox, /role="option"/)
+	assert.match(combobox, /aria-live="polite"/, 'the number of options left is announced')
+	assert.match(combobox, /import '@utrecht\/combobox-css\/dist\/index\.css'/)
+	assert.match(combobox, /import '@utrecht\/listbox-css\/dist\/index\.css'/)
+	assert.match(combobox, /event\.key === 'Escape'/)
 })

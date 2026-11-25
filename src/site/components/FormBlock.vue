@@ -78,6 +78,18 @@
 					:invalid="!!errors[field.id]"
 					:testid="`form-field-${field.id}`" />
 
+				<SelectCombobox
+					v-else-if="field.type === 'select' && field.searchable === true"
+					:id="fieldElementId(field)"
+					v-model="values[field.id]"
+					:options="field.options || []"
+					:labelOf="(option) => optionLabel(field, option)"
+					:required="!!field.required"
+					:invalid="!!errors[field.id]"
+					:labelledby="`${fieldElementId(field)}-label`"
+					:describedby="describedBy"
+					:testid="`form-field-${field.id}`" />
+
 				<select
 					v-else-if="field.type === 'select'"
 					:id="fieldElementId(field)"
@@ -256,12 +268,14 @@ import { defineAsyncComponent } from 'vue'
 import DateInputGroup from './forms/DateInputGroup.vue'
 import ErrorSummary from './forms/ErrorSummary.vue'
 import FieldShell from './forms/FieldShell.vue'
+import SelectCombobox from './forms/SelectCombobox.vue'
 import {
 	capturedReferrer,
 	captureLanding,
 	firstTouch,
 	lastTouch,
 } from '../lib/campaignTracking.js'
+import { choiceErrors } from '../lib/comboboxOptions.js'
 import {
 	chosenList,
 	chosenValue,
@@ -307,6 +321,7 @@ function formErrors(fields, values) {
 		...plainFieldErrors(fieldRules(fields), values),
 		...minimumErrors(fields, values),
 		...dateRangeErrors(fields, values),
+		...choiceErrors(fields, values),
 	}
 }
 
@@ -349,6 +364,7 @@ export default {
 
 	components: {
 		DateInputGroup,
+		SelectCombobox,
 		ErrorSummary,
 		FieldShell,
 		FormHelp: defineAsyncComponent(() => import('./FormHelp.vue')),

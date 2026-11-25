@@ -122,9 +122,11 @@ export const FORM_FIELD_TYPES = Object.freeze([
 		type: 'select',
 		label: 'Keuzelijst',
 		nlds: 'Select',
-		synonyms: ['dropdown', 'uitklaplijst'],
+		synonyms: ['dropdown', 'uitklaplijst', 'combobox', 'zoeken'],
+		// D1 rows 81 and 82: `searchable` turns the list into a Select Combobox.
 		settings: [
 			{ name: 'options', kind: 'options', label: 'Keuzes (één per regel)' },
+			{ name: 'searchable', kind: 'boolean', label: 'Zoeken in de keuzes' },
 		],
 	},
 	{
