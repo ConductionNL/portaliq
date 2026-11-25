@@ -24,9 +24,9 @@ use PHPUnit\Framework\TestCase;
  * now answers with a redirect to the site keeping its query string
  * (site-reaches-portal-parity REQ-SRP-048).
  *
- * @spec openspec/changes/portal-controller-http-test-coverage/tasks.md#3.1
- * @spec openspec/changes/portal-controller-http-test-coverage/tasks.md#3.2
- * @spec openspec/changes/portal-controller-http-test-coverage/tasks.md#3.3
+ * @spec openspec/changes/archive/2026-11-25-portal-controller-http-test-coverage/tasks.md#3.1
+ * @spec openspec/changes/archive/2026-11-25-portal-controller-http-test-coverage/tasks.md#3.2
+ * @spec openspec/changes/archive/2026-11-25-portal-controller-http-test-coverage/tasks.md#3.3
  * @spec openspec/changes/archive/2026-11-24-portal-white-label-runtime-config/tasks.md#3.2
  */
 class PortalPageControllerTest extends TestCase {
