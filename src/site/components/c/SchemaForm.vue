@@ -754,7 +754,7 @@ export default {
 		 * @param {unknown} value The value.
 		 * @return {boolean}
 		 *
-		 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
+		 * @spec openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
 		 */
 		isPlainObject(value) {
 			return (
