@@ -84,7 +84,8 @@
 </template>
 
 <script>
-import { CnDialog, CnMarkdownEditor } from '@conduction/nextcloud-vue'
+import { CnDialog } from '@conduction/nextcloud-vue'
+import { CnMarkdownEditor } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
 import { NcButton, NcCheckboxRadioSwitch, NcNoteCard, NcSelect, NcTextField } from '@nextcloud/vue'
 import { variablesOf } from '../lib/mailTemplateEditing.js'
@@ -104,7 +105,11 @@ export default {
 
 	props: {
 		/** The look to draw in; a spawned dialog gets the app's (src/lib/dialogLook.js). */
-		look: { type: String, default: undefined },
+		look: {
+			type: String,
+			default: undefined,
+		},
+
 		/** The fields of the text, from formFromRow(). */
 		form: { type: Object, required: true },
 		/** The kinds of mail with their variables. */
