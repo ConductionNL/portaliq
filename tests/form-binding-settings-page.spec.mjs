@@ -63,7 +63,8 @@ test('the tabs follow the board, as far as the binding holds the settings', () =
 		assert.ok(NL[tab.label], `"${tab.label}" is not in the Dutch catalogue`)
 	}
 	const sections = widget('binding-general').content.sections.map((s) => s.title)
-	assert.deepEqual(sections, ['Form', 'Sign in', 'Status'])
+	// Introduction came with form-statements-intro-and-confirmation-mail (REQ-FCI-001); seen live 25 Nov 2026.
+	assert.deepEqual(sections, ['Form', 'Introduction', 'Sign in', 'Status'])
 })
 
 test('the availability tab carries the status panel and the availability settings (REQ-FGV-001)', () => {
