@@ -49,7 +49,7 @@ interface AccessibilityFramingInterface {
 	 *
 	 * @return ContentSecurityPolicy
 	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
 	 */
 	public function sitePolicy(IRequest $request): ContentSecurityPolicy;
 }//end interface

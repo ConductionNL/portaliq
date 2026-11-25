@@ -7,7 +7,7 @@
 //
 // Imports nothing, so tests/site-accessibility-statement.spec.mjs runs it as node.
 //
-// @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+// @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
 
 /** The national model's words per status. */
 const STATUS_WORDS = {
@@ -24,8 +24,8 @@ const STATUS_WORDS = {
  * @param {(key: string, vars?: object) => string} t The translator.
  * @param {(iso: string) => string} formatDate Writes a date for the visitor.
  * @return {object} `{status, automated, evidence, audit, issues, notMeasured, registerUrl, contact}`.
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
  */
 export function statementLines(statement, t, formatDate) {
 	const value = statement || {}
@@ -123,7 +123,7 @@ function issueLine(issue, t) {
  *
  * @param {string} impact axe-core's impact.
  * @return {string}
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
  */
 function impactWord(impact) {
 	return (

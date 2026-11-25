@@ -314,7 +314,7 @@ class ContentControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
 	 */
 	public function testSiteSendsThePortalsImagesAsAddresses(): void {
 		$portal = $this->portal();
@@ -336,7 +336,7 @@ class ContentControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
 	 */
 	public function testSiteNeverSendsAnUnresolvedReference(): void {
 		$this->resolver->method('resolve')->willReturn([...$this->portal(), 'logo' => '/apps/portaliq/logo/zuid.svg', 'heroImage' => 'media:hero']);
@@ -354,7 +354,7 @@ class ContentControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
 	 */
 	public function testSiteSendsTheOrganisationTypeLabel(): void {
 		$this->resolver->method('resolve')->willReturnOnConsecutiveCalls(
@@ -373,7 +373,7 @@ class ContentControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
 	 */
 	public function testSiteSendsTheFooterKindLine(): void {
 		$this->resolver->method('resolve')->willReturnOnConsecutiveCalls(

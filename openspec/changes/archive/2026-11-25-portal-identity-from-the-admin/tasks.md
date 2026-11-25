@@ -109,21 +109,45 @@ that is not in `check:specs` does not run in CI.
 
 ## 4. Live
 
-- [ ] 4.1 Live check after merge on the dev instance: set a favicon, a hero image and the type
+- [x] 4.1 Live check after merge on the dev instance: set a favicon, a hero image and the type
   waterschap on one portal; record the head's icon link, a screenshot of the hero and the "Van het
   waterschap" line.
+  — done 25 Nov 2026 (live-portaliq-1) on a sandbox Nextcloud 34.0.6 + MariaDB with OpenRegister main
+  and portaliq development, portal open-tilburg seeded by `tests/e2e/ci-seed.sh`. Two published
+  images in its Media (a 64x64 PNG, a 1440x480 JPEG). In the portal's Instellingen the Tabbladpictogram
+  and Hero-afbeelding pickers list them; Opslaan PATCHes `favicon` and `heroImage` as `media:<id>`. A
+  JPEG as favicon is refused with 422 "A favicon must be a PNG, SVG or ICO file." (REQ-PIA-001).
+  Head: exactly one `<link rel="icon" href=".../api/content/media/<favicon id>?portal=open-tilburg">`,
+  which answers 200 `image/png` without a session. A hero block without its own image, added to the
+  home page, draws the portal's hero image as its background
+  (`url(.../api/content/media/<hero id>?portal=open-tilburg)`) (REQ-PIA-002); the sandbox has no theme
+  styles, so the screenshot is plain. Soort organisatie: the TOOI organisation type scheme is not in
+  OpenRegister's bundled lists, so the picker first offered nothing with its hint (as specified); a
+  two-concept subset (waterschap, gemeente) under `https://identifier.overheid.nl/tooi/set/scw_organisatietypen`
+  was added to the vocabulary register as sandbox seed (through the objects API: `occ
+  openregister:vocabulary:import-csv` is refused as user 'Anonymous'), after which the picker offered
+  both; choosing waterschap stores the uri, `organisationTypeLabel` "waterschap" and the scheme's uuid.
+  The site then reads "Een website van het waterschap" in the footer and
+  `<meta name="DCTERMS.creator" content="dev-org (waterschap)">` (REQ-PIA-003). The signed-in "Van het
+  waterschap" line sits on case documents, which need a dossiq case on the sandbox; it stays covered
+  by `tests/mijn-components.spec.mjs` (46 node tests green here).
 
 ## 5. Verify and deliver
 
-- [ ] 5.1 `TMPDIR` set to a sibling directory beside the clone.
-- [ ] 5.2 While building, run `./vendor/bin/phpunit -c phpunit-unit.xml --no-coverage --filter` on the
+- [x] 5.1 `TMPDIR` set to a sibling directory beside the clone.
+- [x] 5.2 While building, run `./vendor/bin/phpunit -c phpunit-unit.xml --no-coverage --filter` on the
   touched classes and `node --test` on the touched node tests. Judge PHPUnit by the `Tests:` line.
-- [ ] 5.3 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then `npm run lint`,
+- [x] 5.3 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then `npm run lint`,
   `npm run format`, `npm run check:l10n-js`, `npm run check:schema-l10n`, `npm run check:manifest`,
   `npm run check:register`, `npm run check:specs` and `npm run build:site` (the entry budget), plus
   any other leg `code-quality.yml` requires (read the workflow). Then hydra's
   `scripts/run-hydra-gates.sh --base origin/development`; count the gates that ran.
-- [ ] 5.4 Project coverage of the added statements: no coverage driver runs locally, so take the base percentages from the last green push run on `development`, intersect its clover uncovered lines with the lines you add, and say in the PR body that the number is arithmetic, not a local green.
-- [ ] 5.5 One PR, `--base development`. Merge development in, never rebase. No `Co-Authored-By` on any
+- [x] 5.4 Project coverage of the added statements: no coverage driver runs locally, so take the base percentages from the last green push run on `development`, intersect its clover uncovered lines with the lines you add, and say in the PR body that the number is arithmetic, not a local green.
+- [x] 5.5 One PR, `--base development`. Merge development in, never rebase. No `Co-Authored-By` on any
   commit. Done means merged on `development` with CI green. 6.22 and 15.8 then read `yes` (build),
   and `production` only with a store release.
+
+> 5.1 to 5.5 for the live round (25 Nov 2026, live-portaliq-1): this round changes only openspec
+> files and `@spec` paths, so no new statements and no coverage arithmetic; PHPUnit SiteIcon,
+> SiteCreator, OrganisationTypeOptions and PortalImageChoice 27/27; hydra diff-check with only the
+> inherited gate-23 finding; one PR on development, merged.

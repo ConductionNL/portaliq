@@ -1337,7 +1337,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 	 * site-accessibility-statement REQ-SAS-001 and REQ-SAS-003: the run and
 	 * the portal's audit settings are declared.
 	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
 	 */
 	public function testTheMeasurementSchemaIsDeclared(): void {
 		$schemas = self::$register['components']['schemas'];
@@ -1363,7 +1363,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
 	 */
 	public function testThePortalDeclaresFaviconAndHeroImage(): void {
 		$properties = self::$register['components']['schemas']['portal']['properties'];

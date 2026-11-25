@@ -19,7 +19,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Portaliq\Service\Cms\PortalImageChoice
  * @uses \OCA\Portaliq\Service\Cms\MediaReferences
  *
- * @spec openspec/changes/portal-identity-from-the-admin/specs
+ * @spec openspec/specs/portaliq-cms/spec.md
  */
 final class PortalImageChoiceTest extends TestCase {
 

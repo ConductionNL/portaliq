@@ -47,7 +47,7 @@ interface AccessibilityRunInterface {
 	 *
 	 * @return array<string, mixed> `['error' => reason]`, or the run's fields.
 	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
 	 */
 	public function normalise(string $axeVersion, array $tags, string $theme, array $pages): array;
 }//end interface

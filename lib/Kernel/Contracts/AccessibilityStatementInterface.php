@@ -49,7 +49,7 @@ interface AccessibilityStatementInterface {
 	 *
 	 * @return array<string, mixed> The statement model.
 	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
 	 */
 	public function build(array $portal, ?array $measurement, string $locale, DateTimeImmutable $now): array;
 
@@ -61,7 +61,7 @@ interface AccessibilityStatementInterface {
 	 *
 	 * @return string One of the AUDIT_* verdicts.
 	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
 	 */
 	public function verdict(array $audit, DateTimeImmutable $now): string;
 }//end interface

@@ -16,7 +16,7 @@
  * `tests/accessibility-measure.spec.mjs` runs it as a plain node script, and
  * axe-core stays a lazy admin chunk that never enters the site entry.
  *
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
  */
 
 /** The axe-core rule sets, the same five as tests/e2e/site-accessibility.spec.ts. */
@@ -32,6 +32,22 @@ const IMPACTS = ['minor', 'moderate', 'serious', 'critical']
 const AUDIT_YEARS = 3
 
 /**
+ * The axe-core version a published axe.min.js carries: its banner
+ * (`/*! axe v4.13.0`), else its first `version="4.13.0"` assignment (the
+ * bundled text loses the banner), or '' when it names neither.
+ *
+ * @param {string} source The file's text.
+ * @return {string}
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+ */
+export function axeVersionOf(source) {
+	const text = String(source || '')
+	const match = /axe v(\d+\.\d+\.\d+)/.exec(text.slice(0, 200))
+		|| /\.version\s*=\s*"(\d+\.\d+\.\d+)"/.exec(text.slice(0, 5000))
+	return match ? match[1] : ''
+}
+
+/**
  * The address the frame loads for one site route: the site of this portal,
  * marked as a measurement so the server lets its own origin frame it.
  *
@@ -39,7 +55,7 @@ const AUDIT_YEARS = 3
  * @param {string} slug The portal slug.
  * @param {string} route The site route.
  * @return {string}
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
  */
 export function frameAddress(siteBase, slug, route) {
 	const query = new URLSearchParams({
@@ -55,7 +71,7 @@ export function frameAddress(siteBase, slug, route) {
  *
  * @param {object} results What `axe.run()` resolved with.
  * @return {Array<object>} `{rule, impact, nodes, help, helpUrl}` per rule.
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
  */
 export function violationsOf(results) {
 	const out = []
@@ -91,7 +107,7 @@ function violationRow(violation) {
  *   and resolves with its site root element, or rejects with the reason.
  * @param {(root: object) => Promise<object>} deps.run Runs axe-core on the root.
  * @return {Promise<object>} The page row.
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
  */
 export async function measurePage(route, { open, run }) {
 	let root
@@ -139,7 +155,7 @@ function unmeasured(route, reason) {
  * @param {object} deps `open`, `run` (see measurePage), `axeVersion`, `theme`.
  * @param {(done: number, total: number) => void} [progress] Called after each page.
  * @return {Promise<object>} `{axeVersion, tags, theme, pages}`.
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
  */
 export async function measureRun(routes, deps, progress = () => {}) {
 	const pages = []
@@ -162,7 +178,7 @@ export async function measureRun(routes, deps, progress = () => {}) {
  * @param {object} audit `{party, date, reportUrl, result}`.
  * @param {Date} today The clock.
  * @return {string} '', 'incomplete' or 'expired'.
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
  */
 export function auditProblem(audit, today) {
 	if (!['A', 'B'].includes(String(audit?.result || ''))) {
@@ -225,7 +241,7 @@ function isExpired(audited, today) {
  * @param {(url: string, body: object) => Promise<{data: object}>} deps.post POSTs JSON.
  * @param {(path: string, params: object) => string} deps.url Builds an app url.
  * @return {object} `load`, `save`, `store`, each resolving `{ok, data, error}`.
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
  */
 export function createAccessibilityApi({ get, put, post, url }) {
 	const path = (slug, tail = '') =>

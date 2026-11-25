@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-identity-from-the-admin/specs
+ * @spec openspec/specs/portaliq-cms/spec.md
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use OCP\IL10N;
  * PNG, SVG or ICO, judged by the newest file of the item, which is the one the
  * media route serves. A plain address (logo, hero image) is left as it is.
  *
- * @spec openspec/changes/portal-identity-from-the-admin/specs
+ * @spec openspec/specs/portaliq-cms/spec.md
  */
 class PortalImageChoice implements PortalImageChoiceInterface {
 
@@ -81,7 +81,7 @@ class PortalImageChoice implements PortalImageChoiceInterface {
 	 *
 	 * @return string|null The refusal message.
 	 *
-	 * @spec openspec/changes/portal-identity-from-the-admin/specs
+	 * @spec openspec/specs/portaliq-cms/spec.md
 	 */
 	public function refusal(array $portal): ?string {
 		$slug = (string)($portal['slug'] ?? '');

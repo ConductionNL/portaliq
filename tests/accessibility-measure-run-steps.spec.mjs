@@ -7,6 +7,8 @@ const widget = await loadSfc('src/widgets/PortalAccessibility.vue', {
 	'@nextcloud/axios': 'export default { get: async () => ({ data: {} }), put: async () => ({ data: {} }) }\n',
 	'@nextcloud/router': 'export const generateUrl = (p) => p\n',
 	'@nextcloud/vue': 'export const NcButton = {}\nexport const NcCheckboxRadioSwitch = {}\nexport const NcLoadingIcon = {}\nexport const NcNoteCard = {}\nexport const NcTextArea = {}\nexport const NcTextField = {}\n',
+	// The published axe.min.js text, as webpack's `?raw` rule hands it over.
+	'axe-core/axe.min.js?raw': 'export default \'!function e(t){var o=o||{},i=(o.version="4.13.0",1)}(window);\'\n',
 })
 
 globalThis.t = (app, text) => text

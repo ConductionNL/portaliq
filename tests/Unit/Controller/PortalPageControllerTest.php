@@ -173,7 +173,7 @@ class PortalPageControllerTest extends TestCase {
 	 * accessibility measurement may make (site-accessibility-statement
 	 * REQ-SAS-001).
 	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
 	 */
 	public function testOnlyTheMeasurementMayFrameTheSiteAndOnlyFromItsOwnOrigin(): void {
 		$policy = $this->controller(orgSlug: '')->site()->getContentSecurityPolicy()->buildPolicy();

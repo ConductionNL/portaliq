@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-identity-from-the-admin/specs
+ * @spec openspec/specs/portaliq-cms/spec.md
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use Psr\Log\LoggerInterface;
  *
  * @template-implements IEventListener<\OCP\EventDispatcher\Event>
  *
- * @spec openspec/changes/portal-identity-from-the-admin/specs
+ * @spec openspec/specs/portaliq-cms/spec.md
  */
 class PortalImagesGuardListener implements IEventListener {
 
@@ -80,7 +80,7 @@ class PortalImagesGuardListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-identity-from-the-admin/specs
+	 * @spec openspec/specs/portaliq-cms/spec.md
 	 */
 	private function check(ObjectCreatingEvent|ObjectUpdatingEvent $event, object $entity): void {
 		if ($this->guardsSchema(schema: (string)$entity->getSchema()) === false) {

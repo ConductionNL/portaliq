@@ -26,7 +26,7 @@ use RuntimeException;
  *
  * @covers \OCA\Portaliq\Service\OrganisationTypeOptions
  *
- * @spec openspec/changes/portal-identity-from-the-admin/specs
+ * @spec openspec/specs/portaliq-cms/spec.md
  */
 final class OrganisationTypeOptionsTest extends TestCase {
 

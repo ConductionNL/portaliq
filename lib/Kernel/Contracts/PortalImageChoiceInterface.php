@@ -44,7 +44,7 @@ interface PortalImageChoiceInterface {
 	 *
 	 * @return string|null The refusal message.
 	 *
-	 * @spec openspec/changes/portal-identity-from-the-admin/specs
+	 * @spec openspec/specs/portaliq-cms/spec.md
 	 */
 	public function refusal(array $portal): ?string;
 }//end interface

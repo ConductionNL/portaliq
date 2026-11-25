@@ -131,7 +131,7 @@ export function momentInWords(value, tr, locale = 'nl') {
  * @param {string} [kind] The portal's organisation type label; none reads "de organisatie".
  * @return {string}
  * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
- * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
  */
 export function fileLine(entry, tr, locale = 'nl', kind = '') {
 	const from =
