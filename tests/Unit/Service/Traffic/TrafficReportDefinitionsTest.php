@@ -137,7 +137,7 @@ class TrafficReportDefinitionsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md#requirement-the-traffic-page-shows-what-the-public-did-not-find-req-pzr-002
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-traffic-page-shows-what-the-public-did-not-find-req-pzr-002
 	 */
 	public function testTheExportCarriesZeroResultSearches(): void {
 		$export = new TrafficExport();

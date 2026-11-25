@@ -512,7 +512,7 @@ class TrafficAggregationServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md#requirement-the-roll-up-counts-searches-that-found-nothing-req-pzr-001
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-roll-up-counts-searches-that-found-nothing-req-pzr-001
 	 */
 	public function testTheDailyJobStoresZeroResultSearches(): void {
 		$empty = ['name' => 'search', 'pagePath' => '/zoeken', 'searchTerm' => 'parkeren', 'params' => ['results' => 0], 'sequence' => 1];
