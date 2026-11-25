@@ -45,8 +45,18 @@ async function seed(
 		`OpenRegister objects#create must be reachable for ${schema}`,
 	).toBeTruthy()
 	const body = await res.json()
-	return (body.id ?? body['@self']?.id) as string
+	const id = (body.id ?? body['@self']?.id) as string
+	created.push(`${schema}/${id}`)
+	return id
 }
+
+/**
+ * What the current test seeded, removed after it. The portal reads ONE active
+ * portalPage per audience and takes the lowest id when several are active, so
+ * a page left behind can shadow the page the next test (or the next spec)
+ * seeds, and that test then reads "Deze zaak is niet van u".
+ */
+const created: string[] = []
 
 /**
  * A case type, a contribution showing the cases with the case screen, and one
@@ -151,6 +161,14 @@ const OPEN = {
 }
 
 test.describe('case-actions-withdraw-screen', () => {
+	test.afterEach(async ({ request }) => {
+		for (const ref of created.splice(0).reverse()) {
+			await request.delete(`${OR_OBJECTS_BASE}/portaliq/${ref}`, {
+				headers: { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true' },
+			})
+		}
+	})
+
 	// @e2e citizen-case-withdraw-screen::a-resident-sees-the-button
 	// @e2e citizen-case-withdraw-screen::a-resident-withdraws-with-a-reason
 	// @e2e citizen-case-withdraw-screen::the-withdrawn-request-after-a-reload
@@ -161,7 +179,9 @@ test.describe('case-actions-withdraw-screen', () => {
 		await openCase(request, page, OPEN, 'ontvangen')
 		await page.getByTestId('case-withdraw').click()
 		await expect(
-			page.getByTestId('case-withdraw-confirm').locator('h4'),
+			// The confirmation is a modal now (WithdrawCaseConfirm), opened on its
+			// heading, whatever level the board gives it.
+			page.getByTestId('case-withdraw-confirm').getByRole('heading').first(),
 		).toBeFocused()
 		await page
 			.getByTestId('case-withdraw-reason')
