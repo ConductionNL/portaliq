@@ -24,7 +24,7 @@ use Psr\Log\NullLogger;
  * the second is refused when it is saved. Checked with the real OpenRegister
  * event classes; the route rule itself is PageRouteClaimTest.
  *
- * @spec openspec/changes/portal-cms-admin-ui/specs/portaliq-cms/spec.md#requirement-publishing-must-refuse-content-that-would-render-broken
+ * @spec openspec/changes/archive/2026-11-25-portal-cms-admin-ui/specs/portaliq-cms/spec.md#requirement-publishing-must-refuse-content-that-would-render-broken
  */
 class PageRouteGuardListenerTest extends TestCase {
 

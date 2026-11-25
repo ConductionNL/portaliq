@@ -174,7 +174,7 @@ interface CmsReaderInterface {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/portal-cms-admin-ui/tasks.md#task-2
+	 * @spec openspec/changes/archive/2026-11-25-portal-cms-admin-ui/tasks.md#task-2
 	 */
 	public function rowsForCheck(string $portal, string $schema): array;
 
