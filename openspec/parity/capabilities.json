@@ -8475,7 +8475,7 @@
 				"note": "Automated axe + a keyboard test cover three page states and the phone breakpoint. The federated-search and publication-detail block templates are not named in the axe test list, so their own controls (facet checkboxes, sort select) are unverified by this suite. Matches source rating (opencatalogi matrix, id pub-wcag): evidence of AA work, not a conformance claim.",
 				"origin": "sibling",
 				"spec": "openspec/specs/portaliq-cms",
-				"requirement": "openspec/changes/public-site-meets-wcag-aa/specs/portaliq-cms/spec.md :: The public site meets WCAG 2.1 AA on every page state it serves (REQ-PWA-001)"
+				"requirement": "openspec/changes/archive/2026-11-25-public-site-meets-wcag-aa/specs/portaliq-cms/spec.md :: The public site meets WCAG 2.1 AA on every page state it serves (REQ-PWA-001)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",

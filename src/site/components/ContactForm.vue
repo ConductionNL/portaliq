@@ -238,7 +238,7 @@ export default {
  * links were 19px high with less than 24px between them, and WCAG 2.2 SC
  * 2.5.8 asks 24 by 24 CSS pixels or that much space; axe flagged them on the
  * Zuiddrecht /contact/vraag page (the only finding left in a 55-page sweep).
- * @spec openspec/changes/public-site-meets-wcag-aa/tasks.md#t05
+ * @spec openspec/changes/archive/2026-11-25-public-site-meets-wcag-aa/tasks.md#t05
  */
 .pq-contact-form__sign-in {
 	display: inline-flex;
