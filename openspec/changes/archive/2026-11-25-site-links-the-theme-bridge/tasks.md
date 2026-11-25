@@ -10,8 +10,9 @@ One PR. Build from `origin/development`.
 - [x] **T5**: the theme app's bundled faces (REQ-STB-002, live finding 3 Oct: the example gemeente fell back to Verdana). `PortalThemeResolver::shippedStylesheets()['fonts']` through `ThemeAppAsset`; the controller hands `themeAppSheets` (`bridge`, `fonts`) only with a resolved set; `site.php` links `fonts.css` after this app's faces, before the uploaded faces and the set.
   - PHPUnit `PortalThemeResolverTest::testTheBundledFacesAreOfferedOnlyWhenShipped`, `PortalPageControllerTest::testTheBridgeTravelsOnlyWithAResolvedSet`; `tests/site-theme-bridge.spec.mjs` (guard, order)
   - Guest access checked on :8090 without signing in: `/custom_apps/thematiq/css/public-bridge.css`, `css/fonts.css` and `css/fonts/source-sans-3-latin-400-normal.woff2` answer 200; theme app assets are static files, not routed
-- [ ] **T3** (coordinator): Live check on the local instance, recorded in the PR.
+- [x] **T3** (coordinator): Live check on the local instance, recorded in the PR.
   - A portal on `denhaag`: header bar and headings take the set's colours.
   - A portal on `vng`: computed `--utrecht-*` roles unchanged against a capture from before the change.
-  - A portal with no theme: no bridge link in the head. — not run: needs a live instance
+  - A portal with no theme: no bridge link in the head.
+  - Done 25 Nov 2026 on a sandbox Nextcloud 34.0.6 (MariaDB, php -S with the router) with thematiq development: `denhaag` computes `--utrecht-document-color` #2e2e2e = the set's `--nldesign-color-text`, and the header's secondary bar is the set's blue-3 (#1260a1) where the unthemed portal draws white; `vng` with and without the bridge (the bridge answered empty): 613 `--utrecht-*` roles, 13 differ, all 13 undefined without the bridge, so no role the set declares changes; a portal with an empty theme links neither the bridge nor thematiq's `fonts.css`. Head order on both themed portals: nlds sheets, `site-theme.css`, `nlds-fonts.css`, thematiq `fonts.css`, uploaded faces, `public-bridge.css`, the set.
 - [x] **T4**: Note in `portal-theme-blocks-and-contributed-pages/tasks.md` task 2 that the bridge link and its order moved to this change.
