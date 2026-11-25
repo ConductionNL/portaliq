@@ -697,6 +697,14 @@ export default {
 
 		boundForm: {
 			immediate: true,
+			/**
+			 * Read the row a newly selected form widget is bound to.
+			 *
+			 * @param {string} formId The bound row's id, or ''.
+			 * @return {void}
+			 *
+			 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+			 */
 			handler(formId) {
 				this.readFormRow(formId)
 			},
