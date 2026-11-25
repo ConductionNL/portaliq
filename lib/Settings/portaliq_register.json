@@ -7996,9 +7996,9 @@
                         }
                     },
                     "decisionSentAt": {
-                        "title": "Decision sent at",
+                        "title": "Decision sent on",
                         "type": "string",
-                        "format": "date-time",
+                        "format": "date",
                         "description": "When the decision was sent; the objection window an onCase action declares counts from it (case-page-objection-and-complaint).",
                         "example": ""
                     },
