@@ -92,6 +92,11 @@ export default {
 		'People and organisations you work with. With a contact you can send messages and make a plan together.':
 			'Mensen en organisaties met wie u samenwerkt. Met een contact kunt u berichten sturen en samen een plan maken.',
 		'Waiting for approval': 'Wacht op goedkeuring',
+		'{name} wants to add you as a contact': '{name} wil u toevoegen als contact',
+		'Invitation to {email}': 'Uitnodiging aan {email}',
+		'Waiting for a reply': 'Wacht op reactie',
+		'Someone only becomes your contact once you have both approved each other.': 'Iemand wordt pas uw contact als u elkaar allebei heeft goedgekeurd.',
+		'Requested on {date}': 'Gevraagd op {date}',
 		'Not accepted': 'Niet geaccepteerd',
 		'Sent on {date}': 'Verstuurd op {date}',
 		Accept: 'Accepteren',
@@ -393,6 +398,11 @@ export default {
 		'People and organisations you work with. With a contact you can send messages and make a plan together.':
 			'People and organisations you work with. With a contact you can send messages and make a plan together.',
 		'Waiting for approval': 'Waiting for approval',
+		'{name} wants to add you as a contact': '{name} wants to add you as a contact',
+		'Invitation to {email}': 'Invitation to {email}',
+		'Waiting for a reply': 'Waiting for a reply',
+		'Someone only becomes your contact once you have both approved each other.': 'Someone only becomes your contact once you have both approved each other.',
+		'Requested on {date}': 'Requested on {date}',
 		'Not accepted': 'Not accepted',
 		'Sent on {date}': 'Sent on {date}',
 		Accept: 'Accept',
