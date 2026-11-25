@@ -49,7 +49,7 @@ interface PortalOverviewInterface {
 	 *                              `outageMinutes`, `lastOutage` and `portals` (`portal`, `title`,
 	 *                              `percentage`).
 	 *
-	 * @spec openspec/changes/dashboard-figures-across-portals/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
+	 * @spec openspec/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
 	 */
 	public function availability(DateTimeImmutable $now): array;
 
@@ -65,7 +65,7 @@ interface PortalOverviewInterface {
 	 *                              `engagedSessions`, `engagedShare` (percent, null without sessions)
 	 *                              and `pages` (`path`, `portal`, `title`, `views`).
 	 *
-	 * @spec openspec/changes/dashboard-figures-across-portals/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
+	 * @spec openspec/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
 	 */
 	public function traffic(int $days, DateTimeImmutable $now): array;
 }//end interface
