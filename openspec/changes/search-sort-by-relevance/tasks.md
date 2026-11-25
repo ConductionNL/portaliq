@@ -8,8 +8,9 @@
 
 ## End to end
 
-- [ ] **T04**: `tests/e2e/search-sort-by-relevance.spec.ts` on an instance with `pg_trgm` and local publications only (the case that works without the opencatalogi sibling half) (REQ-SSR-001). Verification: the first result for the seeded term is the matching publication, not the newest.
+- [x] **T04**: `tests/e2e/search-sort-by-relevance.spec.ts` on an instance with `pg_trgm` and local publications only (the case that works without the opencatalogi sibling half) (REQ-SSR-001). Verification: the first result for the seeded term is the matching publication, not the newest.
   - Run live 25 Nov 2026 on a sandbox Nextcloud 35.0.3 on MariaDB (not PostgreSQL, so not yet the `pg_trgm` instance this task names): `tests/e2e/search-sort-by-relevance.spec.ts` 4 passed (REQ-SSR-001 x3, REQ-SSR-004), 1 skipped (REQ-SSR-005 needs `E2E_CONTAINER` and opencatalogi). Left open for the PostgreSQL run.
+  - Run live 25 Nov 2026 on a sandbox Nextcloud 34.0.6 on PostgreSQL 16 with `pg_trgm` (OpenRegister main, portaliq development, seed `tests/e2e/fixtures/seed-cms.sh`): 4 passed (REQ-SSR-001 x3, REQ-SSR-004), 1 skipped (REQ-SSR-005: no `E2E_CONTAINER`, no opencatalogi). OpenRegister's own ranking on that database: `_search=contct&_fuzzy=true&_order[_relevance]=DESC` on the `page` schema finds the `/contact` page with `@self.relevance` 50.
 
 ## Docs, strings and validation
 
