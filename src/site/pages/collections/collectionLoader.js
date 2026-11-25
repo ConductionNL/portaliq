@@ -292,7 +292,7 @@ export function openRecordState(loaded, target) {
  *
  * @param {object|null} record The open record.
  * @return {boolean}
- * @spec openspec/changes/mandated-case-offers-no-writes/specs/portal-my-cases/spec.md#requirement-a-case-read-under-a-mandate-offers-no-writes
+ * @spec openspec/specs/portal-my-cases/spec.md#requirement-a-case-read-under-a-mandate-offers-no-writes
  */
 export function readUnderMandate(record) {
 	const id = record?._mandate?.id
