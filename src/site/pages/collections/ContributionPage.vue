@@ -559,8 +559,8 @@ import { asksInput } from '../../../shared/actionInput.js'
 import {
 	anyGrouped,
 	groupFieldOf,
-	groupOrderOf,
 	groupLabelCollection,
+	groupOrderOf,
 	groupRows,
 } from '../../../shared/collectionGroups.js'
 import { introOf } from '../../../shared/collectionIntro.js'
