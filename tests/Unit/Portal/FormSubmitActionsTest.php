@@ -162,7 +162,7 @@ class FormSubmitActionsTest extends TestCase {
 	 * @return void
 	 */
 	public function testAGroupsFieldsAreAcceptedInItsPlace(): void {
-		$random = $this->createMock(ISecureRandom::class);
+		$random = $this->createMock(originalClassName: ISecureRandom::class);
 		$random->method('generate')->willReturn('n');
 
 		$fields = [
@@ -180,9 +180,13 @@ class FormSubmitActionsTest extends TestCase {
 			['id' => 'note'],
 		];
 
-		$action = (new FormSubmitActions($random, $this->createMock(LoggerInterface::class)))->action(row: $this->row(fields: $fields), formId: 'f-3');
-		$this->assertIsArray($action);
-		$this->assertSame(['email', 'street', 'city', 'note', 'utmFirstTouch', 'utmLastTouch', 'referrer'], $action['fields']);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+		$action = (new FormSubmitActions(random: $random, logger: $logger))->action(row: $this->row(fields: $fields), formId: 'f-3');
+		$this->assertIsArray(actual: $action);
+		$this->assertSame(
+			expected: ['email', 'street', 'city', 'note', 'utmFirstTouch', 'utmLastTouch', 'referrer'],
+			actual: $action['fields']
+		);
 	}//end testAGroupsFieldsAreAcceptedInItsPlace()
 
 	/**
@@ -193,12 +197,13 @@ class FormSubmitActionsTest extends TestCase {
 	 * @return void
 	 */
 	public function testAFormWithOnlyAnEmptyGroupGetsNoAction(): void {
-		$random = $this->createMock(ISecureRandom::class);
+		$random = $this->createMock(originalClassName: ISecureRandom::class);
 		$random->expects($this->never())->method('generate');
 
 		$fields = [['id' => 'address', 'type' => 'group', 'fields' => []]];
-		$action = (new FormSubmitActions($random, $this->createMock(LoggerInterface::class)))->action(row: $this->row(fields: $fields), formId: 'f-4');
-		$this->assertNull($action);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+		$action = (new FormSubmitActions(random: $random, logger: $logger))->action(row: $this->row(fields: $fields), formId: 'f-4');
+		$this->assertNull(actual: $action);
 	}//end testAFormWithOnlyAnEmptyGroupGetsNoAction()
 
 	/**

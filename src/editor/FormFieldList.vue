@@ -320,6 +320,7 @@ export default {
 .form-field-list__item--in-group {
 	margin-inline-start: 16px;
 }
+
 .form-field-list__fieldset {
 	border: 1px solid var(--color-border);
 	border-radius: var(--border-radius);

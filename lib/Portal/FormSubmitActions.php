@@ -166,67 +166,41 @@ final class FormSubmitActions {
 	 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
 	 */
 	private function fieldIdsOf(array $row): array {
-		$fieldIds = [];
-		foreach ((array)($row['fields'] ?? []) as $field) {
-			if (is_array($field) === true && ($field['type'] ?? null) === 'group') {
-				$fieldIds = array_merge($fieldIds, $this->groupFieldIds(group: $field));
-				continue;
-			}
-
-			$fieldId = $this->fieldIdOf(field: $field);
-			if ($fieldId !== null) {
-				$fieldIds[] = $fieldId;
-			}
-		}
-
-		return $fieldIds;
+		return $this->idsIn(fields: (array)($row['fields'] ?? []), inGroup: false);
 	}//end fieldIdsOf()
 
 	/**
-	 * The ids of the fields inside a group; a group inside a group is not a
-	 * field and adds nothing.
+	 * The ids of a field list. A group outside a group gives the ids of its
+	 * own fields; a group inside a group is not a field and gives nothing.
 	 *
-	 * @param array<string, mixed> $group The `group` field.
+	 * @param array<int|string, mixed> $fields  The field list.
+	 * @param bool                     $inGroup Whether the list is a group's own.
 	 *
 	 * @return array<int, string>
 	 *
 	 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
 	 */
-	private function groupFieldIds(array $group): array {
+	private function idsIn(array $fields, bool $inGroup): array {
 		$fieldIds = [];
-		foreach ((array)($group['fields'] ?? []) as $field) {
-			if (is_array($field) === true && ($field['type'] ?? null) === 'group') {
+		foreach ($fields as $field) {
+			if (is_array($field) === false) {
 				continue;
 			}
 
-			$fieldId = $this->fieldIdOf(field: $field);
-			if ($fieldId !== null) {
+			if (($field['type'] ?? null) === 'group') {
+				if ($inGroup === false) {
+					$fieldIds = array_merge($fieldIds, $this->idsIn(fields: (array)($field['fields'] ?? []), inGroup: true));
+				}
+
+				continue;
+			}
+
+			$fieldId = ($field['id'] ?? null);
+			if (is_string($fieldId) === true && $fieldId !== '') {
 				$fieldIds[] = $fieldId;
 			}
-		}
+		}//end foreach
 
 		return $fieldIds;
-	}//end groupFieldIds()
-
-	/**
-	 * One field's id, or null when the entry is not a field with an id.
-	 *
-	 * @param mixed $field One entry of a field list.
-	 *
-	 * @return string|null
-	 *
-	 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
-	 */
-	private function fieldIdOf(mixed $field): ?string {
-		if (is_array($field) === false) {
-			return null;
-		}
-
-		$fieldId = ($field['id'] ?? null);
-		if (is_string($fieldId) === true && $fieldId !== '') {
-			return $fieldId;
-		}
-
-		return null;
-	}//end fieldIdOf()
+	}//end idsIn()
 }//end class
