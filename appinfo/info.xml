@@ -47,6 +47,12 @@
         OpenRegister — every Portaliq entity is an OpenRegister object, and
         src/manifest.json lists "openregister" as a required dependency.
 
+        Theming app (optional, same limitation): thematiq (formerly nldesign)
+        ships the token stylesheets a portal's `theme` names. Without it a site
+        renders unthemed, and PortalThemeResolver logs the missing app by name
+        for every portal that names a theme (portal-theme-application,
+        requirement "Portaliq MUST declare its dependency on themiq").
+
         min-version is 32 because 32 is the OLDEST NEXTCLOUD THIS REPO TESTS.
         `nextcloud-test-refs` in .github/workflows/code-quality.yml is
         ["stable32", "stable33"]; there is no stable31 leg and no stable28 leg.

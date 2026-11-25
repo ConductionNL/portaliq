@@ -150,7 +150,7 @@ export default {
 		 * @return {string} The same HTML, with typography classes applied.
 		 *
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
-		 * @spec openspec/changes/portal-theme-application/specs/portaliq-cms/spec.md#requirement-markup-must-carry-nl-design-component-classes
+		 * @spec openspec/changes/archive/2026-11-25-portal-theme-application/specs/portaliq-cms/spec.md#requirement-markup-must-carry-nl-design-component-classes
 		 */
 		withDesignSystemClasses(html) {
 			const body = new DOMParser().parseFromString(html, 'text/html').body
