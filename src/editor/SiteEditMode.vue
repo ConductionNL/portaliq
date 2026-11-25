@@ -158,6 +158,7 @@
 			:editor="editor"
 			:loadCatalogueKinds="loadCatalogueKinds"
 			:excludedPaths="excludedPaths"
+			:formRows="formRows"
 			publicOnly />
 
 		<PageHistoryDialog
@@ -184,7 +185,12 @@ import SiteMenuPanel from './SiteMenuPanel.vue'
 import SitePagesPanel from './SitePagesPanel.vue'
 import { defaultSizeFor } from '../lib/pageWidgetCatalogue.js'
 import { fetchCatalogueKinds } from '../site/lib/publicCatalogue.js'
-import { createPageEditor, createPageSaver, kindsFrom } from './index.js'
+import {
+	createFormRowFields,
+	createPageEditor,
+	createPageSaver,
+	kindsFrom,
+} from './index.js'
 import { instanceUrl } from './instanceUrl.js'
 import { loadExcludedPaths } from './reportExclusion.js'
 
@@ -245,6 +251,13 @@ export default {
 
 	data() {
 		return {
+			// The bound form row a form widget's field list edits (T11b, option b).
+			formRows: createFormRowFields({
+				get: (url) => axios.get(url),
+				put: (url, payload, config) => axios.put(url, payload, config),
+				url: (id) =>
+					instanceUrl(`/apps/openregister/api/objects/portaliq/form/${encodeURIComponent(id)}`),
+			}),
 			editor: createPageEditor({
 				saver: createPageSaver({
 					get: (url) => axios.get(url),

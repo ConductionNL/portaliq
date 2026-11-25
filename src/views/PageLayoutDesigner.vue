@@ -192,7 +192,8 @@
 			:loadBlocks="loadBlocks"
 			:loadRecordLists="loadRecordLists"
 			:loadCatalogueKinds="loadCatalogueKinds"
-			:excludedPaths="excludedPaths" />
+			:excludedPaths="excludedPaths"
+			:formRows="formRows" />
 
 		<MediaPickerDialog
 			v-model:open="mediaOpen"
@@ -229,6 +230,7 @@ import PublishPageDialog from '../dialogs/PublishPageDialog.vue'
 import PageGridEditor from '../editor/PageGridEditor.vue'
 import {
 	blockToPage,
+	createFormRowFields,
 	createPageEditor,
 	createPageSaver,
 	kindsFrom,
@@ -276,6 +278,13 @@ export default {
 	data() {
 		return {
 			editor: this.makeEditor(),
+			// The bound form row a form widget's field list edits (T11b, option b).
+			formRows: createFormRowFields({
+				get: (url) => axios.get(url),
+				put: (url, payload, config) => axios.put(url, payload, config),
+				url: (id) =>
+					generateUrl(`/apps/openregister/api/objects/portaliq/form/${encodeURIComponent(id)}`),
+			}),
 			paletteOpen: false,
 			historyOpen: false,
 			mediaOpen: false,
